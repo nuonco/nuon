@@ -60,7 +60,7 @@ export const TerraformValuesDiff = ({
 
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
-      <div className={cn(!wrapLines && 'min-w-fit')}>
+      <div className={cn(wrapLines ? 'pr-4' : 'min-w-fit')}>
       {valuesDiff.length ? (
         valuesDiff.map((value, idx) => {
           const prefix = getDiffPrefix(values.action, value.changed)

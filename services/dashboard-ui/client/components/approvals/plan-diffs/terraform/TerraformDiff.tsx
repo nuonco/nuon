@@ -13,7 +13,7 @@ import { parseTerraformPlan } from '@/utils/terraform-utils'
 import { useTerraformResourceFilter } from '@/hooks/use-terraform-plan-resource-filter'
 import { useTerraformOutputFilter } from '@/hooks/use-terraform-plan-output-filter'
 import { DiffFilter } from '../DiffFilter'
-import { WrapLinesProvider, WrapLinesToggle } from '../wrap-lines-context'
+import { WrapLinesProvider } from '../wrap-lines-context'
 import { TerraformSummary } from './TerraformSummary'
 import { ResourceChangesList } from './ResourceChangesList'
 import { OutputChangesList } from './OutputChangesList'
@@ -84,31 +84,29 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
   return (
     <WrapLinesProvider>
     <div className="flex flex-col gap-6">
-      <div className="self-end flex items-center gap-2">
-        <WrapLinesToggle />
-        <Modal
-          heading={
-            <Text flex className="gap-4" variant="h3" weight="strong">
-              <Icon variant="NetworkXIcon" size="24" /> Plan graph
-            </Text>
-          }
-          triggerButton={{
-            children: (
-              <>
-                View plan graph <Icon variant="NetworkXIcon" />
-              </>
-            ),
-            variant: 'secondary',
-          }}
-          size="xl"
-        >
-          <TerraformPlanGraph
-            resources={resources.changes}
-            drift={drift.changes}
-            outputs={outputs.changes}
-          />
-        </Modal>
-      </div>
+      <Modal
+        heading={
+          <Text flex className="gap-4" variant="h3" weight="strong">
+            <Icon variant="NetworkXIcon" size="24" /> Plan graph
+          </Text>
+        }
+        triggerButton={{
+          className: 'self-end',
+          children: (
+            <>
+              View plan graph <Icon variant="NetworkXIcon" />
+            </>
+          ),
+          variant: 'secondary',
+        }}
+        size="xl"
+      >
+        <TerraformPlanGraph
+          resources={resources.changes}
+          drift={drift.changes}
+          outputs={outputs.changes}
+        />
+      </Modal>
 
       {drift?.changes?.length ? (
         <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">

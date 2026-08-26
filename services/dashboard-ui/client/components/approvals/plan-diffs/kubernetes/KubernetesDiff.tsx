@@ -14,11 +14,7 @@ import {
 } from '../diff-style-utils'
 import { KubernetesDiffSummary } from './KubernetesDiffSummary'
 import { DiffFilter } from '../DiffFilter'
-import {
-  DiffCodeBlock,
-  WrapLinesProvider,
-  WrapLinesToggle,
-} from '../wrap-lines-context'
+import { DiffCodeBlock, WrapLinesProvider } from '../wrap-lines-context'
 
 export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
   const { changes, errors, summary } = useMemo(
@@ -41,11 +37,10 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
   return (
     <WrapLinesProvider>
     <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-      <div className="flex items-center justify-between gap-4 px-4 py-4 sm:px-6 border-b">
+      <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
         <Text variant="base" weight="strong">
           Kubernetes changes
         </Text>
-        <WrapLinesToggle />
       </div>
 
       <KubernetesDiffSummary summary={summary} />

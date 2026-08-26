@@ -295,7 +295,7 @@ export function PrismCodeBlock({
           'bg-code font-mono w-full',
           isDiff && 'block',
           isDiff && !wrapLongLines && 'min-w-fit',
-          wrapLongLines && '!whitespace-pre-wrap break-all'
+          wrapLongLines && '!whitespace-pre-wrap break-all !pr-4'
         ),
       }}
       customStyle={{

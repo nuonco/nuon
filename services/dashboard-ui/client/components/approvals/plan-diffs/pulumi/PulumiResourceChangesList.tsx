@@ -85,7 +85,7 @@ function DetailedDiffBody({
     : 'flex whitespace-pre'
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
-      <div className={cn(!wrapLines && 'min-w-fit')}>
+      <div className={cn(wrapLines ? 'pr-4' : 'min-w-fit')}>
       {Object.entries(detailedDiff).map(([prop, diff]) => {
         const prefix = getDiffPrefix(diff.kind)
         return (
@@ -139,7 +139,7 @@ function InputsDiffBody({
 
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
-      <div className={cn(!wrapLines && 'min-w-fit')}>
+      <div className={cn(wrapLines ? 'pr-4' : 'min-w-fit')}>
       {keyValues.length ? (
         keyValues.map((value, idx) => {
           const prefix = value.changed

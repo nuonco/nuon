@@ -41,7 +41,7 @@ export function TreeDiffValue({ before, after }: TreeDiffValueProps) {
   return (
     <div className="ml-4 my-1">
       <div className="font-mono text-[13px] leading-6 overflow-x-auto">
-        <div className={cn(!wrapLines && 'min-w-fit')}>
+        <div className={cn(wrapLines ? 'pr-4' : 'min-w-fit')}>
         {visibleLines.map((line, i) => (
           <div
             key={i}

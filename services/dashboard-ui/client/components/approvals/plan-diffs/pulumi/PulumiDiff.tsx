@@ -6,7 +6,7 @@ import { Text } from '@/components/common/Text'
 import { Modal } from '@/components/surfaces/Modal'
 import { usePulumiPlanFilter } from '@/hooks/use-pulumi-plan-filter'
 import { DiffFilter } from '../DiffFilter'
-import { WrapLinesProvider, WrapLinesToggle } from '../wrap-lines-context'
+import { WrapLinesProvider } from '../wrap-lines-context'
 import { PulumiSummary } from './PulumiSummary'
 import { PulumiResourceChangesList } from './PulumiResourceChangesList'
 import { PulumiPlanGraph } from './PulumiPlanGraph'
@@ -55,27 +55,25 @@ export function PulumiDiff({
     <WrapLinesProvider>
     <div className="flex flex-col gap-6">
       {hasResourceChanges && (
-        <div className="self-end flex items-center gap-2">
-          <WrapLinesToggle />
-          <Modal
-            heading={
-              <Text flex className="gap-4" variant="h3" weight="strong">
-                <Icon variant="NetworkXIcon" size="24" /> Preview graph
-              </Text>
-            }
-            triggerButton={{
-              children: (
-                <>
-                  View preview graph <Icon variant="NetworkXIcon" />
-                </>
-              ),
-              variant: 'secondary',
-            }}
-            size="xl"
-          >
-            <PulumiPlanGraph resources={plan.resource_changes!} />
-          </Modal>
-        </div>
+        <Modal
+          heading={
+            <Text flex className="gap-4" variant="h3" weight="strong">
+              <Icon variant="NetworkXIcon" size="24" /> Preview graph
+            </Text>
+          }
+          triggerButton={{
+            className: 'self-end',
+            children: (
+              <>
+                View preview graph <Icon variant="NetworkXIcon" />
+              </>
+            ),
+            variant: 'secondary',
+          }}
+          size="xl"
+        >
+          <PulumiPlanGraph resources={plan.resource_changes!} />
+        </Modal>
       )}
 
       <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">

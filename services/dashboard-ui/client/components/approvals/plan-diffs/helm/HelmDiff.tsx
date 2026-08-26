@@ -15,11 +15,7 @@ import {
 import { HelmDiffSummary } from './HelmDiffSummary'
 import { humanize } from '@/utils/string-utils'
 import { DiffFilter } from '../DiffFilter'
-import {
-  DiffCodeBlock,
-  WrapLinesProvider,
-  WrapLinesToggle,
-} from '../wrap-lines-context'
+import { DiffCodeBlock, WrapLinesProvider } from '../wrap-lines-context'
 
 export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
   const { changes, summary } = useMemo(() => parseHelmPlan(plan), [plan])
@@ -39,16 +35,13 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
   return (
     <WrapLinesProvider>
     <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-      <div className="flex items-start justify-between gap-4 px-4 py-4 sm:px-6 border-b">
-        <div className="flex flex-col">
-          <Text variant="base" weight="strong">
-            Helm changes
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Operation: {humanize(plan.op)}
-          </Text>
-        </div>
-        <WrapLinesToggle />
+      <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
+        <Text variant="base" weight="strong">
+          Helm changes
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          Operation: {humanize(plan.op)}
+        </Text>
       </div>
 
       <HelmDiffSummary summary={summary} />

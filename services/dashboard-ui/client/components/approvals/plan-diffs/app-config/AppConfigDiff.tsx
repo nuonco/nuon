@@ -342,7 +342,7 @@ const FieldsDiff = ({ fields }: { fields: DiffFieldEntry[] }) => {
     : 'flex whitespace-pre'
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
-      <div className={cn(!wrapLines && 'min-w-fit')}>
+      <div className={cn(wrapLines ? 'pr-4' : 'min-w-fit')}>
         {fields.map((field, idx) => {
           const prefix = getDiffPrefix(field.op)
           return (
