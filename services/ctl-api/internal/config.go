@@ -176,6 +176,8 @@ func init() {
 
 	config.RegisterDefault("internal_email_domains", []string{})
 
+	config.RegisterDefault("posthog_host", "https://us.i.posthog.com")
+
 	// Nuon Auth Service Configs
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
 	config.RegisterDefault("nuon_auth_allow_all_users", false)
@@ -355,6 +357,10 @@ type Config struct {
 	NuonAuthIssuerURL    string `config:"nuon_auth_issuer_url"`
 	NuonAuthRedirectURL  string `config:"nuon_auth_redirect_url"`
 	NuonAuthProviderName string `config:"nuon_auth_provider_name"` // label shown on the sign-in page
+	NuonBrandedLogin     bool   `config:"nuon_branded_login"`
+
+	PostHogKey  string `config:"posthog_key"`
+	PostHogHost string `config:"posthog_host"`
 
 	// links
 	AppURL        string `config:"app_url" validate:"required"`
