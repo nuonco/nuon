@@ -21,7 +21,8 @@ func (a {{.Receiver}}) {{if .Options.WrapperPrefix}}{{.Options.WrapperPrefix}}{{
 }
 {{- end}}
 
-// Await{{.Name | ToPascal}} is a wrapper for the {{.Name | ToPascal}} activity
+{{if .Tags}}// tags: {{range $i, $t := .Tags}}{{if $i}}, {{end}}{{$t}}{{end}}
+{{end}}// Await{{.Name | ToPascal}} is a wrapper for the {{.Name | ToPascal}} activity
 func Await{{.Name | ToPascal}}(ctx workflow.Context, input {{if .Options.ByFieldOnly}}{{.ByFieldType}}{{else}}{{$reqType}}{{end}}, opts ...*workflow.ActivityOptions) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
 	{{if .OutputType}}var result {{.OutputType}}{{end}}
 	options := workflow.GetActivityOptions(ctx)

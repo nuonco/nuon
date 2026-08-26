@@ -165,6 +165,17 @@ func generateTemporal(ctx context.Context) error {
 		Validate:    true,
 		Imports:     true,
 		Parallelism: runtime.NumCPU(),
+
+		// Declare the `@tag <name>` vocabulary here rather than in a
+		// temporal-gen.yaml. Setting Tags makes it the whole vocabulary: file
+		// discovery is skipped, and any @tag not listed is a generation error.
+		//
+		//	Tags: &tags.Config{
+		//		Defaults: &tags.Attrs{StartToCloseTimeout: "1m"},
+		//		Tags: map[string]*tags.Attrs{
+		//			"db-read": {StartToCloseTimeout: "30s", MaxRetries: generics.ToPtr(3)},
+		//		},
+		//	},
 	})
 }
 
