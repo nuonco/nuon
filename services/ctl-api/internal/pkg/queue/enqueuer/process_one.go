@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -23,7 +22,7 @@ const (
 )
 
 // EnqueueInline synchronously enqueues a queue signal by performing the
-// UpdateWithStart call inline with the caller. It records enqueue timing
+// SignalWithStart call inline with the caller. It records enqueue timing
 // metadata (including the enqueue source) and marks the signal as enqueued
 // on success.
 func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, source string) error {
@@ -46,21 +45,18 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 	enqueueStart := time.Now().UTC()
 	enqueueStartedAt := enqueueStart.Format(time.RFC3339)
 
-	startOp := e.queueStartOperation(&q)
-	_, err := e.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
-		UpdateOptions: tclient.UpdateWorkflowOptions{
-			WorkflowID:   q.Workflow.ID,
-			UpdateName:   queue.EnqueueUpdateName,
-			WaitForStage: tclient.WorkflowUpdateStageAccepted,
-			Args: []any{
-				queue.EnqueueHandlerInput{
-					QueueSignalID: qs.ID,
-					WorkflowID:    qs.Workflow.ID,
-				},
-			},
+	startOpts, wkflowReq := e.queueStartOptions(&q)
+	_, err := e.tClient.SignalWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace,
+		q.Workflow.ID,
+		queue.EnqueueSignalName,
+		queue.EnqueueHandlerInput{
+			QueueSignalID: qs.ID,
+			WorkflowID:    qs.Workflow.ID,
 		},
-		StartWorkflowOperation: startOp,
-	})
+		startOpts,
+		"Queue",
+		wkflowReq,
+	)
 
 	enqueueFinishedAt := time.Now().UTC().Format(time.RFC3339)
 
@@ -96,7 +92,7 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 		})
 		e.mw.Incr("queue_signals.enqueue", failTags)
 		e.mw.Timing("queue_signals.enqueue.latency", time.Since(enqueueStart), failTags)
-		return errors.Wrap(err, "enqueue UpdateWithStart failed")
+		return errors.Wrap(err, "enqueue SignalWithStart failed")
 	}
 
 	enqueueTags := metrics.ToTags(map[string]string{
@@ -111,7 +107,7 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 }
 
 // processOne looks up the queue signal and its parent queue, performs the
-// UpdateWithStart call, and marks the signal as enqueued.
+// SignalWithStart call, and marks the signal as enqueued.
 func (e *Enqueuer) processOne(queueSignalID string) {
 	ctx, cancel := context.WithTimeout(e.ctx, processOneTimeout)
 	defer cancel()
