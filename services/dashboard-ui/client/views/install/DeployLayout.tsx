@@ -18,7 +18,10 @@ function getTabsForComponentType(
   type?: TComponentType,
   traceEnabled?: boolean
 ): TNavLink[] {
-  const tabs: TNavLink[] = [{ path: '/', text: 'Logs' }]
+  const tabs: TNavLink[] = [
+    { path: '/', text: 'Summary' },
+    { path: '/logs', text: 'Logs' },
+  ]
   if (traceEnabled) {
     tabs.push({ path: '/trace', text: 'Trace' })
   }
