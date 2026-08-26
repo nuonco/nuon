@@ -39,7 +39,7 @@ export const RunnerProcesses = () => {
 
   return (
     <RunnerProvider runnerId={runnerId} shouldPoll>
-      <PageLayout className="pb-6">
+      <PageLayout>
         <PageTitle title="Runner processes" />
         <Breadcrumbs
           breadcrumbs={[

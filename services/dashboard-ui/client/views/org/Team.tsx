@@ -16,7 +16,7 @@ export const Team = () => {
   const { org } = useOrg()
 
   return (
-    <PageLayout className="pb-6">
+    <PageLayout>
       <PageTitle title="Team" />
       <Breadcrumbs
         breadcrumbs={[

@@ -68,26 +68,34 @@ export const Page = () => (
       description="View and manage all deployed installs here."
       createAction={<Button variant="primary">Create install</Button>}
     >
-      <Table columns={columns} data={data} />
+      <Table
+        columns={columns}
+        data={data}
+        pagination={{ hasNext: true, offset: 0, limit: 20 }}
+      />
     </ListPage>
   </ShellProviders>
 )
 
-export const PageWithFilters = () => (
+export const PageWithTableFilters = () => (
   <ShellProviders>
     <ListPage
       variant="page"
       title="Installs"
       description="View and manage all deployed installs here."
       createAction={<Button variant="primary">Create install</Button>}
-      filters={
-        <>
-          <Button variant="secondary">Labels</Button>
-          <Button variant="secondary">Branches</Button>
-        </>
-      }
     >
-      <Table columns={columns} data={data} />
+      <Table
+        columns={columns}
+        data={data}
+        filterActions={
+          <div className="flex items-center gap-3">
+            <Button variant="secondary">Labels</Button>
+            <Button variant="secondary">Branches</Button>
+          </div>
+        }
+        pagination={{ hasNext: true, offset: 0, limit: 20 }}
+      />
     </ListPage>
   </ShellProviders>
 )

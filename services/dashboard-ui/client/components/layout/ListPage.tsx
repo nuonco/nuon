@@ -7,7 +7,6 @@ import { SectionHeader, type ISectionHeader } from './SectionHeader'
 export interface IListPage extends ISectionHeader {
   children: ReactNode
   createAction?: ReactNode
-  filters?: ReactNode
 }
 
 export const ListPage = ({
@@ -16,7 +15,6 @@ export const ListPage = ({
   className,
   createAction,
   description,
-  filters,
   status,
   title,
   variant = 'section',
@@ -29,27 +27,22 @@ export const ListPage = ({
       </>
     ) : undefined
 
-  const body = (
-    <>
-      {filters ? (
-        <div className="flex flex-wrap items-center gap-3">{filters}</div>
-      ) : null}
-      {children}
-    </>
+  const header = (
+    <SectionHeader
+      actions={headerActions}
+      description={description}
+      status={status}
+      title={title}
+      variant={variant}
+    />
   )
 
   if (variant === 'page') {
     return (
       <PageLayout>
-        <SectionHeader
-          actions={headerActions}
-          description={description}
-          status={status}
-          title={title}
-          variant="page"
-        />
+        {header}
         <PageContent>
-          <PageSection className={className}>{body}</PageSection>
+          <PageSection className={className}>{children}</PageSection>
         </PageContent>
       </PageLayout>
     )
@@ -57,14 +50,8 @@ export const ListPage = ({
 
   return (
     <PageSection className={className}>
-      <SectionHeader
-        actions={headerActions}
-        description={description}
-        status={status}
-        title={title}
-        variant="section"
-      />
-      {body}
+      {header}
+      {children}
     </PageSection>
   )
 }

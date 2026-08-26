@@ -13,7 +13,7 @@ export const Installs = () => {
   const { org } = useOrg()
 
   return (
-    <PageLayout className="pb-6">
+    <PageLayout>
       <PageTitle title="Installs" />
       <Breadcrumbs
         breadcrumbs={[

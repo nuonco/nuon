@@ -12,7 +12,7 @@ export const BuildRunner = () => {
   const { org } = useOrg()
 
   return (
-    <PageLayout className="pb-6">
+    <PageLayout>
       <PageTitle title="Builds" />
       <Breadcrumbs
         breadcrumbs={[
