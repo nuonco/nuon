@@ -30307,8 +30307,6 @@ export interface operations {
         page?: number;
         /** @description include service accounts with the runner role (excluded by default) */
         include_runners?: boolean;
-        /** @description include service accounts with the stack role (excluded by default) */
-        include_stacks?: boolean;
       };
     };
     responses: {
