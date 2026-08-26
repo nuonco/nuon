@@ -13,6 +13,7 @@ import { parseTerraformPlan } from '@/utils/terraform-utils'
 import { useTerraformResourceFilter } from '@/hooks/use-terraform-plan-resource-filter'
 import { useTerraformOutputFilter } from '@/hooks/use-terraform-plan-output-filter'
 import { DiffFilter } from '../DiffFilter'
+import { WrapLinesProvider } from '../wrap-lines-context'
 import { TerraformSummary } from './TerraformSummary'
 import { ResourceChangesList } from './ResourceChangesList'
 import { OutputChangesList } from './OutputChangesList'
@@ -81,6 +82,7 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
   }
 
   return (
+    <WrapLinesProvider>
     <div className="flex flex-col gap-6">
       <Modal
         heading={
@@ -201,5 +203,6 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
         </Card>
       ) : null}
     </div>
+    </WrapLinesProvider>
   )
 }
