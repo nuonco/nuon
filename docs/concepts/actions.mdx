@@ -2,7 +2,7 @@
 title: "Actions"
 icon: "circle-play"
 description: "Automate operational tasks and workflows in installs."
-keywords: ["actions", "what are actions", "health checks", "cron schedule", "action triggers", "day 2 operations", "database migrations", "kubectl", "bash scripts", "operational runbooks", "post-deploy", "pre-provision", "break glass actions", "remediation actions", "one-off commands", "ad-hoc operations", "scripted operations"]
+keywords: ["actions", "what are actions", "health checks", "cron schedule", "action triggers", "day 2 operations", "database migrations", "kubectl", "bash scripts", "operational runbooks", "post-deploy", "pre-provision", "break glass actions", "remediation actions", "one-off commands", "ad-hoc operations", "scripted operations", "container actions", "image-backed actions", "action image"]
 ---
 
 Actions allow you to create automated workflows that can be run in installs.
@@ -93,6 +93,23 @@ EXPECTED_STATUS_CODE = "200"
 	actions](https://github.com/nuonco/actions) in an open-source repo for you to
 	get started with.
 </Note>
+
+## Container Actions
+
+By default an action's steps run directly on the install [runner](/concepts/runners) VM, so they are
+limited to the tooling that VM carries. An action can instead declare a container `image`, in which case
+every step runs inside that image and ships with whatever tools it needs:
+
+```toml actions/db_migrate.toml
+# action
+name    = "db_migrate"
+timeout = "10m"
+image   = "ghcr.io/acme/migrate-tools:v1.4.0"
+```
+
+The image can be a public reference, or the `image.ref` output of a
+[container image component](/guides/container-image-components) when the tools image is private. See
+[Container actions](/guides/container-actions) for how to configure one.
 
 ## Running Actions
 
