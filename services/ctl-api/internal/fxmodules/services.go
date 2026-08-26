@@ -23,7 +23,6 @@ import (
 	runnerauthservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runner-auth/service"
 	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
 	slackservice "github.com/nuonco/nuon/services/ctl-api/internal/app/slack/service"
-	stacksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/stacks/service"
 	triggersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/triggers/service"
 	vcsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/health"
@@ -68,7 +67,6 @@ var sharedServices = fx.Options(
 	fx.Invoke(runnersservice.StartRunnerJobNotifyListener),
 	fx.Provide(api.AsService(runnersservice.New)),
 	fx.Provide(api.AsService(slackservice.New)),
-	fx.Provide(api.AsService(stacksservice.New)),
 	fx.Provide(api.AsService(vcsservice.New)),
 	fx.Provide(api.AsService(onboardingservice.New)),
 	fx.Provide(onboardingservice.NewCatalog),

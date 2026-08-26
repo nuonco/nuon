@@ -26,15 +26,8 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# Build from the checkout this script belongs to, not from a path in the
-# environment. $NUON_ROOT/nuon is the primary checkout, so running dev from a
-# worktree compiled the server from the wrong source: client changes hot-reloaded
-# while Go changes silently did not appear. NUON_DIR still overrides.
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-
-echo "Building dashboard server from ${NUON_DIR:-$REPO_DIR}..."
-go build -C "${NUON_DIR:-$REPO_DIR}" -o /tmp/dashboard-server ./services/dashboard-ui/server
+echo "Building dashboard server..."
+go build -C "${NUON_DIR:-$NUON_ROOT/nuon}" -o /tmp/dashboard-server ./services/dashboard-ui/server
 
 rm -f dist/.port
 /tmp/dashboard-server serve &

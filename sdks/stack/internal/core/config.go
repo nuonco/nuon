@@ -70,12 +70,6 @@ type Config struct {
 	// the SDK enforces it at provision time.
 	RequiredInputs []string `json:"required_inputs,omitempty"`
 
-	// SensitiveInputs lists the install-input names the app declares sensitive.
-	// Tracked separately for the same reason RequiredInputs is: InstallInputs
-	// is a plain map with no per-key metadata. Consumers (the Terraform
-	// provider) use it to mark those values sensitive.
-	SensitiveInputs []string `json:"sensitive_inputs,omitempty"`
-
 	// AWS carries the AWS-specific inputs; populated when Cloud is aws.
 	AWS *AWSConfig `json:"aws,omitempty"`
 	// GCP carries the GCP-specific inputs; populated when Cloud is gcp.
