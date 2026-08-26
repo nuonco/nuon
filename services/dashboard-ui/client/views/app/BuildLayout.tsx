@@ -58,7 +58,9 @@ const BuildLayoutInner = ({
         tabs: [
           { path: '/', text: 'Summary' },
           { path: '/logs', text: 'Logs' },
-          { path: '/trace', text: 'Trace' },
+          ...(org?.features?.['trace-view']
+            ? [{ path: '/trace', text: 'Trace' }]
+            : []),
         ],
       }}
     >

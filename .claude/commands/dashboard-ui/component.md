@@ -98,6 +98,15 @@ Every string you render is exactly one of three classes; the class fixes its cas
 
 **Chip pick:** value changes on its own while you watch (lifecycle) → `Status`; static classification (type/kind/count/version) → `Badge` (`variant="code"` iff identifier content, default sans variant iff vocabulary); user key:value label → `LabelBadge`. **mono ⇔ identifier.** Never `humanize()` a string that contains a user identifier (mixed strings, e.g. a step name) or a free-text API sentence (`status_human_description`) — render those verbatim.
 
+## Page headers (`SectionHeader` / `DetailHeader`)
+
+Never hand-assemble a heading row. Two components own it; pick with one question: **does the header identify a resource?** Full record: `DESIGN.md` §5 / UXDR 020 + plan 024.
+
+1. **`DetailHeader`** — the header carries a resource ID, `BackLink`, label badges, a status chip, timestamps, or a metadata block → it is an **identity header**. Metadata goes in its `metadata` slot, which renders a `Card` of `LabeledValue`/`LabeledStatus` below the heading row — never an inline top-right block, and no value-count threshold.
+2. **`SectionHeader`** — the heading just names what you're looking at ("Components", "Install state", "Processes"). `variant="page"` at the top of a route tree, `variant="section"` (default) inside a `PageSection`.
+
+`DetailHeader` renders `SectionHeader`'s row internally, so the heading row is identical either way. A resource's `*Header` feature component (e.g. `DeployHeader`, `BuildHeader`) is a thin wrapper that fills `DetailHeader`'s slots from domain data — it never re-implements the row. Pair it with `DetailPage` (shell + banners + routed `TabNav`) and, on entity pages, `HistoryRail` + `HistoryPanelButton`.
+
 ## Labeled data (`LabeledValue` / `KeyValueList` / `PropertyGrid`)
 
 Which component renders labeled data is fixed by who names the fields and each datum's shape. Classify with these tests. Full record: `DESIGN.md` §5 / UXDR 022.
