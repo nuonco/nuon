@@ -104,7 +104,7 @@ require (
 	github.com/mholt/archiver/v4 v4.0.0-alpha.8
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/modelcontextprotocol/go-sdk v1.6.1
+	github.com/modelcontextprotocol/go-sdk v1.7.1-0.20260825151509-2732839dbadd
 	github.com/nuonco/gin-swagger v1.6.2
 	github.com/nuonco/nuon/sdks/nuon-runner-go v0.0.0-00010101000000-000000000000
 	github.com/nuonco/sandboxes v1.34.0
@@ -152,6 +152,7 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.18.0
 	go.temporal.io/api v1.62.7
 	go.temporal.io/sdk v1.42.0
+	go.temporal.io/sdk/contrib/opentelemetry v0.7.0
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.1
 	golang.design/x/clipboard v0.7.1
@@ -673,7 +674,7 @@ require (
 	golang.org/x/sys v0.44.0 // indirect
 	golang.org/x/term v0.43.0
 	golang.org/x/text v0.37.0
-	golang.org/x/time v0.14.0
+	golang.org/x/time v0.15.0
 	golang.org/x/tools v0.44.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect

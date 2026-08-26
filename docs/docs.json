@@ -309,7 +309,6 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
-          "updates/041-terraform-stack-module",
           "updates/040-app-branches",
           "updates/039-oidc-federation",
           "updates/038-spacelift-and-cli-automation",

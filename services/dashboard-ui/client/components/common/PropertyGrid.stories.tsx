@@ -204,9 +204,9 @@ export const Empty = () => (
 export const AutoDetectedColumns = () => (
   <PropertyGrid 
     values={[
-      { applicationName: 'My App', deploymentStatus: 'Running', lastDeploy: '2024-01-09' },
-      { applicationName: 'API Service', deploymentStatus: 'Stopped', lastDeploy: '2024-01-08' },
-      { applicationName: 'Worker', deploymentStatus: 'Running', lastDeploy: '2024-01-09' }
+      { application_name: 'My App', deployment_status: 'Running', last_deploy: '2024-01-09' },
+      { application_name: 'API Service', deployment_status: 'Stopped', last_deploy: '2024-01-08' },
+      { application_name: 'Worker', deployment_status: 'Running', last_deploy: '2024-01-09' }
     ]} 
   />
 )
@@ -214,9 +214,9 @@ export const AutoDetectedColumns = () => (
 export const CustomGridTemplate = () => (
   <PropertyGrid 
     values={[
-      { applicationName: 'My App', deploymentStatus: 'Running', lastDeploy: '2024-01-09' },
-      { applicationName: 'API Service', deploymentStatus: 'Stopped', lastDeploy: '2024-01-08' },
-      { applicationName: 'Worker', deploymentStatus: 'Running', lastDeploy: '2024-01-09' }
+      { application_name: 'My App', deployment_status: 'Running', last_deploy: '2024-01-09' },
+      { application_name: 'API Service', deployment_status: 'Stopped', last_deploy: '2024-01-08' },
+      { application_name: 'Worker', deployment_status: 'Running', last_deploy: '2024-01-09' }
     ]}
     gridTemplate="auto auto 1fr"
   />
@@ -225,9 +225,9 @@ export const CustomGridTemplate = () => (
 export const BalancedColumns = () => (
   <PropertyGrid 
     values={[
-      { applicationName: 'My App', deploymentStatus: 'Running', lastDeploy: '2024-01-09' },
-      { applicationName: 'API Service', deploymentStatus: 'Stopped', lastDeploy: '2024-01-08' },
-      { applicationName: 'Long Application Name Here', deploymentStatus: 'Running', lastDeploy: '2024-01-09' }
+      { application_name: 'My App', deployment_status: 'Running', last_deploy: '2024-01-09' },
+      { application_name: 'API Service', deployment_status: 'Stopped', last_deploy: '2024-01-08' },
+      { application_name: 'Long Application Name Here', deployment_status: 'Running', last_deploy: '2024-01-09' }
     ]}
     gridTemplate="minmax(150px, 2fr) minmax(100px, 1fr) minmax(100px, 1fr)"
   />

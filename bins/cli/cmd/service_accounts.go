@@ -12,7 +12,6 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 		offset         int
 		limit          int
 		includeRunners bool
-		includeStacks  bool
 		duration       string
 		invalidate     bool
 	)
@@ -32,13 +31,12 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 		Short:   "List service accounts for the current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.serviceAccounts
-			return svc.ListServiceAccounts(cmd.Context(), includeRunners, includeStacks, offset, limit, PrintJSON)
+			return svc.ListServiceAccounts(cmd.Context(), includeRunners, offset, limit, PrintJSON)
 		}),
 	}
 	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "The offset of results to return")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "The limit of results to return")
 	listCmd.Flags().BoolVar(&includeRunners, "include-runners", false, "Include service accounts with the runner role (excluded by default)")
-	listCmd.Flags().BoolVar(&includeStacks, "include-stacks", false, "Include service accounts with the stack role (excluded by default)")
 	serviceAccountsCmd.AddCommand(listCmd)
 
 	createCmd := &cobra.Command{

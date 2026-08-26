@@ -90,6 +90,12 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 	}
 	payloadFields = append(payloadFields, secretPayloadFields...)
 
+	customerInputs := azureCustomerInputs(inp)
+	if len(customerInputs) > 0 {
+		// Unquoted, unlike every other field: the env var already holds a JSON object.
+		payloadFields = append(payloadFields, fmt.Sprintf(`  "install_inputs": $%s`, installInputsEnvName))
+	}
+
 	// Outputs a custom VNet template declares beyond the fixed contract. Namespaced
 	// under vnet_ because the raw names collide: a VNet stack that makes its own
 	// resource group emits resourceGroupName, which is already Nuon's install group.
@@ -206,6 +212,12 @@ fi
 		})
 	}
 	envVars = append(envVars, secretEnvVars...)
+	if len(customerInputs) > 0 {
+		envVars = append(envVars, map[string]any{
+			"name":  installInputsEnvName,
+			"value": installInputsObjectExpr(customerInputs),
+		})
+	}
 	envVars = append(envVars, vnetExtraEnvVars...)
 	envVars = append(envVars, customEnvVars...)
 	envVars = append(envVars, identityEnvVars...)

@@ -12,7 +12,7 @@ export const ProcessSystemLogs = () => {
 
   return (
     <PageLayout>
-      <PageTitle title={`System logs | ${org?.name}`} />
+      <PageTitle title="System logs" />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

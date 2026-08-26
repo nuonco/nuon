@@ -66,11 +66,10 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 
 	// For image-type builds with source-identity recorded, copy the
 	// artifact by digest and tag the install-registry copy with the
-	// resolved tag instead of an internal ID. Fall back to build/deploy ID
-	// tagging for non-image components and image builds without source
-	// identity.
+	// resolved tag instead of an internal ID. Fall back to installRegistryTag
+	// for non-image components and image builds without source identity.
 	srcTag := deploy.ComponentBuildID
-	dstTag := deploy.ID
+	dstTag := installRegistryTag(deploy)
 	if compBuild.SourceDigest != "" {
 		// oras.Copy resolves both tags and digest references, so passing
 		// the manifest digest as the source ref pulls the exact same

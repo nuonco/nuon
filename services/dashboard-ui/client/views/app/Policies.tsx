@@ -2,6 +2,7 @@ import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { PoliciesTable, policiesTableColumns } from '@/components/policies/PoliciesTable'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppPoliciesConfigs } from '@/lib'
@@ -30,6 +31,7 @@ export const Policies = () => {
 
   return (
     <div className="flex flex-auto">
+      <PageTitle segments={['Policies', app?.name]} />
       {isLoading ? (
         <TableSkeleton columns={policiesTableColumns} skeletonRows={5} />
       ) : (

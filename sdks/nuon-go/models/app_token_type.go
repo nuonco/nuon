@@ -53,6 +53,9 @@ const (
 
 	// AppTokenTypeFederated captures enum value "federated"
 	AppTokenTypeFederated AppTokenType = "federated"
+
+	// AppTokenTypeOauth captures enum value "oauth"
+	AppTokenTypeOauth AppTokenType = "oauth"
 )
 
 // for schema
@@ -60,7 +63,7 @@ var appTokenTypeEnum []any
 
 func init() {
 	var res []AppTokenType
-	if err := json.Unmarshal([]byte(`["auth","auth0","admin","static","integration","canary","nuon","federated"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["auth","auth0","admin","static","integration","canary","nuon","federated","oauth"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

@@ -3,7 +3,7 @@ export default {
 }
 
 import { AwaitAzureDetails } from './AwaitAzureDetails'
-import type { TAppSecretConfig } from '@/types'
+import type { TAppInput, TAppSecretConfig } from '@/types'
 
 const mockStack = {
   versions: [
@@ -37,6 +37,26 @@ const mockSecrets = [
     auto_generate: false,
   },
 ] satisfies TAppSecretConfig[]
+
+const mockInputs = [
+  {
+    name: 'api_key',
+    display_name: 'API key',
+    description: 'Issued from your vendor account.',
+    source: 'customer',
+    required: true,
+  },
+  {
+    name: 'log_level',
+    description: 'Verbosity of the application logs.',
+    source: 'customer',
+    default: 'info',
+  },
+  {
+    name: 'internal_toggle',
+    source: 'vendor',
+  },
+] satisfies TAppInput[]
 
 export const Default = () => (
   <div className="max-w-2xl p-4">
@@ -81,6 +101,33 @@ export const WithApplicationSecrets = () => (
       installId="install-1"
       azureLocation="eastus"
       secrets={mockSecrets}
+    />
+  </div>
+)
+
+export const WithCustomerInputs = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitAzureDetails
+      stack={mockStack}
+      step={mockStep}
+      installId="install-1"
+      azureLocation="eastus"
+      inputs={mockInputs}
+    />
+  </div>
+)
+
+// api_key already has a value, so the deploy command must not offer to replace it
+// with a placeholder.
+export const WithCustomerInputsAlreadySet = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitAzureDetails
+      stack={mockStack}
+      step={mockStep}
+      installId="install-1"
+      azureLocation="eastus"
+      inputs={mockInputs}
+      setInputNames={new Set(['api_key'])}
     />
   </div>
 )
