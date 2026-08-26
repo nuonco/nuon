@@ -1,4 +1,4 @@
-import { AppInstallsTable } from '@/components/apps/AppInstallsTable'
+import { InstallsTable } from '@/components/installs/InstallsTable'
 import { ListPage } from '@/components/layout/ListPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -24,7 +24,7 @@ export const Installs = () => {
         title="App installs"
         description="View and manage deployments of your app into customer cloud accounts."
       >
-        <AppInstallsTable appId={app?.id} />
+        <InstallsTable appId={app?.id} />
       </ListPage>
     </>
   )

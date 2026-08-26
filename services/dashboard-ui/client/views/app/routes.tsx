@@ -5,7 +5,10 @@ import { AppIndex } from './AppIndex'
 import { LegacyAppRoute } from './LegacyAppRoute'
 import { Components } from './Components'
 import { ComponentDetail } from './ComponentDetail'
-import { BuildDetail } from './BuildDetail'
+import { BuildLayout } from './BuildLayout'
+import { BuildSummaryTab } from './build-tabs/BuildSummaryTab'
+import { BuildLogsTab } from './build-tabs/BuildLogsTab'
+import { BuildTraceTab } from './build-tabs/BuildTraceTab'
 import { Actions } from './Actions'
 import { ActionDetail } from './ActionDetail'
 import { Runbooks } from './Runbooks'
@@ -27,7 +30,10 @@ import { InstallSyncDetail } from './InstallSyncDetail'
 import { Labels } from './Labels'
 import { Readme } from './Readme'
 import { Sandbox } from './Sandbox'
-import { SandboxBuildDetail } from './SandboxBuildDetail'
+import { SandboxBuildLayout } from './SandboxBuildLayout'
+import { SandboxBuildSummaryTab } from './sandbox-build-tabs/SandboxBuildSummaryTab'
+import { SandboxBuildLogsTab } from './sandbox-build-tabs/SandboxBuildLogsTab'
+import { SandboxBuildTraceTab } from './sandbox-build-tabs/SandboxBuildTraceTab'
 import { Branches } from './branches/Branches'
 import { BranchLayout } from './branches/BranchLayout'
 import { BranchOverviewTab } from './branches/tabs/BranchOverviewTab'
@@ -44,6 +50,18 @@ const legacy = (
   element: ReactNode,
   subPath?: (params: Params) => string
 ) => <LegacyAppRoute subPath={subPath}>{element}</LegacyAppRoute>
+
+const buildTabRoutes: RouteObject[] = [
+  { index: true, element: <BuildSummaryTab /> },
+  { path: 'logs', element: <BuildLogsTab /> },
+  { path: 'trace', element: <BuildTraceTab /> },
+]
+
+const sandboxBuildTabRoutes: RouteObject[] = [
+  { index: true, element: <SandboxBuildSummaryTab /> },
+  { path: 'logs', element: <SandboxBuildLogsTab /> },
+  { path: 'trace', element: <SandboxBuildTraceTab /> },
+]
 
 export const appRoutes: RouteObject[] = [
   {
@@ -71,9 +89,10 @@ export const appRoutes: RouteObject[] = [
       {
         path: ':orgId/apps/:appId/components/:componentId/builds/:buildId',
         element: legacy(
-          <BuildDetail />,
+          <BuildLayout />,
           (p) => `components/${p.componentId}/builds/${p.buildId}`
         ),
+        children: buildTabRoutes,
       },
       {
         path: ':orgId/apps/:appId/actions',
@@ -134,7 +153,8 @@ export const appRoutes: RouteObject[] = [
           { path: 'components/:componentId', element: <ComponentDetail /> },
           {
             path: 'components/:componentId/builds/:buildId',
-            element: <BuildDetail />,
+            element: <BuildLayout />,
+            children: buildTabRoutes,
           },
           { path: 'actions', element: <BranchActions /> },
           { path: 'actions/:actionId', element: <ActionDetail /> },
@@ -163,7 +183,11 @@ export const appRoutes: RouteObject[] = [
           { path: 'labels', element: <Labels /> },
           { path: 'readme', element: <Readme /> },
           { path: 'sandbox', element: <Sandbox /> },
-          { path: 'sandbox/builds/:buildId', element: <SandboxBuildDetail /> },
+          {
+            path: 'sandbox/builds/:buildId',
+            element: <SandboxBuildLayout />,
+            children: sandboxBuildTabRoutes,
+          },
         ],
       },
       {
@@ -173,9 +197,10 @@ export const appRoutes: RouteObject[] = [
       {
         path: ':orgId/apps/:appId/sandbox/builds/:buildId',
         element: legacy(
-          <SandboxBuildDetail />,
+          <SandboxBuildLayout />,
           (p) => `sandbox/builds/${p.buildId}`
         ),
+        children: sandboxBuildTabRoutes,
       },
       {
         path: ':orgId/apps/:appId/installs',
