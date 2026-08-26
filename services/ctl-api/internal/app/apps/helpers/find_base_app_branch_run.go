@@ -51,8 +51,9 @@ func shouldCreateComparison(runType app.AppBranchRunType, planOnly bool) bool {
 	}
 }
 
-// createAppBranchRunComparison creates a comparison row for headRun and links it via ComparisonID.
+// createAppBranchRunComparison creates a comparison row for headRun.
 // BaseRunID is set when a prior deploy with builds_completed=true exists; otherwise nil.
+// Ownership is HeadRunID on the comparison (has-one from the run); no column on AppBranchRun.
 func (h *Helpers) createAppBranchRunComparison(ctx context.Context, headRun *app.AppBranchRun) error {
 	var baseRunID *string
 	baseRun, err := h.FindBaseAppBranchRun(ctx, headRun.AppBranchID)
@@ -71,11 +72,6 @@ func (h *Helpers) createAppBranchRunComparison(ctx context.Context, headRun *app
 		return err
 	}
 
-	if err := h.db.WithContext(ctx).
-		Model(headRun).
-		Update("comparison_id", comparison.ID).Error; err != nil {
-		return err
-	}
-	headRun.ComparisonID = &comparison.ID
+	headRun.Comparison = comparison
 	return nil
 }

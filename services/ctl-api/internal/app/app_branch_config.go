@@ -44,7 +44,6 @@ type AppBranchConfig struct {
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 
-	// generated view field
 	ConfigNumber int `json:"config_number,omitzero" gorm:"->;-:migration" temporaljson:"config_number,omitzero,omitempty"`
 }
 

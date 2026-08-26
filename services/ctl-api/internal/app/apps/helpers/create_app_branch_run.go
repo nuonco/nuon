@@ -24,20 +24,6 @@ type CreateAppBranchRunRequest struct {
 }
 
 func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRunRequest) (*app.AppBranchRun, error) {
-	// Look up the previous successful run on the same branch for build diffing
-	var previousRunID *string
-	var prevRun app.AppBranchRun
-	err := h.db.WithContext(ctx).
-		Where(app.AppBranchRun{
-			AppBranchID: req.AppBranchID,
-			Status:      "success",
-		}).
-		Order("created_at DESC").
-		First(&prevRun).Error
-	if err == nil {
-		previousRunID = &prevRun.ID
-	}
-
 	runType := req.RunType
 	if runType == "" {
 		runType = app.AppBranchRunTypeManual
@@ -55,7 +41,6 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 		PRNumber:               req.PRNumber,
 		HeadSHA:                req.HeadSHA,
 		BaseBranch:             req.BaseBranch,
-		PreviousRunID:          previousRunID,
 		Status:                 "pending",
 		WorkflowID:             nil,
 		Labeled:                labels.Labeled{Labels: req.Labels},

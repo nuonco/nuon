@@ -34,7 +34,6 @@ func setupBuildsCompletedDB(t *testing.T) *gorm.DB {
 			labels TEXT,
 			no_config_changes INTEGER NOT NULL DEFAULT 0,
 			error_message TEXT NOT NULL DEFAULT '',
-			commit_sha TEXT NOT NULL DEFAULT '',
 			app_config_id TEXT NOT NULL DEFAULT '',
 			head_sha TEXT NOT NULL DEFAULT '',
 			base_branch TEXT NOT NULL DEFAULT '',

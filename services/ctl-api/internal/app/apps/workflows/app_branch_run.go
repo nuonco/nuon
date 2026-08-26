@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	appconfig "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/appconfig"
 	builds "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
+	comparison "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/comparison"
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/planinstallgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/postdeployrunbooks"
@@ -128,6 +129,16 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		}
 		steps = append(steps, step)
 	}
+
+	sg.nextGroup()
+	step, err := sg.appBranchSignalStep(ctx, appBranchID, "compute run comparison", pgtype.Hstore{}, &comparison.Signal{
+		AppBranchID: appBranchID,
+		RunID:       runID,
+	}, WithSkippable(false))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create compute run comparison step")
+	}
+	steps = append(steps, step)
 
 	// Step 3: Build all components and sandbox
 	if appConfigID != "" && skipBuilds {

@@ -335,8 +335,10 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLo
 			configDiff = p.previewDiff
 		} else {
 			var oldConfigID string
-			if run.PreviousRunID != nil && *run.PreviousRunID != "" {
-				prevRun, prevErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.PreviousRunID)
+			if run.Comparison != nil && run.Comparison.BaseRun != nil && run.Comparison.BaseRun.AppConfigID != "" {
+				oldConfigID = run.Comparison.BaseRun.AppConfigID
+			} else if run.Comparison != nil && run.Comparison.BaseRunID != nil && *run.Comparison.BaseRunID != "" {
+				prevRun, prevErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.Comparison.BaseRunID)
 				if prevErr == nil && prevRun.AppConfigID != "" {
 					oldConfigID = prevRun.AppConfigID
 				}

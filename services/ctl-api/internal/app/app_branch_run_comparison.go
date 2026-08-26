@@ -27,21 +27,16 @@ type AppBranchRunComparison struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	// HeadRunID is the run being evaluated (1:1 with this comparison).
 	HeadRunID string       `json:"head_run_id,omitzero" gorm:"not null" temporaljson:"head_run_id,omitzero,omitempty"`
 	HeadRun   AppBranchRun `faker:"-" json:"head_run,omitempty" gorm:"foreignKey:HeadRunID" temporaljson:"head_run,omitzero,omitempty"`
 
-	// BaseRunID is the baseline deploy run (builds_completed=true). Nil on the first run for a branch.
 	BaseRunID *string       `json:"base_run_id,omitempty" temporaljson:"base_run_id,omitzero,omitempty"`
 	BaseRun   *AppBranchRun `faker:"-" json:"base_run,omitempty" gorm:"foreignKey:BaseRunID" temporaljson:"base_run,omitzero,omitempty"`
 
-	// GitDiff is the full unified git diff between base and head commits (S3 blob).
 	GitDiff *blobstore.Blob `json:"git_diff,omitempty" temporaljson:"git_diff,omitzero,omitempty"`
 
-	// FullDiff is the full app-config semantic diff tree (pkg/config/diff).
 	FullDiff *blobstore.Blob `json:"full_diff,omitempty" temporaljson:"full_diff,omitzero,omitempty"`
 
-	// ConfigDiff is FullDiff enriched with SourceChanged per entry (derived from git changed paths).
 	ConfigDiff *blobstore.Blob `json:"config_diff,omitempty" temporaljson:"config_diff,omitzero,omitempty"`
 }
 

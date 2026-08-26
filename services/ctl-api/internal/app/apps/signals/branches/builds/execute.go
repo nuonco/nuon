@@ -68,10 +68,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Determine previous run's app config for build diffing
+	// Determine previous run's app config for build diffing via comparison baseline.
 	var previousAppConfigID string
-	if run.PreviousRunID != nil && *run.PreviousRunID != "" {
-		prevRun, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.PreviousRunID)
+	if run.Comparison != nil && run.Comparison.BaseRun != nil && run.Comparison.BaseRun.AppConfigID != "" {
+		previousAppConfigID = run.Comparison.BaseRun.AppConfigID
+	} else if run.Comparison != nil && run.Comparison.BaseRunID != nil && *run.Comparison.BaseRunID != "" {
+		prevRun, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.Comparison.BaseRunID)
 		if err == nil && prevRun.AppConfigID != "" {
 			previousAppConfigID = prevRun.AppConfigID
 		}

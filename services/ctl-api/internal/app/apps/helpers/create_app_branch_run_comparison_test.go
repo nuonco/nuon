@@ -38,15 +38,12 @@ func setupAppBranchRunComparisonDB(t *testing.T) *gorm.DB {
 			plan_only INTEGER NOT NULL DEFAULT 0,
 			force INTEGER NOT NULL DEFAULT 0,
 			labels TEXT,
-			previous_run_id TEXT,
-			comparison_id TEXT,
 			app_config_id TEXT NOT NULL DEFAULT '',
 			head_sha TEXT NOT NULL DEFAULT '',
 			base_branch TEXT NOT NULL DEFAULT '',
 			event_type TEXT NOT NULL DEFAULT '',
 			no_config_changes INTEGER NOT NULL DEFAULT 0,
 			error_message TEXT NOT NULL DEFAULT '',
-			commit_sha TEXT NOT NULL DEFAULT '',
 			trigger_event_dispatch_id TEXT,
 			workflow_id TEXT,
 			pr_number INTEGER,
@@ -165,10 +162,11 @@ func TestCreateAppBranchRunCreatesComparison(t *testing.T) {
 			Labels:            labels.Labels{"commit": "abc"},
 		})
 		require.NoError(t, err)
-		require.NotNil(t, run.ComparisonID)
+		require.NotNil(t, run.Comparison)
+		require.Equal(t, run.ID, run.Comparison.HeadRunID)
 
 		var comparison app.AppBranchRunComparison
-		require.NoError(t, db.First(&comparison, "id = ?", *run.ComparisonID).Error)
+		require.NoError(t, db.Where(app.AppBranchRunComparison{HeadRunID: run.ID}).First(&comparison).Error)
 		require.Equal(t, run.ID, comparison.HeadRunID)
 		require.NotNil(t, comparison.BaseRunID)
 		require.Equal(t, "base-run", *comparison.BaseRunID)
@@ -183,10 +181,10 @@ func TestCreateAppBranchRunCreatesComparison(t *testing.T) {
 			RunType:           app.AppBranchRunTypeGitPreview,
 		})
 		require.NoError(t, err)
-		require.NotNil(t, run.ComparisonID)
+		require.NotNil(t, run.Comparison)
 
 		var comparison app.AppBranchRunComparison
-		require.NoError(t, db.First(&comparison, "id = ?", *run.ComparisonID).Error)
+		require.NoError(t, db.Where(app.AppBranchRunComparison{HeadRunID: run.ID}).First(&comparison).Error)
 		require.Equal(t, run.ID, comparison.HeadRunID)
 		require.Nil(t, comparison.BaseRunID)
 	})
@@ -201,7 +199,11 @@ func TestCreateAppBranchRunCreatesComparison(t *testing.T) {
 			PlanOnly:          true,
 		})
 		require.NoError(t, err)
-		require.Nil(t, run.ComparisonID)
+		require.Nil(t, run.Comparison)
+
+		var count int64
+		require.NoError(t, db.Model(&app.AppBranchRunComparison{}).Where(app.AppBranchRunComparison{HeadRunID: run.ID}).Count(&count).Error)
+		require.Zero(t, count)
 	})
 }
 
