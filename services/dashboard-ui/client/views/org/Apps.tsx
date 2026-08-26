@@ -1,10 +1,5 @@
 import { AppsTable } from '@/components/apps/AppsTable'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
-import { PageContent } from '@/components/layout/PageContent'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { PageLayout } from '@/components/layout/PageLayout'
-import { PageSection } from '@/components/layout/PageSection'
+import { ListPage } from '@/components/layout/ListPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useOrg } from '@/hooks/use-org'
@@ -13,7 +8,7 @@ export const Apps = () => {
   const { org } = useOrg()
 
   return (
-    <PageLayout>
+    <>
       <PageTitle title="Apps" />
       <Breadcrumbs
         breadcrumbs={[
@@ -27,21 +22,13 @@ export const Apps = () => {
           },
         ]}
       />
-
-      <PageHeader>
-        <HeadingGroup>
-          <Text variant="h3" weight="stronger" level={1}>
-            Apps
-          </Text>
-          <Text theme="neutral">Manage your applications here.</Text>
-        </HeadingGroup>
-      </PageHeader>
-
-      <PageContent>
-        <PageSection>
-          <AppsTable shouldPoll />
-        </PageSection>
-      </PageContent>
-    </PageLayout>
+      <ListPage
+        variant="page"
+        title="Apps"
+        description="Manage your applications here."
+      >
+        <AppsTable shouldPoll />
+      </ListPage>
+    </>
   )
 }
