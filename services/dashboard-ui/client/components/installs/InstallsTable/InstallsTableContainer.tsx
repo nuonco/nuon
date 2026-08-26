@@ -82,10 +82,6 @@ export const InstallsTableContainer = ({
               return [...new Set(data.map((b) => b.name).filter(Boolean))].sort()
             }}
           />
-          <CreateInstallButton
-            className="!w-full !flex !justify-center md:!w-fit"
-            variant="primary"
-          />
         </div>
       }
       pagination={{
