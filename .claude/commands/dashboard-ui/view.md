@@ -41,39 +41,55 @@ This skill enforces correct route registration, layout-aware provider usage, and
 
 7. Do NOT add `SurfacesProvider` or `ToastProvider` inside the view — they are already provided by `InstallLayout`. Adding them again creates a nested context that breaks `useSurfaces()` lookups.
 
-8. Use the correct page structure based on the route level:
+8. Use the scaffolds for the page shell and heading row — never hand-assemble `PageLayout` / `PageHeader` / `HeadingGroup` (UXDR 020). `ListPage` for a page listing one resource, `SectionHeader` for every other heading row. `variant="page"` at the top of a route tree (owns the `PageLayout`); the default `variant="section"` for anything mounted via a parent layout's `Outlet`.
 
-   **Org-level page** (has its own PageLayout):
+   **Org-level list page** (top of a route tree):
    ```tsx
    export const MyPage = () => (
-     <PageLayout>
+     <>
        <PageTitle title="My page" />
-       <PageHeader>
-         <PageHeadingGroup title="My page" />
-       </PageHeader>
-       <PageContent>
-         <PageSection>
-           {/* content */}
-         </PageSection>
-       </PageContent>
-     </PageLayout>
+       <Breadcrumbs breadcrumbs={[...]} />
+       <ListPage
+         variant="page"
+         title="My page"
+         description="What this page is for."
+         createAction={<CreateThingButton variant="primary" />}
+       >
+         <ThingsTable shouldPoll />
+       </ListPage>
+     </>
    )
    ```
 
-   **Child page inside App/Install layout** (just content, no PageLayout):
+   **Child list page inside App/Install/Settings layout** (no PageLayout):
    ```tsx
    export const MyChildPage = () => {
      const { install } = useInstall()
      return (
-       <PageSection>
+       <>
          <PageTitle segments={['My page', install?.name]} />
-         {/* content */}
-       </PageSection>
+         <Breadcrumbs breadcrumbs={[...]} />
+         <ListPage title="My page" description="What this page is for.">
+           <ThingsTable shouldPoll />
+         </ListPage>
+       </>
      )
    }
    ```
 
-   **Detail page with flush header** (inside App/Install layout):
+   **Non-list section page** (document, config page, tab layout) — `SectionHeader` inside a `PageSection`:
+   ```tsx
+   export const MyConfigPage = () => (
+     <PageSection>
+       <PageTitle segments={['Configuration', app?.name]} />
+       <Breadcrumbs breadcrumbs={[...]} />
+       <SectionHeader title="Configuration" description="What this page shows." actions={<EditButton />} />
+       {/* content */}
+     </PageSection>
+   )
+   ```
+
+   **Detail page with flush header** (inside App/Install layout) — identity headers (resource ID, label badges, timestamps, `BackLink`, metadata column) do NOT use `SectionHeader`; they get their scaffold from the UXDR-2 run-template migration:
    ```tsx
    export const MyDetailPage = () => {
      const { install } = useInstall()
@@ -90,6 +106,10 @@ This skill enforces correct route registration, layout-aware provider usage, and
      )
    }
    ```
+
+   `PageTitle` and `Breadcrumbs` are headless setters — render them as siblings before the scaffold, not inside it.
+
+   Search, pagination and filters belong to `Table`/`Timeline` (`enableSearch`, `pagination`, `filterActions`), not to the page — `ListPage` has no slot for them.
 
    Scrolling, BackToTop, and SubNav sticky are all handled automatically by PageLayout — do not add them manually.
 
@@ -153,6 +173,11 @@ A page's loading state is the page itself with `loading` primitives inside — b
 - **Do not** call `useInstall()` outside a route that is a child of `InstallLayout` — the provider won't be present
 - **Do not** add `isScrollable`, `CONTAINER_ID`, or `<BackToTop />` to view files — PageLayout handles scrolling and back-to-top automatically
 - **Do not** use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead
+- **Do not** hand-assemble a heading row (`PageHeader` + `HeadingGroup` + an actions `div`, or a bare heading `Text`) — use `SectionHeader`/`ListPage`
+- **Do not** render `PageLayout` from a view mounted via a parent layout's `Outlet` — use the default `variant="section"`
+- **Do not** put metadata (IDs, timestamps, badges, grids) in a second header column — it is content below the heading row
+- **Do not** leave a create button in the table's `filterActions` or only in the empty state — a UI-creatable list gets one create button in `ListPage`'s `createAction`
+- **Do not** add a search or pagination control to the page — `Table`/`Timeline` own those
 - **Do not** hand-build a page-skeleton block or full-page spinner — render chrome real and drive regions off `loading` primitives
 - **Do not** set the title on a layout/`Outlet` wrapper, and **do not** ship a routed view without a title — the leaf view owns `document.title`; a missing one leaves the title stale from the previous page
 - **Do not** put the org name in a title segment, and **do not** interpolate `${x?.name}` into a `title` string (prints `"undefined"`) — use `segments`, which drops unset values
