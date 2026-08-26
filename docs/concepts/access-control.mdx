@@ -2,7 +2,7 @@
 title: "Access Control"
 icon: "shield-halved"
 description: "How to control what team members and service accounts can do in your Nuon org."
-keywords: ["roles", "RBAC", "access control", "permissions", "org admin", "read-only", "team", "service account", "API token", "OIDC"]
+keywords: ["roles", "RBAC", "access control", "permissions", "org admin", "read-only", "team", "service account", "API token", "OIDC", "stack", "runner"]
 ---
 
 Every identity in your Nuon org — whether a team member or a [service account](/concepts/service-accounts) — must be assigned a **role**. The role determines what that identity can read and change in the org.
@@ -38,3 +38,5 @@ When an identity attempts something its role does not allow, Nuon returns a mess
 ## Reserved roles
 
 The **Runner** role is reserved for the machine accounts Nuon provisions for your runners. It is assigned automatically and is never user-selectable.
+
+The **Stack** role is reserved for the machine accounts Nuon provisions for install stacks managed with the Terraform module. It is assigned automatically, is never user-selectable, and — unlike the org-wide roles — grants access scoped to a single install. See [Stack service accounts](/concepts/service-accounts#stack-service-accounts) for details.
