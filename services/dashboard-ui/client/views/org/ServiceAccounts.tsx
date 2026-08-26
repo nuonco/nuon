@@ -4,6 +4,7 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { ServiceAccountsTable } from '@/components/service-accounts/ServiceAccountsTable'
 import { CreateServiceAccountButton } from '@/components/service-accounts/CreateServiceAccount'
 import { ShowRunnerAccountsContainer as ShowRunnerAccounts } from '@/components/service-accounts/filters/ShowRunnerAccounts'
+import { ShowStackAccountsContainer as ShowStackAccounts } from '@/components/service-accounts/filters/ShowStackAccounts'
 
 import { useOrg } from '@/hooks/use-org'
 
@@ -12,7 +13,7 @@ export const ServiceAccounts = () => {
 
   return (
     <>
-      <PageTitle title="Service accounts" />
+      <PageTitle title={`Service accounts | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           {
@@ -35,6 +36,7 @@ export const ServiceAccounts = () => {
         createAction={<CreateServiceAccountButton variant="primary" />}
       >
         <div className="flex items-center justify-end">
+          <ShowStackAccounts />
           <ShowRunnerAccounts />
         </div>
         <ServiceAccountsTable shouldPoll />

@@ -26,8 +26,13 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-echo "Building dashboard server..."
-go build -C "${NUON_DIR:-$NUON_ROOT/nuon}" -o /tmp/dashboard-server ./services/dashboard-ui/server
+# Build from this script's own checkout, not $NUON_ROOT/nuon: running dev from a
+# worktree otherwise compiled the server from the wrong source. NUON_DIR overrides.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+echo "Building dashboard server from ${NUON_DIR:-$REPO_DIR}..."
+go build -C "${NUON_DIR:-$REPO_DIR}" -o /tmp/dashboard-server ./services/dashboard-ui/server
 
 rm -f dist/.port
 /tmp/dashboard-server serve &

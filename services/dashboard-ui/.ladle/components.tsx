@@ -32,6 +32,7 @@ const mockAuth = {
 
 const mockConfig: TRuntimeConfig = {
   apiUrl: "http://localhost:8081",
+  runnerApiUrl: "http://localhost:8083",
   appUrl: "http://localhost:4000",
   githubAppName: "nuon-dev",
   isByoc: false,
