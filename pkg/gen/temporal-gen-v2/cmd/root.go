@@ -11,6 +11,8 @@ var (
 	recursiveFlag   bool
 	importsFlag     bool
 	parallelismFlag int
+	configFlag      string
+	noConfigFlag    bool
 )
 
 func NewRootCmd() *cobra.Command {
