@@ -2,12 +2,13 @@
 title: "Configure actions"
 description: "Define and remotely execute custom action workflows in your installs."
 icon: "circle-play"
-keywords: ["actions", "actions guide", "how to create actions", "configure actions", "action TOML", "connected repo actions", "action steps", "action environment variables", "action triggers"]
+keywords: ["actions", "actions guide", "how to create actions", "configure actions", "action TOML", "connected repo actions", "action steps", "action environment variables", "action triggers", "container actions", "action image"]
 ---
 
 Actions let you define and remotely execute custom workflows in installs. You can automate common tasks, implement healthchecks, and even automate runbooks to handle incidents.
 
 For one-off scripts you don't want to commit to TOML, see [Run adhoc actions](/guides/adhoc-actions).
+To run an action's steps inside a container image you build, see [Container actions](/guides/container-actions).
 
 ## Configuring action workflows
 
@@ -164,6 +165,32 @@ ENDPOINT             = "https://your-app.{{.nuon.install.sandbox.outputs.public_
 METHOD               = "HEAD"
 EXPECTED_STATUS_CODE = "200"
 ```
+
+### Running steps in a container image
+
+Steps run on the install runner VM by default, which means any tool a step needs beyond the runner's
+own toolchain has to be installed by the script at run time. Setting `image` on the action runs every
+step inside a container image you build instead:
+
+```toml actions/db_migrate.toml
+# action
+name    = "db_migrate"
+timeout = "10m"
+image   = "ghcr.io/acme/migrate-tools:v1.4.0"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name            = "migrate"
+inline_contents = """
+#!/usr/bin/env sh
+migrate -database "$DATABASE_URL" -path /migrations up
+"""
+```
+
+This is behind an org feature flag and has a few constraints (all steps must use `inline_contents`,
+AWS install runners only). See [Container actions](/guides/container-actions) for the full guide.
 
 ## Monitoring workflow runs
 
