@@ -46,7 +46,7 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 		return fmt.Errorf("build %s does not have external image config", req.BuildID)
 	}
 
-	srcRepo, err := a.getSourceRepository(extImgCfg, req.IsControlPlaneBuild)
+	srcRepo, err := a.getSourceRepository(extImgCfg, req.IsControlPlaneBuild, build.ComponentConfigConnection.ComponentID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get source repository")
 	}
@@ -76,7 +76,7 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 	return nil
 }
 
-func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, isControlPlaneBuild bool) (*configs.OCIRegistryRepository, error) {
+func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, isControlPlaneBuild bool, componentID string) (*configs.OCIRegistryRepository, error) {
 	if cfg.AWSECRImageConfig != nil {
 		assumeRole := &credentials.AssumeRoleConfig{
 			RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
@@ -121,14 +121,27 @@ func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, 
 	}
 
 	if cfg.AzureACRImageConfig != nil {
-		return &configs.OCIRegistryRepository{
+		acrCfg := &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeACR,
 			Repository:   cfg.ImageURL,
 			LoginServer:  cfg.AzureACRImageConfig.RegistryURL,
 			ACRAuth: &azurecredentials.Config{
 				UseDefault: true,
 			},
-		}, nil
+		}
+
+		if acr := cfg.AzureACRImageConfig; acr.ClientID != "" || acr.TenantID != "" ||
+			acr.ClientSecretName != "" || acr.ClientCertificateName != "" {
+			acrCfg.ACRAppRegistration = &configs.ACRAppRegistration{
+				ComponentID:           componentID,
+				TenantID:              acr.TenantID,
+				ClientID:              acr.ClientID,
+				ClientSecretName:      acr.ClientSecretName,
+				ClientCertificateName: acr.ClientCertificateName,
+			}
+		}
+
+		return acrCfg, nil
 	}
 
 	return &configs.OCIRegistryRepository{
