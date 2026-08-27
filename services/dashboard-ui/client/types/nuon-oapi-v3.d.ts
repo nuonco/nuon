@@ -309,6 +309,13 @@ export interface paths {
      */
     post: operations["CreateAppBranchConfig"];
   };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/configs/{config_id}": {
+    /**
+     * update app branch config settings
+     * @description Updates mutable settings on an existing app branch config (e.g. webhook trigger behavior).
+     */
+    patch: operations["UpdateAppBranchConfig"];
+  };
   "/v1/apps/{app_id}/branches/{app_branch_id}/latest-config": {
     /**
      * get latest app branch config
@@ -334,6 +341,13 @@ export interface paths {
      * @description Returns component builds triggered by a specific app branch run
      */
     get: operations["GetAppBranchRunBuilds"];
+  };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/comparison": {
+    /**
+     * get comparison for an app branch run
+     * @description Returns the AppBranchRunComparison for a run (as head), optionally including diff blob contents via include_diff=git|full|config
+     */
+    get: operations["GetAppBranchRunComparison"];
   };
   "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/install-group-runs": {
     /**
@@ -3575,11 +3589,15 @@ export interface components {
       action_ids?: string[];
       app_branch_id?: string;
       component_ids?: string[];
-      /** @description generated view field */
       config_number?: number;
       connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
       created_at?: string;
       created_by_id?: string;
+      /**
+       * @description DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
+       * branch runs for this config. Manual triggers are unaffected.
+       */
+      disable_branch_triggers?: boolean;
       id?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
       org_id?: string;
@@ -3618,23 +3636,15 @@ export interface components {
     "app.AppBranchRun": {
       app_branch?: components["schemas"]["app.AppBranch"];
       app_branch_config?: components["schemas"]["app.AppBranchConfig"];
-      /** @description AppConfigID is the app config that was created/synced during this run */
       app_config_id?: string;
       awaiting_approval?: boolean;
       base_branch?: string;
-      /**
-       * @description CommitSHA is the VCS commit that triggered or is associated with this run
-       * DEPRECATED: Use VCSConnectionCommit relationship instead
-       */
-      commit_sha?: string;
-      /** @description CompletedAt tracks when execution finished */
+      comparison?: components["schemas"]["app.AppBranchRunComparison"];
       completed_at?: string;
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
-      /** @description ErrorMessage stores any error that occurred during execution */
       error_message?: string;
-      /** @description EventType indicates what triggered this run. Kept for backward compat; new code uses RunType. */
       event_type?: string;
       force?: boolean;
       github_comment_id?: number;
@@ -3642,33 +3652,33 @@ export interface components {
       id?: string;
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       log_stream?: components["schemas"]["app.LogStream"];
-      /** @description LogStreamID is the log stream created during this run for event tracking */
       log_stream_id?: string;
       no_config_changes?: boolean;
-      /** @description PlanOnly indicates this is a preview run. Kept for backward compat; new code uses RunType. */
       plan_only?: boolean;
       pr_number?: number;
-      previous_run?: components["schemas"]["app.AppBranchRun"];
-      /**
-       * @description PreviousRunID links to the previous successful run on the same branch,
-       * used for build diffing to determine which components need rebuilding.
-       */
-      previous_run_id?: string;
-      /** @description QueueSignal is the signal that was enqueued to trigger this run */
       queue_signal?: components["schemas"]["app.QueueSignal"];
       run_type?: components["schemas"]["app.AppBranchRunType"];
-      /** @description StartedAt tracks when execution actually began */
       started_at?: string;
-      /**
-       * @description Status tracks the current state of the run
-       * Values: pending, running, success, failed, cancelled
-       */
       status?: string;
       trigger_event_dispatch_id?: string;
       updated_at?: string;
       vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
       workflow?: components["schemas"]["app.Workflow"];
       workflow_id?: string;
+    };
+    "app.AppBranchRunComparison": {
+      base_run?: components["schemas"]["app.AppBranchRun"];
+      base_run_id?: string;
+      config_diff?: components["schemas"]["blobstore.Blob"];
+      created_at?: string;
+      created_by_id?: string;
+      full_diff?: components["schemas"]["blobstore.Blob"];
+      git_diff?: components["schemas"]["blobstore.Blob"];
+      head_run?: components["schemas"]["app.AppBranchRun"];
+      head_run_id?: string;
+      id?: string;
+      org_id?: string;
+      updated_at?: string;
     };
     /** @enum {string} */
     "app.AppBranchRunType": "manual-run" | "git-run" | "git-preview-run";
@@ -4297,10 +4307,13 @@ export interface components {
       version?: number;
     };
     "app.ComponentDiffEntry": {
+      build_changed?: boolean;
       component_id?: string;
       component_name?: string;
       component_type?: string;
+      new_build_id?: string;
       new_checksum?: string;
+      old_build_id?: string;
       old_checksum?: string;
     };
     "app.ComponentHealthProbe": {
@@ -4866,6 +4879,9 @@ export interface components {
       added?: components["schemas"]["app.ComponentDiffEntry"][];
       changed?: components["schemas"]["app.ComponentDiffEntry"][];
       removed?: components["schemas"]["app.ComponentDiffEntry"][];
+      sandbox_build_changed?: boolean;
+      sandbox_build_new_id?: string;
+      sandbox_build_old_id?: string;
       sandbox_changed?: boolean;
       sandbox_new_id?: string;
       sandbox_old_id?: string;
@@ -6756,6 +6772,22 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "app_install_sync" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled" | "recover_helm_release";
     "blobstore.Blob": Record<string, never>;
+    "blobstore.BlobMetadata": {
+      /** @description S3 key (blob_id) */
+      blob_id?: string;
+      /** @description SHA256 checksum */
+      checksum?: string;
+      /** @description MIME type */
+      content_type?: string;
+      /** @description ISO 8601 timestamp */
+      created_at?: string;
+      /** @description Account ID who created the blob */
+      created_by?: string;
+      /** @description Full S3 path: org_id/blob_id */
+      s3_key?: string;
+      /** @description Size in bytes */
+      size?: number;
+    };
     "callback.Ref": {
       namespace?: string;
       signal_name?: string;
@@ -7651,6 +7683,31 @@ export interface components {
       permissions_boundary?: string;
       policies?: components["schemas"]["service.AppAWSIAMPolicyConfig"][];
     };
+    "service.AppBranchRunComparisonResponse": {
+      base_run?: components["schemas"]["service.AppBranchRunComparisonRunSummary"];
+      base_run_id?: string;
+      base_sha?: string;
+      config_diff?: components["schemas"]["blobstore.BlobMetadata"];
+      config_diff_content?: unknown;
+      full_diff?: components["schemas"]["blobstore.BlobMetadata"];
+      full_diff_content?: unknown;
+      git_diff?: components["schemas"]["blobstore.BlobMetadata"];
+      git_diff_content?: unknown;
+      head_run?: components["schemas"]["service.AppBranchRunComparisonRunSummary"];
+      head_run_id?: string;
+      head_sha?: string;
+      id?: string;
+    };
+    "service.AppBranchRunComparisonRunSummary": {
+      base_branch?: string;
+      created_at?: string;
+      event_type?: string;
+      id?: string;
+      pr_number?: number;
+      status?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+      workflow_id?: string;
+    };
     "service.AppConfigDiffResponse": {
       changed?: string;
       config_id?: string;
@@ -7914,6 +7971,11 @@ export interface components {
     };
     "service.CreateAppBranchConfigRequest": {
       connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
+      /**
+       * @description DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
+       * branch runs. Omit to carry the current setting forward.
+       */
+      disable_branch_triggers?: boolean;
       install_groups?: components["schemas"]["service.InstallGroupRequest"][];
       /**
        * @description PostDeployRunbookIDs run on each install, in order, after its deploy succeeds.
@@ -9012,6 +9074,9 @@ export interface components {
         [key: string]: string;
       };
       name?: string;
+    };
+    "service.UpdateAppBranchConfigRequest": {
+      disable_branch_triggers?: boolean;
     };
     "service.UpdateAppBranchRequest": {
       name: string;
@@ -11730,6 +11795,66 @@ export interface operations {
     };
   };
   /**
+   * update app branch config settings
+   * @description Updates mutable settings on an existing app branch config (e.g. webhook trigger behavior).
+   */
+  UpdateAppBranchConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+        /** @description app branch config ID */
+        config_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateAppBranchConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranchConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get latest app branch config
    * @description Returns the latest AppBranchConfig ordered by config_number (descending)
    */
@@ -11921,6 +12046,64 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.ComponentBuild"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get comparison for an app branch run
+   * @description Returns the AppBranchRunComparison for a run (as head), optionally including diff blob contents via include_diff=git|full|config
+   */
+  GetAppBranchRunComparison: {
+    parameters: {
+      query?: {
+        /** @description comma-separated: git,full,config */
+        include_diff?: string;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+        /** @description app branch run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.AppBranchRunComparisonResponse"];
         };
       };
       /** @description Bad Request */
@@ -14198,6 +14381,8 @@ export interface operations {
       query?: {
         /** @description load all children configs */
         recurse?: boolean;
+        /** @description include intermediate_config_json blob contents */
+        include_intermediate?: boolean;
       };
       path: {
         /** @description app ID */

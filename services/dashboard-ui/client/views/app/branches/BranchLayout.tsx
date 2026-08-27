@@ -135,7 +135,6 @@ const BranchTemplate = () => {
                 currentConfig={currentConfig}
                 appId={appId}
                 orgId={orgId}
-                showManage={false}
                 showTriggerNudge={showTriggerNudge}
               />
             }

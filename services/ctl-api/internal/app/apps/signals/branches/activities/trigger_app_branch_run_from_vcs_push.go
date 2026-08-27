@@ -52,6 +52,14 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		return nil, fmt.Errorf("unable to find app branch config: %w", err)
 	}
 
+	if config.DisableBranchTriggers {
+		a.l.Info("skipping vcs push trigger: branch triggers disabled for app branch config",
+			zap.String("app_branch_id", appBranchID),
+			zap.String("app_branch_config_id", appBranchConfigID),
+		)
+		return &TriggerAppBranchRunFromVCSPushResponse{}, nil
+	}
+
 	ctx = a.resolvePusherAccount(ctx, branch.OrgID, req.PusherEmails, req.FallbackCreatedByID)
 
 	runType := RunTypeFromEventType(req.EventType)

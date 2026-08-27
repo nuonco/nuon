@@ -10,25 +10,26 @@ const sections: DiffSectionData[] = [
     name: 'Components',
     sectionKey: 'components',
     grouped: true,
-    additions: 1,
+    additions: 2,
     removals: 0,
-    changed: 1,
+    changed: 0,
     entities: [
       {
         name: 'worker',
         op: 'add',
         componentType: 'docker_build',
         fields: [
-          { key: 'type', op: 'add', diff: "'' -> 'docker_build'" },
-          { key: 'dockerfile', op: 'add', diff: "'' -> 'Dockerfile'" },
+          { key: 'type', op: 'add', diff: "'docker_build'" },
+          { key: 'dockerfile', op: 'add', diff: "'Dockerfile'" },
         ],
       },
       {
         name: 'api',
-        op: 'change',
+        op: 'add',
         componentType: 'helm_chart',
         fields: [
-          { key: 'image_tag', op: 'change', diff: "'v1.0' -> 'v1.1'" },
+          { key: 'chart_name', op: 'add', diff: "'api'" },
+          { key: 'image_tag', op: 'add', diff: "'v1.1'" },
         ],
       },
     ],
@@ -38,52 +39,42 @@ const sections: DiffSectionData[] = [
     name: 'Actions',
     sectionKey: 'actions',
     grouped: true,
-    additions: 0,
-    removals: 1,
+    additions: 1,
+    removals: 0,
     changed: 0,
     entities: [
       {
         name: 'seed-db',
-        op: 'remove',
-        fields: [
-          { key: 'timeout', op: 'remove', diff: "'60s' -> ''" },
-        ],
+        op: 'add',
+        fields: [{ key: 'timeout', op: 'add', diff: "'60s'" }],
       },
     ],
     fields: [],
   },
 ]
 
-export const WithChanges = () => (
+export const FullConfig = () => (
   <ConfigStep
     appConfigId="cfg-123"
     status="success"
     sections={sections}
-    summary={{ added: 1, removed: 1, changed: 1 }}
-    diffResolved
-    metadata={{}}
   />
 )
 
-export const NoChanges = () => (
+export const Loading = () => (
   <ConfigStep
     appConfigId="cfg-123"
     status="success"
     sections={[]}
-    summary={null}
-    diffResolved
-    metadata={{ component_count: 4, action_count: 2 }}
+    isLoading
   />
 )
 
-export const LoadingDiff = () => (
+export const Empty = () => (
   <ConfigStep
     appConfigId="cfg-123"
     status="success"
     sections={[]}
-    summary={null}
-    diffResolved={false}
-    metadata={{}}
   />
 )
 
@@ -92,9 +83,6 @@ export const WaitingForConfig = () => (
     appConfigId={undefined}
     status="in-progress"
     sections={[]}
-    summary={null}
-    diffResolved={false}
-    metadata={{}}
   />
 )
 
@@ -103,8 +91,5 @@ export const PendingConfig = () => (
     appConfigId={undefined}
     status="pending"
     sections={[]}
-    summary={null}
-    diffResolved={false}
-    metadata={{}}
   />
 )

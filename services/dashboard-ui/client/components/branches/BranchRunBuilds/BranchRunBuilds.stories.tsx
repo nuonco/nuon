@@ -57,3 +57,22 @@ export const Empty = () => (
     <BranchRunBuilds builds={[]} orgId="org1" appId="app1" />
   </div>
 )
+
+export const WithSandboxAndTypes = () => (
+  <div className="max-w-3xl">
+    <BranchRunBuilds
+      builds={[
+        build({ id: 'bld1', component_name: 'ec2', component_config_connection: { type: 'terraform_module' }, status_v2: { status: 'active' } }),
+        build({ id: 'bld2', component_name: 'api', component_config_connection: { type: 'docker_build' }, status_v2: { status: 'building' } }),
+        build({ id: 'bld3', component_name: 'ingress', component_config_connection: { type: 'helm_chart' }, status_v2: { status: 'error' } }),
+      ]}
+      sandboxBuild={{
+        id: 'asb1',
+        status: 'active',
+        status_v2: { status: 'active' },
+      }}
+      orgId="org1"
+      appId="app1"
+    />
+  </div>
+)

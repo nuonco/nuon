@@ -153,7 +153,8 @@ export const WorkflowTimeline = ({
             caption={<ID>{workflow?.id}</ID>}
             underline={
               <span className="flex items-center gap-6 mt-1">
-                {workflow.app_branch_runs?.[0]?.commit_sha ? (
+                {workflow.app_branch_runs?.[0]?.head_sha ||
+                workflow.app_branch_runs?.[0]?.vcs_connection_commit?.sha ? (
                   <Text
                     flex
                     className="gap-1"
@@ -161,7 +162,11 @@ export const WorkflowTimeline = ({
                     theme="neutral"
                   >
                     <Icon variant="GitCommitIcon" size={12} />
-                    {workflow.app_branch_runs[0].commit_sha.substring(0, 7)}
+                    {(
+                      workflow.app_branch_runs[0].head_sha ||
+                      workflow.app_branch_runs[0].vcs_connection_commit?.sha ||
+                      ''
+                    ).substring(0, 7)}
                   </Text>
                 ) : null}
                 <Text

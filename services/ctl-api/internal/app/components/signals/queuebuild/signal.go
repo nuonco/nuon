@@ -68,6 +68,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			ComponentID:    s.ComponentID,
 			OrgID:          cmp.OrgID,
 			AppBranchRunID: s.AppBranchRunID,
+			AppConfigID:    s.AppConfigID,
 		}
 
 		// If AppConfigID is provided, try to use the branch's VCS commit when the
