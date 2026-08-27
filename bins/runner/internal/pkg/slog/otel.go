@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/sdk/log"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/otelresource"
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	"github.com/nuonco/nuon/pkg/runner/settings"
 )
@@ -18,7 +19,7 @@ const (
 
 func NewOTELProvider(cfg *runnerconfig.Config, set *settings.Settings, logStreamID string) (*log.LoggerProvider, error) {
 	opts := []log.LoggerProviderOption{
-		log.WithResource(getResource(set, logStreamID)),
+		log.WithResource(otelresource.New(set, logStreamID)),
 	}
 
 	if set.EnableLogging {

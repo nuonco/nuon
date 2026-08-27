@@ -1,4 +1,4 @@
-package slog
+package otelresource
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ func TestResourceIncludesNuonServiceIdentity(t *testing.T) {
 		"service.name":      "overridden",
 		"service.namespace": "overridden",
 	}}
-	rsrc := getResource(set, "log123")
+	rsrc := New(set, "log123")
 
 	want := map[attribute.Key]string{
 		semconv.ServiceNamespaceKey:    "nuon",
@@ -34,7 +34,7 @@ func TestResourceIncludesNuonServiceIdentity(t *testing.T) {
 }
 
 func TestResourceOmitsEmptyServiceInstanceID(t *testing.T) {
-	rsrc := getResource(&settings.Settings{Metadata: map[string]string{}}, "")
+	rsrc := New(&settings.Settings{Metadata: map[string]string{}}, "")
 	if _, ok := rsrc.Set().Value(semconv.ServiceInstanceIDKey); ok {
 		t.Fatal("empty service.instance.id was included")
 	}

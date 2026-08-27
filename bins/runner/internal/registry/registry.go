@@ -8,6 +8,7 @@ import (
 	ociregistry "github.com/distribution/distribution/v3/registry"
 	"github.com/sourcegraph/conc"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 )
@@ -15,16 +16,20 @@ import (
 type Params struct {
 	fx.In
 
-	LC  fx.Lifecycle
-	Cfg *runnerconfig.Config
+	LC         fx.Lifecycle
+	Shutdowner fx.Shutdowner
+	Cfg        *runnerconfig.Config
+	L          *zap.Logger `name:"system"`
 }
 
 type Registry struct {
 	cfg *runnerconfig.Config
+	l   *zap.Logger
 	*ociregistry.Registry
 
 	ctx      context.Context
 	cancelFn func()
+	shutdown fx.Shutdowner
 
 	wg *conc.WaitGroup
 }
@@ -36,8 +41,10 @@ func New(params Params) (*Registry, error) {
 	reg := &Registry{
 		wg:       conc.NewWaitGroup(),
 		cfg:      params.Cfg,
+		l:        params.L,
 		ctx:      ctx,
 		cancelFn: cancelFn,
+		shutdown: params.Shutdowner,
 	}
 
 	// distribution inits otel unconditionally inside NewRegistry with no config knob to disable it,
