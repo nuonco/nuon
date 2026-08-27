@@ -50,3 +50,12 @@ export const Deprovisioning = () => (
 export const Deprovisioned = () => (
   <DeprovisionBanner install={mockDeprovisioned} orgId="org123" />
 )
+
+export const Dismissable = () => (
+  <DeprovisionBanner
+    install={mockProvisioning}
+    orgId="org123"
+    workflowId="wf123"
+    onDismiss={() => {}}
+  />
+)
