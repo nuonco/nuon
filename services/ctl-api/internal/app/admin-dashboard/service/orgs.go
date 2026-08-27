@@ -89,17 +89,26 @@ func (s *service) getOrgs(ctx context.Context, search, label, feature, featureSt
 	}
 
 	if feature != "" {
-		// Orgs predating a flag have no stored value, so fall back to the
-		// default the same way a new org would resolve it.
-		fallback := "false"
-		if s.effectiveFeatureDefault(feature) {
-			fallback = "true"
-		}
 		want := "true"
 		if featureState == "disabled" {
 			want = "false"
 		}
-		query = query.Where("COALESCE(features->>?, ?) = ?", feature, fallback, want)
+
+		if app.ForcedFeatures()[feature] {
+			// A forced flag reads as enabled for every org, so "disabled" can
+			// never match.
+			if want == "false" {
+				query = query.Where("1 = 0")
+			}
+		} else {
+			// Orgs predating a flag have no stored value, so fall back to the
+			// default the same way a new org would resolve it.
+			fallback := "false"
+			if s.effectiveFeatureDefault(feature) {
+				fallback = "true"
+			}
+			query = query.Where("COALESCE(features->>?, ?) = ?", feature, fallback, want)
+		}
 	}
 
 	if err := query.Count(&totalCount).Error; err != nil {
@@ -113,15 +122,15 @@ func (s *service) getOrgs(ctx context.Context, search, label, feature, featureSt
 
 	offset := (page - 1) * orgsPerPage
 
-	activeFlags, flagDefaults := s.featureDefaultsJSON()
+	activeFlags, forcedFlags, flagDefaults := s.featureResolutionJSON()
 
 	res := query.
 		Select("orgs.*, "+
 			"(SELECT COUNT(*) FROM apps WHERE apps.org_id = orgs.id AND apps.deleted_at = 0) as app_count, "+
 			"(SELECT COUNT(*) FROM installs WHERE installs.org_id = orgs.id AND installs.deleted_at = 0) as install_count, "+
 			"(SELECT COUNT(*) FROM jsonb_array_elements_text(?::jsonb) AS f(name) "+
-			"WHERE COALESCE(orgs.features->>f.name, (?::jsonb)->>f.name) = 'true') as enabled_feature_count",
-			activeFlags, flagDefaults).
+			"WHERE COALESCE((?::jsonb)->>f.name, orgs.features->>f.name, (?::jsonb)->>f.name) = 'true') as enabled_feature_count",
+			activeFlags, forcedFlags, flagDefaults).
 		Order("created_at desc").
 		Limit(orgsPerPage).
 		Offset(offset).
