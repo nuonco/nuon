@@ -149,6 +149,12 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		return errors.Wrap(err, "unable to update stack version")
 	}
 
+	// Above the cloud split: the GCP path returns below, and every cloud's stack
+	// needs this account before its directions are rendered.
+	if _, err := activities.AwaitEnsureInstallStackServiceAccountByInstallStackID(ctx, stack.ID); err != nil {
+		return errors.Wrap(err, "unable to ensure install stack service account")
+	}
+
 	// GCP uses a static Terraform module with tfvars.
 	if cfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
 		initScriptURL := DefaultGCPRunnerInitScript
