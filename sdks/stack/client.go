@@ -16,6 +16,7 @@ import (
 
 	genclient "github.com/nuonco/nuon/sdks/stack/client"
 	"github.com/nuonco/nuon/sdks/stack/client/operations"
+	"github.com/nuonco/nuon/sdks/stack/models"
 )
 
 const (
@@ -32,7 +33,7 @@ const (
 // surface embedders and stack-cli consume.
 type Client interface {
 	// FetchConfig reads the install's rendered stack config.
-	FetchConfig(ctx context.Context) (*Config, error)
+	FetchConfig(ctx context.Context) (*models.AppInstallerSDKConfig, error)
 	// PhoneHome reports stack outputs to the endpoint the config named.
 	PhoneHome(ctx context.Context, phoneHomeURL string, payload map[string]any) error
 }
@@ -113,11 +114,11 @@ func newClient(ctx context.Context, opts Options) (*client, error) {
 	}, nil
 }
 
-func (c *client) FetchConfig(ctx context.Context) (*Config, error) {
+func (c *client) FetchConfig(ctx context.Context) (*models.AppInstallerSDKConfig, error) {
 	params := operations.NewGetStackConfigParamsWithContext(ctx).
 		WithInstallID(c.installID)
 
-	var cfg *Config
+	var cfg *models.AppInstallerSDKConfig
 	err := retry(ctx, func() error {
 		res, err := c.ops.GetStackConfig(params, c.authInfo)
 		if err != nil {
@@ -126,8 +127,8 @@ func (c *client) FetchConfig(ctx context.Context) (*Config, error) {
 		if res.Payload == nil || res.Payload.Config == nil {
 			return errNoConfig
 		}
-		cfg, err = configFromModel(res.Payload.Config)
-		return err
+		cfg = res.Payload.Config
+		return nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("fetch stack config: %w", err)

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/nuonco/nuon/sdks/stack/models"
 )
 
 // Options configures a call against the runner API's stacks namespace. Only APIURL
@@ -39,7 +41,7 @@ func (o Options) validate() error {
 
 // FetchConfig reads an install's rendered stack config. The returned Config carries
 // PhoneHomeURL, so a later report needs no other identifier.
-func FetchConfig(ctx context.Context, opts Options) (*Config, error) {
+func FetchConfig(ctx context.Context, opts Options) (*models.AppInstallerSDKConfig, error) {
 	c, err := newClient(ctx, opts)
 	if err != nil {
 		return nil, err
