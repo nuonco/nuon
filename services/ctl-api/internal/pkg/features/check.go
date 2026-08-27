@@ -10,6 +10,10 @@ import (
 )
 
 func (f *Features) OrgHasFeature(ctx context.Context, orgID string, feature app.OrgFeature) (bool, error) {
+	if app.FeatureForced(feature) {
+		return true, nil
+	}
+
 	var org app.Org
 	if res := f.db.WithContext(ctx).
 		First(&org, "id = ?", orgID); res.Error != nil {
@@ -37,6 +41,10 @@ func (f *Features) OrgHealthcheckSweepsEnabled(ctx context.Context, orgID string
 }
 
 func (f *Features) FeatureEnabled(ctx context.Context, feature app.OrgFeature) (bool, error) {
+	if app.FeatureForced(feature) {
+		return true, nil
+	}
+
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		return false, err
