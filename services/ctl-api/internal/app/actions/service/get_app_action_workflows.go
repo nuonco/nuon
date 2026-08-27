@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -22,6 +24,7 @@ import (
 // @Param					q							query	string	false	"search query to filter action workflows by name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					trigger_types				query	string	false	"filter by action workflow trigger type"
+// @Param					branch_id					query	string	false	"only return the actions defined by this branch's config"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -73,6 +76,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 
 	q := ctx.Query("q")
 	triggerTypes := ctx.Query("trigger_types")
+	branchID := ctx.Query("branch_id")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	appID := ctx.Param("app_id")
 	_, err = s.findApp(ctx, org.ID, appID)
@@ -81,7 +85,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 		return
 	}
 
-	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appID, q, triggerTypes, lbls)
+	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appID, branchID, q, triggerTypes, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflows %s: %w", appID, err))
 		return
@@ -90,7 +94,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, actionWorkflows)
 }
 
-func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q, triggerTypes string, lbls labels.Labels) ([]*app.ActionWorkflow, error) {
+func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, branchID, q, triggerTypes string, lbls labels.Labels) ([]*app.ActionWorkflow, error) {
 	actionWorkflows := []*app.ActionWorkflow{}
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -102,6 +106,21 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q, trigger
 		Preload("Configs.Triggers.Component").
 		Preload("Configs.Steps").
 		Where("org_id = ? AND app_id = ?", orgID, appID)
+
+	if branchID != "" {
+		appCfg, err := s.appsHelpers.GetLatestActiveAppConfigForBranch(ctx, appID, branchID)
+		if err != nil {
+			if errors.Is(err, appshelpers.ErrAppBranchNotFound) {
+				return nil, err
+			}
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return []*app.ActionWorkflow{}, nil
+			}
+			return nil, fmt.Errorf("unable to get branch app config: %w", err)
+		}
+
+		tx = tx.Where("action_workflows.id IN ?", []string(appCfg.ActionIDs))
+	}
 
 	if q != "" {
 		tx = tx.Where("name ILIKE ? OR action_workflows.id = ?", "%"+q+"%", q)
