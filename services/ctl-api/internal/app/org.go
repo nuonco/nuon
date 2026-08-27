@@ -1,7 +1,6 @@
 package app
 
 import (
-	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -196,9 +195,14 @@ func (o *Org) AfterQuery(tx *gorm.DB) error {
 	}
 
 	actieFeatures := GetFeatures()
+	forced := ForcedFeatures()
 
 	// if active feature not in features, add it
 	for _, feature := range actieFeatures {
+		if forced[string(feature)] {
+			o.Features[string(feature)] = true
+			continue
+		}
 		if _, ok := o.Features[string(feature)]; !ok {
 			o.Features[string(feature)] = false
 		}
@@ -225,19 +229,13 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	defaultFeatures := DefaultFeatures()
-
-	cfg := configFromContext(tx.Statement.Context)
-
-	if cfg != nil && cfg.AutoEnabledFeatures != "" {
-		for _, name := range strings.Split(cfg.AutoEnabledFeatures, ",") {
-			name = strings.TrimSpace(name)
-			if name != "" {
-				defaultFeatures[OrgFeature(name)] = true
-			}
-		}
-	}
+	forced := ForcedFeatures()
 
 	for _, feature := range GetFeatures() {
+		if forced[string(feature)] {
+			o.Features[string(feature)] = true
+			continue
+		}
 		if _, ok := o.Features[string(feature)]; !ok {
 			o.Features[string(feature)] = defaultFeatures[feature]
 		}
@@ -252,7 +250,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 }
 
 // DefaultFeatures returns the feature flag values applied to newly created
-// orgs, before the config-driven AutoEnabledFeatures overrides.
+// orgs, before the config-driven ForcedEnabledFeatures overrides.
 func DefaultFeatures() map[OrgFeature]bool {
 	return map[OrgFeature]bool{
 		// Disabled by default
@@ -327,6 +325,9 @@ func GetFeatures() []OrgFeature {
 type OrgFeatureInfo struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	// Forced marks a flag this deployment pins on for every org, which callers
+	// cannot toggle off.
+	Forced bool `json:"forced"`
 }
 
 // GetFeatureDescriptions returns a map of feature names to their descriptions
@@ -369,12 +370,14 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 func GetFeaturesWithDescriptions() []OrgFeatureInfo {
 	features := GetFeatures()
 	descriptions := GetFeatureDescriptions()
+	forced := ForcedFeatures()
 	result := make([]OrgFeatureInfo, 0, len(features))
 
 	for _, feature := range features {
 		result = append(result, OrgFeatureInfo{
 			Name:        string(feature),
 			Description: descriptions[feature],
+			Forced:      forced[string(feature)],
 		})
 	}
 
@@ -393,10 +396,14 @@ var adminOnlyFeatures = map[OrgFeature]struct{}{
 // GetUserManageableFeatures returns features that users are allowed to toggle
 func GetUserManageableFeatures() []OrgFeature {
 	allFeatures := GetFeatures()
+	forced := ForcedFeatures()
 	manageable := make([]OrgFeature, 0, len(allFeatures)-len(adminOnlyFeatures))
 
 	for _, feature := range allFeatures {
 		if _, ok := adminOnlyFeatures[feature]; ok {
+			continue
+		}
+		if forced[string(feature)] {
 			continue
 		}
 		manageable = append(manageable, feature)
