@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -24,6 +26,7 @@ import (
 // @Security		OrgID
 // @Param			app_id	path	string	true	"app ID"
 // @Param			q		query	string	false	"search query to filter runbooks by name or ID"
+// @Param			branch_id	query	string	false	"only return the runbooks defined by this branch's config"
 // @Param			offset	query	int		false	"offset"	Default(0)
 // @Param			limit	query	int		false	"limit"		Default(10)
 // @Success		200		{array}	app.Runbook
@@ -42,6 +45,7 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 	}
 
 	q := ctx.Query("q")
+	branchID := ctx.Query("branch_id")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 
 	runbooks := []*app.Runbook{}
@@ -58,6 +62,24 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 			return tx2.Order("idx ASC")
 		}).
 		Where(app.Runbook{OrgID: org.ID, AppID: appID})
+
+	if branchID != "" {
+		appCfg, err := s.appsHelpers.GetLatestActiveAppConfigForBranch(ctx, appID, branchID)
+		if err != nil {
+			if errors.Is(err, appshelpers.ErrAppBranchNotFound) {
+				ctx.Error(err)
+				return
+			}
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				ctx.Error(fmt.Errorf("unable to get branch app config: %w", err))
+				return
+			}
+			ctx.JSON(http.StatusOK, runbooks)
+			return
+		}
+
+		tx = tx.Where("runbooks.id IN ?", []string(appCfg.RunbookIDs))
+	}
 
 	if q != "" {
 		tx = tx.Where("name ILIKE ? OR id = ?", "%"+q+"%", q)

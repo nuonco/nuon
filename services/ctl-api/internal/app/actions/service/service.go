@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	comphelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
@@ -26,6 +27,7 @@ type Params struct {
 	VcsHelpers     *vcshelpers.Helpers
 	CompHelpers    *comphelpers.Helpers
 	Helpers        *actionshelpers.Helpers
+	AppsHelpers    *appshelpers.Helpers
 	InstallHelpers *installhelpers.Helpers
 	EndpointAudit  *apiPkg.EndpointAudit
 	FeaturesClient *features.Features
@@ -40,6 +42,7 @@ type service struct {
 	cfg            *internal.Config
 	vcsHelpers     *vcshelpers.Helpers
 	actionsHelpers *actionshelpers.Helpers
+	appsHelpers    *appshelpers.Helpers
 	compHelpers    *comphelpers.Helpers
 	installHelpers *installhelpers.Helpers
 	featuresClient *features.Features
@@ -182,6 +185,7 @@ func New(params Params) *service {
 		db:             params.DB,
 		vcsHelpers:     params.VcsHelpers,
 		actionsHelpers: params.Helpers,
+		appsHelpers:    params.AppsHelpers,
 		compHelpers:    params.CompHelpers,
 
 		installHelpers: params.InstallHelpers,

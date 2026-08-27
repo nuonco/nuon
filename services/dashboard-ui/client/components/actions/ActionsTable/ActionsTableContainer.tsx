@@ -10,12 +10,10 @@ import { ActionsTable, parseActionsToTableData } from './ActionsTable'
 const LIMIT = 20
 
 export const ActionsTableContainer = ({
-  filterIds,
   branchId,
   pollInterval = 20000,
   shouldPoll = true,
 }: {
-  filterIds?: string[]
   branchId?: string
   pollInterval?: number
   shouldPoll?: boolean
@@ -30,6 +28,7 @@ export const ActionsTableContainer = ({
       'actions',
       org?.id,
       app?.id,
+      branchId,
       offset,
       searchParams.get('q'),
       searchParams.get('labels'),
@@ -41,6 +40,7 @@ export const ActionsTableContainer = ({
         appId: app.id,
         offset,
         limit: LIMIT,
+        branch_id: branchId,
         q: searchParams.get('q') || undefined,
         labels: searchParams.get('labels') || undefined,
         trigger_types: searchParams.get('trigger_types') || undefined,
@@ -53,9 +53,7 @@ export const ActionsTableContainer = ({
   return (
     <ActionsTable
       data={parseActionsToTableData(
-        (result?.data ?? []).filter(
-          (row) => !filterIds || filterIds.includes(row.id ?? '')
-        ),
+        result?.data ?? [],
         org.id,
         app.id,
         labelColors,
