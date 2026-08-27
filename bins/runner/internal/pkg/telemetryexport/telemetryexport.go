@@ -49,6 +49,8 @@ type Supervisor struct {
 	mu               sync.Mutex
 	child            *childProcess
 	active           string
+	rejectedConfig   string
+	restartConfig    string
 	backoff          time.Duration
 	nextStart        time.Time
 	reported         bool
@@ -146,25 +148,41 @@ func (s *Supervisor) reconcile(update configUpdate) {
 	}
 	value := update.value
 	if value == s.active {
+		s.rejectedConfig = ""
+		return
+	}
+	if value == s.rejectedConfig {
+		return
+	}
+	if value == s.restartConfig {
 		return
 	}
 	cfg, err := parseSecret(value)
 	if err != nil {
+		s.rejectedConfig = value
 		s.logger.Warn("telemetry export configuration is invalid")
 		return
 	}
 	if err := s.replaceChildFn(cfg); err != nil {
 		s.logger.Warn("telemetry export collector failed to start")
 		if s.active != "" {
+			s.rejectedConfig = value
 			if previous, parseErr := parseSecret(s.active); parseErr == nil {
 				if rollbackErr := s.replaceChildFn(previous); rollbackErr != nil {
-					s.nextStart = time.Now().Add(s.backoff)
+					s.scheduleRestart(s.active)
+				} else {
+					s.restartConfig = ""
+					s.nextStart = time.Time{}
 				}
 			}
+		} else {
+			s.scheduleRestart(value)
 		}
 		return
 	}
 	s.active = value
+	s.rejectedConfig = ""
+	s.restartConfig = ""
 	s.backoff = time.Second
 	s.nextStart = time.Time{}
 	s.logEnabled(cfg)
@@ -173,6 +191,8 @@ func (s *Supervisor) reconcile(update configUpdate) {
 func (s *Supervisor) disable(reason string) {
 	s.stopChildFn()
 	s.active = ""
+	s.rejectedConfig = ""
+	s.restartConfig = ""
 	s.nextStart = time.Time{}
 	if !s.reported || s.collectorEnabled {
 		s.logger.Info("runner telemetry export collector disabled",
@@ -308,14 +328,14 @@ func (s *Supervisor) restartCrashed(_ context.Context) {
 			if time.Since(child.startedAt) >= 30*time.Second {
 				s.backoff = time.Second
 			}
-			s.nextStart = time.Now().Add(s.backoff)
+			s.scheduleRestart(s.active)
 		default:
 		}
 	}
-	if s.active == "" || s.nextStart.IsZero() || time.Now().Before(s.nextStart) {
+	if s.restartConfig == "" || s.nextStart.IsZero() || time.Now().Before(s.nextStart) {
 		return
 	}
-	cfg, err := parseSecret(s.active)
+	cfg, err := parseSecret(s.restartConfig)
 	if err != nil {
 		return
 	}
@@ -330,7 +350,15 @@ func (s *Supervisor) restartCrashed(_ context.Context) {
 		s.logger.Warn("telemetry export collector restart failed")
 		return
 	}
+	s.active = s.restartConfig
+	s.restartConfig = ""
 	s.nextStart = time.Time{}
+	s.logEnabled(cfg)
+}
+
+func (s *Supervisor) scheduleRestart(value string) {
+	s.restartConfig = value
+	s.nextStart = time.Now().Add(s.backoff)
 }
 
 func childEnvironment(secretHeaders []string) []string {
