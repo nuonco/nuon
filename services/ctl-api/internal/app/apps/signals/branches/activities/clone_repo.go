@@ -70,7 +70,7 @@ func (a *Activities) resolveGitSource(ctx context.Context, vcsConfigID string, c
 	var publicCfg app.PublicGitVCSConfig
 	res = a.db.WithContext(ctx).First(&publicCfg, "id = ?", vcsConfigID)
 	if res.Error == nil {
-		src, err := vcsHelpers.GetPublicGitSourceAtCommit(&publicCfg, commitSHA)
+		src, err := vcsHelpers.GetPublicGitSourceAtCommit(ctx, &publicCfg, commitSHA)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get git source for public repo: %w", err)
 		}

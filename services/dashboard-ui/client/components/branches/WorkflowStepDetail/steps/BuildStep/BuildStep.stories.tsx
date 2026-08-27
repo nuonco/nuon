@@ -44,7 +44,7 @@ export const Rows = () => (
         component_id: 'c1',
         component_name: 'rds_subnet',
         status: 'success',
-        cache_status: 'partial cache',
+        change_reason: 'source_changed',
       }}
     />
     <BuildRow
@@ -53,8 +53,8 @@ export const Rows = () => (
       build={{
         component_id: 'c2',
         component_name: 'coder',
-        status: 'success',
-        cache_status: 'cache hit',
+        status: 'skipped',
+        change_reason: 'no_changes',
       }}
     />
     <BuildRow
@@ -64,7 +64,7 @@ export const Rows = () => (
         component_id: 'c3',
         component_name: 'api',
         status: 'in-progress',
-        cache_status: 'no cache',
+        change_reason: 'config_changed',
       }}
     />
     <BuildRow
@@ -74,7 +74,7 @@ export const Rows = () => (
         component_id: 'c4',
         component_name: 'migrations',
         status: 'error',
-        cache_status: 'no cache',
+        change_reason: 'source_changed',
       }}
     />
     <BuildRow
@@ -83,8 +83,8 @@ export const Rows = () => (
         component_id: 'sandbox',
         component_type: 'sandbox',
         component_name: 'Sandbox',
-        status: 'success',
-        cache_status: 'no cache',
+        status: 'skipped',
+        change_reason: 'no_changes',
       }}
     />
   </RowList>

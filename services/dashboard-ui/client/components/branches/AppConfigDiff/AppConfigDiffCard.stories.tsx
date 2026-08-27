@@ -61,6 +61,29 @@ export const Loading = () => (
   </div>
 )
 
+export const Snapshot = () => (
+  <div className="max-w-3xl">
+    <AppConfigDiffCard
+      title="Config"
+      presentation="snapshot"
+      sections={[
+        {
+          ...componentsSection,
+          additions: 2,
+          removals: 0,
+          changed: 0,
+          entities: componentsSection.entities.map((e) => ({
+            ...e,
+            op: 'add' as const,
+            fields: e.fields.map((f) => ({ ...f, op: 'add' })),
+          })),
+        },
+      ]}
+      summary={null}
+    />
+  </div>
+)
+
 export const Collapsed = () => (
   <div className="max-w-3xl">
     <AppConfigDiffCard

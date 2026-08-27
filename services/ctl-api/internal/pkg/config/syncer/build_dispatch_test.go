@@ -202,6 +202,72 @@ func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchPrecreatesOneImageBuild() 
 	s.Equal(builds[0].ID, ccc.LatestBuildID.String)
 }
 
+// An unchanged non-image component whose previous build is Active must pin the
+// fresh CCC to that build on branch sync (DispatchBuilds=false).
+func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchReusesActiveTerraformBuild() {
+	cfg := testseedconfig.BuildMinimalAppConfig()
+	cmp := terraformComponent("stable-terraform")
+	cfg.Components = config.ComponentList{cmp}
+
+	ctx, testApp, _ := s.syncEmpty()
+
+	s.syncInto(ctx, testApp.ID, cfg)
+	cmpID := s.componentID(ctx, testApp.ID, "stable-terraform")
+	s.markBuilt(ctx, cmpID)
+
+	var firstCCC app.ComponentConfigConnection
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.ComponentConfigConnection{ComponentID: cmpID}).
+		Order("created_at DESC").
+		First(&firstCCC).Error)
+	s.Require().True(firstCCC.LatestBuildID.Valid)
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Model(&app.ComponentBuild{}).
+		Where("id = ?", firstCCC.LatestBuildID.String).
+		Update("status", app.ComponentBuildStatusActive).Error)
+
+	secondCfg := s.syncInto(ctx, testApp.ID, cfg)
+
+	var secondCCC app.ComponentConfigConnection
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.ComponentConfigConnection{ComponentID: cmpID, AppConfigID: secondCfg.ID}).
+		First(&secondCCC).Error)
+
+	s.Require().True(secondCCC.LatestBuildID.Valid)
+	s.Equal(firstCCC.LatestBuildID.String, secondCCC.LatestBuildID.String,
+		"fresh CCC must be pinned to the previous Active build")
+}
+
+// Creating a build for a specific app-config CCC must attach and pin there even
+// when a newer CCC exists as LatestConfig (concurrent branch-run race).
+func (s *SyncFieldsTestSuite) TestCreateBuildPinsRequestedAppConfigCCC() {
+	cfg := testseedconfig.BuildMinimalAppConfig()
+	cmp := terraformComponent("race-terraform")
+	cfg.Components = config.ComponentList{cmp}
+
+	ctx, testApp, _ := s.syncEmpty()
+
+	olderCfg := s.syncInto(ctx, testApp.ID, cfg)
+	cmpID := s.componentID(ctx, testApp.ID, "race-terraform")
+	s.syncInto(ctx, testApp.ID, cfg)
+
+	var olderCCC app.ComponentConfigConnection
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.ComponentConfigConnection{ComponentID: cmpID, AppConfigID: olderCfg.ID}).
+		First(&olderCCC).Error)
+	s.False(olderCCC.LatestBuildID.Valid, "older CCC should not have a build yet")
+
+	bld, err := s.deps.ComponentHelpers.CreateComponentBuildForConfigConnection(ctx, cmpID, olderCCC.ID, nil)
+	s.Require().NoError(err)
+	s.Equal(olderCCC.ID, bld.ComponentConfigConnectionID)
+
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.ComponentConfigConnection{ID: olderCCC.ID}).
+		First(&olderCCC).Error)
+	s.Require().True(olderCCC.LatestBuildID.Valid)
+	s.Equal(bld.ID, olderCCC.LatestBuildID.String)
+}
+
 // An unchanged image component whose previous build is Active must not get a
 // new build on re-sync — the fresh CCC is pinned to the previous Active build.
 func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchReusesActiveImageBuild() {

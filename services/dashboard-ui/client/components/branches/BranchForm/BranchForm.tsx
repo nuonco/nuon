@@ -39,6 +39,7 @@ interface IBranchFormModal extends Omit<IModal, 'onSubmit'> {
   defaultUseVcs?: boolean
   defaultDirectory?: string
   defaultPathFilter?: string
+  defaultDisableBranchTriggers?: boolean
   isSubmitting: boolean
   submitError?: TAPIError | Error | null
   onSubmit: (output: BranchFormOutput) => void
@@ -64,6 +65,7 @@ export const BranchFormModal = ({
   defaultUseVcs = true,
   defaultDirectory = '.',
   defaultPathFilter = '',
+  defaultDisableBranchTriggers = false,
   isSubmitting,
   submitError,
   onSubmit,
@@ -79,6 +81,7 @@ export const BranchFormModal = ({
       useVcs: defaultUseVcs,
       directory: defaultDirectory,
       pathFilter: defaultPathFilter,
+      disableBranchTriggers: defaultDisableBranchTriggers,
     } as BranchFormValues,
     validators: { onMount: branchFormSchema, onChange: branchFormSchema },
     onSubmit: ({ value }) => {
@@ -98,6 +101,7 @@ export const BranchFormModal = ({
         selectedBranch,
         directory: value.directory.trim(),
         pathFilter: value.pathFilter.trim(),
+        disableBranchTriggers: value.disableBranchTriggers,
       })
     },
   })
@@ -215,6 +219,25 @@ export const BranchFormModal = ({
             isSubmitting={isSubmitting}
           />
         )}
+
+        {mode === 'edit' ? (
+          <div className="flex flex-col gap-1">
+            <form.Field name="disableBranchTriggers">
+              {(field) => (
+                <FormCheckbox
+                  field={field}
+                  id="disable-branch-triggers"
+                  disabled={isSubmitting}
+                  labelProps={{ labelText: 'Disable webhook triggers' }}
+                />
+              )}
+            </form.Field>
+            <Text variant="subtext" theme="neutral" className="px-2">
+              When enabled, git push and pull request events will not start runs
+              on this branch.
+            </Text>
+          </div>
+        ) : null}
       </form>
     </Modal>
   )

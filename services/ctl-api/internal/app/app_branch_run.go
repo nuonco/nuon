@@ -21,6 +21,10 @@ const (
 	AppBranchRunTypeGitPreview AppBranchRunType = "git-preview-run"
 )
 
+// AppBranchRunLabelBuildsCompleted is set on AppBranchRun.labels when the builds
+// step finishes. Used to select baseline runs for AppBranchRunComparison.
+const AppBranchRunLabelBuildsCompleted = "builds_completed"
+
 type AppBranchRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -43,18 +47,14 @@ type AppBranchRun struct {
 	WorkflowID *string   `json:"workflow_id,omitempty" temporaljson:"workflow_id,omitzero,omitempty"`
 	Workflow   *Workflow `json:"workflow,omitempty" temporaljson:"workflow,omitzero,omitempty"`
 
-	// Status tracks the current state of the run
-	// Values: pending, running, success, failed, cancelled
 	Status string `json:"status,omitzero" gorm:"notnull;default:'pending'" temporaljson:"status,omitzero,omitempty"`
 
 	RunType AppBranchRunType `json:"run_type,omitzero" gorm:"notnull;default:'manual-run'" temporaljson:"run_type,omitzero,omitempty"`
 
 	Force bool `json:"force,omitzero" temporaljson:"force,omitzero,omitempty"`
 
-	// PlanOnly indicates this is a preview run. Kept for backward compat; new code uses RunType.
 	PlanOnly bool `json:"plan_only,omitzero" temporaljson:"plan_only,omitzero,omitempty"`
 
-	// EventType indicates what triggered this run. Kept for backward compat; new code uses RunType.
 	EventType string `json:"event_type,omitempty" temporaljson:"event_type,omitzero,omitempty"`
 
 	PRNumber   *int   `json:"pr_number,omitempty" temporaljson:"pr_number,omitzero,omitempty"`
@@ -64,36 +64,22 @@ type AppBranchRun struct {
 	GithubCommentID *int64 `json:"github_comment_id,omitempty" temporaljson:"github_comment_id,omitzero,omitempty"`
 	NoConfigChanges bool   `json:"no_config_changes,omitempty" temporaljson:"no_config_changes,omitzero,omitempty"`
 
-	// StartedAt tracks when execution actually began
 	StartedAt *time.Time `json:"started_at,omitempty" temporaljson:"started_at,omitzero,omitempty"`
 
-	// CompletedAt tracks when execution finished
 	CompletedAt *time.Time `json:"completed_at,omitempty" temporaljson:"completed_at,omitzero,omitempty"`
 
-	// ErrorMessage stores any error that occurred during execution
 	ErrorMessage string `json:"error_message,omitempty" temporaljson:"error_message,omitzero,omitempty"`
 
-	// AppConfigID is the app config that was created/synced during this run
 	AppConfigID string `json:"app_config_id,omitempty" temporaljson:"app_config_id,omitzero,omitempty"`
 
-	// LogStreamID is the log stream created during this run for event tracking
 	LogStreamID *string    `json:"log_stream_id,omitempty" temporaljson:"log_stream_id,omitzero,omitempty"`
 	LogStream   *LogStream `json:"log_stream,omitempty" temporaljson:"log_stream,omitzero,omitempty"`
 
-	// CommitSHA is the VCS commit that triggered or is associated with this run
-	// DEPRECATED: Use VCSConnectionCommit relationship instead
-	CommitSHA string `json:"commit_sha,omitzero" temporaljson:"commit_sha,omitzero,omitempty"`
+	Comparison *AppBranchRunComparison `json:"comparison,omitempty" gorm:"foreignKey:HeadRunID" temporaljson:"comparison,omitzero,omitempty"`
 
-	// PreviousRunID links to the previous successful run on the same branch,
-	// used for build diffing to determine which components need rebuilding.
-	PreviousRunID *string       `json:"previous_run_id,omitempty" temporaljson:"previous_run_id,omitzero,omitempty"`
-	PreviousRun   *AppBranchRun `json:"previous_run,omitempty" gorm:"foreignKey:PreviousRunID" temporaljson:"previous_run,omitzero,omitempty"`
-
-	// VCSConnectionCommit is the full commit record associated with this run
 	VCSConnectionCommitID *string              `json:"vcs_connection_commit_id,omitempty" swaggerignore:"true" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitempty" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
 
-	// QueueSignal is the signal that was enqueued to trigger this run
 	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
 
 	AwaitingApproval bool `json:"awaiting_approval,omitzero" gorm:"-" temporaljson:"awaiting_approval,omitzero,omitempty"`

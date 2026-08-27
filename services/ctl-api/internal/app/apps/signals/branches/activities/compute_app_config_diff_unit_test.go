@@ -153,6 +153,7 @@ func TestDiffNodeToSection(t *testing.T) {
 		require.Equal(t, 1, section.Additions)
 		require.Equal(t, 0, section.Changed)
 		require.Len(t, section.Entries, 1)
+		require.Equal(t, "api", section.Entries[0].Name)
 	})
 }
 

@@ -10,7 +10,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { useVcsRepoBrowser } from '@/hooks/use-vcs-repo-browser'
-import { createBranchConfig, updateBranch } from '@/lib'
+import { createBranchConfig, updateBranch, updateBranchConfig } from '@/lib'
 import type { TCreateBranchConfigRequest } from '@/lib/ctl-api/apps/branches/create-branch-config'
 import type { TAPIError, TAppBranch, TAppBranchConfig } from '@/types'
 import { BranchFormModal } from '@/components/branches/BranchForm'
@@ -99,6 +99,11 @@ export const EditBranchNameModalContainer = ({
         }
       }
 
+      const defaultDisableBranchTriggers =
+        currentConfig?.disable_branch_triggers ?? false
+      const toggleChanged =
+        data.disableBranchTriggers !== defaultDisableBranchTriggers
+
       const request: TCreateBranchConfigRequest = {}
 
       if (data.useVcs && data.selectedRepo) {
@@ -141,12 +146,30 @@ export const EditBranchNameModalContainer = ({
       const hasGroups = (request.install_groups?.length ?? 0) > 0
 
       if (hasVCS || hasGroups) {
+        if (toggleChanged) {
+          request.disable_branch_triggers = data.disableBranchTriggers
+        }
         try {
           await createBranchConfig({
             appId: app.id,
             branchId: branch.id || '',
             orgId: org.id,
             request,
+          })
+        } catch (err) {
+          throw new Error(formatError(err as TAPIError))
+        }
+      } else if (toggleChanged) {
+        if (!currentConfig?.id) {
+          throw new Error('Sync the app config before changing trigger settings.')
+        }
+        try {
+          await updateBranchConfig({
+            appId: app.id,
+            branchId: branch.id || '',
+            configId: currentConfig.id,
+            orgId: org.id,
+            request: { disable_branch_triggers: data.disableBranchTriggers },
           })
         } catch (err) {
           throw new Error(formatError(err as TAPIError))
@@ -200,6 +223,9 @@ export const EditBranchNameModalContainer = ({
       defaultUseVcs={defaultUseVcs}
       defaultDirectory={defaultDirectory}
       defaultPathFilter={defaultPathFilter}
+      defaultDisableBranchTriggers={
+        currentConfig?.disable_branch_triggers ?? false
+      }
       isSubmitting={isSubmitting}
       submitError={submitError}
       onSubmit={(output) => handleSave(output)}
