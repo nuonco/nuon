@@ -20,6 +20,10 @@ type AppOrgFeatureInfo struct {
 	// description
 	Description string `json:"description,omitempty"`
 
+	// Forced marks a flag this deployment pins on for every org, which callers
+	// cannot toggle off.
+	Forced bool `json:"forced,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 }

@@ -19,7 +19,7 @@ export type TFeatureFlag = {
   name: string
   description: string
   default: boolean
-  auto_enabled: boolean
+  forced: boolean
   effective_default: boolean
   enabled_count: number
   unset_count: number

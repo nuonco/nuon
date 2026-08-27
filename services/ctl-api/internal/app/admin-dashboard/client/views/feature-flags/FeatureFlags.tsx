@@ -57,14 +57,15 @@ export const FeatureFlags = () => {
   const visible = sortFlags(filtered, sort)
 
   const defaultOnCount = flags.filter((f) => f.effective_default).length
-  const autoEnabledCount = flags.filter((f) => f.auto_enabled).length
+  const forcedCount = flags.filter((f) => f.forced).length
 
   return (
     <div>
       <h1 className="page-heading">Feature flags</h1>
       <p className="page-subheading">
         {flags.length} flags across {total_orgs} orgs · {defaultOnCount} on by default for new orgs
-        {autoEnabledCount > 0 && `, ${autoEnabledCount} of them forced on by this deployment's auto_enabled_features config`}
+        {forcedCount > 0 &&
+          `, ${forcedCount} of them forced on for every org by this deployment's forced_enabled_features config`}
       </p>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
@@ -143,12 +144,12 @@ export const FeatureFlags = () => {
                     >
                       {flag.effective_default ? 'on' : 'off'}
                     </span>
-                    {flag.auto_enabled && !flag.default && (
+                    {flag.forced && (
                       <div
                         className="mt-0.5 text-[10px] text-amber-600 dark:text-amber-400"
-                        title="Off in the code defaults, but this deployment's auto_enabled_features config turns it on for newly created orgs. Existing orgs are unaffected."
+                        title="This deployment's forced_enabled_features config pins the flag on for every org, existing orgs included. The stored per-org value is ignored and the flag cannot be toggled off."
                       >
-                        auto_enabled_features
+                        forced
                       </div>
                     )}
                   </td>
@@ -165,7 +166,7 @@ export const FeatureFlags = () => {
                       </Link>
                       <span className="text-xs text-gray-400 dark:text-gray-500">{pct}%</span>
                     </div>
-                    {flag.unset_count > 0 && (
+                    {!flag.forced && flag.unset_count > 0 && (
                       <div className="mt-0.5 text-[10px] text-gray-400 dark:text-gray-500">
                         {flag.effective_default
                           ? `incl. ${flag.unset_count} with no stored value, assumed on`
