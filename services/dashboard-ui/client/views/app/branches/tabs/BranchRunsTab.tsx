@@ -46,9 +46,10 @@ const BranchRunsContent = () => {
 
   return (
     <BranchTabPage
-      tab="Runs"
-      heading="Workflow runs"
-      subheading="Every deployment of this branch, newest first."
+      tab="Updates"
+      tabPath="runs"
+      heading="Updates"
+      subheading="Every update rolled out from this branch, newest first."
       actions={<ShowPreviewRuns />}
     >
       {isLoading ? (
