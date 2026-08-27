@@ -32,7 +32,7 @@ export const AdminOrgFeaturesPanelContainer = ({
     mutationFn: (formData: FormData) => {
       const features: Record<string, boolean> = {}
       featuresList.forEach((feature) => {
-        features[feature.name] = formData.get(feature.name) === 'on'
+        features[feature.name] = feature.forced || formData.get(feature.name) === 'on'
       })
       return adminUpdateOrgFeatures({ orgId, features, adminEmail })
     },

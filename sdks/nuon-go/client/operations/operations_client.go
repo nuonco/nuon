@@ -408,6 +408,8 @@ type ClientService interface {
 
 	GetAppBranchRunBuilds(params *GetAppBranchRunBuildsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunBuildsOK, error)
 
+	GetAppBranchRunComparison(params *GetAppBranchRunComparisonParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunComparisonOK, error)
+
 	GetAppBranchRunInstallGroups(params *GetAppBranchRunInstallGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunInstallGroupsOK, error)
 
 	GetAppBranchRuns(params *GetAppBranchRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunsOK, error)
@@ -961,6 +963,8 @@ type ClientService interface {
 	UpdateAppActionWorkflow(params *UpdateAppActionWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppActionWorkflowCreated, error)
 
 	UpdateAppBranch(params *UpdateAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppBranchOK, error)
+
+	UpdateAppBranchConfig(params *UpdateAppBranchConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppBranchConfigOK, error)
 
 	UpdateAppComponent(params *UpdateAppComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppComponentOK, error)
 
@@ -7841,6 +7845,52 @@ func (a *Client) GetAppBranchRunBuilds(params *GetAppBranchRunBuildsParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppBranchRunBuilds: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppBranchRunComparison gets comparison for an app branch run
+
+Returns the AppBranchRunComparison for a run (as head), optionally including diff blob contents via include_diff=git|full|config
+*/
+func (a *Client) GetAppBranchRunComparison(params *GetAppBranchRunComparisonParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunComparisonOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppBranchRunComparisonParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppBranchRunComparison",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/comparison",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppBranchRunComparisonReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppBranchRunComparisonOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppBranchRunComparison: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -20654,6 +20704,52 @@ func (a *Client) UpdateAppBranch(params *UpdateAppBranchParams, authInfo runtime
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateAppBranchConfig updates app branch config settings
+
+Updates mutable settings on an existing app branch config (e.g. webhook trigger behavior).
+*/
+func (a *Client) UpdateAppBranchConfig(params *UpdateAppBranchConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAppBranchConfigOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateAppBranchConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateAppBranchConfig",
+		Method:             "PATCH",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/configs/{config_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateAppBranchConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateAppBranchConfigOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateAppBranchConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

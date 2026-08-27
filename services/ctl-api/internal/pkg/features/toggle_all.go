@@ -20,6 +20,12 @@ func (s *Features) ToggleForAllOrgs(ctx context.Context, features map[string]boo
 		return errors.Wrap(err, "unable to validate org features")
 	}
 
+	for name := range app.ForcedFeatures() {
+		if _, ok := features[name]; ok {
+			features[name] = true
+		}
+	}
+
 	patch, err := json.Marshal(features)
 	if err != nil {
 		return errors.Wrap(err, "unable to marshal features patch")

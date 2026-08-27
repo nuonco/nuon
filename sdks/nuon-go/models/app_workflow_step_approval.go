@@ -19,6 +19,12 @@ import (
 // swagger:model app.WorkflowStepApproval
 type AppWorkflowStepApproval struct {
 
+	// app branch id
+	AppBranchID string `json:"app_branch_id,omitempty"`
+
+	// app id
+	AppID string `json:"app_id,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
