@@ -68,16 +68,18 @@ func (h *Helpers) CreateAppBranchWithDB(
 func (h *Helpers) EnsureAppBranchQueues(ctx context.Context, branchID string) error {
 	ownerType := plugins.TableName(h.db, app.AppBranch{})
 
-	// Create default queue for app branch signals
-	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+	existing, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     branchID,
 		OwnerType:   ownerType,
 		Namespace:   "apps",
-		MaxInFlight: 2,
+		MaxInFlight: AppBranchDefaultMaxInFlight,
 		MaxDepth:    50,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create queue: %w", err)
+	}
+	if existing.MaxInFlight != AppBranchDefaultMaxInFlight {
+		h.db.WithContext(ctx).Model(existing).Update("max_in_flight", AppBranchDefaultMaxInFlight)
 	}
 
 	// Create named queues for workflow execution pipeline
