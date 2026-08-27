@@ -73,14 +73,9 @@ export const DeleteChannelSubscriptionButton = ({
   )
 
   return (
-    <Button
-      variant="ghost"
-      className="!text-red-800 dark:!text-red-500"
-      onClick={() => addModal(modal)}
-      {...props}
-    >
+    <Button onClick={() => addModal(modal)} {...props} variant="danger">
+      Remove subscription
       <Icon variant="TrashIcon" />
-      Remove
     </Button>
   )
 }
