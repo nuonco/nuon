@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Branch Run Comparison — Flow Diagram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    padding: 40px 24px 80px;
+    line-height: 1.5;
+  }
+  h1 { text-align: center; color: #58a6ff; font-size: 26px; margin-bottom: 6px; }
+  .subtitle { text-align: center; color: #8b949e; font-size: 14px; margin-bottom: 40px; max-width: 720px; margin-left: auto; margin-right: auto; }
+
+  section { max-width: 1100px; margin: 0 auto 56px; }
+  h2 { font-size: 13px; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 32px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #8b949e; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid; }
+
+  .model-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .model-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+  .card-title { font-size: 15px; font-weight: 600; color: #f0f6fc; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .card-title .id { font-family: monospace; font-size: 11px; color: #79c0ff; font-weight: 400; }
+
+  .field { font-size: 12px; font-family: monospace; padding: 3px 0; display: flex; gap: 8px; flex-wrap: wrap; }
+  .field .k { color: #7ee787; min-width: 140px; }
+  .field .note { color: #8b949e; font-family: -apple-system, sans-serif; font-size: 11px; }
+
+  .blob-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .blob {
+    flex: 1; min-width: 140px;
+    background: #21262d;
+    border: 1px dashed #da368855;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .blob-name { font-size: 12px; font-weight: 600; color: #f78166; margin-bottom: 4px; }
+  .blob-desc { font-size: 10px; color: #8b949e; line-height: 1.4; }
+
+  svg.diagram { width: 100%; max-width: 1060px; display: block; margin: 0 auto; }
+
+  .phase-bar {
+    display: flex; gap: 0; max-width: 1060px; margin: 0 auto 40px;
+    border-radius: 8px; overflow: hidden; border: 1px solid #30363d;
+  }
+  .phase {
+    flex: 1; padding: 14px 16px; text-align: center;
+    font-size: 12px; border-right: 1px solid #30363d;
+  }
+  .phase:last-child { border-right: none; }
+  .phase-num { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .phase-title { font-weight: 600; color: #f0f6fc; font-size: 13px; margin-bottom: 4px; }
+  .phase-desc { font-size: 11px; color: #8b949e; line-height: 1.4; }
+  .p1 { background: #1f6feb18; }
+  .p1 .phase-num { color: #58a6ff; }
+  .p2 { background: #23863618; }
+  .p2 .phase-num { color: #7ee787; }
+  .p3 { background: #bc8cff18; }
+  .p3 .phase-num { color: #d2a8ff; }
+
+  .fork-box { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 1060px; margin: 0 auto; }
+  @media (max-width: 700px) { .fork-box { grid-template-columns: 1fr; } }
+  .fork-path { border-radius: 10px; padding: 18px 20px; border: 1.5px solid; }
+  .fork-path.first { background: #f0883e12; border-color: #f0883e55; }
+  .fork-path.normal { background: #7ee78712; border-color: #23863655; }
+  .fork-path h3 { font-size: 14px; margin-bottom: 8px; }
+  .fork-path.first h3 { color: #f0883e; }
+  .fork-path.normal h3 { color: #7ee787; }
+  .fork-path ol { margin-left: 18px; font-size: 12px; color: #c9d1d9; }
+  .fork-path li { margin-bottom: 6px; }
+  .fork-path code { background: #21262d; padding: 1px 5px; border-radius: 3px; font-size: 11px; color: #79c0ff; }
+
+  .derive-flow {
+    display: flex; align-items: stretch; gap: 0; max-width: 1060px; margin: 0 auto;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .derive-step {
+    flex: 1; min-width: 160px; max-width: 220px;
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    padding: 14px; text-align: center;
+  }
+  .derive-step .num { font-size: 10px; color: #8b949e; font-weight: 600; margin-bottom: 6px; }
+  .derive-step .label { font-size: 13px; font-weight: 600; color: #f0f6fc; margin-bottom: 6px; }
+  .derive-step .desc { font-size: 10px; color: #8b949e; line-height: 1.45; }
+  .derive-arrow { display: flex; align-items: center; color: #484f58; font-size: 20px; padding: 0 4px; }
+
+  .future { opacity: 0.85; border-style: dashed !important; }
+  code { color: #79c0ff; font-size: 0.9em; }
+</style>
+</head>
+<body>
+
+<h1>App Branch Run Comparison</h1>
+<p class="subtitle">
+  How <code>AppBranchRunComparison</code> links Base and Head runs,
+  stores git + config diffs in S3, and feeds the builds step via <code>SourceChanged</code>.
+</p>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-swatch" style="background:#1f6feb33;border-color:#58a6ff"></span> DB / model</div>
+  <div class="legend-item"><span class="legend-swatch" style="background:#23863633;border-color:#7ee787"></span> Workflow step</div>
+  <div class="legend-item"><span class="legend-swatch" style="background:#da368833;border-color:#f78166"></span> S3 blob</div>
+  <div class="legend-item"><span class="legend-swatch" style="background:#f0883e33;border-color:#f0883e"></span> Git clone</div>
+  <div class="legend-item"><span class="legend-swatch" style="background:#bc8cff33;border-color:#d2a8ff"></span> Temporal activity</div>
+</div>
+
+<div class="phase-bar">
+  <div class="phase p1">
+    <div class="phase-num">PHASE 1</div>
+    <div class="phase-title">Foundation</div>
+    <div class="phase-desc">Model, comparison row at create, builds_completed label, VCS auth for clone URLs</div>
+  </div>
+  <div class="phase p2">
+    <div class="phase-num">PHASE 2</div>
+    <div class="phase-title">Diff computation</div>
+    <div class="phase-desc">Git clone diff → blobs; FullDiff + ConfigDiff with SourceChanged; GET API</div>
+  </div>
+  <div class="phase p3">
+    <div class="phase-num">PHASE 3</div>
+    <div class="phase-title">Downstream</div>
+    <div class="phase-desc">Install-scoped comparison, dashboard UI</div>
+  </div>
+</div>
+
+<section>
+<h2>End-to-end lifecycle</h2>
+<svg class="diagram" viewBox="0 0 1060 900" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <defs>
+    <marker id="a-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#58a6ff"/></marker>
+    <marker id="a-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#7ee787"/></marker>
+    <marker id="a-orange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f0883e"/></marker>
+    <marker id="a-pink" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f78166"/></marker>
+    <marker id="a-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#d2a8ff"/></marker>
+  </defs>
+
+  <!-- Run creation zone -->
+  <rect x="0" y="0" width="1060" height="200" fill="#161b22" opacity="0.6"/>
+  <text x="16" y="22" fill="#58a6ff" font-size="11" font-weight="700" letter-spacing="1">AT RUN CREATION (create_app_branch_run.go)</text>
+
+  <rect x="30" y="44" width="120" height="50" rx="8" fill="#21262d" stroke="#30363d"/>
+  <text x="90" y="66" text-anchor="middle" fill="#f0f6fc" font-size="12" font-weight="600">Trigger</text>
+  <text x="90" y="82" text-anchor="middle" fill="#8b949e" font-size="9">git-run / preview / manual</text>
+
+  <line x1="150" y1="69" x2="198" y2="69" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <rect x="202" y="38" width="240" height="62" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="322" y="58" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">FindBaseRun</text>
+  <text x="322" y="74" text-anchor="middle" fill="#8b949e" font-size="9">same app_branch_id</text>
+  <text x="322" y="88" text-anchor="middle" fill="#79c0ff" font-size="9" font-family="monospace">labels.builds_completed = true</text>
+  <text x="322" y="92" text-anchor="middle" fill="#8b949e" font-size="9">deploy runs only</text>
+
+  <line x1="442" y1="69" x2="490" y2="69" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <rect x="494" y="44" width="150" height="50" rx="8" fill="#23863622" stroke="#238636" stroke-width="1.5"/>
+  <text x="569" y="66" text-anchor="middle" fill="#7ee787" font-size="12" font-weight="600">AppBranchRun</text>
+  <text x="569" y="82" text-anchor="middle" fill="#8b949e" font-size="9">HeadRun (new)</text>
+
+  <line x1="644" y1="69" x2="692" y2="69" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <rect x="696" y="32" width="200" height="74" rx="8" fill="#1f6feb22" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="796" y="52" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">AppBranchRunComparison</text>
+  <text x="796" y="68" text-anchor="middle" fill="#79c0ff" font-size="9" font-family="monospace">HeadRunID = new run</text>
+  <text x="796" y="82" text-anchor="middle" fill="#79c0ff" font-size="9" font-family="monospace">BaseRunID = found | nil</text>
+  <text x="796" y="96" text-anchor="middle" fill="#8b949e" font-size="9">blobs empty until phase 2</text>
+
+  <rect x="30" y="120" width="400" height="56" rx="6" fill="#21262d" stroke="#30363d" stroke-dasharray="4,3"/>
+  <text x="44" y="140" fill="#8b949e" font-size="10">PreviousRunID = build-cache (status=success) · separate from BaseRunID</text>
+  <text x="44" y="158" fill="#8b949e" font-size="10">BaseRunID = VCS/config baseline (builds_completed=true, deploy runs only)</text>
+
+  <!-- Workflow zone -->
+  <rect x="0" y="210" width="1060" height="490" fill="#161b22" opacity="0.4"/>
+  <text x="16" y="232" fill="#7ee787" font-size="11" font-weight="700" letter-spacing="1">BRANCH RUN WORKFLOW</text>
+
+  <rect x="30" y="250" width="130" height="48" rx="8" fill="#23863622" stroke="#238636"/>
+  <text x="95" y="270" text-anchor="middle" fill="#7ee787" font-size="11" font-weight="600">fetch commit</text>
+  <text x="95" y="286" text-anchor="middle" fill="#8b949e" font-size="9">VCSConnectionCommit</text>
+
+  <line x1="160" y1="274" x2="208" y2="274" stroke="#7ee787" stroke-width="2" marker-end="url(#a-green)"/>
+
+  <rect x="212" y="250" width="130" height="48" rx="8" fill="#23863622" stroke="#238636"/>
+  <text x="277" y="270" text-anchor="middle" fill="#7ee787" font-size="11" font-weight="600">sync app config</text>
+  <text x="277" y="286" text-anchor="middle" fill="#8b949e" font-size="9">AppConfigID on run</text>
+
+  <line x1="342" y1="274" x2="390" y2="274" stroke="#d2a8ff" stroke-width="2" marker-end="url(#a-purple)"/>
+
+  <rect x="394" y="238" width="220" height="72" rx="8" fill="#bc8cff22" stroke="#bc8cff" stroke-width="1.5"/>
+  <text x="504" y="262" text-anchor="middle" fill="#d2a8ff" font-size="11" font-weight="700">ComputeAndStore</text>
+  <text x="504" y="278" text-anchor="middle" fill="#d2a8ff" font-size="11" font-weight="700">AppBranchRunComparison</text>
+  <text x="504" y="296" text-anchor="middle" fill="#8b949e" font-size="9">phase 2 · after appconfig, before builds</text>
+
+  <line x1="614" y1="274" x2="678" y2="274" stroke="#d2a8ff" stroke-width="2" marker-end="url(#a-purple)"/>
+
+  <polygon points="680,274 720,254 760,274 720,294" fill="#21262d" stroke="#f0883e" stroke-width="1.5"/>
+  <text x="720" y="272" text-anchor="middle" fill="#f0883e" font-size="9" font-weight="600">BaseRun</text>
+  <text x="720" y="284" text-anchor="middle" fill="#f0883e" font-size="9" font-weight="600">set?</text>
+
+  <!-- First run path -->
+  <line x1="720" y1="294" x2="720" y2="340" stroke="#f0883e" stroke-width="2" marker-end="url(#a-orange)"/>
+  <text x="732" y="322" fill="#f0883e" font-size="10" font-weight="600">nil</text>
+
+  <rect x="640" y="344" width="160" height="64" rx="8" fill="#f0883e18" stroke="#f0883e" stroke-width="1.5"/>
+  <text x="720" y="366" text-anchor="middle" fill="#f0883e" font-size="11" font-weight="600">Skip diff blobs</text>
+  <text x="720" y="382" text-anchor="middle" fill="#8b949e" font-size="9">everything is new</text>
+  <text x="720" y="396" text-anchor="middle" fill="#8b949e" font-size="9">full build</text>
+
+  <!-- Normal path -->
+  <line x1="760" y1="274" x2="820" y2="274" stroke="#7ee787" stroke-width="2" marker-end="url(#a-green)"/>
+  <text x="784" y="266" fill="#7ee787" font-size="10">yes</text>
+
+  <rect x="824" y="248" width="200" height="52" rx="8" fill="#f0883e22" stroke="#f0883e" stroke-width="1.5"/>
+  <text x="924" y="268" text-anchor="middle" fill="#f0883e" font-size="11" font-weight="600">Git clone workspace</text>
+  <text x="924" y="284" text-anchor="middle" fill="#8b949e" font-size="9">base SHA + head SHA · org VCS token</text>
+
+  <line x1="924" y1="300" x2="924" y2="328" stroke="#f0883e" stroke-width="2" marker-end="url(#a-orange)"/>
+
+  <rect x="844" y="332" width="160" height="44" rx="8" fill="#21262d" stroke="#30363d"/>
+  <text x="924" y="352" text-anchor="middle" fill="#c9d1d9" font-size="11" font-family="monospace">git diff base..head</text>
+  <text x="924" y="366" text-anchor="middle" fill="#8b949e" font-size="9">unified diff</text>
+
+  <line x1="924" y1="376" x2="924" y2="408" stroke="#f78166" stroke-width="2" marker-end="url(#a-pink)"/>
+
+  <rect x="760" y="412" width="328" height="100" rx="8" fill="#da368818" stroke="#da3688" stroke-width="1.5"/>
+  <text x="924" y="432" text-anchor="middle" fill="#f78166" font-size="11" font-weight="700">Upload to S3 (blobstore)</text>
+
+  <rect x="776" y="442" width="88" height="56" rx="6" fill="#21262d" stroke="#f78166"/>
+  <text x="820" y="462" text-anchor="middle" fill="#f78166" font-size="10" font-weight="600">GitDiff</text>
+  <text x="820" y="476" text-anchor="middle" fill="#8b949e" font-size="8">unified diff</text>
+
+  <rect x="876" y="442" width="88" height="56" rx="6" fill="#21262d" stroke="#f78166"/>
+  <text x="920" y="462" text-anchor="middle" fill="#f78166" font-size="10" font-weight="600">FullDiff</text>
+  <text x="920" y="476" text-anchor="middle" fill="#8b949e" font-size="8">nuon.toml tree</text>
+
+  <rect x="976" y="442" width="96" height="56" rx="6" fill="#21262d" stroke="#f78166"/>
+  <text x="1024" y="462" text-anchor="middle" fill="#f78166" font-size="10" font-weight="600">ConfigDiff</text>
+  <text x="1024" y="476" text-anchor="middle" fill="#8b949e" font-size="8">+ SourceChanged</text>
+
+  <text x="720" y="548" fill="#8b949e" font-size="9">git changed paths → SourceChanged on config entries</text>
+
+  <!-- VCS auth -->
+  <rect x="30" y="412" width="280" height="90" rx="8" fill="#1f6feb15" stroke="#1f6feb55"/>
+  <text x="44" y="432" fill="#58a6ff" font-size="10" font-weight="700">PUBLIC VCS AUTH</text>
+  <text x="44" y="450" fill="#8b949e" font-size="9">Org VCSConnection → token in clone URL</text>
+  <text x="44" y="466" fill="#8b949e" font-size="9">No connection → warn + fallback</text>
+  <line x1="310" y1="458" x2="824" y2="272" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- builds -->
+  <line x1="504" y1="310" x2="504" y2="548" stroke="#7ee787" stroke-width="2" stroke-dasharray="5,3"/>
+  <line x1="504" y1="548" x2="200" y2="548" stroke="#7ee787" stroke-width="2"/>
+  <line x1="200" y1="548" x2="200" y2="568" stroke="#7ee787" stroke-width="2" marker-end="url(#a-green)"/>
+
+  <rect x="120" y="572" width="160" height="48" rx="8" fill="#23863622" stroke="#238636" stroke-width="1.5"/>
+  <text x="200" y="592" text-anchor="middle" fill="#7ee787" font-size="11" font-weight="600">builds step</text>
+  <text x="200" y="608" text-anchor="middle" fill="#8b949e" font-size="9">uses SourceChanged</text>
+
+  <line x1="200" y1="620" x2="200" y2="648" stroke="#7ee787" stroke-width="2" marker-end="url(#a-green)"/>
+
+  <rect x="100" y="652" width="200" height="44" rx="8" fill="#21262d" stroke="#30363d"/>
+  <text x="200" y="672" text-anchor="middle" fill="#79c0ff" font-size="10" font-family="monospace">labels.builds_completed</text>
+  <text x="200" y="686" text-anchor="middle" fill="#8b949e" font-size="9">future BaseRun candidate</text>
+
+  <!-- API -->
+  <rect x="0" y="710" width="1060" height="90" fill="#161b22" opacity="0.5"/>
+  <text x="16" y="732" fill="#58a6ff" font-size="11" font-weight="700" letter-spacing="1">API (PHASE 2)</text>
+
+  <rect x="30" y="746" width="500" height="44" rx="8" fill="#21262d" stroke="#30363d"/>
+  <text x="44" y="766" fill="#79c0ff" font-size="10" font-family="monospace">GET …/runs/{run_id}/comparison</text>
+  <text x="44" y="780" fill="#8b949e" font-size="9">SHAs from VCSConnectionCommit on linked runs · ?include_diff=git|full|config</text>
+
+  <rect x="550" y="746" width="480" height="44" rx="8" fill="#bc8cff12" stroke="#bc8cff55" stroke-dasharray="5,3"/>
+  <text x="564" y="766" fill="#d2a8ff" font-size="10" font-weight="600">Future: InstallAppBranchRunComparison</text>
+  <text x="564" y="780" fill="#8b949e" font-size="9">Git diff shared · InstallConfigDiff per install</text>
+
+  <rect x="30" y="820" width="1000" height="36" rx="6" fill="#21262d" stroke="#30363d"/>
+  <text x="44" y="842" fill="#8b949e" font-size="10">No denormalized SHAs on comparison — load from VCSConnectionCommit on BaseRun/HeadRun at compute and API time</text>
+</svg>
+</section>
+
+<section>
+<h2>Data model</h2>
+<div class="model-grid">
+  <div class="card">
+    <div class="card-title">AppBranchRun <span class="id">arn_*</span></div>
+    <div class="field"><span class="k">ComparisonID</span><span class="note">→ comparison row</span></div>
+    <div class="field"><span class="k">PreviousRunID</span><span class="note">build cache (unchanged)</span></div>
+    <div class="field"><span class="k">VCSConnectionCommit</span><span class="note">SHA loaded dynamically</span></div>
+    <div class="field"><span class="k">labels.builds_completed</span><span class="note">true / false / unset</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">AppBranchRunComparison <span class="id">arc_*</span></div>
+    <div class="field"><span class="k">HeadRunID</span><span class="note">unique · current run</span></div>
+    <div class="field"><span class="k">BaseRunID</span><span class="note">nil on first run</span></div>
+    <div class="blob-row">
+      <div class="blob">
+        <div class="blob-name">GitDiff</div>
+        <div class="blob-desc">git clone + <code>git diff base..head</code></div>
+      </div>
+      <div class="blob">
+        <div class="blob-name">FullDiff</div>
+        <div class="blob-desc">Full nuon.toml semantic diff tree</div>
+      </div>
+      <div class="blob">
+        <div class="blob-name">ConfigDiff</div>
+        <div class="blob-desc">FullDiff + <code>source_changed</code> per entry</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2>Diff derivation</h2>
+<div class="derive-flow">
+  <div class="derive-step"><div class="num">1</div><div class="label">Git clone</div><div class="desc">Clone at base + head SHAs. Org VCS token in URL.</div></div>
+  <div class="derive-arrow">→</div>
+  <div class="derive-step"><div class="num">2</div><div class="label">git diff</div><div class="desc">Unified diff → GitDiff blob + changed paths</div></div>
+  <div class="derive-arrow">→</div>
+  <div class="derive-step"><div class="num">3</div><div class="label">FullDiff</div><div class="desc">ComputeAppConfigDiff base → head AppConfigIDs</div></div>
+  <div class="derive-arrow">→</div>
+  <div class="derive-step"><div class="num">4</div><div class="label">ConfigDiff</div><div class="desc">Mark SourceChanged where git paths overlap component sources</div></div>
+  <div class="derive-arrow">→</div>
+  <div class="derive-step"><div class="num">5</div><div class="label">builds</div><div class="desc">Incremental build decisions from SourceChanged</div></div>
+</div>
+</section>
+
+<section>
+<h2>First run vs subsequent run</h2>
+<div class="fork-box">
+  <div class="fork-path first">
+    <h3>First run (BaseRunID = nil)</h3>
+    <ol>
+      <li>Comparison row with empty blobs</li>
+      <li>Skip diff computation</li>
+      <li>Full build — everything is new</li>
+      <li><code>labels.builds_completed = true</code> on success</li>
+    </ol>
+  </div>
+  <div class="fork-path normal">
+    <h3>Subsequent run (BaseRunID set)</h3>
+    <ol>
+      <li>BaseRun = latest deploy with <code>builds_completed=true</code></li>
+      <li>Git clone + diff → GitDiff blob</li>
+      <li>FullDiff + ConfigDiff with SourceChanged</li>
+      <li>Builds consume comparison before setting builds_completed</li>
+    </ol>
+  </div>
+</div>
+</section>
+
+<section>
+<h2>Future: install-scoped comparison (phase 3)</h2>
+<div class="card future" style="max-width:1060px;margin:0 auto;">
+  <div class="card-title" style="color:#d2a8ff">InstallAppBranchRunComparison</div>
+  <p style="font-size:13px;color:#8b949e;margin-bottom:12px">Git diff shared from branch comparison. Per-install InstallConfigDiff between pinned config versions.</p>
+  <div class="model-grid">
+    <div style="background:#21262d;border-radius:8px;padding:14px;border:1px dashed #bc8cff44">
+      <div style="font-size:12px;font-weight:600;color:#d2a8ff;margin-bottom:8px">Branch (once per run)</div>
+      <div class="field"><span class="k">GitDiff</span><span class="note">shared</span></div>
+      <div class="field"><span class="k">FullDiff + ConfigDiff</span></div>
+    </div>
+    <div style="background:#21262d;border-radius:8px;padding:14px;border:1px dashed #bc8cff44">
+      <div style="font-size:12px;font-weight:600;color:#d2a8ff;margin-bottom:8px">Install (per install)</div>
+      <div class="field"><span class="k">GitDiff</span><span class="note">ref branch comparison</span></div>
+      <div class="field"><span class="k">InstallConfigDiff</span></div>
+    </div>
+  </div>
+</div>
+</section>
+
+</body>
+</html>

@@ -141,6 +141,44 @@ func TestCheckBuildNeeded(t *testing.T) {
 		require.True(t, out.NeedsBuild)
 	})
 
+	t.Run("unchanged checksum with source change forces build", func(t *testing.T) {
+		db := setupCheckBuildNeededDB(t)
+		insertConnection(t, db, "conn-old", "cfg-old", componentID, "sum", "")
+		insertConnection(t, db, "conn-new", "cfg-new", componentID, "sum", "")
+		insertBuild(t, db, "bld-1", "conn-old", "active")
+
+		sourceChanged := true
+		a := &Activities{db: db}
+		out, err := a.CheckBuildNeeded(context.Background(), &CheckBuildNeededInput{
+			ComponentID:    componentID,
+			NewAppConfigID: "cfg-new",
+			OldAppConfigID: "cfg-old",
+			SourceChanged:  &sourceChanged,
+		})
+		require.NoError(t, err)
+		require.True(t, out.NeedsBuild)
+		require.Equal(t, ChangeReasonSourceChanged, out.ChangeReason)
+	})
+
+	t.Run("unchanged checksum without source change reuses build", func(t *testing.T) {
+		db := setupCheckBuildNeededDB(t)
+		insertConnection(t, db, "conn-old", "cfg-old", componentID, "sum", "")
+		insertConnection(t, db, "conn-new", "cfg-new", componentID, "sum", "")
+		insertBuild(t, db, "bld-1", "conn-old", "active")
+
+		sourceChanged := false
+		a := &Activities{db: db}
+		out, err := a.CheckBuildNeeded(context.Background(), &CheckBuildNeededInput{
+			ComponentID:    componentID,
+			NewAppConfigID: "cfg-new",
+			OldAppConfigID: "cfg-old",
+			SourceChanged:  &sourceChanged,
+		})
+		require.NoError(t, err)
+		require.False(t, out.NeedsBuild)
+		require.Equal(t, ChangeReasonNoChanges, out.ChangeReason)
+	})
+
 	t.Run("no previous config always builds", func(t *testing.T) {
 		db := setupCheckBuildNeededDB(t)
 

@@ -4,7 +4,9 @@ import type { Interests as TInterests } from '@/components/interests/types'
 export type TAppBranch = components['schemas']['app.AppBranch'] & {
   latest_run?: TAppBranchRun
 }
-export type TAppBranchConfig = components['schemas']['app.AppBranchConfig']
+export type TAppBranchConfig = components['schemas']['app.AppBranchConfig'] & {
+  disable_branch_triggers?: boolean
+}
 export type TAppBranchInstallGroup =
   components['schemas']['app.AppBranchInstallGroup']
 export type TAppBranchRun = components['schemas']['app.AppBranchRun'] & {

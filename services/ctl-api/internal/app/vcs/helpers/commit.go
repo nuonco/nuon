@@ -39,8 +39,10 @@ func (h *Helpers) GetPublicGitVCSConfigLatestCommit(ctx context.Context, cfg *ap
 		return nil, fmt.Errorf("unable to parse repo %q: %w", cfg.Repo, err)
 	}
 
-	// Use an unauthenticated client for public repos
-	client := github.NewClient(nil)
+	client, _, err := h.ResolvePublicRepoGithubClient(ctx, h.l, cfg.OrgID, owner)
+	if err != nil {
+		return nil, err
+	}
 
 	commitResp, _, err := client.Repositories.GetCommit(ctx, owner, repo, cfg.Branch, &github.ListOptions{})
 	if err != nil {

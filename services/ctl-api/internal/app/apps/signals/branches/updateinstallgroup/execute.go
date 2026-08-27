@@ -150,6 +150,13 @@ func (s *Signal) enqueueInstallUpdates(
 			workflowID: result.WorkflowID,
 			cb:         cb,
 		})
+
+		_, _ = activities.AwaitUpdateInstallAppConfigVersionStatus(ctx, &activities.UpdateInstallAppConfigVersionStatusInput{
+			AppBranchRunID: s.RunID,
+			InstallID:      installID,
+			Status:         app.StatusInProgress,
+			StatusDesc:     "install workflow running",
+		})
 	}
 
 	return enqueued, nil
@@ -176,6 +183,7 @@ func (s *Signal) awaitInstallUpdates(
 			results[e.installID] = statusError
 			failed++
 			installEntries[i].Status = statusError
+			s.updateInstallAppConfigVersionStatus(ctx, e.installID, app.StatusError, err.Error())
 
 		// Only an "error" result comes back as a Go error, so a cancelled or expired
 		// deploy arrives here as a clean return and would otherwise be counted as a
@@ -185,15 +193,18 @@ func (s *Signal) awaitInstallUpdates(
 			if res != nil && res.Status != "" {
 				status = res.Status
 			}
-			errs = append(errs, fmt.Errorf("install %s workflow %s: finished as %s", e.installID, e.workflowID, status))
+			errMsg := fmt.Sprintf("install %s workflow %s: finished as %s", e.installID, e.workflowID, status)
+			errs = append(errs, fmt.Errorf("%s", errMsg))
 			results[e.installID] = statusError
 			failed++
 			installEntries[i].Status = statusError
+			s.updateInstallAppConfigVersionStatus(ctx, e.installID, app.StatusError, errMsg)
 
 		default:
 			results[e.installID] = statusSuccess
 			completed++
 			installEntries[i].Status = statusSuccess
+			s.updateInstallAppConfigVersionStatus(ctx, e.installID, app.StatusSuccess, "install workflow completed")
 
 			logger.Info("install config update completed",
 				"install_id", e.installID,
@@ -280,6 +291,15 @@ func (s *Signal) recordAppConfigVersions(
 			)
 		}
 	}
+}
+
+func (s *Signal) updateInstallAppConfigVersionStatus(ctx workflow.Context, installID string, status app.Status, desc string) {
+	_, _ = activities.AwaitUpdateInstallAppConfigVersionStatus(ctx, &activities.UpdateInstallAppConfigVersionStatusInput{
+		AppBranchRunID: s.RunID,
+		InstallID:      installID,
+		Status:         status,
+		StatusDesc:     desc,
+	})
 }
 
 func (s *Signal) updateInstallMetadata(ctx workflow.Context, enqueued []enqueuedInstall, results map[string]string) {
