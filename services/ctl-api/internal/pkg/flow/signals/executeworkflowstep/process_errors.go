@@ -189,16 +189,25 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			return err
 		}
 		if !parked {
-			_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: step.ID,
 				Status: app.CompositeStatus{
 					Status:                 app.StatusError,
-					StatusHumanDescription: "step abandoned: no retry or skip within 3 days",
+					StatusHumanDescription: "step abandoned: no retry or skip received",
 					Metadata: map[string]any{
 						"abandoned": true,
 					},
 				},
-			})
+			}); err != nil {
+				return errors.Wrap(err, "unable to update workflow step status")
+			}
+			if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+				StepID:            step.ID,
+				Status:            app.StatusError,
+				StatusDescription: "step abandoned: no retry or skip received",
+			}); err != nil {
+				return errors.Wrap(err, "unable to update step target status for abandoned step")
+			}
 			if derr := setResultDirective(ctx, step.ID, DirectiveStop); derr != nil {
 				return errors.Wrap(derr, "unable to set stop directive for abandoned step")
 			}

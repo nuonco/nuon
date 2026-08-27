@@ -81,12 +81,21 @@ func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow
 		return nil, fmt.Errorf("error waiting for approval for step %s: %w", step.ID, err)
 	}
 	if !ok {
-		statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalExpired, map[string]any{
-				"err_message": "approval was not accepted",
-			}),
+		expired := app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalExpired, map[string]any{
+			"err_message": "approval was not accepted",
 		})
+		expired.StatusHumanDescription = "no approval received"
+		statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID:     step.ID,
+			Status: expired,
+		})
+		if terr := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+			StepID:            step.ID,
+			Status:            app.WorkflowStepApprovalStatusApprovalExpired,
+			StatusDescription: "no approval received",
+		}); terr != nil {
+			return nil, errors.Wrap(terr, "unable to update step target status for expired approval")
+		}
 		// Stop the group instead of erroring: an expired approval must not
 		// enter the retry machinery and re-park.
 		if derr := setResultDirective(ctx, step.ID, DirectiveStop); derr != nil {

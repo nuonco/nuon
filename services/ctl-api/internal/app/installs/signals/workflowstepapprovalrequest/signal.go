@@ -1,6 +1,8 @@
 package workflowstepapprovalrequest
 
 import (
+	goerrors "errors"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -153,6 +155,9 @@ func Dispatch(ctx workflow.Context, sig *Signal) error {
 	}
 
 	if _, err := callback.AwaitWithTimeout(ctx, cb, callback.HumanGatedTimeout); err != nil {
+		if goerrors.Is(err, callback.ErrAwaitTimeout) {
+			return errors.Wrap(err, "no approval response received")
+		}
 		return errors.Wrap(err, "workflow-step-approval-request signal failed")
 	}
 	return nil
