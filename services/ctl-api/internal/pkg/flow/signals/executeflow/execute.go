@@ -86,6 +86,8 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 
 		if runErr == nil {
 			if s.cancelRequested {
+				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+				s.writeFlowCancelled(ctx)
 				return nil
 			}
 
@@ -108,6 +110,8 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			}
 		} else {
 			if s.cancelRequested {
+				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+				s.writeFlowCancelled(ctx)
 				return nil
 			}
 
@@ -177,6 +181,7 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			}
 			if s.cancelRequested {
 				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+				s.writeFlowCancelled(ctx)
 				return runErr
 			}
 			if !parked {
@@ -202,6 +207,7 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 
 		if s.cancelRequested {
 			s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+			s.writeFlowCancelled(ctx)
 			return runErr
 		}
 
@@ -963,7 +969,23 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 	return true
 }
 
-// checkRetryable checks if the workflow is still eligible for retry.
+// writeFlowCancelled update's workflow's status to cancelled
+func (s *Signal) writeFlowCancelled(ctx workflow.Context) {
+	l, _ := log.WorkflowLogger(ctx)
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: s.WorkflowID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusCancelled,
+			StatusHumanDescription: "workflow cancelled",
+			Metadata: map[string]any{
+				"cancel_requested_at": workflow.Now(ctx).Unix(),
+			},
+		},
+	}); err != nil && l != nil {
+		l.Error("unable to re-assert cancelled workflow status", zap.Error(err))
+	}
+}
+
 func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 	resp, err := workflowactivities.AwaitCheckWorkflowRetryable(ctx, workflowactivities.CheckWorkflowRetryableRequest{
 		WorkflowID: s.WorkflowID,
