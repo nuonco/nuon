@@ -6,7 +6,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -32,6 +31,11 @@ type AzureACRImageConfig struct {
 	RegistryURL string `json:"registry_url,omitzero" gorm:"notnull" temporaljson:"registry_url,omitzero,omitempty"`
 	TenantID    string `json:"tenant_id,omitzero" temporaljson:"tenant_id,omitzero,omitempty"`
 	ClientID    string `json:"client_id,omitzero" temporaljson:"client_id,omitzero,omitempty"`
+
+	// Names of app secrets holding the app registration's credential material,
+	// never the material itself.
+	ClientSecretName      string `json:"client_secret_name,omitzero" temporaljson:"client_secret_name,omitzero,omitempty"`
+	ClientCertificateName string `json:"client_certificate_name,omitzero" temporaljson:"client_certificate_name,omitzero,omitempty"`
 }
 
 func (c *AzureACRImageConfig) Indexes(db *gorm.DB) []migrations.Index {
@@ -41,18 +45,6 @@ func (c *AzureACRImageConfig) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
-		},
-	}
-}
-
-func (c *AzureACRImageConfig) CredentialsConfig() *azurecredentials.Config {
-	if c.TenantID == "" && c.ClientID == "" {
-		return nil
-	}
-	return &azurecredentials.Config{
-		UseDefault: true,
-		ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
-			SubscriptionTenantID: c.TenantID,
 		},
 	}
 }
