@@ -70,6 +70,10 @@ type Config struct {
 	// the SDK enforces it at provision time.
 	RequiredInputs []string `json:"required_inputs,omitempty"`
 
+	// Names the app declares sensitive. InstallInputs is a plain map with no per-key
+	// metadata, so this rides alongside like RequiredInputs.
+	SensitiveInputs []string `json:"sensitive_inputs,omitempty"`
+
 	// AWS carries the AWS-specific inputs; populated when Cloud is aws.
 	AWS *AWSConfig `json:"aws,omitempty"`
 	// GCP carries the GCP-specific inputs; populated when Cloud is gcp.
