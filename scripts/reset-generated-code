@@ -59,6 +59,8 @@ if [[ "$#" == 1 && "$1" == "--sdk" ]]; then
   (cd "$REPO_DIR/sdks/nuon-go" && ./generate.sh)
   echo >&2 "Generating nuon-runner-go SDK..."
   (cd "$REPO_DIR/sdks/nuon-runner-go" && ./generate.sh)
+  echo >&2 "Generating stack SDK..."
+  (cd "$REPO_DIR/sdks/stack" && ./generate.sh)
   echo >&2 "========================================"
   echo >&2 "SDK generation complete!"
   echo >&2 "========================================"
@@ -105,7 +107,7 @@ generate_repo() {
   ensure_codegen_tools
 
   echo >&2 "Running go generate..."
-  all_files=$(grep -r --include="*.go" -l "//go:generate" . | grep -v "sdks/nuon-go" | grep -v "sdks/nuon-runner-go" || true)
+  all_files=$(grep -r --include="*.go" -l "//go:generate" . | grep -v "sdks/nuon-go" | grep -v "sdks/nuon-runner-go" | grep -v "sdks/stack" || true)
   remaining="$all_files"
 
   remaining=$(printf "%s\n" "$remaining" | grep -v "services/ctl-api/main.go" || true)
@@ -176,6 +178,20 @@ if [ -d "$REPO_DIR/sdks/nuon-runner-go" ]; then
   echo >&2 "Done with nuon-runner-go!"
 else
   echo >&2 "Skipping nuon-runner-go (directory not found: $REPO_DIR/sdks/nuon-runner-go)"
+fi
+
+# Generate for the stack SDK (depends on the ctl-api stacks spec generated above)
+if [ -d "$REPO_DIR/sdks/stack" ]; then
+  echo >&2 "========================================"
+  echo >&2 "Processing stack SDK..."
+  echo >&2 "========================================"
+  cd "$REPO_DIR/sdks/stack"
+  echo >&2 "root: $(pwd)"
+  echo >&2 "Running go generate..."
+  grep -r --include="*.go" -l "//go:generate" . | xargs -n 1 -P 10 go generate
+  echo >&2 "Done with the stack SDK!"
+else
+  echo >&2 "Skipping stack SDK (directory not found: $REPO_DIR/sdks/stack)"
 fi
 
 echo >&2 ""

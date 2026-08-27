@@ -40,29 +40,10 @@ func (o Options) validate() error {
 // FetchConfig reads an install's rendered stack config. The returned Config carries
 // PhoneHomeURL, so a later report needs no other identifier.
 func FetchConfig(ctx context.Context, opts Options) (*Config, error) {
-	if err := opts.validate(); err != nil {
-		return nil, err
-	}
-
-	token, err := resolveToken(ctx, opts)
+	c, err := newClient(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	client := newRunClient(runClientConfig{
-		RunnerAPIURL: opts.APIURL,
-		InstallID:    opts.InstallID,
-		APIToken:     token,
-		HTTPClient:   opts.HTTPClient,
-	})
-
-	cfg, err := client.fetchConfig(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("fetch stack config: %w", err)
-	}
-	if cfg == nil {
-		return nil, fmt.Errorf("fetch stack config: runner api returned no config block")
-	}
-
-	return cfg, nil
+	return c.FetchConfig(ctx)
 }
