@@ -8,6 +8,7 @@ export interface IDeprovisionBanner {
   install: TInstall
   orgId: string
   workflowId?: string
+  onDismiss?: () => void
 }
 
 const LIFECYCLE_CONFIG: Record<
@@ -32,6 +33,7 @@ export const DeprovisionBanner = ({
   install,
   orgId,
   workflowId,
+  onDismiss,
 }: IDeprovisionBanner) => {
   const phase = install?.lifecycle_phase?.phase ?? ''
   const config = LIFECYCLE_CONFIG[phase]
@@ -40,7 +42,7 @@ export const DeprovisionBanner = ({
   const description = install?.lifecycle_phase?.description
 
   return (
-    <Banner theme={config.theme}>
+    <Banner theme={config.theme} onDismiss={onDismiss}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-0.5">
           <Text weight="strong">{config.heading}</Text>
