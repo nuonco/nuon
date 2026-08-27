@@ -222,6 +222,10 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get GAR access token")
 			return notify(errors.Wrap(err, "unable to get GAR access token"))
 		}
+		if err := sharedactivities.EnsureACRAuth(ctx, runPlan.ContainerImagePullPlan.RepoCfg); err != nil {
+			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get ACR access token")
+			return notify(errors.Wrap(err, "unable to get ACR access token"))
+		}
 	}
 
 	planJSON, err := json.Marshal(runPlan)

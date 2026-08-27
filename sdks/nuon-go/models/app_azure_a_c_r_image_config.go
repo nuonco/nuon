@@ -17,8 +17,15 @@ import (
 // swagger:model app.AzureACRImageConfig
 type AppAzureACRImageConfig struct {
 
+	// client certificate name
+	ClientCertificateName string `json:"client_certificate_name,omitempty"`
+
 	// client id
 	ClientID string `json:"client_id,omitempty"`
+
+	// Names of app secrets holding the app registration's credential material,
+	// never the material itself.
+	ClientSecretName string `json:"client_secret_name,omitempty"`
 
 	// connection to parent model
 	ComponentConfigID string `json:"component_config_id,omitempty"`

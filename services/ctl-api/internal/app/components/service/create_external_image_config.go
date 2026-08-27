@@ -37,6 +37,9 @@ type azureACRImageConfigRequest struct {
 	RegistryURL string `json:"registry_url"`
 	TenantID    string `json:"tenant_id,omitempty"`
 	ClientID    string `json:"client_id,omitempty"`
+	// Names of app secrets, never raw values. At most one may be set.
+	ClientSecretName      string `json:"client_secret_name,omitempty"`
+	ClientCertificateName string `json:"client_certificate_name,omitempty"`
 }
 
 type CreateExternalImageComponentConfigRequest struct {
@@ -91,12 +94,14 @@ func (c *CreateExternalImageComponentConfigRequest) toConfig() *config.ExternalI
 		}
 	case c.AzureACRImageConfig != nil:
 		obj.AzureACRImageConfig = &config.AzureACRConfig{
-			RegistryURL:  c.AzureACRImageConfig.RegistryURL,
-			TenantID:     c.AzureACRImageConfig.TenantID,
-			ClientID:     c.AzureACRImageConfig.ClientID,
-			ImageURL:     c.ImageURL,
-			Tag:          c.Tag,
-			UpdatePolicy: c.UpdatePolicy,
+			RegistryURL:           c.AzureACRImageConfig.RegistryURL,
+			TenantID:              c.AzureACRImageConfig.TenantID,
+			ClientID:              c.AzureACRImageConfig.ClientID,
+			ClientSecretName:      c.AzureACRImageConfig.ClientSecretName,
+			ClientCertificateName: c.AzureACRImageConfig.ClientCertificateName,
+			ImageURL:              c.ImageURL,
+			Tag:                   c.Tag,
+			UpdatePolicy:          c.UpdatePolicy,
 		}
 	default:
 		obj.PublicImageConfig = &config.PublicImageConfig{
@@ -152,6 +157,17 @@ func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Valida
 	}
 	if c.MaxAutoRetries != nil {
 		if err := validation.ValidateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
+			return err
+		}
+	}
+	if c.AzureACRImageConfig != nil {
+		acrCfg := config.AzureACRConfig{
+			TenantID:              c.AzureACRImageConfig.TenantID,
+			ClientID:              c.AzureACRImageConfig.ClientID,
+			ClientSecretName:      c.AzureACRImageConfig.ClientSecretName,
+			ClientCertificateName: c.AzureACRImageConfig.ClientCertificateName,
+		}
+		if err := acrCfg.ValidateCredentials(); err != nil {
 			return err
 		}
 	}
