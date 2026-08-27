@@ -30,7 +30,11 @@ const SectionBody = ({ section }: { section: TCompositeErrorSection }) => {
   switch (section?.kind) {
     case 'code':
       return (
-        <CodeBlock language="text" showCopy>
+        <CodeBlock
+          language="text"
+          showCopy
+          className="!whitespace-pre-wrap !break-all !pr-12 [&_code]:!whitespace-pre-wrap [&_code]:!break-all"
+        >
           {body}
         </CodeBlock>
       )
