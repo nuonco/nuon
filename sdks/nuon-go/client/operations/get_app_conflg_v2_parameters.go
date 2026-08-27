@@ -74,6 +74,12 @@ type GetAppConflgV2Params struct {
 	*/
 	ConfigID string
 
+	/* IncludeIntermediate.
+
+	   include intermediate_config_json blob contents
+	*/
+	IncludeIntermediate *bool
+
 	/* Recurse.
 
 	   load all children configs
@@ -98,11 +104,14 @@ func (o *GetAppConflgV2Params) WithDefaults() *GetAppConflgV2Params {
 // All values with no default are reset to their zero value.
 func (o *GetAppConflgV2Params) SetDefaults() {
 	var (
+		includeIntermediateDefault = bool(false)
+
 		recurseDefault = bool(false)
 	)
 
 	val := GetAppConflgV2Params{
-		Recurse: &recurseDefault,
+		IncludeIntermediate: &includeIntermediateDefault,
+		Recurse:             &recurseDefault,
 	}
 
 	val.timeout = o.timeout
@@ -166,6 +175,17 @@ func (o *GetAppConflgV2Params) SetConfigID(configID string) {
 	o.ConfigID = configID
 }
 
+// WithIncludeIntermediate adds the includeIntermediate to the get app conflg v2 params
+func (o *GetAppConflgV2Params) WithIncludeIntermediate(includeIntermediate *bool) *GetAppConflgV2Params {
+	o.SetIncludeIntermediate(includeIntermediate)
+	return o
+}
+
+// SetIncludeIntermediate adds the includeIntermediate to the get app conflg v2 params
+func (o *GetAppConflgV2Params) SetIncludeIntermediate(includeIntermediate *bool) {
+	o.IncludeIntermediate = includeIntermediate
+}
+
 // WithRecurse adds the recurse to the get app conflg v2 params
 func (o *GetAppConflgV2Params) WithRecurse(recurse *bool) *GetAppConflgV2Params {
 	o.SetRecurse(recurse)
@@ -193,6 +213,23 @@ func (o *GetAppConflgV2Params) WriteToRequest(r runtime.ClientRequest, reg strfm
 	// path param config_id
 	if err := r.SetPathParam("config_id", o.ConfigID); err != nil {
 		return err
+	}
+
+	if o.IncludeIntermediate != nil {
+
+		// query param include_intermediate
+		var qrIncludeIntermediate bool
+
+		if o.IncludeIntermediate != nil {
+			qrIncludeIntermediate = *o.IncludeIntermediate
+		}
+		qIncludeIntermediate := swag.FormatBool(qrIncludeIntermediate)
+		if qIncludeIntermediate != "" {
+
+			if err := r.SetQueryParam("include_intermediate", qIncludeIntermediate); err != nil {
+				return err
+			}
+		}
 	}
 
 	if o.Recurse != nil {
