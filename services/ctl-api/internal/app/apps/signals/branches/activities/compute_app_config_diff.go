@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	pkgconfig "github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/diff"
@@ -102,7 +103,7 @@ func diffNodeToSection(node *diff.Diff) *ConfigDiffSection {
 
 			entry := ConfigDiffEntry{
 				Op:   string(op),
-				Name: entityNode.Key,
+				Name: stripDiffEntityPrefix(entityNode.Key),
 			}
 			section.Entries = append(section.Entries, entry)
 
@@ -120,7 +121,7 @@ func diffNodeToSection(node *diff.Diff) *ConfigDiffSection {
 		if op != "" {
 			section.Entries = append(section.Entries, ConfigDiffEntry{
 				Op:   string(op),
-				Name: node.Key,
+				Name: stripDiffEntityPrefix(node.Key),
 			})
 			switch op {
 			case diff.OpAdd:
@@ -134,6 +135,17 @@ func diffNodeToSection(node *diff.Diff) *ConfigDiffSection {
 	}
 
 	return section
+}
+
+// stripDiffEntityPrefix turns diff tree keys like "component.api" into the
+// plain resource name used by source_changed lookups and the builds step.
+func stripDiffEntityPrefix(key string) string {
+	for _, prefix := range []string{"component.", "action.", "runbook."} {
+		if strings.HasPrefix(key, prefix) {
+			return strings.TrimPrefix(key, prefix)
+		}
+	}
+	return key
 }
 
 // entityAggregateOp determines the overall operation for a diff subtree.

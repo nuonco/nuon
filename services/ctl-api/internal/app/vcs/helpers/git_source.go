@@ -15,16 +15,7 @@ import (
 )
 
 func (h *Helpers) GetPubliGitSource(ctx context.Context, cfg *app.PublicGitVCSConfig) (*plantypes.GitSource, error) {
-	url, err := githubpkg.EnsureURL(cfg.Repo)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to derive url from source")
-	}
-
-	return &plantypes.GitSource{
-		URL:  url,
-		Ref:  cfg.Branch,
-		Path: cfg.Directory,
-	}, nil
+	return h.publicGitSource(ctx, cfg, cfg.Branch)
 }
 
 func (h *Helpers) GetGitSource(ctx context.Context, cfg *app.ConnectedGithubVCSConfig) (*plantypes.GitSource, error) {
@@ -61,15 +52,36 @@ func (h *Helpers) GetGitSourceAtCommit(ctx context.Context, cfg *app.ConnectedGi
 }
 
 // GetPublicGitSourceAtCommit returns a git source for a public repo at a specific commit SHA.
-func (h *Helpers) GetPublicGitSourceAtCommit(cfg *app.PublicGitVCSConfig, commitSHA string) (*plantypes.GitSource, error) {
+// Uses an org VCS connection token when available; otherwise falls back to a plain HTTPS URL.
+func (h *Helpers) GetPublicGitSourceAtCommit(ctx context.Context, cfg *app.PublicGitVCSConfig, commitSHA string) (*plantypes.GitSource, error) {
+	return h.publicGitSource(ctx, cfg, commitSHA)
+}
+
+func (h *Helpers) publicGitSource(ctx context.Context, cfg *app.PublicGitVCSConfig, ref string) (*plantypes.GitSource, error) {
+	owner, repoName, err := parseOwnerRepo(cfg.Repo)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse repo %q: %w", cfg.Repo, err)
+	}
+
+	token, authenticated, err := h.ResolvePublicRepoCloneToken(ctx, h.l, cfg.OrgID, owner, repoName)
+	if err != nil {
+		return nil, err
+	}
+	if authenticated {
+		return &plantypes.GitSource{
+			URL:  githubpkg.RepoPath(owner, repoName, token),
+			Ref:  ref,
+			Path: cfg.Directory,
+		}, nil
+	}
+
 	url, err := githubpkg.EnsureURL(cfg.Repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to derive url from source")
 	}
-
 	return &plantypes.GitSource{
 		URL:  url,
-		Ref:  commitSHA,
+		Ref:  ref,
 		Path: cfg.Directory,
 	}, nil
 }

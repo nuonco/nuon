@@ -225,7 +225,8 @@ func parseGithubRepo(repoURL string) (owner, name string, err error) {
 
 // resolveGithubClient loads the VCS config and returns a GitHub client.
 // For ConnectedGithubVCSConfig, returns an authenticated client.
-// For PublicGitVCSConfig, returns an unauthenticated client (read-only).
+// For PublicGitVCSConfig, prefers an org VCS connection token and falls back
+// to an unauthenticated client with a warning when none is available.
 func (a *Activities) resolveGithubClient(ctx context.Context, vcsConfigID string) (owner, repo string, client *github.Client, err error) {
 	vcsHelpers := a.helpers.VCSHelpers()
 
@@ -247,11 +248,15 @@ func (a *Activities) resolveGithubClient(ctx context.Context, vcsConfigID string
 	var publicCfg app.PublicGitVCSConfig
 	publicRes := a.db.WithContext(ctx).First(&publicCfg, "id = ?", vcsConfigID)
 	if publicRes.Error == nil {
-		parts := strings.SplitN(strings.TrimPrefix(strings.TrimPrefix(publicCfg.Repo, "https://github.com/"), "/"), "/", 2)
-		if len(parts) != 2 {
-			return "", "", nil, fmt.Errorf("unable to parse public repo: %s", publicCfg.Repo)
+		repoOwner, repoName, parseErr := parseGithubRepo(publicCfg.Repo)
+		if parseErr != nil {
+			return "", "", nil, fmt.Errorf("unable to parse public repo: %w", parseErr)
 		}
-		return parts[0], strings.TrimSuffix(parts[1], ".git"), github.NewClient(nil), nil
+		client, _, err = vcsHelpers.ResolvePublicRepoGithubClient(ctx, a.l, publicCfg.OrgID, repoOwner)
+		if err != nil {
+			return "", "", nil, err
+		}
+		return repoOwner, repoName, client, nil
 	}
 
 	return "", "", nil, fmt.Errorf("VCS config not found: %s", vcsConfigID)

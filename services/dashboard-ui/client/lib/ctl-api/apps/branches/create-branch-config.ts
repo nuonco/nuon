@@ -25,6 +25,7 @@ export type TCreateBranchConfigRequest = {
   }>
   // Omit to carry the current setting forward; send [] to clear it.
   post_deploy_runbook_ids?: string[]
+  disable_branch_triggers?: boolean
 }
 
 export const createBranchConfig = ({

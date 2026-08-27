@@ -57,7 +57,7 @@ const branchRunWorkflow: TWorkflow = {
   finished: true,
   status: { status: 'success' },
   created_by: { email: 'nat@nuon.co' },
-  app_branch_runs: [{ commit_sha: '83061cbabc123' }],
+  app_branch_runs: [{ head_sha: '83061cbabc123' }],
 } as unknown as TWorkflow
 
 const previewBranchRunWorkflow: TWorkflow = {
