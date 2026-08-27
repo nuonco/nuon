@@ -4307,10 +4307,13 @@ export interface components {
       version?: number;
     };
     "app.ComponentDiffEntry": {
+      build_changed?: boolean;
       component_id?: string;
       component_name?: string;
       component_type?: string;
+      new_build_id?: string;
       new_checksum?: string;
+      old_build_id?: string;
       old_checksum?: string;
     };
     "app.ComponentHealthProbe": {
@@ -4876,6 +4879,9 @@ export interface components {
       added?: components["schemas"]["app.ComponentDiffEntry"][];
       changed?: components["schemas"]["app.ComponentDiffEntry"][];
       removed?: components["schemas"]["app.ComponentDiffEntry"][];
+      sandbox_build_changed?: boolean;
+      sandbox_build_new_id?: string;
+      sandbox_build_old_id?: string;
       sandbox_changed?: boolean;
       sandbox_new_id?: string;
       sandbox_old_id?: string;
@@ -7678,6 +7684,7 @@ export interface components {
       policies?: components["schemas"]["service.AppAWSIAMPolicyConfig"][];
     };
     "service.AppBranchRunComparisonResponse": {
+      base_run?: components["schemas"]["service.AppBranchRunComparisonRunSummary"];
       base_run_id?: string;
       base_sha?: string;
       config_diff?: components["schemas"]["blobstore.BlobMetadata"];
@@ -7686,9 +7693,20 @@ export interface components {
       full_diff_content?: unknown;
       git_diff?: components["schemas"]["blobstore.BlobMetadata"];
       git_diff_content?: unknown;
+      head_run?: components["schemas"]["service.AppBranchRunComparisonRunSummary"];
       head_run_id?: string;
       head_sha?: string;
       id?: string;
+    };
+    "service.AppBranchRunComparisonRunSummary": {
+      base_branch?: string;
+      created_at?: string;
+      event_type?: string;
+      id?: string;
+      pr_number?: number;
+      status?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+      workflow_id?: string;
     };
     "service.AppConfigDiffResponse": {
       changed?: string;
