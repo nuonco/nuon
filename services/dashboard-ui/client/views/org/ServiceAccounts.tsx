@@ -13,7 +13,7 @@ export const ServiceAccounts = () => {
 
   return (
     <>
-      <PageTitle title={`Service accounts | ${org?.name}`} />
+      <PageTitle title="Service accounts" />
       <Breadcrumbs
         breadcrumbs={[
           {
