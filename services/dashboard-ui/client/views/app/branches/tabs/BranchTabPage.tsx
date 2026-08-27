@@ -10,6 +10,7 @@ import { useOrg } from '@/hooks/use-org'
 
 interface IBranchTabPage {
   tab: string
+  tabPath?: string
   heading: string
   subheading?: string
   actions?: ReactNode
@@ -18,6 +19,7 @@ interface IBranchTabPage {
 
 export const BranchTabPage = ({
   tab,
+  tabPath,
   heading,
   subheading,
   actions,
@@ -40,7 +42,10 @@ export const BranchTabPage = ({
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
           { path: basePath, text: branch?.name },
-          { path: `${basePath}/${tab.toLowerCase()}`, text: tab },
+          {
+            path: `${basePath}/${tabPath ?? tab.toLowerCase()}`,
+            text: tab,
+          },
         ]}
       />
       <SectionHeader
