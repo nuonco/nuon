@@ -68,6 +68,12 @@ type GetAppComponentsParams struct {
 	*/
 	AppID string
 
+	/* BranchID.
+
+	   only return the components defined by this branch's config
+	*/
+	BranchID *string
+
 	/* ComponentIds.
 
 	   comma-separated list of component IDs to filter by
@@ -193,6 +199,17 @@ func (o *GetAppComponentsParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
+// WithBranchID adds the branchID to the get app components params
+func (o *GetAppComponentsParams) WithBranchID(branchID *string) *GetAppComponentsParams {
+	o.SetBranchID(branchID)
+	return o
+}
+
+// SetBranchID adds the branchId to the get app components params
+func (o *GetAppComponentsParams) SetBranchID(branchID *string) {
+	o.BranchID = branchID
+}
+
 // WithComponentIds adds the componentIds to the get app components params
 func (o *GetAppComponentsParams) WithComponentIds(componentIds *string) *GetAppComponentsParams {
 	o.SetComponentIds(componentIds)
@@ -281,6 +298,23 @@ func (o *GetAppComponentsParams) WriteToRequest(r runtime.ClientRequest, reg str
 	// path param app_id
 	if err := r.SetPathParam("app_id", o.AppID); err != nil {
 		return err
+	}
+
+	if o.BranchID != nil {
+
+		// query param branch_id
+		var qrBranchID string
+
+		if o.BranchID != nil {
+			qrBranchID = *o.BranchID
+		}
+		qBranchID := qrBranchID
+		if qBranchID != "" {
+
+			if err := r.SetQueryParam("branch_id", qBranchID); err != nil {
+				return err
+			}
+		}
 	}
 
 	if o.ComponentIds != nil {

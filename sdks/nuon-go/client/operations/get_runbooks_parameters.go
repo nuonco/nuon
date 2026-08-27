@@ -68,6 +68,12 @@ type GetRunbooksParams struct {
 	*/
 	AppID string
 
+	/* BranchID.
+
+	   only return the runbooks defined by this branch's config
+	*/
+	BranchID *string
+
 	/* Limit.
 
 	   limit
@@ -166,6 +172,17 @@ func (o *GetRunbooksParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
+// WithBranchID adds the branchID to the get runbooks params
+func (o *GetRunbooksParams) WithBranchID(branchID *string) *GetRunbooksParams {
+	o.SetBranchID(branchID)
+	return o
+}
+
+// SetBranchID adds the branchId to the get runbooks params
+func (o *GetRunbooksParams) SetBranchID(branchID *string) {
+	o.BranchID = branchID
+}
+
 // WithLimit adds the limit to the get runbooks params
 func (o *GetRunbooksParams) WithLimit(limit *int64) *GetRunbooksParams {
 	o.SetLimit(limit)
@@ -210,6 +227,23 @@ func (o *GetRunbooksParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 	// path param app_id
 	if err := r.SetPathParam("app_id", o.AppID); err != nil {
 		return err
+	}
+
+	if o.BranchID != nil {
+
+		// query param branch_id
+		var qrBranchID string
+
+		if o.BranchID != nil {
+			qrBranchID = *o.BranchID
+		}
+		qBranchID := qrBranchID
+		if qBranchID != "" {
+
+			if err := r.SetQueryParam("branch_id", qBranchID); err != nil {
+				return err
+			}
+		}
 	}
 
 	if o.Limit != nil {
