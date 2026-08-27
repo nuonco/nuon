@@ -129,7 +129,8 @@ export const SubNav = ({ basePath, links, storageKey = 'subnav-sections' }: ISub
           }
 
           const label = group.header.label
-          const userOpen = sectionState[label] ?? true
+          const userOpen =
+            sectionState[label] ?? group.header.defaultOpen ?? true
           const hasActiveItem = group.items.some((item) =>
             isAction(item)
               ? item.isActive
