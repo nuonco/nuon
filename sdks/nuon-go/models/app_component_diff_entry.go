@@ -17,6 +17,9 @@ import (
 // swagger:model app.ComponentDiffEntry
 type AppComponentDiffEntry struct {
 
+	// build changed
+	BuildChanged bool `json:"build_changed,omitempty"`
+
 	// component id
 	ComponentID string `json:"component_id,omitempty"`
 
@@ -26,8 +29,14 @@ type AppComponentDiffEntry struct {
 	// component type
 	ComponentType string `json:"component_type,omitempty"`
 
+	// new build id
+	NewBuildID string `json:"new_build_id,omitempty"`
+
 	// new checksum
 	NewChecksum string `json:"new_checksum,omitempty"`
+
+	// old build id
+	OldBuildID string `json:"old_build_id,omitempty"`
 
 	// old checksum
 	OldChecksum string `json:"old_checksum,omitempty"`
