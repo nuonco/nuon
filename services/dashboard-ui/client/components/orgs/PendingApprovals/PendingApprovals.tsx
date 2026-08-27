@@ -5,7 +5,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { getApprovalType } from '@/utils/approval-utils'
-import { getWorkflowHref, getWorkflowStepTitle } from '@/utils/workflow-utils'
+import { getApprovalHref, getWorkflowStepTitle } from '@/utils/workflow-utils'
 import type { TWorkflowStepApproval, TWorkflow } from '@/types'
 
 interface IPendingApprovals {
@@ -38,11 +38,7 @@ export const PendingApprovals = ({ orgId, approvals, activeWorkflows }: IPending
             ? workflowsById.get(step.install_workflow_id)
             : undefined
           const isBranchRun = workflow?.owner_type === 'app_branches'
-          const href = workflow
-            ? getWorkflowHref(orgId, workflow)
-            : step?.owner_id && step?.install_workflow_id
-              ? `/${orgId}/installs/${step.owner_id}/workflows/${step.install_workflow_id}`
-              : undefined
+          const href = getApprovalHref(orgId, approval, workflow)
           const name = isBranchRun
             ? getRunTitle(workflow)
             : step?.name

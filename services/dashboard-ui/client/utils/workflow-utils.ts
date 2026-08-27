@@ -65,6 +65,29 @@ export function isServiceAccount(account?: {
   return !!account.email?.endsWith('@serviceaccount.nuon.co')
 }
 
+export function getApprovalHref(
+  orgId: string,
+  approval: TWorkflowStepApproval,
+  workflow?: TWorkflow
+): string | undefined {
+  const step = approval?.workflow_step
+  const workflowId = step?.install_workflow_id
+
+  if (approval?.app_id && approval?.app_branch_id && workflowId) {
+    return `/${orgId}/apps/${approval.app_id}/branches/${approval.app_branch_id}/runs/${workflowId}`
+  }
+
+  if (workflow) {
+    return getWorkflowHref(orgId, workflow)
+  }
+
+  if (step?.owner_type === 'app_branches' || !step?.owner_id || !workflowId) {
+    return undefined
+  }
+
+  return `/${orgId}/installs/${step.owner_id}/workflows/${workflowId}`
+}
+
 export function getWorkflowHref(orgId: string, workflow: TWorkflow): string {
   if (workflow?.owner_type === 'app_branches') {
     const run = workflow?.app_branch_runs?.[0]
