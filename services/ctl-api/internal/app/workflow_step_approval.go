@@ -64,6 +64,9 @@ type WorkflowStepApproval struct {
 	// afterquery
 	WorkflowStepID string       `json:"workflow_step_id,omitzero" gorm:"-" temporaljson:"workflow_step_id,omitzero,omitempty"`
 	WorkflowStep   WorkflowStep `json:"workflow_step,omitzero" gorm:"-" temporaljson:"workflow_step,omitzero,omitempty"`
+
+	AppID       string `json:"app_id,omitzero" gorm:"-" temporaljson:"app_id,omitzero,omitempty"`
+	AppBranchID string `json:"app_branch_id,omitzero" gorm:"-" temporaljson:"app_branch_id,omitzero,omitempty"`
 }
 
 func (c *WorkflowStepApproval) TableName() string {
