@@ -18,8 +18,10 @@ import (
 
 // NOTE: the process will require ownership of /opt/nuon/runner and its children
 const (
-	ConfigDirectory     = "/opt/nuon/runner"
-	ImageConfigFilename = "/opt/nuon/runner/image"
+	ConfigDirectory                 = "/opt/nuon/runner"
+	ImageConfigFilename             = "/opt/nuon/runner/image"
+	TelemetryExportStorageDirectory = "/opt/nuon/runner/telemetry-export"
+	telemetryExportStorageMount     = TelemetryExportStorageDirectory + ":/var/lib/nuon/telemetry-export"
 )
 
 //go:embed templates/image.env

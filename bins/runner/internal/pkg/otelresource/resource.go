@@ -1,4 +1,4 @@
-package slog
+package otelresource
 
 import (
 	"github.com/nuonco/nuon/pkg/generics"
@@ -10,7 +10,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 )
 
-func getResource(set *settings.Settings, logStreamID string) *resource.Resource {
+func New(set *settings.Settings, logStreamID string) *resource.Resource {
 	attrs := []attribute.KeyValue{}
 	builtInAttrs := map[string]string{
 		string(semconv.ServiceNamespaceKey): "nuon",
