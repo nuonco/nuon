@@ -1,17 +1,11 @@
-import { useMemo } from 'react'
 import { ComponentsTable } from '@/components/components/ComponentsTable'
 import { useBranch } from '@/hooks/use-branch'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
-import { latestBranchConfig } from '@/utils/branch-utils'
 import { Components } from '../../Components'
 import { BranchTabPage } from '../tabs/BranchTabPage'
 
 const BranchComponentsContent = () => {
   const { branch } = useBranch()
-  const filterIds = useMemo(
-    () => latestBranchConfig(branch)?.component_ids ?? [],
-    [branch]
-  )
 
   return (
     <BranchTabPage
@@ -20,7 +14,7 @@ const BranchComponentsContent = () => {
       subheading="The components defined by this branch's configuration."
     >
       <div className="flex flex-auto min-w-0">
-        <ComponentsTable filterIds={filterIds} branchId={branch?.id} />
+        <ComponentsTable branchId={branch?.id} />
       </div>
     </BranchTabPage>
   )
