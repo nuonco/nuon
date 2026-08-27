@@ -188,6 +188,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
+	// Above the cloud split: the GCP path returns below, and every cloud's stack
+	// needs this account before its directions are rendered.
+	if _, err := activities.AwaitEnsureInstallStackServiceAccountByInstallStackID(ctx, stack.ID); err != nil {
+		return errors.Wrap(err, "unable to ensure install stack service account")
+	}
+
 	// GCP uses a static Terraform module with tfvars — no S3 upload needed.
 	if cfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
 		initScriptURL := DefaultGCPRunnerInitScript
