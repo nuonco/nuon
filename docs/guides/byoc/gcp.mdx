@@ -78,7 +78,7 @@ You'll need a GCP project with a few APIs enabled. The install stack provisions 
 make sure your account has IAM permissions to create those resources and the project has not hit quota limits for VPCs,
 Cloud SQL instances, or GKE clusters.
 
-The following APIs are required by the `install-stack` and BYOC Nuon. These will be enabled by the `install-stack`
+The following APIs are required by the `install-stack` and Nuon BYOC. These will be enabled by the `install-stack`
 terraform module.
 
 - Secret Manager API
@@ -100,12 +100,12 @@ bring your own at any time.
 
 ## Provision the Install Stack
 
-BYOC Nuon on GCP is provisioned with terraform using the the
+Nuon BYOC on GCP is provisioned with terraform using the the
 [`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module. Nuon will share `inputs.auto.tfvars` and
 `secrets.auto.tfvars` files with the values specific to your install which you will augment with configuration and input
 values you control. Once the vars files are populated and the module is in your CI pipeline, you will apply the
-[`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module to provision the following resources for BYOC
-Nuon:
+[`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module to provision the following resources for Nuon
+BYOC:
 
 - VPC
 - GKE cluster
@@ -150,7 +150,7 @@ The values fall into two categories.
 | ------------------------ | ------------------------------------------------------------- |
 | `nuon_install_id`        | Your Nuon install ID.                                         |
 | `nuon_org_id`            | Your Nuon org ID.                                             |
-| `nuon_app_id`            | The Nuon app ID for the BYOC Nuon control plane.              |
+| `nuon_app_id`            | The Nuon app ID for the Nuon BYOC control plane.              |
 | `runner_api_url`         | The Nuon Runner API URL (typically `https://runner.nuon.co`). |
 | `runner_api_token`       | The auth token your Nuon Runner uses to poll Nuon Cloud.      |
 | `runner_id`              | The Nuon Runner ID assigned to this install.                  |
