@@ -43,8 +43,9 @@ const BranchPlanContent = () => {
 
   return (
     <BranchTabPage
-      tab="Plan"
-      heading="Deployment plan"
+      tab="Install groups"
+      tabPath="plan"
+      heading="Install groups"
       subheading="Group installs and control the rollout order for this branch."
     >
       <DeploymentPlanSection
