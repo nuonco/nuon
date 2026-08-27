@@ -11,12 +11,10 @@ import { ComponentsTable, parseComponentToTableData } from './ComponentsTable'
 const LIMIT = 20
 
 export const ComponentsTableContainer = ({
-  filterIds,
   branchId,
   pollInterval = 20000,
   shouldPoll = true,
 }: {
-  filterIds?: string[]
   branchId?: string
   pollInterval?: number
   shouldPoll?: boolean
@@ -31,6 +29,7 @@ export const ComponentsTableContainer = ({
       'components',
       org.id,
       app.id,
+      branchId,
       offset,
       searchParams.get('q'),
       searchParams.get('types'),
@@ -42,6 +41,7 @@ export const ComponentsTableContainer = ({
         appId: app.id,
         offset,
         limit: LIMIT,
+        branch_id: branchId,
         q: searchParams.get('q') || undefined,
         types: searchParams.get('types') || undefined,
         labels: searchParams.get('labels') || undefined,
@@ -53,9 +53,7 @@ export const ComponentsTableContainer = ({
   return (
     <ComponentsTable
       data={parseComponentToTableData(
-        (result?.data ?? []).filter(
-          (row) => !filterIds || filterIds.includes(row.id ?? '')
-        ),
+        result?.data ?? [],
         org.id,
         app.id,
         labelColors,

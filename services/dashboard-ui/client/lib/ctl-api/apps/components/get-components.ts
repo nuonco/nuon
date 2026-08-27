@@ -4,6 +4,7 @@ import { buildQueryParams } from '@/utils/build-query-params'
 
 export interface IGetComponents extends TPaginationParams {
   appId: string
+  branch_id?: string
   component_ids?: string
   labels?: string
   orgId: string
@@ -13,6 +14,7 @@ export interface IGetComponents extends TPaginationParams {
 
 export async function getComponents({
   appId,
+  branch_id,
   component_ids,
   labels,
   orgId,
@@ -23,7 +25,7 @@ export async function getComponents({
 }: IGetComponents) {
   return api<TComponent[]>({
     orgId,
-    path: `apps/${appId}/components${buildQueryParams({ limit, offset, q, types, component_ids, labels })}`,
+    path: `apps/${appId}/components${buildQueryParams({ limit, offset, q, types, component_ids, labels, branch_id })}`,
     paginated: true,
   })
 }

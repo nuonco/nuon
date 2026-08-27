@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -23,6 +24,7 @@ import (
 // @Param         q                 query	string	false	"search query to filter components by name or ID"
 // @Param         types					    query	string	false	"comma-separated list of component types to filter by (e.g., terraform_module, helm_chart)"
 // @Param 				component_ids		query	string	false	"comma-separated list of component IDs to filter by"
+// @Param					branch_id					query	string	false	"only return the components defined by this branch's config"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
@@ -57,8 +59,9 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 	}
 
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
+	branchID := ctx.Query("branch_id")
 
-	components, err := s.getAppComponents(ctx, appID, q, typesSlice, componentIDsSlice, lbls)
+	components, err := s.getAppComponents(ctx, appID, branchID, q, typesSlice, componentIDsSlice, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app components: %w", err))
 		return
@@ -67,9 +70,12 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, components)
 }
 
-func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []string, componentIDs []string, lbls labels.Labels) ([]app.Component, error) {
-	appCfg, err := s.appsHelpers.GetLatestActiveAppConfig(ctx, appID)
+func (s *service) getAppComponents(ctx *gin.Context, appID, branchID, q string, types []string, componentIDs []string, lbls labels.Labels) ([]app.Component, error) {
+	appCfg, err := s.scopedAppConfig(ctx, appID, branchID)
 	if err != nil {
+		if errors.Is(err, appshelpers.ErrAppBranchNotFound) {
+			return nil, err
+		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []app.Component{}, nil
 		}
@@ -112,4 +118,12 @@ func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []st
 	}
 
 	return cmps, nil
+}
+
+func (s *service) scopedAppConfig(ctx *gin.Context, appID, branchID string) (*app.AppConfig, error) {
+	if branchID == "" {
+		return s.appsHelpers.GetLatestActiveAppConfig(ctx, appID)
+	}
+
+	return s.appsHelpers.GetLatestActiveAppConfigForBranch(ctx, appID, branchID)
 }
