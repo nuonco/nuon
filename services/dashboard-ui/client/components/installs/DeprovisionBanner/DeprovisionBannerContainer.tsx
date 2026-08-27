@@ -1,17 +1,26 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useStoredRecord } from '@/hooks/use-stored-record'
 import { getInstallWorkflows } from '@/lib'
 import { DeprovisionBanner } from './DeprovisionBanner'
 
 const BANNER_STATUSES = ['provisioning', 'deprovisioning', 'deprovisioned']
+const DISMISSED_STORAGE_KEY = 'nuon:dismissed-lifecycle-banners'
 
 export const DeprovisionBannerContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const [dismissed, setDismissed] = useStoredRecord<boolean>(
+    DISMISSED_STORAGE_KEY
+  )
 
   const lifecycleStatus = install?.lifecycle_phase?.phase
-  const showBanner = !!lifecycleStatus && BANNER_STATUSES.includes(lifecycleStatus)
+  const dismissKey = `${install?.id}:${lifecycleStatus}`
+  const showBanner =
+    !!lifecycleStatus &&
+    BANNER_STATUSES.includes(lifecycleStatus) &&
+    !dismissed[dismissKey]
 
   const { data: workflows } = useQuery({
     placeholderData: keepPreviousData,
@@ -34,6 +43,7 @@ export const DeprovisionBannerContainer = () => {
       install={install}
       orgId={org?.id ?? ''}
       workflowId={activeWorkflow?.id}
+      onDismiss={() => setDismissed(dismissKey, true)}
     />
   )
 }
