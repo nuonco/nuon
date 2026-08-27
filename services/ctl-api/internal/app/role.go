@@ -29,6 +29,9 @@ const (
 	RoleTypeInstaller       RoleType = "installer"
 	RoleTypeRunner          RoleType = "runner"
 	RoleTypeHostedInstaller RoleType = "hosted-installer"
+	// RoleTypeStack is per-install: one role per install-stack service account,
+	// granting only that install's stack endpoints.
+	RoleTypeStack RoleType = "stack"
 )
 
 // Role contexts name the assignment surfaces a role may be offered on. A role
