@@ -227,13 +227,18 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 	}
 	if src := obj.AzureACRImageConfig; src != nil {
 		sources++
+		if err := src.ValidateCredentials(); err != nil {
+			return nil, err
+		}
 		cfg.ImageURL = src.ImageURL
 		cfg.Tag = src.Tag
 		cfg.UpdatePolicy = src.UpdatePolicy
 		cfg.AzureACRImageConfig = &app.AzureACRImageConfig{
-			RegistryURL: src.RegistryURL,
-			TenantID:    src.TenantID,
-			ClientID:    src.ClientID,
+			RegistryURL:           src.RegistryURL,
+			TenantID:              src.TenantID,
+			ClientID:              src.ClientID,
+			ClientSecretName:      src.ClientSecretName,
+			ClientCertificateName: src.ClientCertificateName,
 		}
 	}
 	if src := obj.PublicImageConfig; src != nil {

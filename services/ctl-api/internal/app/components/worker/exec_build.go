@@ -80,6 +80,9 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		if err := sharedactivities.EnsureGARAuth(ctx, runPlan.ContainerImagePullPlan.RepoCfg); err != nil {
 			return errors.Wrap(err, "unable to get GAR access token")
 		}
+		if err := sharedactivities.EnsureACRAuth(ctx, runPlan.ContainerImagePullPlan.RepoCfg); err != nil {
+			return errors.Wrap(err, "unable to get ACR access token")
+		}
 	}
 
 	planJSON, err := json.Marshal(runPlan)
