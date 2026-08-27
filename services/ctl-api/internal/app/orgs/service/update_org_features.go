@@ -76,6 +76,17 @@ func (s *service) UpdateOrgFeatures(ctx *gin.Context) {
 		return
 	}
 
+	forced := app.ForcedFeatures()
+	for featureName := range req.Features {
+		if forced[featureName] {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("feature %s is forced on for all organizations", featureName),
+				Description: fmt.Sprintf("The '%s' feature flag is enabled for all organizations and cannot be changed.", featureName),
+			})
+			return
+		}
+	}
+
 	// Validate that all requested features are user-manageable
 	manageableFeatures := app.GetUserManageableFeatures()
 	manageableMap := make(map[string]bool)
