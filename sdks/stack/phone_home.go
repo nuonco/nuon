@@ -35,9 +35,10 @@ func phoneHomePath(installID string) string {
 }
 
 // PhoneHome posts to phoneHomeURL after checking it addresses this install's
-// report route. The host is not checked: it varies by environment. The path is,
-// because a stale capability URL carrying a phone_home_id shows up there and
-// would otherwise be reported against silently.
+// report route. Only the route suffix is checked: the host varies by environment,
+// and the runner api is served under a path prefix in some of them. The suffix is
+// checked because a stale capability URL carrying a phone_home_id shows up there
+// and would otherwise be reported against silently.
 func (c *client) PhoneHome(ctx context.Context, phoneHomeURL string, payload map[string]any) error {
 	u, err := url.Parse(phoneHomeURL)
 	if err != nil {
@@ -45,14 +46,18 @@ func (c *client) PhoneHome(ctx context.Context, phoneHomeURL string, payload map
 	}
 
 	want := phoneHomePath(c.installID)
-	if got := strings.TrimSuffix(u.Path, "/"); got != want {
+	got := strings.TrimSuffix(u.Path, "/")
+	if !strings.HasSuffix(got, want) {
 		return fmt.Errorf(
-			"phone home: phone_home_url path is %q, expected %q — re-read phone_home_url from the stack config",
+			"phone home: phone_home_url path is %q, expected it to end with %q — re-read phone_home_url from the stack config",
 			got, want,
 		)
 	}
 
-	ops, err := newOps(u.Scheme+"://"+u.Host, c.opts.HTTPClient)
+	// Whatever precedes the route is the api's base path, and has to be kept.
+	base := u.Scheme + "://" + u.Host + strings.TrimSuffix(got, want)
+
+	ops, err := newOps(base, c.opts.HTTPClient)
 	if err != nil {
 		return fmt.Errorf("phone home: %w", err)
 	}

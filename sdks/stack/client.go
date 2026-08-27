@@ -87,7 +87,13 @@ func newOps(rawURL string, hc *http.Client) (operations.ClientService, error) {
 		schemes = []string{"https"}
 	}
 
-	tr := httptransport.NewWithClient(u.Host, genclient.DefaultBasePath, schemes, hc)
+	// Honour a path prefix: the runner api is served under one in some environments.
+	basePath := u.Path
+	if basePath == "" {
+		basePath = genclient.DefaultBasePath
+	}
+
+	tr := httptransport.NewWithClient(u.Host, basePath, schemes, hc)
 	return operations.New(tr, strfmt.Default), nil
 }
 

@@ -151,3 +151,23 @@ func TestPhoneHomeAcceptsADifferentHost(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "/v1/stacks/inst-1/phone-home", gotPath)
 }
+
+func TestPhoneHomeKeepsABasePathPrefix(t *testing.T) {
+	clearAmbientCredentials(t)
+
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	err := PhoneHome(t.Context(), Options{
+		APIURL:    srv.URL + "/runner",
+		InstallID: "install-1",
+		APIToken:  "tok",
+	}, srv.URL+"/runner/v1/stacks/install-1/phone-home", map[string]any{"request_type": "Create"})
+	require.NoError(t, err)
+
+	assert.Equal(t, "/runner/v1/stacks/install-1/phone-home", gotPath)
+}
