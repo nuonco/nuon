@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
@@ -21,6 +22,7 @@ type Params struct {
 	DB             *gorm.DB `name:"psql"`
 	Cfg            *internal.Config
 	Helpers        *runbookshelpers.Helpers
+	AppsHelpers    *appshelpers.Helpers
 	InstallHelpers *installhelpers.Helpers
 	EndpointAudit  *apiPkg.EndpointAudit
 	FeaturesClient *features.Features
@@ -33,6 +35,7 @@ type service struct {
 	db             *gorm.DB
 	cfg            *internal.Config
 	helpers        *runbookshelpers.Helpers
+	appsHelpers    *appshelpers.Helpers
 	installHelpers *installhelpers.Helpers
 	featuresClient *features.Features
 	queueClient    *queueclient.Client
@@ -49,6 +52,7 @@ func New(params Params) *service {
 		db:             params.DB,
 		cfg:            params.Cfg,
 		helpers:        params.Helpers,
+		appsHelpers:    params.AppsHelpers,
 		installHelpers: params.InstallHelpers,
 		featuresClient: params.FeaturesClient,
 		queueClient:    params.QueueClient,
