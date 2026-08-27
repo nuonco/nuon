@@ -6,6 +6,7 @@ import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import type { TOrgFeatureInfo } from '@/lib'
 import type { TOrg } from '@/types'
+import { cn } from '@/utils/classnames'
 
 interface IAdminOrgFeaturesPanel extends Omit<IPanel, 'onSubmit'> {
   org: TOrg
@@ -73,12 +74,23 @@ export const AdminOrgFeaturesPanel = ({
                 <CheckboxInput
                   key={feature.name}
                   name={feature.name}
-                  defaultChecked={org?.features?.[feature.name] || false}
+                  defaultChecked={feature.forced || org?.features?.[feature.name] || false}
+                  disabled={feature.forced}
                   labelProps={{
-                    className: '!items-start',
+                    className: cn('!items-start', feature.forced && 'cursor-not-allowed'),
                     labelText: (
                       <div className="flex flex-col gap-0.5">
-                        <span>{feature.name}</span>
+                        <span className="flex items-center gap-2">
+                          {feature.name}
+                          {feature.forced && (
+                            <span
+                              className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-mono text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                              title="Forced on for every org by this deployment's forced_enabled_features config"
+                            >
+                              forced
+                            </span>
+                          )}
+                        </span>
                         {feature.description && (
                           <Text variant="subtext" className="text-gray-500 dark:text-gray-400">
                             {feature.description}

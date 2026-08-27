@@ -18,7 +18,11 @@ export const adminGetInstallRunner = ({ installId }: { installId: string }) =>
     path: `installs/${installId}/admin-get-runner`,
   })
 
-export type TOrgFeatureInfo = { name: string; description: string }
+export type TOrgFeatureInfo = {
+  name: string
+  description: string
+  forced?: boolean
+}
 
 export const adminGetOrgFeaturesList = () =>
   api<TOrgFeatureInfo[]>({ baseUrl: '/admin', path: `orgs/admin-features` })

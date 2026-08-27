@@ -5,7 +5,6 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
@@ -41,13 +40,4 @@ func logstreamIDFromContext(ctx context.Context) string {
 		return ""
 	}
 	return valObj.ID
-}
-
-func configFromContext(ctx context.Context) *internal.Config {
-	val := ctx.Value(keys.CfgCtxKey)
-	valObj, ok := val.(*internal.Config)
-	if !ok {
-		return nil
-	}
-	return valObj
 }
