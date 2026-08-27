@@ -65,15 +65,10 @@ const BranchTemplate = () => {
 
   const navLinks: TNavItem[] = [
     { path: `/`, iconVariant: 'HouseSimpleIcon', text: 'Overview' },
-    { path: `/runs`, iconVariant: 'PlayIcon', text: 'Runs' },
-    { path: `/plan`, iconVariant: 'TreeStructureIcon', text: 'Deployment plan' },
-    { type: 'section', label: 'Definition' },
-    { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },
-    { path: `/actions`, iconVariant: 'TerminalWindowIcon', text: 'Actions' },
-    { path: `/runbooks`, iconVariant: 'BookIcon', text: 'Runbooks' },
-    { path: `/sandbox`, iconVariant: 'ShippingContainerIcon', text: 'Sandbox builds' },
-    { type: 'section', label: 'Distribution' },
+    { path: `/runs`, iconVariant: 'PlayIcon', text: 'Updates' },
+    { type: 'section', label: 'Installs', defaultOpen: false },
     { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
+    { path: `/plan`, iconVariant: 'TreeStructureIcon', text: 'Install groups' },
     ...(hasInstallSyncing
       ? [
           {
@@ -83,10 +78,14 @@ const BranchTemplate = () => {
           },
         ]
       : []),
-    { type: 'section', label: 'Access' },
-    { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
+    { type: 'section', label: 'Template' },
+    { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },
+    { path: `/actions`, iconVariant: 'TerminalWindowIcon', text: 'Actions' },
+    { path: `/runbooks`, iconVariant: 'BookIcon', text: 'Runbooks' },
+    { path: `/sandbox`, iconVariant: 'ShippingContainerIcon', text: 'Sandboxes' },
     { path: `/policies`, iconVariant: 'ShieldCheckIcon', text: 'Policies' },
-    { type: 'section', label: 'Meta' },
+    { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
+    { type: 'section', label: 'Configuration' },
     { path: `/labels`, iconVariant: 'TagIcon', text: 'Labels' },
     { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
     {

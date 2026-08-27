@@ -83,6 +83,7 @@ export type TNavLink = {
 export type TNavSectionHeader = {
   type: 'section'
   label: string
+  defaultOpen?: boolean
 }
 
 export type TNavAction = {
