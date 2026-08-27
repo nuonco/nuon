@@ -201,6 +201,9 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		if err := sharedactivities.EnsureGARAuth(ctx, ociSource.Registry); err != nil {
 			return nil, nil, errors.Wrap(err, "unable to get GAR access token for sandbox artifact")
 		}
+		if err := sharedactivities.EnsureACRAuth(ctx, ociSource.Registry); err != nil {
+			return nil, nil, errors.Wrap(err, "unable to get ACR access token for sandbox artifact")
+		}
 	}
 
 	l.Info("getting auth with role selection")
