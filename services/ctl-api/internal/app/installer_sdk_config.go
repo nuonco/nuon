@@ -58,8 +58,12 @@ type InstallerSDKAWSConfig struct {
 // the Nuon-generated fields; the customer-supplied project/region/machine-type/
 // GKE inputs are filled by the SDK from CLI options, so they are left empty here.
 type InstallerSDKGCPConfig struct {
-	// NOTE: project + region are NOT set here — the customer supplies them at
-	// provision time via the CLI. ctl-api only emits the Nuon-generated inputs.
+	// Empty until the install has a recorded GCP target: unlike AWS, a GCP install
+	// can be created without one, and the first provision's phone home records it.
+	// The module supplies its own values for that first apply.
+	ProjectID string `json:"project_id,omitempty"`
+	Region    string `json:"region,omitempty"`
+
 	RunnerInitScriptURL string `json:"runner_init_script_url,omitempty"`
 	RunnerAPIToken      string `json:"runner_api_token,omitempty"`
 	RunnerMachineType   string `json:"runner_machine_type,omitempty"`

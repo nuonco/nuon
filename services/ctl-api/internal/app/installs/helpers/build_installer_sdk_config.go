@@ -215,10 +215,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		}
 
 	case app.AppRunnerTypeGCP:
-		// NOTE: project + region are NOT known server-side — the customer
-		// supplies them at provision time via the CLI. ctl-api only provides the
-		// Nuon-generated inputs.
-
 		// GCP provisions via the Terraform module, which authenticates the
 		// runner with a real API token (no IID-based auth like AWS).
 		token, err := h.runnersHelpers.CreateToken(ctx, install.RunnerID)
@@ -234,8 +230,19 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		breakGlass := gcpstacks.ExtractGCPRolesRaw(appCfg.BreakGlassConfig.Roles)
 		customRoles := gcpstacks.ExtractGCPRolesRaw(appCfg.PermissionsConfig.CustomRoles)
 
+		// Absent until the first provision's phone home records a target, so this
+		// is served empty rather than treated as an error the way AWS does.
+		var gcpProjectID, gcpRegion string
+		if install.GCPAccount != nil {
+			gcpProjectID = install.GCPAccount.ProjectID
+			gcpRegion = install.GCPAccount.Region
+		}
+
 		cfg.Cloud = "gcp"
 		cfg.GCP = &app.InstallerSDKGCPConfig{
+			ProjectID: gcpProjectID,
+			Region:    gcpRegion,
+
 			RunnerInitScriptURL: initScriptURL,
 			RunnerAPIToken:      token.Token,
 			RunnerMachineType:   instanceType,
