@@ -112,6 +112,7 @@ func (c *Client) run(ctx context.Context) {
 			retryAt = time.Time{}
 		case !enabled && (retryAt.IsZero() || !time.Now().Before(retryAt)):
 			if err := c.writer.Enable(); err != nil {
+				// TODO: Support fail-closed job admission and durable async fallback as explicit startup failure modes.
 				c.writer.Disable()
 				retryAt = time.Now().Add(c.retryInterval)
 				c.logger.Warn("customer audit startup event was not acknowledged by the synchronous route",
