@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Code } from '@/components/common/Code'
+import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
+import { Menu } from '@/components/common/Menu'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -9,6 +11,24 @@ import { describeMatch } from '@/components/match/types'
 import { DeleteWebhookButton } from '@/components/webhooks/DeleteWebhook'
 import { EditWebhookButton } from '@/components/webhooks/EditWebhook'
 import type { TWebhook } from '@/types'
+
+const ActionCell = ({ webhook }: { webhook: TWebhook }) => (
+  <Dropdown
+    id={`action-${webhook.id}`}
+    buttonText={<Icon variant="DotsThreeIcon" size={20} weight="bold" />}
+    hideIcon
+    variant="ghost"
+    buttonClassName="!p-1"
+    alignment="right"
+  >
+    <Menu>
+      <EditWebhookButton webhook={webhook} isMenuButton />
+      <span>
+        <DeleteWebhookButton webhook={webhook} isMenuButton />
+      </span>
+    </Menu>
+  </Dropdown>
+)
 
 export const WebhooksTable = ({
   data,
@@ -70,12 +90,7 @@ export const WebhooksTable = ({
       {
         id: 'action',
         header: '',
-        cell: (props) => (
-          <div className="flex justify-end gap-1">
-            <EditWebhookButton webhook={props.row.original} size="sm" />
-            <DeleteWebhookButton webhook={props.row.original} size="sm" />
-          </div>
-        ),
+        cell: (props) => <ActionCell webhook={props.row.original} />,
       },
     ],
     []

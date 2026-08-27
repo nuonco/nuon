@@ -74,8 +74,8 @@ export const EditWebhookButton = ({
 
   return (
     <Button variant="ghost" onClick={() => addModal(modal)} {...props}>
+      Edit webhook
       <Icon variant="PencilSimpleIcon" />
-      Edit
     </Button>
   )
 }

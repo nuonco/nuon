@@ -62,14 +62,9 @@ export const DeleteWebhookButton = ({
   const modal = <DeleteWebhookModalContainer webhook={webhook} />
 
   return (
-    <Button
-      variant="ghost"
-      className="!text-red-800 dark:!text-red-500"
-      onClick={() => addModal(modal)}
-      {...props}
-    >
+    <Button onClick={() => addModal(modal)} {...props} variant="danger">
+      Delete webhook
       <Icon variant="TrashIcon" />
-      Delete
     </Button>
   )
 }
