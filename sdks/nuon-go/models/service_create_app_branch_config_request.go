@@ -23,6 +23,10 @@ type ServiceCreateAppBranchConfigRequest struct {
 	// connected github vcs config
 	ConnectedGithubVcsConfig *HelpersConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
+	// DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
+	// branch runs. Omit to carry the current setting forward.
+	DisableBranchTriggers bool `json:"disable_branch_triggers,omitempty"`
+
 	// install groups
 	InstallGroups []*ServiceInstallGroupRequest `json:"install_groups"`
 

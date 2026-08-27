@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	db "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -83,5 +84,64 @@ func (s *service) getOrgPendingApprovals(ctx *gin.Context, orgID string) ([]app.
 		return nil, errors.Wrap(err, "unable to handle paginated response")
 	}
 
+	if err := s.attachAppBranchRunOwners(ctx, approvals); err != nil {
+		return nil, err
+	}
+
 	return approvals, nil
+}
+
+type appBranchRunOwner struct {
+	RunID       string
+	AppBranchID string
+	AppID       string
+}
+
+func (s *service) attachAppBranchRunOwners(ctx *gin.Context, approvals []app.WorkflowStepApproval) error {
+	appBranchRunsTable := plugins.TableName(s.db, app.AppBranchRun{})
+
+	runIDs := make([]string, 0, len(approvals))
+	seen := map[string]struct{}{}
+	for _, approval := range approvals {
+		if approval.OwnerType != appBranchRunsTable || approval.OwnerID == "" {
+			continue
+		}
+		if _, ok := seen[approval.OwnerID]; ok {
+			continue
+		}
+		seen[approval.OwnerID] = struct{}{}
+		runIDs = append(runIDs, approval.OwnerID)
+	}
+
+	if len(runIDs) == 0 {
+		return nil
+	}
+
+	var owners []appBranchRunOwner
+	res := s.db.WithContext(ctx).
+		Model(&app.AppBranchRun{}).
+		Scopes(scopes.ForceReplica).
+		Select("app_branch_runs.id AS run_id, app_branch_runs.app_branch_id AS app_branch_id, app_branches.app_id AS app_id").
+		Joins("JOIN app_branches ON app_branches.id = app_branch_runs.app_branch_id").
+		Where("app_branch_runs.id IN ?", runIDs).
+		Find(&owners)
+	if res.Error != nil {
+		return errors.Wrap(res.Error, "unable to get app branch run owners")
+	}
+
+	ownersByRunID := make(map[string]appBranchRunOwner, len(owners))
+	for _, owner := range owners {
+		ownersByRunID[owner.RunID] = owner
+	}
+
+	for i := range approvals {
+		owner, ok := ownersByRunID[approvals[i].OwnerID]
+		if !ok {
+			continue
+		}
+		approvals[i].AppID = owner.AppID
+		approvals[i].AppBranchID = owner.AppBranchID
+	}
+
+	return nil
 }
