@@ -11,10 +11,11 @@ import (
 	"time"
 )
 
-// runClientConfig configures the run client. RunnerAPIURL + PhoneHomeID are required.
+// runClientConfig configures the run client. RunnerAPIURL and APIToken are required.
 type runClientConfig struct {
 	RunnerAPIURL string // runner API base URL, e.g. https://runner.nuon.co
-	PhoneHomeID  string // per-stack-version secret, in the URL path
+	InstallID    string // install whose stack config is being read
+	APIToken     string // bearer token; identifies the caller to the runner API
 	HTTPClient   *http.Client
 }
 
@@ -37,12 +38,13 @@ type configResponse struct {
 	Config *Config `json:"config"`
 }
 
-// fetchConfig reads the rendered install-stack config for the stack version
+// fetchConfig reads an install's rendered stack config, keyed on install ID: the
+// caller is authenticated, so the path is no longer the credential.
 func (c *runClient) fetchConfig(ctx context.Context) (*Config, error) {
 	url := fmt.Sprintf(
-		"%s/v1/stack-runs/%s/config",
+		"%s/v1/stacks/%s/config",
 		strings.TrimSuffix(c.cfg.RunnerAPIURL, "/"),
-		c.cfg.PhoneHomeID,
+		c.cfg.InstallID,
 	)
 	var out configResponse
 	if err := c.doWithRetry(ctx, http.MethodGet, url, nil, &out); err != nil {
@@ -85,6 +87,9 @@ func (c *runClient) doWithRetry(ctx context.Context, method, url string, body, o
 		if body != nil {
 			req.Header.Set("Content-Type", "application/json")
 		}
+		if c.cfg.APIToken != "" {
+			req.Header.Set("Authorization", "Bearer "+c.cfg.APIToken)
+		}
 
 		resp, err := c.hc.Do(req)
 		if err != nil {
@@ -102,6 +107,7 @@ func (c *runClient) doWithRetry(ctx context.Context, method, url string, body, o
 			}
 			return nil
 		}
+		// A rejected credential will be rejected identically on every retry.
 		if resp.StatusCode >= 400 && resp.StatusCode < 500 {
 			return fmt.Errorf("runner api %d: %s", resp.StatusCode, string(respBody))
 		}
