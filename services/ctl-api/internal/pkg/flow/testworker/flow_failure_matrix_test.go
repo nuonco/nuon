@@ -201,6 +201,7 @@ func (e *FlowTestSuite) TestGeneratedStepsStartPending() {
 	_, err := e.service.FlowClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{InstallWorkflowID: flw.ID})
 	require.NoError(e.T(), err)
 	e.waitForWorkflowTerminal(ctx, flw.ID)
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // Exhausted failure stops the workflow; only the runner ever writes success/failure target statuses.
@@ -235,6 +236,7 @@ func (e *FlowTestSuite) TestFailStopTargetUntouched() {
 			require.Equal(e.T(), app.StatusNotAttempted, s.Status.Status)
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // Auto-budget exhaustion parks the step; workflow failed-pending-retry, target untouched.
@@ -304,6 +306,7 @@ func (e *FlowTestSuite) TestFailParallelPartial() {
 			require.Equal(e.T(), app.StatusNotAttempted, s.Status.Status)
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // Manual retry creates exactly one clone; original keeps discarded+retried; workflow completes.
@@ -345,6 +348,7 @@ func (e *FlowTestSuite) TestFailManualRetryOnce() {
 		}
 	}
 	require.Equal(e.T(), 1, cloneCount, "manual retry must create exactly one clone")
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // While a retry clone executes, the workflow reports in-progress, not failed-pending-retry.
@@ -372,6 +376,7 @@ func (e *FlowTestSuite) TestFailManualRetryRunsAsInProgress() {
 	_, err = e.service.FlowClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{InstallWorkflowID: flw.ID})
 	require.NoError(e.T(), err)
 	e.waitForWorkflowTerminal(ctx, flw.ID)
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // Skipping a parked step marks it user-skipped and the workflow resumes running.
@@ -497,6 +502,7 @@ func (e *FlowTestSuite) TestSkipOnFailureContinuesWorkflow() {
 				"the group after a skip-on-failure step must still run")
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // The approve path never writes the deploy target; success statuses are the runner's job.
@@ -522,4 +528,5 @@ func (e *FlowTestSuite) TestApproveTargetUntouchedOnSuccess() {
 	e.assertStatusMatrix(ctx, steps[0].ID, statusMatrix{
 		Target: app.Status(app.InstallDeployStatusActive),
 	})
+	e.assertTemporalDrained(ctx, flw.ID)
 }

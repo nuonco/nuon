@@ -3,6 +3,7 @@ package testworker
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/suite"
@@ -14,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/pkg/filecache"
 	pkgkafka "github.com/nuonco/nuon/pkg/kafka"
 	pkgmetrics "github.com/nuonco/nuon/pkg/metrics"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -22,6 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
@@ -73,6 +76,7 @@ type TestService struct {
 	Seed        *seed.Seeder
 	QueueClient *queueclient.Client
 	FlowClient  *flowclient.Client
+	TClient     temporalclient.Client
 }
 
 type FlowTestSuite struct {
@@ -92,6 +96,11 @@ func TestSuite(t *testing.T) {
 }
 
 func (e *FlowTestSuite) SetupSuite() {
+	// Shrink the abandoned-wait ceiling so approval/park expiry paths fire in
+	// test time instead of 3 days. Read at workflow runtime, so setting it
+	// before the worker boots covers every flow the suite starts.
+	callback.MaxWaitCeiling = 15 * time.Second
+
 	e.app = fxtest.New(
 		e.T(),
 		fx.Provide(internal.NewConfig),

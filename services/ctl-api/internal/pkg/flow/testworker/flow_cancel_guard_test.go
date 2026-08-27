@@ -76,6 +76,7 @@ func (e *FlowTestSuite) TestCancelledWorkflowRejectsRetry() {
 		_ = resp
 	}
 	e.assertStillCancelled(ctx, flw, 2)
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 func (e *FlowTestSuite) TestCancelledWorkflowRejectsSkip() {
@@ -91,6 +92,7 @@ func (e *FlowTestSuite) TestCancelledWorkflowRejectsSkip() {
 		require.False(e.T(), resp.Skippable, "skip on a cancelled workflow must be rejected")
 	}
 	e.assertStillCancelled(ctx, flw, 2)
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 func (e *FlowTestSuite) TestCancelledWorkflowRejectsApprove() {
@@ -130,4 +132,5 @@ func (e *FlowTestSuite) TestCancelledWorkflowRejectsApprove() {
 	})
 
 	e.assertStillCancelled(ctx, flw, 2)
+	e.assertTemporalDrained(ctx, flw.ID)
 }

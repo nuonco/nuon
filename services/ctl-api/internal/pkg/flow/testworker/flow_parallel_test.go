@@ -31,6 +31,7 @@ func (e *FlowTestSuite) TestParallelGroupExecution() {
 		require.Equal(e.T(), app.StatusSuccess, step.Status.Status,
 			"parallel step %s should be success", step.Name)
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // TestMixedParallelAndSequentialGroups verifies a workflow with both a
@@ -67,4 +68,5 @@ func (e *FlowTestSuite) TestMixedParallelAndSequentialGroups() {
 		require.Equal(e.T(), app.StatusSuccess, step.Status.Status,
 			"step %s should be success", step.Name)
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }

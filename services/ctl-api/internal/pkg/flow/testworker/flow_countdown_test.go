@@ -50,6 +50,7 @@ func (e *FlowTestSuite) TestAutoRetryEventuallySucceeds() {
 				"group 2 step should have succeeded after retry")
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // TestResultDirectiveWrittenOnRetry verifies that auto-retried steps have
@@ -79,4 +80,5 @@ func (e *FlowTestSuite) TestResultDirectiveWrittenOnRetry() {
 				"original step should have ResultDirective=retry after auto-retry")
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }

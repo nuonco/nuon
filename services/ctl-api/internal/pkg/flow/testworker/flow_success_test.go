@@ -82,4 +82,5 @@ func (e *FlowTestSuite) TestSequentialGroupSuccess() {
 		require.Equal(e.T(), app.StatusSuccess, step.Status.Status,
 			"step %s should be success, got %s", step.Name, step.Status.Status)
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }

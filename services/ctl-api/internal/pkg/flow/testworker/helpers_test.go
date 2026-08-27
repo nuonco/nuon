@@ -2,10 +2,13 @@ package testworker
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	enumspb "go.temporal.io/api/enums/v1"
+	"go.temporal.io/api/serviceerror"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -209,6 +212,63 @@ func (e *FlowTestSuite) waitForWorkflowTerminal(ctx context.Context, workflowID 
 		}
 		return false
 	}, pollTimeout, pollInterval, "workflow %s did not reach a terminal status", workflowID)
+}
+
+// ceilingWait bounds asserts that depend on the MaxWaitCeiling override (15s
+// in SetupSuite) firing, with margin for scheduling.
+const ceilingWait = 45 * time.Second
+
+// flowTemporalRefs collects the Temporal workflow refs of every queue signal
+// owned by the flow, its groups, or its steps (including retry clones).
+func (e *FlowTestSuite) flowTemporalRefs(ctx context.Context, workflowID string) []signaldb.WorkflowRef {
+	ownerIDs := []string{workflowID}
+	var groups []app.WorkflowStepGroup
+	res := e.service.DB.WithContext(ctx).
+		Where(app.WorkflowStepGroup{WorkflowID: workflowID}).
+		Find(&groups)
+	require.Nil(e.T(), res.Error)
+	for _, g := range groups {
+		ownerIDs = append(ownerIDs, g.ID)
+	}
+	for _, s := range e.getStepsByWorkflow(ctx, workflowID) {
+		ownerIDs = append(ownerIDs, s.ID)
+	}
+
+	var queueSignals []app.QueueSignal
+	res = e.service.DB.WithContext(ctx).
+		Where("owner_id IN ?", ownerIDs).
+		Find(&queueSignals)
+	require.Nil(e.T(), res.Error)
+
+	var refs []signaldb.WorkflowRef
+	for _, qs := range queueSignals {
+		if qs.Workflow.ID != "" {
+			refs = append(refs, qs.Workflow)
+		}
+	}
+	return refs
+}
+
+// assertTemporalDrained waits until every Temporal workflow backing the flow's
+// queue signals is closed — a stopped flow must not hold handlers open.
+func (e *FlowTestSuite) assertTemporalDrained(ctx context.Context, workflowID string) {
+	require.Eventually(e.T(), func() bool {
+		refs := e.flowTemporalRefs(ctx, workflowID)
+		for _, ref := range refs {
+			resp, err := e.service.TClient.DescribeWorkflowExecutionInNamespace(ctx, ref.Namespace, ref.ID, "")
+			if err != nil {
+				var notFound *serviceerror.NotFound
+				if errors.As(err, &notFound) {
+					continue
+				}
+				return false
+			}
+			if resp.GetWorkflowExecutionInfo().GetStatus() == enumspb.WORKFLOW_EXECUTION_STATUS_RUNNING {
+				return false
+			}
+		}
+		return true
+	}, ceilingWait, pollInterval, "temporal workflows for flow %s did not drain", workflowID)
 }
 
 // isTerminal returns true if the status is a terminal status for a step.

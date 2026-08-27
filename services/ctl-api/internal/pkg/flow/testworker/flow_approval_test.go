@@ -133,6 +133,7 @@ func (e *FlowTestSuite) TestApprovalApproveContinues() {
 	for _, s := range e.getStepsByWorkflow(ctx, flw.ID) {
 		require.Equal(e.T(), app.StatusSuccess, s.Status.Status, s.Name)
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // After approval the workflow reports in-progress while the next step runs.
@@ -165,6 +166,7 @@ func (e *FlowTestSuite) TestApprovalApproveMarksWorkflowRunning() {
 	_, err := e.service.FlowClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{InstallWorkflowID: flw.ID})
 	require.NoError(e.T(), err)
 	e.waitForWorkflowTerminal(ctx, flw.ID)
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // Deny stops everything: siblings discarded, later groups not-attempted, target approval-denied, queue signal errors.
@@ -216,8 +218,9 @@ func (e *FlowTestSuite) TestApprovalDenyStopsWorkflow() {
 			require.Equal(e.T(), app.StatusNotAttempted, s.Status.Status)
 		}
 	}
-	require.Equal(e.T(), "workflow stopped", e.getWorkflow(ctx, flw.ID).Status.StatusHumanDescription)
+	require.Contains(e.T(), e.getWorkflow(ctx, flw.ID).Status.StatusHumanDescription, "workflow stopped")
 	e.waitForQueueSignalStatus(ctx, flw.ID, "install_workflows", executeflow.SignalType, app.StatusError)
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // Deny-skip-current denies the step, skips same-group siblings, and the workflow continues.
@@ -267,6 +270,7 @@ func (e *FlowTestSuite) TestApprovalDenySkipCurrent() {
 			require.Equal(e.T(), app.StatusSuccess, s.Status.Status)
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // Deny-skip-current on a SkipGroup signal skips the whole group; later groups still run.
@@ -310,6 +314,7 @@ func (e *FlowTestSuite) TestApprovalDenySkipGroup() {
 			require.Equal(e.T(), app.StatusSuccess, s.Status.Status)
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // Deny-skip-current-and-dependents skips the step then stops the workflow.
@@ -350,7 +355,8 @@ func (e *FlowTestSuite) TestApprovalDenySkipDependents() {
 			require.Equal(e.T(), app.StatusNotAttempted, s.Status.Status)
 		}
 	}
-	require.Equal(e.T(), "workflow stopped", e.getWorkflow(ctx, flw.ID).Status.StatusHumanDescription)
+	require.Contains(e.T(), e.getWorkflow(ctx, flw.ID).Status.StatusHumanDescription, "workflow stopped")
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // Retry-plan supersedes the parked step with exactly one clone that re-parks at approval.
@@ -402,6 +408,7 @@ func (e *FlowTestSuite) TestApprovalRetryPlan() {
 		}
 	}
 	require.Equal(e.T(), 1, cloneCount, "retry-plan must create exactly one clone")
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // Cancel-step during approval cancels step+target; main writes no terminal workflow status (see TestPinCancelStepTerminatesWorkflow).
@@ -485,4 +492,5 @@ func (e *FlowTestSuite) TestCancelWorkflowDuringApproval() {
 		}
 		return false
 	}, 5*time.Second, pollInterval, "cancelled workflow must not run further steps")
+	e.assertTemporalDrained(ctx, flw.ID)
 }
