@@ -27,7 +27,8 @@ type buildEntry struct {
 	IsNew         bool    `json:"is_new,omitempty"`
 	Status        string  `json:"status"`
 	Skipped       bool    `json:"skipped,omitempty"`
-	CacheStatus   string  `json:"cache_status,omitempty"` // "cache hit", "partial cache", "no cache"
+	CacheStatus   string  `json:"cache_status,omitempty"` // deprecated: use change_reason in UI
+	ChangeReason  string  `json:"change_reason,omitempty"`
 	ImageDigest   string  `json:"image_digest,omitempty"` // sha256:...
 	Duration      float64 `json:"duration,omitempty"`     // seconds
 }
@@ -64,13 +65,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	if len(appConfig.ComponentIDs) == 0 {
 		l.Info("no components to build")
+		s.markBuildsCompleted(ctx, l, true)
 		return nil
 	}
 
-	// Determine previous run's app config for build diffing
+	// Determine previous run's app config for build diffing via comparison baseline.
 	var previousAppConfigID string
-	if run.PreviousRunID != nil && *run.PreviousRunID != "" {
-		prevRun, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.PreviousRunID)
+	if run.Comparison != nil && run.Comparison.BaseRun != nil && run.Comparison.BaseRun.AppConfigID != "" {
+		previousAppConfigID = run.Comparison.BaseRun.AppConfigID
+	} else if run.Comparison != nil && run.Comparison.BaseRunID != nil && *run.Comparison.BaseRunID != "" {
+		prevRun, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.Comparison.BaseRunID)
 		if err == nil && prevRun.AppConfigID != "" {
 			previousAppConfigID = prevRun.AppConfigID
 		}
@@ -78,6 +82,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	builds, err := s.buildComponents(ctx, l, appConfig, run.AppConfigID, previousAppConfigID, run.Force)
 	if err != nil {
+		s.markBuildsCompleted(ctx, l, false)
+		s.finalizeBuildMetadata(ctx, builds, false)
 		if isPreview && run.PRNumber != nil {
 			s.finalizePreview(ctx, l, run, err)
 		}
@@ -98,14 +104,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			ComponentName: "Sandbox",
 			ComponentType: "sandbox",
 			Status:        "in-progress",
-			CacheStatus:   "no cache",
+			ChangeReason:  activities.ChangeReasonSourceChanged,
 		}
 		builds = append(builds, sandboxEntry)
 		s.updateBuildMetadata(ctx, builds)
 
 		if err := s.buildSandbox(ctx, l); err != nil {
 			s.setBuildStatus(builds, "sandbox", "error")
-			s.updateBuildMetadata(ctx, builds)
+			s.markBuildsCompleted(ctx, l, false)
+			s.finalizeBuildMetadata(ctx, builds, false)
 			if isPreview && run.PRNumber != nil {
 				s.finalizePreview(ctx, l, run, err)
 			}
@@ -121,6 +128,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.finalizePreview(ctx, l, run, nil)
 	}
 
+	s.markBuildsCompleted(ctx, l, true)
+	s.finalizeBuildMetadata(ctx, builds, true)
 	l.Info("all builds completed successfully")
 	return nil
 }
@@ -143,6 +152,16 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 		}
 	}
 
+	sourceChangedByName := map[string]bool{}
+	if previousAppConfigID != "" {
+		sourceOut, err := activities.AwaitLoadComparisonSourceChanged(ctx, &activities.LoadComparisonSourceChangedInput{
+			RunID: s.RunID,
+		})
+		if err == nil && sourceOut != nil && sourceOut.ByComponentName != nil {
+			sourceChangedByName = sourceOut.ByComponentName
+		}
+	}
+
 	builds := make([]buildEntry, 0, len(componentIDs))
 	var toBuild []string
 	for _, componentID := range componentIDs {
@@ -155,15 +174,30 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 		isNew := previousAppConfigID == ""
 
 		if previousAppConfigID != "" && !force {
-			check, err := activities.AwaitCheckBuildNeeded(ctx, &activities.CheckBuildNeededInput{
+			checkInput := &activities.CheckBuildNeededInput{
 				ComponentID:    componentID,
 				NewAppConfigID: appConfigID,
 				OldAppConfigID: previousAppConfigID,
-			})
+			}
+			if _, ok := sourceChangedByName[name]; ok {
+				changed := sourceChangedByName[name]
+				checkInput.SourceChanged = &changed
+			}
+
+			check, err := activities.AwaitCheckBuildNeeded(ctx, checkInput)
 			if err == nil && !check.NeedsBuild {
 				l.Info("skipping build for unchanged component",
 					"component_id", componentID,
 					"existing_build_id", check.ExistingBuildID)
+				if check.ExistingBuildID != "" {
+					if pinErr := activities.AwaitSetComponentConfigLatestBuild(ctx, &activities.SetComponentConfigLatestBuildInput{
+						AppConfigID: appConfigID,
+						ComponentID: componentID,
+						BuildID:     check.ExistingBuildID,
+					}); pinErr != nil {
+						return builds, fmt.Errorf("component %s: pin latest build: %w", componentID, pinErr)
+					}
+				}
 				builds = append(builds, buildEntry{
 					BuildID:       check.ExistingBuildID,
 					ComponentID:   componentID,
@@ -172,8 +206,20 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 					IsNew:         false,
 					Status:        "skipped",
 					Skipped:       true,
-					CacheStatus:   "cache hit",
+					ChangeReason:  activities.ChangeReasonNoChanges,
 				})
+				continue
+			}
+			if err == nil && check.NeedsBuild {
+				builds = append(builds, buildEntry{
+					ComponentID:   componentID,
+					ComponentName: name,
+					ComponentType: info.Type,
+					IsNew:         isNew,
+					Status:        "pending",
+					ChangeReason:  check.ChangeReason,
+				})
+				toBuild = append(toBuild, componentID)
 				continue
 			}
 			if err != nil {
@@ -181,17 +227,13 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 			}
 		}
 
-		cacheStatus := "no cache"
-		if previousAppConfigID != "" {
-			cacheStatus = "partial cache"
-		}
 		builds = append(builds, buildEntry{
 			ComponentID:   componentID,
 			ComponentName: name,
 			ComponentType: info.Type,
 			IsNew:         isNew,
 			Status:        "pending",
-			CacheStatus:   cacheStatus,
+			ChangeReason:  activities.ChangeReasonSourceChanged,
 		})
 		toBuild = append(toBuild, componentID)
 	}
@@ -333,11 +375,14 @@ func (s *Signal) setBuildID(builds []buildEntry, componentID, buildID string) {
 // updateBuildMetadata writes the current builds list to the parent step's
 // status metadata so the UI can display real-time build progress.
 func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) {
+	s.updateBuildMetadataWithCompleted(ctx, builds, nil)
+}
+
+func (s *Signal) updateBuildMetadataWithCompleted(ctx workflow.Context, builds []buildEntry, buildsCompleted *bool) {
 	if s.StepID == "" {
 		return
 	}
 
-	// Convert builds to a slice of map[string]any for JSON serialization
 	buildList := make([]any, 0, len(builds))
 	for _, b := range builds {
 		entry := map[string]any{
@@ -348,6 +393,9 @@ func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) 
 			"status":         b.Status,
 			"skipped":        b.Skipped,
 			"cache_status":   b.CacheStatus,
+		}
+		if b.ChangeReason != "" {
+			entry["change_reason"] = b.ChangeReason
 		}
 		if b.BuildID != "" {
 			entry["build_id"] = b.BuildID
@@ -361,18 +409,45 @@ func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) 
 		buildList = append(buildList, entry)
 	}
 
+	meta := map[string]any{
+		"builds": buildList,
+	}
+	statusVal := app.StatusInProgress
+	desc := fmt.Sprintf("building %d components", len(builds))
+	if buildsCompleted != nil {
+		meta[app.AppBranchRunLabelBuildsCompleted] = *buildsCompleted
+		if *buildsCompleted {
+			statusVal = app.StatusSuccess
+			desc = fmt.Sprintf("built %d components", len(builds))
+		} else {
+			statusVal = app.StatusError
+			desc = "builds failed"
+		}
+	}
+
 	status := app.CompositeStatus{
-		Status:                 app.StatusInProgress,
-		StatusHumanDescription: fmt.Sprintf("building %d components", len(builds)),
-		Metadata: map[string]any{
-			"builds": buildList,
-		},
+		Status:                 statusVal,
+		StatusHumanDescription: desc,
+		Metadata:               meta,
 	}
 
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID:     s.StepID,
 		Status: status,
 	})
+}
+
+func (s *Signal) markBuildsCompleted(ctx workflow.Context, l log.Logger, completed bool) {
+	if err := activities.AwaitUpdateAppBranchRunBuildsCompleted(ctx, &activities.UpdateAppBranchRunBuildsCompletedInput{
+		RunID:           s.RunID,
+		BuildsCompleted: completed,
+	}); err != nil {
+		l.Warn("unable to update builds_completed label", "error", err, "builds_completed", completed)
+	}
+}
+
+func (s *Signal) finalizeBuildMetadata(ctx workflow.Context, builds []buildEntry, completed bool) {
+	s.updateBuildMetadataWithCompleted(ctx, builds, &completed)
 }
 
 func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.AppBranchRun, buildErr error) {

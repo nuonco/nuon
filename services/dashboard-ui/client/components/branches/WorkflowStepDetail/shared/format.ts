@@ -24,6 +24,26 @@ export function getInitials(name?: string): string {
     .slice(0, 2)
 }
 
+export function changeReasonBadgeTheme(reason?: string) {
+  if (reason === 'no_changes') return 'success'
+  if (reason === 'config_changed') return 'warn'
+  if (reason === 'source_changed') return 'info'
+  return 'neutral'
+}
+
+export function changeReasonLabel(reason?: string) {
+  switch (reason) {
+    case 'no_changes':
+      return 'No changes'
+    case 'config_changed':
+      return 'Config changed'
+    case 'source_changed':
+      return 'Source changed'
+    default:
+      return reason || ''
+  }
+}
+
 export function cacheBadgeTheme(cacheStatus?: string) {
   if (cacheStatus === 'cache hit') return 'success'
   if (cacheStatus === 'no cache') return 'warn'

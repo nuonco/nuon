@@ -89,6 +89,7 @@ export const Edit = () => (
       vcsConnections={[]}
       defaultName="production"
       defaultUseVcs={false}
+      defaultDisableBranchTriggers={true}
       isSubmitting={false}
       onSubmit={noop}
       onCancel={noop}

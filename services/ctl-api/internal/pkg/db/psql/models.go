@@ -60,6 +60,7 @@ func AllModels() []any {
 		&app.AppBranchConfig{},
 		&app.AppBranchInstallGroup{},
 		&app.AppBranchRun{},
+		&app.AppBranchRunComparison{},
 		&app.Trigger{},
 		&app.TriggerSecret{},
 		&app.TriggerEvent{},

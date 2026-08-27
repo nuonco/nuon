@@ -88,7 +88,7 @@ func (s *AppBranchRunStepsTestSuite) TestVCSPathFetchesConfig() {
 		"config_id":     "config-1",
 	})
 
-	s.Equal([]string{"fetch commit", "fetch app config", "building components and sandbox"}, stepNames(result))
+	s.Equal([]string{"fetch commit", "fetch app config", "compute differences", "building components and sandbox"}, stepNames(result))
 }
 
 func (s *AppBranchRunStepsTestSuite) TestPreCompiledConfigSyncsInsteadOfFetching() {
@@ -102,7 +102,7 @@ func (s *AppBranchRunStepsTestSuite) TestPreCompiledConfigSyncsInsteadOfFetching
 		"sync_app_config": "true",
 	})
 
-	s.Equal([]string{"fetch commit (skipped)", "sync app config", "building components and sandbox"}, stepNames(result))
+	s.Equal([]string{"fetch commit (skipped)", "sync app config", "compute differences", "building components and sandbox"}, stepNames(result))
 	s.Equal(app.WorkflowStepExecutionTypeSystem, result.Steps[1].ExecutionType)
 }
 
@@ -120,6 +120,7 @@ func (s *AppBranchRunStepsTestSuite) TestAlreadySyncedConfigSkipsBothSteps() {
 	s.Equal([]string{
 		"fetch commit (skipped)",
 		"fetch app config (skipped)",
+		"compute differences",
 		"building components and sandbox (skipped)",
 	}, stepNames(result))
 }

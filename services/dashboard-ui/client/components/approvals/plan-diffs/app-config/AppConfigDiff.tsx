@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { Badge } from '@/components/common/Badge'
 import type { TBadgeTheme } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
@@ -76,6 +76,15 @@ export type DiffSectionData = {
   files?: DiffFileEntry[]
   content?: { op: 'add' | 'remove' | 'change'; before?: string; after?: string }
 }
+
+export type TAppConfigDiffPresentation = 'diff' | 'snapshot'
+
+const PresentationContext = createContext<TAppConfigDiffPresentation>('diff')
+
+const usePresentation = () => useContext(PresentationContext)
+
+const SNAPSHOT_ROW =
+  'hover:!bg-black/5 dark:hover:!bg-white/5 focus:!bg-black/5 dark:focus:!bg-white/5'
 
 type AppConfigOp = 'add' | 'remove' | 'change'
 
@@ -336,20 +345,27 @@ const AppConfigSummary = ({ summary }: { summary: { added: number; removed: numb
 )
 
 const FieldsDiff = ({ fields }: { fields: DiffFieldEntry[] }) => {
+  const isSnapshot = usePresentation() === 'snapshot'
   const wrapLines = useWrapLines()
   const lineClass = wrapLines
     ? 'flex whitespace-pre-wrap break-all'
     : 'flex whitespace-pre'
+
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
       <div className={cn(wrapLines ? 'pr-4' : 'min-w-fit')}>
         {fields.map((field, idx) => {
           const prefix = getDiffPrefix(field.op)
           return (
-            <div className={`${lineClass} ${prefix.style}`} key={`${field.key}-${idx}`}>
-              <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
-                {prefix.char}
-              </span>
+            <div
+              className={`${lineClass} ${isSnapshot ? '' : prefix.style}`}
+              key={`${field.key}-${idx}`}
+            >
+              {!isSnapshot && (
+                <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
+                  {prefix.char}
+                </span>
+              )}
               <span className="min-w-0">
                 <span className="font-semibold">{field.key}:</span>
                 {'  '}
@@ -385,8 +401,14 @@ const FileDiffRow = ({
   entityKey: string
   idx: number
 }) => {
-  const bgColor = getOpBgColor(file.op)
-  const borderColor = getOpBorderColor(file.op)
+  const isSnapshot = usePresentation() === 'snapshot'
+  const bgColor = isSnapshot ? SNAPSHOT_ROW : getOpBgColor(file.op)
+  const borderColor = isSnapshot
+    ? '!border-l-cool-grey-200 dark:!border-l-dark-grey-600'
+    : getOpBorderColor(file.op)
+  const content = isSnapshot
+    ? (file.after ?? file.before ?? '')
+    : diffLines(file.before, file.after)
 
   return (
     <Expand
@@ -398,16 +420,22 @@ const FileDiffRow = ({
           <Text family="mono" variant="subtext" weight="strong" className="truncate">
             {file.name}
           </Text>
-          <div className="flex items-center pr-4 self-center">
-            <Badge theme={OP_BADGE_THEME[file.op] || 'neutral'} size="sm">
-              {humanize(file.op)}
-            </Badge>
-          </div>
+          {!isSnapshot && (
+            <div className="flex items-center pr-4 self-center">
+              <Badge theme={OP_BADGE_THEME[file.op] || 'neutral'} size="sm">
+                {humanize(file.op)}
+              </Badge>
+            </div>
+          )}
         </div>
       }
     >
-      <DiffCodeBlock className="!rounded-none border-t" language={langForFile(file.name)} isDiff>
-        {diffLines(file.before, file.after)}
+      <DiffCodeBlock
+        className="!rounded-none border-t"
+        language={langForFile(file.name)}
+        isDiff={!isSnapshot}
+      >
+        {content}
       </DiffCodeBlock>
     </Expand>
   )
@@ -431,8 +459,11 @@ const EntityRow = ({
   idx: number
   focus?: TConfigDiffFocus | null
 }) => {
-  const bgColor = getOpBgColor(entity.op)
-  const borderColor = getOpBorderColor(entity.op)
+  const isSnapshot = usePresentation() === 'snapshot'
+  const bgColor = isSnapshot ? SNAPSHOT_ROW : getOpBgColor(entity.op)
+  const borderColor = isSnapshot
+    ? '!border-l-cool-grey-200 dark:!border-l-dark-grey-600'
+    : getOpBorderColor(entity.op)
   const isComponent = sectionKey === 'components'
   const hasDetail = entity.fields.length > 0 || (entity.files?.length ?? 0) > 0
   const entityId = `${sectionKey}-${entity.name}-${idx}`
@@ -471,11 +502,13 @@ const EntityRow = ({
             </Text>
           )}
         </div>
-        <div className="flex items-center pr-4 self-center">
-          <Badge theme={OP_BADGE_THEME[entity.op] || 'neutral'} size="sm">
-            {humanize(entity.op)}
-          </Badge>
-        </div>
+        {!isSnapshot && (
+          <div className="flex items-center pr-4 self-center">
+            <Badge theme={OP_BADGE_THEME[entity.op] || 'neutral'} size="sm">
+              {humanize(entity.op)}
+            </Badge>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -505,9 +538,12 @@ const EntityRow = ({
   )
 }
 
-const FieldRow = ({ field, sectionKey, idx }: { field: DiffFieldEntry; sectionKey: string; idx: number }) => {
-  const bgColor = getOpBgColor(field.op)
-  const borderColor = getOpBorderColor(field.op)
+const FieldRow = ({ field }: { field: DiffFieldEntry }) => {
+  const isSnapshot = usePresentation() === 'snapshot'
+  const bgColor = isSnapshot ? SNAPSHOT_ROW : getOpBgColor(field.op)
+  const borderColor = isSnapshot
+    ? '!border-l-cool-grey-200 dark:!border-l-dark-grey-600'
+    : getOpBorderColor(field.op)
 
   return (
     <div className={`flex items-center justify-between border-l-4 px-4 py-3 ${borderColor} ${bgColor}`}>
@@ -515,14 +551,18 @@ const FieldRow = ({ field, sectionKey, idx }: { field: DiffFieldEntry; sectionKe
         <Text weight="strong">{field.key}</Text>
         <Text variant="subtext" theme="neutral" family="mono">{field.diff}</Text>
       </div>
-      <Badge theme={OP_BADGE_THEME[field.op as AppConfigOp] || 'neutral'} size="sm">
-        {humanize(field.op)}
-      </Badge>
+      {!isSnapshot && (
+        <Badge theme={OP_BADGE_THEME[field.op as AppConfigOp] || 'neutral'} size="sm">
+          {humanize(field.op)}
+        </Badge>
+      )}
     </div>
   )
 }
 
 const SectionCounts = ({ section }: { section: DiffSectionData }) => {
+  const isSnapshot = usePresentation() === 'snapshot'
+  if (isSnapshot) return null
   if (!section.additions && !section.changed && !section.removals) return null
   return (
     <span className="flex items-center gap-2.5">
@@ -542,6 +582,28 @@ const SectionCounts = ({ section }: { section: DiffSectionData }) => {
         </Text>
       )}
     </span>
+  )
+}
+
+const SectionContent = ({
+  content,
+}: {
+  content: NonNullable<DiffSectionData['content']>
+}) => {
+  const isSnapshot = usePresentation() === 'snapshot'
+  const borderColor = isSnapshot
+    ? '!border-l-cool-grey-200 dark:!border-l-dark-grey-600'
+    : getOpBorderColor(content.op)
+  const body = isSnapshot
+    ? (content.after ?? content.before ?? '')
+    : diffLines(content.before, content.after)
+
+  return (
+    <div className={`border-l-4 ${borderColor}`}>
+      <DiffCodeBlock className="!rounded-none" language="toml" isDiff={!isSnapshot}>
+        {body}
+      </DiffCodeBlock>
+    </div>
   )
 }
 
@@ -606,11 +668,7 @@ const SectionGroup = ({
       {open && (
         <div className="flex flex-col divide-y">
           {section.content ? (
-            <div className={`border-l-4 ${getOpBorderColor(section.content.op)}`}>
-              <DiffCodeBlock className="!rounded-none" language="toml" isDiff>
-                {diffLines(section.content.before, section.content.after)}
-              </DiffCodeBlock>
-            </div>
+            <SectionContent content={section.content} />
           ) : section.grouped ? (
             section.entities.map((entity, idx) => (
               <EntityRow key={`${entity.name}-${idx}`} entity={entity} sectionKey={section.sectionKey} idx={idx} focus={focus} />
@@ -618,7 +676,7 @@ const SectionGroup = ({
           ) : (
             <>
               {section.fields.map((field, idx) => (
-                <FieldRow key={`field-${field.key}-${idx}`} field={field} sectionKey={section.sectionKey} idx={idx} />
+                <FieldRow key={`field-${field.key}-${idx}`} field={field} />
               ))}
               {(section.files ?? []).map((file, idx) => (
                 <FileDiffRow key={`file-${file.name}-${idx}`} file={file} entityKey={section.sectionKey} idx={idx} />
@@ -661,6 +719,7 @@ export interface IAppConfigDiff {
   isLoading?: boolean
   defaultSectionsOpen?: boolean
   focus?: TConfigDiffFocus | null
+  presentation?: TAppConfigDiffPresentation
 }
 
 export const AppConfigDiff = ({
@@ -669,6 +728,7 @@ export const AppConfigDiff = ({
   isLoading = false,
   defaultSectionsOpen = true,
   focus,
+  presentation = 'diff',
 }: IAppConfigDiff) => {
   if (isLoading) {
     return <AppConfigDiffSkeleton />
@@ -679,8 +739,12 @@ export const AppConfigDiff = ({
       <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
         <div className="px-4 py-3 text-center">
           <EmptyState
-            emptyTitle="No config changes"
-            emptyMessage="This config matches the previous version."
+            emptyTitle={presentation === 'snapshot' ? 'No configuration' : 'No config changes'}
+            emptyMessage={
+              presentation === 'snapshot'
+                ? 'This config has nothing to display.'
+                : 'This config matches the previous version.'
+            }
             variant="diagram"
             size="sm"
           />
@@ -691,26 +755,28 @@ export const AppConfigDiff = ({
 
   return (
     <WrapLinesProvider>
-      <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0 overflow-hidden">
-        {summary ? (
-          <AppConfigSummary summary={summary} />
-        ) : (
-          <div className="px-4 sm:px-6 py-1.5 border-b bg-cool-grey-100 dark:bg-dark-grey-800 flex justify-end">
-            <WrapLinesToggle />
-          </div>
-        )}
+      <PresentationContext.Provider value={presentation}>
+        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0 overflow-hidden">
+          {summary && presentation === 'diff' ? (
+            <AppConfigSummary summary={summary} />
+          ) : presentation === 'diff' ? (
+            <div className="px-4 sm:px-6 py-1.5 border-b bg-cool-grey-100 dark:bg-dark-grey-800 flex justify-end">
+              <WrapLinesToggle />
+            </div>
+          ) : null}
 
-        <div className="flex flex-col">
-          {sections.map((section) => (
-            <SectionGroup
-              key={section.name}
-              section={section}
-              defaultOpen={defaultSectionsOpen}
-              focus={focus}
-            />
-          ))}
-        </div>
-      </Card>
+          <div className="flex flex-col">
+            {sections.map((section) => (
+              <SectionGroup
+                key={section.name}
+                section={section}
+                defaultOpen={defaultSectionsOpen}
+                focus={focus}
+              />
+            ))}
+          </div>
+        </Card>
+      </PresentationContext.Provider>
     </WrapLinesProvider>
   )
 }
