@@ -68,6 +68,12 @@ type GetAppActionsParams struct {
 	*/
 	AppID string
 
+	/* BranchID.
+
+	   only return the actions defined by this branch's config
+	*/
+	BranchID *string
+
 	/* Labels.
 
 	   label filter (key:value,key:value)
@@ -187,6 +193,17 @@ func (o *GetAppActionsParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
+// WithBranchID adds the branchID to the get app actions params
+func (o *GetAppActionsParams) WithBranchID(branchID *string) *GetAppActionsParams {
+	o.SetBranchID(branchID)
+	return o
+}
+
+// SetBranchID adds the branchId to the get app actions params
+func (o *GetAppActionsParams) SetBranchID(branchID *string) {
+	o.BranchID = branchID
+}
+
 // WithLabels adds the labels to the get app actions params
 func (o *GetAppActionsParams) WithLabels(labels *string) *GetAppActionsParams {
 	o.SetLabels(labels)
@@ -264,6 +281,23 @@ func (o *GetAppActionsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 	// path param app_id
 	if err := r.SetPathParam("app_id", o.AppID); err != nil {
 		return err
+	}
+
+	if o.BranchID != nil {
+
+		// query param branch_id
+		var qrBranchID string
+
+		if o.BranchID != nil {
+			qrBranchID = *o.BranchID
+		}
+		qBranchID := qrBranchID
+		if qBranchID != "" {
+
+			if err := r.SetQueryParam("branch_id", qBranchID); err != nil {
+				return err
+			}
+		}
 	}
 
 	if o.Labels != nil {
