@@ -10,7 +10,7 @@ import (
 type UpdateInstallAppConfigVersionStatusInput struct {
 	AppBranchRunID string            `json:"app_branch_run_id" validate:"required"`
 	InstallID      string            `json:"install_id" validate:"required"`
-	Status         app.Status        `json:"status,omitempty"`
+	Status         app.Status        `json:"status" validate:"required"`
 	StatusDesc     string            `json:"status_description,omitempty"`
 	Metadata       map[string]string `json:"metadata,omitempty"`
 }
@@ -32,13 +32,9 @@ func (a *Activities) UpdateInstallAppConfigVersionStatus(ctx context.Context, in
 		return nil, fmt.Errorf("unable to find install app config version for run %s install %s: %w", input.AppBranchRunID, input.InstallID, err)
 	}
 
-	status := input.Status
-	if status == "" {
-		status = app.StatusSuccess
-	}
 	updates := map[string]any{
 		"status": app.CompositeStatus{
-			Status:                 status,
+			Status:                 input.Status,
 			StatusHumanDescription: input.StatusDesc,
 		},
 	}

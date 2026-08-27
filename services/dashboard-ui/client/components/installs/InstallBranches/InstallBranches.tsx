@@ -119,7 +119,7 @@ const InstallUpdatesList = ({
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Status status={update.status?.status || 'unknown'} />
+              <Status status={resolveInstallAppConfigVersionStatus(update)} />
               {update.workflow_id && (
                 <Link
                   href={`/${orgId}/installs/${update.install_id}/workflows/${update.workflow_id}`}
@@ -136,6 +136,18 @@ const InstallUpdatesList = ({
   )
 }
 
+const resolveInstallAppConfigVersionStatus = (version: TInstallAppConfigVersion): string => {
+  const iacvStatus = version.status?.status
+  const workflowStatus = version.workflow?.status?.status
+  if (
+    (iacvStatus === 'pending' || iacvStatus === 'in-progress') &&
+    (workflowStatus === 'error' || workflowStatus === 'cancelled')
+  ) {
+    return workflowStatus
+  }
+  return iacvStatus || 'unknown'
+}
+
 const ConfigVersionSummary = ({
   version,
   orgId,
@@ -147,7 +159,7 @@ const ConfigVersionSummary = ({
   installId: string
   appId: string
 }) => {
-  const status = version.status?.status || 'unknown'
+  const status = resolveInstallAppConfigVersionStatus(version)
   const branchRun = (version as any).app_branch_run
   const branchRunWorkflowId = branchRun?.workflow_id
   const branchId = branchRun?.app_branch_id
