@@ -2,6 +2,9 @@ import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
 import { Code } from '@/components/common/Code'
+import { Dropdown } from '@/components/common/Dropdown'
+import { Icon } from '@/components/common/Icon'
+import { Menu } from '@/components/common/Menu'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -15,6 +18,31 @@ import { describeMatch } from '@/components/match/types'
 import { DeleteChannelSubscriptionButton } from '@/components/slack/DeleteChannelSubscription'
 import { EditChannelSubscriptionButton } from '@/components/slack/EditChannelSubscription'
 import type { TSlackChannelSubscription, TSlackOrgLink } from '@/types'
+
+const ActionCell = ({
+  subscription,
+}: {
+  subscription: TSlackChannelSubscription
+}) => (
+  <Dropdown
+    id={`action-${subscription.id}`}
+    buttonText={<Icon variant="DotsThreeIcon" size={20} weight="bold" />}
+    hideIcon
+    variant="ghost"
+    buttonClassName="!p-1"
+    alignment="right"
+  >
+    <Menu>
+      <EditChannelSubscriptionButton subscription={subscription} isMenuButton />
+      <span>
+        <DeleteChannelSubscriptionButton
+          subscription={subscription}
+          isMenuButton
+        />
+      </span>
+    </Menu>
+  </Dropdown>
+)
 
 const teamLabel = (
   sub: TSlackChannelSubscription,
@@ -97,18 +125,7 @@ export const ChannelSubscriptionsTable = ({
       {
         id: 'action',
         header: '',
-        cell: (props) => (
-          <div className="flex justify-end gap-1">
-            <EditChannelSubscriptionButton
-              subscription={props.row.original}
-              size="sm"
-            />
-            <DeleteChannelSubscriptionButton
-              subscription={props.row.original}
-              size="sm"
-            />
-          </div>
-        ),
+        cell: (props) => <ActionCell subscription={props.row.original} />,
       },
     ],
     [links]
