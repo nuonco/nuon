@@ -8,10 +8,8 @@ import { RunbooksTable, parseRunbooksToTableData } from './RunbooksTable'
 const LIMIT = 20
 
 export const RunbooksTableContainer = ({
-  filterIds,
   branchId,
 }: {
-  filterIds?: string[]
   branchId?: string
 } = {}) => {
   const [searchParams] = useSearchParams()
@@ -20,13 +18,14 @@ export const RunbooksTableContainer = ({
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['runbooks', org?.id, app?.id, offset],
+    queryKey: ['runbooks', org?.id, app?.id, branchId, offset],
     queryFn: () =>
       getRunbooks({
         orgId: org!.id,
         appId: app!.id,
         offset,
         limit: LIMIT,
+        branch_id: branchId,
       }),
     placeholderData: keepPreviousData,
     enabled: !!org?.id && !!app?.id,
@@ -35,9 +34,7 @@ export const RunbooksTableContainer = ({
   return (
     <RunbooksTable
       data={parseRunbooksToTableData(
-        (result?.data ?? []).filter(
-          (row) => !filterIds || filterIds.includes(row.id ?? '')
-        ),
+        result?.data ?? [],
         org?.id ?? '',
         app?.id ?? '',
         labelColors,
