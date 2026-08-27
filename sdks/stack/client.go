@@ -126,8 +126,8 @@ func (c *client) FetchConfig(ctx context.Context) (*Config, error) {
 		if res.Payload == nil || res.Payload.Config == nil {
 			return errNoConfig
 		}
-		cfg = configFromModel(res.Payload.Config)
-		return nil
+		cfg, err = configFromModel(res.Payload.Config)
+		return err
 	})
 	if err != nil {
 		return nil, fmt.Errorf("fetch stack config: %w", err)
