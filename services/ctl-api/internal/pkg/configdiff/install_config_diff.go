@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -66,15 +67,13 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 					continue
 				}
 
-				entry := app.ComponentDiffEntry{
-					ComponentID:   componentID,
-					ComponentName: newConn.ComponentName,
-					ComponentType: string(newConn.Type),
-					OldChecksum:   oldConn.Checksum,
-					NewChecksum:   newConn.Checksum,
-				}
-				if oldConn.Checksum != "" && newConn.Checksum != "" && oldConn.Checksum == newConn.Checksum {
-					diff.Unchanged = append(diff.Unchanged, entry)
+				entry := componentDiffEntry(oldConn, newConn)
+				if checksumsEqual(oldConn, newConn) {
+					if entry.BuildChanged {
+						diff.Changed = append(diff.Changed, entry)
+					} else {
+						diff.Unchanged = append(diff.Unchanged, entry)
+					}
 				} else {
 					diff.Changed = append(diff.Changed, entry)
 				}
@@ -82,13 +81,9 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 				delete(newConnByComponent, componentID)
 			}
 
-			for componentID, newConn := range newConnByComponent {
-				diff.Added = append(diff.Added, app.ComponentDiffEntry{
-					ComponentID:   componentID,
-					ComponentName: newConn.ComponentName,
-					ComponentType: string(newConn.Type),
-					NewChecksum:   newConn.Checksum,
-				})
+			for _, newConn := range newConnByComponent {
+				entry := componentDiffEntry(nil, newConn)
+				diff.Added = append(diff.Added, entry)
 			}
 
 			// Every sync writes fresh sandbox and stack config rows, so their IDs
@@ -106,17 +101,27 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 				diff.StackNewID = newAppCfg.StackConfig.ID
 			}
 
+			oldSandboxBuildID, err := latestActiveSandboxBuildID(ctx, db, oldAppConfigID)
+			if err != nil {
+				return nil, err
+			}
+			newSandboxBuildID, err := latestActiveSandboxBuildID(ctx, db, newAppConfigID)
+			if err != nil {
+				return nil, err
+			}
+			if oldSandboxBuildID != newSandboxBuildID {
+				diff.SandboxBuildChanged = true
+				diff.SandboxBuildOldID = oldSandboxBuildID
+				diff.SandboxBuildNewID = newSandboxBuildID
+			}
+
 			return diff, nil
 		}
 	}
 
-	for componentID, newConn := range newConnByComponent {
-		diff.Added = append(diff.Added, app.ComponentDiffEntry{
-			ComponentID:   componentID,
-			ComponentName: newConn.ComponentName,
-			ComponentType: string(newConn.Type),
-			NewChecksum:   newConn.Checksum,
-		})
+	for _, newConn := range newConnByComponent {
+		entry := componentDiffEntry(nil, newConn)
+		diff.Added = append(diff.Added, entry)
 	}
 	if newAppCfg.SandboxConfig.ID != "" {
 		diff.SandboxChanged = true
@@ -126,8 +131,63 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 		diff.StackChanged = true
 		diff.StackNewID = newAppCfg.StackConfig.ID
 	}
+	if newSandboxBuildID, err := latestActiveSandboxBuildID(ctx, db, newAppConfigID); err != nil {
+		return nil, err
+	} else if newSandboxBuildID != "" {
+		diff.SandboxBuildChanged = true
+		diff.SandboxBuildNewID = newSandboxBuildID
+	}
 
 	return diff, nil
+}
+
+func checksumsEqual(oldConn, newConn *app.ComponentConfigConnection) bool {
+	return oldConn.Checksum != "" && newConn.Checksum != "" && oldConn.Checksum == newConn.Checksum
+}
+
+func cccBuildID(ccc *app.ComponentConfigConnection) string {
+	if ccc == nil || !ccc.LatestBuildID.Valid {
+		return ""
+	}
+	return ccc.LatestBuildID.String
+}
+
+func componentDiffEntry(oldConn, newConn *app.ComponentConfigConnection) app.ComponentDiffEntry {
+	entry := app.ComponentDiffEntry{
+		ComponentID:   newConn.ComponentID,
+		ComponentName: newConn.ComponentName,
+		ComponentType: string(newConn.Type),
+		NewChecksum:   newConn.Checksum,
+		NewBuildID:    cccBuildID(newConn),
+	}
+	if oldConn != nil {
+		entry.OldChecksum = oldConn.Checksum
+		entry.OldBuildID = cccBuildID(oldConn)
+		entry.BuildChanged = checksumsEqual(oldConn, newConn) && entry.OldBuildID != entry.NewBuildID &&
+			(entry.OldBuildID != "" || entry.NewBuildID != "")
+	}
+	return entry
+}
+
+func latestActiveSandboxBuildID(ctx context.Context, db *gorm.DB, appConfigID string) (string, error) {
+	if appConfigID == "" {
+		return "", nil
+	}
+	var build app.AppSandboxBuild
+	err := db.WithContext(ctx).
+		Where(app.AppSandboxBuild{
+			AppConfigID: appConfigID,
+			Status:      app.AppSandboxBuildStatusActive,
+		}).
+		Order("created_at DESC").
+		First(&build).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("unable to get active sandbox build for app config %s: %w", appConfigID, err)
+	}
+	return build.ID, nil
 }
 
 // sandboxContent is everything about a sandbox config that decides what gets

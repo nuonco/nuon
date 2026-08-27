@@ -58,7 +58,10 @@ func (h *Helpers) ResumeAppBranchRun(ctx context.Context, run *app.AppBranchRun,
 	}
 	req.Metadata["run_id"] = run.ID
 	req.Metadata["app_branch_id"] = run.AppBranchID
-	req.Metadata["commit_sha"] = run.CommitSHA
+	req.Metadata["commit_sha"] = run.HeadSHA
+	if run.VCSConnectionCommit != nil && run.VCSConnectionCommit.SHA != "" {
+		req.Metadata["commit_sha"] = run.VCSConnectionCommit.SHA
+	}
 	approvalOption := req.ApprovalOption
 	if approvalOption == "" {
 		approvalOption = app.InstallApprovalOptionPrompt

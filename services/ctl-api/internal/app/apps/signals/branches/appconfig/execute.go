@@ -7,6 +7,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
@@ -143,6 +144,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if branchRepo != "" {
 		overrideBranches(intermediateConfig, branchRepo, branchName)
 	}
+
+	config.NormalizeIntermediateConfig(intermediateConfig)
 
 	configJSON, err := json.Marshal(intermediateConfig)
 	if err != nil {
@@ -333,10 +336,12 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLo
 		var configDiff *activities.ComputeAppConfigDiffOutput
 		if p.previewDiff != nil {
 			configDiff = p.previewDiff
-		} else {
+		} else if p.isPreview {
 			var oldConfigID string
-			if run.PreviousRunID != nil && *run.PreviousRunID != "" {
-				prevRun, prevErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.PreviousRunID)
+			if run.Comparison != nil && run.Comparison.BaseRun != nil && run.Comparison.BaseRun.AppConfigID != "" {
+				oldConfigID = run.Comparison.BaseRun.AppConfigID
+			} else if run.Comparison != nil && run.Comparison.BaseRunID != nil && *run.Comparison.BaseRunID != "" {
+				prevRun, prevErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.Comparison.BaseRunID)
 				if prevErr == nil && prevRun.AppConfigID != "" {
 					oldConfigID = prevRun.AppConfigID
 				}
@@ -352,13 +357,6 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLo
 			}
 		}
 
-		if configDiff != nil {
-			meta["config_file"] = configDiff.ConfigFile
-			meta["diff_additions"] = configDiff.Additions
-			meta["diff_removals"] = configDiff.Removals
-			meta["diff_changed"] = configDiff.Changed
-			meta["diff_sections"] = configDiff.Sections
-		}
 		if p.previewBaselineConfigID != "" {
 			meta["baseline_app_config_id"] = p.previewBaselineConfigID
 		}
