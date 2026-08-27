@@ -44,6 +44,8 @@ func generateRunnerSchema(ctx context.Context) error {
 		"--parseDependency",
 		"--parseInternal", "-g", "runner.go",
 		"--markdownFiles", "docs/runner/descriptions",
+		// stacks/runner is omitted: its only client is the hand-written sdks/stack,
+		// so generating a client here would be dead code.
 		"-t", "orgs/runner,apps/runner,general/runner,sandboxes/runner,installs/runner,installers/runner,components/runner,runners/runner,runners/auth,actions/runner",
 	}
 
