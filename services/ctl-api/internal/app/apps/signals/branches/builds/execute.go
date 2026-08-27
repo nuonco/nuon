@@ -189,6 +189,15 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 				l.Info("skipping build for unchanged component",
 					"component_id", componentID,
 					"existing_build_id", check.ExistingBuildID)
+				if check.ExistingBuildID != "" {
+					if pinErr := activities.AwaitSetComponentConfigLatestBuild(ctx, &activities.SetComponentConfigLatestBuildInput{
+						AppConfigID: appConfigID,
+						ComponentID: componentID,
+						BuildID:     check.ExistingBuildID,
+					}); pinErr != nil {
+						return builds, fmt.Errorf("component %s: pin latest build: %w", componentID, pinErr)
+					}
+				}
 				builds = append(builds, buildEntry{
 					BuildID:       check.ExistingBuildID,
 					ComponentID:   componentID,

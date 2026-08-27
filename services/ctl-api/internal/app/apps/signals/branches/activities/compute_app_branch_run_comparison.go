@@ -317,11 +317,26 @@ func (a *Activities) loadComponentDirectories(ctx context.Context, appConfigID s
 		if name == "" {
 			continue
 		}
-		dir := "."
-		if c.ConnectedGithubVCSConfig != nil && c.ConnectedGithubVCSConfig.Directory != "" {
+		dir := ""
+		if c.ConnectedGithubVCSConfig != nil {
 			dir = c.ConnectedGithubVCSConfig.Directory
-		} else if c.PublicGitVCSConfig != nil && c.PublicGitVCSConfig.Directory != "" {
+		} else if c.PublicGitVCSConfig != nil {
 			dir = c.PublicGitVCSConfig.Directory
+		}
+		if c.KubernetesManifestComponentConfig != nil &&
+			c.KubernetesManifestComponentConfig.Kustomize != nil &&
+			c.KubernetesManifestComponentConfig.Kustomize.Path != "" {
+			kustomizePath := c.KubernetesManifestComponentConfig.Kustomize.Path
+			if dir == "." || dir == "" {
+				dir = kustomizePath
+			} else {
+				dir = strings.TrimSuffix(dir, "/") + "/" + strings.TrimPrefix(kustomizePath, "./")
+			}
+		}
+		// Omit missing / repo-root "." so inputs-only git changes do not
+		// mark every component source_changed (enrich skips missing names).
+		if normalizeRepoPath(dir) == "" {
+			continue
 		}
 		out[name] = dir
 	}

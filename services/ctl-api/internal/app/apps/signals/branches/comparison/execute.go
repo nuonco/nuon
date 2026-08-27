@@ -28,13 +28,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	meta := map[string]any{
 		"head_run_id": s.RunID,
 	}
-	desc := "comparison complete"
+	desc := "differences computed"
 	if out != nil {
 		if out.Skipped {
-			desc = "comparison skipped"
+			desc = "differences skipped"
 			if out.SkipReason != "" {
 				meta["skip_reason"] = out.SkipReason
-				desc = fmt.Sprintf("comparison skipped: %s", out.SkipReason)
+				desc = fmt.Sprintf("differences skipped: %s", out.SkipReason)
 			}
 		}
 		if out.BaseRunID != "" {
@@ -64,7 +64,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		},
 	})
 
-	logger.Info("run comparison step complete",
+	logger.Info("run differences step complete",
 		"run_id", s.RunID,
 		"app_branch_id", s.AppBranchID,
 		"skipped", out != nil && out.Skipped)

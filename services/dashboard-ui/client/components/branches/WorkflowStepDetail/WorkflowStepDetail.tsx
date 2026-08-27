@@ -31,10 +31,13 @@ export const WorkflowStepDetail = ({
 
   const isCommitStep = step.name?.toLowerCase().includes('commit')
   const isBuildStep = step.name?.toLowerCase().includes('build')
-  const isComparisonStep = step.name?.toLowerCase().includes('compute run comparison')
+  const isComparisonStep =
+    step.name?.toLowerCase().includes('compute differences') ||
+    step.name?.toLowerCase().includes('compute run comparison')
   const isConfigStep =
     step.name?.toLowerCase().includes('config') &&
-    !step.name?.toLowerCase().includes('diff')
+    !step.name?.toLowerCase().includes('diff') &&
+    !step.name?.toLowerCase().includes('differences')
   const isPlanGroupStep = step.name
     ?.toLowerCase()
     .includes('plan install group')
@@ -122,7 +125,12 @@ export const WorkflowStepDetail = ({
           />
         )}
         {isComparisonStep && (
-          <ComparisonStep metadata={metadata} status={step.status?.status} />
+          <ComparisonStep
+            metadata={metadata}
+            status={step.status?.status}
+            appBranchId={appBranchId}
+            appBranchRunId={appBranchRunId}
+          />
         )}
         {isBuildStep && (
           <BuildStep

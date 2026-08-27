@@ -17,14 +17,12 @@ func normalizeRepoPath(p string) string {
 }
 
 // pathMatchesDirectory reports whether path is under directory (or equal to it).
-// An empty directory (normalized from "." or "") matches every path.
+// Empty / "." directories never match — they are not a usable source root for
+// rebuild decisions (inputs-only changes would otherwise mark every component).
 func pathMatchesDirectory(path, directory string) bool {
 	path = normalizeRepoPath(path)
 	directory = normalizeRepoPath(directory)
-	if directory == "" {
-		return path != ""
-	}
-	if path == "" {
+	if directory == "" || path == "" {
 		return false
 	}
 	return path == directory || strings.HasPrefix(path, directory+"/")
@@ -76,10 +74,9 @@ func enrichConfigDiffWithSourceChanged(
 			}
 			if sec.Name == "Components" {
 				dir, ok := componentDirs[e.Name]
-				if !ok {
-					dir = "."
+				if ok {
+					entry.SourceChanged = anyPathMatchesDirectory(changedPaths, dir)
 				}
-				entry.SourceChanged = anyPathMatchesDirectory(changedPaths, dir)
 			}
 			section.Entries = append(section.Entries, entry)
 		}

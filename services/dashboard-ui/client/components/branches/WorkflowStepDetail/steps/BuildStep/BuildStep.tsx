@@ -13,6 +13,13 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { ComponentType } from '@/components/components/ComponentType'
+import {
+  BuildTypeFilter,
+  SANDBOX_FILTER,
+  uniqueBuildFilterTypes,
+  useBuildTypeFilter,
+  type TBuildTypeFilterKey,
+} from '@/components/branches/BuildTypeFilter'
 import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
@@ -38,6 +45,16 @@ interface IBuildStep {
 
 const isSandboxBuild = (build: any) =>
   build.component_type === 'sandbox' || build.component_id === 'sandbox'
+
+const buildFilterType = (
+  build: any,
+  typeMap: Record<string, TComponentType>
+): TBuildTypeFilterKey | undefined => {
+  if (isSandboxBuild(build)) return SANDBOX_FILTER
+  return (build.component_type || typeMap[build.component_id]) as
+    | TComponentType
+    | undefined
+}
 
 const pollingBuildStatuses = new Set([
   'queued',
@@ -354,17 +371,17 @@ export const BuildStep = ({
     return map
   }, [branchBuilds])
 
-  if (builds.length === 0) {
-    return status === 'in-progress' ? (
-      <StepStatePlaceholder variant="loading">
-        Starting component builds
-      </StepStatePlaceholder>
-    ) : (
-      <StepStatePlaceholder variant="pending">
-        Waiting to start component builds
-      </StepStatePlaceholder>
-    )
-  }
+  const filterTypes = useMemo(
+    () => uniqueBuildFilterTypes(builds.map((b: any) => buildFilterType(b, typeMap))),
+    [builds, typeMap]
+  )
+  const filter = useBuildTypeFilter(filterTypes)
+
+  const visibleBuilds = useMemo(
+    () =>
+      builds.filter((b: any) => filter.matches(buildFilterType(b, typeMap))),
+    [builds, filter.matches, filter.deselected, typeMap]
+  )
 
   const buildSummary = useMemo(() => {
     const counts = {
@@ -389,6 +406,18 @@ export const BuildStep = ({
     }
     return counts
   }, [builds])
+
+  if (builds.length === 0) {
+    return status === 'in-progress' ? (
+      <StepStatePlaceholder variant="loading">
+        Starting component builds
+      </StepStatePlaceholder>
+    ) : (
+      <StepStatePlaceholder variant="pending">
+        Waiting to start component builds
+      </StepStatePlaceholder>
+    )
+  }
 
   const summaryParts: string[] = []
   if (buildSummary.built > 0) {
@@ -422,25 +451,41 @@ export const BuildStep = ({
         )}
       </div>
 
+      {filterTypes.length > 1 && (
+        <BuildTypeFilter
+          types={filter.types}
+          deselected={filter.deselected}
+          onToggle={filter.toggle}
+        />
+      )}
+
       <div className="border rounded-[10px] divide-y overflow-hidden">
-        {builds.map((build: any, i: number) => {
-          const rowId = String(build.component_id || i)
-          return (
-            <BuildRow
-              key={rowId}
-              build={build}
-              type={build.component_type || typeMap[build.component_id]}
-              rowId={rowId}
-              orgId={org?.id}
-              appId={app?.id}
-              componentBuildId={
-                build.build_id || componentBuildMap.get(build.component_id)
-              }
-              sandboxBuildId={sandboxBuildId}
-              isLoadingBuilds={isLoadingBuilds}
-            />
-          )
-        })}
+        {visibleBuilds.length === 0 ? (
+          <div className="px-4 py-3">
+            <Text variant="subtext" theme="neutral">
+              No builds match filters
+            </Text>
+          </div>
+        ) : (
+          visibleBuilds.map((build: any, i: number) => {
+            const rowId = String(build.component_id || i)
+            return (
+              <BuildRow
+                key={rowId}
+                build={build}
+                type={build.component_type || typeMap[build.component_id]}
+                rowId={rowId}
+                orgId={org?.id}
+                appId={app?.id}
+                componentBuildId={
+                  build.build_id || componentBuildMap.get(build.component_id)
+                }
+                sandboxBuildId={sandboxBuildId}
+                isLoadingBuilds={isLoadingBuilds}
+              />
+            )
+          })
+        )}
       </div>
     </div>
   )

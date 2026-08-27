@@ -131,12 +131,12 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 	}
 
 	sg.nextGroup()
-	step, err := sg.appBranchSignalStep(ctx, appBranchID, "compute run comparison", pgtype.Hstore{}, &comparison.Signal{
+	step, err := sg.appBranchSignalStep(ctx, appBranchID, "compute differences", pgtype.Hstore{}, &comparison.Signal{
 		AppBranchID: appBranchID,
 		RunID:       runID,
 	}, WithSkippable(false))
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create compute run comparison step")
+		return nil, errors.Wrap(err, "unable to create compute differences step")
 	}
 	steps = append(steps, step)
 

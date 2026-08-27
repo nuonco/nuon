@@ -7953,6 +7953,11 @@ export interface components {
     };
     "service.CreateAppBranchConfigRequest": {
       connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
+      /**
+       * @description DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
+       * branch runs. Omit to carry the current setting forward.
+       */
+      disable_branch_triggers?: boolean;
       install_groups?: components["schemas"]["service.InstallGroupRequest"][];
       /**
        * @description PostDeployRunbookIDs run on each install, in order, after its deploy succeeds.
@@ -9056,7 +9061,7 @@ export interface components {
       disable_branch_triggers?: boolean;
     };
     "service.UpdateAppBranchRequest": {
-      name?: string;
+      name: string;
     };
     "service.UpdateAppConfigInstallsRequest": {
       installIDs?: string[];
@@ -14358,6 +14363,8 @@ export interface operations {
       query?: {
         /** @description load all children configs */
         recurse?: boolean;
+        /** @description include intermediate_config_json blob contents */
+        include_intermediate?: boolean;
       };
       path: {
         /** @description app ID */

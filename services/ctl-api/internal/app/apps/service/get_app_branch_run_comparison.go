@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -15,12 +16,26 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
+type AppBranchRunComparisonRunSummary struct {
+	ID                  string                   `json:"id"`
+	WorkflowID          string                   `json:"workflow_id,omitempty"`
+	Status              string                   `json:"status,omitempty"`
+	CreatedAt           time.Time                `json:"created_at,omitempty"`
+	PRNumber            *int                     `json:"pr_number,omitempty"`
+	BaseBranch          string                   `json:"base_branch,omitempty"`
+	EventType           string                   `json:"event_type,omitempty"`
+	VCSConnectionCommit *app.VCSConnectionCommit `json:"vcs_connection_commit,omitempty"`
+}
+
 type AppBranchRunComparisonResponse struct {
 	ID        string `json:"id"`
 	HeadRunID string `json:"head_run_id"`
 	BaseRunID string `json:"base_run_id,omitempty"`
 	BaseSHA   string `json:"base_sha,omitempty"`
 	HeadSHA   string `json:"head_sha,omitempty"`
+
+	HeadRun *AppBranchRunComparisonRunSummary `json:"head_run,omitempty"`
+	BaseRun *AppBranchRunComparisonRunSummary `json:"base_run,omitempty"`
 
 	GitDiff    *blobstore.BlobMetadata `json:"git_diff,omitempty"`
 	FullDiff   *blobstore.BlobMetadata `json:"full_diff,omitempty"`
@@ -114,6 +129,8 @@ func (s *service) GetAppBranchRunComparison(ctx *gin.Context) {
 	if comparison.BaseRun != nil {
 		resp.BaseSHA = comparisonRunSHA(comparison.BaseRun)
 	}
+	resp.HeadRun = comparisonRunSummary(&comparison.HeadRun)
+	resp.BaseRun = comparisonRunSummary(comparison.BaseRun)
 
 	include := parseIncludeDiff(ctx.Query("include_diff"))
 	if len(include) > 0 {
@@ -163,6 +180,28 @@ func comparisonRunSHA(run *app.AppBranchRun) string {
 		return run.VCSConnectionCommit.SHA
 	}
 	return run.HeadSHA
+}
+
+func comparisonRunSummary(run *app.AppBranchRun) *AppBranchRunComparisonRunSummary {
+	if run == nil || run.ID == "" {
+		return nil
+	}
+	out := &AppBranchRunComparisonRunSummary{
+		ID:         run.ID,
+		Status:     run.Status,
+		CreatedAt:  run.CreatedAt,
+		PRNumber:   run.PRNumber,
+		BaseBranch: run.BaseBranch,
+		EventType:  run.EventType,
+	}
+	if run.WorkflowID != nil {
+		out.WorkflowID = *run.WorkflowID
+	}
+	if run.VCSConnectionCommit != nil {
+		commit := *run.VCSConnectionCommit
+		out.VCSConnectionCommit = &commit
+	}
+	return out
 }
 
 func parseIncludeDiff(raw string) map[string]bool {
