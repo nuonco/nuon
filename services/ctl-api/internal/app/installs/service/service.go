@@ -24,6 +24,7 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 type Params struct {
@@ -38,6 +39,7 @@ type Params struct {
 	ComponentHelpers *componenthelpers.Helpers
 	Helpers          *helpers.Helpers
 	AccountsHelpers  *accountshelpers.Helpers
+	AcctClient       *account.Client
 	AppsHelpers      *appshelpers.Helpers
 	OrgsHelpers      *orgshelpers.Helpers
 	RunnersHelpers   *runnershelpers.Helpers
@@ -61,6 +63,7 @@ type service struct {
 	componentHelpers *componenthelpers.Helpers
 	helpers          *helpers.Helpers
 	accountsHelpers  *accountshelpers.Helpers
+	acctClient       *account.Client
 	appsHelpers      *appshelpers.Helpers
 	orgsHelpers      *orgshelpers.Helpers
 	runnersHelpers   *runnershelpers.Helpers
@@ -391,6 +394,7 @@ func New(params Params) *service {
 		componentHelpers: params.ComponentHelpers,
 		helpers:          params.Helpers,
 		accountsHelpers:  params.AccountsHelpers,
+		acctClient:       params.AcctClient,
 		queueClient:      params.QueueClient,
 		appsHelpers:      params.AppsHelpers,
 		orgsHelpers:      params.OrgsHelpers,
