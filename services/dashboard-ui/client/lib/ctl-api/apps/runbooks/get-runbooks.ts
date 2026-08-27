@@ -4,18 +4,20 @@ import { buildQueryParams } from '@/utils/build-query-params'
 
 export interface IGetRunbooks extends TPaginationParams {
   appId: string
+  branch_id?: string
   orgId: string
 }
 
 export async function getRunbooks({
   appId,
+  branch_id,
   orgId,
   limit,
   offset,
 }: IGetRunbooks) {
   return api<TRunbook[]>({
     orgId,
-    path: `apps/${appId}/runbooks${buildQueryParams({ limit, offset })}`,
+    path: `apps/${appId}/runbooks${buildQueryParams({ limit, offset, branch_id })}`,
     paginated: true,
   })
 }

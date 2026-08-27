@@ -4,6 +4,7 @@ import { buildQueryParams } from '@/utils/build-query-params'
 
 export interface IGetActions extends TPaginationParams {
   appId: string
+  branch_id?: string
   labels?: string
   orgId: string
   q?: string
@@ -12,6 +13,7 @@ export interface IGetActions extends TPaginationParams {
 
 export async function getActions({
   appId,
+  branch_id,
   labels,
   orgId,
   limit,
@@ -21,7 +23,7 @@ export async function getActions({
 }: IGetActions) {
   return api<TAction[]>({
     orgId,
-    path: `apps/${appId}/action-workflows${buildQueryParams({ limit, offset, q, labels, trigger_types })}`,
+    path: `apps/${appId}/action-workflows${buildQueryParams({ limit, offset, q, labels, trigger_types, branch_id })}`,
     paginated: true,
   })
 }
