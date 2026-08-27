@@ -2,15 +2,15 @@
 title: 'Container Image Components'
 description: "Container image components allow you to use prebuilt container images."
 icon: "box"
-keywords: ["components", "container image", "container image guide", "prebuilt image", "ECR", "GAR", "Artifact Registry", "container_image type", "external image", "image registry", "OCI image"]
+keywords: ["components", "container image", "container image guide", "prebuilt image", "ECR", "GAR", "Artifact Registry", "ACR", "Azure Container Registry", "container_image type", "external image", "image registry", "OCI image"]
 ---
 
-Container images allow you to import prebuilt container images from public sources, private AWS ECR repositories, and private GCP Artifact Registry (GAR) repositories.
+Container images allow you to import prebuilt container images from public sources, private AWS ECR repositories, private GCP Artifact Registry (GAR) repositories, and private Azure Container Registry (ACR) repositories.
 
-Container images are used to import _prebuilt_ images, that have already been pushed to either a public registry, a private AWS ECR repository, or a private GCP Artifact Registry repository.
+Container images are used to import _prebuilt_ images, that have already been pushed to either a public registry, a private AWS ECR repository, a private GCP Artifact Registry repository, or a private Azure Container Registry repository.
 
 <Note>
-If you have private prebuilt images in a registry other than AWS ECR or GCP Artifact Registry, [please get in touch](https://nuon.co/contact-us)!
+If you have private prebuilt images in a registry other than AWS ECR, GCP Artifact Registry, or Azure Container Registry, [please get in touch](https://nuon.co/contact-us)!
 </Note>
 
 ## Configuring a container image component
@@ -73,6 +73,48 @@ workload_identity_provider = "projects/123456789/locations/global/workloadIdenti
 ```
 
 To use a GAR image, [follow the access setup directions](#gcp-gar-access). Both Nuon-hosted (AWS) and self-hosted-on-GCP customers can pull from the same GAR repository.
+
+### Using a Private Azure ACR Image
+
+To use an image from a private Azure Container Registry, configure the `azure_acr` block.
+
+```toml components/acr_image.toml
+# container-image
+name   = "acr"
+type   = "container_image"
+
+[azure_acr]
+image_url    = "vendoracr.azurecr.io/private-app"
+tag          = "latest"
+registry_url = "vendoracr.azurecr.io"
+tenant_id    = "00000000-0000-0000-0000-000000000000"
+client_id    = "11111111-1111-1111-1111-111111111111"
+
+# Exactly one of client_secret_name or client_certificate_name. Both take the
+# NAME of an app secret, never the credential itself.
+client_secret_name = "acr_pull_secret"
+```
+
+Access to a private ACR repository is granted through a service principal in
+your own tenant, not through credentials in your app config. The service
+principal's secret (or certificate) value is stored as an app secret and
+referenced by name; the value itself never appears in app config or git. To
+set this up, [follow the access setup directions](#azure-acr-access).
+
+<Note>
+ACR has no registry-level password. Authentication always goes through Azure
+AD: Nuon exchanges an Azure AD token for the service principal for an ACR
+refresh token, then uses that to pull the image. This is why `azure_acr`
+takes a tenant, client, and secret/certificate rather than a username and
+password.
+</Note>
+
+<Note>
+This credential is used only when Nuon's build runs — it authenticates to
+your registry once, at build time, from Nuon's control plane. It never lands
+in a customer cloud account, and it is shared across all installs of the app
+rather than configured per install.
+</Note>
 
 ## Deployments
 
@@ -144,6 +186,7 @@ section that matches your registry and the deployment kind your customers are us
 | GCP Artifact Registry | Nuon-hosted (AWS) | [GAR for Nuon-hosted (AWS) customers](#gar-for-nuon-hosted-aws-customers) |
 | GCP Artifact Registry | Self-hosted on GCP | [GCP GAR Access](#gcp-gar-access) |
 | GCP Artifact Registry | Self-hosted on Azure | [GAR for Nuon self-hosted (Azure) customers](#gar-for-nuon-self-hosted-azure-customers) |
+| Azure Container Registry | Any | [Azure ACR Access](#azure-acr-access) |
 
 If you have customers on both deployments, you can set both inputs on the same role or service account. Both modules add the new principals alongside any existing ones.
 
@@ -322,9 +365,101 @@ customer's component config, set `gcp_gar.service_account_email` to the GAR-acce
 
 See the full set of `gcp_gar` fields in the [container-image config reference](/config-ref/container-image#gcp_gar).
 
+### Azure ACR Access
+
+Unlike AWS ECR and GCP GAR, ACR has no cross-tenant identity federation, so
+access is granted the way most third parties access an Azure resource: you
+create a service principal (an app registration) in your own tenant, grant
+it `AcrPull` scoped to your registry, and give Nuon the tenant ID, client
+ID, and a secret or certificate for that service principal.
+
+<Note>
+Only your build needs this. The install runner that deploys into a
+customer's cloud account pulls the image from Nuon's own registry, never
+from your ACR — so no access needs to be granted to any customer's Azure
+identity. One service principal, scoped to your tenant, covers every install
+of the app.
+</Note>
+
+**1. Create the app registration and service principal:**
+
+```bash
+az ad app create --display-name "nuon-acr-pull"
+# note the "appId" field from the output — this is your client_id
+
+az ad sp create --id <app-id>
+```
+
+**2. Grant `AcrPull`, scoped to just this registry:**
+
+```bash
+az role assignment create \
+  --assignee <app-id> \
+  --role AcrPull \
+  --scope $(az acr show --name vendoracr --query id --output tsv)
+```
+
+**3. Create a credential.** Use a client secret, or a client certificate
+(the better practice of the two, since it needs no plaintext secret at
+rest):
+
+```bash
+# Option A: client secret
+az ad app credential reset \
+  --id <app-id> \
+  --display-name "nuon-acr-pull-secret" \
+  --years 1
+# outputs a JSON object with "password" — this is the secret value
+```
+
+```bash
+# Option B: client certificate
+openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+  -keyout acr-pull.key -out acr-pull.crt -subj "/CN=nuon-acr-pull"
+
+az ad app credential reset --id <app-id> --cert @acr-pull.crt --append
+
+# Nuon needs the private key too, so bundle both into one PEM and base64
+# encode it before storing it as an app secret
+cat acr-pull.key acr-pull.crt | base64 > acr-pull-bundle.b64
+```
+
+**4. Store the value as an app secret**, never in app config or git:
+
+```bash
+# for a client secret
+nuon apps variables create \
+  --app-id <your-nuon-app-id> \
+  --name acr_pull_secret \
+  --value "<password-from-step-3>"
+
+# for a client certificate
+nuon apps variables create \
+  --app-id <your-nuon-app-id> \
+  --name acr_pull_cert \
+  --value "$(cat acr-pull-bundle.b64)"
+```
+
+**5. Reference the secret by name** in the component's `azure_acr` block —
+see [Using a Private Azure ACR Image](#using-a-private-azure-acr-image).
+Set `tenant_id` to your tenant, `client_id` to the `appId` from step 1, and
+`client_secret_name` or `client_certificate_name` (never both) to the app
+secret name from step 4.
+
+<Note>
+Rotating the credential is a plain app secret update — run `nuon apps
+variables create` again with the same `--name` to overwrite it. Nothing
+re-runs automatically, so a stale or expired credential surfaces as a build
+failure the next time the component builds, not immediately at rotation
+time.
+</Note>
+
+See the full set of `azure_acr` fields in the [container-image config
+reference](/config-ref/container-image#azure_acr).
+
 ## Importing Images Outside of Supported Registries
 
-We currently support public container images, private AWS ECR repositories, and private GCP Artifact Registry repositories.
+We currently support public container images, private AWS ECR repositories, private GCP Artifact Registry repositories, and private Azure Container Registry repositories.
 
 If your registry is supported by AWS ECR's [pull through
   cache](https://docs.aws.amazon.com/AmazonECR/latest/userguide/pull-through-cache-working.html), the easiest way to

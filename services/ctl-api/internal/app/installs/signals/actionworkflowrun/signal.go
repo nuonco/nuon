@@ -572,15 +572,16 @@ func resolveMirroredDigestRef(ctx workflow.Context, syncJobID string) (string, e
 	return out.Ref, nil
 }
 
-// supportedImageActionPlatform gates image-backed actions to AWS (plus local
-// runners, which only run on a developer machine). AWS is the only platform
-// that mints the selected role's credentials on the runner and injects them, so
-// the container never needs the VM's metadata identity. GCP injects only an
-// impersonation hint and Azure injects nothing, so both fall back to the node
-// identity and need credential work before they can honor the role boundary.
+// supportedImageActionPlatform gates image-backed actions to the platforms that
+// can put the selected role inside the container. AWS mints the role's
+// credentials on the runner and injects them, so the container never needs the
+// VM's metadata identity. Azure names the selected user-assigned managed
+// identity via ARM_CLIENT_ID/AZURE_CLIENT_ID and the container reaches IMDS over
+// the docker bridge, which is the same boundary a script action gets. GCP only
+// injects an impersonation hint and still needs credential work.
 func supportedImageActionPlatform(p app.AppRunnerType) bool {
 	switch p {
-	case app.AppRunnerTypeAWS, app.AppRunnerTypeLocal:
+	case app.AppRunnerTypeAWS, app.AppRunnerTypeAzure, app.AppRunnerTypeLocal:
 		return true
 	default:
 		return false
