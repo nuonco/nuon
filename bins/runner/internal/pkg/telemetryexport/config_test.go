@@ -3,6 +3,7 @@ package telemetryexport
 import (
 	"encoding/base64"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -119,22 +120,36 @@ func TestCollectorConfigKeepsHeaderValuesOutOfFile(t *testing.T) {
 	if len(environment) != 1 || !strings.HasSuffix(environment[0], "=super-secret-value") {
 		t.Fatalf("unexpected child environment: %q", environment)
 	}
-	for _, component := range []string{"127.0.0.1:4318", "127.0.0.1:4319", "logs/audit_async:", "logs/audit_sync:", "otlp_http/async:", "otlp_http/sync:"} {
+	for _, component := range []string{audit.AsyncRouteAddress, audit.SyncRouteAddress, "logs/audit_async:", "logs/audit_sync:", "otlp_http/async:", "otlp_http/sync:"} {
 		if !strings.Contains(string(contents), component) {
 			t.Fatalf("generated collector configuration lacks %q", component)
 		}
 	}
-	if !strings.Contains(string(contents), `attributes["nuon.audit"] != "true"`) {
-		t.Fatal("generated collector configuration does not filter non-audit logs")
-	}
-	if !strings.Contains(string(contents), "- filter/audit") {
-		t.Fatal("generated collector pipeline does not use the audit filter")
+	for _, standardOTLPEndpoint := range []string{"127.0.0.1:4317", "127.0.0.1:4318"} {
+		if strings.Contains(string(contents), standardOTLPEndpoint) {
+			t.Fatalf("generated audit collector configuration uses standard OTLP endpoint %q", standardOTLPEndpoint)
+		}
 	}
 	var generated struct {
+		Extensions map[string]struct {
+			Directory            string `yaml:"directory"`
+			CreateDirectory      bool   `yaml:"create_directory"`
+			DirectoryPermissions string `yaml:"directory_permissions"`
+			Fsync                bool   `yaml:"fsync"`
+			Compaction           struct {
+				OnRebound      bool   `yaml:"on_rebound"`
+				Directory      string `yaml:"directory"`
+				CleanupOnStart bool   `yaml:"cleanup_on_start"`
+			} `yaml:"compaction"`
+		} `yaml:"extensions"`
 		Exporters map[string]struct {
 			Timeout      string `yaml:"timeout"`
 			SendingQueue struct {
-				Enabled bool `yaml:"enabled"`
+				Enabled         bool   `yaml:"enabled"`
+				QueueSize       int    `yaml:"queue_size"`
+				NumConsumers    int    `yaml:"num_consumers"`
+				Storage         string `yaml:"storage"`
+				BlockOnOverflow bool   `yaml:"block_on_overflow"`
 			} `yaml:"sending_queue"`
 			Retry struct {
 				Enabled         bool   `yaml:"enabled"`
@@ -143,13 +158,23 @@ func TestCollectorConfigKeepsHeaderValuesOutOfFile(t *testing.T) {
 				MaxElapsedTime  string `yaml:"max_elapsed_time"`
 			} `yaml:"retry_on_failure"`
 		} `yaml:"exporters"`
+		Service struct {
+			Extensions []string `yaml:"extensions"`
+		} `yaml:"service"`
 	}
 	if err := yaml.Unmarshal(contents, &generated); err != nil {
 		t.Fatal(err)
 	}
 	async := generated.Exporters["otlp_http/async"]
-	if !async.SendingQueue.Enabled || !async.Retry.Enabled || async.Retry.InitialInterval != "1s" || async.Retry.MaxInterval != "30s" || async.Retry.MaxElapsedTime != "5m" {
+	if !async.SendingQueue.Enabled || async.SendingQueue.QueueSize != auditQueueSize || async.SendingQueue.NumConsumers != auditQueueConsumers || async.SendingQueue.Storage != fileStorageExtensionID || async.SendingQueue.BlockOnOverflow || !async.Retry.Enabled || async.Retry.InitialInterval != "1s" || async.Retry.MaxInterval != "30s" || async.Retry.MaxElapsedTime != "0s" {
 		t.Fatalf("asynchronous exporter does not queue and retry: %#v", async)
+	}
+	storage := generated.Extensions[fileStorageExtensionID]
+	if storage.Directory != collectorStorageDir || !storage.CreateDirectory || storage.DirectoryPermissions != "0700" || !storage.Fsync || !storage.Compaction.OnRebound || storage.Compaction.Directory != collectorStorageDir || !storage.Compaction.CleanupOnStart {
+		t.Fatalf("asynchronous exporter storage is not durable: %#v", storage)
+	}
+	if !slices.Contains(generated.Service.Extensions, fileStorageExtensionID) {
+		t.Fatalf("file storage extension is not enabled by the collector service: %q", generated.Service.Extensions)
 	}
 	sync := generated.Exporters["otlp_http/sync"]
 	if sync.SendingQueue.Enabled || sync.Retry.Enabled || sync.Timeout != audit.SyncExportTimeout.String() {
@@ -176,7 +201,7 @@ func TestCollectorConfigOmitsAuditPipelineWhenDisabled(t *testing.T) {
 	if !strings.Contains(config, "health_check:") || !strings.Contains(config, "pipelines: {}") {
 		t.Fatalf("generated collector configuration does not contain an empty service: %s", config)
 	}
-	for _, unexpected := range []string{"127.0.0.1:4318", "127.0.0.1:4319", "logs/audit_async:", "logs/audit_sync:", "filter/audit:", "otlp_http/async:", "otlp_http/sync:"} {
+	for _, unexpected := range []string{audit.AsyncRouteAddress, audit.SyncRouteAddress, "logs/audit_async:", "logs/audit_sync:", "otlp_http/async:", "otlp_http/sync:", fileStorageExtensionID, collectorStorageDir} {
 		if strings.Contains(config, unexpected) {
 			t.Fatalf("generated collector configuration contains disabled audit component %q", unexpected)
 		}

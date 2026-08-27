@@ -156,7 +156,7 @@ func TestClientStopsBeforeOwnedRouteLifecycle(t *testing.T) {
 	var order []string
 	var mu sync.Mutex
 	exporter := &orderedExporter{mu: &mu, order: &order}
-	w := newWriter(nil, nil, new(testExporter), exporter)
+	w := newWriter(nil, nil, new(testExporter), exporter, nil)
 	w.enabled = true
 
 	app := fx.New(

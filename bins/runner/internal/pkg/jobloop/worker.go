@@ -3,7 +3,6 @@ package jobloop
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	smithytime "github.com/aws/smithy-go/time"
@@ -44,10 +43,12 @@ func (j *jobLoop) runWorker() {
 		l.Info("worker exited cleanly due to drain")
 		return
 	}
+	if j.pollCtx.Err() != nil {
+		return
+	}
 
 	l.Warn("shutting down runner due to closing job loop")
-	os.Exit(155)
-	if err := j.shutdowner.Shutdown(fx.ExitCode(1)); err != nil {
+	if err := j.shutdowner.Shutdown(fx.ExitCode(155)); err != nil {
 		l.Warn("unable to shut down", zap.Error(err))
 	}
 }

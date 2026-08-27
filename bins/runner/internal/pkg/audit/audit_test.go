@@ -11,9 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/otelresource"
 	"github.com/nuonco/nuon/pkg/runner/settings"
 	"github.com/nuonco/nuon/pkg/runner/version"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -111,7 +114,7 @@ func TestProcessIdentityUsesRegisteredProcessAndConfiguredImage(t *testing.T) {
 
 func TestWriteSyncWaitsForAcknowledgementAndReturnsErrors(t *testing.T) {
 	syncExporter := new(testExporter)
-	w := newWriter(map[string]string{"runner_process.id": "proc-123"}, nil, new(testExporter), syncExporter)
+	w := newWriter(map[string]string{"runner_process.id": "proc-123"}, nil, new(testExporter), syncExporter, nil)
 	w.enabled = true
 
 	event := Event{Name: "test", Message: "test event", Outcome: OutcomeSucceeded}
@@ -138,7 +141,7 @@ func TestWriteSyncWaitsForAcknowledgementAndReturnsErrors(t *testing.T) {
 
 func TestWriteSyncEnforcesConfiguredTimeout(t *testing.T) {
 	syncExporter := &testExporter{wait: true}
-	w := newWriter(nil, nil, new(testExporter), syncExporter)
+	w := newWriter(nil, nil, new(testExporter), syncExporter, nil)
 	w.enabled = true
 	w.syncTimeout = 10 * time.Millisecond
 
@@ -150,7 +153,7 @@ func TestWriteSyncEnforcesConfiguredTimeout(t *testing.T) {
 
 func TestWriteSyncPropagatesCallerCancellation(t *testing.T) {
 	syncExporter := &testExporter{wait: true}
-	w := newWriter(nil, nil, new(testExporter), syncExporter)
+	w := newWriter(nil, nil, new(testExporter), syncExporter, nil)
 	w.enabled = true
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -164,7 +167,8 @@ func TestWriteSyncPropagatesCallerCancellation(t *testing.T) {
 func TestWriteAsyncSendsToCollector(t *testing.T) {
 	asyncExporter := new(testExporter)
 	syncExporter := new(testExporter)
-	w := newWriter(nil, nil, asyncExporter, syncExporter)
+	rsrc := otelresource.New(&settings.Settings{Metadata: map[string]string{"runner.id": "run-123"}}, "")
+	w := newWriter(nil, nil, asyncExporter, syncExporter, rsrc)
 	w.enabled = true
 	before := time.Now()
 	if err := w.WriteAsync(Event{Name: "test", Message: "queued", Outcome: OutcomeStarted}); err != nil {
@@ -178,6 +182,17 @@ func TestWriteAsyncSendsToCollector(t *testing.T) {
 	}
 	if timestamp := asyncExporter.records[0].Timestamp(); timestamp.Before(before) || timestamp.After(time.Now()) {
 		t.Fatalf("collector record timestamp = %s, want write time", timestamp)
+	}
+	wantResource := map[attribute.Key]string{
+		semconv.ServiceNamespaceKey:  "nuon",
+		semconv.ServiceNameKey:       "runner",
+		semconv.ServiceInstanceIDKey: "run-123",
+	}
+	for key, want := range wantResource {
+		got, ok := asyncExporter.records[0].Resource().Set().Value(key)
+		if !ok || got.AsString() != want {
+			t.Errorf("collector record %s = %q, want %q", key, got.AsString(), want)
+		}
 	}
 }
 
@@ -200,7 +215,7 @@ func TestOTLPWriteSyncWaitsForCollectorResponse(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newOTLPExporter() error = %v", err)
 	}
-	w := newWriter(nil, nil, new(testExporter), exp)
+	w := newWriter(nil, nil, new(testExporter), exp, nil)
 	w.enabled = true
 
 	started := time.Now()
@@ -219,7 +234,7 @@ func TestOTLPWriteSyncWaitsForCollectorResponse(t *testing.T) {
 
 func TestEnableEmitsStartupOnce(t *testing.T) {
 	syncExporter := new(testExporter)
-	w := newWriter(map[string]string{"runner_process.id": "proc-123"}, nil, new(testExporter), syncExporter)
+	w := newWriter(map[string]string{"runner_process.id": "proc-123"}, nil, new(testExporter), syncExporter, nil)
 
 	w.Enable()
 	w.Disable()
@@ -231,7 +246,7 @@ func TestEnableEmitsStartupOnce(t *testing.T) {
 
 func TestEnableRetriesStartupAfterFailedExport(t *testing.T) {
 	syncExporter := &testExporter{err: errors.New("collector unavailable")}
-	w := newWriter(map[string]string{"runner_process.id": "proc-123"}, nil, new(testExporter), syncExporter)
+	w := newWriter(map[string]string{"runner_process.id": "proc-123"}, nil, new(testExporter), syncExporter, nil)
 
 	if err := w.Enable(); err == nil {
 		t.Fatal("Enable() returned nil for failed startup export")
@@ -253,7 +268,7 @@ func TestEnableRetriesStartupAfterFailedExport(t *testing.T) {
 func TestLifecycleEnvelopeAndStoppingAreSynchronousAndDeduplicated(t *testing.T) {
 	asyncExporter := new(testExporter)
 	syncExporter := new(testExporter)
-	w := newWriter(map[string]string{"runner_process.id": "proc-123"}, nil, asyncExporter, syncExporter)
+	w := newWriter(map[string]string{"runner_process.id": "proc-123"}, nil, asyncExporter, syncExporter, nil)
 	w.Enable()
 	if err := w.ProcessStopping(context.Background(), "host_shutdown", "systemd_logind"); err != nil {
 		t.Fatalf("ProcessStopping() error = %v", err)
@@ -276,7 +291,7 @@ func TestLifecycleEnvelopeAndStoppingAreSynchronousAndDeduplicated(t *testing.T)
 
 func TestProcessStoppingRetriesAfterFailedExport(t *testing.T) {
 	syncExporter := &testExporter{err: errors.New("collector rejected record")}
-	w := newWriter(nil, nil, new(testExporter), syncExporter)
+	w := newWriter(nil, nil, new(testExporter), syncExporter, nil)
 	w.enabled = true
 
 	if err := w.ProcessStopping(context.Background(), "host_shutdown", "systemd_logind"); err == nil {
@@ -298,7 +313,7 @@ func TestProcessStoppingRetriesAfterFailedExport(t *testing.T) {
 
 func TestProcessStoppingSerializesConcurrentCalls(t *testing.T) {
 	syncExporter := new(testExporter)
-	w := newWriter(nil, nil, new(testExporter), syncExporter)
+	w := newWriter(nil, nil, new(testExporter), syncExporter, nil)
 	w.enabled = true
 
 	const callers = 16
@@ -330,7 +345,7 @@ func TestWritesRecordDeliveryMetrics(t *testing.T) {
 	metrics := new(testMetrics)
 	asyncExporter := new(testExporter)
 	syncExporter := new(testExporter)
-	w := newWriter(nil, metrics, asyncExporter, syncExporter)
+	w := newWriter(nil, metrics, asyncExporter, syncExporter, nil)
 	w.enabled = true
 
 	event := Event{Name: "test", Message: "test event", Outcome: OutcomeSucceeded}
@@ -387,12 +402,13 @@ func TestJobEventPreservesExistingEnvelope(t *testing.T) {
 		CreatedByID:     "acct-123",
 		OrgID:           "org-123",
 		RunnerProcessID: "proc-123",
+		LogStreamID:     "log-123",
 		Metadata:        map[string]string{"install_id": "inst-123"},
 	}, "job execution started", OutcomeStarted, nil)
 	if !ok {
 		t.Fatal("deploy job was not auditable")
 	}
-	if event.Name != "install_deploy" || event.Attributes["user.id"] != "acct-123" || event.Attributes["install.id"] != "inst-123" || event.Attributes["runner_process.id"] != "proc-123" {
+	if event.Name != "install_deploy" || event.Attributes["user.id"] != "acct-123" || event.Attributes["install.id"] != "inst-123" || event.Attributes["runner_process.id"] != "proc-123" || event.Attributes["log_stream.id"] != "log-123" {
 		t.Fatalf("unexpected job audit event: %#v", event)
 	}
 	if _, ok := JobEvent(&models.AppRunnerJob{Group: models.AppRunnerJobGroupBuild}, "ignored", OutcomeStarted, nil); ok {
