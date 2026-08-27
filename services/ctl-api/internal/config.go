@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/services/config"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/orgfeatures"
 )
 
 //nolint:gochecknoinits
@@ -129,7 +130,7 @@ func init() {
 	config.RegisterDefault("temporal_blob_cache_max_size_mb", 1024)
 	config.RegisterDefault("temporal_blob_s3_timeout", "30s")
 
-	config.RegisterDefault("auto_enabled_features", "")
+	config.RegisterDefault("forced_enabled_features", "")
 	config.RegisterDefault("enable_httpbin_debug_endpoints", false)
 	config.RegisterDefault("enable_endpoint_auditing", false)
 	config.RegisterDefault("org_default_user_journeys_enabled", false)
@@ -375,7 +376,9 @@ type Config struct {
 	SandboxModeSleep           time.Duration `config:"sandbox_mode_sleep" validate:"required"`
 	SandboxModeEnableRunners   bool          `config:"sandbox_mode_enable_runners"`
 
-	AutoEnabledFeatures string `config:"auto_enabled_features"`
+	// ForcedEnabledFeatures lists flags this deployment pins on for every org: they
+	// resolve enabled regardless of the stored per-org value and cannot be toggled off.
+	ForcedEnabledFeatures string `config:"forced_enabled_features"`
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
@@ -665,6 +668,8 @@ func NewConfig() (*Config, error) {
 	if err := v.Struct(cfg); err != nil {
 		return nil, fmt.Errorf("unable to validate config: %w", err)
 	}
+
+	orgfeatures.SetForced(cfg.ForcedEnabledFeatures)
 
 	switch {
 	case cfg.IsGCP():

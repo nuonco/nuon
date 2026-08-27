@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -18,12 +17,13 @@ type featureFlagRow struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	// Default is the value a new org gets from the code default, before the
-	// deployment's auto_enabled_features override.
+	// deployment's forced_enabled_features override.
 	Default          bool `json:"default"`
-	AutoEnabled      bool `json:"auto_enabled"`
+	Forced           bool `json:"forced"`
 	EffectiveDefault bool `json:"effective_default"`
 	// EnabledCount counts orgs resolved against the default, so orgs predating
-	// the flag are counted as whatever the default says.
+	// the flag are counted as whatever the default says. A forced flag counts
+	// every org, since the stored value is ignored at read time.
 	EnabledCount int `json:"enabled_count"`
 	// UnsetCount is how many orgs have no stored value and fall back to the default.
 	UnsetCount int `json:"unset_count"`
@@ -79,7 +79,7 @@ func (s *service) getFeatureFlags(ctx context.Context) ([]featureFlagRow, int64,
 	}
 
 	defaults := app.DefaultFeatures()
-	autoEnabled := s.autoEnabledFeatures()
+	forcedFeatures := app.ForcedFeatures()
 	features := app.GetFeaturesWithDescriptions()
 
 	// GetFeatures() is chronological, oldest first, so reverse for newest-first display.
@@ -87,8 +87,8 @@ func (s *service) getFeatureFlags(ctx context.Context) ([]featureFlagRow, int64,
 	for i := len(features) - 1; i >= 0; i-- {
 		f := features[i]
 		def := defaults[app.OrgFeature(f.Name)]
-		auto := autoEnabled[f.Name]
-		effective := def || auto
+		forced := forcedFeatures[f.Name]
+		effective := def || forced
 
 		stored := explicit[f.Name]
 		unset := int(totalOrgs) - stored.TrueCount - stored.FalseCount
@@ -101,12 +101,15 @@ func (s *service) getFeatureFlags(ctx context.Context) ([]featureFlagRow, int64,
 			enabledCount += unset
 			drift = stored.FalseCount
 		}
+		if forced {
+			enabledCount, drift = int(totalOrgs), 0
+		}
 
 		rows = append(rows, featureFlagRow{
 			Name:             f.Name,
 			Description:      f.Description,
 			Default:          def,
-			AutoEnabled:      auto,
+			Forced:           forced,
 			EffectiveDefault: effective,
 			EnabledCount:     enabledCount,
 			UnsetCount:       unset,
@@ -117,47 +120,39 @@ func (s *service) getFeatureFlags(ctx context.Context) ([]featureFlagRow, int64,
 	return rows, totalOrgs, nil
 }
 
-// featureDefaultsJSON returns the active flag names as a JSON array and their
-// effective defaults as a JSON object of name to "true"/"false", both shaped for
-// use as jsonb query parameters.
-func (s *service) featureDefaultsJSON() (string, string) {
+// featureResolutionJSON returns the active flag names as a JSON array, the
+// forced flags as a JSON object of name to "true", and the code defaults as a
+// JSON object of name to "true"/"false", all shaped for use as jsonb query
+// parameters. Resolving forced before the stored value mirrors the read-time
+// override in Features.OrgHasFeature.
+func (s *service) featureResolutionJSON() (string, string, string) {
 	features := app.GetFeatures()
-	autoEnabled := s.autoEnabledFeatures()
+	forcedFeatures := app.ForcedFeatures()
 	defaults := app.DefaultFeatures()
 
 	names := make([]string, 0, len(features))
+	forced := make(map[string]string)
 	values := make(map[string]string, len(features))
 	for _, f := range features {
 		name := string(f)
 		names = append(names, name)
-		values[name] = strconv.FormatBool(defaults[f] || autoEnabled[name])
+		values[name] = strconv.FormatBool(defaults[f])
+		if forcedFeatures[name] {
+			forced[name] = "true"
+		}
 	}
 
 	namesJSON, _ := json.Marshal(names)
+	forcedJSON, _ := json.Marshal(forced)
 	valuesJSON, _ := json.Marshal(values)
-	return string(namesJSON), string(valuesJSON)
+	return string(namesJSON), string(forcedJSON), string(valuesJSON)
 }
 
 // effectiveFeatureDefault is the value an org with no stored entry for the flag
-// resolves to: the code default, or forced on by auto_enabled_features.
+// resolves to: the code default, or forced on by forced_enabled_features.
 func (s *service) effectiveFeatureDefault(name string) bool {
-	if s.autoEnabledFeatures()[name] {
+	if app.ForcedFeatures()[name] {
 		return true
 	}
 	return app.DefaultFeatures()[app.OrgFeature(name)]
-}
-
-// autoEnabledFeatures reports the flags this deployment force-enables on new
-// orgs regardless of their code default.
-func (s *service) autoEnabledFeatures() map[string]bool {
-	out := make(map[string]bool)
-	if s.cfg == nil {
-		return out
-	}
-	for _, name := range strings.Split(s.cfg.AutoEnabledFeatures, ",") {
-		if name = strings.TrimSpace(name); name != "" {
-			out[name] = true
-		}
-	}
-	return out
 }
