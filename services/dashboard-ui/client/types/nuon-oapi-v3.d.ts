@@ -6702,6 +6702,8 @@ export interface components {
       workflow_step_group_id?: string;
     };
     "app.WorkflowStepApproval": {
+      app_branch_id?: string;
+      app_id?: string;
       created_at?: string;
       created_by_id?: string;
       id?: string;

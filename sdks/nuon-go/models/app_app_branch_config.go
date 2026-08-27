@@ -29,7 +29,7 @@ type AppAppBranchConfig struct {
 	// component ids
 	ComponentIds []string `json:"component_ids"`
 
-	// generated view field
+	// config number
 	ConfigNumber int64 `json:"config_number,omitempty"`
 
 	// connected github vcs config
@@ -40,6 +40,10 @@ type AppAppBranchConfig struct {
 
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
+
+	// DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
+	// branch runs for this config. Manual triggers are unaffected.
+	DisableBranchTriggers bool `json:"disable_branch_triggers,omitempty"`
 
 	// id
 	ID string `json:"id,omitempty"`

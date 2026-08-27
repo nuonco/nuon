@@ -29,6 +29,15 @@ type AppInstallConfigDiff struct {
 	// removed
 	Removed []*AppComponentDiffEntry `json:"removed"`
 
+	// sandbox build changed
+	SandboxBuildChanged bool `json:"sandbox_build_changed,omitempty"`
+
+	// sandbox build new id
+	SandboxBuildNewID string `json:"sandbox_build_new_id,omitempty"`
+
+	// sandbox build old id
+	SandboxBuildOldID string `json:"sandbox_build_old_id,omitempty"`
+
 	// sandbox changed
 	SandboxChanged bool `json:"sandbox_changed,omitempty"`
 
