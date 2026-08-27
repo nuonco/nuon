@@ -156,7 +156,7 @@ func (s *azureSubjectTokenSupplier) SubjectToken(ctx context.Context, _ external
 func (a *Activities) getGARTokenViaAzureFederation(ctx context.Context, req *GetGARAccessTokenRequest, scopes []string) (*GARAccessToken, error) {
 	l := temporalzap.GetActivityLogger(ctx)
 
-	cred, err := azurecredentials.Fetch(ctx, l)
+	cred, err := azurecredentials.Fetch(ctx, nil, l)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get azure credentials: %w", err)
 	}

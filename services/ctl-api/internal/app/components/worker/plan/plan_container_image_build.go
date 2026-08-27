@@ -20,7 +20,10 @@ import (
 )
 
 func (p *Planner) createContainerImageBuildPlan(ctx workflow.Context, bld *app.ComponentBuild) (*plantypes.ContainerImagePullPlan, error) {
-	srcRepo, err := p.getSourceRepository(bld.ComponentConfigConnection.ExternalImageComponentConfig)
+	srcRepo, err := p.getSourceRepository(
+		bld.ComponentConfigConnection.ExternalImageComponentConfig,
+		bld.ComponentConfigConnection.ComponentID,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get source repository")
 	}
@@ -79,7 +82,7 @@ func (b *Planner) normalizeRepository(repo string) (string, error) {
 	return "", nil
 }
 
-func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig) (*configs.OCIRegistryRepository, error) {
+func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
 	loginServer, err := b.normalizeRepository(cfg.ImageURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to normalize repository")
@@ -131,14 +134,35 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig) (*c
 	}
 
 	if cfg.AzureACRImageConfig != nil {
-		return &configs.OCIRegistryRepository{
+		acrCfg := &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeACR,
 			Repository:   cfg.ImageURL,
 			LoginServer:  cfg.AzureACRImageConfig.RegistryURL,
 			ACRAuth: &azurecredentials.Config{
 				UseDefault: true,
 			},
-		}, nil
+		}
+
+		// Naming an app registration is what makes a registry in someone else's
+		// tenant reachable; without one the ambient identity is all there is,
+		// which only works when the registry shares our tenant.
+		//
+		// Any field being set is enough to attach it. A half-specified
+		// registration is rejected at sync, but attaching it here too means a
+		// config that slipped through fails loudly in the token activity rather
+		// than quietly falling back to an identity that cannot see the registry.
+		if acr := cfg.AzureACRImageConfig; acr.ClientID != "" || acr.TenantID != "" ||
+			acr.ClientSecretName != "" || acr.ClientCertificateName != "" {
+			acrCfg.ACRAppRegistration = &configs.ACRAppRegistration{
+				ComponentID:           componentID,
+				TenantID:              acr.TenantID,
+				ClientID:              acr.ClientID,
+				ClientSecretName:      acr.ClientSecretName,
+				ClientCertificateName: acr.ClientCertificateName,
+			}
+		}
+
+		return acrCfg, nil
 	}
 
 	return &configs.OCIRegistryRepository{

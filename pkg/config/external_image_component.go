@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/invopop/jsonschema"
 
@@ -51,6 +52,11 @@ type AzureACRConfig struct {
 	RegistryURL string `mapstructure:"registry_url,omitempty" toml:"registry_url,omitempty" jsonschema:"required"`
 	TenantID    string `mapstructure:"tenant_id,omitempty" toml:"tenant_id,omitempty"`
 	ClientID    string `mapstructure:"client_id,omitempty" toml:"client_id,omitempty"`
+	// These name an AppSecret holding the credential; the "_name" suffix is
+	// load-bearing, because a field called client_secret invites pasting the
+	// secret itself into a file that gets committed.
+	ClientSecretName      string `mapstructure:"client_secret_name,omitempty" toml:"client_secret_name,omitempty"`
+	ClientCertificateName string `mapstructure:"client_certificate_name,omitempty" toml:"client_certificate_name,omitempty"`
 	// UpdatePolicy is an optional Masterminds-compatible semver constraint
 	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
 	// matching tag from the registry at build time. Either tag or
@@ -168,12 +174,52 @@ func (a AzureACRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example(">=1.0.0,<2.0.0").
 		Example("1.x").
 		Example("^1.0 || ^2.0").
-		Field("tenant_id").Short("Azure tenant ID for service principal auth").
-		Long("Optional Azure AD tenant ID. If set with client_id, the runner uses service principal credentials; otherwise it uses default Azure credentials").
+		Field("tenant_id").Short("Azure tenant ID owning the registry").
+		Long("Azure AD tenant that owns the registry. Required to reach a registry in a tenant Nuon holds no identity in, and must be set together with client_id and one of client_secret or client_certificate. Leave all four unset for a registry in the same tenant as the Nuon control plane, which is reached with ambient credentials").
 		Example("00000000-0000-0000-0000-000000000000").
-		Field("client_id").Short("Azure client ID for service principal auth").
-		Long("Optional Azure AD client (application) ID. If set with tenant_id, the runner uses service principal credentials; otherwise it uses default Azure credentials").
-		Example("00000000-0000-0000-0000-000000000000")
+		Field("client_id").Short("Azure client ID of the app registration granted AcrPull").
+		Long("Application (client) ID of an app registration in tenant_id that has been granted AcrPull on the registry. Must be set together with tenant_id and one of client_secret or client_certificate; setting only some of them is rejected at sync").
+		Example("00000000-0000-0000-0000-000000000000").
+		Field("client_secret_name").Short("name of the app secret holding the client secret").
+		Long("Name of an app secret (nuon apps variables create) whose value is the app registration's client secret. This is the secret's name, not the secret itself — never put the value here. Exactly one of client_secret_name or client_certificate_name may be set").
+		Example("azure-acr-client-secret").
+		Field("client_certificate_name").Short("name of the app secret holding the client certificate").
+		Long("Name of an app secret (nuon apps variables create) whose value is the app registration's base64-encoded PEM certificate. This is the secret's name, not the certificate itself — never put the value here. Exactly one of client_secret_name or client_certificate_name may be set").
+		Example("azure-acr-client-cert")
+}
+
+// ValidateCredentials rejects a half-specified app registration. All four
+// fields absent means ambient credentials, which is the supported same-tenant
+// case; anything in between would fall back to ambient and surface as an
+// unexplained 401 against a registry the author believes they configured.
+func (a AzureACRConfig) ValidateCredentials() error {
+	if a.ClientSecretName != "" && a.ClientCertificateName != "" {
+		return fmt.Errorf("azure_acr: only one of client_secret_name or client_certificate_name may be set")
+	}
+
+	anySet := a.TenantID != "" || a.ClientID != "" || a.ClientSecretName != "" || a.ClientCertificateName != ""
+	if !anySet {
+		return nil
+	}
+
+	var missing []string
+	if a.TenantID == "" {
+		missing = append(missing, "tenant_id")
+	}
+	if a.ClientID == "" {
+		missing = append(missing, "client_id")
+	}
+	if a.ClientSecretName == "" && a.ClientCertificateName == "" {
+		missing = append(missing, "one of client_secret_name or client_certificate_name")
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf(
+			"azure_acr: incomplete credentials, missing %s; set all of tenant_id, client_id and a credential, or none of them to use ambient credentials",
+			strings.Join(missing, ", "),
+		)
+	}
+
+	return nil
 }
 
 func (e ExternalImageComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -220,6 +266,9 @@ func (t *ExternalImageComponentConfig) Validate() error {
 	}
 	if t.AzureACRImageConfig != nil {
 		sources = append(sources, imageSource{"azure_acr", t.AzureACRImageConfig.Tag, t.AzureACRImageConfig.UpdatePolicy})
+		if err := t.AzureACRImageConfig.ValidateCredentials(); err != nil {
+			return err
+		}
 	}
 	for _, s := range sources {
 		if s.tag == "" && s.updatePolicy == "" {

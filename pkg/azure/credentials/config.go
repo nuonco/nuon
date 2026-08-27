@@ -12,9 +12,42 @@ type Config struct {
 	// ManagedIdentityClientID runs the operation as a specific user-assigned
 	// managed identity instead of the VM's system identity.
 	ManagedIdentityClientID string `cty:"managed_identity_client_id,optional" hcl:"managed_identity_client_id,optional" mapstructure:"managed_identity_client_id,omitempty" json:"managed_identity_client_id" temporaljson:"managed_identity_client_id"`
+
+	// The fields below authenticate as an app registration in someone else's
+	// tenant — a vendor's registry, reached from a control plane that holds no
+	// identity there. Managed identity cannot cross a tenant boundary, so this
+	// is the only path for that case.
+	//
+	// They are deliberately unserializable. A Config travels inside plans and
+	// Temporal history; ClientSecret and ClientCertificatePEM are long-lived
+	// vendor credentials that must not. Resolve them, mint a short-lived
+	// registry token, and send that instead (see EnsureACRAuth). The blank
+	// tags are what make an accidental send drop the material rather than
+	// leak it.
+	TenantID             string `cty:"-" hcl:"-" mapstructure:"-" json:"-" temporaljson:"-"`
+	ClientID             string `cty:"-" hcl:"-" mapstructure:"-" json:"-" temporaljson:"-"`
+	ClientSecret         string `cty:"-" hcl:"-" mapstructure:"-" json:"-" temporaljson:"-"`
+	ClientCertificatePEM []byte `cty:"-" hcl:"-" mapstructure:"-" json:"-" temporaljson:"-"`
+}
+
+// HasAppRegistrationCredentials reports whether this config carries material
+// for a specific app registration, as opposed to relying on whatever ambient
+// identity the process happens to have.
+func (c Config) HasAppRegistrationCredentials() bool {
+	if c.ClientID == "" || c.TenantID == "" {
+		return false
+	}
+	return c.ClientSecret != "" || len(c.ClientCertificatePEM) > 0
 }
 
 func (c Config) String() string {
+	if c.HasAppRegistrationCredentials() {
+		kind := "secret"
+		if len(c.ClientCertificatePEM) > 0 {
+			kind = "certificate"
+		}
+		return "app registration " + c.ClientID + " in tenant " + c.TenantID + " (" + kind + ")"
+	}
 	if c.ManagedIdentityClientID != "" {
 		return "user-assigned managed identity " + c.ManagedIdentityClientID
 	}

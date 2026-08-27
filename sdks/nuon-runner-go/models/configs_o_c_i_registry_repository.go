@@ -19,6 +19,9 @@ import (
 // swagger:model configs.OCIRegistryRepository
 type ConfigsOCIRegistryRepository struct {
 
+	// acrapp registration
+	AcrappRegistration *ConfigsACRAppRegistration `json:"acrappRegistration,omitempty"`
+
 	// acrauth
 	Acrauth *GithubComNuoncoNuonPkgAzureCredentialsConfig `json:"acrauth,omitempty"`
 
@@ -54,6 +57,10 @@ type ConfigsOCIRegistryRepository struct {
 func (m *ConfigsOCIRegistryRepository) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAcrappRegistration(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateAcrauth(formats); err != nil {
 		res = append(res, err)
 	}
@@ -73,6 +80,29 @@ func (m *ConfigsOCIRegistryRepository) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ConfigsOCIRegistryRepository) validateAcrappRegistration(formats strfmt.Registry) error {
+	if swag.IsZero(m.AcrappRegistration) { // not required
+		return nil
+	}
+
+	if m.AcrappRegistration != nil {
+		if err := m.AcrappRegistration.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("acrappRegistration")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("acrappRegistration")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -170,6 +200,10 @@ func (m *ConfigsOCIRegistryRepository) validateRegistryType(formats strfmt.Regis
 func (m *ConfigsOCIRegistryRepository) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAcrappRegistration(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateAcrauth(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -189,6 +223,31 @@ func (m *ConfigsOCIRegistryRepository) ContextValidate(ctx context.Context, form
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ConfigsOCIRegistryRepository) contextValidateAcrappRegistration(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AcrappRegistration != nil {
+
+		if swag.IsZero(m.AcrappRegistration) { // not required
+			return nil
+		}
+
+		if err := m.AcrappRegistration.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("acrappRegistration")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("acrappRegistration")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

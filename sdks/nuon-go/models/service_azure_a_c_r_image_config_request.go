@@ -17,8 +17,14 @@ import (
 // swagger:model service.azureACRImageConfigRequest
 type ServiceAzureACRImageConfigRequest struct {
 
+	// client certificate name
+	ClientCertificateName string `json:"client_certificate_name,omitempty"`
+
 	// client id
 	ClientID string `json:"client_id,omitempty"`
+
+	// Names of app secrets, never raw values. At most one may be set.
+	ClientSecretName string `json:"client_secret_name,omitempty"`
 
 	// registry url
 	RegistryURL string `json:"registry_url,omitempty"`

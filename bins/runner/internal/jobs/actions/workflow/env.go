@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/kube/config"
@@ -110,6 +111,26 @@ func (h *handler) cloudCredentialEnv(ctx context.Context) (map[string]string, er
 		}
 
 		env = generics.MergeMap(env, gcpEnv)
+	}
+
+	if h.state.auth.AzureAuth != nil {
+		azureEnv, err := azurecredentials.FetchEnv(ctx, h.state.auth.AzureAuth)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get Azure credentials")
+		}
+
+		// ARM_* only steers the terraform provider. The azure SDK and az CLI
+		// read AZURE_CLIENT_ID, and a container has no inherited process env to
+		// fall back on, so the identity has to be named for both.
+		if h.state.auth.AzureAuth.ManagedIdentityClientID != "" {
+			azureEnv["AZURE_CLIENT_ID"] = h.state.auth.AzureAuth.ManagedIdentityClientID
+		}
+		if h.state.auth.AzureAuth.ServicePrincipal != nil {
+			azureEnv["AZURE_SUBSCRIPTION_ID"] = h.state.auth.AzureAuth.ServicePrincipal.SubscriptionID
+			azureEnv["AZURE_TENANT_ID"] = h.state.auth.AzureAuth.ServicePrincipal.SubscriptionTenantID
+		}
+
+		env = generics.MergeMap(env, azureEnv)
 	}
 
 	return env, nil
