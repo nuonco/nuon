@@ -11,8 +11,10 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	sdkresource "go.opentelemetry.io/otel/sdk/resource"
 	"go.uber.org/fx"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/otelresource"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
@@ -137,15 +139,21 @@ func New(params Params) (*Writer, error) {
 		shutdownExporter(asyncExporter)
 		return nil, fmt.Errorf("create synchronous customer audit exporter: %w", err)
 	}
-	w := newWriter(processIdentity(params.Registrar.ProcessID(), params.Registrar.ProcessType(), params.Settings), params.Metrics, asyncExporter, syncExporter)
+	w := newWriter(processIdentity(params.Registrar.ProcessID(), params.Registrar.ProcessType(), params.Settings), params.Metrics, asyncExporter, syncExporter, otelresource.New(params.Settings, ""))
 	params.Lifecycle.Append(fx.Hook{
 		OnStop: w.stop,
 	})
 	return w, nil
 }
 
-func newWriter(identity map[string]string, metrics metricsWriter, asyncExporter, syncExporter exporter) *Writer {
-	provider := sdklog.NewLoggerProvider(sdklog.WithProcessor(syncProcessor{}))
+func newWriter(identity map[string]string, metrics metricsWriter, asyncExporter, syncExporter exporter, rsrc *sdkresource.Resource) *Writer {
+	if rsrc == nil {
+		rsrc = sdkresource.Empty()
+	}
+	provider := sdklog.NewLoggerProvider(
+		sdklog.WithResource(rsrc),
+		sdklog.WithProcessor(syncProcessor{}),
+	)
 	return &Writer{
 		otel:          provider.Logger("github.com/nuonco/nuon/bins/runner/audit"),
 		identity:      identity,
@@ -361,6 +369,9 @@ func JobEvent(job *models.AppRunnerJob, message, outcome string, attributes map[
 	}
 	for key, value := range attributes {
 		attrs[key] = value
+	}
+	if job.LogStreamID != "" {
+		attrs["log_stream.id"] = job.LogStreamID
 	}
 	return Event{Name: jobEventTypes[job.Group], Message: message, Outcome: outcome, Attributes: attrs}, true
 }
