@@ -35,12 +35,12 @@ backing Temporal's persistence layer.
 
 **AWS:**
 
-Our [BYOC Nuon terraform module](https://github.com/nuonco/byoc/tree/main/byoc-nuon/src/components/rds_cluster_nuon) is
+Our [Nuon BYOC terraform module](https://github.com/nuonco/byoc/tree/main/byoc-nuon/src/components/rds_cluster_nuon) is
 a useful reference.
 
 **GCP:**
 
-Our [BYOC Nuon GCP terraform module](https://github.com/nuonco/byoc/tree/main/byoc-nuon-gcp/src/components) provides
+Our [Nuon BYOC GCP terraform module](https://github.com/nuonco/byoc/tree/main/byoc-nuon-gcp/src/components) provides
 references for both `cloudsql_nuon` and `cloudsql_temporal`.
 
 ### Container Registry
@@ -63,7 +63,7 @@ Artifact Registry is used for container image storage.
 The `ctl-api` deployment relies on an IAM role (attached to the service account) with specific permissions which we
 enumerate here.
 
-The [BYOC Nuon terraform module](https://github.com/nuonco/byoc/tree/main/byoc-nuon/src/components/management) is a
+The [Nuon BYOC terraform module](https://github.com/nuonco/byoc/tree/main/byoc-nuon/src/components/management) is a
 useful reference.
 
 #### ECR
@@ -82,7 +82,7 @@ The blob storage requires the `ctl-api` to be able to read and write from an S3 
 **GCP:**
 
 The `ctl-api` and `dashboard-ui` deployments rely on GCP service accounts bound to Kubernetes service accounts via
-Workload Identity. The [BYOC Nuon GCP management
+Workload Identity. The [Nuon BYOC GCP management
 component](https://github.com/nuonco/byoc/tree/main/byoc-nuon-gcp/src/components/management) is a useful reference for
 the required service accounts and IAM bindings.
 
