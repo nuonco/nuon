@@ -19,8 +19,9 @@ func (h *Helpers) CreateAppBranchConfig(
 	publicGitVCSConfig *app.PublicGitVCSConfig,
 	installGroups []app.AppBranchInstallGroup,
 	postDeployRunbookIDs *[]string,
+	disableBranchTriggers *bool,
 ) (*app.AppBranchConfig, error) {
-	return h.CreateAppBranchConfigWithDB(ctx, h.db, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs)
+	return h.CreateAppBranchConfigWithDB(ctx, h.db, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs, disableBranchTriggers)
 }
 
 // Callers inside a transaction must use this, or the app_branch_id FK fails.
@@ -32,6 +33,7 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 	publicGitVCSConfig *app.PublicGitVCSConfig,
 	installGroups []app.AppBranchInstallGroup,
 	postDeployRunbookIDs *[]string,
+	disableBranchTriggers *bool,
 ) (*app.AppBranchConfig, error) {
 	if postDeployRunbookIDs != nil && len(*postDeployRunbookIDs) > 0 {
 		if err := h.validatePostDeployRunbooks(ctx, db, appBranchID, *postDeployRunbookIDs); err != nil {
@@ -68,6 +70,12 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 		config.PostDeployRunbookIDs = pq.StringArray(*postDeployRunbookIDs)
 	} else if hasPrevious {
 		config.PostDeployRunbookIDs = previous.PostDeployRunbookIDs
+	}
+
+	if disableBranchTriggers != nil {
+		config.DisableBranchTriggers = *disableBranchTriggers
+	} else if hasPrevious {
+		config.DisableBranchTriggers = previous.DisableBranchTriggers
 	}
 
 	if err := db.WithContext(ctx).Create(&config).Error; err != nil {

@@ -38,6 +38,10 @@ type CreateAppBranchConfigRequest struct {
 	// PostDeployRunbookIDs run on each install, in order, after its deploy succeeds.
 	// Omit to carry the current setting forward; send an empty array to clear it.
 	PostDeployRunbookIDs *[]string `json:"post_deploy_runbook_ids,omitempty"`
+
+	// DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
+	// branch runs. Omit to carry the current setting forward.
+	DisableBranchTriggers *bool `json:"disable_branch_triggers,omitempty"`
 }
 
 func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
@@ -248,6 +252,7 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		publicGitVCSConfig,
 		installGroups,
 		req.PostDeployRunbookIDs,
+		req.DisableBranchTriggers,
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch config: %w", err))

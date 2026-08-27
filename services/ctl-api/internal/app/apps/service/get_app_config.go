@@ -9,8 +9,14 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
+
+type appConfigWithIntermediateResponse struct {
+	*app.AppConfig
+	IntermediateConfigJSON string `json:"intermediate_config_json,omitempty"`
+}
 
 // @ID						GetAppConflgV2
 // @Summary				get an app config
@@ -18,6 +24,7 @@ import (
 // @Param					app_id			path	string	true	"app ID"
 // @Param					config_id	path	string	true	"app config ID"
 // @Param recurse query bool false "load all children configs" Default(false)
+// @Param include_intermediate query bool false "include intermediate_config_json blob contents" Default(false)
 // @Tags					apps
 // @Accept					json
 // @Produce				json
@@ -41,6 +48,7 @@ func (s *service) GetAppConfigV2(ctx *gin.Context) {
 	appConfigID := ctx.Param("config_id")
 
 	recurse := ctx.DefaultQuery("recurse", "false") == "true"
+	includeIntermediate := ctx.DefaultQuery("include_intermediate", "false") == "true"
 
 	var appConfig *app.AppConfig
 	if recurse {
@@ -62,7 +70,22 @@ func (s *service) GetAppConfigV2(ctx *gin.Context) {
 		}
 	}
 
-	ctx.JSON(http.StatusOK, appConfig)
+	if !includeIntermediate {
+		ctx.JSON(http.StatusOK, appConfig)
+		return
+	}
+
+	resp := appConfigWithIntermediateResponse{AppConfig: appConfig}
+	if appConfig.IntermediateConfig != nil {
+		blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
+		raw, err := appConfig.IntermediateConfig.Get(blobCtx)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to load intermediate config: %w", err))
+			return
+		}
+		resp.IntermediateConfigJSON = raw
+	}
+	ctx.JSON(http.StatusOK, resp)
 }
 
 // @ID						GetAppConfig

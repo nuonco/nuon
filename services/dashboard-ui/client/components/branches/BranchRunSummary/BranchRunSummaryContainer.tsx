@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstallsById } from '@/hooks/use-installs-by-id'
 import { useOrg } from '@/hooks/use-org'
-import { getBranchRunBuilds, getBranchRunInstallGroups, getBranchInstallGroupRuns } from '@/lib'
+import { getBranchRunBuilds, getBranchRunInstallGroups, getBranchInstallGroupRuns, getSandboxBuilds } from '@/lib'
 import { BranchRunSummary } from './BranchRunSummary'
 import type { TAppBranchRun } from '@/types'
 
@@ -51,10 +51,24 @@ export const BranchRunSummaryContainer = ({
     refetchInterval: isTerminal ? false : 5000,
   })
 
+  const { data: sandboxBuilds } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: ['sandbox-builds', orgId, appId],
+    queryFn: () => getSandboxBuilds({ orgId: orgId!, appId, limit: 50 }),
+    enabled: !!orgId && !!appId && !!branchRun?.app_config_id,
+    refetchInterval: isTerminal ? false : 5000,
+  })
+
+  const sandboxBuild =
+    sandboxBuilds?.data?.find(
+      (b) => b.app_config_id === branchRun?.app_config_id
+    ) ?? null
+
   return (
     <BranchRunSummary
       branchRun={branchRun}
       builds={builds ?? []}
+      sandboxBuild={sandboxBuild}
       installUpdates={installUpdates ?? []}
       installGroupRuns={installGroupRuns ?? []}
       installsById={installsById}

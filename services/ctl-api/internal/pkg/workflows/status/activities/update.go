@@ -2,11 +2,13 @@ package statusactivities
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/lifecyclephase"
@@ -199,12 +201,40 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 		return err
 	}
 
+	a.syncInstallAppConfigVersionFromFlowStatus(ctx, req.ID, req.Status)
+
 	if a.notifier != nil {
 		a.notifier.FlowStatusUpdated(ctx, req)
 	}
 
 	a.logWorkflowError(ctx, loaded, req.Status)
 	return nil
+}
+
+// syncInstallAppConfigVersionFromFlowStatus copies the install workflow status
+// onto the InstallAppConfigVersion linked by workflow_id. Best-effort: never
+// fails the flow status write. This keeps IACV in sync when executeflow parks
+// on error (awaiting retry) without sending the parent enqueue callback.
+func (a *Activities) syncInstallAppConfigVersionFromFlowStatus(ctx context.Context, workflowID string, status app.CompositeStatus) {
+	statusJSON, err := json.Marshal(status)
+	if err != nil {
+		a.l.Warn("unable to marshal status for install app config version sync",
+			zap.String("workflow_id", workflowID),
+			zap.Error(err),
+		)
+		return
+	}
+
+	res := a.db.WithContext(ctx).
+		Model(&app.InstallAppConfigVersion{}).
+		Where("workflow_id = ?", workflowID).
+		Update("status", statusJSON)
+	if res.Error != nil {
+		a.l.Warn("unable to sync install app config version status from flow",
+			zap.String("workflow_id", workflowID),
+			zap.Error(res.Error),
+		)
+	}
 }
 
 // @temporal-gen-v2 activity

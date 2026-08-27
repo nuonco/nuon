@@ -42,9 +42,12 @@ type AppBranchConfig struct {
 	// branch's synced app config produced.
 	PostDeployRunbookIDs pq.StringArray `gorm:"type:text[]" json:"post_deploy_runbook_ids,omitzero" temporaljson:"post_deploy_runbook_ids,omitzero,omitempty" swaggertype:"array,string"`
 
+	// DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
+	// branch runs for this config. Manual triggers are unaffected.
+	DisableBranchTriggers bool `json:"disable_branch_triggers" temporaljson:"disable_branch_triggers,omitempty"`
+
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 
-	// generated view field
 	ConfigNumber int `json:"config_number,omitzero" gorm:"->;-:migration" temporaljson:"config_number,omitzero,omitempty"`
 }
 

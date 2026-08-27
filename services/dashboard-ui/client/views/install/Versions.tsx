@@ -96,11 +96,24 @@ export const Versions = () => {
   )
 }
 
+const resolveInstallAppConfigVersionStatus = (version: TInstallAppConfigVersion): string => {
+  const iacvStatus = version.status?.status
+  const workflowStatus = version.workflow?.status?.status
+  if (
+    (iacvStatus === 'pending' || iacvStatus === 'in-progress') &&
+    (workflowStatus === 'error' || workflowStatus === 'cancelled')
+  ) {
+    return workflowStatus
+  }
+  return iacvStatus || 'unknown'
+}
+
 const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
   const { org } = useOrg()
   const { install } = useInstall()
 
   const source = version.metadata?.triggered_by || (version.app_branch_run_id ? 'app-branch' : 'sync')
+  const status = resolveInstallAppConfigVersionStatus(version)
 
   return (
     <Expand
@@ -109,7 +122,7 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
       headerClassName="px-5 py-4"
       heading={
         <div className="flex items-center gap-3 w-full">
-          <Status status={version.status?.status || 'unknown'} variant="badge" />
+          <Status status={status} variant="badge" />
           <Badge size="sm" theme="neutral">
             {source}
           </Badge>

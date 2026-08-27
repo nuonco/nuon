@@ -18,6 +18,9 @@ type CreateComponentBuildRecordRequest struct {
 	VCSConnectionCommitID *string
 	// AppBranchRunID links this build to the branch run that triggered it.
 	AppBranchRunID string
+	// AppConfigID pins the build to the CCC for this app config + component
+	// instead of the global LatestConfig view (avoids concurrent-run races).
+	AppConfigID string
 }
 
 // CreateComponentBuildRecord creates a component build record. Used by queue signals
@@ -27,7 +30,23 @@ type CreateComponentBuildRecordRequest struct {
 func (a *Activities) CreateComponentBuildRecord(ctx context.Context, req CreateComponentBuildRecordRequest) (*app.ComponentBuild, error) {
 	ctx = cctx.SetOrgIDContext(ctx, req.OrgID)
 
-	build, err := a.helpers.CreateComponentBuild(ctx, req.ComponentID, false, req.GitRef)
+	var build *app.ComponentBuild
+	var err error
+	if req.AppConfigID != "" {
+		var ccc app.ComponentConfigConnection
+		if res := a.db.WithContext(ctx).
+			Select("id").
+			Where(app.ComponentConfigConnection{
+				AppConfigID: req.AppConfigID,
+				ComponentID: req.ComponentID,
+			}).
+			First(&ccc); res.Error != nil {
+			return nil, fmt.Errorf("get config connection for app config: %w", res.Error)
+		}
+		build, err = a.helpers.CreateComponentBuildForConfigConnection(ctx, req.ComponentID, ccc.ID, req.GitRef)
+	} else {
+		build, err = a.helpers.CreateComponentBuild(ctx, req.ComponentID, false, req.GitRef)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("create component build: %w", err)
 	}

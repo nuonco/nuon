@@ -2,11 +2,8 @@ import { useCallback, useState } from 'react'
 import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
-import { Card } from '@/components/common/Card'
-import { Icon } from '@/components/common/Icon'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
-import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
@@ -15,12 +12,14 @@ import { DetailPage } from '@/components/layout/DetailPage'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
 import { BranchRunApproval } from '@/components/branches/BranchRunApproval'
-import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
+import { BranchRunChanges } from '@/components/branches/BranchRunChanges'
+import { BranchRunComparisonRuns } from '@/components/branches/BranchRunComparisonRuns'
 import { BranchRunSummary } from '@/components/branches/BranchRunSummary'
 import { RuntimeChanges } from '@/components/branches/RuntimeChanges'
 import { WorkflowRunPanelButton } from '@/components/branches/WorkflowRunPanel'
+import { githubCommitUrl, resolvePrLink } from '@/components/branches/shared/pr-link'
+import { getRunTitle } from '@/components/branches/shared/run-title'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
@@ -30,8 +29,7 @@ import {
   ConfigDiffFocusContext,
   type TConfigDiffFocus,
 } from '@/components/approvals/plan-diffs/config-diff-focus'
-import { getBranchWorkflowRun, getBranchWorkflowRuns } from '@/lib'
-import { getRunTitle } from '@/components/branches/shared/run-title'
+import { getBranchRunComparison, getBranchWorkflowRun } from '@/lib'
 
 const BranchRunDetailContent = () => {
   const { org } = useOrg()
@@ -62,13 +60,23 @@ const BranchRunDetailContent = () => {
     refetchInterval: 5000,
   })
 
-  const { data: branchRunsResult } = useQuery({
+  const branchRun = run?.app_branch_runs?.at(0)
+  const repoSlug = branchRun?.app_branch_config?.connected_github_vcs_config?.repo
+
+  const { data: comparison } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['branch-runs', orgId, appId, branchId],
-    queryFn: () => getBranchWorkflowRuns({ orgId, appId, branchId, limit: 10 }),
-    enabled: !!orgId && !!appId && !!branchId,
+    queryKey: ['branch-run-comparison', orgId, appId, branchId, branchRun?.id],
+    queryFn: () =>
+      getBranchRunComparison({
+        orgId: orgId!,
+        appId: appId!,
+        branchId,
+        runId: branchRun!.id!,
+        includeDiff: ['config'],
+      }),
+    enabled: !!orgId && !!appId && !!branchId && !!branchRun?.id,
+    retry: 1,
   })
-  const branchRunsList = branchRunsResult?.data
 
   if (isLoading || !run) {
     return (
@@ -82,44 +90,24 @@ const BranchRunDetailContent = () => {
 
   const status = run.status?.status || 'unknown'
   const statusDescription = run.status?.status_human_description || ''
-
-  const branchRun = run.app_branch_runs?.at(0)
   const runTitle = getRunTitle(run)
 
-  const configStep = run.steps?.find(
-    (s) =>
-      s.name?.toLowerCase().includes('config') &&
-      !s.name?.toLowerCase().includes('diff')
-  )
-  const appConfigId =
-    branchRun?.app_config_id ||
-    (configStep?.status?.metadata?.app_config_id as string | undefined)
+  const prLink = resolvePrLink({
+    repoSlug,
+    prNumber: branchRun?.pr_number,
+    commitMessage: branchRun?.vcs_connection_commit?.message,
+  })
+  const commitUrl = githubCommitUrl(repoSlug, branchRun?.vcs_connection_commit?.sha)
+  const currentGithubHref = prLink?.url ?? commitUrl
 
-  const previousBranchRun = (() => {
-    if (!branchRunsList || !branchRun) return undefined
-    const sorted = [...branchRunsList].sort(
-      (a, b) =>
-        new Date(b.created_at || 0).getTime() -
-        new Date(a.created_at || 0).getTime()
-    )
-    const currentIdx = sorted.findIndex(
-      (r) => r.app_branch_runs?.at(0)?.id === branchRun.id
-    )
-    if (currentIdx < 0) return undefined
-    for (let i = currentIdx + 1; i < sorted.length; i++) {
-      const prevRun = sorted[i].app_branch_runs?.at(0)
-      if (prevRun?.app_config_id && prevRun.app_config_id !== appConfigId) {
-        return prevRun
-      }
-    }
-    return undefined
-  })()
-  const oldConfigId = previousBranchRun?.app_config_id
+  const showRunComparison =
+    !!branchRun?.vcs_connection_commit ||
+    !!branchRun?.pr_number ||
+    !!comparison?.head_run ||
+    !!comparison?.base_run
 
   return (
-    <ConfigDiffFocusContext.Provider
-      value={{ requestFocus: requestConfigFocus }}
-    >
+    <ConfigDiffFocusContext.Provider value={{ requestFocus: requestConfigFocus }}>
       <>
         <PageTitle segments={[runTitle, app?.name]} />
         <Breadcrumbs
@@ -133,7 +121,7 @@ const BranchRunDetailContent = () => {
               text: branch?.name,
             },
             {
-              path: `/${org?.id}/apps/${app?.id}/branches/${branchId}/runs/${runId}`,
+              path: `/${org?.id}/apps/${appId}/branches/${branchId}/runs/${runId}`,
               text: 'Run',
             },
           ]}
@@ -154,10 +142,7 @@ const BranchRunDetailContent = () => {
               id={runId}
               actions={
                 <>
-                  <AdminDashboardLink
-                    path={`/workflows/${runId}`}
-                    label="admin"
-                  />
+                  <AdminDashboardLink path={`/workflows/${runId}`} label="admin" />
                   <WorkflowRunPanelButton runId={runId} />
                   <CancelWorkflowButton workflow={run} />
                 </>
@@ -173,28 +158,16 @@ const BranchRunDetailContent = () => {
                     }}
                   />
                   <LabeledValue label="Created">
-                    <Time
-                      time={run.created_at}
-                      format="relative"
-                      variant="subtext"
-                    />
+                    <Time time={run.created_at} format="relative" variant="subtext" />
                   </LabeledValue>
                   {run.started_at ? (
                     <LabeledValue label="Started">
-                      <Time
-                        time={run.started_at}
-                        format="relative"
-                        variant="subtext"
-                      />
+                      <Time time={run.started_at} format="relative" variant="subtext" />
                     </LabeledValue>
                   ) : null}
                   {run.finished_at ? (
                     <LabeledValue label="Finished">
-                      <Time
-                        time={run.finished_at}
-                        format="relative"
-                        variant="subtext"
-                      />
+                      <Time time={run.finished_at} format="relative" variant="subtext" />
                     </LabeledValue>
                   ) : null}
                 </>
@@ -204,120 +177,40 @@ const BranchRunDetailContent = () => {
           banners={<BranchRunApproval run={run} />}
         >
           <div className="flex flex-col gap-4">
-            {(branchRun?.vcs_connection_commit || branchRun?.pr_number) &&
-              (() => {
-                const vcsConfig =
-                  branchRun?.app_branch_config?.connected_github_vcs_config
-                const repoSlug = vcsConfig?.repo
-                const prUrl =
-                  repoSlug && branchRun?.pr_number
-                    ? `https://github.com/${repoSlug}/pull/${branchRun.pr_number}`
-                    : undefined
-                const commitUrl =
-                  repoSlug && branchRun?.vcs_connection_commit?.sha
-                    ? `https://github.com/${repoSlug}/commit/${branchRun.vcs_connection_commit.sha}`
-                    : undefined
-                const githubUrl = prUrl || commitUrl
+            {showRunComparison && branchRun?.id ? (
+              <BranchRunComparisonRuns
+                orgId={orgId}
+                appId={appId}
+                branchId={branchId}
+                baseRun={comparison?.base_run}
+                headRun={comparison?.head_run}
+                repoSlug={repoSlug}
+                currentGithubHref={currentGithubHref}
+              />
+            ) : null}
 
-                return (
-                  <Card className="!p-4 !gap-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Icon
-                          variant="GitBranchIcon"
-                          size={16}
-                          className="text-cool-grey-400"
-                        />
-                        <Text variant="base" weight="strong">
-                          Source
-                        </Text>
-                      </div>
-                      {githubUrl && (
-                        <Link href={githubUrl} isExternal>
-                          <Icon variant="GitHub" size={14} />
-                          View in GitHub
-                        </Link>
-                      )}
-                    </div>
-
-                    {branchRun?.pr_number && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {prUrl ? (
-                          <Link href={prUrl} isExternal>
-                            <Badge size="sm" theme="info">
-                              PR #{branchRun.pr_number}
-                            </Badge>
-                          </Link>
-                        ) : (
-                          <Badge size="sm" theme="info">
-                            PR #{branchRun.pr_number}
-                          </Badge>
-                        )}
-                        {branchRun?.base_branch && (
-                          <Text variant="subtext" theme="neutral">
-                            into {branchRun.base_branch}
-                          </Text>
-                        )}
-                        {branchRun?.event_type && (
-                          <Badge size="sm" theme="neutral">
-                            {branchRun.event_type.replace(/_/g, ' ')}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-
-                    {branchRun?.vcs_connection_commit && (
-                      <BranchRunCommit
-                        status={branchRun.status}
-                        href={githubUrl}
-                        isExternal
-                        message={branchRun.vcs_connection_commit.message
-                          ?.split('\n')[0]
-                          ?.trim()}
-                        author={branchRun.vcs_connection_commit.author_name}
-                        avatarUrl={
-                          branchRun.vcs_connection_commit.author_avatar_url
-                        }
-                        sha={branchRun.vcs_connection_commit.sha}
-                        createdAt={branchRun.created_at}
-                      />
-                    )}
-
-                    {repoSlug && (
-                      <div className="flex items-center gap-1.5">
-                        <Icon
-                          variant="GitHub"
-                          size={14}
-                          className="text-cool-grey-400"
-                        />
-                        <Text variant="subtext" theme="neutral">
-                          {repoSlug}
-                        </Text>
-                      </div>
-                    )}
-                  </Card>
-                )
-              })()}
-          </div>
-
-          <BranchRunSummary
-            branchRun={branchRun}
-            appId={appId}
-            branchId={branchId}
-            branchRunId={branchRun?.id}
-            runStatus={status}
-          />
-
-          {branchRun?.id && (
-            <RuntimeChanges branchId={branchId} appBranchRunId={branchRun.id} />
-          )}
-          {appConfigId && (
-            <AppConfigDiff
-              appConfigId={appConfigId}
-              oldConfigId={oldConfigId}
-              focus={configFocus}
+            <BranchRunSummary
+              branchRun={branchRun}
+              appId={appId}
+              branchId={branchId}
+              branchRunId={branchRun?.id}
+              runStatus={status}
             />
-          )}
+
+            {branchRun?.id && (
+              <RuntimeChanges branchId={branchId} appBranchRunId={branchRun.id} />
+            )}
+
+            {branchRun?.id && (
+              <BranchRunChanges
+                branchId={branchId}
+                appBranchRunId={branchRun.id}
+                focus={configFocus}
+                repoSlug={repoSlug}
+                showRunComparison={false}
+              />
+            )}
+          </div>
         </DetailPage>
       </>
     </ConfigDiffFocusContext.Provider>

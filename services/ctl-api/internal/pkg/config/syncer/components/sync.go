@@ -200,10 +200,11 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 			ConfigID: ccc.ID,
 			Checksum: comp.Checksum,
 		})
-	} else if comp.ExternalImage != nil {
-		// Every CCC needs a build behind it. Reuse the previous CCC's Active
-		// build when nothing changed; otherwise pre-create a queued build for
-		// the branch run's builds step to adopt and execute via queuebuild.
+	} else {
+		// Branch sync always creates a fresh CCC. Pin a reusable Active build
+		// when checksum is unchanged so CheckBuildNeeded can skip. External
+		// images still pre-create a queued build when nothing is reusable so
+		// the builds step can adopt it.
 		found, reusableBuildID, err := reusableActiveBuildID(ctx, db, apiComp.ID, ccc)
 		if err != nil {
 			return err
@@ -218,10 +219,12 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 					Err:         err,
 				}
 			}
-		} else if _, err := helpers.CreateComponentBuildInTx(ctx, db, apiComp.ID, false, nil); err != nil {
-			return sync.SyncInternalErr{
-				Description: fmt.Sprintf("unable to queue build for component %s", comp.Name),
-				Err:         err,
+		} else if comp.ExternalImage != nil {
+			if _, err := helpers.CreateComponentBuildInTx(ctx, db, apiComp.ID, ccc.ID, false, nil); err != nil {
+				return sync.SyncInternalErr{
+					Description: fmt.Sprintf("unable to queue build for component %s", comp.Name),
+					Err:         err,
+				}
 			}
 		}
 	}
@@ -237,55 +240,74 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 	return nil
 }
 
-// reusableActiveBuildID returns the previous config connection's build ID when
-// the incoming config is unchanged and that build is Active. retuurns false when
-// no reusable build.
+// reusableActiveBuildID returns a prior config connection's Active build ID when
+// the incoming checksum is unchanged. Walks same-checksum CCCs newest-first so
+// a concurrent branch sync with a different checksum does not block reuse.
 func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incoming *app.ComponentConfigConnection) (bool, string, error) {
 	if incoming.Checksum == "" || build.RequiresFreshBuild(incoming) {
 		return false, "", nil
 	}
 
-	var prev app.ComponentConfigConnection
+	var prevs []app.ComponentConfigConnection
 	res := db.WithContext(ctx).
 		Select("id", "checksum", "latest_build_id").
-		Where(app.ComponentConfigConnection{ComponentID: cmpID}).
+		Where(app.ComponentConfigConnection{ComponentID: cmpID, Checksum: incoming.Checksum}).
 		Where("id <> ?", incoming.ID).
 		Order("created_at DESC").
-		First(&prev)
+		Find(&prevs)
 	if res.Error != nil {
-		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return false, "", nil
-		}
 		return false, "", sync.SyncInternalErr{
-			Description: fmt.Sprintf("unable to look up previous config for component %s", cmpID),
+			Description: fmt.Sprintf("unable to look up previous configs for component %s", cmpID),
 			Err:         res.Error,
 		}
 	}
 
-	if prev.Checksum != incoming.Checksum || !prev.LatestBuildID.Valid {
-		return false, "", nil
-	}
-
-	var bld app.ComponentBuild
-	res = db.WithContext(ctx).
-		Select("id", "status").
-		Where(app.ComponentBuild{ID: prev.LatestBuildID.String}).
-		First(&bld)
-	if res.Error != nil {
-		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return false, "", nil
+	for _, prev := range prevs {
+		if prev.LatestBuildID.Valid {
+			var bld app.ComponentBuild
+			res = db.WithContext(ctx).
+				Select("id", "status").
+				Where(app.ComponentBuild{ID: prev.LatestBuildID.String}).
+				First(&bld)
+			if res.Error != nil {
+				if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+					continue
+				}
+				return false, "", sync.SyncInternalErr{
+					Description: fmt.Sprintf("unable to look up previous build for component %s", cmpID),
+					Err:         res.Error,
+				}
+			}
+			if bld.Status == app.ComponentBuildStatusActive {
+				return true, bld.ID, nil
+			}
+			continue
 		}
-		return false, "", sync.SyncInternalErr{
-			Description: fmt.Sprintf("unable to look up previous build for component %s", cmpID),
-			Err:         res.Error,
+
+		// Prior CCC may have an Active build row without latest_build_id pinned
+		// (broken pin from concurrent create). Recover by looking up the build.
+		var bld app.ComponentBuild
+		res = db.WithContext(ctx).
+			Select("id").
+			Where(app.ComponentBuild{
+				ComponentConfigConnectionID: prev.ID,
+				Status:                      app.ComponentBuildStatusActive,
+			}).
+			Order("created_at DESC").
+			First(&bld)
+		if res.Error != nil {
+			if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+				continue
+			}
+			return false, "", sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to look up previous build for component %s", cmpID),
+				Err:         res.Error,
+			}
 		}
+		return true, bld.ID, nil
 	}
 
-	if bld.Status != app.ComponentBuildStatusActive {
-		return false, "", nil
-	}
-
-	return true, bld.ID, nil
+	return false, "", nil
 }
 
 // reusableConfigID returns the latest config connection's ID when it matches
