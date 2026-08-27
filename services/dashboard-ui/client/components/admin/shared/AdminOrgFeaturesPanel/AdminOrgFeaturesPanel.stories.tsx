@@ -8,7 +8,15 @@ export const Default = () => (
   <AdminOrgFeaturesPanel
     org={{ features: { 'feature-a': true, 'feature-b': false } } as any}
     orgId="org-1"
-    featuresList={['feature-a', 'feature-b', 'feature-c']}
+    featuresList={[
+      { name: 'feature-a', description: 'An org-toggleable feature.' },
+      { name: 'feature-b', description: 'Another org-toggleable feature.' },
+      {
+        name: 'feature-c',
+        description: 'Pinned on by the deployment config.',
+        forced: true,
+      },
+    ]}
     isLoading={false}
     isSubmitting={false}
     onSubmit={(e) => e.preventDefault()}

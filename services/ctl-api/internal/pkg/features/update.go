@@ -61,6 +61,12 @@ func (s *Features) updateOrgFeatures(ctx context.Context, orgID string, updateFe
 	// Remove the "all" key from updateFeatures if it exists
 	delete(updateFeatures, "all")
 
+	for name := range app.ForcedFeatures() {
+		if _, ok := updateFeatures[name]; ok {
+			updateFeatures[name] = true
+		}
+	}
+
 	res := s.db.WithContext(ctx).Model(&org).Updates(app.Org{
 		Features: updateFeatures,
 	})
