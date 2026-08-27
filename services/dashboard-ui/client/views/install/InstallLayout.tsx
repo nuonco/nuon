@@ -6,6 +6,8 @@ import {
   useLocation,
 } from 'react-router'
 import { LabelBadge } from '@/components/common/LabelBadge'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { ID } from '@/components/common/ID'
 import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
@@ -24,9 +26,9 @@ import {
   INSTALL_SETTINGS_PANEL_KEY,
 } from '@/components/installs/InstallSettingsPanel'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
-import { DetailHeader } from '@/components/layout/DetailHeader'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -211,42 +213,44 @@ const InstallTemplate = () => {
           </PageContent>
         ) : (
           <>
-            <DetailHeader
-              variant="page"
-              backLink={false}
-              title={install.name}
-              status={
-                install.labels
-                  ? Object.entries(install.labels).map(([key, value]) => (
-                      <LabelBadge
-                        key={key}
-                        size="sm"
-                        labelKey={key}
-                        labelValue={value}
-                        customColor={labelColors?.[key]}
+            <PageHeader>
+              <DeprovisionBanner />
+              <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
+                <HeadingGroup className="gap-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Text variant="h3" weight="stronger" level={1}>
+                      {install.name}
+                    </Text>
+
+                    {install.labels &&
+                      Object.entries(install.labels).map(([key, value]) => (
+                        <LabelBadge
+                          key={key}
+                          size="sm"
+                          labelKey={key}
+                          labelValue={value}
+                          customColor={labelColors?.[key]}
+                        />
+                      ))}
+                  </div>
+                  <ID>{install.id}</ID>
+                  <div className="flex items-center gap-3">
+                    <Text variant="subtext" theme="info">
+                      Last updated{' '}
+                      <Time
+                        variant="subtext"
+                        time={install?.updated_at}
+                        format="relative"
                       />
-                    ))
-                  : null
-              }
-              id={install.id}
-              identity={
-                <>
-                  <Text variant="subtext" theme="info">
-                    Last updated{' '}
-                    <Time
-                      variant="subtext"
-                      time={install?.updated_at}
-                      format="relative"
+                    </Text>
+                    <AdminDashboardLink
+                      path={`/queues?owner_id=${install.id}`}
+                      label="Admin panel"
                     />
-                  </Text>
-                  <AdminDashboardLink
-                    path={`/queues?owner_id=${install.id}`}
-                    label="Admin panel"
-                  />
-                </>
-              }
-              metadata={
-                <>
+                  </div>
+                </HeadingGroup>
+
+                <div className="flex items-start flex-wrap gap-4 md:gap-8">
                   {isManagedByConfig && (
                     <LabeledValue label="Managed by">
                       <Text variant="subtext">
@@ -274,18 +278,17 @@ const InstallTemplate = () => {
                     </Link>
                   </LabeledValue>
                   <InstallStatusesContainer collapsible />
-                </>
-              }
-            >
-              <DeprovisionBanner />
+                </div>
+              </div>
               {install?.drifted_objects?.length ? (
                 <DriftedSummary
+                  className="mt-4"
                   orgId={org.id}
                   installId={install.id}
                   driftedObjects={install.drifted_objects}
                 />
               ) : null}
-            </DetailHeader>
+            </PageHeader>
             <PageContent className="border-t" variant="row">
               <SubNav
                 basePath={`/${org?.id}/installs/${install?.id}`}
