@@ -12,7 +12,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { getRunTitle } from '@/components/branches/shared/run-title'
-import { getWorkflowHref, getWorkflowStepTitle } from '@/utils/workflow-utils'
+import { getApprovalHref, getWorkflowStepTitle } from '@/utils/workflow-utils'
 import type { TWorkflowStepApproval } from '@/types'
 
 type WorkflowApprovalsContextValue = {
@@ -76,11 +76,7 @@ export function WorkflowApprovalsProvider({
           : stepName
             ? getWorkflowStepTitle(step)
             : 'Approval required'
-        const workflowUrl = workflow
-          ? getWorkflowHref(org.id, workflow)
-          : step?.owner_id && step?.install_workflow_id
-            ? `/${org.id}/installs/${step.owner_id}/workflows/${step.install_workflow_id}`
-            : null
+        const workflowUrl = getApprovalHref(org.id, approval, workflow)
         addToast(
           <Toast
             heading={installName ? `${installName} — ${heading}` : heading}
