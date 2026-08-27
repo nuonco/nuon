@@ -7,11 +7,13 @@ import type {
   TInstallAppConfigVersion,
   TAppBranchRun,
   TInstallGroupRun,
+  TAppSandboxBuild,
 } from '@/types'
 
 interface IBranchRunSummary {
   branchRun?: TAppBranchRun
   builds: TComponentBuild[]
+  sandboxBuild?: TAppSandboxBuild | null
   installUpdates: TInstallAppConfigVersion[]
   installGroupRuns: TInstallGroupRun[]
   installsById?: Record<string, TInstall>
@@ -49,6 +51,7 @@ const InstallsSection = ({
 export const BranchRunSummary = ({
   branchRun,
   builds,
+  sandboxBuild,
   installUpdates,
   installGroupRuns,
   installsById,
@@ -57,11 +60,16 @@ export const BranchRunSummary = ({
   branchId,
   runStatus,
 }: IBranchRunSummary) => {
-  if (builds.length === 0 && installGroupRuns.length === 0) return null
+  if (builds.length === 0 && !sandboxBuild && installGroupRuns.length === 0) return null
 
   return (
     <div className="flex flex-col gap-6">
-      <BranchRunBuilds builds={builds} orgId={orgId} appId={appId} />
+      <BranchRunBuilds
+        builds={builds}
+        sandboxBuild={sandboxBuild}
+        orgId={orgId}
+        appId={appId}
+      />
       <InstallsSection
         installGroupRuns={installGroupRuns}
         installsById={installsById}

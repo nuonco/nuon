@@ -13,6 +13,13 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { ComponentType } from '@/components/components/ComponentType'
+import {
+  BuildTypeFilter,
+  SANDBOX_FILTER,
+  uniqueBuildFilterTypes,
+  useBuildTypeFilter,
+  type TBuildTypeFilterKey,
+} from '@/components/branches/BuildTypeFilter'
 import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
@@ -27,7 +34,7 @@ import type {
   TBuild,
   TComponentType,
 } from '@/types'
-import { cacheBadgeTheme } from '../../shared/format'
+import { changeReasonBadgeTheme, changeReasonLabel } from '../../shared/format'
 
 interface IBuildStep {
   metadata: Record<string, any>
@@ -38,6 +45,16 @@ interface IBuildStep {
 
 const isSandboxBuild = (build: any) =>
   build.component_type === 'sandbox' || build.component_id === 'sandbox'
+
+const buildFilterType = (
+  build: any,
+  typeMap: Record<string, TComponentType>
+): TBuildTypeFilterKey | undefined => {
+  if (isSandboxBuild(build)) return SANDBOX_FILTER
+  return (build.component_type || typeMap[build.component_id]) as
+    | TComponentType
+    | undefined
+}
 
 const pollingBuildStatuses = new Set([
   'queued',
@@ -262,9 +279,17 @@ export const BuildRow = ({
             {build.component_name || build.component_id}
           </Text>
 
-          {build.cache_status && (
-            <Badge theme={cacheBadgeTheme(build.cache_status)} size="sm">
-              {build.cache_status}
+          {(build.change_reason || build.cache_status) && (
+            <Badge
+              theme={changeReasonBadgeTheme(
+                build.change_reason ||
+                  (build.cache_status === 'cache hit' ? 'no_changes' : undefined)
+              )}
+              size="sm"
+            >
+              {build.change_reason
+                ? changeReasonLabel(build.change_reason)
+                : build.cache_status}
             </Badge>
           )}
 
@@ -346,6 +371,42 @@ export const BuildStep = ({
     return map
   }, [branchBuilds])
 
+  const filterTypes = useMemo(
+    () => uniqueBuildFilterTypes(builds.map((b: any) => buildFilterType(b, typeMap))),
+    [builds, typeMap]
+  )
+  const filter = useBuildTypeFilter(filterTypes)
+
+  const visibleBuilds = useMemo(
+    () =>
+      builds.filter((b: any) => filter.matches(buildFilterType(b, typeMap))),
+    [builds, filter.matches, filter.deselected, typeMap]
+  )
+
+  const buildSummary = useMemo(() => {
+    const counts = {
+      source_changed: 0,
+      config_changed: 0,
+      no_changes: 0,
+      built: 0,
+    }
+    for (const b of builds) {
+      const reason =
+        b.change_reason ||
+        (b.skipped || b.status === 'skipped' ? 'no_changes' : 'source_changed')
+      if (reason === 'no_changes') {
+        counts.no_changes++
+      } else if (reason === 'config_changed') {
+        counts.config_changed++
+        counts.built++
+      } else if (reason === 'source_changed') {
+        counts.source_changed++
+        counts.built++
+      }
+    }
+    return counts
+  }, [builds])
+
   if (builds.length === 0) {
     return status === 'in-progress' ? (
       <StepStatePlaceholder variant="loading">
@@ -358,9 +419,18 @@ export const BuildStep = ({
     )
   }
 
-  const succeededCount = builds.filter(
-    (b: any) => b.status === 'success' || b.status === 'skipped'
-  ).length
+  const summaryParts: string[] = []
+  if (buildSummary.built > 0) {
+    summaryParts.push(
+      `${buildSummary.built} ${buildSummary.built === 1 ? 'component' : 'components'} built`
+    )
+  }
+  if (buildSummary.no_changes > 0) {
+    summaryParts.push(
+      `${buildSummary.no_changes} no changes`
+    )
+  }
+
   const totalDuration = builds.reduce(
     (acc: number, b: any) => acc + (b.duration || 0),
     0
@@ -371,12 +441,7 @@ export const BuildStep = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Text variant="body" theme="neutral">
-            <span className="font-semibold">{builds.length}</span> components
-            built
-          </Text>
-          <span className="text-[12px] text-cool-grey-400">·</span>
-          <Text variant="body" weight="strong" theme="success">
-            {succeededCount} succeeded
+            {summaryParts.length > 0 ? summaryParts.join(' · ') : `${builds.length} components`}
           </Text>
         </div>
         {totalDuration > 0 && (
@@ -386,25 +451,41 @@ export const BuildStep = ({
         )}
       </div>
 
+      {filterTypes.length > 1 && (
+        <BuildTypeFilter
+          types={filter.types}
+          deselected={filter.deselected}
+          onToggle={filter.toggle}
+        />
+      )}
+
       <div className="border rounded-[10px] divide-y overflow-hidden">
-        {builds.map((build: any, i: number) => {
-          const rowId = String(build.component_id || i)
-          return (
-            <BuildRow
-              key={rowId}
-              build={build}
-              type={build.component_type || typeMap[build.component_id]}
-              rowId={rowId}
-              orgId={org?.id}
-              appId={app?.id}
-              componentBuildId={
-                build.build_id || componentBuildMap.get(build.component_id)
-              }
-              sandboxBuildId={sandboxBuildId}
-              isLoadingBuilds={isLoadingBuilds}
-            />
-          )
-        })}
+        {visibleBuilds.length === 0 ? (
+          <div className="px-4 py-3">
+            <Text variant="subtext" theme="neutral">
+              No builds match filters
+            </Text>
+          </div>
+        ) : (
+          visibleBuilds.map((build: any, i: number) => {
+            const rowId = String(build.component_id || i)
+            return (
+              <BuildRow
+                key={rowId}
+                build={build}
+                type={build.component_type || typeMap[build.component_id]}
+                rowId={rowId}
+                orgId={org?.id}
+                appId={app?.id}
+                componentBuildId={
+                  build.build_id || componentBuildMap.get(build.component_id)
+                }
+                sandboxBuildId={sandboxBuildId}
+                isLoadingBuilds={isLoadingBuilds}
+              />
+            )
+          })
+        )}
       </div>
     </div>
   )

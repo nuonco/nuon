@@ -111,15 +111,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		metadata["triggered_by"] = s.TriggeredBy
 	}
 
-	if s.AppBranchRunID != "" {
-		if _, err := activities.AwaitUpdateInstallAppConfigVersionStatus(ctx, &activities.UpdateInstallAppConfigVersionStatusInput{
-			AppBranchRunID: s.AppBranchRunID,
-			InstallID:      s.InstallID,
-			Metadata:       metadata,
-		}); err != nil {
-			return fmt.Errorf("unable to update install app config version status: %w", err)
-		}
-	} else {
+	if s.AppBranchRunID == "" {
 		if _, err := activities.AwaitCreateInstallAppConfigVersion(ctx, &activities.CreateInstallAppConfigVersionInput{
 			InstallID:      s.InstallID,
 			OldAppConfigID: install.AppConfigID,

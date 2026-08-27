@@ -95,7 +95,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		steps = append(steps, stackSteps...)
 	}
 
-	if diff != nil && diff.SandboxChanged {
+	if diff != nil && (diff.SandboxChanged || diff.SandboxBuildChanged) {
 		flw.Metadata["skip_components"] = generics.ToPtr("true")
 
 		newAppCfg, err := activities.AwaitGetAppConfigByID(ctx, newAppConfigID)
