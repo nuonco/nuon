@@ -44,6 +44,11 @@ type AppInstallerSDKGCPConfig struct {
 	// maintenance predefined role
 	MaintenancePredefinedRole string `json:"maintenance_predefined_role,omitempty"`
 
+	// Empty until the install has a recorded GCP target: unlike AWS, a GCP install
+	// can be created without one, and the first provision's phone home records it.
+	// The module supplies its own values for that first apply.
+	ProjectID string `json:"project_id,omitempty"`
+
 	// provision permissions
 	ProvisionPermissions []string `json:"provision_permissions"`
 
@@ -54,11 +59,13 @@ type AppInstallerSDKGCPConfig struct {
 	// provision predefined role
 	ProvisionPredefinedRole string `json:"provision_predefined_role,omitempty"`
 
+	// region
+	Region string `json:"region,omitempty"`
+
 	// runner api token
 	RunnerAPIToken string `json:"runner_api_token,omitempty"`
 
-	// NOTE: project + region are NOT set here — the customer supplies them at
-	// provision time via the CLI. ctl-api only emits the Nuon-generated inputs.
+	// runner init script url
 	RunnerInitScriptURL string `json:"runner_init_script_url,omitempty"`
 
 	// runner machine type
