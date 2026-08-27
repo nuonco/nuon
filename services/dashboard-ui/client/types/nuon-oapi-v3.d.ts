@@ -5575,6 +5575,11 @@ export interface components {
     };
     "app.OrgFeatureInfo": {
       description?: string;
+      /**
+       * @description Forced marks a flag this deployment pins on for every org, which callers
+       * cannot toggle off.
+       */
+      forced?: boolean;
       name?: string;
     };
     "app.OrgInvite": {
@@ -10746,6 +10751,8 @@ export interface operations {
         labels?: string;
         /** @description filter by action workflow trigger type */
         trigger_types?: string;
+        /** @description only return the actions defined by this branch's config */
+        branch_id?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -12540,6 +12547,8 @@ export interface operations {
         types?: string;
         /** @description comma-separated list of component IDs to filter by */
         component_ids?: string;
+        /** @description only return the components defined by this branch's config */
+        branch_id?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
         /** @description offset of results to return */
@@ -16476,6 +16485,8 @@ export interface operations {
       query?: {
         /** @description search query to filter runbooks by name or ID */
         q?: string;
+        /** @description only return the runbooks defined by this branch's config */
+        branch_id?: string;
         /** @description offset */
         offset?: number;
         /** @description limit */
