@@ -25,7 +25,7 @@ type AppAppBranchRun struct {
 	// app branch config
 	AppBranchConfig *AppAppBranchConfig `json:"app_branch_config,omitempty"`
 
-	// AppConfigID is the app config that was created/synced during this run
+	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
 	// awaiting approval
@@ -34,11 +34,10 @@ type AppAppBranchRun struct {
 	// base branch
 	BaseBranch string `json:"base_branch,omitempty"`
 
-	// CommitSHA is the VCS commit that triggered or is associated with this run
-	// DEPRECATED: Use VCSConnectionCommit relationship instead
-	CommitSha string `json:"commit_sha,omitempty"`
+	// comparison
+	Comparison *AppAppBranchRunComparison `json:"comparison,omitempty"`
 
-	// CompletedAt tracks when execution finished
+	// completed at
 	CompletedAt string `json:"completed_at,omitempty"`
 
 	// created at
@@ -50,10 +49,10 @@ type AppAppBranchRun struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
-	// ErrorMessage stores any error that occurred during execution
+	// error message
 	ErrorMessage string `json:"error_message,omitempty"`
 
-	// EventType indicates what triggered this run. Kept for backward compat; new code uses RunType.
+	// event type
 	EventType string `json:"event_type,omitempty"`
 
 	// force
@@ -74,38 +73,28 @@ type AppAppBranchRun struct {
 	// log stream
 	LogStream *AppLogStream `json:"log_stream,omitempty"`
 
-	// LogStreamID is the log stream created during this run for event tracking
+	// log stream id
 	LogStreamID string `json:"log_stream_id,omitempty"`
 
 	// no config changes
 	NoConfigChanges bool `json:"no_config_changes,omitempty"`
 
-	// PlanOnly indicates this is a preview run. Kept for backward compat; new code uses RunType.
+	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
 
 	// pr number
 	PrNumber int64 `json:"pr_number,omitempty"`
 
-	// previous run
-	PreviousRun *AppAppBranchRun `json:"previous_run,omitempty"`
-
-	// PreviousRunID links to the previous successful run on the same branch,
-	// used for build diffing to determine which components need rebuilding.
-	PreviousRunID string `json:"previous_run_id,omitempty"`
-
-	// QueueSignal is the signal that was enqueued to trigger this run
-	QueueSignal struct {
-		AppQueueSignal
-	} `json:"queue_signal,omitempty"`
+	// queue signal
+	QueueSignal *AppQueueSignal `json:"queue_signal,omitempty"`
 
 	// run type
 	RunType AppAppBranchRunType `json:"run_type,omitempty"`
 
-	// StartedAt tracks when execution actually began
+	// started at
 	StartedAt string `json:"started_at,omitempty"`
 
-	// Status tracks the current state of the run
-	// Values: pending, running, success, failed, cancelled
+	// status
 	Status string `json:"status,omitempty"`
 
 	// trigger event dispatch id
@@ -136,6 +125,10 @@ func (m *AppAppBranchRun) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateComparison(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateCreatedBy(formats); err != nil {
 		res = append(res, err)
 	}
@@ -145,10 +138,6 @@ func (m *AppAppBranchRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLogStream(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validatePreviousRun(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -211,6 +200,29 @@ func (m *AppAppBranchRun) validateAppBranchConfig(formats strfmt.Registry) error
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("app_branch_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) validateComparison(formats strfmt.Registry) error {
+	if swag.IsZero(m.Comparison) { // not required
+		return nil
+	}
+
+	if m.Comparison != nil {
+		if err := m.Comparison.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("comparison")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("comparison")
 			}
 
 			return err
@@ -289,32 +301,24 @@ func (m *AppAppBranchRun) validateLogStream(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AppAppBranchRun) validatePreviousRun(formats strfmt.Registry) error {
-	if swag.IsZero(m.PreviousRun) { // not required
+func (m *AppAppBranchRun) validateQueueSignal(formats strfmt.Registry) error {
+	if swag.IsZero(m.QueueSignal) { // not required
 		return nil
 	}
 
-	if m.PreviousRun != nil {
-		if err := m.PreviousRun.Validate(formats); err != nil {
+	if m.QueueSignal != nil {
+		if err := m.QueueSignal.Validate(formats); err != nil {
 			ve := new(errors.Validation)
 			if stderrors.As(err, &ve) {
-				return ve.ValidateName("previous_run")
+				return ve.ValidateName("queue_signal")
 			}
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
-				return ce.ValidateName("previous_run")
+				return ce.ValidateName("queue_signal")
 			}
 
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *AppAppBranchRun) validateQueueSignal(formats strfmt.Registry) error {
-	if swag.IsZero(m.QueueSignal) { // not required
-		return nil
 	}
 
 	return nil
@@ -399,6 +403,10 @@ func (m *AppAppBranchRun) ContextValidate(ctx context.Context, formats strfmt.Re
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateComparison(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCreatedBy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -408,10 +416,6 @@ func (m *AppAppBranchRun) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateLogStream(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidatePreviousRun(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -478,6 +482,31 @@ func (m *AppAppBranchRun) contextValidateAppBranchConfig(ctx context.Context, fo
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("app_branch_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) contextValidateComparison(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Comparison != nil {
+
+		if swag.IsZero(m.Comparison) { // not required
+			return nil
+		}
+
+		if err := m.Comparison.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("comparison")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("comparison")
 			}
 
 			return err
@@ -559,32 +588,27 @@ func (m *AppAppBranchRun) contextValidateLogStream(ctx context.Context, formats 
 	return nil
 }
 
-func (m *AppAppBranchRun) contextValidatePreviousRun(ctx context.Context, formats strfmt.Registry) error {
+func (m *AppAppBranchRun) contextValidateQueueSignal(ctx context.Context, formats strfmt.Registry) error {
 
-	if m.PreviousRun != nil {
+	if m.QueueSignal != nil {
 
-		if swag.IsZero(m.PreviousRun) { // not required
+		if swag.IsZero(m.QueueSignal) { // not required
 			return nil
 		}
 
-		if err := m.PreviousRun.ContextValidate(ctx, formats); err != nil {
+		if err := m.QueueSignal.ContextValidate(ctx, formats); err != nil {
 			ve := new(errors.Validation)
 			if stderrors.As(err, &ve) {
-				return ve.ValidateName("previous_run")
+				return ve.ValidateName("queue_signal")
 			}
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
-				return ce.ValidateName("previous_run")
+				return ce.ValidateName("queue_signal")
 			}
 
 			return err
 		}
 	}
-
-	return nil
-}
-
-func (m *AppAppBranchRun) contextValidateQueueSignal(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }
