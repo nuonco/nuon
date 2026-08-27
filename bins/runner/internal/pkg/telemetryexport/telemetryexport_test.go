@@ -67,8 +67,12 @@ func TestReconcilePreservesLastKnownGoodConfiguration(t *testing.T) {
 	}
 
 	s.reconcile(configUpdate{state: configAvailable, value: invalid})
-	if replacements != 0 || stops != 0 || s.active != valid {
+	if replacements != 0 || stops != 0 || s.active != valid || s.rejectedConfig != invalid {
 		t.Fatal("invalid update changed the active collector")
+	}
+	s.reconcile(configUpdate{state: configAvailable, value: invalid})
+	if replacements != 0 || stops != 0 {
+		t.Fatal("unchanged invalid update was retried")
 	}
 
 	s.reconcile(configUpdate{state: configLookupFailed, err: errors.New("temporary failure")})
@@ -97,7 +101,7 @@ func TestReconcileAppliesChangedValidConfigurationOnce(t *testing.T) {
 
 	s.reconcile(configUpdate{state: configAvailable, value: valid})
 	s.reconcile(configUpdate{state: configAvailable, value: valid})
-	if replacements != 1 || s.active != valid {
+	if replacements != 1 || s.active != valid || s.rejectedConfig != "" {
 		t.Fatal("valid configuration was not applied exactly once")
 	}
 }
@@ -117,8 +121,51 @@ func TestReconcileSchedulesRestartWhenUpdateAndRollbackFail(t *testing.T) {
 	}
 
 	s.reconcile(configUpdate{state: configAvailable, value: updated})
-	if s.nextStart.IsZero() || s.active != current {
+	if s.nextStart.IsZero() || s.active != current || s.rejectedConfig != updated || s.restartConfig != current {
 		t.Fatal("failed rollback did not schedule recovery of the last-known-good configuration")
+	}
+}
+
+func TestReconcileSchedulesRestartAfterInitialStartFailure(t *testing.T) {
+	value := auditEnabledConfig("https://otlp.example.com")
+	attempts := 0
+	s := &Supervisor{
+		installID: "inst-test",
+		logger:    zap.NewNop(),
+		backoff:   time.Second,
+		replaceChildFn: func(config) error {
+			attempts++
+			return errors.New("start failed")
+		},
+		stopChildFn: func() {},
+	}
+
+	s.reconcile(configUpdate{state: configAvailable, value: value})
+	s.reconcile(configUpdate{state: configAvailable, value: value})
+	if attempts != 1 || s.active != "" || s.restartConfig != value || s.nextStart.IsZero() {
+		t.Fatalf("initial failure did not schedule restart: active=%q restart=%q next=%s", s.active, s.restartConfig, s.nextStart)
+	}
+}
+
+func TestRestartActivatesPendingConfiguration(t *testing.T) {
+	value := auditEnabledConfig("https://otlp.example.com")
+	restarts := 0
+	s := &Supervisor{
+		installID:     "inst-test",
+		logger:        zap.NewNop(),
+		restartConfig: value,
+		nextStart:     time.Now().Add(-time.Second),
+		backoff:       time.Second,
+		replaceChildFn: func(config) error {
+			restarts++
+			return nil
+		},
+		stopChildFn: func() {},
+	}
+
+	s.restartCrashed(context.Background())
+	if restarts != 1 || s.active != value || s.restartConfig != "" || !s.nextStart.IsZero() || !s.collectorEnabled {
+		t.Fatalf("pending configuration was not activated: restarts=%d active=%q pending=%q next=%s enabled=%t", restarts, s.active, s.restartConfig, s.nextStart, s.collectorEnabled)
 	}
 }
 
@@ -142,8 +189,35 @@ func TestReconcileFailedUpdateRestoresLastKnownGoodCollector(t *testing.T) {
 	}
 
 	s.reconcile(configUpdate{state: configAvailable, value: updated})
-	if s.active != current || len(endpoints) != 2 || endpoints[0] != "https://updated.example.com" || endpoints[1] != "https://current.example.com" {
+	s.reconcile(configUpdate{state: configAvailable, value: updated})
+	if s.active != current || s.rejectedConfig != updated || len(endpoints) != 2 || endpoints[0] != "https://updated.example.com" || endpoints[1] != "https://current.example.com" {
 		t.Fatalf("failed update did not restore the active collector: active=%q endpoints=%q", s.active, endpoints)
+	}
+}
+
+func TestReconcileRetriesRejectedConfigurationAfterSecretChanges(t *testing.T) {
+	current := auditEnabledConfig("https://current.example.com")
+	rejected := auditEnabledConfig("https://rejected.example.com")
+	corrected := auditEnabledConfig("https://corrected.example.com")
+	var endpoints []string
+	s := &Supervisor{
+		installID: "inst-test",
+		logger:    zap.NewNop(),
+		active:    current,
+		replaceChildFn: func(cfg config) error {
+			endpoints = append(endpoints, cfg.OTLPHTTP.Endpoint)
+			if cfg.OTLPHTTP.Endpoint == "https://rejected.example.com" {
+				return errors.New("start failed")
+			}
+			return nil
+		},
+		stopChildFn: func() {},
+	}
+
+	s.reconcile(configUpdate{state: configAvailable, value: rejected})
+	s.reconcile(configUpdate{state: configAvailable, value: corrected})
+	if s.active != corrected || s.rejectedConfig != "" || len(endpoints) != 3 {
+		t.Fatalf("changed secret did not replace a rejected configuration: active=%q rejected=%q endpoints=%q", s.active, s.rejectedConfig, endpoints)
 	}
 }
 
@@ -154,13 +228,16 @@ func TestReconcileDisablesUnavailableSecret(t *testing.T) {
 		installID:        "inst-test",
 		logger:           zap.NewNop(),
 		active:           valid,
+		rejectedConfig:   "rejected",
+		restartConfig:    valid,
+		nextStart:        time.Now().Add(time.Minute),
 		collectorEnabled: true,
 		reported:         true,
 		stopChildFn:      func() { stops++ },
 	}
 
 	s.reconcile(configUpdate{state: configUnavailable})
-	if stops != 1 || s.active != "" || s.collectorEnabled {
+	if stops != 1 || s.active != "" || s.rejectedConfig != "" || s.restartConfig != "" || !s.nextStart.IsZero() || s.collectorEnabled {
 		t.Fatal("unavailable secret did not disable the collector")
 	}
 }
@@ -174,6 +251,7 @@ func TestReconcileKeepsCollectorWithoutAuditPipeline(t *testing.T) {
 		installID:        "inst-test",
 		logger:           zap.NewNop(),
 		active:           active,
+		restartConfig:    active,
 		nextStart:        time.Now().Add(time.Minute),
 		collectorEnabled: true,
 		reported:         true,
@@ -185,7 +263,7 @@ func TestReconcileKeepsCollectorWithoutAuditPipeline(t *testing.T) {
 	}
 
 	s.reconcile(configUpdate{state: configAvailable, value: disabledAudit})
-	if replacements != 1 || stops != 0 || s.active != disabledAudit || !s.nextStart.IsZero() || !s.collectorEnabled {
+	if replacements != 1 || stops != 0 || s.active != disabledAudit || s.restartConfig != "" || !s.nextStart.IsZero() || !s.collectorEnabled {
 		t.Fatal("disabled audit logs did not leave the collector running without the audit pipeline")
 	}
 }
