@@ -26,8 +26,7 @@ const (
 	// MaxWaitCeiling bounds every long-lived wait (parked retries, approvals,
 	// fallback callback waits) so an abandoned workflow closes instead of
 	// holding its Temporal workflows open indefinitely.
-	// MaxWaitCeiling = 3 * 24 * time.Hour
-	MaxWaitCeiling = 10 * time.Second
+	MaxWaitCeiling = 3 * 24 * time.Hour
 
 	// HumanGatedTimeout is for operations that require human interaction:
 	// approval workflows, user-initiated stack runs.
