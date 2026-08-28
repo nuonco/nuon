@@ -46,7 +46,9 @@ export const WithError = () => (
     <ApprovePlanModal
       modalCopy={APPROVAL_MODAL_COPY.terraform_plan}
       isPending={false}
-      error={{ error: 'Install is currently busy with another operation' } as any}
+      error={
+        { error: 'Install is currently busy with another operation' } as any
+      }
       onSubmit={noop}
     />
   </ModalStory>

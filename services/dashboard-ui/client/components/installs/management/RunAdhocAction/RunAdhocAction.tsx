@@ -80,7 +80,10 @@ export const RunAdhocActionModal = ({
 
   const form = useForm({
     defaultValues,
-    validators: { onMount: runAdhocActionSchema, onChange: runAdhocActionSchema },
+    validators: {
+      onMount: runAdhocActionSchema,
+      onChange: runAdhocActionSchema,
+    },
     onSubmit: ({ value }) => {
       clearDraftRef.current()
       onSubmit(toBody(value))

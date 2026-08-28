@@ -49,7 +49,13 @@ const publicRepoEntry = (value: string): TVCSConnectionRepo | null => {
   } as TVCSConnectionRepo
 }
 
-const FieldSkeleton = ({ htmlFor, label }: { htmlFor: string; label: string }) => (
+const FieldSkeleton = ({
+  htmlFor,
+  label,
+}: {
+  htmlFor: string
+  label: string
+}) => (
   <div className="flex flex-col gap-1">
     <Label htmlFor={htmlFor}>
       <Text variant="body" className="font-medium">
@@ -82,7 +88,9 @@ export const BranchVcsConfigFields = ({
 }: IBranchVcsConfigFields) => {
   const hasConnections = vcsConnections.length > 0
   const [usePublicRepo, setUsePublicRepo] = useState(!hasConnections)
-  const [publicRepoText, setPublicRepoText] = useState(selectedRepo?.full_name ?? '')
+  const [publicRepoText, setPublicRepoText] = useState(
+    selectedRepo?.full_name ?? ''
+  )
 
   useEffect(() => {
     if (!usePublicRepo || publicRepoText) return
@@ -109,7 +117,9 @@ export const BranchVcsConfigFields = ({
         {!hasConnections && (
           <Banner theme="warn">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Text>No GitHub connections yet. Public repositories work without one.</Text>
+              <Text>
+                No GitHub connections yet. Public repositories work without one.
+              </Text>
               <ConnectGithubButton
                 type="button"
                 variant="secondary"
@@ -174,9 +184,9 @@ export const BranchVcsConfigFields = ({
         )}
 
         <Banner theme="info">
-          Pushes and pull requests only trigger runs if this repository&apos;s GitHub
-          organization has a Nuon connection. Without one, trigger runs manually and
-          Nuon cannot post commit statuses or PR comments.
+          Pushes and pull requests only trigger runs if this repository&apos;s
+          GitHub organization has a Nuon connection. Without one, trigger runs
+          manually and Nuon cannot post commit statuses or PR comments.
         </Banner>
 
         {hasConnections && (
@@ -205,7 +215,8 @@ export const BranchVcsConfigFields = ({
           disabled={isSubmitting || loadingRepos}
           options={vcsConnections.map((conn) => ({
             value: conn.id,
-            label: conn.github_account_name || conn.github_install_id || conn.id,
+            label:
+              conn.github_account_name || conn.github_install_id || conn.id,
           }))}
           labelProps={{ labelText: 'VCS connection' }}
         />
@@ -219,8 +230,8 @@ export const BranchVcsConfigFields = ({
         <Banner theme="error">Failed to load repositories</Banner>
       ) : repos.length === 0 ? (
         <Banner theme="warn">
-          No connected repositories found. Update your GitHub connection to grant
-          access to repositories.
+          No connected repositories found. Update your GitHub connection to
+          grant access to repositories.
         </Banner>
       ) : (
         <Select
@@ -235,7 +246,9 @@ export const BranchVcsConfigFields = ({
           options={repos.map((repo) => ({
             value: repo.full_name,
             label: repo.name,
-            badge: repo.private ? { label: 'private' } : { label: repo.full_name.split('/')[0] },
+            badge: repo.private
+              ? { label: 'private' }
+              : { label: repo.full_name.split('/')[0] },
           }))}
           labelProps={{ labelText: 'Repository' }}
           searchable

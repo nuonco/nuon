@@ -86,7 +86,8 @@ export const MatchPicker = ({
   const [appId, setAppId] = useState<string | undefined>(undefined)
 
   const { org } = useOrg()
-  const needsApp = kind === 'components' || kind === 'actions' || kind === 'app_branches'
+  const needsApp =
+    kind === 'components' || kind === 'actions' || kind === 'app_branches'
 
   const appsQuery = useQuery({
     placeholderData: keepPreviousData,
@@ -128,7 +129,10 @@ export const MatchPicker = ({
     // (server-side Validate rejects it); we still emit the empty
     // shape so the submit-time validator can surface the error rather
     // than silently keeping the previous match.
-    const selector: { match_labels?: typeof include; not_match_labels?: typeof exclude } = {}
+    const selector: {
+      match_labels?: typeof include
+      not_match_labels?: typeof exclude
+    } = {}
     if (Object.keys(include).length > 0) selector.match_labels = include
     if (Object.keys(exclude).length > 0) selector.not_match_labels = exclude
     onChange({ [kind]: { selector } })
@@ -331,7 +335,8 @@ const derivePredicate = (
 ): Predicate => {
   const tm = m?.[kind]
   if (!tm) return 'any'
-  if (tm.selector?.match_labels || tm.selector?.not_match_labels) return 'labels'
+  if (tm.selector?.match_labels || tm.selector?.not_match_labels)
+    return 'labels'
   if (tm.ids && tm.ids.length > 0) return 'specific'
   return 'any'
 }

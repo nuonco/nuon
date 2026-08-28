@@ -44,19 +44,24 @@ export const ComponentCard = ({
 
   const content = (
     <div className="flex w-fit items-center gap-3 rounded-lg border px-3 py-2.5">
-
       {name && (
         <Text variant="body" className="font-strong">
           {name}
         </Text>
       )}
-      {type && <ComponentType type={type} variant="subtext" colorVariant="color" />}
+      {type && (
+        <ComponentType type={type} variant="subtext" colorVariant="color" />
+      )}
       {status && <Status status={status} variant="badge" />}
     </div>
   )
 
   if (href) {
-    return <Link href={href} variant="ghost" className="flex !p-0 no-underline">{content}</Link>
+    return (
+      <Link href={href} variant="ghost" className="flex !p-0 no-underline">
+        {content}
+      </Link>
+    )
   }
 
   return content

@@ -8,7 +8,10 @@ import { Button } from '@/components/common/Button'
 
 export const Default = () => (
   <PageHeader>
-    <PageHeadingGroup title="Page title" subtitle="A short description of the page" />
+    <PageHeadingGroup
+      title="Page title"
+      subtitle="A short description of the page"
+    />
   </PageHeader>
 )
 

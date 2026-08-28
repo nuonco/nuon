@@ -22,12 +22,7 @@ export const DriftScanAllComponentsModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="ScanIcon" size="24" />
           Drift scan all {installName} components?
         </Text>

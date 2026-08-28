@@ -43,7 +43,8 @@ type AppConfig struct {
 	// Break-glass config
 	BreakGlass *BreakGlass `mapstructure:"break_glass,omitempty" toml:"break_glass,omitempty"`
 	// Stack config
-	Stack *StackConfig `mapstructure:"stack,omitempty" toml:"stack,omitempty"`
+	Stack           *StackConfig           `mapstructure:"stack,omitempty" toml:"stack,omitempty"`
+	CustomerManaged *CustomerManagedConfig `mapstructure:"customer_managed,omitempty" toml:"customer_managed,omitempty"`
 	// Operation rules
 	OperationRoles *OperationRolesConfig `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
 	// Kubernetes contexts
@@ -66,6 +67,8 @@ type AppConfig struct {
 	Runbooks []*RunbookConfig `mapstructure:"runbooks,omitempty" toml:"runbooks,omitempty"`
 
 	Triggers *TriggersConfig `mapstructure:"triggers,omitempty" toml:"triggers,omitempty"`
+
+	SourceArchive *SourceArchive `mapstructure:"-" toml:"-" json:"-" jsonschema:"-" temporaljson:"source_archive,omitempty"`
 }
 type ComponentList []*Component
 
@@ -120,6 +123,8 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Configure break-glass roles for emergency access to installs").
 		Field("stack").Short("stack configuration").
 		Long("Stack configuration for infrastructure orchestration").
+		Field("customer_managed").Short("customer-managed package runtime").
+		Long("Vendor-controlled runtime artifacts included in customer-managed release packages").
 		Field("kubernetes_contexts").Short("kubernetes context bindings").
 		Long("Named bindings to peer components that produce cluster connection details. Components opt in via their top-level kubernetes_context field").
 		Field("components").Short("component configurations").

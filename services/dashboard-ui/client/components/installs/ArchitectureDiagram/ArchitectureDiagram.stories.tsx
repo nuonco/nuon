@@ -1,4 +1,9 @@
-import type { TInstall, TInstallComponent, TInstallStack, TAppConfig } from '@/types'
+import type {
+  TInstall,
+  TInstallComponent,
+  TInstallStack,
+  TAppConfig,
+} from '@/types'
 import type { TInstallAppPermissionsConfig } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
 import { ArchitectureDiagram } from './ArchitectureDiagram'
 
@@ -23,7 +28,10 @@ const mockComponents: TInstallComponent[] = [
       name: 'api-server',
       type: 'helm_chart',
     },
-    status_v2: { status: 'healthy', status_human_description: 'Running normally' },
+    status_v2: {
+      status: 'healthy',
+      status_human_description: 'Running normally',
+    },
     install_deploys: [
       {
         status_v2: { status: 'succeeded' },
@@ -39,7 +47,10 @@ const mockComponents: TInstallComponent[] = [
       name: 'nginx-ingress',
       type: 'kubernetes_manifest',
     },
-    status_v2: { status: 'healthy', status_human_description: 'Running normally' },
+    status_v2: {
+      status: 'healthy',
+      status_human_description: 'Running normally',
+    },
     install_deploys: [],
   },
   {
@@ -65,7 +76,10 @@ const mockComponents: TInstallComponent[] = [
       name: 'worker-service',
       type: 'docker_build',
     },
-    status_v2: { status: 'deploying', status_human_description: 'Deploy in progress' },
+    status_v2: {
+      status: 'deploying',
+      status_human_description: 'Deploy in progress',
+    },
     install_deploys: [],
   },
 ] as unknown as TInstallComponent[]

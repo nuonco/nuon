@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from 'react'
 import { Icon } from '@/components/common/Icon'
-import type { TTheme } from '@/types'
+import type { TTheme } from '@/types/dashboard.types'
 import { cn } from '@/utils/classnames'
 import { humanize } from '@/utils/string-utils'
 import { getStatusTheme, getStatusIconVariant } from '@/utils/status-utils'
@@ -127,7 +127,7 @@ export const Status = ({
   const indicatorClass = cn(
     INDICATOR_BASE,
     INDICATOR_SIZE[variant],
-    INDICATOR_THEME_CLASSES[variant][theme],
+    INDICATOR_THEME_CLASSES[variant][theme]
   )
   const indicatorStyle =
     variant === 'timeline'

@@ -32,9 +32,6 @@ export const Default = () => (
 
 export const Hidden = () => (
   <AuthContext.Provider value={nonAdminAuth}>
-    <AdminDashboardLink
-      path="/queues"
-      label="View queues"
-    />
+    <AdminDashboardLink path="/queues" label="View queues" />
   </AuthContext.Provider>
 )

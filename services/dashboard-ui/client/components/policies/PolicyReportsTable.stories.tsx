@@ -45,7 +45,8 @@ const v = (
   input_identity: inputIdentity,
 })
 
-const minutesAgo = (n: number) => new Date(Date.now() - n * 60_000).toISOString()
+const minutesAgo = (n: number) =>
+  new Date(Date.now() - n * 60_000).toISOString()
 
 const reportWithDeny: TPolicyReport = {
   id: 'rpt-q7fplr1up5atx5zpxotbabm',

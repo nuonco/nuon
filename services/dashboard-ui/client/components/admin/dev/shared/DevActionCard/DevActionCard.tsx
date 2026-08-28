@@ -10,10 +10,7 @@ export interface IDevActionCard {
   onClick: () => void
 }
 
-const getActionIcon = (
-  title: string,
-  variant: IDevActionCard['variant']
-) => {
+const getActionIcon = (title: string, variant: IDevActionCard['variant']) => {
   if (title.toLowerCase().includes('seed')) return 'DatabaseIcon'
   if (title.toLowerCase().includes('reset')) return 'ArrowCounterClockwiseIcon'
   if (title.toLowerCase().includes('sync')) return 'ArrowsClockwiseIcon'

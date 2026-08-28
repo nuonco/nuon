@@ -62,10 +62,17 @@ export const ContainerNode = memo(({ data }: NodeProps) => {
           theme="neutral"
           className="shrink-0"
         />
-        <Text variant="label" weight="strong" theme="neutral" className="truncate !block min-w-0">
+        <Text
+          variant="label"
+          weight="strong"
+          theme="neutral"
+          className="truncate !block min-w-0"
+        >
           {data.label as string}
         </Text>
-        {status ? <Status status={status} variant="badge" className="shrink-0" /> : null}
+        {status ? (
+          <Status status={status} variant="badge" className="shrink-0" />
+        ) : null}
       </div>
     </div>
   )
@@ -127,7 +134,9 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
                     </Text>
                     {latestDeployAt && (
                       <>
-                        <Text variant="label" theme="neutral">·</Text>
+                        <Text variant="label" theme="neutral">
+                          ·
+                        </Text>
                         <Time
                           time={latestDeployAt}
                           format="relative"
@@ -218,9 +227,7 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
           </span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {isDrifted && (
-            <Icon variant="WarningIcon" size={12} theme="warn" />
-          )}
+          {isDrifted && <Icon variant="WarningIcon" size={12} theme="warn" />}
           <Status status={status || 'not-deployed'} variant="badge">
             {status ? undefined : 'Not deployed'}
           </Status>
@@ -235,54 +242,61 @@ ComponentCardNode.displayName = 'ComponentCardNode'
 export const RoleCardNode = memo(({ data }: NodeProps) => {
   const role = data as unknown as TRoleInfo & { width: number }
 
-  const items: import('@/components/common/ContextTooltip').TContextTooltipItem[] = [
-    {
-      id: 'status',
-      title: 'Provisioned',
-      subtitle: role.enabled ? 'Provisioned' : 'Not provisioned',
-      leftContent: (
-        <Status
-          status={role.enabled ? 'active' : 'inactive'}
-          isWithoutText
-          variant="timeline"
-          iconSize={16}
-        />
-      ),
-    },
-    ...(role.description
-      ? [
-          {
-            id: 'description',
-            title: 'Description',
-            subtitle: role.description,
-            leftContent: <Icon variant="InfoIcon" size={16} />,
-          },
-        ]
-      : []),
-    ...(role.policies.length > 0
-      ? [
-          {
-            id: 'policies',
-            title: `${role.policies.length} ${role.policies.length === 1 ? 'Policy' : 'Policies'}`,
-            subtitle: (
-              <span className="flex flex-col">
-                {role.policies.slice(0, 3).map((p, i) => (
-                  <Text key={i} variant="label" theme="neutral" family="mono" className="truncate">
-                    {p.name || 'Unnamed'}
-                  </Text>
-                ))}
-                {role.policies.length > 3 && (
-                  <Text variant="label" theme="neutral">
-                    +{role.policies.length - 3} more
-                  </Text>
-                )}
-              </span>
-            ),
-            leftContent: <Icon variant="ShieldCheckIcon" size={16} />,
-          },
-        ]
-      : []),
-  ]
+  const items: import('@/components/common/ContextTooltip').TContextTooltipItem[] =
+    [
+      {
+        id: 'status',
+        title: 'Provisioned',
+        subtitle: role.enabled ? 'Provisioned' : 'Not provisioned',
+        leftContent: (
+          <Status
+            status={role.enabled ? 'active' : 'inactive'}
+            isWithoutText
+            variant="timeline"
+            iconSize={16}
+          />
+        ),
+      },
+      ...(role.description
+        ? [
+            {
+              id: 'description',
+              title: 'Description',
+              subtitle: role.description,
+              leftContent: <Icon variant="InfoIcon" size={16} />,
+            },
+          ]
+        : []),
+      ...(role.policies.length > 0
+        ? [
+            {
+              id: 'policies',
+              title: `${role.policies.length} ${role.policies.length === 1 ? 'Policy' : 'Policies'}`,
+              subtitle: (
+                <span className="flex flex-col">
+                  {role.policies.slice(0, 3).map((p, i) => (
+                    <Text
+                      key={i}
+                      variant="label"
+                      theme="neutral"
+                      family="mono"
+                      className="truncate"
+                    >
+                      {p.name || 'Unnamed'}
+                    </Text>
+                  ))}
+                  {role.policies.length > 3 && (
+                    <Text variant="label" theme="neutral">
+                      +{role.policies.length - 3} more
+                    </Text>
+                  )}
+                </span>
+              ),
+              leftContent: <Icon variant="ShieldCheckIcon" size={16} />,
+            },
+          ]
+        : []),
+    ]
 
   return (
     <ContextTooltip
@@ -296,13 +310,15 @@ export const RoleCardNode = memo(({ data }: NodeProps) => {
         className="rounded-lg border bg-white dark:bg-dark-grey-900 px-3 py-2 flex items-center justify-between cursor-default overflow-hidden"
         style={{ width: role.width, height: 48 }}
       >
-        <Text variant="label" weight="strong" className="truncate min-w-0" title={role.name}>
+        <Text
+          variant="label"
+          weight="strong"
+          className="truncate min-w-0"
+          title={role.name}
+        >
           {role.name}
         </Text>
-        <Status
-          status={role.enabled ? 'active' : 'inactive'}
-          variant="badge"
-        />
+        <Status status={role.enabled ? 'active' : 'inactive'} variant="badge" />
       </div>
     </ContextTooltip>
   )

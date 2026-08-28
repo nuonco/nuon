@@ -80,10 +80,12 @@ export const RESOURCE_LABELS: Record<ResourceKind, string> = {
 export const RESOURCE_DESCRIPTIONS: Record<ResourceKind, string> = {
   installs:
     'Install provision, deprovision, reprovision lifecycle. Toggle install degraded to be notified when install health degrades and when it recovers.',
-  stacks: 'Install stack lifecycle, including when a stack version becomes active.',
+  stacks:
+    'Install stack lifecycle, including when a stack version becomes active.',
   components:
     'Per-component deploy and teardown. Toggle drift detected to be notified when drift is found. Toggle component health to be notified when a component becomes unhealthy and when it recovers.',
-  sandboxes: 'Sandbox provision, reprovision, deprovision. Toggle drift detected to be notified when drift is found.',
+  sandboxes:
+    'Sandbox provision, reprovision, deprovision. Toggle drift detected to be notified when drift is found.',
   install_configurations: 'Install input updates and secret syncs.',
   runners: 'Runner provision and reprovision.',
   actions: 'Action workflow runs.',

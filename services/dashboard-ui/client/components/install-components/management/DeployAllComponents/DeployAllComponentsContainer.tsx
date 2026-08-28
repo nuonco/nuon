@@ -29,8 +29,14 @@ export const DeployAllComponentsModalContainer = ({
   const queryClient = useQueryClient()
   const [isKickedOff, setIsKickedOff] = useState(false)
 
-  const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { body: Parameters<typeof deployComponents>[0]['body'] }) =>
+  const {
+    mutate: execute,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: (params: {
+      body: Parameters<typeof deployComponents>[0]['body']
+    }) =>
       deployComponents({
         body: params.body,
         installId: install.id,
@@ -48,7 +54,13 @@ export const DeployAllComponentsModalContainer = ({
       })
       addToast(
         <Toast heading="Deploying components" theme="info">
-          <Text>Deploying all components to <Badge variant="code" size="md">{install.name}</Badge>. This may take a few minutes.</Text>
+          <Text>
+            Deploying all components to{' '}
+            <Badge variant="code" size="md">
+              {install.name}
+            </Badge>
+            . This may take a few minutes.
+          </Text>
         </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
@@ -74,7 +86,13 @@ export const DeployAllComponentsModalContainer = ({
       })
       addToast(
         <Toast heading="Deploy failed" theme="error">
-          <Text>Unable to deploy components to <Badge variant="code" size="md">{install.name}</Badge>.</Text>
+          <Text>
+            Unable to deploy components to{' '}
+            <Badge variant="code" size="md">
+              {install.name}
+            </Badge>
+            .
+          </Text>
         </Toast>
       )
     },

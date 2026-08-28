@@ -42,8 +42,7 @@ export const DenyPlanModal = ({
       <div className="flex flex-col gap-1">
         {error ? (
           <Banner theme="error">
-            {error?.error ||
-              'Something went wrong. Try refreshing the page.'}
+            {error?.error || 'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
         <Text variant="base" weight="stronger">

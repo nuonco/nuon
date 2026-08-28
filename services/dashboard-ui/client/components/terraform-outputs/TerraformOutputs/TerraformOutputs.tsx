@@ -51,8 +51,16 @@ export const TerraformOutputs = ({
             value={viewMode}
             onChange={updateViewMode}
             options={[
-              { value: 'grid', label: <Icon variant="ListDashesIcon" size={16} />, ariaLabel: 'Grid view' },
-              { value: 'json', label: <Icon variant="BracketsCurlyIcon" size={16} />, ariaLabel: 'JSON view' },
+              {
+                value: 'grid',
+                label: <Icon variant="ListDashesIcon" size={16} />,
+                ariaLabel: 'Grid view',
+              },
+              {
+                value: 'json',
+                label: <Icon variant="BracketsCurlyIcon" size={16} />,
+                ariaLabel: 'JSON view',
+              },
             ]}
           />
           <ClickToCopyButton
@@ -63,7 +71,12 @@ export const TerraformOutputs = ({
       </div>
 
       {viewMode === 'json' ? (
-        <JSONViewer data={outputs} expanded={2} showDataTypes={false} className="w-full" />
+        <JSONViewer
+          data={outputs}
+          expanded={2}
+          showDataTypes={false}
+          className="w-full"
+        />
       ) : isFlat ? (
         <KeyValueList values={toKeyValues(outputs)} />
       ) : (
@@ -112,13 +125,7 @@ const SectionContent = ({ value }: { value: unknown }) => {
   return <KeyValueList values={toKeyValues(value as Record<string, unknown>)} />
 }
 
-const SectionExpand = ({
-  name,
-  value,
-}: {
-  name: string
-  value: unknown
-}) => {
+const SectionExpand = ({ name, value }: { name: string; value: unknown }) => {
   const badge = Array.isArray(value)
     ? `${value.length} items`
     : typeof value === 'object' && value !== null

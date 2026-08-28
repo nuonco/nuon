@@ -51,16 +51,17 @@ export const ApproveAllModalContainer = ({
     onError: (err: any) => {
       addToast(
         <Toast heading="Approval failed" theme="error">
-          <Text>{err?.error || `Unable to approve all changes to ${workflow.type} workflow.`}</Text>
+          <Text>
+            {err?.error ||
+              `Unable to approve all changes to ${workflow.type} workflow.`}
+          </Text>
         </Toast>
       )
     },
   })
 
   const pendingSteps = (workflow?.steps ?? [])
-    .filter(
-      (s) => s?.execution_type === 'approval' && !s?.approval?.response
-    )
+    .filter((s) => s?.execution_type === 'approval' && !s?.approval?.response)
     .map((s) => ({ id: s.id, name: s.name }))
 
   return (

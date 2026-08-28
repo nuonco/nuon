@@ -100,6 +100,15 @@ type Client interface {
 	// app installs config methods
 	CreateAppInstallsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppInstallsConfigRequest) (*models.AppAppInstallsConfig, error)
 
+	CreateAppRelease(ctx context.Context, appID, appConfigID string) (*models.AppAppRelease, error)
+	ListAppReleases(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppRelease, bool, error)
+	GetAppRelease(ctx context.Context, appID, releaseID string) (*models.AppAppRelease, error)
+	CreateReleasePackage(ctx context.Context, appID, releaseID, targetPlatform string) (*models.AppReleasePackage, error)
+	ListReleasePackages(ctx context.Context, appID, releaseID string) ([]*models.AppReleasePackage, error)
+	GetReleasePackage(ctx context.Context, packageID string) (*models.AppReleasePackage, error)
+	CreateReleasePackageDownloadGrant(ctx context.Context, packageID string) (*models.ServiceReleasePackageDownloadGrantResponse, error)
+	CreateReleasePackageBlobGrants(ctx context.Context, packageID string, digests []string) (*models.ServiceBlobGrantsResponse, error)
+
 	ListTriggerEvents(ctx context.Context, limit int, trigger string) ([]*models.TriggerEventSummary, error)
 	ListTriggerEventsPage(ctx context.Context, limit int, trigger, cursor string) (*models.TriggerEventPage, error)
 	SearchTriggerEvents(ctx context.Context, filters models.TriggerEventListQuery) (*models.TriggerEventPage, error)

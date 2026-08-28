@@ -1,4 +1,10 @@
-import { createContext, useCallback, useEffect, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react'
 
 interface NotificationOptions {
   title: string
@@ -30,23 +36,25 @@ interface NotificationContextType {
   toggleMute: () => void
 }
 
-export const NotificationContext = createContext<NotificationContextType | null>(null)
+export const NotificationContext =
+  createContext<NotificationContextType | null>(null)
 
 const STORAGE_KEY = 'notification_settings'
 
-export function NotificationProvider({ 
+export function NotificationProvider({
   children,
   autoRequestOnLoad = true,
-  autoRequestDelay = 2000
-}: { 
+  autoRequestDelay = 2000,
+}: {
   children: ReactNode
   autoRequestOnLoad?: boolean
   autoRequestDelay?: number
 }) {
-  const [permission, setPermission] = useState<NotificationPermission>('default')
+  const [permission, setPermission] =
+    useState<NotificationPermission>('default')
   const [isSupported, setIsSupported] = useState(false)
   const [settings, setSettings] = useState<NotificationSettings>({
-    permissionRequested: false
+    permissionRequested: false,
   })
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false)
   const [muted, setMuted] = useState(false)
@@ -63,7 +71,10 @@ export function NotificationProvider({
         setMuted(parsedSettings.muted ?? false)
       }
     } catch (error) {
-      console.warn('Failed to load notification settings from localStorage:', error)
+      console.warn(
+        'Failed to load notification settings from localStorage:',
+        error
+      )
     }
   }, [])
 
@@ -86,14 +97,23 @@ export function NotificationProvider({
     }, autoRequestDelay)
 
     return () => clearTimeout(timer)
-  }, [isSupported, permission, hasRequestedPermission, autoRequestOnLoad, autoRequestDelay])
+  }, [
+    isSupported,
+    permission,
+    hasRequestedPermission,
+    autoRequestOnLoad,
+    autoRequestDelay,
+  ])
 
   const saveSettings = useCallback((newSettings: NotificationSettings) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings))
       setSettings(newSettings)
     } catch (error) {
-      console.warn('Failed to save notification settings to localStorage:', error)
+      console.warn(
+        'Failed to save notification settings to localStorage:',
+        error
+      )
     }
   }, [])
 
@@ -103,81 +123,85 @@ export function NotificationProvider({
     saveSettings({ ...settings, muted: newMuted })
   }, [muted, settings, saveSettings])
 
-  const requestPermission = useCallback(async (): Promise<NotificationPermission> => {
-    if (!isSupported) {
-      console.warn('Notifications are not supported in this browser')
-      return 'denied'
-    }
-
-    try {
-      const result = await Notification.requestPermission()
-      setPermission(result)
-      setHasRequestedPermission(true)
-
-      const now = new Date().toISOString()
-      const newSettings: NotificationSettings = {
-        permissionRequested: true,
-        lastPermissionRequest: now,
-        ...(result === 'granted' && { permissionGrantedAt: now })
+  const requestPermission =
+    useCallback(async (): Promise<NotificationPermission> => {
+      if (!isSupported) {
+        console.warn('Notifications are not supported in this browser')
+        return 'denied'
       }
 
-      saveSettings(newSettings)
-      
-      return result
-    } catch (error) {
-      console.error('Error requesting notification permission:', error)
-      return 'denied'
-    }
-  }, [isSupported, saveSettings])
+      try {
+        const result = await Notification.requestPermission()
+        setPermission(result)
+        setHasRequestedPermission(true)
 
-  const emitNotification = useCallback(async (options: NotificationOptions): Promise<boolean> => {
-    if (!isSupported) {
-      console.warn('Notifications are not supported')
-      return false
-    }
-
-    if (permission !== 'granted' || muted) {
-      return false
-    }
-
-    try {
-      const notification = new Notification(options.title, {
-        body: options.body,
-        icon: options.icon,
-        tag: options.tag,
-        requireInteraction: options.requireInteraction,
-        silent: options.silent,
-        data: options.data,
-      })
-
-      if (options.onClick) {
-        notification.onclick = () => {
-          options.onClick!(options.data)
-          notification.close()
+        const now = new Date().toISOString()
+        const newSettings: NotificationSettings = {
+          permissionRequested: true,
+          lastPermissionRequest: now,
+          ...(result === 'granted' && { permissionGrantedAt: now }),
         }
+
+        saveSettings(newSettings)
+
+        return result
+      } catch (error) {
+        console.error('Error requesting notification permission:', error)
+        return 'denied'
+      }
+    }, [isSupported, saveSettings])
+
+  const emitNotification = useCallback(
+    async (options: NotificationOptions): Promise<boolean> => {
+      if (!isSupported) {
+        console.warn('Notifications are not supported')
+        return false
       }
 
-      if (options.sound) {
-        try {
-          const audio = new Audio(options.sound)
-          await audio.play()
-        } catch (soundError) {
-          console.warn('Failed to play notification sound:', soundError)
+      if (permission !== 'granted' || muted) {
+        return false
+      }
+
+      try {
+        const notification = new Notification(options.title, {
+          body: options.body,
+          icon: options.icon,
+          tag: options.tag,
+          requireInteraction: options.requireInteraction,
+          silent: options.silent,
+          data: options.data,
+        })
+
+        if (options.onClick) {
+          notification.onclick = () => {
+            options.onClick!(options.data)
+            notification.close()
+          }
         }
-      }
 
-      if (!options.requireInteraction) {
-        setTimeout(() => {
-          notification.close()
-        }, 10000)
-      }
+        if (options.sound) {
+          try {
+            const audio = new Audio(options.sound)
+            await audio.play()
+          } catch (soundError) {
+            console.warn('Failed to play notification sound:', soundError)
+          }
+        }
 
-      return true
-    } catch (error) {
-      console.error('Error creating notification:', error)
-      return false
-    }
-  }, [isSupported, permission, muted])
+        if (!options.requireInteraction) {
+          setTimeout(() => {
+            notification.close()
+          }, 10000)
+        }
+
+        return true
+      } catch (error) {
+        console.error('Error creating notification:', error)
+        return false
+      }
+    },
+    [isSupported, permission, muted]
+  )
 
   const value: NotificationContextType = {
     emitNotification,

@@ -39,7 +39,9 @@ const unlockButton = (
 )
 
 const cliButton = (
-  <Button variant="secondary" size="sm">Use Terraform CLI</Button>
+  <Button variant="secondary" size="sm">
+    Use Terraform CLI
+  </Button>
 )
 
 const lockActions = (
@@ -49,29 +51,20 @@ const lockActions = (
   </>
 )
 
-const mockLockBadge = (lock: Parameters<typeof TerraformWorkspaceLockBadge>[0]['lock']) => (
-  <TerraformWorkspaceLockBadge lock={lock} />
-)
+const mockLockBadge = (
+  lock: Parameters<typeof TerraformWorkspaceLockBadge>[0]['lock']
+) => <TerraformWorkspaceLockBadge lock={lock} />
 
 export const Default = () => (
-  <TerraformWorkspaceCard
-    currentRevision={mockState}
-    actions={lockActions}
-  />
+  <TerraformWorkspaceCard currentRevision={mockState} actions={lockActions} />
 )
 
 export const Empty = () => (
-  <TerraformWorkspaceCard
-    currentRevision={null}
-    actions={cliButton}
-  />
+  <TerraformWorkspaceCard currentRevision={null} actions={cliButton} />
 )
 
 export const Unlocked = () => (
-  <TerraformWorkspaceCard
-    currentRevision={mockState}
-    actions={cliButton}
-  />
+  <TerraformWorkspaceCard currentRevision={mockState} actions={cliButton} />
 )
 
 export const LockedByPlan = () => (

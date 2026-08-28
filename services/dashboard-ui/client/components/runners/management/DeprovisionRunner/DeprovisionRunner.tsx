@@ -40,12 +40,7 @@ export const DeprovisionRunnerModal = ({
     <Modal
       heading={
         <div className="flex flex-col gap-2">
-          <Text
-            flex
-            className="gap-4"
-            variant="h3"
-            weight="strong"
-          >
+          <Text flex className="gap-4" variant="h3" weight="strong">
             <Icon variant="BoxArrowDownIcon" size="24" />
             {headingText}
           </Text>
@@ -56,14 +51,14 @@ export const DeprovisionRunnerModal = ({
     >
       <div className="flex flex-col gap-4">
         <Text variant="body">
-          You can use the shut down button to restart your runner during
-          normal operation. If you need to forcefully terminate your
-          runner, you can terminate the instance directly from the
-          AutoScaling group in your AWS account.
+          You can use the shut down button to restart your runner during normal
+          operation. If you need to forcefully terminate your runner, you can
+          terminate the instance directly from the AutoScaling group in your AWS
+          account.
         </Text>
         <Text variant="body">
-          Deleting the instance has the chance to lose any state of
-          in-flight jobs, but in other cases is a safe operation.
+          Deleting the instance has the chance to lose any state of in-flight
+          jobs, but in other cases is a safe operation.
         </Text>
       </div>
     </Modal>

@@ -45,52 +45,47 @@ export const ActionStepGraph = ({
   }, [theme])
 
   const { nodes: builtNodes, edges: builtEdges } = useMemo(() => {
-    const nodes = sortByIdx(steps || [])
-      .map((s, i) => {
-        const id = s.id || String(i)
-        return {
-          id,
-          data: {
-            label: (
-              <div className="flex flex-col my-auto w-full px-2">
-                <div className="flex items-center gap-2">
-                  <Status status={s?.status} isWithoutText variant="timeline" />
-                  <Text variant="subtext" weight="stronger">
-                    {s.name || `Step ${i + 1}`}
-                  </Text>
-                </div>
-                {s?.execution_duration ? (
-                  <Text
-                    flex
-                    className="gap-1"
-                    variant="label"
-                  >
-                    <Icon variant="TimerIcon" size="13" />
-                    <Duration
-                      nanoseconds={s?.execution_duration}
-                      variant="label"
-                    />
-                  </Text>
-                ) : null}
+    const nodes = sortByIdx(steps || []).map((s, i) => {
+      const id = s.id || String(i)
+      return {
+        id,
+        data: {
+          label: (
+            <div className="flex flex-col my-auto w-full px-2">
+              <div className="flex items-center gap-2">
+                <Status status={s?.status} isWithoutText variant="timeline" />
+                <Text variant="subtext" weight="stronger">
+                  {s.name || `Step ${i + 1}`}
+                </Text>
               </div>
-            ),
-            raw: s,
-          },
-          position: { x: 0, y: 0 },
-          style: {
-            display: 'flex',
-            width: NODE_WIDTH,
-            height: NODE_HEIGHT,
-            color: colors?.textColor,
-            backgroundColor: colors?.nodeBGColor,
-            border: '1px solid var(--border-color)',
-            borderRadius: 8,
-            textAlign: 'left',
-          },
-          sourcePosition: 'right',
-          targetPosition: 'left',
-        }
-      })
+              {s?.execution_duration ? (
+                <Text flex className="gap-1" variant="label">
+                  <Icon variant="TimerIcon" size="13" />
+                  <Duration
+                    nanoseconds={s?.execution_duration}
+                    variant="label"
+                  />
+                </Text>
+              ) : null}
+            </div>
+          ),
+          raw: s,
+        },
+        position: { x: 0, y: 0 },
+        style: {
+          display: 'flex',
+          width: NODE_WIDTH,
+          height: NODE_HEIGHT,
+          color: colors?.textColor,
+          backgroundColor: colors?.nodeBGColor,
+          border: '1px solid var(--border-color)',
+          borderRadius: 8,
+          textAlign: 'left',
+        },
+        sourcePosition: 'right',
+        targetPosition: 'left',
+      }
+    })
 
     const edges = (steps || []).slice(1).map((s, i) => {
       const prev = steps[i]

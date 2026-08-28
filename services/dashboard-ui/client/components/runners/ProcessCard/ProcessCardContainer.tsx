@@ -1,10 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
-import {
-  getProcessLatestHeartbeat,
-  getRunnerRecentHealthChecks,
-} from '@/lib'
+import { getProcessLatestHeartbeat, getRunnerRecentHealthChecks } from '@/lib'
 import type { TRunnerProcess, TRunnerSettings } from '@/types'
 import { isRecentTimestamp } from '@/utils/time-utils'
 import { ProcessManagementDropdown } from '@/components/runners/ProcessManagementDropdown'

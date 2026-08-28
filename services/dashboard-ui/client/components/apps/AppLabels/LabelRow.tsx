@@ -11,7 +11,12 @@ interface ILabelRow {
   onRemoveOverride: (key: string) => void
 }
 
-export const LabelRow = ({ label, disabled, onOverride, onRemoveOverride }: ILabelRow) => {
+export const LabelRow = ({
+  label,
+  disabled,
+  onOverride,
+  onRemoveOverride,
+}: ILabelRow) => {
   const entityTypes = [...(label.entity_types ?? [])].sort()
   const values = [...(label.values ?? [])].sort()
 
@@ -27,7 +32,9 @@ export const LabelRow = ({ label, disabled, onOverride, onRemoveOverride }: ILab
           />
           <span className="flex flex-wrap gap-1">
             {entityTypes.map((et) => (
-              <Badge key={et} size="sm" theme="neutral">{et}</Badge>
+              <Badge key={et} size="sm" theme="neutral">
+                {et}
+              </Badge>
             ))}
           </span>
           <Text variant="subtext" theme="neutral">
@@ -36,7 +43,11 @@ export const LabelRow = ({ label, disabled, onOverride, onRemoveOverride }: ILab
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {label.is_override && <Badge size="sm" theme="brand">Custom</Badge>}
+          {label.is_override && (
+            <Badge size="sm" theme="brand">
+              Custom
+            </Badge>
+          )}
           <LabelColorPicker
             id={`label-color-picker-${label.key}`}
             value={label.color}
@@ -52,10 +63,14 @@ export const LabelRow = ({ label, disabled, onOverride, onRemoveOverride }: ILab
 
       {values.length > 1 && (
         <div className="flex items-center gap-2">
-          <Text variant="subtext" theme="neutral">Values</Text>
+          <Text variant="subtext" theme="neutral">
+            Values
+          </Text>
           <span className="flex flex-wrap gap-1">
             {values.map((v) => (
-              <Badge key={v} size="sm" theme="default">{v}</Badge>
+              <Badge key={v} size="sm" theme="default">
+                {v}
+              </Badge>
             ))}
           </span>
         </div>

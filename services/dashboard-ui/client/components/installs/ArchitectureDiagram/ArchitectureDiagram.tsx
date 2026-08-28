@@ -1,5 +1,10 @@
 import { useCallback, useMemo, useRef } from 'react'
-import { ReactFlow, useReactFlow, ReactFlowProvider, type ReactFlowInstance } from '@xyflow/react'
+import {
+  ReactFlow,
+  useReactFlow,
+  ReactFlowProvider,
+  type ReactFlowInstance,
+} from '@xyflow/react'
 import { toPng } from 'html-to-image'
 import '@xyflow/react/dist/style.css'
 
@@ -20,18 +25,45 @@ const DiagramControls = ({ onExport }: { onExport: () => void }) => {
   const { zoomIn, zoomOut, fitView } = useReactFlow()
 
   return (
-    <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1" role="toolbar" aria-label="Diagram controls">
-      <Button size="xs" variant="ghost" onClick={() => zoomIn()} aria-label="Zoom in">
+    <div
+      className="absolute bottom-3 right-3 z-10 flex items-center gap-1"
+      role="toolbar"
+      aria-label="Diagram controls"
+    >
+      <Button
+        size="xs"
+        variant="ghost"
+        onClick={() => zoomIn()}
+        aria-label="Zoom in"
+      >
         <Icon variant="PlusIcon" size={14} />
       </Button>
-      <Button size="xs" variant="ghost" onClick={() => zoomOut()} aria-label="Zoom out">
+      <Button
+        size="xs"
+        variant="ghost"
+        onClick={() => zoomOut()}
+        aria-label="Zoom out"
+      >
         <Icon variant="MinusIcon" size={14} />
       </Button>
-      <Button size="xs" variant="ghost" onClick={() => fitView({ padding: 0.2 })} aria-label="Fit to view">
+      <Button
+        size="xs"
+        variant="ghost"
+        onClick={() => fitView({ padding: 0.2 })}
+        aria-label="Fit to view"
+      >
         <Icon variant="CornersOutIcon" size={14} />
       </Button>
-      <div className="w-px h-4 bg-cool-grey-300 dark:bg-dark-grey-600 mx-0.5" aria-hidden="true" />
-      <Button size="xs" variant="ghost" onClick={onExport} aria-label="Export as PNG">
+      <div
+        className="w-px h-4 bg-cool-grey-300 dark:bg-dark-grey-600 mx-0.5"
+        aria-hidden="true"
+      />
+      <Button
+        size="xs"
+        variant="ghost"
+        onClick={onExport}
+        aria-label="Export as PNG"
+      >
         <Icon variant="DownloadSimpleIcon" size={14} />
       </Button>
     </div>
@@ -69,9 +101,9 @@ const DiagramCanvas = ({
   }, [])
 
   const handleExportPng = useCallback(() => {
-    const el = containerRef.current?.querySelector('.react-flow') as
-      | HTMLElement
-      | null
+    const el = containerRef.current?.querySelector(
+      '.react-flow'
+    ) as HTMLElement | null
     if (!el) return
 
     toPng(el, { cacheBust: true, pixelRatio: 2 })
@@ -87,24 +119,32 @@ const DiagramCanvas = ({
           const ctx = canvas.getContext('2d')
           if (!ctx) return
 
-          ctx.fillStyle = getComputedStyle(document.documentElement)
-            .getPropertyValue('--background-neutral').trim() || '#F0F3F5'
+          ctx.fillStyle =
+            getComputedStyle(document.documentElement)
+              .getPropertyValue('--background-neutral')
+              .trim() || '#F0F3F5'
           ctx.fillRect(0, 0, canvas.width, canvas.height)
           ctx.drawImage(img, pad, pad)
 
           ctx.globalAlpha = 0.4
-          ctx.fillStyle = getComputedStyle(document.documentElement)
-            .getPropertyValue('--foreground').trim() || '#19171C'
+          ctx.fillStyle =
+            getComputedStyle(document.documentElement)
+              .getPropertyValue('--foreground')
+              .trim() || '#19171C'
           ctx.font = '500 24px Inter, sans-serif'
           ctx.textBaseline = 'bottom'
           const timestamp = new Date().toLocaleString(undefined, {
-            year: 'numeric', month: 'short', day: 'numeric',
-            hour: 'numeric', minute: '2-digit',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
           })
           const installName = install?.name || 'install'
           ctx.fillText(
             `Exported from Nuon · ${timestamp} · ${installName}`,
-            pad, canvas.height - 10
+            pad,
+            canvas.height - 10
           )
           ctx.globalAlpha = 1
 
@@ -122,7 +162,10 @@ const DiagramCanvas = ({
 
   if (isLoading) {
     return (
-      <div className="w-full h-full min-h-[420px] flex items-center justify-center" style={{ background: 'var(--background-neutral)' }}>
+      <div
+        className="w-full h-full min-h-[420px] flex items-center justify-center"
+        style={{ background: 'var(--background-neutral)' }}
+      >
         <Skeleton width="90%" height="80%" />
       </div>
     )
@@ -130,9 +173,14 @@ const DiagramCanvas = ({
 
   if (isError || !install) {
     return (
-      <div className="w-full h-full min-h-[420px] flex items-center justify-center" style={{ background: 'var(--background-neutral)' }}>
+      <div
+        className="w-full h-full min-h-[420px] flex items-center justify-center"
+        style={{ background: 'var(--background-neutral)' }}
+      >
         <Text theme="neutral">
-          {isError ? 'Failed to load diagram data.' : 'No install data available.'}
+          {isError
+            ? 'Failed to load diagram data.'
+            : 'No install data available.'}
         </Text>
       </div>
     )

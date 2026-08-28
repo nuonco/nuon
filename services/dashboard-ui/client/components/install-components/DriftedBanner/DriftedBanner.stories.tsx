@@ -10,11 +10,7 @@ const mockDrifted = {
 } as any
 
 export const Deploy = () => (
-  <DriftedBanner
-    drifted={mockDrifted}
-    orgId="org-1"
-    installId="install-1"
-  />
+  <DriftedBanner drifted={mockDrifted} orgId="org-1" installId="install-1" />
 )
 
 export const Sandbox = () => (

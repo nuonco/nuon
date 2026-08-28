@@ -31,7 +31,11 @@ export const ToggleComponentModalContainer = ({
   const action = enabling ? 'Enabling' : 'Disabling'
   const pastAction = enabling ? 'enabled' : 'disabled'
 
-  const { mutate: execute, isPending, error } = useMutation({
+  const {
+    mutate: execute,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: (params: { planOnly: boolean }) =>
       toggleComponent({
         body: {
@@ -64,7 +68,9 @@ export const ToggleComponentModalContainer = ({
     onError: (err: any) => {
       addToast(
         <Toast heading={`Component ${pastAction} failed`} theme="error">
-          <Text>{err?.error || `Unable to ${pastAction} ${component.name}.`}</Text>
+          <Text>
+            {err?.error || `Unable to ${pastAction} ${component.name}.`}
+          </Text>
         </Toast>
       )
     },

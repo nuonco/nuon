@@ -59,7 +59,11 @@ export const ShutdownInstanceModal = ({
           <Text variant="base" weight="strong">
             Restart this runner instance.
           </Text>
-          <Text variant="body" theme="neutral" className="leading-relaxed max-w-md">
+          <Text
+            variant="body"
+            theme="neutral"
+            className="leading-relaxed max-w-md"
+          >
             The runner VM will be restarted.
           </Text>
         </div>

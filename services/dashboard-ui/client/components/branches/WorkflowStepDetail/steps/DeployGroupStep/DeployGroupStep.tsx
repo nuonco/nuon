@@ -22,10 +22,16 @@ export const DeployGroupStep = ({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon variant="PackageIcon" size={16} className="text-cool-grey-500 dark:text-cool-grey-400 shrink-0" />
+          <Icon
+            variant="PackageIcon"
+            size={16}
+            className="text-cool-grey-500 dark:text-cool-grey-400 shrink-0"
+          />
           <Text variant="body" theme="neutral">
             install group:{' '}
-            <span className="font-semibold text-cool-grey-900 dark:text-white">{groupName}</span>
+            <span className="font-semibold text-cool-grey-900 dark:text-white">
+              {groupName}
+            </span>
           </Text>
           <Text variant="subtext" theme="neutral">
             {totalInstalls} {totalInstalls === 1 ? 'install' : 'installs'}
@@ -45,7 +51,9 @@ export const DeployGroupStep = ({
           ))}
         </div>
       ) : emptyMessage ? (
-        <StepStatePlaceholder variant="loading">{emptyMessage}</StepStatePlaceholder>
+        <StepStatePlaceholder variant="loading">
+          {emptyMessage}
+        </StepStatePlaceholder>
       ) : null}
     </div>
   )

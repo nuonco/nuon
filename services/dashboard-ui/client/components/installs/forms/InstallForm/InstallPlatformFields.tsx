@@ -183,7 +183,11 @@ const GcpFields = ({
     >
       <form.Field name="gcp_project_id">
         {(field) => (
-          <FormInput field={field} placeholder="my-gcp-project" disabled={disabled} />
+          <FormInput
+            field={field}
+            placeholder="my-gcp-project"
+            disabled={disabled}
+          />
         )}
       </form.Field>
     </FieldRow>

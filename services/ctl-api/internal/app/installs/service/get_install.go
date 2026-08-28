@@ -63,6 +63,9 @@ func (s *service) GetInstall(ctx *gin.Context) {
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
+		Preload("ManagementPolicyVersions", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_management_policy_versions.version DESC")
+		}).
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").

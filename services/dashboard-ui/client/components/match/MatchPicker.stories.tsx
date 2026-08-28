@@ -59,9 +59,7 @@ export const PreselectedInstallsIncludeAndExclude = () => (
   />
 )
 
-export const PreselectedActionsAny = () => (
-  <Story initial={{ actions: {} }} />
-)
+export const PreselectedActionsAny = () => <Story initial={{ actions: {} }} />
 
 // Preselected component ids — exercises the app-first flow on edit. The
 // app picker starts unselected; the existing chips render with bare ids

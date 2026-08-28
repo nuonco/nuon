@@ -25,7 +25,8 @@ const inputs: TAppInput[] = [
 
 const values: Record<string, string> = {
   [inputName('enabled', 'whoami')]: 'true',
-  [inputName('helm_values', 'whoami')]: 'replicaCount: 3\nimage:\n  tag: "1.27"',
+  [inputName('helm_values', 'whoami')]:
+    'replicaCount: 3\nimage:\n  tag: "1.27"',
   [inputName('tf_vars', 'database')]: 'instance_type = "t3.large"',
 }
 
@@ -37,7 +38,11 @@ export const Default = () => (
 
 export const WithoutEnabledState = () => (
   <div className="max-w-2xl">
-    <ComponentOverridesList inputs={inputs} values={values} showEnabled={false} />
+    <ComponentOverridesList
+      inputs={inputs}
+      values={values}
+      showEnabled={false}
+    />
   </div>
 )
 

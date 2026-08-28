@@ -50,6 +50,122 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, nil, errors.Wrap(err, "unable to get sandbox run")
 	}
 
+	return p.RenderSandboxRunPlan(l, &RenderSandboxRunPlanInput{
+		RootDomain: req.RootDomain,
+		Install:    install,
+		Stack:      stack,
+		AppCfg:     appCfg,
+		Run:        run,
+		ResolveState: func() (*state.State, map[string]any, error) {
+			st, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+				InstallID: install.ID,
+			})
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "unable to get install state")
+			}
+			stateData, err := st.WorkflowSafeAsMap(ctx)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "unable to get state")
+			}
+			return st, stateData, nil
+		},
+		ResolveSource: func() (*plantypes.GitSource, *plantypes.OCISource, error) {
+			ociArtifacts, err := activities.AwaitHasOrgFeature(ctx, activities.HasOrgFeatureRequest{
+				OrgID:   install.OrgID,
+				Feature: string(app.OrgFeatureSandboxOCIArtifacts),
+			})
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "unable to check sandbox-oci-artifacts feature")
+			}
+
+			var gitSource *plantypes.GitSource
+			var ociSource *plantypes.OCISource
+			switch {
+			case !ociArtifacts:
+				l.Info("sandbox-oci-artifacts disabled, using git source")
+			case req.OCISource != nil:
+				l.Info("using OCI source from caller")
+				ociSource = req.OCISource
+			default:
+				l.Info("checking for active sandbox build OCI artifact")
+				sandboxBuild, sbErr := activities.AwaitGetLatestActiveSandboxBuildByAppConfigID(ctx, appCfg.ID)
+				if sbErr != nil {
+					l.Warn("unable to check for sandbox build, falling back to git source", zap.Error(sbErr))
+				}
+
+				if sandboxBuild != nil {
+					l.Info("found active sandbox build, resolving OCI source", zap.String("sandbox_build_id", sandboxBuild.ID))
+					registry, regErr := sharedactivities.AwaitGetSandboxBuildOCIRegistry(ctx, sharedactivities.GetSandboxBuildOCIRegistryRequest{
+						AppID: install.AppID,
+					})
+					if regErr != nil {
+						l.Warn("unable to get OCI registry, falling back to git source", zap.Error(regErr))
+					} else {
+						ociSource = &plantypes.OCISource{
+							Registry: registry,
+							Tag:      sandboxBuild.ID,
+						}
+						if err := activities.AwaitSetSandboxRunBuild(ctx, activities.SetSandboxRunBuildRequest{
+							SandboxRunID: run.ID,
+							BuildID:      sandboxBuild.ID,
+						}); err != nil {
+							return nil, nil, errors.Wrap(err, "record sandbox build used by run")
+						}
+					}
+				}
+			}
+
+			if ociSource == nil {
+				l.Info("fetching sandbox git source")
+				gitSource, err = activities.AwaitGetSandboxRunGitSourceByAppConfigID(ctx, appCfg.ID)
+				if err != nil {
+					return nil, nil, errors.Wrap(err, "unable to get sandbox run git source")
+				}
+			}
+
+			if ociSource != nil {
+				if err := sharedactivities.EnsureGARAuth(ctx, ociSource.Registry); err != nil {
+					return nil, nil, errors.Wrap(err, "unable to get GAR access token for sandbox artifact")
+				}
+				if err := sharedactivities.EnsureACRAuth(ctx, ociSource.Registry); err != nil {
+					return nil, nil, errors.Wrap(err, "unable to get ACR access token for sandbox artifact")
+				}
+			}
+
+			return gitSource, ociSource, nil
+		},
+		HasUpdatePlansFeature: func() (bool, error) {
+			return activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeaturePulumiUpdatePlans))
+		},
+	})
+}
+
+// RenderSandboxRunPlanInput carries the already-loaded data a sandbox run plan
+// is rendered from.
+type RenderSandboxRunPlanInput struct {
+	RootDomain string
+	Install    *app.Install
+	Stack      *app.InstallStack
+	AppCfg     *app.AppConfig
+	Run        *app.InstallSandboxRun
+
+	// ResolveState loads the install state at this exact point in the plan
+	// render: after the sandbox var/config preparation and before rendering.
+	// Injected because the connected path resolves it via a Temporal activity
+	// at that position; install-free callers can return precomputed state.
+	ResolveState          func() (*state.State, map[string]any, error)
+	ResolveSource         func() (*plantypes.GitSource, *plantypes.OCISource, error)
+	HasUpdatePlansFeature func() (bool, error)
+}
+
+// RenderSandboxRunPlan renders a sandbox run plan from already-loaded inputs
+// with no Temporal dependency.
+func (p *Planner) RenderSandboxRunPlan(l *zap.Logger, in *RenderSandboxRunPlanInput) (*plantypes.SandboxRunPlan, *operationroles.RoleSelection, error) {
+	install := in.Install
+	stack := in.Stack
+	appCfg := in.AppCfg
+	run := in.Run
+
 	isPulumi := appCfg.SandboxConfig.Type == config.AppSandboxTypePulumi
 
 	l.Info("configuring environment variables to execute sandbox run as")
@@ -57,9 +173,10 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 	var vars map[string]any
 	var pulumiCfg map[string]string
+	var err error
 	if isPulumi {
 		l.Info("configuring pulumi stack config")
-		pulumiCfg, err = p.getSandboxRunPulumiConfig(appCfg, req.RootDomain)
+		pulumiCfg, err = p.getSandboxRunPulumiConfig(appCfg, in.RootDomain)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to get pulumi config")
 		}
@@ -70,7 +187,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		}
 	} else {
 		l.Info("configuring terraform variables")
-		vars, err = p.getSandboxRunTerraformVars(appCfg, req.RootDomain)
+		vars, err = p.getSandboxRunTerraformVars(appCfg, in.RootDomain)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to get vars")
 		}
@@ -79,15 +196,9 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		}
 	}
 
-	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
-		InstallID: install.ID,
-	})
+	state, stateData, err := in.ResolveState()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to get install state")
-	}
-	stateData, err := state.WorkflowSafeAsMap(ctx)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to get state")
+		return nil, nil, err
 	}
 
 	l.Info("rendering environment variables")
@@ -147,67 +258,13 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, nil, errors.Wrap(err, "unable to get policies")
 	}
 
-	ociArtifacts, err := activities.AwaitHasOrgFeature(ctx, activities.HasOrgFeatureRequest{
-		OrgID:   install.OrgID,
-		Feature: string(app.OrgFeatureSandboxOCIArtifacts),
-	})
+	gitSource, ociSource, err := in.ResolveSource()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to check sandbox-oci-artifacts feature")
-	}
-
-	var gitSource *plantypes.GitSource
-	var ociSource *plantypes.OCISource
-	switch {
-	case !ociArtifacts:
-		l.Info("sandbox-oci-artifacts disabled, using git source")
-	case req.OCISource != nil:
-		l.Info("using OCI source from caller")
-		ociSource = req.OCISource
-	default:
-		l.Info("checking for active sandbox build OCI artifact")
-		sandboxBuild, sbErr := activities.AwaitGetLatestActiveSandboxBuildByAppConfigID(ctx, appCfg.ID)
-		if sbErr != nil {
-			l.Warn("unable to check for sandbox build, falling back to git source", zap.Error(sbErr))
-		}
-
-		if sandboxBuild != nil {
-			l.Info("found active sandbox build, resolving OCI source", zap.String("sandbox_build_id", sandboxBuild.ID))
-			registry, regErr := sharedactivities.AwaitGetSandboxBuildOCIRegistry(ctx, sharedactivities.GetSandboxBuildOCIRegistryRequest{
-				AppID: install.AppID,
-			})
-			if regErr != nil {
-				l.Warn("unable to get OCI registry, falling back to git source", zap.Error(regErr))
-			} else {
-				ociSource = &plantypes.OCISource{
-					Registry: registry,
-					Tag:      sandboxBuild.ID,
-				}
-			}
-		}
-	}
-
-	if ociSource == nil {
-		l.Info("fetching sandbox git source")
-		gitSource, err = activities.AwaitGetSandboxRunGitSourceByAppConfigID(ctx, appCfg.ID)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "unable to get sandbox run git source")
-		}
-	}
-
-	// The install runner does not share the control plane's cloud, so a GAR
-	// artifact has to travel with its own credentials rather than relying on
-	// the runner finding GCP application default credentials.
-	if ociSource != nil {
-		if err := sharedactivities.EnsureGARAuth(ctx, ociSource.Registry); err != nil {
-			return nil, nil, errors.Wrap(err, "unable to get GAR access token for sandbox artifact")
-		}
-		if err := sharedactivities.EnsureACRAuth(ctx, ociSource.Registry); err != nil {
-			return nil, nil, errors.Wrap(err, "unable to get ACR access token for sandbox artifact")
-		}
+		return nil, nil, err
 	}
 
 	l.Info("getting auth with role selection")
-	cloudAuth, roleSelection, err := p.getAuthForSandbox(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
+	cloudAuth, roleSelection, err := p.AuthForSandbox(l, stack.InstallStackOutputs, run, appCfg, stack, state)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get sandbox run auth")
 	}
@@ -239,7 +296,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	}
 
 	if isPulumi {
-		updatePlans, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeaturePulumiUpdatePlans))
+		updatePlans, err := in.HasUpdatePlansFeature()
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to check pulumi-update-plans feature")
 		}
@@ -436,6 +493,19 @@ func (p *Planner) getAuthForSandbox(
 		return nil, nil, err
 	}
 
+	return p.AuthForSandbox(l, outputs, run, appCfg, stack, installState)
+}
+
+// AuthForSandbox is the pure core of getAuthForSandbox, usable outside a
+// Temporal workflow by callers with already-loaded sandbox inputs.
+func (p *Planner) AuthForSandbox(
+	l *zap.Logger,
+	outputs app.InstallStackOutputs,
+	run *app.InstallSandboxRun,
+	appCfg *app.AppConfig,
+	stack *app.InstallStack,
+	installState *state.State,
+) (*CloudAuth, *operationroles.RoleSelection, error) {
 	roleSelection, operation, err := p.getRoleForSandbox(l, appCfg, run, stack, installState)
 	if err != nil {
 		return nil, nil, err

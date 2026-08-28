@@ -36,7 +36,11 @@ export const Default = () => (
 )
 
 export const WithSelectedStep = () => (
-  <WorkflowStepsPipeline steps={mockSteps} selectedStepId="step-2" onSelectStep={noop} />
+  <WorkflowStepsPipeline
+    steps={mockSteps}
+    selectedStepId="step-2"
+    onSelectStep={noop}
+  />
 )
 
 export const Empty = () => (
@@ -45,24 +49,70 @@ export const Empty = () => (
 
 export const AllSuccess = () => (
   <WorkflowStepsPipeline
-    steps={mockSteps.map((s) => ({ ...s, status: { status: 'success' }, execution_time: 30000000000 }))}
+    steps={mockSteps.map((s) => ({
+      ...s,
+      status: { status: 'success' },
+      execution_time: 30000000000,
+    }))}
     onSelectStep={noop}
   />
 )
 
 const manySteps = [
-  { id: 's1', name: 'Bundling components and sandbox', status: { status: 'success' }, group_idx: 3, execution_time: 1260000000000 },
-  { id: 's2', name: 'Plan install group: group-1', status: { status: 'success' }, group_idx: 4, execution_time: 480000000000 },
-  { id: 's3', name: 'Deploy install group: group-1', status: { status: 'in-progress' }, group_idx: 5, execution_time: 11700000000000 },
-  { id: 's4', name: 'Plan install group: group-2', status: { status: 'pending' }, group_idx: 6 },
-  { id: 's5', name: 'Deploy install group: group-2', status: { status: 'pending' }, group_idx: 7 },
-  { id: 's6', name: 'Plan install group: group-3', status: { status: 'pending' }, group_idx: 8 },
-  { id: 's7', name: 'Deploy install group: group-3', status: { status: 'pending' }, group_idx: 9 },
+  {
+    id: 's1',
+    name: 'Bundling components and sandbox',
+    status: { status: 'success' },
+    group_idx: 3,
+    execution_time: 1260000000000,
+  },
+  {
+    id: 's2',
+    name: 'Plan install group: group-1',
+    status: { status: 'success' },
+    group_idx: 4,
+    execution_time: 480000000000,
+  },
+  {
+    id: 's3',
+    name: 'Deploy install group: group-1',
+    status: { status: 'in-progress' },
+    group_idx: 5,
+    execution_time: 11700000000000,
+  },
+  {
+    id: 's4',
+    name: 'Plan install group: group-2',
+    status: { status: 'pending' },
+    group_idx: 6,
+  },
+  {
+    id: 's5',
+    name: 'Deploy install group: group-2',
+    status: { status: 'pending' },
+    group_idx: 7,
+  },
+  {
+    id: 's6',
+    name: 'Plan install group: group-3',
+    status: { status: 'pending' },
+    group_idx: 8,
+  },
+  {
+    id: 's7',
+    name: 'Deploy install group: group-3',
+    status: { status: 'pending' },
+    group_idx: 9,
+  },
 ] as any[]
 
 export const ManySteps = () => (
   <div className="max-w-[760px]">
-    <WorkflowStepsPipeline steps={manySteps} selectedStepId="s3" onSelectStep={noop} />
+    <WorkflowStepsPipeline
+      steps={manySteps}
+      selectedStepId="s3"
+      onSelectStep={noop}
+    />
   </div>
 )
 
@@ -70,7 +120,13 @@ export const WithError = () => (
   <WorkflowStepsPipeline
     steps={[
       { ...mockSteps[0], status: { status: 'success' } },
-      { ...mockSteps[1], status: { status: 'error', status_human_description: 'Deployment failed' } },
+      {
+        ...mockSteps[1],
+        status: {
+          status: 'error',
+          status_human_description: 'Deployment failed',
+        },
+      },
       mockSteps[2],
     ]}
     onSelectStep={noop}

@@ -51,13 +51,20 @@ export function parseActionsToTableData(
       })(),
       labels: (() => {
         const lbls = action.labels
-        if (!lbls || Object.keys(lbls).length === 0) return <Icon variant="MinusIcon" />
+        if (!lbls || Object.keys(lbls).length === 0)
+          return <Icon variant="MinusIcon" />
         return (
           <span className="flex flex-wrap gap-1">
             {Object.keys(lbls)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" customColor={labelColors?.[k]} />
+                <LabelBadge
+                  key={k}
+                  labelKey={k}
+                  labelValue={lbls[k]}
+                  size="sm"
+                  customColor={labelColors?.[k]}
+                />
               ))}
           </span>
         )

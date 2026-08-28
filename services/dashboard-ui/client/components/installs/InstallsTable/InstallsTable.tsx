@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Badge } from '@/components/common/Badge'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { CloudRegion } from '@/components/common/CloudRegion'
 import { ContextTooltip } from '@/components/common/ContextTooltip'
@@ -13,6 +14,7 @@ import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { QuickManagementDropdown } from '@/components/installs/management/QuickManagementDropdown'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import type { TCloudPlatform, TInstall } from '@/types'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
 
 export type TInstallsTableScope = 'org' | 'app' | 'branch'
 
@@ -25,6 +27,7 @@ export type InstallRow = {
   appName: string
   installId: string
   labels: ReactNode
+  management: ReactNode
   name: string
   nameHref: string
   region?: ReactNode
@@ -32,7 +35,41 @@ export type InstallRow = {
   platform: ReactNode
 }
 
-function getCreatedBySubtitle(install: TInstall): { email: string; source: string } | undefined {
+function ManagementBadge({ install }: { install: TInstall }) {
+  const policy = install.management_policy
+  if (!policy || policy.command_authority === 'nuon') {
+    return (
+      <Badge size="sm" theme="neutral">
+        Nuon-managed
+      </Badge>
+    )
+  }
+
+  if (policy.connectivity === 'disconnected') {
+    return (
+      <Badge size="sm" theme="neutral">
+        <Icon variant="CloudSlashIcon" size={12} />
+        Customer-managed · offline
+      </Badge>
+    )
+  }
+
+  return (
+    <Badge size="sm" theme="info">
+      Customer-managed · connected
+    </Badge>
+  )
+}
+
+function isSupportedCloudPlatform(
+  platform: string | undefined
+): platform is Exclude<TCloudPlatform, 'unknown'> {
+  return platform === 'aws' || platform === 'azure' || platform === 'gcp'
+}
+
+function getCreatedBySubtitle(
+  install: TInstall
+): { email: string; source: string } | undefined {
   const account = install?.created_by
   if (!account?.email) return undefined
   const source = account.account_type === 'service' ? 'API / CLI' : 'Dashboard'
@@ -61,7 +98,11 @@ function ActivityCell({ install }: { install: TInstall }) {
           id: 'created',
           title: 'Created',
           subtitle: (
-            <Time variant="label" time={install?.created_at} format="long-datetime" />
+            <Time
+              variant="label"
+              time={install?.created_at}
+              format="long-datetime"
+            />
           ),
           leftContent: <Icon variant="PlusCircleIcon" size={16} />,
         },
@@ -69,7 +110,11 @@ function ActivityCell({ install }: { install: TInstall }) {
           id: 'updated',
           title: 'Updated',
           subtitle: (
-            <Time variant="label" time={install?.updated_at} format="long-datetime" />
+            <Time
+              variant="label"
+              time={install?.updated_at}
+              format="long-datetime"
+            />
           ),
           leftContent: <Icon variant="ClockCounterClockwiseIcon" size={16} />,
         },
@@ -88,68 +133,87 @@ export function parseInstallsToTableData(
   orgId: string,
   labelColorsByApp?: Record<string, Record<string, string>>
 ): InstallRow[] {
-  return installs.map((install) => ({
-    appHref: `/${install.org_id}/apps/${install.app_id}`,
-    appName: install?.app?.name,
-    name: install.name,
-    nameHref: `/${orgId}/installs/${install.id}`,
-    installId: install.id,
-    region: (
-      <CloudRegion
-        variant="subtext"
-        platform={(install?.cloud_platform as TCloudPlatform) || 'unknown'}
-        region={install.gcp_account?.region || install.aws_account?.region}
-        location={install.azure_account?.location}
-      />
-    ),
-    statuses: (
-      <InstallStatuses install={install} isLabelHidden tooltipPosition="top" />
-    ),
-    platform: (
-      <CloudPlatform
-        platform={(install?.cloud_platform as TCloudPlatform) || 'unknown'}
-        variant="subtext"
-        colorVariant="color"
-        displayVariant="icon-only"
-        iconSize="20"
-      />
-    ),
-    labels: (() => {
-      const lbls = install.labels
-      if (!lbls || Object.keys(lbls).length === 0) return <Icon variant="MinusIcon" />
-      return (
-        <span className="flex flex-wrap gap-1">
-          {Object.keys(lbls)
-            .sort()
-            .map((k) => (
-              <LabelBadge key={k} size="sm" labelKey={k} labelValue={lbls[k]} customColor={labelColorsByApp?.[install.app_id ?? '']?.[k]} />
-            ))}
+  return installs.map((install) => {
+    const platform = install.cloud_platform
+    return {
+      appHref: `/${install.org_id}/apps/${install.app_id}`,
+      appName: install?.app?.name,
+      name: install.name,
+      nameHref: `/${orgId}/installs/${install.id}`,
+      installId: install.id,
+      management: <ManagementBadge install={install} />,
+      region: (
+        <CloudRegion
+          variant="subtext"
+          platform={(install?.cloud_platform as TCloudPlatform) || 'unknown'}
+          region={install.gcp_account?.region || install.aws_account?.region}
+          location={install.azure_account?.location}
+        />
+      ),
+      statuses: (
+        <InstallStatuses install={install} isLabelHidden tooltipPosition="top" />
+      ),
+      platform: isSupportedCloudPlatform(platform) ? (
+        <CloudPlatform
+          platform={platform}
+          variant="subtext"
+          colorVariant="color"
+          displayVariant="icon-only"
+          iconSize="20"
+        />
+      ) : (
+        <CloudPlatform
+          platform="unknown"
+          variant="subtext"
+          colorVariant="color"
+          displayVariant="icon-only"
+          iconSize="20"
+        />
+      ),
+      labels: (() => {
+        const lbls = install.labels
+        if (!lbls || Object.keys(lbls).length === 0)
+          return <Icon variant="MinusIcon" />
+        return (
+          <span className="flex flex-wrap gap-1">
+            {Object.keys(lbls)
+              .sort()
+              .map((k) => (
+                <LabelBadge
+                  key={k}
+                  size="sm"
+                  labelKey={k}
+                  labelValue={lbls[k]}
+                  customColor={labelColorsByApp?.[install.app_id ?? '']?.[k]}
+                />
+              ))}
+          </span>
+        )
+      })(),
+      branch: install.app_branch?.id ? (
+        <span className="flex items-center gap-1.5">
+          <Icon variant="GitBranchIcon" size={14} />
+          <Link
+            href={`/${orgId}/apps/${install.app_id}/branches/${install.app_branch.id}`}
+            variant="inline"
+          >
+            {install.app_branch.name}
+          </Link>
         </span>
-      )
-    })(),
-    branch: install.app_branch?.id ? (
-      <span className="flex items-center gap-1.5">
-        <Icon variant="GitBranchIcon" size={14} />
-        <Link
-          href={`/${orgId}/apps/${install.app_id}/branches/${install.app_branch.id}`}
-          variant="inline"
-        >
-          {install.app_branch.name}
-        </Link>
-      </span>
-    ) : (
-      <Text variant="subtext" theme="neutral">
-        —
-      </Text>
-    ),
-    activity: <ActivityCell install={install} />,
-    updatedAt: install?.updated_at ?? '',
-    action: (
-      <div className="hidden md:block">
-        <QuickManagementDropdown install={install} />
-      </div>
-    ),
-  }))
+      ) : (
+        <Text variant="subtext" theme="neutral">
+          —
+        </Text>
+      ),
+      activity: <ActivityCell install={install} />,
+      updatedAt: install?.updated_at ?? '',
+      action: (
+        <div className="hidden md:block">
+          <QuickManagementDropdown install={install} />
+        </div>
+      ),
+    }
+  })
 }
 
 const columns: ColumnDef<InstallRow>[] = [
@@ -174,6 +238,12 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => (
       <Link href={info.row.original.appHref}>{info.getValue() as string}</Link>
     ),
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'management',
+    header: 'Management',
+    cell: (info) => info.getValue() as ReactNode,
   },
   {
     enableSorting: false,
@@ -277,4 +347,3 @@ export const InstallsTable = ({
     />
   )
 }
-

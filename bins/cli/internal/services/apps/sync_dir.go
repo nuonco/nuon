@@ -103,13 +103,18 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 
 	s.warnIfCLIOutdated(ctx)
 
-	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
+	parseResult, err := parse.ParseDirWithSource(ctx, parse.ParseConfig{
 		Dirname:       dir,
 		V:             validator.New(),
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 	})
 	if err != nil {
 		return ui.PrintError(err)
+	}
+	cfg := parseResult.Config
+	var sourceArchive *config.SourceArchive
+	if cfg.CustomerManaged != nil {
+		sourceArchive = parseResult.Source
 	}
 
 	if s.cfg.Debug {
@@ -162,7 +167,7 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		}
 	}
 
-	appConfig, err := s.createConfig(ctx, appID, version, cfg, branchID, opts.Preview)
+	appConfig, err := s.createConfig(ctx, appID, version, cfg, sourceArchive, branchID, opts.Preview)
 	if err != nil {
 		return ui.PrintError(err)
 	}

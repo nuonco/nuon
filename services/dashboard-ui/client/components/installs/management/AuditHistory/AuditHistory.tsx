@@ -25,12 +25,7 @@ export const AuditHistoryModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="ClockClockwiseIcon" size="24" />
           Audit history
         </Text>
@@ -75,32 +70,32 @@ export const AuditHistoryModal = ({
             name="date-range"
             value="1"
             onChange={() => onDateChange(1)}
-            labelProps={{ labelText: "Last one hour" }}
+            labelProps={{ labelText: 'Last one hour' }}
           />
           <RadioInput
             name="date-range"
             value="24"
             onChange={() => onDateChange(24)}
-            labelProps={{ labelText: "Last 24 hours" }}
+            labelProps={{ labelText: 'Last 24 hours' }}
           />
           <RadioInput
             name="date-range"
             value="168"
             onChange={() => onDateChange(7 * 24)}
             defaultChecked={true}
-            labelProps={{ labelText: "Last week" }}
+            labelProps={{ labelText: 'Last week' }}
           />
           <RadioInput
             name="date-range"
             value="720"
             onChange={() => onDateChange(30 * 24)}
-            labelProps={{ labelText: "Last 30 days" }}
+            labelProps={{ labelText: 'Last 30 days' }}
           />
           <RadioInput
             name="date-range"
             value="1440"
             onChange={() => onDateChange(60 * 24)}
-            labelProps={{ labelText: "Last 60 days" }}
+            labelProps={{ labelText: 'Last 60 days' }}
           />
         </div>
       </div>

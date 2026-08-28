@@ -1,10 +1,12 @@
 import type { TKeyValue } from '@/types'
 
-export function objectToKeyValueArray(obj: Record<string, any> | null | undefined): TKeyValue[] {
+export function objectToKeyValueArray(
+  obj: Record<string, any> | null | undefined
+): TKeyValue[] {
   if (obj === null || obj === undefined) {
     return []
   }
-  
+
   return Object.entries(obj).map(([key, value]) => ({
     key,
     value: formatValue(value),

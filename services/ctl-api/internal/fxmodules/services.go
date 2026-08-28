@@ -10,6 +10,7 @@ import (
 	authservice "github.com/nuonco/nuon/services/ctl-api/internal/app/auth/service"
 	awsaccountconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/aws-account-connections/service"
 	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
+	customermanagedservice "github.com/nuonco/nuon/services/ctl-api/internal/app/customer_managed/service"
 	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
@@ -47,6 +48,7 @@ var sharedServices = fx.Options(
 	// Domain services with swagger-annotated routes.
 	fx.Provide(api.AsService(accountsservice.New)),
 	fx.Provide(api.AsService(actionsservice.New)),
+	fx.Provide(api.AsService(customermanagedservice.New)),
 	fx.Provide(api.AsService(awsaccountconnectionsservice.New)),
 	fx.Provide(api.AsService(appsservice.New)),
 	fx.Provide(api.AsService(componentsservice.New)),

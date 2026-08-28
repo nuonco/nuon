@@ -50,7 +50,10 @@ type CreateInstallGCPAccountParams struct {
 }
 
 type CreateInstallParams struct {
-	Name string `json:"name" validate:"required"`
+	Name           string `json:"name" validate:"required"`
+	AppConfigID    string `json:"-"`
+	RunnerImageURL string `json:"-"`
+	RunnerImageTag string `json:"-"`
 
 	AWSAccount *CreateInstallAWSAccountParams `json:"aws_account"`
 
@@ -77,6 +80,15 @@ type CreateInstallParams struct {
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
 	parentApp := app.App{}
+	appConfigScope := func(db *gorm.DB) *gorm.DB {
+		if req.AppConfigID != "" {
+			return db.Where(views.TableOrViewName(s.db, &app.AppConfig{}, ".id = ?"), req.AppConfigID).Limit(1)
+		}
+		return db.
+			Where(views.TableOrViewName(s.db, &app.AppConfig{}, ".status_v2 ->> 'status' = ?"), string(app.AppConfigStatusActive)).
+			Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).
+			Limit(1)
+	}
 	res := s.db.WithContext(ctx).
 		Preload("Components").
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
@@ -88,12 +100,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC").Limit(1)
 		}).
-		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.
-				Where(views.TableOrViewName(s.db, &app.AppConfig{}, ".status_v2 ->> 'status' = ?"), string(app.AppConfigStatusActive)).
-				Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).
-				Limit(1)
-		}).
+		Preload("AppConfigs", appConfigScope).
+		Preload("AppConfigs.SandboxConfig").
+		Preload("AppConfigs.RunnerConfig").
+		Preload("AppConfigs.PermissionsConfig.Roles").
 		Preload("AppPermissionsConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_permissions_configs.created_at DESC").Limit(1)
 		}).
@@ -122,13 +132,22 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if err := s.ValidateInstallInputs(ctx, pinnedAppInputConfig, req.Inputs); err != nil {
 		return nil, err
 	}
+	selectedConfig := parentApp.AppConfigs[0]
+	sandboxConfigID := parentApp.AppSandboxConfigs[0].ID
+	runnerConfigID := parentApp.AppRunnerConfigs[0].ID
+	permissionsConfig := parentApp.AppPermissionsConfig
+	if req.AppConfigID != "" {
+		sandboxConfigID = selectedConfig.SandboxConfig.ID
+		runnerConfigID = selectedConfig.RunnerConfig.ID
+		permissionsConfig = selectedConfig.PermissionsConfig
+	}
 	install := app.Install{
 		AppID:              appID,
 		Name:               req.Name,
 		SandboxMode:        pkggenerics.NewNullBool(req.SandboxMode),
-		AppSandboxConfigID: parentApp.AppSandboxConfigs[0].ID,
-		AppRunnerConfigID:  parentApp.AppRunnerConfigs[0].ID,
-		AppConfigID:        parentApp.AppConfigs[0].ID,
+		AppSandboxConfigID: sandboxConfigID,
+		AppRunnerConfigID:  runnerConfigID,
+		AppConfigID:        selectedConfig.ID,
 		InstallSandbox: app.InstallSandbox{
 			Status: app.InstallSandboxStatusQueued,
 			TerraformWorkspace: app.TerraformWorkspace{
@@ -185,7 +204,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 
 	targetSource := ""
 
-	runnerType := parentApp.AppRunnerConfigs[0].Type
+	runnerType := selectedConfig.RunnerConfig.Type
+	if req.AppConfigID == "" {
+		runnerType = parentApp.AppRunnerConfigs[0].Type
+	}
 	switch runnerType {
 	case app.AppRunnerTypeGCP, app.AppRunnerTypeGCPGKE:
 		if req.GCPAccount == nil {
@@ -308,10 +330,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 		install.CloudPlatformMetadata.TargetSource = targetSource
 	}
-	if parentApp.AppPermissionsConfig.ID != "" && len(parentApp.AppPermissionsConfig.Roles) > 0 {
+	if permissionsConfig.ID != "" && len(permissionsConfig.Roles) > 0 {
 		installRoles := make([]app.InstallRoles, 0)
 
-		for _, role := range parentApp.AppPermissionsConfig.Roles {
+		for _, role := range permissionsConfig.Roles {
 			installRoles = append(installRoles, app.InstallRoles{
 				AppRoleConfigID: role.ID,
 			})
@@ -329,7 +351,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
-	switch parentApp.AppRunnerConfigs[0].Type {
+	switch runnerType {
 	case "aws":
 		install.InstallStack = &app.InstallStack{
 			InstallStackOutputs: app.InstallStackOutputs{
@@ -388,7 +410,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to load all install resources: %w", err)
 	}
 
-	if _, err := s.runnersHelpers.CreateInstallRunnerGroup(ctx, loadedInstall); err != nil {
+	if _, err := s.runnersHelpers.CreateInstallRunnerGroup(ctx, loadedInstall, req.RunnerImageURL, req.RunnerImageTag); err != nil {
 		return nil, fmt.Errorf("unable to create install runner: %w", err)
 	}
 

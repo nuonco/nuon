@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -30,6 +31,7 @@ type Signal struct {
 
 	InstallSandboxID string
 	InstallID        string
+	SandboxBuildID   string
 	WorkflowStepID   string
 	FlowStepID       string
 	FlowID           string
@@ -314,11 +316,24 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 	}
 	s.runnerJobID = runnerJob.ID
 
+	var ociSource *plantypes.OCISource
+	if s.SandboxBuildID != "" {
+		registry, err := sharedactivities.AwaitGetSandboxBuildOCIRegistry(ctx, sharedactivities.GetSandboxBuildOCIRegistryRequest{AppID: install.AppID})
+		if err != nil {
+			return errors.Wrap(err, "unable to resolve release sandbox registry")
+		}
+		ociSource = &plantypes.OCISource{Registry: registry, Tag: s.SandboxBuildID}
+		if err := activities.AwaitSetSandboxRunBuild(ctx, activities.SetSandboxRunBuildRequest{SandboxRunID: installRun.ID, BuildID: s.SandboxBuildID}); err != nil {
+			return errors.Wrap(err, "unable to record release sandbox build")
+		}
+	}
+
 	planResponse, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
 		RunID:      installRun.ID,
 		InstallID:  install.ID,
 		RootDomain: dnsRootDomain,
 		WorkflowID: fmt.Sprintf("%s-create-api-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		OCISource:  ociSource,
 	})
 	if err != nil {
 		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan request")

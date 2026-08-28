@@ -122,11 +122,15 @@ export const RunRunbookForm = ({
   const config = installRunbook.runbook?.configs?.[0]
 
   const steps = useMemo(
-    () => (config?.steps ?? []).slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)),
+    () =>
+      (config?.steps ?? []).slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)),
     [config]
   )
   const inputs = useMemo(
-    () => (config?.inputs ?? []).slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)),
+    () =>
+      (config?.inputs ?? [])
+        .slice()
+        .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)),
     [config]
   )
   const hasInputs = inputs.length > 0
@@ -138,7 +142,9 @@ export const RunRunbookForm = ({
       inputs: Object.fromEntries(
         inputs.map((input) => [
           input.name,
-          isBooleanInput(input) ? input.default === 'true' : (input.default ?? ''),
+          isBooleanInput(input)
+            ? input.default === 'true'
+            : (input.default ?? ''),
         ])
       ),
     }),
@@ -220,7 +226,10 @@ export const RunRunbookForm = ({
       {...props}
     >
       <div className="flex flex-col gap-4">
-        <FormErrorBanner error={error} fallback={`Unable to run ${runbookName}`} />
+        <FormErrorBanner
+          error={error}
+          fallback={`Unable to run ${runbookName}`}
+        />
 
         {hasInputs ? (
           <WizardNavComponent
@@ -230,7 +239,9 @@ export const RunRunbookForm = ({
               { id: 'confirm', title: 'Confirm' },
             ]}
             currentStepIndex={page}
-            completedSteps={new Set(['inputs', 'steps'].slice(0, page) as string[])}
+            completedSteps={
+              new Set(['inputs', 'steps'].slice(0, page) as string[])
+            }
             skipHref={null}
             onGoToStep={(index) => {
               if (index <= page) setPage(index as 0 | 1 | 2)
@@ -308,7 +319,8 @@ export const RunRunbookForm = ({
               <dl className="flex flex-col gap-2 p-2">
                 {inputs.map((input) => {
                   const raw = values.inputs?.[input.name]
-                  const value = typeof raw === 'boolean' ? String(raw) : (raw ?? '')
+                  const value =
+                    typeof raw === 'boolean' ? String(raw) : (raw ?? '')
                   return (
                     <div
                       key={input.id ?? input.name}

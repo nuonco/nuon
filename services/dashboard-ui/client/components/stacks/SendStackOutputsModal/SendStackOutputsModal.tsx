@@ -63,12 +63,16 @@ export const SendStackOutputsModal = ({
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
           <Text variant="subtext">Version</Text>
-          <Badge variant="code" size="md">{versionId}</Badge>
+          <Badge variant="code" size="md">
+            {versionId}
+          </Badge>
         </div>
 
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
-            <Text variant="body" weight="strong">Outputs (JSON)</Text>
+            <Text variant="body" weight="strong">
+              Outputs (JSON)
+            </Text>
             <Button
               variant="ghost"
               size="sm"

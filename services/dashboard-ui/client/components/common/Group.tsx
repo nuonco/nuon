@@ -54,7 +54,7 @@ export const Group = ({
       ALIGN[align],
       JUSTIFY[justify],
       wrap && 'flex-wrap',
-      className,
+      className
     )}
     {...props}
   >

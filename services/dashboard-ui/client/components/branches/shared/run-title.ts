@@ -14,5 +14,7 @@ export const getRunTitle = (run?: TInstallWorkflow): string => {
     ?.split('\n')[0]
     ?.trim()
   const typeLabel = run?.type ? WORKFLOW_TYPE_LABELS[run.type] : undefined
-  return toSentenceCase(commitMessage || typeLabel || run?.name || 'Workflow run')
+  return toSentenceCase(
+    commitMessage || typeLabel || run?.name || 'Workflow run'
+  )
 }

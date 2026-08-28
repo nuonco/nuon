@@ -34,33 +34,84 @@ const wfHref = '/org_1/installs/ins_acme/workflows/wf_1'
 const installHref = '/org_1/installs/ins_acme'
 
 export const RowDeployed = () => (
-  <InstallDeployRow installId="ins_acme" install={mkInstall()} deployStatus="success" workflowHref={wfHref} installHref={installHref} />
+  <InstallDeployRow
+    installId="ins_acme"
+    install={mkInstall()}
+    deployStatus="success"
+    workflowHref={wfHref}
+    installHref={installHref}
+  />
 )
 
 export const RowInProgress = () => (
-  <InstallDeployRow installId="ins_globex" install={azureInstall} deployStatus="in-progress" workflowHref={wfHref} installHref={installHref} />
+  <InstallDeployRow
+    installId="ins_globex"
+    install={azureInstall}
+    deployStatus="in-progress"
+    workflowHref={wfHref}
+    installHref={installHref}
+  />
 )
 
 export const RowError = () => (
-  <InstallDeployRow installId="ins_initech" install={gcpInstall} deployStatus="error" workflowHref={wfHref} installHref={installHref} />
+  <InstallDeployRow
+    installId="ins_initech"
+    install={gcpInstall}
+    deployStatus="error"
+    workflowHref={wfHref}
+    installHref={installHref}
+  />
 )
 
 export const RowPending = () => (
-  <InstallDeployRow installId="ins_acme" install={mkInstall({ cloud_platform: undefined, aws_account: undefined })} deployStatus="pending" installHref={installHref} />
+  <InstallDeployRow
+    installId="ins_acme"
+    install={mkInstall({ cloud_platform: undefined, aws_account: undefined })}
+    deployStatus="pending"
+    installHref={installHref}
+  />
 )
 
 export const RowUnresolved = () => (
-  <InstallDeployRow installId="inlyompj5ren1oqpnvsc3xcksn" deployStatus="in-progress" workflowHref={wfHref} installHref={installHref} />
+  <InstallDeployRow
+    installId="inlyompj5ren1oqpnvsc3xcksn"
+    deployStatus="in-progress"
+    workflowHref={wfHref}
+    installHref={installHref}
+  />
 )
 
 const rows: IInstallDeployRow[] = [
-  { installId: 'ins_acme', install: mkInstall(), deployStatus: 'success', workflowHref: wfHref, installHref },
-  { installId: 'ins_globex', install: azureInstall, deployStatus: 'in-progress', workflowHref: wfHref, installHref },
-  { installId: 'ins_initech', install: gcpInstall, deployStatus: 'error', workflowHref: wfHref, installHref },
+  {
+    installId: 'ins_acme',
+    install: mkInstall(),
+    deployStatus: 'success',
+    workflowHref: wfHref,
+    installHref,
+  },
+  {
+    installId: 'ins_globex',
+    install: azureInstall,
+    deployStatus: 'in-progress',
+    workflowHref: wfHref,
+    installHref,
+  },
+  {
+    installId: 'ins_initech',
+    install: gcpInstall,
+    deployStatus: 'error',
+    workflowHref: wfHref,
+    installHref,
+  },
 ]
 
 export const GroupMixed = () => (
-  <DeployGroupStep groupName="UAT" totalInstalls={3} deployedCount={1} rows={rows} />
+  <DeployGroupStep
+    groupName="UAT"
+    totalInstalls={3}
+    deployedCount={1}
+    rows={rows}
+  />
 )
 
 export const GroupAllDeployed = () => (
@@ -73,9 +124,20 @@ export const GroupAllDeployed = () => (
 )
 
 export const GroupSingleInstall = () => (
-  <DeployGroupStep groupName="UAT" totalInstalls={1} deployedCount={1} rows={[rows[0]]} />
+  <DeployGroupStep
+    groupName="UAT"
+    totalInstalls={1}
+    deployedCount={1}
+    rows={[rows[0]]}
+  />
 )
 
 export const GroupDeploying = () => (
-  <DeployGroupStep groupName="UAT" totalInstalls={0} deployedCount={0} rows={[]} emptyMessage="Deploying to install group" />
+  <DeployGroupStep
+    groupName="UAT"
+    totalInstalls={0}
+    deployedCount={0}
+    rows={[]}
+    emptyMessage="Deploying to install group"
+  />
 )

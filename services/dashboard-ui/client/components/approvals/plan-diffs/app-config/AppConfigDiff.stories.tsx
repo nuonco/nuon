@@ -31,7 +31,11 @@ const mockSections: DiffSectionData[] = [
         componentType: 'docker_build',
         fields: [
           { key: 'type', op: 'remove', diff: "'docker_build' -> ''" },
-          { key: 'dockerfile', op: 'remove', diff: "'Dockerfile.worker' -> ''" },
+          {
+            key: 'dockerfile',
+            op: 'remove',
+            diff: "'Dockerfile.worker' -> ''",
+          },
         ],
         files: [],
       },
@@ -40,15 +44,21 @@ const mockSections: DiffSectionData[] = [
         op: 'change',
         componentType: 'helm_chart',
         fields: [
-          { key: 'chart_name', op: 'change', diff: "'ctl-api-v1' -> 'ctl-api-v2'" },
+          {
+            key: 'chart_name',
+            op: 'change',
+            diff: "'ctl-api-v1' -> 'ctl-api-v2'",
+          },
           { key: 'namespace', op: 'change', diff: "'default' -> 'app'" },
         ],
         files: [
           {
             name: './values/prod.yaml',
             op: 'change',
-            before: 'replicas: 1\nimage:\n  tag: v1\nresources:\n  limits:\n    cpu: 500m\n',
-            after: 'replicas: 3\nimage:\n  tag: v2\nresources:\n  limits:\n    cpu: 1000m\n',
+            before:
+              'replicas: 1\nimage:\n  tag: v1\nresources:\n  limits:\n    cpu: 500m\n',
+            after:
+              'replicas: 3\nimage:\n  tag: v2\nresources:\n  limits:\n    cpu: 1000m\n',
           },
           {
             name: './values/feature-flags.yaml',
@@ -88,7 +98,8 @@ const mockSections: DiffSectionData[] = [
             name: 'inline_contents',
             op: 'change',
             before: '#!/bin/bash\ncurl -f http://localhost:8080/health\n',
-            after: '#!/bin/bash\ncurl -f http://localhost:8080/healthz\nexit 0\n',
+            after:
+              '#!/bin/bash\ncurl -f http://localhost:8080/healthz\nexit 0\n',
           },
         ],
       },
@@ -106,13 +117,19 @@ const mockSections: DiffSectionData[] = [
     entities: [],
     fields: [
       { key: 'runner_type', op: 'change', diff: "'standard' -> 'gpu'" },
-      { key: 'init_script', op: 'change', diff: "'setup.sh' -> 'setup-gpu.sh'" },
+      {
+        key: 'init_script',
+        op: 'change',
+        diff: "'setup.sh' -> 'setup-gpu.sh'",
+      },
     ],
     files: [],
     content: {
       op: 'change',
-      before: 'runner_type = "standard"\nhelm_driver = "secret"\ninit_script = "setup.sh"\n',
-      after: 'runner_type = "gpu"\nhelm_driver = "secret"\ninit_script = "setup-gpu.sh"\n',
+      before:
+        'runner_type = "standard"\nhelm_driver = "secret"\ninit_script = "setup.sh"\n',
+      after:
+        'runner_type = "gpu"\nhelm_driver = "secret"\ninit_script = "setup-gpu.sh"\n',
     },
   },
 ]
@@ -124,9 +141,7 @@ export const Default = () => (
   />
 )
 
-export const NoChanges = () => (
-  <AppConfigDiff sections={[]} summary={null} />
-)
+export const NoChanges = () => <AppConfigDiff sections={[]} summary={null} />
 
 export const Loading = () => (
   <AppConfigDiff sections={[]} summary={null} isLoading />
@@ -237,8 +252,10 @@ export const AllSections = () => {
       files: [],
       content: {
         op: 'change',
-        before: 'terraform_version = "1.5.0"\n\n[public_repo]\nbranch = "main"\n',
-        after: 'terraform_version = "1.6.0"\n\n[public_repo]\nbranch = "main"\n',
+        before:
+          'terraform_version = "1.5.0"\n\n[public_repo]\nbranch = "main"\n',
+        after:
+          'terraform_version = "1.6.0"\n\n[public_repo]\nbranch = "main"\n',
       },
     },
     {
@@ -250,7 +267,11 @@ export const AllSections = () => {
       changed: 0,
       entities: [],
       fields: [
-        { key: 'provision', op: 'add', diff: "'' -> 'arn:aws:iam::role/deploy'" },
+        {
+          key: 'provision',
+          op: 'add',
+          diff: "'' -> 'arn:aws:iam::role/deploy'",
+        },
       ],
       files: [],
       content: {

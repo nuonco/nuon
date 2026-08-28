@@ -24,7 +24,9 @@ export const InstallRunbooksRow = ({
   installHref,
   runbooks,
 }: IInstallRunbooksRow) => {
-  const platform = (install?.cloud_platform?.toLowerCase() as TCloudPlatform | undefined) || 'unknown'
+  const platform =
+    (install?.cloud_platform?.toLowerCase() as TCloudPlatform | undefined) ||
+    'unknown'
 
   return (
     <div className="flex flex-col">
@@ -34,7 +36,12 @@ export const InstallRunbooksRow = ({
             <Link href={installHref} variant="inline">{install?.name || installId}</Link>
           </Text>
         ) : (
-          <Text variant="body" weight="strong" nowrap className="block truncate">
+          <Text
+            variant="body"
+            weight="strong"
+            nowrap
+            className="block truncate"
+          >
             {install?.name || installId}
           </Text>
         )}
@@ -56,7 +63,12 @@ export const InstallRunbooksRow = ({
             key={runbook.runbookId || runbook.runbookName}
             className="flex items-center gap-3 pl-6 pr-4 py-2.5"
           >
-            <Text variant="subtext" family="mono" theme="neutral" className="shrink-0">
+            <Text
+              variant="subtext"
+              family="mono"
+              theme="neutral"
+              className="shrink-0"
+            >
               {idx + 1}
             </Text>
             <Text variant="body" nowrap className="truncate">
@@ -65,7 +77,11 @@ export const InstallRunbooksRow = ({
 
             <div className="flex-1" />
 
-            <Status status={runbook.status || 'pending'} variant="badge" className="shrink-0" />
+            <Status
+              status={runbook.status || 'pending'}
+              variant="badge"
+              className="shrink-0"
+            />
 
             {runbook.workflowHref && (
               <Link href={runbook.workflowHref} className="shrink-0">View run</Link>

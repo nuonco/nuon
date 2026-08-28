@@ -3,7 +3,10 @@ export default {
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'
-import { TerraformVariablesFilesModal, TerraformVariablesModal } from './TerraformConfig'
+import {
+  TerraformVariablesFilesModal,
+  TerraformVariablesModal,
+} from './TerraformConfig'
 
 export const VariablesFilesModal = () => (
   <ModalStory>

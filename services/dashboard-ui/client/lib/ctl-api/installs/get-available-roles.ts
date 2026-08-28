@@ -1,5 +1,9 @@
 import { api } from '@/lib/api'
-import type { TAvailableRolesResponse, TOperationType, TPrincipalType } from '@/types'
+import type {
+  TAvailableRolesResponse,
+  TOperationType,
+  TPrincipalType,
+} from '@/types'
 
 export async function getAvailableRoles({
   installId,

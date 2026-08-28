@@ -7,9 +7,13 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/customer_managed/transport"
 )
 
 func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
+	if err := h.deleteReleasePackageObjects(ctx, orgID); err != nil {
+		return err
+	}
 	childObjs := []interface{}{
 		&app.EventDispatch{},
 		&app.TriggerRule{},
@@ -17,6 +21,13 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.TriggerEvent{},
 		&app.TriggerSecret{},
 		&app.Trigger{},
+		&app.InstallReleaseDeployment{},
+		&app.InstallManagementPolicyVersion{},
+		&app.ReleasePackageReplica{},
+		&app.ReleasePackageMember{},
+		&app.ReleasePackage{},
+		&app.AppReleaseMember{},
+		&app.AppRelease{},
 		&app.RunnerJobExecutionResult{},
 		&app.RunnerJobExecutionOutputs{},
 		&app.RunnerJobExecution{},
@@ -102,5 +113,25 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		return fmt.Errorf("org not found %w", gorm.ErrRecordNotFound)
 	}
 
+	return nil
+}
+
+func (h *Helpers) deleteReleasePackageObjects(ctx context.Context, orgID string) error {
+	var replicas []app.ReleasePackageReplica
+	if err := h.db.WithContext(ctx).Where(app.ReleasePackageReplica{OrgID: orgID}).Find(&replicas).Error; err != nil {
+		return fmt.Errorf("load release package replicas for org: %w", err)
+	}
+	for _, stored := range replicas {
+		replica := transport.Replica{
+			Provider: stored.Provider, Region: stored.Region, StorageRef: stored.StorageRef,
+			StorageVersion: stored.StorageVersion, TransportChecksum: stored.ArchiveChecksum, Size: stored.Size,
+		}
+		if stored.VerifiedAt != nil {
+			replica.VerifiedAt = *stored.VerifiedAt
+		}
+		if err := h.customerManagedStore.Delete(ctx, replica); err != nil {
+			return fmt.Errorf("delete release package %s archive: %w", stored.PackageID, err)
+		}
+	}
 	return nil
 }

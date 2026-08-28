@@ -1,6 +1,9 @@
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { InstallRunbooksRow, type IInstallRunbooksRow } from './InstallRunbooksRow'
+import {
+  InstallRunbooksRow,
+  type IInstallRunbooksRow,
+} from './InstallRunbooksRow'
 import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 
 export interface IPostDeployRunbooksStep {
@@ -55,7 +58,9 @@ export const PostDeployRunbooksStep = ({
           ))}
         </div>
       ) : emptyMessage ? (
-        <StepStatePlaceholder variant="loading">{emptyMessage}</StepStatePlaceholder>
+        <StepStatePlaceholder variant="loading">
+          {emptyMessage}
+        </StepStatePlaceholder>
       ) : statusDescription ? (
         <div className="p-3 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
           <Text variant="base">{statusDescription}</Text>

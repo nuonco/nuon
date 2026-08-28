@@ -145,9 +145,9 @@ export const CommonSchedules = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Common Schedule Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Cron expressions support a wide variety of scheduling patterns. Here
-        are the most commonly used patterns in production systems for tasks
-        like backups, reports, and maintenance operations.
+        Cron expressions support a wide variety of scheduling patterns. Here are
+        the most commonly used patterns in production systems for tasks like
+        backups, reports, and maintenance operations.
       </p>
     </div>
 
@@ -279,8 +279,8 @@ export const UsageExamples = () => (
       <h3 className="text-lg font-semibold">Real-World Usage Examples</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Cron components are commonly used in drift detection schedules, backup
-        configurations, and automated task management. Here are typical
-        patterns for different application contexts.
+        configurations, and automated task management. Here are typical patterns
+        for different application contexts.
       </p>
     </div>
 
@@ -289,7 +289,11 @@ export const UsageExamples = () => (
       <div className="space-y-3 border rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Icon variant="ClockClockwiseIcon" size="16" className="text-blue-600" />
+            <Icon
+              variant="ClockClockwiseIcon"
+              size="16"
+              className="text-blue-600"
+            />
             <div>
               <Text weight="strong">Infrastructure Drift Check</Text>
               <Text variant="subtext" theme="neutral">
@@ -301,7 +305,11 @@ export const UsageExamples = () => (
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Icon variant="ClockClockwiseIcon" size="16" className="text-blue-600" />
+            <Icon
+              variant="ClockClockwiseIcon"
+              size="16"
+              className="text-blue-600"
+            />
             <div>
               <Text weight="strong">Security Compliance Scan</Text>
               <Text variant="subtext" theme="neutral">
@@ -313,7 +321,11 @@ export const UsageExamples = () => (
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Icon variant="ClockClockwiseIcon" size="16" className="text-blue-600" />
+            <Icon
+              variant="ClockClockwiseIcon"
+              size="16"
+              className="text-blue-600"
+            />
             <div>
               <Text weight="strong">Configuration Audit</Text>
               <Text variant="subtext" theme="neutral">
@@ -397,9 +409,7 @@ export const UsageExamples = () => (
       <ul className="mt-2 space-y-1 list-disc list-inside">
         <li>Use human format for end-user interfaces and dashboards</li>
         <li>Use expression format for technical configuration pages</li>
-        <li>
-          Use both format for documentation and administrative interfaces
-        </li>
+        <li>Use both format for documentation and administrative interfaces</li>
         <li>
           Enable tooltips (default) to help users understand the raw expression
         </li>
@@ -416,8 +426,8 @@ export const EdgeCases = () => (
       <h3 className="text-lg font-semibold">Edge Cases & Error Handling</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         The Cron component gracefully handles various edge cases including
-        invalid expressions, missing values, and complex cron syntax. Here's
-        how different scenarios are handled.
+        invalid expressions, missing values, and complex cron syntax. Here's how
+        different scenarios are handled.
       </p>
     </div>
 

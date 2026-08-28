@@ -17,7 +17,11 @@ const repos = [
   { full_name: 'acme-co/public-docs', private: false },
 ] as any
 
-const branches = [{ name: 'main' }, { name: 'develop' }, { name: 'release/1.x' }] as any
+const branches = [
+  { name: 'main' },
+  { name: 'develop' },
+  { name: 'release/1.x' },
+] as any
 
 const Wrap = ({ children }: { children: React.ReactNode }) => (
   <div className="flex flex-col gap-4 max-w-md">{children}</div>

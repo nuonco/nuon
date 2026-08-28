@@ -84,6 +84,9 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels(views.TableOrViewName(s.db, &app.Install{}, ".labels"), lbls)).
+		Preload("ManagementPolicyVersions", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_management_policy_versions.version DESC")
+		}).
 		Preload("AppSandboxConfig").
 		Preload("AWSAccount").
 		Preload("AzureAccount").

@@ -4,7 +4,9 @@ import { WorkflowApprovalsContext } from '@/providers/workflow-approvals-provide
 export function useWorkflowApprovals() {
   const ctx = useContext(WorkflowApprovalsContext)
   if (!ctx) {
-    throw new Error('useWorkflowApprovals must be used within a WorkflowApprovalsProvider')
+    throw new Error(
+      'useWorkflowApprovals must be used within a WorkflowApprovalsProvider'
+    )
   }
   return ctx
 }

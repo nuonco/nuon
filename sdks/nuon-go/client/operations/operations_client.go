@@ -210,6 +210,8 @@ type ClientService interface {
 
 	CreateAppPulumiComponentConfig(params *CreateAppPulumiComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppPulumiComponentConfigCreated, error)
 
+	CreateAppRelease(params *CreateAppReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppReleaseOK, *CreateAppReleaseCreated, error)
+
 	CreateAppRunnerConfig(params *CreateAppRunnerConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppRunnerConfigCreated, error)
 
 	CreateAppSandboxBuild(params *CreateAppSandboxBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppSandboxBuildCreated, error)
@@ -234,6 +236,8 @@ type ClientService interface {
 
 	CreateCurrentOrgWebhook(params *CreateCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCurrentOrgWebhookCreated, error)
 
+	CreateCustomerManagedInstall(params *CreateCustomerManagedInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCustomerManagedInstallCreated, error)
+
 	CreateDockerBuildComponentConfig(params *CreateDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDockerBuildComponentConfigCreated, error)
 
 	CreateExternalImageComponentConfig(params *CreateExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalImageComponentConfigCreated, error)
@@ -256,6 +260,8 @@ type ClientService interface {
 
 	CreateInstallInputs(params *CreateInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallInputsCreated, error)
 
+	CreateInstallReleaseUpdate(params *CreateInstallReleaseUpdateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallReleaseUpdateCreated, error)
+
 	CreateInstallV2(params *CreateInstallV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallV2Created, error)
 
 	CreateJobComponentConfig(params *CreateJobComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateJobComponentConfigCreated, error)
@@ -275,6 +281,12 @@ type ClientService interface {
 	CreateOrgInvite(params *CreateOrgInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrgInviteCreated, error)
 
 	CreatePulumiComponentConfig(params *CreatePulumiComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePulumiComponentConfigCreated, error)
+
+	CreateReleasePackage(params *CreateReleasePackageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateReleasePackageOK, *CreateReleasePackageAccepted, error)
+
+	CreateReleasePackageBlobGrants(params *CreateReleasePackageBlobGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateReleasePackageBlobGrantsOK, error)
+
+	CreateReleasePackageDownloadGrant(params *CreateReleasePackageDownloadGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateReleasePackageDownloadGrantOK, error)
 
 	CreateRunbook(params *CreateRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunbookCreated, error)
 
@@ -479,6 +491,10 @@ type ClientService interface {
 	GetAppPoliciesConfigs(params *GetAppPoliciesConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppPoliciesConfigsOK, error)
 
 	GetAppPolicyConfig(params *GetAppPolicyConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppPolicyConfigOK, error)
+
+	GetAppRelease(params *GetAppReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleaseOK, error)
+
+	GetAppReleaseFileContent(params *GetAppReleaseFileContentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleaseFileContentOK, error)
 
 	GetAppRunnerConfigs(params *GetAppRunnerConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppRunnerConfigsOK, error)
 
@@ -754,6 +770,8 @@ type ClientService interface {
 
 	GetQueueStatus(params *GetQueueStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueStatusOK, error)
 
+	GetReleasePackage(params *GetReleasePackageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleasePackageOK, error)
+
 	GetRunbook(params *GetRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbookOK, error)
 
 	GetRunbookConfigs(params *GetRunbookConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbookConfigsOK, error)
@@ -846,11 +864,17 @@ type ClientService interface {
 
 	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerOK, error)
 
+	ListAppReleases(params *ListAppReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAppReleasesOK, error)
+
+	ListInstallReleaseDeployments(params *ListInstallReleaseDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInstallReleaseDeploymentsOK, error)
+
 	ListOIDCTrustPolicies(params *ListOIDCTrustPoliciesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOIDCTrustPoliciesOK, error)
 
 	ListOrgComponentBuilds(params *ListOrgComponentBuildsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOrgComponentBuildsOK, error)
 
 	ListQueues(params *ListQueuesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListQueuesOK, error)
+
+	ListReleasePackages(params *ListReleasePackagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListReleasePackagesOK, error)
 
 	ListRoles(params *ListRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRolesOK, error)
 
@@ -3256,6 +3280,50 @@ func (a *Client) CreateAppPulumiComponentConfig(params *CreateAppPulumiComponent
 }
 
 /*
+CreateAppRelease creates an immutable application release
+*/
+func (a *Client) CreateAppRelease(params *CreateAppReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppReleaseOK, *CreateAppReleaseCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAppReleaseParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAppRelease",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/releases",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAppReleaseReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// several success responses have to be checked
+	switch value := result.(type) {
+	case *CreateAppReleaseOK:
+		return value, nil, nil
+	case *CreateAppReleaseCreated:
+		return nil, value, nil
+	}
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateAppRunnerConfig creates an app runner config
 
 Create a runner configuration for an app.
@@ -3806,6 +3874,50 @@ func (a *Client) CreateCurrentOrgWebhook(params *CreateCurrentOrgWebhookParams, 
 }
 
 /*
+CreateCustomerManagedInstall creates an authenticated customer managed install
+*/
+func (a *Client) CreateCustomerManagedInstall(params *CreateCustomerManagedInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCustomerManagedInstallCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateCustomerManagedInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateCustomerManagedInstall",
+		Method:             "POST",
+		PathPattern:        "/v1/customer-managed/installs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateCustomerManagedInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateCustomerManagedInstallCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateCustomerManagedInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateDockerBuildComponentConfig creates a docker build component config
 
 Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
@@ -4310,6 +4422,50 @@ func (a *Client) CreateInstallInputs(params *CreateInstallInputsParams, authInfo
 }
 
 /*
+CreateInstallReleaseUpdate proposes a vendor release to a customer managed install
+*/
+func (a *Client) CreateInstallReleaseUpdate(params *CreateInstallReleaseUpdateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallReleaseUpdateCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateInstallReleaseUpdateParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateInstallReleaseUpdate",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/release-updates",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateInstallReleaseUpdateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateInstallReleaseUpdateCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateInstallReleaseUpdate: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateInstallV2 creates an app install
 
 Create a new install for an app.
@@ -4762,6 +4918,138 @@ func (a *Client) CreatePulumiComponentConfig(params *CreatePulumiComponentConfig
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreatePulumiComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateReleasePackage creates a portable package for an application release
+*/
+func (a *Client) CreateReleasePackage(params *CreateReleasePackageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateReleasePackageOK, *CreateReleasePackageAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateReleasePackageParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateReleasePackage",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/releases/{release_id}/packages",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateReleasePackageReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// several success responses have to be checked
+	switch value := result.(type) {
+	case *CreateReleasePackageOK:
+		return value, nil, nil
+	case *CreateReleasePackageAccepted:
+		return nil, value, nil
+	}
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateReleasePackageBlobGrants creates download grants for content addressed package blobs
+*/
+func (a *Client) CreateReleasePackageBlobGrants(params *CreateReleasePackageBlobGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateReleasePackageBlobGrantsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateReleasePackageBlobGrantsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateReleasePackageBlobGrants",
+		Method:             "POST",
+		PathPattern:        "/v1/release-packages/{package_id}/blob-grants",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateReleasePackageBlobGrantsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateReleasePackageBlobGrantsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateReleasePackageBlobGrants: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateReleasePackageDownloadGrant creates a download grant for a published release package
+*/
+func (a *Client) CreateReleasePackageDownloadGrant(params *CreateReleasePackageDownloadGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateReleasePackageDownloadGrantOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateReleasePackageDownloadGrantParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateReleasePackageDownloadGrant",
+		Method:             "POST",
+		PathPattern:        "/v1/release-packages/{package_id}/download-grants",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateReleasePackageDownloadGrantReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateReleasePackageDownloadGrantOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateReleasePackageDownloadGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -9509,6 +9797,94 @@ func (a *Client) GetAppPolicyConfig(params *GetAppPolicyConfigParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppPolicyConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppRelease gets an immutable application release
+*/
+func (a *Client) GetAppRelease(params *GetAppReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleaseOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppReleaseParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppRelease",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/releases/{release_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppReleaseReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppReleaseOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppRelease: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppReleaseFileContent gets one authored file from an immutable application release
+*/
+func (a *Client) GetAppReleaseFileContent(params *GetAppReleaseFileContentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleaseFileContentOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppReleaseFileContentParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppReleaseFileContent",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/releases/{release_id}/files/content",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppReleaseFileContentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppReleaseFileContentOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppReleaseFileContent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -15862,6 +16238,50 @@ func (a *Client) GetQueueStatus(params *GetQueueStatusParams, authInfo runtime.C
 }
 
 /*
+GetReleasePackage gets a release package
+*/
+func (a *Client) GetReleasePackage(params *GetReleasePackageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleasePackageOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetReleasePackageParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetReleasePackage",
+		Method:             "GET",
+		PathPattern:        "/v1/release-packages/{package_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetReleasePackageReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetReleasePackageOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetReleasePackage: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetRunbook gets a runbook
 */
 func (a *Client) GetRunbook(params *GetRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbookOK, error) {
@@ -17974,6 +18394,94 @@ func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, au
 }
 
 /*
+ListAppReleases lists immutable application releases
+*/
+func (a *Client) ListAppReleases(params *ListAppReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAppReleasesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListAppReleasesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListAppReleases",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/releases",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAppReleasesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListAppReleasesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListAppReleases: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListInstallReleaseDeployments lists immutable release deployment history for an install
+*/
+func (a *Client) ListInstallReleaseDeployments(params *ListInstallReleaseDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInstallReleaseDeploymentsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListInstallReleaseDeploymentsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListInstallReleaseDeployments",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/release-deployments",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListInstallReleaseDeploymentsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListInstallReleaseDeploymentsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListInstallReleaseDeployments: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 ListOIDCTrustPolicies lists your org s o ID c trust policies
 
 Lists the OIDC workload identity trust policies for your current org.
@@ -18106,6 +18614,50 @@ func (a *Client) ListQueues(params *ListQueuesParams, authInfo runtime.ClientAut
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ListQueues: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListReleasePackages lists packages for an application release
+*/
+func (a *Client) ListReleasePackages(params *ListReleasePackagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListReleasePackagesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListReleasePackagesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListReleasePackages",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/releases/{release_id}/packages",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListReleasePackagesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListReleasePackagesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListReleasePackages: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

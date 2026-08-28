@@ -22,104 +22,84 @@ export const InstallActionRunOutputs = ({
 
   return (
     <div className="flex flex-col gap-4">
-      {sortByIdx(steps ?? [])
-        .map((step) => {
-          const outputs = installActionRun?.outputs?.steps?.[step?.name]
-          const outputCount = Object.keys(outputs || {})?.length
-          const quickRef = extractQuickReference(outputs || {})
+      {sortByIdx(steps ?? []).map((step) => {
+        const outputs = installActionRun?.outputs?.steps?.[step?.name]
+        const outputCount = Object.keys(outputs || {})?.length
+        const quickRef = extractQuickReference(outputs || {})
 
-          return outputs ? (
-            <Expand
-              className="rounded-md border"
-              id={`${step?.id}-outputs`}
-              key={step?.id}
-              heading={
-                <div className="flex flex-col gap-1 items-start">
-                  <Text
-                    flex
-                    className="gap-4"
-                    variant="base"
-                    weight="strong"
-                  >
-                    {step?.name} outputs{' '}
-                  </Text>
-                  <div className="flex items-center gap-6">
-                    <Status status={step?.status} />
+        return outputs ? (
+          <Expand
+            className="rounded-md border"
+            id={`${step?.id}-outputs`}
+            key={step?.id}
+            heading={
+              <div className="flex flex-col gap-1 items-start">
+                <Text flex className="gap-4" variant="base" weight="strong">
+                  {step?.name} outputs{' '}
+                </Text>
+                <div className="flex items-center gap-6">
+                  <Status status={step?.status} />
 
-                    <Text
-                      flex
-                      className="gap-1"
-                      variant="subtext"
-                    >
-                      <Icon variant="PackageIcon" />
-                      {outputCount} item{outputCount > 1 ? 's' : null}
-                    </Text>
-                    {step?.execution_duration ? (
-                      <Text flex className="gap-1">
-                        <Icon variant="TimerIcon" />
-                        <Duration
-                          nanoseconds={step?.execution_duration}
-                          variant="subtext"
-                        />
-                      </Text>
-                    ) : null}
-                  </div>
-                </div>
-              }
-            >
-              <div className="flex flex-col gap-6 p-4 border-t">
-                {quickRef?.length ? (
-                  <div className="flex flex-col gap-2">
-                    <Text weight="strong">Quick reference</Text>
-                    <KeyValueList values={quickRef} />
-                  </div>
-                ) : null}
-                <div className="flex flex-col gap-2">
-                  <Text flex className="gap-4" weight="strong">
-                    Outputs JSON{' '}
-                    <Text
-                      flex
-                      className="gap-1"
-                      variant="label"
-                      theme="neutral"
-                    >
-                      <Icon variant="FloppyDiskIcon" size="13" />{' '}
-                      {getOutputSize(outputs)}
-                    </Text>
+                  <Text flex className="gap-1" variant="subtext">
+                    <Icon variant="PackageIcon" />
+                    {outputCount} item{outputCount > 1 ? 's' : null}
                   </Text>
-                  <JSONViewer
-                    className="border-none !rounded-t-none max-h-[600px] overflow-auto"
-                    data={outputs}
-                    expanded={3}
-                  />
+                  {step?.execution_duration ? (
+                    <Text flex className="gap-1">
+                      <Icon variant="TimerIcon" />
+                      <Duration
+                        nanoseconds={step?.execution_duration}
+                        variant="subtext"
+                      />
+                    </Text>
+                  ) : null}
                 </div>
               </div>
-            </Expand>
-          ) : (
-            <div
-              key={step?.id}
-              className="flex flex-col items-start border rounded-md w-full px-4 py-2"
-            >
-              <Text
-                flex
-                className="gap-2"
-                weight="strong"
-                theme="neutral"
-              >
-                No outputs for {step?.name} step
-              </Text>
-              {step?.execution_duration ? (
-                <Text variant="subtext" theme="neutral">
-                  Finished in{' '}
-                  <Duration
-                    nanoseconds={step?.execution_duration}
-                    variant="subtext"
-                  />
-                </Text>
+            }
+          >
+            <div className="flex flex-col gap-6 p-4 border-t">
+              {quickRef?.length ? (
+                <div className="flex flex-col gap-2">
+                  <Text weight="strong">Quick reference</Text>
+                  <KeyValueList values={quickRef} />
+                </div>
               ) : null}
+              <div className="flex flex-col gap-2">
+                <Text flex className="gap-4" weight="strong">
+                  Outputs JSON{' '}
+                  <Text flex className="gap-1" variant="label" theme="neutral">
+                    <Icon variant="FloppyDiskIcon" size="13" />{' '}
+                    {getOutputSize(outputs)}
+                  </Text>
+                </Text>
+                <JSONViewer
+                  className="border-none !rounded-t-none max-h-[600px] overflow-auto"
+                  data={outputs}
+                  expanded={3}
+                />
+              </div>
             </div>
-          )
-        })}
+          </Expand>
+        ) : (
+          <div
+            key={step?.id}
+            className="flex flex-col items-start border rounded-md w-full px-4 py-2"
+          >
+            <Text flex className="gap-2" weight="strong" theme="neutral">
+              No outputs for {step?.name} step
+            </Text>
+            {step?.execution_duration ? (
+              <Text variant="subtext" theme="neutral">
+                Finished in{' '}
+                <Duration
+                  nanoseconds={step?.execution_duration}
+                  variant="subtext"
+                />
+              </Text>
+            ) : null}
+          </div>
+        )
+      })}
     </div>
   )
 }

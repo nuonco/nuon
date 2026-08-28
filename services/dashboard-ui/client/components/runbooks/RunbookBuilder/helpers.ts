@@ -44,7 +44,8 @@ export const operationLabels: Record<TBuilderOperation, string> = {
 const escapeToml = (value: string) =>
   `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')}"`
 
-const goDurationPattern = /^[+-]?(?:0|(?:(?:\d+(?:\.\d+)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+)$/
+const goDurationPattern =
+  /^[+-]?(?:0|(?:(?:\d+(?:\.\d+)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))+)$/
 const goDurationTermPattern = /(\d+(?:\.\d+)?|\.\d+)(ns|us|µs|μs|ms|s|m|h)/g
 const durationUnitNanoseconds: Record<string, bigint> = {
   ns: BigInt(1),
@@ -66,8 +67,7 @@ function isGoDuration(value: string) {
     const [whole = '0', fraction = ''] = match[1].split('.')
     const scale = BigInt(`1${'0'.repeat(fraction.length)}`)
     const numerator = BigInt(`${whole || '0'}${fraction}`)
-    nanoseconds +=
-      (numerator * durationUnitNanoseconds[match[2]]) / scale
+    nanoseconds += (numerator * durationUnitNanoseconds[match[2]]) / scale
   }
   const limit = value.startsWith('-')
     ? BigInt('9223372036854775808')
@@ -126,11 +126,7 @@ export function serializeRunbook(
       `readme = ${escapeToml(`./runbooks/${slugifyRunbookName(name)}.md`)}`
     )
   steps.forEach((step) => {
-    lines.push(
-      '',
-      '[[steps]]',
-      `name = ${escapeToml(step.name.trim())}`
-    )
+    lines.push('', '[[steps]]', `name = ${escapeToml(step.name.trim())}`)
     const componentDeploy = [
       'deploy-component',
       'check-component-drift',
@@ -213,13 +209,13 @@ export function importRunbook(runbook: TRunbook, actions: TOption[]) {
   if (config?.inputs?.length) {
     return {
       steps: [],
-      errors: [`${runbook.name} defines runbook inputs and cannot be imported yet.`],
+      errors: [
+        `${runbook.name} defines runbook inputs and cannot be imported yet.`,
+      ],
     }
   }
   const source =
-    config?.steps
-      ?.slice()
-      .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ?? []
+    config?.steps?.slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ?? []
   const steps = source.flatMap((step, index) => {
     const converted = convertImportedStep(
       step,

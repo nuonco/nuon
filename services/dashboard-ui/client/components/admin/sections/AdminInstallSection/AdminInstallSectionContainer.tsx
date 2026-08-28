@@ -9,7 +9,10 @@ interface IAdminInstallSectionContainer {
   installId: string
 }
 
-export const AdminInstallSectionContainer = ({ orgId, installId }: IAdminInstallSectionContainer) => {
+export const AdminInstallSectionContainer = ({
+  orgId,
+  installId,
+}: IAdminInstallSectionContainer) => {
   const { user } = useAuth()
   const adminEmail = user?.email ?? ''
   const [runner, setRunner] = useState<TRunner>()

@@ -58,7 +58,7 @@ export const CompositeError = ({ error }: ICompositeError) => {
     Boolean(error?.type?.trim()) ||
     sections.some(
       (section) =>
-        Boolean(section?.heading?.trim()) || Boolean(section?.body?.trim()),
+        Boolean(section?.heading?.trim()) || Boolean(section?.body?.trim())
     )
 
   if (!hasContent) {
@@ -69,7 +69,9 @@ export const CompositeError = ({ error }: ICompositeError) => {
     <Banner theme={theme}>
       <div className="flex w-full min-w-0 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2 mb-2">
-          <Text variant="base" weight="strong">{error?.message}</Text>
+          <Text variant="base" weight="strong">
+            {error?.message}
+          </Text>
           {error?.type ? (
             <Badge variant="code" size="sm" theme="neutral">
               {error.type}

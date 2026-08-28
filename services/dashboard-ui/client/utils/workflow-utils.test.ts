@@ -508,7 +508,8 @@ describe('workflow-utils', () => {
           status: 'error',
           metadata: {
             check: 'stale-plan',
-            detail: 'Approval was submitted 4380m after plan creation (threshold: 4320m)',
+            detail:
+              'Approval was submitted 4380m after plan creation (threshold: 4320m)',
           },
         },
       } as TWorkflowStep

@@ -135,9 +135,7 @@ export const ProcessCard = ({
             label="Admin panel"
           />
         </div>
-        <div className="flex items-center gap-2">
-          {managementDropdown}
-        </div>
+        <div className="flex items-center gap-2">{managementDropdown}</div>
       </div>
 
       {warnings.map((warning, i) => (

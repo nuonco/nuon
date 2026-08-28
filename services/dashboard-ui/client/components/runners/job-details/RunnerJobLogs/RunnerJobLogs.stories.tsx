@@ -4,6 +4,4 @@ export default {
 
 import { RunnerJobLogs } from './RunnerJobLogs'
 
-export const NoLogStream = () => (
-  <RunnerJobLogs />
-)
+export const NoLogStream = () => <RunnerJobLogs />

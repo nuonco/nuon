@@ -162,6 +162,9 @@ type AppInstall struct {
 	// links
 	Links map[string]any `json:"links,omitempty"`
 
+	// management policy
+	ManagementPolicy *AppInstallManagementPolicyVersion `json:"management_policy,omitempty"`
+
 	// metadata
 	Metadata map[string]string `json:"metadata,omitempty"`
 
@@ -294,6 +297,10 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLabels(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateManagementPolicy(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -800,6 +807,29 @@ func (m *AppInstall) validateLabels(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppInstall) validateManagementPolicy(formats strfmt.Registry) error {
+	if swag.IsZero(m.ManagementPolicy) { // not required
+		return nil
+	}
+
+	if m.ManagementPolicy != nil {
+		if err := m.ManagementPolicy.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("management_policy")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("management_policy")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppInstall) validatePhoneHomeAuth(formats strfmt.Registry) error {
 	if swag.IsZero(m.PhoneHomeAuth) { // not required
 		return nil
@@ -987,6 +1017,10 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 	}
 
 	if err := m.contextValidateLabels(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateManagementPolicy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -1494,6 +1528,31 @@ func (m *AppInstall) contextValidateLabels(ctx context.Context, formats strfmt.R
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppInstall) contextValidateManagementPolicy(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ManagementPolicy != nil {
+
+		if swag.IsZero(m.ManagementPolicy) { // not required
+			return nil
+		}
+
+		if err := m.ManagementPolicy.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("management_policy")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("management_policy")
+			}
+
+			return err
+		}
 	}
 
 	return nil

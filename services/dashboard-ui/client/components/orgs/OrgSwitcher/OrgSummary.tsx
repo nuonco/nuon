@@ -54,12 +54,7 @@ export const OrgSummary = ({
           'md:opacity-0': !isSidebarOpen,
         })}
       >
-        <Text
-          weight="strong"
-          variant="subtext"
-          flex
-          className="text-nowrap"
-        >
+        <Text weight="strong" variant="subtext" flex className="text-nowrap">
           {org.sandbox_mode && (
             <Icon
               variant="TestTubeIcon"

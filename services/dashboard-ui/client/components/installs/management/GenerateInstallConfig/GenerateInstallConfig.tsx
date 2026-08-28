@@ -24,12 +24,7 @@ export const GenerateInstallConfigModal = ({
     <Modal
       className="!max-w-5xl"
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="FileCodeIcon" size="24" />
           Generate install config
         </Text>

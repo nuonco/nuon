@@ -27,13 +27,7 @@ export const ForgetModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-          theme="error"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
           <Icon variant="TrashIcon" size="24" />
           Forget {installName}?
         </Text>
@@ -64,7 +58,9 @@ export const ForgetModal = ({
 
         <Banner theme="warn">
           <Text variant="body">
-            <strong>Warning:</strong> This should only be used in cases where an install was broken in an unordinary way and needs to be manually removed.
+            <strong>Warning:</strong> This should only be used in cases where an
+            install was broken in an unordinary way and needs to be manually
+            removed.
           </Text>
         </Banner>
 
@@ -76,9 +72,7 @@ export const ForgetModal = ({
           </div>
 
           <div className="flex flex-col gap-3">
-            <Text variant="body">
-              You should only do this after you have:
-            </Text>
+            <Text variant="body">You should only do this after you have:</Text>
             <ul className="flex flex-col gap-1 list-disc pl-6 text-sm text-cool-grey-700 dark:text-cool-grey-300">
               <li>Successfully deprovisioned the install</li>
               <li>Deprovisioned the CloudFormation stack for this install</li>
@@ -100,7 +94,11 @@ export const ForgetModal = ({
               value={confirmName}
               onChange={(e) => setConfirmName(e.target.value)}
               error={confirmName.length > 0 && !isConfirmValid}
-              errorMessage={confirmName.length > 0 && !isConfirmValid ? "Install name doesn't match" : undefined}
+              errorMessage={
+                confirmName.length > 0 && !isConfirmValid
+                  ? "Install name doesn't match"
+                  : undefined
+              }
             />
           </div>
         </div>

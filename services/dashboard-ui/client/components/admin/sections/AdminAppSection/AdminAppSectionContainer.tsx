@@ -6,7 +6,10 @@ interface IAdminAppSectionContainer {
   appId: string
 }
 
-export const AdminAppSectionContainer = ({ orgId, appId }: IAdminAppSectionContainer) => {
+export const AdminAppSectionContainer = ({
+  orgId,
+  appId,
+}: IAdminAppSectionContainer) => {
   const { user } = useAuth()
   const adminEmail = user?.email ?? ''
 

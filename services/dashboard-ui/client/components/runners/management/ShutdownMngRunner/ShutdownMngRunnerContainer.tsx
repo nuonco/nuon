@@ -25,10 +25,21 @@ interface IShutdownMngRunnerModalContainer extends IModal {
   showRunnerLabel?: boolean
 }
 
-export const ShutdownMngRunnerButton = ({ runnerId, processId, showRunnerLabel, ...props }: IShutdownMngRunnerButton) => {
+export const ShutdownMngRunnerButton = ({
+  runnerId,
+  processId,
+  showRunnerLabel,
+  ...props
+}: IShutdownMngRunnerButton) => {
   const { addModal } = useSurfaces()
   const label = showRunnerLabel ? 'Shutdown runner process' : 'Shutdown process'
-  const modal = <ShutdownMngRunnerModalContainer runnerId={runnerId} processId={processId} showRunnerLabel={showRunnerLabel} />
+  const modal = (
+    <ShutdownMngRunnerModalContainer
+      runnerId={runnerId}
+      processId={processId}
+      showRunnerLabel={showRunnerLabel}
+    />
+  )
   return (
     <Button
       onClick={() => {
@@ -43,7 +54,12 @@ export const ShutdownMngRunnerButton = ({ runnerId, processId, showRunnerLabel, 
   )
 }
 
-export const ShutdownMngRunnerModalContainer = ({ runnerId, processId, showRunnerLabel, ...props }: IShutdownMngRunnerModalContainer) => {
+export const ShutdownMngRunnerModalContainer = ({
+  runnerId,
+  processId,
+  showRunnerLabel,
+  ...props
+}: IShutdownMngRunnerModalContainer) => {
   const label = showRunnerLabel ? 'Shutdown runner process' : 'Shutdown process'
   const { user } = useAuth()
   const { org } = useOrg()
@@ -65,7 +81,10 @@ export const ShutdownMngRunnerModalContainer = ({ runnerId, processId, showRunne
       }),
     onSuccess: () => {
       addToast(
-        <Toast heading="Shutdown managed runner process started" theme="success">
+        <Toast
+          heading="Shutdown managed runner process started"
+          theme="success"
+        >
           <Text>Shutdown managed runner process initiated.</Text>
         </Toast>
       )

@@ -67,5 +67,7 @@ export const InvitedUsersError = ({
   message?: string
   title?: string
 }) => {
-  return <EmptyState variant="table" emptyMessage={message} emptyTitle={title} />
+  return (
+    <EmptyState variant="table" emptyMessage={message} emptyTitle={title} />
+  )
 }

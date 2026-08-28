@@ -10,7 +10,8 @@ import { SandboxRunOutputsButton } from './SandboxRunOutputsModal'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
 import type { TWorkflow } from '@/types'
 
-interface ManageRunDropdownProps extends Omit<IDropdown, 'id' | 'buttonText' | 'children'> {
+interface ManageRunDropdownProps
+  extends Omit<IDropdown, 'id' | 'buttonText' | 'children'> {
   workflow?: TWorkflow
 }
 
@@ -20,11 +21,12 @@ export const ManageRunDropdown = ({
   ...props
 }: ManageRunDropdownProps) => {
   const { sandboxRun } = useSandboxRun()
-  
+
   if (!sandboxRun) return null
 
   const hasRunnerJobs = sandboxRun?.runner_jobs?.length > 0
-  const shouldShowCancel = sandboxRun?.runner_jobs &&
+  const shouldShowCancel =
+    sandboxRun?.runner_jobs &&
     sandboxRun?.status_v2?.status !== 'active' &&
     sandboxRun?.status_v2?.status !== 'error' &&
     workflow &&
@@ -58,10 +60,7 @@ export const ManageRunDropdown = ({
             runnerJobId={sandboxRun.runner_jobs[1].id}
           />
         ) : null}
-        <SandboxRunOutputsButton
-          isMenuButton
-          sandboxRun={sandboxRun}
-        />
+        <SandboxRunOutputsButton isMenuButton sandboxRun={sandboxRun} />
         <hr />
         <Text>Controls</Text>
         <DriftScanSandboxButton isMenuButton />

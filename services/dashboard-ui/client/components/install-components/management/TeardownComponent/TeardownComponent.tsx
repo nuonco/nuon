@@ -120,13 +120,19 @@ export const TeardownComponentModal = ({
               value={confirmName}
               onChange={(e) => setConfirmName(e.target.value)}
               error={confirmName.length > 0 && !isConfirmValid}
-              errorMessage={confirmName.length > 0 && !isConfirmValid ? "Component name doesn't match" : undefined}
+              errorMessage={
+                confirmName.length > 0 && !isConfirmValid
+                  ? "Component name doesn't match"
+                  : undefined
+              }
             />
           </div>
 
           <Banner theme="warn">
             <Text variant="body">
-              <strong>Important:</strong> This action cannot be undone. All infrastructure provisioned by this component will be permanently destroyed.
+              <strong>Important:</strong> This action cannot be undone. All
+              infrastructure provisioned by this component will be permanently
+              destroyed.
             </Text>
           </Banner>
 

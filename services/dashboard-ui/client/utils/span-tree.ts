@@ -156,17 +156,24 @@ export const filterRunnerInternal = (spans: TSpan[]): TSpan[] => {
   for (const s of spans) {
     if (isRunnerInternal(s)) continue
     const newParent = findVisibleAncestor(s.parent_span_id)
-    out.push(newParent === s.parent_span_id ? s : { ...s, parent_span_id: newParent })
+    out.push(
+      newParent === s.parent_span_id ? s : { ...s, parent_span_id: newParent }
+    )
   }
   return out
 }
 
 export const formatDurationNs = (ns: number): string => {
   if (!Number.isFinite(ns) || ns <= 0) return '—'
-  const dur = Duration.fromMillis(ns / 1_000_000).shiftTo('minutes', 'seconds', 'milliseconds')
+  const dur = Duration.fromMillis(ns / 1_000_000).shiftTo(
+    'minutes',
+    'seconds',
+    'milliseconds'
+  )
   const { minutes, seconds, milliseconds } = dur.toObject()
   if ((minutes ?? 0) > 0) return `${minutes}m ${Math.round(seconds ?? 0)}s`
-  if ((seconds ?? 0) >= 1) return `${((seconds ?? 0) + (milliseconds ?? 0) / 1000).toFixed(2)} s`
+  if ((seconds ?? 0) >= 1)
+    return `${((seconds ?? 0) + (milliseconds ?? 0) / 1000).toFixed(2)} s`
   if ((milliseconds ?? 0) >= 1) return `${(milliseconds ?? 0).toFixed(1)} ms`
   return `${Math.round(ns)} ns`
 }

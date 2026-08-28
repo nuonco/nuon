@@ -58,7 +58,9 @@ export const AdminConfirmationModal = ({
       heading={
         <div className="flex items-center gap-3">
           <Icon variant={getWarningIcon(variant)} />
-          <Text variant="h3" weight="strong">{title}</Text>
+          <Text variant="h3" weight="strong">
+            {title}
+          </Text>
         </div>
       }
       primaryActionTrigger={{
@@ -67,10 +69,12 @@ export const AdminConfirmationModal = ({
             <Icon variant="Loading" />
             Executing...
           </span>
-        ) : 'Confirm action',
+        ) : (
+          'Confirm action'
+        ),
         disabled: !isValid || isPending,
         onClick: onConfirm,
-        variant: variant === 'danger' ? 'danger' : 'primary'
+        variant: variant === 'danger' ? 'danger' : 'primary',
       }}
       onClose={onCancel}
       {...props}
@@ -84,15 +88,18 @@ export const AdminConfirmationModal = ({
           <Banner theme={getBannerTheme(variant)}>
             {variant === 'danger'
               ? 'This is a destructive action and cannot be undone.'
-              : 'This action will affect running infrastructure.'
-            }
+              : 'This action will affect running infrastructure.'}
           </Banner>
         )}
 
         {requiresInput && (
           <div className="flex flex-col gap-3">
             <Text variant="base" weight="strong">
-              Type <span className="text-red-600 dark:text-red-400 font-mono">{inputText}</span> to proceed:
+              Type{' '}
+              <span className="text-red-600 dark:text-red-400 font-mono">
+                {inputText}
+              </span>{' '}
+              to proceed:
             </Text>
             <Input
               value={inputValue}

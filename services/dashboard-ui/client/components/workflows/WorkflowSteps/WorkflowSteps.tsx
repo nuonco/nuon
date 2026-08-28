@@ -15,6 +15,9 @@ export interface IWorkflowSteps {
   workflowSteps: TWorkflowStep[]
   eagerStepsLoaded?: boolean
   allStepsLoaded?: boolean
+  readOnly?: boolean
+  noun?: 'workflow' | 'run'
+  onViewDetails?: (step: TWorkflowStep) => void
 }
 
 export const WorkflowSteps = ({
@@ -23,6 +26,9 @@ export const WorkflowSteps = ({
   workflowSteps,
   eagerStepsLoaded = false,
   allStepsLoaded = false,
+  readOnly = false,
+  noun = 'workflow',
+  onViewDetails,
 }: IWorkflowSteps) => {
   const [searchName, setSearchName] = useState<string>('')
 
@@ -59,6 +65,8 @@ export const WorkflowSteps = ({
           steps={groupSteps}
           approvalPrompt={approvalPrompt}
           planOnly={planOnly}
+          readOnly={readOnly}
+          onViewDetails={onViewDetails}
         />
       )
     }
@@ -82,6 +90,8 @@ export const WorkflowSteps = ({
             steps={kindSteps}
             approvalPrompt={approvalPrompt}
             planOnly={planOnly}
+            readOnly={readOnly}
+            onViewDetails={onViewDetails}
           />
         )
       }
@@ -107,6 +117,8 @@ export const WorkflowSteps = ({
             approvalPrompt={approvalPrompt}
             planOnly={planOnly}
             showRetry
+            readOnly={readOnly}
+            onViewDetails={onViewDetails}
           />
         </div>
       )
@@ -116,7 +128,7 @@ export const WorkflowSteps = ({
   return (
     <div className="flex flex-col gap-6">
       <SearchInput
-        placeholder="Search workflow steps"
+        placeholder={`Search ${noun} steps`}
         value={searchName}
         onChange={setSearchName}
       />
@@ -142,13 +154,13 @@ export const WorkflowSteps = ({
           variant="table"
           emptyMessage={
             workflowSteps.length
-              ? 'No workflow steps match your search. Try adjusting your search criteria.'
-              : 'Steps will appear here once the workflow has been generated.'
+              ? `No ${noun} steps match your search. Try adjusting your search criteria.`
+              : `Steps will appear here once the ${noun} has been generated.`
           }
           emptyTitle={
             workflowSteps.length
               ? 'No steps found'
-              : 'Workflow steps not available'
+              : `${noun === 'workflow' ? 'Workflow' : 'Run'} steps not available`
           }
         />
       )}

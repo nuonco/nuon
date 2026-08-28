@@ -29,6 +29,12 @@ type InstallAppConfigVersion struct {
 	InstallGroupID *string               `json:"install_group_id,omitempty" temporaljson:"install_group_id,omitzero,omitempty"`
 	InstallGroup   AppBranchInstallGroup `faker:"-" json:"-" temporaljson:"install_group,omitzero,omitempty"`
 
+	AppReleaseID *string     `json:"app_release_id,omitempty" gorm:"index" temporaljson:"app_release_id,omitzero,omitempty"`
+	AppRelease   *AppRelease `faker:"-" json:"-" gorm:"constraint:OnDelete:RESTRICT;" temporaljson:"app_release,omitzero,omitempty"`
+
+	PolicyVersionID *string                         `json:"policy_version_id,omitempty" gorm:"index" temporaljson:"policy_version_id,omitzero,omitempty"`
+	PolicyVersion   *InstallManagementPolicyVersion `faker:"-" json:"-" gorm:"constraint:OnDelete:RESTRICT;" temporaljson:"policy_version,omitzero,omitempty"`
+
 	InstallID string  `json:"install_id,omitzero" gorm:"not null" temporaljson:"install_id,omitzero,omitempty"`
 	Install   Install `faker:"-" json:"-" temporaljson:"install,omitzero,omitempty"`
 
@@ -67,6 +73,10 @@ func (i *InstallAppConfigVersion) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"install_id",
 			},
+		},
+		{
+			Name:    indexes.Name(db, &InstallAppConfigVersion{}, "app_release_id"),
+			Columns: []string{"app_release_id"},
 		},
 	}
 }

@@ -76,7 +76,10 @@ export const Checksums = () => (
       </LabeledValue>
 
       <LabeledValue label="Build artifact hash">
-        <Hash hash="sha256:b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2" length={16} />
+        <Hash
+          hash="sha256:b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2"
+          length={16}
+        />
       </LabeledValue>
 
       <LabeledValue label="MD5 checksum">
@@ -117,8 +120,8 @@ export const UsageExamples = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Real-World Usage Examples</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Examples showing how Hash is used throughout the application for
-        various hash types.
+        Examples showing how Hash is used throughout the application for various
+        hash types.
       </p>
     </div>
 

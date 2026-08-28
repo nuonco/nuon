@@ -10,7 +10,14 @@ const noop = () => {}
 
 const mockFilters: TLogFiltersProps = {
   selectedSeverities: new Set(['Info', 'Warn', 'Error', 'Fatal']),
-  availableSeverities: new Set(['Trace', 'Debug', 'Info', 'Warn', 'Error', 'Fatal']),
+  availableSeverities: new Set([
+    'Trace',
+    'Debug',
+    'Info',
+    'Warn',
+    'Error',
+    'Fatal',
+  ]),
   handleSeverityInputToggle: noop,
   handleSeverityButtonClick: noop,
   handleSeverityReset: noop,
@@ -65,13 +72,17 @@ export const LiveStream = () => (
 )
 
 export const StaticLogs = () => (
-  <LogStreamContext.Provider value={{ ...mockLogStreamContext, connectionState: 'disconnected' }}>
+  <LogStreamContext.Provider
+    value={{ ...mockLogStreamContext, connectionState: 'disconnected' }}
+  >
     <LogFilters filters={mockFilters} />
   </LogStreamContext.Provider>
 )
 
 export const WithSystemLogs = () => (
-  <LogStreamContext.Provider value={{ ...mockLogStreamContext, connectionState: 'disconnected' }}>
+  <LogStreamContext.Provider
+    value={{ ...mockLogStreamContext, connectionState: 'disconnected' }}
+  >
     <LogFilters filters={{ ...mockFilters, includeSystemLogs: true }} />
   </LogStreamContext.Provider>
 )

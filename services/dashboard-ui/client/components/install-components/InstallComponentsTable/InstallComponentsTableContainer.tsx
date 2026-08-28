@@ -9,7 +9,10 @@ import { useOrg } from '@/hooks/use-org'
 import { useSyncedOnlyFilter } from '@/hooks/use-synced-only-filter'
 import { getInstallComponents, getComponentLabelKeys } from '@/lib'
 import { parseComponentOverrideInput } from '@/utils/install-utils'
-import { InstallComponentsTable, parseInstallComponentSummaryToTableData } from './InstallComponentsTable'
+import {
+  InstallComponentsTable,
+  parseInstallComponentSummaryToTableData,
+} from './InstallComponentsTable'
 
 const LIMIT = 10
 
@@ -30,7 +33,15 @@ export const InstallComponentsTableContainer = ({
   const { syncedOnly } = useSyncedOnlyFilter()
 
   const { data: componentsResult, isLoading } = useQuery({
-    queryKey: ['install-components', org?.id, install?.id, offset, q, types, labels],
+    queryKey: [
+      'install-components',
+      org?.id,
+      install?.id,
+      offset,
+      q,
+      types,
+      labels,
+    ],
     queryFn: () =>
       getInstallComponents({
         orgId: org.id,
@@ -47,7 +58,14 @@ export const InstallComponentsTableContainer = ({
   })
 
   const { data: removedResult } = useQuery({
-    queryKey: ['install-components-removed', org?.id, install?.id, q, types, labels],
+    queryKey: [
+      'install-components-removed',
+      org?.id,
+      install?.id,
+      q,
+      types,
+      labels,
+    ],
     queryFn: () =>
       getInstallComponents({
         orgId: org.id,
@@ -70,7 +88,7 @@ export const InstallComponentsTableContainer = ({
 
   const components = componentsResult?.data ?? []
   const removedComponents =
-    offset === 0 && !syncedOnly ? removedResult?.data ?? [] : []
+    offset === 0 && !syncedOnly ? (removedResult?.data ?? []) : []
   const pagination = {
     hasNext: componentsResult?.pagination?.hasNext ?? false,
     offset,

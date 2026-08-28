@@ -26,7 +26,9 @@ export const GapSizes = () => (
   <div className="flex flex-col gap-6">
     {([1, 2, 3, 4, 6, 8] as const).map((gap) => (
       <div key={gap}>
-        <Text variant="subtext" className="mb-1">gap={gap}</Text>
+        <Text variant="subtext" className="mb-1">
+          gap={gap}
+        </Text>
         <Group gap={gap}>
           <Badge>One</Badge>
           <Badge>Two</Badge>

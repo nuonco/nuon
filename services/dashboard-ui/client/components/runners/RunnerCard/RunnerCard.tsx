@@ -16,12 +16,7 @@ const Skeleton = () => (
   </div>
 )
 
-export const RunnerCard = ({
-  status,
-  href,
-  isLoading,
-  error,
-}: IRunnerCard) => {
+export const RunnerCard = ({ status, href, isLoading, error }: IRunnerCard) => {
   if (isLoading) return <Skeleton />
 
   if (error) {
@@ -44,7 +39,11 @@ export const RunnerCard = ({
   )
 
   if (href) {
-    return <Link href={href} variant="ghost" className="flex !p-0 no-underline">{content}</Link>
+    return (
+      <Link href={href} variant="ghost" className="flex !p-0 no-underline">
+        {content}
+      </Link>
+    )
   }
 
   return content

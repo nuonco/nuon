@@ -23,9 +23,15 @@ export const CreateNotebookModal = ({
 }: ICreateNotebookModal) => {
   const form = useForm({
     defaultValues: { name: '', description: '' } as CreateNotebookValues,
-    validators: { onMount: createNotebookSchema, onChange: createNotebookSchema },
+    validators: {
+      onMount: createNotebookSchema,
+      onChange: createNotebookSchema,
+    },
     onSubmit: ({ value }) =>
-      onSubmit({ name: value.name, description: value.description || undefined }),
+      onSubmit({
+        name: value.name,
+        description: value.description || undefined,
+      }),
   })
 
   const canSubmit = useStore(form.store, (s) => s.canSubmit)
@@ -58,7 +64,10 @@ export const CreateNotebookModal = ({
         onSubmit={(e) => e.preventDefault()}
         className="flex flex-col gap-4"
       >
-        <FormErrorBanner error={error} fallback="Unable to create the notebook" />
+        <FormErrorBanner
+          error={error}
+          fallback="Unable to create the notebook"
+        />
 
         <form.Field name="name">
           {(field) => (

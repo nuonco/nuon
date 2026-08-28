@@ -16,7 +16,10 @@ const MARGIN_Y = 24
 const HEIGHT_PADDING = 12
 
 const nodeHeight = (node: Node, opts: LayoutOptions) =>
-  Math.max(opts.minHeight, opts.baseHeight + opts.rowCount(node) * opts.rowHeight)
+  Math.max(
+    opts.minHeight,
+    opts.baseHeight + opts.rowCount(node) * opts.rowHeight
+  )
 
 export function layoutSequential(
   nodes: Node[],
@@ -32,7 +35,10 @@ export function layoutSequential(
   })
 
   for (const node of nodes) {
-    graph.setNode(node.id, { width: opts.nodeWidth, height: nodeHeight(node, opts) })
+    graph.setNode(node.id, {
+      width: opts.nodeWidth,
+      height: nodeHeight(node, opts),
+    })
   }
   for (const edge of edges) {
     graph.setEdge(edge.source, edge.target)
@@ -59,7 +65,8 @@ export function layoutSequential(
   }
 
   const height =
-    Math.max(...positioned.map((n) => n.position.y + nodeHeight(n, opts))) + HEIGHT_PADDING
+    Math.max(...positioned.map((n) => n.position.y + nodeHeight(n, opts))) +
+    HEIGHT_PADDING
 
   return { nodes: positioned, edges, height }
 }
@@ -73,7 +80,11 @@ export function sequentialEdges(ids: string[]): Edge[] {
       target: ids[i + 1],
       type: 'smoothstep',
       animated: true,
-      style: { stroke: 'var(--foreground)', strokeOpacity: 0.3, strokeWidth: 2 },
+      style: {
+        stroke: 'var(--foreground)',
+        strokeOpacity: 0.3,
+        strokeWidth: 2,
+      },
       markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' },
     })
   }

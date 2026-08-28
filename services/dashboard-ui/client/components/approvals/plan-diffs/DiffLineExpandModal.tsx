@@ -55,7 +55,12 @@ const DiffLineModal = ({
   }, [before, after, useCodeBlock])
 
   const heading = (
-    <Text variant="h3" weight="strong" family="mono" className={PREFIX_STYLES[prefix]}>
+    <Text
+      variant="h3"
+      weight="strong"
+      family="mono"
+      className={PREFIX_STYLES[prefix]}
+    >
       {prefix} {label}:
     </Text>
   )

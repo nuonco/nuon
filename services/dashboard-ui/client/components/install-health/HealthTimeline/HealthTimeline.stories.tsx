@@ -203,4 +203,6 @@ export const NoData = () => (
   />
 )
 
-export const Loading = () => <HealthTimeline scope="install" days={90} isLoading />
+export const Loading = () => (
+  <HealthTimeline scope="install" days={90} isLoading />
+)

@@ -4,7 +4,11 @@ import { updateUserJourneyStepMetadata } from '@/lib'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import { WelcomeStep } from './WelcomeStep'
 
-export const WelcomeStepContainer = ({ onAdvance, setSharedData, nextStepTitle }: IWizardStepComponentProps) => {
+export const WelcomeStepContainer = ({
+  onAdvance,
+  setSharedData,
+  nextStepTitle,
+}: IWizardStepComponentProps) => {
   const { mutate, isPending } = useMutation({
     mutationFn: (metadata: Record<string, string>) =>
       updateUserJourneyStepMetadata({

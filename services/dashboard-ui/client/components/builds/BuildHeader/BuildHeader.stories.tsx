@@ -29,9 +29,5 @@ const mockApp = {
 } as any
 
 export const Default = () => (
-  <BuildHeader
-    component={mockComponent}
-    build={mockBuild}
-    app={mockApp}
-  />
+  <BuildHeader component={mockComponent} build={mockBuild} app={mockApp} />
 )

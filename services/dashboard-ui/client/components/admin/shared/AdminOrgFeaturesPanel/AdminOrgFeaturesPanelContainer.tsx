@@ -5,7 +5,11 @@ import { Toast } from '@/components/surfaces/Toast'
 import { type IPanel } from '@/components/surfaces/Panel'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
-import { adminGetOrgFeaturesList, adminUpdateOrgFeatures, type TOrgFeatureInfo } from '@/lib'
+import {
+  adminGetOrgFeaturesList,
+  adminUpdateOrgFeatures,
+  type TOrgFeatureInfo,
+} from '@/lib'
 import type { TOrg } from '@/types'
 import { AdminOrgFeaturesPanel } from './AdminOrgFeaturesPanel'
 

@@ -25,7 +25,9 @@ interface WorkflowContextValue {
   policyViolationsCount: number
 }
 
-export const WorkflowContext = createContext<WorkflowContextValue | undefined>(undefined)
+export const WorkflowContext = createContext<WorkflowContextValue | undefined>(
+  undefined
+)
 
 export const WorkflowProvider = ({
   children,
@@ -39,10 +41,16 @@ export const WorkflowProvider = ({
   const { org } = useOrg()
   const [sseEnabled, setSseEnabled] = useState(shouldPoll)
 
-  const { data: workflow, isLoading, error, disconnect } = useSSEResourceQuery<TWorkflow>({
-    sseUrl: org?.id && workflowId
-      ? `/api/orgs/${org.id}/workflows/${workflowId}/sse`
-      : undefined,
+  const {
+    data: workflow,
+    isLoading,
+    error,
+    disconnect,
+  } = useSSEResourceQuery<TWorkflow>({
+    sseUrl:
+      org?.id && workflowId
+        ? `/api/orgs/${org.id}/workflows/${workflowId}/sse`
+        : undefined,
     queryKey: ['workflow', org?.id, workflowId],
     queryFn: () => getWorkflow({ orgId: org!.id, workflowId }),
     enabled: !!org?.id && !!workflowId,

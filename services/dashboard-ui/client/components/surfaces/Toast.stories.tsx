@@ -28,17 +28,17 @@ export const BasicUsage = () => (
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">Basic Toast Usage</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          The Toast component displays temporary notifications that appear in the
-          bottom-right corner of the screen. Toasts automatically dismiss after a
-          configurable timeout and can be manually dismissed by users. They provide
-          important feedback for user actions and system events.
+          The Toast component displays temporary notifications that appear in
+          the bottom-right corner of the screen. Toasts automatically dismiss
+          after a configurable timeout and can be manually dismissed by users.
+          They provide important feedback for user actions and system events.
         </p>
       </div>
 
       <div className="space-y-4">
         <h4 className="text-sm font-medium">Simple Toast Example</h4>
         <div className="p-4 border rounded-lg">
-          <ToastTrigger 
+          <ToastTrigger
             theme="default"
             heading="Welcome"
             content="This is a simple toast notification that demonstrates the basic functionality."
@@ -76,9 +76,10 @@ export const ToastThemes = () => (
           <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
             theme
           </code>{' '}
-          prop controls the visual appearance and semantic meaning of toast notifications.
-          Each theme uses appropriate colors, semantic meaning, and ARIA attributes
-          to convey the right level of urgency and context to users.
+          prop controls the visual appearance and semantic meaning of toast
+          notifications. Each theme uses appropriate colors, semantic meaning,
+          and ARIA attributes to convey the right level of urgency and context
+          to users.
         </p>
       </div>
 
@@ -86,13 +87,55 @@ export const ToastThemes = () => (
         <h4 className="text-sm font-medium">Available Themes</h4>
         <div className="p-4 border rounded-lg">
           <div className="flex flex-wrap gap-3 mb-6">
-            <ToastTrigger theme="brand" heading="Brand updated" content="Your brand settings have been updated.">Brand</ToastTrigger>
-            <ToastTrigger theme="success" heading="Changes saved" content="Your changes have been saved.">Success</ToastTrigger>
-            <ToastTrigger theme="info" heading="Information" content="Here's some helpful information for you.">Info</ToastTrigger>
-            <ToastTrigger theme="warn" heading="Warning" content="Review your settings before continuing.">Warning</ToastTrigger>
-            <ToastTrigger theme="error" heading="Error" content="An error occurred while processing your request.">Error</ToastTrigger>
-            <ToastTrigger theme="neutral" heading="Notification" content="You have a new notification.">Neutral</ToastTrigger>
-            <ToastTrigger theme="default" heading="Default" content="This is a default notification.">Default</ToastTrigger>
+            <ToastTrigger
+              theme="brand"
+              heading="Brand updated"
+              content="Your brand settings have been updated."
+            >
+              Brand
+            </ToastTrigger>
+            <ToastTrigger
+              theme="success"
+              heading="Changes saved"
+              content="Your changes have been saved."
+            >
+              Success
+            </ToastTrigger>
+            <ToastTrigger
+              theme="info"
+              heading="Information"
+              content="Here's some helpful information for you."
+            >
+              Info
+            </ToastTrigger>
+            <ToastTrigger
+              theme="warn"
+              heading="Warning"
+              content="Review your settings before continuing."
+            >
+              Warning
+            </ToastTrigger>
+            <ToastTrigger
+              theme="error"
+              heading="Error"
+              content="An error occurred while processing your request."
+            >
+              Error
+            </ToastTrigger>
+            <ToastTrigger
+              theme="neutral"
+              heading="Notification"
+              content="You have a new notification."
+            >
+              Neutral
+            </ToastTrigger>
+            <ToastTrigger
+              theme="default"
+              heading="Default"
+              content="This is a default notification."
+            >
+              Default
+            </ToastTrigger>
           </div>
         </div>
         <Text variant="subtext" theme="neutral">
@@ -104,15 +147,21 @@ export const ToastThemes = () => (
         <h4 className="text-sm font-medium">Theme Descriptions</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="p-3 border rounded-lg">
-            <strong className="text-purple-600 dark:text-purple-400">brand:</strong>
+            <strong className="text-purple-600 dark:text-purple-400">
+              brand:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
-              Purple primary colors for Nuon platform-specific notifications and branding
+              Purple primary colors for Nuon platform-specific notifications and
+              branding
             </span>
           </div>
           <div className="p-3 border rounded-lg">
-            <strong className="text-green-600 dark:text-green-400">success:</strong>
+            <strong className="text-green-600 dark:text-green-400">
+              success:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
-              Green colors for successful operations, completions, and positive feedback
+              Green colors for successful operations, completions, and positive
+              feedback
             </span>
           </div>
           <div className="p-3 border rounded-lg">
@@ -122,7 +171,9 @@ export const ToastThemes = () => (
             </span>
           </div>
           <div className="p-3 border rounded-lg">
-            <strong className="text-orange-600 dark:text-orange-400">warn:</strong>
+            <strong className="text-orange-600 dark:text-orange-400">
+              warn:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
               Orange colors for warnings that require user attention
             </span>
@@ -134,15 +185,20 @@ export const ToastThemes = () => (
             </span>
           </div>
           <div className="p-3 border rounded-lg">
-            <strong className="text-gray-600 dark:text-gray-400">neutral:</strong>
+            <strong className="text-gray-600 dark:text-gray-400">
+              neutral:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
               Cool grey colors for neutral information and general notifications
             </span>
           </div>
           <div className="p-3 border rounded-lg">
-            <strong className="text-gray-600 dark:text-gray-400">default:</strong>
+            <strong className="text-gray-600 dark:text-gray-400">
+              default:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
-              Standard grey colors - the default theme when no theme is specified
+              Standard grey colors - the default theme when no theme is
+              specified
             </span>
           </div>
         </div>
@@ -153,17 +209,20 @@ export const ToastThemes = () => (
         <ul className="mt-2 space-y-1 list-disc list-inside">
           <li>
             <strong>Error &amp; Warn:</strong> Use <code>role="alert"</code> and{' '}
-            <code>aria-live="assertive"</code> for immediate screen reader attention
+            <code>aria-live="assertive"</code> for immediate screen reader
+            attention
           </li>
           <li>
             <strong>Other themes:</strong> Use <code>role="status"</code> and{' '}
             <code>aria-live="polite"</code> for non-urgent notifications
           </li>
           <li>
-            <strong>Dark mode:</strong> All themes automatically adapt colors for dark mode compatibility
+            <strong>Dark mode:</strong> All themes automatically adapt colors
+            for dark mode compatibility
           </li>
           <li>
-            <strong>Semantic meaning:</strong> Colors and ARIA attributes convey proper urgency levels
+            <strong>Semantic meaning:</strong> Colors and ARIA attributes convey
+            proper urgency levels
           </li>
         </ul>
       </div>
@@ -187,16 +246,18 @@ export const ToastUsageExamples = () => (
       <div className="space-y-4">
         <h4 className="text-sm font-medium">Form Submission Feedback</h4>
         <div className="p-4 border rounded-lg space-y-3">
-          <Text variant="base" className="font-medium">User Registration Form</Text>
+          <Text variant="base" className="font-medium">
+            User Registration Form
+          </Text>
           <div className="flex gap-3">
-            <ToastTrigger 
+            <ToastTrigger
               theme="success"
               heading="Account created"
               content="Your account was created and you're now logged in."
             >
               Register Success
             </ToastTrigger>
-            <ToastTrigger 
+            <ToastTrigger
               theme="error"
               heading="Registration failed"
               content="Email address is already in use. Try a different email."
@@ -210,25 +271,27 @@ export const ToastUsageExamples = () => (
       <div className="space-y-4">
         <h4 className="text-sm font-medium">System Status Updates</h4>
         <div className="p-4 border rounded-lg space-y-3">
-          <Text variant="base" className="font-medium">Deployment Pipeline</Text>
+          <Text variant="base" className="font-medium">
+            Deployment Pipeline
+          </Text>
           <div className="flex gap-3">
-            <ToastTrigger 
-              theme="info" 
-              heading="Deployment Started" 
+            <ToastTrigger
+              theme="info"
+              heading="Deployment Started"
               content="Your application deployment has begun. This may take a few minutes."
             >
               Deploy Started
             </ToastTrigger>
-            <ToastTrigger 
-              theme="success" 
-              heading="Deployment Complete" 
+            <ToastTrigger
+              theme="success"
+              heading="Deployment Complete"
               content="Your application has been successfully deployed to production."
             >
               Deploy Success
             </ToastTrigger>
-            <ToastTrigger 
-              theme="warn" 
-              heading="Deployment Warning" 
+            <ToastTrigger
+              theme="warn"
+              heading="Deployment Warning"
               content="Deployment completed with warnings. Check logs for details."
             >
               Deploy Warning
@@ -240,12 +303,23 @@ export const ToastUsageExamples = () => (
       <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
         <strong>Best Practices:</strong>
         <ul className="mt-2 space-y-1 list-disc list-inside">
-          <li>Use toasts for temporary, non-critical information that doesn't require user action</li>
+          <li>
+            Use toasts for temporary, non-critical information that doesn't
+            require user action
+          </li>
           <li>Keep toast messages concise and actionable</li>
-          <li>Choose appropriate themes that match the semantic meaning of the message</li>
-          <li>For critical errors that require user action, consider using modals instead</li>
+          <li>
+            Choose appropriate themes that match the semantic meaning of the
+            message
+          </li>
+          <li>
+            For critical errors that require user action, consider using modals
+            instead
+          </li>
           <li>Don't overwhelm users with too many simultaneous toasts</li>
-          <li>Ensure toast content is accessible and readable by screen readers</li>
+          <li>
+            Ensure toast content is accessible and readable by screen readers
+          </li>
         </ul>
       </div>
     </div>
@@ -263,7 +337,10 @@ const DeployAllToastTrigger = () => {
               timeout={999999}
               heading={
                 <span className="inline-flex items-center gap-1.5">
-                  <Badge variant="code" size="md">my-cool-install</Badge> deploy started
+                  <Badge variant="code" size="md">
+                    my-cool-install
+                  </Badge>{' '}
+                  deploy started
                 </span>
               }
               theme="info"
@@ -280,7 +357,10 @@ const DeployAllToastTrigger = () => {
               timeout={999999}
               heading={
                 <span className="inline-flex items-center gap-1.5">
-                  <Badge variant="code" size="md">my-cool-install</Badge> deploy failed
+                  <Badge variant="code" size="md">
+                    my-cool-install
+                  </Badge>{' '}
+                  deploy failed
                 </span>
               }
               theme="error"

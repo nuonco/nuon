@@ -17,7 +17,15 @@ export interface ISearchInput
 
 export const SearchInput = forwardRef<HTMLInputElement, ISearchInput>(
   (
-    { className, labelClassName, placeholder, onChange, onClear, value, ...props },
+    {
+      className,
+      labelClassName,
+      placeholder,
+      onChange,
+      onClear,
+      value,
+      ...props
+    },
     ref
   ) => {
     return (

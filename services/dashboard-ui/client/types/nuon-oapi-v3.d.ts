@@ -872,6 +872,26 @@ export interface paths {
      */
     get: operations["GetAppPolicyConfig"];
   };
+  "/v1/apps/{app_id}/releases": {
+    /** list immutable application releases */
+    get: operations["ListAppReleases"];
+    /** create an immutable application release */
+    post: operations["CreateAppRelease"];
+  };
+  "/v1/apps/{app_id}/releases/{release_id}": {
+    /** get an immutable application release */
+    get: operations["GetAppRelease"];
+  };
+  "/v1/apps/{app_id}/releases/{release_id}/files/content": {
+    /** get one authored file from an immutable application release */
+    get: operations["GetAppReleaseFileContent"];
+  };
+  "/v1/apps/{app_id}/releases/{release_id}/packages": {
+    /** list packages for an application release */
+    get: operations["ListReleasePackages"];
+    /** create a portable package for an application release */
+    post: operations["CreateReleasePackage"];
+  };
   "/v1/apps/{app_id}/runbooks": {
     /** get runbooks for an app */
     get: operations["GetRunbooks"];
@@ -1206,6 +1226,10 @@ export interface paths {
      * @description Returns all components that depend on the provided component.
      */
     get: operations["GetComponentDependents"];
+  };
+  "/v1/customer-managed/installs": {
+    /** create an authenticated customer-managed install */
+    post: operations["CreateCustomerManagedInstall"];
   };
   "/v1/general/cli-config": {
     /**
@@ -2078,6 +2102,14 @@ export interface paths {
      */
     get: operations["GetInstallReadme"];
   };
+  "/v1/installs/{install_id}/release-deployments": {
+    /** list immutable release deployment history for an install */
+    get: operations["ListInstallReleaseDeployments"];
+  };
+  "/v1/installs/{install_id}/release-updates": {
+    /** propose a vendor release to a customer-managed install */
+    post: operations["CreateInstallReleaseUpdate"];
+  };
   "/v1/installs/{install_id}/reprovision": {
     /**
      * reprovision an install
@@ -2667,6 +2699,18 @@ export interface paths {
      * @description Get real-time status of a queue including depth and in-flight signals
      */
     get: operations["GetQueueStatus"];
+  };
+  "/v1/release-packages/{package_id}": {
+    /** get a release package */
+    get: operations["GetReleasePackage"];
+  };
+  "/v1/release-packages/{package_id}/blob-grants": {
+    /** create download grants for content-addressed package blobs */
+    post: operations["CreateReleasePackageBlobGrants"];
+  };
+  "/v1/release-packages/{package_id}/download-grants": {
+    /** create a download grant for a published release package */
+    post: operations["CreateReleasePackageDownloadGrant"];
   };
   "/v1/roles": {
     /**
@@ -3726,6 +3770,7 @@ export interface components {
       runner?: components["schemas"]["app.AppRunnerConfig"];
       sandbox?: components["schemas"]["app.AppSandboxConfig"];
       secrets?: components["schemas"]["app.AppSecretsConfig"];
+      source_config?: components["schemas"]["blobstore.Blob"];
       stack?: components["schemas"]["app.AppStackConfig"];
       state?: string;
       status?: components["schemas"]["app.AppConfigStatus"];
@@ -3912,6 +3957,56 @@ export interface components {
       org_id?: string;
       type?: components["schemas"]["config.AppPolicyType"];
       updated_at?: string;
+    };
+    "app.AppRelease": {
+      app_config_id?: string;
+      app_id?: string;
+      component_build_ids?: {
+        [key: string]: string;
+      };
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      members?: components["schemas"]["app.AppReleaseMember"][];
+      packages?: components["schemas"]["app.ReleasePackage"][];
+      runtime?: components["schemas"]["app.AppReleaseRuntime"];
+      runtime_digest?: string;
+      sandbox_build_id?: string;
+      schema_version?: number;
+      semantic_digest?: string;
+      source_files?: components["schemas"]["customermanaged.ReleaseFile"][];
+      status?: string;
+      status_description?: string;
+      updated_at?: string;
+    };
+    "app.AppReleaseMember": {
+      action_workflow_id?: string;
+      app_sandbox_config_id?: string;
+      build_id?: string;
+      component_config_connection_id?: string;
+      component_id?: string;
+      config_digest?: string;
+      config_toml?: string;
+      content_digest?: string;
+      id?: string;
+      kind?: string;
+      logical_name?: string;
+      release_id?: string;
+      source_identity?: {
+        [key: string]: unknown;
+      };
+      source_type?: string;
+    };
+    "app.AppReleasePlatformRuntime": {
+      portal_binary_url?: string;
+      runner_binary_url?: string;
+    };
+    "app.AppReleaseRuntime": {
+      platforms?: {
+        [key: string]: components["schemas"]["app.AppReleasePlatformRuntime"];
+      };
+      runner_image_tag?: string;
+      runner_image_url?: string;
     };
     "app.AppRunnerConfig": {
       app_config_id?: string;
@@ -4393,6 +4488,27 @@ export interface components {
       vcs_connection?: components["schemas"]["app.VCSConnection"];
       vcs_connection_id?: string;
     };
+    "app.CustomerManagedBundleArtifact": {
+      action_workflow_id?: string;
+      app_sandbox_config_id?: string;
+      bundle_id?: string;
+      component_config_connection_id?: string;
+      component_id?: string;
+      config_digest?: string;
+      digest?: string;
+      id?: string;
+      kind?: string;
+      logical_name?: string;
+      media_type?: string;
+      platform_architecture?: string;
+      platform_os?: string;
+      repository?: string;
+      size?: number;
+      source_identity?: {
+        [key: string]: unknown;
+      };
+      source_type?: string;
+    };
     "app.DockerBuildComponentConfig": {
       build_args?: string[];
       /** @description value */
@@ -4667,6 +4783,7 @@ export interface components {
       links?: {
         [key: string]: unknown;
       };
+      management_policy?: components["schemas"]["app.InstallManagementPolicyVersion"];
       metadata?: {
         [key: string]: string;
       };
@@ -4786,6 +4903,7 @@ export interface components {
     "app.InstallAppConfigVersion": {
       app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
+      app_release_id?: string;
       created_at?: string;
       created_by_id?: string;
       diff?: components["schemas"]["blobstore.Blob"];
@@ -4798,6 +4916,7 @@ export interface components {
       new_app_config_id?: string;
       old_app_config_id?: string;
       org_id?: string;
+      policy_version_id?: string;
       status?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
       workflow?: components["schemas"]["app.Workflow"];
@@ -5073,6 +5192,39 @@ export interface components {
       /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
       workflow_id?: string;
     };
+    "app.InstallManagementPolicyVersion": {
+      approval_authority?: string;
+      command_authority?: string;
+      connectivity?: string;
+      created_at?: string;
+      created_by_id?: string;
+      effective_at?: string;
+      id?: string;
+      install_id?: string;
+      release_selection?: string;
+      superseded_at?: string;
+      telemetry?: string;
+      version?: number;
+    };
+    "app.InstallReleaseDeployment": {
+      actor?: string;
+      created_at?: string;
+      executor?: string;
+      finished_at?: string;
+      id?: string;
+      install_app_config_version_id?: string;
+      install_id?: string;
+      method?: string;
+      operation_id?: string;
+      package_id?: string;
+      plan_digest?: string;
+      policy_version_id?: string;
+      previous_release_id?: string;
+      release_id?: string;
+      result_directive?: string;
+      started_at?: string;
+      status?: string;
+    };
     "app.InstallRoleSelectionRecord": {
       available?: boolean;
       role_id?: string;
@@ -5174,6 +5326,7 @@ export interface components {
     };
     "app.InstallSandboxRun": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
+      app_sandbox_build_id?: string;
       app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
       /** @description AppliedAt is set when the apply runner job completes successfully. */
       applied_at?: string;
@@ -5675,7 +5828,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack" | "customer_portal";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -5860,6 +6013,59 @@ export interface components {
       updated_at?: string;
       workflow?: components["schemas"]["signaldb.WorkflowRef"];
     };
+    "app.ReleasePackage": {
+      archive_checksum?: string;
+      archive_size?: number;
+      created_at?: string;
+      created_by_id?: string;
+      format?: string;
+      id?: string;
+      manifest_digest?: string;
+      members?: components["schemas"]["app.ReleasePackageMember"][];
+      oci_index_digest?: string;
+      oci_root_digest?: string;
+      package_digest?: string;
+      plan_digest?: string;
+      release_id?: string;
+      replicas?: components["schemas"]["app.ReleasePackageReplica"][];
+      schema_version?: number;
+      status?: string;
+      status_description?: string;
+      target_platform?: string;
+      updated_at?: string;
+    };
+    "app.ReleasePackageMember": {
+      action_workflow_id?: string;
+      app_sandbox_config_id?: string;
+      component_config_connection_id?: string;
+      component_id?: string;
+      config_digest?: string;
+      digest?: string;
+      id?: string;
+      kind?: string;
+      logical_name?: string;
+      media_type?: string;
+      package_id?: string;
+      platform_architecture?: string;
+      platform_os?: string;
+      repository?: string;
+      size?: number;
+      source_identity?: {
+        [key: string]: unknown;
+      };
+      source_type?: string;
+    };
+    "app.ReleasePackageReplica": {
+      archive_checksum?: string;
+      created_at?: string;
+      id?: string;
+      package_id?: string;
+      provider?: string;
+      region?: string;
+      size?: number;
+      storage_version?: string;
+      verified_at?: string;
+    };
     "app.Role": {
       applies_to?: string[];
       createdBy?: components["schemas"]["app.Account"];
@@ -5879,7 +6085,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack" | "customer_portal";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -6182,6 +6388,10 @@ export interface components {
       };
       id?: string;
       org_id?: string;
+      output_digest?: string;
+      output_media_type?: string;
+      output_repository?: string;
+      output_size?: number;
       runner_job_execution_id?: string;
       success?: boolean;
       updated_at?: string;
@@ -6941,6 +7151,37 @@ export interface components {
       access_key_id: string;
       secret_access_key: string;
       session_token: string;
+    };
+    "customermanaged.Finding": {
+      code?: string;
+      member?: string;
+      message?: string;
+    };
+    "customermanaged.QualificationReport": {
+      platform?: string;
+      qualified?: boolean;
+      violations?: components["schemas"]["customermanaged.Finding"][];
+      warnings?: components["schemas"]["customermanaged.Finding"][];
+    };
+    "customermanaged.ReleaseFile": {
+      digest?: string;
+      media_type?: string;
+      path?: string;
+      size?: number;
+    };
+    "customermanaged.RunbookStep": {
+      /**
+       * @description Component scopes a health-gate to one component by name; empty gates
+       * on every component's health.
+       */
+      component?: string;
+      kind?: string;
+      ref_id?: string;
+    };
+    "customermanaged.RunbookTemplate": {
+      id?: string;
+      name?: string;
+      steps?: components["schemas"]["customermanaged.RunbookStep"][];
     };
     "diff.Diff": {
       children?: components["schemas"]["diff.Diff"][];
@@ -8041,6 +8282,8 @@ export interface components {
        * Used when creating a config as part of app deletion cleanup.
        */
       skip_notification?: boolean;
+      /** @description SourceConfigJSON contains the exact authored TOML files and their release-member index. */
+      source_config_json?: string;
     };
     "service.CreateAppInputConfigRequest": {
       app_config_id?: string;
@@ -8491,6 +8734,9 @@ export interface components {
       skip_noops?: boolean;
       toggleable?: boolean;
       version?: string;
+    };
+    "service.CreateReleaseUpdateRequest": {
+      release_id: string;
     };
     "service.CreateRunbookConfigRequest": {
       app_config_id?: string;
@@ -9343,6 +9589,71 @@ export interface components {
       registry_url?: string;
       tenant_id?: string;
     };
+    "service.blobGrantItem": {
+      digest?: string;
+      expires_at?: string;
+      size?: number;
+      url?: string;
+    };
+    "service.blobGrantsRequest": {
+      /**
+       * @description Digests are content-addressed blob digests (sha256 hex, with or
+       * without the sha256: prefix) to grant download access for. When
+       * empty, only bundle metadata is returned so clients can discover the
+       * OCI index digest and diff against their local store first.
+       */
+      digests?: string[];
+    };
+    "service.blobGrantsResponse": {
+      grants?: components["schemas"]["service.blobGrantItem"][];
+      manifest_digest?: string;
+      oci_index_digest?: string;
+      transport_checksum?: string;
+    };
+    "service.bundleResponse": {
+      app_config_id?: string;
+      app_id?: string;
+      artifacts?: components["schemas"]["app.CustomerManagedBundleArtifact"][];
+      created_at?: string;
+      id?: string;
+      manifest_digest?: string;
+      oci_root_digest?: string;
+      schema_version?: number;
+      size?: number;
+      status?: string;
+      status_description?: string;
+      target_platform?: string;
+      transport_checksum?: string;
+    };
+    "service.createBundleRequest": {
+      app_config_id: string;
+      runbooks?: components["schemas"]["customermanaged.RunbookTemplate"][];
+      target_platform?: string;
+    };
+    "service.createCustomerManagedInstallRequest": {
+      app_id?: string;
+      aws_account_id?: string;
+      aws_region?: string;
+      inputs?: {
+        [key: string]: string;
+      };
+      intended_name?: string;
+      release_id?: string;
+      telemetry?: string;
+    };
+    "service.createReleasePackageRequest": {
+      format?: string;
+      target_platform?: string;
+    };
+    "service.createReleaseRequest": {
+      app_config_id: string;
+      runbooks?: components["schemas"]["customermanaged.RunbookTemplate"][];
+    };
+    "service.customerManagedInstallResponse": {
+      install?: components["schemas"]["app.Install"];
+      management_policy?: components["schemas"]["app.InstallManagementPolicyVersion"];
+      portal_service_account?: components["schemas"]["app.Account"];
+    };
     "service.dailyHealthBucket": {
       date?: string;
       degraded_seconds?: number;
@@ -9351,6 +9662,15 @@ export interface components {
       unhealthy_seconds?: number;
       unknown_seconds?: number;
     };
+    "service.downloadGrantResponse": {
+      expires_at?: string;
+      filename?: string;
+      manifest_digest?: string;
+      size?: number;
+      supports_range?: boolean;
+      transport_checksum?: string;
+      url?: string;
+    };
     "service.gcpGARImageConfigRequest": {
       gcp_project_id?: string;
       gcp_region?: string;
@@ -9358,6 +9678,22 @@ export interface components {
       service_account_email?: string;
       tag?: string;
       workload_identity_provider?: string;
+    };
+    "service.releaseFileContentResponse": {
+      content?: string;
+      digest?: string;
+      media_type?: string;
+      path?: string;
+      size?: number;
+    };
+    "service.releasePackageDownloadGrantResponse": {
+      archive_checksum?: string;
+      expires_at?: string;
+      filename?: string;
+      manifest_digest?: string;
+      size?: number;
+      supports_range?: boolean;
+      url?: string;
     };
     "service.slackChallengeResponse": {
       challenge?: string;
@@ -16520,6 +16856,260 @@ export interface operations {
       };
     };
   };
+  /** list immutable application releases */
+  ListAppReleases: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description maximum number of results to return */
+        limit?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppRelease"][];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create an immutable application release */
+  CreateAppRelease: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description release request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.createReleaseRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppRelease"];
+        };
+      };
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppRelease"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Precondition Failed */
+      412: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an immutable application release */
+  GetAppRelease: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description release ID */
+        release_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppRelease"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get one authored file from an immutable application release */
+  GetAppReleaseFileContent: {
+    parameters: {
+      query: {
+        /** @description release-relative file path */
+        path: string;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description release ID */
+        release_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.releaseFileContentResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** list packages for an application release */
+  ListReleasePackages: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description release ID */
+        release_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ReleasePackage"][];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a portable package for an application release */
+  CreateReleasePackage: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description release ID */
+        release_id: string;
+      };
+    };
+    /** @description package request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.createReleasePackageRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ReleasePackage"];
+        };
+      };
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["app.ReleasePackage"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        content: {
+          "application/json": components["schemas"]["customermanaged.QualificationReport"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /** get runbooks for an app */
   GetRunbooks: {
     parameters: {
@@ -19335,6 +19925,37 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create an authenticated customer-managed install */
+  CreateCustomerManagedInstall: {
+    /** @description Customer-managed install */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.createCustomerManagedInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.customerManagedInstallResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Forbidden */
+      403: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -24820,6 +25441,76 @@ export interface operations {
       };
     };
   };
+  /** list immutable release deployment history for an install */
+  ListInstallReleaseDeployments: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallReleaseDeployment"][];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** propose a vendor release to a customer-managed install */
+  CreateInstallReleaseUpdate: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateReleaseUpdateRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallAppConfigVersion"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * reprovision an install
    * @description Reprovision an install sandbox.
@@ -28797,6 +29488,135 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a release package */
+  GetReleasePackage: {
+    parameters: {
+      path: {
+        /** @description package ID */
+        package_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ReleasePackage"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create download grants for content-addressed package blobs */
+  CreateReleasePackageBlobGrants: {
+    parameters: {
+      path: {
+        /** @description package ID */
+        package_id: string;
+      };
+    };
+    /** @description blob grant request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.blobGrantsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.blobGrantsResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a download grant for a published release package */
+  CreateReleasePackageDownloadGrant: {
+    parameters: {
+      path: {
+        /** @description package ID */
+        package_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.releasePackageDownloadGrantResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

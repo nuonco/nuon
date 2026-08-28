@@ -73,11 +73,7 @@ function PolicyRow({
                       (isDeny ? 'Policy check failed' : 'Policy warning')}
                   </Text>
                   {violation.input_identity ? (
-                    <Text
-                      variant="subtext"
-                      theme="neutral"
-                      className="text-xs"
-                    >
+                    <Text variant="subtext" theme="neutral" className="text-xs">
                       Input: {violation.input_identity}
                     </Text>
                   ) : null}
@@ -182,7 +178,5 @@ export function PolicyReportGroup({
     return <div className="flex flex-col">{content}</div>
   }
 
-  return (
-    <Card className="!p-0 !gap-0 overflow-hidden">{content}</Card>
-  )
+  return <Card className="!p-0 !gap-0 overflow-hidden">{content}</Card>
 }

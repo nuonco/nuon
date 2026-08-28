@@ -46,9 +46,7 @@ export const DeprovisionBanner = ({
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-0.5">
           <Text weight="strong">{config.heading}</Text>
-          {description && (
-            <Text variant="subtext">{description}</Text>
-          )}
+          {description && <Text variant="subtext">{description}</Text>}
         </div>
         {workflowId && (
           <Link

@@ -9,9 +9,15 @@ interface IOnboardingJourneyContext {
   getStepMetadata: (stepName: string, key: string) => unknown
 }
 
-export const OnboardingJourneyContext = createContext<IOnboardingJourneyContext | undefined>(undefined)
+export const OnboardingJourneyContext = createContext<
+  IOnboardingJourneyContext | undefined
+>(undefined)
 
-export function OnboardingJourneyProvider({ children }: { children: React.ReactNode }) {
+export function OnboardingJourneyProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const { data: account, isLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['onboarding-journey-account'],
@@ -25,13 +31,16 @@ export function OnboardingJourneyProvider({ children }: { children: React.ReactN
   const getStep = (stepName: string) =>
     journey?.steps?.find((s) => s.name === stepName)
 
-  const isStepComplete = (stepName: string): boolean => getStep(stepName)?.complete ?? false
+  const isStepComplete = (stepName: string): boolean =>
+    getStep(stepName)?.complete ?? false
 
   const getStepMetadata = (stepName: string, key: string): unknown =>
     getStep(stepName)?.metadata?.[key]
 
   return (
-    <OnboardingJourneyContext.Provider value={{ isLoading, orgId, isStepComplete, getStepMetadata }}>
+    <OnboardingJourneyContext.Provider
+      value={{ isLoading, orgId, isStepComplete, getStepMetadata }}
+    >
       {children}
     </OnboardingJourneyContext.Provider>
   )

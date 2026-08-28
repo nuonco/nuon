@@ -34,7 +34,12 @@ export const Sandbox = () => {
     placeholderData: keepPreviousData,
     queryKey: ['app-config', org?.id, app?.id, appConfigId, 'recurse'],
     queryFn: () =>
-      getAppConfig({ orgId: org.id, appId: app.id, appConfigId, recurse: true }),
+      getAppConfig({
+        orgId: org.id,
+        appId: app.id,
+        appConfigId,
+        recurse: true,
+      }),
     enabled: !!org?.id && !!app?.id && !!appConfigId,
   })
 

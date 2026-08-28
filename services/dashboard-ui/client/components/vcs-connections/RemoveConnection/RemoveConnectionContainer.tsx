@@ -78,7 +78,12 @@ export const RemoveConnectionButton = ({
   ...props
 }: IRemoveConnection & IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <RemoveConnectionModalContainer vcs_connection={vcs_connection} onRemoveSuccess={onRemoveSuccess} />
+  const modal = (
+    <RemoveConnectionModalContainer
+      vcs_connection={vcs_connection}
+      onRemoveSuccess={onRemoveSuccess}
+    />
+  )
 
   return (
     <Button

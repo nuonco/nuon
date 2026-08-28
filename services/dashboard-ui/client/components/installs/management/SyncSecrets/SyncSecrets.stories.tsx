@@ -9,18 +9,33 @@ const noop = () => {}
 
 export const Default = () => (
   <ModalStory>
-    <SyncSecretsModal installName="prod-acme" isPending={false} error={null} onSubmit={noop} />
+    <SyncSecretsModal
+      installName="prod-acme"
+      isPending={false}
+      error={null}
+      onSubmit={noop}
+    />
   </ModalStory>
 )
 
 export const Loading = () => (
   <ModalStory>
-    <SyncSecretsModal installName="prod-acme" isPending={true} error={null} onSubmit={noop} />
+    <SyncSecretsModal
+      installName="prod-acme"
+      isPending={true}
+      error={null}
+      onSubmit={noop}
+    />
   </ModalStory>
 )
 
 export const WithError = () => (
   <ModalStory>
-    <SyncSecretsModal installName="prod-acme" isPending={false} error={{ error: 'Something went wrong' }} onSubmit={noop} />
+    <SyncSecretsModal
+      installName="prod-acme"
+      isPending={false}
+      error={{ error: 'Something went wrong' }}
+      onSubmit={noop}
+    />
   </ModalStory>
 )

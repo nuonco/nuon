@@ -169,7 +169,13 @@ func (s *AppConfigSignalTestSuite) TestSyncAppConfigError() {
 		&activities.CloneRepoResult{SourceDir: "/tmp/repo"}, nil)
 
 	s.env.OnActivity((*activities.Activities).FetchIntermediateConfig, mock.Anything, mock.Anything, mock.Anything).Return(
-		&config.AppConfig{Version: "v1"}, nil)
+		&config.AppConfig{
+			Version: "v1",
+			SourceArchive: &config.SourceArchive{
+				SchemaVersion: 2,
+				Files:         map[string]string{"metadata.toml": "version = \"v2\""},
+			},
+		}, nil)
 
 	s.env.OnActivity((*activities.Activities).CreateAppConfig, mock.Anything, mock.Anything, mock.Anything).Return(
 		&activities.CreateAppConfigOutput{AppConfigID: "cfg-1"}, nil)

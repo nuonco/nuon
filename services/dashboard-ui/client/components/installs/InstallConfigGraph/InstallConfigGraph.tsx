@@ -13,7 +13,10 @@ interface IInstallConfigGraph {
   appConfigId: string | undefined
 }
 
-export const InstallConfigGraph = ({ appId, appConfigId }: IInstallConfigGraph) => {
+export const InstallConfigGraph = ({
+  appId,
+  appConfigId,
+}: IInstallConfigGraph) => {
   if (!appId || !appConfigId) {
     return (
       <Banner theme="warn">

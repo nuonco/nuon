@@ -290,7 +290,13 @@ export const Dismissible = () => {
   })
 
   const reset = () =>
-    setVisible({ info: true, warn: true, success: true, neutral: true, brand: true })
+    setVisible({
+      info: true,
+      warn: true,
+      success: true,
+      neutral: true,
+      brand: true,
+    })
 
   return (
     <div className="space-y-6">
@@ -307,7 +313,10 @@ export const Dismissible = () => {
 
       <div className="space-y-4">
         {visible.info && (
-          <Banner theme="info" onDismiss={() => setVisible((v) => ({ ...v, info: false }))}>
+          <Banner
+            theme="info"
+            onDismiss={() => setVisible((v) => ({ ...v, info: false }))}
+          >
             <div className="flex flex-col">
               <Text weight="strong">Dismissible info banner</Text>
               <Text variant="subtext" theme="neutral">
@@ -317,7 +326,10 @@ export const Dismissible = () => {
           </Banner>
         )}
         {visible.warn && (
-          <Banner theme="warn" onDismiss={() => setVisible((v) => ({ ...v, warn: false }))}>
+          <Banner
+            theme="warn"
+            onDismiss={() => setVisible((v) => ({ ...v, warn: false }))}
+          >
             <div className="flex flex-col">
               <Text weight="strong">Dismissible warning</Text>
               <Text variant="subtext" theme="neutral">
@@ -327,7 +339,10 @@ export const Dismissible = () => {
           </Banner>
         )}
         {visible.success && (
-          <Banner theme="success" onDismiss={() => setVisible((v) => ({ ...v, success: false }))}>
+          <Banner
+            theme="success"
+            onDismiss={() => setVisible((v) => ({ ...v, success: false }))}
+          >
             <div className="flex flex-col">
               <Text weight="strong">Deployment succeeded</Text>
               <Text variant="subtext" theme="neutral">
@@ -337,7 +352,10 @@ export const Dismissible = () => {
           </Banner>
         )}
         {visible.neutral && (
-          <Banner theme="neutral" onDismiss={() => setVisible((v) => ({ ...v, neutral: false }))}>
+          <Banner
+            theme="neutral"
+            onDismiss={() => setVisible((v) => ({ ...v, neutral: false }))}
+          >
             <div className="flex flex-col">
               <Text weight="strong">Step was skipped</Text>
               <Text variant="subtext" theme="neutral">
@@ -347,7 +365,10 @@ export const Dismissible = () => {
           </Banner>
         )}
         {visible.brand && (
-          <Banner theme="brand" onDismiss={() => setVisible((v) => ({ ...v, brand: false }))}>
+          <Banner
+            theme="brand"
+            onDismiss={() => setVisible((v) => ({ ...v, brand: false }))}
+          >
             <div className="flex flex-col">
               <Text weight="strong">Welcome to Nuon</Text>
               <Text variant="subtext" theme="neutral">

@@ -7,13 +7,23 @@ import { DriftScanComponentModal } from '@/components/install-components/managem
 import { BuildComponentModal } from '@/components/components/management/BuildComponent'
 import type { TComponent } from '@/types'
 
-type IInstallComponentCommandModal = { installId: string; component: TComponent } & IModal
-type IAppComponentCommandModal = { appId: string; component: TComponent } & IModal
+type IInstallComponentCommandModal = {
+  installId: string
+  component: TComponent
+} & IModal
+type IAppComponentCommandModal = {
+  appId: string
+  component: TComponent
+} & IModal
 
 const withInstallProvider = (
   Modal: React.ComponentType<IModal & { component: TComponent }>
 ) => {
-  const Wrapped = ({ installId, component, ...modalProps }: IInstallComponentCommandModal) => (
+  const Wrapped = ({
+    installId,
+    component,
+    ...modalProps
+  }: IInstallComponentCommandModal) => (
     <InstallProvider installId={installId}>
       <Modal component={component} {...modalProps} />
     </InstallProvider>
@@ -25,7 +35,11 @@ const withInstallProvider = (
 const withAppProvider = (
   Modal: React.ComponentType<IModal & { component: TComponent }>
 ) => {
-  const Wrapped = ({ appId, component, ...modalProps }: IAppComponentCommandModal) => (
+  const Wrapped = ({
+    appId,
+    component,
+    ...modalProps
+  }: IAppComponentCommandModal) => (
     <AppProvider appId={appId}>
       <Modal component={component} {...modalProps} />
     </AppProvider>
@@ -34,7 +48,12 @@ const withAppProvider = (
   return Wrapped
 }
 
-export const SpotlightDeployComponentModal = withInstallProvider(DeployComponentModal)
-export const SpotlightTeardownComponentModal = withInstallProvider(TeardownComponentModal)
-export const SpotlightDriftScanComponentModal = withInstallProvider(DriftScanComponentModal)
+export const SpotlightDeployComponentModal =
+  withInstallProvider(DeployComponentModal)
+export const SpotlightTeardownComponentModal = withInstallProvider(
+  TeardownComponentModal
+)
+export const SpotlightDriftScanComponentModal = withInstallProvider(
+  DriftScanComponentModal
+)
 export const SpotlightBuildComponentModal = withAppProvider(BuildComponentModal)

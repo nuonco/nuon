@@ -70,15 +70,11 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
   const [outputsExpanded, setOutputsExpanded] = useState(true)
 
   if (!plan) {
-    return (
-      <Banner theme="neutral">No Terraform plan data available</Banner>
-    )
+    return <Banner theme="neutral">No Terraform plan data available</Banner>
   }
 
   if (parseError) {
-    return (
-      <Banner theme="warn">Unable to parse Terraform plan</Banner>
-    )
+    return <Banner theme="warn">Unable to parse Terraform plan</Banner>
   }
 
   return (

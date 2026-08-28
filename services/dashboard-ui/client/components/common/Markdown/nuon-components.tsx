@@ -16,7 +16,10 @@ import { Card } from '@/components/common/Card'
 import { RunRunbookCard } from '@/components/runbooks/RunRunbookCard'
 import { ViewStateButton } from '@/components/installs/management/ViewState'
 
-const ALERT_CONFIG: Record<string, { label: string; icon: ReactNode; borderClass: string; textClass: string }> = {
+const ALERT_CONFIG: Record<
+  string,
+  { label: string; icon: ReactNode; borderClass: string; textClass: string }
+> = {
   note: {
     label: 'Note',
     icon: <Icon variant="InfoIcon" size={16} />,
@@ -50,13 +53,21 @@ const ALERT_CONFIG: Record<string, { label: string; icon: ReactNode; borderClass
   },
 }
 
-function MarkdownAlert({ type, children }: { type: string; children: ReactNode }) {
+function MarkdownAlert({
+  type,
+  children,
+}: {
+  type: string
+  children: ReactNode
+}) {
   const config = ALERT_CONFIG[type]
   if (!config) return <>{children}</>
 
   return (
     <div className={`my-4 border-l-4 pl-4 py-1 ${config.borderClass}`}>
-      <p className={`flex items-center gap-1.5 font-semibold text-sm !mt-0 !mb-1 ${config.textClass}`}>
+      <p
+        className={`flex items-center gap-1.5 font-semibold text-sm !mt-0 !mb-1 ${config.textClass}`}
+      >
         {config.icon}
         {config.label}
       </p>
@@ -276,14 +287,22 @@ function hasUnresolvedTemplates(attrs: Record<string, string>): boolean {
   )
 }
 
-function InlineCodeFallback({ tagName, attrs }: { tagName: string; attrs: Record<string, string> }) {
+function InlineCodeFallback({
+  tagName,
+  attrs,
+}: {
+  tagName: string
+  attrs: Record<string, string>
+}) {
   const attrStr = Object.entries(attrs)
     .filter(([k]) => k !== 'children')
     .map(([k, v]) => `${k}="${v}"`)
     .join(' ')
   const tag = attrStr ? `<${tagName} ${attrStr}>` : `<${tagName}>`
   const children = attrs.children
-  const display = children ? `${tag}${children}</${tagName}>` : `${tag}</${tagName}>`
+  const display = children
+    ? `${tag}${children}</${tagName}>`
+    : `${tag}</${tagName}>`
   return (
     <code className="bg-code text-sm text-blue-800 dark:text-blue-500 font-mono px-1 py-0.5 rounded">
       {display}
@@ -296,9 +315,10 @@ export function buildNuonComponents(
 ): Record<string, ComponentType<any>> {
   const components: Record<string, ComponentType<any>> = {}
 
-  for (const [tagName, { component: Component, mapProps, requiresInstall }] of Object.entries(
-    registry
-  )) {
+  for (const [
+    tagName,
+    { component: Component, mapProps, requiresInstall },
+  ] of Object.entries(registry)) {
     components[tagName] = ({ node, ...attrs }: any) => {
       if (requiresInstall && mode === 'app') {
         return <InlineCodeFallback tagName={tagName} attrs={attrs} />

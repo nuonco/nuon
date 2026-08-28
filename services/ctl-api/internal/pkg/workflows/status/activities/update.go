@@ -201,7 +201,7 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 		return err
 	}
 
-	a.syncInstallAppConfigVersionFromFlowStatus(ctx, req.ID, req.Status)
+	a.syncInstallAppConfigVersionFromFlowStatus(ctx, loaded, req.Status)
 
 	if a.notifier != nil {
 		a.notifier.FlowStatusUpdated(ctx, req)
@@ -215,7 +215,8 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 // onto the InstallAppConfigVersion linked by workflow_id. Best-effort: never
 // fails the flow status write. This keeps IACV in sync when executeflow parks
 // on error (awaiting retry) without sending the parent enqueue callback.
-func (a *Activities) syncInstallAppConfigVersionFromFlowStatus(ctx context.Context, workflowID string, status app.CompositeStatus) {
+func (a *Activities) syncInstallAppConfigVersionFromFlowStatus(ctx context.Context, workflow app.Workflow, status app.CompositeStatus) {
+	workflowID := workflow.ID
 	statusJSON, err := json.Marshal(status)
 	if err != nil {
 		a.l.Warn("unable to marshal status for install app config version sync",
@@ -234,6 +235,63 @@ func (a *Activities) syncInstallAppConfigVersionFromFlowStatus(ctx context.Conte
 			zap.String("workflow_id", workflowID),
 			zap.Error(res.Error),
 		)
+	}
+	a.recordTerminalReleaseUpdate(ctx, workflow, status)
+}
+
+func (a *Activities) recordTerminalReleaseUpdate(ctx context.Context, workflow app.Workflow, status app.CompositeStatus) {
+	if awaitingRetry, ok := status.Metadata["awaiting_retry"].(bool); status.Status == app.StatusError && ok && awaitingRetry {
+		return
+	}
+	deploymentStatus := ""
+	directive := ""
+	switch status.Status {
+	case app.StatusError:
+		deploymentStatus, directive = app.InstallDeploymentStatusFailed, "failed"
+	case app.StatusCancelled:
+		deploymentStatus, directive = app.InstallDeploymentStatusCancelled, "cancelled"
+	case app.StatusUserSkipped:
+		deploymentStatus, directive = app.InstallDeploymentStatusSkipped, "user-skipped"
+	case app.StatusAutoSkipped, app.StatusDiscarded:
+		deploymentStatus, directive = app.InstallDeploymentStatusSkipped, "auto-skipped"
+	default:
+		return
+	}
+
+	var update app.InstallAppConfigVersion
+	if err := a.db.WithContext(ctx).Where(app.InstallAppConfigVersion{WorkflowID: &workflow.ID}).First(&update).Error; err != nil || update.AppReleaseID == nil || update.PolicyVersionID == nil {
+		return
+	}
+	var count int64
+	if err := a.db.WithContext(ctx).Model(&app.InstallReleaseDeployment{}).Where(app.InstallReleaseDeployment{
+		InstallID: update.InstallID, OperationID: workflow.ID,
+	}).Count(&count).Error; err != nil || count > 0 {
+		return
+	}
+
+	finishedAt := time.Now().UTC()
+	startedAt := workflow.StartedAt.UTC()
+	if startedAt.IsZero() {
+		startedAt = workflow.CreatedAt.UTC()
+	}
+	deployment := app.InstallReleaseDeployment{
+		OrgID: update.OrgID, InstallID: update.InstallID, ReleaseID: *update.AppReleaseID,
+		InstallAppConfigVersionID: &update.ID, PolicyVersionID: *update.PolicyVersionID,
+		Method: app.InstallDeploymentMethodNuonManaged, Actor: "vendor", Executor: "temporal",
+		OperationID: workflow.ID, ResultDirective: directive, Status: deploymentStatus,
+		StartedAt: startedAt, FinishedAt: &finishedAt,
+	}
+	var previous app.InstallReleaseDeployment
+	if err := a.db.WithContext(ctx).Where(app.InstallReleaseDeployment{
+		OrgID: update.OrgID, InstallID: update.InstallID, Status: app.InstallDeploymentStatusSucceeded,
+	}).Order("finished_at DESC, created_at DESC, id DESC").First(&previous).Error; err == nil {
+		deployment.PreviousReleaseID = previous.ReleaseID
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		a.l.Warn("unable to resolve active release for terminal update", zap.String("workflow_id", workflow.ID), zap.Error(err))
+		return
+	}
+	if err := a.db.WithContext(ctx).Create(&deployment).Error; err != nil {
+		a.l.Warn("unable to record terminal release update", zap.String("workflow_id", workflow.ID), zap.Error(err))
 	}
 }
 

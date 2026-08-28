@@ -19,8 +19,9 @@ type TDropdownNestingContext = {
   unregisterChild: (el: HTMLElement) => void
 }
 
-const DropdownNestingContext =
-  createContext<TDropdownNestingContext | null>(null)
+const DropdownNestingContext = createContext<TDropdownNestingContext | null>(
+  null
+)
 
 const MENU_ITEM_SELECTOR =
   'button:not([data-focus-guard]), a, [role="menuitem"], [tabindex]:not([tabindex="-1"]):not([data-focus-guard])'
@@ -88,7 +89,8 @@ export const Dropdown = ({
   }, [isOpen, onOpenChange])
 
   const focusFirstItem = useCallback(() => {
-    const item = contentRef.current?.querySelector<HTMLElement>(MENU_ITEM_SELECTOR)
+    const item =
+      contentRef.current?.querySelector<HTMLElement>(MENU_ITEM_SELECTOR)
     if (item) item.focus()
     else pendingFocus.current = true
   }, [])
@@ -124,18 +126,15 @@ export const Dropdown = ({
     contentEl.querySelector<HTMLElement>(MENU_ITEM_SELECTOR)?.focus()
   }, [isOpen, contentEl])
 
-  const isInsideTree = useCallback(
-    (target: Node | null): boolean => {
-      if (!target) return false
-      if (triggerRef.current?.contains(target)) return true
-      if (contentRef.current?.contains(target)) return true
-      for (const child of childPortals.current) {
-        if (child.contains(target)) return true
-      }
-      return false
-    },
-    []
-  )
+  const isInsideTree = useCallback((target: Node | null): boolean => {
+    if (!target) return false
+    if (triggerRef.current?.contains(target)) return true
+    if (contentRef.current?.contains(target)) return true
+    for (const child of childPortals.current) {
+      if (child.contains(target)) return true
+    }
+    return false
+  }, [])
 
   const calculatePosition = useCallback(() => {
     if (!triggerRef.current) return
@@ -156,7 +155,11 @@ export const Dropdown = ({
       const spaceBelow = vh - trigger.bottom
       const spaceAbove = trigger.top
       const needed = contentHeight + gap
-      if (position === 'below' && needed > spaceBelow && spaceAbove > spaceBelow) {
+      if (
+        position === 'below' &&
+        needed > spaceBelow &&
+        spaceAbove > spaceBelow
+      ) {
         effPosition = 'above'
       } else if (
         position === 'above' &&
@@ -171,7 +174,11 @@ export const Dropdown = ({
       const spaceRight = vw - trigger.right
       const spaceLeft = trigger.left
       const needed = contentWidth + gap
-      if (alignment === 'right' && needed > spaceRight && spaceLeft > spaceRight) {
+      if (
+        alignment === 'right' &&
+        needed > spaceRight &&
+        spaceLeft > spaceRight
+      ) {
         effAlignment = 'left'
       } else if (
         alignment === 'left' &&
@@ -308,7 +315,8 @@ export const Dropdown = ({
         if (e.key === 'Escape') {
           e.preventDefault()
           handleClose()
-          const trigger = triggerRef.current?.querySelector<HTMLElement>('button')
+          const trigger =
+            triggerRef.current?.querySelector<HTMLElement>('button')
           trigger?.focus()
           return
         }

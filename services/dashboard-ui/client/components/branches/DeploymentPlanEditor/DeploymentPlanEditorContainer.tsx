@@ -17,13 +17,17 @@ import type { IInstallGroup } from './types'
 
 const toEditorGroups = (config?: TAppBranchConfig): IInstallGroup[] =>
   config?.install_groups?.map((g, idx) => {
-    const hasLabelSelector = !!g.label_selector?.match_labels && Object.keys(g.label_selector.match_labels).length > 0
+    const hasLabelSelector =
+      !!g.label_selector?.match_labels &&
+      Object.keys(g.label_selector.match_labels).length > 0
     return {
       id: g.id || `group-${idx}`,
       name: g.name || '',
       install_ids: g.install_ids || [],
       label_selector: g.label_selector || null,
-      selection_mode: hasLabelSelector ? 'labels' as const : 'manual' as const,
+      selection_mode: hasLabelSelector
+        ? ('labels' as const)
+        : ('manual' as const),
       order: g.order ?? idx,
       max_parallel: g.max_parallel || 1,
       use_for_previews: g.use_for_previews || false,
@@ -92,7 +96,9 @@ export const DeploymentPlanEditorContainer = ({
       const installGroupsForApi = groups.map((group, index) => {
         const matchLabels = group.label_selector?.match_labels
         const useLabels =
-          group.selection_mode === 'labels' && !!matchLabels && Object.keys(matchLabels).length > 0
+          group.selection_mode === 'labels' &&
+          !!matchLabels &&
+          Object.keys(matchLabels).length > 0
 
         return {
           name: group.name,
@@ -135,8 +141,12 @@ export const DeploymentPlanEditorContainer = ({
       })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['app-branch', org.id, app.id, branch.id] })
-      queryClient.invalidateQueries({ queryKey: ['branch-configs', org.id, app.id, branch.id] })
+      queryClient.invalidateQueries({
+        queryKey: ['app-branch', org.id, app.id, branch.id],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['branch-configs', org.id, app.id, branch.id],
+      })
       addToast(
         <Toast heading="Deployment plan saved" theme="success">
           <Text>A new config version has been created.</Text>
@@ -148,7 +158,11 @@ export const DeploymentPlanEditorContainer = ({
     onError: (error: TAPIError) => {
       addToast(
         <Toast heading="Deployment plan save failed" theme="error">
-          <Text>{error.description || error.error || 'Unable to save deployment plan.'}</Text>
+          <Text>
+            {error.description ||
+              error.error ||
+              'Unable to save deployment plan.'}
+          </Text>
         </Toast>
       )
     },
@@ -195,14 +209,14 @@ export const EditDeploymentPlanButton = ({
     />
   )
   return (
-    <Button
-      variant="secondary"
-      onClick={() => addModal(modal)}
-      {...props}
-    >
-      {props?.isMenuButton ? null : <Icon variant="SlidersHorizontalIcon" size={16} />}
+    <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
+      {props?.isMenuButton ? null : (
+        <Icon variant="SlidersHorizontalIcon" size={16} />
+      )}
       {label}
-      {props?.isMenuButton ? <Icon variant="SlidersHorizontalIcon" size={16} /> : null}
+      {props?.isMenuButton ? (
+        <Icon variant="SlidersHorizontalIcon" size={16} />
+      ) : null}
     </Button>
   )
 }

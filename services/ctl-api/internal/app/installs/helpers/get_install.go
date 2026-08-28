@@ -15,6 +15,9 @@ import (
 func (h *Helpers) GetInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := h.db.WithContext(ctx).
+		Preload("ManagementPolicyVersions", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_management_policy_versions.version DESC")
+		}).
 		Preload("AppRunnerConfig").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
 			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC")).Limit(1)

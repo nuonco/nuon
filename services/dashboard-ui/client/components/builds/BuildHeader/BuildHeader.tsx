@@ -52,14 +52,14 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
       addToast(
         <Toast heading="Build cancelled." theme="success">
           <Text>Successfully cancelled the build.</Text>
-        </Toast>,
+        </Toast>
       )
     },
     onError: (err: { error?: string }) => {
       addToast(
         <Toast heading="Cancel build failed." theme="error">
           <Text>{err?.error || 'Unknown error occurred.'}</Text>
-        </Toast>,
+        </Toast>
       )
     },
   })

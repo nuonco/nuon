@@ -175,7 +175,10 @@ const StackVersionCard = ({
         <div className="flex items-center justify-between w-full pr-2">
           <span className="flex items-center gap-3">
             <ID>{version?.id}</ID>
-            <Status variant="badge" status={version?.composite_status?.status} />
+            <Status
+              variant="badge"
+              status={version?.composite_status?.status}
+            />
             <Text variant="subtext" theme="neutral">
               {runs.length} {runs.length === 1 ? 'run' : 'runs'}
             </Text>

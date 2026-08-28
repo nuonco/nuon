@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { useNavigate } from 'react-router'
 import { LogPanel } from '@/components/log-stream/LogPanel'
 import { useArrowKeys } from '@/hooks/use-arrow-keys'
@@ -14,7 +21,9 @@ type LogViewerContextValue = {
   handleActiveLog: (id?: string) => void
 }
 
-export const LogViewerContext = createContext<LogViewerContextValue | undefined>(undefined)
+export const LogViewerContext = createContext<
+  LogViewerContextValue | undefined
+>(undefined)
 
 interface LogViewerProviderProps {
   children: ReactNode
@@ -57,7 +66,11 @@ export function LogViewerProvider({ children, spans }: LogViewerProviderProps) {
 
   useArrowKeys({
     onDownArrow() {
-      if (activeLog && filters.filteredLogs && filters.filteredLogs.length > 0) {
+      if (
+        activeLog &&
+        filters.filteredLogs &&
+        filters.filteredLogs.length > 0
+      ) {
         cycleDirectionRef.current = 'down'
         const idx = filters.filteredLogs.findIndex((l) => l.id === activeLog.id)
         const nextIdx = idx + 1 >= filters.filteredLogs.length ? 0 : idx + 1
@@ -65,7 +78,11 @@ export function LogViewerProvider({ children, spans }: LogViewerProviderProps) {
       }
     },
     onUpArrow() {
-      if (activeLog && filters.filteredLogs && filters.filteredLogs.length > 0) {
+      if (
+        activeLog &&
+        filters.filteredLogs &&
+        filters.filteredLogs.length > 0
+      ) {
         cycleDirectionRef.current = 'up'
         const idx = filters.filteredLogs.findIndex((l) => l.id === activeLog.id)
         handleActiveLog(filters.filteredLogs.at(idx - 1)?.id)

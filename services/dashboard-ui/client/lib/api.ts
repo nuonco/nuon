@@ -36,10 +36,18 @@ interface IAPIData {
   withHeaders?: boolean
 }
 
-export async function api<T>(opts: IAPIData & { withHeaders: true }): Promise<TWithHeadersResult<T>>
-export async function api<T>(opts: IAPIData & { paginated: true }): Promise<TPaginatedResult<T>>
-export async function api<T>(opts: IAPIData & { withMeta: true }): Promise<TWithMetaResult<T>>
-export async function api<T>(opts: IAPIData & { paginated?: false; withMeta?: false; withHeaders?: false }): Promise<T>
+export async function api<T>(
+  opts: IAPIData & { withHeaders: true }
+): Promise<TWithHeadersResult<T>>
+export async function api<T>(
+  opts: IAPIData & { paginated: true }
+): Promise<TPaginatedResult<T>>
+export async function api<T>(
+  opts: IAPIData & { withMeta: true }
+): Promise<TWithMetaResult<T>>
+export async function api<T>(
+  opts: IAPIData & { paginated?: false; withMeta?: false; withHeaders?: false }
+): Promise<T>
 export async function api<T>({
   abortTimeout = 10000,
   baseUrl,
@@ -52,7 +60,9 @@ export async function api<T>({
   paginated,
   withMeta,
   withHeaders,
-}: IAPIData): Promise<T | TPaginatedResult<T> | TWithMetaResult<T> | TWithHeadersResult<T>> {
+}: IAPIData): Promise<
+  T | TPaginatedResult<T> | TWithMetaResult<T> | TWithHeadersResult<T>
+> {
   let response: Response | undefined
   try {
     const fetchOpts: RequestInit = {
@@ -68,10 +78,13 @@ export async function api<T>({
       signal: AbortSignal.timeout(abortTimeout),
     }
     if (body !== undefined && method !== 'GET') {
-      fetchOpts.body = JSON.stringify(body)
+      fetchOpts.body = body instanceof Blob ? body : JSON.stringify(body)
     }
 
-    response = await fetch(`${baseUrl ?? API_URL}${pathVersion}/${path}`, fetchOpts)
+    response = await fetch(
+      `${baseUrl ?? API_URL}${pathVersion}/${path}`,
+      fetchOpts
+    )
 
     let data = null
     const contentType = response.headers.get('content-type')
@@ -121,11 +134,16 @@ export async function api<T>({
         }
       }
       if (withMeta) {
-        return { data: data as T, nextOffset: response.headers.get('x-nuon-api-next') }
+        return {
+          data: data as T,
+          nextOffset: response.headers.get('x-nuon-api-next'),
+        }
       }
       if (withHeaders) {
         const responseHeaders: Record<string, string> = {}
-        response.headers.forEach((value, key) => { responseHeaders[key] = value })
+        response.headers.forEach((value, key) => {
+          responseHeaders[key] = value
+        })
         return { data: data as T, headers: responseHeaders }
       }
       return data as T

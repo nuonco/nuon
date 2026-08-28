@@ -20,12 +20,7 @@ export const VCSConnectionSuccessModal = ({
     <Modal
       heading={
         <div className="flex flex-col">
-          <Text
-            flex
-            className="gap-2"
-            variant="h3"
-            theme="success"
-          >
+          <Text flex className="gap-2" variant="h3" theme="success">
             <Icon variant="GitHub" />
             GitHub connected to {orgName}!
           </Text>

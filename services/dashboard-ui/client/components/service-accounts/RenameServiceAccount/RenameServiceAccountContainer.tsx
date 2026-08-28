@@ -33,7 +33,9 @@ const RenameServiceAccountModalContainer = ({
       queryClient.invalidateQueries({ queryKey: ['service-accounts', org.id] })
       addToast(
         <Toast heading="Service account renamed" theme="success">
-          <Text>Renamed {identity} to {name}.</Text>
+          <Text>
+            Renamed {identity} to {name}.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)

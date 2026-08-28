@@ -18,6 +18,9 @@ export const Latest = () => <SandboxRunSummary sandboxRun={mockRun} isLatest />
 
 export const Error = () => (
   <SandboxRunSummary
-    sandboxRun={{ ...mockRun, status_v2: { status: 'error', status_human_description: 'Failed' } }}
+    sandboxRun={{
+      ...mockRun,
+      status_v2: { status: 'error', status_human_description: 'Failed' },
+    }}
   />
 )

@@ -30,7 +30,11 @@ function getDiffForComponentType(componentType: TComponentType, plan: any) {
   }
 }
 
-const DeployPlanFallback = ({ componentType }: { componentType: TComponentType }) => {
+const DeployPlanFallback = ({
+  componentType,
+}: {
+  componentType: TComponentType
+}) => {
   const { deploy } = useDeploy()
   const { org } = useOrg()
 
@@ -59,7 +63,8 @@ const DeployPlanFallback = ({ componentType }: { componentType: TComponentType }
     )
   }
 
-  const parsed = typeof planDisplay === 'string' ? JSON.parse(planDisplay) : planDisplay
+  const parsed =
+    typeof planDisplay === 'string' ? JSON.parse(planDisplay) : planDisplay
   const diff = getDiffForComponentType(componentType, parsed)
 
   if (!diff) {

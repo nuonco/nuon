@@ -100,9 +100,7 @@ export const CreateWithNestedValues = () => (
         node_config: {
           machine_type: 'e2-standard-4',
           disk_size_gb: 100,
-          oauth_scopes: [
-            'https://www.googleapis.com/auth/cloud-platform',
-          ],
+          oauth_scopes: ['https://www.googleapis.com/auth/cloud-platform'],
           metadata: {
             disable_legacy_endpoints: true,
           },
@@ -180,8 +178,7 @@ export const TruncatedLongStrings = () => (
       before: {
         allowed_origins:
           'https://app.example.com,https://staging.example.com,https://dev.example.com',
-        iam_role_arn:
-          'arn:aws:iam::123456789012:role/short-role',
+        iam_role_arn: 'arn:aws:iam::123456789012:role/short-role',
         policy:
           '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:GetObject"],"Resource":"arn:aws:s3:::my-bucket/*"}]}',
         description: 'A short desc',

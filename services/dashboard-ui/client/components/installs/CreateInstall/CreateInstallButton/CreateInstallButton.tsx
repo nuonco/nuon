@@ -5,7 +5,10 @@ interface ICreateInstallButton extends IButtonAsButton {
   onOpen: () => void
 }
 
-export const CreateInstallButton = ({ onOpen, ...props }: ICreateInstallButton) => {
+export const CreateInstallButton = ({
+  onOpen,
+  ...props
+}: ICreateInstallButton) => {
   return (
     <Button onClick={onOpen} {...props}>
       <Icon variant="PlusIcon" size={16} />

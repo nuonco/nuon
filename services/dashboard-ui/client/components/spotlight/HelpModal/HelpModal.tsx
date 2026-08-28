@@ -5,7 +5,11 @@ import { Text } from '@/components/common/Text'
 import { Badge } from '@/components/common/Badge'
 import { Kbd } from '@/components/common/Kbd'
 import { toSentenceCase } from '@/utils/string-utils'
-import { COMMANDS_BY_PREFIX, COMMAND_DESCRIPTIONS, FILTER_PREFIXES } from '../types'
+import {
+  COMMANDS_BY_PREFIX,
+  COMMAND_DESCRIPTIONS,
+  FILTER_PREFIXES,
+} from '../types'
 
 const Combo = ({ children }: { children: React.ReactNode }) => (
   <span className="flex items-center gap-1">{children}</span>
@@ -173,7 +177,11 @@ export const HelpModal = ({ ...props }: IModal) => {
               <Combo>
                 <Kbd>↑</Kbd>
                 <Kbd>↓</Kbd>
-                <Text variant="subtext" theme="neutral" className="text-xs px-1">
+                <Text
+                  variant="subtext"
+                  theme="neutral"
+                  className="text-xs px-1"
+                >
                   or
                 </Text>
                 <Kbd>K</Kbd>

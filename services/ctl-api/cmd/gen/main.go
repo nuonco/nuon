@@ -16,6 +16,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"golang.org/x/sync/errgroup"
@@ -137,7 +138,7 @@ func generatePublicSchema(ctx context.Context) error {
 		"--parseInternal",
 		"-g", "public.go",
 		"--markdownFiles", "docs/public/descriptions",
-		"-t", "auth,accounts,apps,actions,components,installs,installers,general,notebooks,oidc_federation,onboarding,orgs,policy-reports,releases,runbooks,sandboxes,slack,stacks,vcs,runners,queues",
+		"-t", "auth,accounts,customer-managed-bundles,apps,actions,components,installs,installers,general,notebooks,oidc_federation,onboarding,orgs,policy-reports,release-packages,releases,runbooks,sandboxes,slack,stacks,vcs,runners,queues",
 	}
 
 	cmd, err := command.New(v,
@@ -170,6 +171,7 @@ func generatePublicOAPI3Spec(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to convert to openapi v3: %w", err)
 	}
+	normalizeBinaryRequestBodies(oapi3Doc)
 
 	// Write to docs/public/swagger-v3.json
 	outputPath := "docs/public/swagger-v3.json"
@@ -187,6 +189,20 @@ func generatePublicOAPI3Spec(ctx context.Context) error {
 
 	fmt.Fprintf(os.Stdout, "✅ successfully generated public openapi v3 spec: %s\n", outputPath)
 	return nil
+}
+
+func normalizeBinaryRequestBodies(doc *openapi3.T) {
+	for _, pathItem := range doc.Paths.Map() {
+		for _, operation := range pathItem.Operations() {
+			if operation.RequestBody == nil || operation.RequestBody.Value == nil {
+				continue
+			}
+			media := operation.RequestBody.Value.Content.Get("application/octet-stream")
+			if media != nil && media.Schema != nil && media.Schema.Value != nil && media.Schema.Value.Format == "" {
+				media.Schema.Value.Format = "binary"
+			}
+		}
+	}
 }
 
 func generateTemporal(ctx context.Context) error {

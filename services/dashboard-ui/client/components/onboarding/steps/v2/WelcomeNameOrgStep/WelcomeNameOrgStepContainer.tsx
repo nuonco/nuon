@@ -20,7 +20,8 @@ export const WelcomeNameOrgStepContainer = ({
 }: IWizardStepComponentProps) => {
   const onboarding = sharedData.onboarding as TOnboarding | undefined
   const orgId = onboarding?.org_id
-  const isStillProvisioning = onboarding?.status_v2?.status === 'in-progress' && !!orgId
+  const isStillProvisioning =
+    onboarding?.status_v2?.status === 'in-progress' && !!orgId
 
   const [orgName, setOrgName] = useState('')
   const [waiting, setWaiting] = useState(isStillProvisioning)
@@ -44,8 +45,13 @@ export const WelcomeNameOrgStepContainer = ({
     onSuccess: (name) => setOrgName(name),
   })
 
-  const { mutate: submit, isPending, error } = useMutation({
-    mutationFn: () => completeOrganizationStep({ body: { name: orgName.trim() } }),
+  const {
+    mutate: submit,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: () =>
+      completeOrganizationStep({ body: { name: orgName.trim() } }),
     onSuccess: (ob) => {
       setSharedData('onboarding', ob)
       if (ob.status_v2?.status === 'in-progress') {
@@ -98,9 +104,10 @@ export const WelcomeNameOrgStepContainer = ({
     attachExistingOrg(selectedOrgId)
   }
 
-  const stepError = onboarding?.status_v2?.status === 'error'
-    ? onboarding?.step_error
-    : undefined
+  const stepError =
+    onboarding?.status_v2?.status === 'error'
+      ? onboarding?.step_error
+      : undefined
 
   return (
     <WelcomeNameOrgStep

@@ -20,8 +20,9 @@ type Signal struct {
 	Metadata       map[string]string `json:"metadata,omitempty"`
 	TriggeredBy    string            `json:"triggered_by,omitempty"`
 
-	AppBranchRunID string `json:"app_branch_run_id,omitempty"`
-	InstallGroupID string `json:"install_group_id,omitempty"`
+	AppBranchRunID            string `json:"app_branch_run_id,omitempty"`
+	InstallGroupID            string `json:"install_group_id,omitempty"`
+	InstallAppConfigVersionID string `json:"install_config_update_id,omitempty"`
 }
 
 var (
@@ -111,7 +112,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		metadata["triggered_by"] = s.TriggeredBy
 	}
 
-	if s.AppBranchRunID == "" {
+	if s.InstallAppConfigVersionID == "" && s.AppBranchRunID == "" {
 		if _, err := activities.AwaitCreateInstallAppConfigVersion(ctx, &activities.CreateInstallAppConfigVersionInput{
 			InstallID:      s.InstallID,
 			OldAppConfigID: install.AppConfigID,

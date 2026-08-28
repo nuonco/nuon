@@ -37,6 +37,17 @@ func (a *Activities) GetNonBranchManagedInstallIDs(ctx context.Context, input *G
 	var installs []app.Install
 	if err := a.db.WithContext(ctx).
 		Where(app.Install{AppID: input.AppID}).
+		Where(`NOT EXISTS (
+			SELECT 1
+			FROM install_management_policy_versions AS current_policy
+			WHERE current_policy.install_id = installs.id
+				AND current_policy.version = (
+					SELECT MAX(policy_version.version)
+					FROM install_management_policy_versions AS policy_version
+					WHERE policy_version.install_id = installs.id
+				)
+				AND current_policy.command_authority <> ?
+		)`, app.InstallAuthorityNuon).
 		Find(&installs).Error; err != nil {
 		return nil, fmt.Errorf("unable to query installs: %w", err)
 	}

@@ -8,7 +8,9 @@ export interface IAppKubernetesContexts {
   appConfig: TAppConfig
 }
 
-export const AppKubernetesContexts = ({ appConfig }: IAppKubernetesContexts) => {
+export const AppKubernetesContexts = ({
+  appConfig,
+}: IAppKubernetesContexts) => {
   const contexts = appConfig?.kubernetes_contexts?.contexts ?? []
 
   if (contexts.length === 0) {

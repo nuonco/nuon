@@ -22,6 +22,11 @@ export const Default = () => <AttributesTabs log={mockLog} />
 
 export const Empty = () => (
   <AttributesTabs
-    log={{ ...mockLog, log_attributes: {}, resource_attributes: {}, scope_attributes: {} }}
+    log={{
+      ...mockLog,
+      log_attributes: {},
+      resource_attributes: {},
+      scope_attributes: {},
+    }}
   />
 )

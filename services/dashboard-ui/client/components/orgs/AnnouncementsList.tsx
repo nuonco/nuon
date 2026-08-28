@@ -7,7 +7,10 @@ export interface IAnnouncementsList {
   disableDismissMemory?: boolean
 }
 
-export const AnnouncementsList = ({ announcements, disableDismissMemory = false }: IAnnouncementsList) => {
+export const AnnouncementsList = ({
+  announcements,
+  disableDismissMemory = false,
+}: IAnnouncementsList) => {
   const visible = announcements.slice(0, 4)
 
   return (

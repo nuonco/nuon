@@ -13,8 +13,16 @@ export const Default = () => {
       value={value}
       onChange={setValue}
       options={[
-        { value: 'grid', label: <Icon variant="ListDashesIcon" size={16} />, ariaLabel: 'Grid view' },
-        { value: 'json', label: <Icon variant="BracketsCurlyIcon" size={16} />, ariaLabel: 'JSON view' },
+        {
+          value: 'grid',
+          label: <Icon variant="ListDashesIcon" size={16} />,
+          ariaLabel: 'Grid view',
+        },
+        {
+          value: 'json',
+          label: <Icon variant="BracketsCurlyIcon" size={16} />,
+          ariaLabel: 'JSON view',
+        },
       ]}
     />
   )
@@ -27,9 +35,21 @@ export const ThreeOptions = () => {
       value={value}
       onChange={setValue}
       options={[
-        { value: 'list', label: <Icon variant="ListIcon" size={16} />, ariaLabel: 'List view' },
-        { value: 'grid', label: <Icon variant="GridFourIcon" size={16} />, ariaLabel: 'Grid view' },
-        { value: 'table', label: <Icon variant="TableIcon" size={16} />, ariaLabel: 'Table view' },
+        {
+          value: 'list',
+          label: <Icon variant="ListIcon" size={16} />,
+          ariaLabel: 'List view',
+        },
+        {
+          value: 'grid',
+          label: <Icon variant="GridFourIcon" size={16} />,
+          ariaLabel: 'Grid view',
+        },
+        {
+          value: 'table',
+          label: <Icon variant="TableIcon" size={16} />,
+          ariaLabel: 'Table view',
+        },
       ]}
     />
   )
@@ -75,12 +95,14 @@ export const WithDescriptions = () => {
         {
           value: 'personal',
           label: 'Personal token',
-          description: 'Issued against your own account and uses your existing role.',
+          description:
+            'Issued against your own account and uses your existing role.',
         },
         {
           value: 'service_account',
           label: 'Service account token',
-          description: 'Creates a dedicated service account with the role you choose.',
+          description:
+            'Creates a dedicated service account with the role you choose.',
         },
       ]}
     />

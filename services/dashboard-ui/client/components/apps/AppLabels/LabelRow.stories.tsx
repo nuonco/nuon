@@ -27,7 +27,16 @@ export const Default = () => (
 export const Overridden = () => (
   <Card className="flex flex-col divide-y">
     <LabelRow
-      label={{ ...base, key: 'destructive', color: '#a21caf', default_color: '#16a34a', is_override: true, values: ['true'], entity_types: ['action'], usage_count: 1 }}
+      label={{
+        ...base,
+        key: 'destructive',
+        color: '#a21caf',
+        default_color: '#16a34a',
+        is_override: true,
+        values: ['true'],
+        entity_types: ['action'],
+        usage_count: 1,
+      }}
       onOverride={noop}
       onRemoveOverride={noop}
     />

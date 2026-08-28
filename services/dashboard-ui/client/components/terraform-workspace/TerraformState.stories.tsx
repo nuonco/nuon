@@ -57,7 +57,18 @@ export const Default = () => (
 
 export const Empty = () => (
   <div className="max-w-4xl p-4">
-    <TerraformState terraformState={{ format_version: '1.0', terraform_version: '1.5.7', values: { outputs: {}, root_module: { resources: [], child_modules: [] } } } as unknown as TTerraformState} />
+    <TerraformState
+      terraformState={
+        {
+          format_version: '1.0',
+          terraform_version: '1.5.7',
+          values: {
+            outputs: {},
+            root_module: { resources: [], child_modules: [] },
+          },
+        } as unknown as TTerraformState
+      }
+    />
   </div>
 )
 
@@ -66,18 +77,34 @@ const networkingState: TTerraformState = {
   terraform_version: '1.9.5',
   values: {
     outputs: {
-      vpc_id: { value: 'vpc-0a3f7c9e2b1d4e8f6', sensitive: false, type: 'string' },
+      vpc_id: {
+        value: 'vpc-0a3f7c9e2b1d4e8f6',
+        sensitive: false,
+        type: 'string',
+      },
       public_subnet_ids: {
-        value: ['subnet-0a1b2c3d4e5f60001', 'subnet-0a1b2c3d4e5f60002', 'subnet-0a1b2c3d4e5f60003'],
+        value: [
+          'subnet-0a1b2c3d4e5f60001',
+          'subnet-0a1b2c3d4e5f60002',
+          'subnet-0a1b2c3d4e5f60003',
+        ],
         sensitive: false,
         type: ['list', 'string'],
       },
       private_subnet_ids: {
-        value: ['subnet-0f1e2d3c4b5a60001', 'subnet-0f1e2d3c4b5a60002', 'subnet-0f1e2d3c4b5a60003'],
+        value: [
+          'subnet-0f1e2d3c4b5a60001',
+          'subnet-0f1e2d3c4b5a60002',
+          'subnet-0f1e2d3c4b5a60003',
+        ],
         sensitive: false,
         type: ['list', 'string'],
       },
-      nat_gateway_ip: { value: '54.203.112.47', sensitive: false, type: 'string' },
+      nat_gateway_ip: {
+        value: '54.203.112.47',
+        sensitive: false,
+        type: 'string',
+      },
       availability_zones: {
         value: ['us-west-2a', 'us-west-2b', 'us-west-2c'],
         sensitive: false,
@@ -97,7 +124,11 @@ const networkingState: TTerraformState = {
             cidr_block: '10.0.0.0/16',
             enable_dns_hostnames: true,
             enable_dns_support: true,
-            tags: { Name: 'production-vpc', Environment: 'production', ManagedBy: 'terraform' },
+            tags: {
+              Name: 'production-vpc',
+              Environment: 'production',
+              ManagedBy: 'terraform',
+            },
           },
           sensitive_values: {},
         },
@@ -108,7 +139,10 @@ const networkingState: TTerraformState = {
           provider_name: 'registry.terraform.io/hashicorp/aws',
           schema_version: 0,
           mode: 'managed',
-          values: { vpc_id: 'vpc-0a3f7c9e2b1d4e8f6', tags: { Name: 'production-igw' } },
+          values: {
+            vpc_id: 'vpc-0a3f7c9e2b1d4e8f6',
+            tags: { Name: 'production-igw' },
+          },
           sensitive_values: {},
           depends_on: ['aws_vpc.main'],
         },
@@ -208,11 +242,28 @@ const eksClusterState: TTerraformState = {
   terraform_version: '1.9.5',
   values: {
     outputs: {
-      cluster_endpoint: { value: 'https://ABCDEF1234567890.gr7.us-west-2.eks.amazonaws.com', sensitive: false, type: 'string' },
-      cluster_certificate_authority: { value: 'LS0tLS1CRUdJTi...', sensitive: true, type: 'string' },
-      cluster_name: { value: 'prod-eks-cluster', sensitive: false, type: 'string' },
+      cluster_endpoint: {
+        value: 'https://ABCDEF1234567890.gr7.us-west-2.eks.amazonaws.com',
+        sensitive: false,
+        type: 'string',
+      },
+      cluster_certificate_authority: {
+        value: 'LS0tLS1CRUdJTi...',
+        sensitive: true,
+        type: 'string',
+      },
+      cluster_name: {
+        value: 'prod-eks-cluster',
+        sensitive: false,
+        type: 'string',
+      },
       cluster_version: { value: '1.30', sensitive: false, type: 'string' },
-      oidc_provider_arn: { value: 'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-west-2.amazonaws.com/id/ABCDEF1234567890', sensitive: false, type: 'string' },
+      oidc_provider_arn: {
+        value:
+          'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-west-2.amazonaws.com/id/ABCDEF1234567890',
+        sensitive: false,
+        type: 'string',
+      },
       node_group_status: {
         value: { general: 'ACTIVE', gpu: 'ACTIVE' },
         sensitive: false,
@@ -232,7 +283,13 @@ const eksClusterState: TTerraformState = {
             name: 'prod-eks-cluster',
             role_arn: 'arn:aws:iam::123456789012:role/eks-cluster-role',
             version: '1.30',
-            enabled_cluster_log_types: ['api', 'audit', 'authenticator', 'controllerManager', 'scheduler'],
+            enabled_cluster_log_types: [
+              'api',
+              'audit',
+              'authenticator',
+              'controllerManager',
+              'scheduler',
+            ],
             endpoint_private_access: true,
             endpoint_public_access: false,
             status: 'ACTIVE',
@@ -276,8 +333,13 @@ const eksClusterState: TTerraformState = {
             capacity_type: 'ON_DEMAND',
             disk_size: 200,
             status: 'ACTIVE',
-            labels: { 'nvidia.com/gpu.present': 'true', workload: 'ml-inference' },
-            taints: [{ key: 'nvidia.com/gpu', value: 'true', effect: 'NO_SCHEDULE' }],
+            labels: {
+              'nvidia.com/gpu.present': 'true',
+              workload: 'ml-inference',
+            },
+            taints: [
+              { key: 'nvidia.com/gpu', value: 'true', effect: 'NO_SCHEDULE' },
+            ],
           },
           sensitive_values: {},
           depends_on: ['aws_eks_cluster.main', 'aws_iam_role.node_group'],
@@ -309,7 +371,11 @@ const k8sManifestState: TTerraformState = {
   terraform_version: '1.9.5',
   values: {
     outputs: {
-      service_endpoint: { value: 'http://api-gateway.default.svc.cluster.local:8080', sensitive: false, type: 'string' },
+      service_endpoint: {
+        value: 'http://api-gateway.default.svc.cluster.local:8080',
+        sensitive: false,
+        type: 'string',
+      },
       namespace: { value: 'default', sensitive: false, type: 'string' },
     },
     root_module: {
@@ -322,9 +388,16 @@ const k8sManifestState: TTerraformState = {
           schema_version: 0,
           mode: 'managed',
           values: {
-            metadata: { name: 'api-gateway', namespace: 'default', labels: { app: 'api-gateway', version: 'v2.4.1' } },
+            metadata: {
+              name: 'api-gateway',
+              namespace: 'default',
+              labels: { app: 'api-gateway', version: 'v2.4.1' },
+            },
             replicas: '3',
-            strategy: { type: 'RollingUpdate', rolling_update: { max_surge: '1', max_unavailable: '0' } },
+            strategy: {
+              type: 'RollingUpdate',
+              rolling_update: { max_surge: '1', max_unavailable: '0' },
+            },
           },
           sensitive_values: {},
         },
@@ -337,7 +410,10 @@ const k8sManifestState: TTerraformState = {
           mode: 'managed',
           values: {
             metadata: { name: 'api-gateway', namespace: 'default' },
-            spec: { type: 'ClusterIP', port: { port: 8080, target_port: 8080, protocol: 'TCP' } },
+            spec: {
+              type: 'ClusterIP',
+              port: { port: 8080, target_port: 8080, protocol: 'TCP' },
+            },
           },
           sensitive_values: {},
           depends_on: ['kubernetes_deployment.api'],
@@ -351,7 +427,11 @@ const k8sManifestState: TTerraformState = {
           mode: 'managed',
           values: {
             metadata: { name: 'api-gateway-config', namespace: 'default' },
-            data: { LOG_LEVEL: 'info', MAX_CONNECTIONS: '100', RATE_LIMIT_RPS: '500' },
+            data: {
+              LOG_LEVEL: 'info',
+              MAX_CONNECTIONS: '100',
+              RATE_LIMIT_RPS: '500',
+            },
           },
           sensitive_values: {},
         },
@@ -366,7 +446,9 @@ const k8sManifestState: TTerraformState = {
             metadata: { name: 'api-gateway-credentials', namespace: 'default' },
             type: 'Opaque',
           },
-          sensitive_values: { data: { DATABASE_URL: true, API_KEY: true, JWT_SECRET: true } },
+          sensitive_values: {
+            data: { DATABASE_URL: true, API_KEY: true, JWT_SECRET: true },
+          },
         },
         {
           address: 'kubernetes_horizontal_pod_autoscaler_v2.api',
@@ -401,7 +483,11 @@ const rdsState: TTerraformState = {
   terraform_version: '1.9.5',
   values: {
     outputs: {
-      db_endpoint: { value: 'prod-db.c9abcdef1234.us-west-2.rds.amazonaws.com:5432', sensitive: false, type: 'string' },
+      db_endpoint: {
+        value: 'prod-db.c9abcdef1234.us-west-2.rds.amazonaws.com:5432',
+        sensitive: false,
+        type: 'string',
+      },
       db_name: { value: 'app_production', sensitive: false, type: 'string' },
       db_connection_string: { value: null, sensitive: true, type: 'string' },
       read_replica_endpoints: {
@@ -495,7 +581,11 @@ const rdsState: TTerraformState = {
           mode: 'managed',
           values: {
             name: 'prod-db-subnet-group',
-            subnet_ids: ['subnet-0f1e2d3c4b5a60001', 'subnet-0f1e2d3c4b5a60002', 'subnet-0f1e2d3c4b5a60003'],
+            subnet_ids: [
+              'subnet-0f1e2d3c4b5a60001',
+              'subnet-0f1e2d3c4b5a60002',
+              'subnet-0f1e2d3c4b5a60003',
+            ],
           },
           sensitive_values: {},
         },
@@ -509,8 +599,22 @@ const rdsState: TTerraformState = {
           values: {
             name: 'prod-rds-sg',
             vpc_id: 'vpc-0a3f7c9e2b1d4e8f6',
-            ingress: [{ from_port: 5432, to_port: 5432, protocol: 'tcp', cidr_blocks: ['10.0.0.0/16'] }],
-            egress: [{ from_port: 0, to_port: 0, protocol: '-1', cidr_blocks: ['0.0.0.0/0'] }],
+            ingress: [
+              {
+                from_port: 5432,
+                to_port: 5432,
+                protocol: 'tcp',
+                cidr_blocks: ['10.0.0.0/16'],
+              },
+            ],
+            egress: [
+              {
+                from_port: 0,
+                to_port: 0,
+                protocol: '-1',
+                cidr_blocks: ['0.0.0.0/0'],
+              },
+            ],
           },
           sensitive_values: {},
         },
@@ -531,8 +635,16 @@ const multiProviderState: TTerraformState = {
   terraform_version: '1.9.5',
   values: {
     outputs: {
-      datadog_dashboard_url: { value: 'https://app.datadoghq.com/dashboard/abc-def-ghi', sensitive: false, type: 'string' },
-      pagerduty_service_id: { value: 'P1234AB', sensitive: false, type: 'string' },
+      datadog_dashboard_url: {
+        value: 'https://app.datadoghq.com/dashboard/abc-def-ghi',
+        sensitive: false,
+        type: 'string',
+      },
+      pagerduty_service_id: {
+        value: 'P1234AB',
+        sensitive: false,
+        type: 'string',
+      },
       dns_records: {
         value: {
           api: 'api.prod.example.com',
@@ -555,8 +667,10 @@ const multiProviderState: TTerraformState = {
           values: {
             name: '[Prod] CPU usage > 85% on EKS nodes',
             type: 'metric alert',
-            query: 'avg(last_5m):avg:system.cpu.user{env:production,kube_cluster_name:prod-eks-cluster} by {host} > 85',
-            message: 'CPU usage is high on {{host.name}}. @pagerduty-prod-infra',
+            query:
+              'avg(last_5m):avg:system.cpu.user{env:production,kube_cluster_name:prod-eks-cluster} by {host} > 85',
+            message:
+              'CPU usage is high on {{host.name}}. @pagerduty-prod-infra',
             priority: 2,
             notify_no_data: false,
             renotify_interval: 300,
@@ -573,8 +687,10 @@ const multiProviderState: TTerraformState = {
           values: {
             name: '[Prod] Pod restart count > 5 in 10m',
             type: 'query alert',
-            query: 'change(sum(last_10m),last_10m):avg:kubernetes.containers.restarts{env:production} by {kube_deployment} > 5',
-            message: 'Pods restarting frequently in {{kube_deployment.name}}. @slack-prod-alerts',
+            query:
+              'change(sum(last_10m),last_10m):avg:kubernetes.containers.restarts{env:production} by {kube_deployment} > 5',
+            message:
+              'Pods restarting frequently in {{kube_deployment.name}}. @slack-prod-alerts',
             priority: 3,
           },
           sensitive_values: {},

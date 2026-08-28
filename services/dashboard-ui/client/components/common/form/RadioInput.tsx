@@ -35,9 +35,13 @@ export const RadioInput = ({
       {...labelProps}
     >
       <input
-        className={cn('accent-primary-600', {
-          'cursor-not-allowed': disabled,
-        }, className)}
+        className={cn(
+          'accent-primary-600',
+          {
+            'cursor-not-allowed': disabled,
+          },
+          className
+        )}
         disabled={disabled}
         {...props}
         type="radio"

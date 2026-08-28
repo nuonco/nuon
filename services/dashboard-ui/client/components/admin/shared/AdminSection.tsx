@@ -12,27 +12,23 @@ export const AdminSection = ({
   title,
   subtitle,
   metadata,
-  children
+  children,
 }: AdminSectionProps) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-2">
-        <Text variant="h3" weight="strong">{title}</Text>
+        <Text variant="h3" weight="strong">
+          {title}
+        </Text>
         {subtitle && (
           <Text variant="subtext" className="text-gray-600 dark:text-gray-300">
             {subtitle}
           </Text>
         )}
-        {metadata && (
-          <div className="flex gap-2 pt-2">
-            {metadata}
-          </div>
-        )}
+        {metadata && <div className="flex gap-2 pt-2">{metadata}</div>}
       </div>
-      
-      <div className="space-y-6">
-        {children}
-      </div>
+
+      <div className="space-y-6">{children}</div>
     </div>
   )
 }

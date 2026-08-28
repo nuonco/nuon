@@ -10,7 +10,9 @@ export const Default = () => (
     <DownloadLogsModal
       isPending={false}
       includeSystemLogs={false}
-      onDownload={(includeSystem) => alert(`Downloading: includeSystem=${includeSystem}`)}
+      onDownload={(includeSystem) =>
+        alert(`Downloading: includeSystem=${includeSystem}`)
+      }
     />
   </ModalStory>
 )
@@ -20,7 +22,9 @@ export const WithSystemLogs = () => (
     <DownloadLogsModal
       isPending={false}
       includeSystemLogs={true}
-      onDownload={(includeSystem) => alert(`Downloading: includeSystem=${includeSystem}`)}
+      onDownload={(includeSystem) =>
+        alert(`Downloading: includeSystem=${includeSystem}`)
+      }
     />
   </ModalStory>
 )

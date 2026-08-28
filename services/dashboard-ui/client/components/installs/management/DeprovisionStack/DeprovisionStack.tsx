@@ -77,13 +77,7 @@ export const DeprovisionStackModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-          theme="warn"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="warn">
           <Icon variant="StackMinusIcon" size="24" />
           Deprovision stack for {installName}?
         </Text>
@@ -98,7 +92,9 @@ export const DeprovisionStackModal = ({
       <div className="flex flex-col gap-4">
         <Banner theme="warn">
           <Text variant="body">
-            <strong>Manual action required:</strong> Once you have deprovisioned the install from the UI, go to {copy.console} and destroy this stack for your install.
+            <strong>Manual action required:</strong> Once you have deprovisioned
+            the install from the UI, go to {copy.console} and destroy this stack
+            for your install.
           </Text>
         </Banner>
 
@@ -116,7 +112,9 @@ export const DeprovisionStackModal = ({
                   ) : (
                     <>
                       {before}
-                      <span className="font-mono bg-cool-grey-100 dark:bg-cool-grey-800 px-1 py-0.5 rounded">{installName}</span>
+                      <span className="font-mono bg-cool-grey-100 dark:bg-cool-grey-800 px-1 py-0.5 rounded">
+                        {installName}
+                      </span>
                       {after}
                     </>
                   )}

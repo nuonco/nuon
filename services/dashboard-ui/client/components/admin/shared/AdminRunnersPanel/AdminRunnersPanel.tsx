@@ -133,14 +133,18 @@ export const AdminRunnersPanel = ({
               {installs.map((install) => (
                 <div key={install.id} className="rounded border p-3">
                   <div className="flex flex-col gap-3">
-                    <Text variant="base" weight="strong">{install.name} runner</Text>
+                    <Text variant="base" weight="strong">
+                      {install.name} runner
+                    </Text>
                     {install.runner_id ? (
                       <LoadRunnerCard
                         runnerId={install.runner_id}
                         installId={install.id}
                       />
                     ) : (
-                      <Text variant="subtext">No runner assigned to this install</Text>
+                      <Text variant="subtext">
+                        No runner assigned to this install
+                      </Text>
                     )}
                   </div>
                 </div>

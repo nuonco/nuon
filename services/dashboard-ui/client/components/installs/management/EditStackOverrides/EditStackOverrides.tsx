@@ -104,12 +104,15 @@ export const EditStackOverridesModal = ({
         onSubmit={(e) => e.preventDefault()}
         className="flex flex-col gap-6"
       >
-        <FormErrorBanner error={error} fallback="Unable to save stack overrides" />
+        <FormErrorBanner
+          error={error}
+          fallback="Unable to save stack overrides"
+        />
 
         <Banner theme="info">
           <Text variant="body">
-            Override the default stack template URLs for this install. Leave empty
-            to use the app-level default.
+            Override the default stack template URLs for this install. Leave
+            empty to use the app-level default.
           </Text>
         </Banner>
 

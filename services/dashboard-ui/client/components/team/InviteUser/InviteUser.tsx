@@ -51,8 +51,7 @@ export const InviteUserModal = ({
           </span>
         ),
         disabled: isResendPending,
-        onClick: () =>
-          matchedInvite.id && onResend?.(matchedInvite.id),
+        onClick: () => matchedInvite.id && onResend?.(matchedInvite.id),
         variant: 'primary' as const,
       }
     : {

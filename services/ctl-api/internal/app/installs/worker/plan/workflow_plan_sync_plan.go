@@ -2,11 +2,13 @@ package plan
 
 import (
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
@@ -64,17 +66,37 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install registry repository")
 	}
 
+	return p.RenderSyncOCIPlan(l, &RenderSyncOCIPlanInput{
+		Deploy:    deploy,
+		CompBuild: compBuild,
+		Install:   install,
+		SrcCfg:    srcCfg,
+		DstCfg:    dstCfg,
+	})
+}
+
+// RenderSyncOCIPlanInput carries the already-loaded data a sync OCI plan is rendered from.
+type RenderSyncOCIPlanInput struct {
+	Deploy    *app.InstallDeploy
+	CompBuild *app.ComponentBuild
+	Install   *app.Install
+	SrcCfg    *configs.OCIRegistryRepository
+	DstCfg    *configs.OCIRegistryRepository
+}
+
+// RenderSyncOCIPlan renders a sync OCI plan from already-loaded inputs.
+func (p *Planner) RenderSyncOCIPlan(l *zap.Logger, in *RenderSyncOCIPlanInput) (*plantypes.SyncOCIPlan, error) {
 	// For image-type builds with source-identity recorded, copy the
 	// artifact by digest and tag the install-registry copy with the
 	// resolved tag instead of an internal ID. Fall back to installRegistryTag
 	// for non-image components and image builds without source identity.
-	srcTag := deploy.ComponentBuildID
-	dstTag := installRegistryTag(deploy)
-	if compBuild.SourceDigest != "" {
+	srcTag := in.Deploy.ComponentBuildID
+	dstTag := installRegistryTag(in.Deploy)
+	if in.CompBuild.SourceDigest != "" {
 		// oras.Copy resolves both tags and digest references, so passing
 		// the manifest digest as the source ref pulls the exact same
 		// content the runner originally resolved during build.
-		srcTag = compBuild.SourceDigest
+		srcTag = in.CompBuild.SourceDigest
 
 		// Push the install-registry copy under a tag the customer can
 		// recognise. Prefer the tag the runner resolved (e.g. "1.25.5"),
@@ -83,29 +105,55 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		// identity of the artifact — the tag is metadata only and
 		// duplicate tags across builds (e.g. successive deploys of
 		// "1.25.5") are intentionally idempotent.
-		dstTag = compBuild.ResolvedTag
+		dstTag = in.CompBuild.ResolvedTag
 		if dstTag == "" {
-			dstTag = compBuild.ID
-		} else if dstCfg.RegistryType == configs.OCIRegistryTypeECR {
+			dstTag = in.CompBuild.ID
+		} else if in.DstCfg.RegistryType == configs.OCIRegistryTypeECR {
 			// ECR keeps one shared repo (repos must be pre-created), so
 			// prefix the tag to keep resolved versions from colliding
 			// across components.
-			dstTag = imageNameSegment(deploy.ComponentName) + "-" + dstTag
+			dstTag = imageNameSegment(in.Deploy.ComponentName) + "-" + dstTag
 		}
 	}
 
 	pln := &plantypes.SyncOCIPlan{
-		Src:    srcCfg,
+		Src:    in.SrcCfg,
 		SrcTag: srcTag,
 
 		DstTag: dstTag,
-		Dst:    dstCfg,
+		Dst:    in.DstCfg,
 	}
 
-	if install.SandboxMode.Bool {
+	if in.Install.SandboxMode.Bool {
 		pln.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
-			Outputs: plantypes.FakeOCISyncOutputs("registry.example.com/nuon/app-service", "v1.2.3"),
+			Outputs: map[string]any{
+				"image": map[string]interface{}{
+					// Sandbox outputs mirror the live runner sync outputs
+					// shape: `repository` and `tag` are the bare repo and
+					// resolved tag that user templates compose as
+					// `{{.repository}}:{{.tag}}`; `ref` is the additive
+					// digest-pinned form; `display_tag` carries the
+					// human-friendly tag.
+					"repository":    "registry.example.com/nuon/app-service",
+					"tag":           "v1.2.3",
+					"ref":           "registry.example.com/nuon/app-service@sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
+					"display_tag":   "v1.2.3",
+					"media_type":    "application/vnd.docker.distribution.manifest.v2+json",
+					"digest":        "sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
+					"size":          28437192,
+					"urls":          []string{"registry.example.com/nuon/app-service:v1.2.3"},
+					"annotations":   map[string]string{"org.opencontainers.image.created": "2024-04-29T10:15:30Z"},
+					"artifact_type": "application/vnd.docker.container.image.v1+json",
+					"platform": map[string]any{
+						"architecture": "arm64",
+						"os":           "linux",
+						"os_version":   "10.0",
+						"variant":      "v8",
+						"os_features":  []string{"sse4", "aes"},
+					},
+				},
+			},
 		}
 	}
 

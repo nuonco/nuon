@@ -71,10 +71,14 @@ const (
 	// step in the dashboard, letting customers provision the Terraform
 	// install stack through Spacelift instead of running Terraform locally.
 	OrgFeatureSpaceliftInstallStacks OrgFeature = "spacelift-install-stacks"
-	// OrgFeatureStackTFProvider adds a "TF Module" tab to the install stack await step,
-	// with directions for the published nuonco/stack/aws module. Additive, AWS only.
-	OrgFeatureStackTFProvider       OrgFeature = "stack-tf-provider"
-	OrgFeatureAWSAccountConnections OrgFeature = "aws-account-connections"
+	// OrgFeatureStackTFProvider switches the install stack "await" step's
+	// Terraform directions to the provider-based flow: clone the ja/stack-sdk
+	// branch of install-stacks (which reads config from the API via the stack
+	// provider's stack_config data source) and use the slimmed-down tfvars
+	// instead of the full generated set.
+	OrgFeatureStackTFProvider         OrgFeature = "stack-tf-provider"
+	OrgFeatureAWSAccountConnections   OrgFeature = "aws-account-connections"
+	OrgFeatureCustomerManagedInstalls OrgFeature = "customer-managed-installs"
 	// OrgFeatureComponentHealth enables the live component resource explorer:
 	// the runner reports the resources each component manages with per-resource
 	// health, surfaced in the install "Resources" tab.
@@ -265,6 +269,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureImageBackedActions:      false,
 		OrgFeatureOrgRunner:               false,
 		OrgFeatureAWSAccountConnections:   false,
+		OrgFeatureCustomerManagedInstalls: false,
 		OrgFeatureComponentHealth:         false,
 		OrgFeaturePhoneHomeAuth:           false,
 		OrgFeatureRunbookStudio:           false,
@@ -303,6 +308,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureSpaceliftInstallStacks,
 		OrgFeatureStackTFProvider,
 		OrgFeatureAWSAccountConnections,
+		OrgFeatureCustomerManagedInstalls,
 		OrgFeatureComponentHealth,
 		OrgFeatureServiceAccountsAndTokens,
 		OrgFeaturePhoneHomeAuth,
@@ -348,6 +354,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureSpaceliftInstallStacks:   "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
 		OrgFeatureStackTFProvider:          "Show the TF Module tab in the install stack await step: directions for the published nuonco/stack/aws Terraform module, which reads its configuration from the API and authenticates with the stack's API token. Additive — the existing CloudFormation and Terraform directions are unchanged. AWS installs only.",
 		OrgFeatureAWSAccountConnections:    "Enable organization-owned cross-account AWS connections with external ID trust verification.",
+		OrgFeatureCustomerManagedInstalls:  "Enable app releases, portable bundles, customer-managed installation setup, registration, and support surfaces.",
 		OrgFeatureComponentHealth:          "Enable the live component resource explorer: the install runner reports the Kubernetes and cloud resources each component manages with per-resource health, surfaced in the install Resources tab.",
 		OrgFeatureServiceAccountsAndTokens: "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
 		OrgFeaturePhoneHomeAuth:            "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",

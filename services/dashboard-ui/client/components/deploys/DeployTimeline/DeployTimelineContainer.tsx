@@ -25,7 +25,11 @@ export const DeployTimelineContainer = ({
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
 
-  const { data: result, isLoading, error } = useSSETimelineQuery({
+  const {
+    data: result,
+    isLoading,
+    error,
+  } = useSSETimelineQuery({
     sseUrl:
       org?.id && install?.id && componentId
         ? `/api/orgs/${org.id}/installs/${install.id}/components/${componentId}/deploys/sse?limit=${LIMIT}&offset=${offset}`

@@ -36,13 +36,19 @@ export const TerraformVariablesFilesModal = ({
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center gap-4">
           <Text variant="body">
-            This is the Terraform variables files for this component configuration.
+            This is the Terraform variables files for this component
+            configuration.
           </Text>
           <div className="flex justify-end">
-            <ClickToCopyButton textToCopy={variablesFilesContent} className="w-fit" />
+            <ClickToCopyButton
+              textToCopy={variablesFilesContent}
+              className="w-fit"
+            />
           </div>
         </div>
-        <CodeBlock language="hcl" className="!max-h-fit">{variablesFilesContent}</CodeBlock>
+        <CodeBlock language="hcl" className="!max-h-fit">
+          {variablesFilesContent}
+        </CodeBlock>
       </div>
     </Modal>
   )
@@ -52,11 +58,13 @@ export const TerraformVariablesModal = ({
   variables,
   ...props
 }: TerraformVariablesModalProps) => {
-  const keyValuePairs: TKeyValue[] = Object.entries(variables).map(([key, value]) => ({
-    key,
-    value,
-    type: 'string'
-  }))
+  const keyValuePairs: TKeyValue[] = Object.entries(variables).map(
+    ([key, value]) => ({
+      key,
+      value,
+      type: 'string',
+    })
+  )
 
   const variablesText = Object.entries(variables)
     .map(([key, value]) => `${key} = "${value}"`)

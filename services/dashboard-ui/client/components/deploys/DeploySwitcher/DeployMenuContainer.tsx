@@ -14,7 +14,10 @@ interface IDeployMenuContainer extends Omit<IMenu, 'children'> {
   componentId: string
 }
 
-export const DeployMenuContainer = ({ activeDeployId, componentId }: IDeployMenuContainer) => {
+export const DeployMenuContainer = ({
+  activeDeployId,
+  componentId,
+}: IDeployMenuContainer) => {
   const limit = 8
   const [offset, setOffset] = useState(0)
   const [deploys, setDeploys] = useState<TDeploy[]>([])
@@ -26,7 +29,13 @@ export const DeployMenuContainer = ({ activeDeployId, componentId }: IDeployMenu
   })
 
   const { data, error, isLoading } = useQuery({
-    queryKey: ['component-deploys-menu', org?.id, install?.id, componentId, queryParams],
+    queryKey: [
+      'component-deploys-menu',
+      org?.id,
+      install?.id,
+      componentId,
+      queryParams,
+    ],
     queryFn: () =>
       getComponentDeploys({
         orgId: org.id,

@@ -39,7 +39,12 @@ export const Active = () => (
 export const Command = () => (
   <div className="w-80 p-2 border rounded">
     <SpotlightResultItem
-      result={{ ...mockResult, label: 'Create install', subtitle: undefined, tag: 'command' }}
+      result={{
+        ...mockResult,
+        label: 'Create install',
+        subtitle: undefined,
+        tag: 'command',
+      }}
       isActive={false}
       index={1}
       onSelect={() => {}}

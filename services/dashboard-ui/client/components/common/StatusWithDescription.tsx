@@ -15,9 +15,13 @@ export const StatusWithDescription = ({
     tipContent,
     tipContentClassName,
     ...tooltipProps
-  },
+  } = { tipContent: undefined },
   maxWidth = 'max-w-xs',
 }: IStatusWithDescription) => {
+  if (!tipContent) {
+    return <Status variant={variant} {...statusProps} />
+  }
+
   const content =
     typeof tipContent === 'string' ? (
       <Text variant="subtext">{tipContent}</Text>

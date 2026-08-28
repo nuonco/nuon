@@ -27,12 +27,18 @@ interface ICodeBlock
   wrapLongLines?: boolean
 }
 
-function CodeBlockFallback({ children, className }: { children: string; className?: string }) {
+function CodeBlockFallback({
+  children,
+  className,
+}: {
+  children: string
+  className?: string
+}) {
   return (
     <pre
       className={cn(
         '!m-0 !p-4 !text-sm !rounded-md !shadow-sm min-h-[3rem] max-h-[40rem] overflow-auto bg-code',
-        className,
+        className
       )}
     >
       <code className="bg-code font-mono w-full">{children}</code>
@@ -51,7 +57,11 @@ export function CodeBlock({
   wrapLongLines = false,
 }: ICodeBlock) {
   const prism = (
-    <Suspense fallback={<CodeBlockFallback className={className}>{children}</CodeBlockFallback>}>
+    <Suspense
+      fallback={
+        <CodeBlockFallback className={className}>{children}</CodeBlockFallback>
+      }
+    >
       <PrismCodeBlock
         className={className}
         language={language}

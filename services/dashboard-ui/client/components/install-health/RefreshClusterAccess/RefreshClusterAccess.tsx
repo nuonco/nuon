@@ -81,7 +81,8 @@ export const RefreshClusterAccessModal = ({
         Health reads this install&apos;s cluster to report component status.
         Refreshing rebuilds that access from the install&apos;s current outputs
         — useful when components show unknown because the install has not been
-        deployed since health was enabled, or after the cluster endpoint changed.
+        deployed since health was enabled, or after the cluster endpoint
+        changed.
       </Text>
       <Text>
         Unless you pick another role, health reads as the maintenance role — the

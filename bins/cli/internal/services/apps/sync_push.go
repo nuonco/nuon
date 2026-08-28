@@ -26,16 +26,24 @@ const (
 // createConfig uploads the parsed config in intermediate form. Nothing is
 // converted to database records until something syncs it, either
 // POST /configs/:id/sync or a branch run's sync app config step.
-func (s *Service) createConfig(ctx context.Context, appID, version string, cfg *config.AppConfig, branchID string, planOnly bool) (*models.AppAppConfig, error) {
+func (s *Service) createConfig(ctx context.Context, appID, version string, cfg *config.AppConfig, sourceArchive *config.SourceArchive, branchID string, planOnly bool) (*models.AppAppConfig, error) {
 	intermediateJSON, err := json.Marshal(cfg)
 	if err != nil {
 		return nil, errs.WithUserFacing(err, "unable to serialize config")
+	}
+	var sourceJSON []byte
+	if sourceArchive != nil {
+		sourceJSON, err = json.Marshal(sourceArchive)
+		if err != nil {
+			return nil, errs.WithUserFacing(err, "unable to serialize authored config")
+		}
 	}
 
 	appConfig, err := s.api.CreateAppConfig(ctx, appID, &models.ServiceCreateAppConfigRequest{
 		Readme:                 cfg.Readme,
 		CliVersion:             version,
 		IntermediateConfigJSON: string(intermediateJSON),
+		SourceConfigJSON:       string(sourceJSON),
 		AppBranchID:            branchID,
 		PlanOnly:               planOnly,
 	})

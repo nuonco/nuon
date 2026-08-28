@@ -39,20 +39,10 @@ export const StackVersionDetails = ({
       heading={
         <div className="flex flex-col">
           <Status status={version?.composite_status?.status} />
-          <Text
-            flex
-            className="gap-2"
-            variant="h3"
-            weight="stronger"
-          >
+          <Text flex className="gap-2" variant="h3" weight="stronger">
             Stack version details
           </Text>
-          <Text
-            flex
-            className="gap-8"
-            theme="neutral"
-            variant="subtext"
-          >
+          <Text flex className="gap-8" theme="neutral" variant="subtext">
             <span>
               <span>Created:</span>{' '}
               <Time variant="subtext" time={version?.created_at} />
@@ -120,24 +110,44 @@ const RunTypeBadge = ({ runType }: { runType?: string }) => {
   if (!runType) return null
   const theme = runType === 'workflow-run' ? 'brand' : 'info'
   const label = runType === 'workflow-run' ? 'Workflow' : 'Out of band'
-  return <Badge theme={theme} size="sm">{label}</Badge>
+  return (
+    <Badge theme={theme} size="sm">
+      {label}
+    </Badge>
+  )
 }
 
-const DiffList = ({ label, items, theme }: { label: string; items?: string[]; theme: 'success' | 'error' | 'info' }) => {
+const DiffList = ({
+  label,
+  items,
+  theme,
+}: {
+  label: string
+  items?: string[]
+  theme: 'success' | 'error' | 'info'
+}) => {
   if (!items?.length) return null
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <Text variant="subtext" theme="neutral">{label}:</Text>
+      <Text variant="subtext" theme="neutral">
+        {label}:
+      </Text>
       {items.map((item) => (
-        <Badge key={item} theme={theme} size="sm" variant="code">{item}</Badge>
+        <Badge key={item} theme={theme} size="sm" variant="code">
+          {item}
+        </Badge>
       ))}
     </div>
   )
 }
 
 const RunDiffs = ({ run }: { run: TInstallStackVersionRun }) => {
-  const hasRoleDiff = run?.role_diff?.enabled?.length || run?.role_diff?.disabled?.length
-  const hasInputDiff = run?.input_diff?.added?.length || run?.input_diff?.removed?.length || run?.input_diff?.changed?.length
+  const hasRoleDiff =
+    run?.role_diff?.enabled?.length || run?.role_diff?.disabled?.length
+  const hasInputDiff =
+    run?.input_diff?.added?.length ||
+    run?.input_diff?.removed?.length ||
+    run?.input_diff?.changed?.length
 
   if (!hasRoleDiff && !hasInputDiff) return null
 
@@ -145,17 +155,41 @@ const RunDiffs = ({ run }: { run: TInstallStackVersionRun }) => {
     <div className="flex flex-col gap-2">
       {hasRoleDiff ? (
         <div className="flex flex-col gap-1.5">
-          <Text variant="subtext" weight="strong">Role changes</Text>
-          <DiffList label="Enabled" items={run.role_diff?.enabled} theme="success" />
-          <DiffList label="Disabled" items={run.role_diff?.disabled} theme="error" />
+          <Text variant="subtext" weight="strong">
+            Role changes
+          </Text>
+          <DiffList
+            label="Enabled"
+            items={run.role_diff?.enabled}
+            theme="success"
+          />
+          <DiffList
+            label="Disabled"
+            items={run.role_diff?.disabled}
+            theme="error"
+          />
         </div>
       ) : null}
       {hasInputDiff ? (
         <div className="flex flex-col gap-1.5">
-          <Text variant="subtext" weight="strong">Input changes</Text>
-          <DiffList label="Added" items={run.input_diff?.added} theme="success" />
-          <DiffList label="Changed" items={run.input_diff?.changed} theme="info" />
-          <DiffList label="Removed" items={run.input_diff?.removed} theme="error" />
+          <Text variant="subtext" weight="strong">
+            Input changes
+          </Text>
+          <DiffList
+            label="Added"
+            items={run.input_diff?.added}
+            theme="success"
+          />
+          <DiffList
+            label="Changed"
+            items={run.input_diff?.changed}
+            theme="info"
+          />
+          <DiffList
+            label="Removed"
+            items={run.input_diff?.removed}
+            theme="error"
+          />
         </div>
       ) : null}
     </div>
@@ -193,7 +227,9 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
                 <RunDiffs run={run} />
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-center">
-                    <Text variant="subtext" weight="strong">Outputs</Text>
+                    <Text variant="subtext" weight="strong">
+                      Outputs
+                    </Text>
                     <ClickToCopyButton
                       className="w-fit"
                       textToCopy={JSON.stringify(

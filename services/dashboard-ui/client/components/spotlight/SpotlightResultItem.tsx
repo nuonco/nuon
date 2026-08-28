@@ -52,7 +52,12 @@ export const SpotlightResultItem = ({
       )}
     </div>
     {result.tag && (
-      <Badge size="sm" variant="code" theme={result.tag === 'command' ? 'brand' : 'neutral'} className="shrink-0">
+      <Badge
+        size="sm"
+        variant="code"
+        theme={result.tag === 'command' ? 'brand' : 'neutral'}
+        className="shrink-0"
+      >
         {result.tag}
       </Badge>
     )}

@@ -286,7 +286,12 @@ export const SandboxMultipleWarningPolicies = () => (
               'EKS API server endpoint is publicly accessible',
               'aws_eks_cluster.sandbox'
             ),
-            v('pol-2', 'warn', 'CPU limit not set', 'kubernetes_deployment.api'),
+            v(
+              'pol-2',
+              'warn',
+              'CPU limit not set',
+              'kubernetes_deployment.api'
+            ),
             v(
               'pol-2',
               'warn',

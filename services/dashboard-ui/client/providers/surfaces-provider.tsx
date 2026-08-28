@@ -70,12 +70,9 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
     [navigate]
   )
 
-  const updatePanel = useCallback(
-    (id: string, content: TPanelEl) => {
-      setPanels((ps) => ps.map((p) => (p.id === id ? { ...p, content } : p)))
-    },
-    []
-  )
+  const updatePanel = useCallback((id: string, content: TPanelEl) => {
+    setPanels((ps) => ps.map((p) => (p.id === id ? { ...p, content } : p)))
+  }, [])
 
   const removePanel = useCallback(
     (id: string, panelKey?: string) => {

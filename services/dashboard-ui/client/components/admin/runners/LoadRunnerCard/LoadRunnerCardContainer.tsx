@@ -9,11 +9,19 @@ interface LoadRunnerCardContainerProps {
   installId: string
 }
 
-export const LoadRunnerCardContainer = ({ runnerId, installId }: LoadRunnerCardContainerProps) => {
+export const LoadRunnerCardContainer = ({
+  runnerId,
+  installId,
+}: LoadRunnerCardContainerProps) => {
   const { org } = useOrg()
   const orgId = org.id
 
-  const { data: runner, error: queryError, isLoading, refetch } = useQuery<TRunner>({
+  const {
+    data: runner,
+    error: queryError,
+    isLoading,
+    refetch,
+  } = useQuery<TRunner>({
     queryKey: ['runner', orgId, runnerId],
     queryFn: () => getRunner({ orgId, runnerId }),
     enabled: !!orgId && !!runnerId,

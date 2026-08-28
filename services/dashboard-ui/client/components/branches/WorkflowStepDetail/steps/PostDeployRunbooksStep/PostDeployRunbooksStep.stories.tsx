@@ -3,7 +3,10 @@ export default {
 }
 
 import { PostDeployRunbooksStep } from './PostDeployRunbooksStep'
-import { InstallRunbooksRow, type IInstallRunbooksRow } from './InstallRunbooksRow'
+import {
+  InstallRunbooksRow,
+  type IInstallRunbooksRow,
+} from './InstallRunbooksRow'
 
 const mkInstall = (over: Record<string, any> = {}): any => ({
   id: 'ins_acme',
@@ -17,8 +20,18 @@ const wfHref = '/org_1/installs/ins_acme/workflows/wf_1'
 const installHref = '/org_1/installs/ins_acme'
 
 const okRunbooks = [
-  { runbookId: 'rb1', runbookName: 'verify_status', status: 'success', workflowHref: wfHref },
-  { runbookId: 'rb2', runbookName: 'deploy_verify_and_logs', status: 'success', workflowHref: wfHref },
+  {
+    runbookId: 'rb1',
+    runbookName: 'verify_status',
+    status: 'success',
+    workflowHref: wfHref,
+  },
+  {
+    runbookId: 'rb2',
+    runbookName: 'deploy_verify_and_logs',
+    status: 'success',
+    workflowHref: wfHref,
+  },
 ]
 
 export const RowAllSucceeded = () => (
@@ -35,7 +48,10 @@ export const RowFailedSecondRunbook = () => (
     installId="ins_acme"
     install={mkInstall()}
     installHref={installHref}
-    runbooks={[okRunbooks[0], { ...okRunbooks[1], runbookName: 'smoke_test', status: 'error' }]}
+    runbooks={[
+      okRunbooks[0],
+      { ...okRunbooks[1], runbookName: 'smoke_test', status: 'error' },
+    ]}
   />
 )
 
@@ -49,7 +65,12 @@ export const RowInProgress = () => (
 )
 
 const rows: IInstallRunbooksRow[] = [
-  { installId: 'ins_acme', install: mkInstall(), installHref, runbooks: okRunbooks },
+  {
+    installId: 'ins_acme',
+    install: mkInstall(),
+    installHref,
+    runbooks: okRunbooks,
+  },
   {
     installId: 'ins_globex',
     install: mkInstall({ id: 'ins_globex', name: 'httpbin2' }),
@@ -82,7 +103,10 @@ export const StepWithFailure = () => (
       rows[0],
       {
         ...rows[1],
-        runbooks: [okRunbooks[0], { ...okRunbooks[1], runbookName: 'smoke_test', status: 'error' }],
+        runbooks: [
+          okRunbooks[0],
+          { ...okRunbooks[1], runbookName: 'smoke_test', status: 'error' },
+        ],
       },
     ]}
   />

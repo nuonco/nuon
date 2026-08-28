@@ -33,7 +33,11 @@ describe('useDraftPersistence', () => {
   test('ignores + removes a stale-version draft', () => {
     localStorage.setItem(
       'k',
-      JSON.stringify({ values: { name: 'x' }, timestamp: new Date().toISOString(), version: 1 })
+      JSON.stringify({
+        values: { name: 'x' },
+        timestamp: new Date().toISOString(),
+        version: 1,
+      })
     )
     const { result } = renderHook(() =>
       useDraftPersistence({ storageKey: 'k', values: { name: '' } })
@@ -46,10 +50,18 @@ describe('useDraftPersistence', () => {
     const old = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString()
     localStorage.setItem(
       'k',
-      JSON.stringify({ values: { name: 'x' }, timestamp: old, version: DRAFT_VERSION })
+      JSON.stringify({
+        values: { name: 'x' },
+        timestamp: old,
+        version: DRAFT_VERSION,
+      })
     )
     const { result } = renderHook(() =>
-      useDraftPersistence({ storageKey: 'k', values: { name: '' }, ttlHours: 24 })
+      useDraftPersistence({
+        storageKey: 'k',
+        values: { name: '' },
+        ttlHours: 24,
+      })
     )
     expect(result.current.hasDraft).toBe(false)
   })
@@ -65,7 +77,11 @@ describe('useDraftPersistence', () => {
       })
     )
     const { result } = renderHook(() =>
-      useDraftPersistence({ storageKey: 'k', values: { name: '' }, configId: 'b' })
+      useDraftPersistence({
+        storageKey: 'k',
+        values: { name: '' },
+        configId: 'b',
+      })
     )
     expect(result.current.hasDraft).toBe(false)
     expect(localStorage.getItem('k')).toBeNull()
@@ -94,7 +110,11 @@ describe('useDraftPersistence', () => {
   test('clearDraft removes storage and resets state', () => {
     localStorage.setItem(
       'k',
-      JSON.stringify({ values: { name: 'x' }, timestamp: new Date().toISOString(), version: DRAFT_VERSION })
+      JSON.stringify({
+        values: { name: 'x' },
+        timestamp: new Date().toISOString(),
+        version: DRAFT_VERSION,
+      })
     )
     const { result } = renderHook(() =>
       useDraftPersistence({ storageKey: 'k', values: { name: '' } })

@@ -260,10 +260,10 @@ Plan: 2 to add, 2 to change, 2 to destroy
 
       expect(result.changes).toHaveLength(6)
       expect(result.changes[0].action).toBe('destroyed') // removed → destroyed
-      expect(result.changes[1].action).toBe('changed')   // changed → changed
-      expect(result.changes[2].action).toBe('added')     // added → added
-      expect(result.changes[3].action).toBe('added')     // created → added
-      expect(result.changes[4].action).toBe('changed')   // modified → changed
+      expect(result.changes[1].action).toBe('changed') // changed → changed
+      expect(result.changes[2].action).toBe('added') // added → added
+      expect(result.changes[3].action).toBe('added') // created → added
+      expect(result.changes[4].action).toBe('changed') // modified → changed
       expect(result.changes[5].action).toBe('destroyed') // destroyed → destroyed
     })
 

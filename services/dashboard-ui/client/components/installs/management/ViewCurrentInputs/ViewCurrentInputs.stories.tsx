@@ -11,11 +11,51 @@ const mockInputGroups = [
     display_name: 'Application settings',
     description: 'Core application configuration',
     app_inputs: [
-      { name: 'app_name', display_name: 'App name', description: 'Display name for the application', required: true, sensitive: false, source: 'vendor', default: 'acme-app' },
-      { name: 'log_level', display_name: 'Log level', description: 'Logging verbosity', required: false, sensitive: false, source: 'vendor', default: 'info' },
-      { name: 'replica_count', display_name: 'Replica count', description: 'Number of application replicas', required: false, sensitive: false, source: 'vendor', default: '2' },
-      { name: 'enable_metrics', display_name: 'Enable metrics', description: 'Expose Prometheus metrics', required: false, sensitive: false, source: 'vendor', default: 'true' },
-      { name: 'feature_flags', display_name: 'Feature flags', description: 'JSON map of feature toggles', required: false, sensitive: false, source: 'vendor', default: '{}' },
+      {
+        name: 'app_name',
+        display_name: 'App name',
+        description: 'Display name for the application',
+        required: true,
+        sensitive: false,
+        source: 'vendor',
+        default: 'acme-app',
+      },
+      {
+        name: 'log_level',
+        display_name: 'Log level',
+        description: 'Logging verbosity',
+        required: false,
+        sensitive: false,
+        source: 'vendor',
+        default: 'info',
+      },
+      {
+        name: 'replica_count',
+        display_name: 'Replica count',
+        description: 'Number of application replicas',
+        required: false,
+        sensitive: false,
+        source: 'vendor',
+        default: '2',
+      },
+      {
+        name: 'enable_metrics',
+        display_name: 'Enable metrics',
+        description: 'Expose Prometheus metrics',
+        required: false,
+        sensitive: false,
+        source: 'vendor',
+        default: 'true',
+      },
+      {
+        name: 'feature_flags',
+        display_name: 'Feature flags',
+        description: 'JSON map of feature toggles',
+        required: false,
+        sensitive: false,
+        source: 'vendor',
+        default: '{}',
+      },
     ],
   },
   {
@@ -23,11 +63,50 @@ const mockInputGroups = [
     display_name: 'Database',
     description: 'Database connection settings',
     app_inputs: [
-      { name: 'db_host', display_name: 'Database host', description: 'Hostname or IP of the database', required: true, sensitive: false, source: 'vendor', default: 'localhost' },
-      { name: 'db_port', display_name: 'Database port', description: 'Port the database listens on', required: false, sensitive: false, source: 'vendor', default: '5432' },
-      { name: 'db_name', display_name: 'Database name', description: 'Name of the database', required: true, sensitive: false, source: 'vendor', default: 'acme' },
-      { name: 'db_username', display_name: 'Database user', description: 'Database username', required: true, sensitive: false, source: 'vendor', default: 'acme' },
-      { name: 'db_password', display_name: 'Database password', description: 'Database password', required: true, sensitive: true, source: 'vendor' },
+      {
+        name: 'db_host',
+        display_name: 'Database host',
+        description: 'Hostname or IP of the database',
+        required: true,
+        sensitive: false,
+        source: 'vendor',
+        default: 'localhost',
+      },
+      {
+        name: 'db_port',
+        display_name: 'Database port',
+        description: 'Port the database listens on',
+        required: false,
+        sensitive: false,
+        source: 'vendor',
+        default: '5432',
+      },
+      {
+        name: 'db_name',
+        display_name: 'Database name',
+        description: 'Name of the database',
+        required: true,
+        sensitive: false,
+        source: 'vendor',
+        default: 'acme',
+      },
+      {
+        name: 'db_username',
+        display_name: 'Database user',
+        description: 'Database username',
+        required: true,
+        sensitive: false,
+        source: 'vendor',
+        default: 'acme',
+      },
+      {
+        name: 'db_password',
+        display_name: 'Database password',
+        description: 'Database password',
+        required: true,
+        sensitive: true,
+        source: 'vendor',
+      },
     ],
   },
   {
@@ -35,9 +114,33 @@ const mockInputGroups = [
     display_name: 'Networking',
     description: 'Ingress and network configuration',
     app_inputs: [
-      { name: 'domain', display_name: 'Domain', description: 'Public domain for the install', required: true, sensitive: false, source: 'vendor', default: 'app.example.com' },
-      { name: 'enable_tls', display_name: 'Enable TLS', description: 'Terminate TLS at the ingress', required: false, sensitive: false, source: 'vendor', default: 'true' },
-      { name: 'allowed_cidrs', display_name: 'Allowed CIDRs', description: 'Comma-separated list of allowed CIDRs', required: false, sensitive: false, source: 'vendor', default: '0.0.0.0/0' },
+      {
+        name: 'domain',
+        display_name: 'Domain',
+        description: 'Public domain for the install',
+        required: true,
+        sensitive: false,
+        source: 'vendor',
+        default: 'app.example.com',
+      },
+      {
+        name: 'enable_tls',
+        display_name: 'Enable TLS',
+        description: 'Terminate TLS at the ingress',
+        required: false,
+        sensitive: false,
+        source: 'vendor',
+        default: 'true',
+      },
+      {
+        name: 'allowed_cidrs',
+        display_name: 'Allowed CIDRs',
+        description: 'Comma-separated list of allowed CIDRs',
+        required: false,
+        sensitive: false,
+        source: 'vendor',
+        default: '0.0.0.0/0',
+      },
     ],
   },
   {
@@ -45,8 +148,22 @@ const mockInputGroups = [
     display_name: 'Customer configuration',
     description: 'Values provided by the customer',
     app_inputs: [
-      { name: 'customer_account_id', display_name: 'AWS account ID', description: 'Customer AWS account ID', required: true, sensitive: false, source: 'customer' },
-      { name: 'customer_region', display_name: 'AWS region', description: 'Region to deploy into', required: true, sensitive: false, source: 'customer' },
+      {
+        name: 'customer_account_id',
+        display_name: 'AWS account ID',
+        description: 'Customer AWS account ID',
+        required: true,
+        sensitive: false,
+        source: 'customer',
+      },
+      {
+        name: 'customer_region',
+        display_name: 'AWS region',
+        description: 'Region to deploy into',
+        required: true,
+        sensitive: false,
+        source: 'customer',
+      },
     ],
   },
 ]
@@ -106,7 +223,8 @@ const mockOverrideGroups = [
 const mockOverrideRedacted = {
   nuon_component_override_v1_helm_values_77686f616d69:
     'replicaCount: 5\nresources:\n  requests:\n    cpu: "150m"\n    memory: 64Mi\n',
-  nuon_component_override_v1_helm_values_617069: 'replicaCount: 2\nimage:\n  tag: "2.3.1"\n',
+  nuon_component_override_v1_helm_values_617069:
+    'replicaCount: 2\nimage:\n  tag: "2.3.1"\n',
   nuon_component_override_v1_tf_vars_767063:
     'cidr_block = "10.1.0.0/16"\ninstance_count = 3\n',
 }
@@ -171,7 +289,11 @@ tags = {
 
 export const WithGroups = () => (
   <ModalStory>
-    <ViewCurrentInputsModal isLoading={false} redactedValues={mockRedacted} inputGroups={mockInputGroups} />
+    <ViewCurrentInputsModal
+      isLoading={false}
+      redactedValues={mockRedacted}
+      inputGroups={mockInputGroups}
+    />
   </ModalStory>
 )
 
@@ -187,19 +309,31 @@ export const WithOverrides = () => (
 
 export const Loading = () => (
   <ModalStory>
-    <ViewCurrentInputsModal isLoading={true} redactedValues={{}} inputGroups={[]} />
+    <ViewCurrentInputsModal
+      isLoading={true}
+      redactedValues={{}}
+      inputGroups={[]}
+    />
   </ModalStory>
 )
 
 export const Empty = () => (
   <ModalStory>
-    <ViewCurrentInputsModal isLoading={false} redactedValues={{}} inputGroups={[]} />
+    <ViewCurrentInputsModal
+      isLoading={false}
+      redactedValues={{}}
+      inputGroups={[]}
+    />
   </ModalStory>
 )
 
 export const FlatInputs = () => (
   <ModalStory>
-    <ViewCurrentInputsModal isLoading={false} redactedValues={{ key1: 'value1', key2: 'value2' }} inputGroups={[]} />
+    <ViewCurrentInputsModal
+      isLoading={false}
+      redactedValues={{ key1: 'value1', key2: 'value2' }}
+      inputGroups={[]}
+    />
   </ModalStory>
 )
 

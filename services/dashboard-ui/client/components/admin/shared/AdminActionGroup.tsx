@@ -37,7 +37,7 @@ export const AdminActionGroup = ({
   title,
   icon,
   variant = 'default',
-  children
+  children,
 }: AdminActionGroupProps) => {
   return (
     <Card className={`border-l-4 ${getVariantClasses(variant)}`}>
@@ -45,9 +45,9 @@ export const AdminActionGroup = ({
         <div className="flex flex-col">
           <div className="flex items-center gap-3">
             {icon && (
-              <Icon 
-                variant={icon} 
-                size="20" 
+              <Icon
+                variant={icon}
+                size="20"
                 className={getIconColor(variant)}
               />
             )}
@@ -56,10 +56,8 @@ export const AdminActionGroup = ({
             </Text>
           </div>
         </div>
-        
-        <div className="grid gap-3 md:grid-cols-2">
-          {children}
-        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">{children}</div>
       </div>
     </Card>
   )

@@ -61,9 +61,13 @@ export const ShutdownMngRunnerModal = ({
           <Text variant="base" weight="strong">
             Shutdown this managed runner instance.
           </Text>
-          <Text variant="body" theme="neutral" className="leading-relaxed max-w-md">
-            This will destroy the managed runner instance. A new instance will be
-            provisioned automatically to replace it.
+          <Text
+            variant="body"
+            theme="neutral"
+            className="leading-relaxed max-w-md"
+          >
+            This will destroy the managed runner instance. A new instance will
+            be provisioned automatically to replace it.
           </Text>
           <ul className="flex flex-col gap-1 list-disc pl-6 text-sm text-cool-grey-700 dark:text-cool-grey-300">
             <li>The VM instance will be terminated</li>

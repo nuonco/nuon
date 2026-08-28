@@ -67,7 +67,12 @@ export function createAddNode(nodes: Node[], nodeIds: Set<string>) {
       data,
       position: { x: 0, y: 0 },
       width: w,
-      style: { background: 'transparent', border: 'none', padding: 0, width: w },
+      style: {
+        background: 'transparent',
+        border: 'none',
+        padding: 0,
+        width: w,
+      },
     })
   }
 }
@@ -80,13 +85,22 @@ export function createAddEdge(edges: Edge[]) {
       source,
       target,
       type: 'smoothstep',
-      style: { stroke: color, strokeWidth: 1.5, strokeDasharray: isDrift ? '6 3' : undefined },
+      style: {
+        stroke: color,
+        strokeWidth: 1.5,
+        strokeDasharray: isDrift ? '6 3' : undefined,
+      },
       markerEnd: { type: MarkerType.ArrowClosed, color },
     })
   }
 }
 
-const nodeStyle = (bg: string, fontSize: string, fontWeight: number, border?: string) => ({
+const nodeStyle = (
+  bg: string,
+  fontSize: string,
+  fontWeight: number,
+  border?: string
+) => ({
   background: bg,
   color: '#FAFAFA',
   borderRadius: '6px',
@@ -103,20 +117,28 @@ export const StructuralNode = memo(({ data }: NodeProps) => {
   const isDrift = data.isDrift as boolean
   return (
     <>
-      <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ visibility: 'hidden' }}
+      />
       <div
         className="flex items-center justify-center px-3 py-2"
         style={nodeStyle(
           isDrift ? DRIFT_STRUCTURAL_COLOR : STRUCTURAL_COLOR,
           '12px',
           600,
-          isDrift ? '2px dashed #d97706' : undefined,
+          isDrift ? '2px dashed #d97706' : undefined
         )}
         title={data.label as string}
       >
         {data.label as string}
       </div>
-      <Handle type="source" position={Position.Bottom} style={{ visibility: 'hidden' }} />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ visibility: 'hidden' }}
+      />
     </>
   )
 })
@@ -127,14 +149,18 @@ export const ActionNode = memo(({ data }: NodeProps) => {
   const isDrift = data.isDrift as boolean
   return (
     <>
-      <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ visibility: 'hidden' }}
+      />
       <div
         className="flex items-center justify-center px-3 py-2"
         style={nodeStyle(
           ACTION_COLORS[action] || '#6b7280',
           '11px',
           500,
-          isDrift ? '2px dashed #d97706' : undefined,
+          isDrift ? '2px dashed #d97706' : undefined
         )}
         title={data.label as string}
       >

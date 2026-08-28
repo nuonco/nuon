@@ -61,7 +61,10 @@ function alignClass(align: TableAlign) {
   return undefined
 }
 
-function searchPlaceholder(headers: TableCell[], indexes: number[] | null): string {
+function searchPlaceholder(
+  headers: TableCell[],
+  indexes: number[] | null
+): string {
   if (!indexes || indexes.length === 0 || indexes.length === headers.length) {
     return 'Search table…'
   }
@@ -69,7 +72,12 @@ function searchPlaceholder(headers: TableCell[], indexes: number[] | null): stri
   return names.length ? `Search by ${names.join(', ')}…` : 'Search table…'
 }
 
-export function MarkdownTable({ headers, rows, align, search }: ExtractedTable) {
+export function MarkdownTable({
+  headers,
+  rows,
+  align,
+  search,
+}: ExtractedTable) {
   const [query, setQuery] = useState('')
 
   const searchColIndexes = useMemo(() => {
@@ -99,7 +107,9 @@ export function MarkdownTable({ headers, rows, align, search }: ExtractedTable) 
           const cls = alignClass(align[i])
           return (
             <div className={cls}>
-              <CellContent cell={rows[ctx.row.original.__i]?.[i] ?? EMPTY_CELL} />
+              <CellContent
+                cell={rows[ctx.row.original.__i]?.[i] ?? EMPTY_CELL}
+              />
             </div>
           )
         },
@@ -125,7 +135,9 @@ export function MarkdownTable({ headers, rows, align, search }: ExtractedTable) 
         <SearchInput
           value={query}
           onChange={setQuery}
-          placeholder={search.placeholder || searchPlaceholder(headers, searchColIndexes)}
+          placeholder={
+            search.placeholder || searchPlaceholder(headers, searchColIndexes)
+          }
           className="w-full md:w-80"
           labelClassName="w-full md:w-fit"
         />
@@ -135,7 +147,9 @@ export function MarkdownTable({ headers, rows, align, search }: ExtractedTable) 
         data={filtered}
         enableSearch={false}
         enableSorting
-        emptyStateProps={{ emptyMessage: query ? 'No matching rows' : 'No data' }}
+        emptyStateProps={{
+          emptyMessage: query ? 'No matching rows' : 'No data',
+        }}
       />
     </div>
   )

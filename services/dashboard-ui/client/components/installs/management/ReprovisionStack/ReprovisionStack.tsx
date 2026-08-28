@@ -91,7 +91,8 @@ export const ReprovisionStackModal = ({
                     Skip component deployments
                   </Text>
                   <Text variant="subtext" theme="neutral">
-                    Only reprovision the stack without redeploying components on top.
+                    Only reprovision the stack without redeploying components on
+                    top.
                   </Text>
                 </div>
               ),

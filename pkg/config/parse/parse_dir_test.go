@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/nuonco/nuon/pkg/config"
@@ -107,3 +108,148 @@ app_branch = "main"
 	require.Equal(t, "$.tag", cfg.Triggers.Rules[0].Filters[0].Path)
 	require.Equal(t, "main", cfg.Triggers.Rules[0].Target.AppBranch)
 }
+
+func TestConfigDirIncludesCustomerManagedRuntime(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(dir, "components"), 0755))
+	files := map[string]string{
+		"metadata.toml": `version = "v2"
+[customer_managed]
+runner_image_url = "registry.example.com/runner"
+runner_image_tag = "v1"
+
+[[customer_managed.platforms]]
+target = "linux/amd64"
+portal_binary_url = "https://artifacts.example.com/portal"
+runner_binary_url = "https://artifacts.example.com/runner"
+`,
+		"sandbox.toml": `terraform_version = "1.11.3"
+[public_repo]
+repo = "nuonco/aws-eks-sandbox"
+directory = "."
+branch = "main"
+`,
+		"runner.toml": `runner_type = "aws"
+helm_driver = "configmap"
+init_script_url = "https://example.com/init.sh"
+`,
+	}
+	for name, contents := range files {
+		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(contents), 0644))
+	}
+
+	cfg, err := ParseDir(context.Background(), ParseConfig{
+		Dirname:       dir,
+		FileProcessor: func(_ string, obj map[string]any) map[string]any { return obj },
+	})
+	require.NoError(t, err)
+	require.NotNil(t, cfg.CustomerManaged)
+	require.Equal(t, "registry.example.com/runner", cfg.CustomerManaged.RunnerImageURL)
+	require.Equal(t, "v1", cfg.CustomerManaged.RunnerImageTag)
+	require.Equal(t, []config.CustomerManagedPlatform{{
+		Target:          "linux/amd64",
+		PortalBinaryURL: "https://artifacts.example.com/portal",
+		RunnerBinaryURL: "https://artifacts.example.com/runner",
+	}}, cfg.CustomerManaged.Platforms)
+}
+
+func TestParseDirWithSourceCapturesConsumedSources(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(dir, "components"), 0o755))
+	require.NoError(t, os.Mkdir(filepath.Join(dir, "actions"), 0o755))
+
+	metadata := `# preserve this authored comment
+version = "v2"
+description = "./not-a-get-field.txt"
+readme = "./README.md"
+
+[customer_managed]
+runner_image_url = "registry.example.com/runner"
+runner_image_tag = "v1"
+
+[[customer_managed.platforms]]
+target = "linux/amd64"
+portal_binary_url = "https://artifacts.example.com/portal"
+runner_binary_url = "https://artifacts.example.com/runner"
+`
+	action := `name = "hello"
+timeout = "10s"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name = "say-hello"
+command = "sh"
+inline_contents = "./hello.sh"
+`
+	files := map[string]string{
+		"metadata.toml":            metadata,
+		"README.md":                "# Captured readme\n",
+		"not-a-get-field.txt":      "must not be captured\n",
+		"unreferenced.txt":         "must not be captured\n",
+		"actions/hello.toml":       action,
+		"actions/hello.sh":         "echo hello\n",
+		"actions/unreferenced.txt": "must not be captured\n",
+		"sandbox.toml": `terraform_version = "1.11.3"
+[public_repo]
+repo = "nuonco/aws-eks-sandbox"
+directory = "."
+branch = "main"
+`,
+		"runner.toml": `runner_type = "aws"
+helm_driver = "configmap"
+init_script_url = "https://example.com/init.sh"
+`,
+	}
+	for name, contents := range files {
+		require.NoError(t, os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o644))
+	}
+
+	result, err := ParseDirWithSource(context.Background(), ParseConfig{
+		Dirname:       dir,
+		FileProcessor: func(_ string, obj map[string]any) map[string]any { return obj },
+	})
+	require.NoError(t, err)
+	require.Equal(t, 3, result.Source.SchemaVersion)
+	require.Equal(t, metadata, result.Source.Files["metadata.toml"])
+	require.Equal(t, action, result.Source.Files["actions/hello.toml"])
+	require.Equal(t, "# Captured readme\n", result.Source.Files["README.md"])
+	require.Equal(t, "echo hello\n", result.Source.Files["actions/hello.sh"])
+	require.NotContains(t, result.Source.Files, "not-a-get-field.txt")
+	require.NotContains(t, result.Source.Files, "unreferenced.txt")
+	require.NotContains(t, result.Source.Files, "actions/unreferenced.txt")
+	require.Equal(t, "metadata.toml", result.Source.Members["metadata:metadata"])
+	require.Equal(t, "actions/hello.toml", result.Source.Members["action:hello"])
+	require.Equal(t, "sandbox.toml", result.Source.Members["sandbox:sandbox"])
+	require.Equal(t, "runner.toml", result.Source.Members["runner:runner"])
+	require.NoError(t, result.Source.ReindexMembers())
+}
+
+func TestParseDirWithSourceDoesNotApplyArchiveLimitsToStandardApps(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(dir, "components"), 0o755))
+	require.NoError(t, os.WriteFile(
+		filepath.Join(dir, "metadata.toml"),
+		[]byte("version = \"v2\"\n# "+strings.Repeat("x", maxSourceArchiveTestFileBytes)),
+		0o644,
+	))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "sandbox.toml"), []byte(`terraform_version = "1.11.3"
+[public_repo]
+repo = "nuonco/aws-eks-sandbox"
+directory = "."
+branch = "main"
+`), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "runner.toml"), []byte(`runner_type = "aws"
+helm_driver = "configmap"
+init_script_url = "https://example.com/init.sh"
+`), 0o644))
+
+	_, err := ParseDirWithSource(context.Background(), ParseConfig{
+		Dirname:       dir,
+		FileProcessor: func(_ string, obj map[string]any) map[string]any { return obj },
+	})
+	require.NoError(t, err)
+}
+
+const maxSourceArchiveTestFileBytes = 5<<20 + 1

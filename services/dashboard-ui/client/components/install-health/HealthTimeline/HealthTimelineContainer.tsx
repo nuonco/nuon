@@ -31,7 +31,11 @@ export const HealthTimelineContainer = ({
     placeholderData: keepPreviousData,
     queryKey: ['install-health-timeline', org?.id, install?.id, days],
     queryFn: () =>
-      getInstallHealthTimeline({ orgId: org!.id, installId: install!.id, days }),
+      getInstallHealthTimeline({
+        orgId: org!.id,
+        installId: install!.id,
+        days,
+      }),
     enabled: !!org?.id && !!install?.id && !isComponentScope,
     refetchInterval: shouldPoll ? pollInterval : false,
   })
@@ -74,7 +78,8 @@ export const HealthTimelineContainer = ({
       clusterAccessError={
         isComponentScope
           ? undefined
-          : (timeline as TInstallHealthTimeline | undefined)?.cluster_access_error
+          : (timeline as TInstallHealthTimeline | undefined)
+              ?.cluster_access_error
       }
       currentHealth={timeline?.current_health}
       components={

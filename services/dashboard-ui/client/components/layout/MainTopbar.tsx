@@ -50,14 +50,22 @@ export const MainTopbar = ({
               tipContentClassName="max-w-64"
               tipContent={
                 <Text variant="subtext">
-                  This organization is running in sandbox mode. Installs are simulated instead of deploying to a real cloud account.
+                  This organization is running in sandbox mode. Installs are
+                  simulated instead of deploying to a real cloud account.
                 </Text>
               }
               position="bottom"
             >
-              <Badge variant="code" theme="neutral" size="sm" className="shrink-0">
+              <Badge
+                variant="code"
+                theme="neutral"
+                size="sm"
+                className="shrink-0"
+              >
                 <Icon variant="TestTubeIcon" size={14} className="xl:hidden" />
-                <span className="hidden xl:inline whitespace-nowrap">Sandbox mode</span>
+                <span className="hidden xl:inline whitespace-nowrap">
+                  Sandbox mode
+                </span>
               </Badge>
             </Tooltip>
           )}

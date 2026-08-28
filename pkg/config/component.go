@@ -41,7 +41,7 @@ func (c ComponentType) APIType() models.AppComponentType {
 		return models.AppComponentTypeHelmChart
 	case DockerBuildComponentType:
 		return models.AppComponentTypeDockerBuild
-	case ContainerImageComponentType:
+	case ContainerImageComponentType, ExternalImageComponentType:
 		return models.AppComponentTypeExternalImage
 	case JobComponentType:
 		return models.AppComponentTypeJob

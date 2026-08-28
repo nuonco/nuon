@@ -23,6 +23,9 @@ type AppInstallSandboxRun struct {
 	// action workflow runs
 	ActionWorkflowRuns []*AppInstallActionWorkflowRun `json:"action_workflow_runs"`
 
+	// app sandbox build id
+	AppSandboxBuildID string `json:"app_sandbox_build_id,omitempty"`
+
 	// app sandbox config
 	AppSandboxConfig *AppAppSandboxConfig `json:"app_sandbox_config,omitempty"`
 

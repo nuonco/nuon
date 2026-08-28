@@ -15,7 +15,11 @@ const WAITING_MESSAGES = [
   'Almost there...',
 ]
 
-function useProgressMessage(messages: string[], enabled: boolean, intervalMs = 3000) {
+function useProgressMessage(
+  messages: string[],
+  enabled: boolean,
+  intervalMs = 3000
+) {
   const [index, setIndex] = useState(0)
   const timerRef = useRef<ReturnType<typeof setInterval>>()
 
@@ -51,7 +55,10 @@ function OrgSpinner() {
   const arcLen = circumference * 0.25
 
   return (
-    <div className="relative flex items-center justify-center shrink-0" style={{ width: ORG_RING_SIZE, height: ORG_RING_SIZE }}>
+    <div
+      className="relative flex items-center justify-center shrink-0"
+      style={{ width: ORG_RING_SIZE, height: ORG_RING_SIZE }}
+    >
       <svg width={ORG_RING_SIZE} height={ORG_RING_SIZE} className="-rotate-90">
         <circle
           cx={ORG_RING_SIZE / 2}
@@ -66,7 +73,10 @@ function OrgSpinner() {
         width={ORG_RING_SIZE}
         height={ORG_RING_SIZE}
         className="absolute inset-0"
-        style={{ transformOrigin: 'center', animation: 'spinner-rotate 1s linear infinite' }}
+        style={{
+          transformOrigin: 'center',
+          animation: 'spinner-rotate 1s linear infinite',
+        }}
       >
         <circle
           cx={ORG_RING_SIZE / 2}
@@ -83,23 +93,43 @@ function OrgSpinner() {
   )
 }
 
-function OrgCard({ name, orgId, status = 'idle', waitingMessage }: IOrgCardProps) {
+function OrgCard({
+  name,
+  orgId,
+  status = 'idle',
+  waitingMessage,
+}: IOrgCardProps) {
   return (
     <Card className="!gap-0 !p-4">
       <div className="flex items-center gap-4">
         <OrgAvatar name={name} size="lg" />
         <div className="flex flex-col flex-1 min-w-0 gap-0">
-          <Text variant="base" weight="strong" className="truncate">{name}</Text>
+          <Text variant="base" weight="strong" className="truncate">
+            {name}
+          </Text>
           {status === 'waiting' && waitingMessage && (
-            <Text variant="body" className="text-cool-grey-600 dark:text-cool-grey-400">{waitingMessage}</Text>
+            <Text
+              variant="body"
+              className="text-cool-grey-600 dark:text-cool-grey-400"
+            >
+              {waitingMessage}
+            </Text>
           )}
           {status === 'success' && (
-            <Text variant="body" className="text-green-700 dark:text-green-500">Organization created</Text>
+            <Text variant="body" className="text-green-700 dark:text-green-500">
+              Organization created
+            </Text>
           )}
         </div>
         {status === 'waiting' && <OrgSpinner />}
         {status === 'success' && (
-          <Icon variant="CheckCircleIcon" size={20} weight="fill" theme="success" className="shrink-0" />
+          <Icon
+            variant="CheckCircleIcon"
+            size={20}
+            weight="fill"
+            theme="success"
+            className="shrink-0"
+          />
         )}
       </div>
     </Card>
@@ -116,7 +146,13 @@ interface IExistingOrgCardProps {
   onSelect: () => void
 }
 
-function ExistingOrgCard({ org, selected, disabled, pending, onSelect }: IExistingOrgCardProps) {
+function ExistingOrgCard({
+  org,
+  selected,
+  disabled,
+  pending,
+  onSelect,
+}: IExistingOrgCardProps) {
   return (
     <button
       type="button"
@@ -130,18 +166,28 @@ function ExistingOrgCard({ org, selected, disabled, pending, onSelect }: IExisti
           : 'border-cool-grey-500/24 dark:border-cool-grey-500/24',
         disabled
           ? 'opacity-60 cursor-not-allowed'
-          : !selected && 'hover:!border-primary-500 hover:ring-2 hover:ring-primary-500 cursor-pointer'
+          : !selected &&
+              'hover:!border-primary-500 hover:ring-2 hover:ring-primary-500 cursor-pointer'
       )}
     >
       <OrgAvatar name={org.name!} size="lg" />
       <div className="flex flex-col flex-1 min-w-0 gap-0">
-        <Text variant="base" weight="strong" className="truncate">{org.name}</Text>
-        <Text variant="subtext" theme="neutral" className="truncate font-mono">{org.id}</Text>
+        <Text variant="base" weight="strong" className="truncate">
+          {org.name}
+        </Text>
+        <Text variant="subtext" theme="neutral" className="truncate font-mono">
+          {org.id}
+        </Text>
       </div>
       {pending ? (
         <Icon variant="Loading" size={20} />
       ) : selected ? (
-        <Icon variant="CheckCircleIcon" weight="fill" theme="success" size={20} />
+        <Icon
+          variant="CheckCircleIcon"
+          weight="fill"
+          theme="success"
+          size={20}
+        />
       ) : (
         <Icon variant="CaretRightIcon" weight="bold" size={20} />
       )}
@@ -222,7 +268,12 @@ export const WelcomeNameOrgStep = ({
       <Text variant="h2" role="heading" level={2} className="mb-2">
         Create your organization
       </Text>
-      <Text variant="body" theme="neutral" as="p" className="max-w-md !text-pretty">
+      <Text
+        variant="body"
+        theme="neutral"
+        as="p"
+        className="max-w-md !text-pretty"
+      >
         {description}
       </Text>
     </div>
@@ -261,9 +312,7 @@ export const WelcomeNameOrgStep = ({
             {error.error ?? 'Failed to create organization'}
           </Banner>
         )}
-        {stepError && (
-          <Banner theme="error">{stepError}</Banner>
-        )}
+        {stepError && <Banner theme="error">{stepError}</Banner>}
 
         {!showCreateView && (
           <>
@@ -353,7 +402,11 @@ export const WelcomeNameOrgStep = ({
             ) : (
               <div />
             )}
-            <Button type="submit" variant="primary" disabled={!orgName.trim() || isWorking}>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={!orgName.trim() || isWorking}
+            >
               {isPending ? 'Creating...' : 'Continue'}{' '}
               {!isWorking && <Icon variant="CaretRightIcon" weight="bold" />}
             </Button>

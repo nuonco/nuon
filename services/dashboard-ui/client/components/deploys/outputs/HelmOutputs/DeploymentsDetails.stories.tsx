@@ -19,8 +19,16 @@ const mockDeployments = {
         availableReplicas: 3,
         updatedReplicas: 3,
         conditions: [
-          { type: 'Available', status: 'True', reason: 'MinimumReplicasAvailable' },
-          { type: 'Progressing', status: 'True', reason: 'NewReplicaSetAvailable' },
+          {
+            type: 'Available',
+            status: 'True',
+            reason: 'MinimumReplicasAvailable',
+          },
+          {
+            type: 'Progressing',
+            status: 'True',
+            reason: 'NewReplicaSetAvailable',
+          },
         ],
       },
     },
@@ -37,13 +45,19 @@ const mockDeployments = {
         availableReplicas: 1,
         updatedReplicas: 2,
         conditions: [
-          { type: 'Available', status: 'True', reason: 'MinimumReplicasAvailable' },
+          {
+            type: 'Available',
+            status: 'True',
+            reason: 'MinimumReplicasAvailable',
+          },
         ],
       },
     },
   },
 }
 
-export const Default = () => <DeploymentsDetails deployments={mockDeployments} />
+export const Default = () => (
+  <DeploymentsDetails deployments={mockDeployments} />
+)
 
 export const Empty = () => <DeploymentsDetails deployments={{}} />

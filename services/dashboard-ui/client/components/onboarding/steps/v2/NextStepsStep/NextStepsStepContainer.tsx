@@ -32,7 +32,8 @@ function buildSections(): ISection[] {
   return [
     {
       tabKey: 'connect your app',
-      description: 'Wire your SaaS into Nuon. Define install inputs, connect your CI/CD pipeline, and configure component sources.',
+      description:
+        'Wire your SaaS into Nuon. Define install inputs, connect your CI/CD pipeline, and configure component sources.',
       graphicLight: '/onboarding-graphics/connect-app-light.png',
       graphicDark: '/onboarding-graphics/connect-app-dark.png',
       steps: [
@@ -64,39 +65,45 @@ function buildSections(): ISection[] {
     },
     {
       tabKey: 'day 2 operations',
-      description: 'Keep customer installs healthy, secure, and auditable after go-live.',
+      description:
+        'Keep customer installs healthy, secure, and auditable after go-live.',
       graphicLight: '/onboarding-graphics/day2-ops-light.png',
       graphicDark: '/onboarding-graphics/day2-ops-dark.png',
       steps: [
         {
           icon: 'ArrowsClockwiseIcon',
           title: 'Drift detection',
-          description: 'Automatic detection of infrastructure changes with scheduled scans and remediation',
+          description:
+            'Automatic detection of infrastructure changes with scheduled scans and remediation',
           href: 'https://docs.nuon.co/updates/021-drift-detection',
         },
         {
           icon: 'ShieldCheckIcon',
           title: 'Break-glass access',
-          description: 'Secure emergency access to customer environments with full audit trails',
+          description:
+            'Secure emergency access to customer environments with full audit trails',
           href: 'https://docs.nuon.co/config-ref/break-glass',
         },
         {
           icon: 'ScalesIcon',
           title: 'Policies',
-          description: 'Enforce compliance and security standards across deployments',
+          description:
+            'Enforce compliance and security standards across deployments',
           href: 'https://docs.nuon.co/guides/configuring-policies',
         },
         {
           icon: 'UserCheckIcon',
           title: 'Approvals',
-          description: 'Let customers review and approve updates on their terms',
+          description:
+            'Let customers review and approve updates on their terms',
           href: 'https://docs.nuon.co/updates/010-approvals',
         },
       ],
     },
     {
       tabKey: 'create an installer',
-      description: 'Give customers a self-service portal to install, configure, and manage their own instance.',
+      description:
+        'Give customers a self-service portal to install, configure, and manage their own instance.',
       graphicLight: '/onboarding-graphics/installer-light.png',
       graphicDark: '/onboarding-graphics/installer-dark.png',
       steps: [
@@ -136,8 +143,12 @@ function StepRow({ step }: { step: INextStep }) {
         <Icon variant={step.icon} size={16} />
       </div>
       <div className="flex flex-col flex-1 min-w-0 ml-4">
-        <Text variant="base" weight="strong">{step.title}</Text>
-        <Text variant="body" theme="neutral">{step.description}</Text>
+        <Text variant="base" weight="strong">
+          {step.title}
+        </Text>
+        <Text variant="body" theme="neutral">
+          {step.description}
+        </Text>
       </div>
       <Link href={step.href} isExternal className="shrink-0 ml-4">
         Learn more
@@ -161,7 +172,9 @@ function SectionContent({ section }: { section: ISection }) {
           className="w-full h-auto object-cover hidden dark:block"
         />
       </div>
-      <Text variant="body" theme="neutral">{section.description}</Text>
+      <Text variant="body" theme="neutral">
+        {section.description}
+      </Text>
       <div className="flex flex-col gap-3">
         {section.steps.map((step) => (
           <StepRow key={step.title} step={step} />
@@ -171,7 +184,10 @@ function SectionContent({ section }: { section: ISection }) {
   )
 }
 
-export const NextStepsStepContainer = ({ onAdvance, sharedData }: IWizardStepComponentProps) => {
+export const NextStepsStepContainer = ({
+  onAdvance,
+  sharedData,
+}: IWizardStepComponentProps) => {
   const onboarding = sharedData.onboarding as TOnboarding | undefined
   const orgId = onboarding?.org_id
   const installId = onboarding?.install_id
@@ -221,11 +237,7 @@ export const NextStepsStepContainer = ({ onAdvance, sharedData }: IWizardStepCom
             Everything is provisioned and ready to go.
           </Text>
         </div>
-        <Button
-          type="button"
-          variant="primary"
-          onClick={handleContinue}
-        >
+        <Button type="button" variant="primary" onClick={handleContinue}>
           View install <Icon variant="CaretRightIcon" weight="bold" />
         </Button>
       </div>

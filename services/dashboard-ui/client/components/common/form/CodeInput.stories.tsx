@@ -81,10 +81,7 @@ export const Sizes = () => (
 
 export const WithLabelsAndText = () => (
   <div className="space-y-6">
-    <CodeInput
-      language="json"
-      defaultValue={`{"no": "label"}`}
-    />
+    <CodeInput language="json" defaultValue={`{"no": "label"}`} />
 
     <CodeInput
       language="json"

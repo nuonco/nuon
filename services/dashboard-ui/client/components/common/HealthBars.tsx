@@ -49,7 +49,10 @@ export const HealthBars = ({
         <Tooltip
           key={bar.key}
           position="top"
-          className={cn(grow && 'flex-auto', animated && HEARTBEAT_WRAPPER_CLASS)}
+          className={cn(
+            grow && 'flex-auto',
+            animated && HEARTBEAT_WRAPPER_CLASS
+          )}
           tipContentClassName="!whitespace-normal !w-auto !p-2"
           tipContent={bar.tooltip}
         >

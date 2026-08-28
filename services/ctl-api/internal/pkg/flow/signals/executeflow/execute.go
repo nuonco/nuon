@@ -636,6 +636,14 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		l.Error("unable to update finished at", zap.Error(err))
 	}
 
+	if workflow.GetVersion(ctx, "record-managed-release-deployment", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if err := workflowactivities.AwaitRecordManagedReleaseDeployment(ctx, workflowactivities.RecordManagedReleaseDeploymentRequest{
+			WorkflowID: s.WorkflowID,
+		}); err != nil {
+			return err
+		}
+	}
+
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: s.WorkflowID,
 		Status: app.CompositeStatus{

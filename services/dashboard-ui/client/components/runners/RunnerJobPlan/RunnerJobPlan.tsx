@@ -25,12 +25,7 @@ export const RunnerJobPlanModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="CodeBlockIcon" size="24" />
           {headingText}
         </Text>
@@ -86,10 +81,7 @@ export const RunnerJobPlanButton = ({
   ...props
 }: IRunnerJobPlanButton) => {
   return (
-    <Button
-      onClick={() => onOpenModal()}
-      {...props}
-    >
+    <Button onClick={() => onOpenModal()} {...props}>
       {props?.isMenuButton ? null : <Icon variant="CodeBlockIcon" />}
       {buttonText}
       {props?.isMenuButton ? <Icon variant="CodeBlockIcon" /> : null}

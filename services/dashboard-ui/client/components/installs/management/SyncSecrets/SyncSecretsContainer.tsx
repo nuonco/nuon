@@ -14,7 +14,9 @@ import { SyncSecretsModal } from './SyncSecrets'
 
 interface ISyncSecrets {}
 
-export const SyncSecretsModalContainer = ({ ...props }: ISyncSecrets & Omit<IModal, 'onSubmit'>) => {
+export const SyncSecretsModalContainer = ({
+  ...props
+}: ISyncSecrets & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
@@ -22,7 +24,11 @@ export const SyncSecretsModalContainer = ({ ...props }: ISyncSecrets & Omit<IMod
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const { mutate, isPending: isLoading, error } = useMutation({
+  const {
+    mutate,
+    isPending: isLoading,
+    error,
+  } = useMutation({
     mutationFn: () =>
       syncSecrets({
         orgId: org.id,

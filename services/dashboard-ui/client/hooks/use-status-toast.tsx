@@ -36,7 +36,13 @@ export function useStatusToast({
 
     addToast(
       <Toast heading={heading} theme={theme}>
-        {label ? <Text><Badge variant="code" size="md">{label}</Badge></Text> : null}
+        {label ? (
+          <Text>
+            <Badge variant="code" size="md">
+              {label}
+            </Badge>
+          </Text>
+        ) : null}
       </Toast>
     )
   }, [status])

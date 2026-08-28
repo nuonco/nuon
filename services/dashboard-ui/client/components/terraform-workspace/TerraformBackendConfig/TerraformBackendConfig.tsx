@@ -25,7 +25,8 @@ export const TerraformBackendConfigModal = ({
     >
       <div className="flex flex-col gap-4">
         <Text>
-          Download the backend config and add it to your Terraform project. Then set your API token and initialize:
+          Download the backend config and add it to your Terraform project. Then
+          set your API token and initialize:
         </Text>
         <CodeBlock language="bash">{`export TF_HTTP_AUTHORIZATION="Bearer $(nuon orgs api-token -j | tr -d '\"')"
 terraform init -reconfigure`}</CodeBlock>

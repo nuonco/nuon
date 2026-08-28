@@ -81,7 +81,8 @@ export const ReprovisionSandboxModal = ({
                     Skip component deployments
                   </Text>
                   <Text variant="subtext" theme="neutral">
-                    Only reprovision the sandbox infrastructure without redeploying components on top.
+                    Only reprovision the sandbox infrastructure without
+                    redeploying components on top.
                   </Text>
                 </div>
               ),

@@ -39,7 +39,10 @@ export const HelmValuesFilesModal = ({
             This is the Helm values files for this component configuration.
           </Text>
           <div className="flex justify-end">
-            <ClickToCopyButton textToCopy={valuesFilesContent} className="w-fit" />
+            <ClickToCopyButton
+              textToCopy={valuesFilesContent}
+              className="w-fit"
+            />
           </div>
         </div>
         <CodeBlock language="yaml">{valuesFilesContent}</CodeBlock>
@@ -48,15 +51,14 @@ export const HelmValuesFilesModal = ({
   )
 }
 
-export const HelmValuesModal = ({
-  values,
-  ...props
-}: HelmValuesModalProps) => {
-  const keyValuePairs: TKeyValue[] = Object.entries(values).map(([key, value]) => ({
-    key,
-    value,
-    type: 'string'
-  }))
+export const HelmValuesModal = ({ values, ...props }: HelmValuesModalProps) => {
+  const keyValuePairs: TKeyValue[] = Object.entries(values).map(
+    ([key, value]) => ({
+      key,
+      value,
+      type: 'string',
+    })
+  )
 
   const valuesText = Object.entries(values)
     .map(([key, value]) => `${key}: ${value}`)

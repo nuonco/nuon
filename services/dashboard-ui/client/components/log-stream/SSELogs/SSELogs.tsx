@@ -54,6 +54,7 @@ interface ISSELogs {
   isLoading: boolean
   isConnected: boolean
   deepLinkLogId?: string | null
+  showDownload?: boolean
 }
 
 export const SSELogs = ({
@@ -65,6 +66,7 @@ export const SSELogs = ({
   isLoading,
   isConnected,
   deepLinkLogId,
+  showDownload = true,
 }: ISSELogs) => {
   const deepLinkHandledRef = useRef(false)
 
@@ -72,7 +74,7 @@ export const SSELogs = ({
     if (deepLinkHandledRef.current || !filteredLogs?.length) return
     if (!deepLinkLogId) return
 
-    const idx = filteredLogs.findIndex(l => l.id === deepLinkLogId)
+    const idx = filteredLogs.findIndex((l) => l.id === deepLinkLogId)
     if (idx === -1) return
 
     deepLinkHandledRef.current = true
@@ -85,10 +87,13 @@ export const SSELogs = ({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col flex-auto">
         <div
-          className={cn('@container sticky bg-background border-b z-10', filterClassName)}
+          className={cn(
+            '@container sticky bg-background border-b z-10',
+            filterClassName
+          )}
         >
           <div className="flex items-center gap-4">
-            <LogFilters filters={filters} />
+            <LogFilters filters={filters} showDownload={showDownload} />
           </div>
         </div>
 
@@ -236,7 +241,10 @@ const LogsEmptyStates = ({
       />
     ) : null}
 
-    {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && isConnected ? (
+    {!filteredLogs?.length &&
+    !filters.filterStats.totalCount &&
+    !isLoading &&
+    isConnected ? (
       <EmptyState
         variant="table"
         emptyTitle="Waiting for logs"
@@ -244,7 +252,10 @@ const LogsEmptyStates = ({
       />
     ) : null}
 
-    {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && !isConnected ? (
+    {!filteredLogs?.length &&
+    !filters.filterStats.totalCount &&
+    !isLoading &&
+    !isConnected ? (
       <EmptyState
         variant="table"
         emptyTitle="No logs available"
@@ -303,12 +314,7 @@ const LogLineComponent = ({ log, activeLogId, onActivate }: ILogLine) => {
         >
           {log.service_name?.split('.').pop()}
         </Text>
-        <Text
-          nowrap
-          as="div"
-          family="mono"
-          variant="subtext"
-        >
+        <Text nowrap as="div" family="mono" variant="subtext">
           {log.body}
         </Text>
       </Button>

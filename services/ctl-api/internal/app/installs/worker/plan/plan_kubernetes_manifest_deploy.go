@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/diff"
+	"github.com/nuonco/nuon/pkg/kube"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
 	types "github.com/nuonco/nuon/pkg/types/approvals"
@@ -49,19 +50,53 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
 
+	return p.RenderKubernetesManifestDeployPlan(l, &RenderKubernetesManifestDeployPlanInput{
+		Stack:         stack,
+		State:         state,
+		StateData:     stateData,
+		InstallDeploy: installDeploy,
+		CompBuild:     compBuild,
+		RoleSelection: roleSelection,
+		ResolveClusterInfo: func(cloudAuth *CloudAuth) (*kube.ClusterInfo, error) {
+			return p.resolveKubernetesContext(ctx, &compBuild.ComponentConfigConnection, appCfg, stack, state, cloudAuth)
+		},
+	})
+}
+
+// RenderKubernetesManifestDeployPlanInput carries the already-loaded data a
+// kubernetes manifest deploy plan is rendered from.
+type RenderKubernetesManifestDeployPlanInput struct {
+	Stack         *app.InstallStack
+	State         *statepkg.State
+	StateData     map[string]any
+	InstallDeploy *app.InstallDeploy
+	CompBuild     *app.ComponentBuild
+	RoleSelection *operationroles.RoleSelection
+
+	// ResolveClusterInfo resolves the kubernetes cluster at this exact point in
+	// the plan render.
+	ResolveClusterInfo func(*CloudAuth) (*kube.ClusterInfo, error)
+}
+
+// RenderKubernetesManifestDeployPlan is the pure core of
+// createKubernetesManifestDeployPlan.
+func (p *Planner) RenderKubernetesManifestDeployPlan(
+	l *zap.Logger,
+	in *RenderKubernetesManifestDeployPlanInput,
+) (*plantypes.KubernetesManifestDeployPlan, error) {
 	// parse out various config fields
-	cfg := compBuild.ComponentConfigConnection.KubernetesManifestComponentConfig
-	if err := render.RenderStruct(cfg, stateData); err != nil {
+	cfg := in.CompBuild.ComponentConfigConnection.KubernetesManifestComponentConfig
+	if err := render.RenderStruct(cfg, in.StateData); err != nil {
 		l.Error("error rendering kubernetes manifest config",
 			zap.Error(err),
-			zap.Any("state", stateData),
+			zap.Any("state", in.StateData),
 		)
 		return nil, errors.Wrap(err, "unable to render config")
 	}
 
 	// Render namespace with install state - namespace supports template variables like {{.nuon.install.id}}
 	namespace := cfg.Namespace
-	renderedNamespace, err := render.RenderV2(namespace, stateData)
+	renderedNamespace, err := render.RenderV2(namespace, in.StateData)
 	if err != nil {
 		l.Error("error rendering namespace",
 			zap.String("namespace", namespace),
@@ -70,7 +105,7 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 	}
 
 	manifest := cfg.Manifest
-	renderedManifest, err := render.RenderV2(manifest, stateData)
+	renderedManifest, err := render.RenderV2(manifest, in.StateData)
 	if err != nil {
 		l.Error("error rendering manifest",
 			zap.String("manifest", manifest),
@@ -80,7 +115,7 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 
 	// Build OCI artifact reference from the install deploy's synced artifact
 	// The manifest content is pulled from this artifact at runtime by the runner
-	ociArtifact := installDeploy.OCIArtifact
+	ociArtifact := in.InstallDeploy.OCIArtifact
 	if ociArtifact.Repository == "" {
 		return nil, errors.New("OCI artifact not found on install deploy - sync job may not have completed")
 	}
@@ -90,17 +125,17 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		zap.String("tag", ociArtifact.Tag),
 		zap.String("digest", ociArtifact.Digest))
 
-	cloudAuth, err := p.getAuthForDeploy(
-		ctx,
-		roleSelection,
-		stack,
-		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
+	cloudAuth, err := p.AuthForDeploy(
+		l,
+		in.RoleSelection,
+		in.Stack,
+		fmt.Sprintf("component-deploy-%s", in.InstallDeploy.ID),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get auth for deploy")
 	}
 
-	clusterInfo, err := p.resolveKubernetesContext(ctx, &compBuild.ComponentConfigConnection, appCfg, stack, state, cloudAuth)
+	clusterInfo, err := in.ResolveClusterInfo(cloudAuth)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to resolve kubernetes context")
 	}
@@ -112,7 +147,7 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 	// {{.nuon.*}} placeholders that survived kustomize unchanged.
 	var planState *statepkg.State
 	if renderedManifest == "" {
-		planState = state
+		planState = in.State
 	}
 
 	return &plantypes.KubernetesManifestDeployPlan{

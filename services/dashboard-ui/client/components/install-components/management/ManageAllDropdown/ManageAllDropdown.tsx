@@ -11,16 +11,15 @@ interface IManageAllDropdown {
   appConfigId: string
 }
 
-export const ManageAllDropdown = ({ appId, appConfigId }: IManageAllDropdown) => {
+export const ManageAllDropdown = ({
+  appId,
+  appConfigId,
+}: IManageAllDropdown) => {
   return (
     <Dropdown
       id="install-components-mgmt"
       variant="secondary"
-      buttonText={
-        <>
-          Component controls
-        </>
-      }
+      buttonText={<>Component controls</>}
       alignment="right"
     >
       <Menu>

@@ -34,7 +34,11 @@ export const WithError = () => (
     <ResendOrgInviteModal
       email="pending@example.com"
       isPending={false}
-      error={{ error: 'Rate limit exceeded', description: '', user_error: true }}
+      error={{
+        error: 'Rate limit exceeded',
+        description: '',
+        user_error: true,
+      }}
       onSubmit={noop}
     />
   </ModalStory>

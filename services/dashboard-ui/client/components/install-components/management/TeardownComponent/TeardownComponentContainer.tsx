@@ -30,8 +30,14 @@ export const TeardownComponentModalContainer = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { body: Parameters<typeof teardownComponent>[0]['body'] }) =>
+  const {
+    mutate: execute,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: (params: {
+      body: Parameters<typeof teardownComponent>[0]['body']
+    }) =>
       teardownComponent({
         body: params.body,
         componentId: component.id,

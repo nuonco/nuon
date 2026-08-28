@@ -60,7 +60,9 @@ const supersededStep: TWorkflowStep = {
   },
 } as TWorkflowStep
 
-export const AwaitingTerraformApproval = () => <ApprovalBanner step={baseTerraformStep} />
+export const AwaitingTerraformApproval = () => (
+  <ApprovalBanner step={baseTerraformStep} />
+)
 
 export const Approved = () => <ApprovalBanner step={approvedStep} />
 
@@ -70,4 +72,6 @@ export const Denied = () => <ApprovalBanner step={deniedStep} />
 
 export const AwaitingHelmApproval = () => <ApprovalBanner step={helmStep} />
 
-export const AwaitingKubernetesApproval = () => <ApprovalBanner step={k8sStep} />
+export const AwaitingKubernetesApproval = () => (
+  <ApprovalBanner step={k8sStep} />
+)

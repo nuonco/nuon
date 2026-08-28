@@ -8,7 +8,8 @@ export const WizardNavContainer = ({
   isScrolled?: boolean
   skipHref: string | null
 }) => {
-  const { steps, currentStepIndex, completedSteps, goToStep } = useOnboardingWizard()
+  const { steps, currentStepIndex, completedSteps, goToStep } =
+    useOnboardingWizard()
 
   return (
     <WizardNav

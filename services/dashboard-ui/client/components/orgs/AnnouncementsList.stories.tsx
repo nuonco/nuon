@@ -21,7 +21,8 @@ const mockAnnouncements: IAnnouncement[] = [
     id: 'story-2',
     title: 'Workflow approvals v2',
     date: 'Apr 21, 2026',
-    description: 'Redesigned approval flows with bulk approve and Slack notifications.',
+    description:
+      'Redesigned approval flows with bulk approve and Slack notifications.',
     image: 'https://via.placeholder.com/800x400',
     ctaText: 'Learn more',
     ctaUrl: 'https://docs.nuon.co/updates/037-approvals-v2',
@@ -40,7 +41,8 @@ const mockAnnouncements: IAnnouncement[] = [
     id: 'story-4',
     title: 'Install drift detection',
     date: 'Apr 7, 2026',
-    description: 'Automatic drift detection alerts when install state diverges.',
+    description:
+      'Automatic drift detection alerts when install state diverges.',
     ctaText: 'Try now',
     ctaUrl: 'https://docs.nuon.co/updates/035-drift-detection',
     dismissible: true,
@@ -64,12 +66,18 @@ export const Default = () => (
 
 export const SingleAnnouncement = () => (
   <div style={{ maxWidth: 400 }}>
-    <AnnouncementsList announcements={[mockAnnouncements[0]]} disableDismissMemory />
+    <AnnouncementsList
+      announcements={[mockAnnouncements[0]]}
+      disableDismissMemory
+    />
   </div>
 )
 
 export const TwoAnnouncements = () => (
   <div style={{ maxWidth: 400 }}>
-    <AnnouncementsList announcements={mockAnnouncements.slice(0, 2)} disableDismissMemory />
+    <AnnouncementsList
+      announcements={mockAnnouncements.slice(0, 2)}
+      disableDismissMemory
+    />
   </div>
 )

@@ -109,6 +109,54 @@ func NewArtifactID() string {
 	return shortid.NewNanoID("art")
 }
 
+func NewAppReleaseID() string {
+	return shortid.NewNanoID("apr")
+}
+
+func NewAppReleaseMemberID() string {
+	return shortid.NewNanoID("arm")
+}
+
+func NewReleasePackageID() string {
+	return shortid.NewNanoID("rpk")
+}
+
+func NewReleasePackageMemberID() string {
+	return shortid.NewNanoID("rpm")
+}
+
+func NewReleasePackageReplicaID() string {
+	return shortid.NewNanoID("rpr")
+}
+
+func NewInstallManagementPolicyVersionID() string {
+	return shortid.NewNanoID("imp")
+}
+
+func NewInstallReleaseDeploymentID() string {
+	return shortid.NewNanoID("ird")
+}
+
+func NewInstallConnectionReportID() string {
+	return shortid.NewNanoID("icr")
+}
+
+func NewCustomerManagedBundleID() string {
+	return shortid.NewNanoID("agb")
+}
+
+func NewCustomerManagedBundleArtifactID() string {
+	return shortid.NewNanoID("aga")
+}
+
+func NewCustomerManagedBundleReplicaID() string {
+	return shortid.NewNanoID("agr")
+}
+
+func NewInstallSupportSnapshotID() string {
+	return shortid.NewNanoID("ags")
+}
+
 func NewAWSAccountID() string {
 	return shortid.NewNanoID("aws")
 }

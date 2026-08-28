@@ -25,6 +25,7 @@ import (
 type Service interface {
 	// Upload stores blob data in S3 (byte-based, for small payloads)
 	Upload(ctx context.Context, s3Key string, data []byte) error
+	Delete(ctx context.Context, s3Key string) error
 
 	// Download retrieves blob data from S3 (byte-based, for small payloads)
 	Download(ctx context.Context, s3Key string) ([]byte, error)
@@ -108,6 +109,14 @@ func NewService(cfg *internal.Config, mw metrics.Writer) (Service, error) {
 
 func (s *service) Upload(ctx context.Context, s3Key string, data []byte) error {
 	return s.uploader.UploadBlob(ctx, data, s3Key)
+}
+
+func (s *service) Delete(ctx context.Context, s3Key string) error {
+	_, err := s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.cfg.BlobStorageBucket),
+		Key:    aws.String(s3Key),
+	})
+	return err
 }
 
 func (s *service) Download(ctx context.Context, s3Key string) ([]byte, error) {

@@ -59,6 +59,8 @@ type genCtx struct {
 	// sync step prepended in this workflow. Multiple non-image components
 	// may share the same image dep; we only sync it once per workflow.
 	addedImageDepSyncs map[string]struct{}
+	releaseBuildIDs    map[string]string
+	sandboxBuildID     string
 }
 
 func newGenCtx(sg *stepGroup, flw *app.Workflow, installID string, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow, opts ...genCtxOption) *genCtx {
@@ -91,6 +93,13 @@ func WithInstallInputs(ii *app.InstallInputs) genCtxOption {
 		if ii != nil {
 			dg.enabledInputs = ii.Values
 		}
+	}
+}
+
+func WithReleaseBuilds(componentBuildIDs map[string]string, sandboxBuildID string) genCtxOption {
+	return func(dg *genCtx) {
+		dg.releaseBuildIDs = componentBuildIDs
+		dg.sandboxBuildID = sandboxBuildID
 	}
 }
 
@@ -129,6 +138,13 @@ func resolvePinnedComponentBuild(ctx workflow.Context, dg *genCtx, compID string
 	ccc, ok := dg.cccByComp[compID]
 	if !ok || ccc == nil {
 		return nil, nil
+	}
+	if dg.releaseBuildIDs != nil {
+		buildID := dg.releaseBuildIDs[ccc.ID]
+		if buildID == "" {
+			return nil, fmt.Errorf("release does not pin a build for component config connection %s", ccc.ID)
+		}
+		return activities.AwaitGetComponentBuildByComponentBuildID(ctx, buildID)
 	}
 	return activities.AwaitGetComponentBuildForConfigConnectionByComponentConfigConnectionID(ctx, ccc.ID)
 }

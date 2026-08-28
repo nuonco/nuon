@@ -11,7 +11,14 @@ const makeLogs = (bodies: string[], severity = 9): TOTELLog[] =>
     body,
     timestamp: new Date(Date.now() - (bodies.length - i) * 1000).toISOString(),
     severity_number: severity,
-    severity_text: severity <= 8 ? 'DEBUG' : severity <= 12 ? 'INFO' : severity <= 16 ? 'WARN' : 'ERROR',
+    severity_text:
+      severity <= 8
+        ? 'DEBUG'
+        : severity <= 12
+          ? 'INFO'
+          : severity <= 16
+            ? 'WARN'
+            : 'ERROR',
     scope_name: 'oteljob',
     service_name: 'runner',
     log_attributes: { 'nuon.command_output': 'true' },

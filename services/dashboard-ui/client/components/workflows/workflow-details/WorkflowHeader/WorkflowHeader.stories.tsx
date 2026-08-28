@@ -97,3 +97,13 @@ export const WithApprovals = () => (
     </div>
   </WorkflowContext.Provider>
 )
+
+export const CapturedRun = () => (
+  <div className="max-w-2xl p-4">
+    <WorkflowHeader
+      workflow={{ ...mockWorkflow, name: 'Initial installation' }}
+      install={mockInstall}
+      readOnly
+    />
+  </div>
+)

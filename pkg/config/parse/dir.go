@@ -254,6 +254,7 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 		cfg.Readme = c.Metadata.Readme
 		cfg.LabelColors = c.Metadata.LabelColors
 		cfg.DefaultLabels = c.Metadata.DefaultLabels
+		cfg.CustomerManaged = c.Metadata.CustomerManaged
 	}
 
 	return cfg, nil

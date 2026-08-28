@@ -64,11 +64,20 @@ export function getContextTooltipItemsFromInstallComponents(
 ): TContextTooltipItem[] {
   const isDeprovisioning = lifecycleStatus === 'deprovisioning'
   const isDeprovisioned = lifecycleStatus === 'deprovisioned'
-  const STALE_STATUSES = ['active', 'pending', 'executing', 'queued', 'planning', 'syncing']
+  const STALE_STATUSES = [
+    'active',
+    'pending',
+    'executing',
+    'queued',
+    'planning',
+    'syncing',
+  ]
   const effectiveStatus = (status: string | undefined) => {
     if (!status) return status
-    if (isDeprovisioned && STALE_STATUSES.includes(status)) return 'deprovisioned'
-    if (isDeprovisioning && STALE_STATUSES.includes(status)) return 'deprovisioning'
+    if (isDeprovisioned && STALE_STATUSES.includes(status))
+      return 'deprovisioned'
+    if (isDeprovisioning && STALE_STATUSES.includes(status))
+      return 'deprovisioning'
     return status
   }
 

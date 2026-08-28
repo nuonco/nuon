@@ -49,7 +49,7 @@ export const DeleteBranchModal = ({
       addToast(
         <Toast heading="Branch deleted" theme="success">
           <Text>Branch "{branch.name}" has been deleted.</Text>
-        </Toast>,
+        </Toast>
       )
       removeModal(props.modalId)
       navigate(`/${org!.id}/apps/${appId}/branches`)
@@ -58,7 +58,7 @@ export const DeleteBranchModal = ({
       addToast(
         <Toast heading="Branch deletion failed" theme="error">
           <Text>{err?.description || err?.error || 'Try again.'}</Text>
-        </Toast>,
+        </Toast>
       )
     },
   })
@@ -75,7 +75,8 @@ export const DeleteBranchModal = ({
       {...props}
     >
       <Text>
-        This will permanently delete the branch "{branch.name}" and all its configs and runs.
+        This will permanently delete the branch "{branch.name}" and all its
+        configs and runs.
       </Text>
     </Modal>
   )

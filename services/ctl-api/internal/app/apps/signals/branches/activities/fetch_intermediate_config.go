@@ -19,13 +19,18 @@ import (
 func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir string) (*config.AppConfig, error) {
 	defer os.RemoveAll(sourceDir)
 
-	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
+	parseResult, err := parse.ParseDirWithSource(ctx, parse.ParseConfig{
 		Dirname:       sourceDir,
 		V:             validator.New(),
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse config from repo: %w", err)
+	}
+	cfg := parseResult.Config
+
+	if cfg.CustomerManaged != nil {
+		cfg.SourceArchive = parseResult.Source
 	}
 
 	return cfg, nil

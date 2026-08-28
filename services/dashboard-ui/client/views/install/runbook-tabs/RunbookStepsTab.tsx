@@ -13,9 +13,8 @@ export const RunbookStepsTab = () => {
 
   const latestConfig = installRunbook?.runbook?.configs?.[0]
   const steps =
-    latestConfig?.steps
-      ?.slice()
-      .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ?? []
+    latestConfig?.steps?.slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ??
+    []
 
   return (
     <>

@@ -35,6 +35,11 @@ type RunnerJobExecutionResult struct {
 
 	Success bool `json:"success,omitzero" temporaljson:"success,omitzero,omitempty"`
 
+	OutputRepository string `json:"output_repository,omitzero" temporaljson:"output_repository,omitzero,omitempty"`
+	OutputDigest     string `json:"output_digest,omitzero" temporaljson:"output_digest,omitzero,omitempty"`
+	OutputMediaType  string `json:"output_media_type,omitzero" temporaljson:"output_media_type,omitzero,omitempty"`
+	OutputSize       int64  `json:"output_size,omitzero" gorm:"type:bigint" temporaljson:"output_size,omitzero,omitempty"`
+
 	ErrorCode     int           `json:"error_code,omitzero" temporaljson:"error_code,omitzero,omitempty"`
 	ErrorMetadata pgtype.Hstore `json:"error_metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"error_metadata,omitzero,omitempty"`
 

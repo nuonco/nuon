@@ -75,15 +75,16 @@ type Install struct {
 	AppRunnerConfigID string          `json:"-" swaggerignore:"true" temporaljson:"app_runner_config_id,omitzero,omitempty"`
 	AppRunnerConfig   AppRunnerConfig `json:"app_runner_config,omitzero" temporaljson:"app_runner_config,omitzero,omitempty"`
 
-	InstallComponents       []InstallComponent        `json:"install_components,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_components,omitzero,omitempty"`
-	InstallActionWorkflows  []InstallActionWorkflow   `json:"install_action_workflows,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_action_workflows,omitzero,omitempty"`
-	InstallSandboxRuns      []InstallSandboxRun       `json:"install_sandbox_runs,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox_runs,omitzero,omitempty"`
-	InstallInputs           []InstallInputs           `json:"install_inputs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_inputs,omitzero,omitempty"`
-	InstallEvents           []InstallEvent            `json:"install_events,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_events,omitzero,omitempty"`
-	InstallIntermediateData []InstallIntermediateData `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_intermediate_data,omitzero,omitempty"`
-	InstallSandbox          InstallSandbox            `json:"sandbox" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox,omitzero,omitempty"`
-	InstallConfig           *InstallConfig            `json:"install_config,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_config,omitzero,omitempty"`
-	InstallStates           []InstallState            `json:"install_states,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_states,omitzero,omitempty"`
+	InstallComponents        []InstallComponent               `json:"install_components,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_components,omitzero,omitempty"`
+	InstallActionWorkflows   []InstallActionWorkflow          `json:"install_action_workflows,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_action_workflows,omitzero,omitempty"`
+	InstallSandboxRuns       []InstallSandboxRun              `json:"install_sandbox_runs,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox_runs,omitzero,omitempty"`
+	InstallInputs            []InstallInputs                  `json:"install_inputs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_inputs,omitzero,omitempty"`
+	InstallEvents            []InstallEvent                   `json:"install_events,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_events,omitzero,omitempty"`
+	InstallIntermediateData  []InstallIntermediateData        `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_intermediate_data,omitzero,omitempty"`
+	InstallSandbox           InstallSandbox                   `json:"sandbox" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox,omitzero,omitempty"`
+	InstallConfig            *InstallConfig                   `json:"install_config,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_config,omitzero,omitempty"`
+	InstallStates            []InstallState                   `json:"install_states,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_states,omitzero,omitempty"`
+	ManagementPolicyVersions []InstallManagementPolicyVersion `json:"-" gorm:"foreignKey:InstallID;constraint:OnDelete:RESTRICT;" temporaljson:"-"`
 
 	// InstallRoles is a list of roles associated with that install at given app config ID
 	InstallRoles []InstallRoles `json:"install_roles,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_roles,omitzero,omitempty"`
@@ -165,7 +166,8 @@ type Install struct {
 
 	// PhoneHomeAuthStatus can take the phone_home_auth JSON name precisely because the
 	// column itself never serializes.
-	PhoneHomeAuthStatus *PhoneHomeAuthStatus `json:"phone_home_auth,omitzero,omitempty" gorm:"-" temporaljson:"-"`
+	PhoneHomeAuthStatus *PhoneHomeAuthStatus            `json:"phone_home_auth,omitzero,omitempty" gorm:"-" temporaljson:"-"`
+	ManagementPolicy    *InstallManagementPolicyVersion `json:"management_policy,omitzero,omitempty" gorm:"-" temporaljson:"management_policy,omitzero,omitempty"`
 
 	// Expected* coalesce the target identifier with the observed one, so callers get
 	// the strongest identifier available without caring which is set.
@@ -241,6 +243,9 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 
 	if len(i.InstallInputs) > 0 {
 		i.CurrentInstallInputs = &i.InstallInputs[0]
+	}
+	if len(i.ManagementPolicyVersions) > 0 {
+		i.ManagementPolicy = &i.ManagementPolicyVersions[0]
 	}
 
 	// get the composite status of all the components

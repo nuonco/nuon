@@ -1,5 +1,11 @@
 import { afterEach, expect, test } from 'bun:test'
-import { render, screen, fireEvent, within, cleanup } from '@testing-library/react'
+import {
+  render,
+  screen,
+  fireEvent,
+  within,
+  cleanup,
+} from '@testing-library/react'
 import { Markdown } from './Markdown'
 
 afterEach(cleanup)

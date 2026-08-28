@@ -49,8 +49,7 @@ export const InstallSyncs = () => {
   })
 
   const { mutate: triggerSync, isPending } = useMutation({
-    mutationFn: () =>
-      triggerAppInstallSync({ appId: app!.id, orgId: org!.id }),
+    mutationFn: () => triggerAppInstallSync({ appId: app!.id, orgId: org!.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['app-install-syncs', org?.id, app?.id],
