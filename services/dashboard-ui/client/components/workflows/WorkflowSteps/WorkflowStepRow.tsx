@@ -1,4 +1,5 @@
 import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { Duration } from '@/components/common/Duration'
 import { Text } from '@/components/common/Text'
 import { PolicyCountsBadge } from '@/components/workflows/step-details/PolicyCountsBadge'
@@ -16,6 +17,8 @@ export interface IWorkflowStepRow {
   showRetry?: boolean
   nested?: boolean
   attemptNumber?: number
+  readOnly?: boolean
+  onViewDetails?: (step: TWorkflowStep) => void
 }
 
 export const WorkflowStepRow = ({
@@ -25,6 +28,8 @@ export const WorkflowStepRow = ({
   showRetry = false,
   nested = false,
   attemptNumber,
+  readOnly = false,
+  onViewDetails,
 }: IWorkflowStepRow) => {
   const badges = getStepBadges(step, approvalPrompt, planOnly)
   const eventWait = step?.links?.event_wait
@@ -58,7 +63,7 @@ export const WorkflowStepRow = ({
 
         <PolicyCountsBadge step={step} />
 
-        {hideDetails ? null : (
+        {hideDetails || readOnly ? null : (
           <StepDetailPanelButton
             approvalPrompt={approvalPrompt}
             step={step}
@@ -74,11 +79,23 @@ export const WorkflowStepRow = ({
         ) : null}
       </div>
 
-      <StepButtons
-        isApproveAll={!approvalPrompt}
-        showRetry={showRetry}
-        step={step}
-      />
+      {readOnly ? null : (
+        <StepButtons
+          isApproveAll={!approvalPrompt}
+          showRetry={showRetry}
+          step={step}
+        />
+      )}
+      {readOnly && onViewDetails ? (
+        <Button
+          className="md:ml-auto"
+          size="sm"
+          variant="secondary"
+          onClick={() => onViewDetails(step)}
+        >
+          View details
+        </Button>
+      ) : null}
     </div>
   )
 }

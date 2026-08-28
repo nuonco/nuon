@@ -55,13 +55,18 @@ const EXAMPLE_APPS: IExampleApp[] = [
   {
     id: 'coder',
     name: 'Coder & Grafana on AWS EKS',
-    description: 'Dev environments for Claude Code agents and devs with coder.com',
+    description:
+      'Dev environments for Claude Code agents and devs with coder.com',
     repo: 'https://github.com/nuonco/example-app-configs',
     dir: 'example-app-configs/coder',
   },
 ]
 
-export const CreateAppStep = ({ onAdvance, setSharedData, nextStepTitle }: IWizardStepComponentProps) => {
+export const CreateAppStep = ({
+  onAdvance,
+  setSharedData,
+  nextStepTitle,
+}: IWizardStepComponentProps) => {
   const [selectedApp, setSelectedApp] = useState<IExampleApp | null>(null)
   const { isStepComplete } = useOnboardingJourney()
   const appCreated = isStepComplete('app_created')
@@ -98,8 +103,17 @@ export const CreateAppStep = ({ onAdvance, setSharedData, nextStepTitle }: IWiza
                   className="accent-primary-600 flex-shrink-0"
                 />
                 <div className="flex flex-col gap-0.5 min-w-0">
-                  <Text variant="body" weight="strong">{app.name}</Text>
-                  <Text variant="subtext" theme="neutral" as="div" className="truncate">{app.description}</Text>
+                  <Text variant="body" weight="strong">
+                    {app.name}
+                  </Text>
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    as="div"
+                    className="truncate"
+                  >
+                    {app.description}
+                  </Text>
                 </div>
               </label>
             )
@@ -113,23 +127,38 @@ export const CreateAppStep = ({ onAdvance, setSharedData, nextStepTitle }: IWiza
             Set up {selectedApp.name}
           </Text>
           <div className="flex flex-col gap-3">
-            <Text variant="subtext" theme="neutral">Clone the repository</Text>
+            <Text variant="subtext" theme="neutral">
+              Clone the repository
+            </Text>
             <div className="relative">
-              <ClickToCopyButton className="w-fit !absolute right-2 top-3" textToCopy={`git clone ${selectedApp.repo}`} />
+              <ClickToCopyButton
+                className="w-fit !absolute right-2 top-3"
+                textToCopy={`git clone ${selectedApp.repo}`}
+              />
               <CodeBlock language="bash">{`git clone ${selectedApp.repo}`}</CodeBlock>
             </div>
           </div>
           <div className="flex flex-col gap-3">
-            <Text variant="subtext" theme="neutral">Navigate to the directory</Text>
+            <Text variant="subtext" theme="neutral">
+              Navigate to the directory
+            </Text>
             <div className="relative">
-              <ClickToCopyButton className="w-fit !absolute right-2 top-3" textToCopy={`cd ${selectedApp.dir}`} />
+              <ClickToCopyButton
+                className="w-fit !absolute right-2 top-3"
+                textToCopy={`cd ${selectedApp.dir}`}
+              />
               <CodeBlock language="bash">{`cd ${selectedApp.dir}`}</CodeBlock>
             </div>
           </div>
           <div className="flex flex-col gap-3">
-            <Text variant="subtext" theme="neutral">Create your app (required to proceed)</Text>
+            <Text variant="subtext" theme="neutral">
+              Create your app (required to proceed)
+            </Text>
             <div className="relative">
-              <ClickToCopyButton className="w-fit !absolute right-2 top-3" textToCopy={`nuon apps create -n ${selectedApp.id}`} />
+              <ClickToCopyButton
+                className="w-fit !absolute right-2 top-3"
+                textToCopy={`nuon apps create -n ${selectedApp.id}`}
+              />
               <CodeBlock language="bash">{`nuon apps create -n ${selectedApp.id}`}</CodeBlock>
             </div>
           </div>
@@ -138,13 +167,15 @@ export const CreateAppStep = ({ onAdvance, setSharedData, nextStepTitle }: IWiza
 
       {!appCreated && (
         <Text variant="subtext" theme="neutral">
-          Waiting for app creation... Once you run <code>nuon apps create</code>, this page will update automatically.
+          Waiting for app creation... Once you run <code>nuon apps create</code>
+          , this page will update automatically.
         </Text>
       )}
 
       <div className="flex justify-end">
         <Button variant="primary" disabled={!appCreated} onClick={onAdvance}>
-          {nextStepTitle ?? 'Continue'} <Icon variant="CaretRightIcon" weight="bold" />
+          {nextStepTitle ?? 'Continue'}{' '}
+          <Icon variant="CaretRightIcon" weight="bold" />
         </Button>
       </div>
     </div>

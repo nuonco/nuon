@@ -26,8 +26,14 @@ export const DriftScanAllComponentsModalContainer = ({
   const { addToast } = useToast()
   const [isKickedOff, setIsKickedOff] = useState(false)
 
-  const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { body: Parameters<typeof deployComponents>[0]['body'] }) =>
+  const {
+    mutate: execute,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: (params: {
+      body: Parameters<typeof deployComponents>[0]['body']
+    }) =>
       deployComponents({
         body: params.body,
         installId: install.id,
@@ -44,7 +50,10 @@ export const DriftScanAllComponentsModalContainer = ({
         },
       })
       addToast(
-        <Toast heading={`${install.name} component drift scan started`} theme="success">
+        <Toast
+          heading={`${install.name} component drift scan started`}
+          theme="success"
+        >
           <Text>Components drift scan workflow was created.</Text>
         </Toast>
       )

@@ -11,14 +11,17 @@ const fullAwsOutputs = {
   },
   cluster: {
     arn: 'arn:aws:eks:us-west-2:123456789012:cluster/nuon-cluster',
-    certificate_authority_data: 'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREF2TVMwd0t3WURWUVFERXlRME4yVTEK...',
+    certificate_authority_data:
+      'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREF2TVMwd0t3WURWUVFERXlRME4yVTEK...',
     cluster_security_group_id: 'sg-0abc123def456',
     endpoint: 'https://A1B2C3D4E5F6.gr7.us-west-2.eks.amazonaws.com',
     name: 'nuon-cluster',
     node_security_group_id: 'sg-0xyz789uvw456',
     oidc_issuer_url: 'https://oidc.eks.us-west-2.amazonaws.com/id/A1B2C3D4E5F6',
-    oidc_provider: '123456789012:oidc-provider/oidc.eks.us-west-2.amazonaws.com/id/A1B2C3D4E5F6',
-    oidc_provider_arn: 'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-west-2.amazonaws.com/id/A1B2C3D4E5F6',
+    oidc_provider:
+      '123456789012:oidc-provider/oidc.eks.us-west-2.amazonaws.com/id/A1B2C3D4E5F6',
+    oidc_provider_arn:
+      'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-west-2.amazonaws.com/id/A1B2C3D4E5F6',
     platform_version: 'eks.9',
     status: 'ACTIVE',
   },

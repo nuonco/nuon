@@ -98,8 +98,7 @@ export const EventDetailsContainer = ({
     enabled: false,
   })
   const { mutate: replay, isPending: isReplaying } = useMutation({
-    mutationFn: () =>
-      replayTriggerEvent({ eventId: eventId!, orgId: org!.id }),
+    mutationFn: () => replayTriggerEvent({ eventId: eventId!, orgId: org!.id }),
     onSuccess: () => {
       queryClient.setQueryData<TTriggerEvent | undefined>(
         ['trigger-event', org?.id, eventId],

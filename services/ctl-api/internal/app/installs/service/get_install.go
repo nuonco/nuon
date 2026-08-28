@@ -63,6 +63,7 @@ func (s *service) GetInstall(ctx *gin.Context) {
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
+		Preload("OperatingModel").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").

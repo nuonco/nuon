@@ -12,7 +12,9 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { createSandboxBuild } from '@/lib'
 import { BuildSandboxModal } from './BuildSandbox'
 
-export const BuildSandboxModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'>) => {
+export const BuildSandboxModalContainer = ({
+  ...props
+}: Omit<IModal, 'onSubmit'>) => {
   const { org } = useOrg()
   const { app } = useApp()
   const { removeModal } = useSurfaces()
@@ -23,7 +25,13 @@ export const BuildSandboxModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'
     onSuccess: () => {
       addToast(
         <Toast heading="Sandbox build started" theme="info">
-          <Text>Building sandbox for <Badge variant="code" size="md">{app.name}</Badge>. This may take a few minutes.</Text>
+          <Text>
+            Building sandbox for{' '}
+            <Badge variant="code" size="md">
+              {app.name}
+            </Badge>
+            . This may take a few minutes.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)
@@ -31,7 +39,13 @@ export const BuildSandboxModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'
     onError: () => {
       addToast(
         <Toast heading="Sandbox build failed" theme="error">
-          <Text>Unable to build sandbox for <Badge variant="code" size="md">{app.name}</Badge>.</Text>
+          <Text>
+            Unable to build sandbox for{' '}
+            <Badge variant="code" size="md">
+              {app.name}
+            </Badge>
+            .
+          </Text>
         </Toast>
       )
     },

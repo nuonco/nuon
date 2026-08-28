@@ -24,7 +24,7 @@ export const AnimatedHeight = ({ children, className }: IAnimatedHeight) => {
       style={{ height }}
       className={cn(
         'overflow-hidden transition-[height] duration-(--duration-fast) ease-cubic motion-reduce:transition-none',
-        className,
+        className
       )}
     >
       <div ref={innerRef}>{children}</div>

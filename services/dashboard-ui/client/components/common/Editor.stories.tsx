@@ -101,26 +101,53 @@ export const Sizes = () => {
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">Height controls</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Use <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">minHeight</code> and{' '}
-          <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">maxHeight</code> props
-          to control the editor dimensions.
+          Use{' '}
+          <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+            minHeight
+          </code>{' '}
+          and{' '}
+          <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+            maxHeight
+          </code>{' '}
+          props to control the editor dimensions.
         </p>
       </div>
 
       <div className="space-y-6">
         <div className="space-y-2">
-          <Text variant="label" weight="strong">Small (100px)</Text>
-          <Editor value={sampleCode} language="bash" minHeight={100} maxHeight={100} />
+          <Text variant="label" weight="strong">
+            Small (100px)
+          </Text>
+          <Editor
+            value={sampleCode}
+            language="bash"
+            minHeight={100}
+            maxHeight={100}
+          />
         </div>
 
         <div className="space-y-2">
-          <Text variant="label" weight="strong">Medium (200px, default)</Text>
-          <Editor value={sampleCode} language="bash" minHeight={200} maxHeight={200} />
+          <Text variant="label" weight="strong">
+            Medium (200px, default)
+          </Text>
+          <Editor
+            value={sampleCode}
+            language="bash"
+            minHeight={200}
+            maxHeight={200}
+          />
         </div>
 
         <div className="space-y-2">
-          <Text variant="label" weight="strong">Large (400px)</Text>
-          <Editor value={sampleCode} language="bash" minHeight={400} maxHeight={400} />
+          <Text variant="label" weight="strong">
+            Large (400px)
+          </Text>
+          <Editor
+            value={sampleCode}
+            language="bash"
+            minHeight={400}
+            maxHeight={400}
+          />
         </div>
       </div>
     </div>
@@ -136,29 +163,58 @@ echo "You can edit this"`)
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">Editor states</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          The editor supports editable, read-only, disabled, and empty with placeholder states.
+          The editor supports editable, read-only, disabled, and empty with
+          placeholder states.
         </p>
       </div>
 
       <div className="space-y-6">
         <div className="space-y-2">
-          <Text variant="label" weight="strong">Editable (default)</Text>
-          <Editor value={editableCode} onChange={setEditableCode} language="bash" minHeight={120} />
+          <Text variant="label" weight="strong">
+            Editable (default)
+          </Text>
+          <Editor
+            value={editableCode}
+            onChange={setEditableCode}
+            language="bash"
+            minHeight={120}
+          />
         </div>
 
         <div className="space-y-2">
-          <Text variant="label" weight="strong">Read-only</Text>
-          <Editor value={`#!/bin/bash\necho "You cannot edit this"`} language="bash" readOnly minHeight={120} />
+          <Text variant="label" weight="strong">
+            Read-only
+          </Text>
+          <Editor
+            value={`#!/bin/bash\necho "You cannot edit this"`}
+            language="bash"
+            readOnly
+            minHeight={120}
+          />
         </div>
 
         <div className="space-y-2">
-          <Text variant="label" weight="strong">Disabled</Text>
-          <Editor value={`#!/bin/bash\necho "Disabled state"`} language="bash" disabled minHeight={120} />
+          <Text variant="label" weight="strong">
+            Disabled
+          </Text>
+          <Editor
+            value={`#!/bin/bash\necho "Disabled state"`}
+            language="bash"
+            disabled
+            minHeight={120}
+          />
         </div>
 
         <div className="space-y-2">
-          <Text variant="label" weight="strong">Empty with placeholder</Text>
-          <Editor value="" placeholder="Enter your code here..." language="bash" minHeight={120} />
+          <Text variant="label" weight="strong">
+            Empty with placeholder
+          </Text>
+          <Editor
+            value=""
+            placeholder="Enter your code here..."
+            language="bash"
+            minHeight={120}
+          />
         </div>
       </div>
     </div>
@@ -280,7 +336,8 @@ echo "Deployment completed successfully at $(date -u +%Y-%m-%dT%H:%M:%SZ)"`)
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">Long script</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          A long bash script to verify the editor handles large content with proper scrolling and editing.
+          A long bash script to verify the editor handles large content with
+          proper scrolling and editing.
         </p>
       </div>
 

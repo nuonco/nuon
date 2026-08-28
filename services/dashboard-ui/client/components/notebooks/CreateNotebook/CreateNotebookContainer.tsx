@@ -58,11 +58,7 @@ export const CreateNotebookButton = (
   const modal = <CreateNotebookModalContainer />
 
   return (
-    <Button
-      variant="primary"
-      onClick={() => addModal(modal)}
-      {...props}
-    >
+    <Button variant="primary" onClick={() => addModal(modal)} {...props}>
       <Icon variant="PlusIcon" size={16} />
       Create notebook
     </Button>

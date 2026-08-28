@@ -39,12 +39,14 @@ export const DeleteApiTokenModal = ({
   >
     <div className="flex flex-col gap-6">
       {error ? (
-        <Banner theme="error">{error?.error || 'Unable to delete API token'}</Banner>
+        <Banner theme="error">
+          {error?.error || 'Unable to delete API token'}
+        </Banner>
       ) : null}
 
       <Text variant="body" theme="neutral">
-        {tokenName} will be deleted and can no longer be used to access the API. This
-        cannot be undone.
+        {tokenName} will be deleted and can no longer be used to access the API.
+        This cannot be undone.
       </Text>
     </div>
   </Modal>

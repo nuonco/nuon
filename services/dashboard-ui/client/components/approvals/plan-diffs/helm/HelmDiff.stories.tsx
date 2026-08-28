@@ -1157,10 +1157,22 @@ const vmagentSingleRemovalPlan = {
         { type: 0, payload: '        - --envflag.enable' },
         { type: 0, payload: '        - --httpListenAddr=:8429' },
         { type: 0, payload: '        - --loggerFormat=json' },
-        { type: 0, payload: '        - --remoteWrite.bearerToken=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' },
+        {
+          type: 0,
+          payload:
+            '        - --remoteWrite.bearerToken=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        },
         { type: 0, payload: '        - --remoteWrite.tmpDataPath=/tmpData' },
-        { type: 0, payload: '        - --remoteWrite.url=https://metrics.example.com/api/v1/write' },
-        { type: 1, payload: '        - --remoteWrite.bearerToken=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' },
+        {
+          type: 0,
+          payload:
+            '        - --remoteWrite.url=https://metrics.example.com/api/v1/write',
+        },
+        {
+          type: 1,
+          payload:
+            '        - --remoteWrite.bearerToken=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        },
         { type: 0, payload: '        env:' },
         { type: 0, payload: '        - name: POD_NAME' },
         { type: 0, payload: '          valueFrom:' },

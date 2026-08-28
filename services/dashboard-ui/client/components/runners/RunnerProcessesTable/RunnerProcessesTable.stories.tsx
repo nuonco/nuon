@@ -31,8 +31,26 @@ const nonAdminAuth = {
 }
 
 const mockProcesses = [
-  { id: 'proc-1', type: 'build', composite_status: { status: 'active' }, version: 'development', labels: ['Local Runner'], started_at: new Date(Date.now() - 24 * 60 * 1000).toISOString(), created_at: new Date(Date.now() - 24 * 60 * 1000).toISOString(), runner_id: 'runner-1' },
-  { id: 'proc-2', type: 'build', composite_status: { status: 'inactive' }, version: 'development', labels: ['Local Runner'], started_at: new Date(Date.now() - 52 * 60 * 1000).toISOString(), created_at: new Date(Date.now() - 52 * 60 * 1000).toISOString(), runner_id: 'runner-1' },
+  {
+    id: 'proc-1',
+    type: 'build',
+    composite_status: { status: 'active' },
+    version: 'development',
+    labels: ['Local Runner'],
+    started_at: new Date(Date.now() - 24 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 24 * 60 * 1000).toISOString(),
+    runner_id: 'runner-1',
+  },
+  {
+    id: 'proc-2',
+    type: 'build',
+    composite_status: { status: 'inactive' },
+    version: 'development',
+    labels: ['Local Runner'],
+    started_at: new Date(Date.now() - 52 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 52 * 60 * 1000).toISOString(),
+    runner_id: 'runner-1',
+  },
 ] as any[]
 
 export const Default = () => (

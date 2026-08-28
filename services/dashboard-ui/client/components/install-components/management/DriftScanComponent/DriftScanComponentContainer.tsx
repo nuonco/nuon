@@ -31,8 +31,14 @@ export const DriftScanComponentModalContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
 
-  const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { body: Parameters<typeof deployComponent>[0]['body'] }) =>
+  const {
+    mutate: execute,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: (params: {
+      body: Parameters<typeof deployComponent>[0]['body']
+    }) =>
       deployComponent({
         body: params.body,
         installId: install.id,
@@ -122,7 +128,12 @@ export const DriftScanComponentButton = ({
   currentBuildId?: string
 }) => {
   const { addModal } = useSurfaces()
-  const modal = <DriftScanComponentModalContainer component={component} currentBuildId={currentBuildId} />
+  const modal = (
+    <DriftScanComponentModalContainer
+      component={component}
+      currentBuildId={currentBuildId}
+    />
+  )
   return (
     <Button
       onClick={() => {

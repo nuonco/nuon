@@ -24,12 +24,17 @@ func Resolve(ctx workflow.Context, installGroupID, appBranchID string) (*Resolve
 	}
 
 	if group.LabelSelector == nil && !group.AllInstalls {
-		logger.Info("resolved install group",
-			"install_group_id", group.ID,
-			"install_group_name", group.Name,
-			"install_count", len(group.InstallIDs),
-		)
-		return &Resolved{InstallIDs: group.InstallIDs, GroupName: group.Name}, nil
+		if len(group.InstallIDs) == 0 {
+			return &Resolved{GroupName: group.Name}, nil
+		}
+		resolved, err := activities.AwaitResolveInstallGroupInstalls(ctx, &activities.ResolveInstallGroupInstallsInput{
+			GroupID:    group.ID,
+			InstallIDs: group.InstallIDs,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to resolve install group IDs: %w", err)
+		}
+		return &Resolved{InstallIDs: resolved.InstallIDs, GroupName: group.Name}, nil
 	}
 
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, appBranchID)

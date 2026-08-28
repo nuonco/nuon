@@ -12,7 +12,9 @@ interface ISandboxRunMenuContainer extends Omit<IMenu, 'children'> {
   activeSandboxRunId: string
 }
 
-export const SandboxRunMenuContainer = ({ activeSandboxRunId }: ISandboxRunMenuContainer) => {
+export const SandboxRunMenuContainer = ({
+  activeSandboxRunId,
+}: ISandboxRunMenuContainer) => {
   const limit = 8
   const [offset, setOffset] = useState(0)
   const [sandboxRuns, setSandboxRuns] = useState<TSandboxRun[]>([])
@@ -52,7 +54,9 @@ export const SandboxRunMenuContainer = ({ activeSandboxRunId }: ISandboxRunMenuC
         const sandboxRunMap = new Map(
           prev.map((sandboxRun) => [sandboxRun.id, sandboxRun])
         )
-        data.data.forEach((sandboxRun) => sandboxRunMap.set(sandboxRun.id, sandboxRun))
+        data.data.forEach((sandboxRun) =>
+          sandboxRunMap.set(sandboxRun.id, sandboxRun)
+        )
         return Array.from(sandboxRunMap.values())
       })
       scrollToBottom.reset()

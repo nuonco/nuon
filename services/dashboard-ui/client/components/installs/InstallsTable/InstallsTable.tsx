@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Badge } from '@/components/common/Badge'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { CloudRegion } from '@/components/common/CloudRegion'
 import { ContextTooltip } from '@/components/common/ContextTooltip'
@@ -25,11 +26,35 @@ export type InstallRow = {
   appName: string
   installId: string
   labels: ReactNode
+  management: ReactNode
   name: string
   nameHref: string
   region?: ReactNode
   statuses: ReactNode
   platform: ReactNode
+}
+
+function ManagementBadge({ install }: { install: TInstall }) {
+  const operatingModel = install.operating_model
+  if (!operatingModel || operatingModel.approval_authority === 'vendor') {
+    return (
+      <Badge size="sm" theme="neutral">
+        Nuon-managed
+      </Badge>
+    )
+  }
+
+  return (
+    <Badge size="sm" theme="info">
+      Customer-managed
+    </Badge>
+  )
+}
+
+function isSupportedCloudPlatform(
+  platform: string | undefined
+): platform is Exclude<TCloudPlatform, 'unknown'> {
+  return platform === 'aws' || platform === 'azure' || platform === 'gcp'
 }
 
 function getCreatedBySubtitle(install: TInstall): { email: string; source: string } | undefined {
@@ -89,12 +114,15 @@ export function parseInstallsToTableData(
   labelColorsByApp?: Record<string, Record<string, string>>,
   lazyComponents = false
 ): InstallRow[] {
-  return installs.map((install) => ({
-    appHref: `/${install.org_id}/apps/${install.app_id}`,
-    appName: install?.app?.name,
-    name: install.name,
-    nameHref: `/${orgId}/installs/${install.id}`,
-    installId: install.id,
+  return installs.map((install) => {
+    const platform = install.cloud_platform
+    return {
+      appHref: `/${install.org_id}/apps/${install.app_id}`,
+      appName: install?.app?.name,
+      name: install.name,
+      nameHref: `/${orgId}/installs/${install.id}`,
+      installId: install.id,
+      management: <ManagementBadge install={install} />,
     region: (
       <CloudRegion
         variant="subtext"
@@ -106,15 +134,23 @@ export function parseInstallsToTableData(
     statuses: (
       <InstallStatuses install={install} isLabelHidden lazyComponents={lazyComponents} tooltipPosition="top" />
     ),
-    platform: (
+      platform: isSupportedCloudPlatform(platform) ? (
       <CloudPlatform
-        platform={(install?.cloud_platform as TCloudPlatform) || 'unknown'}
+        platform={platform}
         variant="subtext"
         colorVariant="color"
         displayVariant="icon-only"
         iconSize="20"
       />
-    ),
+      ) : (
+        <CloudPlatform
+          platform="unknown"
+          variant="subtext"
+          colorVariant="color"
+          displayVariant="icon-only"
+          iconSize="20"
+        />
+      ),
     labels: (() => {
       const lbls = install.labels
       if (!lbls || Object.keys(lbls).length === 0) return <Icon variant="MinusIcon" />
@@ -150,7 +186,8 @@ export function parseInstallsToTableData(
         <QuickManagementDropdown install={install} />
       </div>
     ),
-  }))
+    }
+  })
 }
 
 const columns: ColumnDef<InstallRow>[] = [
@@ -175,6 +212,12 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => (
       <Link href={info.row.original.appHref}>{info.getValue() as string}</Link>
     ),
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'management',
+    header: 'Management',
+    cell: (info) => info.getValue() as ReactNode,
   },
   {
     enableSorting: false,

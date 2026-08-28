@@ -1,5 +1,8 @@
 import { api } from '@/lib/api'
-import type { TCreateStaticTokenBody, TCreateStaticTokenResponse } from '@/types'
+import type {
+  TCreateStaticTokenBody,
+  TCreateStaticTokenResponse,
+} from '@/types'
 
 export const createStaticToken = ({
   body,

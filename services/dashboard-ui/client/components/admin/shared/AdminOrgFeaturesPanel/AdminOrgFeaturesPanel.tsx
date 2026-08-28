@@ -34,7 +34,9 @@ export const AdminOrgFeaturesPanel = ({
       heading={
         <div className="flex items-center gap-3">
           <Icon variant="SlidersIcon" size="24" />
-          <Text weight="strong" variant="h2">Organization features</Text>
+          <Text weight="strong" variant="h2">
+            Organization features
+          </Text>
         </div>
       }
       size={size}
@@ -42,7 +44,8 @@ export const AdminOrgFeaturesPanel = ({
     >
       <div className="@container flex flex-col gap-6">
         <Text variant="body" className="text-gray-600 dark:text-gray-300">
-          Configure feature flags for organization: <span className="font-mono">{orgId}</span>
+          Configure feature flags for organization:{' '}
+          <span className="font-mono">{orgId}</span>
         </Text>
 
         {error && (
@@ -92,7 +95,10 @@ export const AdminOrgFeaturesPanel = ({
                           )}
                         </span>
                         {feature.description && (
-                          <Text variant="subtext" className="text-gray-500 dark:text-gray-400">
+                          <Text
+                            variant="subtext"
+                            className="text-gray-500 dark:text-gray-400"
+                          >
                             {feature.description}
                           </Text>
                         )}
@@ -121,9 +127,17 @@ export const AdminOrgFeaturesPanel = ({
           </form>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Icon variant="WarningIcon" size="48" className="text-gray-400 mb-4" />
-            <Text variant="base" weight="strong" className="mb-2">No features available</Text>
-            <Text variant="subtext">No feature flags are configured for this organization.</Text>
+            <Icon
+              variant="WarningIcon"
+              size="48"
+              className="text-gray-400 mb-4"
+            />
+            <Text variant="base" weight="strong" className="mb-2">
+              No features available
+            </Text>
+            <Text variant="subtext">
+              No feature flags are configured for this organization.
+            </Text>
           </div>
         )}
       </div>

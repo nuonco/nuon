@@ -19,13 +19,7 @@ export const DeleteOIDCTrustPolicyModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-          theme="error"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
           <Icon variant="WarningIcon" size="24" />
           Delete trust policy?
         </Text>

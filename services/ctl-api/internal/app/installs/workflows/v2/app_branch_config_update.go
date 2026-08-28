@@ -42,19 +42,32 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	appBranchRunID := generics.FromPtrStr(flw.Metadata["app_branch_run_id"])
 	installGroupID := generics.FromPtrStr(flw.Metadata["install_group_id"])
+	appReleaseID := generics.FromPtrStr(flw.Metadata["app_release_id"])
+	releaseComponentBuildIDs, releaseSandboxBuildID, err := releaseBuildsFromWorkflow(flw)
+	if err != nil {
+		return nil, err
+	}
+	releaseBuilds := WithReleaseBuilds(releaseComponentBuildIDs, releaseSandboxBuildID)
+	triggeredBy := "api"
+	if appBranchRunID != "" {
+		triggeredBy = "app-branch"
+	} else if appReleaseID != "" {
+		triggeredBy = "app-release"
+	}
 
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup(flw)
 
 	sg.nextGroupEager()
 	configStep, err := sg.installSignalStep(ctx, installID, "update app config", pgtype.Hstore{}, &updateappconfig.Signal{
-		InstallID:      installID,
-		NewAppConfigID: newAppConfigID,
-		DryRun:         flw.PlanOnly,
-		AppBranchRunID: appBranchRunID,
-		InstallGroupID: installGroupID,
-		TriggeredBy:    "app-branch",
-		Metadata:       map[string]string{"source": "app-branch"},
+		InstallID:                 installID,
+		NewAppConfigID:            newAppConfigID,
+		DryRun:                    flw.PlanOnly,
+		AppBranchRunID:            appBranchRunID,
+		InstallGroupID:            installGroupID,
+		InstallAppConfigVersionID: installConfigUpdateID,
+		TriggeredBy:               triggeredBy,
+		Metadata:                  map[string]string{"source": triggeredBy},
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create update app config step")
@@ -110,7 +123,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 			return nil, errors.Wrap(err, "unable to get action workflows")
 		}
 
-		dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
+		dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs), releaseBuilds)
 		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install, sandboxNeedsRunnerHealthyGate(diff))
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to generate sandbox reprovision steps")
@@ -139,7 +152,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	deployComponentIDs := filterComponentsByDiff(componentIDs, newAppCfg, diff)
 
-	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
+	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs), releaseBuilds)
 	deploySteps, err := getComponentDeploySteps(ctx, dg, deployComponentIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to generate component deploy steps")

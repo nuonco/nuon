@@ -92,7 +92,10 @@ export const UpdateRunnerModal = ({
         runnerId: runner.id,
         orgId: org.id,
         body: {
-          container_image_tag: field === 'container_image_tag' ? value : settings?.container_image_tag,
+          container_image_tag:
+            field === 'container_image_tag'
+              ? value
+              : settings?.container_image_tag,
           container_image_url: settings?.container_image_url,
           org_awsiam_role_arn: settings?.org_aws_iam_role_arn || '',
           org_k8s_service_account_name: settings?.org_k8s_service_account_name,
@@ -102,7 +105,9 @@ export const UpdateRunnerModal = ({
       })
 
       if (runner?.runner_group?.type !== 'org') {
-        await updateMngRunner({ orgId: org.id, runnerId: runner.id }).catch(() => {})
+        await updateMngRunner({ orgId: org.id, runnerId: runner.id }).catch(
+          () => {}
+        )
       }
     },
     onSuccess: () => {

@@ -46,7 +46,9 @@ export const RoleSelector = ({
 
   const options: SelectOption[] = [
     ...(defaultRole ? [roleOption(defaultRole, '')] : []),
-    ...roles.filter((role) => !role.default).map((role) => roleOption(role, role.name)),
+    ...roles
+      .filter((role) => !role.default)
+      .map((role) => roleOption(role, role.name)),
   ]
 
   const helperText = isLoading

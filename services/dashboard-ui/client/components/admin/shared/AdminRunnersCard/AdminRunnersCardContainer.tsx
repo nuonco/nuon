@@ -6,7 +6,9 @@ interface IAdminRunnersCardContainer {
   orgId: string
 }
 
-export const AdminRunnersCardContainer = ({ orgId }: IAdminRunnersCardContainer) => {
+export const AdminRunnersCardContainer = ({
+  orgId,
+}: IAdminRunnersCardContainer) => {
   const { addPanel } = useSurfaces()
 
   const handleOpenPanel = () => {

@@ -43,7 +43,11 @@ export const InstallResourceDetailPanel = ({
         </LabeledValue>
         <LabeledValue label="Observed">
           {resource?.observed_at ? (
-            <Time variant="subtext" time={resource.observed_at} format="relative" />
+            <Time
+              variant="subtext"
+              time={resource.observed_at}
+              format="relative"
+            />
           ) : (
             <Icon variant="MinusIcon" />
           )}
@@ -58,7 +62,9 @@ export const InstallResourceDetailPanel = ({
           <LabeledValue label="API group">{resource.api_group}</LabeledValue>
         ) : null}
         {resource?.native_status ? (
-          <LabeledValue label="Native status">{resource.native_status}</LabeledValue>
+          <LabeledValue label="Native status">
+            {resource.native_status}
+          </LabeledValue>
         ) : null}
         {resource?.runner_id ? (
           <LabeledValue label="Runner ID">

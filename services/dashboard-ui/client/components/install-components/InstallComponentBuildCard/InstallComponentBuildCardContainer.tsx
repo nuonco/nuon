@@ -1,8 +1,15 @@
 import { useInstall } from '@/hooks/use-install'
-import { InstallComponentBuildCard, InstallComponentBuildCardSkeleton } from './InstallComponentBuildCard'
+import {
+  InstallComponentBuildCard,
+  InstallComponentBuildCardSkeleton,
+} from './InstallComponentBuildCard'
 import type { TBuild } from '@/types'
 
-export const InstallComponentBuildCardContainer = ({ build }: { build: TBuild }) => {
+export const InstallComponentBuildCardContainer = ({
+  build,
+}: {
+  build: TBuild
+}) => {
   const { install } = useInstall()
 
   return (

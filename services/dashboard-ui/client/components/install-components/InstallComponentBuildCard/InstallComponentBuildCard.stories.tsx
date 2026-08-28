@@ -2,7 +2,10 @@ export default {
   title: 'Install Components/InstallComponentBuildCard',
 }
 
-import { InstallComponentBuildCard, InstallComponentBuildCardSkeleton } from './InstallComponentBuildCard'
+import {
+  InstallComponentBuildCard,
+  InstallComponentBuildCardSkeleton,
+} from './InstallComponentBuildCard'
 
 const mockBuild = {
   id: 'bld-abc123',

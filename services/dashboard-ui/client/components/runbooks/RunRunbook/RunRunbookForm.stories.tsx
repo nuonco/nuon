@@ -49,7 +49,12 @@ const noInputs = {
   runbook_id: 'rb-2',
   runbook: {
     name: 'restart-workers',
-    configs: [{ inputs: [], steps: [{ id: 's1', name: 'Restart', type: 'helm', idx: 0 }] }],
+    configs: [
+      {
+        inputs: [],
+        steps: [{ id: 's1', name: 'Restart', type: 'helm', idx: 0 }],
+      },
+    ],
   },
 } as any
 
@@ -82,7 +87,11 @@ export const WithError = () => (
     <RunRunbookForm
       installRunbook={withInputs}
       isPending={false}
-      error={{ error: 'Unable to run rotate-secrets', description: '', user_error: true }}
+      error={{
+        error: 'Unable to run rotate-secrets',
+        description: '',
+        user_error: true,
+      }}
       onRun={noop}
       roleSelector={roleSelector}
     />

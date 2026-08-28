@@ -50,7 +50,8 @@ const TracePanelContent = ({ logStream }: { logStream: TLogStream }) => {
   const { data: spans, isLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['log-stream-spans', org?.id, logStream.id],
-    queryFn: () => getLogStreamSpans({ orgId: org.id, logStreamId: logStream.id }),
+    queryFn: () =>
+      getLogStreamSpans({ orgId: org.id, logStreamId: logStream.id }),
     enabled: !!org?.id && !!logStream.id,
     refetchInterval: shouldPoll ? 5000 : false,
   })

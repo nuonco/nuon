@@ -43,7 +43,14 @@ export const RunnerRecentActivityContainer = ({
   const offset = Number(searchParams.get(RECENT_ACTIVITY_SEARCH_PARAM) ?? 0)
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['runner-jobs', org?.id, runner?.id, offset, RECENT_ACTIVITY_GROUPS, executor],
+    queryKey: [
+      'runner-jobs',
+      org?.id,
+      runner?.id,
+      offset,
+      RECENT_ACTIVITY_GROUPS,
+      executor,
+    ],
     queryFn: () =>
       getRunnerJobs({
         executor,
@@ -58,8 +65,9 @@ export const RunnerRecentActivityContainer = ({
     placeholderData: keepPreviousData,
   })
 
-  const visibleJobs = (result?.data ?? [])
-    .filter((job) => !HIDDEN_JOB_TYPES.includes(job.type))
+  const visibleJobs = (result?.data ?? []).filter(
+    (job) => !HIDDEN_JOB_TYPES.includes(job.type)
+  )
 
   return (
     <RunnerRecentActivity

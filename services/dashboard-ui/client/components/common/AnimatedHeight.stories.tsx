@@ -12,7 +12,11 @@ export const Default = () => {
   const [tall, setTall] = useState(false)
   return (
     <div className="flex flex-col gap-4">
-      <Button variant="secondary" className="w-fit" onClick={() => setTall(!tall)}>
+      <Button
+        variant="secondary"
+        className="w-fit"
+        onClick={() => setTall(!tall)}
+      >
         Toggle content height
       </Button>
       <Card>

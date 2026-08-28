@@ -7,7 +7,12 @@ import type { GraphNode, GraphEdge } from './ComponentDependencyGraph'
 
 const nodes: GraphNode[] = [
   { id: 'cmp-api', name: 'api', type: 'docker_build', role: 'current' },
-  { id: 'cmp-db', name: 'database', type: 'terraform_module', role: 'dependency' },
+  {
+    id: 'cmp-db',
+    name: 'database',
+    type: 'terraform_module',
+    role: 'dependency',
+  },
   { id: 'cmp-cache', name: 'cache', type: 'helm_chart', role: 'dependency' },
   { id: 'cmp-worker', name: 'worker', type: 'docker_build', role: 'dependent' },
   { id: 'cmp-web', name: 'web', type: 'docker_build', role: 'dependent' },

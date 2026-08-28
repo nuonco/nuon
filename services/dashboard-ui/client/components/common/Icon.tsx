@@ -56,6 +56,7 @@ import {
   CloudArrowDownIcon,
   CloudArrowUpIcon,
   CloudCheckIcon,
+  CloudSlashIcon,
   CodeBlockIcon,
   CopyIcon,
   CornersOutIcon,
@@ -208,7 +209,7 @@ import {
 import type { IconProps as PhosphorIconProps } from '@phosphor-icons/react'
 import { Loading } from './Loading'
 import { AWSColor, AzureColor, GCPColor } from './CloudPlatformColorIcons'
-import type { TTheme } from '@/types'
+import type { TTheme } from '@/types/dashboard.types'
 import { cn } from '@/utils/classnames'
 
 const customIcons = {
@@ -274,6 +275,7 @@ const phosphorIcons = {
   CloudArrowDownIcon,
   CloudArrowUpIcon,
   CloudCheckIcon,
+  CloudSlashIcon,
   CodeBlockIcon,
   CopyIcon,
   CornersOutIcon,
@@ -468,11 +470,18 @@ export const Icon = ({
       console.warn(
         `Icon variant "${variant}" not found. Add it to the phosphorIcons map in client/components/common/Icon.tsx:\n` +
           `  1. Add: import { ${variant} } from '@phosphor-icons/react'\n` +
-          `  2. Add: ${variant} to the phosphorIcons object`,
+          `  2. Add: ${variant} to the phosphorIcons object`
       )
     }
     return null
   }
 
-  return <IconComponent size={size} weight={weight} className={themeClass} {...props} />
+  return (
+    <IconComponent
+      size={size}
+      weight={weight}
+      className={themeClass}
+      {...props}
+    />
+  )
 }

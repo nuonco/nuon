@@ -62,9 +62,7 @@ export const NarrowMixedStatuses = () => (
   </div>
 )
 
-export const Simple = () => (
-  <SimpleInstallStatuses install={mockInstall} />
-)
+export const Simple = () => <SimpleInstallStatuses install={mockInstall} />
 
 export const SimpleLabelHidden = () => (
   <SimpleInstallStatuses install={mockInstall} isLabelHidden />

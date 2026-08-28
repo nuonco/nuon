@@ -96,6 +96,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, dg *genCtx, install *app.I
 	step, err := dg.sg.installSignalStep(ctx, dg.installID, "reprovision sandbox plan", pgtype.Hstore{}, &reprovisionsandboxplan.Signal{
 		InstallSandboxID: sandbox.ID,
 		InstallID:        dg.installID,
+		SandboxBuildID:   dg.sandboxBuildID,
 		Role:             dg.flw.Role,
 	}, dg.flw.PlanOnly, WithSkippable(false))
 	if err != nil {

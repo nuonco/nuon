@@ -64,7 +64,9 @@ export const ComponentsTableContainer = ({
         <div className="flex items-center gap-3">
           <LabelFilterDropdown
             queryKey={['component-label-keys', org.id, app.id]}
-            queryFn={() => getComponentLabelKeys({ orgId: org.id, appId: app.id })}
+            queryFn={() =>
+              getComponentLabelKeys({ orgId: org.id, appId: app.id })
+            }
           />
           <ComponentTypeFilterDropdown />
           <ManagementDropdown />

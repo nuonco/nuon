@@ -25,7 +25,7 @@ export const UpdateRunnerModal = ({
   onSubmit,
   onClose,
   modalHeading = 'Update runner version',
-  inputLabel = 'Enter the runner tag you\'d like to update to.',
+  inputLabel = "Enter the runner tag you'd like to update to.",
   inputPlaceholder = 'runner tag',
   submitLabel = 'Update runner version',
   ...props
@@ -42,12 +42,7 @@ export const UpdateRunnerModal = ({
     <Modal
       heading={
         <div className="flex flex-col gap-2">
-          <Text
-            flex
-            className="gap-4"
-            variant="h3"
-            weight="strong"
-          >
+          <Text flex className="gap-4" variant="h3" weight="strong">
             <Icon variant="ArrowsCounterClockwiseIcon" size="24" />
             {modalHeading}
           </Text>
@@ -108,13 +103,14 @@ export const UpdateRunnerButton = ({
   ...props
 }: IUpdateRunnerButton) => {
   return (
-    <Button
-      onClick={() => onOpenModal()}
-      {...props}
-    >
-      {props?.isMenuButton ? null : <Icon variant="ArrowsCounterClockwiseIcon" />}
+    <Button onClick={() => onOpenModal()} {...props}>
+      {props?.isMenuButton ? null : (
+        <Icon variant="ArrowsCounterClockwiseIcon" />
+      )}
       {label}
-      {props?.isMenuButton ? <Icon variant="ArrowsCounterClockwiseIcon" /> : null}
+      {props?.isMenuButton ? (
+        <Icon variant="ArrowsCounterClockwiseIcon" />
+      ) : null}
     </Button>
   )
 }

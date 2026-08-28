@@ -98,6 +98,9 @@ type AppAppConfig struct {
 	// secrets
 	Secrets *AppAppSecretsConfig `json:"secrets,omitempty"`
 
+	// source config
+	SourceConfig BlobstoreBlob `json:"source_config,omitempty"`
+
 	// stack
 	Stack *AppAppStackConfig `json:"stack,omitempty"`
 

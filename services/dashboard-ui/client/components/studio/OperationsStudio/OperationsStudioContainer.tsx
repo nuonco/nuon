@@ -67,9 +67,7 @@ export function OperationsStudioContainer() {
       previewInstallState={installState.data}
       previewInstallStateLoading={installState.isLoading && !!previewInstallId}
       onPreviewInstallChange={setPreviewInstallId}
-      loading={
-        components.isLoading || actions.isLoading || runbooks.isLoading
-      }
+      loading={components.isLoading || actions.isLoading || runbooks.isLoading}
       loadingError={
         !!installs.error ||
         !!installState.error ||

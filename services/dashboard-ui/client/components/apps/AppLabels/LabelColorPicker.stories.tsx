@@ -7,7 +7,12 @@ export default {
 const noop = () => {}
 
 export const Default = () => (
-  <LabelColorPicker id="story-picker" value="#2563eb" defaultColor="#2563eb" onSelect={noop} />
+  <LabelColorPicker
+    id="story-picker"
+    value="#2563eb"
+    defaultColor="#2563eb"
+    onSelect={noop}
+  />
 )
 
 export const Overridden = () => (

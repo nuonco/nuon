@@ -90,12 +90,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("component builds failed: %w", err)
 	}
 
-	ociArtifacts, err := activities.AwaitOrgHasFeature(ctx, activities.OrgHasFeatureRequest{
-		OrgID:   run.OrgID,
-		Feature: string(app.OrgFeatureSandboxOCIArtifacts),
-	})
+	ociArtifacts, err := s.shouldBuildSandboxOCI(ctx, run.OrgID, appConfig.AppID, appConfig.ID)
 	if err != nil {
-		return fmt.Errorf("unable to check sandbox-oci-artifacts feature flag: %w", err)
+		return err
 	}
 
 	if ociArtifacts {
@@ -132,6 +129,28 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	s.finalizeBuildMetadata(ctx, builds, true)
 	l.Info("all builds completed successfully")
 	return nil
+}
+
+func (s *Signal) shouldBuildSandboxOCI(ctx workflow.Context, orgID, appID, appConfigID string) (bool, error) {
+	enabled, err := activities.AwaitOrgHasFeature(ctx, activities.OrgHasFeatureRequest{
+		OrgID:   orgID,
+		Feature: string(app.OrgFeatureSandboxOCIArtifacts),
+	})
+	if err != nil {
+		return false, fmt.Errorf("unable to check sandbox-oci-artifacts feature flag: %w", err)
+	}
+	if enabled {
+		return true, nil
+	}
+
+	customerManaged, err := activities.AwaitAppConfigUsesCustomerManaged(ctx, activities.AppConfigUsesCustomerManagedRequest{
+		AppID:       appID,
+		AppConfigID: appConfigID,
+	})
+	if err != nil {
+		return false, fmt.Errorf("unable to check customer-managed app config: %w", err)
+	}
+	return customerManaged, nil
 }
 
 // buildComponents enqueues queuebuild signals directly to component queues

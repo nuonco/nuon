@@ -34,7 +34,11 @@ const entityTags = {
   component: 'nuon-component-card',
 } as const
 
-const entityElement = (type: keyof typeof entityTags, id: string, name: string) => {
+const entityElement = (
+  type: keyof typeof entityTags,
+  id: string,
+  name: string
+) => {
   const tag = entityTags[type]
   const attrs = [
     id ? `id="${escapeHtml(id)}"` : '',
@@ -190,10 +194,7 @@ function evalCondition(
   }
 }
 
-const previewValue = (
-  kind: TValueKind,
-  value: unknown
-): string => {
+const previewValue = (kind: TValueKind, value: unknown): string => {
   switch (kind) {
     case 'status':
       return scalar(value)
@@ -209,9 +210,15 @@ const previewValue = (
 }
 
 const entityPreviewLabels = {
-  runbook: { title: 'Run runbook', hint: 'Opens the runbook on the install page' },
+  runbook: {
+    title: 'Run runbook',
+    hint: 'Opens the runbook on the install page',
+  },
   action: { title: 'Run action', hint: 'Triggers the action on the install' },
-  component: { title: 'Deploy component', hint: 'Deploys the component to the install' },
+  component: {
+    title: 'Deploy component',
+    hint: 'Deploys the component to the install',
+  },
 } as const
 
 const entityPreview = (
@@ -364,7 +371,9 @@ export function getArraySources(
         sources.push({
           path: path.join('.'),
           keys: Object.keys(first).filter(
-            (key) => identifier.test(key) && scalar((first as Record<string, unknown>)[key])
+            (key) =>
+              identifier.test(key) &&
+              scalar((first as Record<string, unknown>)[key])
           ),
           length: value.length,
         })

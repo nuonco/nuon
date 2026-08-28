@@ -38,11 +38,7 @@ export function ResourceChangesList({
                 <div className="text-left w-full">
                   <div className="flex items-start justify-between w-full">
                     <div className="flex flex-col max-w-[500px]">
-                      <Text
-                        nowrap
-                        className="block truncate"
-                        weight="strong"
-                      >
+                      <Text nowrap className="block truncate" weight="strong">
                         {change.address}
                       </Text>
                       <Text variant="subtext" theme="neutral">

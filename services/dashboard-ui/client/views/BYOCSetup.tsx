@@ -12,18 +12,30 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useConfig } from '@/hooks/use-config'
 import { getOrgs } from '@/lib'
 
-function Step({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
+function Step({
+  number,
+  title,
+  children,
+}: {
+  number: number
+  title: string
+  children: React.ReactNode
+}) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
         <div className="w-7 h-7 rounded-full bg-primary-600 dark:bg-primary-400 flex items-center justify-center flex-shrink-0">
-          <Text variant="label" weight="strong" className="text-white dark:text-black">{number}</Text>
+          <Text
+            variant="label"
+            weight="strong"
+            className="text-white dark:text-black"
+          >
+            {number}
+          </Text>
         </div>
         <Text variant="h3">{title}</Text>
       </div>
-      <div className="pl-10 flex flex-col gap-3">
-        {children}
-      </div>
+      <div className="pl-10 flex flex-col gap-3">{children}</div>
     </div>
   )
 }
@@ -60,7 +72,8 @@ export function BYOCSetup() {
           <div className="flex flex-col gap-2">
             <Text variant="h1">Get started</Text>
             <Text variant="body" theme="neutral">
-              Set up the Nuon CLI, create your organization, and sync your first app.
+              Set up the Nuon CLI, create your organization, and sync your first
+              app.
             </Text>
           </div>
 
@@ -85,7 +98,9 @@ export function BYOCSetup() {
                       textToCopy="bash <(curl -sSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)"
                     />
                     <CodeBlock language="bash">
-                      {'bash <(curl -sSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)'}
+                      {
+                        'bash <(curl -sSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/install.sh)'
+                      }
                     </CodeBlock>
                   </div>
                 ),
@@ -116,7 +131,8 @@ export function BYOCSetup() {
 
           <Step number={3} title="Create an organization">
             <Text variant="body" theme="neutral">
-              Organizations are the top-level container for your apps and installs.
+              Organizations are the top-level container for your apps and
+              installs.
             </Text>
             <div className="relative">
               <ClickToCopyButton
@@ -137,8 +153,8 @@ export function BYOCSetup() {
                 className="text-primary-600 dark:text-primary-400 underline underline-offset-2"
               >
                 example app configs
-              </a>
-              {' '}to get started with a working configuration.
+              </a>{' '}
+              to get started with a working configuration.
             </Text>
             <div className="relative">
               <ClickToCopyButton
@@ -151,8 +167,8 @@ export function BYOCSetup() {
 
           <Step number={5} title="Sync your app config">
             <Text variant="body" theme="neutral">
-              From inside your app config directory, run sync to push your configuration to Nuon and trigger your first build.
-              See the{' '}
+              From inside your app config directory, run sync to push your
+              configuration to Nuon and trigger your first build. See the{' '}
               <a
                 href="https://docs.nuon.co/cli-commands#apps-&-config"
                 target="_blank"
@@ -160,8 +176,8 @@ export function BYOCSetup() {
                 className="text-primary-600 dark:text-primary-400 underline underline-offset-2"
               >
                 apps CLI commands
-              </a>
-              {' '}for more details.
+              </a>{' '}
+              for more details.
             </Text>
             <div className="relative">
               <ClickToCopyButton
@@ -176,20 +192,32 @@ export function BYOCSetup() {
             {org ? (
               <div className="flex items-center gap-4 p-4 rounded-lg border bg-background-secondary">
                 <Avatar
-                  {...(org.logo_url ? { src: org.logo_url } : { name: org.name })}
+                  {...(org.logo_url
+                    ? { src: org.logo_url }
+                    : { name: org.name })}
                   size="xl"
                 />
                 <div className="flex-1 min-w-0">
-                  <Text weight="strong" variant="subtext" flex className="text-nowrap">
+                  <Text
+                    weight="strong"
+                    variant="subtext"
+                    flex
+                    className="text-nowrap"
+                  >
                     {org.sandbox_mode && (
-                      <Icon variant="TestTubeIcon" className="!w-[12px] !h-[12px] shrink-0" size="12" />
+                      <Icon
+                        variant="TestTubeIcon"
+                        className="!w-[12px] !h-[12px] shrink-0"
+                        size="12"
+                      />
                     )}
                     <span className="truncate">{org.name}</span>
                   </Text>
                   <Status status={org.status} />
                 </div>
                 <Button variant="primary" href={`/${org.id}`}>
-                  Go to dashboard <Icon variant="ArrowRightIcon" weight="bold" />
+                  Go to dashboard{' '}
+                  <Icon variant="ArrowRightIcon" weight="bold" />
                 </Button>
               </div>
             ) : (

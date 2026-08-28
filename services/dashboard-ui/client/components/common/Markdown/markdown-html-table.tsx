@@ -1,6 +1,15 @@
-import { Children, isValidElement, type ReactElement, type ReactNode } from 'react'
+import {
+  Children,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from 'react'
 import { DateTime } from 'luxon'
-import type { ExtractedTable, TableCell, TableSearchConfig } from './markdown-table'
+import type {
+  ExtractedTable,
+  TableCell,
+  TableSearchConfig,
+} from './markdown-table'
 
 function nodeText(node: ReactNode): string {
   if (node == null || typeof node === 'boolean') return ''
@@ -55,7 +64,11 @@ function cellSortValue(node: ReactNode): number | undefined {
     if (!isValidElement(n)) return
     const props = n.props as any
     const seconds = props?.seconds
-    if (seconds != null && String(seconds).trim() !== '' && !Number.isNaN(Number(seconds))) {
+    if (
+      seconds != null &&
+      String(seconds).trim() !== '' &&
+      !Number.isNaN(Number(seconds))
+    ) {
       const dt = DateTime.fromSeconds(Number(seconds))
       if (dt.isValid) {
         result = dt.toMillis()
@@ -77,7 +90,11 @@ function cellSortValue(node: ReactNode): number | undefined {
 
 function toCell(cell: ReactElement): TableCell {
   const content = (cell.props as any)?.children
-  return { text: nodeText(content).trim(), content, sortValue: cellSortValue(content) }
+  return {
+    text: nodeText(content).trim(),
+    content,
+    sortValue: cellSortValue(content),
+  }
 }
 
 export function htmlTableToExtracted(
@@ -90,7 +107,9 @@ export function htmlTableToExtracted(
   const cellRows = rows.map(rowCells).filter((cells) => cells.length > 0)
   if (cellRows.length === 0) return null
 
-  let headerIdx = cellRows.findIndex((cells) => cells.every((c) => tagName(c) === 'th'))
+  let headerIdx = cellRows.findIndex((cells) =>
+    cells.every((c) => tagName(c) === 'th')
+  )
   if (headerIdx === -1) headerIdx = 0
 
   const headerCells = cellRows[headerIdx]

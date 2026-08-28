@@ -69,7 +69,11 @@ const DependencyNode = memo(({ data }: NodeProps) => {
 
   return (
     <>
-      <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ visibility: 'hidden' }}
+      />
       <div
         className="flex items-center gap-2 px-3 py-2"
         style={{
@@ -90,11 +94,25 @@ const DependencyNode = memo(({ data }: NodeProps) => {
           displayVariant="icon-only"
           variant="subtext"
         />
-        <span style={isLink ? { textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.3)', textUnderlineOffset: '2px' } : undefined}>
+        <span
+          style={
+            isLink
+              ? {
+                  textDecoration: 'underline',
+                  textDecorationColor: 'rgba(255,255,255,0.3)',
+                  textUnderlineOffset: '2px',
+                }
+              : undefined
+          }
+        >
           {data.label as string}
         </span>
       </div>
-      <Handle type="source" position={Position.Bottom} style={{ visibility: 'hidden' }} />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ visibility: 'hidden' }}
+      />
     </>
   )
 })
@@ -106,7 +124,7 @@ function layoutGraph(
   graphNodes: GraphNode[],
   graphEdges: GraphEdge[],
   currentId: string,
-  basePath: string,
+  basePath: string
 ) {
   const nodes: Node[] = graphNodes.map((n) => ({
     id: n.id,
@@ -127,7 +145,10 @@ function layoutGraph(
     .filter((e) => nodeIds.has(e.sourceId) && nodeIds.has(e.targetId))
     .map((e) => {
       const targetRole = roleById.get(e.targetId)
-      const color = targetRole === 'dependent' ? EDGE_COLORS.dependent : EDGE_COLORS.dependency
+      const color =
+        targetRole === 'dependent'
+          ? EDGE_COLORS.dependent
+          : EDGE_COLORS.dependency
       return {
         id: `${e.sourceId}->${e.targetId}`,
         source: e.sourceId,
@@ -177,7 +198,7 @@ export const ComponentDependencyGraph = ({
 
   const { nodes, edges } = useMemo(
     () => layoutGraph(graphNodes, graphEdges, currentId, basePath),
-    [graphNodes, graphEdges, currentId, basePath],
+    [graphNodes, graphEdges, currentId, basePath]
   )
 
   const memoizedNodeTypes = useMemo(() => nodeTypes, [])
@@ -190,11 +211,14 @@ export const ComponentDependencyGraph = ({
         onNavigate?.()
       }
     },
-    [navigate, onNavigate],
+    [navigate, onNavigate]
   )
 
   return (
-    <div style={{ width: '100%', height: '100%' }} className="border rounded-lg overflow-hidden">
+    <div
+      style={{ width: '100%', height: '100%' }}
+      className="border rounded-lg overflow-hidden"
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}

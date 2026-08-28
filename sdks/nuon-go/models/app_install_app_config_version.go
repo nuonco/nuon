@@ -25,6 +25,9 @@ type AppInstallAppConfigVersion struct {
 	// app branch run id
 	AppBranchRunID string `json:"app_branch_run_id,omitempty"`
 
+	// app release id
+	AppReleaseID string `json:"app_release_id,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -51,6 +54,9 @@ type AppInstallAppConfigVersion struct {
 
 	// old app config id
 	OldAppConfigID string `json:"old_app_config_id,omitempty"`
+
+	// operating model id
+	OperatingModelID string `json:"operating_model_id,omitempty"`
 
 	// org id
 	OrgID string `json:"org_id,omitempty"`

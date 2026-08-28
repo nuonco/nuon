@@ -5,7 +5,9 @@ type PageTitleContextValue = {
   updateTitle: (title: string) => void
 }
 
-export const PageTitleContext = createContext<PageTitleContextValue | undefined>(undefined)
+export const PageTitleContext = createContext<
+  PageTitleContextValue | undefined
+>(undefined)
 
 export function PageTitleProvider({ children }: { children: ReactNode }) {
   const [title, setTitle] = useState('')

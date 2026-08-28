@@ -58,16 +58,32 @@ export const createTriggerSchema = z
 
     if (preset === 'google-pubsub' || (custom && v.authType === 'bearer_jwt')) {
       if (!v.issuer.trim())
-        ctx.addIssue({ code: 'custom', path: ['issuer'], message: 'Issuer is required' })
+        ctx.addIssue({
+          code: 'custom',
+          path: ['issuer'],
+          message: 'Issuer is required',
+        })
       if (!v.audience.trim())
-        ctx.addIssue({ code: 'custom', path: ['audience'], message: 'Audience is required' })
+        ctx.addIssue({
+          code: 'custom',
+          path: ['audience'],
+          message: 'Audience is required',
+        })
       if (!v.identity.trim())
-        ctx.addIssue({ code: 'custom', path: ['identity'], message: 'Expected identity is required' })
+        ctx.addIssue({
+          code: 'custom',
+          path: ['identity'],
+          message: 'Expected identity is required',
+        })
     }
 
     if (preset === 'aws-sns' || (custom && v.authType === 'sns_signature')) {
       if (!v.topicArn.trim())
-        ctx.addIssue({ code: 'custom', path: ['topicArn'], message: 'SNS topic ARN is required' })
+        ctx.addIssue({
+          code: 'custom',
+          path: ['topicArn'],
+          message: 'SNS topic ARN is required',
+        })
     }
 
     if (preset === 'slack-events' && !v.slackSigningSecret.trim()) {

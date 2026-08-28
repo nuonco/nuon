@@ -78,12 +78,15 @@ const BarRow = ({ node, t0, totalMs, isSelected, onSelect }: IBarRow) => {
   const leftPct = clampPct((start / totalMs) * 100)
   const widthPct = Math.max(0.5, clampPct(((end - start) / totalMs) * 100))
   const isError = (span.status_code ?? '').toLowerCase() === 'error'
-  const tipPosition = leftPct + widthPct > 75 ? 'left' as const : 'bottom' as const
+  const tipPosition =
+    leftPct + widthPct > 75 ? ('left' as const) : ('bottom' as const)
 
   const tipContent = (
     <div className="flex flex-col gap-0.5">
       <div className="flex items-center gap-1.5">
-        <Text variant="subtext" weight="strong">{span.name}</Text>
+        <Text variant="subtext" weight="strong">
+          {span.name}
+        </Text>
         {span.service_name && (
           <Text variant="label">· {span.service_name}</Text>
         )}
@@ -146,11 +149,14 @@ const formatTickMs = (ms: number): string => {
 }
 
 const NICE_INTERVALS = [
-  1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10_000, 15_000,
-  30_000, 60_000, 120_000, 300_000, 600_000,
+  1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10_000, 15_000, 30_000,
+  60_000, 120_000, 300_000, 600_000,
 ]
 
-const computeTicks = (totalMs: number, targetCount = 5): { ms: number; pct: number }[] => {
+const computeTicks = (
+  totalMs: number,
+  targetCount = 5
+): { ms: number; pct: number }[] => {
   if (totalMs <= 0) return []
   const rawInterval = totalMs / targetCount
   const interval = NICE_INTERVALS.find((n) => n >= rawInterval) ?? rawInterval
@@ -164,7 +170,12 @@ const computeTicks = (totalMs: number, targetCount = 5): { ms: number; pct: numb
   return ticks
 }
 
-const TimeAxis = ({ ticks }: { ticks: { ms: number; pct: number }[]; totalMs: number }) => (
+const TimeAxis = ({
+  ticks,
+}: {
+  ticks: { ms: number; pct: number }[]
+  totalMs: number
+}) => (
   <div className="flex items-end h-14 border-b border-cool-grey-200 dark:border-dark-grey-600 px-2">
     <div className="relative w-full pb-1">
       {ticks.map((tick, i) => {

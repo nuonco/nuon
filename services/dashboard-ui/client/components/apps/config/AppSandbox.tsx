@@ -28,7 +28,9 @@ export const AppSandbox = ({ appConfig }: IAppSandbox) => {
           <>
             <LabeledValue label="Type">Pulumi</LabeledValue>
             {sandboxConfig?.runtime && (
-              <LabeledValue label="Runtime">{sandboxConfig.runtime}</LabeledValue>
+              <LabeledValue label="Runtime">
+                {sandboxConfig.runtime}
+              </LabeledValue>
             )}
             {sandboxConfig?.pulumi_version && (
               <LabeledValue label="Pulumi version">

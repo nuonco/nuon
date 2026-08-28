@@ -9,9 +9,21 @@ import type { IInstallGroup } from './types'
 const noop = () => {}
 
 const installs = [
-  { id: 'i1', name: 'acme-prod', labels: { tier: 'prod', region: 'us-east-1' } },
-  { id: 'i2', name: 'globex-prod', labels: { tier: 'prod', region: 'us-west-2' } },
-  { id: 'i3', name: 'initech-staging', labels: { tier: 'staging', region: 'eu-west-1' } },
+  {
+    id: 'i1',
+    name: 'acme-prod',
+    labels: { tier: 'prod', region: 'us-east-1' },
+  },
+  {
+    id: 'i2',
+    name: 'globex-prod',
+    labels: { tier: 'prod', region: 'us-west-2' },
+  },
+  {
+    id: 'i3',
+    name: 'initech-staging',
+    labels: { tier: 'staging', region: 'eu-west-1' },
+  },
   { id: 'i4', name: 'umbrella-dev', labels: { tier: 'dev' } },
 ] as any
 

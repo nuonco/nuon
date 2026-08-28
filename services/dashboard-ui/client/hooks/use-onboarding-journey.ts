@@ -4,7 +4,9 @@ import { OnboardingJourneyContext } from '@/providers/onboarding-journey-provide
 export function useOnboardingJourney() {
   const context = useContext(OnboardingJourneyContext)
   if (context === undefined) {
-    throw new Error('useOnboardingJourney must be used within an OnboardingJourneyProvider')
+    throw new Error(
+      'useOnboardingJourney must be used within an OnboardingJourneyProvider'
+    )
   }
   return context
 }

@@ -16,8 +16,10 @@ const mockIngresses = {
           'external-dns.alpha.kubernetes.io/hostname': 'app.example.com',
           'alb.ingress.kubernetes.io/scheme': 'internet-facing',
           'alb.ingress.kubernetes.io/target-type': 'ip',
-          'alb.ingress.kubernetes.io/certificate-arn': 'arn:aws:acm:us-east-1:123456789:certificate/abc-def',
-          'alb.ingress.kubernetes.io/listen-ports': '[{"HTTP": 80}, {"HTTPS": 443}]',
+          'alb.ingress.kubernetes.io/certificate-arn':
+            'arn:aws:acm:us-east-1:123456789:certificate/abc-def',
+          'alb.ingress.kubernetes.io/listen-ports':
+            '[{"HTTP": 80}, {"HTTPS": 443}]',
           'alb.ingress.kubernetes.io/healthcheck-path': '/health',
           'alb.ingress.kubernetes.io/healthcheck-timeout-seconds': '10',
           'alb.ingress.kubernetes.io/healthy-threshold-count': '2',

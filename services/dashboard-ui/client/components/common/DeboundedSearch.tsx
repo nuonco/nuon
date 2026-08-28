@@ -38,7 +38,9 @@ export const DebouncedSearchInput = ({
       }
       params.delete('offset')
       const query = params.toString()
-      navigate(`${window.location.pathname}${query ? `?${query}` : ''}`, { replace: true })
+      navigate(`${window.location.pathname}${query ? `?${query}` : ''}`, {
+        replace: true,
+      })
     }, debounceMs)
 
     return () => {

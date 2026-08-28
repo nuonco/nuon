@@ -47,7 +47,8 @@ export function useInstallForm({
   )
 
   const defaults = useMemo(
-    () => buildInstallDefaults({ mode, inputConfig, install, defaultAutoApprove }),
+    () =>
+      buildInstallDefaults({ mode, inputConfig, install, defaultAutoApprove }),
     [mode, inputConfig, install, defaultAutoApprove]
   )
 

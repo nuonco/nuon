@@ -14,7 +14,9 @@ import { ForgetModal } from './Forget'
 
 interface IForget {}
 
-export const ForgetModalContainer = ({ ...props }: IForget & Omit<IModal, 'onSubmit'>) => {
+export const ForgetModalContainer = ({
+  ...props
+}: IForget & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const queryClient = useQueryClient()
@@ -22,7 +24,11 @@ export const ForgetModalContainer = ({ ...props }: IForget & Omit<IModal, 'onSub
   const { install } = useInstall()
   const { addToast } = useToast()
 
-  const { mutate, isPending: isLoading, error } = useMutation({
+  const {
+    mutate,
+    isPending: isLoading,
+    error,
+  } = useMutation({
     mutationFn: () =>
       forgetInstall({
         orgId: org.id,
@@ -59,9 +65,7 @@ export const ForgetModalContainer = ({ ...props }: IForget & Omit<IModal, 'onSub
   )
 }
 
-export const ForgetButton = ({
-  ...props
-}: IForget & IButtonAsButton) => {
+export const ForgetButton = ({ ...props }: IForget & IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const modal = <ForgetModalContainer />
 

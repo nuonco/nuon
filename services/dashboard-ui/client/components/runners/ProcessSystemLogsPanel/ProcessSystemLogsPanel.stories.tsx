@@ -11,7 +11,9 @@ const baseProcess = {
   log_stream_id: 'log-1',
 } as TRunnerProcess
 
-export const Loading = () => <ProcessSystemLogsPanel isLoading runnerId="runner-1" />
+export const Loading = () => (
+  <ProcessSystemLogsPanel isLoading runnerId="runner-1" />
+)
 
 export const NoLogStream = () => (
   <ProcessSystemLogsPanel

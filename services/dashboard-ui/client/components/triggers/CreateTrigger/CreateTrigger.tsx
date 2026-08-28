@@ -7,11 +7,7 @@ import { FormRadioGroup } from '@/components/common/form/FormRadioGroup'
 import { FormSelect } from '@/components/common/form/FormSelect'
 import { FormTextarea } from '@/components/common/form/FormTextarea'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import type {
-  TAPIError,
-  TCreateTriggerBody,
-  TTriggerAuthConfig,
-} from '@/types'
+import type { TAPIError, TCreateTriggerBody, TTriggerAuthConfig } from '@/types'
 import {
   createTriggerSchema,
   getTriggerPreset,
@@ -122,7 +118,10 @@ export const CreateTriggerModal = ({
       const custom = value.provider === 'custom'
 
       const auth_config: TTriggerAuthConfig = {}
-      if (preset === 'google-pubsub' || (custom && value.authType === 'bearer_jwt')) {
+      if (
+        preset === 'google-pubsub' ||
+        (custom && value.authType === 'bearer_jwt')
+      ) {
         auth_config.issuer = value.issuer
         auth_config.audience = value.audience
           .split(',')
@@ -130,10 +129,16 @@ export const CreateTriggerModal = ({
           .filter(Boolean)
         auth_config.expected_email = value.identity
       }
-      if (preset === 'aws-sns' || (custom && value.authType === 'sns_signature')) {
+      if (
+        preset === 'aws-sns' ||
+        (custom && value.authType === 'sns_signature')
+      ) {
         auth_config.topic_arn = value.topicArn.trim()
       }
-      if (custom && (value.authType === 'hmac' || value.authType === 'api_key')) {
+      if (
+        custom &&
+        (value.authType === 'hmac' || value.authType === 'api_key')
+      ) {
         auth_config.header = value.header.trim()
       }
       if (custom && value.authType === 'basic') {
@@ -268,7 +273,8 @@ export const CreateTriggerModal = ({
           </form.Field>
         ) : null}
 
-        {preset === 'google-pubsub' || (custom && values.authType === 'bearer_jwt') ? (
+        {preset === 'google-pubsub' ||
+        (custom && values.authType === 'bearer_jwt') ? (
           <>
             <form.Field name="issuer">
               {(field) => (
@@ -305,7 +311,8 @@ export const CreateTriggerModal = ({
           </>
         ) : null}
 
-        {preset === 'aws-sns' || (custom && values.authType === 'sns_signature') ? (
+        {preset === 'aws-sns' ||
+        (custom && values.authType === 'sns_signature') ? (
           <form.Field name="topicArn">
             {(field) => (
               <FormInput

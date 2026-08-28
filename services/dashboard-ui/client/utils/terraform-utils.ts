@@ -365,9 +365,7 @@ export function isTerraformEscapedYaml(str: string): {
   yamlContent?: string
 } {
   if (str.includes('\\"') && str.includes(':')) {
-    const cleaned = str
-      .replace(/\\n/g, '\n')
-      .replace(/\\"/g, '"')
+    const cleaned = str.replace(/\\n/g, '\n').replace(/\\"/g, '"')
 
     if (
       cleaned.includes(':') &&

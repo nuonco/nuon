@@ -26,19 +26,15 @@ function SelectionIndicator({ selected }: { selected: boolean }) {
           : 'border-cool-grey-400 dark:border-cool-grey-600'
       )}
     >
-      {selected && (
-        <div className="w-2 h-2 rounded-full bg-white" />
-      )}
+      {selected && <div className="w-2 h-2 rounded-full bg-white" />}
     </div>
   )
 }
 
 const CARD_BASE =
   'flex flex-col w-full gap-3 p-5 rounded-md text-left transition-all cursor-pointer border bg-white dark:bg-dark-grey-900 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)]'
-const CARD_DEFAULT =
-  'border-cool-grey-500/24 dark:border-cool-grey-500/24'
-const CARD_SELECTED =
-  'border-primary-500 ring-2 ring-primary-500'
+const CARD_DEFAULT = 'border-cool-grey-500/24 dark:border-cool-grey-500/24'
+const CARD_SELECTED = 'border-primary-500 ring-2 ring-primary-500'
 
 type CloudSetupOption = 'cloud' | 'sandbox'
 type CloudPlatform = 'aws' | 'gcp' | 'azure'
@@ -49,7 +45,9 @@ const CLOUD_LABELS: Record<CloudPlatform, string> = {
   azure: 'Azure',
 }
 
-function buildDefaultInputValues(inputConfig?: TAppInputConfig | null): Record<string, string> {
+function buildDefaultInputValues(
+  inputConfig?: TAppInputConfig | null
+): Record<string, string> {
   if (!inputConfig?.input_groups) return {}
   const values: Record<string, string> = {}
   for (const group of inputConfig.input_groups) {
@@ -84,7 +82,9 @@ function InputField({
       <div className="flex items-center gap-3">
         <CheckboxInput
           checked={value === 'true'}
-          onChange={(e) => onChange(input.name!, e.target.checked ? 'true' : 'false')}
+          onChange={(e) =>
+            onChange(input.name!, e.target.checked ? 'true' : 'false')
+          }
           labelProps={{
             labelText: input.display_name || input.name || '',
             className: 'hover:!bg-transparent !px-0',
@@ -139,9 +139,7 @@ function InputGroupSection({
   return (
     <fieldset className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <Text weight="strong">
-          {group.display_name || group.name}
-        </Text>
+        <Text weight="strong">{group.display_name || group.name}</Text>
         {group.description && (
           <Text variant="subtext" theme="neutral">
             {group.description}
@@ -205,8 +203,7 @@ export const CloudSetupStepContainer = ({
     queryKey: ['app', appId],
     queryFn: () => getApp({ appId: appId!, orgId: orgId! }),
     enabled: !!appId && !!orgId,
-    refetchInterval: (query) =>
-      query.state.data?.input_config ? false : 3000,
+    refetchInterval: (query) => (query.state.data?.input_config ? false : 3000),
   })
 
   const inputConfig = app?.input_config
@@ -217,9 +214,7 @@ export const CloudSetupStepContainer = ({
         .sort((a, b) => (a?.index ?? 0) - (b?.index ?? 0)),
     [inputConfig]
   )
-  const hasInputs = sortedGroups.some(
-    (g) => (g.app_inputs?.length ?? 0) > 0
-  )
+  const hasInputs = sortedGroups.some((g) => (g.app_inputs?.length ?? 0) > 0)
 
   useEffect(() => {
     if (inputConfig && !inputsInitialized) {
@@ -232,14 +227,16 @@ export const CloudSetupStepContainer = ({
     setInputValues((prev) => ({ ...prev, [name]: value }))
   }
 
-  const { mutate: submit, isPending, error } = useMutation({
+  const {
+    mutate: submit,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: () => {
       if (!orgId || !selected) throw new Error('Missing required data')
 
       const inputs =
-        Object.keys(inputValues).length > 0
-          ? inputValues
-          : undefined
+        Object.keys(inputValues).length > 0 ? inputValues : undefined
 
       return completeInstallStep({
         body: {
@@ -278,7 +275,11 @@ export const CloudSetupStepContainer = ({
     if (!hasInputs) return false
     for (const group of sortedGroups) {
       for (const input of group.app_inputs ?? []) {
-        if (input.required && input.source !== 'customer' && !inputValues[input.name!]?.trim()) {
+        if (
+          input.required &&
+          input.source !== 'customer' &&
+          !inputValues[input.name!]?.trim()
+        ) {
           return true
         }
       }
@@ -354,8 +355,7 @@ export const CloudSetupStepContainer = ({
             <SelectionIndicator selected={selected === 'sandbox'} />
           </div>
           <Text variant="body" theme="neutral" className="whitespace-normal">
-            We'll spin up a managed demo environment — no cloud account
-            needed.
+            We'll spin up a managed demo environment — no cloud account needed.
           </Text>
         </button>
       </div>
@@ -391,7 +391,11 @@ export const CloudSetupStepContainer = ({
           disabled={!selected || isWorking || requiredInputsMissing}
           onClick={handleAdvance}
         >
-          {waiting ? 'Setting up install...' : isPending ? 'Creating...' : 'Continue'}{' '}
+          {waiting
+            ? 'Setting up install...'
+            : isPending
+              ? 'Creating...'
+              : 'Continue'}{' '}
           {!isWorking && <Icon variant="CaretRightIcon" weight="bold" />}
         </Button>
       </div>

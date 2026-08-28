@@ -6,8 +6,10 @@ import type { TRunnerHealthCheck } from '@/types'
 import { ProcessCard } from './ProcessCard'
 
 const now = new Date()
-const minutesAgo = (m: number) => new Date(now.getTime() - m * 60000).toISOString()
-const hoursAgo = (h: number) => new Date(now.getTime() - h * 3600000).toISOString()
+const minutesAgo = (m: number) =>
+  new Date(now.getTime() - m * 60000).toISOString()
+const hoursAgo = (h: number) =>
+  new Date(now.getTime() - h * 3600000).toISOString()
 
 const baseProcess = {
   id: 'rpru3x3uwgappsn730x5lbz8bf',
@@ -27,23 +29,32 @@ const mngProcess = {
   labels: ['Local Runner'],
 } as any
 
-const healthyChecks: TRunnerHealthCheck[] = Array.from({ length: 30 }, (_, i) => ({
-  id: `hc-${i}`,
-  status_code: 0,
-  minute_bucket: minutesAgo(30 - i),
-})) as TRunnerHealthCheck[]
+const healthyChecks: TRunnerHealthCheck[] = Array.from(
+  { length: 30 },
+  (_, i) => ({
+    id: `hc-${i}`,
+    status_code: 0,
+    minute_bucket: minutesAgo(30 - i),
+  })
+) as TRunnerHealthCheck[]
 
-const mixedChecks: TRunnerHealthCheck[] = Array.from({ length: 30 }, (_, i) => ({
-  id: `hc-${i}`,
-  status_code: i >= 20 && i <= 25 ? 1 : i >= 26 ? 900 : 0,
-  minute_bucket: minutesAgo(30 - i),
-})) as TRunnerHealthCheck[]
+const mixedChecks: TRunnerHealthCheck[] = Array.from(
+  { length: 30 },
+  (_, i) => ({
+    id: `hc-${i}`,
+    status_code: i >= 20 && i <= 25 ? 1 : i >= 26 ? 900 : 0,
+    minute_bucket: minutesAgo(30 - i),
+  })
+) as TRunnerHealthCheck[]
 
-const unknownChecks: TRunnerHealthCheck[] = Array.from({ length: 30 }, (_, i) => ({
-  id: `hc-${i}`,
-  status_code: 900,
-  minute_bucket: minutesAgo(30 - i),
-})) as TRunnerHealthCheck[]
+const unknownChecks: TRunnerHealthCheck[] = Array.from(
+  { length: 30 },
+  (_, i) => ({
+    id: `hc-${i}`,
+    status_code: 900,
+    minute_bucket: minutesAgo(30 - i),
+  })
+) as TRunnerHealthCheck[]
 
 export const ActiveConnected = () => (
   <ProcessCard
@@ -207,7 +218,10 @@ export const PendingShutdown = () => (
   <ProcessCard
     process={{
       ...baseProcess,
-      composite_status: { status: 'pending-shutdown', status_description: 'Shutting down for version update' },
+      composite_status: {
+        status: 'pending-shutdown',
+        status_description: 'Shutting down for version update',
+      },
       warnings: ['Shutting down for version update'],
     }}
     isConnected

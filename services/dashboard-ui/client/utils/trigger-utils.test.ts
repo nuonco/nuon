@@ -367,9 +367,7 @@ describe('trigger-utils', () => {
       expect(steps[0]?.command).toContain('X-Nuon-API-Key')
       expect(steps[0]?.command).toContain(`s3cr'"'"'et`)
       expect(steps[0]?.command).toContain('\\"event_id\\":\\"$ID\\"')
-      expect(steps[0]?.command).toContain(
-        '\\"event_type\\":\\"$EVENT_TYPE\\"'
-      )
+      expect(steps[0]?.command).toContain('\\"event_type\\":\\"$EVENT_TYPE\\"')
       expect(steps[1]?.command).toContain('@webhook-nuon-production-alerts')
     })
   })

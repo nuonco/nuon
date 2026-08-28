@@ -8,12 +8,22 @@ import { Button } from '../Button'
 import { ModalBase } from '@/components/surfaces/Modal'
 import { PanelBase } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { extractTabs, extractSurfaces, type ExtractedTabs, type ExtractedSurface, type MarkdownMode } from './nuon-components'
+import {
+  extractTabs,
+  extractSurfaces,
+  type ExtractedTabs,
+  type ExtractedSurface,
+  type MarkdownMode,
+} from './nuon-components'
 import { extractTables, type ExtractedTable } from './markdown-table'
 import { MarkdownTable } from './MarkdownTable'
 import { getMarkdownComponents } from './markdown-renderers'
 import { preprocessContent } from './markdown-preprocessing'
-import { markdownStyles, proseClassName, compactProseClassName } from './markdown-styles'
+import {
+  markdownStyles,
+  proseClassName,
+  compactProseClassName,
+} from './markdown-styles'
 
 export type MarkdownVariant = 'default' | 'compact'
 
@@ -56,7 +66,11 @@ function SurfacePlaceholder({
     const content = <Markdown content={surface.content} mode={mode} />
     if (surface.type === 'modal') {
       addModal(
-        <ModalBase heading={surface.heading} size={surface.size as any} showFooter={false}>
+        <ModalBase
+          heading={surface.heading}
+          size={surface.size as any}
+          showFooter={false}
+        >
           {content}
         </ModalBase>
       )
@@ -88,47 +102,74 @@ function TablePlaceholder({
   return <MarkdownTable {...table} />
 }
 
-export const Markdown = React.memo(({ content = '', mode = 'app', variant = 'default' }: { content?: string; mode?: MarkdownMode; variant?: MarkdownVariant }) => {
-  const { content: processedContent, tabsMap, surfaceMap, tableMap } = useMemo(() => {
-    const { content: afterTabs, tabsMap } = extractTabs(content)
-    const { content: afterSurfaces, surfaceMap } = extractSurfaces(afterTabs)
-    const { content: afterTables, tableMap } = extractTables(afterSurfaces)
-    return { content: afterTables, tabsMap, surfaceMap, tableMap }
-  }, [content])
-  const processed = preprocessContent(processedContent)
+export const Markdown = React.memo(
+  ({
+    content = '',
+    mode = 'app',
+    variant = 'default',
+  }: {
+    content?: string
+    mode?: MarkdownMode
+    variant?: MarkdownVariant
+  }) => {
+    const {
+      content: processedContent,
+      tabsMap,
+      surfaceMap,
+      tableMap,
+    } = useMemo(() => {
+      const { content: afterTabs, tabsMap } = extractTabs(content)
+      const { content: afterSurfaces, surfaceMap } = extractSurfaces(afterTabs)
+      const { content: afterTables, tableMap } = extractTables(afterSurfaces)
+      return { content: afterTables, tabsMap, surfaceMap, tableMap }
+    }, [content])
+    const processed = preprocessContent(processedContent)
 
-  const components = useMemo(() => {
-    const base = getMarkdownComponents(mode, variant)
-    if (tabsMap.size > 0) {
-      base['nuon-tabs-rendered'] = ({ node, ...attrs }: any) => (
-        <TabsPlaceholder tabsMap={tabsMap} mode={mode} dataId={attrs['data-id']} />
-      )
-    }
-    if (surfaceMap.size > 0) {
-      base['nuon-surface-rendered'] = ({ node, ...attrs }: any) => (
-        <SurfacePlaceholder surfaceMap={surfaceMap} mode={mode} dataId={attrs['data-id']} />
-      )
-    }
-    if (tableMap.size > 0) {
-      base['nuon-table-rendered'] = ({ node, ...attrs }: any) => (
-        <TablePlaceholder tableMap={tableMap} dataId={attrs['data-id']} />
-      )
-    }
-    return base
-  }, [mode, variant, tabsMap, surfaceMap, tableMap])
+    const components = useMemo(() => {
+      const base = getMarkdownComponents(mode, variant)
+      if (tabsMap.size > 0) {
+        base['nuon-tabs-rendered'] = ({ node, ...attrs }: any) => (
+          <TabsPlaceholder
+            tabsMap={tabsMap}
+            mode={mode}
+            dataId={attrs['data-id']}
+          />
+        )
+      }
+      if (surfaceMap.size > 0) {
+        base['nuon-surface-rendered'] = ({ node, ...attrs }: any) => (
+          <SurfacePlaceholder
+            surfaceMap={surfaceMap}
+            mode={mode}
+            dataId={attrs['data-id']}
+          />
+        )
+      }
+      if (tableMap.size > 0) {
+        base['nuon-table-rendered'] = ({ node, ...attrs }: any) => (
+          <TablePlaceholder tableMap={tableMap} dataId={attrs['data-id']} />
+        )
+      }
+      return base
+    }, [mode, variant, tabsMap, surfaceMap, tableMap])
 
-  return (
-    <>
-      <style>{markdownStyles}</style>
-      <div className={variant === 'compact' ? compactProseClassName : proseClassName}>
-        <ReactMarkdown
-          remarkPlugins={REMARK_PLUGINS}
-          rehypePlugins={REHYPE_PLUGINS}
-          components={components}
+    return (
+      <>
+        <style>{markdownStyles}</style>
+        <div
+          className={
+            variant === 'compact' ? compactProseClassName : proseClassName
+          }
         >
-          {processed}
-        </ReactMarkdown>
-      </div>
-    </>
-  )
-})
+          <ReactMarkdown
+            remarkPlugins={REMARK_PLUGINS}
+            rehypePlugins={REHYPE_PLUGINS}
+            components={components}
+          >
+            {processed}
+          </ReactMarkdown>
+        </div>
+      </>
+    )
+  }
+)

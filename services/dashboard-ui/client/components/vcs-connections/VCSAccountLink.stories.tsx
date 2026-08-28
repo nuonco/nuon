@@ -16,6 +16,8 @@ export const Default = () => <VCSAccountLink vcs_connection={mockConnection} />
 
 export const NoAccountName = () => (
   <VCSAccountLink
-    vcs_connection={{ ...mockConnection, github_account_name: undefined } as TVCSConnection}
+    vcs_connection={
+      { ...mockConnection, github_account_name: undefined } as TVCSConnection
+    }
   />
 )

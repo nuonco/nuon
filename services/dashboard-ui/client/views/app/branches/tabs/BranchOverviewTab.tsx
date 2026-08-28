@@ -108,7 +108,9 @@ const BranchOverviewContent = () => {
               </Badge>
             )}
           </div>
-          {hasDeploymentPlan && <Link href={`${basePath}/plan`}>View plan</Link>}
+          {hasDeploymentPlan && (
+            <Link href={`${basePath}/plan`}>View plan</Link>
+          )}
         </div>
         {hasDeploymentPlan && currentConfig ? (
           <DeploymentPlanGraph
@@ -141,7 +143,9 @@ const BranchOverviewContent = () => {
           <Text variant="base" weight="strong">
             Recent runs
           </Text>
-          {runs.length > 0 && <Link href={`${basePath}/runs`}>View all runs</Link>}
+          {runs.length > 0 && (
+            <Link href={`${basePath}/runs`}>View all runs</Link>
+          )}
         </div>
         {isLoadingRuns ? (
           <TimelineSkeleton eventCount={3} />

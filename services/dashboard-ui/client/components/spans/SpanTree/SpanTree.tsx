@@ -4,7 +4,11 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import type { TSpan } from '@/types'
 import { cn } from '@/utils/classnames'
-import { buildSpanForest, formatDurationNs, type TSpanNode } from '@/utils/span-tree'
+import {
+  buildSpanForest,
+  formatDurationNs,
+  type TSpanNode,
+} from '@/utils/span-tree'
 
 export interface ISpanTree {
   spans: TSpan[]
@@ -48,11 +52,16 @@ export const SpanTree = ({
   return (
     <div className="flex flex-col">
       <div className="@container flex items-center justify-between gap-3 px-2 h-14 border-b border-cool-grey-200 dark:border-dark-grey-600">
-        <Text variant="subtext" theme="neutral" className="whitespace-nowrap shrink-0">
+        <Text
+          variant="subtext"
+          theme="neutral"
+          className="whitespace-nowrap shrink-0"
+        >
           {spans.length} span{spans.length === 1 ? '' : 's'}
           {hiddenCount > 0 ? (
             <Text variant="subtext" theme="neutral" as="span">
-              {' '}({hiddenCount} hidden)
+              {' '}
+              ({hiddenCount} hidden)
             </Text>
           ) : null}
         </Text>
@@ -65,10 +74,16 @@ export const SpanTree = ({
             aria-label={isAllExpanded ? 'Collapse all' : 'Expand all'}
           >
             <Icon
-              variant={isAllExpanded ? 'ArrowsInLineVerticalIcon' : 'ArrowsOutLineVerticalIcon'}
+              variant={
+                isAllExpanded
+                  ? 'ArrowsInLineVerticalIcon'
+                  : 'ArrowsOutLineVerticalIcon'
+              }
               size="12"
             />
-            <span className="@max-[22rem]:hidden">{isAllExpanded ? 'Collapse' : 'Expand'}</span>
+            <span className="@max-[22rem]:hidden">
+              {isAllExpanded ? 'Collapse' : 'Expand'}
+            </span>
           </Button>
         </div>
       </div>
@@ -204,7 +219,13 @@ const SpanTreeNode = ({
               <Icon variant="InfoIcon" size={12} />
             </button>
           ) : null}
-          <Text variant="subtext" family="mono" theme="neutral" nowrap as="span">
+          <Text
+            variant="subtext"
+            family="mono"
+            theme="neutral"
+            nowrap
+            as="span"
+          >
             {formatDurationNs(span.duration_ns)}
           </Text>
         </div>
@@ -249,12 +270,23 @@ const SpanAttributePanel = ({ depth, entries }: ISpanAttributePanel) => (
         {entries.map(([k, v]) => (
           <Fragment key={k}>
             <dt>
-              <Text family="mono" variant="subtext" theme="neutral" as="span" nowrap>
+              <Text
+                family="mono"
+                variant="subtext"
+                theme="neutral"
+                as="span"
+                nowrap
+              >
                 {k}
               </Text>
             </dt>
             <dd className="min-w-0">
-              <Text family="mono" variant="subtext" as="span" className="break-all">
+              <Text
+                family="mono"
+                variant="subtext"
+                as="span"
+                className="break-all"
+              >
                 {v}
               </Text>
             </dd>

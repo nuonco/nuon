@@ -12,17 +12,23 @@ import {
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { ComponentDependencyGraph, type GraphNode, type GraphEdge } from './ComponentDependencyGraph'
+import {
+  ComponentDependencyGraph,
+  type GraphNode,
+  type GraphEdge,
+} from './ComponentDependencyGraph'
 import { ComponentDependencyTable } from './ComponentDependencyTable'
 import type { TAppConfig, TComponentType } from '@/types'
 
-type Connection = NonNullable<TAppConfig['component_config_connections']>[number]
+type Connection = NonNullable<
+  TAppConfig['component_config_connections']
+>[number]
 
 function buildTransitiveGraph(
   connections: Connection[],
   componentId: string,
   componentName: string,
-  componentType?: TComponentType,
+  componentType?: TComponentType
 ) {
   const connById = new Map(connections.map((c) => [c.component_id!, c]))
 
@@ -64,9 +70,12 @@ function buildTransitiveGraph(
   const nodes: GraphNode[] = []
   for (const id of allIds) {
     const conn = connById.get(id)
-    const role = id === componentId ? 'current' as const
-      : depIds.has(id) ? 'dependency' as const
-      : 'dependent' as const
+    const role =
+      id === componentId
+        ? ('current' as const)
+        : depIds.has(id)
+          ? ('dependency' as const)
+          : ('dependent' as const)
     nodes.push({
       id,
       name: id === componentId ? componentName : (conn?.component_name ?? id),
@@ -109,12 +118,18 @@ export const ComponentDependencyGraphModal = ({
   const [viewMode, setViewMode] = useStoredViewMode<TDependencyViewMode>(
     DEPENDENCY_VIEW_STORAGE_KEY,
     DEPENDENCY_VIEW_MODES,
-    'graph',
+    'graph'
   )
 
   const { nodes, edges } = useMemo(
-    () => buildTransitiveGraph(connections, componentId, componentName, componentType),
-    [connections, componentId, componentName, componentType],
+    () =>
+      buildTransitiveGraph(
+        connections,
+        componentId,
+        componentName,
+        componentType
+      ),
+    [connections, componentId, componentName, componentType]
   )
 
   return (
@@ -158,7 +173,8 @@ export const ComponentDependencyGraphModal = ({
   )
 }
 
-interface IComponentDependencyGraphButton extends Omit<IButtonAsButton, 'onClick'> {
+interface IComponentDependencyGraphButton
+  extends Omit<IButtonAsButton, 'onClick'> {
   componentId: string
   componentName: string
   componentType?: TComponentType
@@ -180,7 +196,7 @@ export const ComponentDependencyGraphButton = ({
   const config = connections?.find((c) => c.component_id === componentId)
   const hasDeps = (config?.component_dependency_ids?.length ?? 0) > 0
   const hasDependents = connections?.some((c) =>
-    c.component_dependency_ids?.includes(componentId),
+    c.component_dependency_ids?.includes(componentId)
   )
 
   if (!hasDeps && !hasDependents) return null

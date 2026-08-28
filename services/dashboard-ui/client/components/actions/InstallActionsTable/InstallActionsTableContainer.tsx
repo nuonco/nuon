@@ -32,7 +32,15 @@ export const InstallActionsTableContainer = ({
   const { syncedOnly } = useSyncedOnlyFilter()
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['install-actions', org?.id, install?.id, offset, q, trigger_types, labels],
+    queryKey: [
+      'install-actions',
+      org?.id,
+      install?.id,
+      offset,
+      q,
+      trigger_types,
+      labels,
+    ],
     queryFn: () =>
       getInstallActionsLatestRuns({
         orgId: org.id,
@@ -49,7 +57,14 @@ export const InstallActionsTableContainer = ({
   })
 
   const { data: removedResult } = useQuery({
-    queryKey: ['install-actions-removed', org?.id, install?.id, q, trigger_types, labels],
+    queryKey: [
+      'install-actions-removed',
+      org?.id,
+      install?.id,
+      q,
+      trigger_types,
+      labels,
+    ],
     queryFn: () =>
       getInstallActionsLatestRuns({
         orgId: org.id,
@@ -68,8 +83,12 @@ export const InstallActionsTableContainer = ({
 
   const actions = result?.data ?? []
   const removedActions =
-    offset === 0 && !syncedOnly ? removedResult?.data ?? [] : []
-  const pagination = { hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }
+    offset === 0 && !syncedOnly ? (removedResult?.data ?? []) : []
+  const pagination = {
+    hasNext: result?.pagination?.hasNext ?? false,
+    offset,
+    limit: LIMIT,
+  }
 
   const removedRows = parseInstallActionsLatestRunsToTableData(
     removedActions,
@@ -91,11 +110,16 @@ export const InstallActionsTableContainer = ({
       data={[...removedRows, ...currentRows]}
       filterActions={
         <div className="flex items-center gap-4 flex-wrap">
-          <AdminDashboardLink path={`/queues?owner_id=${install.id}`} label="View queues" />
+          <AdminDashboardLink
+            path={`/queues?owner_id=${install.id}`}
+            label="View queues"
+          />
           <SyncedFilterContainer />
           <LabelFilterDropdown
             queryKey={['action-label-keys', org.id, install?.app_id]}
-            queryFn={() => getActionLabelKeys({ orgId: org.id, appId: install.app_id })}
+            queryFn={() =>
+              getActionLabelKeys({ orgId: org.id, appId: install.app_id })
+            }
           />
           <TriggeredByFilter />
         </div>

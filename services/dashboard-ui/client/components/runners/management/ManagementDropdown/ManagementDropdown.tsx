@@ -20,7 +20,8 @@ export const ManagementDropdown = ({
       id={`runner-${runner.id}-mgmt`}
       buttonText={
         <>
-          <Icon variant="SlidersHorizontalIcon" /> {isInstallRunner ? 'Manage runner' : 'Manage build runner'}
+          <Icon variant="SlidersHorizontalIcon" />{' '}
+          {isInstallRunner ? 'Manage runner' : 'Manage build runner'}
         </>
       }
       alignment="right"

@@ -12,10 +12,5 @@ export const RunnerCardContainer = () => {
 
   const href = `/${org.id}/installs/${install.id}/runner`
 
-  return (
-    <RunnerCard
-      status={install.runner_status}
-      href={href}
-    />
-  )
+  return <RunnerCard status={install.runner_status} href={href} />
 }

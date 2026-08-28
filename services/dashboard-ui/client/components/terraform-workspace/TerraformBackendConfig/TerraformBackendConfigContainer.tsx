@@ -6,7 +6,11 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { downloadFileOnClick } from '@/utils/file-download'
 import { TerraformBackendConfigModal } from './TerraformBackendConfig'
 
-const getBackendContent = (apiUrl: string, workspaceId: string, orgId: string) => `terraform {
+const getBackendContent = (
+  apiUrl: string,
+  workspaceId: string,
+  orgId: string
+) => `terraform {
   backend "http" {
     lock_method    = "POST"
     unlock_method  = "POST"
@@ -51,7 +55,9 @@ export const TerraformBackendConfigButton = ({
   ...props
 }: ITerraformBackendConfig & IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <TerraformBackendConfigModalContainer workspaceId={workspaceId} />
+  const modal = (
+    <TerraformBackendConfigModalContainer workspaceId={workspaceId} />
+  )
 
   return (
     <Button onClick={() => addModal(modal)} {...props}>

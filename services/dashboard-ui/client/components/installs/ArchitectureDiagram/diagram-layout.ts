@@ -55,7 +55,9 @@ function cardXY(index: number, containerX: number, containerY: number) {
   }
 }
 
-export function extractRoles(permissionsConfig?: TInstallAppPermissionsConfig): TRoleInfo[] {
+export function extractRoles(
+  permissionsConfig?: TInstallAppPermissionsConfig
+): TRoleInfo[] {
   if (!permissionsConfig) return []
 
   const entries = [
@@ -110,8 +112,14 @@ function buildComponentNodeData(
     latestDeployAt: latestDeploy?.created_at,
     configVersion: comp.component?.config_versions,
     updatedAt: comp.updated_at,
-    href: comp.component_id && installId ? `/${orgId}/installs/${installId}/components/${comp.component_id}` : undefined,
-    deploysHref: comp.component_id && installId ? `/${orgId}/installs/${installId}/components/${comp.component_id}/deploys` : undefined,
+    href:
+      comp.component_id && installId
+        ? `/${orgId}/installs/${installId}/components/${comp.component_id}`
+        : undefined,
+    deploysHref:
+      comp.component_id && installId
+        ? `/${orgId}/installs/${installId}/components/${comp.component_id}/deploys`
+        : undefined,
   }
 }
 
@@ -139,8 +147,7 @@ export function computeLayout(data: TDiagramData): Node[] {
   const innerW = Math.max(eksGrid.w, sbGrid.w, 300)
 
   const sandboxInnerH =
-    (eksGrid.h > 0 ? eksGrid.h + CARD_GAP : 0) +
-    (sbGrid.h > 0 ? sbGrid.h : 0)
+    (eksGrid.h > 0 ? eksGrid.h + CARD_GAP : 0) + (sbGrid.h > 0 ? sbGrid.h : 0)
   const sandboxW = innerW + PAD * 2
   const sandboxH = Math.max(sandboxInnerH + HEADER + PAD, HEADER + PAD + 60)
 
@@ -150,10 +157,9 @@ export function computeLayout(data: TDiagramData): Node[] {
   const hasRoles = roles.length > 0
   const rolesColW = hasRoles ? ROLE_W : 0
   const rolesGap = hasRoles ? PAD : 0
-  const rolesBlockH =
-    hasRoles
-      ? roles.length * ROLE_H + (roles.length - 1) * ROLE_GAP
-      : 0
+  const rolesBlockH = hasRoles
+    ? roles.length * ROLE_H + (roles.length - 1) * ROLE_GAP
+    : 0
 
   const contentW = rolesColW + rolesGap + vpcW
   const stackW = contentW + PAD * 2
@@ -257,12 +263,17 @@ export function computeLayout(data: TDiagramData): Node[] {
     const clusterStatuses = clusterComps
       .map((c) => c.status_v2?.status || '')
       .filter(Boolean)
-    const themePriority = ['error', 'warn', 'info', 'success', 'neutral'] as const
-    const clusterStatus =
-      themePriority.reduce<string>((found, theme) => {
-        if (found) return found
-        return clusterStatuses.find((s) => getStatusTheme(s) === theme) || ''
-      }, '')
+    const themePriority = [
+      'error',
+      'warn',
+      'info',
+      'success',
+      'neutral',
+    ] as const
+    const clusterStatus = themePriority.reduce<string>((found, theme) => {
+      if (found) return found
+      return clusterStatuses.find((s) => getStatusTheme(s) === theme) || ''
+    }, '')
 
     nodes.push({
       id: 'eks-cluster',
@@ -287,14 +298,20 @@ export function computeLayout(data: TDiagramData): Node[] {
         id: `comp-${comp.id || `cluster-${i}`}`,
         type: 'componentCardNode',
         position: pos,
-        data: buildComponentNodeData(comp, driftSet.has(comp.id || ''), orgId, install.id || ''),
+        data: buildComponentNodeData(
+          comp,
+          driftSet.has(comp.id || ''),
+          orgId,
+          install.id || ''
+        ),
         draggable: false,
         selectable: false,
       })
     }
   }
 
-  const sbCardsBaseY = eksY + (clusterComps.length > 0 ? eksGrid.h + CARD_GAP : 0)
+  const sbCardsBaseY =
+    eksY + (clusterComps.length > 0 ? eksGrid.h + CARD_GAP : 0)
 
   for (let i = 0; i < sandboxComps.length; i++) {
     const comp = sandboxComps[i]
@@ -307,7 +324,12 @@ export function computeLayout(data: TDiagramData): Node[] {
         x: sandboxX + PAD + col * (CARD_W + CARD_GAP),
         y: sbCardsBaseY + row * (CARD_H + CARD_GAP),
       },
-      data: buildComponentNodeData(comp, driftSet.has(comp.id || ''), orgId, install.id || ''),
+      data: buildComponentNodeData(
+        comp,
+        driftSet.has(comp.id || ''),
+        orgId,
+        install.id || ''
+      ),
       draggable: false,
       selectable: false,
     })

@@ -19,6 +19,7 @@ import (
 	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
 	awsaccountconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/aws-account-connections/service"
 	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
+	customermanagedservice "github.com/nuonco/nuon/services/ctl-api/internal/app/customer_managed/service"
 	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
@@ -66,6 +67,7 @@ func testDomainServices(ea *api.EndpointAudit) []api.Service {
 		}),
 		stacksservice.New(stacksservice.Params{EndpointAudit: ea}),
 		vcsservice.New(vcsservice.Params{}),
+		customermanagedservice.New(customermanagedservice.Params{}),
 		onboardingservice.New(onboardingservice.Params{EndpointAudit: ea}),
 		oidcfederationservice.New(oidcfederationservice.Params{}),
 	}

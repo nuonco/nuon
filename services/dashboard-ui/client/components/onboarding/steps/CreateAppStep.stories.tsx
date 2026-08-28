@@ -28,7 +28,9 @@ export const Default = () => (
 )
 
 export const StepComplete = () => (
-  <OnboardingJourneyContext.Provider value={{ ...mockJourney, isStepComplete: () => true }}>
+  <OnboardingJourneyContext.Provider
+    value={{ ...mockJourney, isStepComplete: () => true }}
+  >
     <CreateAppStep {...mockProps} />
   </OnboardingJourneyContext.Provider>
 )

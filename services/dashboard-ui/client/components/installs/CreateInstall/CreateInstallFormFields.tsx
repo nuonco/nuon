@@ -50,23 +50,29 @@ export const CreateInstallFormFields = ({
     | 'gcp'
     | undefined
 
-  const { form, canSubmit, hasDraft, draftTimestamp, clearDraft, restoreDraft } =
-    useInstallForm({
-      mode: 'create',
-      platform,
-      inputConfig,
-      requireTargetAccount,
-      defaultAutoApprove,
-      storageKey: `install-draft:${app.id}`,
-      onSubmit: async (values) => {
-        try {
-          await onSubmit(values)
-          clearDraft()
-        } catch {
-          // error surfaced via submitError → FormErrorBanner
-        }
-      },
-    })
+  const {
+    form,
+    canSubmit,
+    hasDraft,
+    draftTimestamp,
+    clearDraft,
+    restoreDraft,
+  } = useInstallForm({
+    mode: 'create',
+    platform,
+    inputConfig,
+    requireTargetAccount,
+    defaultAutoApprove,
+    storageKey: `install-draft:${app.id}`,
+    onSubmit: async (values) => {
+      try {
+        await onSubmit(values)
+        clearDraft()
+      } catch {
+        // error surfaced via submitError → FormErrorBanner
+      }
+    },
+  })
 
   useEffect(() => {
     onStateChange({ canSubmit, submit: () => form.handleSubmit() })
@@ -104,7 +110,10 @@ export const CreateInstallFormFields = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <FormErrorBanner error={submitError} fallback="Unable to create install" />
+      <FormErrorBanner
+        error={submitError}
+        fallback="Unable to create install"
+      />
       <InstallForm
         form={form}
         mode="create"

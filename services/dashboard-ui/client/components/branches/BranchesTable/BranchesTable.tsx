@@ -28,7 +28,10 @@ export function parseBranchesToTableData(
     branchId: branch.id || '',
     branchName: branch.name || '',
     managedBy: branch.managed_by ? (
-      <Badge size="sm" theme={branch.managed_by === 'config' ? 'brand' : 'default'}>
+      <Badge
+        size="sm"
+        theme={branch.managed_by === 'config' ? 'brand' : 'default'}
+      >
         {branch.managed_by}
       </Badge>
     ) : null,
@@ -95,7 +98,11 @@ interface IBranchesTable {
   pagination?: { hasNext: boolean; offset: number; limit: number }
 }
 
-export const BranchesTable = ({ data, isLoading, pagination }: IBranchesTable) => {
+export const BranchesTable = ({
+  data,
+  isLoading,
+  pagination,
+}: IBranchesTable) => {
   return (
     <Table<TBranchRow>
       columns={columns}

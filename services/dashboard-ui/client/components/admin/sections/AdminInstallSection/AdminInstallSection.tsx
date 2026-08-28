@@ -65,7 +65,11 @@ export const AdminInstallSection = ({
       subtitle={`Managing install: ${installId}`}
       metadata={metadata}
     >
-      <AdminActionGroup title="Install infrastructure" icon="HardDrivesIcon" variant="warning">
+      <AdminActionGroup
+        title="Install infrastructure"
+        icon="HardDrivesIcon"
+        variant="warning"
+      >
         <AdminActionCard
           title="Reprovision install"
           description="Reprovision current install sandbox and runner"
@@ -106,7 +110,11 @@ export const AdminInstallSection = ({
         />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Component management" icon="CubeIcon" variant="danger">
+      <AdminActionGroup
+        title="Component management"
+        icon="CubeIcon"
+        variant="danger"
+      >
         <AdminActionCard
           title="Teardown all components"
           description="Teardown all components on this install"

@@ -26,7 +26,13 @@ export const InstallComponentDeploySwitcherContainer = ({
   const { org } = useOrg()
 
   const { data, error, isLoading } = useQuery({
-    queryKey: ['component-deploys-switcher', org?.id, install?.id, componentId, offset],
+    queryKey: [
+      'component-deploys-switcher',
+      org?.id,
+      install?.id,
+      componentId,
+      offset,
+    ],
     queryFn: () =>
       getComponentDeploys({
         orgId: org.id,
@@ -74,7 +80,7 @@ export const InstallComponentDeploySwitcherContainer = ({
       orgId={org.id}
       installId={install.id}
       onLoadMore={() => {
-        setOffset((prev) => prev === 0 ? limit + 1 : prev + limit)
+        setOffset((prev) => (prev === 0 ? limit + 1 : prev + limit))
       }}
       onDeploysLoaded={(newDeploys) => setDeploys(newDeploys)}
       scrollRef={scrollToBottom.elementRef}

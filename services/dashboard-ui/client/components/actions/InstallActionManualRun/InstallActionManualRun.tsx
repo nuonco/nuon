@@ -66,10 +66,7 @@ export const InstallActionManualRunModal = ({
   ...props
 }: IInstallActionManualRunModal) => {
   const config = action?.configs?.[0]
-  const envVars = useMemo(
-    () => normalizeEnvVars(config?.steps || []),
-    [config]
-  )
+  const envVars = useMemo(() => normalizeEnvVars(config?.steps || []), [config])
 
   const { initialValues, customFromRun } = useMemo(() => {
     const runEnvVarEntries = Object.entries(runEnvVars ?? {}).filter(
@@ -150,7 +147,10 @@ export const InstallActionManualRunModal = ({
         onSubmit={(e) => e.preventDefault()}
         className="flex flex-col gap-4"
       >
-        <FormErrorBanner error={error} fallback={`Unable to run ${action?.name}`} />
+        <FormErrorBanner
+          error={error}
+          fallback={`Unable to run ${action?.name}`}
+        />
 
         {roleSelector}
 

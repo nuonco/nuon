@@ -7,7 +7,11 @@ import { TerraformPlanGraph } from './TerraformPlanGraph'
 
 const parse = (plan: any) => {
   const { resources, drift, outputs } = parseTerraformPlan(plan)
-  return { resources: resources.changes, drift: drift.changes, outputs: outputs.changes }
+  return {
+    resources: resources.changes,
+    drift: drift.changes,
+    outputs: outputs.changes,
+  }
 }
 
 export const SimpleCreates = () => {
@@ -18,21 +22,33 @@ export const SimpleCreates = () => {
         type: 'aws_eks_cluster',
         name: 'main',
         module_address: 'module.eks',
-        change: { actions: ['create'], before: null, after: { name: 'prod-cluster', version: '1.29' } },
+        change: {
+          actions: ['create'],
+          before: null,
+          after: { name: 'prod-cluster', version: '1.29' },
+        },
       },
       {
         address: 'aws_eks_node_group.default',
         type: 'aws_eks_node_group',
         name: 'default',
         module_address: 'module.eks',
-        change: { actions: ['create'], before: null, after: { cluster_name: 'prod-cluster', node_group_name: 'default' } },
+        change: {
+          actions: ['create'],
+          before: null,
+          after: { cluster_name: 'prod-cluster', node_group_name: 'default' },
+        },
       },
       {
         address: 'aws_eks_addon.vpc_cni',
         type: 'aws_eks_addon',
         name: 'vpc_cni',
         module_address: 'module.eks',
-        change: { actions: ['create'], before: null, after: { addon_name: 'vpc-cni' } },
+        change: {
+          actions: ['create'],
+          before: null,
+          after: { addon_name: 'vpc-cni' },
+        },
       },
     ],
     output_changes: {},
@@ -47,19 +63,31 @@ export const MixedActions = () => {
         address: 'aws_vpc.main',
         type: 'aws_vpc',
         name: 'main',
-        change: { actions: ['no-op'], before: { cidr_block: '10.0.0.0/16' }, after: { cidr_block: '10.0.0.0/16' } },
+        change: {
+          actions: ['no-op'],
+          before: { cidr_block: '10.0.0.0/16' },
+          after: { cidr_block: '10.0.0.0/16' },
+        },
       },
       {
         address: 'aws_subnet.public',
         type: 'aws_subnet',
         name: 'public',
-        change: { actions: ['update'], before: { map_public_ip_on_launch: false }, after: { map_public_ip_on_launch: true } },
+        change: {
+          actions: ['update'],
+          before: { map_public_ip_on_launch: false },
+          after: { map_public_ip_on_launch: true },
+        },
       },
       {
         address: 'aws_route_table.private',
         type: 'aws_route_table',
         name: 'private',
-        change: { actions: ['create'], before: null, after: { vpc_id: 'vpc-abc123' } },
+        change: {
+          actions: ['create'],
+          before: null,
+          after: { vpc_id: 'vpc-abc123' },
+        },
       },
       {
         address: 'aws_security_group_rule.old_ssh',
@@ -71,7 +99,11 @@ export const MixedActions = () => {
         address: 'aws_nat_gateway.main',
         type: 'aws_nat_gateway',
         name: 'main',
-        change: { actions: ['no-op'], before: { subnet_id: 'subnet-pub001' }, after: { subnet_id: 'subnet-pub001' } },
+        change: {
+          actions: ['no-op'],
+          before: { subnet_id: 'subnet-pub001' },
+          after: { subnet_id: 'subnet-pub001' },
+        },
       },
     ],
     output_changes: {},
@@ -129,13 +161,21 @@ export const WithModules = () => {
         type: 'aws_iam_role_policy',
         name: 'ecs_secrets',
         module_address: 'module.ecs',
-        change: { actions: ['create'], before: null, after: { name: 'ecs-secrets-access' } },
+        change: {
+          actions: ['create'],
+          before: null,
+          after: { name: 'ecs-secrets-access' },
+        },
       },
       {
         address: 'aws_s3_bucket.logs',
         type: 'aws_s3_bucket',
         name: 'logs',
-        change: { actions: ['create'], before: null, after: { bucket: 'my-logs' } },
+        change: {
+          actions: ['create'],
+          before: null,
+          after: { bucket: 'my-logs' },
+        },
       },
     ],
     output_changes: {},
@@ -146,7 +186,15 @@ export const WithModules = () => {
 export const LargePlan = () => {
   const resourceChanges: any[] = []
   const modules = ['module.network', 'module.compute', 'module.storage']
-  const types = ['aws_instance', 'aws_security_group', 'aws_subnet', 'aws_s3_bucket', 'aws_iam_role', 'aws_lambda_function', 'aws_sqs_queue']
+  const types = [
+    'aws_instance',
+    'aws_security_group',
+    'aws_subnet',
+    'aws_s3_bucket',
+    'aws_iam_role',
+    'aws_lambda_function',
+    'aws_sqs_queue',
+  ]
   const actions = ['create', 'update', 'delete', 'no-op']
 
   let idx = 0
@@ -179,19 +227,31 @@ export const NoOpAndRead = () => {
         address: 'data.aws_caller_identity.current',
         type: 'aws_caller_identity',
         name: 'current',
-        change: { actions: ['read'], before: null, after: { account_id: 'Known after apply' } },
+        change: {
+          actions: ['read'],
+          before: null,
+          after: { account_id: 'Known after apply' },
+        },
       },
       {
         address: 'data.aws_region.current',
         type: 'aws_region',
         name: 'current',
-        change: { actions: ['read'], before: null, after: { name: 'Known after apply' } },
+        change: {
+          actions: ['read'],
+          before: null,
+          after: { name: 'Known after apply' },
+        },
       },
       {
         address: 'aws_s3_bucket.logs',
         type: 'aws_s3_bucket',
         name: 'logs',
-        change: { actions: ['no-op'], before: { bucket: 'my-logs' }, after: { bucket: 'my-logs' } },
+        change: {
+          actions: ['no-op'],
+          before: { bucket: 'my-logs' },
+          after: { bucket: 'my-logs' },
+        },
       },
     ],
     output_changes: {},
@@ -302,20 +362,32 @@ export const FullPlan = () => {
         address: 'azurerm_container_registry.acr',
         type: 'azurerm_container_registry',
         name: 'acr',
-        change: { actions: ['no-op'], before: { name: 'myregistry' }, after: { name: 'myregistry' } },
+        change: {
+          actions: ['no-op'],
+          before: { name: 'myregistry' },
+          after: { name: 'myregistry' },
+        },
       },
       {
         address: 'module.aks.azurerm_kubernetes_cluster.main',
         module_address: 'module.aks',
         type: 'azurerm_kubernetes_cluster',
         name: 'main',
-        change: { actions: ['no-op'], before: { name: 'my-aks' }, after: { name: 'my-aks' } },
+        change: {
+          actions: ['no-op'],
+          before: { name: 'my-aks' },
+          after: { name: 'my-aks' },
+        },
       },
       {
         address: 'aws_s3_bucket.new_logs',
         type: 'aws_s3_bucket',
         name: 'new_logs',
-        change: { actions: ['create'], before: null, after: { bucket: 'new-logs-bucket' } },
+        change: {
+          actions: ['create'],
+          before: null,
+          after: { bucket: 'new-logs-bucket' },
+        },
       },
     ],
     output_changes: {

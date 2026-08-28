@@ -85,7 +85,11 @@ export const AdminOrgSection = ({
         <AdminFeatureToggleCard org={org} orgId={orgId} />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Infrastructure" icon="HardDrivesIcon" variant="warning">
+      <AdminActionGroup
+        title="Infrastructure"
+        icon="HardDrivesIcon"
+        variant="warning"
+      >
         <AdminActionCard
           title="Reprovision org"
           description="Reprovision current org infrastructure"
@@ -116,7 +120,10 @@ export const AdminOrgSection = ({
           action={async () => {
             const resp = await adminForceRestartOrgQueues({ orgId, adminEmail })
             if (resp?.queue_signal_id && resp?.queue_id) {
-              window.open(`${adminDashboardUrl}/queues/${resp.queue_id}/signals/${resp.queue_signal_id}`, '_blank')
+              window.open(
+                `${adminDashboardUrl}/queues/${resp.queue_id}/signals/${resp.queue_signal_id}`,
+                '_blank'
+              )
             }
           }}
           variant="danger"
@@ -169,7 +176,9 @@ export const AdminOrgSection = ({
         <AdminActionCard
           title="Graceful shutdown all processes"
           description="Request graceful shutdown of all active runner processes in this org"
-          action={() => adminGracefulShutdownOrgProcesses({ orgId, adminEmail })}
+          action={() =>
+            adminGracefulShutdownOrgProcesses({ orgId, adminEmail })
+          }
           variant="warning"
           requiresConfirmation
           confirmationText="This will request graceful shutdown of ALL active runner processes for this organization. Each process will complete in-flight work before shutting down."
@@ -185,7 +194,11 @@ export const AdminOrgSection = ({
         />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Teardown & cleanup" icon="TrashIcon" variant="danger">
+      <AdminActionGroup
+        title="Teardown & cleanup"
+        icon="TrashIcon"
+        variant="danger"
+      >
         <AdminActionCard
           title="Deprovision org"
           description="Deprovision all org infrastructure. Keeps database records but tears down cloud resources."
@@ -218,7 +231,11 @@ export const AdminOrgSection = ({
         />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Security & debug" icon="ShieldIcon" variant="danger">
+      <AdminActionGroup
+        title="Security & debug"
+        icon="ShieldIcon"
+        variant="danger"
+      >
         <AdminActionCard
           title="Invalidate runner token"
           description="Invalidate runner service account token"

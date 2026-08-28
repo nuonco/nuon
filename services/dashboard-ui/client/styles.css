@@ -1,12 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @plugin "@tailwindcss/typography";
 
 @font-face {
   font-family: 'Hack';
-  src: url('/fonts/hack-regular.woff2') format('woff2'),
-       url('/fonts/hack-regular.woff') format('woff');
+  src:
+    url('/fonts/hack-regular.woff2') format('woff2'),
+    url('/fonts/hack-regular.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -19,95 +20,95 @@
   --font-mono: var(--font-hack);
 
   --border-color-light: #dee3e7;
-  --border-color-dark: #27252a; 
-  --color-white: #FFFFFF;
+  --border-color-dark: #27252a;
+  --color-white: #ffffff;
   --color-black: #000000;
-  
-  --color-primary-50: #FCFAFF;
-  --color-primary-100: #F6F0FF;
-  --color-primary-200: #F2E5FF;
-  --color-primary-300: #E5D0FB;
-  --color-primary-400: #C494F4;
-  --color-primary-500: #AD71EA;
-  --color-primary-600: #8040BF;
-  --color-primary-700: #7339AC;
-  --color-primary-800: #662F9D;
-  --color-primary-900: #4C2277;
-  --color-primary-950: #2E0E4E;
 
-  --color-blue-50: #FAFBFF;
-  --color-blue-100: #EDF2FF;
-  --color-blue-200: #E5EEFF;
-  --color-blue-300: #CDDDFF;
-  --color-blue-400: #8DB0FB;
-  --color-blue-500: #6792F4;
-  --color-blue-600: #3062D4;
-  --color-blue-700: #2759CD;
-  --color-blue-800: #1E50C0;
+  --color-primary-50: #fcfaff;
+  --color-primary-100: #f6f0ff;
+  --color-primary-200: #f2e5ff;
+  --color-primary-300: #e5d0fb;
+  --color-primary-400: #c494f4;
+  --color-primary-500: #ad71ea;
+  --color-primary-600: #8040bf;
+  --color-primary-700: #7339ac;
+  --color-primary-800: #662f9d;
+  --color-primary-900: #4c2277;
+  --color-primary-950: #2e0e4e;
+
+  --color-blue-50: #fafbff;
+  --color-blue-100: #edf2ff;
+  --color-blue-200: #e5eeff;
+  --color-blue-300: #cdddff;
+  --color-blue-400: #8db0fb;
+  --color-blue-500: #6792f4;
+  --color-blue-600: #3062d4;
+  --color-blue-700: #2759cd;
+  --color-blue-800: #1e50c0;
   --color-blue-900: #113997;
-  --color-blue-950: #05205E;
+  --color-blue-950: #05205e;
 
-  --color-green-50: #F4FBF7;
-  --color-green-100: #E6F9EF;
-  --color-green-200: #D8F8E7;
-  --color-green-300: #C6F1DA;
-  --color-green-400: #75CC9E;
-  --color-green-500: #4AA578;
-  --color-green-600: #1D7C4D;
-  --color-green-700: #1E714A;
+  --color-green-50: #f4fbf7;
+  --color-green-100: #e6f9ef;
+  --color-green-200: #d8f8e7;
+  --color-green-300: #c6f1da;
+  --color-green-400: #75cc9e;
+  --color-green-500: #4aa578;
+  --color-green-600: #1d7c4d;
+  --color-green-700: #1e714a;
   --color-green-800: #196742;
-  --color-green-900: #0E4E30;
-  --color-green-950: #062D1B;
+  --color-green-900: #0e4e30;
+  --color-green-950: #062d1b;
 
-  --color-orange-50: #FFF5EB;
-  --color-orange-100: #FFF0E0;
-  --color-orange-200: #FFE8D1;
-  --color-orange-300: #FFD4A8;
-  --color-orange-400: #FEB872;
-  --color-orange-500: #F6A351;
-  --color-orange-600: #F59638;
-  --color-orange-700: #B4610E;
-  --color-orange-800: #A05C1C;
-  --color-orange-900: #7A4510;
+  --color-orange-50: #fff5eb;
+  --color-orange-100: #fff0e0;
+  --color-orange-200: #ffe8d1;
+  --color-orange-300: #ffd4a8;
+  --color-orange-400: #feb872;
+  --color-orange-500: #f6a351;
+  --color-orange-600: #f59638;
+  --color-orange-700: #b4610e;
+  --color-orange-800: #a05c1c;
+  --color-orange-900: #7a4510;
   --color-orange-950: #482909;
 
-  --color-red-50: #FEF2F2;
-  --color-red-100: #FEE2E2;
-  --color-red-200: #FECACA;
-  --color-red-300: #FCA5A5;
-  --color-red-400: #F87171;
-  --color-red-500: #EF4444;
-  --color-red-600: #DC2626;
-  --color-red-700: #B91C1C;
-  --color-red-800: #991B1B;
-  --color-red-900: #7F1D1D;
-  --color-red-950: #450A0A;
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+  --color-red-950: #450a0a;
 
-  --color-cool-grey-50: #FAFAFA;
-  --color-cool-grey-100: #F0F3F5;
-  --color-cool-grey-200: #EAEDF0;
-  --color-cool-grey-300: #DEE3E7;
-  --color-cool-grey-400: #CFD6DD;
-  --color-cool-grey-500: #9EA8B3;
-  --color-cool-grey-600: #555F6D;
-  --color-cool-grey-700: #4A545E;
-  --color-cool-grey-800: #3A424A;
-  --color-cool-grey-900: #272E35;
-  --color-cool-grey-950: #1B242C;
+  --color-cool-grey-50: #fafafa;
+  --color-cool-grey-100: #f0f3f5;
+  --color-cool-grey-200: #eaedf0;
+  --color-cool-grey-300: #dee3e7;
+  --color-cool-grey-400: #cfd6dd;
+  --color-cool-grey-500: #9ea8b3;
+  --color-cool-grey-600: #555f6d;
+  --color-cool-grey-700: #4a545e;
+  --color-cool-grey-800: #3a424a;
+  --color-cool-grey-900: #272e35;
+  --color-cool-grey-950: #1b242c;
 
-  --color-dark-grey-50: #3E3D41;
-  --color-dark-grey-100: #3A383C;
+  --color-dark-grey-50: #3e3d41;
+  --color-dark-grey-100: #3a383c;
   --color-dark-grey-200: #353337;
-  --color-dark-grey-300: #302E33;
-  --color-dark-grey-400: #2C2A2E;
-  --color-dark-grey-500: #27252A;
+  --color-dark-grey-300: #302e33;
+  --color-dark-grey-400: #2c2a2e;
+  --color-dark-grey-500: #27252a;
   --color-dark-grey-600: #222025;
-  --color-dark-grey-700: #1D1B20;
-  --color-dark-grey-800: #19171C;
+  --color-dark-grey-700: #1d1b20;
+  --color-dark-grey-800: #19171c;
   --color-dark-grey-900: #141217;
   --color-dark-grey-950: #121212;
-  
-   --text-gradient-light: linear-gradient(
+
+  --text-gradient-light: linear-gradient(
     88.14deg,
     #f9519d 7.25%,
     #6133ff 62.82%
@@ -118,22 +119,31 @@
     #3a00ff 62.82%
   );
 
-  --bg-gradient-light: linear-gradient(172deg,  #FFF 0%,  #FAFAFA 99.36%), #FFF;  
-  --bg-gradient-dark: linear-gradient(172deg, #0D0416 0%,#050109 99.36%),  #141217;
+  --bg-gradient-light: linear-gradient(172deg, #fff 0%, #fafafa 99.36%), #fff;
+  --bg-gradient-dark:
+    linear-gradient(172deg, #0d0416 0%, #050109 99.36%), #141217;
 
-  --background-image-btn-gradient-light: linear-gradient(0deg, #FCFAFF 0%, #FCFAFF 100%);
-  --background-image-btn-gradient-dark: linear-gradient(0deg, rgba(128, 64, 191, 0.16) 0%, rgba(128, 64, 191, 0.16) 100%);
-  --color-btn-bg-light: #FFF;
+  --background-image-btn-gradient-light: linear-gradient(
+    0deg,
+    #fcfaff 0%,
+    #fcfaff 100%
+  );
+  --background-image-btn-gradient-dark: linear-gradient(
+    0deg,
+    rgba(128, 64, 191, 0.16) 0%,
+    rgba(128, 64, 191, 0.16) 100%
+  );
+  --color-btn-bg-light: #fff;
   --color-btn-bg-dark: #141217;
 
   --color-code: var(--bg-code);
   --color-back-to-top: var(--bg-back-to-top);
-  
+
   /* text tokens */
   --font-weight-normal: 400;
   --font-weight-strong: 500;
-  --font-weight-stronger: 600;  
-  
+  --font-weight-stronger: 600;
+
   /* animation tokens */
   --ease-cubic: cubic-bezier(0.65, 0, 0.35, 1);
   --duration-fastest: 150ms;
@@ -169,10 +179,9 @@
 }
 
 hr,
-:where([class*="divide"] > :not(:last-child)),
-[class*="border"],
-[class*="[&:before]:border"]::before
-{
+:where([class*='divide'] > :not(:last-child)),
+[class*='border'],
+[class*='[&:before]:border']::before {
   border-color: var(--border-color);
 }
 
@@ -255,10 +264,10 @@ body {
 
 @keyframes exit-fade {
   0% {
-    opacity: 1;  
+    opacity: 1;
   }
   100% {
-    opacity: 0; 
+    opacity: 0;
   }
 }
 
@@ -289,18 +298,24 @@ body {
 }
 
 @keyframes spinner-rotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* log panel cycle transitions */
 
 .animate-slide-in-from-bottom {
-  animation: slide-in-from-bottom var(--duration-log-cycle) var(--ease-cubic) forwards;
+  animation: slide-in-from-bottom var(--duration-log-cycle) var(--ease-cubic)
+    forwards;
 }
 
 .animate-slide-in-from-top {
-  animation: slide-in-from-top var(--duration-log-cycle) var(--ease-cubic) forwards;
+  animation: slide-in-from-top var(--duration-log-cycle) var(--ease-cubic)
+    forwards;
 }
 
 .animate-slide-exit-up {
@@ -308,7 +323,8 @@ body {
 }
 
 .animate-slide-exit-down {
-  animation: slide-exit-down var(--duration-log-cycle) var(--ease-cubic) forwards;
+  animation: slide-exit-down var(--duration-log-cycle) var(--ease-cubic)
+    forwards;
 }
 
 @keyframes slide-in-from-bottom {
@@ -356,19 +372,23 @@ body {
 }
 
 .animate-slide-exit-left {
-  animation: slide-exit-left var(--duration-log-cycle) var(--ease-cubic) forwards;
+  animation: slide-exit-left var(--duration-log-cycle) var(--ease-cubic)
+    forwards;
 }
 
 .animate-slide-exit-right {
-  animation: slide-exit-right var(--duration-log-cycle) var(--ease-cubic) forwards;
+  animation: slide-exit-right var(--duration-log-cycle) var(--ease-cubic)
+    forwards;
 }
 
 .animate-slide-in-from-right {
-  animation: slide-in-from-right var(--duration-log-cycle) var(--ease-cubic) forwards;
+  animation: slide-in-from-right var(--duration-log-cycle) var(--ease-cubic)
+    forwards;
 }
 
 .animate-slide-in-from-left {
-  animation: slide-in-from-left var(--duration-log-cycle) var(--ease-cubic) forwards;
+  animation: slide-in-from-left var(--duration-log-cycle) var(--ease-cubic)
+    forwards;
 }
 
 .animate-heading-exit {
@@ -380,13 +400,21 @@ body {
 }
 
 @keyframes heading-exit {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes heading-enter {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-exit-left {

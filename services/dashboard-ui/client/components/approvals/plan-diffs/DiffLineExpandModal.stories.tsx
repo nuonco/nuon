@@ -35,7 +35,12 @@ const DiffRow = ({
       <span className="inline-block max-w-[300px] truncate align-bottom">
         {afterDisplay}
       </span>
-      <DiffLineExpandButton label={label} prefix={prefix as '~' | '+' | '-'} before={before} after={after} />
+      <DiffLineExpandButton
+        label={label}
+        prefix={prefix as '~' | '+' | '-'}
+        before={before}
+        after={after}
+      />
     </span>
   </div>
 )

@@ -254,9 +254,7 @@ describe('runner-utils', () => {
         status: 'in-progress',
       } as TRunnerJob
 
-      expect(getJobExecutionStatus(finishedJob)).toBe(
-        'component built'
-      )
+      expect(getJobExecutionStatus(finishedJob)).toBe('component built')
       expect(getJobExecutionStatus(failedJob)).toBe('component build failed')
       expect(getJobExecutionStatus(inProgressJob)).toBe(
         'component build is being built'
@@ -279,9 +277,7 @@ describe('runner-utils', () => {
         status: 'queued',
       } as TRunnerJob
 
-      expect(getJobExecutionStatus(finishedJob)).toBe(
-        'sandbox provisioned'
-      )
+      expect(getJobExecutionStatus(finishedJob)).toBe('sandbox provisioned')
       expect(getJobExecutionStatus(failedJob)).toBe(
         'sandbox provisioning failed'
       )
@@ -301,9 +297,7 @@ describe('runner-utils', () => {
         status: 'timed-out',
       } as TRunnerJob
 
-      expect(getJobExecutionStatus(finishedJob)).toBe(
-        'component synced'
-      )
+      expect(getJobExecutionStatus(finishedJob)).toBe('component synced')
       expect(getJobExecutionStatus(timedOutJob)).toBe(
         'component sync timed out'
       )
@@ -325,9 +319,7 @@ describe('runner-utils', () => {
         status: 'cancelled',
       } as TRunnerJob
 
-      expect(getJobExecutionStatus(finishedJob)).toBe(
-        'component deployed'
-      )
+      expect(getJobExecutionStatus(finishedJob)).toBe('component deployed')
       expect(getJobExecutionStatus(inProgressJob)).toBe(
         'component is being deployed'
       )
@@ -347,9 +339,7 @@ describe('runner-utils', () => {
         status: 'available',
       } as TRunnerJob
 
-      expect(getJobExecutionStatus(finishedJob)).toBe(
-        'action completed'
-      )
+      expect(getJobExecutionStatus(finishedJob)).toBe('action completed')
       expect(getJobExecutionStatus(availableJob)).toBe('action starting soon')
     })
 
@@ -364,9 +354,7 @@ describe('runner-utils', () => {
         status: 'not-attempted',
       } as TRunnerJob
 
-      expect(getJobExecutionStatus(finishedJob)).toBe(
-        'operation completed'
-      )
+      expect(getJobExecutionStatus(finishedJob)).toBe('operation completed')
       expect(getJobExecutionStatus(notAttemptedJob)).toBe(
         'operation not attempted'
       )

@@ -78,7 +78,9 @@ export const Time = ({
   const getFormattedTime = () => {
     switch (format) {
       case 'relative': {
-        const diffSeconds = Math.abs(DateTime.now().diff(datetime, 'seconds').seconds)
+        const diffSeconds = Math.abs(
+          DateTime.now().diff(datetime, 'seconds').seconds
+        )
         if (diffSeconds < 10) return 'just now'
         return datetime.toRelative()
       }

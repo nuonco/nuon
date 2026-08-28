@@ -11,7 +11,7 @@ export const useWorkflowMetrics = (workflow: TWorkflow | undefined) => {
     const hasApprovals = metricSteps.some(
       (step) => step?.execution_type === 'approval'
     )
-    
+
     const failedSteps = metricSteps.filter(
       (step) => step?.status?.status === 'error'
     )
@@ -31,7 +31,8 @@ export const useWorkflowMetrics = (workflow: TWorkflow | undefined) => {
 
     const stepsWithPolicyViolations = metricSteps.filter(
       (s) =>
-        ((s?.status?.metadata?.deny_violations as unknown[])?.length || 0) > 0 ||
+        ((s?.status?.metadata?.deny_violations as unknown[])?.length || 0) >
+          0 ||
         ((s?.status?.metadata?.warn_violations as unknown[])?.length || 0) > 0
     )
 

@@ -13,7 +13,8 @@ export const VCSConnectionsStatusIndicatorContainer = () => {
   const statusQueries = useQueries({
     queries: connections.map((conn) => ({
       queryKey: ['vcs-connection-status', org?.id, conn.id],
-      queryFn: () => checkVCSConnectionStatus({ orgId: org!.id, connectionId: conn.id }),
+      queryFn: () =>
+        checkVCSConnectionStatus({ orgId: org!.id, connectionId: conn.id }),
       enabled: !!org?.id && !!conn.id,
       refetchInterval: 60_000,
     })),
@@ -25,7 +26,8 @@ export const VCSConnectionsStatusIndicatorContainer = () => {
     const status = statusQueries[i]?.data
     const isLoading = statusQueries[i]?.isLoading
     const itemTheme = isLoading ? 'neutral' : getStatusTheme(status?.status)
-    const accountName = conn.github_account_name || conn.github_account_id || 'GitHub'
+    const accountName =
+      conn.github_account_name || conn.github_account_id || 'GitHub'
 
     return {
       id: conn.id,
@@ -33,7 +35,12 @@ export const VCSConnectionsStatusIndicatorContainer = () => {
       title: accountName,
       subtitle: status?.status ?? undefined,
       leftContent: (
-        <Status status={itemTheme} isWithoutText variant="timeline" iconSize={16} />
+        <Status
+          status={itemTheme}
+          isWithoutText
+          variant="timeline"
+          iconSize={16}
+        />
       ),
     }
   })

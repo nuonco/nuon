@@ -11,7 +11,10 @@ import {
   InputsFilterBar,
   InputsNoResults,
 } from '@/components/installs/InputsFilter'
-import { useInputsFilter, type TInputsFilterGroup } from '@/hooks/use-inputs-filter'
+import {
+  useInputsFilter,
+  type TInputsFilterGroup,
+} from '@/hooks/use-inputs-filter'
 import { getInputDisplayName } from '@/utils/install-utils'
 
 interface IViewCurrentInputsModal extends IModal {
@@ -66,12 +69,7 @@ export const ViewCurrentInputsModal = ({
       className="!m-0 !mx-auto !mt-[10vh] !h-[80vh]"
       childrenClassName="flex-1"
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="ListChecksIcon" size="24" />
           Current inputs
         </Text>
@@ -147,7 +145,9 @@ export const ViewCurrentInputsModal = ({
                             {input.display_name}
                           </Text>
                           <Text variant="label" family="mono" theme="neutral">
-                            {input.name ? getInputDisplayName(input.name) : null}
+                            {input.name
+                              ? getInputDisplayName(input.name)
+                              : null}
                           </Text>
                         </span>
                       ),
@@ -169,16 +169,12 @@ export const ViewCurrentInputsModal = ({
                       ),
                       required: (
                         <Icon
-                          variant={
-                            input?.required ? 'CheckIcon' : 'MinusIcon'
-                          }
+                          variant={input?.required ? 'CheckIcon' : 'MinusIcon'}
                         />
                       ),
                       sensitive: (
                         <Icon
-                          variant={
-                            input?.sensitive ? 'CheckIcon' : 'MinusIcon'
-                          }
+                          variant={input?.sensitive ? 'CheckIcon' : 'MinusIcon'}
                         />
                       ),
                       source: (

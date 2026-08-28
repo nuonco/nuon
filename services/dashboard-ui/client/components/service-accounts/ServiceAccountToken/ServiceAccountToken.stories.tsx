@@ -51,7 +51,11 @@ export const WithError = () => (
     <CreateServiceAccountTokenModal
       accountIdentity="svc-ci-deploy@example.com"
       isPending={false}
-      error={{ error: 'duration is invalid', description: '', user_error: true }}
+      error={{
+        error: 'duration is invalid',
+        description: '',
+        user_error: true,
+      }}
       createdToken={null}
       onSubmit={noop}
       onDone={noop}

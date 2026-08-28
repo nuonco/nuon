@@ -99,6 +99,10 @@ func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest
 		return err
 	}
 
+	if err := a.acctClient.DeleteServiceAccount(ctx, req.InstallID); err != nil {
+		return err
+	}
+
 	res := a.db.WithContext(ctx).
 		Select(clause.Associations).
 		Delete(&app.Install{

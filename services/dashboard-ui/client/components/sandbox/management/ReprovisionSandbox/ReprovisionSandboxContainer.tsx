@@ -27,8 +27,14 @@ export const ReprovisionSandboxModalContainer = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { body: Parameters<typeof reprovisionSandbox>[0]['body'] }) =>
+  const {
+    mutate: execute,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: (params: {
+      body: Parameters<typeof reprovisionSandbox>[0]['body']
+    }) =>
       reprovisionSandbox({
         body: params.body,
         installId: install.id,
@@ -43,7 +49,13 @@ export const ReprovisionSandboxModalContainer = ({
       })
       addToast(
         <Toast heading="Sandbox reprovision started" theme="info">
-          <Text>Reprovisioning <Badge variant="code" size="md">{install.name}</Badge> sandbox. This may take a few minutes.</Text>
+          <Text>
+            Reprovisioning{' '}
+            <Badge variant="code" size="md">
+              {install.name}
+            </Badge>{' '}
+            sandbox. This may take a few minutes.
+          </Text>
         </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
@@ -65,7 +77,13 @@ export const ReprovisionSandboxModalContainer = ({
       })
       addToast(
         <Toast heading="Sandbox reprovision failed" theme="error">
-          <Text>Unable to reprovision <Badge variant="code" size="md">{install.name}</Badge> sandbox.</Text>
+          <Text>
+            Unable to reprovision{' '}
+            <Badge variant="code" size="md">
+              {install.name}
+            </Badge>{' '}
+            sandbox.
+          </Text>
         </Toast>
       )
     },
@@ -91,9 +109,7 @@ export const ReprovisionSandboxModalContainer = ({
   )
 }
 
-export const ReprovisionSandboxButton = ({
-  ...props
-}: IButtonAsButton) => {
+export const ReprovisionSandboxButton = ({ ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
 
   const modal = <ReprovisionSandboxModalContainer />

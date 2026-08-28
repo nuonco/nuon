@@ -22,9 +22,12 @@ export const CreateAppModalContainer = ({
   const { removeModal } = useSurfaces()
   const queryClient = useQueryClient()
 
-  const { mutate, isPending: isSubmitting, error } = useMutation({
-    mutationFn: (body: { name: string }) =>
-      createApp({ orgId: org.id, body }),
+  const {
+    mutate,
+    isPending: isSubmitting,
+    error,
+  } = useMutation({
+    mutationFn: (body: { name: string }) => createApp({ orgId: org.id, body }),
     onSuccess: (app) => {
       addToast(
         <Toast heading="App created" theme="success">

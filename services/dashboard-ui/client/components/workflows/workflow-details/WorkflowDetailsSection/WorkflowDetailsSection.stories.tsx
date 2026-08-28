@@ -59,3 +59,20 @@ export const WithChangedInputs = () => (
     </div>
   </SurfacesProvider>
 )
+
+export const CapturedRun = () => (
+  <SurfacesProvider>
+    <div className="max-w-2xl p-4">
+      <WorkflowDetailsSection
+        workflow={{
+          ...mockWorkflow,
+          id: 'run-123',
+          created_by: { email: 'Customer runner' },
+        }}
+        orgId="org-123"
+        install={mockInstall}
+        noun="run"
+      />
+    </div>
+  </SurfacesProvider>
+)

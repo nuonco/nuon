@@ -14,8 +14,12 @@ const mockComponent = {
   type: 'helm_chart',
 } as TComponent
 
-const mockBuildSelect = () => <div className="p-4 border rounded">Build select placeholder</div>
-const mockRoleSelector = () => <div className="p-4 border rounded">Role selector placeholder</div>
+const mockBuildSelect = () => (
+  <div className="p-4 border rounded">Build select placeholder</div>
+)
+const mockRoleSelector = () => (
+  <div className="p-4 border rounded">Role selector placeholder</div>
+)
 
 export const Default = () => (
   <ModalStory>

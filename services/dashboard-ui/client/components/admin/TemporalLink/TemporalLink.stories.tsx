@@ -23,10 +23,7 @@ const nonAdminAuth = {
 
 export const Visible = () => (
   <AuthContext.Provider value={adminAuth}>
-    <TemporalLink
-      namespace="components"
-      eventLoopId="wf-123"
-    />
+    <TemporalLink namespace="components" eventLoopId="wf-123" />
   </AuthContext.Provider>
 )
 
@@ -41,9 +38,6 @@ export const WithHref = () => (
 
 export const Hidden = () => (
   <AuthContext.Provider value={nonAdminAuth}>
-    <TemporalLink
-      namespace="components"
-      eventLoopId="wf-123"
-    />
+    <TemporalLink namespace="components" eventLoopId="wf-123" />
   </AuthContext.Provider>
 )

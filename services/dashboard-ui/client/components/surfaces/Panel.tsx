@@ -126,16 +126,16 @@ export const PanelBase = ({
                     }
                   >
                     <Icon
-                      variant={size === 'full' ? 'CornersInIcon' : 'CornersOutIcon'}
+                      variant={
+                        size === 'full' ? 'CornersInIcon' : 'CornersOutIcon'
+                      }
                     />
                   </Button>
                 </Tooltip>
               ) : null}
               <Tooltip
                 position="bottom"
-                tipContent={
-                  <Text variant="subtext">Close panel</Text>
-                }
+                tipContent={<Text variant="subtext">Close panel</Text>}
               >
                 <Button
                   className="!p-2 ml-auto"
@@ -178,11 +178,7 @@ export const Panel = ({ triggerButton, ...props }: IPanel) => {
       openedByTrigger.current = false
       return
     }
-    if (
-      props.panelKey &&
-      props.panelKey === panelParam &&
-      !props.isVisible
-    ) {
+    if (props.panelKey && props.panelKey === panelParam && !props.isVisible) {
       // Defer so this runs after the pathname-change panel clear in SurfacesProvider
       const timer = setTimeout(() => handleAddPanel(), 0)
       return () => clearTimeout(timer)

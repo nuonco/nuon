@@ -11,7 +11,13 @@ interface ILoadRunnerCard {
   onAction: () => void
 }
 
-export const LoadRunnerCard = ({ runner, error, isLoading, href, onAction }: ILoadRunnerCard) => {
+export const LoadRunnerCard = ({
+  runner,
+  error,
+  isLoading,
+  href,
+  onAction,
+}: ILoadRunnerCard) => {
   if (error) {
     return (
       <Text variant="subtext" className="text-red-600">

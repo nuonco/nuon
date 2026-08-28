@@ -63,6 +63,8 @@ const AppTemplate = () => {
   const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
   const hasNewAppIA = useNewAppIA()
+  const hasCustomerManagedInstalls =
+    !!org?.features?.['customer-managed-installs']
 
   if (!app) return null
 
@@ -82,8 +84,16 @@ const AppTemplate = () => {
       iconVariant: 'ShippingContainerIcon' as const,
       text: 'Sandbox builds',
     },
-    { path: `/components`, iconVariant: 'CardsIcon' as const, text: 'Components' },
-    { path: `/actions`, iconVariant: 'TerminalWindowIcon' as const, text: 'Actions' },
+    {
+      path: `/components`,
+      iconVariant: 'CardsIcon' as const,
+      text: 'Components',
+    },
+    {
+      path: `/actions`,
+      iconVariant: 'TerminalWindowIcon' as const,
+      text: 'Actions',
+    },
     {
       path: `/runbooks`,
       iconVariant: 'BookIcon' as const,
@@ -95,7 +105,16 @@ const AppTemplate = () => {
       text: 'Branches',
     },
     { path: `/roles`, iconVariant: 'FileLockIcon' as const, text: 'Roles' },
-    { path: `/policies`, iconVariant: 'ShieldCheckIcon' as const, text: 'Policies' },
+    {
+      path: `/policies`,
+      iconVariant: 'ShieldCheckIcon' as const,
+      text: 'Policies',
+    },
+    hasCustomerManagedInstalls && {
+      path: `/releases`,
+      iconVariant: 'PackageIcon' as const,
+      text: 'Releases',
+    },
     { path: `/installs`, iconVariant: 'CubeIcon' as const, text: 'Installs' },
     hasInstallSyncing && {
       path: `/install-syncs`,

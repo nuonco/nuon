@@ -66,8 +66,7 @@ function EntityPicker({
 }) {
   const { label, empty } = entityEditorMeta[type]
   const selectedId =
-    block.id ||
-    (options.find((option) => option.name === block.name)?.id ?? '')
+    block.id || (options.find((option) => option.name === block.name)?.id ?? '')
   if (!options.length) {
     return (
       <Input
@@ -318,7 +317,9 @@ export function BlockEditor({
               />
               <Select
                 size="sm"
-                labelProps={index === 0 ? { labelText: 'Render as' } : undefined}
+                labelProps={
+                  index === 0 ? { labelText: 'Render as' } : undefined
+                }
                 options={kindOptions}
                 value={item.kind}
                 onChange={(value) =>
@@ -335,7 +336,9 @@ export function BlockEditor({
               <Select
                 size="sm"
                 searchable
-                labelProps={index === 0 ? { labelText: 'State value' } : undefined}
+                labelProps={
+                  index === 0 ? { labelText: 'State value' } : undefined
+                }
                 options={pathOptions(variables)}
                 value={item.path}
                 placeholder="Select a .nuon value"
@@ -411,9 +414,7 @@ export function BlockEditor({
                   ? 'Select a list from install state'
                   : 'Pick an install to browse lists'
               }
-              onChange={(value) =>
-                onChange({ ...block, sourcePath: value })
-              }
+              onChange={(value) => onChange({ ...block, sourcePath: value })}
             />
             <Input
               size="sm"

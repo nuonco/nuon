@@ -27,19 +27,13 @@ const mockSummaries = [
 ]
 
 export const Default = () => (
-  <ComponentsTooltip
-    componentSummaries={mockSummaries}
-    title="Components"
-  >
+  <ComponentsTooltip componentSummaries={mockSummaries} title="Components">
     <Text>3 components</Text>
   </ComponentsTooltip>
 )
 
 export const Empty = () => (
-  <ComponentsTooltip
-    componentSummaries={[]}
-    title="Components"
-  >
+  <ComponentsTooltip componentSummaries={[]} title="Components">
     <Text>No components</Text>
   </ComponentsTooltip>
 )

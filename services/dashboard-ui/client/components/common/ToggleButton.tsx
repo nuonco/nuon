@@ -44,10 +44,11 @@ export const ToggleButton = <T extends string>({
             aria-pressed={value === option.value}
             className={cn(
               'focus:z-10',
-              value !== option.value && '!bg-transparent !shadow-none !text-current',
+              value !== option.value &&
+                '!bg-transparent !shadow-none !text-current',
               isFirst && '!rounded-e-none',
               isLast && '!rounded-s-none !border-l-0',
-              !isFirst && !isLast && '!rounded-none !border-l-0',
+              !isFirst && !isLast && '!rounded-none !border-l-0'
             )}
           >
             {option.label}

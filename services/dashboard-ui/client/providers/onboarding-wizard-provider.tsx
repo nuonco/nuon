@@ -44,7 +44,9 @@ export interface IWizardContext {
   onClose?: () => void
 }
 
-export const WizardContext = createContext<IWizardContext | undefined>(undefined)
+export const WizardContext = createContext<IWizardContext | undefined>(
+  undefined
+)
 
 const STORAGE_KEY = 'onboarding-wizard-step'
 
@@ -77,7 +79,9 @@ export function OnboardingWizardProvider({
     return new Set(steps.slice(0, parsed).map((s) => s.id))
   })
 
-  const [sharedData, setSharedDataState] = useState<Record<string, unknown>>(initialSharedData ?? {})
+  const [sharedData, setSharedDataState] = useState<Record<string, unknown>>(
+    initialSharedData ?? {}
+  )
 
   useEffect(() => {
     if (useLocalStorage) {

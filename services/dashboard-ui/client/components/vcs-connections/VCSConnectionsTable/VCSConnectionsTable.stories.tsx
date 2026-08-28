@@ -2,7 +2,10 @@ export default {
   title: 'VCSConnections/VCSConnectionsTable',
 }
 
-import { VCSConnectionsTable, type TVCSConnectionRow } from './VCSConnectionsTable'
+import {
+  VCSConnectionsTable,
+  type TVCSConnectionRow,
+} from './VCSConnectionsTable'
 
 const rows: TVCSConnectionRow[] = [
   {

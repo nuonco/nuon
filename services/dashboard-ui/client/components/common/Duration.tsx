@@ -63,10 +63,14 @@ export const Duration = ({
         ) : duration.as('seconds') < 1 ? (
           '< 1s'
         ) : duration.as('minutes') >= 1 ? (
-          duration.rescale().set({ seconds: 0, milliseconds: 0 }).rescale().toHuman({
-            listStyle,
-            unitDisplay,
-          })
+          duration
+            .rescale()
+            .set({ seconds: 0, milliseconds: 0 })
+            .rescale()
+            .toHuman({
+              listStyle,
+              unitDisplay,
+            })
         ) : (
           duration.rescale().set({ milliseconds: 0 }).rescale().toHuman({
             listStyle,

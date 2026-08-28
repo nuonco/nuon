@@ -28,7 +28,9 @@ export const Default = () => (
 )
 
 export const AppSynced = () => (
-  <OnboardingJourneyContext.Provider value={{ ...mockJourney, isStepComplete: () => true }}>
+  <OnboardingJourneyContext.Provider
+    value={{ ...mockJourney, isStepComplete: () => true }}
+  >
     <SyncAppStep {...mockProps} />
   </OnboardingJourneyContext.Provider>
 )

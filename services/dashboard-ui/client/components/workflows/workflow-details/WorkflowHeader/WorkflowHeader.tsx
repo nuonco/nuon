@@ -7,9 +7,14 @@ import type { TWorkflow, TInstall } from '@/types'
 interface IWorkflowHeader {
   workflow: TWorkflow
   install?: TInstall
+  readOnly?: boolean
 }
 
-export const WorkflowHeader = ({ workflow, install }: IWorkflowHeader) => {
+export const WorkflowHeader = ({
+  workflow,
+  install,
+  readOnly = false,
+}: IWorkflowHeader) => {
   const hasDrift =
     install?.drifted_objects?.length &&
     install?.drifted_objects?.find(
@@ -46,7 +51,7 @@ export const WorkflowHeader = ({ workflow, install }: IWorkflowHeader) => {
         </>
       }
       id={workflow?.id}
-      actions={<WorkflowActionButtons />}
+      actions={readOnly ? null : <WorkflowActionButtons />}
     />
   )
 }

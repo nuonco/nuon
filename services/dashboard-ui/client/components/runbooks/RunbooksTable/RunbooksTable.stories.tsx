@@ -14,8 +14,16 @@ const mockRows: TRunbookRow[] = Array.from({ length: 3 }, (_, i) => ({
       Rotates API keys and secrets for the install.
     </Text>
   ),
-  labels: <Text variant="subtext" theme="neutral">production</Text>,
-  lastUpdated: <Text variant="subtext" theme="neutral">3 days ago</Text>,
+  labels: (
+    <Text variant="subtext" theme="neutral">
+      production
+    </Text>
+  ),
+  lastUpdated: (
+    <Text variant="subtext" theme="neutral">
+      3 days ago
+    </Text>
+  ),
   href: `/org-1/apps/app-1/runbooks/runbook-${i + 1}`,
 }))
 

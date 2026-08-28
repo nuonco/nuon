@@ -1,5 +1,5 @@
 import React from 'react'
-import type { TEmptyVariant } from '@/types'
+import type { TEmptyVariant } from '@/types/dashboard.types'
 import { cn } from '@/utils/classnames'
 import { Text } from '../Text'
 import { EmptyGraphic } from './EmptyGraphic'

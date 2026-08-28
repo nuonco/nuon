@@ -23,7 +23,9 @@ const mockDeployments = {
   },
 }
 
-export const Default = () => <DeploymentStatuses deployments={mockDeployments} />
+export const Default = () => (
+  <DeploymentStatuses deployments={mockDeployments} />
+)
 
 export const AllHealthy = () => (
   <DeploymentStatuses
@@ -32,7 +34,7 @@ export const AllHealthy = () => (
         'api-server': {
           status: { replicas: 3, readyReplicas: 3, availableReplicas: 3 },
         },
-        'worker': {
+        worker: {
           status: { replicas: 2, readyReplicas: 2, availableReplicas: 2 },
         },
       },

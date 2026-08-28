@@ -89,6 +89,7 @@ type AppConfig struct {
 	TriggerRules               []TriggerRule               `json:"trigger_rules,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"trigger_rules,omitzero,omitempty"`
 	OperationRoleConfig        AppOperationRoleConfig      `json:"operation_role_config,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"operation_role_config,omitzero,omitempty"`
 	KubernetesContextsConfig   AppKubernetesContextsConfig `json:"kubernetes_contexts,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"kubernetes_contexts_config,omitzero,omitempty"`
+	CustomerManagedRuntime     *AppReleaseRuntime          `json:"-" gorm:"-" temporaljson:"-"`
 
 	// individual pointers
 	InstallAWSCloudFormationStackVersion []InstallStackVersion `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_aws_cloud_formation_stack_version,omitzero,omitempty"`

@@ -96,7 +96,9 @@ export const ManagementDropdown = ({
             />
           </>
         ) : null}
-        {(component?.type === 'terraform_module' || component?.type === 'pulumi') && workspaceId ? (
+        {(component?.type === 'terraform_module' ||
+          component?.type === 'pulumi') &&
+        workspaceId ? (
           <UnlockTerraformWorkspaceButton
             workspaceId={workspaceId}
             description={component.name}
@@ -112,7 +114,11 @@ export const ManagementDropdown = ({
             reason="This component is already torn down."
           />
         ) : (
-          <TeardownComponentButton component={component} isMenuButton variant="danger" />
+          <TeardownComponentButton
+            component={component}
+            isMenuButton
+            variant="danger"
+          />
         )}
         <ForgetComponentButton
           component={component}

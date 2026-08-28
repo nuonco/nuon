@@ -1,7 +1,10 @@
 import { useMemo } from 'react'
 import type { TWorkflow } from '@/types'
 
-export const useWorkflowActions = (workflow: TWorkflow, hasApprovals: boolean) => {
+export const useWorkflowActions = (
+  workflow: TWorkflow,
+  hasApprovals: boolean
+) => {
   return useMemo(() => {
     const isFinished = workflow?.finished
     const status = workflow?.status?.status
@@ -17,10 +20,7 @@ export const useWorkflowActions = (workflow: TWorkflow, hasApprovals: boolean) =
       !isCancelled &&
       hasApprovals
 
-    const canShowCancel =
-      !isFinished &&
-      !isCancelled &&
-      !isError
+    const canShowCancel = !isFinished && !isCancelled && !isError
 
     return {
       canShowApproveAll,

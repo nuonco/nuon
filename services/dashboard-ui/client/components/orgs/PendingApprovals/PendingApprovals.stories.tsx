@@ -21,7 +21,11 @@ export const Default = () => (
     <PendingApprovals
       orgId="org-1"
       approvals={mockApprovals}
-      activeWorkflows={[{ owner_id: 'install-1', metadata: { owner_name: 'My Install' } }] as any}
+      activeWorkflows={
+        [
+          { owner_id: 'install-1', metadata: { owner_name: 'My Install' } },
+        ] as any
+      }
     />
   </div>
 )

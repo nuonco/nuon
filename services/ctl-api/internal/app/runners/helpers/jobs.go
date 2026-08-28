@@ -26,8 +26,9 @@ func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duratio
 		app.RunnerJobTypeDockerBuild:          time.Minute * 60,
 		app.RunnerJobTypeContainerImageBuild:  time.Minute * 15,
 		app.RunnerJobTypeHelmChartBuild:       time.Minute * 5,
-		app.RunnerJobTypeTerraformModuleBuild: time.Minute * 15,
+		app.RunnerJobTypeTerraformModuleBuild: time.Minute * 30,
 		app.RunnerJobTypePulumiBuild:          time.Minute * 5,
+		app.RunnerJobTypeSandboxBuild:         time.Minute * 30,
 
 		// sync timeouts
 		app.RunnerJobTypeOCISync:            time.Minute * 15,

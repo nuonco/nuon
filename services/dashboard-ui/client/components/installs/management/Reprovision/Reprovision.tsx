@@ -23,13 +23,7 @@ export const ReprovisionModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-          theme="warn"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="warn">
           <Icon variant="ArrowURightUpIcon" size="24" />
           Reprovision install?
         </Text>
@@ -50,17 +44,17 @@ export const ReprovisionModal = ({
       <div className="flex flex-col gap-4">
         {error ? (
           <Banner theme="error">
-            {error?.error ||
-              'Something went wrong. Try refreshing the page.'}
+            {error?.error || 'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
         <Text variant="base">
-          Reprovisioning {installName} will recreate the stack and sandbox, and redeploy all components.
+          Reprovisioning {installName} will recreate the stack and sandbox, and
+          redeploy all components.
         </Text>
         <Banner theme="warn">
           <Text variant="body">
-            <strong>Warning:</strong> Actions and deployments won't be
-            available while the runner is recreated during the stack reprovision.
+            <strong>Warning:</strong> Actions and deployments won't be available
+            while the runner is recreated during the stack reprovision.
           </Text>
         </Banner>
 

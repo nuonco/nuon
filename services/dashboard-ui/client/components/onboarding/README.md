@@ -4,13 +4,13 @@ A full-screen, step-based wizard with a top nav bar, animated step transitions, 
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `OnboardingWizard.tsx` | Main entry point — renders the full-screen layout |
-| `WizardNav.tsx` | Stratus stepper — step dots with labels and animated progress lines |
-| `WizardStepView.tsx` | Renders the current step's heading, back/skip buttons, and component |
-| `../../providers/onboarding-wizard-provider.tsx` | Context, provider, and all shared types |
-| `../../hooks/use-onboarding-wizard.ts` | `useOnboardingWizard()` hook for accessing wizard state |
+| File                                             | Purpose                                                              |
+| ------------------------------------------------ | -------------------------------------------------------------------- |
+| `OnboardingWizard.tsx`                           | Main entry point — renders the full-screen layout                    |
+| `WizardNav.tsx`                                  | Stratus stepper — step dots with labels and animated progress lines  |
+| `WizardStepView.tsx`                             | Renders the current step's heading, back/skip buttons, and component |
+| `../../providers/onboarding-wizard-provider.tsx` | Context, provider, and all shared types                              |
+| `../../hooks/use-onboarding-wizard.ts`           | `useOnboardingWizard()` hook for accessing wizard state              |
 
 ---
 
@@ -41,7 +41,9 @@ export function MyFlow() {
   return (
     <OnboardingWizard
       steps={STEPS}
-      onComplete={() => { window.location.href = '/dashboard' }}
+      onComplete={() => {
+        window.location.href = '/dashboard'
+      }}
     />
   )
 }
@@ -53,10 +55,10 @@ export function MyFlow() {
 
 ```ts
 interface IOnboardingWizardProps {
-  steps: IWizardStepDef[]   // Ordered list of step definitions
-  onComplete: () => void     // Called when the final step is advanced past
-  canClose?: boolean         // Show a "Close" button in the nav (default: false)
-  onClose?: () => void       // Called when Close is clicked
+  steps: IWizardStepDef[] // Ordered list of step definitions
+  onComplete: () => void // Called when the final step is advanced past
+  canClose?: boolean // Show a "Close" button in the nav (default: false)
+  onClose?: () => void // Called when Close is clicked
 }
 ```
 
@@ -68,12 +70,12 @@ Each step is a plain object:
 
 ```ts
 interface IWizardStepDef {
-  id: string                                        // Unique identifier
-  title: string                                     // Shown as page heading
-  navLabel?: string                                 // Short label shown below the stepper dot (falls back to title)
-  description?: string                              // Shown below the heading
+  id: string // Unique identifier
+  title: string // Shown as page heading
+  navLabel?: string // Short label shown below the stepper dot (falls back to title)
+  description?: string // Shown below the heading
   component: ComponentType<IWizardStepComponentProps>
-  data?: unknown                                    // Optional static config passed to the component
+  data?: unknown // Optional static config passed to the component
 }
 ```
 
@@ -85,10 +87,10 @@ Every step component receives these props:
 
 ```ts
 interface IWizardStepComponentProps {
-  isComplete: boolean                               // Whether this step has been marked complete
-  sharedData: Record<string, unknown>               // Cross-step shared state
+  isComplete: boolean // Whether this step has been marked complete
+  sharedData: Record<string, unknown> // Cross-step shared state
   setSharedData: (key: string, val: unknown) => void
-  onAdvance: () => void                             // Marks step complete and advances to next
+  onAdvance: () => void // Marks step complete and advances to next
 }
 ```
 
@@ -103,10 +105,13 @@ const MyStep = ({ onAdvance }: IWizardStepComponentProps) => (
 ### Async step (API call before advancing)
 
 ```tsx
-const CreateOrgStep = ({ onAdvance, setSharedData }: IWizardStepComponentProps) => {
+const CreateOrgStep = ({
+  onAdvance,
+  setSharedData,
+}: IWizardStepComponentProps) => {
   const handleSubmit = async () => {
     const org = await createOrg({ name: 'Acme' })
-    setSharedData('orgId', org.id)  // available to all later steps
+    setSharedData('orgId', org.id) // available to all later steps
     onAdvance()
   }
 
@@ -144,7 +149,8 @@ If you need more control than `onAdvance` provides (e.g. mark complete without i
 import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 
 const PollingStep = ({ isComplete }: IWizardStepComponentProps) => {
-  const { markComplete, goNext, steps, currentStepIndex } = useOnboardingWizard()
+  const { markComplete, goNext, steps, currentStepIndex } =
+    useOnboardingWizard()
   const stepId = steps[currentStepIndex].id
 
   useEffect(() => {
@@ -160,17 +166,17 @@ const PollingStep = ({ isComplete }: IWizardStepComponentProps) => {
 
 ### Available from `useOnboardingWizard()`
 
-| Value | Type | Description |
-|-------|------|-------------|
-| `steps` | `IWizardStepDef[]` | All step definitions |
-| `currentStepIndex` | `number` | Index of the active step |
-| `completedSteps` | `Set<string>` | IDs of completed steps |
-| `sharedData` | `Record<string, unknown>` | Cross-step shared state |
-| `canClose` | `boolean` | Whether the close button is shown |
-| `markComplete` | `(id: string) => void` | Mark a step complete without advancing |
-| `setSharedData` | `(key, val) => void` | Write to shared state |
-| `goToStep` | `(index: number) => void` | Jump to a specific step |
-| `goNext` | `() => void` | Advance one step (or call `onComplete` on the last) |
-| `goPrev` | `() => void` | Go back one step |
-| `onComplete` | `() => void` | The completion callback passed to `OnboardingWizard` |
-| `onClose` | `() => void \| undefined` | The close callback passed to `OnboardingWizard` |
+| Value              | Type                      | Description                                          |
+| ------------------ | ------------------------- | ---------------------------------------------------- |
+| `steps`            | `IWizardStepDef[]`        | All step definitions                                 |
+| `currentStepIndex` | `number`                  | Index of the active step                             |
+| `completedSteps`   | `Set<string>`             | IDs of completed steps                               |
+| `sharedData`       | `Record<string, unknown>` | Cross-step shared state                              |
+| `canClose`         | `boolean`                 | Whether the close button is shown                    |
+| `markComplete`     | `(id: string) => void`    | Mark a step complete without advancing               |
+| `setSharedData`    | `(key, val) => void`      | Write to shared state                                |
+| `goToStep`         | `(index: number) => void` | Jump to a specific step                              |
+| `goNext`           | `() => void`              | Advance one step (or call `onComplete` on the last)  |
+| `goPrev`           | `() => void`              | Go back one step                                     |
+| `onComplete`       | `() => void`              | The completion callback passed to `OnboardingWizard` |
+| `onClose`          | `() => void \| undefined` | The close callback passed to `OnboardingWizard`      |

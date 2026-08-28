@@ -84,7 +84,10 @@ const OnboardingInstallForm = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <FormErrorBanner error={submitError} fallback="Unable to create install" />
+      <FormErrorBanner
+        error={submitError}
+        fallback="Unable to create install"
+      />
       <InstallForm
         form={form}
         mode="create"

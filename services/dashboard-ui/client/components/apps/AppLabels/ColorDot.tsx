@@ -6,7 +6,12 @@ interface IColorDot extends HTMLAttributes<HTMLSpanElement> {
   size?: number
 }
 
-export const ColorDot = ({ color, size = 14, className, ...props }: IColorDot) => (
+export const ColorDot = ({
+  color,
+  size = 14,
+  className,
+  ...props
+}: IColorDot) => (
   <span
     className={cn('inline-block rounded-sm border shrink-0', className)}
     style={{ backgroundColor: color, width: size, height: size }}

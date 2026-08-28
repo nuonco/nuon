@@ -10,13 +10,9 @@ interface IPageSidebarContext {
 
 export const PageSidebarContext = createContext<IPageSidebarContext>({})
 
-export const PageSidebarProvider = ({
-  children,
-}: {
-  children: ReactNode
-}) => {
-  const [isPageSidebarOpen, setIsPageSidebarOpen] = useState(
-    () => getPageSidebarOpen()
+export const PageSidebarProvider = ({ children }: { children: ReactNode }) => {
+  const [isPageSidebarOpen, setIsPageSidebarOpen] = useState(() =>
+    getPageSidebarOpen()
   )
 
   function closePageSidebar() {

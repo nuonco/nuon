@@ -13,7 +13,12 @@ interface IResetLabelColorsModal extends IModal {
   appName?: string
 }
 
-export const ResetLabelColorsModal = ({ orgId, appId, appName, ...props }: IResetLabelColorsModal) => {
+export const ResetLabelColorsModal = ({
+  orgId,
+  appId,
+  appName,
+  ...props
+}: IResetLabelColorsModal) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
@@ -25,7 +30,9 @@ export const ResetLabelColorsModal = ({ orgId, appId, appName, ...props }: IRese
       queryClient.invalidateQueries({ queryKey: ['app', orgId, appId] })
       addToast(
         <Toast heading="Label colors reset" theme="success">
-          <Text>Restored the automatic colors{appName ? ` for ${appName}` : ''}.</Text>
+          <Text>
+            Restored the automatic colors{appName ? ` for ${appName}` : ''}.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)
@@ -51,8 +58,8 @@ export const ResetLabelColorsModal = ({ orgId, appId, appName, ...props }: IRese
       {...props}
     >
       <Text>
-        This clears every color override{appName ? ` for ${appName}` : ''} and restores the automatic
-        default colors.
+        This clears every color override{appName ? ` for ${appName}` : ''} and
+        restores the automatic default colors.
       </Text>
     </Modal>
   )

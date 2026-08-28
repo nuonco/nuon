@@ -2,7 +2,10 @@ export default {
   title: 'Install Components/InstallComponentConfigCard',
 }
 
-import { InstallComponentConfigCard, InstallComponentConfigCardSkeleton } from './InstallComponentConfigCard'
+import {
+  InstallComponentConfigCard,
+  InstallComponentConfigCardSkeleton,
+} from './InstallComponentConfigCard'
 
 const mockConfig = {
   component_id: 'comp-1',

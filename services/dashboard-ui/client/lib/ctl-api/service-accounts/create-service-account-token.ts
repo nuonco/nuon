@@ -1,5 +1,8 @@
 import { api } from '@/lib/api'
-import type { TCreateServiceAccountTokenBody, TCreateServiceAccountTokenResponse } from '@/types'
+import type {
+  TCreateServiceAccountTokenBody,
+  TCreateServiceAccountTokenResponse,
+} from '@/types'
 
 export const createServiceAccountToken = ({
   body,

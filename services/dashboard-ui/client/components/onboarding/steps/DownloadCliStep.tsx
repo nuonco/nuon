@@ -69,7 +69,8 @@ export const DownloadCliStep = ({
 
       {!cliInstalled && (
         <Text variant="subtext" theme="neutral">
-          Waiting for CLI authentication... Once you run <code>nuon auth login</code>, this page will update automatically.
+          Waiting for CLI authentication... Once you run{' '}
+          <code>nuon auth login</code>, this page will update automatically.
         </Text>
       )}
 

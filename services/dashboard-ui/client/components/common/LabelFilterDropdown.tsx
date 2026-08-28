@@ -41,7 +41,7 @@ export const LabelFilterDropdown = ({
         params.delete('offset')
         return params
       },
-      { replace: true },
+      { replace: true }
     )
   }
 
@@ -91,7 +91,8 @@ export const LabelFilterDropdown = ({
           <div className="flex items-center space-x-2" key={label}>
             <CheckboxInputWithButton
               buttonProps={{
-                className: '!p-1 flex items-center justify-between group w-full',
+                className:
+                  '!p-1 flex items-center justify-between group w-full',
                 children: (
                   <>
                     <span className="font-semibold text-xs font-mono">

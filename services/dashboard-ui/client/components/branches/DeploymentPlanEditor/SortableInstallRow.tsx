@@ -60,7 +60,9 @@ export const SortableInstallRow = ({
           title="Drag to move"
           className={cn(
             'flex items-center justify-center p-1 rounded text-cool-grey-500 hover:text-cool-grey-800 dark:hover:text-cool-grey-300 shrink-0',
-            disabled ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'
+            disabled
+              ? 'cursor-not-allowed'
+              : 'cursor-grab active:cursor-grabbing'
           )}
         >
           <Icon variant="DotsSixVerticalIcon" size={16} />

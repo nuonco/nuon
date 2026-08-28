@@ -4,9 +4,7 @@ export default {
 
 import { PageHeadingGroup } from './PageHeadingGroup'
 
-export const Default = () => (
-  <PageHeadingGroup title="Page title" />
-)
+export const Default = () => <PageHeadingGroup title="Page title" />
 
 export const WithSubtitle = () => (
   <PageHeadingGroup

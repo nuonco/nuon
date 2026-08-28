@@ -5,8 +5,5 @@ export default {
 import { DeploySwitcher } from './DeploySwitcher'
 
 export const Default = () => (
-  <DeploySwitcher
-    componentId="comp-1"
-    deployId="deploy-1"
-  />
+  <DeploySwitcher componentId="comp-1" deployId="deploy-1" />
 )

@@ -47,7 +47,8 @@ export function InstallAppConfigProvider({
         appConfigId: install.app_config_id!,
         recurse: true,
       }),
-    enabled: enabled && !!org?.id && !!install?.app_id && !!install?.app_config_id,
+    enabled:
+      enabled && !!org?.id && !!install?.app_id && !!install?.app_config_id,
   })
 
   return (

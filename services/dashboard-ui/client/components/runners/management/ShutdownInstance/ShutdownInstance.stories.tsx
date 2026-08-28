@@ -21,6 +21,10 @@ export const Loading = () => (
 
 export const WithError = () => (
   <ModalStory>
-    <ShutdownInstanceModal error={{ error: 'Instance restart failed' }} isLoading={false} onConfirm={noop} />
+    <ShutdownInstanceModal
+      error={{ error: 'Instance restart failed' }}
+      isLoading={false}
+      onConfirm={noop}
+    />
   </ModalStory>
 )

@@ -27,7 +27,13 @@ const mockAccounts: TAccount[] = [
 ]
 
 const roleTitles = (roleType: string | undefined) =>
-  ({ org_admin: 'Admin', org_support: 'Support', org_read_only: 'Read-only' } as Record<string, string>)[roleType ?? ''] ??
+  (
+    ({
+      org_admin: 'Admin',
+      org_support: 'Support',
+      org_read_only: 'Read-only',
+    }) as Record<string, string>
+  )[roleType ?? ''] ??
   roleType ??
   '—'
 

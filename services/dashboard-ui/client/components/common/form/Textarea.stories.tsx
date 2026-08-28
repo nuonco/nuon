@@ -11,8 +11,9 @@ export const BasicUsage = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Basic Textarea Usage</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Multi-line text input with different configurations. The textarea 
-        automatically handles styling, focus states, and accessibility attributes.
+        Multi-line text input with different configurations. The textarea
+        automatically handles styling, focus states, and accessibility
+        attributes.
       </p>
     </div>
 
@@ -99,7 +100,8 @@ export const AutoResize = () => (
         and{' '}
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           maxRows
-        </code>.
+        </code>
+        .
       </p>
     </div>
 
@@ -112,7 +114,7 @@ export const AutoResize = () => (
         labelProps={{ labelText: 'Auto-resize (2-6 rows)' }}
         helperText="This textarea will grow as you type, up to 6 rows"
       />
-      
+
       <Textarea
         autoResize
         minRows={3}
@@ -121,7 +123,7 @@ export const AutoResize = () => (
         labelProps={{ labelText: 'Auto-resize (3-8 rows)' }}
         helperText="Larger range for longer content"
       />
-      
+
       <Textarea
         autoResize={false}
         rows={4}
@@ -149,9 +151,9 @@ export const States = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Textarea States</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Textarea components support various states including error states, disabled
-        states, and helper text for better user experience and validation
-        feedback.
+        Textarea components support various states including error states,
+        disabled states, and helper text for better user experience and
+        validation feedback.
       </p>
     </div>
 
@@ -162,7 +164,7 @@ export const States = () => (
         helperText="This is a normal textarea field"
         rows={3}
       />
-      
+
       <Textarea
         placeholder="Error textarea"
         labelProps={{ labelText: 'Error State' }}
@@ -170,7 +172,7 @@ export const States = () => (
         errorMessage="This field is required and cannot be empty"
         rows={3}
       />
-      
+
       <Textarea
         placeholder="Disabled textarea"
         labelProps={{ labelText: 'Disabled State' }}
@@ -178,7 +180,7 @@ export const States = () => (
         helperText="This field is currently disabled"
         rows={3}
       />
-      
+
       <Textarea
         placeholder="Required field"
         labelProps={{ labelText: 'Required Field' }}
@@ -199,7 +201,8 @@ export const States = () => (
         <strong>Disabled:</strong> Muted colors and no interaction
       </div>
       <div>
-        <strong>Required:</strong> Semantic HTML required attribute with validation
+        <strong>Required:</strong> Semantic HTML required attribute with
+        validation
       </div>
     </div>
   </div>
@@ -219,28 +222,28 @@ export const WithLabelsAndText = () => (
     <div className="space-y-4">
       <Textarea
         placeholder="Describe your project in detail..."
-        labelProps={{ 
+        labelProps={{
           labelText: 'Project Description',
-          labelTextProps: { weight: 'strong' }
+          labelTextProps: { weight: 'strong' },
         }}
         helperText="Provide a comprehensive overview of your project goals"
         rows={4}
       />
-      
+
       <Textarea
         placeholder="Enter feedback or comments..."
         labelProps={{ labelText: 'Additional Comments' }}
         helperText="Any additional information or special requirements"
         rows={3}
       />
-      
+
       <Textarea
         placeholder="Describe technical requirements..."
         labelProps={{ labelText: 'Technical Specifications' }}
         helperText="Include technical details, frameworks, or constraints"
         rows={4}
       />
-      
+
       <Textarea
         placeholder="Enter notes (optional)..."
         labelProps={{ labelText: 'Notes (Optional)' }}
@@ -287,7 +290,7 @@ export const ErrorHandling = () => (
         errorMessage="Description is required"
         rows={3}
       />
-      
+
       <Textarea
         placeholder="Enter your message..."
         labelProps={{ labelText: 'Message' }}
@@ -295,7 +298,7 @@ export const ErrorHandling = () => (
         errorMessage="Message must be at least 10 characters long"
         rows={4}
       />
-      
+
       <Textarea
         placeholder="Enter comments..."
         labelProps={{ labelText: 'Comments' }}
@@ -303,7 +306,7 @@ export const ErrorHandling = () => (
         errorMessage="Please provide valid input without special characters"
         rows={3}
       />
-      
+
       <Textarea
         placeholder="Enter feedback..."
         labelProps={{ labelText: 'Feedback' }}
@@ -345,21 +348,21 @@ export const RealWorldExamples = () => (
         placeholder="Describe the issue you're experiencing..."
         labelProps={{
           labelText: 'Bug Report Description',
-          labelTextProps: { weight: 'strong' }
+          labelTextProps: { weight: 'strong' },
         }}
         helperText="Please provide detailed steps to reproduce the issue"
       />
-      
+
       <Textarea
         rows={6}
         placeholder="Enter your commit message..."
         labelProps={{
           labelText: 'Commit Message',
-          labelTextProps: { weight: 'strong' }
+          labelTextProps: { weight: 'strong' },
         }}
         helperText="First line should be a concise summary (max 50 chars)"
       />
-      
+
       <Textarea
         autoResize
         minRows={3}
@@ -367,7 +370,7 @@ export const RealWorldExamples = () => (
         placeholder="Document your API endpoint..."
         labelProps={{
           labelText: 'API Documentation',
-          labelTextProps: { weight: 'strong' }
+          labelTextProps: { weight: 'strong' },
         }}
         helperText="Include endpoint description, parameters, and example responses"
       />
@@ -377,7 +380,7 @@ export const RealWorldExamples = () => (
         placeholder="Add release notes..."
         labelProps={{
           labelText: 'Release Notes',
-          labelTextProps: { weight: 'strong' }
+          labelTextProps: { weight: 'strong' },
         }}
         helperText="Describe new features, bug fixes, and breaking changes"
       />
@@ -390,12 +393,14 @@ export const FormIntegration = () => {
     title: 'Project Alpha',
     description: '',
     notes: '',
-    requirements: ''
+    requirements: '',
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    alert(`Form submitted!\n\nTitle: ${formData.title}\nDescription: ${formData.description.slice(0, 50)}...\nNotes: ${formData.notes.slice(0, 50)}...`)
+    alert(
+      `Form submitted!\n\nTitle: ${formData.title}\nDescription: ${formData.description.slice(0, 50)}...\nNotes: ${formData.notes.slice(0, 50)}...`
+    )
   }
 
   return (
@@ -407,10 +412,12 @@ export const FormIntegration = () => {
           It supports standard form attributes like{' '}
           <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
             name
-          </code>,{' '}
+          </code>
+          ,{' '}
           <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
             required
-          </code>, and{' '}
+          </code>
+          , and{' '}
           <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
             onChange
           </code>{' '}
@@ -420,20 +427,25 @@ export const FormIntegration = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
         <div>
-          <label htmlFor="project-title" className="block text-sm font-medium mb-1">
+          <label
+            htmlFor="project-title"
+            className="block text-sm font-medium mb-1"
+          >
             Project Title *
           </label>
           <input
             id="project-title"
             type="text"
             value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, title: e.target.value }))
+            }
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-900"
             placeholder="Enter project title"
             required
           />
         </div>
-        
+
         <Textarea
           id="project-description"
           name="description"
@@ -441,7 +453,9 @@ export const FormIntegration = () => {
           minRows={4}
           maxRows={8}
           value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, description: e.target.value }))
+          }
           labelProps={{
             labelText: 'Project Description *',
           }}
@@ -454,7 +468,9 @@ export const FormIntegration = () => {
           name="requirements"
           rows={4}
           value={formData.requirements}
-          onChange={(e) => setFormData(prev => ({ ...prev, requirements: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, requirements: e.target.value }))
+          }
           labelProps={{
             labelText: 'Technical Requirements',
           }}
@@ -468,13 +484,15 @@ export const FormIntegration = () => {
           minRows={2}
           maxRows={6}
           value={formData.notes}
-          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, notes: e.target.value }))
+          }
           labelProps={{
             labelText: 'Additional Notes',
           }}
           helperText="Any additional comments or special considerations"
         />
-        
+
         <div className="flex gap-3">
           <button
             type="submit"
@@ -484,12 +502,14 @@ export const FormIntegration = () => {
           </button>
           <button
             type="button"
-            onClick={() => setFormData({
-              title: '',
-              description: '',
-              notes: '',
-              requirements: ''
-            })}
+            onClick={() =>
+              setFormData({
+                title: '',
+                description: '',
+                notes: '',
+                requirements: '',
+              })
+            }
             className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500"
           >
             Reset

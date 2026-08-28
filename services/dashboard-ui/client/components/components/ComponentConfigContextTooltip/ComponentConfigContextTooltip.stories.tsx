@@ -8,7 +8,14 @@ import { ComponentConfigContextTooltip } from './ComponentConfigContextTooltip'
 export const Default = () => (
   <SurfacesProvider>
     <ComponentConfigContextTooltip
-      config={{ component_id: 'comp-1', version: 3, type: 'terraform_module', terraform_module: { version: '1.5.0' } } as any}
+      config={
+        {
+          component_id: 'comp-1',
+          version: 3,
+          type: 'terraform_module',
+          terraform_module: { version: '1.5.0' },
+        } as any
+      }
       isLoading={false}
       hasError={false}
       orgId="org-1"

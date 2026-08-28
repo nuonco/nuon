@@ -11,8 +11,10 @@ export function PolicyReportsFilterContainer() {
   const { pathname } = useLocation()
   const [searchParams] = useSearchParams()
 
-  const currentStatus = (searchParams.get('status') as TPolicyReportStatus) || undefined
-  const currentOwnerType = (searchParams.get('owner_type') as TPolicyReportOwnerType) || undefined
+  const currentStatus =
+    (searchParams.get('status') as TPolicyReportStatus) || undefined
+  const currentOwnerType =
+    (searchParams.get('owner_type') as TPolicyReportOwnerType) || undefined
 
   const updateParam = useCallback(
     (key: string, value: string) => {

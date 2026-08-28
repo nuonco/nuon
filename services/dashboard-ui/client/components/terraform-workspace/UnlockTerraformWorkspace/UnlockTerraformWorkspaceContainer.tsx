@@ -67,9 +67,16 @@ export const UnlockTerraformWorkspaceModalContainer = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const { mutate: execute, isPending: isLoading, error } = useMutation({
+  const {
+    mutate: execute,
+    isPending: isLoading,
+    error,
+  } = useMutation({
     mutationFn: () =>
-      unlockTerraformWorkspace({ orgId: org.id, terraformWorkspaceId: workspaceId }),
+      unlockTerraformWorkspace({
+        orgId: org.id,
+        terraformWorkspaceId: workspaceId,
+      }),
     onSuccess: () => {
       trackEvent({
         event: 'terraform_workspace_state_unlock',
@@ -79,7 +86,9 @@ export const UnlockTerraformWorkspaceModalContainer = ({
       })
       addToast(
         <Toast heading="Terraform state unlocked" theme="success">
-          <Text>The Terraform workspace for {description} has been unlocked.</Text>
+          <Text>
+            The Terraform workspace for {description} has been unlocked.
+          </Text>
         </Toast>
       )
       queryClient.invalidateQueries({
@@ -93,7 +102,12 @@ export const UnlockTerraformWorkspaceModalContainer = ({
         event: 'terraform_workspace_state_unlock',
         status: 'error',
         user,
-        props: { orgId: org.id, installId: install.id, workspaceId, err: err?.error },
+        props: {
+          orgId: org.id,
+          installId: install.id,
+          workspaceId,
+          err: err?.error,
+        },
       })
     },
   })

@@ -14,10 +14,12 @@ export const SandboxPulumiConfigModal = ({
   pulumiConfig,
   ...props
 }: SandboxPulumiConfigModalProps) => {
-  const keyValuePairs: TKeyValue[] = Object.entries(pulumiConfig).map(([key, value]) => ({
-    key,
-    value,
-  }))
+  const keyValuePairs: TKeyValue[] = Object.entries(pulumiConfig).map(
+    ([key, value]) => ({
+      key,
+      value,
+    })
+  )
 
   const configText = Object.entries(pulumiConfig)
     .map(([key, value]) => `${key}: "${value}"`)
@@ -63,10 +65,12 @@ export const SandboxEnvironmentVariablesModal = ({
   envVars,
   ...props
 }: SandboxEnvironmentVariablesModalProps) => {
-  const envVarsList: TKeyValue[] = Object.entries(envVars).map(([key, value]) => ({
-    key,
-    value,
-  }))
+  const envVarsList: TKeyValue[] = Object.entries(envVars).map(
+    ([key, value]) => ({
+      key,
+      value,
+    })
+  )
 
   const envVarsText = Object.entries(envVars)
     .map(([key, value]) => `${key}=${value}`)
@@ -125,7 +129,10 @@ export const SandboxVariablesFilesModal = ({
             Terraform variables files configured for this sandbox.
           </Text>
           <div className="flex justify-end">
-            <ClickToCopyButton textToCopy={variablesFilesContent} className="w-fit" />
+            <ClickToCopyButton
+              textToCopy={variablesFilesContent}
+              className="w-fit"
+            />
           </div>
         </div>
         <TerraformRenderedVariablesFiles files={variablesFiles} />

@@ -27,7 +27,8 @@ export const ComponentConfigContextTooltipContainer = ({
   } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['component-config', org?.id, appId, componentId, configId],
-    queryFn: () => getComponentConfig({ orgId: org.id, appId, componentId, configId }),
+    queryFn: () =>
+      getComponentConfig({ orgId: org.id, appId, componentId, configId }),
     enabled: !!org?.id && !!appId && !!componentId && !!configId,
   })
 

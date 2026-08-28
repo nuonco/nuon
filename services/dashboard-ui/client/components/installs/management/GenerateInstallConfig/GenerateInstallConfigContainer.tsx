@@ -53,9 +53,7 @@ export const GenerateInstallConfigModalContainer = ({ ...props }: IModal) => {
   )
 }
 
-export const GenerateInstallConfigButton = ({
-  ...props
-}: IButtonAsButton) => {
+export const GenerateInstallConfigButton = ({ ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const modal = <GenerateInstallConfigModalContainer />
 

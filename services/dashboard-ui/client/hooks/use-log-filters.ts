@@ -184,28 +184,44 @@ export const useLogFilters = <T extends TOTELLog>(
     }
 
     if (tool) {
-      filtered = filtered.filter((item) => item.log_attributes?.['nuon.tool'] === tool)
+      filtered = filtered.filter(
+        (item) => item.log_attributes?.['nuon.tool'] === tool
+      )
     }
     if (helmReleaseName) {
-      filtered = filtered.filter((item) => item.log_attributes?.['helm.release_name'] === helmReleaseName)
+      filtered = filtered.filter(
+        (item) => item.log_attributes?.['helm.release_name'] === helmReleaseName
+      )
     }
     if (helmOperation) {
-      filtered = filtered.filter((item) => item.log_attributes?.['helm.operation'] === helmOperation)
+      filtered = filtered.filter(
+        (item) => item.log_attributes?.['helm.operation'] === helmOperation
+      )
     }
     if (tfWorkspaceID) {
-      filtered = filtered.filter((item) => item.log_attributes?.['tf.workspace_id'] === tfWorkspaceID)
+      filtered = filtered.filter(
+        (item) => item.log_attributes?.['tf.workspace_id'] === tfWorkspaceID
+      )
     }
     if (tfOperation) {
-      filtered = filtered.filter((item) => item.log_attributes?.['tf.operation'] === tfOperation)
+      filtered = filtered.filter(
+        (item) => item.log_attributes?.['tf.operation'] === tfOperation
+      )
     }
     if (k8sKind) {
-      filtered = filtered.filter((item) => item.log_attributes?.['k8s.kind'] === k8sKind)
+      filtered = filtered.filter(
+        (item) => item.log_attributes?.['k8s.kind'] === k8sKind
+      )
     }
     if (k8sNamespace) {
-      filtered = filtered.filter((item) => item.log_attributes?.['k8s.namespace'] === k8sNamespace)
+      filtered = filtered.filter(
+        (item) => item.log_attributes?.['k8s.namespace'] === k8sNamespace
+      )
     }
     if (k8sName) {
-      filtered = filtered.filter((item) => item.log_attributes?.['k8s.name'] === k8sName)
+      filtered = filtered.filter(
+        (item) => item.log_attributes?.['k8s.name'] === k8sName
+      )
     }
 
     if (spanId) {
@@ -269,14 +285,38 @@ export const useLogFilters = <T extends TOTELLog>(
     setMultiValue(PARAM_SEVERITY, [])
   }, [setMultiValue])
 
-  const setTool = useCallback((v: string) => setSingleValue(PARAM_TOOL, v), [setSingleValue])
-  const setHelmReleaseName = useCallback((v: string) => setSingleValue(PARAM_HELM_RELEASE, v), [setSingleValue])
-  const setHelmOperation = useCallback((v: string) => setSingleValue(PARAM_HELM_OPERATION, v), [setSingleValue])
-  const setTfWorkspaceID = useCallback((v: string) => setSingleValue(PARAM_TF_WORKSPACE, v), [setSingleValue])
-  const setTfOperation = useCallback((v: string) => setSingleValue(PARAM_TF_OPERATION, v), [setSingleValue])
-  const setK8sKind = useCallback((v: string) => setSingleValue(PARAM_K8S_KIND, v), [setSingleValue])
-  const setK8sNamespace = useCallback((v: string) => setSingleValue(PARAM_K8S_NAMESPACE, v), [setSingleValue])
-  const setK8sName = useCallback((v: string) => setSingleValue(PARAM_K8S_NAME, v), [setSingleValue])
+  const setTool = useCallback(
+    (v: string) => setSingleValue(PARAM_TOOL, v),
+    [setSingleValue]
+  )
+  const setHelmReleaseName = useCallback(
+    (v: string) => setSingleValue(PARAM_HELM_RELEASE, v),
+    [setSingleValue]
+  )
+  const setHelmOperation = useCallback(
+    (v: string) => setSingleValue(PARAM_HELM_OPERATION, v),
+    [setSingleValue]
+  )
+  const setTfWorkspaceID = useCallback(
+    (v: string) => setSingleValue(PARAM_TF_WORKSPACE, v),
+    [setSingleValue]
+  )
+  const setTfOperation = useCallback(
+    (v: string) => setSingleValue(PARAM_TF_OPERATION, v),
+    [setSingleValue]
+  )
+  const setK8sKind = useCallback(
+    (v: string) => setSingleValue(PARAM_K8S_KIND, v),
+    [setSingleValue]
+  )
+  const setK8sNamespace = useCallback(
+    (v: string) => setSingleValue(PARAM_K8S_NAMESPACE, v),
+    [setSingleValue]
+  )
+  const setK8sName = useCallback(
+    (v: string) => setSingleValue(PARAM_K8S_NAME, v),
+    [setSingleValue]
+  )
 
   const handleSearchChange = useCallback(
     (query: string) => setSingleValue(PARAM_BODY, query),
@@ -337,7 +377,8 @@ export const useLogFilters = <T extends TOTELLog>(
   const serverFilters: TLogStreamFilters = useMemo(() => {
     const f: TLogStreamFilters = {}
     if (!includeSystemLogs) f.scope_name = ['oteljob']
-    if (selectedSeverities.size > 0) f.severity_text = Array.from(selectedSeverities)
+    if (selectedSeverities.size > 0)
+      f.severity_text = Array.from(selectedSeverities)
     if (tool) f.tool = tool
     if (helmReleaseName) f.helm_release_name = helmReleaseName
     if (helmOperation) f.helm_operation = helmOperation

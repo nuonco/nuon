@@ -3,7 +3,9 @@ import { FormErrorBanner } from './FormErrorBanner'
 
 export default { title: 'Common/Forms/FormErrorBanner' }
 
-const apiError = { error: 'A webhook with this URL already exists.' } as TAPIError
+const apiError = {
+  error: 'A webhook with this URL already exists.',
+} as TAPIError
 
 export const WithError = () => (
   <div className="max-w-md p-4">
@@ -28,7 +30,10 @@ export const WithDescription = () => (
 
 export const FallbackMessage = () => (
   <div className="max-w-md p-4">
-    <FormErrorBanner error={{} as TAPIError} fallback="Unable to create webhook" />
+    <FormErrorBanner
+      error={{} as TAPIError}
+      fallback="Unable to create webhook"
+    />
   </div>
 )
 

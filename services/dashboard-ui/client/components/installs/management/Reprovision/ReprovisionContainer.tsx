@@ -16,7 +16,9 @@ import { ReprovisionModal } from './Reprovision'
 
 interface IReprovision {}
 
-export const ReprovisionModalContainer = ({ ...props }: IReprovision & Omit<IModal, 'onSubmit'>) => {
+export const ReprovisionModalContainer = ({
+  ...props
+}: IReprovision & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
@@ -25,7 +27,11 @@ export const ReprovisionModalContainer = ({ ...props }: IReprovision & Omit<IMod
   const queryClient = useQueryClient()
   const [selectedRole, setSelectedRole] = useState<string>('')
 
-  const { mutate, isPending: isLoading, error } = useMutation({
+  const {
+    mutate,
+    isPending: isLoading,
+    error,
+  } = useMutation({
     mutationFn: () =>
       reprovisionInstall({
         orgId: org.id,
@@ -37,7 +43,10 @@ export const ReprovisionModalContainer = ({ ...props }: IReprovision & Omit<IMod
       }),
     onSuccess: (result) => {
       addToast(
-        <Toast heading={`${install.name} reprovision was started`} theme="success">
+        <Toast
+          heading={`${install.name} reprovision was started`}
+          theme="success"
+        >
           <Text>Reprovisioning {install.name} workflow was created.</Text>
         </Toast>
       )

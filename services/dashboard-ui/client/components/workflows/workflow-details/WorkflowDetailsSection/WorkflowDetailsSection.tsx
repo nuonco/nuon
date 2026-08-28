@@ -24,12 +24,14 @@ interface IWorkflowDetailsSection {
   workflow: TWorkflow
   orgId: string
   install?: TInstall
+  noun?: 'workflow' | 'run'
 }
 
 export const WorkflowDetailsSection = ({
   workflow,
   orgId,
   install,
+  noun = 'workflow',
 }: IWorkflowDetailsSection) => {
   const changedInputs = useMemo<ChangedInput[]>(() => {
     if (
@@ -77,7 +79,7 @@ export const WorkflowDetailsSection = ({
             {workflow?.created_by?.email}
           </Text>
           <Text theme="neutral">
-            initiated this workflow{' '}
+            initiated this {noun}{' '}
             <Time time={workflow.created_at} format="relative" />
           </Text>
         </div>
@@ -93,7 +95,9 @@ export const WorkflowDetailsSection = ({
           <hr className="-mx-4" />
 
           <div className="flex flex-wrap items-start gap-x-16 gap-y-4">
-            <LabeledValue label="Workflow ID">
+            <LabeledValue
+              label={`${noun === 'workflow' ? 'Workflow' : 'Run'} ID`}
+            >
               <ID theme="default">{workflow.id}</ID>
             </LabeledValue>
 

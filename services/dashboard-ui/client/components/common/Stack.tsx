@@ -50,7 +50,7 @@ export const Stack = ({
       GAP[gap],
       ALIGN[align],
       JUSTIFY[justify],
-      className,
+      className
     )}
     {...props}
   >

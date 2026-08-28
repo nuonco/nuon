@@ -37,6 +37,7 @@ func (a *Activities) GetNonBranchManagedInstallIDs(ctx context.Context, input *G
 	var installs []app.Install
 	if err := a.db.WithContext(ctx).
 		Where(app.Install{AppID: input.AppID}).
+		Scopes(app.VendorManagedInstalls).
 		Find(&installs).Error; err != nil {
 		return nil, fmt.Errorf("unable to query installs: %w", err)
 	}
