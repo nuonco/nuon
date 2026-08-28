@@ -727,6 +727,13 @@ const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
     [customerSecrets]
   )
 
+  const config = useConfig()
+  // The provider defaults to the production runner API, so a local, stage, or BYOC
+  // control plane has to name itself here.
+  const providerBlock = config.runnerApiUrl
+    ? `provider "stack" {\n  api_url = "${config.runnerApiUrl}"\n}`
+    : 'provider "stack" {}'
+
   const mainTf = `terraform {
   required_providers {
     aws   = { source = "hashicorp/aws" }
@@ -738,7 +745,7 @@ provider "aws" {
   region = "${region}"
 }
 
-provider "stack" {}
+${providerBlock}
 
 module "aws_stack" {
   source  = "nuonco/stack/aws"
@@ -765,6 +772,13 @@ module "aws_stack" {
             <ClickToCopyButton textToCopy={mainTf} />
           </span>
           <Code variant="preformated">{mainTf}</Code>
+          {config.runnerApiUrl ? null : (
+            <Text variant="subtext" theme="neutral">
+              This control plane has not published its runner API URL, so the
+              provider will default to production. Set{' '}
+              <code>NUON_RUNNER_API_URL</code> on the dashboard and reload.
+            </Text>
+          )}
         </Card>
         {secretExports ? (
           <Card>
