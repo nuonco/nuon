@@ -36,13 +36,23 @@ func NewApprovalPauseErr(stepID string) *ApprovalPauseErr {
 // why the flow stopped and signals to the execute-flow signal that it should
 // not enter the retry-wait loop.
 type FlowStoppedErr struct {
-	StepID           string
-	Reason           string
-	RetriesExhausted bool
+	StepID                 string
+	Reason                 string
+	RetriesExhausted       bool
+	StatusHumanDescription string
 }
 
 func (e *FlowStoppedErr) Error() string {
-	return fmt.Sprintf("workflow stopped at step %s: %s", e.StepID, e.Reason)
+	switch {
+	case e.StepID == "" && e.Reason == "":
+		return "workflow stopped"
+	case e.StepID == "":
+		return fmt.Sprintf("workflow stopped: %s", e.Reason)
+	case e.Reason == "":
+		return fmt.Sprintf("workflow stopped at step %s", e.StepID)
+	default:
+		return fmt.Sprintf("workflow stopped at step %s: %s", e.StepID, e.Reason)
+	}
 }
 
 func NewFlowStoppedErr(stepID, reason string) *FlowStoppedErr {
