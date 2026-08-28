@@ -7,7 +7,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) ListServiceAccounts(ctx context.Context, includeRunners bool, offset, limit int, asJSON bool) error {
+func (s *Service) ListServiceAccounts(ctx context.Context, includeRunners, includeStacks bool, offset, limit int, asJSON bool) error {
 	if s.cfg.OrgID == "" {
 		s.printOrgNotSetMsg()
 		return nil
@@ -15,7 +15,7 @@ func (s *Service) ListServiceAccounts(ctx context.Context, includeRunners bool, 
 
 	view := ui.NewListView()
 
-	accounts, _, err := s.api.ListServiceAccounts(ctx, includeRunners, &models.GetPaginatedQuery{
+	accounts, _, err := s.api.ListServiceAccounts(ctx, includeRunners, includeStacks, &models.GetPaginatedQuery{
 		Offset: offset,
 		Limit:  limit,
 	})
