@@ -2,12 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallStack } from '@/lib'
-import {
-  InstallStacksTable,
-  parseInstallStackSummaryToTableData,
-} from './InstallStacksTable'
-
-const LIMIT = 10
+import { InstallStacksTable } from './InstallStacksTable'
 
 export const InstallStacksTableContainer = ({
   pollInterval = 20000,
@@ -27,18 +22,12 @@ export const InstallStacksTableContainer = ({
     enabled: !!org?.id && !!install?.id,
   })
 
-  const pagination = { hasNext: false, offset: 0, limit: LIMIT }
-
-  if (isLoading) {
-    return <InstallStacksTable data={[]} isLoading pagination={pagination} />
-  }
-  if (!stack) return null
-
   return (
     <InstallStacksTable
-      data={parseInstallStackSummaryToTableData(stack, org.id, install.app_id)}
-      isLoading={false}
-      pagination={pagination}
+      versions={stack?.versions ?? []}
+      orgId={org?.id}
+      appId={install?.app_id}
+      isLoading={isLoading}
     />
   )
 }
