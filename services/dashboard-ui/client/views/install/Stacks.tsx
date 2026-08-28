@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { EditStackOverridesButton } from '@/components/installs/management/EditStackOverrides'
 import { CustomStackTemplateURL } from '@/components/stacks/CustomStackTemplateURL'
-import { InstallStackVersionCards } from '@/components/stacks/InstallStackVersionCards'
+import { InstallStacksTable } from '@/components/stacks/InstallStacksTable'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
@@ -19,7 +19,7 @@ import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
-import { getAppConfig, getAppConfigs, getInstallStack } from '@/lib'
+import { getAppConfig, getAppConfigs } from '@/lib'
 import { hasNewerAppConfig, hasStackConfigChanged } from '@/utils/app-utils'
 
 export const Stacks = () => {
@@ -61,14 +61,6 @@ export const Stacks = () => {
         recurse: true,
       }),
     enabled: newerAppConfig && !!latestConfigSummary?.id,
-  })
-
-  const { data: stack } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['install-stack', org?.id, install?.id],
-    queryFn: () => getInstallStack({ orgId: org.id, installId: install.id }),
-    refetchInterval: 20000,
-    enabled: !!org?.id && !!install?.id,
   })
 
   const stackChanged = hasStackConfigChanged(config, latestFullConfig)
@@ -292,16 +284,12 @@ export const Stacks = () => {
         )
       })()}
 
-      <div className="flex flex-col gap-4">
-        <Text weight="strong">Install stack versions</Text>
-        {stack ? (
-          <InstallStackVersionCards
-            stack={stack}
-            orgId={org?.id}
-            appId={install?.app_id}
-          />
-        ) : null}
-      </div>
+      <SectionHeader
+        title="Stack versions"
+        description="Each version this install has applied. Select a version to inspect its runs and outputs."
+      />
+
+      <InstallStacksTable shouldPoll />
     </PageSection>
   )
 }

@@ -1,62 +1,104 @@
-import { Badge } from '@/components/common/Badge'
+import { useMemo } from 'react'
+import type { ColumnDef } from '@tanstack/react-table'
+import { Dropdown } from '@/components/common/Dropdown'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Icon } from '@/components/common/Icon'
+import { Menu } from '@/components/common/Menu'
 import { Status } from '@/components/common/Status'
+import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { ResendOrgInviteButton } from '@/components/team/ResendOrgInvite'
 import { RevokeOrgInviteButton } from '@/components/team/RevokeOrgInvite'
 import type { TOrgInvite } from '@/types'
+
+export interface IInvitedUsers {
+  invites: TOrgInvite[]
+  roleTitles: (roleType: string | undefined) => string
+  isLoading: boolean
+  isError: boolean
+}
+
+const ActionCell = ({ invite }: { invite: TOrgInvite }) => (
+  <Dropdown
+    id={`invite-action-${invite?.id}`}
+    buttonText={<Icon variant="DotsThreeIcon" size={20} weight="bold" />}
+    hideIcon
+    variant="ghost"
+    buttonClassName="!p-1"
+    alignment="right"
+  >
+    <Menu>
+      <span>
+        <ResendOrgInviteButton invite={invite} isMenuButton />
+      </span>
+      <span>
+        <RevokeOrgInviteButton invite={invite} isMenuButton />
+      </span>
+    </Menu>
+  </Dropdown>
+)
 
 export const InvitedUsers = ({
   invites,
   roleTitles,
   isLoading,
   isError,
-}: {
-  invites: TOrgInvite[]
-  roleTitles: (roleType: string | undefined) => string
-  isLoading: boolean
-  isError: boolean
-}) => {
-  if (isLoading) {
-    return (
-      <div className="flex flex-col gap-2">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4">
-            <Status loading variant="badge" />
-            <Text variant="subtext" loading loadingWidth={18} />
-            <Badge loading size="sm" variant="code" />
-          </div>
-        ))}
-      </div>
-    )
-  }
+}: IInvitedUsers) => {
+  const pendingInvites = useMemo(
+    () => invites?.filter((invite) => invite?.status !== 'accepted') ?? [],
+    [invites]
+  )
+
+  const columns = useMemo<ColumnDef<TOrgInvite, unknown>[]>(
+    () => [
+      {
+        accessorKey: 'email',
+        header: 'Email',
+        cell: ({ row }) => (
+          <Text variant="body">{row.original?.email}</Text>
+        ),
+      },
+      {
+        id: 'role',
+        accessorFn: (invite) => roleTitles(invite?.role_type),
+        header: 'Role',
+        cell: ({ row }) => (
+          <Text variant="body">{roleTitles(row.original?.role_type)}</Text>
+        ),
+      },
+      {
+        accessorKey: 'status',
+        header: 'Status',
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Status variant="badge" status={row.original?.status} />
+        ),
+      },
+      {
+        id: 'more-options',
+        header: '',
+        enableSorting: false,
+        cell: ({ row }) => <ActionCell invite={row.original} />,
+      },
+    ],
+    [roleTitles]
+  )
+
   if (isError) return <InvitedUsersError />
 
-  const pendingInvites = invites?.filter((i) => i?.status !== 'accepted') ?? []
-
-  if (!pendingInvites.length) {
-    return (
-      <InvitedUsersError
-        title="No active invites"
-        message="No outstanding invites to this org"
-      />
-    )
-  }
-
   return (
-    <div className="flex flex-col gap-2">
-      {pendingInvites.map((i) => (
-        <div className="flex items-center gap-4" key={i?.id}>
-          <Status variant="badge" status={i?.status} />
-          <Text variant="subtext">{i?.email}</Text>
-          <Badge size="sm" variant="code">
-            {roleTitles(i?.role_type)}
-          </Badge>
-          <ResendOrgInviteButton invite={i} size="sm" />
-          <RevokeOrgInviteButton invite={i} size="sm" />
-        </div>
-      ))}
-    </div>
+    <Table<TOrgInvite>
+      columns={columns}
+      data={pendingInvites}
+      enableSearch={false}
+      isLoading={isLoading}
+      skeletonRows={2}
+      emptyStateProps={{
+        variant: 'table',
+        emptyTitle: 'No active invites',
+        emptyMessage: 'No outstanding invites to this org.',
+      }}
+    />
   )
 }
 
