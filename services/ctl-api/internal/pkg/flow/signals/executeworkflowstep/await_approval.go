@@ -71,6 +71,11 @@ func (s *Signal) dispatchApprovalResponse(ctx workflow.Context, step *app.Workfl
 // directive and expired status are already written when it is returned.
 var errApprovalExpired = errors.New("approval expired")
 
+// approvalExpiredStopVersion gates the expired-approval stop path: histories
+// written before it recorded only the step-status update on expiry, so the
+// target-status and stop-directive activities must not replay into them.
+const approvalExpiredStopVersion = "approval-expired-stop-v1"
+
 // waitForApprovalResponse waits for an approval response reactively using the
 // "approve-plan" update handler.
 func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep) (*app.WorkflowStepApprovalResponse, error) {
@@ -89,6 +94,9 @@ func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow
 			ID:     step.ID,
 			Status: expired,
 		})
+		if workflow.GetVersion(ctx, approvalExpiredStopVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return nil, fmt.Errorf("approval timed out for step %s", step.ID)
+		}
 		if terr := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
 			StepID:            step.ID,
 			Status:            app.WorkflowStepApprovalStatusApprovalExpired,
