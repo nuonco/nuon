@@ -25,6 +25,7 @@ In order to use a Terraform module, your customer will need the following.
 - A Terraform project, with their own state backend configured.
 - A secret store.
 - Credentials for the cloud account they want to provision the stack in.
+- On GCP, the project and region to provision into, if the install has not been provisioned before. AWS records the region when the install is created; on GCP the target is recorded by the first apply, so the first one must pass `project_id` and `region` to the module.
 - Outbound network access to the Terraform Registry from their CI (to install the module and the `nuonco/stack` provider).
 - Outbound network access to the Nuon runner API from their CI (so the provider can fetch the stack configuration at plan time).
 
@@ -79,7 +80,8 @@ The rest of the process is completed by your customer, using the information you
   <Step title="Import the stack module">
     Your customer must import the module using the Terraform snippet you saved from the provision workflow.
 
-    ```hcl main.tf
+    <CodeGroup>
+    ```hcl AWS
     terraform {
       required_providers {
         aws   = { source = "hashicorp/aws" }
@@ -114,6 +116,47 @@ The rest of the process is completed by your customer, using the information you
       description = "License key that activates the product."
     }
     ```
+
+    ```hcl GCP
+    terraform {
+      required_providers {
+        google = { source = "hashicorp/google" }
+        stack  = { source = "nuonco/stack" }
+      }
+    }
+
+    provider "google" {
+      project = "my-project"
+      region  = "us-central1"
+    }
+
+    provider "stack" {}
+
+    module "gcp_stack" {
+      source  = "nuonco/stack/gcp"
+      version = "~> 0.1"
+
+      install_id = "<install-id>"
+
+      inputs = {
+        machine_type = "e2-standard-4"
+      }
+
+      secrets = {
+        license_key = { value = var.license_key }
+      }
+    }
+
+    variable "license_key" {
+      type        = string
+      sensitive   = true
+      description = "License key that activates the product."
+    }
+    ```
+    </CodeGroup>
+
+    On GCP, the module reads the install's project and region from the control plane, so they appear only in the `google` provider block.
+    Before the install's first apply the control plane has nothing recorded, and the plan will fail asking for them — pass `project_id` and `region` to the module for that first apply, then drop them.
   </Step>
   <Step title="Configure the secret values">
     Nuon credentials and app secret values are supplied using environment variables, so they are never written to Terraform files or committed to version control.

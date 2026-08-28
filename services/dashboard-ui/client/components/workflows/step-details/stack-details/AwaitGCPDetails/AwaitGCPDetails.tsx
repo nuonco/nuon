@@ -10,6 +10,8 @@ import { Link } from '@/components/common/Link'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { createFileDownload } from '@/utils/file-download'
+import { TFModuleTab } from '../tf-module'
+import type { IMainTfParts } from '../tf-module'
 import type { IStackDetails } from '../types'
 
 interface StackEnvelope {
@@ -73,9 +75,12 @@ function withSpaceliftGCPPlaceholders(tfvars: string): string {
 }
 
 interface IAwaitGCPDetails extends IStackDetails {
+  orgId: string
   installId?: string
   gcpProjectId?: string
+  gcpRegion?: string
   spaceliftEnabled?: boolean
+  tfProvider?: boolean
 }
 
 const telemetryExportConfigFilename = 'telemetry-export-config.yaml'
@@ -94,9 +99,12 @@ exporters:
 
 export const AwaitGCPDetails = ({
   stack,
+  orgId,
   installId,
   gcpProjectId,
+  gcpRegion,
   spaceliftEnabled,
+  tfProvider = false,
   loading,
 }: IAwaitGCPDetails) => {
   const version = stack?.versions?.at(0)
@@ -165,10 +173,27 @@ export const AwaitGCPDetails = ({
         Setup your install stack
       </Text>
 
-      {hasSpacelift ? (
+      {hasSpacelift || tfProvider ? (
         <Tabs
-          initActiveTab="terraform"
+          // The published module is the recommended path, so it opens first
+          // wherever it is available.
+          initActiveTab={tfProvider ? 'tfmodule' : 'terraform'}
+          tabLabels={{ tfmodule: 'TF Module' }}
           tabs={{
+            // Gated on the org feature until the module release it depends on
+            // is published.
+            ...(tfProvider
+              ? {
+                  tfmodule: (
+                    <GCPTFModuleTab
+                      orgId={orgId}
+                      installId={installId}
+                      gcpProjectId={gcpProjectId}
+                      gcpRegion={gcpRegion}
+                    />
+                  ),
+                }
+              : {}),
             terraform: (
               <TerraformTab
                 inputsTfvars={envelope.inputs}
@@ -176,15 +201,19 @@ export const AwaitGCPDetails = ({
                 installId={installId}
               />
             ),
-            spacelift: (
-              <SpaceliftTab
-                adminTf={envelope.spaceliftAdminTf}
-                blueprintYaml={envelope.spaceliftBlueprintYaml}
-                inputsTfvars={envelope.inputs}
-                secretsTfvars={envelope.secrets}
-                installId={installId}
-              />
-            ),
+            ...(hasSpacelift
+              ? {
+                  spacelift: (
+                    <SpaceliftTab
+                      adminTf={envelope.spaceliftAdminTf}
+                      blueprintYaml={envelope.spaceliftBlueprintYaml}
+                      inputsTfvars={envelope.inputs}
+                      secretsTfvars={envelope.secrets}
+                      installId={installId}
+                    />
+                  ),
+                }
+              : {}),
           }}
         />
       ) : (
@@ -720,5 +749,64 @@ const BlueprintSubTab = ({ blueprintYaml }: IBlueprintSubTab) => {
         </Text>
       </div>
     </div>
+  )
+}
+
+interface IGCPTFModuleTab {
+  orgId: string
+  installId?: string
+  gcpProjectId?: string
+  gcpRegion?: string
+}
+
+// The GCP half of the TF Module tab: which providers to require, and the module
+// source. Auth, inputs, secrets and the step layout are shared.
+//
+// project and region go in the google provider block only. The module reads the
+// install's target from the control plane, so repeating them as module arguments
+// would be a second copy of the same value to drift. They fall back to
+// placeholders before the first provision has recorded them.
+const GCPTFModuleTab = ({
+  orgId,
+  installId,
+  gcpProjectId,
+  gcpRegion,
+}: IGCPTFModuleTab) => {
+  const project = gcpProjectId || '<gcp-project-id>'
+  const region = gcpRegion || '<gcp-region>'
+
+  const buildMainTf = ({
+    installId: id,
+    providerBlock,
+    inputsBlock,
+    secretsBlock,
+    secretVariablesBlock,
+  }: IMainTfParts) => `terraform {
+  required_providers {
+    google = { source = "hashicorp/google" }
+    stack  = { source = "nuonco/stack" }
+  }
+}
+
+provider "google" {
+  project = "${project}"
+  region  = "${region}"
+}
+
+${providerBlock}
+
+module "gcp_stack" {
+  source  = "nuonco/stack/gcp"
+  version = "~> 0.1"
+
+  install_id = "${id}"${inputsBlock}${secretsBlock}
+}${secretVariablesBlock}`
+
+  return (
+    <TFModuleTab
+      orgId={orgId}
+      installId={installId}
+      buildMainTf={buildMainTf}
+    />
   )
 }
