@@ -13,6 +13,12 @@ import (
 
 const SignalType signal.SignalType = "update-app-config"
 
+// branchRunStatusRemovedVersion gates the removal of the branch-run
+// config-version status update; in-flight histories scheduled that activity
+// and must keep replaying it.
+// todo(sk): clean this after terminating old workflows
+const branchRunStatusRemovedVersion = "branch-run-version-status-removed-v1"
+
 type Signal struct {
 	InstallID      string            `json:"install_id"`
 	NewAppConfigID string            `json:"new_app_config_id"`
@@ -111,7 +117,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		metadata["triggered_by"] = s.TriggeredBy
 	}
 
-	if s.AppBranchRunID == "" {
+	if s.AppBranchRunID != "" {
+		if workflow.GetVersion(ctx, branchRunStatusRemovedVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			if _, err := activities.AwaitUpdateInstallAppConfigVersionStatus(ctx, &activities.UpdateInstallAppConfigVersionStatusInput{
+				AppBranchRunID: s.AppBranchRunID,
+				InstallID:      s.InstallID,
+				Metadata:       metadata,
+			}); err != nil {
+				return fmt.Errorf("unable to update install app config version status: %w", err)
+			}
+		}
+	} else {
 		if _, err := activities.AwaitCreateInstallAppConfigVersion(ctx, &activities.CreateInstallAppConfigVersionInput{
 			InstallID:      s.InstallID,
 			OldAppConfigID: install.AppConfigID,
