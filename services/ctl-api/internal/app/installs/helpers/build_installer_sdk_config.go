@@ -24,6 +24,9 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 	var install app.Install
 	if res := h.db.WithContext(ctx).
 		Preload("AWSAccount").
+		// Install.AfterQuery does not load cloud accounts, so without this the gcp
+		// branch below always sees a nil GCPAccount and serves an empty target.
+		Preload("GCPAccount").
 		// Newest row only: AfterQuery promotes it to CurrentInstallInputs, which the
 		// input values and cluster_name below both read.
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
