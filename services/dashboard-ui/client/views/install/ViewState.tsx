@@ -14,8 +14,20 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallState } from '@/lib'
 import { createFileDownload } from '@/utils/file-download'
+import { CustomerManagedSnapshotState } from '@/components/customer-managed-support/SnapshotState'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
 
 export const ViewState = () => {
+  const { install } = useInstall()
+
+  return isCustomerManagedInstall(install) ? (
+    <CustomerManagedSnapshotState />
+  ) : (
+    <ConnectedViewState />
+  )
+}
+
+const ConnectedViewState = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const [isCopied, setIsCopied] = useState(false)

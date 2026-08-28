@@ -21,8 +21,17 @@ func (s *InstallsServiceTestSuite) TestGetOrgInstallsEmpty() {
 }
 
 func (s *InstallsServiceTestSuite) TestGetOrgInstallsReturnsList() {
+	install := s.createTestInstall()
 	s.createTestInstall()
-	s.createTestInstall()
+	operatingModel := app.InstallOperatingModel{
+		InstallID:         install.ID,
+		Connectivity:      app.InstallConnectivityDisconnected,
+		ReleaseSelection:  app.InstallReleaseSelectionCustomer,
+		CommandAuthority:  app.InstallAuthorityCustomer,
+		ApprovalAuthority: app.InstallAuthorityCustomer,
+		Telemetry:         app.InstallTelemetryManual,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&operatingModel).Error)
 
 	rr := s.makeRequest(http.MethodGet, "/v1/installs", nil)
 	require.Equal(s.T(), http.StatusOK, rr.Code)
@@ -30,6 +39,14 @@ func (s *InstallsServiceTestSuite) TestGetOrgInstallsReturnsList() {
 	var resp []app.Install
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Len(s.T(), resp, 2)
+	for _, returnedInstall := range resp {
+		if returnedInstall.ID == install.ID {
+			require.NotNil(s.T(), returnedInstall.OperatingModel)
+			assert.Equal(s.T(), operatingModel.ID, returnedInstall.OperatingModel.ID)
+			return
+		}
+	}
+	s.T().Fatalf("install %s was not returned", install.ID)
 }
 
 func (s *InstallsServiceTestSuite) TestGetOrgInstallsCanExcludeComponents() {

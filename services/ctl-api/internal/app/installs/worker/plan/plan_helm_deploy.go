@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/kube"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -54,18 +55,60 @@ func (p *Planner) createHelmDeployPlan(
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
 
+	return p.RenderHelmDeployPlan(l, &RenderHelmDeployPlanInput{
+		Stack:         stack,
+		State:         state,
+		StateData:     stateData,
+		InstallDeploy: installDeploy,
+		CompBuild:     compBuild,
+		RoleSelection: roleSelection,
+		GetHelmChartID: func(ownerID string) (string, error) {
+			hc, err := activities.AwaitGetHelmChartByOwnerID(ctx, ownerID)
+			if err != nil {
+				return "", err
+			}
+			return hc.ID, nil
+		},
+		ResolveClusterInfo: func(cloudAuth *CloudAuth) (*kube.ClusterInfo, error) {
+			return p.resolveKubernetesContext(ctx, &compBuild.ComponentConfigConnection, appCfg, stack, state, cloudAuth)
+		},
+	})
+}
+
+// RenderHelmDeployPlanInput carries the already-loaded data a helm deploy plan
+// is rendered from.
+type RenderHelmDeployPlanInput struct {
+	Stack         *app.InstallStack
+	State         *state.State
+	StateData     map[string]any
+	InstallDeploy *app.InstallDeploy
+	CompBuild     *app.ComponentBuild
+	RoleSelection *operationroles.RoleSelection
+
+	// GetHelmChartID loads the chart at this exact point in the plan render.
+	GetHelmChartID func(string) (string, error)
+	// ResolveClusterInfo resolves the kubernetes cluster at this exact point in
+	// the plan render.
+	ResolveClusterInfo func(*CloudAuth) (*kube.ClusterInfo, error)
+}
+
+// RenderHelmDeployPlan is the pure core of createHelmDeployPlan.
+func (p *Planner) RenderHelmDeployPlan(
+	l *zap.Logger,
+	in *RenderHelmDeployPlanInput,
+) (*plantypes.HelmDeployPlan, error) {
 	// parse out various config fields
-	cfg := compBuild.ComponentConfigConnection.HelmComponentConfig
-	if err := render.RenderStruct(cfg, stateData); err != nil {
+	cfg := in.CompBuild.ComponentConfigConnection.HelmComponentConfig
+	if err := render.RenderStruct(cfg, in.StateData); err != nil {
 		l.Error("error rendering helm config",
 			zap.Error(err),
-			zap.Any("state", stateData),
+			zap.Any("state", in.StateData),
 		)
 		return nil, errors.Wrap(err, "unable to render config")
 	}
 
 	namespace := cfg.Namespace.ValueOrDefault("{{.nuon.install.id}}")
-	renderedNamespace, err := render.RenderV2(namespace, stateData)
+	renderedNamespace, err := render.RenderV2(namespace, in.StateData)
 	if err != nil {
 		l.Error("error rendering namespace",
 			zap.String("namespace", namespace),
@@ -74,7 +117,7 @@ func (p *Planner) createHelmDeployPlan(
 	}
 
 	driver := cfg.StorageDriver.ValueOrDefault("configmap")
-	renderedDriver, err := render.RenderV2(driver, stateData)
+	renderedDriver, err := render.RenderV2(driver, in.StateData)
 	if err != nil {
 		l.Error("error rendering driver",
 			zap.String("driver", driver),
@@ -85,20 +128,16 @@ func (p *Planner) createHelmDeployPlan(
 
 	var helmChartID string
 	if driver == "nuon" {
-		hc, err := activities.AwaitGetHelmChartByOwnerID(
-			ctx,
-			installDeploy.InstallComponent.ID,
-		)
+		helmChartID, err = in.GetHelmChartID(in.InstallDeploy.InstallComponent.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get helm chart")
 		}
-		helmChartID = hc.ID
 	}
 
 	valuesFiles := []string(cfg.ValuesFiles)
 	values := make([]plantypes.HelmValue, 0)
 	for k, v := range generics.ToStringMap(cfg.Values) {
-		v, err = render.RenderV2(v, stateData)
+		v, err = render.RenderV2(v, in.StateData)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to render")
 		}
@@ -112,24 +151,24 @@ func (p *Planner) createHelmDeployPlan(
 	// Install-level Helm values override, carried via a reserved synthetic input.
 	// Rendered like app values so it can reference {{.nuon.*}}. Empty is a no-op.
 	valuesOverride, err := p.installComponentOverride(
-		state, stateData,
-		config.HelmValuesOverrideInputName(installDeploy.ComponentName),
+		in.State, in.StateData,
+		config.HelmValuesOverrideInputName(in.InstallDeploy.ComponentName),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to render helm values override")
 	}
 
-	cloudAuth, err := p.getAuthForDeploy(
-		ctx,
-		roleSelection,
-		stack,
-		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
+	cloudAuth, err := p.AuthForDeploy(
+		l,
+		in.RoleSelection,
+		in.Stack,
+		fmt.Sprintf("component-deploy-%s", in.InstallDeploy.ID),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get auth for deploy")
 	}
 
-	clusterInfo, err := p.resolveKubernetesContext(ctx, &compBuild.ComponentConfigConnection, appCfg, stack, state, cloudAuth)
+	clusterInfo, err := in.ResolveClusterInfo(cloudAuth)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to resolve kubernetes context")
 	}
@@ -154,7 +193,6 @@ func (p *Planner) createHelmDeployPlan(
 }
 
 func (p *Planner) createHelmDeploySandboxMode(
-	ctx workflow.Context,
 	req *plantypes.HelmDeployPlan,
 ) *plantypes.HelmSandboxMode {
 	return &plantypes.HelmSandboxMode{

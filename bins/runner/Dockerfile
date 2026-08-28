@@ -243,6 +243,9 @@ FROM runtime-base AS final
 
 WORKDIR /src/bins/runner
 
+LABEL io.nuon.customer_managed.bundle-schema.min="3" \
+      io.nuon.customer_managed.bundle-schema.max="3"
+
 COPY ./bundle /bundle
 COPY --from=build-versioned /bin/runner /bin/runner
 COPY --from=build-otelcol /bin/nuon-runner-otelcol /bin/nuon-runner-otelcol

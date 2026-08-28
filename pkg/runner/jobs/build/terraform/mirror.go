@@ -1,11 +1,14 @@
 package terraform
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -37,7 +40,9 @@ const (
 	// terraformInstallTimeout bounds the terraform CLI download. It replaces
 	// hc-install's 30s default, which is not enough for a ~30MB archive when
 	// several component builds download concurrently.
-	terraformInstallTimeout = 10 * time.Minute
+	terraformInstallTimeout  = 10 * time.Minute
+	terraformInstallAttempts = 3
+	hashicorpReleasesURL     = "https://releases.hashicorp.com"
 )
 
 type MirrorConfig struct {
@@ -200,7 +205,7 @@ func GenerateProviderMirror(ctx context.Context, srcDir string, cfg MirrorConfig
 	}
 
 	// Now that the provider mirror is in place, also vendor the terraform
-	// CLI binary itself so install runners can run fully airgapped (no
+	// CLI binary itself so customer-managed install runners can run offline (no
 	// fetch from releases.hashicorp.com for `terraform_<ver>_<plat>.zip`
 	// either). Reuses the host-platform binary we already installed above
 	// to avoid a redundant download in the modal single-platform case.
@@ -213,30 +218,8 @@ func GenerateProviderMirror(ctx context.Context, srcDir string, cfg MirrorConfig
 	return nil
 }
 
-// vendorTerraformBinary copies the terraform CLI binary itself into
-// `<srcDir>/<workspace.DefaultBundledBinaryDir>/<host>/terraform` and
-// writes a sibling `VERSION` sidecar recording tfVersion. The artifact
-// packer picks the tree up alongside everything else (mirror, modules,
-// lockfile).
-//
-// We only vendor the host platform's binary, even when `platforms`
-// includes others for the provider mirror. Reasons:
-//
-//  1. hc-install's ExactVersion does not expose OS/Arch overrides, so
-//     cross-platform binary vendoring would require a manual HTTP fetch
-//     against releases.hashicorp.com — not free, and not justified by the
-//     modal use case (homogeneous orgs).
-//  2. The install side is graceful about platform-mismatch artifacts:
-//     workspace.DetectBundledBinary returns "" when the host platform's
-//     binary is absent and the runner falls through to its existing
-//     remotebinary path. So a heterogeneous setup that vendors providers
-//     across platforms still works — just without the binary airgap on
-//     non-build platforms.
-//
-// If we ever need cross-platform binary vendoring, the natural extension
-// is a manual fetch from
-// `https://releases.hashicorp.com/terraform/<ver>/terraform_<ver>_<os>_<arch>.zip`,
-// gated by a TERRAFORM_BINARY_PLATFORMS env var.
+// vendorTerraformBinary copies the host Terraform binary and downloads
+// verified release binaries for the other requested platforms.
 func vendorTerraformBinary(
 	ctx context.Context,
 	l *zap.Logger,
@@ -249,36 +232,20 @@ func vendorTerraformBinary(
 	}
 
 	hostPlatform := runtime.GOOS + "_" + runtime.GOARCH
-
-	skipped := make([]string, 0)
 	for _, p := range platforms {
-		if p != hostPlatform {
-			skipped = append(skipped, p)
+		dst := filepath.Join(binDir, p, bundledBinaryName)
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			return fmt.Errorf("unable to create bundled binary platform dir: %w", err)
 		}
+		if p == hostPlatform {
+			if err := copyExecutable(hostExecPath, dst); err != nil {
+				return fmt.Errorf("unable to copy terraform binary for %s: %w", p, err)
+			}
+		} else if err := fetchTerraformBinary(ctx, http.DefaultClient, hashicorpReleasesURL, tfVersion, p, dst); err != nil {
+			return fmt.Errorf("unable to fetch terraform binary for %s: %w", p, err)
+		}
+		l.Info("vendored terraform CLI binary", zap.String("platform", p), zap.String("version", tfVersion), zap.String("dst", dst))
 	}
-	if len(skipped) > 0 {
-		// Surface the limitation in the build log so heterogeneous-org
-		// operators understand why install runners on non-build
-		// platforms still hit releases.hashicorp.com for the CLI even
-		// though their providers are vendored.
-		l.Info("skipping CLI binary vendoring for non-host platforms (provider mirror still covers them)",
-			zap.String("host_platform", hostPlatform),
-			zap.Strings("skipped_platforms", skipped),
-		)
-	}
-
-	dst := filepath.Join(binDir, hostPlatform, bundledBinaryName)
-	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
-		return fmt.Errorf("unable to create bundled binary platform dir: %w", err)
-	}
-	if err := copyExecutable(hostExecPath, dst); err != nil {
-		return fmt.Errorf("unable to copy terraform binary for %s: %w", hostPlatform, err)
-	}
-	l.Info("vendored terraform CLI binary",
-		zap.String("platform", hostPlatform),
-		zap.String("version", tfVersion),
-		zap.String("dst", dst),
-	)
 
 	// VERSION sidecar: install side uses this to detect terraform_version
 	// drift between the build that produced this artifact and the install
@@ -290,6 +257,77 @@ func vendorTerraformBinary(
 	}
 
 	return nil
+}
+
+func fetchTerraformBinary(ctx context.Context, client *http.Client, baseURL, tfVersion, platform, dst string) error {
+	if !regexp.MustCompile(`^[a-z0-9]+_[a-z0-9]+$`).MatchString(platform) {
+		return fmt.Errorf("invalid terraform platform %q", platform)
+	}
+	filename := fmt.Sprintf("terraform_%s_%s.zip", tfVersion, platform)
+	checksums, err := getReleaseFile(ctx, client, fmt.Sprintf("%s/terraform/%s/terraform_%s_SHA256SUMS", baseURL, tfVersion, tfVersion))
+	if err != nil {
+		return fmt.Errorf("download checksums: %w", err)
+	}
+	expected := ""
+	for line := range strings.Lines(string(checksums)) {
+		fields := strings.Fields(line)
+		if len(fields) == 2 && fields[1] == filename {
+			expected = fields[0]
+			break
+		}
+	}
+	if expected == "" {
+		return fmt.Errorf("checksum for %s not found", filename)
+	}
+	archive, err := getReleaseFile(ctx, client, fmt.Sprintf("%s/terraform/%s/%s", baseURL, tfVersion, filename))
+	if err != nil {
+		return fmt.Errorf("download archive: %w", err)
+	}
+	actual := fmt.Sprintf("%x", sha256.Sum256(archive))
+	if actual != expected {
+		return fmt.Errorf("archive checksum mismatch: got %s", actual)
+	}
+	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	if err != nil {
+		return fmt.Errorf("open archive: %w", err)
+	}
+	for _, file := range zr.File {
+		if file.Name != bundledBinaryName || file.FileInfo().IsDir() {
+			continue
+		}
+		src, err := file.Open()
+		if err != nil {
+			return err
+		}
+		out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
+		if err != nil {
+			src.Close()
+			return err
+		}
+		_, copyErr := io.Copy(out, src)
+		closeErr := errors.Join(src.Close(), out.Close())
+		if err := errors.Join(copyErr, closeErr); err != nil {
+			return err
+		}
+		return os.Chmod(dst, 0o755)
+	}
+	return fmt.Errorf("terraform binary not found in %s", filename)
+}
+
+func getReleaseFile(ctx context.Context, client *http.Client, url string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("GET %s: %s", url, resp.Status)
+	}
+	return io.ReadAll(resp.Body)
 }
 
 // bundledBinaryName mirrors the unexported constant of the same name in
@@ -564,10 +602,31 @@ func installTerraform(ctx context.Context, l *zap.Logger, ver string) (string, f
 		attribute.String("terraform.version", ver),
 		attribute.String("install.dir", installDir),
 	)
-	execPath, err := installer.Install(ctx)
-	if err == nil {
-		if _, serr := os.Stat(execPath); serr != nil {
-			err = fmt.Errorf("terraform binary missing after install: %w", serr)
+	var execPath string
+	for attempt := 1; attempt <= terraformInstallAttempts; attempt++ {
+		execPath, err = installer.Install(ctx)
+		if err == nil {
+			if _, statErr := os.Stat(execPath); statErr == nil {
+				break
+			} else {
+				err = fmt.Errorf("terraform binary missing after install: %w", statErr)
+			}
+		}
+		if ctx.Err() != nil || attempt == terraformInstallAttempts {
+			break
+		}
+		l.Warn("terraform CLI install failed; retrying",
+			zap.String("version", ver),
+			zap.Int("attempt", attempt),
+			zap.Error(err),
+		)
+		if removeErr := os.RemoveAll(installDir); removeErr != nil {
+			err = errors.Join(err, fmt.Errorf("reset terraform install dir: %w", removeErr))
+			break
+		}
+		if mkdirErr := os.MkdirAll(installDir, 0o755); mkdirErr != nil {
+			err = errors.Join(err, fmt.Errorf("recreate terraform install dir: %w", mkdirErr))
+			break
 		}
 	}
 	endInstall(err)

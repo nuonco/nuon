@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -106,6 +107,16 @@ type Client interface {
 	GetAppRelease(ctx context.Context, appID, releaseID string) (*models.AppAppRelease, error)
 	GetAppReleaseFileContent(ctx context.Context, appID, releaseID, path string) (*models.ServiceReleaseFileContentResponse, error)
 
+	CreateCustomerManagedBundle(ctx context.Context, appID, appConfigID, targetPlatform string) (*models.ServiceBundleResponse, error)
+	CreateCustomerManagedBundleWithRequest(ctx context.Context, appID string, req *models.ServiceCreateBundleRequest) (*models.ServiceBundleResponse, error)
+	ListCustomerManagedBundles(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.ServiceBundleResponse, bool, error)
+	GetCustomerManagedBundle(ctx context.Context, appID, bundleID string) (*models.ServiceBundleResponse, error)
+	CreateCustomerManagedBundleDownloadGrant(ctx context.Context, appID, bundleID string) (*models.ServiceDownloadGrantResponse, error)
+	CreateCustomerManagedBundleBlobGrants(ctx context.Context, appID, bundleID string, digests []string) (*models.ServiceBlobGrantsResponse, error)
+	RegisterInstall(ctx context.Context, registration *models.CustomermanagedInstallationRegistration) (*models.ServiceInstallRegistrationResponse, error)
+	CreateInstallSupportSnapshot(ctx context.Context, installID string, archive io.Reader) (*models.ServiceSupportSnapshotResponse, error)
+	ListInstallSupportSnapshots(ctx context.Context, installID string) ([]*models.ServiceSupportSnapshotResponse, error)
+	GetInstallSupportSnapshot(ctx context.Context, installID, snapshotID string) (*models.ServiceSupportSnapshotResponse, error)
 	ListTriggerEvents(ctx context.Context, limit int, trigger string) ([]*models.TriggerEventSummary, error)
 	ListTriggerEventsPage(ctx context.Context, limit int, trigger, cursor string) (*models.TriggerEventPage, error)
 	SearchTriggerEvents(ctx context.Context, filters models.TriggerEventListQuery) (*models.TriggerEventPage, error)

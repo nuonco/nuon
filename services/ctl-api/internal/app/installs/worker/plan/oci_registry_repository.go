@@ -49,6 +49,27 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 		return nil, errors.Wrap(err, "unable to get auth for install registry")
 	}
 
+	return p.RenderInstallRegistryRepository(l, &RenderInstallRegistryRepositoryInput{
+		InstallDeploy: installDeploy,
+		Stack:         stack,
+		StateData:     stateData,
+		CloudAuth:     cloudAuth,
+	})
+}
+
+// RenderInstallRegistryRepositoryInput carries the already-loaded data an install registry repository is rendered from.
+type RenderInstallRegistryRepositoryInput struct {
+	InstallDeploy *app.InstallDeploy
+	Stack         *app.InstallStack
+	StateData     map[string]any
+	CloudAuth     *CloudAuth
+}
+
+// RenderInstallRegistryRepository renders an install registry repository from already-loaded inputs.
+func (p *Planner) RenderInstallRegistryRepository(
+	l *zap.Logger,
+	in *RenderInstallRegistryRepositoryInput,
+) (*configs.OCIRegistryRepository, error) {
 	cfg := &configs.OCIRegistryRepository{
 		Plugin: "oci",
 	}
@@ -56,53 +77,53 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	// NOTE(jm): this is mainly a relic of not having the outputs properly passed from the install sandbox, or a
 	// good way of "cataloging" resources.
 	switch {
-	case stack.InstallStackOutputs.AWSStackOutputs != nil:
+	case in.Stack.InstallStackOutputs.AWSStackOutputs != nil:
 
 		cfg.RegistryType = configs.OCIRegistryTypeECR
-		repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.ecr.repository_url}}", stateData)
+		repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.ecr.repository_url}}", in.StateData)
 		if err != nil {
 			l.Error("error rendering repository",
 				zap.Any("repository", repositoryStr),
 				zap.Error(err),
-				zap.Any("state", stateData),
+				zap.Any("state", in.StateData),
 			)
 			return nil, errors.Wrap(err, "unable to render ecr repository url")
 		}
 		cfg.Repository = repositoryStr
-		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.ecr.registry_url}}", stateData)
+		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.ecr.registry_url}}", in.StateData)
 		if err != nil {
 			l.Error("error rendering registy url",
 				zap.Any("registry-url", loginServer),
 				zap.Error(err),
-				zap.Any("state", stateData),
+				zap.Any("state", in.StateData),
 			)
 			return nil, errors.Wrap(err, "unable to render acr login server")
 		}
 		cfg.LoginServer = loginServer
-		cfg.Region = stack.InstallStackOutputs.AWSStackOutputs.Region
-		cfg.ECRAuth = cloudAuth.AWS
+		cfg.Region = in.Stack.InstallStackOutputs.AWSStackOutputs.Region
+		cfg.ECRAuth = in.CloudAuth.AWS
 
-	case stack.InstallStackOutputs.AzureStackOutputs != nil:
+	case in.Stack.InstallStackOutputs.AzureStackOutputs != nil:
 
 		cfg.RegistryType = configs.OCIRegistryTypeACR
-		repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.acr.name}}", stateData)
+		repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.acr.name}}", in.StateData)
 		if err != nil {
 			l.Error("error rendering repository",
 				zap.Any("repository", repositoryStr),
 				zap.Error(err),
-				zap.Any("state", stateData),
+				zap.Any("state", in.StateData),
 			)
 			return nil, errors.Wrap(err, "unable to render acr repository name")
 		}
 		// Per-component paths so resolved-version tags can't collide across
 		// components. ACR creates nested repositories implicitly on push.
-		cfg.Repository = repositoryStr + "/" + imageNameSegment(installDeploy.ComponentName)
-		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.acr.login_server}}", stateData)
+		cfg.Repository = repositoryStr + "/" + imageNameSegment(in.InstallDeploy.ComponentName)
+		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.acr.login_server}}", in.StateData)
 		if err != nil {
 			l.Error("error rendering registy url",
 				zap.Any("registry-url", loginServer),
 				zap.Error(err),
-				zap.Any("state", stateData),
+				zap.Any("state", in.StateData),
 			)
 			return nil, errors.Wrap(err, "unable to render acr login server")
 		}
@@ -111,34 +132,34 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 			UseDefault: true,
 		}
 
-	case stack.InstallStackOutputs.GCPStackOutputs != nil:
+	case in.Stack.InstallStackOutputs.GCPStackOutputs != nil:
 
 		cfg.RegistryType = configs.OCIRegistryTypeGAR
-		repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.repository_url}}", stateData)
+		repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.repository_url}}", in.StateData)
 		if err != nil {
 			l.Error("error rendering repository",
 				zap.Any("repository", repositoryStr),
 				zap.Error(err),
-				zap.Any("state", stateData),
+				zap.Any("state", in.StateData),
 			)
 			return nil, errors.Wrap(err, "unable to render gar repository url")
 		}
 		// GAR requires an image name within the repo: HOST/PROJECT/REPO/IMAGE.
 		// Per-component paths so resolved-version tags can't collide across components.
-		cfg.Repository = repositoryStr + "/" + imageNameSegment(installDeploy.ComponentName)
-		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.registry_url}}", stateData)
+		cfg.Repository = repositoryStr + "/" + imageNameSegment(in.InstallDeploy.ComponentName)
+		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.registry_url}}", in.StateData)
 		if err != nil {
 			l.Error("error rendering registy url",
 				zap.Any("registry-url", loginServer),
 				zap.Error(err),
-				zap.Any("state", stateData),
+				zap.Any("state", in.StateData),
 			)
 			return nil, errors.Wrap(err, "unable to render gar login server")
 		}
 		cfg.LoginServer = loginServer
-		cfg.Region = stack.InstallStackOutputs.GCPStackOutputs.Region
-		if cloudAuth.GCP != nil {
-			cfg.ServiceAccountEmail = cloudAuth.GCP.ImpersonateServiceAccount
+		cfg.Region = in.Stack.InstallStackOutputs.GCPStackOutputs.Region
+		if in.CloudAuth.GCP != nil {
+			cfg.ServiceAccountEmail = in.CloudAuth.GCP.ImpersonateServiceAccount
 		}
 	}
 
@@ -256,18 +277,40 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 		}
 	}
 
-	appRepoName := fmt.Sprintf("%s/%s", install.OrgID, install.AppID)
-	loginServer := strings.TrimPrefix(accessInfo.ServerAddress, "https://")
+	return b.RenderOrgRegistryRepository(&RenderOrgRegistryRepositoryInput{
+		OrgID:         install.OrgID,
+		AppID:         install.AppID,
+		ServerAddress: accessInfo.ServerAddress,
+		RegistryID:    accessInfo.RegistryID,
+		Username:      accessInfo.Username,
+		RegistryToken: accessInfo.RegistryToken,
+	}), nil
+}
+
+// RenderOrgRegistryRepositoryInput carries the already-loaded data an org registry repository is rendered from.
+type RenderOrgRegistryRepositoryInput struct {
+	OrgID         string
+	AppID         string
+	ServerAddress string
+	RegistryID    string
+	Username      string
+	RegistryToken string
+}
+
+// RenderOrgRegistryRepository renders an org registry repository from already-loaded inputs.
+func (b *Planner) RenderOrgRegistryRepository(in *RenderOrgRegistryRepositoryInput) *configs.OCIRegistryRepository {
+	appRepoName := fmt.Sprintf("%s/%s", in.OrgID, in.AppID)
+	loginServer := strings.TrimPrefix(in.ServerAddress, "https://")
 
 	// For GCP/GAR, the RegistryID from GetOrgECRAccessInfo contains the full GAR URL
 	// (e.g. "us-central1-docker.pkg.dev/project/repo"). Use it to build the full image path.
 	// Always use PrivateOCI with static credentials — the install runner may not have GCP
 	// default credentials (it runs in the customer's cloud, not ours).
-	if accessInfo.RegistryID != "" && strings.Contains(accessInfo.ServerAddress, "pkg.dev") {
-		garURL := accessInfo.RegistryID
+	if in.RegistryID != "" && strings.Contains(in.ServerAddress, "pkg.dev") {
+		garURL := in.RegistryID
 		if idx := strings.Index(garURL, "/"); idx != -1 {
 			loginServer = garURL[:idx]
-			appRepoName = fmt.Sprintf("%s/%s/%s", garURL[idx+1:], install.OrgID, install.AppID)
+			appRepoName = fmt.Sprintf("%s/%s/%s", garURL[idx+1:], in.OrgID, in.AppID)
 		}
 	}
 
@@ -276,11 +319,11 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 		Region:       "",
 		RegistryType: configs.OCIRegistryTypePrivateOCI,
 		OCIAuth: &configs.OCIRegistryAuth{
-			Username: accessInfo.Username,
-			Password: accessInfo.RegistryToken,
+			Username: in.Username,
+			Password: in.RegistryToken,
 		},
 		LoginServer: loginServer,
-	}, nil
+	}
 }
 
 // RenderText does the same thing as render.RenderV2, but using "text/template" instead of "html/template",

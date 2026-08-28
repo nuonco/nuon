@@ -159,6 +159,7 @@ header.topbar { position: sticky; top: 0; z-index: 10; display: flex; align-item
 .top-pills { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .top-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--border-color); border-radius: 999px; background: var(--surface); font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
 .top-pill svg { width: 12px; height: 12px; }
+.top-pill .offline { color: var(--error-text); }
 .top-pill .ok { color: var(--success-text); }
 .top-pill .stale { color: var(--warn-text); }
 

@@ -13,8 +13,20 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallRunbook, getInstallRunbooks } from '@/lib'
+import { CustomerManagedSnapshotRunbookDetail } from '@/components/customer-managed-support/SnapshotRunbooks'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
 
 export const RunbookDetailLayout = () => {
+  const { install } = useInstall()
+
+  return isCustomerManagedInstall(install) ? (
+    <CustomerManagedSnapshotRunbookDetail />
+  ) : (
+    <ConnectedRunbookDetailLayout />
+  )
+}
+
+const ConnectedRunbookDetailLayout = () => {
   const { runbookId } = useParams()
   const { pathname } = useLocation()
   const { org } = useOrg()

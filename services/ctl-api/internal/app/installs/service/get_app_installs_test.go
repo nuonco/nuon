@@ -12,7 +12,16 @@ import (
 )
 
 func (s *InstallsServiceTestSuite) TestGetAppInstallsReturnsList() {
-	s.createTestInstall()
+	install := s.createTestInstall()
+	operatingModel := app.InstallOperatingModel{
+		InstallID:         install.ID,
+		Connectivity:      app.InstallConnectivityDisconnected,
+		ReleaseSelection:  app.InstallReleaseSelectionCustomer,
+		CommandAuthority:  app.InstallAuthorityCustomer,
+		ApprovalAuthority: app.InstallAuthorityCustomer,
+		Telemetry:         app.InstallTelemetryManual,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&operatingModel).Error)
 
 	path := fmt.Sprintf("/v1/apps/%s/installs", s.testApp.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
@@ -25,6 +34,8 @@ func (s *InstallsServiceTestSuite) TestGetAppInstallsReturnsList() {
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Len(s.T(), resp, 1)
 	assert.Equal(s.T(), s.testApp.ID, resp[0].AppID)
+	require.NotNil(s.T(), resp[0].OperatingModel)
+	assert.Equal(s.T(), operatingModel.ID, resp[0].OperatingModel.ID)
 }
 
 func (s *InstallsServiceTestSuite) TestGetAppInstallsFiltersByAppBranch() {

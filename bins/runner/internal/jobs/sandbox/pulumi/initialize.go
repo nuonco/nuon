@@ -25,9 +25,20 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 			return fmt.Errorf("unable to initialize OCI archive: %w", err)
 		}
 
-		l.Info("unpacking OCI archive")
-		if err := arch.Unpack(ctx, h.state.plan.OCISource.Registry, h.state.plan.OCISource.Tag); err != nil {
-			return fmt.Errorf("unable to unpack OCI archive: %w", err)
+		if h.archiveSource != nil {
+			store, ref, ok := h.archiveSource.ResolveArchive(h.state.plan.OCISource.Tag)
+			if !ok {
+				return fmt.Errorf("sandbox source tag %s is not packaged in the bundle; offline runs cannot pull from remote registries", h.state.plan.OCISource.Tag)
+			}
+			l.Info("unpacking OCI archive from bundle")
+			if err := arch.UnpackFromStore(ctx, store, ref); err != nil {
+				return fmt.Errorf("unable to unpack OCI archive from bundle: %w", err)
+			}
+		} else {
+			l.Info("unpacking OCI archive")
+			if err := arch.Unpack(ctx, h.state.plan.OCISource.Registry, h.state.plan.OCISource.Tag); err != nil {
+				return fmt.Errorf("unable to unpack OCI archive: %w", err)
+			}
 		}
 
 		h.state.ociArch = arch

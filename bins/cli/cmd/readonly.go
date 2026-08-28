@@ -72,6 +72,7 @@ var readOnlyCommands = map[string]struct{}{
 	"mcp":                  {},
 	"agents":               {},
 	"context":              {},
+	"download":             {},
 }
 
 func readOnlyFromEnv() bool {

@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/management"
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
+	customermanagedmng "github.com/nuonco/nuon/bins/runner/internal/pkg/customer_managedmng"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/health"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -39,6 +40,18 @@ func (c *cli) registerMng() error {
 	fetchTokenCmd.Flags().Bool("json", false, "Output result as JSON (does not write token to disk)")
 	fetchTokenCmd.Flags().String("platform", "", "Cloud platform to use for authentication (aws, azure, gcp). Defaults to auto-detect.")
 
+	customerManagedCmd := &cobra.Command{
+		Use:   "customer-managed",
+		Short: "Supervise an offline customer-managed runner without a control plane",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			envFile, _ := cmd.Flags().GetString("env-file")
+			imageFile, _ := cmd.Flags().GetString("image-file")
+			return customermanagedmng.Run(cmd.Context(), customermanagedmng.Options{EnvFile: envFile, ImageFile: imageFile})
+		},
+	}
+	customerManagedCmd.Flags().String("env-file", "/opt/nuon/runner/env", "runner environment file")
+	customerManagedCmd.Flags().String("image-file", "/opt/nuon/runner/image", "runner image environment file")
+	mngCmd.AddCommand(customerManagedCmd)
 	mngCmd.AddCommand(fetchTokenCmd)
 	rootCmd.AddCommand(mngCmd)
 	return nil

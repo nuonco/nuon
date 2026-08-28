@@ -19,6 +19,7 @@ import {
   InputsNoResults,
 } from '@/components/installs/InputsFilter'
 import { ComponentOverridesList } from '@/components/install-overrides/ComponentOverridesList'
+import { CustomerManagedSnapshotInputs } from '@/components/customer-managed-support/SnapshotInputs'
 import {
   useInputsFilter,
   type TInputsFilterGroup,
@@ -32,6 +33,7 @@ import { normalizeAppInputGroups } from '@/utils/app-utils'
 import {
   COMPONENT_OVERRIDE_INPUT_GROUP,
   getInputDisplayName,
+  isCustomerManagedInstall,
 } from '@/utils/install-utils'
 
 // Mirrors app.CloudPlatformMetadata in ctl-api — the generated type is an
@@ -68,7 +70,7 @@ const PHONE_HOME_AUTH_LABELS: Array<{
   { key: 'last_rejected_at', label: 'Last rejected' },
 ]
 
-export const CurrentInputs = () => {
+const ConnectedCurrentInputs = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 
@@ -338,5 +340,16 @@ export const CurrentInputs = () => {
         />
       )}
     </PageSection>
+  )
+}
+
+export const CurrentInputs = () => {
+  const { install } = useInstall()
+  return isCustomerManagedInstall(install) ? (
+    <PageSection>
+      <CustomerManagedSnapshotInputs />
+    </PageSection>
+  ) : (
+    <ConnectedCurrentInputs />
   )
 }

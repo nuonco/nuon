@@ -323,20 +323,6 @@ export interface paths {
      */
     get: operations["GetAppBranchLatestConfig"];
   };
-  "/v1/apps/{app_id}/branches/{app_branch_id}/preview-install-candidates": {
-    /**
-     * list preview install candidates for an app branch
-     * @description Lists all installs on the app for preview run selection (includes installs on other branches)
-     */
-    get: operations["GetAppBranchPreviewInstallCandidates"];
-  };
-  "/v1/apps/{app_id}/branches/{app_branch_id}/preview-sources": {
-    /**
-     * list preview sources for an app branch
-     * @description Returns open pull requests targeting the branch and other git branches in the repo
-     */
-    get: operations["GetAppBranchPreviewSources"];
-  };
   "/v1/apps/{app_id}/branches/{app_branch_id}/runs": {
     /**
      * get app branch workflow runs
@@ -348,13 +334,6 @@ export interface paths {
      * @description Creates and triggers a workflow run for an app branch. If config_id is not provided, uses the latest config.
      */
     post: operations["TriggerAppBranchRun"];
-  };
-  "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}": {
-    /**
-     * get an app branch workflow run
-     * @description Returns a branch workflow by either app branch run ID or workflow ID.
-     */
-    get: operations["GetAppBranchRun"];
   };
   "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/builds": {
     /**
@@ -689,6 +668,27 @@ export interface paths {
     /** @description Update app configuration across multiple installs. */
     post: operations["UpdateAppConfigInstallsV2"];
   };
+  "/v1/apps/{app_id}/customer-managed-bundles": {
+    /** list published portable bundles for an app */
+    get: operations["ListCustomerManagedBundles"];
+    /** create and publish an immutable portable bundle */
+    post: operations["CreateCustomerManagedBundle"];
+  };
+  "/v1/apps/{app_id}/customer-managed-bundles/{bundle_id}": {
+    /** get a published portable bundle */
+    get: operations["GetCustomerManagedBundle"];
+  };
+  "/v1/apps/{app_id}/customer-managed-bundles/{bundle_id}/blob-grants": {
+    /**
+     * create download grants for individual content-addressed bundle blobs
+     * @description Grants presigned access to individual bundle blobs so clients can download only blobs missing from their local store. Call with no digests to discover the bundle's OCI index digest, then request grants for missing blobs in batches.
+     */
+    post: operations["CreateCustomerManagedBundleBlobGrants"];
+  };
+  "/v1/apps/{app_id}/customer-managed-bundles/{bundle_id}/download-grants": {
+    /** create a download grant for a published portable bundle */
+    post: operations["CreateCustomerManagedBundleDownloadGrant"];
+  };
   "/v1/apps/{app_id}/input-config": {
     /**
      * @description App input configs allow you to declare the inputs for your application, and do things such as require customer inputs or
@@ -892,6 +892,26 @@ export interface paths {
      * @description get a single app policy config by ID
      */
     get: operations["GetAppPolicyConfig"];
+  };
+  "/v1/apps/{app_id}/releases": {
+    /** list immutable application releases */
+    get: operations["ListAppReleases"];
+    /** create an immutable application release */
+    post: operations["CreateAppRelease"];
+  };
+  "/v1/apps/{app_id}/releases/{release_id}": {
+    /** get an immutable application release */
+    get: operations["GetAppRelease"];
+  };
+  "/v1/apps/{app_id}/releases/{release_id}/files/content": {
+    /** get one authored file from an immutable application release */
+    get: operations["GetAppReleaseFileContent"];
+  };
+  "/v1/apps/{app_id}/releases/{release_id}/packages": {
+    /** list packages for an application release */
+    get: operations["ListReleasePackages"];
+    /** create a portable package for an application release */
+    post: operations["CreateReleasePackage"];
   };
   "/v1/apps/{app_id}/runbooks": {
     /** get runbooks for an app */
@@ -1228,6 +1248,10 @@ export interface paths {
      */
     get: operations["GetComponentDependents"];
   };
+  "/v1/customer-managed/installs": {
+    /** create an authenticated customer-managed install */
+    post: operations["CreateCustomerManagedInstall"];
+  };
   "/v1/general/cli-config": {
     /**
      * Get config for cli
@@ -1311,6 +1335,10 @@ export interface paths {
      * @description Add an entry to the waitlist.
      */
     post: operations["CreateWaitlist"];
+  };
+  "/v1/install-registrations": {
+    /** register a customer-managed installation */
+    post: operations["RegisterInstall"];
   };
   "/v1/install-workflows/{install_workflow_id}": {
     /**
@@ -2099,6 +2127,14 @@ export interface paths {
      */
     get: operations["GetInstallReadme"];
   };
+  "/v1/installs/{install_id}/release-deployments": {
+    /** list immutable release deployment history for an install */
+    get: operations["ListInstallReleaseDeployments"];
+  };
+  "/v1/installs/{install_id}/release-updates": {
+    /** propose a vendor release to a customer-managed install */
+    post: operations["CreateInstallReleaseUpdate"];
+  };
   "/v1/installs/{install_id}/reprovision": {
     /**
      * reprovision an install
@@ -2116,7 +2152,7 @@ export interface paths {
   "/v1/installs/{install_id}/reprovision-stack": {
     /**
      * reprovision an install stack
-     * @description Reprovision an install stack, recreating the runner and its infrastructure. Components are not redeployed.
+     * @description Reprovision an install stack, recreating the runner and its infrastructure. Set `skip_components` to avoid redeploying components on top of the new stack.
      */
     post: operations["ReprovisionInstallStack"];
   };
@@ -2235,6 +2271,16 @@ export interface paths {
      * @description Returns the state history for an install.
      */
     get: operations["GetInstallStateHistory"];
+  };
+  "/v1/installs/{install_id}/support-snapshots": {
+    /** list imported support snapshots for a customer-managed install */
+    get: operations["ListInstallSupportSnapshots"];
+    /** import a customer-managed install support snapshot */
+    post: operations["CreateInstallSupportSnapshot"];
+  };
+  "/v1/installs/{install_id}/support-snapshots/{snapshot_id}": {
+    /** get one imported customer-managed install support snapshot */
+    get: operations["GetInstallSupportSnapshot"];
   };
   "/v1/installs/{install_id}/sync-config": {
     /**
@@ -2688,6 +2734,18 @@ export interface paths {
      * @description Get real-time status of a queue including depth and in-flight signals
      */
     get: operations["GetQueueStatus"];
+  };
+  "/v1/release-packages/{package_id}": {
+    /** get a release package */
+    get: operations["GetReleasePackage"];
+  };
+  "/v1/release-packages/{package_id}/blob-grants": {
+    /** create download grants for content-addressed package blobs */
+    post: operations["CreateReleasePackageBlobGrants"];
+  };
+  "/v1/release-packages/{package_id}/download-grants": {
+    /** create a download grant for a published release package */
+    post: operations["CreateReleasePackageDownloadGrant"];
   };
   "/v1/roles": {
     /**
@@ -3621,14 +3679,12 @@ export interface components {
       connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
       created_at?: string;
       created_by_id?: string;
-      id?: string;
       /**
-       * @description IgnoreChangesRegex is an RE2 pattern matched against every changed file path
-       * in a git-run or git-preview run. When every changed file matches, the run is
-       * marked not-attempted instead of building and deploying. Empty disables the
-       * check, and a forced run bypasses it.
+       * @description DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
+       * branch runs for this config. Manual triggers are unaffected.
        */
-      ignore_changes_regex?: string;
+      disable_branch_triggers?: boolean;
+      id?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
       org_id?: string;
       /**
@@ -3637,14 +3693,8 @@ export interface components {
        * branch's synced app config produced.
        */
       post_deploy_runbook_ids?: string[];
-      preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       runbook_ids?: string[];
-      /**
-       * @description SendStatusesOnIgnore posts a successful commit status when a run is ignored
-       * by IgnoreChangesRegex, so a required check does not block the pull request.
-       */
-      send_statuses_on_ignore?: boolean;
       updated_at?: string;
       workflows?: components["schemas"]["app.Workflow"][];
     };
@@ -3656,7 +3706,6 @@ export interface components {
        */
       all_installs?: boolean;
       app_branch_config_id?: string;
-      auto_approve_on_policies_passing?: boolean | null;
       created_at?: string;
       created_by_id?: string;
       id?: string;
@@ -3667,18 +3716,8 @@ export interface components {
       order?: number;
       org_id?: string;
       updated_at?: string;
-    };
-    "app.AppBranchPreviewConfig": {
-      comment?: boolean;
-      install_id?: string;
-      install_name?: string;
-      label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
-      mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
-      set_statuses?: boolean;
-    };
-    "app.AppBranchPreviewOverride": {
-      install_id?: string;
-      mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
+      /** @description UseForPreviews marks this group for plan-only preview runs (e.g., PR previews). */
+      use_for_previews?: boolean;
     };
     "app.AppBranchRun": {
       app_branch?: components["schemas"]["app.AppBranch"];
@@ -3688,7 +3727,6 @@ export interface components {
       base_branch?: string;
       comparison?: components["schemas"]["app.AppBranchRunComparison"];
       completed_at?: string;
-      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
@@ -3704,7 +3742,6 @@ export interface components {
       no_config_changes?: boolean;
       plan_only?: boolean;
       pr_number?: number;
-      preview?: components["schemas"]["app.AppBranchRunPreview"];
       queue_signal?: components["schemas"]["app.QueueSignal"];
       run_type?: components["schemas"]["app.AppBranchRunType"];
       started_at?: string;
@@ -3729,29 +3766,6 @@ export interface components {
       org_id?: string;
       updated_at?: string;
     };
-    "app.AppBranchRunPreview": {
-      app_branch_run_id?: string;
-      branch_preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
-      created_at?: string;
-      created_by_id?: string;
-      git_ref?: string;
-      id?: string;
-      ignore_changes_regex?: string;
-      input_app_config_id?: string;
-      install_id?: string;
-      install_name?: string;
-      mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
-      org_id?: string;
-      override_preview_config?: components["schemas"]["app.AppBranchPreviewOverride"];
-      resolved_preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
-      send_statuses_on_ignore?: boolean;
-      source?: components["schemas"]["app.AppBranchRunPreviewSource"];
-      updated_at?: string;
-    };
-    /** @enum {string} */
-    "app.AppBranchRunPreviewMode": "plan-only" | "apply" | "build-only";
-    /** @enum {string} */
-    "app.AppBranchRunPreviewSource": "pr" | "commit" | "branch" | "local";
     /** @enum {string} */
     "app.AppBranchRunType": "manual-run" | "git-run" | "git-preview-run";
     "app.AppBreakGlassConfig": {
@@ -3791,6 +3805,7 @@ export interface components {
       runner?: components["schemas"]["app.AppRunnerConfig"];
       sandbox?: components["schemas"]["app.AppSandboxConfig"];
       secrets?: components["schemas"]["app.AppSecretsConfig"];
+      source_config?: components["schemas"]["blobstore.Blob"];
       stack?: components["schemas"]["app.AppStackConfig"];
       state?: string;
       status?: components["schemas"]["app.AppConfigStatus"];
@@ -3977,6 +3992,56 @@ export interface components {
       org_id?: string;
       type?: components["schemas"]["config.AppPolicyType"];
       updated_at?: string;
+    };
+    "app.AppRelease": {
+      app_config_id?: string;
+      app_id?: string;
+      component_build_ids?: {
+        [key: string]: string;
+      };
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      members?: components["schemas"]["app.AppReleaseMember"][];
+      packages?: components["schemas"]["app.ReleasePackage"][];
+      runtime?: components["schemas"]["app.AppReleaseRuntime"];
+      runtime_digest?: string;
+      sandbox_build_id?: string;
+      schema_version?: number;
+      semantic_digest?: string;
+      source_files?: components["schemas"]["customermanaged.ReleaseFile"][];
+      status?: string;
+      status_description?: string;
+      updated_at?: string;
+    };
+    "app.AppReleaseMember": {
+      action_workflow_id?: string;
+      app_sandbox_config_id?: string;
+      build_id?: string;
+      component_config_connection_id?: string;
+      component_id?: string;
+      config_digest?: string;
+      config_toml?: string;
+      content_digest?: string;
+      id?: string;
+      kind?: string;
+      logical_name?: string;
+      release_id?: string;
+      source_identity?: {
+        [key: string]: unknown;
+      };
+      source_type?: string;
+    };
+    "app.AppReleasePlatformRuntime": {
+      portal_binary_url?: string;
+      runner_binary_url?: string;
+    };
+    "app.AppReleaseRuntime": {
+      platforms?: {
+        [key: string]: components["schemas"]["app.AppReleasePlatformRuntime"];
+      };
+      runner_image_tag?: string;
+      runner_image_url?: string;
     };
     "app.AppRunnerConfig": {
       app_config_id?: string;
@@ -4458,6 +4523,27 @@ export interface components {
       vcs_connection?: components["schemas"]["app.VCSConnection"];
       vcs_connection_id?: string;
     };
+    "app.CustomerManagedBundleArtifact": {
+      action_workflow_id?: string;
+      app_sandbox_config_id?: string;
+      bundle_id?: string;
+      component_config_connection_id?: string;
+      component_id?: string;
+      config_digest?: string;
+      digest?: string;
+      id?: string;
+      kind?: string;
+      logical_name?: string;
+      media_type?: string;
+      platform_architecture?: string;
+      platform_os?: string;
+      repository?: string;
+      size?: number;
+      source_identity?: {
+        [key: string]: unknown;
+      };
+      source_type?: string;
+    };
     "app.DockerBuildComponentConfig": {
       build_args?: string[];
       /** @description value */
@@ -4511,7 +4597,6 @@ export interface components {
        */
       update_policy?: string;
       updated_at?: string;
-      verification?: components["schemas"]["signature.Verification"];
     };
     "app.GCPAccount": {
       created_at?: string;
@@ -4729,6 +4814,7 @@ export interface components {
        * every install individually.
        */
       last_health_report_at?: string;
+      latest_registration?: components["schemas"]["app.InstallRegistration"];
       lifecycle_phase?: Record<string, never>;
       links?: {
         [key: string]: unknown;
@@ -4737,6 +4823,7 @@ export interface components {
         [key: string]: string;
       };
       name?: string;
+      operating_model?: components["schemas"]["app.InstallOperatingModel"];
       /**
        * @description PhoneHomeAuthStatus can take the phone_home_auth JSON name precisely because the
        * column itself never serializes.
@@ -4852,6 +4939,7 @@ export interface components {
     "app.InstallAppConfigVersion": {
       app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
+      app_release_id?: string;
       created_at?: string;
       created_by_id?: string;
       diff?: components["schemas"]["blobstore.Blob"];
@@ -4863,6 +4951,7 @@ export interface components {
       };
       new_app_config_id?: string;
       old_app_config_id?: string;
+      operating_model_id?: string;
       org_id?: string;
       status?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
@@ -5139,6 +5228,49 @@ export interface components {
       /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
       workflow_id?: string;
     };
+    "app.InstallOperatingModel": {
+      approval_authority?: string;
+      command_authority?: string;
+      connectivity?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_id?: string;
+      release_selection?: string;
+      telemetry?: string;
+    };
+    "app.InstallRegistration": {
+      association_status?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      imported_at?: string;
+      install_id?: string;
+      integrity_status?: string;
+      package_id?: string;
+      registration?: components["schemas"]["customermanaged.InstallationRegistration"];
+      release_id?: string;
+      source?: string;
+    };
+    "app.InstallReleaseDeployment": {
+      actor?: string;
+      created_at?: string;
+      executor?: string;
+      finished_at?: string;
+      id?: string;
+      install_app_config_version_id?: string;
+      install_id?: string;
+      method?: string;
+      operating_model_id?: string;
+      operation_id?: string;
+      package_id?: string;
+      plan_digest?: string;
+      previous_release_id?: string;
+      release_id?: string;
+      result_directive?: string;
+      started_at?: string;
+      status?: string;
+    };
     "app.InstallRoleSelectionRecord": {
       available?: boolean;
       role_id?: string;
@@ -5240,6 +5372,7 @@ export interface components {
     };
     "app.InstallSandboxRun": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
+      app_sandbox_build_id?: string;
       app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
       /** @description AppliedAt is set when the apply runner job completes successfully. */
       applied_at?: string;
@@ -5312,21 +5445,10 @@ export interface components {
       aws_bucket_name?: string;
       callback_ref?: components["schemas"]["callback.Ref"];
       checksum?: string;
-      /**
-       * @description CompositeError holds a typed, structured error frozen at write time when
-       * stack template generation fails due to a config or rendering problem. It
-       * is nil for successful versions and for failures not attributed to template
-       * rendering (e.g. transient infrastructure upload errors).
-       */
-      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       composite_status?: components["schemas"]["app.CompositeStatus"];
       contents?: string;
       created_at?: string;
       created_by_id?: string;
-      custom_stacks_aws_bucket_key?: string;
-      custom_stacks_input_parameters_map?: Record<string, never>;
-      custom_stacks_output_map?: Record<string, never>;
-      custom_stacks_template_url?: string;
       id?: string;
       install_id?: string;
       install_stack_id?: string;
@@ -5752,7 +5874,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack" | "customer_portal";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -5937,6 +6059,59 @@ export interface components {
       updated_at?: string;
       workflow?: components["schemas"]["signaldb.WorkflowRef"];
     };
+    "app.ReleasePackage": {
+      archive_checksum?: string;
+      archive_size?: number;
+      created_at?: string;
+      created_by_id?: string;
+      format?: string;
+      id?: string;
+      manifest_digest?: string;
+      members?: components["schemas"]["app.ReleasePackageMember"][];
+      oci_index_digest?: string;
+      oci_root_digest?: string;
+      package_digest?: string;
+      plan_digest?: string;
+      release_id?: string;
+      replicas?: components["schemas"]["app.ReleasePackageReplica"][];
+      schema_version?: number;
+      status?: string;
+      status_description?: string;
+      target_platform?: string;
+      updated_at?: string;
+    };
+    "app.ReleasePackageMember": {
+      action_workflow_id?: string;
+      app_sandbox_config_id?: string;
+      component_config_connection_id?: string;
+      component_id?: string;
+      config_digest?: string;
+      digest?: string;
+      id?: string;
+      kind?: string;
+      logical_name?: string;
+      media_type?: string;
+      package_id?: string;
+      platform_architecture?: string;
+      platform_os?: string;
+      repository?: string;
+      size?: number;
+      source_identity?: {
+        [key: string]: unknown;
+      };
+      source_type?: string;
+    };
+    "app.ReleasePackageReplica": {
+      archive_checksum?: string;
+      created_at?: string;
+      id?: string;
+      package_id?: string;
+      provider?: string;
+      region?: string;
+      size?: number;
+      storage_version?: string;
+      verified_at?: string;
+    };
     "app.Role": {
       applies_to?: string[];
       createdBy?: components["schemas"]["app.Account"];
@@ -5956,7 +6131,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack" | "customer_portal";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -6259,6 +6434,10 @@ export interface components {
       };
       id?: string;
       org_id?: string;
+      output_digest?: string;
+      output_media_type?: string;
+      output_repository?: string;
+      output_size?: number;
       runner_job_execution_id?: string;
       success?: boolean;
       updated_at?: string;
@@ -7019,6 +7198,122 @@ export interface components {
       secret_access_key: string;
       session_token: string;
     };
+    "customermanaged.CapturedInput": {
+      bindable?: boolean;
+      default?: string;
+      description?: string;
+      name?: string;
+      required?: boolean;
+      secret?: boolean;
+      type?: string;
+      value?: string;
+      value_available?: boolean;
+      value_status?: string;
+    };
+    "customermanaged.CapturedInputs": {
+      inputs?: components["schemas"]["customermanaged.CapturedInput"][];
+      observed_at?: string;
+    };
+    "customermanaged.CapturedRole": {
+      cloud_id?: string;
+      name?: string;
+      provisioned?: boolean;
+      type?: string;
+    };
+    "customermanaged.CapturedRoles": {
+      observed_at?: string;
+      roles?: components["schemas"]["customermanaged.CapturedRole"][];
+    };
+    "customermanaged.ComponentHealth": {
+      component_id?: string;
+      component_name?: string;
+      component_type?: string;
+      health?: string;
+      install_component_id?: string;
+      resources?: components["schemas"]["customermanaged.ResourceHealth"][];
+      truncated?: boolean;
+    };
+    "customermanaged.Finding": {
+      code?: string;
+      member?: string;
+      message?: string;
+    };
+    "customermanaged.HealthSnapshot": {
+      cluster_access_error?: string;
+      components?: components["schemas"]["customermanaged.ComponentHealth"][];
+      kind?: string;
+      observed_at?: string;
+      sandbox_releases?: components["schemas"]["customermanaged.SandboxReleaseHealth"][];
+    };
+    "customermanaged.HealthTransition": {
+      component_id?: string;
+      component_name?: string;
+      from?: string;
+      observed_at?: string;
+      to?: string;
+    };
+    "customermanaged.InstallationRegistration": {
+      archive_digest?: string;
+      bundle_digest?: string;
+      cloud?: components["schemas"]["customermanaged.InstallationRegistrationCloud"];
+      deployment_id?: string;
+      install_id?: string;
+      installed_at?: string;
+      operation_id?: string;
+      package_digest?: string;
+      package_id?: string;
+      registration_id?: string;
+      release_digest?: string;
+      release_id?: string;
+      schema_version?: number;
+      stack?: components["schemas"]["customermanaged.InstallationRegistrationStack"];
+    };
+    "customermanaged.InstallationRegistrationCloud": {
+      account_id?: string;
+      provider?: string;
+      region?: string;
+    };
+    "customermanaged.InstallationRegistrationStack": {
+      id?: string;
+      name?: string;
+      type?: string;
+    };
+    "customermanaged.QualificationReport": {
+      platform?: string;
+      qualified?: boolean;
+      violations?: components["schemas"]["customermanaged.Finding"][];
+      warnings?: components["schemas"]["customermanaged.Finding"][];
+    };
+    "customermanaged.ReleaseFile": {
+      digest?: string;
+      media_type?: string;
+      path?: string;
+      size?: number;
+    };
+    "customermanaged.ResourceHealth": {
+      api_group?: string;
+      health?: string;
+      kind?: string;
+      message?: string;
+      name?: string;
+      namespace?: string;
+      provider?: string;
+    };
+    "customermanaged.RunnerHeartbeat": {
+      bundle_digest?: string;
+      capabilities?: string[];
+      observed_at?: string;
+      runner_id?: string;
+      session_id?: string;
+      started_at?: string;
+      version?: string;
+    };
+    "customermanaged.SandboxReleaseHealth": {
+      health?: string;
+      namespace?: string;
+      release_name?: string;
+      resources?: components["schemas"]["customermanaged.ResourceHealth"][];
+    };
     "diff.Diff": {
       children?: components["schemas"]["diff.Diff"][];
       diff?: components["schemas"]["diff.DiffKey"];
@@ -7044,6 +7339,85 @@ export interface components {
       /** @description Valid is true if Time is not NULL */
       valid?: boolean;
     };
+    "github.Match": {
+      indices?: number[];
+      text?: string;
+    };
+    "github.Plan": {
+      collaborators?: number;
+      filled_seats?: number;
+      name?: string;
+      private_repos?: number;
+      seats?: number;
+      space?: number;
+    };
+    "github.TextMatch": {
+      fragment?: string;
+      matches?: components["schemas"]["github.Match"][];
+      object_type?: string;
+      object_url?: string;
+      property?: string;
+    };
+    "github.Timestamp": {
+      "time.Time"?: string;
+    };
+    "github.User": {
+      avatar_url?: string;
+      bio?: string;
+      blog?: string;
+      collaborators?: number;
+      company?: string;
+      created_at?: components["schemas"]["github.Timestamp"];
+      disk_usage?: number;
+      email?: string;
+      events_url?: string;
+      followers?: number;
+      followers_url?: string;
+      following?: number;
+      following_url?: string;
+      gists_url?: string;
+      gravatar_id?: string;
+      hireable?: boolean;
+      html_url?: string;
+      id?: number;
+      ldap_dn?: string;
+      location?: string;
+      login?: string;
+      name?: string;
+      node_id?: string;
+      organizations_url?: string;
+      owned_private_repos?: number;
+      /**
+       * @description Permissions and RoleName identify the permissions and role that a user has on a given
+       * repository. These are only populated when calling Repositories.ListCollaborators.
+       */
+      permissions?: {
+        [key: string]: boolean;
+      };
+      plan?: components["schemas"]["github.Plan"];
+      private_gists?: number;
+      public_gists?: number;
+      public_repos?: number;
+      received_events_url?: string;
+      repos_url?: string;
+      role_name?: string;
+      site_admin?: boolean;
+      starred_url?: string;
+      subscriptions_url?: string;
+      suspended_at?: components["schemas"]["github.Timestamp"];
+      /**
+       * @description TextMatches is only populated from search results that request text matches
+       * See: search.go and https://docs.github.com/en/rest/search/#text-match-metadata
+       */
+      text_matches?: components["schemas"]["github.TextMatch"][];
+      total_private_repos?: number;
+      twitter_username?: string;
+      two_factor_authentication?: boolean;
+      type?: string;
+      updated_at?: components["schemas"]["github.Timestamp"];
+      /** @description API URLs */
+      url?: string;
+    };
     "github_com_nuonco_nuon_pkg_aws_credentials.Config": {
       assume_role?: components["schemas"]["credentials.AssumeRoleConfig"];
       /** @description when cache ID is set, these credentials will be reused, up to the duration of the sessionTimeout (or default) */
@@ -7062,6 +7436,20 @@ export interface components {
       managed_identity_client_id?: string;
       service_principal?: components["schemas"]["credentials.ServicePrincipalCredentials"];
       use_default?: boolean;
+    };
+    "github_com_nuonco_nuon_pkg_customer_managed.RunbookStep": {
+      /**
+       * @description Component scopes a health-gate to one component by name; empty gates
+       * on every component's health.
+       */
+      component?: string;
+      kind?: string;
+      ref_id?: string;
+    };
+    "github_com_nuonco_nuon_pkg_customer_managed.RunbookTemplate": {
+      id?: string;
+      name?: string;
+      steps?: components["schemas"]["github_com_nuonco_nuon_pkg_customer_managed.RunbookStep"][];
     };
     "github_com_nuonco_nuon_pkg_gcp_credentials.Config": {
       impersonate_service_account?: string;
@@ -7148,21 +7536,6 @@ export interface components {
     "helpers.InstallMetadata": {
       managed_by?: string;
     };
-    "helpers.ListPreviewSourcesResult": {
-      branches?: components["schemas"]["helpers.PreviewSourceBranch"][];
-      pull_requests?: components["schemas"]["helpers.PreviewSourcePR"][];
-    };
-    "helpers.PreviewSourceBranch": {
-      name?: string;
-      sha?: string;
-    };
-    "helpers.PreviewSourcePR": {
-      head_ref?: string;
-      head_sha?: string;
-      pr_number?: number;
-      title?: string;
-      url?: string;
-    };
     "helpers.PublicGitVCSConfigRequest": {
       branch: string;
       directory: string;
@@ -7202,6 +7575,201 @@ export interface components {
        * NOTE(JM): we are deprecating this
        */
       trusted_role_arn?: string;
+    };
+    "operation.BundleActionDefinition": {
+      break_glass_role_arn?: string;
+      component_dependencies?: string[];
+      enable_kube_config?: boolean;
+      kubernetes_context_name?: string;
+      references?: string[];
+      role?: string;
+      steps?: components["schemas"]["operation.BundleActionStep"][];
+      timeout_nanos?: number;
+      triggers?: components["schemas"]["operation.BundleActionTrigger"][];
+    };
+    "operation.BundleActionStep": {
+      artifact_digest?: string;
+      command?: string;
+      environment?: {
+        [key: string]: string;
+      };
+      index?: number;
+      inline_contents_digest?: string;
+      name?: string;
+      source?: components["schemas"]["operation.BundleSource"];
+    };
+    "operation.BundleActionTrigger": {
+      component_name?: string;
+      cron_schedule?: string;
+      index?: number;
+      type?: string;
+    };
+    "operation.BundleCandidate": {
+      archive_name?: string;
+      archive_size?: number;
+      bundle?: components["schemas"]["operation.BundleInfo"];
+      changes?: components["schemas"]["operation.BundleChange"][];
+      deployment?: components["schemas"]["operation.BundleDeploymentAssets"];
+      previous_digest?: string;
+      schema_version?: number;
+      staged_at?: string;
+    };
+    "operation.BundleChange": {
+      apply_step_id?: string;
+      candidate_action_definition?: components["schemas"]["operation.BundleActionDefinition"];
+      candidate_component_definition?: {
+        [key: string]: unknown;
+      };
+      candidate_config_digest?: string;
+      candidate_digest?: string;
+      candidate_runbook_definition?: components["schemas"]["operation.BundleRunbookDefinition"];
+      change?: string;
+      detail?: string;
+      kind?: string;
+      name?: string;
+      plan_step_id?: string;
+      previous_action_definition?: components["schemas"]["operation.BundleActionDefinition"];
+      previous_component_definition?: {
+        [key: string]: unknown;
+      };
+      previous_config_digest?: string;
+      previous_digest?: string;
+      previous_runbook_definition?: components["schemas"]["operation.BundleRunbookDefinition"];
+    };
+    "operation.BundleContent": {
+      action_definition?: components["schemas"]["operation.BundleActionDefinition"];
+      component_definition?: {
+        [key: string]: unknown;
+      };
+      config_digest?: string;
+      detail?: string;
+      digest?: string;
+      kind?: string;
+      name?: string;
+      runbook_definition?: components["schemas"]["operation.BundleRunbookDefinition"];
+      size?: number;
+    };
+    "operation.BundleDeploymentAssets": {
+      candidate_bundle_key?: string;
+      stack_template_url?: string;
+      target_bundle_key?: string;
+    };
+    "operation.BundleInfo": {
+      activated_at?: string;
+      /**
+       * @description ArchiveDigest is the sha256 of the .tar.zst transport archive the
+       * runner extracted, when the runner performed the extraction itself;
+       * pre-extracted bundle directories leave it empty.
+       */
+      archive_digest?: string;
+      bundle_digest?: string;
+      contents?: components["schemas"]["operation.BundleContent"][];
+      deployment_id?: string;
+      operation_id?: string;
+      package?: components["schemas"]["operation.BundlePackageIdentity"];
+      release?: components["schemas"]["operation.BundleReleaseIdentity"];
+      schema_version?: number;
+      target?: components["schemas"]["operation.BundleTarget"];
+      total_size?: number;
+      verification?: components["schemas"]["operation.BundleVerification"];
+    };
+    "operation.BundlePackageIdentity": {
+      digest?: string;
+      format?: string;
+      id?: string;
+      target?: string;
+    };
+    "operation.BundleReleaseIdentity": {
+      digest?: string;
+      id?: string;
+    };
+    "operation.BundleRunbookDefinition": {
+      inputs?: components["schemas"]["operation.BundleRunbookInput"][];
+      readme_digest?: string;
+      steps?: components["schemas"]["operation.BundleRunbookStep"][];
+    };
+    "operation.BundleRunbookInput": {
+      default?: string;
+      description?: string;
+      display_name?: string;
+      index?: number;
+      name?: string;
+      required?: boolean;
+      sensitive?: boolean;
+      type?: string;
+    };
+    "operation.BundleRunbookStep": {
+      command?: string;
+      component?: string;
+      deploy_dependents?: boolean;
+      environment?: {
+        [key: string]: string;
+      };
+      event_types?: string[];
+      filters_digest?: string;
+      index?: number;
+      inline_contents_digest?: string;
+      kind?: string;
+      name?: string;
+      plan_only?: boolean;
+      reference?: string;
+      role?: string;
+      skip_component_deploys?: boolean;
+      tear_down_dependents?: boolean;
+      timeout_nanos?: number;
+      trigger_name?: string;
+    };
+    "operation.BundleSource": {
+      commit?: string;
+      digest?: string;
+      directory?: string;
+      repository?: string;
+      requested_ref?: string;
+      version?: string;
+    };
+    "operation.BundleTarget": {
+      architecture?: string;
+      os?: string;
+    };
+    "operation.BundleVerification": {
+      blobs_verified?: boolean;
+      envelope_parsed?: boolean;
+    };
+    "operation.Catalog": {
+      bundle_digest?: string;
+      deployment_id?: string;
+      generated_at?: string;
+      refs?: components["schemas"]["operation.CatalogRef"][];
+      schema_version?: number;
+    };
+    "operation.CatalogRef": {
+      component?: string;
+      cron_schedule?: string;
+      id?: string;
+      kind?: string;
+      name?: string;
+      steps?: number;
+    };
+    "operation.DriftResourceChange": {
+      /** @description Action is create, update, destroy, replace, or noop. */
+      action?: string;
+      address?: string;
+      /** @description Drifted marks changes correlated with out-of-band resource drift. */
+      drifted?: boolean;
+    };
+    "operation.DriftResult": {
+      drifted?: boolean;
+      output_changes?: number;
+      resource_changes?: number;
+      resource_drift?: number;
+      /**
+       * @description Resources lists every resource in the plan with its change verdict,
+       * changed resources first, capped at MaxDriftResources so run status
+       * files stay small; the raw plan at JobPlanKey holds the full detail.
+       */
+      resources?: components["schemas"]["operation.DriftResourceChange"][];
+      resources_truncated?: boolean;
+      summary?: string;
     };
     "outputs.SecretSyncOutput": {
       arn?: string;
@@ -7317,7 +7885,6 @@ export interface components {
        * Empty for components that don't use update_policy.
        */
       update_policy?: string;
-      verification?: components["schemas"]["signature.Verification"];
     };
     "plantypes.DeployPlan": {
       app_config_id?: string;
@@ -8015,25 +8582,17 @@ export interface components {
     "service.CreateAppBranchConfigRequest": {
       connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
       /**
-       * @description IgnoreChangesRegex marks a run not-attempted when every changed file path in
-       * it matches this RE2 pattern. Omit to carry the current setting forward; send
-       * an empty string to clear it.
+       * @description DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
+       * branch runs. Omit to carry the current setting forward.
        */
-      ignore_changes_regex?: string;
+      disable_branch_triggers?: boolean;
       install_groups?: components["schemas"]["service.InstallGroupRequest"][];
       /**
        * @description PostDeployRunbookIDs run on each install, in order, after its deploy succeeds.
        * Omit to carry the current setting forward; send an empty array to clear it.
        */
       post_deploy_runbook_ids?: string[];
-      /** @description PreviewConfig sets branch-level preview defaults. Omit to carry forward. */
-      preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
-      /**
-       * @description SendStatusesOnIgnore posts a successful commit status for runs ignored by
-       * IgnoreChangesRegex. Omit to carry the current setting forward.
-       */
-      send_statuses_on_ignore?: boolean;
     };
     "service.CreateAppBranchRequest": {
       managed_by?: string;
@@ -8063,6 +8622,8 @@ export interface components {
        * Used when creating a config as part of app deletion cleanup.
        */
       skip_notification?: boolean;
+      /** @description SourceConfigJSON contains the exact authored TOML files and their release-member index. */
+      source_config_json?: string;
     };
     "service.CreateAppInputConfigRequest": {
       app_config_id?: string;
@@ -8514,6 +9075,9 @@ export interface components {
       toggleable?: boolean;
       version?: string;
     };
+    "service.CreateReleaseUpdateRequest": {
+      release_id: string;
+    };
     "service.CreateRunbookConfigRequest": {
       app_config_id?: string;
       inputs?: components["schemas"]["service.CreateRunbookInputRequest"][];
@@ -8776,11 +9340,6 @@ export interface components {
        * Mutually exclusive with InstallIDs and LabelSelector.
        */
       all_installs?: boolean;
-      /**
-       * @description AutoApproveOnPoliciesPassing approves this group's plan step without user
-       * input when its policy checks pass. Omit to leave it unset (off).
-       */
-      auto_approve_on_policies_passing?: boolean;
       install_ids?: string[];
       /**
        * @description LabelSelector dynamically resolves installs at deploy time.
@@ -8789,6 +9348,7 @@ export interface components {
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       name: string;
       order?: number;
+      use_for_previews?: boolean;
     };
     "service.InstallHealthSummary": {
       app_id?: string;
@@ -8946,17 +9506,6 @@ export interface components {
       interval?: string;
       start?: string;
     };
-    "service.PreviewInstallCandidatesResponse": {
-      installs?: components["schemas"]["app.Install"][];
-    };
-    "service.PreviewRunRequest": {
-      git_ref?: string;
-      head_sha?: string;
-      install_id?: string;
-      mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
-      pr_number?: number;
-      source?: components["schemas"]["app.AppBranchRunPreviewSource"];
-    };
     "service.PruneTokensResponse": {
       invalidated_count?: number;
     };
@@ -9027,6 +9576,7 @@ export interface components {
     "service.ReprovisionInstallStackRequest": {
       plan_only?: boolean;
       role?: string;
+      skip_components?: boolean;
     };
     "service.ResetInstallHealthBaselineResponse": {
       baseline_at?: string;
@@ -9118,16 +9668,33 @@ export interface components {
       plan_only?: boolean;
     };
     "service.TriggerAppBranchRunRequest": {
+      /** @description optional - use pre-existing app config (skips VCS fetch + config parse) */
       app_config_id?: string;
+      /**
+       * @description AutoApprove skips the approval gate on the plan steps. Without it the
+       * approval option is derived from the installs the branch targets.
+       */
       auto_approve?: boolean;
       base_branch?: string;
+      /** @description optional - use latest if not provided */
       config_id?: string;
+      /** @description force run even if no changes detected */
       force?: boolean;
       head_sha?: string;
+      /** @description plan-only preview mode (no apply) */
       plan_only?: boolean;
+      /**
+       * @description PR context, for previews triggered from CI rather than a GitHub webhook.
+       * Supplying PRNumber is what lets the run report back onto the pull request.
+       */
       pr_number?: number;
-      preview_run?: components["schemas"]["service.PreviewRunRequest"];
+      /** @description skip builds step (e.g. rollback to existing config with existing builds) */
       skip_builds?: boolean;
+      /**
+       * @description SyncAppConfig syncs AppConfigID inside the run rather than assuming it was
+       * already synced. Set by callers that compiled the config themselves, such
+       * as `nuon apps sync`.
+       */
       sync_app_config?: boolean;
     };
     "service.TriggerInstallConfigSyncRequest": {
@@ -9140,13 +9707,7 @@ export interface components {
       name?: string;
     };
     "service.UpdateAppBranchConfigRequest": {
-      /**
-       * @description IgnoreChangesRegex marks a run not-attempted when every changed file path in
-       * it matches this RE2 pattern. Send an empty string to clear it.
-       */
-      ignore_changes_regex?: string;
-      /** @description SendStatusesOnIgnore posts a successful commit status for ignored runs. */
-      send_statuses_on_ignore?: boolean;
+      disable_branch_triggers?: boolean;
     };
     "service.UpdateAppBranchRequest": {
       name: string;
@@ -9334,11 +9895,7 @@ export interface components {
       repository_selection?: string;
       status?: string;
       suspended_at?: string;
-      suspended_by?: components["schemas"]["service.VCSConnectionUser"];
-    };
-    "service.VCSConnectionUser": {
-      id?: number;
-      login?: string;
+      suspended_by?: components["schemas"]["github.User"];
     };
     "service.WaitlistRequest": {
       org_name: string;
@@ -9372,6 +9929,71 @@ export interface components {
       registry_url?: string;
       tenant_id?: string;
     };
+    "service.blobGrantItem": {
+      digest?: string;
+      expires_at?: string;
+      size?: number;
+      url?: string;
+    };
+    "service.blobGrantsRequest": {
+      /**
+       * @description Digests are content-addressed blob digests (sha256 hex, with or
+       * without the sha256: prefix) to grant download access for. When
+       * empty, only bundle metadata is returned so clients can discover the
+       * OCI index digest and diff against their local store first.
+       */
+      digests?: string[];
+    };
+    "service.blobGrantsResponse": {
+      grants?: components["schemas"]["service.blobGrantItem"][];
+      manifest_digest?: string;
+      oci_index_digest?: string;
+      transport_checksum?: string;
+    };
+    "service.bundleResponse": {
+      app_config_id?: string;
+      app_id?: string;
+      artifacts?: components["schemas"]["app.CustomerManagedBundleArtifact"][];
+      created_at?: string;
+      id?: string;
+      manifest_digest?: string;
+      oci_root_digest?: string;
+      schema_version?: number;
+      size?: number;
+      status?: string;
+      status_description?: string;
+      target_platform?: string;
+      transport_checksum?: string;
+    };
+    "service.createBundleRequest": {
+      app_config_id: string;
+      runbooks?: components["schemas"]["github_com_nuonco_nuon_pkg_customer_managed.RunbookTemplate"][];
+      target_platform?: string;
+    };
+    "service.createCustomerManagedInstallRequest": {
+      app_id?: string;
+      aws_account_id?: string;
+      aws_region?: string;
+      inputs?: {
+        [key: string]: string;
+      };
+      intended_name?: string;
+      release_id?: string;
+      telemetry?: string;
+    };
+    "service.createReleasePackageRequest": {
+      format?: string;
+      target_platform?: string;
+    };
+    "service.createReleaseRequest": {
+      app_config_id: string;
+      runbooks?: components["schemas"]["github_com_nuonco_nuon_pkg_customer_managed.RunbookTemplate"][];
+    };
+    "service.customerManagedInstallResponse": {
+      install?: components["schemas"]["app.Install"];
+      operating_model?: components["schemas"]["app.InstallOperatingModel"];
+      portal_service_account?: components["schemas"]["app.Account"];
+    };
     "service.dailyHealthBucket": {
       date?: string;
       degraded_seconds?: number;
@@ -9379,6 +10001,15 @@ export interface components {
       observed_seconds?: number;
       unhealthy_seconds?: number;
       unknown_seconds?: number;
+    };
+    "service.downloadGrantResponse": {
+      expires_at?: string;
+      filename?: string;
+      manifest_digest?: string;
+      size?: number;
+      supports_range?: boolean;
+      transport_checksum?: string;
+      url?: string;
     };
     "service.gcpGARImageConfigRequest": {
       gcp_project_id?: string;
@@ -9388,12 +10019,47 @@ export interface components {
       tag?: string;
       workload_identity_provider?: string;
     };
+    "service.installRegistrationResponse": {
+      install?: components["schemas"]["app.Install"];
+      operating_model?: components["schemas"]["app.InstallOperatingModel"];
+      registration?: components["schemas"]["app.InstallRegistration"];
+      release_deployment?: components["schemas"]["app.InstallReleaseDeployment"];
+    };
+    "service.releaseFileContentResponse": {
+      content?: string;
+      digest?: string;
+      media_type?: string;
+      path?: string;
+      size?: number;
+    };
+    "service.releasePackageDownloadGrantResponse": {
+      archive_checksum?: string;
+      expires_at?: string;
+      filename?: string;
+      manifest_digest?: string;
+      size?: number;
+      supports_range?: boolean;
+      url?: string;
+    };
     "service.slackChallengeResponse": {
       challenge?: string;
     };
     "service.slashResponse": {
       response_type?: string;
       text?: string;
+    };
+    "service.supportSnapshotResponse": {
+      archive_sha256?: string;
+      archive_size?: number;
+      association_status?: string;
+      captured_at?: string;
+      created_at?: string;
+      id?: string;
+      install_id?: string;
+      integrity_status?: string;
+      manifest?: components["schemas"]["supportsnapshot.Manifest"];
+      schema_version?: number;
+      snapshot?: components["schemas"]["supportsnapshot.Snapshot"];
     };
     "signaldb.SignalData": {
       signal?: unknown;
@@ -9404,19 +10070,6 @@ export interface components {
       run_id?: string;
       /** @description empty means workflows.APITaskQueue (back-compat for pre-isolation rows) */
       task_queue?: string;
-    };
-    "signature.Authority": {
-      issuer?: string;
-      public_key?: string;
-      subject?: string;
-      subject_regexp?: string;
-      type?: components["schemas"]["signature.AuthorityType"];
-    };
-    /** @enum {string} */
-    "signature.AuthorityType": "keyless" | "public_key";
-    "signature.Verification": {
-      authorities?: components["schemas"]["signature.Authority"][];
-      require_signature?: boolean;
     };
     "sql.NullBool": {
       bool?: boolean;
@@ -9521,10 +10174,119 @@ export interface components {
     "state.SecretsState": {
       [key: string]: components["schemas"]["outputs.SecretSyncOutput"];
     };
+    /** @enum {string} */
+    "statestore.ResultDirective": "continue" | "stop" | "retry-group" | "skip-group" | "await-approval" | "await-retry";
     "stderr.ErrResponse": {
       description?: string;
       error?: string;
       user_error?: boolean;
+    };
+    "supportsnapshot.CapturedState": {
+      report?: Record<string, never>;
+      status?: Record<string, never>;
+    };
+    "supportsnapshot.CollectionReport": {
+      included?: string[];
+      redaction_policy?: string;
+      schema_version?: number;
+      truncated?: {
+        [key: string]: number;
+      };
+      unavailable?: {
+        [key: string]: string;
+      };
+    };
+    "supportsnapshot.JobLog": {
+      entries?: components["schemas"]["supportsnapshot.LogEntry"][];
+      job_id?: string;
+      name?: string;
+      run_id?: string;
+      started_at?: string;
+      status?: string;
+      total?: number;
+      truncated?: boolean;
+    };
+    "supportsnapshot.LogEntry": {
+      fields?: {
+        [key: string]: unknown;
+      };
+      level?: string;
+      msg?: string;
+      time?: string;
+    };
+    "supportsnapshot.Manifest": {
+      bundle_digest?: string;
+      captured_at?: string;
+      entries?: components["schemas"]["supportsnapshot.ManifestEntry"][];
+      producer?: components["schemas"]["supportsnapshot.Producer"];
+      registration_id?: string;
+      schema_version?: number;
+    };
+    "supportsnapshot.ManifestEntry": {
+      media_type?: string;
+      path?: string;
+      schema_version?: number;
+      sha256?: string;
+      size?: number;
+    };
+    "supportsnapshot.Producer": {
+      name?: string;
+      runner_version?: string;
+      version?: string;
+    };
+    "supportsnapshot.Run": {
+      bundle_digest?: string;
+      dispatch_id?: string;
+      error?: string;
+      finished_at?: string;
+      previous_run_id?: string;
+      ref_id?: string;
+      ref_kind?: string;
+      ref_name?: string;
+      result_directive?: components["schemas"]["statestore.ResultDirective"];
+      run_id?: string;
+      source?: string;
+      started_at?: string;
+      status?: string;
+      steps?: components["schemas"]["supportsnapshot.RunStep"][];
+    };
+    "supportsnapshot.RunStep": {
+      drift?: components["schemas"]["operation.DriftResult"];
+      error?: string;
+      finished_at?: string;
+      id?: string;
+      job_id?: string;
+      kind?: string;
+      name?: string;
+      plan?: components["schemas"]["supportsnapshot.StepPlan"];
+      result_directive?: components["schemas"]["statestore.ResultDirective"];
+      source_run_id?: string;
+      started_at?: string;
+      status?: string;
+      status_description?: string;
+    };
+    "supportsnapshot.Snapshot": {
+      active_bundle?: components["schemas"]["operation.BundleInfo"];
+      bundle_history?: components["schemas"]["operation.BundleInfo"][];
+      captured_at?: string;
+      catalog?: components["schemas"]["operation.Catalog"];
+      collection?: components["schemas"]["supportsnapshot.CollectionReport"];
+      current_inputs?: components["schemas"]["customermanaged.CapturedInputs"];
+      health?: components["schemas"]["customermanaged.HealthSnapshot"];
+      health_transitions?: components["schemas"]["customermanaged.HealthTransition"][];
+      include_state?: boolean;
+      logs?: components["schemas"]["supportsnapshot.JobLog"][];
+      registration?: components["schemas"]["customermanaged.InstallationRegistration"];
+      roles?: components["schemas"]["customermanaged.CapturedRoles"];
+      runner?: components["schemas"]["customermanaged.RunnerHeartbeat"];
+      runs?: components["schemas"]["supportsnapshot.Run"][];
+      schema_version?: number;
+      staged_bundle?: components["schemas"]["operation.BundleCandidate"];
+      state?: components["schemas"]["supportsnapshot.CapturedState"];
+    };
+    "supportsnapshot.StepPlan": {
+      content?: Record<string, never>;
+      kind?: string;
     };
     "types.StringBoolMap": {
       [key: string]: boolean;
@@ -11999,114 +12761,6 @@ export interface operations {
     };
   };
   /**
-   * list preview install candidates for an app branch
-   * @description Lists all installs on the app for preview run selection (includes installs on other branches)
-   */
-  GetAppBranchPreviewInstallCandidates: {
-    parameters: {
-      query?: {
-        /** @description branch config ID (defaults to latest) */
-        config_id?: string;
-      };
-      path: {
-        /** @description app ID */
-        app_id: string;
-        /** @description app branch ID */
-        app_branch_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["service.PreviewInstallCandidatesResponse"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * list preview sources for an app branch
-   * @description Returns open pull requests targeting the branch and other git branches in the repo
-   */
-  GetAppBranchPreviewSources: {
-    parameters: {
-      path: {
-        /** @description app ID */
-        app_id: string;
-        /** @description app branch ID */
-        app_branch_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["helpers.ListPreviewSourcesResult"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
    * get app branch workflow runs
    * @description Returns workflow runs for an app branch ordered by creation time (descending)
    */
@@ -12192,60 +12846,6 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.AppBranchRun"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * get an app branch workflow run
-   * @description Returns a branch workflow by either app branch run ID or workflow ID.
-   */
-  GetAppBranchRun: {
-    parameters: {
-      path: {
-        /** @description app ID */
-        app_id: string;
-        /** @description app branch ID */
-        app_branch_id: string;
-        /** @description app branch run ID or workflow ID */
-        run_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.Workflow"];
         };
       };
       /** @description Bad Request */
@@ -15027,6 +15627,214 @@ export interface operations {
       };
     };
   };
+  /** list published portable bundles for an app */
+  ListCustomerManagedBundles: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"][];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create and publish an immutable portable bundle */
+  CreateCustomerManagedBundle: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description bundle request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.createBundleRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"];
+        };
+      };
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Precondition Failed */
+      412: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        content: {
+          "application/json": components["schemas"]["customermanaged.QualificationReport"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a published portable bundle */
+  GetCustomerManagedBundle: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description bundle ID */
+        bundle_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create download grants for individual content-addressed bundle blobs
+   * @description Grants presigned access to individual bundle blobs so clients can download only blobs missing from their local store. Call with no digests to discover the bundle's OCI index digest, then request grants for missing blobs in batches.
+   */
+  CreateCustomerManagedBundleBlobGrants: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description bundle ID */
+        bundle_id: string;
+      };
+    };
+    /** @description blob grant request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.blobGrantsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.blobGrantsResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a download grant for a published portable bundle */
+  CreateCustomerManagedBundleDownloadGrant: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description bundle ID */
+        bundle_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.downloadGrantResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * @description App input configs allow you to declare the inputs for your application, and do things such as require customer inputs or
    * expose configuration knobs in your application.
@@ -16714,6 +17522,260 @@ export interface operations {
       404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** list immutable application releases */
+  ListAppReleases: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description maximum number of results to return */
+        limit?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppRelease"][];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create an immutable application release */
+  CreateAppRelease: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description release request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.createReleaseRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppRelease"];
+        };
+      };
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppRelease"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Precondition Failed */
+      412: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get an immutable application release */
+  GetAppRelease: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description release ID */
+        release_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppRelease"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get one authored file from an immutable application release */
+  GetAppReleaseFileContent: {
+    parameters: {
+      query: {
+        /** @description release-relative file path */
+        path: string;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description release ID */
+        release_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.releaseFileContentResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** list packages for an application release */
+  ListReleasePackages: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description release ID */
+        release_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ReleasePackage"][];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a portable package for an application release */
+  CreateReleasePackage: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description release ID */
+        release_id: string;
+      };
+    };
+    /** @description package request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.createReleasePackageRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ReleasePackage"];
+        };
+      };
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["app.ReleasePackage"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        content: {
+          "application/json": components["schemas"]["customermanaged.QualificationReport"];
         };
       };
       /** @description Internal Server Error */
@@ -19545,6 +20607,37 @@ export interface operations {
       };
     };
   };
+  /** create an authenticated customer-managed install */
+  CreateCustomerManagedInstall: {
+    /** @description Customer-managed install */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.createCustomerManagedInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.customerManagedInstallResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * Get config for cli
    * @description Returns CLI configuration and settings.
@@ -19843,6 +20936,43 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.Waitlist"];
+        };
+      };
+    };
+  };
+  /** register a customer-managed installation */
+  RegisterInstall: {
+    /** @description installation registration exported by the customer portal */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["customermanaged.InstallationRegistration"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.installRegistrationResponse"];
+        };
+      };
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.installRegistrationResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -20190,8 +21320,6 @@ export interface operations {
         runner_id?: string;
         /** @description filter installs by branch name (comma-separated; use __none__ for installs with no branch) */
         branches?: string;
-        /** @description include install components */
-        include_components?: boolean;
         /** @description limit of results to return */
         limit?: number;
         /** @description page number of results to return */
@@ -25026,6 +26154,76 @@ export interface operations {
       };
     };
   };
+  /** list immutable release deployment history for an install */
+  ListInstallReleaseDeployments: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallReleaseDeployment"][];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** propose a vendor release to a customer-managed install */
+  CreateInstallReleaseUpdate: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateReleaseUpdateRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallAppConfigVersion"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * reprovision an install
    * @description Reprovision an install sandbox.
@@ -25140,7 +26338,7 @@ export interface operations {
   };
   /**
    * reprovision an install stack
-     * @description Reprovision an install stack, recreating the runner and its infrastructure. Components are not redeployed.
+   * @description Reprovision an install stack, recreating the runner and its infrastructure. Set `skip_components` to avoid redeploying components on top of the new stack.
    */
   ReprovisionInstallStack: {
     parameters: {
@@ -26221,6 +27419,131 @@ export interface operations {
       403: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** list imported support snapshots for a customer-managed install */
+  ListInstallSupportSnapshots: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.supportSnapshotResponse"][];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** import a customer-managed install support snapshot */
+  CreateInstallSupportSnapshot: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    /** @description support snapshot archive */
+    requestBody: {
+      content: {
+        "application/octet-stream": string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.supportSnapshotResponse"];
+        };
+      };
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.supportSnapshotResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Request Entity Too Large */
+      413: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get one imported customer-managed install support snapshot */
+  GetInstallSupportSnapshot: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+        /** @description Support snapshot ID */
+        snapshot_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.supportSnapshotResponse"];
         };
       };
       /** @description Not Found */
@@ -29003,6 +30326,135 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a release package */
+  GetReleasePackage: {
+    parameters: {
+      path: {
+        /** @description package ID */
+        package_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ReleasePackage"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create download grants for content-addressed package blobs */
+  CreateReleasePackageBlobGrants: {
+    parameters: {
+      path: {
+        /** @description package ID */
+        package_id: string;
+      };
+    };
+    /** @description blob grant request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.blobGrantsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.blobGrantsResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a download grant for a published release package */
+  CreateReleasePackageDownloadGrant: {
+    parameters: {
+      path: {
+        /** @description package ID */
+        package_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.releasePackageDownloadGrantResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

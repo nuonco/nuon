@@ -35,12 +35,16 @@ func NewOTELProvider(cfg *runnerconfig.Config, set *settings.Settings, logStream
 
 func newAPIProcessor(cfg *runnerconfig.Config, logStreamID string) (log.Processor, error) {
 	url := fmt.Sprintf(defaultOTLPLogsEndpointTmpl, cfg.RunnerAPIURL, logStreamID)
-	exporter, err := otlploghttp.New(context.Background(),
-		otlploghttp.WithEndpointURL(url),
-		otlploghttp.WithHeaders(map[string]string{
+	options := []otlploghttp.Option{}
+	if cfg.OTLPLogsEndpoint != "" {
+		url = cfg.OTLPLogsEndpoint
+	} else {
+		options = append(options, otlploghttp.WithHeaders(map[string]string{
 			"Authorization": "Bearer " + cfg.RunnerAPIToken,
-		}),
-	)
+		}))
+	}
+	options = append(options, otlploghttp.WithEndpointURL(url))
+	exporter, err := otlploghttp.New(context.Background(), options...)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize otlp log exporter: %w", err)
 	}

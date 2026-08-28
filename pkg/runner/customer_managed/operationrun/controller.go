@@ -1,0 +1,124 @@
+package operationrun
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"sync"
+	"time"
+
+	"go.uber.org/zap"
+
+	customermanaged "github.com/nuonco/nuon/pkg/runner/customer_managed"
+	"github.com/nuonco/nuon/pkg/runner/customer_managed/operation"
+)
+
+type ControllerConfig struct {
+	Mailbox      *Mailbox
+	Envelope     *customermanaged.Envelope
+	Digest       string
+	DeploymentID string
+	Owner        string
+	Executor     RefExecutor
+	Logger       *zap.Logger
+	FlushRun     func(context.Context, string) error
+	WriteLocal   func(string, []byte) error
+	// Bundle, when set, is published at startup alongside the catalog so
+	// portals can render the active bundle's inventory and history.
+	Bundle       *operation.BundleInfo
+	PollInterval time.Duration
+}
+
+type Controller struct {
+	cfg        ControllerConfig
+	dispatcher *dispatcher
+}
+
+func NewController(cfg ControllerConfig) (*Controller, error) {
+	if cfg.Mailbox == nil || cfg.Envelope == nil || cfg.Executor == nil {
+		return nil, fmt.Errorf("mailbox, envelope, and executor are required")
+	}
+	if cfg.Logger == nil {
+		cfg.Logger = zap.NewNop()
+	}
+	if cfg.PollInterval <= 0 {
+		cfg.PollInterval = defaultPollInterval
+	}
+	d := &dispatcher{mailbox: cfg.Mailbox, envelope: cfg.Envelope, digest: cfg.Digest, deploymentID: cfg.DeploymentID, owner: cfg.Owner, executor: cfg.Executor, flushRun: cfg.FlushRun, logger: cfg.Logger, now: time.Now}
+	return &Controller{cfg: cfg, dispatcher: d}, nil
+}
+
+func (c *Controller) Run(ctx context.Context) error {
+	if err := c.publishCatalog(ctx); err != nil {
+		return err
+	}
+	if err := c.publishBundleInfo(ctx); err != nil {
+		return err
+	}
+	poller := &Poller{dispatcher: c.dispatcher, interval: c.cfg.PollInterval}
+	scheduler := &Scheduler{dispatcher: c.dispatcher, actions: c.cfg.Envelope.Actions, writeLocal: c.cfg.WriteLocal}
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() { defer wg.Done(); poller.Run(ctx) }()
+	go func() { defer wg.Done(); scheduler.Run(ctx) }()
+	wg.Wait()
+	return ctx.Err()
+}
+
+func (c *Controller) publishCatalog(ctx context.Context) error {
+	catalog := operation.Catalog{SchemaVersion: operation.SchemaVersion, DeploymentID: c.cfg.DeploymentID, BundleDigest: c.cfg.Digest, GeneratedAt: time.Now().UTC()}
+	for _, action := range c.cfg.Envelope.Actions {
+		catalog.Refs = append(catalog.Refs, operation.CatalogRef{ID: action.ID, Kind: operation.RefKindAction, Name: action.Name, CronSchedule: action.CronSchedule})
+	}
+	for _, drift := range c.cfg.Envelope.Drift {
+		catalog.Refs = append(catalog.Refs, operation.CatalogRef{ID: drift.ID, Kind: operation.RefKindDrift, Name: drift.ComponentName, Component: drift.ComponentName})
+	}
+	for _, book := range c.cfg.Envelope.Runbooks {
+		catalog.Refs = append(catalog.Refs, operation.CatalogRef{ID: book.ID, Kind: operation.RefKindRunbook, Name: book.Name, Steps: len(book.Steps)})
+	}
+	if c.cfg.WriteLocal != nil {
+		b, err := json.MarshalIndent(catalog, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := c.cfg.WriteLocal(operation.CatalogKey, append(b, '\n')); err != nil {
+			return fmt.Errorf("write local operation catalog: %w", err)
+		}
+	}
+	if err := c.cfg.Mailbox.PutCatalog(ctx, catalog); err != nil {
+		return fmt.Errorf("publish operation catalog: %w", err)
+	}
+	return nil
+}
+
+func (c *Controller) publishBundleInfo(ctx context.Context) error {
+	if c.cfg.Bundle == nil {
+		return nil
+	}
+	info := *c.cfg.Bundle
+	if prev, found, err := c.cfg.Mailbox.GetBundleHistory(ctx, info.BundleDigest); err != nil {
+		c.cfg.Logger.Warn("read bundle activation history; keeping current activation time", zap.Error(err))
+	} else if found && !prev.ActivatedAt.IsZero() {
+		info.ActivatedAt = prev.ActivatedAt
+		info.OperationID = prev.OperationID
+	}
+	if c.cfg.WriteLocal != nil {
+		b, err := json.MarshalIndent(info, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := c.cfg.WriteLocal(operation.BundleKey, append(b, '\n')); err != nil {
+			return fmt.Errorf("write local bundle info: %w", err)
+		}
+		if err := c.cfg.WriteLocal(operation.BundleHistoryKey(info.BundleDigest), append(b, '\n')); err != nil {
+			return fmt.Errorf("write local bundle history: %w", err)
+		}
+	}
+	if err := c.cfg.Mailbox.PutBundleInfo(ctx, info); err != nil {
+		return fmt.Errorf("publish bundle info: %w", err)
+	}
+	if err := c.cfg.Mailbox.PutBundleHistory(ctx, info); err != nil {
+		return fmt.Errorf("publish bundle history: %w", err)
+	}
+	return nil
+}

@@ -121,11 +121,41 @@ func NewAppReleaseMemberID() string {
 	return shortid.NewNanoID("arm")
 }
 
-func NewReleasePackageID() string           { return shortid.NewNanoID("rpk") }
-func NewReleasePackageMemberID() string     { return shortid.NewNanoID("rpm") }
-func NewReleasePackageReplicaID() string    { return shortid.NewNanoID("rpr") }
-func NewInstallOperatingModelID() string    { return shortid.NewNanoID("iom") }
-func NewInstallReleaseDeploymentID() string { return shortid.NewNanoID("ird") }
+func NewReleasePackageID() string {
+	return shortid.NewNanoID("rpk")
+}
+
+func NewReleasePackageMemberID() string {
+	return shortid.NewNanoID("rpm")
+}
+
+func NewReleasePackageReplicaID() string {
+	return shortid.NewNanoID("rpr")
+}
+
+func NewInstallOperatingModelID() string {
+	return shortid.NewNanoID("iom")
+}
+
+func NewInstallReleaseDeploymentID() string {
+	return shortid.NewNanoID("ird")
+}
+
+func NewCustomerManagedBundleID() string {
+	return shortid.NewNanoID("cmb")
+}
+
+func NewCustomerManagedBundleArtifactID() string {
+	return shortid.NewNanoID("cma")
+}
+
+func NewCustomerManagedBundleReplicaID() string {
+	return shortid.NewNanoID("cmr")
+}
+
+func NewInstallSupportSnapshotID() string {
+	return shortid.NewNanoID("iss")
+}
 
 func NewAWSAccountID() string {
 	return shortid.NewNanoID("aws")

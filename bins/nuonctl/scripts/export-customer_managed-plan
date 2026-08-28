@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ "${1:-}" == "--help" ]]; then
+  cat <<'EOF'
+Export planned runner jobs for a local install as an customer-managed plan envelope.
+
+Options:
+  --install-id string  install ID to export (required)
+  --out string         output path (default ./customer-managed-envelope.json)
+EOF
+  exit 0
+fi
+
+if [[ "${1:-}" == "--usage" ]]; then
+  echo "usage: nuonctl scripts exec export-customer-managed-plan --install-id <install-id> [--out ./customer-managed-envelope.json]"
+  exit 0
+fi
+
+NUON_DIR="${NUON_DIR:-$(git rev-parse --show-toplevel)}"
+exec go run "$NUON_DIR/bins/nuonctl/scripts/internal/exportcustomer-managedplan" "$@"

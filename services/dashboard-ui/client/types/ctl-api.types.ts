@@ -16,7 +16,11 @@ export type TAppBranchRun = components['schemas']['app.AppBranchRun'] & {
   preview?: TAppBranchRunPreview
 }
 
-export type TAppBranchRunPreviewMode = 'plan-only' | 'apply' | 'build-only'
+export type TAppBranchRunPreviewMode =
+  | 'plan-only'
+  | 'plan-infra'
+  | 'apply'
+  | 'build-only'
 export type TAppBranchRunPreviewSource = 'pr' | 'commit' | 'branch' | 'local'
 
 export type TAppBranchPreviewConfig = {
@@ -105,6 +109,38 @@ export type TAppSandboxBuild = {
   runner_job?: TRunnerJob
   vcs_connection_commit?: { sha?: string; message?: string }
 }
+export type TAppRelease = components['schemas']['app.AppRelease']
+export type TReleaseFile = {
+  path: string
+  digest: string
+  size: number
+  media_type: string
+}
+export type TAppReleaseWithFiles = TAppRelease & {
+  source_files?: TReleaseFile[]
+}
+export type TReleaseFileContent = TReleaseFile & {
+  content: string
+}
+export type TAppReleaseMember = components['schemas']['app.AppReleaseMember']
+export type TReleasePackage = components['schemas']['app.ReleasePackage']
+export type TReleasePackageMember =
+  components['schemas']['app.ReleasePackageMember']
+export type TCustomerManagedBundle =
+  components['schemas']['service.bundleResponse']
+export type TCustomerManagedBundleArtifact =
+  components['schemas']['app.CustomerManagedBundleArtifact']
+export type TCreateCustomerManagedBundleRequest =
+  components['schemas']['service.createBundleRequest']
+export type TCustomerManagedBundleDownloadGrant =
+  components['schemas']['service.downloadGrantResponse']
+export type TCreateReleasePackageRequest =
+  components['schemas']['service.createReleasePackageRequest']
+export type TReleasePackageDownloadGrant =
+  components['schemas']['service.releasePackageDownloadGrantResponse']
+export type TCreateReleaseRequest =
+  components['schemas']['service.createReleaseRequest']
+
 // Policy types - manually defined as API schema may not be deployed yet
 export type TAppPolicyType =
   | 'kubernetes_cluster'

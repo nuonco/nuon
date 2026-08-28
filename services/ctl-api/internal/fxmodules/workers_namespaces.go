@@ -13,6 +13,7 @@ import (
 	appsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	componentsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker"
 	componentsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
+	customermanagedpublishactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/customer_managed/signals/publish/activities"
 	generalworker "github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker"
 	generalactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker/activities"
 	installsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker"
@@ -50,6 +51,7 @@ var OrgsWorkerModule = fx.Module("worker-orgs",
 // AppsWorkerModule provides the apps namespace worker.
 var AppsWorkerModule = fx.Module("worker-apps",
 	fx.Provide(appsactivities.New),
+	fx.Provide(customermanagedpublishactivities.New),
 	fx.Provide(appsworker.NewWorkflows),
 	fx.Provide(appbranchesactivities.New),
 	fx.Provide(appconfigsyncactivities.NewActivities),

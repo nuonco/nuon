@@ -13,9 +13,16 @@ import { useWorkflow } from '@/hooks/use-workflow'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { humanize } from '@/utils/string-utils'
+import { CustomerManagedSnapshotWorkflowDetail } from '@/components/customer-managed-support/SnapshotWorkflowDetail'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
 
 export const WorkflowDetail = () => {
   const { workflowId } = useParams()
+  const { install } = useInstall()
+
+  if (isCustomerManagedInstall(install)) {
+    return <CustomerManagedSnapshotWorkflowDetail />
+  }
 
   return (
     <WorkflowProvider workflowId={workflowId!} shouldPoll>

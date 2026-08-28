@@ -124,6 +124,27 @@ func (s *service) PortalGetReleaseFileContent(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, content)
 }
 
+func (s *service) PortalGetReleasePackage(ctx *gin.Context) {
+	portal, ok := s.connectedPortal(ctx)
+	if !ok {
+		return
+	}
+	pkg, err := s.getReleasePackage(ctx, portal.Install.OrgID, ctx.Param("package_id"))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.Status(http.StatusNotFound)
+			return
+		}
+		ctx.Error(err)
+		return
+	}
+	if pkg.Release.AppID != portal.Install.AppID || pkg.Release.Status != app.AppReleaseStatusReady {
+		ctx.Status(http.StatusNotFound)
+		return
+	}
+	ctx.JSON(http.StatusOK, pkg)
+}
+
 func (s *service) activeInstallRelease(ctx context.Context, install app.Install) (app.InstallReleaseDeployment, error) {
 	var active app.InstallReleaseDeployment
 	err := s.db.WithContext(ctx).

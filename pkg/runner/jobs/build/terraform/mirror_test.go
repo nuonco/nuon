@@ -1,8 +1,17 @@
 package terraform
 
 import (
+	"archive/zip"
+	"bytes"
+	"context"
+	"crypto/sha256"
 	"errors"
+	"fmt"
 	"io"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -162,4 +171,50 @@ func TestScrubbedEnvMap(t *testing.T) {
 	for k := range got {
 		assert.False(t, strings.HasPrefix(k, "TF_CLI_ARGS"), "TF_CLI_ARGS leaked through scrubber")
 	}
+}
+
+func TestFetchTerraformBinary(t *testing.T) {
+	var archive bytes.Buffer
+	zw := zip.NewWriter(&archive)
+	w, err := zw.Create("terraform")
+	require.NoError(t, err)
+	_, err = w.Write([]byte("linux terraform"))
+	require.NoError(t, err)
+	require.NoError(t, zw.Close())
+	digest := fmt.Sprintf("%x", sha256.Sum256(archive.Bytes()))
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch filepath.Base(r.URL.Path) {
+		case "terraform_1.11.4_SHA256SUMS":
+			fmt.Fprintf(w, "%s  terraform_1.11.4_linux_amd64.zip\n", digest)
+		case "terraform_1.11.4_linux_amd64.zip":
+			_, _ = w.Write(archive.Bytes())
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	dst := filepath.Join(t.TempDir(), "terraform")
+	require.NoError(t, fetchTerraformBinary(context.Background(), server.Client(), server.URL, "1.11.4", "linux_amd64", dst))
+	raw, err := os.ReadFile(dst)
+	require.NoError(t, err)
+	require.Equal(t, "linux terraform", string(raw))
+	info, err := os.Stat(dst)
+	require.NoError(t, err)
+	require.NotZero(t, info.Mode()&0o111)
+}
+
+func TestFetchTerraformBinaryRejectsChecksumMismatch(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "SHA256SUMS") {
+			fmt.Fprintln(w, "bad  terraform_1.11.4_linux_amd64.zip")
+			return
+		}
+		_, _ = w.Write([]byte("not a zip"))
+	}))
+	defer server.Close()
+
+	err := fetchTerraformBinary(context.Background(), server.Client(), server.URL, "1.11.4", "linux_amd64", filepath.Join(t.TempDir(), "terraform"))
+	require.ErrorContains(t, err, "checksum mismatch")
 }

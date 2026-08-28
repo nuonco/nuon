@@ -34,6 +34,8 @@ import { SandboxBuildLayout } from './SandboxBuildLayout'
 import { SandboxBuildSummaryTab } from './sandbox-build-tabs/SandboxBuildSummaryTab'
 import { SandboxBuildLogsTab } from './sandbox-build-tabs/SandboxBuildLogsTab'
 import { SandboxBuildTraceTab } from './sandbox-build-tabs/SandboxBuildTraceTab'
+import { Bundles } from './Bundles'
+import { BundleDetail } from './BundleDetail'
 import { Branches } from './branches/Branches'
 import { BranchLayout } from './branches/BranchLayout'
 import { BranchOverviewTab } from './branches/tabs/BranchOverviewTab'
@@ -223,6 +225,11 @@ export const appRoutes: RouteObject[] = [
           (p) => `sandbox/builds/${p.buildId}`
         ),
         children: sandboxBuildTabRoutes,
+      },
+      { path: ':orgId/apps/:appId/releases', element: <Bundles /> },
+      {
+        path: ':orgId/apps/:appId/releases/:releaseId',
+        element: <BundleDetail />,
       },
       {
         path: ':orgId/apps/:appId/installs',

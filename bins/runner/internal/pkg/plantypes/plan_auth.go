@@ -10,5 +10,5 @@ import (
 type PlanAuth struct {
 	AWSAuth   *awscredentials.Config   `json:"aws_auth,omitempty"`
 	AzureAuth *azurecredentials.Config `json:"azure_auth,omitempty"`
-	GCPAuth   *gcpcredentials.Config   `json:"gcp_auth,omitempty`
+	GCPAuth   *gcpcredentials.Config   `json:"gcp_auth,omitempty"`
 }

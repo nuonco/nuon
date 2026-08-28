@@ -7,8 +7,20 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { CustomerManagedSnapshotResources } from '@/components/customer-managed-support/SnapshotResources'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
 
 export const Resources = () => {
+  const { install } = useInstall()
+
+  return isCustomerManagedInstall(install) ? (
+    <CustomerManagedSnapshotResources />
+  ) : (
+    <ConnectedResources />
+  )
+}
+
+const ConnectedResources = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 

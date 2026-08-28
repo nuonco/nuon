@@ -13,6 +13,15 @@ import (
 
 func (s *InstallsServiceTestSuite) TestGetInstallByID() {
 	install := s.createTestInstall()
+	operatingModel := app.InstallOperatingModel{
+		InstallID:         install.ID,
+		Connectivity:      app.InstallConnectivityDisconnected,
+		ReleaseSelection:  app.InstallReleaseSelectionCustomer,
+		CommandAuthority:  app.InstallAuthorityCustomer,
+		ApprovalAuthority: app.InstallAuthorityCustomer,
+		Telemetry:         app.InstallTelemetryManual,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&operatingModel).Error)
 
 	path := fmt.Sprintf("/v1/installs/%s", install.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
@@ -26,6 +35,8 @@ func (s *InstallsServiceTestSuite) TestGetInstallByID() {
 	assert.Equal(s.T(), install.ID, resp.ID)
 	assert.Equal(s.T(), install.Name, resp.Name)
 	assert.Equal(s.T(), s.testApp.ID, resp.AppID)
+	require.NotNil(s.T(), resp.OperatingModel)
+	assert.Equal(s.T(), operatingModel.ID, resp.OperatingModel.ID)
 }
 
 func (s *InstallsServiceTestSuite) TestGetInstallByName() {

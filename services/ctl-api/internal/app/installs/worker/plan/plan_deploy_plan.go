@@ -74,22 +74,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		return nil, nil, errors.Wrap(err, "unable to get install registry repository config")
 	}
 
-	// Address the install-registry artifact by its content (manifest
-	// digest) rather than the synthetic install-deploy ID. The sync plan
-	// copies image-type builds into the install registry under their
-	// ResolvedTag; using the digest as SrcTag here is correct because
-	// oras.Copy resolves both tags and digests, and the digest is the
-	// immutable identity of the artifact.
-	//
-	// For non-image builds and image builds without SourceDigest, the sync
-	// plan tags the install-registry copy with installRegistryTag, so we read
-	// it back under the same tag.
-	srcTag := installRegistryTag(deploy)
-	srcDigest := ""
-	if build.SourceDigest != "" {
-		srcTag = build.SourceDigest
-		srcDigest = build.SourceDigest
-	}
+	srcTag, srcDigest := DeploySrcRef(deploy, build)
 
 	plan := &plantypes.DeployPlan{
 		Src:       ociConfig,
@@ -142,36 +127,74 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 	}
 
 	if install.SandboxMode.Bool {
-		targetRefs := helpers.GetComponentReferences(appCfg, installDeploy.ComponentName)
-
-		plan.SandboxMode = &plantypes.SandboxMode{
-			Enabled: true,
-			Outputs: refs.GetFakeRefs(targetRefs),
-		}
-
-		switch build.ComponentConfigConnection.Type {
-		case app.ComponentTypeHelmChart:
-			plan.SandboxMode.Helm = p.createHelmDeploySandboxMode(ctx, plan.HelmDeployPlan)
-		case app.ComponentTypeKubernetesManifest:
-			sandboxPlan, err := p.createKubernetesManifestDeployPlanSandboxMode(plan.KubernetesManifestDeployPlan)
-			if err != nil {
-				return nil, nil, errors.Wrap(err, "unable to create sandbox plan")
-			}
-
-			plan.SandboxMode.KubernetesManifest = sandboxPlan
-		case app.ComponentTypeTerraformModule:
-			sandboxPlan, err := p.createTerraformDeploySandboxMode(ctx, plan.TerraformDeployPlan)
-			if err != nil {
-				return nil, nil, errors.Wrap(err, "unable to create sandbox plan")
-			}
-
-			plan.SandboxMode.Terraform = sandboxPlan
-		case app.ComponentTypePulumi:
-			plan.SandboxMode.Pulumi = p.createPulumiDeploySandboxMode()
+		if err := p.ApplyDeploySandboxMode(appCfg, installDeploy.ComponentName, build.ComponentConfigConnection.Type, plan); err != nil {
+			return nil, nil, err
 		}
 	}
 
 	return plan, roleSelection, nil
+}
+
+// DeploySrcRef returns the tag and digest a deploy plan should use to address
+// the component artifact in the install registry.
+//
+// Address the install-registry artifact by its content (manifest
+// digest) rather than the synthetic install-deploy ID. The sync plan
+// copies image-type builds into the install registry under their
+// ResolvedTag; using the digest as SrcTag here is correct because
+// oras.Copy resolves both tags and digests, and the digest is the
+// immutable identity of the artifact.
+//
+// For non-image builds and image builds without SourceDigest, the sync
+// plan tags the install-registry copy with installRegistryTag, so we read it
+// back under the same tag.
+func DeploySrcRef(deploy *app.InstallDeploy, build *app.ComponentBuild) (srcTag, srcDigest string) {
+	srcTag = installRegistryTag(deploy)
+	if build.SourceDigest != "" {
+		srcTag = build.SourceDigest
+		srcDigest = build.SourceDigest
+	}
+	return srcTag, srcDigest
+}
+
+// ApplyDeploySandboxMode fills in the plan's SandboxMode with fake refs and
+// the component type's fake plan contents. Pure so install-free callers can
+// reuse it alongside the Render* plan cores.
+func (p *Planner) ApplyDeploySandboxMode(
+	appCfg *app.AppConfig,
+	componentName string,
+	componentType app.ComponentType,
+	plan *plantypes.DeployPlan,
+) error {
+	targetRefs := helpers.GetComponentReferences(appCfg, componentName)
+
+	plan.SandboxMode = &plantypes.SandboxMode{
+		Enabled: true,
+		Outputs: refs.GetFakeRefs(targetRefs),
+	}
+
+	switch componentType {
+	case app.ComponentTypeHelmChart:
+		plan.SandboxMode.Helm = p.createHelmDeploySandboxMode(plan.HelmDeployPlan)
+	case app.ComponentTypeKubernetesManifest:
+		sandboxPlan, err := p.createKubernetesManifestDeployPlanSandboxMode(plan.KubernetesManifestDeployPlan)
+		if err != nil {
+			return errors.Wrap(err, "unable to create sandbox plan")
+		}
+
+		plan.SandboxMode.KubernetesManifest = sandboxPlan
+	case app.ComponentTypeTerraformModule:
+		sandboxPlan, err := p.createTerraformDeploySandboxMode(plan.TerraformDeployPlan)
+		if err != nil {
+			return errors.Wrap(err, "unable to create sandbox plan")
+		}
+
+		plan.SandboxMode.Terraform = sandboxPlan
+	case app.ComponentTypePulumi:
+		plan.SandboxMode.Pulumi = p.createPulumiDeploySandboxMode()
+	}
+
+	return nil
 }
 
 func (p *Planner) getRoleForDeploy(
@@ -241,6 +264,17 @@ func (p *Planner) getAuthForDeploy(
 		return nil, err
 	}
 
+	return p.AuthForDeploy(l, roleSelection, stack, sessionName)
+}
+
+// AuthForDeploy is the pure core of getAuthForDeploy, usable outside a
+// Temporal workflow by callers that have already resolved a role selection.
+func (p *Planner) AuthForDeploy(
+	l *zap.Logger,
+	roleSelection *operationroles.RoleSelection,
+	stack *app.InstallStack,
+	sessionName string,
+) (*CloudAuth, error) {
 	l.Info("using selected role for component deploy auth",
 		zap.String("role_name", roleSelection.RoleName),
 		zap.String("role_arn", roleSelection.RoleARN),

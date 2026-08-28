@@ -31,8 +31,20 @@ import { getInstallAction, getInstallState } from '@/lib'
 import type { TActionConfigTriggerType } from '@/types'
 import { sortByIdx } from '@/utils/action-utils'
 import { isActionInAppConfig } from '@/utils/app-config-membership'
+import { CustomerManagedSnapshotActionDetail } from '@/components/customer-managed-support/SnapshotActions'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
 
 export const ActionDetail = () => {
+  const { install } = useInstall()
+
+  return isCustomerManagedInstall(install) ? (
+    <CustomerManagedSnapshotActionDetail />
+  ) : (
+    <ConnectedActionDetail />
+  )
+}
+
+const ConnectedActionDetail = () => {
   const { actionId } = useParams()
   const { org } = useOrg()
   const { install } = useInstall()

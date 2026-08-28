@@ -10,6 +10,7 @@ import (
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	"github.com/nuonco/nuon/pkg/runner/errs"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 )
 
 // handler is the handler implementation
@@ -20,6 +21,7 @@ type handler struct {
 	cfg               *runnerconfig.Config
 	l                 *zap.Logger
 	terraformProvider *componenthealth.TerraformProvider
+	archiveSource     ociarchive.Source
 
 	// created on initialization of the plugin struct
 	state *handlerState
@@ -36,6 +38,7 @@ type HandlerParams struct {
 	ErrRecorder       *errs.Recorder
 	L                 *zap.Logger
 	TerraformProvider *componenthealth.TerraformProvider
+	ArchiveSource     ociarchive.Source `optional:"true"`
 }
 
 func New(params HandlerParams) (*handler, error) {
@@ -46,5 +49,6 @@ func New(params HandlerParams) (*handler, error) {
 		errRecorder:       params.ErrRecorder,
 		l:                 params.L,
 		terraformProvider: params.TerraformProvider,
+		archiveSource:     params.ArchiveSource,
 	}, nil
 }

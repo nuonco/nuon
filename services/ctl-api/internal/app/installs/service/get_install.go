@@ -63,6 +63,10 @@ func (s *service) GetInstall(ctx *gin.Context) {
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
+		Preload("OperatingModel").
+		Preload("InstallRegistrations", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_registrations.created_at DESC")
+		}).
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").

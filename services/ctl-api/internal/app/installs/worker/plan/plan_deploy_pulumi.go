@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/kube"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -52,51 +53,92 @@ func (p *Planner) createPulumiDeployPlan(
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
 
-	cfg := compBuild.ComponentConfigConnection.PulumiComponentConfig
-	if err := render.RenderStruct(cfg, stateData); err != nil {
+	return p.RenderPulumiDeployPlan(l, &RenderPulumiDeployPlanInput{
+		Stack:         stack,
+		State:         state,
+		StateData:     stateData,
+		InstallDeploy: installDeploy,
+		CompBuild:     compBuild,
+		WorkspaceID:   installComp.TerraformWorkspace.ID,
+		RoleSelection: roleSelection,
+		ResolveClusterInfo: func(cloudAuth *CloudAuth) (*kube.ClusterInfo, error) {
+			return p.resolveKubernetesContext(ctx, &compBuild.ComponentConfigConnection, appCfg, stack, state, cloudAuth)
+		},
+		HasUpdatePlansFeature: func() (bool, error) {
+			return activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeaturePulumiUpdatePlans))
+		},
+	})
+}
+
+// RenderPulumiDeployPlanInput carries the already-loaded data a pulumi deploy
+// plan is rendered from.
+type RenderPulumiDeployPlanInput struct {
+	Stack         *app.InstallStack
+	State         *state.State
+	StateData     map[string]any
+	InstallDeploy *app.InstallDeploy
+	CompBuild     *app.ComponentBuild
+	WorkspaceID   string
+	RoleSelection *operationroles.RoleSelection
+
+	// ResolveClusterInfo resolves the kubernetes cluster at this exact point in
+	// the plan render.
+	ResolveClusterInfo func(*CloudAuth) (*kube.ClusterInfo, error)
+	// HasUpdatePlansFeature checks the feature at this exact point in the plan
+	// render.
+	HasUpdatePlansFeature func() (bool, error)
+}
+
+// RenderPulumiDeployPlan is the pure core of createPulumiDeployPlan.
+func (p *Planner) RenderPulumiDeployPlan(
+	l *zap.Logger,
+	in *RenderPulumiDeployPlanInput,
+) (*plantypes.PulumiDeployPlan, error) {
+	cfg := in.CompBuild.ComponentConfigConnection.PulumiComponentConfig
+	if err := render.RenderStruct(cfg, in.StateData); err != nil {
 		l.Error("error rendering pulumi config",
 			zap.Error(err),
-			zap.Any("state", stateData),
+			zap.Any("state", in.StateData),
 		)
 		return nil, errors.Wrap(err, "unable to render config")
 	}
 
 	configMap := generics.ToStringMap(cfg.Config)
-	if err := render.RenderMap(&configMap, stateData); err != nil {
+	if err := render.RenderMap(&configMap, in.StateData); err != nil {
 		l.Error("error rendering pulumi config map",
 			zap.Any("config", configMap),
 			zap.Error(err),
-			zap.Any("state", stateData),
+			zap.Any("state", in.StateData),
 		)
 		return nil, errors.Wrap(err, "unable to render pulumi config")
 	}
 
 	envVars := generics.ToStringMap(cfg.EnvVars)
-	if err := render.RenderMap(&envVars, stateData); err != nil {
+	if err := render.RenderMap(&envVars, in.StateData); err != nil {
 		l.Error("error rendering env-vars",
 			zap.Any("env-vars", envVars),
 			zap.Error(err),
-			zap.Any("state", stateData),
+			zap.Any("state", in.StateData),
 		)
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
-	cloudAuth, err := p.getAuthForDeploy(
-		ctx,
-		roleSelection,
-		stack,
-		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
+	cloudAuth, err := p.AuthForDeploy(
+		l,
+		in.RoleSelection,
+		in.Stack,
+		fmt.Sprintf("component-deploy-%s", in.InstallDeploy.ID),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get auth for deploy")
 	}
 
-	clusterInfo, err := p.resolveKubernetesContext(ctx, &compBuild.ComponentConfigConnection, appCfg, stack, state, cloudAuth)
+	clusterInfo, err := in.ResolveClusterInfo(cloudAuth)
 	if err != nil {
 		l.Warn("unable to resolve kubernetes context, this usually means this was not a kubernetes application")
 	}
 
-	updatePlans, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeaturePulumiUpdatePlans))
+	updatePlans, err := in.HasUpdatePlansFeature()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check pulumi-update-plans feature")
 	}
@@ -106,14 +148,14 @@ func (p *Planner) createPulumiDeployPlan(
 		EnvVars:       envVars,
 		Runtime:       cfg.Runtime,
 		PulumiVersion: cfg.Version,
-		StackName:     fmt.Sprintf("nuon-%s", installDeploy.InstallID),
-		WorkspaceID:   installComp.TerraformWorkspace.ID,
+		StackName:     fmt.Sprintf("nuon-%s", in.InstallDeploy.InstallID),
+		WorkspaceID:   in.WorkspaceID,
 		AzureAuth:     cloudAuth.Azure,
 		AWSAuth:       cloudAuth.AWS,
 		GCPAuth:       cloudAuth.GCP,
 		ClusterInfo:   clusterInfo,
-		State:         state,
-		Destroy:       installDeploy.Type == app.InstallDeployTypeTeardown,
+		State:         in.State,
+		Destroy:       in.InstallDeploy.Type == app.InstallDeployTypeTeardown,
 		UpdatePlans:   updatePlans,
 	}, nil
 }

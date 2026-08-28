@@ -14,8 +14,20 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
+import { CustomerManagedSnapshotSandbox } from '@/components/customer-managed-support/SnapshotSandbox'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
 
 export const Sandbox = () => {
+  const { install } = useInstall()
+
+  return isCustomerManagedInstall(install) ? (
+    <CustomerManagedSnapshotSandbox />
+  ) : (
+    <ConnectedSandbox />
+  )
+}
+
+const ConnectedSandbox = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 

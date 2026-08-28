@@ -19,6 +19,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/triggereventdispatch"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
+	customermanagedpublishactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/customer_managed/signals/publish/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 )
@@ -34,13 +35,14 @@ type Worker struct {
 type WorkerParams struct {
 	fx.In
 
-	Cfg                   *internal.Config
-	Tclient               temporalclient.Client
-	Wkflows               *Workflows
-	Acts                  *activities.Activities
-	BranchActs            *branchactivities.Activities
-	SyncInstallConfigActs *syncappconfiginstalls.Activities
-	AppConfigSyncActs     *appconfigsync.Activities
+	Cfg                        *internal.Config
+	Tclient                    temporalclient.Client
+	Wkflows                    *Workflows
+	Acts                       *activities.Activities
+	BranchActs                 *branchactivities.Activities
+	CustomerManagedPublishActs *customermanagedpublishactivities.Activities
+	SyncInstallConfigActs      *syncappconfiginstalls.Activities
+	AppConfigSyncActs          *appconfigsync.Activities
 
 	SharedActs      *workflows.Activities
 	SharedWorkflows *workflows.Workflows
@@ -87,6 +89,7 @@ func New(params WorkerParams) (*Worker, error) {
 	// register activities
 	wkr.RegisterActivity(params.Acts)
 	wkr.RegisterActivity(params.BranchActs)
+	wkr.RegisterActivity(params.CustomerManagedPublishActs)
 	wkr.RegisterActivity(params.SyncInstallConfigActs)
 	wkr.RegisterActivity(params.AppConfigSyncActs)
 	for _, acts := range params.SharedActs.AllActivities() {

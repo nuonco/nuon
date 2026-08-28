@@ -26,7 +26,7 @@ type ServiceCreateReleaseRequest struct {
 	AppConfigID *string `json:"app_config_id"`
 
 	// runbooks
-	Runbooks []*CustomermanagedRunbookTemplate `json:"runbooks"`
+	Runbooks []*GithubComNuoncoNuonPkgCustomerManagedRunbookTemplate `json:"runbooks"`
 }
 
 // Validate validates this service create release request
