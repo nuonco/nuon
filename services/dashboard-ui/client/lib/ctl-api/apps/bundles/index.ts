@@ -1,1 +1,5 @@
+export * from './create-customer-managed-bundle'
+export * from './create-customer-managed-bundle-download-grant'
+export * from './get-customer-managed-bundle'
+export * from './get-customer-managed-bundles'
 export * from './releases'

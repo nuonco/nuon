@@ -17,6 +17,8 @@ import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { PageSection } from '@/components/layout/PageSection'
+import { CustomerManagedSnapshotBanner } from '@/components/customer-managed-support/SnapshotBanner'
+import { CustomerManagedBadge } from '@/components/installs/CustomerManagedBadge'
 import { DeprovisionBanner } from '@/components/installs/DeprovisionBanner'
 import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
@@ -32,6 +34,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
 import type { TNavItem } from '@/types'
 
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
@@ -39,6 +42,7 @@ import { InstallProvider } from '@/providers/install-provider'
 import { InstallAppConfigProvider } from '@/providers/install-app-config-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
+import { CustomerManagedSupportSnapshotProvider } from '@/providers/customer-managed-support-snapshot-provider'
 
 export const InstallLayout = () => {
   const params = useParams()
@@ -46,13 +50,15 @@ export const InstallLayout = () => {
   return (
     <InstallProvider installId={params?.installId} shouldPoll>
       <InstallAppConfigProvider>
-        <PageSidebarProvider>
-          <ToastProvider>
-            <SurfacesProvider>
-              <InstallTemplate />
-            </SurfacesProvider>
-          </ToastProvider>
-        </PageSidebarProvider>
+        <CustomerManagedSupportSnapshotProvider>
+          <PageSidebarProvider>
+            <ToastProvider>
+              <SurfacesProvider>
+                <InstallTemplate />
+              </SurfacesProvider>
+            </ToastProvider>
+          </PageSidebarProvider>
+        </CustomerManagedSupportSnapshotProvider>
       </InstallAppConfigProvider>
     </InstallProvider>
   )
@@ -82,8 +88,9 @@ const InstallTemplate = () => {
   const [searchParams] = useSearchParams()
   const isSettingsOpen =
     searchParams.get('panel') === INSTALL_SETTINGS_PANEL_KEY
+  const isCustomerManaged = isCustomerManagedInstall(install)
 
-  const navLinks: TNavItem[] = [
+  const connectedNavLinks: TNavItem[] = [
     { type: 'section', label: 'Overview' },
     {
       path: `/`,
@@ -185,6 +192,26 @@ const InstallTemplate = () => {
       text: 'Install runner',
     },
   ]
+  const customerManagedNavLinks: TNavItem[] = [
+    { type: 'section', label: 'Captured state' },
+    { path: '/', iconVariant: 'HouseSimpleIcon', text: 'Overview' },
+    { path: '/workflows', iconVariant: 'TreeStructureIcon', text: 'Runs' },
+    { path: '/resources', iconVariant: 'PulseIcon', text: 'Resources' },
+    { path: '/components', iconVariant: 'CardsIcon', text: 'Components' },
+    { path: '/sandbox', iconVariant: 'ShippingContainerIcon', text: 'Sandbox' },
+    { path: '/roles', iconVariant: 'FileLockIcon', text: 'Roles' },
+    { path: '/actions', iconVariant: 'TerminalWindowIcon', text: 'Actions' },
+    { path: '/runbooks', iconVariant: 'BookIcon', text: 'Runbooks' },
+    { path: '/runner', iconVariant: 'SneakerMoveIcon', text: 'Install runner' },
+    { path: '/bundles', iconVariant: 'ArchiveIcon', text: 'Bundles' },
+    { type: 'section', label: 'Customer' },
+    { path: '/stacks', iconVariant: 'StackIcon', text: 'Stacks' },
+    { path: '/inputs', iconVariant: 'ListChecksIcon', text: 'Current inputs' },
+    { path: '/state', iconVariant: 'CodeBlockIcon', text: 'View state' },
+  ]
+  const navLinks = isCustomerManaged
+    ? customerManagedNavLinks
+    : connectedNavLinks
   const isChildRoute = !!useMatch(
     '/:orgId/installs/:installId/:section/:rest/*'
   )
@@ -196,7 +223,7 @@ const InstallTemplate = () => {
 
   return (
     <>
-      <InstallSettingsPanel />
+      {!isCustomerManaged && <InstallSettingsPanel />}
       <PageLayout>
         {isChildRoute ? (
           <PageContent className="border-t" variant="row">
@@ -206,6 +233,11 @@ const InstallTemplate = () => {
               storageKey="subnav:install"
             />
             <div className="flex flex-col flex-1 min-w-0">
+              {isCustomerManaged && (
+                <div className="px-6 pt-6">
+                  <CustomerManagedSnapshotBanner />
+                </div>
+              )}
               <ErrorBoundary key={pathname} fallback={<InstallContentError />}>
                 <Outlet />
               </ErrorBoundary>
@@ -222,6 +254,7 @@ const InstallTemplate = () => {
                       {install.name}
                     </Text>
 
+                    {isCustomerManaged && <CustomerManagedBadge />}
                     {install.labels &&
                       Object.entries(install.labels).map(([key, value]) => (
                         <LabelBadge
@@ -277,7 +310,13 @@ const InstallTemplate = () => {
                       {install?.app?.name}
                     </Link>
                   </LabeledValue>
-                  <InstallStatusesContainer collapsible />
+                  {isCustomerManaged ? (
+                    <LabeledValue label="Management">
+                      <Text variant="subtext">Customer-managed · offline</Text>
+                    </LabeledValue>
+                  ) : (
+                    <InstallStatusesContainer collapsible />
+                  )}
                 </div>
               </div>
               {install?.drifted_objects?.length ? (
@@ -296,7 +335,15 @@ const InstallTemplate = () => {
                 storageKey="subnav:install"
               />
               <div className="flex flex-col flex-1 min-w-0">
-                <ErrorBoundary key={pathname} fallback={<InstallContentError />}>
+                {isCustomerManaged && (
+                  <div className="px-6 pt-6">
+                    <CustomerManagedSnapshotBanner />
+                  </div>
+                )}
+                <ErrorBoundary
+                  key={pathname}
+                  fallback={<InstallContentError />}
+                >
                   <Outlet />
                 </ErrorBoundary>
               </div>

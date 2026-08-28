@@ -87,6 +87,9 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 		Preload("ManagementPolicyVersions", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_management_policy_versions.version DESC")
 		}).
+		Preload("InstallRegistrations", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_registrations.created_at DESC")
+		}).
 		Preload("AppSandboxConfig").
 		Preload("AWSAccount").
 		Preload("AzureAccount").

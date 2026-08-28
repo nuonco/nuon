@@ -156,6 +156,9 @@ type AppInstall struct {
 	// every install individually.
 	LastHealthReportAt string `json:"last_health_report_at,omitempty"`
 
+	// latest registration
+	LatestRegistration *AppInstallRegistration `json:"latest_registration,omitempty"`
+
 	// lifecycle phase
 	LifecyclePhase any `json:"lifecycle_phase,omitempty"`
 
@@ -297,6 +300,10 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLabels(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLatestRegistration(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -807,6 +814,29 @@ func (m *AppInstall) validateLabels(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppInstall) validateLatestRegistration(formats strfmt.Registry) error {
+	if swag.IsZero(m.LatestRegistration) { // not required
+		return nil
+	}
+
+	if m.LatestRegistration != nil {
+		if err := m.LatestRegistration.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("latest_registration")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("latest_registration")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppInstall) validateManagementPolicy(formats strfmt.Registry) error {
 	if swag.IsZero(m.ManagementPolicy) { // not required
 		return nil
@@ -1017,6 +1047,10 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 	}
 
 	if err := m.contextValidateLabels(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLatestRegistration(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -1528,6 +1562,31 @@ func (m *AppInstall) contextValidateLabels(ctx context.Context, formats strfmt.R
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppInstall) contextValidateLatestRegistration(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LatestRegistration != nil {
+
+		if swag.IsZero(m.LatestRegistration) { // not required
+			return nil
+		}
+
+		if err := m.LatestRegistration.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("latest_registration")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("latest_registration")
+			}
+
+			return err
+		}
 	}
 
 	return nil

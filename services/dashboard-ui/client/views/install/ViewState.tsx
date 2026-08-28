@@ -14,13 +14,29 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallState } from '@/lib'
 import { createFileDownload } from '@/utils/file-download'
+import { CustomerManagedSnapshotState } from '@/components/customer-managed-support/SnapshotState'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
 
 export const ViewState = () => {
+  const { install } = useInstall()
+
+  return isCustomerManagedInstall(install) ? (
+    <CustomerManagedSnapshotState />
+  ) : (
+    <ConnectedViewState />
+  )
+}
+
+const ConnectedViewState = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const [isCopied, setIsCopied] = useState(false)
 
-  const { data: state, error, isLoading } = useQuery({
+  const {
+    data: state,
+    error,
+    isLoading,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-state', org?.id, install?.id],
     queryFn: () => getInstallState({ orgId: org.id, installId: install.id }),

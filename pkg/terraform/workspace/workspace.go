@@ -41,7 +41,7 @@ var providerZipPlatformRE = regexp.MustCompile(`_([a-z0-9]+_[a-z0-9]+)\.zip$`)
 // `<archBase>/<DefaultBundledBinaryDir>/<os>_<arch>/terraform` plus a
 // sibling `VERSION` sidecar that records the terraform version they were
 // built for. The install runner looks at the same path to decide whether
-// it can run terraform fully airgapped.
+// it can run terraform fully customer-managed.
 //
 // Mirrors the shape of DefaultFilesystemMirrorDir for providers — same
 // "filesystem-driven, feature-flag-unaware" rule on the install side.
@@ -175,7 +175,7 @@ func isBundledTerraformBinary(name string) bool {
 // resolution.
 //
 // The platform check is a guard against cross-platform install runners
-// (notably local-dev macOS): if the airgap mirror only ships linux_amd64 +
+// (notably local-dev macOS): if the customer-managed mirror only ships linux_amd64 +
 // linux_arm64 zips and the install runner is darwin_arm64, writing the
 // `direct { exclude = ["*/*"] }` .terraformrc would deadlock terraform init.
 // We'd rather fall back to direct registry resolution on the unsupported
@@ -275,7 +275,7 @@ type workspace struct {
 	//
 	// The path may be relative or absolute. Relative paths are resolved
 	// against the workspace root (which is created lazily). The
-	// `direct { exclude = ["*/*"] }` block is the airgap guarantee:
+	// `direct { exclude = ["*/*"] }` block is the customer-managed guarantee:
 	// terraform init will fail loudly if a provider is missing from the
 	// mirror rather than silently fall back to the public registry.
 	FilesystemMirrorPath string

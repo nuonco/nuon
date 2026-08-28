@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router";
 import { SurfacesProvider } from "@/providers/surfaces-provider";
+import { App } from "./App";
 import { BrandingBoundary } from "./branding";
-import { ConnectedApp } from "./ConnectedApp";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,7 +21,7 @@ createRoot(document.getElementById("root")!).render(
       <BrowserRouter>
         <SurfacesProvider>
           <BrandingBoundary>
-            <ConnectedApp />
+            <App />
           </BrandingBoundary>
         </SurfacesProvider>
       </BrowserRouter>

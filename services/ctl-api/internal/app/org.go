@@ -71,11 +71,11 @@ const (
 	// step in the dashboard, letting customers provision the Terraform
 	// install stack through Spacelift instead of running Terraform locally.
 	OrgFeatureSpaceliftInstallStacks OrgFeature = "spacelift-install-stacks"
-	// OrgFeatureStackTFProvider switches the install stack "await" step's
-	// Terraform directions to the provider-based flow: clone the ja/stack-sdk
-	// branch of install-stacks (which reads config from the API via the stack
-	// provider's stack_config data source) and use the slimmed-down tfvars
-	// instead of the full generated set.
+ 	// OrgFeatureStackTFProvider switches the install stack "await" step's
+ 	// Terraform directions to the provider-based flow: clone the ja/stack-sdk
+ 	// branch of install-stacks (which reads config from the API via the stack
+ 	// provider's stack_config data source) and use the slimmed-down tfvars
+ 	// instead of the full generated set.
 	OrgFeatureStackTFProvider         OrgFeature = "stack-tf-provider"
 	OrgFeatureAWSAccountConnections   OrgFeature = "aws-account-connections"
 	OrgFeatureCustomerManagedInstalls OrgFeature = "customer-managed-installs"

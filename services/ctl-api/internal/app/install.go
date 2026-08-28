@@ -85,6 +85,7 @@ type Install struct {
 	InstallConfig            *InstallConfig                   `json:"install_config,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_config,omitzero,omitempty"`
 	InstallStates            []InstallState                   `json:"install_states,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_states,omitzero,omitempty"`
 	ManagementPolicyVersions []InstallManagementPolicyVersion `json:"-" gorm:"foreignKey:InstallID;constraint:OnDelete:RESTRICT;" temporaljson:"-"`
+	InstallRegistrations     []InstallRegistration            `json:"-" gorm:"foreignKey:InstallID" temporaljson:"-"`
 
 	// InstallRoles is a list of roles associated with that install at given app config ID
 	InstallRoles []InstallRoles `json:"install_roles,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_roles,omitzero,omitempty"`
@@ -168,6 +169,7 @@ type Install struct {
 	// column itself never serializes.
 	PhoneHomeAuthStatus *PhoneHomeAuthStatus            `json:"phone_home_auth,omitzero,omitempty" gorm:"-" temporaljson:"-"`
 	ManagementPolicy    *InstallManagementPolicyVersion `json:"management_policy,omitzero,omitempty" gorm:"-" temporaljson:"management_policy,omitzero,omitempty"`
+	LatestRegistration  *InstallRegistration            `json:"latest_registration,omitzero,omitempty" gorm:"-" temporaljson:"-"`
 
 	// Expected* coalesce the target identifier with the observed one, so callers get
 	// the strongest identifier available without caring which is set.
@@ -246,6 +248,9 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	}
 	if len(i.ManagementPolicyVersions) > 0 {
 		i.ManagementPolicy = &i.ManagementPolicyVersions[0]
+	}
+	if len(i.InstallRegistrations) > 0 {
+		i.LatestRegistration = &i.InstallRegistrations[0]
 	}
 
 	// get the composite status of all the components

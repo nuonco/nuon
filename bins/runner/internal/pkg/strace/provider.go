@@ -22,9 +22,9 @@ import (
 // across the full process lifetime via runner_id, while logs correlate per
 // log_stream_id. The two share only the Resource builder.
 func NewProcessProvider(cfg *runnerconfig.Config, set *settings.Settings) (*sdktrace.TracerProvider, error) {
-	// Tie tracing on/off to EnableLogging so we don't add a new toggle for
-	// the spike. A no-op TracerProvider keeps op.Start cheap if disabled.
-	if !set.EnableLogging {
+	// Offline customer-managed logging uses a loopback OTLP endpoint, but traces still have no
+	// offline sink. A no-op provider prevents them from reaching the local API.
+	if !set.EnableLogging || cfg.OTLPLogsEndpoint != "" {
 		return sdktrace.NewTracerProvider(), nil
 	}
 

@@ -668,6 +668,27 @@ export interface paths {
     /** @description Update app configuration across multiple installs. */
     post: operations["UpdateAppConfigInstallsV2"];
   };
+  "/v1/apps/{app_id}/customer-managed-bundles": {
+    /** list published portable bundles for an app */
+    get: operations["ListCustomerManagedBundles"];
+    /** create and publish an immutable portable bundle */
+    post: operations["CreateCustomerManagedBundle"];
+  };
+  "/v1/apps/{app_id}/customer-managed-bundles/{bundle_id}": {
+    /** get a published portable bundle */
+    get: operations["GetCustomerManagedBundle"];
+  };
+  "/v1/apps/{app_id}/customer-managed-bundles/{bundle_id}/blob-grants": {
+    /**
+     * create download grants for individual content-addressed bundle blobs
+     * @description Grants presigned access to individual bundle blobs so clients can download only blobs missing from their local store. Call with no digests to discover the bundle's OCI index digest, then request grants for missing blobs in batches.
+     */
+    post: operations["CreateCustomerManagedBundleBlobGrants"];
+  };
+  "/v1/apps/{app_id}/customer-managed-bundles/{bundle_id}/download-grants": {
+    /** create a download grant for a published portable bundle */
+    post: operations["CreateCustomerManagedBundleDownloadGrant"];
+  };
   "/v1/apps/{app_id}/input-config": {
     /**
      * @description App input configs allow you to declare the inputs for your application, and do things such as require customer inputs or
@@ -1314,6 +1335,10 @@ export interface paths {
      * @description Add an entry to the waitlist.
      */
     post: operations["CreateWaitlist"];
+  };
+  "/v1/install-registrations": {
+    /** register a customer-managed installation */
+    post: operations["RegisterInstall"];
   };
   "/v1/install-workflows/{install_workflow_id}": {
     /**
@@ -2246,6 +2271,16 @@ export interface paths {
      * @description Returns the state history for an install.
      */
     get: operations["GetInstallStateHistory"];
+  };
+  "/v1/installs/{install_id}/support-snapshots": {
+    /** list imported support snapshots for a customer-managed install */
+    get: operations["ListInstallSupportSnapshots"];
+    /** import a customer-managed install support snapshot */
+    post: operations["CreateInstallSupportSnapshot"];
+  };
+  "/v1/installs/{install_id}/support-snapshots/{snapshot_id}": {
+    /** get one imported customer-managed install support snapshot */
+    get: operations["GetInstallSupportSnapshot"];
   };
   "/v1/installs/{install_id}/sync-config": {
     /**
@@ -4779,6 +4814,7 @@ export interface components {
        * every install individually.
        */
       last_health_report_at?: string;
+      latest_registration?: components["schemas"]["app.InstallRegistration"];
       lifecycle_phase?: Record<string, never>;
       links?: {
         [key: string]: unknown;
@@ -5205,6 +5241,19 @@ export interface components {
       superseded_at?: string;
       telemetry?: string;
       version?: number;
+    };
+    "app.InstallRegistration": {
+      association_status?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      imported_at?: string;
+      install_id?: string;
+      integrity_status?: string;
+      package_id?: string;
+      registration?: components["schemas"]["customermanaged.InstallationRegistration"];
+      release_id?: string;
+      source?: string;
     };
     "app.InstallReleaseDeployment": {
       actor?: string;
@@ -7152,10 +7201,85 @@ export interface components {
       secret_access_key: string;
       session_token: string;
     };
+    "customermanaged.CapturedInput": {
+      bindable?: boolean;
+      default?: string;
+      description?: string;
+      name?: string;
+      required?: boolean;
+      secret?: boolean;
+      type?: string;
+      value?: string;
+      value_available?: boolean;
+      value_status?: string;
+    };
+    "customermanaged.CapturedInputs": {
+      inputs?: components["schemas"]["customermanaged.CapturedInput"][];
+      observed_at?: string;
+    };
+    "customermanaged.CapturedRole": {
+      cloud_id?: string;
+      name?: string;
+      provisioned?: boolean;
+      type?: string;
+    };
+    "customermanaged.CapturedRoles": {
+      observed_at?: string;
+      roles?: components["schemas"]["customermanaged.CapturedRole"][];
+    };
+    "customermanaged.ComponentHealth": {
+      component_id?: string;
+      component_name?: string;
+      component_type?: string;
+      health?: string;
+      install_component_id?: string;
+      resources?: components["schemas"]["customermanaged.ResourceHealth"][];
+      truncated?: boolean;
+    };
     "customermanaged.Finding": {
       code?: string;
       member?: string;
       message?: string;
+    };
+    "customermanaged.HealthSnapshot": {
+      cluster_access_error?: string;
+      components?: components["schemas"]["customermanaged.ComponentHealth"][];
+      kind?: string;
+      observed_at?: string;
+      sandbox_releases?: components["schemas"]["customermanaged.SandboxReleaseHealth"][];
+    };
+    "customermanaged.HealthTransition": {
+      component_id?: string;
+      component_name?: string;
+      from?: string;
+      observed_at?: string;
+      to?: string;
+    };
+    "customermanaged.InstallationRegistration": {
+      archive_digest?: string;
+      bundle_digest?: string;
+      cloud?: components["schemas"]["customermanaged.InstallationRegistrationCloud"];
+      deployment_id?: string;
+      install_id?: string;
+      installed_at?: string;
+      operation_id?: string;
+      package_digest?: string;
+      package_id?: string;
+      registration_id?: string;
+      release_digest?: string;
+      release_id?: string;
+      schema_version?: number;
+      stack?: components["schemas"]["customermanaged.InstallationRegistrationStack"];
+    };
+    "customermanaged.InstallationRegistrationCloud": {
+      account_id?: string;
+      provider?: string;
+      region?: string;
+    };
+    "customermanaged.InstallationRegistrationStack": {
+      id?: string;
+      name?: string;
+      type?: string;
     };
     "customermanaged.QualificationReport": {
       platform?: string;
@@ -7168,6 +7292,15 @@ export interface components {
       media_type?: string;
       path?: string;
       size?: number;
+    };
+    "customermanaged.ResourceHealth": {
+      api_group?: string;
+      health?: string;
+      kind?: string;
+      message?: string;
+      name?: string;
+      namespace?: string;
+      provider?: string;
     };
     "customermanaged.RunbookStep": {
       /**
@@ -7182,6 +7315,21 @@ export interface components {
       id?: string;
       name?: string;
       steps?: components["schemas"]["customermanaged.RunbookStep"][];
+    };
+    "customermanaged.RunnerHeartbeat": {
+      bundle_digest?: string;
+      capabilities?: string[];
+      observed_at?: string;
+      runner_id?: string;
+      session_id?: string;
+      started_at?: string;
+      version?: string;
+    };
+    "customermanaged.SandboxReleaseHealth": {
+      health?: string;
+      namespace?: string;
+      release_name?: string;
+      resources?: components["schemas"]["customermanaged.ResourceHealth"][];
     };
     "diff.Diff": {
       children?: components["schemas"]["diff.Diff"][];
@@ -7430,6 +7578,201 @@ export interface components {
        * NOTE(JM): we are deprecating this
        */
       trusted_role_arn?: string;
+    };
+    "operation.BundleActionDefinition": {
+      break_glass_role_arn?: string;
+      component_dependencies?: string[];
+      enable_kube_config?: boolean;
+      kubernetes_context_name?: string;
+      references?: string[];
+      role?: string;
+      steps?: components["schemas"]["operation.BundleActionStep"][];
+      timeout_nanos?: number;
+      triggers?: components["schemas"]["operation.BundleActionTrigger"][];
+    };
+    "operation.BundleActionStep": {
+      artifact_digest?: string;
+      command?: string;
+      environment?: {
+        [key: string]: string;
+      };
+      index?: number;
+      inline_contents_digest?: string;
+      name?: string;
+      source?: components["schemas"]["operation.BundleSource"];
+    };
+    "operation.BundleActionTrigger": {
+      component_name?: string;
+      cron_schedule?: string;
+      index?: number;
+      type?: string;
+    };
+    "operation.BundleCandidate": {
+      archive_name?: string;
+      archive_size?: number;
+      bundle?: components["schemas"]["operation.BundleInfo"];
+      changes?: components["schemas"]["operation.BundleChange"][];
+      deployment?: components["schemas"]["operation.BundleDeploymentAssets"];
+      previous_digest?: string;
+      schema_version?: number;
+      staged_at?: string;
+    };
+    "operation.BundleChange": {
+      apply_step_id?: string;
+      candidate_action_definition?: components["schemas"]["operation.BundleActionDefinition"];
+      candidate_component_definition?: {
+        [key: string]: unknown;
+      };
+      candidate_config_digest?: string;
+      candidate_digest?: string;
+      candidate_runbook_definition?: components["schemas"]["operation.BundleRunbookDefinition"];
+      change?: string;
+      detail?: string;
+      kind?: string;
+      name?: string;
+      plan_step_id?: string;
+      previous_action_definition?: components["schemas"]["operation.BundleActionDefinition"];
+      previous_component_definition?: {
+        [key: string]: unknown;
+      };
+      previous_config_digest?: string;
+      previous_digest?: string;
+      previous_runbook_definition?: components["schemas"]["operation.BundleRunbookDefinition"];
+    };
+    "operation.BundleContent": {
+      action_definition?: components["schemas"]["operation.BundleActionDefinition"];
+      component_definition?: {
+        [key: string]: unknown;
+      };
+      config_digest?: string;
+      detail?: string;
+      digest?: string;
+      kind?: string;
+      name?: string;
+      runbook_definition?: components["schemas"]["operation.BundleRunbookDefinition"];
+      size?: number;
+    };
+    "operation.BundleDeploymentAssets": {
+      candidate_bundle_key?: string;
+      stack_template_url?: string;
+      target_bundle_key?: string;
+    };
+    "operation.BundleInfo": {
+      activated_at?: string;
+      /**
+       * @description ArchiveDigest is the sha256 of the .tar.zst transport archive the
+       * runner extracted, when the runner performed the extraction itself;
+       * pre-extracted bundle directories leave it empty.
+       */
+      archive_digest?: string;
+      bundle_digest?: string;
+      contents?: components["schemas"]["operation.BundleContent"][];
+      deployment_id?: string;
+      operation_id?: string;
+      package?: components["schemas"]["operation.BundlePackageIdentity"];
+      release?: components["schemas"]["operation.BundleReleaseIdentity"];
+      schema_version?: number;
+      target?: components["schemas"]["operation.BundleTarget"];
+      total_size?: number;
+      verification?: components["schemas"]["operation.BundleVerification"];
+    };
+    "operation.BundlePackageIdentity": {
+      digest?: string;
+      format?: string;
+      id?: string;
+      target?: string;
+    };
+    "operation.BundleReleaseIdentity": {
+      digest?: string;
+      id?: string;
+    };
+    "operation.BundleRunbookDefinition": {
+      inputs?: components["schemas"]["operation.BundleRunbookInput"][];
+      readme_digest?: string;
+      steps?: components["schemas"]["operation.BundleRunbookStep"][];
+    };
+    "operation.BundleRunbookInput": {
+      default?: string;
+      description?: string;
+      display_name?: string;
+      index?: number;
+      name?: string;
+      required?: boolean;
+      sensitive?: boolean;
+      type?: string;
+    };
+    "operation.BundleRunbookStep": {
+      command?: string;
+      component?: string;
+      deploy_dependents?: boolean;
+      environment?: {
+        [key: string]: string;
+      };
+      event_types?: string[];
+      filters_digest?: string;
+      index?: number;
+      inline_contents_digest?: string;
+      kind?: string;
+      name?: string;
+      plan_only?: boolean;
+      reference?: string;
+      role?: string;
+      skip_component_deploys?: boolean;
+      tear_down_dependents?: boolean;
+      timeout_nanos?: number;
+      trigger_name?: string;
+    };
+    "operation.BundleSource": {
+      commit?: string;
+      digest?: string;
+      directory?: string;
+      repository?: string;
+      requested_ref?: string;
+      version?: string;
+    };
+    "operation.BundleTarget": {
+      architecture?: string;
+      os?: string;
+    };
+    "operation.BundleVerification": {
+      blobs_verified?: boolean;
+      envelope_parsed?: boolean;
+    };
+    "operation.Catalog": {
+      bundle_digest?: string;
+      deployment_id?: string;
+      generated_at?: string;
+      refs?: components["schemas"]["operation.CatalogRef"][];
+      schema_version?: number;
+    };
+    "operation.CatalogRef": {
+      component?: string;
+      cron_schedule?: string;
+      id?: string;
+      kind?: string;
+      name?: string;
+      steps?: number;
+    };
+    "operation.DriftResourceChange": {
+      /** @description Action is create, update, destroy, replace, or noop. */
+      action?: string;
+      address?: string;
+      /** @description Drifted marks changes correlated with out-of-band resource drift. */
+      drifted?: boolean;
+    };
+    "operation.DriftResult": {
+      drifted?: boolean;
+      output_changes?: number;
+      resource_changes?: number;
+      resource_drift?: number;
+      /**
+       * @description Resources lists every resource in the plan with its change verdict,
+       * changed resources first, capped at MaxDriftResources so run status
+       * files stay small; the raw plan at JobPlanKey holds the full detail.
+       */
+      resources?: components["schemas"]["operation.DriftResourceChange"][];
+      resources_truncated?: boolean;
+      summary?: string;
     };
     "outputs.SecretSyncOutput": {
       arn?: string;
@@ -9679,6 +10022,12 @@ export interface components {
       tag?: string;
       workload_identity_provider?: string;
     };
+    "service.installRegistrationResponse": {
+      install?: components["schemas"]["app.Install"];
+      management_policy?: components["schemas"]["app.InstallManagementPolicyVersion"];
+      registration?: components["schemas"]["app.InstallRegistration"];
+      release_deployment?: components["schemas"]["app.InstallReleaseDeployment"];
+    };
     "service.releaseFileContentResponse": {
       content?: string;
       digest?: string;
@@ -9701,6 +10050,19 @@ export interface components {
     "service.slashResponse": {
       response_type?: string;
       text?: string;
+    };
+    "service.supportSnapshotResponse": {
+      archive_sha256?: string;
+      archive_size?: number;
+      association_status?: string;
+      captured_at?: string;
+      created_at?: string;
+      id?: string;
+      install_id?: string;
+      integrity_status?: string;
+      manifest?: components["schemas"]["supportsnapshot.Manifest"];
+      schema_version?: number;
+      snapshot?: components["schemas"]["supportsnapshot.Snapshot"];
     };
     "signaldb.SignalData": {
       signal?: unknown;
@@ -9815,10 +10177,119 @@ export interface components {
     "state.SecretsState": {
       [key: string]: components["schemas"]["outputs.SecretSyncOutput"];
     };
+    /** @enum {string} */
+    "statestore.ResultDirective": "continue" | "stop" | "retry-group" | "skip-group" | "await-approval" | "await-retry";
     "stderr.ErrResponse": {
       description?: string;
       error?: string;
       user_error?: boolean;
+    };
+    "supportsnapshot.CapturedState": {
+      report?: Record<string, never>;
+      status?: Record<string, never>;
+    };
+    "supportsnapshot.CollectionReport": {
+      included?: string[];
+      redaction_policy?: string;
+      schema_version?: number;
+      truncated?: {
+        [key: string]: number;
+      };
+      unavailable?: {
+        [key: string]: string;
+      };
+    };
+    "supportsnapshot.JobLog": {
+      entries?: components["schemas"]["supportsnapshot.LogEntry"][];
+      job_id?: string;
+      name?: string;
+      run_id?: string;
+      started_at?: string;
+      status?: string;
+      total?: number;
+      truncated?: boolean;
+    };
+    "supportsnapshot.LogEntry": {
+      fields?: {
+        [key: string]: unknown;
+      };
+      level?: string;
+      msg?: string;
+      time?: string;
+    };
+    "supportsnapshot.Manifest": {
+      bundle_digest?: string;
+      captured_at?: string;
+      entries?: components["schemas"]["supportsnapshot.ManifestEntry"][];
+      producer?: components["schemas"]["supportsnapshot.Producer"];
+      registration_id?: string;
+      schema_version?: number;
+    };
+    "supportsnapshot.ManifestEntry": {
+      media_type?: string;
+      path?: string;
+      schema_version?: number;
+      sha256?: string;
+      size?: number;
+    };
+    "supportsnapshot.Producer": {
+      name?: string;
+      runner_version?: string;
+      version?: string;
+    };
+    "supportsnapshot.Run": {
+      bundle_digest?: string;
+      dispatch_id?: string;
+      error?: string;
+      finished_at?: string;
+      previous_run_id?: string;
+      ref_id?: string;
+      ref_kind?: string;
+      ref_name?: string;
+      result_directive?: components["schemas"]["statestore.ResultDirective"];
+      run_id?: string;
+      source?: string;
+      started_at?: string;
+      status?: string;
+      steps?: components["schemas"]["supportsnapshot.RunStep"][];
+    };
+    "supportsnapshot.RunStep": {
+      drift?: components["schemas"]["operation.DriftResult"];
+      error?: string;
+      finished_at?: string;
+      id?: string;
+      job_id?: string;
+      kind?: string;
+      name?: string;
+      plan?: components["schemas"]["supportsnapshot.StepPlan"];
+      result_directive?: components["schemas"]["statestore.ResultDirective"];
+      source_run_id?: string;
+      started_at?: string;
+      status?: string;
+      status_description?: string;
+    };
+    "supportsnapshot.Snapshot": {
+      active_bundle?: components["schemas"]["operation.BundleInfo"];
+      bundle_history?: components["schemas"]["operation.BundleInfo"][];
+      captured_at?: string;
+      catalog?: components["schemas"]["operation.Catalog"];
+      collection?: components["schemas"]["supportsnapshot.CollectionReport"];
+      current_inputs?: components["schemas"]["customermanaged.CapturedInputs"];
+      health?: components["schemas"]["customermanaged.HealthSnapshot"];
+      health_transitions?: components["schemas"]["customermanaged.HealthTransition"][];
+      include_state?: boolean;
+      logs?: components["schemas"]["supportsnapshot.JobLog"][];
+      registration?: components["schemas"]["customermanaged.InstallationRegistration"];
+      roles?: components["schemas"]["customermanaged.CapturedRoles"];
+      runner?: components["schemas"]["customermanaged.RunnerHeartbeat"];
+      runs?: components["schemas"]["supportsnapshot.Run"][];
+      schema_version?: number;
+      staged_bundle?: components["schemas"]["operation.BundleCandidate"];
+      state?: components["schemas"]["supportsnapshot.CapturedState"];
+    };
+    "supportsnapshot.StepPlan": {
+      content?: Record<string, never>;
+      kind?: string;
     };
     "types.StringBoolMap": {
       [key: string]: boolean;
@@ -15159,6 +15630,214 @@ export interface operations {
       };
     };
   };
+  /** list published portable bundles for an app */
+  ListCustomerManagedBundles: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"][];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create and publish an immutable portable bundle */
+  CreateCustomerManagedBundle: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description bundle request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.createBundleRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"];
+        };
+      };
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Precondition Failed */
+      412: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        content: {
+          "application/json": components["schemas"]["customermanaged.QualificationReport"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a published portable bundle */
+  GetCustomerManagedBundle: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description bundle ID */
+        bundle_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create download grants for individual content-addressed bundle blobs
+   * @description Grants presigned access to individual bundle blobs so clients can download only blobs missing from their local store. Call with no digests to discover the bundle's OCI index digest, then request grants for missing blobs in batches.
+   */
+  CreateCustomerManagedBundleBlobGrants: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description bundle ID */
+        bundle_id: string;
+      };
+    };
+    /** @description blob grant request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.blobGrantsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.blobGrantsResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a download grant for a published portable bundle */
+  CreateCustomerManagedBundleDownloadGrant: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description bundle ID */
+        bundle_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.downloadGrantResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * @description App input configs allow you to declare the inputs for your application, and do things such as require customer inputs or
    * expose configuration knobs in your application.
@@ -20260,6 +20939,43 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.Waitlist"];
+        };
+      };
+    };
+  };
+  /** register a customer-managed installation */
+  RegisterInstall: {
+    /** @description installation registration exported by the customer portal */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["customermanaged.InstallationRegistration"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.installRegistrationResponse"];
+        };
+      };
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.installRegistrationResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -26706,6 +27422,131 @@ export interface operations {
       403: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** list imported support snapshots for a customer-managed install */
+  ListInstallSupportSnapshots: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.supportSnapshotResponse"][];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** import a customer-managed install support snapshot */
+  CreateInstallSupportSnapshot: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    /** @description support snapshot archive */
+    requestBody: {
+      content: {
+        "application/octet-stream": string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.supportSnapshotResponse"];
+        };
+      };
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.supportSnapshotResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Request Entity Too Large */
+      413: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get one imported customer-managed install support snapshot */
+  GetInstallSupportSnapshot: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+        /** @description Support snapshot ID */
+        snapshot_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.supportSnapshotResponse"];
         };
       };
       /** @description Not Found */

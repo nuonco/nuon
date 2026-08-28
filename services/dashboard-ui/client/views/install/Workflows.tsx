@@ -14,6 +14,8 @@ import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocA
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallWorkflows } from '@/lib'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
+import { CustomerManagedSnapshotRuns } from '@/components/customer-managed-support/SnapshotRuns'
 
 const POLL_INTERVAL = 20000
 
@@ -21,6 +23,7 @@ export const Workflows = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const [searchParams] = useSearchParams()
+  const isCustomerManaged = isCustomerManagedInstall(install)
 
   const type = searchParams.get('type') || ''
   const search = searchParams.get('search') || ''
@@ -39,7 +42,7 @@ export const Workflows = () => {
         offset: 0,
       }),
     refetchInterval: POLL_INTERVAL,
-    enabled: !!org?.id && !!install?.id,
+    enabled: !!org?.id && !!install?.id && !isCustomerManaged,
   })
 
   const activeWorkflows = (data?.data ?? []).filter(
@@ -48,6 +51,26 @@ export const Workflows = () => {
       w.status.status !== 'pending' &&
       w.status.status !== 'queued'
   )
+
+  if (isCustomerManaged) {
+    return (
+      <PageSection>
+        <PageTitle title={`Runs | ${install.name}`} />
+        <Breadcrumbs
+          breadcrumbs={[
+            { path: `/${org.id}`, text: org.name },
+            { path: `/${org.id}/installs`, text: 'Installs' },
+            { path: `/${org.id}/installs/${install.id}`, text: install.name },
+            {
+              path: `/${org.id}/installs/${install.id}/workflows`,
+              text: 'Runs',
+            },
+          ]}
+        />
+        <CustomerManagedSnapshotRuns />
+      </PageSection>
+    )
+  }
 
   return (
     <PageSection>
@@ -64,10 +87,7 @@ export const Workflows = () => {
         ]}
       />
 
-      <ActiveWorkflows
-        workflows={activeWorkflows}
-        install={install}
-      />
+      <ActiveWorkflows workflows={activeWorkflows} install={install} />
 
       <SectionHeader
         title="Workflow history"

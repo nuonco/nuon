@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,8 +22,19 @@ func (s *InstallsServiceTestSuite) TestGetOrgInstallsEmpty() {
 }
 
 func (s *InstallsServiceTestSuite) TestGetOrgInstallsReturnsList() {
+	install := s.createTestInstall()
 	s.createTestInstall()
-	s.createTestInstall()
+	policy := app.InstallManagementPolicyVersion{
+		InstallID:         install.ID,
+		Version:           1,
+		EffectiveAt:       time.Now(),
+		Connectivity:      app.InstallConnectivityDisconnected,
+		ReleaseSelection:  app.InstallReleaseSelectionCustomer,
+		CommandAuthority:  app.InstallAuthorityCustomer,
+		ApprovalAuthority: app.InstallAuthorityCustomer,
+		Telemetry:         app.InstallTelemetryManual,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&policy).Error)
 
 	rr := s.makeRequest(http.MethodGet, "/v1/installs", nil)
 	require.Equal(s.T(), http.StatusOK, rr.Code)
@@ -30,6 +42,14 @@ func (s *InstallsServiceTestSuite) TestGetOrgInstallsReturnsList() {
 	var resp []app.Install
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Len(s.T(), resp, 2)
+	for _, returnedInstall := range resp {
+		if returnedInstall.ID == install.ID {
+			require.NotNil(s.T(), returnedInstall.ManagementPolicy)
+			assert.Equal(s.T(), policy.ID, returnedInstall.ManagementPolicy.ID)
+			return
+		}
+	}
+	s.T().Fatalf("install %s was not returned", install.ID)
 }
 
 func (s *InstallsServiceTestSuite) TestGetOrgInstallsSearch() {

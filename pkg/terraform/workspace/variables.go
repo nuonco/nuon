@@ -102,7 +102,7 @@ func (w *workspace) resolveFilesystemMirrorPath() string {
 // configures terraform to source providers exclusively from the configured
 // filesystem mirror. It returns the absolute path to the written file.
 //
-// The `direct { exclude = ["*/*"] }` block is the airgap guarantee: it
+// The `direct { exclude = ["*/*"] }` block is the customer-managed guarantee: it
 // instructs terraform to never reach out to the public registry as a
 // fallback. If a provider is missing from the mirror, init will fail
 // loudly rather than silently downloading it.

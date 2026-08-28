@@ -42,7 +42,7 @@ func (p *handler) buildBinary(archBase, requestedVersion string) (binary.Binary,
 // detectAndLogMirror's contract for providers).
 //
 // Logged states:
-//   - airgap-ready: bundled binary present, host-platform match, version
+//   - customer-managed-ready: bundled binary present, host-platform match, version
 //     match → use it.
 //   - version-mismatch: bundled binary present but VERSION sidecar
 //     disagrees with requestedVersion → fall through to remote (warn).
@@ -51,7 +51,7 @@ func (p *handler) buildBinary(archBase, requestedVersion string) (binary.Binary,
 //   - absent: no bundled binary dir → silent, falls through. We don't
 //     log the absent case to keep non-vendored installs noise-free; the
 //     provider-mirror line already tells the operator whether the
-//     artifact participates in airgap at all.
+//     artifact participates in offline execution at all.
 func (p *handler) detectAndLogBundledBinary(archBase, requestedVersion string) string {
 	path := workspace.DetectBundledBinary(archBase, requestedVersion)
 	bundledVersion := workspace.BundledBinaryVersion(archBase)
@@ -60,7 +60,7 @@ func (p *handler) detectAndLogBundledBinary(archBase, requestedVersion string) s
 
 	switch {
 	case path != "":
-		p.l.Info("terraform: build-vendored CLI binary detected, using airgap binary",
+		p.l.Info("terraform: build-vendored CLI binary detected, using offline binary",
 			zap.String("arch_base", archBase),
 			zap.String("bundled_binary_path", path),
 			zap.String("host_platform", hostPlatform),
@@ -96,7 +96,7 @@ func (p *handler) detectAndLogMirror(archBase string) string {
 
 	switch {
 	case path != "":
-		p.l.Info("terraform: build-vendored provider mirror detected, using airgap resolution",
+		p.l.Info("terraform: build-vendored provider mirror detected, using offline resolution",
 			zap.String("arch_base", archBase),
 			zap.String("mirror_path", path),
 			zap.String("host_platform", hostPlatform),

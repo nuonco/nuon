@@ -1,10 +1,15 @@
 package service
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/runner/customer_managed/operation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -40,4 +45,72 @@ func (s *service) ListReleaseDeployments(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, deployments)
+}
+
+func (s *service) syncBundleHistory(ctx context.Context, install *app.Install, history []operation.BundleInfo) error {
+	if len(history) == 0 {
+		return nil
+	}
+	sorted := append([]operation.BundleInfo(nil), history...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].ActivatedAt.Before(sorted[j].ActivatedAt) })
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var policy app.InstallManagementPolicyVersion
+		if err := tx.Where(app.InstallManagementPolicyVersion{OrgID: install.OrgID, InstallID: install.ID}).Order("version DESC").First(&policy).Error; err != nil {
+			return fmt.Errorf("load install management policy: %w", err)
+		}
+		var previous app.InstallReleaseDeployment
+		err := tx.Where(app.InstallReleaseDeployment{OrgID: install.OrgID, InstallID: install.ID, Status: app.InstallDeploymentStatusSucceeded}).Order("finished_at DESC, created_at DESC").First(&previous).Error
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return fmt.Errorf("load release deployment history: %w", err)
+		}
+		for _, info := range sorted {
+			if info.ActivatedAt.IsZero() || info.Release == nil || info.Package == nil {
+				continue
+			}
+			var count int64
+			operationID := info.OperationID
+			if operationID == "" {
+				if err := tx.Model(&app.InstallReleaseDeployment{}).Where(app.InstallReleaseDeployment{
+					OrgID: install.OrgID, InstallID: install.ID, PlanDigest: info.BundleDigest,
+					Status: app.InstallDeploymentStatusSucceeded,
+				}).Count(&count).Error; err != nil {
+					return err
+				}
+				if count > 0 {
+					continue
+				}
+				operationID = "bundle:" + info.BundleDigest
+			}
+			if err := tx.Model(&app.InstallReleaseDeployment{}).Where(app.InstallReleaseDeployment{OrgID: install.OrgID, InstallID: install.ID, OperationID: operationID}).Count(&count).Error; err != nil {
+				return err
+			}
+			if count > 0 {
+				continue
+			}
+			var release app.AppRelease
+			if err := tx.Where(app.AppRelease{ID: info.Release.ID, OrgID: install.OrgID, AppID: install.AppID, SemanticDigest: info.Release.Digest}).First(&release).Error; err != nil {
+				return fmt.Errorf("validate activated release %q: %w", info.Release.ID, err)
+			}
+			var pkg app.ReleasePackage
+			if err := tx.Where(app.ReleasePackage{ID: info.Package.ID, OrgID: install.OrgID, ReleaseID: release.ID, PackageDigest: info.Package.Digest, PlanDigest: info.BundleDigest, Status: app.ReleasePackageStatusActive}).First(&pkg).Error; err != nil {
+				return fmt.Errorf("validate activated release package %q: %w", info.Package.ID, err)
+			}
+			finishedAt := info.ActivatedAt.UTC()
+			deployment := app.InstallReleaseDeployment{
+				OrgID: install.OrgID, InstallID: install.ID, ReleaseID: release.ID, PackageID: &pkg.ID,
+				PolicyVersionID: policy.ID, Method: app.InstallDeploymentMethodDisconnectedLocal,
+				Actor: "customer", Executor: "customer-local", OperationID: operationID, PlanDigest: info.BundleDigest,
+				ResultDirective: "applied", Status: app.InstallDeploymentStatusSucceeded,
+				StartedAt: finishedAt, FinishedAt: &finishedAt,
+			}
+			if previous.ID != "" {
+				deployment.PreviousReleaseID = previous.ReleaseID
+			}
+			if err := tx.Create(&deployment).Error; err != nil {
+				return fmt.Errorf("record activated release %q: %w", release.ID, err)
+			}
+			previous = deployment
+		}
+		return nil
+	})
 }

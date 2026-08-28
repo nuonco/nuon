@@ -1,0 +1,19 @@
+[Unit]
+Description=Nuon Customer-Managed Runner Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=0
+User=runner
+ExecStartPre=-/bin/sh -c "/usr/bin/docker stop $(/usr/bin/docker ps -a -q --filter=\"name=%n\")"
+ExecStartPre=-/bin/sh -c "/usr/bin/docker rm $(/usr/bin/docker ps -a -q --filter=\"name=%n\")"
+EnvironmentFile={{ .ImageFile }}
+EnvironmentFile={{ .EnvFile }}
+ExecStartPre=/usr/bin/docker pull ${CONTAINER_IMAGE_URL}:${CONTAINER_IMAGE_TAG}
+ExecStart=/usr/bin/docker run --network host --volume /tmp/nuon-runner:/tmp --volume /opt/nuon/runner/bin/runner:/bin/runner:ro --rm --name %n --env-file {{ .EnvFile }} --log-driver=awslogs --log-opt awslogs-region={{ .AWSRegion }} --log-opt awslogs-group=runner-{{ .RunnerID }} --log-opt awslogs-create-group=true ${CONTAINER_IMAGE_URL}:${CONTAINER_IMAGE_TAG} customer-managed --bundle {{ .BundleURI }}{{ if .StateURI }} --state-s3 {{ .StateURI }}{{ end }}{{ if .StackOutputsURI }} --install-stack-outputs {{ .StackOutputsURI }}{{ end }}{{ if .InstallInputsURI }} --install-inputs {{ .InstallInputsURI }}{{ end }}{{ if .DeploymentID }} --deployment-id {{ .DeploymentID }}{{ end }} --workdir {{ .Workdir }}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

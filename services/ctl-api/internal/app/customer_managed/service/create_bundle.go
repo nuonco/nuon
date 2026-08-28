@@ -43,6 +43,7 @@ type createBundleRequest struct {
 // @Failure 422 {object} customermanagedapp.QualificationReport
 // @Failure 412 {object} map[string]string
 // @Failure 500 {object} stderr.ErrResponse
+// @Router /v1/apps/{app_id}/customer-managed-bundles [post]
 func (s *service) CreateBundle(ctx *gin.Context) {
 	if !s.store.Configured() {
 		ctx.Error(transport.ErrNotConfigured)

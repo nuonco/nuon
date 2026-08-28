@@ -21,8 +21,20 @@ import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { getAppConfig, getAppConfigs, getInstallStack } from '@/lib'
 import { hasNewerAppConfig, hasStackConfigChanged } from '@/utils/app-utils'
+import { CustomerManagedSnapshotStacks } from '@/components/customer-managed-support/SnapshotStacks'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
 
 export const Stacks = () => {
+  const { install } = useInstall()
+
+  return isCustomerManagedInstall(install) ? (
+    <CustomerManagedSnapshotStacks />
+  ) : (
+    <ConnectedStacks />
+  )
+}
+
+const ConnectedStacks = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 

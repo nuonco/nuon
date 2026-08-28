@@ -12,17 +12,35 @@ import { ViewCurrentInputsButton } from '@/components/installs/management/ViewCu
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallReadme } from '@/lib'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
+import { CustomerManagedSnapshotOverview } from '@/components/customer-managed-support/SnapshotOverview'
 
 export const Overview = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const isCustomerManaged = isCustomerManagedInstall(install)
   const { data: readme } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-readme', org?.id, install?.id],
-    queryFn: () =>
-      getInstallReadme({ orgId: org.id, installId: install.id }),
-    enabled: !!org?.id && !!install?.id,
+    queryFn: () => getInstallReadme({ orgId: org.id, installId: install.id }),
+    enabled: !!org?.id && !!install?.id && !isCustomerManaged,
   })
+
+  if (isCustomerManaged) {
+    return (
+      <PageSection>
+        <PageTitle title={`Overview | ${install.name}`} />
+        <Breadcrumbs
+          breadcrumbs={[
+            { path: `/${org.id}`, text: org.name },
+            { path: `/${org.id}/installs`, text: 'Installs' },
+            { path: `/${org.id}/installs/${install.id}`, text: install.name },
+          ]}
+        />
+        <CustomerManagedSnapshotOverview />
+      </PageSection>
+    )
+  }
 
   return (
     <PageSection>

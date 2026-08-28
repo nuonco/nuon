@@ -53,6 +53,7 @@ func responseFromBundle(bundle app.CustomerManagedBundle) bundleResponse {
 // @Param page query int false "page number of results to return" Default(0)
 // @Success 200 {array} bundleResponse
 // @Failure 500 {object} stderr.ErrResponse
+// @Router /v1/apps/{app_id}/customer-managed-bundles [get]
 func (s *service) ListBundles(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
@@ -97,6 +98,7 @@ func (s *service) listBundles(ctx *gin.Context, orgID, appID string) ([]bundleRe
 // @Success 200 {object} bundleResponse
 // @Failure 404 {object} stderr.ErrResponse
 // @Failure 500 {object} stderr.ErrResponse
+// @Router /v1/apps/{app_id}/customer-managed-bundles/{bundle_id} [get]
 func (s *service) GetBundle(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

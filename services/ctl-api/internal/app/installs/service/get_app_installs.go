@@ -99,6 +99,9 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBr
 		Preload("ManagementPolicyVersions", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_management_policy_versions.version DESC")
 		}).
+		Preload("InstallRegistrations", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_registrations.created_at DESC")
+		}).
 		Preload("AppSandboxConfig").
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC")

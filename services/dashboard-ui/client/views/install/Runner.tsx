@@ -17,8 +17,9 @@ import { RunnerProvider } from '@/providers/runner-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useRunner } from '@/hooks/use-runner'
 import { getRunnerSettings, getRunnerProcesses } from '@/lib'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
+import { CustomerManagedSnapshotRunner } from '@/components/customer-managed-support/SnapshotRunner'
 
 const RunnerContent = ({
   runnerId,
@@ -28,7 +29,6 @@ const RunnerContent = ({
   installId: string
 }) => {
   const { org } = useOrg()
-  const { runner } = useRunner()
 
   const { data: settings } = useQuery({
     placeholderData: keepPreviousData,
@@ -120,6 +120,26 @@ const RunnerContent = ({
 export const Runner = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+
+  if (isCustomerManagedInstall(install)) {
+    return (
+      <PageSection>
+        <PageTitle title={`Install runner | ${install.name}`} />
+        <Breadcrumbs
+          breadcrumbs={[
+            { path: `/${org.id}`, text: org.name },
+            { path: `/${org.id}/installs`, text: 'Installs' },
+            { path: `/${org.id}/installs/${install.id}`, text: install.name },
+            {
+              path: `/${org.id}/installs/${install.id}/runner`,
+              text: 'Install runner',
+            },
+          ]}
+        />
+        <CustomerManagedSnapshotRunner />
+      </PageSection>
+    )
+  }
 
   if (!install?.runner_id) {
     return (

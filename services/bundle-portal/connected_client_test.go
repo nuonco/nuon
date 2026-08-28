@@ -23,8 +23,9 @@ func TestConnectedPortalProxiesStandardAuthenticationServerSide(t *testing.T) {
 	defer upstream.Close()
 	client, err := newConnectedClient(upstream.URL, "org-1", "ins-1", "standard-token")
 	require.NoError(t, err)
-	portal, err := newPortalServer("csrf", map[string]bool{"portal.test": true}, zaptest.NewLogger(t))
+	portal, err := newPortalServer(nil, nil, "csrf", "", map[string]bool{"portal.test": true}, zaptest.NewLogger(t))
 	require.NoError(t, err)
+	portal.mode = "connected"
 	portal.connected = client
 
 	request := httptest.NewRequest(http.MethodGet, "http://portal.test/api/connected/releases/rel-1", nil)
@@ -53,14 +54,27 @@ func TestConnectedPortalProxiesReleaseFileQuery(t *testing.T) {
 	defer upstream.Close()
 	client, err := newConnectedClient(upstream.URL, "org-1", "ins-1", "standard-token")
 	require.NoError(t, err)
-	portal, err := newPortalServer("csrf", map[string]bool{"portal.test": true}, zaptest.NewLogger(t))
+	portal, err := newPortalServer(nil, nil, "csrf", "", map[string]bool{"portal.test": true}, zaptest.NewLogger(t))
 	require.NoError(t, err)
+	portal.mode = "connected"
 	portal.connected = client
 
 	request := httptest.NewRequest(http.MethodGet, "http://portal.test/api/connected/releases/rel-1/files/content?path=components%2Flambda.toml", nil)
 	response := httptest.NewRecorder()
 	portal.handler().ServeHTTP(response, request)
 	require.Equal(t, http.StatusOK, response.Code)
+}
+
+func TestConnectedPortalReportsCapabilities(t *testing.T) {
+	portal, err := newPortalServer(nil, nil, "csrf", "", map[string]bool{"portal.test": true}, zaptest.NewLogger(t))
+	require.NoError(t, err)
+	portal.mode = "connected"
+	portal.connected = &connectedClient{}
+	request := httptest.NewRequest(http.MethodGet, "http://portal.test/api/mode/capabilities", nil)
+	response := httptest.NewRecorder()
+	portal.handler().ServeHTTP(response, request)
+	require.Equal(t, http.StatusOK, response.Code)
+	require.JSONEq(t, `{"mode":"connected","capabilities":{"vendor_releases":true,"workflows":true,"approvals":true,"bundle_upload":false,"support_snapshot":false,"local_dispatch":false}}`, response.Body.String())
 }
 
 func TestConnectedPortalProxiesWorkflowStepRetry(t *testing.T) {
@@ -75,8 +89,9 @@ func TestConnectedPortalProxiesWorkflowStepRetry(t *testing.T) {
 	defer upstream.Close()
 	client, err := newConnectedClient(upstream.URL, "org-1", "ins-1", "standard-token")
 	require.NoError(t, err)
-	portal, err := newPortalServer("csrf", map[string]bool{"portal.test": true}, zaptest.NewLogger(t))
+	portal, err := newPortalServer(nil, nil, "csrf", "", map[string]bool{"portal.test": true}, zaptest.NewLogger(t))
 	require.NoError(t, err)
+	portal.mode = "connected"
 	portal.connected = client
 
 	request := httptest.NewRequest(http.MethodPost, "http://portal.test/api/connected/workflows/wf-1/steps/step-1/retry", strings.NewReader(`{}`))

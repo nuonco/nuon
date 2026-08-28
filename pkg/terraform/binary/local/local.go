@@ -4,7 +4,7 @@
 // terraform CLI inside the OCI artifact under
 // pkg/terraform/workspace.DefaultBundledBinaryDir, the install runner
 // instantiates this package's `local` binary instead of remotebinary so
-// `terraform init`/`apply` can run fully airgapped.
+// `terraform init`/`apply` can run fully customer-managed.
 //
 // Lifecycle is intentionally tiny: no download, no copy, no cleanup.
 // `Install` only validates the path is a regular executable file and

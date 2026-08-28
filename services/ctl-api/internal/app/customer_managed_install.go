@@ -5,11 +5,16 @@ import (
 
 	"gorm.io/gorm"
 
+	customermanaged "github.com/nuonco/nuon/pkg/runner/customer_managed"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 )
 
 const (
-	InstallConnectivityConnected = "connected"
+	InstallRegistrationSourceManual         = "manual"
+	InstallRegistrationSourceConnectedAgent = "connected_agent"
+
+	InstallConnectivityDisconnected = "disconnected"
+	InstallConnectivityConnected    = "connected"
 
 	InstallReleaseSelectionCustomer = "customer"
 	InstallReleaseSelectionVendor   = "vendor_proposed"
@@ -17,10 +22,13 @@ const (
 	InstallAuthorityCustomer = "customer"
 	InstallAuthorityNuon     = "nuon"
 
+	InstallTelemetryManual      = "manual"
 	InstallTelemetryOperational = "operational"
 	InstallTelemetryLive        = "live"
 
-	InstallDeploymentMethodNuonManaged = "nuon_managed"
+	InstallDeploymentMethodDisconnectedLocal = "disconnected_local"
+	InstallDeploymentMethodConnectedLocal    = "connected_local"
+	InstallDeploymentMethodNuonManaged       = "nuon_managed"
 
 	InstallDeploymentStatusSucceeded = "succeeded"
 	InstallDeploymentStatusFailed    = "failed"
@@ -56,6 +64,39 @@ func (p *InstallManagementPolicyVersion) BeforeCreate(tx *gorm.DB) error {
 	}
 	if p.OrgID == "" {
 		p.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+	return nil
+}
+
+type InstallRegistration struct {
+	ID          string    `gorm:"primary_key" json:"id"`
+	CreatedByID string    `json:"created_by_id" gorm:"not null;default:null"`
+	CreatedAt   time.Time `json:"created_at" gorm:"notnull"`
+
+	OrgID     string         `json:"-" gorm:"notnull;index"`
+	InstallID string         `json:"install_id" gorm:"notnull;index"`
+	Install   Install        `json:"-" gorm:"constraint:OnDelete:RESTRICT;"`
+	ReleaseID string         `json:"release_id" gorm:"notnull;index"`
+	Release   AppRelease     `json:"-" gorm:"constraint:OnDelete:RESTRICT;"`
+	PackageID string         `json:"package_id" gorm:"notnull;index"`
+	Package   ReleasePackage `json:"-" gorm:"constraint:OnDelete:RESTRICT;"`
+
+	Source            string                                   `json:"source" gorm:"notnull"`
+	Registration      customermanaged.InstallationRegistration `json:"registration" gorm:"type:jsonb;serializer:json;<-:create"`
+	IntegrityStatus   string                                   `json:"integrity_status" gorm:"notnull"`
+	AssociationStatus string                                   `json:"association_status" gorm:"notnull"`
+	ImportedAt        time.Time                                `json:"imported_at" gorm:"notnull"`
+}
+
+func (r *InstallRegistration) BeforeCreate(tx *gorm.DB) error {
+	if r.ID == "" {
+		r.ID = r.Registration.RegistrationID
+	}
+	if r.CreatedByID == "" {
+		r.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	}
+	if r.OrgID == "" {
+		r.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 	return nil
 }

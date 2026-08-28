@@ -74,6 +74,11 @@ func WithContentTypeApplicationJSON(r *runtime.ClientOperation) {
 	r.ConsumesMediaTypes = []string{"application/json"}
 }
 
+// WithContentTypeApplicationOctetStream sets the Content-Type header to "application/octet-stream".
+func WithContentTypeApplicationOctetStream(r *runtime.ClientOperation) {
+	r.ConsumesMediaTypes = []string{"application/octet-stream"}
+}
+
 // WithContentTypeApplicationxWwwFormUrlencoded sets the Content-Type header to "application/x-www-form-urlencoded".
 func WithContentTypeApplicationxWwwFormUrlencoded(r *runtime.ClientOperation) {
 	r.ConsumesMediaTypes = []string{"application/x-www-form-urlencoded"}
@@ -236,6 +241,12 @@ type ClientService interface {
 
 	CreateCurrentOrgWebhook(params *CreateCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCurrentOrgWebhookCreated, error)
 
+	CreateCustomerManagedBundle(params *CreateCustomerManagedBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCustomerManagedBundleOK, *CreateCustomerManagedBundleAccepted, error)
+
+	CreateCustomerManagedBundleBlobGrants(params *CreateCustomerManagedBundleBlobGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCustomerManagedBundleBlobGrantsOK, error)
+
+	CreateCustomerManagedBundleDownloadGrant(params *CreateCustomerManagedBundleDownloadGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCustomerManagedBundleDownloadGrantOK, error)
+
 	CreateCustomerManagedInstall(params *CreateCustomerManagedInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCustomerManagedInstallCreated, error)
 
 	CreateDockerBuildComponentConfig(params *CreateDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDockerBuildComponentConfigCreated, error)
@@ -261,6 +272,8 @@ type ClientService interface {
 	CreateInstallInputs(params *CreateInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallInputsCreated, error)
 
 	CreateInstallReleaseUpdate(params *CreateInstallReleaseUpdateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallReleaseUpdateCreated, error)
+
+	CreateInstallSupportSnapshot(params *CreateInstallSupportSnapshotParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallSupportSnapshotOK, *CreateInstallSupportSnapshotCreated, error)
 
 	CreateInstallV2(params *CreateInstallV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallV2Created, error)
 
@@ -564,6 +577,8 @@ type ClientService interface {
 
 	GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserOK, error)
 
+	GetCustomerManagedBundle(params *GetCustomerManagedBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCustomerManagedBundleOK, error)
+
 	GetDriftedObjects(params *GetDriftedObjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDriftedObjectsOK, error)
 
 	GetInstall(params *GetInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallOK, error)
@@ -685,6 +700,8 @@ type ClientService interface {
 	GetInstallState(params *GetInstallStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStateOK, error)
 
 	GetInstallStateHistory(params *GetInstallStateHistoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStateHistoryOK, error)
+
+	GetInstallSupportSnapshot(params *GetInstallSupportSnapshotParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallSupportSnapshotOK, error)
 
 	GetInstallWorkflow(params *GetInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallWorkflowOK, error)
 
@@ -866,7 +883,11 @@ type ClientService interface {
 
 	ListAppReleases(params *ListAppReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAppReleasesOK, error)
 
+	ListCustomerManagedBundles(params *ListCustomerManagedBundlesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCustomerManagedBundlesOK, error)
+
 	ListInstallReleaseDeployments(params *ListInstallReleaseDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInstallReleaseDeploymentsOK, error)
+
+	ListInstallSupportSnapshots(params *ListInstallSupportSnapshotsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInstallSupportSnapshotsOK, error)
 
 	ListOIDCTrustPolicies(params *ListOIDCTrustPoliciesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOIDCTrustPoliciesOK, error)
 
@@ -913,6 +934,8 @@ type ClientService interface {
 	RecoverInstallComponentHelmRelease(params *RecoverInstallComponentHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RecoverInstallComponentHelmReleaseCreated, error)
 
 	RefreshInstallHealthClusterAccess(params *RefreshInstallHealthClusterAccessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RefreshInstallHealthClusterAccessOK, error)
+
+	RegisterInstall(params *RegisterInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RegisterInstallOK, *RegisterInstallCreated, error)
 
 	RemoveAppActionLabels(params *RemoveAppActionLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveAppActionLabelsOK, error)
 
@@ -3874,6 +3897,140 @@ func (a *Client) CreateCurrentOrgWebhook(params *CreateCurrentOrgWebhookParams, 
 }
 
 /*
+CreateCustomerManagedBundle creates and publish an immutable portable bundle
+*/
+func (a *Client) CreateCustomerManagedBundle(params *CreateCustomerManagedBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCustomerManagedBundleOK, *CreateCustomerManagedBundleAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateCustomerManagedBundleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateCustomerManagedBundle",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/customer-managed-bundles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateCustomerManagedBundleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// several success responses have to be checked
+	switch value := result.(type) {
+	case *CreateCustomerManagedBundleOK:
+		return value, nil, nil
+	case *CreateCustomerManagedBundleAccepted:
+		return nil, value, nil
+	}
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateCustomerManagedBundleBlobGrants creates download grants for individual content addressed bundle blobs
+
+Grants presigned access to individual bundle blobs so clients can download only blobs missing from their local store. Call with no digests to discover the bundle's OCI index digest, then request grants for missing blobs in batches.
+*/
+func (a *Client) CreateCustomerManagedBundleBlobGrants(params *CreateCustomerManagedBundleBlobGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCustomerManagedBundleBlobGrantsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateCustomerManagedBundleBlobGrantsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateCustomerManagedBundleBlobGrants",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/customer-managed-bundles/{bundle_id}/blob-grants",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateCustomerManagedBundleBlobGrantsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateCustomerManagedBundleBlobGrantsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateCustomerManagedBundleBlobGrants: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateCustomerManagedBundleDownloadGrant creates a download grant for a published portable bundle
+*/
+func (a *Client) CreateCustomerManagedBundleDownloadGrant(params *CreateCustomerManagedBundleDownloadGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCustomerManagedBundleDownloadGrantOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateCustomerManagedBundleDownloadGrantParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateCustomerManagedBundleDownloadGrant",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/customer-managed-bundles/{bundle_id}/download-grants",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateCustomerManagedBundleDownloadGrantReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateCustomerManagedBundleDownloadGrantOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateCustomerManagedBundleDownloadGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateCustomerManagedInstall creates an authenticated customer managed install
 */
 func (a *Client) CreateCustomerManagedInstall(params *CreateCustomerManagedInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCustomerManagedInstallCreated, error) {
@@ -4462,6 +4619,50 @@ func (a *Client) CreateInstallReleaseUpdate(params *CreateInstallReleaseUpdatePa
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateInstallReleaseUpdate: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateInstallSupportSnapshot imports a customer managed install support snapshot
+*/
+func (a *Client) CreateInstallSupportSnapshot(params *CreateInstallSupportSnapshotParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallSupportSnapshotOK, *CreateInstallSupportSnapshotCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateInstallSupportSnapshotParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateInstallSupportSnapshot",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/support-snapshots",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/octet-stream"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateInstallSupportSnapshotReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// several success responses have to be checked
+	switch value := result.(type) {
+	case *CreateInstallSupportSnapshotOK:
+		return value, nil, nil
+	case *CreateInstallSupportSnapshotCreated:
+		return nil, value, nil
+	}
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -11512,6 +11713,50 @@ func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.C
 }
 
 /*
+GetCustomerManagedBundle gets a published portable bundle
+*/
+func (a *Client) GetCustomerManagedBundle(params *GetCustomerManagedBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCustomerManagedBundleOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetCustomerManagedBundleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetCustomerManagedBundle",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/customer-managed-bundles/{bundle_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetCustomerManagedBundleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetCustomerManagedBundleOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetCustomerManagedBundle: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetDriftedObjects gets drifted objects for an install
 
 Returns all drifted objects for an install.
@@ -14314,6 +14559,50 @@ func (a *Client) GetInstallStateHistory(params *GetInstallStateHistoryParams, au
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallStateHistory: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallSupportSnapshot gets one imported customer managed install support snapshot
+*/
+func (a *Client) GetInstallSupportSnapshot(params *GetInstallSupportSnapshotParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallSupportSnapshotOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallSupportSnapshotParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallSupportSnapshot",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/support-snapshots/{snapshot_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallSupportSnapshotReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallSupportSnapshotOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallSupportSnapshot: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -18438,6 +18727,50 @@ func (a *Client) ListAppReleases(params *ListAppReleasesParams, authInfo runtime
 }
 
 /*
+ListCustomerManagedBundles lists published portable bundles for an app
+*/
+func (a *Client) ListCustomerManagedBundles(params *ListCustomerManagedBundlesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCustomerManagedBundlesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListCustomerManagedBundlesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListCustomerManagedBundles",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/customer-managed-bundles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListCustomerManagedBundlesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListCustomerManagedBundlesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListCustomerManagedBundles: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 ListInstallReleaseDeployments lists immutable release deployment history for an install
 */
 func (a *Client) ListInstallReleaseDeployments(params *ListInstallReleaseDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInstallReleaseDeploymentsOK, error) {
@@ -18478,6 +18811,50 @@ func (a *Client) ListInstallReleaseDeployments(params *ListInstallReleaseDeploym
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ListInstallReleaseDeployments: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListInstallSupportSnapshots lists imported support snapshots for a customer managed install
+*/
+func (a *Client) ListInstallSupportSnapshots(params *ListInstallSupportSnapshotsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInstallSupportSnapshotsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListInstallSupportSnapshotsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListInstallSupportSnapshots",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/support-snapshots",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListInstallSupportSnapshotsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListInstallSupportSnapshotsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListInstallSupportSnapshots: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -19566,6 +19943,50 @@ func (a *Client) RefreshInstallHealthClusterAccess(params *RefreshInstallHealthC
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for RefreshInstallHealthClusterAccess: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+RegisterInstall registers a customer managed installation
+*/
+func (a *Client) RegisterInstall(params *RegisterInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RegisterInstallOK, *RegisterInstallCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRegisterInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RegisterInstall",
+		Method:             "POST",
+		PathPattern:        "/v1/install-registrations",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RegisterInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// several success responses have to be checked
+	switch value := result.(type) {
+	case *RegisterInstallOK:
+		return value, nil, nil
+	case *RegisterInstallCreated:
+		return nil, value, nil
+	}
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

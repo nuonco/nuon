@@ -40,6 +40,113 @@ func (c *cli) appsCmd() *cobra.Command {
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	appsCmd.AddCommand(listCmd)
 
+	var (
+		bundleAppID     string
+		bundleOffset    int
+		bundleLimit     int
+		bundleFile      string
+		bundleNoResume  bool
+		bundleOverwrite bool
+		bundleConfigID  string
+		bundlePlatform  string
+		bundleNoWait    bool
+	)
+	bundlesCmd := &cobra.Command{
+		Use:   "bundles",
+		Short: "View and download published portable bundles",
+	}
+	bundlesCreateCmd := &cobra.Command{
+		Use:         "create",
+		Short:       "Create and publish a portable bundle",
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.CreateBundle(cmd.Context(), bundleAppID, bundleConfigID, bundlePlatform, apps.CreateBundleOptions{
+				NoWait:    bundleNoWait,
+				PrintJSON: PrintJSON,
+			})
+		}),
+	}
+	bundlesCreateCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundlesCreateCmd.Flags().StringVar(&bundleConfigID, "config-id", "", "Exact app config ID")
+	bundlesCreateCmd.Flags().StringVar(&bundlePlatform, "platform", "linux/amd64", "Target platform")
+	bundlesCreateCmd.Flags().BoolVar(&bundleNoWait, "no-wait", false, "Return immediately without waiting for the bundle to become active")
+	bundlesCreateCmd.MarkFlagRequired("config-id")
+	bundlesCmd.AddCommand(bundlesCreateCmd)
+	bundlesListCmd := &cobra.Command{
+		Use:         "list",
+		Aliases:     []string{"ls"},
+		Short:       "List published portable bundles",
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.ListBundles(cmd.Context(), bundleAppID, bundleOffset, bundleLimit, PrintJSON)
+		}),
+	}
+	bundlesListCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundlesListCmd.Flags().IntVar(&bundleOffset, "offset", 0, "Offset for pagination")
+	bundlesListCmd.Flags().IntVar(&bundleLimit, "limit", 20, "Limit for pagination")
+	bundlesCmd.AddCommand(bundlesListCmd)
+
+	bundlesGetCmd := &cobra.Command{
+		Use:         "get <bundle-id>",
+		Short:       "Get a published portable bundle",
+		Args:        cobra.ExactArgs(1),
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.GetBundle(cmd.Context(), bundleAppID, args[0], PrintJSON)
+		}),
+	}
+	bundlesGetCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundlesCmd.AddCommand(bundlesGetCmd)
+
+	bundlesDownloadCmd := &cobra.Command{
+		Use:         "download <bundle-id>",
+		Short:       "Download a published portable bundle",
+		Long:        "Download a published portable bundle to the path specified by --file. The global --output flag remains reserved for output formatting.",
+		Args:        cobra.ExactArgs(1),
+		Annotations: outputsAnnotation(OutputTable),
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.DownloadBundle(cmd.Context(), bundleAppID, args[0], apps.DownloadBundleOptions{
+				File:      bundleFile,
+				NoResume:  bundleNoResume,
+				Overwrite: bundleOverwrite,
+			})
+		}),
+	}
+	bundlesDownloadCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundlesDownloadCmd.Flags().StringVar(&bundleFile, "file", "", "Destination file path (required; --output controls CLI formatting)")
+	bundlesDownloadCmd.Flags().BoolVar(&bundleNoResume, "no-resume", false, "Restart instead of resuming an existing partial download")
+	bundlesDownloadCmd.Flags().BoolVar(&bundleOverwrite, "overwrite", false, "Replace an existing destination file")
+	bundlesDownloadCmd.MarkFlagRequired("file")
+	bundlesCmd.AddCommand(bundlesDownloadCmd)
+
+	var bundleCacheDir string
+	bundlesPullCmd := &cobra.Command{
+		Use:         "pull <bundle-id>",
+		Short:       "Differentially download a published portable bundle",
+		Long:        "Download only the bundle blobs missing from the local cache, then reassemble the exact bundle archive at --file. Repeat pulls of similar bundles transfer only what changed.",
+		Args:        cobra.ExactArgs(1),
+		Annotations: outputsAnnotation(OutputTable),
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.PullBundle(cmd.Context(), bundleAppID, args[0], apps.PullBundleOptions{
+				File:      bundleFile,
+				CacheDir:  bundleCacheDir,
+				Overwrite: bundleOverwrite,
+			})
+		}),
+	}
+	bundlesPullCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundlesPullCmd.Flags().StringVar(&bundleFile, "file", "", "Destination file path (required; --output controls CLI formatting)")
+	bundlesPullCmd.Flags().StringVar(&bundleCacheDir, "cache-dir", "", "Blob cache directory (defaults to ~/.config/nuon/bundle-blobs)")
+	bundlesPullCmd.Flags().BoolVar(&bundleOverwrite, "overwrite", false, "Replace an existing destination file")
+	bundlesPullCmd.MarkFlagRequired("file")
+	bundlesCmd.AddCommand(bundlesPullCmd)
+	appsCmd.AddCommand(bundlesCmd)
+
 	appID := ""
 	getCmd := &cobra.Command{
 		Use:   "get",

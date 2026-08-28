@@ -53,7 +53,11 @@ func (w *workspace) plan(ctx context.Context, client Terraform, log hclog.Logger
 		writer,
 		opts...,
 	); err != nil {
-		fmt.Printf("%e", err)
+		if raw, bErr := out.Bytes(); bErr == nil {
+			if diags := extractDiagnostics(raw); diags != "" {
+				return nil, fmt.Errorf("unable to plan: %w: %s", err, diags)
+			}
+		}
 		return nil, fmt.Errorf("unable to plan: %w", err)
 	}
 

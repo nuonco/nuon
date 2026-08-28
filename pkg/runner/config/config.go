@@ -34,6 +34,10 @@ type Config struct {
 	// observability configuration
 	HostIP   string `config:"host_ip" validate:"required"`
 	LogLevel string `config:"log_level"`
+	// OTLPLogsEndpoint overrides the connected control-plane log endpoint.
+	// Customer-managed offline runners point this at their loopback collector.
+	OTLPLogsEndpoint string `config:"otlp_logs_endpoint"`
+	OTELLogDir       string `config:"otel_log_dir"`
 
 	// some artifacts are bundled into the runner binary, to make loading them easier.
 	BundleDir    string `config:"bundle_dir" validate:"required"`

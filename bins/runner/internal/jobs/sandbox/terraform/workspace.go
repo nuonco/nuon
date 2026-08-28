@@ -43,7 +43,7 @@ func (h *handler) detectAndLogBundledBinary(archBase, requestedVersion string) s
 
 	switch {
 	case path != "":
-		h.l.Info("terraform: build-vendored CLI binary detected, using airgap binary",
+		h.l.Info("terraform: build-vendored CLI binary detected, using offline binary",
 			zap.String("arch_base", archBase),
 			zap.String("bundled_binary_path", path),
 			zap.String("host_platform", hostPlatform),
@@ -79,7 +79,7 @@ func (h *handler) detectAndLogMirror(archBase string) string {
 
 	switch {
 	case path != "":
-		h.l.Info("terraform: build-vendored provider mirror detected, using airgap resolution",
+		h.l.Info("terraform: build-vendored provider mirror detected, using offline resolution",
 			zap.String("arch_base", archBase),
 			zap.String("mirror_path", path),
 			zap.String("host_platform", hostPlatform),

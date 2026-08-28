@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -11,6 +12,9 @@ import (
 )
 
 func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
+	if err := h.deleteCustomerManagedSupportSnapshotObjects(ctx, orgID); err != nil {
+		return err
+	}
 	if err := h.deleteReleasePackageObjects(ctx, orgID); err != nil {
 		return err
 	}
@@ -22,12 +26,16 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.TriggerSecret{},
 		&app.Trigger{},
 		&app.InstallReleaseDeployment{},
+		&app.InstallRegistration{},
 		&app.InstallManagementPolicyVersion{},
 		&app.ReleasePackageReplica{},
 		&app.ReleasePackageMember{},
 		&app.ReleasePackage{},
 		&app.AppReleaseMember{},
 		&app.AppRelease{},
+		&app.CustomerManagedBundleTransportReplica{},
+		&app.CustomerManagedBundleArtifact{},
+		&app.CustomerManagedBundle{},
 		&app.RunnerJobExecutionResult{},
 		&app.RunnerJobExecutionOutputs{},
 		&app.RunnerJobExecution{},
@@ -69,6 +77,7 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.InstallSandbox{},
 		&app.InstallInputs{},
 		&app.InstallEvent{},
+		&app.InstallSupportSnapshot{},
 		&app.Install{},
 		&app.AzureAccount{},
 		&app.AWSAccount{},
@@ -131,6 +140,35 @@ func (h *Helpers) deleteReleasePackageObjects(ctx context.Context, orgID string)
 		}
 		if err := h.customerManagedStore.Delete(ctx, replica); err != nil {
 			return fmt.Errorf("delete release package %s archive: %w", stored.PackageID, err)
+		}
+	}
+	return nil
+}
+
+func (h *Helpers) deleteCustomerManagedSupportSnapshotObjects(ctx context.Context, orgID string) error {
+	var snapshots []app.InstallSupportSnapshot
+	if err := h.db.WithContext(ctx).Where(&app.InstallSupportSnapshot{OrgID: orgID}).Find(&snapshots).Error; err != nil {
+		return fmt.Errorf("load customer-managed support snapshots for org: %w", err)
+	}
+	for _, snapshot := range snapshots {
+		replica := transport.Replica{
+			Provider:       snapshot.StorageProvider,
+			Region:         snapshot.StorageRegion,
+			StorageRef:     snapshot.StorageRef,
+			StorageVersion: snapshot.StorageVersion,
+			Size:           snapshot.ArchiveSize,
+		}
+		var errs []error
+		if err := h.customerManagedStore.Delete(ctx, replica); err != nil {
+			errs = append(errs, fmt.Errorf("delete support snapshot %s archive: %w", snapshot.ID, err))
+		}
+		if snapshot.SnapshotBlob != nil && snapshot.SnapshotBlob.Metadata().S3Key != "" {
+			if err := h.blobStore.Delete(ctx, snapshot.SnapshotBlob.Metadata().S3Key); err != nil {
+				errs = append(errs, fmt.Errorf("delete support snapshot %s data: %w", snapshot.ID, err))
+			}
+		}
+		if err := errors.Join(errs...); err != nil {
+			return err
 		}
 	}
 	return nil

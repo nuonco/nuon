@@ -34,6 +34,8 @@ import { SandboxBuildLayout } from './SandboxBuildLayout'
 import { SandboxBuildSummaryTab } from './sandbox-build-tabs/SandboxBuildSummaryTab'
 import { SandboxBuildLogsTab } from './sandbox-build-tabs/SandboxBuildLogsTab'
 import { SandboxBuildTraceTab } from './sandbox-build-tabs/SandboxBuildTraceTab'
+import { Bundles } from './Bundles'
+import { BundleDetail } from './BundleDetail'
 import { Branches } from './branches/Branches'
 import { BranchLayout } from './branches/BranchLayout'
 import { BranchOverviewTab } from './branches/tabs/BranchOverviewTab'
@@ -46,10 +48,9 @@ import { BranchRunbooks } from './branches/scoped/BranchRunbooks'
 import { BranchInstalls } from './branches/scoped/BranchInstalls'
 import { BranchRunDetail } from './branches/BranchRunDetail'
 
-const legacy = (
-  element: ReactNode,
-  subPath?: (params: Params) => string
-) => <LegacyAppRoute subPath={subPath}>{element}</LegacyAppRoute>
+const legacy = (element: ReactNode, subPath?: (params: Params) => string) => (
+  <LegacyAppRoute subPath={subPath}>{element}</LegacyAppRoute>
+)
 
 const buildTabRoutes: RouteObject[] = [
   { index: true, element: <BuildSummaryTab /> },
@@ -132,7 +133,14 @@ export const appRoutes: RouteObject[] = [
         element: legacy(<PoliciesLayout />, () => 'policies'),
         children: [
           { index: true, element: <Policies /> },
-          { path: 'analytics', element: <Suspense><PolicyAnalytics /></Suspense> },
+          {
+            path: 'analytics',
+            element: (
+              <Suspense>
+                <PolicyAnalytics />
+              </Suspense>
+            ),
+          },
         ],
       },
       {
@@ -173,7 +181,14 @@ export const appRoutes: RouteObject[] = [
             element: <PoliciesLayout />,
             children: [
               { index: true, element: <Policies /> },
-              { path: 'analytics', element: <Suspense><PolicyAnalytics /></Suspense> },
+              {
+                path: 'analytics',
+                element: (
+                  <Suspense>
+                    <PolicyAnalytics />
+                  </Suspense>
+                ),
+              },
             ],
           },
           { path: 'policies/:policyId', element: <PolicyDetail /> },
@@ -201,6 +216,11 @@ export const appRoutes: RouteObject[] = [
           (p) => `sandbox/builds/${p.buildId}`
         ),
         children: sandboxBuildTabRoutes,
+      },
+      { path: ':orgId/apps/:appId/releases', element: <Bundles /> },
+      {
+        path: ':orgId/apps/:appId/releases/:releaseId',
+        element: <BundleDetail />,
       },
       {
         path: ':orgId/apps/:appId/installs',

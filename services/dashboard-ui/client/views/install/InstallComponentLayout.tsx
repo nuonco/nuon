@@ -20,8 +20,20 @@ import { getComponentBuilds, getInstallComponent } from '@/lib'
 import type { TNavLink } from '@/types'
 import { groupComponentOverrideInputs } from '@/utils/install-utils'
 import type { TInstallComponentOutletContext } from './install-component-tabs/types'
+import { CustomerManagedSnapshotComponentDetail } from '@/components/customer-managed-support/SnapshotComponentDetail'
+import { isCustomerManagedInstall } from '@/utils/install-utils'
 
 export const InstallComponentLayout = () => {
+  const { install } = useInstall()
+
+  return isCustomerManagedInstall(install) ? (
+    <CustomerManagedSnapshotComponentDetail />
+  ) : (
+    <ConnectedInstallComponentLayout />
+  )
+}
+
+const ConnectedInstallComponentLayout = () => {
   const { componentId } = useParams()
   const { org } = useOrg()
   const { install } = useInstall()

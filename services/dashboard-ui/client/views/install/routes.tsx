@@ -54,6 +54,8 @@ import { RunnerJobDetail } from './RunnerJobDetail'
 import { Notebooks } from './Notebooks'
 import { NotebookDetail } from './NotebookDetail'
 import { InstallConfigs } from './InstallConfigs'
+import { CustomerManagedBundles } from './CustomerManagedBundles'
+import { CustomerManagedLogs } from './CustomerManagedLogs'
 
 export const installRoutes: RouteObject[] = [
   {
@@ -77,6 +79,10 @@ export const installRoutes: RouteObject[] = [
       { path: ':orgId/installs/:installId/roles', element: <Roles /> },
       { path: ':orgId/installs/:installId/policies', element: <Policies /> },
       { path: ':orgId/installs/:installId/runner', element: <Runner /> },
+      {
+        path: ':orgId/installs/:installId/logs',
+        element: <CustomerManagedLogs />,
+      },
       { path: ':orgId/installs/:installId/inputs', element: <CurrentInputs /> },
       { path: ':orgId/installs/:installId/state', element: <ViewState /> },
       {
@@ -112,7 +118,14 @@ export const installRoutes: RouteObject[] = [
       },
       { path: ':orgId/installs/:installId/stacks', element: <Stacks /> },
       { path: ':orgId/installs/:installId/versions', element: <Versions /> },
-      { path: ':orgId/installs/:installId/configs', element: <InstallConfigs /> },
+      {
+        path: ':orgId/installs/:installId/configs',
+        element: <InstallConfigs />,
+      },
+      {
+        path: ':orgId/installs/:installId/bundles',
+        element: <CustomerManagedBundles />,
+      },
       { path: ':orgId/installs/:installId/workflows', element: <Workflows /> },
       { path: ':orgId/installs/:installId/readme', element: <Readme /> },
       {

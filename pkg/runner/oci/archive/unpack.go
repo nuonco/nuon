@@ -2,6 +2,7 @@ package ociarchive
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"go.uber.org/zap"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
+	orasfile "oras.land/oras-go/v2/content/file"
 
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
@@ -24,14 +26,35 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 	ctx = opCtx
 	defer func() { end(retErr) }()
 
+	srcRepo, err := oci.GetRepo(ctx, srcCfg)
+	if err != nil {
+		return fmt.Errorf("unable to get source repo: %w", err)
+	}
+	return a.unpackFrom(ctx, srcRepo, tag)
+}
+
+// UnpackFromStore unpacks an archive artifact already present in a local
+// store (e.g. an customer-managed bundle), bypassing all registry access.
+func (a *archive) UnpackFromStore(ctx context.Context, src oras.ReadOnlyTarget, ref string) (retErr error) {
+	opCtx, end := op.Tool(ctx, "oci", "unpack_from_store")
+	ctx = opCtx
+	defer func() { end(retErr) }()
+
+	return a.unpackFrom(ctx, src, ref)
+}
+
+func (a *archive) unpackFrom(ctx context.Context, src oras.ReadOnlyTarget, tag string) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to get logger: %w", err)
 	}
 
-	srcRepo, err := oci.GetRepo(ctx, srcCfg)
+	sourceManifest, err := src.Resolve(ctx, tag)
 	if err != nil {
-		return fmt.Errorf("unable to get source repo: %w", err)
+		return fmt.Errorf("unable to resolve source manifest: %w", err)
+	}
+	if err := validateArchiveManifest(ctx, src, sourceManifest); err != nil {
+		return err
 	}
 
 	l.Info("pulling artifact from oci registry", zap.String("tag", tag))
@@ -94,7 +117,7 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 		return nil
 	}
 
-	manifest, err := oras.Copy(ctx, srcRepo, tag, a.store, tag, opts)
+	manifest, err := oras.Copy(ctx, src, sourceManifest.Digest.String(), a.store, tag, opts)
 	// Finalize any layer spans whose PostCopy never fired (typically the
 	// failure case below; PreCopy may also have started spans for layers
 	// the caller cancelled mid-flight). Done before the error return so
@@ -121,5 +144,32 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 	}
 	l.Info("finished fetching artifact contents", zap.String("duration", time.Since(fetchStart).String()))
 
+	return nil
+}
+
+func validateArchiveManifest(ctx context.Context, fetcher content.Fetcher, descriptor ocispec.Descriptor) error {
+	if descriptor.MediaType != ocispec.MediaTypeImageManifest {
+		return fmt.Errorf("unsupported OCI archive manifest media type %q", descriptor.MediaType)
+	}
+
+	data, err := content.FetchAll(ctx, fetcher, descriptor)
+	if err != nil {
+		return fmt.Errorf("unable to fetch source manifest: %w", err)
+	}
+	var manifest ocispec.Manifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return fmt.Errorf("unable to decode source manifest: %w", err)
+	}
+	if manifest.Config.MediaType != defaultArtifactType {
+		return fmt.Errorf("unsupported OCI archive artifact type %q", manifest.Config.MediaType)
+	}
+	if len(manifest.Layers) != 1 {
+		return fmt.Errorf("unsupported OCI archive layer count %d: expected 1", len(manifest.Layers))
+	}
+
+	layer := manifest.Layers[0]
+	if layer.MediaType != tarLayerMediaType || layer.Annotations[ocispec.AnnotationTitle] != tarLayerTitle || layer.Annotations[orasfile.AnnotationUnpack] != "true" {
+		return fmt.Errorf("unsupported OCI archive layer format %q", layer.MediaType)
+	}
 	return nil
 }

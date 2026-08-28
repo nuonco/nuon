@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,6 +14,17 @@ import (
 
 func (s *InstallsServiceTestSuite) TestGetInstallByID() {
 	install := s.createTestInstall()
+	policy := app.InstallManagementPolicyVersion{
+		InstallID:         install.ID,
+		Version:           1,
+		EffectiveAt:       time.Now(),
+		Connectivity:      app.InstallConnectivityDisconnected,
+		ReleaseSelection:  app.InstallReleaseSelectionCustomer,
+		CommandAuthority:  app.InstallAuthorityCustomer,
+		ApprovalAuthority: app.InstallAuthorityCustomer,
+		Telemetry:         app.InstallTelemetryManual,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&policy).Error)
 
 	path := fmt.Sprintf("/v1/installs/%s", install.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
@@ -26,6 +38,8 @@ func (s *InstallsServiceTestSuite) TestGetInstallByID() {
 	assert.Equal(s.T(), install.ID, resp.ID)
 	assert.Equal(s.T(), install.Name, resp.Name)
 	assert.Equal(s.T(), s.testApp.ID, resp.AppID)
+	require.NotNil(s.T(), resp.ManagementPolicy)
+	assert.Equal(s.T(), policy.ID, resp.ManagementPolicy.ID)
 }
 
 func (s *InstallsServiceTestSuite) TestGetInstallByName() {

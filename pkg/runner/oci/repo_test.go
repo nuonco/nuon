@@ -86,3 +86,14 @@ func TestGetRepoAnonymousDoesNotUseSharedGlobalClient(t *testing.T) {
 	require.NotSame(t, auth.DefaultCache, authClient.Cache, "must not reuse the process-global default cache")
 	require.Nil(t, authClient.Credential, "anonymous repo must not attach static credentials")
 }
+
+func TestGetRepoUsesPlainHTTPForLocalhostRegistry(t *testing.T) {
+	repo, err := GetRepo(context.Background(), &configs.OCIRegistryRepository{
+		RegistryType: configs.OCIRegistryTypePublicOCI,
+		Repository:   "localhost:5005/runner",
+	})
+	require.NoError(t, err)
+
+	remoteRepo := repo.(*remote.Repository)
+	require.True(t, remoteRepo.PlainHTTP)
+}

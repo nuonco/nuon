@@ -58,8 +58,7 @@ func New(params Params) *service {
 	return &service{
 		db: params.DB, chDB: params.CHDB, store: params.Store, cfg: params.Config, appsHelpers: params.AppsHelpers,
 		installsHelpers: params.InstallsHelpers, queueClient: params.QueueClient, blobSvc: params.BlobService, features: params.Features,
-		flowsClient:   params.FlowsClient,
-		accountClient: params.AccountClient, authzClient: params.AuthzClient,
+		flowsClient: params.FlowsClient, accountClient: params.AccountClient, authzClient: params.AuthzClient,
 	}
 }
 
@@ -77,6 +76,13 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	packages.POST("/:package_id/blob-grants", s.CreateReleasePackageBlobGrants)
 	api.POST("/v1/customer-managed/installs", s.CreateCustomerManagedInstall)
 
+	group := api.Group("/v1/apps/:app_id/customer-managed-bundles")
+	group.POST("", s.CreateBundle)
+	group.GET("", s.ListBundles)
+	group.GET("/:bundle_id", s.GetBundle)
+	group.POST("/:bundle_id/download-grants", s.CreateDownloadGrant)
+	group.POST("/:bundle_id/blob-grants", s.CreateBlobGrants)
+	api.POST("/v1/install-registrations", s.RegisterInstall)
 	api.GET("/v1/installs/:install_id/release-deployments", s.ListReleaseDeployments)
 	api.POST("/v1/installs/:install_id/release-updates", s.CreateReleaseUpdate)
 	agent := api.Group("/v1/customer-managed/installs/:install_id")
@@ -92,6 +98,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	agent.POST("/workflows/:workflow_id/steps/:step_id/retry", require.Route(permissions.KindInstall, permissions.PermissionUpdate, "install_id"), s.AgentRetryWorkflowStep)
 	agent.GET("/workflows/:workflow_id/steps/:step_id/approvals/:approval_id/contents", require.Route(permissions.KindInstall, permissions.PermissionRead, "install_id"), s.AgentGetApprovalContents)
 	agent.POST("/workflows/:workflow_id/steps/:step_id/approvals/:approval_id/response", require.Route(permissions.KindInstall, permissions.PermissionCreate, "install_id"), s.AgentCreateApprovalResponse)
+	snapshots := api.Group("/v1/installs/:install_id/support-snapshots")
+	snapshots.POST("", s.CreateSupportSnapshot)
+	snapshots.GET("", s.ListSupportSnapshots)
+	snapshots.GET("/:snapshot_id", s.GetSupportSnapshot)
 	return nil
 }
 

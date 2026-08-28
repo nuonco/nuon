@@ -56,6 +56,7 @@ func GetRepo(ctx context.Context, cfg *configs.OCIRegistryRepository) (registry.
 	if err != nil {
 		return nil, fmt.Errorf("unable to get repository: %w", err)
 	}
+	repo.PlainHTTP = repo.Reference.Registry == "localhost" || strings.HasPrefix(repo.Reference.Registry, "localhost:")
 
 	// Always give every repository its own isolated auth client and cache.
 	// Leaving repo.Client nil makes oras-go fall back to the process-global

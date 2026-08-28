@@ -39,6 +39,7 @@ type downloadGrantResponse struct {
 // @Failure 404 {object} stderr.ErrResponse
 // @Failure 409 {object} stderr.ErrResponse
 // @Failure 500 {object} stderr.ErrResponse
+// @Router /v1/apps/{app_id}/customer-managed-bundles/{bundle_id}/download-grants [post]
 func (s *service) CreateDownloadGrant(ctx *gin.Context) {
 	if !s.store.Configured() {
 		ctx.Error(transport.ErrNotConfigured)

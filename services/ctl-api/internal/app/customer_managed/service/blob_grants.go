@@ -54,6 +54,7 @@ type blobGrantsResponse struct {
 // @Failure 404 {object} stderr.ErrResponse
 // @Failure 409 {object} stderr.ErrResponse
 // @Failure 500 {object} stderr.ErrResponse
+// @Router /v1/apps/{app_id}/customer-managed-bundles/{bundle_id}/blob-grants [post]
 func (s *service) CreateBlobGrants(ctx *gin.Context) {
 	if !s.store.Configured() {
 		ctx.Error(transport.ErrNotConfigured)
