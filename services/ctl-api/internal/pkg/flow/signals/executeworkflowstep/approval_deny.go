@@ -28,14 +28,16 @@ func (s *Signal) handleDenyResponse(ctx workflow.Context, l *zap.Logger, step *a
 		return errors.Wrap(err, "unable to set result directive for denied step")
 	}
 
+	denied := app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalDenied, map[string]any{
+		"reason":             "approval denied",
+		string(DirectiveKey): string(DirectiveStop),
+		"sibling_status":     string(app.StatusDiscarded),
+		"future_step_status": string(app.StatusNotAttempted),
+	})
+	denied.StatusHumanDescription = "approval denied"
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: step.ID,
-		Status: app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalDenied, map[string]any{
-			"reason":             "approval denied",
-			string(DirectiveKey): string(DirectiveStop),
-			"sibling_status":     string(app.StatusDiscarded),
-			"future_step_status": string(app.StatusNotAttempted),
-		}),
+		ID:     step.ID,
+		Status: denied,
 	}); err != nil {
 		return errors.Wrap(err, "unable to update")
 	}

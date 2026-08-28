@@ -81,6 +81,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return s.err
 	}
 
+	defer func() {
+		if ctx.Err() == nil {
+			return
+		}
+		// new disconnected context because current context has already been cancelled due to workflow cancellation
+		dCtx, dCancel := workflow.NewDisconnectedContext(ctx)
+		defer dCancel()
+		_ = workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(dCtx, flw.ID)
+	}()
+
 	// Resolve owner type — prefer the signal field, fall back to the workflow.
 	ownerType := s.OwnerType
 	if ownerType == "" {
@@ -153,7 +163,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
-	if err := workflow.SetUpdateHandlerWithOptions(ctx, "eager-step-groups",
+	if err := workflow.SetUpdateHandlerWithOptions(
+		ctx, "eager-step-groups",
 		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
 			defer func() { s.eagerStepGroupsCalled = true }()
 			// Block until eager step groups are ready.
@@ -170,7 +181,8 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		return err
 	}
 
-	return workflow.SetUpdateHandlerWithOptions(ctx, "FetchSteps",
+	return workflow.SetUpdateHandlerWithOptions(
+		ctx, "FetchSteps",
 		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
 			defer func() { s.fetchStepsCalled = true }()
 			// Block until Execute has finished generating steps.

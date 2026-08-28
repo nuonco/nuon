@@ -86,6 +86,8 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 
 		if runErr == nil {
 			if s.cancelRequested {
+				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+				s.writeFlowCancelled(ctx)
 				return nil
 			}
 
@@ -108,6 +110,8 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			}
 		} else {
 			if s.cancelRequested {
+				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+				s.writeFlowCancelled(ctx)
 				return nil
 			}
 
@@ -121,15 +125,20 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 				if stoppedErr.RetriesExhausted {
 					metadata["retries_exhausted"] = true
 				}
+				humanDesc := stoppedErr.StatusHumanDescription
+				if humanDesc == "" {
+					humanDesc = "workflow stopped"
+				}
 				_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 					ID: s.WorkflowID,
 					Status: app.CompositeStatus{
 						Status:                 app.StatusError,
-						StatusHumanDescription: "workflow stopped",
+						StatusHumanDescription: humanDesc,
 						Metadata:               metadata,
 					},
 				})
-				// Resident hosts must survive a stopped/failed step: one bad				// appended step becomes a terminal (errored) group and the host
+				// Resident hosts must survive a stopped/failed step: one bad
+				// appended step becomes a terminal (errored) group and the host
 				// stays up to run later steps. The step's own status is mirrored
 				// onto its target row by the inner signal.
 				if !s.Resident {
@@ -172,6 +181,7 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			}
 			if s.cancelRequested {
 				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+				s.writeFlowCancelled(ctx)
 				return runErr
 			}
 			if !parked {
@@ -197,6 +207,7 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 
 		if s.cancelRequested {
 			s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+			s.writeFlowCancelled(ctx)
 			return runErr
 		}
 
@@ -512,12 +523,18 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			}
 
 		case flowdirective.GroupStop:
+			// Derive the reason before the sweeps overwrite step statuses.
+			stepName, reason := s.groupStopReason(ctx, group)
+
 			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
 			s.markRemainingStepsNotAttempted(ctx, l)
 			if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
 				l.Error("unable to update finished at", zap.Error(err))
 			}
-			stoppedErr := flow.NewFlowStoppedErr("", "group returned stop directive")
+			stoppedErr := flow.NewFlowStoppedErr(stepName, reason)
+			if reason != "" {
+				stoppedErr.StatusHumanDescription = "workflow stopped: " + reason
+			}
 			stoppedErr.RetriesExhausted = s.checkGroupRetriesExhausted(ctx, group)
 			return stoppedErr
 
@@ -890,6 +907,7 @@ func isStepTerminal(status app.Status) bool {
 		app.StatusDiscarded, app.StatusCancelled, app.StatusError,
 		app.StatusNotAttempted,
 		app.WorkflowStepApprovalStatusApproved, app.WorkflowStepApprovalStatusApprovalDenied,
+		app.WorkflowStepApprovalStatusApprovalExpired,
 		app.WorkflowStepNoDrift, app.WorkflowStepDrifted:
 		return true
 	}
@@ -951,7 +969,23 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 	return true
 }
 
-// checkRetryable checks if the workflow is still eligible for retry.
+// writeFlowCancelled update's workflow's status to cancelled
+func (s *Signal) writeFlowCancelled(ctx workflow.Context) {
+	l, _ := log.WorkflowLogger(ctx)
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: s.WorkflowID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusCancelled,
+			StatusHumanDescription: "workflow cancelled",
+			Metadata: map[string]any{
+				"cancel_requested_at": workflow.Now(ctx).Unix(),
+			},
+		},
+	}); err != nil && l != nil {
+		l.Error("unable to re-assert cancelled workflow status", zap.Error(err))
+	}
+}
+
 func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 	resp, err := workflowactivities.AwaitCheckWorkflowRetryable(ctx, workflowactivities.CheckWorkflowRetryableRequest{
 		WorkflowID: s.WorkflowID,
@@ -960,6 +994,26 @@ func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 		return false
 	}
 	return resp.Retryable
+}
+
+// groupStopReason returns the name and status text of the step that caused
+// the group to stop. The step that writes the StepStop directive owns the
+// user-facing phrasing; this is only a lookup.
+func (s *Signal) groupStopReason(ctx workflow.Context, group *app.WorkflowStepGroup) (string, string) {
+	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+		FlowID: s.WorkflowID,
+	})
+	if err != nil {
+		return "", ""
+	}
+	for i := range steps {
+		step := &steps[i]
+		if step.GroupIdx != group.GroupIdx || flowdirective.Step(step.ResultDirective) != flowdirective.StepStop {
+			continue
+		}
+		return step.Name, step.Status.StatusHumanDescription
+	}
+	return "", ""
 }
 
 // checkGroupRetriesExhausted checks if any step in the group has retries_exhausted

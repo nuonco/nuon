@@ -1,6 +1,7 @@
 package executeworkflowstep
 
 import (
+	goerrors "errors"
 	"fmt"
 	"time"
 
@@ -88,6 +89,11 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 
 	// Phase 2: Await user approval response
 	resp, err := s.awaitApprovalResponse(ctx, step, flw)
+	if goerrors.Is(err, errApprovalExpired) {
+		// Expired status and stop directive are already written; return nil so
+		// the group stops the workflow instead of retrying the step.
+		return nil
+	}
 	if err != nil {
 		return err
 	}
