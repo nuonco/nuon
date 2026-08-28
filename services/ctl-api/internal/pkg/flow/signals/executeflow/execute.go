@@ -86,8 +86,10 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 
 		if runErr == nil {
 			if s.cancelRequested {
-				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
-				s.writeFlowCancelled(ctx)
+				if workflow.GetVersion(ctx, flowCancelStatusVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+					s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+					s.writeFlowCancelled(ctx)
+				}
 				return nil
 			}
 
@@ -110,8 +112,10 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			}
 		} else {
 			if s.cancelRequested {
-				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
-				s.writeFlowCancelled(ctx)
+				if workflow.GetVersion(ctx, flowCancelStatusVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+					s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+					s.writeFlowCancelled(ctx)
+				}
 				return nil
 			}
 
@@ -524,7 +528,10 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 		case flowdirective.GroupStop:
 			// Derive the reason before the sweeps overwrite step statuses.
-			stepName, reason := s.groupStopReason(ctx, group)
+			stepName, reason := "", ""
+			if workflow.GetVersion(ctx, groupStopReasonVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+				stepName, reason = s.groupStopReason(ctx, group)
+			}
 
 			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
 			s.markRemainingStepsNotAttempted(ctx, l)
@@ -971,6 +978,9 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 
 // writeFlowCancelled update's workflow's status to cancelled
 func (s *Signal) writeFlowCancelled(ctx workflow.Context) {
+	if workflow.GetVersion(ctx, flowCancelStatusVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return
+	}
 	l, _ := log.WorkflowLogger(ctx)
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: s.WorkflowID,
@@ -1040,6 +1050,14 @@ func (s *Signal) checkGroupRetriesExhausted(ctx workflow.Context, group *app.Wor
 // runnerDisabledCheckVersion gates the pre-group runner check so in-flight
 // histories, which never scheduled the activity, still replay deterministically.
 const runnerDisabledCheckVersion = "execute-flow-runner-disabled-check-v1"
+
+// flowCancelStatusVersion gates the cancelled-status writes added on the
+// cancel-return paths; in-flight histories never scheduled those activities.
+const flowCancelStatusVersion = "execute-flow-cancel-status-v1"
+
+// groupStopReasonVersion gates the GetFlowSteps lookup that derives the stop
+// reason; in-flight histories never scheduled it before the sweeps.
+const groupStopReasonVersion = "execute-flow-group-stop-reason-v1"
 
 // stopIfRunnerDisabled halts a workflow whose install runner was disabled after
 // it started. Creation already rejects these, so without this the workflow would
