@@ -1,13 +1,15 @@
 import { Link } from '@/components/common/Link'
 import { Badge } from '@/components/common/Badge'
-import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { Divider } from '@/components/common/Divider'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
+import { panelTriggerClass } from '@/components/surfaces/panel-trigger'
 import { cn } from '@/utils/classnames'
 import type { TPolicyReport, TPolicyResult, TPolicyViolation } from '@/types'
 
@@ -52,16 +54,18 @@ function getPolicyStatusBadge(policy: TPolicyResult) {
   )
 }
 
-interface IPolicyReportPanel extends IPanel {
+export interface IPolicyReportPanel extends IPanel {
   report: TPolicyReport
   orgId: string
   policyNameMap: Map<string, string>
+  history?: TPolicyReport[]
 }
 
 export const PolicyReportPanel = ({
   report,
   orgId,
   policyNameMap,
+  history,
   ...props
 }: IPolicyReportPanel) => {
   const { label: ownerTypeLabel, theme: ownerTypeTheme } = formatOwnerType(
@@ -309,33 +313,77 @@ export const PolicyReportPanel = ({
           </div>
         </Card>
       )}
+
+      {history?.length ? (
+        <>
+          <Divider dividerWord="Evaluation history" />
+          <div className="flex flex-col divide-y">
+            {history.map((olderReport) => (
+              <PolicyReportHistoryRow
+                key={olderReport.id}
+                report={olderReport}
+                orgId={orgId}
+                policyNameMap={policyNameMap}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
     </Panel>
   )
 }
 
-interface IPolicyReportPanelButton extends IButtonAsButton {
-  report: TPolicyReport
-  orgId: string
-  policyNameMap: Map<string, string>
-  onOpen: () => void
-}
-
-export const PolicyReportPanelButton = ({
+const PolicyReportHistoryRow = ({
   report,
   orgId,
   policyNameMap,
-  onOpen,
-  ...props
-}: IPolicyReportPanelButton) => {
+}: {
+  report: TPolicyReport
+  orgId: string
+  policyNameMap: Map<string, string>
+}) => {
+  const denyCount = report?.deny_count ?? 0
+  const warnCount = report?.warn_count ?? 0
+
   return (
-    <Button
-      variant="secondary"
-      size="sm"
-      onClick={onOpen}
-      aria-label="View policy report details"
-      {...props}
-    >
-      Details
-    </Button>
+    <div className="flex items-center justify-between gap-4 py-2">
+      <span className="flex items-center gap-3">
+        <Status variant="badge" status={report?.status?.status ?? 'unknown'} />
+        <PolicyReportPanel
+          report={report}
+          orgId={orgId}
+          policyNameMap={policyNameMap}
+          panelKey={`policy-report-${report?.id}`}
+          triggerButton={{
+            variant: 'ghost',
+            className: panelTriggerClass,
+            children: (
+              <Time
+                variant="subtext"
+                time={report?.evaluated_at || ''}
+                format="relative"
+              />
+            ),
+          }}
+        />
+      </span>
+      <span className="flex items-center gap-2">
+        {denyCount ? (
+          <Badge size="sm" theme="error">
+            {denyCount} denied
+          </Badge>
+        ) : null}
+        {warnCount ? (
+          <Badge size="sm" theme="warn">
+            {warnCount} warning{warnCount === 1 ? '' : 's'}
+          </Badge>
+        ) : null}
+        {!denyCount && !warnCount ? (
+          <Text variant="subtext" theme="neutral">
+            Passed
+          </Text>
+        ) : null}
+      </span>
+    </div>
   )
 }
