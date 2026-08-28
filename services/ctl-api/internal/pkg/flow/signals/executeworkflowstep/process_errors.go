@@ -12,6 +12,11 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
+// parkedWaitCeilingVersion gates the parked-step wait ceiling: histories
+// written before the ceiling recorded an unbounded Await (no timer command),
+// so replaying them with AwaitWithTimeout is nondeterministic.
+const parkedWaitCeilingVersion = "parked-step-wait-ceiling-v1"
+
 // handleStepError marks the step as errored and checks for auto-retry.
 // If the inner signal implements SignalWithAutoRetry and the retry budget
 // hasn't been exhausted, it writes a directive ("retry" or "retry-group")
@@ -182,6 +187,9 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		// terminal directive (retry or retry-group) before setting s.retried.
 		// The ceiling stops abandoned parks from holding Temporal workflows
 		// open forever.
+		if workflow.GetVersion(ctx, parkedWaitCeilingVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return workflow.Await(ctx, func() bool { return s.retried || s.canceled || s.skipped })
+		}
 		parked, err := workflow.AwaitWithTimeout(ctx, callback.MaxWaitCeiling, func() bool {
 			return s.retried || s.canceled || s.skipped
 		})
