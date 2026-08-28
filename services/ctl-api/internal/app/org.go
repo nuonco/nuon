@@ -71,11 +71,8 @@ const (
 	// step in the dashboard, letting customers provision the Terraform
 	// install stack through Spacelift instead of running Terraform locally.
 	OrgFeatureSpaceliftInstallStacks OrgFeature = "spacelift-install-stacks"
-	// OrgFeatureStackTFProvider switches the install stack "await" step's
-	// Terraform directions to the provider-based flow: clone the ja/stack-sdk
-	// branch of install-stacks (which reads config from the API via the stack
-	// provider's stack_config data source) and use the slimmed-down tfvars
-	// instead of the full generated set.
+	// OrgFeatureStackTFProvider adds a "TF Module" tab to the install stack await step,
+	// with directions for the published nuonco/stack/aws module. Additive, AWS only.
 	OrgFeatureStackTFProvider       OrgFeature = "stack-tf-provider"
 	OrgFeatureAWSAccountConnections OrgFeature = "aws-account-connections"
 	// OrgFeatureComponentHealth enables the live component resource explorer:
@@ -349,7 +346,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureNotebooks:                "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
 		OrgFeatureVersionsUI:               "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
 		OrgFeatureSpaceliftInstallStacks:   "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
-		OrgFeatureStackTFProvider:          "Use the Terraform-provider install stack flow: the await step's directions clone the ja/stack-sdk branch of install-stacks (which reads config from the API via the stack provider) and use the slimmed-down tfvars.",
+		OrgFeatureStackTFProvider:          "Show the TF Module tab in the install stack await step: directions for the published nuonco/stack/aws Terraform module, which reads its configuration from the API and authenticates with the stack's API token. Additive — the existing CloudFormation and Terraform directions are unchanged. AWS installs only.",
 		OrgFeatureAWSAccountConnections:    "Enable organization-owned cross-account AWS connections with external ID trust verification.",
 		OrgFeatureComponentHealth:          "Enable the live component resource explorer: the install runner reports the Kubernetes and cloud resources each component manages with per-resource health, surfaced in the install Resources tab.",
 		OrgFeatureServiceAccountsAndTokens: "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
