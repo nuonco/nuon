@@ -44,8 +44,7 @@ func generateRunnerSchema(ctx context.Context) error {
 		"--parseDependency",
 		"--parseInternal", "-g", "runner.go",
 		"--markdownFiles", "docs/runner/descriptions",
-		// stacks/runner is omitted: its only client is the hand-written sdks/stack,
-		// so generating a client here would be dead code.
+		// stacks/runner has its own instance; see generateStackSchema.
 		"-t", "orgs/runner,apps/runner,general/runner,sandboxes/runner,installs/runner,installers/runner,components/runner,runners/runner,runners/auth,actions/runner",
 	}
 
@@ -64,6 +63,37 @@ func generateRunnerSchema(ctx context.Context) error {
 	}
 
 	fmt.Fprintf(os.Stdout, "✅ successfully generated runner schema\n")
+	return nil
+}
+
+// generateStackSchema emits a spec containing only the stacks/runner namespace,
+// so the generated sdks/stack client does not carry the whole runner API.
+func generateStackSchema(ctx context.Context) error {
+	args := []string{
+		"run", "github.com/swaggo/swag/cmd/swag",
+		"init",
+		"--instanceName", "stack",
+		"--output", "docs/stack",
+		"--parseDependency",
+		"--parseInternal", "-g", "runner.go",
+		"-t", "stacks/runner",
+	}
+
+	cmd, err := command.New(v,
+		command.WithInheritedEnv(),
+		command.WithCmd("go"),
+		command.WithArgs(args),
+		command.WithLinePrefix("stack-schema"),
+	)
+	if err != nil {
+		return fmt.Errorf("unable to create command: %w", err)
+	}
+
+	if err := cmd.Exec(ctx); err != nil {
+		return fmt.Errorf("unable to execute command: %w", err)
+	}
+
+	fmt.Fprintf(os.Stdout, "✅ successfully generated stack schema\n")
 	return nil
 }
 
@@ -281,7 +311,7 @@ func collapseImportGroups(src []byte) []byte {
 }
 
 func main() {
-	targetsFlag := flag.String("targets", "", "comma-separated targets: public,public-v3,runner,admin,temporal")
+	targetsFlag := flag.String("targets", "", "comma-separated targets: public,public-v3,runner,stack,admin,temporal")
 	flag.Parse()
 
 	targets := parseTargets(*targetsFlag)
@@ -303,6 +333,13 @@ func main() {
 		eg.Go(func() error {
 			return recorder.time("Runner schema", func() error {
 				return generateRunnerSchema(ctx)
+			})
+		})
+	}
+	if targets.has("stack") {
+		eg.Go(func() error {
+			return recorder.time("Stack schema", func() error {
+				return generateStackSchema(ctx)
 			})
 		})
 	}
@@ -375,7 +412,7 @@ func parseTargets(flagValue string) targetSet {
 
 	set := targetSet{}
 	if value == "" {
-		for _, target := range []string{"public", "public-v3", "runner", "admin", "temporal", "templ"} {
+		for _, target := range []string{"public", "public-v3", "runner", "stack", "admin", "temporal", "templ"} {
 			set.add(target)
 		}
 		return set
@@ -389,6 +426,7 @@ func parseTargets(flagValue string) targetSet {
 		if trimmed == "sdk" {
 			set.add("public")
 			set.add("runner")
+			set.add("stack")
 			continue
 		}
 		set.add(trimmed)

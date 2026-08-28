@@ -16,7 +16,7 @@ import (
 
 // Keeps the removed /v1/stack-runs/{phone_home_id}/config response shape, which the
 // stack SDK's decoder was built against.
-type stackConfigResponse struct {
+type StackConfigResponse struct {
 	Config *app.InstallerSDKConfig `json:"config"`
 }
 
@@ -33,7 +33,7 @@ type stackConfigResponse struct {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}	stackConfigResponse
+// @Success				200	{object}	StackConfigResponse
 // @Router					/v1/stacks/{install_id}/config [get]
 func (s *service) GetStackConfig(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
@@ -77,5 +77,5 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 	cfg.PhoneHomeURL = fmt.Sprintf("%s/v1/stacks/%s/phone-home",
 		strings.TrimSuffix(cfg.RunnerAPIURL, "/"), install.ID)
 
-	ctx.JSON(http.StatusOK, stackConfigResponse{Config: cfg})
+	ctx.JSON(http.StatusOK, StackConfigResponse{Config: cfg})
 }
