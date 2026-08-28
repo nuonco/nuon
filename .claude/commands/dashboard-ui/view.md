@@ -150,6 +150,32 @@ This skill enforces correct route registration, layout-aware provider usage, and
 
    Scrolling, BackToTop, and SubNav sticky are all handled automatically by PageLayout — do not add them manually.
 
+## List bodies & drill-down (keystone 010, plan 025)
+
+A list page's body is `Table`, `Timeline`, or `Cards`, and the page gets exactly **one**
+disclosure mechanism.
+
+- **`Table`** (default) — the items *exist* and you compare them by attribute. If you can name
+  three column headers, it is a table.
+- **`Timeline`** — the items *happened*: primary sort is `created_at` and every row has a status.
+- **`Cards`** — only when the item's content is the point and nothing compares column-wise. Needs
+  a written exception; "it looks nicer as cards" is not one.
+
+Drill-down: own lifecycle (actions, logs, shareable link) → its own **page**; read-only inspection
+where list context matters → **panel**; a few scannable lines with no sub-structure → **expand**.
+If the disclosed content has a diff, a nested collection, tabs, or its own actions, it is not an
+expand.
+
+Panels copy `InstallResourceDetailPanel`'s shape (`size="half"`, plain heading, status + `ID` row,
+2-col `LabeledValue` grid, `Divider dividerWord="…"` sections) and open from the row's identity
+cell using `panelTriggerClass` from `components/surfaces/panel-trigger.ts` — never a whole-row
+click or a trailing "Details" button.
+
+Sanctioned exceptions (leave them alone): announcements cards, `BranchCards`, and the
+`ActiveWorkflows` cards above the install Workflows timeline (kept by explicit team request).
+
+See `DESIGN.md` §5 "List bodies & drill-down".
+
 ## Page title (required, UXDR 018)
 
 **Every routed view sets its own `document.title`. Layouts NEVER set it — the leaf view that renders the page owns its title.** (This is why tab pages under a shared layout each set their own; the layout does not.)
@@ -219,6 +245,9 @@ A page's loading state is the page itself with `loading` primitives inside — b
 - **Do not** put metadata (IDs, timestamps, badges, grids) in a second header column — it is content below the heading row
 - **Do not** leave a create button in the table's `filterActions` or only in the empty state — a UI-creatable list gets one create button in `ListPage`'s `createAction`
 - **Do not** add a search or pagination control to the page — `Table`/`Timeline` own those
+- **Do not** render a resource collection as cards, or mix cards/expands/panels on one page — pick one body by the test above and one disclosure mechanism
+- **Do not** put a diff, a nested collection, or row actions inside an `Expand` — that content belongs in a panel or its own page
+- **Do not** add a view switcher (table ⇄ cards) — one rendering per list
 - **Do not** hand-build a page-skeleton block or full-page spinner — render chrome real and drive regions off `loading` primitives
 - **Do not** set the title on a layout/`Outlet` wrapper, and **do not** ship a routed view without a title — the leaf view owns `document.title`; a missing one leaves the title stale from the previous page
 - **Do not** put the org name in a title segment, and **do not** interpolate `${x?.name}` into a `title` string (prints `"undefined"`) — use `segments`, which drops unset values
