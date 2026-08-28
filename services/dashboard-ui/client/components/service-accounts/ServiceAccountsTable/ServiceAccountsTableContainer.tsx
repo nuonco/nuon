@@ -2,7 +2,11 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { listRoles, listServiceAccounts } from '@/lib'
-import { ServiceAccountsTable, roleTitleLookup, SERVICE_ACCOUNTS_TABLE_LIMIT } from './ServiceAccountsTable'
+import {
+  ServiceAccountsTable,
+  roleTitleLookup,
+  SERVICE_ACCOUNTS_TABLE_LIMIT,
+} from './ServiceAccountsTable'
 
 export const ServiceAccountsTableContainer = ({
   pollInterval = 20000,
@@ -15,15 +19,23 @@ export const ServiceAccountsTableContainer = ({
   const { org } = useOrg()
   const offset = Number(searchParams.get('offset') ?? 0)
   const includeRunners = searchParams.get('runners') === 'true'
+  const includeStacks = searchParams.get('stacks') === 'true'
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['service-accounts', org.id, offset, includeRunners],
+    queryKey: [
+      'service-accounts',
+      org.id,
+      offset,
+      includeRunners,
+      includeStacks,
+    ],
     queryFn: () =>
       listServiceAccounts({
         orgId: org.id,
         offset,
         limit: SERVICE_ACCOUNTS_TABLE_LIMIT + 1,
         includeRunners,
+        includeStacks,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
