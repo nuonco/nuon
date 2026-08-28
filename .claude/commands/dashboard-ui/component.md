@@ -107,6 +107,46 @@ Never hand-assemble a heading row. Two components own it; pick with one question
 
 `DetailHeader` renders `SectionHeader`'s row internally, so the heading row is identical either way. A resource's `*Header` feature component (e.g. `DeployHeader`, `BuildHeader`) is a thin wrapper that fills `DetailHeader`'s slots from domain data — it never re-implements the row. Pair it with `DetailPage` (shell + banners + routed `TabNav`) and, on entity pages, `HistoryRail` + `HistoryPanelButton`.
 
+## Collection bodies & drill-down (`Table` / `Timeline` / `Cards`)
+
+Which body renders a collection is fixed by the shape of the items, not by taste. Full record:
+`DESIGN.md` §5 / keystone 010 + plan 025.
+
+1. **`Table`** (default) — the items *exist* and you compare them by attribute. Test: you can name
+   three column headers for the collection.
+2. **`Timeline`** — the items *happened*. Test: the primary sort is `created_at` and every row
+   carries a status.
+3. **`Cards`** — only when the item's content is the point and nothing compares column-wise.
+   Restricted: needs a written exception, and cards are never a styling upgrade.
+
+Each collection surface gets **one** disclosure mechanism: a **page** (the item has its own
+lifecycle), a **panel** (read-only inspection, list context matters), or an **expand** (a few
+scannable lines, no sub-structure). A diff, a nested collection, tabs, or row actions inside an
+expand means it should have been a panel or a page.
+
+A detail panel copies `InstallResourceDetailPanel`'s shape — `size="half"`, a plain string
+heading, a status + `ID` row, a 2-column `LabeledValue` grid, then `Divider dividerWord="…"`
+sections — and opens from the row's identity cell:
+
+```tsx
+import { panelTriggerClass } from '@/components/surfaces/panel-trigger'
+
+cell: ({ row }) => (
+  <MyResourceDetails
+    resource={row.original}
+    panelKey={`my-resource-${row.original?.id}`}
+    triggerButton={{ variant: 'ghost', className: panelTriggerClass, children: row.original?.name }}
+  />
+)
+```
+
+If the panel needs its own fetch, don't render it inline with `triggerButton` (the query would run
+for every row on mount) — expose a `*Button` container that calls `addPanel(<MyPanelContainer …/>)`
+so the fetch happens on open, like `InstallResourceDetailPanel`.
+
+Sanctioned card exceptions (leave them alone): announcements, `BranchCards`, and `ActiveWorkflows`
+above the install Workflows timeline.
+
 ## Labeled data (`LabeledValue` / `KeyValueList` / `PropertyGrid`)
 
 Which component renders labeled data is fixed by who names the fields and each datum's shape. Classify with these tests. Full record: `DESIGN.md` §5 / UXDR 022.
@@ -179,3 +219,6 @@ The `Button` owns its tooltip via `tooltipProps` (`Omit<ITooltip, 'children'>`).
 - **Do not** add a `Record<string, string>` display map whose entries just equal `humanize(key)`, put a lifecycle status in a `Badge` (use `Status`), or make a chip mono for vocabulary / sans for an identifier
 - **Do not** hand-roll a label/value `Text` stack (`flex flex-col` with a neutral subtext label above a value) — use `LabeledValue`; nor a 2-column `PropertyGrid` (it's a map → `KeyValueList`, or author-labeled metadata → `LabeledValue` block)
 - **Do not** re-case `KeyValueList` keys, or give a `PropertyGrid` row actions/pagination/search/sort (that's a `Table`) — see "Labeled data"
+- **Do not** render a resource collection as cards or mix cards/expands/panels on one surface — pick the body by the test above and one disclosure mechanism (see "Collection bodies")
+- **Do not** put a diff, a nested collection, tabs, or row actions inside an `Expand` — that content belongs in a panel or its own page
+- **Do not** copy the panel-trigger link classes into a new component or add a trailing "Details"/"View →" button for a panel — import `panelTriggerClass` and trigger from the identity cell

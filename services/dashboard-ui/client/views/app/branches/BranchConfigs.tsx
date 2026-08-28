@@ -1,13 +1,12 @@
 import { useParams } from 'react-router'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { BranchConfigsTable } from '@/components/branches/BranchConfigsTable'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
-import { useOrg } from '@/hooks/use-org'
 import { useBranch } from '@/hooks/use-branch'
-import { getBranchConfigs } from '@/lib'
+import { useOrg } from '@/hooks/use-org'
 import { BranchProvider } from '@/providers/branch-provider'
 
 const BranchConfigsContent = () => {
@@ -16,13 +15,6 @@ const BranchConfigsContent = () => {
   const { branch } = useBranch()
   const params = useParams()
   const branchId = params.branchId as string
-
-  const { data: configs } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['branch-configs', org.id, app.id, branchId],
-    queryFn: () => getBranchConfigs({ orgId: org.id!, appId: app.id!, branchId }),
-    enabled: !!org.id && !!app.id && !!branchId,
-  })
 
   return (
     <PageSection>
@@ -41,8 +33,10 @@ const BranchConfigsContent = () => {
       />
       <SectionHeader
         title="Branch configs"
-        description={`${configs?.length || 0} config${configs?.length !== 1 ? 's' : ''} found`}
+        description="App config versions synced from this branch. Select a version to see its contents."
       />
+
+      <BranchConfigsTable branchId={branchId} />
     </PageSection>
   )
 }

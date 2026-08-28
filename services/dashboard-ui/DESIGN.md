@@ -368,6 +368,56 @@ resource ID, `BackLink`, label badges, a status chip, timestamps, or a metadata 
 </DetailPage>
 ```
 
+### List bodies & drill-down (`Table` / `Timeline` / `Cards`)
+
+A list page's body is one of three renderings, and the page has exactly **one** disclosure
+mechanism. Decision records: [keystone 010](./.planning/ux/010-page-archetypes-and-variants.md),
+[plan 025](./.planning/ux/025-plan-list-body-disclosure-convergence.md).
+
+**Body variant — answer in order:**
+
+| Test | Body |
+|------|------|
+| The items *exist* and you compare them by attribute (name, status, owner, counts) | **`Table`** (default) |
+| The items *happened* — the axis is time, every row carries a status | **`Timeline`** |
+| The item's *content* is the point and there is nothing to compare column-wise | **`Cards`** (restricted) |
+
+Falsifiable checks: if you can name three column headers for the collection, it is a `Table`. If
+the primary sort is `created_at` and each row has a status, it is a `Timeline`. `Cards` require a
+written exception — cards are never a styling upgrade for a resource collection, and "it looks
+nicer as cards" is not one.
+
+**Drill-down — what opening a row does:**
+
+| Test | Drill-down |
+|------|-----------|
+| The item has its own lifecycle: actions performed on it, logs/runs, a link someone would share | its own **page** |
+| Read-only inspection where keeping list context is valuable | **panel** |
+| A few scannable lines with no sub-structure | **expand** |
+
+Falsifiable check: if the disclosed content contains a diff, a nested collection, its own tabs, or
+its own actions, it is **not** an expand.
+
+**Panels copy `InstallResourceDetailPanel`'s shape** until the shared panel-detail layout is
+extracted (tracked in 025): `size="half"`, a plain string heading, a status + `ID` row, a 2-column
+`LabeledValue` grid, then `Divider dividerWord="…"` sections. Open it from the row's **identity
+cell** — the name/version cell rendered as `Button variant="ghost"` with `panelTriggerClass`
+(`components/surfaces/panel-trigger.ts`). Not a whole-row click (rows carry dropdowns and links),
+not a trailing "Details" or "View →" button.
+
+**One disclosure mechanism per page.** Cards + expands + panels on one screen is a defect. Folding
+a *group* of table rows (a collapsible group header) is not item disclosure and does not count.
+
+**No view switchers.** One right rendering per list, chosen by the tests above.
+
+**Sanctioned exceptions — do not "fix" these:**
+- Announcements cards on the org dashboard (010).
+- `BranchCards` on the app branches page (010, re-ruled 2026-08-27 — composite latest-run and
+  plan-sentence fields, small list).
+- The `ActiveWorkflows` cards above the install Workflows timeline (2026-08-28) — the same
+  resource rendered twice on one page, kept by explicit team request as an at-a-glance
+  "running now" block.
+
 ### Labeled-data components (`LabeledValue` / `KeyValueList` / `PropertyGrid`)
 
 Which component renders labeled data is fixed by who names the fields and the shape of each datum.
