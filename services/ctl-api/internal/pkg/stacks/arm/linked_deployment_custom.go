@@ -251,6 +251,15 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			allParamNames[paramName] = stack.Name
 		}
 
+		// An expression default is computed in the template's own parameter scope;
+		// hoisting it re-binds it to the parent's. See hoistableDefault.
+		for paramName, param := range defaultParams {
+			if !hoistableDefault(param.DefaultValue) {
+				delete(defaultParams, paramName)
+				delete(allParamNames, paramName)
+			}
+		}
+
 		// Remaining params are hoisted into parent
 		for paramName := range defaultParams {
 			if _, alreadySet := deploymentParams[paramName]; !alreadySet {
@@ -286,6 +295,15 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 				},
 				"parameters": deploymentParams,
 			},
+		}
+
+		// Guessing a stack's scope wrong fails the whole deployment with
+		// InvalidScope, so take it from the template's own $schema, as
+		// getVNetLinkedDeployment does.
+		if isSubscriptionScopedTemplate(armTmpl) {
+			scope.targetSubscription(deployment)
+		} else {
+			scope.targetInstallRG(deployment)
 		}
 
 		resources = append(resources, deployment)
