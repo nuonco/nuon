@@ -95,7 +95,12 @@ const DeployLayoutInner = () => {
     ?.at(-1) ?? null
   const responded = step ? hasResponded(step.id) : false
   const stepStatus = step?.status?.status
-  const isTerminal = stepStatus === 'error' || stepStatus === 'cancelled' || stepStatus === 'discarded'
+  const isTerminal =
+    stepStatus === 'error' ||
+    stepStatus === 'cancelled' ||
+    stepStatus === 'discarded' ||
+    stepStatus === 'approval-expired' ||
+    stepStatus === 'approval-denied'
   const isAutoApprove =
     step?.approval?.type === 'approve-all' ||
     step?.approval?.response?.type === 'auto-approve'
