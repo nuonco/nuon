@@ -71,6 +71,7 @@ type service struct {
 	blobSvc              blobstore.Service
 	emitterClient        *emitterclient.Client
 	queueClient          *queueclient.Client
+	telemetryTokenIssuer *telemetryTokenIssuer
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
 	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
 	// are effectively immutable for the life of the stream, so a 5min TTL
@@ -93,6 +94,7 @@ const (
 var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
+	api.GET("/.well-known/jwks.json", s.GetTelemetryJWKS)
 	api.GET("/v1/runners/:runner_id", s.GetRunnerCtlAPI)
 	api.GET("/v1/runners/:runner_id/connected", s.GetRunnerConnectStatus)
 	api.GET("/v1/runners/:runner_id/jobs", s.GetRunnerJobsCtlAPI)
@@ -289,6 +291,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	api.POST("/v1/telemetry/access-token", s.CreateTelemetryAccessToken)
+
 	runners := api.Group("/v1/runners/:runner_id")
 	runners.POST("/health-checks", s.CreateRunnerHealthCheck)
 	runners.POST("/heart-beats", s.CreateRunnerHeartBeat)
@@ -384,6 +388,11 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 }
 
 func New(params Params) *service {
+	telemetryTokenIssuer, telemetryTokenErr := newTelemetryTokenIssuer(params.Cfg)
+	if telemetryTokenErr != nil && params.L != nil {
+		params.L.Error("telemetry token issuer configuration is invalid", zap.Error(telemetryTokenErr))
+	}
+
 	return &service{
 		RouteRegister: apiPkg.RouteRegister{
 			EndpointAudit: params.EndpointAudit,
@@ -406,6 +415,7 @@ func New(params Params) *service {
 		blobSvc:              params.BlobSvc,
 		emitterClient:        params.EmitterClient,
 		queueClient:          params.QueueClient,
+		telemetryTokenIssuer: telemetryTokenIssuer,
 		logStreamCache:       expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
 	}
 }
