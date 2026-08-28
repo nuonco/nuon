@@ -2,12 +2,12 @@ package executeworkflowstep
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -67,23 +67,49 @@ func (s *Signal) dispatchApprovalResponse(ctx workflow.Context, step *app.Workfl
 	}
 }
 
+// errApprovalExpired marks an approval wait that hit MaxWaitCeiling; the stop
+// directive and expired status are already written when it is returned.
+var errApprovalExpired = errors.New("approval expired")
+
+// approvalExpiredStopVersion gates the expired-approval stop path: histories
+// written before it recorded only the step-status update on expiry, so the
+// target-status and stop-directive activities must not replay into them.
+const approvalExpiredStopVersion = "approval-expired-stop-v1"
+
 // waitForApprovalResponse waits for an approval response reactively using the
 // "approve-plan" update handler.
 func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep) (*app.WorkflowStepApprovalResponse, error) {
-	ok, err := workflow.AwaitWithTimeout(ctx, 30*24*time.Hour, func() bool {
+	ok, err := workflow.AwaitWithTimeout(ctx, callback.MaxWaitCeiling, func() bool {
 		return s.approved || s.retried || s.canceled || s.skipped
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error waiting for approval for step %s: %w", step.ID, err)
 	}
 	if !ok {
-		statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalExpired, map[string]any{
-				"err_message": "approval was not accepted",
-			}),
+		expired := app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalExpired, map[string]any{
+			"err_message": "approval was not accepted",
 		})
-		return nil, fmt.Errorf("approval timed out for step %s", step.ID)
+		expired.StatusHumanDescription = "no approval received"
+		statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID:     step.ID,
+			Status: expired,
+		})
+		if workflow.GetVersion(ctx, approvalExpiredStopVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return nil, fmt.Errorf("approval timed out for step %s", step.ID)
+		}
+		if terr := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+			StepID:            step.ID,
+			Status:            app.WorkflowStepApprovalStatusApprovalExpired,
+			StatusDescription: "no approval received",
+		}); terr != nil {
+			return nil, errors.Wrap(terr, "unable to update step target status for expired approval")
+		}
+		// Stop the group instead of erroring: an expired approval must not
+		// enter the retry machinery and re-park.
+		if derr := setResultDirective(ctx, step.ID, DirectiveStop); derr != nil {
+			return nil, errors.Wrap(derr, "unable to set stop directive for expired approval")
+		}
+		return nil, errApprovalExpired
 	}
 
 	if s.retried || s.canceled || s.skipped {

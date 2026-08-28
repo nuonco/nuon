@@ -6,10 +6,16 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
+
+// parkedWaitCeilingVersion gates the parked-step wait ceiling: histories
+// written before the ceiling recorded an unbounded Await (no timer command),
+// so replaying them with AwaitWithTimeout is nondeterministic.
+const parkedWaitCeilingVersion = "parked-step-wait-ceiling-v1"
 
 // handleStepError marks the step as errored and checks for auto-retry.
 // If the inner signal implements SignalWithAutoRetry and the retry budget
@@ -179,8 +185,40 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		// stays blocked naturally. When the retry update arrives (flow → group → step),
 		// s.retried is set and we unblock. The createStepRetryHandler writes the
 		// terminal directive (retry or retry-group) before setting s.retried.
-		if err := workflow.Await(ctx, func() bool { return s.retried || s.canceled || s.skipped }); err != nil {
+		// The ceiling stops abandoned parks from holding Temporal workflows
+		// open forever.
+		if workflow.GetVersion(ctx, parkedWaitCeilingVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return workflow.Await(ctx, func() bool { return s.retried || s.canceled || s.skipped })
+		}
+		parked, err := workflow.AwaitWithTimeout(ctx, callback.MaxWaitCeiling, func() bool {
+			return s.retried || s.canceled || s.skipped
+		})
+		if err != nil {
 			return err
+		}
+		if !parked {
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: step.ID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusError,
+					StatusHumanDescription: "step abandoned: no retry or skip received",
+					Metadata: map[string]any{
+						"abandoned": true,
+					},
+				},
+			}); err != nil {
+				return errors.Wrap(err, "unable to update workflow step status")
+			}
+			if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
+				StepID:            step.ID,
+				Status:            app.StatusError,
+				StatusDescription: "step abandoned: no retry or skip received",
+			}); err != nil {
+				return errors.Wrap(err, "unable to update step target status for abandoned step")
+			}
+			if derr := setResultDirective(ctx, step.ID, DirectiveStop); derr != nil {
+				return errors.Wrap(derr, "unable to set stop directive for abandoned step")
+			}
 		}
 		return nil
 	}

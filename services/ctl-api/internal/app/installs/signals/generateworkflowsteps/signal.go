@@ -12,6 +12,11 @@ import (
 
 const SignalType qsignal.SignalType = "generate-workflow-steps"
 
+// cancelFinishedAtVersion gates the finished-at write on cancellation so
+// in-flight histories, which never scheduled it, replay deterministically.
+// todo(sk): clean this after teminating old workflows
+const cancelFinishedAtVersion = "generate-steps-cancel-finished-at-v1"
+
 // generatorRegistry is populated at init time by packages that register
 // step generators for specific owner types. This avoids import cycles.
 var generatorRegistry = map[string]func() map[app.WorkflowType]flow.WorkflowStepGenerator{}
@@ -80,6 +85,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.done = true
 		return s.err
 	}
+
+	defer func() {
+		if ctx.Err() == nil {
+			return
+		}
+		// new disconnected context because current context has already been cancelled due to workflow cancellation
+		dCtx, dCancel := workflow.NewDisconnectedContext(ctx)
+		defer dCancel()
+		// In-flight histories never scheduled this activity on cancel.
+		if workflow.GetVersion(dCtx, cancelFinishedAtVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+			return
+		}
+		_ = workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(dCtx, flw.ID)
+	}()
 
 	// Resolve owner type — prefer the signal field, fall back to the workflow.
 	ownerType := s.OwnerType
@@ -153,7 +172,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
-	if err := workflow.SetUpdateHandlerWithOptions(ctx, "eager-step-groups",
+	if err := workflow.SetUpdateHandlerWithOptions(
+		ctx, "eager-step-groups",
 		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
 			defer func() { s.eagerStepGroupsCalled = true }()
 			// Block until eager step groups are ready.
@@ -170,7 +190,8 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		return err
 	}
 
-	return workflow.SetUpdateHandlerWithOptions(ctx, "FetchSteps",
+	return workflow.SetUpdateHandlerWithOptions(
+		ctx, "FetchSteps",
 		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
 			defer func() { s.fetchStepsCalled = true }()
 			// Block until Execute has finished generating steps.

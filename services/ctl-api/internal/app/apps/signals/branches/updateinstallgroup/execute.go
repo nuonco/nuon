@@ -20,6 +20,12 @@ const (
 	statusError      = "error"
 )
 
+// installVersionStatusVersion gates the per-install config-version status
+// writes added by the diffing engine; in-flight histories never scheduled
+// those activities between the enqueue and await commands.
+// todo(sk): cleanup after terminating old workflows
+const installVersionStatusVersion = "install-app-config-version-status-v1"
+
 type enqueuedInstall struct {
 	installID  string
 	workflowID string
@@ -138,7 +144,8 @@ func (s *Signal) enqueueInstallUpdates(
 			return nil, fmt.Errorf("install %s: unable to create config update workflow: %w", installID, err)
 		}
 
-		logger.Info("enqueued install config update",
+		logger.Info(
+			"enqueued install config update",
 			"install_id", installID,
 			"workflow_id", result.WorkflowID,
 			"install_config_update_id", result.InstallAppConfigVersionID,
@@ -151,12 +158,7 @@ func (s *Signal) enqueueInstallUpdates(
 			cb:         cb,
 		})
 
-		_, _ = activities.AwaitUpdateInstallAppConfigVersionStatus(ctx, &activities.UpdateInstallAppConfigVersionStatusInput{
-			AppBranchRunID: s.RunID,
-			InstallID:      installID,
-			Status:         app.StatusInProgress,
-			StatusDesc:     "install workflow running",
-		})
+		s.updateInstallAppConfigVersionStatus(ctx, installID, app.StatusInProgress, "install workflow running")
 	}
 
 	return enqueued, nil
@@ -206,7 +208,8 @@ func (s *Signal) awaitInstallUpdates(
 			installEntries[i].Status = statusSuccess
 			s.updateInstallAppConfigVersionStatus(ctx, e.installID, app.StatusSuccess, "install workflow completed")
 
-			logger.Info("install config update completed",
+			logger.Info(
+				"install config update completed",
 				"install_id", e.installID,
 				"workflow_id", e.workflowID,
 			)
@@ -240,7 +243,8 @@ func (s *Signal) awaitInstallUpdates(
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
-	logger.Info("cancelling install group update",
+	logger.Info(
+		"cancelling install group update",
 		"install_group_id", s.InstallGroupID,
 		"child_workflow_count", len(s.childWorkflowIDs),
 	)
@@ -249,7 +253,8 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 		if err := activities.AwaitCancelInstallWorkflow(ctx, &activities.CancelInstallWorkflowInput{
 			WorkflowID: wfID,
 		}); err != nil {
-			logger.Warn("failed to cancel child workflow",
+			logger.Warn(
+				"failed to cancel child workflow",
 				"workflow_id", wfID,
 				"error", err,
 			)
@@ -285,7 +290,8 @@ func (s *Signal) recordAppConfigVersions(
 				Metadata:       map[string]string{"source": "app-branch"},
 			},
 		}); err != nil {
-			logger.Warn("unable to enqueue update-app-config signal",
+			logger.Warn(
+				"unable to enqueue update-app-config signal",
 				"install_id", e.installID,
 				"error", err,
 			)
@@ -294,6 +300,9 @@ func (s *Signal) recordAppConfigVersions(
 }
 
 func (s *Signal) updateInstallAppConfigVersionStatus(ctx workflow.Context, installID string, status app.Status, desc string) {
+	if workflow.GetVersion(ctx, installVersionStatusVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return
+	}
 	_, _ = activities.AwaitUpdateInstallAppConfigVersionStatus(ctx, &activities.UpdateInstallAppConfigVersionStatusInput{
 		AppBranchRunID: s.RunID,
 		InstallID:      installID,
