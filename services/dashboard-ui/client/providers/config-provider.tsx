@@ -3,6 +3,10 @@ import { createContext, useMemo } from 'react'
 export type TRuntimeConfig = {
   apiUrl: string
 
+  // The runner API, which install stacks authenticate against — a different host
+  // from apiUrl, and the audience a stack's OIDC trust policy must name.
+  runnerApiUrl?: string
+
   temporalUiUrl?: string
   authServiceUrl?: string
   appUrl: string
@@ -42,8 +46,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
     document.getElementById('nuon-config')?.remove()
     delete window.__NUON_CONFIG__
     const apiUrl = cfg.apiUrl ?? ''
-    const isDev =
-      apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')
+    const isDev = apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')
     return { ...cfg, isDev }
   }, [])
 
