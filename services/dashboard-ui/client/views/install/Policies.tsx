@@ -75,31 +75,18 @@ export const Policies = () => {
       />
       <SectionHeader
         title="Policy reports"
-        description="View policy compliance reports for this install."
+        description="Latest policy evaluation for each component in this install."
         actions={<PolicyReportsFilter />}
       />
 
-      <div className="flex flex-auto">
-        {isLoading ? (
-          <div className="flex flex-col gap-3 w-full">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-32 rounded-md border bg-cool-grey-50 dark:bg-dark-grey-800 animate-pulse"
-              />
-            ))}
-          </div>
-        ) : (
-          <PolicyReportsTable
-            reports={reports}
-            orgId={org?.id ?? ''}
-            installId={install?.id ?? ''}
-            policyNameMap={policyNameMap}
-            currentStatus={status || undefined}
-            currentOwnerType={ownerType || undefined}
-          />
-        )}
-      </div>
+      <PolicyReportsTable
+        reports={reports}
+        orgId={org?.id ?? ''}
+        policyNameMap={policyNameMap}
+        isLoading={isLoading}
+        currentStatus={status || undefined}
+        currentOwnerType={ownerType || undefined}
+      />
     </PageSection>
   )
 }

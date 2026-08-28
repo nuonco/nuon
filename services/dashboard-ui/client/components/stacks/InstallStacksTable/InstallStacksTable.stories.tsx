@@ -1,40 +1,36 @@
+import { InstallStacksTable, type TStackVersion } from './InstallStacksTable'
+
 export default {
   title: 'Stacks/InstallStacksTable',
 }
 
-import { InstallStacksTable, type TInstallStackRow } from './InstallStacksTable'
-import { Status } from '@/components/common/Status'
-
-const mockData: TInstallStackRow[] = Array.from({ length: 3 }, (_, i) => ({
-  versionId: `ver-${i + 1}`,
-  appConfigId: `cfg-${i + 1}`,
-  appStackConfigHref: `/org-1/apps/app-1`,
-  status: <Status variant="badge" status="active" />,
-  runs: `${i + 1}`,
-  createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-  more: <span>details</span>,
-}))
+const mockVersions = Array.from({ length: 3 }, (_, i) => ({
+  id: `stkv-${i + 1}`,
+  app_config_id: `cfg-${i + 1}`,
+  created_at: new Date(Date.now() - i * 86400000).toISOString(),
+  updated_at: new Date(Date.now() - i * 43200000).toISOString(),
+  composite_status: {
+    status: i === 0 ? 'active' : 'expired',
+    history: [{ status: 'pending', created_at_ts: Date.now() - 7200000 }],
+  },
+  runs: Array.from({ length: i + 1 }, (_, r) => ({
+    id: `run-${i}-${r}`,
+    created_at: new Date(Date.now() - r * 3600000).toISOString(),
+    run_type: r === 0 ? 'workflow-run' : 'out-of-band',
+    data_contents: { vpc_id: 'vpc-abc123' },
+  })),
+  quick_link_url: 'https://console.aws.amazon.com/cloudformation/home',
+  template_url: 'https://s3.amazonaws.com/nuon-stacks/template.json',
+})) as unknown as TStackVersion[]
 
 export const Default = () => (
-  <InstallStacksTable
-    data={mockData}
-    isLoading={false}
-    pagination={{ hasNext: false, offset: 0, limit: 10 }}
-  />
+  <InstallStacksTable versions={mockVersions} orgId="org-1" appId="app-1" />
 )
 
 export const Empty = () => (
-  <InstallStacksTable
-    data={[]}
-    isLoading={false}
-    pagination={{ hasNext: false, offset: 0, limit: 10 }}
-  />
+  <InstallStacksTable versions={[]} orgId="org-1" appId="app-1" />
 )
 
 export const Loading = () => (
-  <InstallStacksTable
-    data={[]}
-    isLoading
-    pagination={{ hasNext: false, offset: 0, limit: 10 }}
-  />
+  <InstallStacksTable versions={[]} orgId="org-1" appId="app-1" isLoading />
 )
