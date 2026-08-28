@@ -2956,6 +2956,13 @@ export interface paths {
      */
     post: operations["CreateServiceAccountToken"];
   };
+  "/v1/stacks/{install_id}/service-account": {
+    /**
+     * get an install stack's service account
+     * @description Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
+     */
+    get: operations["GetStackServiceAccount"];
+  };
   "/v1/terraform-backend": {
     /**
      * get current terraform
@@ -4074,7 +4081,13 @@ export interface components {
       vpc_nested_template_url?: string;
     };
     "app.AzureACRImageConfig": {
+      client_certificate_name?: string;
       client_id?: string;
+      /**
+       * @description Names of app secrets holding the app registration's credential material,
+       * never the material itself.
+       */
+      client_secret_name?: string;
       /** @description connection to parent model */
       component_config_id?: string;
       component_config_type?: string;
@@ -5662,7 +5675,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -5866,7 +5879,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -6882,11 +6895,20 @@ export interface components {
       repoURL?: string;
       version?: string;
     };
+    "configs.ACRAppRegistration": {
+      clientCertificateName?: string;
+      clientID?: string;
+      /** @description App secret names holding the credential. Exactly one is set. */
+      clientSecretName?: string;
+      componentID?: string;
+      tenantID?: string;
+    };
     "configs.OCIRegistryAuth": {
       password?: string;
       username?: string;
     };
     "configs.OCIRegistryRepository": {
+      acrappRegistration?: components["schemas"]["configs.ACRAppRegistration"];
       acrauth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
       ecrauth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
       loginServer?: string;
@@ -8541,6 +8563,8 @@ export interface components {
        */
       duration?: string;
       invalidate?: boolean;
+      /** @description Name labels the token where it is listed; defaults to the account's identity. */
+      name?: string;
     };
     "service.CreateServiceAccountTokenResponse": {
       token?: string;
@@ -9020,6 +9044,20 @@ export interface components {
       skippable?: boolean;
       workflow_id?: string;
     };
+    "service.StackServiceAccountResponse": {
+      account_id?: string;
+      email?: string;
+      /**
+       * @description ExpiresAt is the expiry of the longest-lived usable token; zero when
+       * HasLiveToken is false.
+       */
+      expires_at?: string;
+      /**
+       * @description HasLiveToken is false whether no token was ever created or every one has
+       * expired or been revoked; the caller fixes both the same way.
+       */
+      has_live_token?: boolean;
+    };
     "service.SyncSecretsRequest": {
       plan_only?: boolean;
     };
@@ -9298,7 +9336,10 @@ export interface components {
       iam_role_arn?: string;
     };
     "service.azureACRImageConfigRequest": {
+      client_certificate_name?: string;
       client_id?: string;
+      /** @description Names of app secrets, never raw values. At most one may be set. */
+      client_secret_name?: string;
       registry_url?: string;
       tenant_id?: string;
     };
@@ -30505,6 +30546,8 @@ export interface operations {
         page?: number;
         /** @description include service accounts with the runner role (excluded by default) */
         include_runners?: boolean;
+        /** @description include service accounts with the stack role (excluded by default) */
+        include_stacks?: boolean;
       };
     };
     responses: {
@@ -30782,6 +30825,50 @@ export interface operations {
       400: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install stack's service account
+   * @description Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
+   */
+  GetStackServiceAccount: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.StackServiceAccountResponse"];
         };
       };
       /** @description Unauthorized */
