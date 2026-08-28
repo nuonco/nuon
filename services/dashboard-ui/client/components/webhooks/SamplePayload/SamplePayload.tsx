@@ -58,11 +58,7 @@ export const SamplePayload = () => {
       id="webhook-sample-payload"
       className="rounded-md border"
       headerClassName="p-4"
-      heading={
-        <Text weight="strong">
-          View sample payload
-        </Text>
-      }
+      heading={<Text weight="strong">View sample payload</Text>}
     >
       <div className="flex flex-col gap-3 p-4 border-t">
         <div className="flex justify-end">

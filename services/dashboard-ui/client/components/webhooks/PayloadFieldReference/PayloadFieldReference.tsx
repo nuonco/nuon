@@ -13,14 +13,18 @@ const FIELD_COLUMNS = [
     key: 'field' as const,
     header: 'Field',
     render: (value: FieldRow['field']) => (
-      <Text variant="subtext" family="mono">{value}</Text>
+      <Text variant="subtext" family="mono">
+        {value}
+      </Text>
     ),
   },
   {
     key: 'type' as const,
     header: 'Type',
     render: (value: FieldRow['type']) => (
-      <Text variant="subtext" family="mono">{value}</Text>
+      <Text variant="subtext" family="mono">
+        {value}
+      </Text>
     ),
   },
   {
@@ -80,8 +84,7 @@ const ENVELOPE_FIELDS: FieldRow[] = [
     field: 'time',
     type: 'string (RFC 3339)',
     presence: 'always',
-    description:
-      'UTC timestamp at which the event was emitted by ctl-api.',
+    description: 'UTC timestamp at which the event was emitted by ctl-api.',
   },
   {
     field: 'subject',
@@ -260,8 +263,7 @@ const STEP_FIELDS: FieldRow[] = [
     field: 'data.step.name',
     type: 'string',
     presence: 'workflow_step events only',
-    description:
-      'Human-readable step name, e.g. "deploy api (apply)".',
+    description: 'Human-readable step name, e.g. "deploy api (apply)".',
   },
   {
     field: 'data.step.idx',
@@ -294,8 +296,7 @@ const STEP_FIELDS: FieldRow[] = [
     presence: 'when target is a deploy',
     description: (
       <>
-        Component id, set when{' '}
-        <span className="font-mono">target_type</span> is{' '}
+        Component id, set when <span className="font-mono">target_type</span> is{' '}
         <span className="font-mono">install_deploys</span>.
       </>
     ),
@@ -306,8 +307,7 @@ const STEP_FIELDS: FieldRow[] = [
     presence: 'when target is a sandbox run',
     description: (
       <>
-        Sandbox id, set when{' '}
-        <span className="font-mono">target_type</span> is{' '}
+        Sandbox id, set when <span className="font-mono">target_type</span> is{' '}
         <span className="font-mono">install_sandbox_runs</span>.
       </>
     ),
@@ -333,13 +333,15 @@ const PARENT_FIELDS: FieldRow[] = [
     field: 'data.parent.workflow_id',
     type: 'string',
     presence: 'when nested',
-    description: 'Parent workflow id when this workflow was launched from another workflow\'s step.',
+    description:
+      "Parent workflow id when this workflow was launched from another workflow's step.",
   },
   {
     field: 'data.parent.step_id',
     type: 'string',
     presence: 'when nested',
-    description: 'Parent step id (the step in the parent workflow that triggered this workflow).',
+    description:
+      'Parent step id (the step in the parent workflow that triggered this workflow).',
   },
   {
     field: 'data.parent.kind',
@@ -394,7 +396,8 @@ const LINK_FIELDS: FieldRow[] = [
     field: 'data.links.install',
     type: 'string (url)',
     presence: 'when applicable',
-    description: 'Dashboard URL for the install. Set when the workflow owner is an install.',
+    description:
+      'Dashboard URL for the install. Set when the workflow owner is an install.',
   },
   {
     field: 'data.links.workflow',
@@ -416,7 +419,8 @@ const LINK_FIELDS: FieldRow[] = [
   },
 ]
 
-const GRID_TEMPLATE = 'minmax(150px, 2fr) minmax(120px, 1.5fr) minmax(100px, 1fr) minmax(200px, 3fr)'
+const GRID_TEMPLATE =
+  'minmax(150px, 2fr) minmax(120px, 1.5fr) minmax(100px, 1fr) minmax(200px, 3fr)'
 
 export const PayloadFieldReference = () => (
   <div className="flex flex-col gap-6">
@@ -433,9 +437,8 @@ export const PayloadFieldReference = () => (
         <span className="font-mono">data</span> shape, with{' '}
         <span className="font-mono">data.step</span> present only on step
         events. Each workflow / step emits a{' '}
-        <span className="font-mono">started</span> transition when it begins
-        and a terminal{' '}
-        <span className="font-mono">succeeded</span>,{' '}
+        <span className="font-mono">started</span> transition when it begins and
+        a terminal <span className="font-mono">succeeded</span>,{' '}
         <span className="font-mono">failed</span>, or{' '}
         <span className="font-mono">cancelled</span> transition when it ends.
       </Text>
@@ -488,9 +491,9 @@ export const PayloadFieldReference = () => (
         data.step
       </Text>
       <Text variant="subtext" theme="neutral">
-        Present only on{' '}
-        <span className="font-mono">workflow_step</span> events. Identifies the
-        specific step within the workflow and the resource it manipulates.
+        Present only on <span className="font-mono">workflow_step</span> events.
+        Identifies the specific step within the workflow and the resource it
+        manipulates.
       </Text>
       <PropertyGrid
         className="rounded-md border p-4"
@@ -522,7 +525,8 @@ export const PayloadFieldReference = () => (
         data.outcome
       </Text>
       <Text variant="subtext" theme="neutral">
-        Set on terminal transitions (<span className="font-mono">succeeded</span>,{' '}
+        Set on terminal transitions (
+        <span className="font-mono">succeeded</span>,{' '}
         <span className="font-mono">failed</span>,{' '}
         <span className="font-mono">cancelled</span>). Omitted on{' '}
         <span className="font-mono">started</span>.
@@ -540,8 +544,8 @@ export const PayloadFieldReference = () => (
         data.links
       </Text>
       <Text variant="subtext" theme="neutral">
-        Dashboard URLs for the entities referenced in the event. Only links
-        that can be resolved are included.
+        Dashboard URLs for the entities referenced in the event. Only links that
+        can be resolved are included.
       </Text>
       <PropertyGrid
         className="rounded-md border p-4"

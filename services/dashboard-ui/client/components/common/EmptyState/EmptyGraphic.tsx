@@ -1,4 +1,4 @@
-import type { TEmptyVariant } from '@/types'
+import type { TEmptyVariant } from '@/types/dashboard.types'
 import { cn } from '@/utils/classnames'
 
 interface IEmptyGraphic {

@@ -37,7 +37,13 @@ const mockSidebarClosed = {
   toggleSidebar: () => {},
 }
 
-const Providers = ({ sidebar, children }: { sidebar: typeof mockSidebarOpen; children: ReactNode }) => (
+const Providers = ({
+  sidebar,
+  children,
+}: {
+  sidebar: typeof mockSidebarOpen
+  children: ReactNode
+}) => (
   <NotificationContext.Provider value={mockNotifications}>
     <SidebarContext.Provider value={sidebar}>
       {children}

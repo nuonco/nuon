@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "target": "ES2017",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/types": ["src/dashboard-types.ts"],
+      "@/*": ["../../dashboard-ui/client/*"],
+      "react": ["node_modules/@types/react/index.d.ts"],
+      "react/jsx-runtime": ["node_modules/@types/react/jsx-runtime.d.ts"],
+      "react-dom": ["node_modules/@types/react-dom/index.d.ts"],
+      "@tanstack/react-query": ["node_modules/@tanstack/react-query"],
+      "@tanstack/react-table": [
+        "../../dashboard-ui/node_modules/@tanstack/react-table"
+      ],
+      "luxon": ["node_modules/@types/luxon/index.d.ts"]
+    }
+  },
+  "include": ["src"]
+}

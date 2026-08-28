@@ -1,4 +1,8 @@
-import { CheckboxInput, Checkbox, CheckboxInputWithButton } from './CheckboxInput'
+import {
+  CheckboxInput,
+  Checkbox,
+  CheckboxInputWithButton,
+} from './CheckboxInput'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 
@@ -26,8 +30,10 @@ export const BasicUsage = () => (
           Basic checkbox with external label
         </label>
       </div>
-      
-      <h4 className="text-sm font-medium">CheckboxInput with Integrated Label</h4>
+
+      <h4 className="text-sm font-medium">
+        CheckboxInput with Integrated Label
+      </h4>
       <CheckboxInput
         labelProps={{ labelText: 'Agree to terms and conditions' }}
       />
@@ -48,16 +54,14 @@ export const States = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Checkbox States</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Checkboxes support various states including checked, unchecked, disabled,
-        and indeterminate states. The component automatically handles focus
-        states and provides visual feedback.
+        Checkboxes support various states including checked, unchecked,
+        disabled, and indeterminate states. The component automatically handles
+        focus states and provides visual feedback.
       </p>
     </div>
 
     <div className="space-y-4">
-      <CheckboxInput
-        labelProps={{ labelText: 'Unchecked state (default)' }}
-      />
+      <CheckboxInput labelProps={{ labelText: 'Unchecked state (default)' }} />
       <CheckboxInput
         labelProps={{ labelText: 'Checked state' }}
         defaultChecked
@@ -71,10 +75,7 @@ export const States = () => (
         disabled
         defaultChecked
       />
-      <CheckboxInput
-        labelProps={{ labelText: 'Required field' }}
-        required
-      />
+      <CheckboxInput labelProps={{ labelText: 'Required field' }} required />
     </div>
 
     <div className="grid grid-cols-1 gap-3 text-sm mt-6">
@@ -100,8 +101,8 @@ export const WithCustomStyling = () => (
       <h3 className="text-lg font-semibold">Custom Styling</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         CheckboxInput components support custom styling through labelTextProps
-        and className overrides. You can customize the label text appearance
-        and container styling.
+        and className overrides. You can customize the label text appearance and
+        container styling.
       </p>
     </div>
 
@@ -109,38 +110,42 @@ export const WithCustomStyling = () => (
       <CheckboxInput
         labelProps={{
           labelText: 'Bold label text',
-          labelTextProps: { weight: 'strong' }
+          labelTextProps: { weight: 'strong' },
         }}
       />
       <CheckboxInput
         labelProps={{
           labelText: 'Custom colored text',
-          labelTextProps: { theme: 'brand' }
+          labelTextProps: { theme: 'brand' },
         }}
       />
       <CheckboxInput
         labelProps={{
           labelText: 'Small text variant',
-          labelTextProps: { variant: 'subtext' }
+          labelTextProps: { variant: 'subtext' },
         }}
       />
       <CheckboxInput
         labelProps={{
           labelText: 'Custom container styling',
-          className: 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+          className:
+            'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800',
         }}
       />
     </div>
 
     <div className="grid grid-cols-1 gap-3 text-sm mt-6">
       <div>
-        <strong>Label Styling:</strong> Use labelTextProps to customize text appearance
+        <strong>Label Styling:</strong> Use labelTextProps to customize text
+        appearance
       </div>
       <div>
-        <strong>Container Styling:</strong> Apply className to the label container
+        <strong>Container Styling:</strong> Apply className to the label
+        container
       </div>
       <div>
-        <strong>Text Variants:</strong> Support all Text component variants and themes
+        <strong>Text Variants:</strong> Support all Text component variants and
+        themes
       </div>
     </div>
   </div>
@@ -190,9 +195,9 @@ export const InForms = () => (
           <CheckboxInput
             name="settings"
             value="two_factor"
-            labelProps={{ 
+            labelProps={{
               labelText: 'Enable two-factor authentication',
-              labelTextProps: { weight: 'strong', theme: 'success' }
+              labelTextProps: { weight: 'strong', theme: 'success' },
             }}
           />
           <CheckboxInput
@@ -210,15 +215,17 @@ export const InForms = () => (
             required
             name="consent"
             value="terms"
-            labelProps={{ 
+            labelProps={{
               labelText: 'I agree to the Terms of Service *',
-              labelTextProps: { variant: 'body' }
+              labelTextProps: { variant: 'body' },
             }}
           />
           <CheckboxInput
             name="consent"
             value="marketing"
-            labelProps={{ labelText: 'I consent to receiving marketing emails' }}
+            labelProps={{
+              labelText: 'I consent to receiving marketing emails',
+            }}
           />
         </div>
       </div>
@@ -243,8 +250,8 @@ export const WithButtons = () => (
       <h3 className="text-lg font-semibold">Checkbox with Button</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         CheckboxInputWithButton combines a checkbox with a button for more
-        complex interactions. Useful for selection lists where each item
-        has additional actions.
+        complex interactions. Useful for selection lists where each item has
+        additional actions.
       </p>
     </div>
 
@@ -256,7 +263,7 @@ export const WithButtons = () => (
               <span>Project Alpha</span>
               <Icon variant="GearIcon" size="16" />
             </div>
-          )
+          ),
         }}
       />
       <CheckboxInputWithButton
@@ -267,7 +274,7 @@ export const WithButtons = () => (
               <span>Project Beta</span>
               <Icon variant="GearIcon" size="16" />
             </div>
-          )
+          ),
         }}
       />
       <CheckboxInputWithButton
@@ -279,7 +286,7 @@ export const WithButtons = () => (
               <Icon variant="ArchiveIcon" size="16" />
             </div>
           ),
-          disabled: true
+          disabled: true,
         }}
       />
     </div>

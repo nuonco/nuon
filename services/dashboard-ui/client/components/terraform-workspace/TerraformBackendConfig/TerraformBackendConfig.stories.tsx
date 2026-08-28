@@ -20,9 +20,6 @@ const noop = () => {}
 
 export const Default = () => (
   <ModalStory>
-    <TerraformBackendConfigModal
-      content={mockContent}
-      onDownload={noop}
-    />
+    <TerraformBackendConfigModal content={mockContent} onDownload={noop} />
   </ModalStory>
 )

@@ -12,12 +12,16 @@ export const Default = () => {
 
 export const WithLabel = () => {
   const [checked, setChecked] = useState(false)
-  return <Toggle checked={checked} onChange={setChecked} label="Auto approval" />
+  return (
+    <Toggle checked={checked} onChange={setChecked} label="Auto approval" />
+  )
 }
 
 export const Checked = () => {
   const [checked, setChecked] = useState(true)
-  return <Toggle checked={checked} onChange={setChecked} label="Auto approval" />
+  return (
+    <Toggle checked={checked} onChange={setChecked} label="Auto approval" />
+  )
 }
 
 export const WithDescription = () => {

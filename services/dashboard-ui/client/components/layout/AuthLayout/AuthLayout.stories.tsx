@@ -5,13 +5,28 @@ export default {
 import { AuthLayout } from './AuthLayout'
 
 export const Loading = () => (
-  <AuthLayout isLoading isAuthenticated={false} hasError={false} onRetry={() => {}} />
+  <AuthLayout
+    isLoading
+    isAuthenticated={false}
+    hasError={false}
+    onRetry={() => {}}
+  />
 )
 
 export const Unauthenticated = () => (
-  <AuthLayout isLoading={false} isAuthenticated={false} hasError={false} onRetry={() => {}} />
+  <AuthLayout
+    isLoading={false}
+    isAuthenticated={false}
+    hasError={false}
+    onRetry={() => {}}
+  />
 )
 
 export const Error = () => (
-  <AuthLayout isLoading={false} isAuthenticated={false} hasError onRetry={() => {}} />
+  <AuthLayout
+    isLoading={false}
+    isAuthenticated={false}
+    hasError
+    onRetry={() => {}}
+  />
 )

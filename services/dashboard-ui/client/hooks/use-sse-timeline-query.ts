@@ -1,7 +1,10 @@
 import { useMemo } from 'react'
 import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { useResourceSSE } from '@/hooks/use-resource-sse'
-import { createSSEQueryListener, type TSSEListenerMap } from '@/lib/sse-listeners'
+import {
+  createSSEQueryListener,
+  type TSSEListenerMap,
+} from '@/lib/sse-listeners'
 
 const SUSPENDED_POLL_MS = 30_000
 

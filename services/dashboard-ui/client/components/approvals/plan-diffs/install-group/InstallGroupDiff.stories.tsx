@@ -4,7 +4,10 @@ export default {
 
 import { InstallGroupDiff } from './InstallGroupDiff'
 import type { InstallDiffEntry } from './InstallGroupDiff'
-import type { DiffEntityEntry, DiffSectionData } from '../app-config/AppConfigDiff'
+import type {
+  DiffEntityEntry,
+  DiffSectionData,
+} from '../app-config/AppConfigDiff'
 
 const componentsSection = (entities: DiffEntityEntry[]): DiffSectionData => ({
   name: 'Components',
@@ -17,9 +20,14 @@ const componentsSection = (entities: DiffEntityEntry[]): DiffSectionData => ({
   fields: [],
 })
 
-const infrastructureSection = (sandbox: boolean, stack: boolean): DiffSectionData => {
+const infrastructureSection = (
+  sandbox: boolean,
+  stack: boolean
+): DiffSectionData => {
   const entities: DiffEntityEntry[] = [
-    ...(sandbox ? [{ name: 'Sandbox', op: 'change' as const, fields: [] }] : []),
+    ...(sandbox
+      ? [{ name: 'Sandbox', op: 'change' as const, fields: [] }]
+      : []),
     ...(stack ? [{ name: 'Stack', op: 'change' as const, fields: [] }] : []),
   ]
   return {
@@ -42,9 +50,19 @@ const changedComponents: InstallDiffEntry = {
   summary: { added: 0, removed: 0, changed: 3 },
   sections: [
     componentsSection([
-      { name: 'certificate', op: 'change', componentType: 'terraform_module', fields: [] },
+      {
+        name: 'certificate',
+        op: 'change',
+        componentType: 'terraform_module',
+        fields: [],
+      },
       { name: 'coder', op: 'change', componentType: 'helm_chart', fields: [] },
-      { name: 'observability', op: 'change', componentType: 'helm_chart', fields: [] },
+      {
+        name: 'observability',
+        op: 'change',
+        componentType: 'helm_chart',
+        fields: [],
+      },
     ]),
   ],
 }
@@ -59,8 +77,18 @@ const withInfrastructure: InstallDiffEntry = {
   summary: { added: 0, removed: 0, changed: 2 },
   sections: [
     componentsSection([
-      { name: 'rds_subnet', op: 'change', componentType: 'terraform_module', fields: [] },
-      { name: 'kubelogstream', op: 'change', componentType: 'helm_chart', fields: [] },
+      {
+        name: 'rds_subnet',
+        op: 'change',
+        componentType: 'terraform_module',
+        fields: [],
+      },
+      {
+        name: 'kubelogstream',
+        op: 'change',
+        componentType: 'helm_chart',
+        fields: [],
+      },
     ]),
     infrastructureSection(true, true),
   ],
@@ -77,8 +105,18 @@ const mixedOps: InstallDiffEntry = {
   sections: [
     componentsSection([
       { name: 'redis', op: 'add', componentType: 'helm_chart', fields: [] },
-      { name: 'application_load_balancer', op: 'change', componentType: 'helm_chart', fields: [] },
-      { name: 'legacy_worker', op: 'remove', componentType: 'docker_build', fields: [] },
+      {
+        name: 'application_load_balancer',
+        op: 'change',
+        componentType: 'helm_chart',
+        fields: [],
+      },
+      {
+        name: 'legacy_worker',
+        op: 'remove',
+        componentType: 'docker_build',
+        fields: [],
+      },
     ]),
     infrastructureSection(true, false),
   ],
@@ -93,7 +131,10 @@ const noChanges: InstallDiffEntry = {
 }
 
 export const Default = () => (
-  <InstallGroupDiff groupName="UAT" installs={[changedComponents, withInfrastructure, mixedOps, noChanges]} />
+  <InstallGroupDiff
+    groupName="UAT"
+    installs={[changedComponents, withInfrastructure, mixedOps, noChanges]}
+  />
 )
 
 export const SingleInstall = () => (
@@ -114,4 +155,6 @@ export const NoChanges = () => (
 
 export const Empty = () => <InstallGroupDiff groupName="canary" installs={[]} />
 
-export const Loading = () => <InstallGroupDiff groupName="UAT" installs={[]} isLoading />
+export const Loading = () => (
+  <InstallGroupDiff groupName="UAT" installs={[]} isLoading />
+)

@@ -2,7 +2,10 @@ export default {
   title: 'Install Components/InstallComponentsTable',
 }
 
-import { InstallComponentsTable, type InstallComponentRow } from './InstallComponentsTable'
+import {
+  InstallComponentsTable,
+  type InstallComponentRow,
+} from './InstallComponentsTable'
 import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -12,8 +15,16 @@ const mockRows: InstallComponentRow[] = [
     componentId: 'comp-abc123',
     componentName: 'web-server',
     componentType: <Text variant="subtext">helm_chart</Text>,
-    toggleStatus: <Badge size="sm" theme="success">Enabled</Badge>,
-    overrideStatus: <Badge size="sm" theme="info">Customized</Badge>,
+    toggleStatus: (
+      <Badge size="sm" theme="success">
+        Enabled
+      </Badge>
+    ),
+    overrideStatus: (
+      <Badge size="sm" theme="info">
+        Customized
+      </Badge>
+    ),
     deployStatus: <Text variant="subtext">active</Text>,
     driftStatus: <Text variant="subtext">-</Text>,
     href: '/org1/installs/inst1/components/comp-abc123',

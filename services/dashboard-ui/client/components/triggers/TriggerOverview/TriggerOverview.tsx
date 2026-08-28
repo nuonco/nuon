@@ -299,9 +299,7 @@ export const TriggerOverview = ({
               </Text>
             </div>
             {canRotateSecret(trigger?.preset) ? (
-              <Button onClick={onRotateSecret}>
-                Rotate secret
-              </Button>
+              <Button onClick={onRotateSecret}>Rotate secret</Button>
             ) : null}
           </div>
           {revealError ? <Banner theme="error">{revealError}</Banner> : null}

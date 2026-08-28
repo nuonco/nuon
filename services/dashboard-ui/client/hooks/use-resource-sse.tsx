@@ -19,7 +19,12 @@ interface UseResourceSSEOptions {
   listeners?: Record<string, SSEEventHandler>
 }
 
-export function useResourceSSE({ url, enabled, onMessage, listeners }: UseResourceSSEOptions) {
+export function useResourceSSE({
+  url,
+  enabled,
+  onMessage,
+  listeners,
+}: UseResourceSSEOptions) {
   const { addToast } = useToast()
   const [connected, setConnected] = useState(false)
   const [suspended, setSuspended] = useState(false)
@@ -118,7 +123,10 @@ export function useResourceSSE({ url, enabled, onMessage, listeners }: UseResour
         return
       }
 
-      const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 30000)
+      const backoffDelay = Math.min(
+        1000 * Math.pow(2, reconnectAttemptRef.current),
+        30000
+      )
       reconnectAttemptRef.current += 1
 
       reconnectTimeoutRef.current = setTimeout(() => {
@@ -154,7 +162,8 @@ export function useResourceSSE({ url, enabled, onMessage, listeners }: UseResour
       }
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+    return () =>
+      document.removeEventListener('visibilitychange', onVisibilityChange)
   }, [enabled, url, connect, disconnect])
 
   return { connected, suspended, disconnect }

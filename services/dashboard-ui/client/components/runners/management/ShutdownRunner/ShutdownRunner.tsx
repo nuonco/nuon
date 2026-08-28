@@ -76,9 +76,14 @@ export const ShutdownRunnerModal = ({
           <Text variant="base" weight="strong">
             Shutdown this runner process.
           </Text>
-          <Text variant="body" theme="neutral" className="leading-relaxed max-w-md">
-            This will terminate the container and restart the process. The runner
-            will make a best effort to complete any queued jobs before shutting down.
+          <Text
+            variant="body"
+            theme="neutral"
+            className="leading-relaxed max-w-md"
+          >
+            This will terminate the container and restart the process. The
+            runner will make a best effort to complete any queued jobs before
+            shutting down.
           </Text>
           <ul className="flex flex-col gap-1 list-disc pl-6 text-sm text-cool-grey-700 dark:text-cool-grey-300">
             <li>Causes all jobs to queue while the process restarts</li>
@@ -126,10 +131,7 @@ export const ShutdownRunnerButton = ({
   const label = showRunnerLabel ? 'Shutdown runner process' : 'Shutdown process'
 
   return (
-    <Button
-      onClick={() => onOpenModal()}
-      {...props}
-    >
+    <Button onClick={() => onOpenModal()} {...props}>
       {props?.isMenuButton ? null : <Icon variant="PowerIcon" />}
       {label}
       {props?.isMenuButton ? <Icon variant="PowerIcon" /> : null}

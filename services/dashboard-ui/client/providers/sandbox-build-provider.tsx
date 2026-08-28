@@ -1,7 +1,10 @@
 import { createContext, type ReactNode } from 'react'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { useSSEResourceQuery, isTerminalStatusV2 } from '@/hooks/use-sse-resource-query'
+import {
+  useSSEResourceQuery,
+  isTerminalStatusV2,
+} from '@/hooks/use-sse-resource-query'
 import { useStatusToast } from '@/hooks/use-status-toast'
 import { getSandboxBuild } from '@/lib'
 import { ProviderError } from '@/components/layout/ProviderError'
@@ -29,10 +32,15 @@ export function SandboxBuildProvider({
   const { org } = useOrg()
   const { app } = useApp()
 
-  const { data: build, isLoading, error } = useSSEResourceQuery<TAppSandboxBuild>({
-    sseUrl: org?.id && app?.id && buildId
-      ? `/api/orgs/${org.id}/apps/${app.id}/sandbox-builds/${buildId}/sse`
-      : undefined,
+  const {
+    data: build,
+    isLoading,
+    error,
+  } = useSSEResourceQuery<TAppSandboxBuild>({
+    sseUrl:
+      org?.id && app?.id && buildId
+        ? `/api/orgs/${org.id}/apps/${app.id}/sandbox-builds/${buildId}/sse`
+        : undefined,
     queryKey: ['sandbox-build', org?.id, app?.id, buildId],
     queryFn: () => getSandboxBuild({ orgId: org!.id, appId: app!.id, buildId }),
     enabled: !!org?.id && !!app?.id && !!buildId,

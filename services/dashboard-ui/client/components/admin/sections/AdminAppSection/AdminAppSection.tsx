@@ -31,7 +31,11 @@ export const AdminAppSection = ({ appId, adminEmail }: IAdminAppSection) => {
       subtitle={`Managing app: ${appId}`}
       metadata={metadata}
     >
-      <AdminActionGroup title="App infrastructure" icon="PackageIcon" variant="warning">
+      <AdminActionGroup
+        title="App infrastructure"
+        icon="PackageIcon"
+        variant="warning"
+      >
         <AdminActionCard
           title="Reprovision app"
           description="Reprovision current app infrastructure"

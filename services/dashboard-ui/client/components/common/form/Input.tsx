@@ -97,7 +97,8 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
       sizeClasses[size],
 
       {
-        'border-cool-grey-500/24 dark:border-cool-grey-500/24': !error && !disabled && !isInvalid,
+        'border-cool-grey-500/24 dark:border-cool-grey-500/24':
+          !error && !disabled && !isInvalid,
         'text-cool-grey-900 dark:text-cool-grey-100': !disabled,
 
         '!border-red-500 dark:!border-red-400': error || isInvalid,
@@ -108,7 +109,8 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
         'text-cool-grey-400 dark:text-cool-grey-500': disabled,
         'cursor-not-allowed': disabled,
         '!shadow-none': disabled,
-        'focus:!ring-transparent focus:!border-cool-grey-300 dark:focus:!border-dark-grey-600': disabled,
+        'focus:!ring-transparent focus:!border-cool-grey-300 dark:focus:!border-dark-grey-600':
+          disabled,
       },
       className
     )
@@ -121,7 +123,9 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
         required={required}
         aria-invalid={error || isInvalid}
         aria-describedby={
-          helperText || errorMessage || showValidationMessage ? `${props.id}-description` : undefined
+          helperText || errorMessage || showValidationMessage
+            ? `${props.id}-description`
+            : undefined
         }
         onChange={handleChange}
         onBlur={handleBlur}
@@ -155,7 +159,7 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
           </Text>
         )
       }
-      
+
       if (helperText) {
         return (
           <Text
@@ -167,7 +171,7 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
           </Text>
         )
       }
-      
+
       return null
     }
 

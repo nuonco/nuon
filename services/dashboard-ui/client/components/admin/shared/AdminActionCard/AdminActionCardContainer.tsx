@@ -40,10 +40,13 @@ export const AdminActionCardContainer = ({
       )
     },
     onError: (err: any) => {
-      const message = err?.error || err?.description || err?.message || 'Unknown error'
+      const message =
+        err?.error || err?.description || err?.message || 'Unknown error'
       addToast(
         <Toast heading="Action failed" theme="error">
-          <Text>Failed to {title.toLowerCase()}: {message}</Text>
+          <Text>
+            Failed to {title.toLowerCase()}: {message}
+          </Text>
         </Toast>
       )
     },

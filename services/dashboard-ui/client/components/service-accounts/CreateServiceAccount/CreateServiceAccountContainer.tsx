@@ -25,7 +25,9 @@ const CreateServiceAccountModalContainer = (props: Record<string, any>) => {
       queryClient.invalidateQueries({ queryKey: ['service-accounts', org.id] })
       addToast(
         <Toast heading="Service account created" theme="success">
-          <Text>Created {name} for {org.name}.</Text>
+          <Text>
+            Created {name} for {org.name}.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)

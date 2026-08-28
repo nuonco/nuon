@@ -1,4 +1,4 @@
-import { JSONViewer } from "@/components/common/JSONViewer"
+import { JSONViewer } from '@/components/common/JSONViewer'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Banner } from '@/components/common/Banner'
@@ -12,16 +12,16 @@ interface IViewStateModal extends IModal {
   isLoading: boolean
 }
 
-export const ViewStateModal = ({ state, error, isLoading, ...props }: IViewStateModal) => {
+export const ViewStateModal = ({
+  state,
+  error,
+  isLoading,
+  ...props
+}: IViewStateModal) => {
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="CodeBlockIcon" size="24" />
           View install state
         </Text>
@@ -51,7 +51,11 @@ export const ViewStateModal = ({ state, error, isLoading, ...props }: IViewState
                 className="w-fit"
               />
             </div>
-            <JSONViewer className="min-h-[458px] max-h-[600px] bg-code" data={state} expanded={1} />
+            <JSONViewer
+              className="min-h-[458px] max-h-[600px] bg-code"
+              data={state}
+              expanded={1}
+            />
           </div>
         ) : (
           <div className="flex items-center justify-center p-8">

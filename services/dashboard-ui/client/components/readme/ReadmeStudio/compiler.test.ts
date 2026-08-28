@@ -22,9 +22,21 @@ const state = {
       recent: {
         outputs: {
           workflows: [
-            { name: 'deploy', status: 'finished', started_at: '2026-07-20T10:00:00Z' },
-            { name: 'sync', status: 'error', started_at: '2026-07-19T10:00:00Z' },
-            { name: 'plan', status: 'finished', started_at: '2026-07-18T10:00:00Z' },
+            {
+              name: 'deploy',
+              status: 'finished',
+              started_at: '2026-07-20T10:00:00Z',
+            },
+            {
+              name: 'sync',
+              status: 'error',
+              started_at: '2026-07-19T10:00:00Z',
+            },
+            {
+              name: 'plan',
+              status: 'finished',
+              started_at: '2026-07-18T10:00:00Z',
+            },
           ],
         },
       },
@@ -74,28 +86,48 @@ describe('compileBlock', () => {
   })
 
   test('runbook block compiles to nuon-run-runbook tag', () => {
-    const block: TBlock = { key: 'r', type: 'runbook', id: 'rbk-1', name: 'Rotate credentials' }
+    const block: TBlock = {
+      key: 'r',
+      type: 'runbook',
+      id: 'rbk-1',
+      name: 'Rotate credentials',
+    }
     expect(compileBlock(block, 0)).toBe(
       '<nuon-run-runbook id="rbk-1" name="Rotate credentials"></nuon-run-runbook>'
     )
   })
 
   test('action block compiles to nuon-action-card tag', () => {
-    const block: TBlock = { key: 'a', type: 'action', id: 'act-1', name: 'restart-api' }
+    const block: TBlock = {
+      key: 'a',
+      type: 'action',
+      id: 'act-1',
+      name: 'restart-api',
+    }
     expect(compileBlock(block, 0)).toBe(
       '<nuon-action-card id="act-1" name="restart-api"></nuon-action-card>'
     )
   })
 
   test('component block compiles to nuon-component-card tag', () => {
-    const block: TBlock = { key: 'c', type: 'component', id: 'cmp-1', name: 'ctl-api' }
+    const block: TBlock = {
+      key: 'c',
+      type: 'component',
+      id: 'cmp-1',
+      name: 'ctl-api',
+    }
     expect(compileBlock(block, 0)).toBe(
       '<nuon-component-card id="cmp-1" name="ctl-api"></nuon-component-card>'
     )
   })
 
   test('entity block escapes attribute values', () => {
-    const block: TBlock = { key: 'r', type: 'runbook', id: '', name: 'a "quoted" <name>' }
+    const block: TBlock = {
+      key: 'r',
+      type: 'runbook',
+      id: '',
+      name: 'a "quoted" <name>',
+    }
     expect(compileBlock(block, 0)).toBe(
       '<nuon-run-runbook name="a &#34;quoted&#34; &lt;name&gt;"></nuon-run-runbook>'
     )
@@ -111,11 +143,17 @@ describe('compileBlock', () => {
     expect(output).toContain(
       '(dig "actions" "workflows" "recent" "outputs" "workflows" (list) .nuon)'
     )
-    expect(output).toContain('{{ if gt (len $rows3) 2 }}{{ $rows3 = slice $rows3 0 2 }}{{ end }}')
+    expect(output).toContain(
+      '{{ if gt (len $rows3) 2 }}{{ $rows3 = slice $rows3 0 2 }}{{ end }}'
+    )
     expect(output).toContain('_No workflows yet_')
     expect(output).toContain('{{ range $row3 := $rows3 }}')
-    expect(output).toContain('<nuon-status status="{{ (dig "status" "" $row3) }}"')
-    expect(output).toContain('<nuon-time time="{{ (dig "started_at" "" $row3) }}"')
+    expect(output).toContain(
+      '<nuon-status status="{{ (dig "status" "" $row3) }}"'
+    )
+    expect(output).toContain(
+      '<nuon-time time="{{ (dig "started_at" "" $row3) }}"'
+    )
     expect(output).toContain('{{ (dig "name" "—" $row3) }}')
   })
 
@@ -125,13 +163,20 @@ describe('compileBlock', () => {
         key: 's',
         type: 'status-row',
         items: [
-          { key: 'i1', label: 'Status', kind: 'status', path: 'install.status' },
+          {
+            key: 'i1',
+            label: 'Status',
+            kind: 'status',
+            path: 'install.status',
+          },
           { key: 'i2', label: 'Name', kind: 'text', path: 'install.name' },
         ],
       },
       0
     )
-    expect(output).toContain('<nuon-status status="{{ (dig "install" "status" "" .nuon) }}"')
+    expect(output).toContain(
+      '<nuon-status status="{{ (dig "install" "status" "" .nuon) }}"'
+    )
     expect(output).toContain('{{ (dig "install" "name" "—" .nuon) }}')
   })
 })
@@ -143,7 +188,9 @@ describe('compileTemplate', () => {
       { key: 'b', type: 'markdown', content: '   ' },
       { key: 'c', type: 'raw', content: '{{ $x := 1 }}' },
     ])
-    expect(output).toStartWith('{{/* Generated with the Nuon README studio */}}')
+    expect(output).toStartWith(
+      '{{/* Generated with the Nuon README studio */}}'
+    )
     expect(output).toContain('# Title\n\n{{ $x := 1 }}')
     expect(output).toEndWith('\n')
   })
@@ -152,7 +199,10 @@ describe('compileTemplate', () => {
 describe('preview', () => {
   test('substitutes scalar variables and escapes html', () => {
     expect(
-      substituteVariables('Version {{.nuon.sandbox.outputs.cluster.version}}', state)
+      substituteVariables(
+        'Version {{.nuon.sandbox.outputs.cluster.version}}',
+        state
+      )
     ).toBe('Version 1.31')
     expect(substituteVariables('{{.nuon.missing.path}}', state)).toBe(
       '{{.nuon.missing.path}}'
@@ -163,7 +213,10 @@ describe('preview', () => {
     expect(previewBlock(bannerBlock, state)).toBe('')
     expect(
       previewBlock(
-        { ...bannerBlock, condition: { path: 'sandbox.status', op: 'eq', value: 'finished' } },
+        {
+          ...bannerBlock,
+          condition: { path: 'sandbox.status', op: 'eq', value: 'finished' },
+        },
         state
       )
     ).toContain('Setup still required for prod-cluster.')
@@ -217,8 +270,12 @@ describe('state helpers', () => {
     const variables = getStateVariables(state)
     const templates = variables.map((variable) => variable.template)
     expect(templates).toContain('{{.nuon.install.name}}')
-    expect(templates.some((template) => template.includes('secrets'))).toBe(false)
-    expect(templates.some((template) => template.includes('cloud_account'))).toBe(false)
+    expect(templates.some((template) => template.includes('secrets'))).toBe(
+      false
+    )
+    expect(
+      templates.some((template) => template.includes('cloud_account'))
+    ).toBe(false)
   })
 
   test('getArraySources finds arrays of objects with scalar keys', () => {

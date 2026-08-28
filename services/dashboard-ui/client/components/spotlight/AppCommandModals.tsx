@@ -14,4 +14,6 @@ const withAppProvider = (Modal: React.ComponentType<IModal>) => {
   return Wrapped
 }
 
-export const AppBuildAllComponentsModal = withAppProvider(BuildAllComponentsModal)
+export const AppBuildAllComponentsModal = withAppProvider(
+  BuildAllComponentsModal
+)

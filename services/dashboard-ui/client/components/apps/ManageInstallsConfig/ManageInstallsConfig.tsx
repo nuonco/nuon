@@ -87,7 +87,9 @@ export const ManageInstallsConfig = ({
 
   return (
     <Modal
-      heading={currentConfig ? 'Update installs config' : 'Configure installs config'}
+      heading={
+        currentConfig ? 'Update installs config' : 'Configure installs config'
+      }
       size="lg"
       primaryActionTrigger={{
         children: isSubmitting ? 'Saving...' : 'Save',
@@ -122,7 +124,9 @@ export const ManageInstallsConfig = ({
         onSubmit={handleFormSubmit}
         className="flex flex-col gap-4"
       >
-        {submitErrorMessage && <Banner theme="error">{submitErrorMessage}</Banner>}
+        {submitErrorMessage && (
+          <Banner theme="error">{submitErrorMessage}</Banner>
+        )}
 
         <BranchVcsConfigFields
           vcsConnections={vcsConnections}

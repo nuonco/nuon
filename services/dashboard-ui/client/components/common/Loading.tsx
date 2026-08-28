@@ -11,7 +11,9 @@ export const Loading = ({
   variant?: 'default' | 'large'
   size?: number | string
 }) => {
-  const sizeStyle = size ? { width: Number(size), height: Number(size) } : undefined
+  const sizeStyle = size
+    ? { width: Number(size), height: Number(size) }
+    : undefined
 
   return (
     <span className="animate-pulse">

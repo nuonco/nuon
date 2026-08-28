@@ -26,8 +26,14 @@ export const DeprovisionSandboxModalContainer = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { body: Parameters<typeof deprovisionSandbox>[0]['body'] }) =>
+  const {
+    mutate: execute,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: (params: {
+      body: Parameters<typeof deprovisionSandbox>[0]['body']
+    }) =>
       deprovisionSandbox({
         body: params.body,
         installId: install.id,
@@ -42,7 +48,13 @@ export const DeprovisionSandboxModalContainer = ({
       })
       addToast(
         <Toast heading="Sandbox deprovision started" theme="info">
-          <Text>Deprovisioning <Badge variant="code" size="md">{install.name}</Badge> sandbox. This may take a few minutes.</Text>
+          <Text>
+            Deprovisioning{' '}
+            <Badge variant="code" size="md">
+              {install.name}
+            </Badge>{' '}
+            sandbox. This may take a few minutes.
+          </Text>
         </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
@@ -64,7 +76,13 @@ export const DeprovisionSandboxModalContainer = ({
       })
       addToast(
         <Toast heading="Sandbox deprovision failed" theme="error">
-          <Text>Unable to deprovision <Badge variant="code" size="md">{install.name}</Badge> sandbox.</Text>
+          <Text>
+            Unable to deprovision{' '}
+            <Badge variant="code" size="md">
+              {install.name}
+            </Badge>{' '}
+            sandbox.
+          </Text>
         </Toast>
       )
     },
@@ -91,9 +109,7 @@ export const DeprovisionSandboxModalContainer = ({
   )
 }
 
-export const DeprovisionSandboxButton = ({
-  ...props
-}: IButtonAsButton) => {
+export const DeprovisionSandboxButton = ({ ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
 
   const modal = <DeprovisionSandboxModalContainer />

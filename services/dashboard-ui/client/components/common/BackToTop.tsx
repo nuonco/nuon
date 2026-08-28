@@ -41,9 +41,7 @@ export const BackToTop = ({
       idleTimer = setTimeout(() => setIsScrolling(false), idleHideDelay)
     }
 
-    const target = containerId
-      ? document.getElementById(containerId)
-      : window
+    const target = containerId ? document.getElementById(containerId) : window
     if (!target) return
     target.addEventListener('scroll', handleScroll)
     return () => {

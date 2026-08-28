@@ -14,11 +14,13 @@ const SimpleModalDemo = () => {
       <Modal heading="Welcome to modals">
         <div className="p-6">
           <Text className="mb-4">
-            This is a simple modal example that demonstrates basic functionality.
-            Modals overlay the main content and capture user focus until dismissed.
+            This is a simple modal example that demonstrates basic
+            functionality. Modals overlay the main content and capture user
+            focus until dismissed.
           </Text>
           <Text variant="subtext" theme="neutral">
-            You can close this modal by clicking the X button, pressing Escape, or clicking outside.
+            You can close this modal by clicking the X button, pressing Escape,
+            or clicking outside.
           </Text>
         </div>
       </Modal>
@@ -35,7 +37,9 @@ const ModalVariantsDemo = () => {
     addModal(
       <Modal heading="Basic modal">
         <div className="p-6">
-          <Text>This is a basic modal with just content and close functionality.</Text>
+          <Text>
+            This is a basic modal with just content and close functionality.
+          </Text>
         </div>
       </Modal>
     )
@@ -43,7 +47,7 @@ const ModalVariantsDemo = () => {
 
   const openActionModal = () => {
     addModal(
-      <Modal 
+      <Modal
         heading="Action modal"
         primaryActionTrigger={{
           children: 'Save changes',
@@ -73,7 +77,7 @@ const ModalVariantsDemo = () => {
 
   const openFormModal = () => {
     addModal(
-      <Modal 
+      <Modal
         heading="Create new project"
         primaryActionTrigger={{
           children: 'Create project',
@@ -83,7 +87,9 @@ const ModalVariantsDemo = () => {
         <div className="p-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Project Name</label>
+              <label className="block text-sm font-medium mb-1">
+                Project Name
+              </label>
               <input
                 type="text"
                 className="w-full p-2 border rounded"
@@ -91,7 +97,9 @@ const ModalVariantsDemo = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
+              <label className="block text-sm font-medium mb-1">
+                Description
+              </label>
               <textarea
                 className="w-full p-2 border rounded"
                 rows={3}
@@ -114,7 +122,7 @@ const ModalVariantsDemo = () => {
 
   const openConfirmModal = () => {
     addModal(
-      <Modal 
+      <Modal
         heading="Delete item?"
         primaryActionTrigger={{
           children: 'Delete item',
@@ -123,7 +131,9 @@ const ModalVariantsDemo = () => {
         }}
       >
         <div className="p-6">
-          <Text className="mb-2">Deleting this item removes it permanently.</Text>
+          <Text className="mb-2">
+            Deleting this item removes it permanently.
+          </Text>
           <Text variant="subtext" theme="neutral" className="text-red-600">
             This action cannot be undone.
           </Text>
@@ -147,7 +157,7 @@ const UserManagementDemo = () => {
 
   const openEditProfile = () => {
     addModal(
-      <Modal 
+      <Modal
         heading="Edit profile"
         primaryActionTrigger={{
           children: 'Update profile',
@@ -157,7 +167,9 @@ const UserManagementDemo = () => {
         <div className="p-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Display Name</label>
+              <label className="block text-sm font-medium mb-1">
+                Display Name
+              </label>
               <input
                 type="text"
                 className="w-full p-2 border rounded"
@@ -188,7 +200,7 @@ const UserManagementDemo = () => {
 
   const openChangePassword = () => {
     addModal(
-      <Modal 
+      <Modal
         heading="Change password"
         primaryActionTrigger={{
           children: 'Update password',
@@ -198,7 +210,9 @@ const UserManagementDemo = () => {
         <div className="p-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Current Password</label>
+              <label className="block text-sm font-medium mb-1">
+                Current Password
+              </label>
               <input
                 type="password"
                 className="w-full p-2 border rounded"
@@ -206,7 +220,9 @@ const UserManagementDemo = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">New Password</label>
+              <label className="block text-sm font-medium mb-1">
+                New Password
+              </label>
               <input
                 type="password"
                 className="w-full p-2 border rounded"
@@ -214,7 +230,9 @@ const UserManagementDemo = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Confirm Password</label>
+              <label className="block text-sm font-medium mb-1">
+                Confirm Password
+              </label>
               <input
                 type="password"
                 className="w-full p-2 border rounded"
@@ -240,7 +258,7 @@ const DataOperationsDemo = () => {
 
   const openCreateContent = () => {
     addModal(
-      <Modal 
+      <Modal
         heading="Create new article"
         primaryActionTrigger={{
           children: 'Publish article',
@@ -282,7 +300,7 @@ const DataOperationsDemo = () => {
 
   const openDeleteConfirm = () => {
     addModal(
-      <Modal 
+      <Modal
         heading="Delete article?"
         primaryActionTrigger={{
           children: 'Delete article',
@@ -297,7 +315,8 @@ const DataOperationsDemo = () => {
           </Text>
           <div className="p-3 bg-red-50 border border-red-200 rounded">
             <Text variant="subtext" className="text-red-700">
-              <strong>Warning:</strong> This will permanently delete the article and all its associated data. This action cannot be undone.
+              <strong>Warning:</strong> This will permanently delete the article
+              and all its associated data. This action cannot be undone.
             </Text>
           </div>
         </div>
@@ -307,7 +326,7 @@ const DataOperationsDemo = () => {
 
   const openBulkAction = () => {
     addModal(
-      <Modal 
+      <Modal
         heading="Bulk update articles"
         primaryActionTrigger={{
           children: 'Update 5 articles',
@@ -316,7 +335,8 @@ const DataOperationsDemo = () => {
       >
         <div className="p-6">
           <Text className="mb-4">
-            You have selected 5 articles to update. Choose what you&rsquo;d like to change:
+            You have selected 5 articles to update. Choose what you&rsquo;d like
+            to change:
           </Text>
           <div className="space-y-3">
             <label className="flex items-center space-x-2">
@@ -351,7 +371,7 @@ const FooterActionsDemo = () => {
 
   const openModalWithInfo = () => {
     addModal(
-      <Modal 
+      <Modal
         heading="Deploy component"
         primaryActionTrigger={{
           children: 'Deploy component',
@@ -372,12 +392,20 @@ const FooterActionsDemo = () => {
           </Text>
           <div className="space-y-3">
             <div className="p-3 border rounded">
-              <Text variant="base" weight="strong">Build #123</Text>
-              <Text variant="subtext" theme="neutral">Latest build from main branch</Text>
+              <Text variant="base" weight="strong">
+                Build #123
+              </Text>
+              <Text variant="subtext" theme="neutral">
+                Latest build from main branch
+              </Text>
             </div>
             <div className="p-3 border rounded opacity-50">
-              <Text variant="base" weight="strong">Build #122</Text>
-              <Text variant="subtext" theme="neutral">Previous stable build</Text>
+              <Text variant="base" weight="strong">
+                Build #122
+              </Text>
+              <Text variant="subtext" theme="neutral">
+                Previous stable build
+              </Text>
             </div>
           </div>
         </div>
@@ -387,7 +415,7 @@ const FooterActionsDemo = () => {
 
   const openModalWithActions = () => {
     addModal(
-      <Modal 
+      <Modal
         heading="Save draft"
         primaryActionTrigger={{
           children: 'Save and continue',
@@ -395,10 +423,7 @@ const FooterActionsDemo = () => {
         }}
         footerActions={
           <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              onClick={() => alert('Auto-save enabled')}
-            >
+            <Button variant="ghost" onClick={() => alert('Auto-save enabled')}>
               <Icon variant="LightningIcon" size={16} />
               Enable auto-save
             </Button>
@@ -425,7 +450,7 @@ const FooterActionsDemo = () => {
 
   const openModalWithStatus = () => {
     addModal(
-      <Modal 
+      <Modal
         heading="Process file"
         primaryActionTrigger={{
           children: 'Start processing',
@@ -434,15 +459,14 @@ const FooterActionsDemo = () => {
         footerActions={
           <div className="flex items-center gap-2 text-green-600">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <Text variant="subtext">
-              Ready to process • 2.4MB file size
-            </Text>
+            <Text variant="subtext">Ready to process • 2.4MB file size</Text>
           </div>
         }
       >
         <div className="p-6">
           <Text className="mb-4">
-            Ready to process the uploaded file. This will analyze the content and generate a report.
+            Ready to process the uploaded file. This will analyze the content
+            and generate a report.
           </Text>
           <div className="space-y-2 text-sm text-gray-600">
             <div className="flex justify-between">
@@ -472,19 +496,16 @@ const FooterActionsDemo = () => {
   )
 }
 
-
-
-
 export const BasicUsage = () => (
   <SurfacesProvider>
     <div className="space-y-6">
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">Basic Modal Usage</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          The Modal component creates centered overlay dialogs that capture user focus
-          and require interaction before returning to the main interface. Modals are
-          ideal for confirmations, forms, detailed information, and critical user
-          decisions that need full attention.
+          The Modal component creates centered overlay dialogs that capture user
+          focus and require interaction before returning to the main interface.
+          Modals are ideal for confirmations, forms, detailed information, and
+          critical user decisions that need full attention.
         </p>
       </div>
 
@@ -519,12 +540,13 @@ export const ModalVariants = () => (
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">Modal Variants</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Modals support different configurations to handle various user interaction
-          patterns. The{' '}
+          Modals support different configurations to handle various user
+          interaction patterns. The{' '}
           <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
             primaryActionTrigger
           </code>{' '}
-          prop adds action buttons to the modal footer for user decisions and form submissions.
+          prop adds action buttons to the modal footer for user decisions and
+          form submissions.
         </p>
       </div>
 
@@ -542,25 +564,33 @@ export const ModalVariants = () => (
         <h4 className="text-sm font-medium">Configuration Options</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="p-3 border rounded-lg">
-            <strong className="text-blue-600 dark:text-blue-400">Basic Modal:</strong>
+            <strong className="text-blue-600 dark:text-blue-400">
+              Basic Modal:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
               Simple content display with close functionality only
             </span>
           </div>
           <div className="p-3 border rounded-lg">
-            <strong className="text-green-600 dark:text-green-400">Action Modal:</strong>
+            <strong className="text-green-600 dark:text-green-400">
+              Action Modal:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
               Includes primary action button for confirmations and submissions
             </span>
           </div>
           <div className="p-3 border rounded-lg">
-            <strong className="text-purple-600 dark:text-purple-400">Form Modal:</strong>
+            <strong className="text-purple-600 dark:text-purple-400">
+              Form Modal:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
               Complex forms with multiple fields and validation
             </span>
           </div>
           <div className="p-3 border rounded-lg">
-            <strong className="text-orange-600 dark:text-orange-400">Confirmation Modal:</strong>
+            <strong className="text-orange-600 dark:text-orange-400">
+              Confirmation Modal:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
               Critical decisions requiring explicit user confirmation
             </span>
@@ -577,16 +607,19 @@ export const ModalUsageExamples = () => (
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">Modal Usage Examples</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Modals are essential for user workflows that require focused attention,
-          data input, or critical decisions. They should interrupt the user's flow
-          only when necessary and provide clear paths to completion or cancellation.
+          Modals are essential for user workflows that require focused
+          attention, data input, or critical decisions. They should interrupt
+          the user's flow only when necessary and provide clear paths to
+          completion or cancellation.
         </p>
       </div>
 
       <div className="space-y-4">
         <h4 className="text-sm font-medium">User Account Management</h4>
         <div className="p-4 border rounded-lg space-y-3">
-          <Text variant="base" className="font-medium">Profile Settings</Text>
+          <Text variant="base" className="font-medium">
+            Profile Settings
+          </Text>
           <div className="flex gap-3">
             <UserManagementDemo />
           </div>
@@ -596,7 +629,9 @@ export const ModalUsageExamples = () => (
       <div className="space-y-4">
         <h4 className="text-sm font-medium">Data Operations</h4>
         <div className="p-4 border rounded-lg space-y-3">
-          <Text variant="base" className="font-medium">Content Management</Text>
+          <Text variant="base" className="font-medium">
+            Content Management
+          </Text>
           <div className="flex gap-3">
             <DataOperationsDemo />
           </div>
@@ -644,12 +679,27 @@ function DeleteButton({ itemName }) {
       <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
         <strong>Best Practices:</strong>
         <ul className="mt-2 space-y-1 list-disc list-inside">
-          <li>Use modals sparingly - only for critical interactions that need full attention</li>
-          <li>Provide clear, descriptive headings that explain the modal's purpose</li>
-          <li>Include primary actions for confirmations, submissions, or next steps</li>
-          <li>Always allow users to easily dismiss or cancel modal interactions</li>
-          <li>Keep modal content focused and avoid overwhelming users with too much information</li>
-          <li>Ensure proper keyboard navigation and screen reader accessibility</li>
+          <li>
+            Use modals sparingly - only for critical interactions that need full
+            attention
+          </li>
+          <li>
+            Provide clear, descriptive headings that explain the modal's purpose
+          </li>
+          <li>
+            Include primary actions for confirmations, submissions, or next
+            steps
+          </li>
+          <li>
+            Always allow users to easily dismiss or cancel modal interactions
+          </li>
+          <li>
+            Keep modal content focused and avoid overwhelming users with too
+            much information
+          </li>
+          <li>
+            Ensure proper keyboard navigation and screen reader accessibility
+          </li>
         </ul>
       </div>
     </div>
@@ -662,10 +712,14 @@ export const FooterActions = () => (
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">Footer Actions</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          The <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">footerActions</code> prop
-          allows you to add custom content to the left side of the modal footer, before the Cancel/Close and
-          primary action buttons. This is useful for displaying contextual information, additional actions,
-          or status indicators.
+          The{' '}
+          <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+            footerActions
+          </code>{' '}
+          prop allows you to add custom content to the left side of the modal
+          footer, before the Cancel/Close and primary action buttons. This is
+          useful for displaying contextual information, additional actions, or
+          status indicators.
         </p>
       </div>
 
@@ -675,7 +729,8 @@ export const FooterActions = () => (
           <FooterActionsDemo />
         </div>
         <Text variant="subtext" theme="neutral">
-          Try these examples to see different types of footer actions in practice
+          Try these examples to see different types of footer actions in
+          practice
         </Text>
       </div>
 
@@ -683,19 +738,25 @@ export const FooterActions = () => (
         <h4 className="text-sm font-medium">Use Cases</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div className="p-3 border rounded-lg">
-            <strong className="text-blue-600 dark:text-blue-400">Contextual Info:</strong>
+            <strong className="text-blue-600 dark:text-blue-400">
+              Contextual Info:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
               Show processing time, file size, or other relevant details
             </span>
           </div>
           <div className="p-3 border rounded-lg">
-            <strong className="text-green-600 dark:text-green-400">Additional Actions:</strong>
+            <strong className="text-green-600 dark:text-green-400">
+              Additional Actions:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
               Secondary buttons like "Enable auto-save" or quick toggles
             </span>
           </div>
           <div className="p-3 border rounded-lg">
-            <strong className="text-purple-600 dark:text-purple-400">Status Indicators:</strong>
+            <strong className="text-purple-600 dark:text-purple-400">
+              Status Indicators:
+            </strong>
             <span className="block text-gray-600 dark:text-gray-400 mt-1">
               Connection status, validation state, or process readiness
             </span>

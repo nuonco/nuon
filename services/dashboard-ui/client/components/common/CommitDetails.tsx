@@ -40,19 +40,13 @@ export const CommitDetails = ({ commit }: CommitDetailsProps) => {
           id: commit?.vcs_connection_id,
           title: 'Date',
           subtitle: (
-            <Time
-              variant="subtext"
-              theme="neutral"
-              time={commit?.created_at}
-            />
+            <Time variant="subtext" theme="neutral" time={commit?.created_at} />
           ),
         },
       ]}
     >
       <ID>
-        <span className="!block !max-w-[60px] !truncate">
-          {commit?.sha}
-        </span>
+        <span className="!block !max-w-[60px] !truncate">{commit?.sha}</span>
       </ID>
     </ContextTooltip>
   )

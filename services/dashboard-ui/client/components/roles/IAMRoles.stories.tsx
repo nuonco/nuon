@@ -17,7 +17,11 @@ const mockAppConfig: TAppConfig = {
         created_at: '2024-01-01T00:00:00Z',
         policies: [
           { id: 'p-1', managed_policy_name: 'AdministratorAccess' },
-          { id: 'p-2', name: 'custom-policy', contents: btoa('{"Version":"2012-10-17","Statement":[]}') },
+          {
+            id: 'p-2',
+            name: 'custom-policy',
+            contents: btoa('{"Version":"2012-10-17","Statement":[]}'),
+          },
         ],
       },
       {
@@ -27,9 +31,7 @@ const mockAppConfig: TAppConfig = {
         name: 'nuon-deprovision-role',
         type: 'deprovision',
         created_at: '2024-01-01T00:00:00Z',
-        policies: [
-          { id: 'p-3', managed_policy_name: 'AdministratorAccess' },
-        ],
+        policies: [{ id: 'p-3', managed_policy_name: 'AdministratorAccess' }],
       },
     ],
   },
@@ -38,7 +40,5 @@ const mockAppConfig: TAppConfig = {
 export const Default = () => <IAMRoles appConfig={mockAppConfig} />
 
 export const NoRoles = () => (
-  <IAMRoles
-    appConfig={{ permissions: { aws_iam_roles: [] } } as any}
-  />
+  <IAMRoles appConfig={{ permissions: { aws_iam_roles: [] } } as any} />
 )

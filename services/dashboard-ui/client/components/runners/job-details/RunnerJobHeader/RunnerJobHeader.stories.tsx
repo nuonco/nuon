@@ -12,9 +12,7 @@ const mockJob = {
   created_at: new Date().toISOString(),
 } as any
 
-export const Default = () => (
-  <RunnerJobHeader job={mockJob} />
-)
+export const Default = () => <RunnerJobHeader job={mockJob} />
 
 export const WithCompositeError = () => (
   <RunnerJobHeader

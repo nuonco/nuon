@@ -74,7 +74,7 @@ function buildGraph(resources: IResourceChange[]) {
 export function PulumiPlanGraph({ resources }: IPulumiPlanGraph) {
   const { nodes: layoutNodes, edges: layoutEdges } = useMemo(
     () => buildGraph(resources),
-    [resources],
+    [resources]
   )
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes)

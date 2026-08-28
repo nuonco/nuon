@@ -40,10 +40,13 @@ export const AdminConfirmationModalContainer = ({
       removeModal(props.modalId)
     },
     onError: (err: any) => {
-      const message = err?.error || err?.description || err?.message || 'Unknown error'
+      const message =
+        err?.error || err?.description || err?.message || 'Unknown error'
       addToast(
         <Toast heading="Action failed" theme="error">
-          <Text>{errorMessage ?? `Failed to ${title.toLowerCase()}: ${message}`}</Text>
+          <Text>
+            {errorMessage ?? `Failed to ${title.toLowerCase()}: ${message}`}
+          </Text>
         </Toast>
       )
     },

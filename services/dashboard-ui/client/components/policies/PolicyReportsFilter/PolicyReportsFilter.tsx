@@ -55,8 +55,7 @@ export function PolicyReportsFilter({
     [onTypeChange]
   )
 
-  const activeFilterCount =
-    (currentStatus ? 1 : 0) + (currentOwnerType ? 1 : 0)
+  const activeFilterCount = (currentStatus ? 1 : 0) + (currentOwnerType ? 1 : 0)
 
   return (
     <Dropdown

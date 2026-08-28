@@ -28,7 +28,8 @@ describe('runbook builder helpers', () => {
         key: '1',
         operation: 'check-component-drift' as const,
         name: 'Check API drift',
-        documentation: 'Review the plan before continuing.\n\n> This step does not apply changes.',
+        documentation:
+          'Review the plan before continuing.\n\n> This step does not apply changes.',
         componentName: 'api',
       },
       {
@@ -41,7 +42,9 @@ describe('runbook builder helpers', () => {
     expect(serializeRunbook('Release API', '', steps)).toContain(
       'readme = "./runbooks/release-api.md"'
     )
-    expect(serializeRunbookReadme('Release API', 'Release workflow.', steps)).toBe(
+    expect(
+      serializeRunbookReadme('Release API', 'Release workflow.', steps)
+    ).toBe(
       '# Release API\n\nRelease workflow.\n\n## 1. Check API drift\n\n**Operation:** Check component drift\n\nReview the plan before continuing.\n\n> This step does not apply changes.\n\n## 2. Deploy API\n\n**Operation:** Deploy component\n'
     )
   })
@@ -58,25 +61,47 @@ describe('runbook builder helpers', () => {
     ).not.toContain('readme =')
   })
   test('validates required settings', () => {
-    expect(validateRunbook('', [{ key: '1', operation: 'command', name: 'Run command' }])).toEqual([
-      'Enter a runbook name.',
-      'Step 1 requires a command.',
-    ])
+    expect(
+      validateRunbook('', [
+        { key: '1', operation: 'command', name: 'Run command' },
+      ])
+    ).toEqual(['Enter a runbook name.', 'Step 1 requires a command.'])
   })
   test('rejects an invalid command timeout', () => {
     expect(
       validateRunbook('verify', [
-        { key: '1', operation: 'command', name: 'Verify', command: 'curl localhost', timeout: 'five minutes' },
+        {
+          key: '1',
+          operation: 'command',
+          name: 'Verify',
+          command: 'curl localhost',
+          timeout: 'five minutes',
+        },
       ])
     ).toEqual(['Step 1 requires a valid timeout such as 30s or 5m.'])
   })
   test('rejects a command timeout that overflows a Go duration', () => {
-    const command = { key: '1', operation: 'command' as const, name: 'Verify', command: 'true' }
-    expect(validateRunbook('verify', [{ ...command, timeout: '2562047h47m16.854775807s' }])).toEqual([])
-    expect(validateRunbook('verify', [{ ...command, timeout: '2562047h47m16.854775808s' }])).toEqual([
-      'Step 1 requires a valid timeout such as 30s or 5m.',
-    ])
-    expect(validateRunbook('verify', [{ ...command, timeout: '-2562047h47m16.854775808s' }])).toEqual([])
+    const command = {
+      key: '1',
+      operation: 'command' as const,
+      name: 'Verify',
+      command: 'true',
+    }
+    expect(
+      validateRunbook('verify', [
+        { ...command, timeout: '2562047h47m16.854775807s' },
+      ])
+    ).toEqual([])
+    expect(
+      validateRunbook('verify', [
+        { ...command, timeout: '2562047h47m16.854775808s' },
+      ])
+    ).toEqual(['Step 1 requires a valid timeout such as 30s or 5m.'])
+    expect(
+      validateRunbook('verify', [
+        { ...command, timeout: '-2562047h47m16.854775808s' },
+      ])
+    ).toEqual([])
   })
   test('imports latest steps and maps action ids', () => {
     const result = importRunbook(
@@ -158,8 +183,18 @@ describe('runbook builder helpers', () => {
           {
             id: 'c',
             steps: [
-              { id: 'one', name: 'deploy', type: 'component_deploy', component_name: 'api' },
-              { id: 'two', name: 'script', type: 'action', inline_contents: './verify.sh' },
+              {
+                id: 'one',
+                name: 'deploy',
+                type: 'component_deploy',
+                component_name: 'api',
+              },
+              {
+                id: 'two',
+                name: 'script',
+                type: 'action',
+                inline_contents: './verify.sh',
+              },
             ],
           },
         ],
@@ -179,7 +214,13 @@ describe('runbook builder helpers', () => {
           {
             id: 'c',
             steps: [
-              { id: 's', name: 'verify', type: 'action', command: 'curl localhost', timeout: 300_000_000_000 },
+              {
+                id: 's',
+                name: 'verify',
+                type: 'action',
+                command: 'curl localhost',
+                timeout: 300_000_000_000,
+              },
             ],
           },
         ],

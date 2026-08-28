@@ -53,10 +53,7 @@ export const DevActionCardContainer = ({
       const confirmationModal = (
         <AdminConfirmationModal
           title={`Confirm: ${title}`}
-          message={
-            confirmationText ||
-            `This will ${title.toLowerCase()}.`
-          }
+          message={confirmationText || `This will ${title.toLowerCase()}.`}
           action={action}
           variant={variant}
           requiresInput={requiresInput}

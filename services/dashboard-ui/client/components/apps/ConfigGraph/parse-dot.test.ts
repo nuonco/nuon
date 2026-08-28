@@ -45,7 +45,9 @@ describe('parseDotGraph', () => {
   })
 
   test('falls back to name attribute then id for labels', () => {
-    const { nodes } = parseDotGraph('"n1" [ name="from-name" ];\n"n2" [ type="helm_chart" ];')
+    const { nodes } = parseDotGraph(
+      '"n1" [ name="from-name" ];\n"n2" [ type="helm_chart" ];'
+    )
     expect(nodes.find((n) => n.id === 'n1')?.label).toBe('from-name')
     expect(nodes.find((n) => n.id === 'n2')?.label).toBe('n2')
   })

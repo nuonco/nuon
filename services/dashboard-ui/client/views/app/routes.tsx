@@ -20,6 +20,8 @@ import { Roles } from './Roles'
 import { PoliciesLayout } from './PoliciesLayout'
 import { Policies } from './Policies'
 import { PolicyDetail } from './PolicyDetail'
+import { Releases } from './Releases'
+import { ReleaseDetail } from './ReleaseDetail'
 
 const PolicyAnalytics = lazy(() =>
   import('./PolicyAnalytics').then((m) => ({ default: m.PolicyAnalytics }))
@@ -145,6 +147,11 @@ export const appRoutes: RouteObject[] = [
       {
         path: ':orgId/apps/:appId/policies/:policyId',
         element: legacy(<PolicyDetail />, (p) => `policies/${p.policyId}`),
+      },
+      { path: ':orgId/apps/:appId/releases', element: <Releases /> },
+      {
+        path: ':orgId/apps/:appId/releases/:releaseId',
+        element: <ReleaseDetail />,
       },
       { path: ':orgId/apps/:appId/branches', element: legacy(<Branches />) },
       {

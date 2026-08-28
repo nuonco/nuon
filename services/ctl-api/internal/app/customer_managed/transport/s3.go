@@ -1,0 +1,335 @@
+package transport
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"io"
+	"net/url"
+	"path"
+	"strings"
+	"time"
+
+	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"go.uber.org/fx"
+
+	ctlconfig "github.com/nuonco/nuon/services/ctl-api/internal"
+)
+
+const ProviderAWSS3 = "aws_s3"
+
+type uploader interface {
+	Upload(context.Context, *s3.PutObjectInput, ...func(*manager.Uploader)) (*manager.UploadOutput, error)
+}
+
+type getClient interface {
+	GetObject(context.Context, *s3.GetObjectInput, ...func(*s3.Options)) (*s3.GetObjectOutput, error)
+}
+
+type presigner interface {
+	PresignGetObject(context.Context, *s3.GetObjectInput, ...func(*s3.PresignOptions)) (*v4.PresignedHTTPRequest, error)
+}
+
+type headClient interface {
+	HeadObject(context.Context, *s3.HeadObjectInput, ...func(*s3.Options)) (*s3.HeadObjectOutput, error)
+}
+
+type deleteClient interface {
+	DeleteObject(context.Context, *s3.DeleteObjectInput, ...func(*s3.Options)) (*s3.DeleteObjectOutput, error)
+}
+
+type S3Params struct {
+	fx.In
+	Config *ctlconfig.Config
+}
+
+type S3Store struct {
+	bucket     string
+	region     string
+	prefix     string
+	defaultTTL time.Duration
+	uploader   uploader
+	get        getClient
+	head       headClient
+	delete     deleteClient
+	presigner  presigner
+	now        func() time.Time
+}
+
+// NewStore returns a disabled store when no bucket is configured: portable
+// bundle publishing and downloads are opt-in per deployment and must never
+// silently fall back to the shared blob-storage bucket.
+func NewStore(params S3Params) (Store, error) {
+	if params.Config == nil {
+		return nil, errors.New("portable bundle storage config is required")
+	}
+	if strings.TrimSpace(params.Config.CustomerManagedBundleStorageBucket) == "" {
+		return NewDisabled(), nil
+	}
+	return NewS3(params)
+}
+
+func NewS3(params S3Params) (*S3Store, error) {
+	cfg := params.Config
+	if cfg == nil {
+		return nil, errors.New("portable bundle storage config is required")
+	}
+	region := cfg.CustomerManagedBundleStorageRegion
+	bucket := cfg.CustomerManagedBundleStorageBucket
+	prefix := strings.Trim(cfg.CustomerManagedBundleStoragePrefix, "/")
+	if prefix == "" {
+		prefix = "customer_managed_bundles"
+	}
+	if strings.TrimSpace(bucket) == "" || strings.TrimSpace(region) == "" {
+		return nil, errors.New("portable bundle storage bucket and region are required")
+	}
+	if cfg.CustomerManagedBundleGrantTTL <= 0 || cfg.CustomerManagedBundleGrantTTL > 7*24*time.Hour {
+		return nil, errors.New("portable bundle grant TTL must be positive and no greater than seven days")
+	}
+	if endpoint := cfg.CustomerManagedBundleStorageEndpoint; endpoint != "" {
+		parsed, err := url.Parse(endpoint)
+		if err != nil || !parsed.IsAbs() || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+			return nil, errors.New("portable bundle storage endpoint must be an absolute HTTP(S) URL with a host")
+		}
+	}
+	awsCfg, err := awsconfig.LoadDefaultConfig(context.Background(), awsconfig.WithRegion(region))
+	if err != nil {
+		return nil, fmt.Errorf("load AWS configuration: %w", err)
+	}
+	client := s3.NewFromConfig(awsCfg, func(options *s3.Options) {
+		options.UsePathStyle = cfg.CustomerManagedBundleStorageForcePathStyle
+		if cfg.CustomerManagedBundleStorageEndpoint != "" {
+			options.BaseEndpoint = &cfg.CustomerManagedBundleStorageEndpoint
+		}
+	})
+	store := newS3Store(bucket, region, prefix, cfg.CustomerManagedBundleGrantTTL, manager.NewUploader(client), client, client, s3.NewPresignClient(client))
+	store.delete = client
+	return store, nil
+}
+
+func newS3Store(bucket, region, prefix string, ttl time.Duration, upload uploader, get getClient, head headClient, presign presigner) *S3Store {
+	if prefix == "" {
+		prefix = "customer_managed_bundles"
+	}
+	if ttl == 0 {
+		ttl = 15 * time.Minute
+	}
+	return &S3Store{bucket: bucket, region: region, prefix: strings.Trim(prefix, "/"), defaultTTL: ttl, uploader: upload, get: get, head: head, presigner: presign, now: time.Now}
+}
+
+func (s *S3Store) Configured() bool { return true }
+
+func (s *S3Store) Delete(ctx context.Context, replica Replica) error {
+	if replica.Provider != ProviderAWSS3 || replica.StorageRef == "" || replica.StorageVersion == "" || replica.StorageVersion == "null" {
+		return errors.New("complete aws_s3 replica with exact version is required")
+	}
+	if s.delete == nil {
+		return errors.New("portable bundle delete client is not configured")
+	}
+	_, err := s.delete.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket:    &s.bucket,
+		Key:       &replica.StorageRef,
+		VersionId: &replica.StorageVersion,
+	})
+	if err != nil {
+		return fmt.Errorf("delete portable bundle: %w", err)
+	}
+	return nil
+}
+
+func (s *S3Store) Publish(ctx context.Context, req PublishRequest) (Replica, error) {
+	if req.Body == nil || req.Size < 0 {
+		return Replica{}, errors.New("publish body and non-negative size are required")
+	}
+	size, err := req.Body.Seek(0, io.SeekEnd)
+	if err != nil {
+		return Replica{}, fmt.Errorf("determine publish body size: %w", err)
+	}
+	if size != req.Size {
+		return Replica{}, fmt.Errorf("publish body size %d does not match declared size %d", size, req.Size)
+	}
+	if _, err := req.Body.Seek(0, io.SeekStart); err != nil {
+		return Replica{}, fmt.Errorf("rewind publish body: %w", err)
+	}
+	digest, _, err := canonicalSHA256(req.SHA256)
+	if err != nil {
+		return Replica{}, fmt.Errorf("invalid publish request: %w", err)
+	}
+	key := path.Join(s.prefix, digest+".tar.zst")
+	out, err := s.uploader.Upload(ctx, &s3.PutObjectInput{Bucket: &s.bucket, Key: &key, Body: req.Body, ContentLength: &req.Size, ContentType: stringPtr("application/zstd"), ChecksumAlgorithm: types.ChecksumAlgorithmSha256})
+	if err != nil {
+		return Replica{}, fmt.Errorf("upload portable bundle: %w", err)
+	}
+	if out.VersionID == nil || *out.VersionID == "" || *out.VersionID == "null" {
+		return Replica{}, errors.New("upload returned no object version; bucket versioning is required")
+	}
+	replica := Replica{Provider: ProviderAWSS3, Region: s.region, StorageRef: key, StorageVersion: *out.VersionID, TransportChecksum: digest, Size: req.Size}
+	verifiedAt, err := s.verify(ctx, replica)
+	if err != nil {
+		return Replica{}, err
+	}
+	replica.VerifiedAt = verifiedAt
+	return replica, nil
+}
+
+func (s *S3Store) verify(ctx context.Context, replica Replica) (time.Time, error) {
+	if replica.StorageVersion == "" || replica.StorageVersion == "null" {
+		return time.Time{}, errors.New("storage version is required")
+	}
+	out, err := s.get.GetObject(ctx, &s3.GetObjectInput{Bucket: &s.bucket, Key: &replica.StorageRef, VersionId: &replica.StorageVersion})
+	if err != nil {
+		return time.Time{}, fmt.Errorf("verify uploaded bundle: %w", err)
+	}
+	if out.Body == nil {
+		return time.Time{}, errors.New("get response omitted object body")
+	}
+	defer out.Body.Close()
+	if out.VersionId == nil || *out.VersionId != replica.StorageVersion {
+		return time.Time{}, errors.New("get response did not confirm the requested object version")
+	}
+	if out.ContentLength == nil || *out.ContentLength != replica.Size {
+		return time.Time{}, fmt.Errorf("uploaded bundle size mismatch")
+	}
+	_, expected, err := canonicalSHA256(replica.TransportChecksum)
+	if err != nil {
+		return time.Time{}, err
+	}
+	hash := sha256.New()
+	read, err := io.Copy(hash, out.Body)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("read uploaded bundle: %w", err)
+	}
+	if read != replica.Size {
+		return time.Time{}, errors.New("uploaded bundle byte count mismatch")
+	}
+	if subtle.ConstantTimeCompare(hash.Sum(nil), expected) != 1 {
+		return time.Time{}, errors.New("uploaded bundle SHA-256 mismatch")
+	}
+	return s.now().UTC(), nil
+}
+
+func (s *S3Store) Grant(ctx context.Context, replica Replica, filename string, expiresAt time.Time) (DownloadGrant, error) {
+	if replica.Provider != ProviderAWSS3 || replica.StorageRef == "" || replica.StorageVersion == "" || replica.StorageVersion == "null" {
+		return DownloadGrant{}, errors.New("complete aws_s3 replica with exact version is required")
+	}
+	now := s.now()
+	if expiresAt.IsZero() {
+		expiresAt = now.Add(s.defaultTTL)
+	}
+	if !expiresAt.After(now) {
+		return DownloadGrant{}, errors.New("grant expiry must be in the future")
+	}
+	if expiresAt.Sub(now) > s.defaultTTL || expiresAt.Sub(now) > 7*24*time.Hour {
+		return DownloadGrant{}, errors.New("grant expiry exceeds the configured maximum TTL")
+	}
+	filename = safeFilename(filename)
+	disposition := fmt.Sprintf("attachment; filename=%q", filename)
+	out, err := s.presigner.PresignGetObject(ctx, &s3.GetObjectInput{Bucket: &s.bucket, Key: &replica.StorageRef, VersionId: &replica.StorageVersion, ResponseContentDisposition: &disposition}, func(options *s3.PresignOptions) { options.Expires = expiresAt.Sub(now) })
+	if err != nil {
+		return DownloadGrant{}, fmt.Errorf("presign portable bundle: %w", err)
+	}
+	return DownloadGrant{URL: out.URL, ExpiresAt: expiresAt, SupportsRange: true}, nil
+}
+
+func (s *S3Store) blobKey(orgID, sha256Hex string) (string, error) {
+	if orgID == "" || strings.ContainsAny(orgID, "/\\") {
+		return "", errors.New("valid org ID is required for blob storage")
+	}
+	hexDigest, _, err := canonicalSHA256(sha256Hex)
+	if err != nil {
+		return "", err
+	}
+	return path.Join(s.prefix, "blobs", orgID, "sha256", hexDigest), nil
+}
+
+// PublishBlob stores one content-addressed bundle blob, skipping the upload
+// when an object of the same digest and size already exists. Blobs are shared
+// across bundle versions within an org, so republishing a bundle only uploads
+// blobs that changed.
+func (s *S3Store) PublishBlob(ctx context.Context, orgID, sha256Hex string, data []byte) error {
+	key, err := s.blobKey(orgID, sha256Hex)
+	if err != nil {
+		return err
+	}
+	size := int64(len(data))
+	existing, err := s.head.HeadObject(ctx, &s3.HeadObjectInput{Bucket: &s.bucket, Key: &key})
+	if err == nil {
+		if existing.ContentLength != nil && *existing.ContentLength == size {
+			return nil
+		}
+	} else {
+		var notFound *types.NotFound
+		if !errors.As(err, &notFound) {
+			return fmt.Errorf("check existing blob %s: %w", sha256Hex, err)
+		}
+	}
+	if _, _, err := canonicalSHA256(sha256Hex); err != nil {
+		return err
+	}
+	// ChecksumAlgorithm (not a precomputed full-object ChecksumSHA256): large
+	// blobs go through multipart uploads, where the manager computes per-part
+	// checksums. Without the algorithm declared at CreateMultipartUpload, or
+	// with a full-object checksum supplied, CompleteMultipartUpload fails with
+	// InvalidPart (aws-sdk-go-v2#3165). End-to-end integrity is covered by
+	// content-addressed keys and digest verification on download.
+	_, err = s.uploader.Upload(ctx, &s3.PutObjectInput{Bucket: &s.bucket, Key: &key, Body: bytes.NewReader(data), ContentLength: &size, ContentType: stringPtr("application/octet-stream"), ChecksumAlgorithm: types.ChecksumAlgorithmSha256})
+	if err != nil {
+		return fmt.Errorf("upload blob %s: %w", sha256Hex, err)
+	}
+	return nil
+}
+
+func (s *S3Store) GrantBlob(ctx context.Context, orgID, sha256Hex string) (BlobGrant, error) {
+	key, err := s.blobKey(orgID, sha256Hex)
+	if err != nil {
+		return BlobGrant{}, err
+	}
+	existing, err := s.head.HeadObject(ctx, &s3.HeadObjectInput{Bucket: &s.bucket, Key: &key})
+	if err != nil {
+		return BlobGrant{}, fmt.Errorf("blob %s is not available: %w", sha256Hex, err)
+	}
+	var size int64
+	if existing.ContentLength != nil {
+		size = *existing.ContentLength
+	}
+	now := s.now()
+	expiresAt := now.Add(s.defaultTTL)
+	out, err := s.presigner.PresignGetObject(ctx, &s3.GetObjectInput{Bucket: &s.bucket, Key: &key}, func(options *s3.PresignOptions) { options.Expires = expiresAt.Sub(now) })
+	if err != nil {
+		return BlobGrant{}, fmt.Errorf("presign blob %s: %w", sha256Hex, err)
+	}
+	return BlobGrant{URL: out.URL, ExpiresAt: expiresAt, Size: size}, nil
+}
+
+func canonicalSHA256(value string) (string, []byte, error) {
+	value = strings.TrimPrefix(strings.ToLower(value), "sha256:")
+	decoded, err := hex.DecodeString(value)
+	if err != nil || len(decoded) != sha256.Size {
+		return "", nil, errors.New("SHA-256 must be 64 hexadecimal characters")
+	}
+	return value, decoded, nil
+}
+
+func safeFilename(value string) string {
+	value = path.Base(strings.ReplaceAll(value, "\\", "/"))
+	value = strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f || r == '"' {
+			return '_'
+		}
+		return r
+	}, value)
+	if value == "" || value == "." {
+		return "portable-bundle.tar.zst"
+	}
+	return value
+}
+
+func stringPtr(value string) *string { return &value }

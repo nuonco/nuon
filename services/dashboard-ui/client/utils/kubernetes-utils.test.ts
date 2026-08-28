@@ -20,14 +20,14 @@ describe('kubernetes-utils', () => {
             api: 'apps/v1',
             resource: 'deployments',
             entries: [
-                {
-                    type: 2,
-                    payload: 'spec:\n  replicas: 3',
-                    path: '',
-                    original: '',
-                    applied: ''
-                }
-            ]
+              {
+                type: 2,
+                payload: 'spec:\n  replicas: 3',
+                path: '',
+                original: '',
+                applied: '',
+              },
+            ],
           } as TKubernetesPlanItem,
           {
             _version: '2',
@@ -40,21 +40,21 @@ describe('kubernetes-utils', () => {
             api: 'v1',
             resource: 'services',
             entries: [
-                {
-                    type: 1,
-                    payload: 'spec:\n  ports:\n  - port: 8080',
-                    path: '',
-                    original: '',
-                    applied: ''
-                },
-                {
-                    type: 2,
-                    payload: 'spec:\n  ports:\n  - port: 9090',
-                    path: '',
-                    original: '',
-                    applied: ''
-                }
-            ]
+              {
+                type: 1,
+                payload: 'spec:\n  ports:\n  - port: 8080',
+                path: '',
+                original: '',
+                applied: '',
+              },
+              {
+                type: 2,
+                payload: 'spec:\n  ports:\n  - port: 9090',
+                path: '',
+                original: '',
+                applied: '',
+              },
+            ],
           } as TKubernetesPlanItem,
           {
             _version: '2',
@@ -67,16 +67,16 @@ describe('kubernetes-utils', () => {
             api: 'v1',
             resource: 'configmaps',
             entries: [
-                {
-                    type: 1,
-                    payload: 'data:\n  config: old',
-                    path: '',
-                    original: '',
-                    applied: ''
-                }
-            ]
+              {
+                type: 1,
+                payload: 'data:\n  config: old',
+                path: '',
+                original: '',
+                applied: '',
+              },
+            ],
           } as TKubernetesPlanItem,
-        ]
+        ],
       }
 
       const result = parseKubernetesPlan(mockPlan)
@@ -130,7 +130,7 @@ describe('kubernetes-utils', () => {
       const mockPlan: TKubernetesPlan = {
         plan: '',
         op: 'apply',
-        k8s_content_diff: []
+        k8s_content_diff: [],
       }
 
       const result = parseKubernetesPlan(mockPlan)
@@ -159,16 +159,16 @@ describe('kubernetes-utils', () => {
             api: 'v1',
             resource: 'pods',
             entries: [
-                {
-                    type: 1,
-                    payload: 'spec:\n  containers: []',
-                    path: '',
-                    original: '',
-                    applied: ''
-                }
-            ]
-          } as TKubernetesPlanItem
-        ]
+              {
+                type: 1,
+                payload: 'spec:\n  containers: []',
+                path: '',
+                original: '',
+                applied: '',
+              },
+            ],
+          } as TKubernetesPlanItem,
+        ],
       }
 
       const result = parseKubernetesPlan(mockPlan)

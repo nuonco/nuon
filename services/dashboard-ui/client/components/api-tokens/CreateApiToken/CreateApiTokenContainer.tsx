@@ -43,7 +43,9 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
       setCreatedToken(data?.api_token ?? null)
       addToast(
         <Toast heading="Token created" theme="success">
-          <Text>API token {name} was created for {org.name}.</Text>
+          <Text>
+            API token {name} was created for {org.name}.
+          </Text>
         </Toast>
       )
     },

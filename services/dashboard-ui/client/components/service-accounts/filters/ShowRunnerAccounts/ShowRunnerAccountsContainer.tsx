@@ -18,5 +18,7 @@ export const ShowRunnerAccountsContainer = () => {
     navigate(`?${params.toString()}`, { replace: true })
   }
 
-  return <ShowRunnerAccounts showRunners={showRunners} onChange={handleChange} />
+  return (
+    <ShowRunnerAccounts showRunners={showRunners} onChange={handleChange} />
+  )
 }

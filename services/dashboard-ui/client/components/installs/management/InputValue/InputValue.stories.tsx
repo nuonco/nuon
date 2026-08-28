@@ -13,7 +13,9 @@ export const Missing = () => <InputValue name="domain" value={null} />
 export const HelmValues = () => (
   <InputValue
     name="nuon_component_override_v1_helm_values_77686f616d69"
-    value={'replicaCount: 5\nresources:\n  requests:\n    cpu: "150m"\n    memory: 64Mi\n'}
+    value={
+      'replicaCount: 5\nresources:\n  requests:\n    cpu: "150m"\n    memory: 64Mi\n'
+    }
   />
 )
 

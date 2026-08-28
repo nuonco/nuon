@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
+import { useOrg } from '@/hooks/use-org'
 import type { TApp } from '@/types'
 import { AppSelectContainer as AppSelect } from './AppSelectContainer'
 import {
   CreateInstallFromAppContainer,
   type ICreateFromAppState,
 } from './CreateInstallFromAppContainer'
+import { InstallationProfileWizard } from './InstallationProfileWizard'
 
 interface ICreateInstall {
   initialApp?: TApp
@@ -24,12 +26,16 @@ export const CreateInstallModal = ({
   initialApp,
   ...props
 }: ICreateInstall & IModal) => {
+  const { org } = useOrg()
   const [selectedApp, setSelectedApp] = useState<TApp | undefined>(initialApp)
   const [state, setState] = useState<ICreateFromAppState>(INITIAL_STATE)
+  const [profileSelected, setProfileSelected] = useState(false)
 
   const showForm = !!selectedApp
   const showBranches = state.phase === 'branches'
-  const showFooter = showForm && state.phase === 'form'
+  const profileEnabled = !!org?.features?.['customer-managed-installs']
+  const showProfile = profileEnabled && !!selectedApp && !profileSelected
+  const showFooter = showForm && !showProfile && state.phase === 'form'
 
   return (
     <Modal
@@ -79,19 +85,38 @@ export const CreateInstallModal = ({
       }
     >
       {selectedApp ? (
-        <CreateInstallFromAppContainer
-          app={selectedApp}
-          onBack={
-            initialApp
-              ? undefined
-              : () => {
-                  setSelectedApp(undefined)
-                  setState(INITIAL_STATE)
-                }
-          }
-          onStateChange={setState}
-          modalId={props.modalId}
-        />
+        showProfile ? (
+          <InstallationProfileWizard
+            app={selectedApp}
+            onBack={
+              initialApp
+                ? undefined
+                : () => {
+                    setSelectedApp(undefined)
+                    setState(INITIAL_STATE)
+                  }
+            }
+            onUseNuon={() => setProfileSelected(true)}
+          />
+        ) : (
+          <CreateInstallFromAppContainer
+            app={selectedApp}
+            onBack={
+              initialApp
+                ? undefined
+                : () => {
+                    if (profileEnabled) {
+                      setProfileSelected(false)
+                    } else {
+                      setSelectedApp(undefined)
+                    }
+                    setState(INITIAL_STATE)
+                  }
+            }
+            onStateChange={setState}
+            modalId={props.modalId}
+          />
+        )
       ) : (
         <AppSelect
           onSelectApp={setSelectedApp}

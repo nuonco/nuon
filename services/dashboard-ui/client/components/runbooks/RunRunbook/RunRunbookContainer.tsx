@@ -48,7 +48,9 @@ export const RunRunbookModal = ({
     onSuccess: (result) => {
       addToast(
         <Toast heading="Running runbook" theme="info">
-          <Text>Running {runbookName} on {install?.name}.</Text>
+          <Text>
+            Running {runbookName} on {install?.name}.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)

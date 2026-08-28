@@ -36,7 +36,6 @@ export const SandboxCard = ({
 
   const content = (
     <div className="flex w-fit items-center gap-3 rounded-lg border px-3 py-2.5">
-
       <Text variant="body" className="font-strong">
         Sandbox
       </Text>
@@ -45,7 +44,11 @@ export const SandboxCard = ({
   )
 
   if (href) {
-    return <Link href={href} variant="ghost" className="flex !p-0 no-underline">{content}</Link>
+    return (
+      <Link href={href} variant="ghost" className="flex !p-0 no-underline">
+        {content}
+      </Link>
+    )
   }
 
   return content

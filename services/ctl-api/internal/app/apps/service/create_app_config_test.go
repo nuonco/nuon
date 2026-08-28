@@ -12,14 +12,17 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // TestCreateAppConfigV2Success tests POST /v1/apps/:app_id/configs with valid input.
 func (s *AppConfigsTestSuite) TestCreateAppConfigV2Success() {
+	sourceConfig := `{"schema_version":1,"files":{"actions/hello.toml":"# action\nname = \"hello\"\n"},"members":{"action:hello":"actions/hello.toml"}}`
 	req := CreateAppConfigRequest{
-		Readme:     "test readme",
-		CLIVersion: "1.0.0",
+		Readme:           "test readme",
+		CLIVersion:       "1.0.0",
+		SourceConfigJSON: sourceConfig,
 	}
 
 	path := fmt.Sprintf("/v1/apps/%s/configs", s.testApp.ID)
@@ -42,13 +45,19 @@ func (s *AppConfigsTestSuite) TestCreateAppConfigV2Success() {
 	assert.Equal(s.T(), models.AppAppConfigStatus(app.AppConfigStatusPending), response.Status)
 
 	var dbConfig app.AppConfig
-	err = s.service.DB.First(&dbConfig, "id = ?", response.ID).Error
+	dbCtx := blobstore.WithBlobService(context.Background(), s.service.AppsService.blobSvc)
+	err = s.service.DB.WithContext(dbCtx).First(&dbConfig, "id = ?", response.ID).Error
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), s.testApp.ID, dbConfig.AppID)
 	assert.Equal(s.T(), s.testOrg.ID, dbConfig.OrgID)
 	assert.Equal(s.T(), "test readme", dbConfig.Readme)
 	assert.Equal(s.T(), "1.0.0", dbConfig.CLIVersion)
 	assert.Equal(s.T(), app.AppConfigStatusPending, dbConfig.Status)
+	require.NotNil(s.T(), dbConfig.SourceConfig)
+	assert.NotEmpty(s.T(), dbConfig.SourceConfig.BlobID())
+	storedSource, err := dbConfig.SourceConfig.Get(dbCtx)
+	require.NoError(s.T(), err)
+	assert.JSONEq(s.T(), sourceConfig, storedSource)
 }
 
 func (s *AppConfigsTestSuite) TestCreateAppConfigV2WithEmptyFields() {

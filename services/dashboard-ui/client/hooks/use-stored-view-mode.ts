@@ -3,7 +3,7 @@ import { useState } from 'react'
 export function useStoredViewMode<T extends string>(
   storageKey: string,
   allowed: readonly T[],
-  fallback: T,
+  fallback: T
 ) {
   const [mode, setMode] = useState<T>(() => {
     try {

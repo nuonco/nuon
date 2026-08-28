@@ -6,56 +6,62 @@ import { AppSandbox } from './AppSandbox'
 
 export const Default = () => (
   <AppSandbox
-    appConfig={{
-      sandbox: {
-        terraform_version: '1.5.7',
-        drift_schedule: '0 2 * * *',
-        public_git_vcs_config: {
-          repo: 'https://github.com/my-org/sandbox-config',
-          branch: 'main',
-          root: '/terraform',
+    appConfig={
+      {
+        sandbox: {
+          terraform_version: '1.5.7',
+          drift_schedule: '0 2 * * *',
+          public_git_vcs_config: {
+            repo: 'https://github.com/my-org/sandbox-config',
+            branch: 'main',
+            root: '/terraform',
+          },
+          variables: {
+            instance_type: 't3.small',
+            min_nodes: '2',
+          },
+          operation_roles: {},
         },
-        variables: {
-          instance_type: 't3.small',
-          min_nodes: '2',
-        },
-        operation_roles: {},
-      },
-    } as any}
+      } as any
+    }
   />
 )
 
 export const WithGitHub = () => (
   <AppSandbox
-    appConfig={{
-      sandbox: {
-        terraform_version: '1.6.0',
-        connected_github_vcs_config: {
-          repo: 'my-org/sandbox-terraform',
-          branch: 'main',
-          root: '/',
+    appConfig={
+      {
+        sandbox: {
+          terraform_version: '1.6.0',
+          connected_github_vcs_config: {
+            repo: 'my-org/sandbox-terraform',
+            branch: 'main',
+            root: '/',
+          },
+          variables: {},
+          operation_roles: {},
         },
-        variables: {},
-        operation_roles: {},
-      },
-    } as any}
+      } as any
+    }
   />
 )
 
 export const Pulumi = () => (
   <AppSandbox
-    appConfig={{
-      sandbox: {
-        type: 'pulumi',
-        runtime: 'go',
-        pulumi_version: '3.100.0',
-        public_git_vcs_config: {
-          repo: 'https://github.com/my-org/pulumi-sandbox',
-          branch: 'main',
-          directory: '/',
+    appConfig={
+      {
+        sandbox: {
+          type: 'pulumi',
+          runtime: 'go',
+          pulumi_version: '3.100.0',
+          public_git_vcs_config: {
+            repo: 'https://github.com/my-org/pulumi-sandbox',
+            branch: 'main',
+            directory: '/',
+          },
+          operation_roles: {},
         },
-        operation_roles: {},
-      },
-    } as any}
+      } as any
+    }
   />
 )

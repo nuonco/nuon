@@ -132,7 +132,11 @@ const ApprovedPlanBanner = ({ step }: IApprovalBanner) => {
   }
 
   return (
-    <Banner theme={optimistic ? 'success' : RESPONSE_THEME[step?.approval?.response?.type]}>
+    <Banner
+      theme={
+        optimistic ? 'success' : RESPONSE_THEME[step?.approval?.response?.type]
+      }
+    >
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col">
           <Text weight="strong">

@@ -157,8 +157,7 @@ const SpanGanttRow = ({
       className={cn(
         'group relative flex items-center min-h-7 px-2 text-left',
         'hover:bg-cool-grey-50 dark:hover:bg-dark-grey-500',
-        isSelected &&
-          'bg-primary-200 dark:bg-primary-600/25'
+        isSelected && 'bg-primary-200 dark:bg-primary-600/25'
       )}
     >
       <div className="relative h-3 w-full">

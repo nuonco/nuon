@@ -94,7 +94,10 @@ export const TeamTable = ({
         header: 'Email',
         accessorKey: 'email',
         cell: (props) => (
-          <Text variant="body" className="text-primary-600 dark:text-primary-400">
+          <Text
+            variant="body"
+            className="text-primary-600 dark:text-primary-400"
+          >
             {props.getValue<string>()}
           </Text>
         ),
@@ -103,7 +106,10 @@ export const TeamTable = ({
         header: 'Role',
         accessorKey: 'role',
         cell: (props) => (
-          <Text variant="body" className="text-primary-600 dark:text-primary-400">
+          <Text
+            variant="body"
+            className="text-primary-600 dark:text-primary-400"
+          >
             {props.getValue<string>()}
           </Text>
         ),

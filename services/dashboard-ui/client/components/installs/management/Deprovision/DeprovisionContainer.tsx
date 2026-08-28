@@ -14,14 +14,20 @@ import { DeprovisionModal } from './Deprovision'
 
 interface IDeprovision {}
 
-export const DeprovisionModalContainer = ({ ...props }: IDeprovision & Omit<IModal, 'onSubmit'>) => {
+export const DeprovisionModalContainer = ({
+  ...props
+}: IDeprovision & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
   const { install } = useInstall()
   const { addToast } = useToast()
 
-  const { mutate, isPending: isLoading, error } = useMutation({
+  const {
+    mutate,
+    isPending: isLoading,
+    error,
+  } = useMutation({
     mutationFn: () =>
       deprovisionInstall({
         orgId: org.id,

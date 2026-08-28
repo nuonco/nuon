@@ -43,12 +43,7 @@ export const DriftScanComponentModal = ({
     <Modal
       heading={
         <div className="flex flex-col gap-2">
-          <Text
-            flex
-            className="gap-4"
-            variant="h3"
-            weight="strong"
-          >
+          <Text flex className="gap-4" variant="h3" weight="strong">
             <Icon variant="ScanIcon" size="24" />
             Drift scan {component.name} component
           </Text>
@@ -93,7 +88,8 @@ export const DriftScanComponentModal = ({
 
         {buildSelect({
           selectedBuildId: buildId,
-          onSelectBuild: (selectedBuildId: string) => setBuildId(selectedBuildId),
+          onSelectBuild: (selectedBuildId: string) =>
+            setBuildId(selectedBuildId),
           onClose: handleClose,
         })}
       </div>

@@ -18,8 +18,5 @@
     "types": ["@testing-library/jest-dom", "@types/bun"]
   },
   "include": ["./**/*.ts", "./**/*.tsx"],
-  "exclude": [
-    "components/admin/**",
-    "components/stacks/StackLinks.tsx"
-  ]
+  "exclude": ["components/admin/**", "components/stacks/StackLinks.tsx"]
 }

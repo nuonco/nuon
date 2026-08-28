@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
-import { PulumiState, type TPulumiState } from '@/components/terraform-workspace/PulumiState'
+import {
+  PulumiState,
+  type TPulumiState,
+} from '@/components/terraform-workspace/PulumiState'
 import { TerraformState } from '@/components/terraform-workspace/TerraformState'
 import type { TComponentType, TTerraformState } from '@/types'
 

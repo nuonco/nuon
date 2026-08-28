@@ -82,7 +82,7 @@ const ComponentsGraphModalContent = ({
   const [viewMode, setViewMode] = useStoredViewMode<TDependencyViewMode>(
     DEPENDENCY_VIEW_STORAGE_KEY,
     DEPENDENCY_VIEW_MODES,
-    'graph',
+    'graph'
   )
 
   return (
@@ -99,14 +99,14 @@ const ComponentsGraphModalContent = ({
           {viewMode === 'graph' ? (
             <ul className="flex flex-col gap-1 list-disc pl-4">
               <li className="text-sm max-w-xl">
-                Dependencies are from root to dependencies (so a red-arrow from a to
-                b, means that b depends on a, or that when a changes, b would be
-                updated when <Code variant="inline">select-dependencies</Code> is
-                true)
+                Dependencies are from root to dependencies (so a red-arrow from
+                a to b, means that b depends on a, or that when a changes, b
+                would be updated when{' '}
+                <Code variant="inline">select-dependencies</Code> is true)
               </li>
               <li className="text-sm">
-                Blue nodes mean that the current config version has changes to that
-                component
+                Blue nodes mean that the current config version has changes to
+                that component
               </li>
             </ul>
           ) : null}
@@ -133,12 +133,7 @@ export const ComponentsGraphRenderer = ({
       className="!max-h-[80vh]"
       childrenClassName="overflow-y-auto"
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="GraphIcon" size="24" />
           Component dependency graph
         </Text>
@@ -252,7 +247,8 @@ export const ComponentsGraphInline = ({
 
   useEffect(() => {
     if (dotGraph) {
-      const { nodes: newNodes, edges: newEdges } = convertDotToFlowData(dotGraph)
+      const { nodes: newNodes, edges: newEdges } =
+        convertDotToFlowData(dotGraph)
       setNodes(newNodes)
       setEdges(newEdges)
     }

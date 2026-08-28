@@ -44,7 +44,8 @@ export const ShutdownInstanceModalContainer = ({ ...props }: IModal) => {
     mutate,
     isPending: isLoading,
   } = useMutation({
-    mutationFn: () => shutdownRunnerInstance({ runnerId: runner.id, orgId: org.id }),
+    mutationFn: () =>
+      shutdownRunnerInstance({ runnerId: runner.id, orgId: org.id }),
     onSuccess: () => {
       addToast(
         <Toast heading="Restart runner instance started" theme="success">

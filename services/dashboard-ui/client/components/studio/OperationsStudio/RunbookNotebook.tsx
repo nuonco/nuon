@@ -171,7 +171,12 @@ function StepSummary({
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2">
         {target ? (
-          <Badge variant="code" size="sm" theme="default" className="max-w-40 truncate">
+          <Badge
+            variant="code"
+            size="sm"
+            theme="default"
+            className="max-w-40 truncate"
+          >
             {target}
           </Badge>
         ) : null}
@@ -204,8 +209,14 @@ function SortableCell({
   onRemove: () => void
   children: React.ReactNode
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: cell.key })
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: cell.key })
   const isStep = cell.kind === 'step'
 
   return (
@@ -213,7 +224,10 @@ function SortableCell({
       ref={setNodeRef}
       id={`cell-${cell.key}`}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cn('group/cell relative scroll-mt-24', isDragging && 'opacity-60 z-20')}
+      className={cn(
+        'group/cell relative scroll-mt-24',
+        isDragging && 'opacity-60 z-20'
+      )}
     >
       <div
         className={cn(
@@ -342,7 +356,12 @@ function PreviewStepCard({
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-2">
         {target ? (
-          <Badge variant="code" size="sm" theme="default" className="max-w-40 truncate">
+          <Badge
+            variant="code"
+            size="sm"
+            theme="default"
+            className="max-w-40 truncate"
+          >
             {target}
           </Badge>
         ) : null}
@@ -405,7 +424,10 @@ function VariablesPanel({
                 const result = onInsert(variable.template)
                 setFeedback({ template: variable.template, result })
                 window.clearTimeout(feedbackTimer.current)
-                feedbackTimer.current = window.setTimeout(() => setFeedback(undefined), 1500)
+                feedbackTimer.current = window.setTimeout(
+                  () => setFeedback(undefined),
+                  1500
+                )
               }}
             >
               <code className="shrink-0 text-xs text-blue-700 dark:text-blue-400">
@@ -492,10 +514,7 @@ export function RunbookNotebook({
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
   )
 
-  const validation = useMemo(
-    () => validateNotebook(name, cells),
-    [name, cells]
-  )
+  const validation = useMemo(() => validateNotebook(name, cells), [name, cells])
   const toml = useMemo(
     () => notebookToml(name, description, cells),
     [name, description, cells]
@@ -557,7 +576,9 @@ export function RunbookNotebook({
     setMessages(
       result.errors.length
         ? result.errors
-        : [`Imported ${result.cells.filter((cell) => cell.kind === 'step').length} steps from ${runbook.name}.`]
+        : [
+            `Imported ${result.cells.filter((cell) => cell.kind === 'step').length} steps from ${runbook.name}.`,
+          ]
     )
   }
 
@@ -762,8 +783,16 @@ export function RunbookNotebook({
                 {(
                   [
                     { value: 'preview', label: 'Preview', icon: 'EyeIcon' },
-                    { value: 'toml', label: `${slug}.toml`, icon: 'FileCodeIcon' },
-                    { value: 'template', label: `${slug}.md`, icon: 'FileTextIcon' },
+                    {
+                      value: 'toml',
+                      label: `${slug}.toml`,
+                      icon: 'FileCodeIcon',
+                    },
+                    {
+                      value: 'template',
+                      label: `${slug}.md`,
+                      icon: 'FileTextIcon',
+                    },
                   ] as const
                 ).map((tab) => (
                   <button

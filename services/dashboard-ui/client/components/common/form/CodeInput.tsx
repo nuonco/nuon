@@ -11,7 +11,10 @@ import { useSystemTheme } from '@/hooks/use-system-theme'
 import { cn } from '@/utils/classnames'
 
 export interface ICodeInput
-  extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'size' | 'onChange'> {
+  extends Omit<
+    TextareaHTMLAttributes<HTMLTextAreaElement>,
+    'size' | 'onChange'
+  > {
   labelProps?: Omit<ILabel, 'children'> & {
     labelText: string
     labelTextProps?: Omit<IText, 'children'>

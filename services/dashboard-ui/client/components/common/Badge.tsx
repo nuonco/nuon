@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react'
-import type { TTheme } from '@/types'
+import type { TTheme } from '@/types/dashboard.types'
 import { cn } from '@/utils/classnames'
 import { SKELETON_CLASSES } from './Skeleton'
 

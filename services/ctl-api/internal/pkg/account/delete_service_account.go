@@ -34,6 +34,9 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 		if err := authz.DeleteStackInstallRoles(tx, acct.ID); err != nil {
 			return err
 		}
+		if err := authz.DeleteCustomerPortalInstallRoles(tx, acct.ID); err != nil {
+			return err
+		}
 
 		return deleteAccountRecords(tx, acct.ID)
 	})

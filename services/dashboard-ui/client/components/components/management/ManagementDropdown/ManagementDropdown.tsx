@@ -9,7 +9,10 @@ interface IManagementDropdown {
   appConfigId: string
 }
 
-export const ManagementDropdown = ({ appId, appConfigId }: IManagementDropdown) => {
+export const ManagementDropdown = ({
+  appId,
+  appConfigId,
+}: IManagementDropdown) => {
   return (
     <Dropdown
       id="components-mgmt"

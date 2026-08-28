@@ -22,7 +22,8 @@ export interface ExtractedTable {
 }
 
 const FENCE = /^\s*(```|~~~)/
-const MARKER = /^\s*<nuon-table-search\b([^>]*)>(?:\s*<\/nuon-table-search>)?\s*$/
+const MARKER =
+  /^\s*<nuon-table-search\b([^>]*)>(?:\s*<\/nuon-table-search>)?\s*$/
 const DELIM_CELL = /^:?-+:?$/
 
 export function parseColumns(raw?: string): string[] | null {
@@ -34,8 +35,14 @@ export function parseColumns(raw?: string): string[] | null {
   return cols.length > 0 ? cols : null
 }
 
-export function makeSearchConfig(columns?: string, placeholder?: string): TableSearchConfig {
-  return { columns: parseColumns(columns), placeholder: placeholder || undefined }
+export function makeSearchConfig(
+  columns?: string,
+  placeholder?: string
+): TableSearchConfig {
+  return {
+    columns: parseColumns(columns),
+    placeholder: placeholder || undefined,
+  }
 }
 
 function parseMarker(attrStr: string): TableSearchConfig {
@@ -54,8 +61,12 @@ function escapeAttr(value: string): string {
 
 function buildSearchAttrs(cfg: TableSearchConfig): string {
   const parts = ['data-nuon-search="1"']
-  if (cfg.columns) parts.push(`data-nuon-search-columns="${escapeAttr(cfg.columns.join(','))}"`)
-  if (cfg.placeholder) parts.push(`data-nuon-search-placeholder="${escapeAttr(cfg.placeholder)}"`)
+  if (cfg.columns)
+    parts.push(
+      `data-nuon-search-columns="${escapeAttr(cfg.columns.join(','))}"`
+    )
+  if (cfg.placeholder)
+    parts.push(`data-nuon-search-placeholder="${escapeAttr(cfg.placeholder)}"`)
   return parts.join(' ')
 }
 
@@ -174,7 +185,9 @@ export function extractTables(content: string): {
     }
 
     if (pendingSearch && /^\s*<table[\s>]/i.test(line)) {
-      out.push(line.replace(/<table/i, `<table ${buildSearchAttrs(pendingSearch)}`))
+      out.push(
+        line.replace(/<table/i, `<table ${buildSearchAttrs(pendingSearch)}`)
+      )
       pendingSearch = null
       i++
       continue

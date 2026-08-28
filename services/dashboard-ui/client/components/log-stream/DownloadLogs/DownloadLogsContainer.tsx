@@ -70,7 +70,5 @@ export const DownloadLogsButtonContainer = ({
     />
   )
 
-  return (
-    <DownloadLogsButton onClick={() => addModal(modal)} {...props} />
-  )
+  return <DownloadLogsButton onClick={() => addModal(modal)} {...props} />
 }

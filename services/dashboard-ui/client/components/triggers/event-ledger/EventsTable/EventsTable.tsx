@@ -176,11 +176,7 @@ export const EventsTable = ({
                 Showing the most recently loaded events.
               </Text>
             </div>
-            <Button
-              variant="secondary"
-              disabled={isRetrying}
-              onClick={onRetry}
-            >
+            <Button variant="secondary" disabled={isRetrying} onClick={onRetry}>
               <Icon variant={isRetrying ? 'Loading' : 'ArrowClockwiseIcon'} />
               {isRetrying ? 'Refreshing events' : 'Refresh events'}
             </Button>

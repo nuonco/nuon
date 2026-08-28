@@ -59,3 +59,40 @@ func TestBuildComponentsForceSelection(t *testing.T) {
 		})
 	}
 }
+
+func TestShouldBuildSandboxOCI(t *testing.T) {
+	for _, tc := range []struct {
+		name            string
+		featureEnabled  bool
+		customerManaged bool
+		expected        bool
+	}{
+		{name: "feature enabled", featureEnabled: true, expected: true},
+		{name: "customer managed config", customerManaged: true, expected: true},
+		{name: "ordinary config", expected: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var suite testsuite.WorkflowTestSuite
+			env := suite.NewTestWorkflowEnvironment()
+			sig := &Signal{}
+
+			env.OnActivity((*branchactivities.Activities).OrgHasFeature, mock.Anything, mock.Anything, mock.Anything).
+				Return(tc.featureEnabled, nil)
+			if !tc.featureEnabled {
+				env.OnActivity((*branchactivities.Activities).AppConfigUsesCustomerManaged, mock.Anything, mock.Anything, mock.Anything).
+					Return(tc.customerManaged, nil)
+			}
+
+			var actual bool
+			env.ExecuteWorkflow(func(ctx workflow.Context) error {
+				var err error
+				actual, err = sig.shouldBuildSandboxOCI(ctx, "org-1", "app-1", "config-1")
+				return err
+			})
+
+			require.NoError(t, env.GetWorkflowError())
+			require.Equal(t, tc.expected, actual)
+			env.AssertExpectations(t)
+		})
+	}
+}

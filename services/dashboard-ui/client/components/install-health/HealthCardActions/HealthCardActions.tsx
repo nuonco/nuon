@@ -24,13 +24,17 @@ export const HealthCardActions = ({ installId }: { installId: string }) => {
           Controls
         </Text>
         <Button
-          onClick={() => addModal(<RefreshClusterAccessModal installId={installId} />)}
+          onClick={() =>
+            addModal(<RefreshClusterAccessModal installId={installId} />)
+          }
         >
           Refresh cluster access
           <Icon variant="ArrowsClockwiseIcon" />
         </Button>
         <Button
-          onClick={() => addModal(<ResetHealthWindowModal installId={installId} />)}
+          onClick={() =>
+            addModal(<ResetHealthWindowModal installId={installId} />)
+          }
         >
           Reset window
           <Icon variant="ClockCounterClockwiseIcon" />

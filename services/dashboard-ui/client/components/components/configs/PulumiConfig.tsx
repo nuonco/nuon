@@ -17,11 +17,13 @@ export const PulumiConfigModal = ({
   config,
   ...props
 }: PulumiConfigModalProps) => {
-  const keyValuePairs: TKeyValue[] = Object.entries(config).map(([key, value]) => ({
-    key,
-    value,
-    type: 'string',
-  }))
+  const keyValuePairs: TKeyValue[] = Object.entries(config).map(
+    ([key, value]) => ({
+      key,
+      value,
+      type: 'string',
+    })
+  )
 
   const configText = Object.entries(config)
     .map(([key, value]) => `${key}: "${value}"`)
@@ -59,11 +61,13 @@ export const PulumiEnvVarsModal = ({
   envVars,
   ...props
 }: PulumiEnvVarsModalProps) => {
-  const keyValuePairs: TKeyValue[] = Object.entries(envVars).map(([key, value]) => ({
-    key,
-    value,
-    type: 'string',
-  }))
+  const keyValuePairs: TKeyValue[] = Object.entries(envVars).map(
+    ([key, value]) => ({
+      key,
+      value,
+      type: 'string',
+    })
+  )
 
   const envVarsText = Object.entries(envVars)
     .map(([key, value]) => `${key}="${value}"`)
@@ -85,7 +89,8 @@ export const PulumiEnvVarsModal = ({
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center gap-4">
           <Text variant="body">
-            This is the environment variables for this Pulumi component configuration.
+            This is the environment variables for this Pulumi component
+            configuration.
           </Text>
           <div className="flex justify-end">
             <ClickToCopyButton textToCopy={envVarsText} className="w-fit" />

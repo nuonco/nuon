@@ -59,7 +59,11 @@ export const WithError = () => (
       currentRole="org_admin"
       roleOptions={roleOptions}
       isPending={false}
-      error={{ error: 'Cannot demote the last org admin', description: '', user_error: true }}
+      error={{
+        error: 'Cannot demote the last org admin',
+        description: '',
+        user_error: true,
+      }}
       onSubmit={noop}
     />
   </ModalStory>

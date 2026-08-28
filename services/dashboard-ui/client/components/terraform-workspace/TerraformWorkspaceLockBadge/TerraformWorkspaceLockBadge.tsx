@@ -15,7 +15,12 @@ export const TerraformWorkspaceLockBadge = ({
   const created = lock.lock?.created || lock.created_at
 
   return (
-    <Badge variant="code" size="sm" theme="warn" className="flex items-center gap-1.5">
+    <Badge
+      variant="code"
+      size="sm"
+      theme="warn"
+      className="flex items-center gap-1.5"
+    >
       <Icon variant="LockIcon" size={12} />
       <span>
         Locked by {operation}

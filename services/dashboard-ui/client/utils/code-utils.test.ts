@@ -24,7 +24,9 @@ describe('code-utils', () => {
 
     test('should handle null and undefined inputs', () => {
       expect(diffLines(null, null)).toBe('Diff not available from planner')
-      expect(diffLines(undefined, undefined)).toBe('Diff not available from planner')
+      expect(diffLines(undefined, undefined)).toBe(
+        'Diff not available from planner'
+      )
       expect(diffLines(null, 'test')).toBe('+ test')
       expect(diffLines('test', null)).toBe('- test')
     })

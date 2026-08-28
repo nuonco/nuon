@@ -16,9 +16,24 @@ const MockStep = () => (
 )
 
 const mockSteps = [
-  { id: 'welcome', title: 'Welcome', description: 'Get started with Nuon.', component: MockStep },
-  { id: 'create-app', title: 'Create your app', description: 'Set up your first app.', component: MockStep },
-  { id: 'sync', title: 'Sync app', description: 'Sync your app config.', component: MockStep },
+  {
+    id: 'welcome',
+    title: 'Welcome',
+    description: 'Get started with Nuon.',
+    component: MockStep,
+  },
+  {
+    id: 'create-app',
+    title: 'Create your app',
+    description: 'Set up your first app.',
+    component: MockStep,
+  },
+  {
+    id: 'sync',
+    title: 'Sync app',
+    description: 'Sync your app config.',
+    component: MockStep,
+  },
 ]
 
 const mockWizard: IWizardContext = {
@@ -43,15 +58,17 @@ const mockConfig: TRuntimeConfig = {
   onboardingV2: false,
 }
 
-const Providers = ({ children, wizard = mockWizard, config = mockConfig }: {
+const Providers = ({
+  children,
+  wizard = mockWizard,
+  config = mockConfig,
+}: {
   children: React.ReactNode
   wizard?: IWizardContext
   config?: TRuntimeConfig
 }) => (
   <ConfigContext.Provider value={config}>
-    <WizardContext.Provider value={wizard}>
-      {children}
-    </WizardContext.Provider>
+    <WizardContext.Provider value={wizard}>{children}</WizardContext.Provider>
   </ConfigContext.Provider>
 )
 
@@ -68,7 +85,13 @@ export const NoSkip = () => (
 )
 
 export const MidProgress = () => (
-  <Providers wizard={{ ...mockWizard, currentStepIndex: 1, completedSteps: new Set(['welcome']) }}>
+  <Providers
+    wizard={{
+      ...mockWizard,
+      currentStepIndex: 1,
+      completedSteps: new Set(['welcome']),
+    }}
+  >
     <OnboardingWizardLayout skipHref="/org-123/apps" />
   </Providers>
 )

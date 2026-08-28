@@ -82,7 +82,14 @@ export const toEntries = (resources: TInstallResource[]): TK8sEntry[] =>
 const KIND_SECTIONS: { heading: string; kinds: string[] }[] = [
   {
     heading: 'Workloads',
-    kinds: ['Deployment', 'StatefulSet', 'DaemonSet', 'ReplicaSet', 'Job', 'Pod'],
+    kinds: [
+      'Deployment',
+      'StatefulSet',
+      'DaemonSet',
+      'ReplicaSet',
+      'Job',
+      'Pod',
+    ],
   },
   { heading: 'Network', kinds: ['Service', 'Ingress'] },
   { heading: 'Storage', kinds: ['PersistentVolumeClaim'] },
@@ -214,7 +221,8 @@ const jobStatus = (obj: any): TDerivedStatus => {
   if (findCondition(obj, 'Complete')?.status === 'True')
     return { label: 'Complete' }
   const failed = findCondition(obj, 'Failed')
-  if (failed?.status === 'True') return { label: 'Failed', detail: failed?.message }
+  if (failed?.status === 'True')
+    return { label: 'Failed', detail: failed?.message }
   if (obj?.status?.active) return { label: 'Running' }
   return { label: 'Pending' }
 }
@@ -297,7 +305,10 @@ const servicePorts = (obj: any) =>
     .join(', ')
 
 const ingressHosts = (obj: any) =>
-  (obj?.spec?.rules ?? []).map((r: any) => r?.host).filter(Boolean).join(', ')
+  (obj?.spec?.rules ?? [])
+    .map((r: any) => r?.host)
+    .filter(Boolean)
+    .join(', ')
 
 const ingressAddress = (obj: any) =>
   (obj?.status?.loadBalancer?.ingress ?? [])
@@ -593,12 +604,20 @@ const KindNavButton = ({
   </button>
 )
 
-const OverviewRow = ({ label, children }: { label: string; children: ReactNode }) => (
+const OverviewRow = ({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) => (
   <div className="flex flex-col gap-0.5">
     <Text variant="label" className="uppercase opacity-60">
       {label}
     </Text>
-    <div className="flex flex-wrap items-center gap-1.5 min-w-0">{children}</div>
+    <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+      {children}
+    </div>
   </div>
 )
 
@@ -617,7 +636,10 @@ const ConditionsList = ({ entry }: { entry: TK8sEntry }) => {
               <Text variant="subtext" weight="strong" family="mono">
                 {c?.type}
               </Text>
-              <Badge size="sm" theme={c?.status === 'True' ? 'success' : 'warn'}>
+              <Badge
+                size="sm"
+                theme={c?.status === 'True' ? 'success' : 'warn'}
+              >
                 {c?.status}
               </Badge>
             </div>
@@ -665,9 +687,7 @@ const resolveRef = (
   namespace: string,
   entries: TK8sEntry[]
 ): TK8sEntry | undefined =>
-  entries.find(
-    (e) => e.namespace === namespace && refMatchesEntry(ref, e)
-  )
+  entries.find((e) => e.namespace === namespace && refMatchesEntry(ref, e))
 
 export const childrenOf = (
   entry: TK8sEntry,
@@ -962,7 +982,12 @@ const DetailPane = ({
               </Text>
             ) : null}
           </div>
-          <Text variant="base" weight="strong" family="mono" className="break-all">
+          <Text
+            variant="base"
+            weight="strong"
+            family="mono"
+            className="break-all"
+          >
             {entry.name}
           </Text>
           {entry.namespace ? (
@@ -971,7 +996,12 @@ const DetailPane = ({
             </Text>
           ) : null}
         </div>
-        <Button variant="ghost" size="xs" onClick={onClose} aria-label="Close details">
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={onClose}
+          aria-label="Close details"
+        >
           <Icon variant="XIcon" size={16} />
         </Button>
       </div>
@@ -980,7 +1010,11 @@ const DetailPane = ({
           key={entryKey(entry)}
           tabs={{
             overview: (
-              <DetailOverview entry={entry} entries={entries} onSelect={onSelect} />
+              <DetailOverview
+                entry={entry}
+                entries={entries}
+                onSelect={onSelect}
+              />
             ),
             yaml: (
               <CodeBlock language="yaml" showCopy>
@@ -1034,7 +1068,12 @@ const HelmDetailPane = ({
               Release
             </Badge>
           </div>
-          <Text variant="base" weight="strong" family="mono" className="break-all">
+          <Text
+            variant="base"
+            weight="strong"
+            family="mono"
+            className="break-all"
+          >
             {entry.name}
           </Text>
           {entry.namespace ? (
@@ -1043,7 +1082,12 @@ const HelmDetailPane = ({
             </Text>
           ) : null}
         </div>
-        <Button variant="ghost" size="xs" onClick={onClose} aria-label="Close details">
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={onClose}
+          aria-label="Close details"
+        >
           <Icon variant="XIcon" size={16} />
         </Button>
       </div>
@@ -1117,7 +1161,12 @@ const HelmDetailPane = ({
                     className="flex items-center justify-between gap-2 rounded-md border border-cool-grey-200 dark:border-dark-grey-600 px-2.5 py-2"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <Text variant="subtext" weight="strong" family="mono" nowrap>
+                      <Text
+                        variant="subtext"
+                        weight="strong"
+                        family="mono"
+                        nowrap
+                      >
                         rev {revision?.version ?? 0}
                       </Text>
                       {revision?.updated_at ? (
@@ -1227,8 +1276,9 @@ export const KubernetesExplorer = ({
         map.set(kindKey(e.apiGroup, e.kind), [e.kind, e.apiGroup])
       }
     }
-    return [...map.entries()].sort(([, [aKind, aGroup]], [, [bKind, bGroup]]) =>
-      aKind.localeCompare(bKind) || aGroup.localeCompare(bGroup)
+    return [...map.entries()].sort(
+      ([, [aKind, aGroup]], [, [bKind, bGroup]]) =>
+        aKind.localeCompare(bKind) || aGroup.localeCompare(bGroup)
     )
   }, [entries])
 
@@ -1250,8 +1300,8 @@ export const KubernetesExplorer = ({
     .find((entry) => entry !== undefined)
   const firstKind = firstBuiltinEntry
     ? kindKey(firstBuiltinEntry.apiGroup, firstBuiltinEntry.kind)
-    : customKinds.at(0)?.[0] ??
-      (helmEntries.length ? HELM_NAV_KIND : kindKey('', 'Deployment'))
+    : (customKinds.at(0)?.[0] ??
+      (helmEntries.length ? HELM_NAV_KIND : kindKey('', 'Deployment')))
 
   const [selectedKind, setSelectedKind] = useState(firstKind)
   const [namespace, setNamespace] = useState('')
@@ -1268,9 +1318,11 @@ export const KubernetesExplorer = ({
   const selectedKindName =
     selectedKind === HELM_NAV_KIND
       ? HELM_NAV_KIND
-      : entries.find(
+      : (entries.find(
           (entry) => kindKey(entry.apiGroup, entry.kind) === selectedKind
-        )?.kind ?? selectedKind.split('/').at(-1) ?? selectedKind
+        )?.kind ??
+        selectedKind.split('/').at(-1) ??
+        selectedKind)
 
   useEffect(() => {
     const availableKinds = new Set([
@@ -1294,8 +1346,7 @@ export const KubernetesExplorer = ({
         .filter((e) => kindKey(e.apiGroup, e.kind) === selectedKind)
         .filter((e) => !namespace || e.namespace === namespace)
         .filter(
-          (e) =>
-            !search || e.name.toLowerCase().includes(search.toLowerCase())
+          (e) => !search || e.name.toLowerCase().includes(search.toLowerCase())
         )
         .sort(
           (a, b) =>
@@ -1310,8 +1361,7 @@ export const KubernetesExplorer = ({
       helmEntries
         .filter((e) => !namespace || e.namespace === namespace)
         .filter(
-          (e) =>
-            !search || e.name.toLowerCase().includes(search.toLowerCase())
+          (e) => !search || e.name.toLowerCase().includes(search.toLowerCase())
         ),
     [helmEntries, namespace, search]
   )
@@ -1333,8 +1383,7 @@ export const KubernetesExplorer = ({
 
   const isSelected = (e: TK8sEntry) => selectedKey === entryKey(e)
 
-  const isHelmSelected = (e: THelmEntry) =>
-    selectedHelmKey === helmEntryKey(e)
+  const isHelmSelected = (e: THelmEntry) => selectedHelmKey === helmEntryKey(e)
 
   return (
     <div className="flex w-full h-full min-h-0 border border-cool-grey-200 dark:border-dark-grey-600 rounded-lg overflow-hidden bg-white dark:bg-dark-grey-900">
@@ -1358,7 +1407,11 @@ export const KubernetesExplorer = ({
             <div key={section.heading} className="flex flex-col gap-1">
               <div className="flex items-center gap-1.5 px-2.5">
                 <Icon variant={SECTION_ICONS[section.heading]} size={14} />
-                <Text variant="label" weight="strong" className="uppercase opacity-60">
+                <Text
+                  variant="label"
+                  weight="strong"
+                  className="uppercase opacity-60"
+                >
                   {section.heading}
                 </Text>
               </div>
@@ -1379,7 +1432,11 @@ export const KubernetesExplorer = ({
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5 px-2.5">
               <Icon variant={SECTION_ICONS['Helm']} size={14} />
-              <Text variant="label" weight="strong" className="uppercase opacity-60">
+              <Text
+                variant="label"
+                weight="strong"
+                className="uppercase opacity-60"
+              >
                 Helm
               </Text>
             </div>
@@ -1395,7 +1452,11 @@ export const KubernetesExplorer = ({
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5 px-2.5">
               <Icon variant={SECTION_ICONS['Custom resources']} size={14} />
-              <Text variant="label" weight="strong" className="uppercase opacity-60">
+              <Text
+                variant="label"
+                weight="strong"
+                className="uppercase opacity-60"
+              >
                 Custom resources
               </Text>
             </div>
@@ -1442,20 +1503,25 @@ export const KubernetesExplorer = ({
               <table className="w-full border-collapse">
                 <thead className="sticky top-0 bg-white dark:bg-dark-grey-900 z-[1]">
                   <tr className="border-b border-cool-grey-200 dark:border-dark-grey-600">
-                    {['Name', 'Namespace', 'Revision', 'History', 'Updated', 'Status'].map(
-                      (header) => (
-                        <th key={header} className="text-left px-3 py-2">
-                          <Text
-                            variant="label"
-                            weight="strong"
-                            className="uppercase opacity-60"
-                            nowrap
-                          >
-                            {header}
-                          </Text>
-                        </th>
-                      )
-                    )}
+                    {[
+                      'Name',
+                      'Namespace',
+                      'Revision',
+                      'History',
+                      'Updated',
+                      'Status',
+                    ].map((header) => (
+                      <th key={header} className="text-left px-3 py-2">
+                        <Text
+                          variant="label"
+                          weight="strong"
+                          className="uppercase opacity-60"
+                          nowrap
+                        >
+                          {header}
+                        </Text>
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -1529,7 +1595,12 @@ export const KubernetesExplorer = ({
                 <tr className="border-b border-cool-grey-200 dark:border-dark-grey-600">
                   {columns.map((col) => (
                     <th key={col.header} className="text-left px-3 py-2">
-                      <Text variant="label" weight="strong" className="uppercase opacity-60" nowrap>
+                      <Text
+                        variant="label"
+                        weight="strong"
+                        className="uppercase opacity-60"
+                        nowrap
+                      >
                         {col.header}
                       </Text>
                     </th>
@@ -1547,7 +1618,9 @@ export const KubernetesExplorer = ({
                         : 'hover:bg-cool-grey-50 dark:hover:bg-dark-grey-800'
                     )}
                     onClick={() =>
-                      setSelectedKey(isSelected(row) ? undefined : entryKey(row))
+                      setSelectedKey(
+                        isSelected(row) ? undefined : entryKey(row)
+                      )
                     }
                   >
                     {columns.map((col) => (

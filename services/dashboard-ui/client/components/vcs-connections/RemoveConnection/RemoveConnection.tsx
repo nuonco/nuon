@@ -33,13 +33,7 @@ export const RemoveConnectionModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-          theme="error"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
           <Icon variant="TrashIcon" size="24" />
           Disconnect GitHub account?
         </Text>
@@ -89,7 +83,8 @@ export const RemoveConnectionModal = ({
           <Text variant="body">This will:</Text>
           <ul className="flex flex-col gap-1 list-disc pl-6 text-sm text-cool-grey-700 dark:text-cool-grey-300">
             <li>
-              Remove your Nuon organization&apos;s access to private repositories
+              Remove your Nuon organization&apos;s access to private
+              repositories
             </li>
             <li>Potentially affect any workflows using private repos</li>
             <li>Allow you to reconnect this account at any time</li>

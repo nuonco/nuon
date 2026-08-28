@@ -38,28 +38,88 @@ const mockTimeseries: TPolicyAnalyticsTimeseries = {
 const mockByPolicy: TPolicyAnalyticsBreakdown = {
   dimension: 'policy_id',
   entries: [
-    { key: 'pol_restrict_ns', evaluations: 400, denies: 12, warns: 20, passes: 368 },
-    { key: 'pol_ecr_only', evaluations: 350, denies: 8, warns: 30, passes: 312 },
-    { key: 'pol_resource_limits', evaluations: 300, denies: 3, warns: 25, passes: 272 },
-    { key: 'pol_no_latest_tag', evaluations: 197, denies: 0, warns: 14, passes: 183 },
+    {
+      key: 'pol_restrict_ns',
+      evaluations: 400,
+      denies: 12,
+      warns: 20,
+      passes: 368,
+    },
+    {
+      key: 'pol_ecr_only',
+      evaluations: 350,
+      denies: 8,
+      warns: 30,
+      passes: 312,
+    },
+    {
+      key: 'pol_resource_limits',
+      evaluations: 300,
+      denies: 3,
+      warns: 25,
+      passes: 272,
+    },
+    {
+      key: 'pol_no_latest_tag',
+      evaluations: 197,
+      denies: 0,
+      warns: 14,
+      passes: 183,
+    },
   ],
 }
 
 const mockByInstall: TPolicyAnalyticsBreakdown = {
   dimension: 'install_id',
   entries: [
-    { key: 'ins_customer_acme', evaluations: 500, denies: 15, warns: 40, passes: 445 },
-    { key: 'ins_customer_globex', evaluations: 400, denies: 5, warns: 30, passes: 365 },
-    { key: 'ins_customer_initech', evaluations: 347, denies: 3, warns: 19, passes: 325 },
+    {
+      key: 'ins_customer_acme',
+      evaluations: 500,
+      denies: 15,
+      warns: 40,
+      passes: 445,
+    },
+    {
+      key: 'ins_customer_globex',
+      evaluations: 400,
+      denies: 5,
+      warns: 30,
+      passes: 365,
+    },
+    {
+      key: 'ins_customer_initech',
+      evaluations: 347,
+      denies: 3,
+      warns: 19,
+      passes: 325,
+    },
   ],
 }
 
 const mockByOwnerType: TPolicyAnalyticsBreakdown = {
   dimension: 'owner_type',
   entries: [
-    { key: 'install_deploys', evaluations: 850, denies: 18, warns: 60, passes: 772 },
-    { key: 'component_builds', evaluations: 310, denies: 5, warns: 22, passes: 283 },
-    { key: 'install_sandbox_runs', evaluations: 87, denies: 0, warns: 7, passes: 80 },
+    {
+      key: 'install_deploys',
+      evaluations: 850,
+      denies: 18,
+      warns: 60,
+      passes: 772,
+    },
+    {
+      key: 'component_builds',
+      evaluations: 310,
+      denies: 5,
+      warns: 22,
+      passes: 283,
+    },
+    {
+      key: 'install_sandbox_runs',
+      evaluations: 87,
+      denies: 0,
+      warns: 7,
+      passes: 80,
+    },
   ],
 }
 
@@ -119,7 +179,13 @@ export const Empty = () => (
       start: '',
       end: '',
     }}
-    timeseries={{ interval: 'day', group_by: [], start: '', end: '', buckets: [] }}
+    timeseries={{
+      interval: 'day',
+      group_by: [],
+      start: '',
+      end: '',
+      buckets: [],
+    }}
     byPolicy={{ dimension: 'policy_id', entries: [] }}
     byInstall={{ dimension: 'install_id', entries: [] }}
     byOwnerType={{ dimension: 'owner_type', entries: [] }}

@@ -25,7 +25,11 @@ export const DriftScanSandboxModalContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
 
-  const { mutate: execute, isPending, error } = useMutation({
+  const {
+    mutate: execute,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: () =>
       reprovisionSandbox({
         body: { plan_only: true },
@@ -41,7 +45,13 @@ export const DriftScanSandboxModalContainer = ({
       })
       addToast(
         <Toast heading="Sandbox drift scan started" theme="info">
-          <Text>Scanning <Badge variant="code" size="md">{install.name}</Badge> sandbox for drift.</Text>
+          <Text>
+            Scanning{' '}
+            <Badge variant="code" size="md">
+              {install.name}
+            </Badge>{' '}
+            sandbox for drift.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)
@@ -61,7 +71,13 @@ export const DriftScanSandboxModalContainer = ({
       })
       addToast(
         <Toast heading="Sandbox drift scan failed" theme="error">
-          <Text>Unable to start drift scan for <Badge variant="code" size="md">{install.name}</Badge> sandbox.</Text>
+          <Text>
+            Unable to start drift scan for{' '}
+            <Badge variant="code" size="md">
+              {install.name}
+            </Badge>{' '}
+            sandbox.
+          </Text>
         </Toast>
       )
     },
@@ -78,9 +94,7 @@ export const DriftScanSandboxModalContainer = ({
   )
 }
 
-export const DriftScanSandboxButton = ({
-  ...props
-}: IButtonAsButton) => {
+export const DriftScanSandboxButton = ({ ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
 
   const modal = <DriftScanSandboxModalContainer />

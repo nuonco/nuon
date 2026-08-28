@@ -40,7 +40,11 @@ describe('span-tree', () => {
     test('child span is nested under parent', () => {
       const spans = [
         span({ span_id: 'parent', start_time: '2024-01-01T00:00:00.000Z' }),
-        span({ span_id: 'child', parent_span_id: 'parent', start_time: '2024-01-01T00:00:00.100Z' }),
+        span({
+          span_id: 'child',
+          parent_span_id: 'parent',
+          start_time: '2024-01-01T00:00:00.100Z',
+        }),
       ]
       const forest = buildSpanForest(spans)
       expect(forest).toHaveLength(1)
@@ -53,8 +57,16 @@ describe('span-tree', () => {
     test('siblings are sorted by start_time', () => {
       const spans = [
         span({ span_id: 'root' }),
-        span({ span_id: 'b', parent_span_id: 'root', start_time: '2024-01-01T00:00:02.000Z' }),
-        span({ span_id: 'a', parent_span_id: 'root', start_time: '2024-01-01T00:00:01.000Z' }),
+        span({
+          span_id: 'b',
+          parent_span_id: 'root',
+          start_time: '2024-01-01T00:00:02.000Z',
+        }),
+        span({
+          span_id: 'a',
+          parent_span_id: 'root',
+          start_time: '2024-01-01T00:00:01.000Z',
+        }),
       ]
       const forest = buildSpanForest(spans)
       expect(forest[0].children[0].span.span_id).toBe('a')
@@ -72,9 +84,7 @@ describe('span-tree', () => {
     })
 
     test('orphaned parent_span_id becomes a root', () => {
-      const spans = [
-        span({ span_id: 'child', parent_span_id: 'missing' }),
-      ]
+      const spans = [span({ span_id: 'child', parent_span_id: 'missing' })]
       const forest = buildSpanForest(spans)
       expect(forest).toHaveLength(1)
       expect(forest[0].span.span_id).toBe('child')
@@ -163,9 +173,21 @@ describe('span-tree', () => {
     test('flattens depth-first', () => {
       const spans = [
         span({ span_id: 'root', start_time: '2024-01-01T00:00:00.000Z' }),
-        span({ span_id: 'a', parent_span_id: 'root', start_time: '2024-01-01T00:00:01.000Z' }),
-        span({ span_id: 'a1', parent_span_id: 'a', start_time: '2024-01-01T00:00:02.000Z' }),
-        span({ span_id: 'b', parent_span_id: 'root', start_time: '2024-01-01T00:00:03.000Z' }),
+        span({
+          span_id: 'a',
+          parent_span_id: 'root',
+          start_time: '2024-01-01T00:00:01.000Z',
+        }),
+        span({
+          span_id: 'a1',
+          parent_span_id: 'a',
+          start_time: '2024-01-01T00:00:02.000Z',
+        }),
+        span({
+          span_id: 'b',
+          parent_span_id: 'root',
+          start_time: '2024-01-01T00:00:03.000Z',
+        }),
       ]
       const forest = buildSpanForest(spans)
       const flat = flattenForest(forest)
@@ -184,7 +206,9 @@ describe('span-tree', () => {
         span({ span_id: 'b', start_time: '2024-01-01T00:00:01.000Z' }),
         span({ span_id: 'c', start_time: '2024-01-01T00:00:10.000Z' }),
       ]
-      expect(traceStart(spans)).toBe(new Date('2024-01-01T00:00:01.000Z').getTime())
+      expect(traceStart(spans)).toBe(
+        new Date('2024-01-01T00:00:01.000Z').getTime()
+      )
     })
   })
 
@@ -199,7 +223,9 @@ describe('span-tree', () => {
         span({ span_id: 'b', end_time: '2024-01-01T00:00:10.000Z' }),
         span({ span_id: 'c', end_time: '2024-01-01T00:00:01.000Z' }),
       ]
-      expect(traceEnd(spans)).toBe(new Date('2024-01-01T00:00:10.000Z').getTime())
+      expect(traceEnd(spans)).toBe(
+        new Date('2024-01-01T00:00:10.000Z').getTime()
+      )
     })
   })
 

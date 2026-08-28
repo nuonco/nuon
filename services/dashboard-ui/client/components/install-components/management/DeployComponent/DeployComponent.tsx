@@ -61,12 +61,7 @@ export const DeployComponentModal = ({
     <Modal
       heading={
         <div className="flex flex-col gap-2">
-          <Text
-            flex
-            className="gap-4"
-            variant="h3"
-            weight="strong"
-          >
+          <Text flex className="gap-4" variant="h3" weight="strong">
             <Icon variant="CloudArrowUpIcon" size="24" />
             Deploy {component.name} component
           </Text>
@@ -115,10 +110,18 @@ export const DeployComponentModal = ({
                 'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-3 max-w-none items-start',
               labelText: (
                 <span className="flex flex-col gap-1">
-                  <Text variant="base" weight="stronger" className="!leading-none">
+                  <Text
+                    variant="base"
+                    weight="stronger"
+                    className="!leading-none"
+                  >
                     Sync dependency images
                   </Text>
-                  <Text variant="subtext" theme="neutral" className="!leading-none">
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="!leading-none"
+                  >
                     Sync any images that this component depends on.
                   </Text>
                 </span>
@@ -134,11 +137,20 @@ export const DeployComponentModal = ({
                 'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-3 max-w-none items-start',
               labelText: (
                 <span className="flex flex-col gap-1">
-                  <Text variant="base" weight="stronger" className="!leading-none">
+                  <Text
+                    variant="base"
+                    weight="stronger"
+                    className="!leading-none"
+                  >
                     Deploy dependents
                   </Text>
-                  <Text variant="subtext" theme="neutral" className="!leading-none">
-                    Trigger a deploy for any component that depends on this component.
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="!leading-none"
+                  >
+                    Trigger a deploy for any component that depends on this
+                    component.
                   </Text>
                 </span>
               ),
@@ -158,7 +170,8 @@ export const DeployComponentModal = ({
 
         {buildSelect({
           selectedBuildId: buildId,
-          onSelectBuild: (selectedBuildId: string) => setBuildId(selectedBuildId),
+          onSelectBuild: (selectedBuildId: string) =>
+            setBuildId(selectedBuildId),
           onClose: handleClose,
         })}
 

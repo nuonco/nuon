@@ -16,7 +16,7 @@ export const Skeleton = ({
   lines = 1,
   width = '100%',
   height = '1rem',
-  maxWidth
+  maxWidth,
 }: ISkeleton) => {
   const widths = Array.isArray(width) ? width : Array(lines).fill(width)
 

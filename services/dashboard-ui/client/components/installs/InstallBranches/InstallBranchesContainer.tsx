@@ -1,7 +1,12 @@
 import { useMemo } from 'react'
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { getBranchWorkflowRuns, getBranchRunBuilds, getBranchRunInstallGroups, getInstallAppConfigVersions } from '@/lib'
+import {
+  getBranchWorkflowRuns,
+  getBranchRunBuilds,
+  getBranchRunInstallGroups,
+  getInstallAppConfigVersions,
+} from '@/lib'
 import { InstallBranches, type IBranchEntry } from './InstallBranches'
 import type { TInstall } from '@/types'
 
@@ -9,7 +14,9 @@ interface IInstallBranchesContainer {
   install?: TInstall
 }
 
-export const InstallBranchesSection = ({ install }: IInstallBranchesContainer) => {
+export const InstallBranchesSection = ({
+  install,
+}: IInstallBranchesContainer) => {
   const { org } = useOrg()
   const orgId = org?.id ?? ''
   const appId = install?.app_id ?? ''
@@ -40,19 +47,20 @@ export const InstallBranchesSection = ({ install }: IInstallBranchesContainer) =
     })),
   })
 
-  const runsWithIds = useMemo(() =>
-    connections.map((conn, idx) => {
-      const runs = runQueries[idx]?.data?.data ?? []
-      const run = runs[0]
-      const branchRun = run?.app_branch_runs?.at(0)
-      return {
-        conn,
-        run,
-        branchRun,
-        branchRunId: branchRun?.id,
-        branchId: conn.app_branch_id ?? '',
-      }
-    }),
+  const runsWithIds = useMemo(
+    () =>
+      connections.map((conn, idx) => {
+        const runs = runQueries[idx]?.data?.data ?? []
+        const run = runs[0]
+        const branchRun = run?.app_branch_runs?.at(0)
+        return {
+          conn,
+          run,
+          branchRun,
+          branchRunId: branchRun?.id,
+          branchId: conn.app_branch_id ?? '',
+        }
+      }),
     [connections, runQueries]
   )
 
@@ -72,7 +80,13 @@ export const InstallBranchesSection = ({ install }: IInstallBranchesContainer) =
 
   const installGroupQueries = useQueries({
     queries: runsWithIds.map(({ branchId, branchRunId }) => ({
-      queryKey: ['branch-run-install-groups', orgId, appId, branchId, branchRunId],
+      queryKey: [
+        'branch-run-install-groups',
+        orgId,
+        appId,
+        branchId,
+        branchRunId,
+      ],
       queryFn: () =>
         getBranchRunInstallGroups({
           orgId: orgId!,
@@ -88,7 +102,8 @@ export const InstallBranchesSection = ({ install }: IInstallBranchesContainer) =
   const { data: configVersions } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-app-config-versions', orgId, installId],
-    queryFn: () => getInstallAppConfigVersions({ installId: installId!, orgId: orgId! }),
+    queryFn: () =>
+      getInstallAppConfigVersions({ installId: installId!, orgId: orgId! }),
     enabled: !!orgId && !!installId,
   })
 
@@ -96,9 +111,13 @@ export const InstallBranchesSection = ({ install }: IInstallBranchesContainer) =
     () =>
       runsWithIds.map(({ conn, run, branchRun }, idx) => {
         const configStep = run?.steps?.find(
-          (s: any) => s.name?.toLowerCase().includes('config') && !s.name?.toLowerCase().includes('diff')
+          (s: any) =>
+            s.name?.toLowerCase().includes('config') &&
+            !s.name?.toLowerCase().includes('diff')
         )
-        const appConfigId = configStep?.status?.metadata?.app_config_id as string | undefined
+        const appConfigId = configStep?.status?.metadata?.app_config_id as
+          | string
+          | undefined
 
         const branchVersions = (configVersions ?? []).filter(
           (v) => !!v.app_branch_run_id
@@ -120,5 +139,12 @@ export const InstallBranchesSection = ({ install }: IInstallBranchesContainer) =
     [runsWithIds, buildQueries, installGroupQueries, configVersions]
   )
 
-  return <InstallBranches branches={branches} orgId={orgId} appId={appId} installId={installId} />
+  return (
+    <InstallBranches
+      branches={branches}
+      orgId={orgId}
+      appId={appId}
+      installId={installId}
+    />
+  )
 }

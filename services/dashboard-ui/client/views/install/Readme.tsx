@@ -17,8 +17,7 @@ export const Readme = () => {
   const { data: result, isLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-readme', org?.id, install?.id],
-    queryFn: () =>
-      getInstallReadme({ orgId: org.id, installId: install.id }),
+    queryFn: () => getInstallReadme({ orgId: org.id, installId: install.id }),
     enabled: !!org?.id && !!install?.id,
   })
 

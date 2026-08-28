@@ -6,7 +6,13 @@ import { LoadRunnerHeartbeat } from './LoadRunnerHeartbeat'
 
 export const Default = () => (
   <LoadRunnerHeartbeat
-    heartbeat={{ version: 'v1.2.3', alive_time: 3600000000000, created_at: new Date().toISOString() } as any}
+    heartbeat={
+      {
+        version: 'v1.2.3',
+        alive_time: 3600000000000,
+        created_at: new Date().toISOString(),
+      } as any
+    }
     error={null}
     isLoading={false}
     platform="linux/amd64"

@@ -6,9 +6,7 @@ export interface RunbookFormValues {
 }
 
 export const isBooleanInput = (input: TRunbookInput) =>
-  input.type === 'bool' ||
-  input.default === 'true' ||
-  input.default === 'false'
+  input.type === 'bool' || input.default === 'true' || input.default === 'false'
 
 export const buildRunbookSchema = (inputs: TRunbookInput[]) =>
   z.object({

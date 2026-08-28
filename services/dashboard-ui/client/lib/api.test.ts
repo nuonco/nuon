@@ -26,6 +26,29 @@ test('api should return a list of apps when provided apps path', async () => {
   expect(Array.isArray(result)).toBe(true)
 })
 
+test('api sends Blob bodies without JSON encoding them', async () => {
+  const contents = 'support snapshot bytes'
+
+  server.use(
+    http.post(`${baseUrl}/v1/snapshots`, async ({ request }) => {
+      expect(request.headers.get('content-type')).toBe('application/zstd')
+      expect(await request.text()).toBe(contents)
+      return HttpResponse.json({ uploaded: true })
+    })
+  )
+
+  const result = await api<{ uploaded: boolean }>({
+    path: 'snapshots',
+    orgId,
+    baseUrl,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/zstd' },
+    body: new Blob([contents], { type: 'application/zstd' }),
+  })
+
+  expect(result).toEqual({ uploaded: true })
+})
+
 test.each([[400], [401], [403], [404], [500]])(
   '%s status rejects',
   async (status) => {

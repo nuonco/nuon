@@ -42,7 +42,8 @@ const STEPS = [
     description: (
       <div className="flex flex-col gap-2">
         <p>
-          An org is an isolated place for metadata about your apps, installs, workflows and logs in Nuon Cloud.
+          An org is an isolated place for metadata about your apps, installs,
+          workflows and logs in Nuon Cloud.
         </p>
         <p className="text-sm opacity-80">
           <a
@@ -53,7 +54,8 @@ const STEPS = [
           >
             Contact sales
           </a>{' '}
-          if you want to run Nuon&apos;s control plane in your AWS, Azure, or GCP.
+          if you want to run Nuon&apos;s control plane in your AWS, Azure, or
+          GCP.
         </p>
       </div>
     ),
@@ -82,10 +84,13 @@ const STEPS = [
     description: (
       <div className="flex flex-col gap-2">
         <p>
-          Syncing pushes your app to Nuon and triggers a build. Run this from inside your cloned app directory.
+          Syncing pushes your app to Nuon and triggers a build. Run this from
+          inside your cloned app directory.
         </p>
         <p className="text-sm opacity-80">
-          A build creates OCI artifacts for the components in your app (e.g., Helm, Terraform, container image, Kubernetes manifest, etc.) and stores them in an isolated container registry in your org.
+          A build creates OCI artifacts for the components in your app (e.g.,
+          Helm, Terraform, container image, Kubernetes manifest, etc.) and
+          stores them in an isolated container registry in your org.
         </p>
       </div>
     ),
@@ -95,7 +100,8 @@ const STEPS = [
     id: 'step-6',
     title: 'Create an install',
     navLabel: 'Deploy Install',
-    description: 'Create an install to deploy your app to a cloud account. (Scroll down to find the Create install button.)',
+    description:
+      'Create an install to deploy your app to a cloud account. (Scroll down to find the Create install button.)',
     component: CreateInstallStep,
   },
 ]
@@ -112,14 +118,16 @@ const STEPS_V2 = [
     id: 'v2-step-2',
     title: 'Tell us about your app',
     navLabel: 'Your stack',
-    description: 'Pick your cloud platform and app attributes, or start from a working example.',
+    description:
+      'Pick your cloud platform and app attributes, or start from a working example.',
     component: AppProfileStep,
   },
   {
     id: 'v2-step-3',
     title: 'Choose how to deploy',
     navLabel: 'Install',
-    description: 'Connect your own cloud account or use a managed sandbox to explore the platform.',
+    description:
+      'Connect your own cloud account or use a managed sandbox to explore the platform.',
     component: CloudSetupStep,
   },
   {
@@ -173,15 +181,18 @@ export function Onboarding() {
       }
     }
     load()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [onboardingV2, requestedOrgId])
 
   if (!initialSharedData) return null
 
   const onboarding = initialSharedData.onboarding as TOnboarding | undefined
-  const initialStepIndex = onboardingV2 && onboarding?.current_step
-    ? ONBOARDING_STEP_TO_INDEX[onboarding.current_step] ?? 0
-    : undefined
+  const initialStepIndex =
+    onboardingV2 && onboarding?.current_step
+      ? (ONBOARDING_STEP_TO_INDEX[onboarding.current_step] ?? 0)
+      : undefined
 
   const wizard = (
     <OnboardingWizard
@@ -198,10 +209,10 @@ export function Onboarding() {
     <ToastProvider>
       <PageTitle title="Onboarding" />
       <SurfacesProvider>
-        {onboardingV2 ? wizard : (
-          <OnboardingJourneyProvider>
-            {wizard}
-          </OnboardingJourneyProvider>
+        {onboardingV2 ? (
+          wizard
+        ) : (
+          <OnboardingJourneyProvider>{wizard}</OnboardingJourneyProvider>
         )}
       </SurfacesProvider>
     </ToastProvider>

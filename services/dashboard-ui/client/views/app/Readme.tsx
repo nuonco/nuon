@@ -26,8 +26,7 @@ export const Readme = () => {
   const { data: appConfig, isLoading: isLoadingConfig } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-config', org?.id, app?.id, appConfigId],
-    queryFn: () =>
-      getAppConfig({ orgId: org.id, appId: app.id, appConfigId }),
+    queryFn: () => getAppConfig({ orgId: org.id, appId: app.id, appConfigId }),
     enabled: !!org?.id && !!app?.id && !!appConfigId,
   })
 
@@ -61,7 +60,6 @@ export const Readme = () => {
           emptyMessage="You can add a README for your app in your app config TOML file."
         />
       )}
-
     </PageSection>
   )
 }

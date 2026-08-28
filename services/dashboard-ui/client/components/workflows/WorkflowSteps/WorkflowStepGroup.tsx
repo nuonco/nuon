@@ -7,12 +7,16 @@ export interface IWorkflowStepGroup {
   steps: TWorkflowStep[]
   approvalPrompt?: boolean
   planOnly?: boolean
+  readOnly?: boolean
+  onViewDetails?: (step: TWorkflowStep) => void
 }
 
 export const WorkflowStepGroup = ({
   steps,
   approvalPrompt = false,
   planOnly = false,
+  readOnly = false,
+  onViewDetails,
 }: IWorkflowStepGroup) => {
   const latest = steps.at(-1)
   const prior = steps
@@ -40,6 +44,8 @@ export const WorkflowStepGroup = ({
             approvalPrompt={approvalPrompt}
             planOnly={planOnly}
             showRetry
+            readOnly={readOnly}
+            onViewDetails={onViewDetails}
           />
         </div>
       }
@@ -54,6 +60,8 @@ export const WorkflowStepGroup = ({
               showRetry={false}
               attemptNumber={attemptNumber}
               nested
+              readOnly={readOnly}
+              onViewDetails={onViewDetails}
             />
           </div>
         ))}

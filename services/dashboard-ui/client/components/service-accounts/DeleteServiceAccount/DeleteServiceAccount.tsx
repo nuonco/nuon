@@ -54,8 +54,8 @@ export const DeleteServiceAccountModal = ({
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Text variant="body" theme="neutral">
-              {accountIdentity} will be deleted and any tokens issued to it will stop
-              working immediately.
+              {accountIdentity} will be deleted and any tokens issued to it will
+              stop working immediately.
             </Text>
           </div>
 
@@ -75,7 +75,9 @@ export const DeleteServiceAccountModal = ({
               onChange={(e) => setConfirmValue(e.target.value)}
               error={confirmValue.length > 0 && !isConfirmValid}
               errorMessage={
-                confirmValue.length > 0 && !isConfirmValid ? "Doesn't match" : undefined
+                confirmValue.length > 0 && !isConfirmValid
+                  ? "Doesn't match"
+                  : undefined
               }
             />
           </div>

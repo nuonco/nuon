@@ -51,7 +51,9 @@ const TimelineBase = <T extends IHasCreatedAt>({
             <Text className="timeline-date">{formatToRelativeDay(date)}</Text>
             <div className="timeline-events">
               {groupedEvents[date].map((event, idx) => (
-                <React.Fragment key={getEventKey?.(event, idx) ?? event.created_at}>
+                <React.Fragment
+                  key={getEventKey?.(event, idx) ?? event.created_at}
+                >
                   {renderEvent ? renderEvent?.(event, idx) : null}
                 </React.Fragment>
               ))}

@@ -22,8 +22,17 @@ export const defaultInterests = (): Interests => ({
       drift_detected: true,
       component_health: true,
     },
-    sandboxes: { outcome: 'completion', approval_requests: true, approval_responses: true, drift_detected: true },
-    install_configurations: { outcome: 'completion', approval_requests: true, approval_responses: true },
+    sandboxes: {
+      outcome: 'completion',
+      approval_requests: true,
+      approval_responses: true,
+      drift_detected: true,
+    },
+    install_configurations: {
+      outcome: 'completion',
+      approval_requests: true,
+      approval_responses: true,
+    },
     app_branches: { outcome: 'completion', config_synced: true },
   },
 })

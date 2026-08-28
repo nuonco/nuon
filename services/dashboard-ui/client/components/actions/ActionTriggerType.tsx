@@ -61,12 +61,7 @@ export const ActionTriggerType = ({
         className="inline-flex items-center gap-1.5 min-w-0"
       >
         {label}:
-        <Cron
-          cron={cronSchedule}
-          variant="subtext"
-          family="mono"
-          showTooltip
-        />
+        <Cron cron={cronSchedule} variant="subtext" family="mono" showTooltip />
       </Text>
     )
   }

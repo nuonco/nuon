@@ -6,11 +6,16 @@ function yamlKeyPrefix(line: string): string | null {
   return null
 }
 
-function lcs(a: string[], b: string[]): { type: 'equal' | 'remove' | 'add'; line: string }[] {
+function lcs(
+  a: string[],
+  b: string[]
+): { type: 'equal' | 'remove' | 'add'; line: string }[] {
   const n = a.length
   const m = b.length
 
-  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0))
+  const dp: number[][] = Array.from({ length: n + 1 }, () =>
+    new Array(m + 1).fill(0)
+  )
   for (let i = n - 1; i >= 0; i--) {
     for (let j = m - 1; j >= 0; j--) {
       if (a[i] === b[j]) {

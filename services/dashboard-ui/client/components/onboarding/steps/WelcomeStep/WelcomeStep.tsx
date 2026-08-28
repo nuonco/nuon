@@ -13,7 +13,12 @@ interface IWelcomeStep {
   onAdvance: () => void
 }
 
-export const WelcomeStep = ({ isPending, nextStepTitle, onSubmit, onAdvance }: IWelcomeStep) => {
+export const WelcomeStep = ({
+  isPending,
+  nextStepTitle,
+  onSubmit,
+  onAdvance,
+}: IWelcomeStep) => {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -42,14 +47,22 @@ export const WelcomeStep = ({ isPending, nextStepTitle, onSubmit, onAdvance }: I
         />
       </div>
       <div className="flex self-end">
-        <Button type="submit" variant="primary" disabled={isPending} onClick={onAdvance}>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={isPending}
+          onClick={onAdvance}
+        >
           {isPending ? (
             <span className="flex items-center gap-2">
               <Icon variant="Loading" />
               Saving...
             </span>
           ) : (
-            <>{nextStepTitle ?? 'Continue'} <Icon variant="CaretRightIcon" weight="bold" /></>
+            <>
+              {nextStepTitle ?? 'Continue'}{' '}
+              <Icon variant="CaretRightIcon" weight="bold" />
+            </>
           )}
         </Button>
       </div>

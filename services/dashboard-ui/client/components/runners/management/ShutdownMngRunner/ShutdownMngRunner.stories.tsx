@@ -9,18 +9,33 @@ const noop = () => {}
 
 export const Default = () => (
   <ModalStory>
-    <ShutdownMngRunnerModal label="Shutdown process" error={null} isLoading={false} onConfirm={noop} />
+    <ShutdownMngRunnerModal
+      label="Shutdown process"
+      error={null}
+      isLoading={false}
+      onConfirm={noop}
+    />
   </ModalStory>
 )
 
 export const Loading = () => (
   <ModalStory>
-    <ShutdownMngRunnerModal label="Shutdown process" error={null} isLoading={true} onConfirm={noop} />
+    <ShutdownMngRunnerModal
+      label="Shutdown process"
+      error={null}
+      isLoading={true}
+      onConfirm={noop}
+    />
   </ModalStory>
 )
 
 export const WithError = () => (
   <ModalStory>
-    <ShutdownMngRunnerModal label="Shutdown process" error={{ error: 'Shutdown failed' }} isLoading={false} onConfirm={noop} />
+    <ShutdownMngRunnerModal
+      label="Shutdown process"
+      error={{ error: 'Shutdown failed' }}
+      isLoading={false}
+      onConfirm={noop}
+    />
   </ModalStory>
 )

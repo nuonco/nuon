@@ -28,6 +28,7 @@ func (s *Helpers) CreateWorkflowWithRole(
 		metadata,
 		planOnly,
 		role,
+		app.InstallApprovalOptionPrompt,
 	)
 }
 
@@ -45,6 +46,26 @@ func (s *Helpers) CreateWorkflow(
 		metadata,
 		planOnly,
 		"",
+		app.InstallApprovalOptionPrompt,
+	)
+}
+
+func (s *Helpers) CreateWorkflowWithApprovalOption(
+	ctx context.Context,
+	installID string,
+	workflowType app.WorkflowType,
+	metadata map[string]string,
+	planOnly bool,
+	approvalOption app.InstallApprovalOption,
+) (*app.Workflow, error) {
+	return s.createWorkflow(
+		ctx,
+		installID,
+		workflowType,
+		metadata,
+		planOnly,
+		"",
+		approvalOption,
 	)
 }
 
@@ -54,6 +75,7 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	metadata map[string]string,
 	planOnly bool,
 	role string,
+	approvalOptionOverride app.InstallApprovalOption,
 ) (*app.Workflow, error) {
 	if workflowType.RequiresInstallRunner() {
 		disabled, err := s.IsRunnerDisabled(ctx, installID)
@@ -66,13 +88,17 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	}
 
 	approvalOption := app.InstallApprovalOptionPrompt
-	installConfig, err := s.GetLatestInstallConfig(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to set approval option")
-	}
+	if approvalOptionOverride != "" {
+		approvalOption = approvalOptionOverride
+	} else {
+		installConfig, err := s.GetLatestInstallConfig(ctx, installID)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to set approval option")
+		}
 
-	if installConfig != nil {
-		approvalOption = installConfig.ApprovalOption
+		if installConfig != nil {
+			approvalOption = installConfig.ApprovalOption
+		}
 	}
 
 	// Label the approval source so the UI can show where auto-approve came from

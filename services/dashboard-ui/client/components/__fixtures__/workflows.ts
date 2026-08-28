@@ -44,7 +44,19 @@ export const mockWorkflow: TWorkflow = {
   type: 'deploy_components',
   steps: [
     mockWorkflowStep,
-    { ...mockWorkflowStep, id: 'step-010', name: 'apply-terraform', execution_type: 'approval', approval: { id: 'a-010', type: 'terraform_plan', response: undefined } },
-    { ...mockWorkflowStep, id: 'step-011', name: 'deploy-helm-chart', execution_type: 'approval', approval: { id: 'a-011', type: 'helm_approval', response: undefined } },
+    {
+      ...mockWorkflowStep,
+      id: 'step-010',
+      name: 'apply-terraform',
+      execution_type: 'approval',
+      approval: { id: 'a-010', type: 'terraform_plan', response: undefined },
+    },
+    {
+      ...mockWorkflowStep,
+      id: 'step-011',
+      name: 'deploy-helm-chart',
+      execution_type: 'approval',
+      approval: { id: 'a-011', type: 'helm_approval', response: undefined },
+    },
   ],
 } as TWorkflow

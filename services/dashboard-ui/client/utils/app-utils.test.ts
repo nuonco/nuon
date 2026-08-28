@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { hasNewerAppConfig, hasStackConfigChanged, normalizeAppInputGroups } from './app-utils'
+import {
+  hasNewerAppConfig,
+  hasStackConfigChanged,
+  normalizeAppInputGroups,
+} from './app-utils'
 import type { TAppConfig, TInstall } from '@/types'
 
 describe('app-utils', () => {
@@ -65,13 +69,23 @@ describe('app-utils', () => {
 
     test('returns true when runner_nested_template_url differs', () => {
       const a = { stack: { ...baseStack } } as TAppConfig
-      const b = { stack: { ...baseStack, runner_nested_template_url: 'https://example.com/new.yaml' } } as TAppConfig
+      const b = {
+        stack: {
+          ...baseStack,
+          runner_nested_template_url: 'https://example.com/new.yaml',
+        },
+      } as TAppConfig
       expect(hasStackConfigChanged(a, b)).toBe(true)
     })
 
     test('returns true when vpc_nested_template_url differs', () => {
       const a = { stack: { ...baseStack } } as TAppConfig
-      const b = { stack: { ...baseStack, vpc_nested_template_url: 'https://example.com/new-vpc.yaml' } } as TAppConfig
+      const b = {
+        stack: {
+          ...baseStack,
+          vpc_nested_template_url: 'https://example.com/new-vpc.yaml',
+        },
+      } as TAppConfig
       expect(hasStackConfigChanged(a, b)).toBe(true)
     })
 
@@ -106,7 +120,7 @@ describe('app-utils', () => {
           index: 1,
         },
         {
-          id: 'group-2', 
+          id: 'group-2',
           name: 'Network Settings',
           description: 'Network configuration',
           index: 2,
@@ -124,7 +138,7 @@ describe('app-utils', () => {
         {
           id: 'input-2',
           name: 'db_port',
-          type: 'number', 
+          type: 'number',
           group_id: 'group-1',
           required: false,
         },
@@ -157,7 +171,7 @@ describe('app-utils', () => {
               id: 'input-2',
               name: 'db_port',
               type: 'number',
-              group_id: 'group-1', 
+              group_id: 'group-1',
               required: false,
             },
           ],
@@ -270,13 +284,15 @@ describe('app-utils', () => {
 
       const result = normalizeAppInputGroups(groups, inputs)
 
-      expect(result[0]).toEqual(expect.objectContaining({
-        id: 'group-1',
-        name: 'Advanced Group',
-        description: 'Advanced configuration options',
-        index: 10,
-        custom_field: 'custom_value',
-      }))
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          id: 'group-1',
+          name: 'Advanced Group',
+          description: 'Advanced configuration options',
+          index: 10,
+          custom_field: 'custom_value',
+        })
+      )
       expect(result[0].app_inputs).toHaveLength(1)
     })
   })

@@ -8,7 +8,9 @@ import { DeprovisionStackModal } from './DeprovisionStack'
 
 interface IDeprovisionStack {}
 
-export const DeprovisionStackModalContainer = ({ ...props }: IDeprovisionStack & IModal) => {
+export const DeprovisionStackModalContainer = ({
+  ...props
+}: IDeprovisionStack & IModal) => {
   const { removeModal } = useSurfaces()
   const { install } = useInstall()
   const { appConfig } = useInstallAppConfig()

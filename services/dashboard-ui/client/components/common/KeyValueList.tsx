@@ -57,37 +57,50 @@ export const KeyValueList = ({
               {typeof value === 'number' ? (
                 <ClickToCopy>{value}</ClickToCopy>
               ) : value ? (
-                type === 'array' ? (() => {
-                  try {
-                    const parsed = JSON.parse(value)
-                    if (!parsed) return <Text variant="subtext" theme="neutral">—</Text>
-                    return (
-                      <CodeBlock language="json" showCopy>
-                        {JSON.stringify(parsed, null, 2)}
-                      </CodeBlock>
-                    )
-                  } catch {
-                    return <ClickToCopy>{value}</ClickToCopy>
-                  }
-                })() : type === 'object' ? (() => {
-                  try {
-                    const parsed = JSON.parse(value)
-                    if (parsed === null || parsed === undefined) {
-                      return <Text variant="subtext" theme="neutral">—</Text>
+                type === 'array' ? (
+                  (() => {
+                    try {
+                      const parsed = JSON.parse(value)
+                      if (!parsed)
+                        return (
+                          <Text variant="subtext" theme="neutral">
+                            —
+                          </Text>
+                        )
+                      return (
+                        <CodeBlock language="json" showCopy>
+                          {JSON.stringify(parsed, null, 2)}
+                        </CodeBlock>
+                      )
+                    } catch {
+                      return <ClickToCopy>{value}</ClickToCopy>
                     }
-                    return (
-                      <JSONViewer
-                        data={parsed}
-                        expanded={1}
-                        showDataTypes={false}
-                        showSize={false}
-                        className="!border-0 !rounded-none"
-                      />
-                    )
-                  } catch {
-                    return <ClickToCopy>{value}</ClickToCopy>
-                  }
-                })() : (
+                  })()
+                ) : type === 'object' ? (
+                  (() => {
+                    try {
+                      const parsed = JSON.parse(value)
+                      if (parsed === null || parsed === undefined) {
+                        return (
+                          <Text variant="subtext" theme="neutral">
+                            —
+                          </Text>
+                        )
+                      }
+                      return (
+                        <JSONViewer
+                          data={parsed}
+                          expanded={1}
+                          showDataTypes={false}
+                          showSize={false}
+                          className="!border-0 !rounded-none"
+                        />
+                      )
+                    } catch {
+                      return <ClickToCopy>{value}</ClickToCopy>
+                    }
+                  })()
+                ) : (
                   <ClickToCopy>{value}</ClickToCopy>
                 )
               ) : (

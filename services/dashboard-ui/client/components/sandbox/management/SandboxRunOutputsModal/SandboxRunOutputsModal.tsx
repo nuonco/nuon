@@ -22,12 +22,7 @@ export const SandboxRunOutputsModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="CodeBlockIcon" size="24" />
           {headingText}
         </Text>
@@ -64,7 +59,9 @@ export const SandboxRunOutputsModal = ({
   )
 }
 
-interface ISandboxRunOutputsButton extends ISandboxRunOutputsModal, IButtonAsButton {
+interface ISandboxRunOutputsButton
+  extends ISandboxRunOutputsModal,
+    IButtonAsButton {
   onOpen: () => void
 }
 
@@ -75,10 +72,7 @@ export const SandboxRunOutputsButton = ({
   ...props
 }: ISandboxRunOutputsButton) => {
   return (
-    <Button
-      onClick={onOpen}
-      {...props}
-    >
+    <Button onClick={onOpen} {...props}>
       {props?.isMenuButton ? null : <Icon variant="CodeBlockIcon" />}
       View outputs
       {props?.isMenuButton ? <Icon variant="CodeBlockIcon" /> : null}

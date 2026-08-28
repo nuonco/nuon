@@ -48,11 +48,10 @@ export const EntityMultiSelect = ({
   const [search, setSearch] = useState('')
   // names cache for ids that aren't in the current search results — keeps
   // the chip labels stable across re-renders.
-  const [resolvedNames, setResolvedNames] = useState<Record<string, string>>(
-    {}
-  )
+  const [resolvedNames, setResolvedNames] = useState<Record<string, string>>({})
 
-  const needsApp = kind === 'components' || kind === 'actions' || kind === 'app_branches'
+  const needsApp =
+    kind === 'components' || kind === 'actions' || kind === 'app_branches'
   const fetchEnabled = !needsApp || !!appId
 
   const searchQuery = useQuery({
@@ -150,11 +149,7 @@ export const EntityMultiSelect = ({
       {chips.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {chips.map((c) => (
-            <Badge
-              key={c.id}
-              theme="info"
-              className="flex items-center gap-1"
-            >
+            <Badge key={c.id} theme="info" className="flex items-center gap-1">
               <span>{entityPickerLabel(c.id, c.name)}</span>
               <button
                 type="button"
@@ -172,7 +167,9 @@ export const EntityMultiSelect = ({
       <div className="border border-neutral-200 dark:border-neutral-700 rounded-md max-h-56 overflow-y-auto">
         {searchQuery.isLoading ? (
           <div className="p-3">
-            <Text variant="subtext" theme="neutral">Loading…</Text>
+            <Text variant="subtext" theme="neutral">
+              Loading…
+            </Text>
           </div>
         ) : results.length === 0 ? (
           <div className="p-3">

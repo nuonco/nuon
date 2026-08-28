@@ -245,11 +245,13 @@ export const TerraformModule = () => (
   <SurfacesProvider>
     <div className="space-y-6">
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold">Terraform Module Configuration</h3>
+        <h3 className="text-lg font-semibold">
+          Terraform Module Configuration
+        </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Displays Terraform module configuration with version and buttons to view
-          variables and variables files. Shows both structured variables and raw
-          HCL files.
+          Displays Terraform module configuration with version and buttons to
+          view variables and variables files. Shows both structured variables
+          and raw HCL files.
         </p>
       </div>
 
@@ -414,11 +416,13 @@ export const AllConfigTypes = () => (
   <SurfacesProvider>
     <div className="space-y-6">
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold">All Component Configuration Types</h3>
+        <h3 className="text-lg font-semibold">
+          All Component Configuration Types
+        </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Overview of all supported component configuration types showing how each
-          type displays different fields and actions based on the component's
-          nature.
+          Overview of all supported component configuration types showing how
+          each type displays different fields and actions based on the
+          component's nature.
         </p>
       </div>
 
@@ -443,10 +447,12 @@ export const AllConfigTypes = () => (
             variable configuration
           </li>
           <li>
-            <strong>Kubernetes Manifest:</strong> Raw K8s YAML configuration files
+            <strong>Kubernetes Manifest:</strong> Raw K8s YAML configuration
+            files
           </li>
           <li>
-            <strong>Docker Build:</strong> Container images built from Dockerfiles
+            <strong>Docker Build:</strong> Container images built from
+            Dockerfiles
           </li>
           <li>
             <strong>External Image:</strong> Pre-built images from registries

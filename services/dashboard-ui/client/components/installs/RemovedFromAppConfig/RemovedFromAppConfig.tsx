@@ -40,8 +40,8 @@ export const RemovedFromAppConfigBanner = ({
     <div className="flex flex-col gap-0.5">
       <Text weight="strong">Removed from the app config</Text>
       <Text variant="subtext">
-        This {kind} is no longer in the install's app config version, so it can't
-        be {actionVerb[kind]}. It's shown here for history.
+        This {kind} is no longer in the install's app config version, so it
+        can't be {actionVerb[kind]}. It's shown here for history.
       </Text>
     </div>
   </Banner>

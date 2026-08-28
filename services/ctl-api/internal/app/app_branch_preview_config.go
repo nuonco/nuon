@@ -10,13 +10,14 @@ type AppBranchRunPreviewMode string
 
 const (
 	AppBranchRunPreviewModePlanOnly  AppBranchRunPreviewMode = "plan-only"
+	AppBranchRunPreviewModePlanInfra AppBranchRunPreviewMode = "plan-infra"
 	AppBranchRunPreviewModeApply     AppBranchRunPreviewMode = "apply"
 	AppBranchRunPreviewModeBuildOnly AppBranchRunPreviewMode = "build-only"
 )
 
 func (m AppBranchRunPreviewMode) Valid() bool {
 	switch m {
-	case AppBranchRunPreviewModePlanOnly, AppBranchRunPreviewModeApply, AppBranchRunPreviewModeBuildOnly, "":
+	case AppBranchRunPreviewModePlanOnly, AppBranchRunPreviewModePlanInfra, AppBranchRunPreviewModeApply, AppBranchRunPreviewModeBuildOnly, "":
 		return true
 	default:
 		return false

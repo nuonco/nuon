@@ -4,6 +4,4 @@ export default {
 
 import { AdminFeatureToggleCard } from './AdminFeatureToggleCard'
 
-export const Default = () => (
-  <AdminFeatureToggleCard onOpenPanel={() => {}} />
-)
+export const Default = () => <AdminFeatureToggleCard onOpenPanel={() => {}} />

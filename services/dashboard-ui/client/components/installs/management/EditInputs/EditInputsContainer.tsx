@@ -27,7 +27,8 @@ const nestInputsUnderGroups = (
   groups
     ? groups.map((group) => ({
         ...group,
-        app_inputs: inputs?.filter((input) => input.group_id === group.id) || [],
+        app_inputs:
+          inputs?.filter((input) => input.group_id === group.id) || [],
       }))
     : []
 

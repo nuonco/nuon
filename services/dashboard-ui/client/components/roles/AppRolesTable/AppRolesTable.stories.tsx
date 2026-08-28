@@ -24,9 +24,7 @@ const mockRoles = [
     name: 'nuon-provision-role',
     type: 'provision',
     created_at: '2024-06-15T10:30:00Z',
-    policies: [
-      { id: 'pol-1', managed_policy_name: 'AmazonEKSClusterPolicy' },
-    ],
+    policies: [{ id: 'pol-1', managed_policy_name: 'AmazonEKSClusterPolicy' }],
     permissions_boundary: undefined,
   },
   {

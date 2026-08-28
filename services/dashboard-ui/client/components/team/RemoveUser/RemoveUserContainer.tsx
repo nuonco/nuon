@@ -19,11 +19,14 @@ const RemoveUserModalContainer = ({
   const { addToast } = useToast()
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: () => removeUser({ body: { user_id: account.id }, orgId: org.id }),
+    mutationFn: () =>
+      removeUser({ body: { user_id: account.id }, orgId: org.id }),
     onSuccess: () => {
       addToast(
         <Toast heading={`${account.email} was removed.`} theme="success">
-          <Text>User {account.email} was removed from {org.name}.</Text>
+          <Text>
+            User {account.email} was removed from {org.name}.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)
@@ -31,7 +34,9 @@ const RemoveUserModalContainer = ({
     onError: () => {
       addToast(
         <Toast heading={`${account.email} was not removed.`} theme="error">
-          <Text>There was an error removing {account.email} from {org.name}.</Text>
+          <Text>
+            There was an error removing {account.email} from {org.name}.
+          </Text>
         </Toast>
       )
     },

@@ -12,7 +12,7 @@ const makeConfig = (
     name: string
     type: string
     depIds?: string[]
-  }[],
+  }[]
 ): TAppConfig => ({
   component_config_connections: connections.map((c) => ({
     component_id: c.id,
@@ -29,9 +29,19 @@ const webAppConfig = makeConfig([
   { id: 'eks', name: 'eks_cluster', type: 'terraform_module', depIds: ['vpc'] },
   { id: 'rds', name: 'postgres', type: 'terraform_module', depIds: ['vpc'] },
   { id: 'api', name: 'api_server', type: 'helm_chart', depIds: ['eks', 'rds'] },
-  { id: 'worker', name: 'background_worker', type: 'helm_chart', depIds: ['eks', 'rds'] },
+  {
+    id: 'worker',
+    name: 'background_worker',
+    type: 'helm_chart',
+    depIds: ['eks', 'rds'],
+  },
   { id: 'frontend', name: 'frontend', type: 'docker_build', depIds: ['api'] },
-  { id: 'monitoring', name: 'observability', type: 'helm_chart', depIds: ['eks'] },
+  {
+    id: 'monitoring',
+    name: 'observability',
+    type: 'helm_chart',
+    depIds: ['eks'],
+  },
 ])
 
 export const WebAppFromApiServer = () => (
@@ -87,8 +97,18 @@ const crossDepConfig = makeConfig([
   { id: 'rds', name: 'rds_cluster_coder', type: 'terraform_module' },
   { id: 'coder', name: 'coder', type: 'helm_chart', depIds: ['cert', 'rds'] },
   { id: 'obs', name: 'observability', type: 'helm_chart', depIds: ['coder'] },
-  { id: 'alb', name: 'application_load_balancer', type: 'helm_chart', depIds: ['coder'] },
-  { id: 'kls', name: 'kubelogstream', type: 'helm_chart', depIds: ['coder', 'alb'] },
+  {
+    id: 'alb',
+    name: 'application_load_balancer',
+    type: 'helm_chart',
+    depIds: ['coder'],
+  },
+  {
+    id: 'kls',
+    name: 'kubelogstream',
+    type: 'helm_chart',
+    depIds: ['coder', 'alb'],
+  },
 ])
 
 export const CrossDependentEdges = () => (

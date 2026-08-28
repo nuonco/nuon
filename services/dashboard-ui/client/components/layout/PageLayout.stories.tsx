@@ -37,7 +37,13 @@ const mockNotifications = {
   toggleMute: () => {},
 }
 
-const Providers = ({ children, breadcrumb = mockBreadcrumb }: { children: ReactNode; breadcrumb?: typeof mockBreadcrumb }) => (
+const Providers = ({
+  children,
+  breadcrumb = mockBreadcrumb,
+}: {
+  children: ReactNode
+  breadcrumb?: typeof mockBreadcrumb
+}) => (
   <NotificationContext.Provider value={mockNotifications}>
     <BreadcrumbContext.Provider value={breadcrumb}>
       <SidebarContext.Provider value={mockSidebar}>

@@ -56,10 +56,7 @@ const inputFieldSchema = (input: TAppInput): z.ZodTypeAny => {
   }
   if (input?.required) {
     const label = input?.display_name || input?.name || 'This field'
-    return z
-      .string()
-      .trim()
-      .min(1, `${label} is required`)
+    return z.string().trim().min(1, `${label} is required`)
   }
   return z.string()
 }

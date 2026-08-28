@@ -2,7 +2,10 @@ import { Text } from '@/components/common/Text'
 import type { TTextTheme } from '@/components/common/Text'
 import type { TPulumiChangeAction } from '@/types'
 
-const ACTION_THEME: Record<TPulumiChangeAction, { theme: TTextTheme; label: string }> = {
+const ACTION_THEME: Record<
+  TPulumiChangeAction,
+  { theme: TTextTheme; label: string }
+> = {
   create: { theme: 'success', label: 'to create' },
   update: { theme: 'warn', label: 'to update' },
   delete: { theme: 'error', label: 'to delete' },
@@ -35,7 +38,11 @@ export function PulumiSummary({
           const config = ACTION_THEME[action as TPulumiChangeAction]
           return (
             <div key={action} className="flex items-center gap-1.5">
-              <Text variant="base" theme={config?.theme || 'neutral'} weight="strong">
+              <Text
+                variant="base"
+                theme={config?.theme || 'neutral'}
+                weight="strong"
+              >
                 {count}
               </Text>
               <Text variant="subtext" theme="neutral">

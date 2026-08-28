@@ -21,9 +21,20 @@ interface IShutdownRunnerContainer {
   showRunnerLabel?: boolean
 }
 
-export const ShutdownRunnerButton = ({ runnerId, processId, showRunnerLabel, ...props }: IShutdownRunnerContainer & IButtonAsButton) => {
+export const ShutdownRunnerButton = ({
+  runnerId,
+  processId,
+  showRunnerLabel,
+  ...props
+}: IShutdownRunnerContainer & IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <ShutdownRunnerModal runnerId={runnerId} processId={processId} showRunnerLabel={showRunnerLabel} />
+  const modal = (
+    <ShutdownRunnerModal
+      runnerId={runnerId}
+      processId={processId}
+      showRunnerLabel={showRunnerLabel}
+    />
+  )
   return (
     <ShutdownRunnerButtonComponent
       showRunnerLabel={showRunnerLabel}
@@ -33,7 +44,12 @@ export const ShutdownRunnerButton = ({ runnerId, processId, showRunnerLabel, ...
   )
 }
 
-export const ShutdownRunnerModal = ({ runnerId, processId, showRunnerLabel, ...props }: IShutdownRunnerContainer & Omit<IModal, 'onSubmit'>) => {
+export const ShutdownRunnerModal = ({
+  runnerId,
+  processId,
+  showRunnerLabel,
+  ...props
+}: IShutdownRunnerContainer & Omit<IModal, 'onSubmit'>) => {
   const { user } = useAuth()
   const { org } = useOrg()
   const { removeModal } = useSurfaces()

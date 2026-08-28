@@ -54,7 +54,9 @@ export const StackCard = ({
           {runCount} {runCount === 1 ? 'run' : 'runs'}
         </Text>
       )}
-      {createdAt && <Time variant="subtext" time={createdAt} format="relative" />}
+      {createdAt && (
+        <Time variant="subtext" time={createdAt} format="relative" />
+      )}
     </div>
   )
 

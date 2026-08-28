@@ -19,9 +19,18 @@ const mockInstall = {
   runner_id: 'runner-mock',
   runner_status: 'active',
   install_components: [
-    { component_id: 'comp-1', component: { name: 'networking', type: 'terraform_module' } },
-    { component_id: 'comp-2', component: { name: 'ingress-nginx', type: 'helm_chart' } },
-    { component_id: 'comp-3', component: { name: 'api-server', type: 'docker_build' } },
+    {
+      component_id: 'comp-1',
+      component: { name: 'networking', type: 'terraform_module' },
+    },
+    {
+      component_id: 'comp-2',
+      component: { name: 'ingress-nginx', type: 'helm_chart' },
+    },
+    {
+      component_id: 'comp-3',
+      component: { name: 'api-server', type: 'docker_build' },
+    },
   ],
 } as TInstall
 
@@ -67,7 +76,13 @@ function createSeededQueryClient() {
     },
   ]
   qc.setQueryData(
-    ['install-actions-card', 'org-mock', 'install-mock', 'deploy-canary', undefined],
+    [
+      'install-actions-card',
+      'org-mock',
+      'install-mock',
+      'deploy-canary',
+      undefined,
+    ],
     { data: mockActions, pagination: { hasNext: false } }
   )
   qc.setQueryData(
@@ -87,14 +102,16 @@ function createSeededQueryClient() {
       runbook: {
         id: 'rbk-1',
         name: 'restart-service',
-        configs: [{
-          id: 'cfg-1',
-          steps: [
-            { id: 'step-1', name: 'Stop service', idx: 0, type: 'command' },
-            { id: 'step-2', name: 'Clear cache', idx: 1, type: 'command' },
-            { id: 'step-3', name: 'Start service', idx: 2, type: 'command' },
-          ],
-        }],
+        configs: [
+          {
+            id: 'cfg-1',
+            steps: [
+              { id: 'step-1', name: 'Stop service', idx: 0, type: 'command' },
+              { id: 'step-2', name: 'Clear cache', idx: 1, type: 'command' },
+              { id: 'step-3', name: 'Start service', idx: 2, type: 'command' },
+            ],
+          },
+        ],
       },
     },
     {
@@ -104,21 +121,40 @@ function createSeededQueryClient() {
       runbook: {
         id: 'rbk-2',
         name: 'health-check',
-        configs: [{
-          id: 'cfg-2',
-          steps: [
-            { id: 'step-4', name: 'Check endpoints', idx: 0, type: 'command' },
-          ],
-        }],
+        configs: [
+          {
+            id: 'cfg-2',
+            steps: [
+              {
+                id: 'step-4',
+                name: 'Check endpoints',
+                idx: 0,
+                type: 'command',
+              },
+            ],
+          },
+        ],
       },
     },
   ]
   qc.setQueryData(
-    ['install-runbooks-card', 'org-mock', 'install-mock', 'restart-service', undefined],
+    [
+      'install-runbooks-card',
+      'org-mock',
+      'install-mock',
+      'restart-service',
+      undefined,
+    ],
     { data: mockRunbooks, pagination: { hasNext: false } }
   )
   qc.setQueryData(
-    ['install-runbooks-card', 'org-mock', 'install-mock', 'health-check', undefined],
+    [
+      'install-runbooks-card',
+      'org-mock',
+      'install-mock',
+      'health-check',
+      undefined,
+    ],
     { data: mockRunbooks, pagination: { hasNext: false } }
   )
 
@@ -140,10 +176,10 @@ const MockInstallProviders = ({ children }: { children: ReactNode }) => {
   return (
     <QueryClientProvider client={qc}>
       <OrgContext.Provider value={{ org: mockOrg, refresh: () => {} }}>
-        <InstallContext.Provider value={{ install: mockInstall, labelColors: {}, refresh: () => {} }}>
-          <SurfacesProvider>
-            {children}
-          </SurfacesProvider>
+        <InstallContext.Provider
+          value={{ install: mockInstall, labelColors: {}, refresh: () => {} }}
+        >
+          <SurfacesProvider>{children}</SurfacesProvider>
         </InstallContext.Provider>
       </OrgContext.Provider>
     </QueryClientProvider>
@@ -155,8 +191,9 @@ export const GitHubAlerts = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">GitHub-style alerts</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Blockquotes starting with [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], or [!CAUTION]
-        render as styled alert banners matching the GitHub Flavored Markdown spec.
+        Blockquotes starting with [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], or
+        [!CAUTION] render as styled alert banners matching the GitHub Flavored
+        Markdown spec.
       </p>
     </div>
 
@@ -714,14 +751,15 @@ export const SearchableTables = () => (
       <h3 className="text-lg font-semibold">Searchable tables</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Markdown pipe tables render through the common Table component (sortable
-        headers, shared styling). Add a{' '}
-        <code>{'<nuon-table-search>'}</code> marker directly before a table to get
-        a client-side filter box.
+        headers, shared styling). Add a <code>{'<nuon-table-search>'}</code>{' '}
+        marker directly before a table to get a client-side filter box.
       </p>
     </div>
 
     <div className="space-y-2">
-      <h4 className="text-sm font-medium">Plain table (no marker) — sortable</h4>
+      <h4 className="text-sm font-medium">
+        Plain table (no marker) — sortable
+      </h4>
       <p className="text-xs text-gray-500">
         Requirement 1: every markdown table now uses the common Table. Click a
         header to sort.
@@ -825,7 +863,9 @@ ${CLUSTER_TABLE}`}
     </div>
 
     <div className="space-y-2">
-      <h4 className="text-sm font-medium">HTML table — rendered through the common Table</h4>
+      <h4 className="text-sm font-medium">
+        HTML table — rendered through the common Table
+      </h4>
       <p className="text-xs text-gray-500">
         Raw HTML tables use the same common Table as markdown tables (sortable
         headers, shared styling). Cell content — including emoji — is preserved.
@@ -848,9 +888,9 @@ ${CLUSTER_TABLE}`}
     <div className="space-y-2">
       <h4 className="text-sm font-medium">HTML table — opted into search</h4>
       <p className="text-xs text-gray-500">
-        Add a <code>{'<nuon-table-search>'}</code> marker before an HTML table to
-        convert it into the searchable common Table. Try “healthcheck” or filter
-        by monitor.
+        Add a <code>{'<nuon-table-search>'}</code> marker before an HTML table
+        to convert it into the searchable common Table. Try “healthcheck” or
+        filter by monitor.
       </p>
       <div className="p-4 border rounded-lg">
         <Markdown
@@ -1031,9 +1071,12 @@ This shows the component dependency graph with custom styling.`}
 export const MermaidFlowchartComplex = () => (
   <div className="space-y-6">
     <div className="space-y-3">
-      <h3 className="text-lg font-semibold">Complex flowchart with nested subgraphs</h3>
+      <h3 className="text-lg font-semibold">
+        Complex flowchart with nested subgraphs
+      </h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        A real-world architecture diagram rendered with ReactFlow instead of mermaid SVG.
+        A real-world architecture diagram rendered with ReactFlow instead of
+        mermaid SVG.
       </p>
     </div>
 
@@ -1313,13 +1356,18 @@ Follow these steps:
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">Component card (requires install context)</h4>
+      <h4 className="text-sm font-medium">
+        Component card (requires install context)
+      </h4>
       <p className="text-xs text-gray-500 dark:text-gray-500">
-        In app mode these degrade to inline code. In install mode they fetch and render the component.
+        In app mode these degrade to inline code. In install mode they fetch and
+        render the component.
       </p>
       <div className="p-4 border rounded-lg space-y-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            App mode (degraded to inline code):
+          </p>
           <Markdown
             mode="app"
             content={`By name: <nuon-component-card name="networking"></nuon-component-card>
@@ -1328,7 +1376,9 @@ By ID: <nuon-component-card id="comp-1"></nuon-component-card>`}
           />
         </div>
         <div>
-          <p className="text-xs text-gray-400 mb-1">Install mode (renders live cards):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            Install mode (renders live cards):
+          </p>
           <MockInstallProviders>
             <Markdown
               mode="install"
@@ -1350,13 +1400,18 @@ In a group:
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">Action card (requires install context)</h4>
+      <h4 className="text-sm font-medium">
+        Action card (requires install context)
+      </h4>
       <p className="text-xs text-gray-500 dark:text-gray-500">
-        In app mode these degrade to inline code. In install mode they fetch the action and latest run.
+        In app mode these degrade to inline code. In install mode they fetch the
+        action and latest run.
       </p>
       <div className="p-4 border rounded-lg space-y-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            App mode (degraded to inline code):
+          </p>
           <Markdown
             mode="app"
             content={`Reference an action by name: <nuon-action-card name="deploy-canary"></nuon-action-card>
@@ -1365,7 +1420,9 @@ Or by ID: <nuon-action-card id="action-1"></nuon-action-card>`}
           />
         </div>
         <div>
-          <p className="text-xs text-gray-400 mb-1">Install mode (renders live cards):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            Install mode (renders live cards):
+          </p>
           <MockInstallProviders>
             <Markdown
               mode="install"
@@ -1386,20 +1443,27 @@ In a group:
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">Sandbox card (requires install context)</h4>
+      <h4 className="text-sm font-medium">
+        Sandbox card (requires install context)
+      </h4>
       <p className="text-xs text-gray-500 dark:text-gray-500">
-        In app mode these degrade to inline code. In install mode they render the sandbox status.
+        In app mode these degrade to inline code. In install mode they render
+        the sandbox status.
       </p>
       <div className="p-4 border rounded-lg space-y-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            App mode (degraded to inline code):
+          </p>
           <Markdown
             mode="app"
             content={`Sandbox status: <nuon-sandbox-card></nuon-sandbox-card>`}
           />
         </div>
         <div>
-          <p className="text-xs text-gray-400 mb-1">Install mode (renders live card):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            Install mode (renders live card):
+          </p>
           <MockInstallProviders>
             <Markdown
               mode="install"
@@ -1411,20 +1475,27 @@ In a group:
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">Runner card (requires install context)</h4>
+      <h4 className="text-sm font-medium">
+        Runner card (requires install context)
+      </h4>
       <p className="text-xs text-gray-500 dark:text-gray-500">
-        In app mode these degrade to inline code. In install mode they render the runner status.
+        In app mode these degrade to inline code. In install mode they render
+        the runner status.
       </p>
       <div className="p-4 border rounded-lg space-y-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            App mode (degraded to inline code):
+          </p>
           <Markdown
             mode="app"
             content={`Runner status: <nuon-runner-card></nuon-runner-card>`}
           />
         </div>
         <div>
-          <p className="text-xs text-gray-400 mb-1">Install mode (renders live card):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            Install mode (renders live card):
+          </p>
           <MockInstallProviders>
             <Markdown
               mode="install"
@@ -1436,20 +1507,27 @@ In a group:
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">Stack card (requires install context)</h4>
+      <h4 className="text-sm font-medium">
+        Stack card (requires install context)
+      </h4>
       <p className="text-xs text-gray-500 dark:text-gray-500">
-        In app mode these degrade to inline code. In install mode they render the stack status.
+        In app mode these degrade to inline code. In install mode they render
+        the stack status.
       </p>
       <div className="p-4 border rounded-lg space-y-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            App mode (degraded to inline code):
+          </p>
           <Markdown
             mode="app"
             content={`Stack status: <nuon-stack-card></nuon-stack-card>`}
           />
         </div>
         <div>
-          <p className="text-xs text-gray-400 mb-1">Install mode (renders live card):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            Install mode (renders live card):
+          </p>
           <MockInstallProviders>
             <Markdown
               mode="install"
@@ -1714,20 +1792,27 @@ nuon installs deploy --install-id inst_123
       </div>
     </div>
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">Run runbook (requires install context)</h4>
+      <h4 className="text-sm font-medium">
+        Run runbook (requires install context)
+      </h4>
       <p className="text-xs text-gray-500 dark:text-gray-500">
-        In app mode these degrade to inline code. In install mode they fetch the runbook and show a run button.
+        In app mode these degrade to inline code. In install mode they fetch the
+        runbook and show a run button.
       </p>
       <div className="p-4 border rounded-lg space-y-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            App mode (degraded to inline code):
+          </p>
           <Markdown
             mode="app"
             content={`Run the restart: <nuon-run-runbook name="restart-service"></nuon-run-runbook>`}
           />
         </div>
         <div>
-          <p className="text-xs text-gray-400 mb-1">Install mode (renders live card):</p>
+          <p className="text-xs text-gray-400 mb-1">
+            Install mode (renders live card):
+          </p>
           <MockInstallProviders>
             <Markdown
               mode="install"
@@ -1751,14 +1836,16 @@ export const RenderModes = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Render modes: app vs install</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Action components like <code>nuon-view-state</code> require install context.
-        In app mode they degrade to inline code. Display components with unresolved
-        Go templates also degrade.
+        Action components like <code>nuon-view-state</code> require install
+        context. In app mode they degrade to inline code. Display components
+        with unresolved Go templates also degrade.
       </p>
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">App mode (default) — action tags render as code</h4>
+      <h4 className="text-sm font-medium">
+        App mode (default) — action tags render as code
+      </h4>
       <div className="p-4 border rounded-lg">
         <Markdown
           mode="app"
@@ -1788,7 +1875,9 @@ Display components still render: <nuon-badge theme="success">Healthy</nuon-badge
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">App mode — unresolved templates degrade to code</h4>
+      <h4 className="text-sm font-medium">
+        App mode — unresolved templates degrade to code
+      </h4>
       <div className="p-4 border rounded-lg">
         <Markdown
           mode="app"
@@ -1800,9 +1889,12 @@ Resolved badge still renders: <nuon-badge theme="info">Ready</nuon-badge>`}
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">Install mode — action tags render real components</h4>
+      <h4 className="text-sm font-medium">
+        Install mode — action tags render real components
+      </h4>
       <p className="text-xs text-gray-500 dark:text-gray-500">
-        ViewStateButton renders as a real button (clicking opens the modal with mock context).
+        ViewStateButton renders as a real button (clicking opens the modal with
+        mock context).
       </p>
       <div className="p-4 border rounded-lg">
         <MockInstallProviders>
@@ -1977,8 +2069,8 @@ export const NuonGroup = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">nuon-group</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Use {'<nuon-group>'} to lay out child elements horizontally with flexbox.
-        Supports gap, align, justify, and wrap attributes.
+        Use {'<nuon-group>'} to lay out child elements horizontally with
+        flexbox. Supports gap, align, justify, and wrap attributes.
       </p>
     </div>
 
@@ -2012,7 +2104,6 @@ export const NuonGroup = () => (
     </div>
   </div>
 )
-
 
 const NESTED_TABLE = `| Name | Status | Region |
 | ---- | ------ | ------ |

@@ -22,7 +22,14 @@ interface IGroupActionTarget {
 
 const ACTION_COPY: Record<
   GroupAction,
-  { title: string; heading: string; message: (groupName: string) => string; confirm: string; pending: string; variant: 'primary' | 'danger' }
+  {
+    title: string
+    heading: string
+    message: (groupName: string) => string
+    confirm: string
+    pending: string
+    variant: 'primary' | 'danger'
+  }
 > = {
   approve: {
     title: 'Approve install group plan',
@@ -49,13 +56,21 @@ interface IConfirmGroupActionModal extends IModal {
   target: IGroupActionTarget
 }
 
-const ConfirmGroupActionModal = ({ action, target, ...props }: IConfirmGroupActionModal) => {
+const ConfirmGroupActionModal = ({
+  action,
+  target,
+  ...props
+}: IConfirmGroupActionModal) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const copy = ACTION_COPY[action]
 
-  const { mutate: execute, isPending, error } = useMutation({
+  const {
+    mutate: execute,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: () =>
       approveWorkflowStep({
         orgId: target.orgId,
@@ -66,7 +81,12 @@ const ConfirmGroupActionModal = ({ action, target, ...props }: IConfirmGroupActi
       }),
     onSuccess: () => {
       addToast(
-        <Toast heading={action === 'approve' ? 'Plan approved' : 'Install group skipped'} theme="success">
+        <Toast
+          heading={
+            action === 'approve' ? 'Plan approved' : 'Install group skipped'
+          }
+          theme="success"
+        >
           <Text>
             {action === 'approve'
               ? `Deploying ${target.groupName}. This may take a few minutes.`
@@ -79,7 +99,10 @@ const ConfirmGroupActionModal = ({ action, target, ...props }: IConfirmGroupActi
     },
     onError: (err: TAPIError) => {
       addToast(
-        <Toast heading={action === 'approve' ? 'Approval failed' : 'Skip failed'} theme="error">
+        <Toast
+          heading={action === 'approve' ? 'Approval failed' : 'Skip failed'}
+          theme="error"
+        >
           <Text>{err?.error || 'Unable to respond to this plan.'}</Text>
         </Toast>
       )
@@ -122,7 +145,10 @@ const ConfirmGroupActionModal = ({ action, target, ...props }: IConfirmGroupActi
   )
 }
 
-const ACTION_LABEL: Record<GroupAction, { label: string; variant: 'primary' | 'danger' }> = {
+const ACTION_LABEL: Record<
+  GroupAction,
+  { label: string; variant: 'primary' | 'danger' }
+> = {
   approve: { label: 'Approve', variant: 'primary' },
   'deny-skip-current': { label: 'Skip', variant: 'danger' },
 }
@@ -138,7 +164,12 @@ export const GroupActionButton = ({
   const { label, variant } = ACTION_LABEL[action]
 
   return (
-    <Button variant={variant} onClick={() => addModal(<ConfirmGroupActionModal action={action} target={target} />)}>
+    <Button
+      variant={variant}
+      onClick={() =>
+        addModal(<ConfirmGroupActionModal action={action} target={target} />)
+      }
+    >
       {label}
     </Button>
   )

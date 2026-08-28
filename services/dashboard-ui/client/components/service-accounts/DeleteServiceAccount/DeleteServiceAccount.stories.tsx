@@ -34,7 +34,11 @@ export const WithError = () => (
     <DeleteServiceAccountModal
       accountIdentity="svc-ci-deploy@example.com"
       isPending={false}
-      error={{ error: 'Cannot delete the last admin service account', description: '', user_error: true }}
+      error={{
+        error: 'Cannot delete the last admin service account',
+        description: '',
+        user_error: true,
+      }}
       onSubmit={noop}
     />
   </ModalStory>

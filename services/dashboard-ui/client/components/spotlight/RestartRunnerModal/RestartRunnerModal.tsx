@@ -8,9 +8,26 @@ interface IRestartRunnerModal extends IModal {
   isManaged: boolean
 }
 
-export const RestartRunnerModal = ({ runnerId, processId = '', isManaged, ...modalProps }: IRestartRunnerModal) => {
+export const RestartRunnerModal = ({
+  runnerId,
+  processId = '',
+  isManaged,
+  ...modalProps
+}: IRestartRunnerModal) => {
   if (isManaged) {
-    return <ShutdownMngRunnerModal runnerId={runnerId} processId={processId} {...modalProps} />
+    return (
+      <ShutdownMngRunnerModal
+        runnerId={runnerId}
+        processId={processId}
+        {...modalProps}
+      />
+    )
   }
-  return <ShutdownRunnerModal runnerId={runnerId} processId={processId} {...modalProps} />
+  return (
+    <ShutdownRunnerModal
+      runnerId={runnerId}
+      processId={processId}
+      {...modalProps}
+    />
+  )
 }

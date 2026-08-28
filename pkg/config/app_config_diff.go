@@ -39,6 +39,10 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 	if d := diffStack(old.Stack, a.Stack); d != nil {
 		children = append(children, d)
 	}
+	children = append(children, diff.NewDiff(
+		diff.WithKey("customer_managed"),
+		diff.WithStringDiff(sectionTOML(old.CustomerManaged), sectionTOML(a.CustomerManaged)),
+	))
 	if d := diffInputs(old.Inputs, a.Inputs); d != nil {
 		children = append(children, d)
 	}

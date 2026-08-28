@@ -15,7 +15,11 @@ const VCSConnectionWithStatus = ({
   const { data, isLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['vcs-connection-status', org?.id, vcs_connection?.id],
-    queryFn: () => checkVCSConnectionStatus({ orgId: org!.id, connectionId: vcs_connection.id }),
+    queryFn: () =>
+      checkVCSConnectionStatus({
+        orgId: org!.id,
+        connectionId: vcs_connection.id,
+      }),
     enabled: !!org?.id && !!vcs_connection?.id,
   })
 

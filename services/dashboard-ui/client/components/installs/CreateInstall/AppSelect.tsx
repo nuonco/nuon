@@ -154,10 +154,11 @@ export const AppSelect = ({
                       )}
                     </div>
                   ),
-                  className: `flex items-start gap-3 p-3 border rounded ${!isProvisionable
+                  className: `flex items-start gap-3 p-3 border rounded ${
+                    !isProvisionable
                       ? 'opacity-50 bg-cool-grey-100 dark:bg-dark-grey-800'
                       : ''
-                    }`,
+                  }`,
                 }}
               />
             )

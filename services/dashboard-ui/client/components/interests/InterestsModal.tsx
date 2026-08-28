@@ -31,7 +31,8 @@ type ResourcesMap = NonNullable<Interests['resources']>
 const initialMode = (value: Interests): Mode =>
   value.all_events ? 'all' : 'specific'
 
-const initialResources = (value: Interests): ResourcesMap => value.resources ?? {}
+const initialResources = (value: Interests): ResourcesMap =>
+  value.resources ?? {}
 
 // Popup form for editing the Interests config. Opened from InterestsPicker via
 // useSurfaces; commits the draft back through onSave only on Save. The Cancel
@@ -80,7 +81,8 @@ export const InterestsModal = ({
       : ALL_RESOURCES.reduce((sum, kind) => {
           const cfg: ResourceCfg | undefined = resources[kind]
           return (
-            sum + RESOURCE_CATEGORIES[kind].filter((c) => isCategoryOn(cfg, c)).length
+            sum +
+            RESOURCE_CATEGORIES[kind].filter((c) => isCategoryOn(cfg, c)).length
           )
         }, 0)
 
@@ -162,8 +164,8 @@ export const InterestsModal = ({
             {totalSelected === 0 ? (
               <Banner theme="warn">
                 <Text variant="subtext">
-                  No events are selected. This subscription will not receive
-                  any events.
+                  No events are selected. This subscription will not receive any
+                  events.
                 </Text>
               </Banner>
             ) : null}

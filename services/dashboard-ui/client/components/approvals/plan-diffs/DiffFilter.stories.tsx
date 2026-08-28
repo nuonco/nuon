@@ -40,7 +40,9 @@ export const WithSearch = () => (
   <DiffFilter
     title="drift"
     diffType="terraform"
-    selectedActions={new Set(['create', 'update', 'delete', 'replace', 'read', 'no-op'])}
+    selectedActions={
+      new Set(['create', 'update', 'delete', 'replace', 'read', 'no-op'])
+    }
     onInputToggle={() => {}}
     onButtonClick={() => {}}
     onReset={() => {}}

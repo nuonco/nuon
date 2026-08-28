@@ -1,10 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { TAppInputConfig, TInstall } from '@/types'
-import {
-  buildInstallSchema,
-  getEditableInputs,
-  isBooleanInput,
-} from './schema'
+import { buildInstallSchema, getEditableInputs, isBooleanInput } from './schema'
 import { buildInstallDefaults, mergeDraftValues } from './defaults'
 
 const inputConfig = {
@@ -13,10 +9,34 @@ const inputConfig = {
     {
       id: 'g1',
       app_inputs: [
-        { id: 'i1', name: 'db_url', type: 'string', required: true, source: 'vendor' },
-        { id: 'i2', name: 'replicas', type: 'number', default: '1', source: 'vendor' },
-        { id: 'i3', name: 'enable_tls', type: 'bool', default: 'false', source: 'vendor' },
-        { id: 'i4', name: 'secret_key', type: 'string', required: true, source: 'customer' },
+        {
+          id: 'i1',
+          name: 'db_url',
+          type: 'string',
+          required: true,
+          source: 'vendor',
+        },
+        {
+          id: 'i2',
+          name: 'replicas',
+          type: 'number',
+          default: '1',
+          source: 'vendor',
+        },
+        {
+          id: 'i3',
+          name: 'enable_tls',
+          type: 'bool',
+          default: 'false',
+          source: 'vendor',
+        },
+        {
+          id: 'i4',
+          name: 'secret_key',
+          type: 'string',
+          required: true,
+          source: 'customer',
+        },
       ],
     },
   ],
@@ -47,7 +67,11 @@ describe('getEditableInputs', () => {
 
 describe('buildInstallSchema — create', () => {
   test('requires name and aws region', () => {
-    const schema = buildInstallSchema({ mode: 'create', platform: 'aws', inputConfig })
+    const schema = buildInstallSchema({
+      mode: 'create',
+      platform: 'aws',
+      inputConfig,
+    })
     const res = schema.safeParse({
       name: '',
       region: '',
@@ -57,7 +81,11 @@ describe('buildInstallSchema — create', () => {
   })
 
   test('passes with valid create values', () => {
-    const schema = buildInstallSchema({ mode: 'create', platform: 'aws', inputConfig })
+    const schema = buildInstallSchema({
+      mode: 'create',
+      platform: 'aws',
+      inputConfig,
+    })
     const res = schema.safeParse({
       name: 'my-install',
       region: 'us-west-2',
@@ -68,7 +96,11 @@ describe('buildInstallSchema — create', () => {
   })
 
   test('required input must be non-empty', () => {
-    const schema = buildInstallSchema({ mode: 'create', platform: 'aws', inputConfig })
+    const schema = buildInstallSchema({
+      mode: 'create',
+      platform: 'aws',
+      inputConfig,
+    })
     const res = schema.safeParse({
       name: 'my-install',
       region: 'us-west-2',
@@ -103,14 +135,20 @@ describe('buildInstallSchema — create', () => {
   })
 
   test('optional aws_account_id allows empty but rejects malformed', () => {
-    const schema = buildInstallSchema({ mode: 'create', platform: 'aws', inputConfig })
+    const schema = buildInstallSchema({
+      mode: 'create',
+      platform: 'aws',
+      inputConfig,
+    })
     const base = {
       name: 'x',
       region: 'us-west-2',
       inputs: { db_url: 'y', replicas: '1', enable_tls: false },
     }
     expect(schema.safeParse({ ...base, aws_account_id: '' }).success).toBe(true)
-    expect(schema.safeParse({ ...base, aws_account_id: '99' }).success).toBe(false)
+    expect(schema.safeParse({ ...base, aws_account_id: '99' }).success).toBe(
+      false
+    )
   })
 })
 
@@ -125,7 +163,11 @@ describe('buildInstallSchema — edit', () => {
   })
 
   test('name required when showNameField is true', () => {
-    const schema = buildInstallSchema({ mode: 'edit', inputConfig, showNameField: true })
+    const schema = buildInstallSchema({
+      mode: 'edit',
+      inputConfig,
+      showNameField: true,
+    })
     const res = schema.safeParse({
       name: '',
       inputs: { db_url: 'y', replicas: '1', enable_tls: false },
@@ -151,7 +193,11 @@ describe('buildInstallDefaults', () => {
       name: 'existing',
       install_inputs: [{ values: { db_url: 'live', enable_tls: 'true' } }],
     } as unknown as TInstall
-    const defaults = buildInstallDefaults({ mode: 'edit', inputConfig, install })
+    const defaults = buildInstallDefaults({
+      mode: 'edit',
+      inputConfig,
+      install,
+    })
     expect(defaults.name).toBe('existing')
     expect(defaults.inputs.db_url).toBe('live')
     expect(defaults.inputs.enable_tls).toBe(true)

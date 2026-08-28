@@ -22,5 +22,5 @@ export const getInstallWorkflows = ({
   api<TWorkflow[]>({
     path: `installs/${installId}/workflows${buildQueryParams({ limit, offset, planonly, type, finished, search })}`,
     orgId,
-    paginated: true
+    paginated: true,
   })

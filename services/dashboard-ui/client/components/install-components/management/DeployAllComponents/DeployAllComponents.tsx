@@ -31,12 +31,7 @@ export const DeployAllComponentsModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="CloudArrowUpIcon" size="24" />
           Deploy all components to {installName}?
         </Text>

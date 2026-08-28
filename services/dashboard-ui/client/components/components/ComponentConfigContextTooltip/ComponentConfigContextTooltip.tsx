@@ -8,9 +8,18 @@ import {
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { KubernetesManifestModal } from '@/components/components/configs/KubernetesConfig'
-import { HelmValuesFilesModal, HelmValuesModal } from '@/components/components/configs/HelmConfig'
-import { TerraformVariablesFilesModal, TerraformVariablesModal } from '@/components/components/configs/TerraformConfig'
-import { PulumiConfigModal, PulumiEnvVarsModal } from '@/components/components/configs/PulumiConfig'
+import {
+  HelmValuesFilesModal,
+  HelmValuesModal,
+} from '@/components/components/configs/HelmConfig'
+import {
+  TerraformVariablesFilesModal,
+  TerraformVariablesModal,
+} from '@/components/components/configs/TerraformConfig'
+import {
+  PulumiConfigModal,
+  PulumiEnvVarsModal,
+} from '@/components/components/configs/PulumiConfig'
 import type { TComponentConfig, TVCSGit, TVCSGitHub } from '@/types'
 
 function getConfigVCSItems(
@@ -189,9 +198,7 @@ function getConfigItems(
               leftContent: <Icon variant="ListIcon" />,
               onClick: () => {
                 const modal = (
-                  <PulumiConfigModal
-                    config={config.pulumi!.config!}
-                  />
+                  <PulumiConfigModal config={config.pulumi!.config!} />
                 )
                 addModal(modal)
               },
@@ -204,9 +211,7 @@ function getConfigItems(
               leftContent: <Icon variant="ListIcon" />,
               onClick: () => {
                 const modal = (
-                  <PulumiEnvVarsModal
-                    envVars={config.pulumi!.env_vars!}
-                  />
+                  <PulumiEnvVarsModal envVars={config.pulumi!.env_vars!} />
                 )
                 addModal(modal)
               },

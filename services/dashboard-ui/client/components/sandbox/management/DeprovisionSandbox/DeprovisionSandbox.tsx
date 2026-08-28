@@ -108,7 +108,7 @@ export const DeprovisionSandboxModal = ({
         <RoleSelector
           installId={installId}
           operationType="deprovision"
-          principalType='sandbox'
+          principalType="sandbox"
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"

@@ -106,11 +106,17 @@ export const InstallActionRunLogs = ({
         >
           <span className="flex items-center gap-2 min-w-0 w-full">
             {stepStatuses?.[step?.name] && (
-              <Status status={stepStatuses[step.name]} isWithoutText className="shrink-0" />
+              <Status
+                status={stepStatuses[step.name]}
+                isWithoutText
+                className="shrink-0"
+              />
             )}
             <span className="truncate">{step?.name}</span>
             {allLogStepCounts[step?.name] > 0 && (
-              <Badge size="sm" className="shrink-0">{allLogStepCounts[step.name]}</Badge>
+              <Badge size="sm" className="shrink-0">
+                {allLogStepCounts[step.name]}
+              </Badge>
             )}
           </span>
         </Button>
@@ -145,9 +151,7 @@ export const InstallActionRunLogs = ({
   if (layout === 'horizontal') {
     return (
       <div className="flex flex-col gap-4 flex-auto">
-        <div className="flex flex-wrap gap-2">
-          {stepButtons}
-        </div>
+        <div className="flex flex-wrap gap-2">{stepButtons}</div>
         <div className="w-full">
           <StepAwareLogViewer {...logViewerProps} />
         </div>
@@ -208,7 +212,9 @@ const StepAwareLogViewer = ({
   const scopedFilters = useMemo(() => {
     if (showAllLogs) return filters
     const selectedCount = displayLogs?.length ?? 0
-    const totalCount = activeStep ? allLogStepCounts[activeStep] ?? selectedCount : selectedCount
+    const totalCount = activeStep
+      ? (allLogStepCounts[activeStep] ?? selectedCount)
+      : selectedCount
     return {
       ...filters,
       filterStats: { selectedCount, totalCount },
@@ -259,9 +265,7 @@ const StepAwareLogViewer = ({
           </pre>
         ) : (
           <div className="flex flex-col divide-y">
-            {!displayLogs?.length && isLoading ? (
-              <LogsSkeleton />
-            ) : null}
+            {!displayLogs?.length && isLoading ? <LogsSkeleton /> : null}
 
             {displayLogs?.map((logLine) => (
               <LogLine

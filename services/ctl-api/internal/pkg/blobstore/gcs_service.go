@@ -48,6 +48,10 @@ func (s *gcsService) Upload(ctx context.Context, key string, data []byte) error 
 	return nil
 }
 
+func (s *gcsService) Delete(ctx context.Context, key string) error {
+	return s.bucket.Object(key).Delete(ctx)
+}
+
 func (s *gcsService) Download(ctx context.Context, key string) ([]byte, error) {
 	r, err := s.bucket.Object(key).NewReader(ctx)
 	if err != nil {

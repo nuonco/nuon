@@ -43,7 +43,10 @@ export const InstallActionRunHeaderContainer = ({
   const cancelButton = hasWorkflow ? (
     <CancelWorkflowButton workflow={workflow} />
   ) : installActionRun?.runner_job && isRunnerJobActive ? (
-    <CancelRunnerJobButton runnerJob={installActionRun.runner_job} jobType="actions" />
+    <CancelRunnerJobButton
+      runnerJob={installActionRun.runner_job}
+      jobType="actions"
+    />
   ) : null
 
   const actionWorkflow = action?.action_workflow
@@ -81,9 +84,7 @@ export const InstallActionRunHeaderContainer = ({
       }
       runnerJobPlanButton={
         installActionRun?.runner_job?.id ? (
-          <RunnerJobPlanButton
-            runnerJobId={installActionRun?.runner_job?.id}
-          />
+          <RunnerJobPlanButton runnerJobId={installActionRun?.runner_job?.id} />
         ) : null
       }
     />

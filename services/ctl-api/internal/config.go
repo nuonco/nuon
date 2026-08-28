@@ -194,6 +194,8 @@ func init() {
 	// Blob storage configuration
 	config.RegisterDefault("blob_storage_bucket", "nuon-dev")
 	config.RegisterDefault("blob_storage_region", "us-west-2")
+	config.RegisterDefault("customer_managed_bundle_storage_prefix", "customer_managed_bundles")
+	config.RegisterDefault("customer_managed_bundle_grant_ttl", "15m")
 
 	// Flow check thresholds
 	config.RegisterDefault("stale_plan_threshold", "72h") // override with STALE_PLAN_THRESHOLD env var
@@ -210,10 +212,11 @@ type Config struct {
 	worker.Config `config:",squash"`
 
 	// configs for starting and introspecting service
-	GitRef         string   `config:"git_ref" validate:"required"`
-	Version        string   `config:"version" validate:"required"`
-	MetricsTags    []string `config:"metrics_tags"`
-	DisableMetrics bool     `config:"disable_metrics"`
+	GitRef                   string   `config:"git_ref" validate:"required"`
+	Version                  string   `config:"version" validate:"required"`
+	MetricsTags              []string `config:"metrics_tags"`
+	DisableMetrics           bool     `config:"disable_metrics"`
+	TerraformMirrorPlatforms []string `config:"terraform_mirror_platforms"`
 
 	ServiceName       string `config:"service_name" validate:"required"`
 	ServiceType       string `config:"service_type" validate:"required"`
@@ -572,9 +575,19 @@ type Config struct {
 	// Blob storage configuration. Provider selects the backend: "s3" (default,
 	// AWS-hosted installs) or "gcs" (self-hosted control-plane installs on GCP,
 	// where BlobStorageBucket is a native GCS bucket rather than S3).
-	BlobStorageBucket   string `config:"blob_storage_bucket" validate:"required"`
-	BlobStorageRegion   string `config:"blob_storage_region" validate:"required"`
-	BlobStorageProvider string `config:"blob_storage_provider" validate:"required,oneof=s3 gcs"`
+	BlobStorageBucket                          string        `config:"blob_storage_bucket" validate:"required"`
+	BlobStorageRegion                          string        `config:"blob_storage_region" validate:"required"`
+	CustomerManagedBundleStorageBucket         string        `config:"customer_managed_bundle_storage_bucket"`
+	CustomerManagedBundleStorageRegion         string        `config:"customer_managed_bundle_storage_region"`
+	CustomerManagedBundleStorageEndpoint       string        `config:"customer_managed_bundle_storage_endpoint"`
+	CustomerManagedBundleStorageForcePathStyle bool          `config:"customer_managed_bundle_storage_force_path_style"`
+	CustomerManagedBundleStoragePrefix         string        `config:"customer_managed_bundle_storage_prefix"`
+	CustomerManagedBundleGrantTTL              time.Duration `config:"customer_managed_bundle_grant_ttl"`
+	// CustomerManagedRunnerBinaryURL accepts HTTPS or file URLs; an empty value omits the customer-managed runner binary from bundles.
+	CustomerManagedRunnerBinaryURL string `config:"customer_managed_runner_binary_url"`
+	// CustomerManagedPortalBinaryURL accepts HTTPS or file URLs; an empty value omits the customer-managed portal binary from bundles.
+	CustomerManagedPortalBinaryURL string `config:"customer_managed_portal_binary_url"`
+	BlobStorageProvider            string `config:"blob_storage_provider" validate:"required,oneof=s3 gcs"`
 
 	// Enqueuer worker pool size — how many signals can be enqueued in parallel.
 	EnqueuerMaxWorkers int `config:"enqueuer_max_workers"`

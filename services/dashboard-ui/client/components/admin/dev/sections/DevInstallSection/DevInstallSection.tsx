@@ -24,9 +24,7 @@ export const DevInstallSection = ({
 
   const handleOpenPhoneHome = () => {
     if (!installId) return
-    const modal = (
-      <PhoneHomeModal installId={installId} orgId={orgId} />
-    )
+    const modal = <PhoneHomeModal installId={installId} orgId={orgId} />
     addModal(modal)
   }
 

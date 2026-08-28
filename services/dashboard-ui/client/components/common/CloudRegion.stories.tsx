@@ -8,4 +8,6 @@ export const Azure = () => <CloudRegion platform="azure" location="eastus" />
 
 export const GCP = () => <CloudRegion platform="gcp" region="us-central1" />
 
-export const Unknown = () => <CloudRegion platform="aws" region="invalid-region" />
+export const Unknown = () => (
+  <CloudRegion platform="aws" region="invalid-region" />
+)

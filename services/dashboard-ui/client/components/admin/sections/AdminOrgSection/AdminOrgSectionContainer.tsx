@@ -10,7 +10,9 @@ interface IAdminOrgSectionContainer {
   orgId: string
 }
 
-export const AdminOrgSectionContainer = ({ orgId }: IAdminOrgSectionContainer) => {
+export const AdminOrgSectionContainer = ({
+  orgId,
+}: IAdminOrgSectionContainer) => {
   const { org } = useOrg()
   const { user } = useAuth()
   const config = useConfig()

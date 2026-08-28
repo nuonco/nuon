@@ -23,7 +23,11 @@ export const WithError = () => (
   <ModalStory>
     <CreateAppModal
       isSubmitting={false}
-      error={{ error: 'An app with this name already exists.', description: '', user_error: true }}
+      error={{
+        error: 'An app with this name already exists.',
+        description: '',
+        user_error: true,
+      }}
       onSubmit={noop}
     />
   </ModalStory>

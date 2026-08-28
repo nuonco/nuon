@@ -13,7 +13,12 @@ interface IStepEditor {
   onChange: (patch: Partial<TBuilderStep>) => void
 }
 
-export function StepEditor({ step, components, actions, onChange }: IStepEditor) {
+export function StepEditor({
+  step,
+  components,
+  actions,
+  onChange,
+}: IStepEditor) {
   return (
     <div className="flex flex-col gap-3">
       <Input

@@ -24,7 +24,9 @@ export const OrgsNavContainer = () => {
       onSearchChange={setSearchTerm}
       onLoadMore={() => setLimit(limit + 10)}
       showSearch={orgs?.length > ENABLE_PAGINATION_COUNT || !!searchTerm}
-      showLoadMore={orgs?.length > ENABLE_PAGINATION_COUNT && orgs?.length === limit}
+      showLoadMore={
+        orgs?.length > ENABLE_PAGINATION_COUNT && orgs?.length === limit
+      }
     />
   )
 }

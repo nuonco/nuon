@@ -10,7 +10,9 @@ import { Text } from '@/components/common/Text'
 const MockStepComponent = ({ onAdvance }: any) => (
   <div className="flex flex-col gap-4">
     <Text variant="body">This is a mock step component.</Text>
-    <button onClick={onAdvance} className="btn">Next</button>
+    <button onClick={onAdvance} className="btn">
+      Next
+    </button>
   </div>
 )
 

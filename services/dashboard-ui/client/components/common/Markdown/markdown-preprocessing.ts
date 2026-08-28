@@ -22,7 +22,9 @@ function preprocessAlerts(content: string): string {
     }
 
     const body = bodyLines.join('\n').trim()
-    result.push(`<nuon-alert type="${headerMatch[1].toLowerCase()}">${body}</nuon-alert>`)
+    result.push(
+      `<nuon-alert type="${headerMatch[1].toLowerCase()}">${body}</nuon-alert>`
+    )
     result.push('')
   }
 
@@ -36,8 +38,12 @@ export function preprocessContent(content: string): string {
   let htmlDepth = 0
 
   for (const line of lines) {
-    const opens = (line.match(/<(?:div|table|thead|tbody|tr|ul|ol|section)\b/gi) || []).length
-    const closes = (line.match(/<\/(?:div|table|thead|tbody|tr|ul|ol|section)\b/gi) || []).length
+    const opens = (
+      line.match(/<(?:div|table|thead|tbody|tr|ul|ol|section)\b/gi) || []
+    ).length
+    const closes = (
+      line.match(/<\/(?:div|table|thead|tbody|tr|ul|ol|section)\b/gi) || []
+    ).length
     htmlDepth += opens - closes
 
     if (htmlDepth > 0 && line.trim() === '') {

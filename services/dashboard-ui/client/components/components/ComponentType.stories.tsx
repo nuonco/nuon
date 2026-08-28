@@ -48,13 +48,41 @@ export const ColorVariants = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Color with icon-only</h4>
       <div className="flex items-center gap-6 p-4 border rounded flex-wrap">
-        <ComponentType type="docker_build" colorVariant="color" displayVariant="icon-only" />
-        <ComponentType type="external_image" colorVariant="color" displayVariant="icon-only" />
-        <ComponentType type="helm_chart" colorVariant="color" displayVariant="icon-only" />
-        <ComponentType type="terraform_module" colorVariant="color" displayVariant="icon-only" />
-        <ComponentType type={'pulumi_module' as any} colorVariant="color" displayVariant="icon-only" />
-        <ComponentType type="job" colorVariant="color" displayVariant="icon-only" />
-        <ComponentType type="kubernetes_manifest" colorVariant="color" displayVariant="icon-only" />
+        <ComponentType
+          type="docker_build"
+          colorVariant="color"
+          displayVariant="icon-only"
+        />
+        <ComponentType
+          type="external_image"
+          colorVariant="color"
+          displayVariant="icon-only"
+        />
+        <ComponentType
+          type="helm_chart"
+          colorVariant="color"
+          displayVariant="icon-only"
+        />
+        <ComponentType
+          type="terraform_module"
+          colorVariant="color"
+          displayVariant="icon-only"
+        />
+        <ComponentType
+          type={'pulumi_module' as any}
+          colorVariant="color"
+          displayVariant="icon-only"
+        />
+        <ComponentType
+          type="job"
+          colorVariant="color"
+          displayVariant="icon-only"
+        />
+        <ComponentType
+          type="kubernetes_manifest"
+          colorVariant="color"
+          displayVariant="icon-only"
+        />
       </div>
     </div>
   </div>
@@ -134,7 +162,9 @@ export const BasicUsage = () => (
         <li>External Image — pre-built OCI container image</li>
         <li>Helm Chart — Kubernetes Helm chart deployment</li>
         <li>Terraform Module — infrastructure as code module</li>
-        <li>Pulumi Module — infrastructure as code with general-purpose languages</li>
+        <li>
+          Pulumi Module — infrastructure as code with general-purpose languages
+        </li>
         <li>Job — Lambda function execution</li>
         <li>Kubernetes Manifest — raw Kubernetes YAML manifest</li>
         <li>Unknown — fallback for unrecognized component types</li>
@@ -198,7 +228,10 @@ export const DisplayVariants = () => (
         <ComponentType type="external_image" displayVariant="icon-only" />
         <ComponentType type="helm_chart" displayVariant="icon-only" />
         <ComponentType type="terraform_module" displayVariant="icon-only" />
-        <ComponentType type={'pulumi_module' as any} displayVariant="icon-only" />
+        <ComponentType
+          type={'pulumi_module' as any}
+          displayVariant="icon-only"
+        />
         <ComponentType type="job" displayVariant="icon-only" />
         <ComponentType type="kubernetes_manifest" displayVariant="icon-only" />
       </div>
@@ -348,7 +381,10 @@ export const UsageExamples = () => (
           </div>
           <div className="px-4 py-3">
             <div className="grid grid-cols-4 gap-4 items-center text-sm">
-              <ComponentType type="kubernetes_manifest" displayVariant="icon-only" />
+              <ComponentType
+                type="kubernetes_manifest"
+                displayVariant="icon-only"
+              />
               <Text variant="subtext">ingress-controller</Text>
               <Text variant="subtext">v1.0.0</Text>
               <Badge theme="error" size="sm">
@@ -408,9 +444,18 @@ export const UsageExamples = () => (
             Pulumi Module
           </Text>
           <div className="flex items-center gap-4">
-            <ComponentType type={'pulumi_module' as any} displayVariant="icon-only" />
-            <ComponentType type={'pulumi_module' as any} displayVariant="abbr" />
-            <ComponentType type={'pulumi_module' as any} displayVariant="name" />
+            <ComponentType
+              type={'pulumi_module' as any}
+              displayVariant="icon-only"
+            />
+            <ComponentType
+              type={'pulumi_module' as any}
+              displayVariant="abbr"
+            />
+            <ComponentType
+              type={'pulumi_module' as any}
+              displayVariant="name"
+            />
           </div>
         </div>
         <div className="p-4 border rounded">
@@ -428,7 +473,10 @@ export const UsageExamples = () => (
             Kubernetes Manifest
           </Text>
           <div className="flex items-center gap-4">
-            <ComponentType type="kubernetes_manifest" displayVariant="icon-only" />
+            <ComponentType
+              type="kubernetes_manifest"
+              displayVariant="icon-only"
+            />
             <ComponentType type="kubernetes_manifest" displayVariant="abbr" />
             <ComponentType type="kubernetes_manifest" displayVariant="name" />
           </div>

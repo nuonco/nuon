@@ -30,7 +30,7 @@ export const ValuesModal = () => (
     <HelmValuesModal
       values={{
         'global.env': 'production',
-        'replicaCount': '3',
+        replicaCount: '3',
         'image.tag': '1.2.3',
         'service.port': '8080',
       }}

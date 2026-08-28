@@ -28,7 +28,9 @@ export const Default = () => (
 )
 
 export const CliInstalled = () => (
-  <OnboardingJourneyContext.Provider value={{ ...mockJourney, isStepComplete: () => true }}>
+  <OnboardingJourneyContext.Provider
+    value={{ ...mockJourney, isStepComplete: () => true }}
+  >
     <DownloadCliStep {...mockProps} />
   </OnboardingJourneyContext.Provider>
 )

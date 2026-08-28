@@ -54,7 +54,9 @@ export const RunnerProcessesTable = ({
             <div className="flex items-center gap-2">
               <Text variant="subtext">{process.version || '-'}</Text>
               {process.labels?.map((label) => (
-                <Badge key={label} theme="neutral" variant="code" size="sm">{label}</Badge>
+                <Badge key={label} theme="neutral" variant="code" size="sm">
+                  {label}
+                </Badge>
               ))}
             </div>
           )

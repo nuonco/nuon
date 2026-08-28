@@ -83,7 +83,11 @@ export function TableBase<TData extends object>({
       {enableSearch || filterActions ? (
         <div className="flex flex-row flex-wrap items-center justify-between gap-4">
           {enableSearch ? (
-            <DebouncedSearchInput labelClassName="w-full md:w-fit" className="w-full md:w-fit" placeholder={searchPlaceholder} />
+            <DebouncedSearchInput
+              labelClassName="w-full md:w-fit"
+              className="w-full md:w-fit"
+              placeholder={searchPlaceholder}
+            />
           ) : null}
           {filterActions ? (
             <div
@@ -94,9 +98,7 @@ export function TableBase<TData extends object>({
           ) : null}
         </div>
       ) : null}
-      <div
-        className={`overflow-x-auto rounded-lg border ${className}`}
-      >
+      <div className={`overflow-x-auto rounded-lg border ${className}`}>
         <table className="w-full min-w-[800px] text-sm">
           <thead className="rounded-lg">
             {table.getHeaderGroups().map((headerGroup) => (

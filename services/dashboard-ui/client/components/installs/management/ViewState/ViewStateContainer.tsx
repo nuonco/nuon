@@ -33,9 +33,7 @@ export const ViewStateModalContainer = ({ ...props }: IModal) => {
   )
 }
 
-export const ViewStateButton = ({
-  ...props
-}: IButtonAsButton) => {
+export const ViewStateButton = ({ ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const modal = <ViewStateModalContainer />
 

@@ -1,4 +1,10 @@
-import { type TextareaHTMLAttributes, forwardRef, useState, useRef, useEffect } from 'react'
+import {
+  type TextareaHTMLAttributes,
+  forwardRef,
+  useState,
+  useRef,
+  useEffect,
+} from 'react'
 import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
@@ -59,21 +65,27 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
           // Reset height to calculate scrollHeight properly
           textarea.style.height = 'auto'
 
-          const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight)
+          const lineHeight = parseInt(
+            window.getComputedStyle(textarea).lineHeight
+          )
           const minHeight = lineHeight * minRows
           const maxHeight = lineHeight * maxRows
 
-          const newHeight = Math.min(Math.max(textarea.scrollHeight, minHeight), maxHeight)
+          const newHeight = Math.min(
+            Math.max(textarea.scrollHeight, minHeight),
+            maxHeight
+          )
           textarea.style.height = `${newHeight}px`
 
-          textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden'
+          textarea.style.overflowY =
+            textarea.scrollHeight > maxHeight ? 'auto' : 'hidden'
         }
 
         adjustHeight()
 
         const handleInput = () => adjustHeight()
         textarea.addEventListener('input', handleInput)
-        
+
         return () => textarea.removeEventListener('input', handleInput)
       }
     }, [autoResize, minRows, maxRows, currentValue])
@@ -116,11 +128,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
             setShowValidationMessage(true)
           }
         }
-        
+
         textarea.addEventListener('invalid', handleInvalid)
         textarea.addEventListener('input', handleInput)
         textarea.addEventListener('blur', handleBlur)
-        
+
         return () => {
           textarea.removeEventListener('invalid', handleInvalid)
           textarea.removeEventListener('input', handleInput)
@@ -162,7 +174,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
       },
 
       {
-        'border-cool-grey-500/24 dark:border-cool-grey-500/24': !error && !disabled && !isInvalid,
+        'border-cool-grey-500/24 dark:border-cool-grey-500/24':
+          !error && !disabled && !isInvalid,
         'text-cool-grey-900 dark:text-cool-grey-100': !disabled,
 
         '!border-red-500 dark:!border-red-400': error || isInvalid,
@@ -173,7 +186,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
         'text-cool-grey-400 dark:text-cool-grey-500': disabled,
         'cursor-not-allowed': disabled,
         '!shadow-none': disabled,
-        'focus:!ring-transparent focus:!border-cool-grey-300 dark:focus:!border-dark-grey-600': disabled,
+        'focus:!ring-transparent focus:!border-cool-grey-300 dark:focus:!border-dark-grey-600':
+          disabled,
       },
       className
     )
@@ -196,7 +210,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
         rows={autoResize ? minRows : props.rows}
         aria-invalid={error || isInvalid}
         aria-describedby={
-          helperText || errorMessage || showValidationMessage ? `${props.id}-description` : undefined
+          helperText || errorMessage || showValidationMessage
+            ? `${props.id}-description`
+            : undefined
         }
         {...props}
       />
@@ -227,7 +243,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
           </Text>
         )
       }
-      
+
       if (helperText) {
         return (
           <Text
@@ -239,7 +255,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
           </Text>
         )
       }
-      
+
       return null
     }
 

@@ -13,13 +13,14 @@ const mockCommit = {
   author_email: 'jane.smith@example.com',
   message: 'Fix authentication bug and update user permissions',
   created_at: '2024-03-15T14:30:00Z',
-  vcs_connection_id: 'vcs_conn_123'
+  vcs_connection_id: 'vcs_conn_123',
 }
 
 const longCommitMessage = {
   ...mockCommit,
   sha: 'x9y8z7w6v5u4',
-  message: 'Implement comprehensive error handling system with detailed logging, user-friendly error messages, retry mechanisms, and proper error boundary components for React applications'
+  message:
+    'Implement comprehensive error handling system with detailed logging, user-friendly error messages, retry mechanisms, and proper error boundary components for React applications',
 }
 
 const shortCommit = {
@@ -27,7 +28,7 @@ const shortCommit = {
   sha: 'f1e2d3c4b5a6',
   author_name: 'Bob Wilson',
   author_email: 'bob@dev.co',
-  message: 'Fix typo'
+  message: 'Fix typo',
 }
 
 export const BasicUsage = () => (
@@ -35,10 +36,10 @@ export const BasicUsage = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Basic CommitDetails Usage</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        CommitDetails displays git commit information in a tooltip when you hover
-        over the commit SHA. It shows the author, commit message, and date in a
-        clean, accessible format. Perfect for build headers, deploy information,
-        or any interface showing git commit data.
+        CommitDetails displays git commit information in a tooltip when you
+        hover over the commit SHA. It shows the author, commit message, and date
+        in a clean, accessible format. Perfect for build headers, deploy
+        information, or any interface showing git commit data.
       </p>
     </div>
 
@@ -48,7 +49,7 @@ export const BasicUsage = () => (
         <LabeledValue label="Commit SHA">
           <CommitDetails commit={mockCommit} />
         </LabeledValue>
-        
+
         <LabeledValue label="Latest Commit">
           <CommitDetails commit={shortCommit} />
         </LabeledValue>
@@ -61,7 +62,10 @@ export const BasicUsage = () => (
     <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
       <strong>Key Features:</strong>
       <ul className="mt-2 space-y-1 list-disc list-inside">
-        <li>Truncated SHA display (first 6 characters) with full details in tooltip</li>
+        <li>
+          Truncated SHA display (first 6 characters) with full details in
+          tooltip
+        </li>
         <li>Author name and email in tooltip</li>
         <li>Commit message with automatic truncation for long messages</li>
         <li>Formatted timestamp showing when the commit was created</li>
@@ -88,17 +92,18 @@ export const MessageHandling = () => (
         <LabeledValue label="Short Message">
           <CommitDetails commit={shortCommit} />
         </LabeledValue>
-        
+
         <LabeledValue label="Standard Message">
           <CommitDetails commit={mockCommit} />
         </LabeledValue>
-        
+
         <LabeledValue label="Long Message">
           <CommitDetails commit={longCommitMessage} />
         </LabeledValue>
       </div>
       <Text variant="subtext" theme="neutral">
-        Messages longer than 180px width are automatically truncated in the tooltip
+        Messages longer than 180px width are automatically truncated in the
+        tooltip
       </Text>
     </div>
   </div>
@@ -128,11 +133,11 @@ export const IntegrationExamples = () => (
               <Text theme="success">Success</Text>
             </div>
           </LabeledValue>
-          
+
           <LabeledValue label="Duration">
             <Text>2m 34s</Text>
           </LabeledValue>
-          
+
           <LabeledValue label="Commit SHA">
             <CommitDetails commit={mockCommit} />
           </LabeledValue>
@@ -150,15 +155,15 @@ export const IntegrationExamples = () => (
           <LabeledValue label="Environment">
             <Text>production</Text>
           </LabeledValue>
-          
+
           <LabeledValue label="Deployed At">
             <Text variant="subtext">2024-03-15 at 2:30 PM UTC</Text>
           </LabeledValue>
-          
+
           <LabeledValue label="Source Commit">
             <CommitDetails commit={mockCommit} />
           </LabeledValue>
-          
+
           <LabeledValue label="Deploy ID">
             <Text family="mono">deploy_abc123</Text>
           </LabeledValue>
@@ -176,11 +181,11 @@ export const IntegrationExamples = () => (
           <LabeledValue label="Head Commit">
             <CommitDetails commit={mockCommit} />
           </LabeledValue>
-          
+
           <LabeledValue label="Previous Release">
             <CommitDetails commit={shortCommit} />
           </LabeledValue>
-          
+
           <LabeledValue label="Feature Branch">
             <CommitDetails commit={longCommitMessage} />
           </LabeledValue>
@@ -210,11 +215,11 @@ export const EdgeCases = () => (
             (Component renders nothing when commit is null)
           </Text>
         </LabeledValue>
-        
+
         <LabeledValue label="Valid Commit">
           <CommitDetails commit={mockCommit} />
         </LabeledValue>
-        
+
         <LabeledValue label="Undefined Commit">
           <CommitDetails commit={undefined} />
           <Text variant="subtext" theme="neutral">

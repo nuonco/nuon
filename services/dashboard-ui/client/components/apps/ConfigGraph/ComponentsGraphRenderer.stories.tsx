@@ -4,9 +4,7 @@ export default {
 
 import { ComponentsGraphInline } from './ComponentsGraphRenderer'
 
-export const Loading = () => (
-  <ComponentsGraphInline isLoading={true} />
-)
+export const Loading = () => <ComponentsGraphInline isLoading={true} />
 
 export const Error = () => (
   <ComponentsGraphInline

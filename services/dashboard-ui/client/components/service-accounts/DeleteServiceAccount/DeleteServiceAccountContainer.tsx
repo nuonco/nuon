@@ -21,12 +21,15 @@ const DeleteServiceAccountModalContainer = ({
   const identity = account.email || account.id || ''
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: () => deleteServiceAccount({ accountId: account.id || '', orgId: org.id }),
+    mutationFn: () =>
+      deleteServiceAccount({ accountId: account.id || '', orgId: org.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-accounts', org.id] })
       addToast(
         <Toast heading="Service account deleted" theme="success">
-          <Text>Deleted {identity} from {org.name}.</Text>
+          <Text>
+            Deleted {identity} from {org.name}.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)

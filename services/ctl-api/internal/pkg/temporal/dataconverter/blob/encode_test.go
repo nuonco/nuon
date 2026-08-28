@@ -28,6 +28,7 @@ type countingBlobSvc struct {
 }
 
 func (c *countingBlobSvc) Upload(ctx context.Context, s3Key string, data []byte) error { return nil }
+func (c *countingBlobSvc) Delete(ctx context.Context, s3Key string) error              { return nil }
 func (c *countingBlobSvc) Download(ctx context.Context, s3Key string) ([]byte, error) {
 	return nil, nil
 }

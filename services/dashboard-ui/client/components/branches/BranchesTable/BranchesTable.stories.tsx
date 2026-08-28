@@ -31,17 +31,11 @@ const mockData = [
   },
 ]
 
-export const Default = () => (
-  <BranchesTable data={mockData} isLoading={false} />
-)
+export const Default = () => <BranchesTable data={mockData} isLoading={false} />
 
-export const Loading = () => (
-  <BranchesTable data={[]} isLoading={true} />
-)
+export const Loading = () => <BranchesTable data={[]} isLoading={true} />
 
-export const Empty = () => (
-  <BranchesTable data={[]} isLoading={false} />
-)
+export const Empty = () => <BranchesTable data={[]} isLoading={false} />
 
 export const SingleWorkflow = () => (
   <BranchesTable

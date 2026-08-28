@@ -211,6 +211,18 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 					return nil, errors.Wrap(err, "unable to create preview plan step")
 				}
 				steps = append(steps, step)
+			case app.AppBranchRunPreviewModePlanInfra:
+				sg.nextGroup()
+				step, err := sg.appBranchSignalStep(ctx, appBranchID, "plan preview install (infra)", pgtype.Hstore{}, &updateinstallgroup.Signal{
+					PreviewInstallID:   run.Preview.InstallID,
+					SyntheticGroupName: "preview",
+					AppBranchID:        appBranchID,
+					RunID:              runID,
+				}, WithSkippable(true))
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to create preview plan-infra step")
+				}
+				steps = append(steps, step)
 			case app.AppBranchRunPreviewModeApply:
 				sg.nextGroup()
 				step, err := sg.appBranchSignalStep(ctx, appBranchID, "apply preview install", pgtype.Hstore{}, &updateinstallgroup.Signal{

@@ -57,7 +57,9 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
       })
       addToast(
         <Toast heading="Invite failed" theme="error">
-          <Text>There was an error inviting {email} to {org.name}.</Text>
+          <Text>
+            There was an error inviting {email} to {org.name}.
+          </Text>
         </Toast>
       )
     },
@@ -105,11 +107,7 @@ export const InviteUserButton = ({
   const modal = <InviteUserModalContainer />
 
   return (
-    <Button
-      variant="secondary"
-      onClick={() => addModal(modal)}
-      {...props}
-    >
+    <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
       {!props?.isMenuButton ? <Icon variant="UserPlusIcon" /> : null}
       Invite user
       {props?.isMenuButton ? <Icon variant="UserPlusIcon" /> : null}
