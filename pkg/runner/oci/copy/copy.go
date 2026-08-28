@@ -82,10 +82,7 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 		},
 	}
 
-	res, err := oras.Copy(ctx, srcRepo, srcTag, dstRepo, dstTag,
-		oras.CopyOptions{
-			CopyGraphOptions: cpo,
-		})
+	res, err := copyWithReferrers(ctx, srcRepo, srcTag, dstRepo, dstTag, cpo)
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +92,14 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 	}
 
 	return &res, nil
+}
+
+func copyWithReferrers(ctx context.Context, src oras.ReadOnlyGraphTarget, srcRef string, dst oras.Target, dstRef string, opts oras.CopyGraphOptions) (ocispec.Descriptor, error) {
+	return oras.ExtendedCopy(ctx, src, srcRef, dst, dstRef, oras.ExtendedCopyOptions{
+		ExtendedCopyGraphOptions: oras.ExtendedCopyGraphOptions{
+			CopyGraphOptions: opts,
+		},
+	})
 }
 
 func mediaNoun(mediatype string) string {
