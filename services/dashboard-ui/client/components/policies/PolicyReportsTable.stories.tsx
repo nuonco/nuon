@@ -55,6 +55,7 @@ const reportWithDeny: TPolicyReport = {
   owner_type: 'install_deploys',
   evaluated_at: minutesAgo(5),
   deny_count: 1,
+  status: { status: 'error' },
   policies: [denied('pol-1'), passed('pol-4')],
   violations: [
     v(
@@ -72,6 +73,7 @@ const reportSandboxWarn: TPolicyReport = {
   owner_type: 'install_sandbox_runs',
   evaluated_at: minutesAgo(60),
   warn_count: 1,
+  status: { status: 'warning' },
   policies: [warned('pol-3')],
   violations: [
     v(
@@ -91,6 +93,7 @@ const reportAllPassed: TPolicyReport = {
   owner_type: 'install_deploys',
   evaluated_at: minutesAgo(120),
   pass_count: 3,
+  status: { status: 'success' },
   policies: [passed('pol-1'), passed('pol-2'), passed('pol-4')],
 } as TPolicyReport
 
@@ -102,6 +105,7 @@ const reportBuild: TPolicyReport = {
   owner_type: 'component_builds',
   evaluated_at: minutesAgo(360),
   warn_count: 2,
+  status: { status: 'warning' },
   policies: [warned('pol-2', 2)],
   violations: [
     v('pol-2', 'warn', 'CPU limit not set'),
@@ -119,6 +123,7 @@ const reportMixed: TPolicyReport = {
   deny_count: 1,
   warn_count: 2,
   pass_count: 1,
+  status: { status: 'error' },
   policies: [
     denied('pol-1'),
     warned('pol-3'),
@@ -137,7 +142,6 @@ export const SingleReport = () => (
   <PolicyReportsTable
     reports={[reportWithDeny]}
     orgId="org-1"
-    installId="install-1"
     policyNameMap={policyNameMap}
   />
 )
@@ -146,7 +150,6 @@ export const MultipleReports = () => (
   <PolicyReportsTable
     reports={[reportWithDeny, reportSandboxWarn, reportAllPassed, reportBuild]}
     orgId="org-1"
-    installId="install-1"
     policyNameMap={policyNameMap}
   />
 )
@@ -164,15 +167,11 @@ export const ManyReports = () => (
       { ...reportAllPassed, id: 'rpt-4', evaluated_at: minutesAgo(2880) },
     ]}
     orgId="org-1"
-    installId="install-1"
     policyNameMap={policyNameMap}
   />
 )
 
 export const ReprovisionHistory = () => (
-  // 5 sandbox reprovisions + 3 deploys for one component + 1 deploy for another.
-  // Should render only 3 group cards (sandbox, api-server deploys, worker deploys),
-  // each with a 'Show N earlier evaluations' toggle.
   <PolicyReportsTable
     reports={[
       {
@@ -223,7 +222,6 @@ export const ReprovisionHistory = () => (
       reportAllPassed,
     ]}
     orgId="org-1"
-    installId="install-1"
     policyNameMap={policyNameMap}
   />
 )
@@ -232,7 +230,6 @@ export const Empty = () => (
   <PolicyReportsTable
     reports={[]}
     orgId="org-1"
-    installId="install-1"
     policyNameMap={policyNameMap}
   />
 )
@@ -241,8 +238,16 @@ export const EmptyWithFilters = () => (
   <PolicyReportsTable
     reports={[]}
     orgId="org-1"
-    installId="install-1"
     policyNameMap={policyNameMap}
     currentStatus="warning"
+  />
+)
+
+export const Loading = () => (
+  <PolicyReportsTable
+    reports={[]}
+    orgId="org-1"
+    policyNameMap={policyNameMap}
+    isLoading
   />
 )

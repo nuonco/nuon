@@ -1,10 +1,10 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallStack } from '@/lib'
-import { InstallStacksTable } from './InstallStacksTable'
+import { getInstallConfigVersions } from '@/lib'
+import { InstallConfigsTimeline } from './InstallConfigsTimeline'
 
-export const InstallStacksTableContainer = ({
+export const InstallConfigsTimelineContainer = ({
   pollInterval = 20000,
   shouldPoll,
 }: {
@@ -14,20 +14,21 @@ export const InstallStacksTableContainer = ({
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const { data: stack, isLoading } = useQuery({
+  const { data: versions, isLoading } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['install-stack', org?.id, install?.id],
-    queryFn: () => getInstallStack({ orgId: org.id, installId: install.id }),
+    queryKey: ['install-config-versions', org?.id, install?.id],
+    queryFn: () =>
+      getInstallConfigVersions({ orgId: org!.id, installId: install!.id }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
   })
 
   return (
-    <InstallStacksTable
-      versions={stack?.versions ?? []}
-      orgId={org?.id}
-      appId={install?.app_id}
+    <InstallConfigsTimeline
+      versions={versions ?? []}
       isLoading={isLoading}
+      orgId={org?.id}
+      installId={install?.id}
     />
   )
 }
