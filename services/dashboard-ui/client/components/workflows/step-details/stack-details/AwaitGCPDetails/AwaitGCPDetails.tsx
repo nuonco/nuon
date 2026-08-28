@@ -797,7 +797,7 @@ ${providerBlock}
 
 module "gcp_stack" {
   source  = "nuonco/stack/gcp"
-  version = "~> 0.1"
+  version = "~> 1.0"
 
   install_id = "${id}"${inputsBlock}${secretsBlock}
 }${secretVariablesBlock}`
