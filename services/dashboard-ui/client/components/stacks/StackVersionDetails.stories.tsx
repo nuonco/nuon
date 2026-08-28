@@ -48,3 +48,41 @@ export const Expired = () => (
     />
   </PanelStory>
 )
+
+export const WithRunDiffs = () => (
+  <PanelStory>
+    <StackVersionDetails
+      version={
+        {
+          ...mockVersion,
+          runs: [
+            {
+              id: 'run-2',
+              created_at: new Date(Date.now() - 600000).toISOString(),
+              run_type: 'workflow-run',
+              data_contents: { vpc_id: 'vpc-abc123', subnet_count: '3' },
+              role_diff: { enabled: ['provision'], disabled: ['deprovision'] },
+              input_diff: {
+                added: ['cluster_size'],
+                changed: ['region'],
+                removed: ['legacy_flag'],
+              },
+            },
+            {
+              id: 'run-1',
+              created_at: new Date(Date.now() - 3600000).toISOString(),
+              run_type: 'out-of-band',
+              data_contents: {},
+            },
+          ],
+        } as TStackVersion
+      }
+    />
+  </PanelStory>
+)
+
+export const NoRuns = () => (
+  <PanelStory>
+    <StackVersionDetails version={{ ...mockVersion, runs: [] } as TStackVersion} />
+  </PanelStory>
+)
