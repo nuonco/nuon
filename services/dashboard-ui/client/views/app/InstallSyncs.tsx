@@ -1,15 +1,14 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate } from 'react-router'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
+import { AppInstallSyncsTimeline } from '@/components/apps/AppInstallSyncsTimeline'
 import { ManageInstallsConfigButton } from '@/components/apps/ManageInstallsConfig'
 import { Badge } from '@/components/common/Badge'
-import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
-import { Time } from '@/components/common/Time'
 import { Toast } from '@/components/surfaces/Toast'
-import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -17,14 +16,8 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
-import {
-  getAppInstallSyncs,
-  triggerAppInstallSync,
-  getAppInstallsConfig,
-  approveInstallCreation,
-} from '@/lib'
-import type { TAPIError, TAppInstallConfigSync } from '@/types'
-import { getStatusTheme } from '@/utils/status-utils'
+import { getAppInstallsConfig, triggerAppInstallSync } from '@/lib'
+import type { TAPIError } from '@/types'
 
 export const InstallSyncs = () => {
   const { org } = useOrg()
@@ -32,14 +25,6 @@ export const InstallSyncs = () => {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
-
-  const { data: syncs, isLoading } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['app-install-syncs', org?.id, app?.id],
-    queryFn: () => getAppInstallSyncs({ appId: app!.id, orgId: org!.id }),
-    enabled: hasInstallSyncing && !!org?.id && !!app?.id,
-    refetchInterval: 10000,
-  })
 
   const { data: installsConfig } = useQuery({
     placeholderData: keepPreviousData,
@@ -103,176 +88,40 @@ export const InstallSyncs = () => {
               onClick={() => triggerSync()}
               disabled={isPending}
             >
-              {isPending ? 'Syncing...' : 'Sync now'}
+              {isPending ? 'Syncing installs' : 'Sync now'}
             </Button>
           </>
         }
       />
 
-      {installsConfig && (
+      {installsConfig ? (
         <Card>
-          <div className="p-4">
-            <Text variant="subtext" weight="strong">
-              Config source
-            </Text>
-            <div className="mt-2 flex items-center gap-3">
+          <Text weight="strong">Config source</Text>
+          <div className="grid grid-cols-4 gap-3">
+            <LabeledValue label="Source">
               <Badge variant="code" size="md">
                 {installsConfig.source === 'config'
                   ? 'installs.toml'
                   : 'dashboard'}
               </Badge>
-              <Text variant="subtext">{installsConfig.repo}</Text>
-              <Text variant="subtext" theme="neutral">
-                {installsConfig.branch}
-              </Text>
-              {installsConfig.directory !== '.' && (
-                <Text variant="subtext" theme="neutral">
-                  /{installsConfig.directory}
-                </Text>
-              )}
-            </div>
+            </LabeledValue>
+            <LabeledValue label="Repo">{installsConfig.repo}</LabeledValue>
+            <LabeledValue label="Branch">{installsConfig.branch}</LabeledValue>
+            {installsConfig.directory !== '.' ? (
+              <LabeledValue label="Directory">
+                /{installsConfig.directory}
+              </LabeledValue>
+            ) : null}
           </div>
         </Card>
-      )}
+      ) : null}
 
-      {isLoading && (
-        <Text variant="subtext" theme="neutral">
-          Loading...
-        </Text>
-      )}
+      <SectionHeader
+        title="Sync history"
+        description="Each run of the installs config sync. Select a run to see its results."
+      />
 
-      {!isLoading && (!syncs || syncs.length === 0) && (
-        <Card>
-          <div className="p-6 text-center">
-            <Text variant="subtext" theme="neutral">
-              No install syncs yet. Configure an installs config source and
-              trigger a sync.
-            </Text>
-          </div>
-        </Card>
-      )}
-
-      {syncs?.map((sync) => (
-        <SyncCard key={sync.id} sync={sync} />
-      ))}
+      <AppInstallSyncsTimeline shouldPoll />
     </PageSection>
-  )
-}
-
-const SyncCard = ({ sync }: { sync: TAppInstallConfigSync }) => {
-  const { org } = useOrg()
-  const { app } = useApp()
-  const { addToast } = useToast()
-  const queryClient = useQueryClient()
-  const status = sync.status?.status || 'unknown'
-  const theme = getStatusTheme(status)
-  const isAwaitingApproval =
-    status === 'awaiting_approval' &&
-    sync.install_creation_approval?.status === 'pending'
-  const approval = sync.install_creation_approval
-  const proposedCount = approval?.proposed_installs?.length
-
-  const { mutate: approve, isPending: isApproving } = useMutation({
-    mutationFn: (approvalId: string) =>
-      approveInstallCreation({
-        appId: app!.id,
-        syncId: sync.id,
-        approvalId,
-        orgId: org!.id,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['app-install-syncs', org?.id, app?.id],
-      })
-      addToast(
-        <Toast heading="Installs approved" theme="success">
-          <Text>Creating missing installs and re-running sync.</Text>
-        </Toast>
-      )
-    },
-    onError: (err: TAPIError) => {
-      addToast(
-        <Toast heading="Approval failed" theme="error">
-          <Text>{err?.error || 'Unable to approve install creation.'}</Text>
-        </Toast>
-      )
-    },
-  })
-
-  return (
-    <Card>
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-3">
-          <Badge theme={theme}>{status.replace(/_/g, ' ')}</Badge>
-          <Text variant="subtext">triggered by {sync.triggered_by}</Text>
-          {sync.vcs_connection_commit?.sha && (
-            <Text variant="subtext" theme="neutral">
-              {sync.vcs_connection_commit.sha.slice(0, 7)}
-            </Text>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          {sync.status?.status_human_description && (
-            <Text variant="subtext" theme="neutral">
-              {sync.status.status_human_description}
-            </Text>
-          )}
-          <Time variant="subtext" time={sync.created_at} format="relative" />
-          {sync.queue_id && sync.queue_signal_id && (
-            <AdminDashboardLink
-              path={`/queues/${sync.queue_id}/signals/${sync.queue_signal_id}`}
-              label="View signal"
-            />
-          )}
-          <Link href={`/${org?.id}/apps/${app?.id}/install-syncs/${sync.id}`}>
-            View sync
-          </Link>
-        </div>
-      </div>
-
-      {isAwaitingApproval && (
-        <div className="border-t px-4 py-3">
-          <Banner theme="warn">
-            <div className="flex items-center justify-between">
-              <Text variant="subtext">
-                {typeof proposedCount === 'number'
-                  ? `${proposedCount} new install${proposedCount === 1 ? '' : 's'} need${proposedCount === 1 ? 's' : ''} approval`
-                  : 'New installs need approval before sync can continue'}
-              </Text>
-              <Button
-                variant="primary"
-                size="xs"
-                onClick={() => approval?.id && approve(approval.id)}
-                disabled={isApproving || !approval?.id}
-              >
-                {isApproving ? 'Approving...' : 'Approve creation'}
-              </Button>
-            </div>
-          </Banner>
-        </div>
-      )}
-
-      {sync.install_config_syncs && sync.install_config_syncs.length > 0 && (
-        <div className="border-t px-4 py-3">
-          <Text variant="subtext" weight="strong">
-            {sync.install_config_syncs.length} install
-            {sync.install_config_syncs.length === 1 ? '' : 's'}
-          </Text>
-          <div className="mt-2 flex flex-col gap-1">
-            {sync.install_config_syncs.map((ics) => (
-              <div key={ics.id} className="flex items-center justify-between">
-                <Text variant="subtext">{ics.install_id}</Text>
-                <Badge
-                  theme={getStatusTheme(ics.status?.status || 'unknown')}
-                  size="sm"
-                >
-                  {ics.status?.status || 'unknown'}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </Card>
   )
 }
