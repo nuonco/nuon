@@ -1,0 +1,58 @@
+---
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  nuonjwtauth:
+    issuer: ${env:NUON_TELEMETRY_ISSUER}
+    audience: urn:nuon:telemetry
+    jwks_url: ${env:NUON_TELEMETRY_JWKS_URL}
+  nuonpartialsuccess:
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+        max_request_body_size: 4194304
+        read_timeout: 30s
+        read_header_timeout: 10s
+        write_timeout: 35s
+        idle_timeout: 1m
+        auth:
+          authenticator: nuonjwtauth
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+  nuonidentity:
+
+exporters:
+  otlp_http/vendor:
+    endpoint: ${env:VENDOR_OTLP_ENDPOINT}
+    middlewares:
+      - id: nuonpartialsuccess
+    headers:
+      Authorization: ${env:VENDOR_OTLP_AUTHORIZATION}
+    timeout: 30s
+    sending_queue:
+      enabled: false
+    retry_on_failure:
+      enabled: false
+
+service:
+  extensions: [health_check, nuonjwtauth, nuonpartialsuccess]
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, nuonidentity]
+      exporters: [otlp_http/vendor]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, nuonidentity]
+      exporters: [otlp_http/vendor]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, nuonidentity]
+      exporters: [otlp_http/vendor]
