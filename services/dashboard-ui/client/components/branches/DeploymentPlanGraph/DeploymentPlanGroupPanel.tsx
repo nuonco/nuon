@@ -16,7 +16,6 @@ interface IDeploymentPlanGroupPanel {
   installs: PlanGroupInstall[]
   orgId: string
   maxParallel: number
-  useForPreviews: boolean
   labelEntries: [string, string][]
 }
 
@@ -24,7 +23,6 @@ const DeploymentPlanGroupContent = memo(({
   installs,
   orgId,
   maxParallel,
-  useForPreviews,
   labelEntries,
 }: Omit<IDeploymentPlanGroupPanel, 'panelKey' | 'groupName'>) => {
   const [query, setQuery] = useState('')
@@ -48,11 +46,6 @@ const DeploymentPlanGroupContent = memo(({
           {maxParallel > 1 && (
             <Text variant="subtext" theme="neutral">
               · {maxParallel} in parallel
-            </Text>
-          )}
-          {useForPreviews && (
-            <Text variant="subtext" theme="neutral">
-              · used for previews
             </Text>
           )}
         </div>
@@ -124,7 +117,6 @@ export const DeploymentPlanGroupPanel = ({
   installs,
   orgId,
   maxParallel,
-  useForPreviews,
   labelEntries,
 }: IDeploymentPlanGroupPanel) => (
   <Panel
@@ -142,7 +134,6 @@ export const DeploymentPlanGroupPanel = ({
       installs={installs}
       orgId={orgId}
       maxParallel={maxParallel}
-      useForPreviews={useForPreviews}
       labelEntries={labelEntries}
     />
   </Panel>

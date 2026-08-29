@@ -6,11 +6,62 @@ export type TAppBranch = components['schemas']['app.AppBranch'] & {
 }
 export type TAppBranchConfig = components['schemas']['app.AppBranchConfig'] & {
   disable_branch_triggers?: boolean
+  preview_config?: TAppBranchPreviewConfig
 }
 export type TAppBranchInstallGroup =
   components['schemas']['app.AppBranchInstallGroup']
 export type TAppBranchRun = components['schemas']['app.AppBranchRun'] & {
   awaiting_approval?: boolean
+  preview?: TAppBranchRunPreview
+}
+
+export type TAppBranchRunPreviewMode = 'plan-only' | 'apply' | 'build-only'
+export type TAppBranchRunPreviewSource = 'pr' | 'commit' | 'branch' | 'local'
+
+export type TAppBranchPreviewConfig = {
+  mode?: TAppBranchRunPreviewMode
+  install_id?: string
+  install_name?: string
+  label_selector?: { match_labels?: Record<string, string> }
+  set_statuses?: boolean
+  comment?: boolean
+}
+
+export type TAppBranchRunPreview = {
+  id?: string
+  source?: TAppBranchRunPreviewSource
+  mode?: TAppBranchRunPreviewMode
+  install_id?: string
+  install_name?: string
+  git_ref?: string
+  resolved_preview_config?: TAppBranchPreviewConfig
+}
+
+export type TPreviewSourcePR = {
+  pr_number: number
+  title: string
+  head_sha: string
+  head_ref: string
+  url: string
+}
+
+export type TPreviewSourceBranch = {
+  name: string
+  sha?: string
+}
+
+export type TPreviewSources = {
+  pull_requests: TPreviewSourcePR[]
+  branches: TPreviewSourceBranch[]
+}
+
+export type TPreviewRunRequest = {
+  source: TAppBranchRunPreviewSource
+  pr_number?: number
+  git_ref?: string
+  head_sha?: string
+  mode?: TAppBranchRunPreviewMode
+  install_id?: string
 }
 export type TCreateAppBranchRequest =
   components['schemas']['service.CreateAppBranchRequest']

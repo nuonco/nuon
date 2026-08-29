@@ -91,6 +91,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
+	if run.Preview != nil && run.Preview.Mode == app.AppBranchRunPreviewModePlanOnly {
+		logger.Info("preview plan-only run, skipping approval dispatch")
+		return nil
+	}
+
 	plan := installGroupPlan{
 		InstallGroup: groupName,
 		Installs:     entries,
@@ -121,6 +126,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, string, error) {
+	previewInstallID := s.PreviewInstallID
+	if previewInstallID == "" {
+		run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to get app branch run: %w", err)
+		}
+		if run.Preview != nil {
+			previewInstallID = run.Preview.InstallID
+		}
+	}
+	if previewInstallID != "" {
+		name := s.SyntheticGroupName
+		if name == "" {
+			name = "preview"
+		}
+		return []string{previewInstallID}, name, nil
+	}
 	resolved, err := installgroups.Resolve(ctx, s.InstallGroupID, s.AppBranchID)
 	if err != nil {
 		return nil, "", err
@@ -142,6 +164,15 @@ func (s *Signal) updatePlanMetadata(ctx workflow.Context, groupName string, entr
 		}
 		if e.InstallName != "" {
 			entry["install_name"] = e.InstallName
+		}
+		if len(e.InstallLabels) > 0 {
+			entry["install_labels"] = e.InstallLabels
+		}
+		if e.OldAppConfigID != "" {
+			entry["old_app_config_id"] = e.OldAppConfigID
+		}
+		if e.NewAppConfigID != "" {
+			entry["new_app_config_id"] = e.NewAppConfigID
 		}
 		if e.Diff != nil {
 			entry["added"] = len(e.Diff.Added)

@@ -20,7 +20,6 @@ const mockConfig: any = {
       order: 0,
       label_selector: { match_labels: { env: 'staging' } },
       max_parallel: 2,
-      use_for_previews: true,
     },
     {
       id: 'group-prod-primary',
@@ -142,7 +141,7 @@ const REGION_SUFFIXES = [
 ]
 
 function buildLargePlan(
-  specs: { name: string; count: number; maxParallel?: number; useForPreviews?: boolean }[]
+  specs: { name: string; count: number; maxParallel?: number }[]
 ) {
   const installsById: Record<string, any> = {}
   const install_groups = specs.map((spec, gi) => {
@@ -163,14 +162,13 @@ function buildLargePlan(
       order: gi,
       install_ids,
       max_parallel: spec.maxParallel ?? 1,
-      use_for_previews: spec.useForPreviews ?? false,
     }
   })
   return { config: { install_groups } as any, installsById }
 }
 
 const largePlan = buildLargePlan([
-  { name: 'Canary', count: 4, useForPreviews: true },
+  { name: 'Canary', count: 4 },
   { name: 'Production US', count: 30, maxParallel: 4 },
   { name: 'Production EU', count: 18, maxParallel: 3 },
   { name: 'Staging', count: 9, maxParallel: 2 },
