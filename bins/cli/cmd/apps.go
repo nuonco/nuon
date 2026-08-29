@@ -442,6 +442,55 @@ func (c *cli) branchesCmd() *cobra.Command {
 	triggerCmd.Flags().StringVar(&baseBranch, "base-branch", "", "Base branch the pull request targets")
 	branchesCmd.AddCommand(triggerCmd)
 
+	var (
+		previewConfigID    string
+		previewPRNumber    int
+		previewGitRef      string
+		previewHeadSHA     string
+		previewInstallID   string
+		previewMode        string
+		previewForce       bool
+		previewAutoApprove bool
+		previewWait        bool
+		previewNoWait      bool
+	)
+	previewCmd := &cobra.Command{
+		Use:         "preview",
+		Short:       "Trigger a git preview run against a PR or branch",
+		Annotations: annotations(tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputJSON, OutputAgent)),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.apps
+			opts := apps.PreviewBranchRunOptions{
+				ConfigID:    previewConfigID,
+				GitRef:      previewGitRef,
+				HeadSHA:     previewHeadSHA,
+				InstallID:   previewInstallID,
+				Mode:        previewMode,
+				Force:       previewForce,
+				AutoApprove: previewAutoApprove,
+				Wait:        previewWait,
+				NoWait:      previewNoWait,
+			}
+			if cmd.Flags().Changed("pr-number") {
+				opts.PRNumber = &previewPRNumber
+			}
+			return svc.PreviewBranchRun(cmd.Context(), appID, branchID, opts, PrintJSON)
+		}),
+	}
+	previewCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	previewCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID or name of the branch")
+	previewCmd.Flags().IntVar(&previewPRNumber, "pr-number", 0, "Pull request number to preview")
+	previewCmd.Flags().StringVar(&previewGitRef, "git-ref", "", "Git branch to preview")
+	previewCmd.Flags().StringVar(&previewHeadSHA, "head-sha", "", "Commit SHA for the preview source")
+	previewCmd.Flags().StringVar(&previewInstallID, "install-id", "", "Install to run the preview against")
+	previewCmd.Flags().StringVar(&previewMode, "mode", "", "Preview mode: plan-only, apply, or build-only")
+	previewCmd.Flags().StringVar(&previewConfigID, "config-id", "", "Branch config ID (defaults to latest)")
+	previewCmd.Flags().BoolVar(&previewForce, "force", false, "Force rebuild all components")
+	previewCmd.Flags().BoolVar(&previewAutoApprove, "auto-approve", false, "Skip the approval gate before deploy steps")
+	previewCmd.Flags().BoolVar(&previewWait, "wait", false, "Block until the preview workflow completes")
+	previewCmd.Flags().BoolVar(&previewNoWait, "no-wait", false, "Return after triggering without opening the workflow viewer")
+	branchesCmd.AddCommand(previewCmd)
+
 	var confirmDelete bool
 	deleteCmd := &cobra.Command{
 		Use:   "delete",

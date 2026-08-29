@@ -67,16 +67,25 @@ const BranchTemplate = () => {
     { path: `/`, iconVariant: 'HouseSimpleIcon', text: 'Overview' },
     { path: `/runs`, iconVariant: 'PlayIcon', text: 'Updates' },
     { type: 'section', label: 'Installs', defaultOpen: false },
+    { path: `/runs`, iconVariant: 'PlayIcon', text: 'Runs' },
+    { path: `/plan`, iconVariant: 'TreeStructureIcon', text: 'Deployment plan' },
+    { path: `/preview`, iconVariant: 'EyeIcon', text: 'Preview' },
+    { type: 'section', label: 'Definition' },
+    { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },
+    { path: `/actions`, iconVariant: 'TerminalWindowIcon', text: 'Actions' },
+    { path: `/runbooks`, iconVariant: 'BookIcon', text: 'Runbooks' },
+    { path: `/sandbox`, iconVariant: 'ShippingContainerIcon', text: 'Sandbox builds' },
+    { type: 'section', label: 'Distribution' },
     { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
     { path: `/plan`, iconVariant: 'TreeStructureIcon', text: 'Install groups' },
     ...(hasInstallSyncing
       ? [
-          {
-            path: `/install-configs`,
-            iconVariant: 'ArrowsClockwiseIcon' as const,
-            text: 'Install configs',
-          },
-        ]
+        {
+          path: `/install-configs`,
+          iconVariant: 'ArrowsClockwiseIcon' as const,
+          text: 'Install configs',
+        },
+      ]
       : []),
     { type: 'section', label: 'Template' },
     { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },

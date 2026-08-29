@@ -10,7 +10,7 @@ import (
 
 type CreateInstallGroupRunInput struct {
 	AppBranchRunID   string `json:"app_branch_run_id" validate:"required"`
-	InstallGroupID   string `json:"install_group_id" validate:"required"`
+	InstallGroupID   string `json:"install_group_id"`
 	InstallGroupName string `json:"install_group_name" validate:"required"`
 	TotalInstalls    int    `json:"total_installs"`
 }

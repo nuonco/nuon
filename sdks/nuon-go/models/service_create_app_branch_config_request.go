@@ -34,6 +34,11 @@ type ServiceCreateAppBranchConfigRequest struct {
 	// Omit to carry the current setting forward; send an empty array to clear it.
 	PostDeployRunbookIds []string `json:"post_deploy_runbook_ids"`
 
+	// PreviewConfig sets branch-level preview defaults. Omit to carry forward.
+	PreviewConfig struct {
+		AppAppBranchPreviewConfig
+	} `json:"preview_config,omitempty"`
+
 	// public git vcs config
 	PublicGitVcsConfig *HelpersPublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
 }
@@ -47,6 +52,10 @@ func (m *ServiceCreateAppBranchConfigRequest) Validate(formats strfmt.Registry) 
 	}
 
 	if err := m.validateInstallGroups(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePreviewConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -113,6 +122,14 @@ func (m *ServiceCreateAppBranchConfigRequest) validateInstallGroups(formats strf
 	return nil
 }
 
+func (m *ServiceCreateAppBranchConfigRequest) validatePreviewConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.PreviewConfig) { // not required
+		return nil
+	}
+
+	return nil
+}
+
 func (m *ServiceCreateAppBranchConfigRequest) validatePublicGitVcsConfig(formats strfmt.Registry) error {
 	if swag.IsZero(m.PublicGitVcsConfig) { // not required
 		return nil
@@ -145,6 +162,10 @@ func (m *ServiceCreateAppBranchConfigRequest) ContextValidate(ctx context.Contex
 	}
 
 	if err := m.contextValidateInstallGroups(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePreviewConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -208,6 +229,11 @@ func (m *ServiceCreateAppBranchConfigRequest) contextValidateInstallGroups(ctx c
 		}
 
 	}
+
+	return nil
+}
+
+func (m *ServiceCreateAppBranchConfigRequest) contextValidatePreviewConfig(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }

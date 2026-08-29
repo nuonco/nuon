@@ -11,6 +11,12 @@ import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { Tooltip } from '@/components/common/Tooltip'
 import { getRunTitle } from '@/components/branches/shared/run-title'
+import {
+  getBranchRunFromWorkflow,
+  isPreviewWorkflow,
+  previewModeLabel,
+  previewSourceLabel,
+} from '@/components/branches/shared/preview-run-utils'
 import type { TInstall, TWorkflow } from '@/types'
 import {
   getWorkflowBadge,
@@ -109,8 +115,39 @@ export const WorkflowTimeline = ({
               ) : null
             }
             additionalCaption={
-              <span className="flex items-center gap-2">
-                {workflow.plan_only ? (
+              <span className="flex items-center gap-2 flex-wrap">
+                {isBranchRun && isPreviewWorkflow(workflow) ? (
+                  <>
+                    <Badge variant="code" size="sm">
+                      preview
+                    </Badge>
+                    {(() => {
+                      const branchRun = getBranchRunFromWorkflow(workflow)
+                      const mode = previewModeLabel(branchRun?.preview) ?? (branchRun?.plan_only ? 'plan-only' : undefined)
+                      const source = previewSourceLabel(branchRun)
+                      const install = branchRun?.preview?.install_name
+                      return (
+                        <>
+                          {mode ? (
+                            <Badge variant="code" size="sm">
+                              {mode}
+                            </Badge>
+                          ) : null}
+                          {source ? (
+                            <Badge variant="code" size="sm">
+                              {source}
+                            </Badge>
+                          ) : null}
+                          {install ? (
+                            <Badge variant="code" size="sm">
+                              {install}
+                            </Badge>
+                          ) : null}
+                        </>
+                      )
+                    })()}
+                  </>
+                ) : workflow.plan_only ? (
                   isBranchRun ? (
                     <Badge variant="code" size="sm">
                       preview

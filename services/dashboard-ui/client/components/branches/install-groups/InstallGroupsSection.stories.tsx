@@ -17,7 +17,6 @@ export const Default = () => (
           name: 'Canary',
           max_parallel: 1,
           install_ids: ['inst-1'],
-          use_for_previews: true,
         },
         {
           id: 'group-2',
