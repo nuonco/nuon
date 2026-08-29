@@ -24,6 +24,15 @@ type AppBranchPreviewConfig struct {
 	Comment       *bool             `mapstructure:"comment,omitempty" toml:"comment,omitempty"`
 }
 
+func (c AppBranchPreviewConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	addDescription(schema, "mode", "preview run mode: plan-only, apply, or build-only")
+	addDescription(schema, "install_id", "default install ID for preview runs")
+	addDescription(schema, "install_name", "default install name for preview runs, resolved to an ID at sync time")
+	addDescription(schema, "label_selector", "label key-value pairs to select the default preview install")
+	addDescription(schema, "set_statuses", "whether to set GitHub commit statuses for preview runs")
+	addDescription(schema, "comment", "whether to comment on the pull request with preview results")
+}
+
 func (c AppBranchInstallGroupConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "name", "name of the install group")
 	addDescription(schema, "order", "deployment order (lower runs first)")
