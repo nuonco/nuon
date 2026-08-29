@@ -406,6 +406,10 @@ type ClientService interface {
 
 	GetAppBranchLatestConfig(params *GetAppBranchLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchLatestConfigOK, error)
 
+	GetAppBranchPreviewInstallCandidates(params *GetAppBranchPreviewInstallCandidatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchPreviewInstallCandidatesOK, error)
+
+	GetAppBranchPreviewSources(params *GetAppBranchPreviewSourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchPreviewSourcesOK, error)
+
 	GetAppBranchRunBuilds(params *GetAppBranchRunBuildsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunBuildsOK, error)
 
 	GetAppBranchRunComparison(params *GetAppBranchRunComparisonParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunComparisonOK, error)
@@ -7801,6 +7805,98 @@ func (a *Client) GetAppBranchLatestConfig(params *GetAppBranchLatestConfigParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppBranchLatestConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppBranchPreviewInstallCandidates lists preview install candidates for an app branch
+
+Lists all installs on the app for preview run selection (includes installs on other branches)
+*/
+func (a *Client) GetAppBranchPreviewInstallCandidates(params *GetAppBranchPreviewInstallCandidatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchPreviewInstallCandidatesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppBranchPreviewInstallCandidatesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppBranchPreviewInstallCandidates",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/preview-install-candidates",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppBranchPreviewInstallCandidatesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppBranchPreviewInstallCandidatesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppBranchPreviewInstallCandidates: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppBranchPreviewSources lists preview sources for an app branch
+
+Returns open pull requests targeting the branch and other git branches in the repo
+*/
+func (a *Client) GetAppBranchPreviewSources(params *GetAppBranchPreviewSourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchPreviewSourcesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppBranchPreviewSourcesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppBranchPreviewSources",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/preview-sources",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppBranchPreviewSourcesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppBranchPreviewSourcesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppBranchPreviewSources: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

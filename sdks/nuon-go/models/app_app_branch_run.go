@@ -85,6 +85,9 @@ type AppAppBranchRun struct {
 	// pr number
 	PrNumber int64 `json:"pr_number,omitempty"`
 
+	// preview
+	Preview *AppAppBranchRunPreview `json:"preview,omitempty"`
+
 	// queue signal
 	QueueSignal *AppQueueSignal `json:"queue_signal,omitempty"`
 
@@ -138,6 +141,10 @@ func (m *AppAppBranchRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLogStream(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePreview(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -301,6 +308,29 @@ func (m *AppAppBranchRun) validateLogStream(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppAppBranchRun) validatePreview(formats strfmt.Registry) error {
+	if swag.IsZero(m.Preview) { // not required
+		return nil
+	}
+
+	if m.Preview != nil {
+		if err := m.Preview.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppAppBranchRun) validateQueueSignal(formats strfmt.Registry) error {
 	if swag.IsZero(m.QueueSignal) { // not required
 		return nil
@@ -416,6 +446,10 @@ func (m *AppAppBranchRun) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateLogStream(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePreview(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -579,6 +613,31 @@ func (m *AppAppBranchRun) contextValidateLogStream(ctx context.Context, formats 
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("log_stream")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) contextValidatePreview(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Preview != nil {
+
+		if swag.IsZero(m.Preview) { // not required
+			return nil
+		}
+
+		if err := m.Preview.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview")
 			}
 
 			return err

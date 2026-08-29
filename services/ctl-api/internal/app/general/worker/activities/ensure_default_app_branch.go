@@ -126,6 +126,7 @@ func (a *Activities) EnsureDefaultAppBranch(ctx context.Context, req EnsureDefau
 		}},
 		&[]string{},
 		nil,
+		nil,
 	); err != nil {
 		return nil, fmt.Errorf("unable to configure default branch %s: %w", defaultBranch.ID, err)
 	}

@@ -46,6 +46,8 @@ type AppBranchConfig struct {
 	// branch runs for this config. Manual triggers are unaffected.
 	DisableBranchTriggers bool `json:"disable_branch_triggers" temporaljson:"disable_branch_triggers,omitempty"`
 
+	PreviewConfig *AppBranchPreviewConfig `json:"preview_config,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"preview_config,omitzero,omitempty"`
+
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 
 	ConfigNumber int `json:"config_number,omitzero" gorm:"->;-:migration" temporaljson:"config_number,omitzero,omitempty"`

@@ -160,8 +160,40 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		steps = append(steps, step)
 	}
 
-	// Preview runs never mutate an install. They report what would change and stop.
+	// Preview runs: synthetic single-install group instead of previewimpact.
 	if isPreview {
+		if run.Preview != nil && run.Preview.InstallID != "" {
+			switch run.Preview.Mode {
+			case app.AppBranchRunPreviewModeBuildOnly:
+				return sg.Result(steps), nil
+			case app.AppBranchRunPreviewModePlanOnly:
+				sg.nextGroup()
+				step, err := sg.appBranchSignalStep(ctx, appBranchID, "plan preview install", pgtype.Hstore{}, &planinstallgroup.Signal{
+					PreviewInstallID:   run.Preview.InstallID,
+					SyntheticGroupName: "preview",
+					AppBranchID:        appBranchID,
+					RunID:              runID,
+				}, WithSkippable(true))
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to create preview plan step")
+				}
+				steps = append(steps, step)
+			case app.AppBranchRunPreviewModeApply:
+				sg.nextGroup()
+				step, err := sg.appBranchSignalStep(ctx, appBranchID, "apply preview install", pgtype.Hstore{}, &updateinstallgroup.Signal{
+					PreviewInstallID:   run.Preview.InstallID,
+					SyntheticGroupName: "preview",
+					AppBranchID:        appBranchID,
+					RunID:              runID,
+				}, WithSkippable(true))
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to create preview apply step")
+				}
+				steps = append(steps, step)
+			}
+			return sg.Result(steps), nil
+		}
+
 		sg.nextGroup()
 		step, err := sg.appBranchSignalStep(ctx, appBranchID, "preview install impact", pgtype.Hstore{}, &previewimpact.Signal{
 			RunID:             runID,
