@@ -153,10 +153,54 @@ The rest of the process is completed by your customer, using the information you
       description = "License key that activates the product."
     }
     ```
+
+    ```hcl Azure
+    terraform {
+      required_providers {
+        azurerm = { source = "hashicorp/azurerm" }
+        stack   = { source = "nuonco/stack" }
+      }
+    }
+
+    provider "azurerm" {
+      subscription_id = "00000000-0000-0000-0000-000000000000"
+
+      features {
+        key_vault {
+          purge_soft_delete_on_destroy = true
+        }
+      }
+    }
+
+    provider "stack" {}
+
+    module "azure_stack" {
+      source  = "nuonco/stack/azure"
+      version = "~> 1.0"
+
+      install_id = "<install-id>"
+
+      inputs = {
+        vm_size = "Standard_D4s_v3"
+      }
+
+      secrets = {
+        license_key = { value = var.license_key }
+      }
+    }
+
+    variable "license_key" {
+      type        = string
+      sensitive   = true
+      description = "License key that activates the product."
+    }
+    ```
     </CodeGroup>
 
     On GCP, the module reads the install's project and region from the control plane, so they appear only in the `google` provider block.
     Before the install's first apply the control plane has nothing recorded, and the plan will fail asking for them — pass `project_id` and `region` to the module for that first apply, then drop them.
+
+    On Azure, the module reads the install's location from the control plane and takes the subscription from the `azurerm` provider, warning at plan time if the two disagree. `purge_soft_delete_on_destroy` is required: the module leaves purge protection off so a destroyed install's Key Vault name can be reused immediately, and without it Azure holds that name for 90 days.
   </Step>
   <Step title="Configure the secret values">
     Nuon credentials and app secret values are supplied using environment variables, so they are never written to Terraform files or committed to version control.
