@@ -45,6 +45,10 @@ func NewAppBranchRunComparisonID() string {
 	return shortid.NewNanoID("arc")
 }
 
+func NewAppBranchRunPreviewID() string {
+	return shortid.NewNanoID("abp")
+}
+
 func NewInstallAppConfigVersionID() string {
 	return shortid.NewNanoID("icu")
 }

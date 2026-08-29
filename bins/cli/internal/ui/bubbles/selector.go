@@ -26,6 +26,10 @@ func (i SelectorItem) Description() string { return i.description }
 func (i SelectorItem) Value() string       { return i.value }
 func (i SelectorItem) IsEvaluation() bool  { return i.isEvaluation }
 
+func NewSelectorItem(title, description, value string) SelectorItem {
+	return SelectorItem{title: title, description: description, value: value}
+}
+
 type searchDebounceMsg struct{ query string }
 type searchResultMsg struct {
 	items []SelectorItem
@@ -565,9 +569,13 @@ func SelectInstall(installs []InstallOption, interactive bool) (string, error) {
 		}
 	}
 	for i, install := range installs {
+		desc := styles.TextDim.Render(fmt.Sprintf("ID: %s", install.ID))
+		if install.Description != "" {
+			desc = install.Description + " · " + desc
+		}
 		items[i] = SelectorItem{
 			title:       fmt.Sprintf("%s%s", install.Name, strings.Repeat(" ", maxInstallNameWidth-len(install.Name))),
-			description: styles.TextDim.Render(fmt.Sprintf("ID: %s", install.ID)),
+			description: desc,
 			value:       install.ID,
 		}
 	}
@@ -635,8 +643,9 @@ type AppOption struct {
 }
 
 type InstallOption struct {
-	ID   string
-	Name string
+	ID          string
+	Name        string
+	Description string
 }
 
 type BranchOption struct {

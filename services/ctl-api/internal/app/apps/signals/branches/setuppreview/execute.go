@@ -26,6 +26,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
+	if !run.PreviewGitHubSetStatuses() && !run.PreviewGitHubComment() {
+		logger.Info("preview GitHub integration disabled, skipping setup")
+		return nil
+	}
+
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return fmt.Errorf("unable to get app branch: %w", err)
@@ -63,7 +68,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		Status:  activities.PRCommentStatusPending,
 	})
 
-	if run.HeadSHA != "" {
+	if run.HeadSHA != "" && run.PreviewGitHubSetStatuses() {
 		_ = activities.AwaitSetGithubCommitStatus(ctx, &activities.SetGithubCommitStatusInput{
 			VcsConfigID: vcsConfigID,
 			CommitSHA:   run.HeadSHA,
@@ -73,28 +78,34 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		})
 	}
 
-	commentResult, err := activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
-		VcsConfigID:       vcsConfigID,
-		PRNumber:          *run.PRNumber,
-		ExistingCommentID: existingCommentID,
-		Body:              commentBody,
-	})
-	if err != nil {
-		logger.Warn("unable to post PR comment", "error", err)
-		return nil
-	}
-
-	if commentResult != nil && commentResult.CommentID != 0 {
-		_ = activities.AwaitUpdateAppBranchRunGithubComment(ctx, &activities.UpdateAppBranchRunGithubCommentInput{
-			RunID:     s.RunID,
-			CommentID: commentResult.CommentID,
+	var commentResult *activities.CreateOrUpdatePRCommentOutput
+	if run.PreviewGitHubComment() {
+		var err error
+		commentResult, err = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
+			VcsConfigID:       vcsConfigID,
+			PRNumber:          *run.PRNumber,
+			ExistingCommentID: existingCommentID,
+			Body:              commentBody,
 		})
+		if err != nil {
+			logger.Warn("unable to post PR comment", "error", err)
+			return nil
+		}
+
+		if commentResult != nil && commentResult.CommentID != 0 {
+			_ = activities.AwaitUpdateAppBranchRunGithubComment(ctx, &activities.UpdateAppBranchRunGithubCommentInput{
+				RunID:     s.RunID,
+				CommentID: commentResult.CommentID,
+			})
+		}
 	}
 
 	logger.Info("preview setup complete",
 		"run_id", s.RunID,
-		"pr_number", *run.PRNumber,
-		"comment_id", commentResult.CommentID)
+		"pr_number", *run.PRNumber)
+	if commentResult != nil {
+		logger.Info("preview comment posted", "comment_id", commentResult.CommentID)
+	}
 
 	return nil
 }

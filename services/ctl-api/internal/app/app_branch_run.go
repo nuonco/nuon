@@ -77,6 +77,8 @@ type AppBranchRun struct {
 
 	Comparison *AppBranchRunComparison `json:"comparison,omitempty" gorm:"foreignKey:HeadRunID" temporaljson:"comparison,omitzero,omitempty"`
 
+	Preview *AppBranchRunPreview `json:"preview,omitempty" gorm:"foreignKey:AppBranchRunID;references:ID" temporaljson:"preview,omitzero,omitempty"`
+
 	VCSConnectionCommitID *string              `json:"vcs_connection_commit_id,omitempty" swaggerignore:"true" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitempty" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
 
@@ -87,11 +89,34 @@ type AppBranchRun struct {
 	labels.Labeled
 }
 
-// IsPreview reports whether the run is read-only. PR previews and plan-only
-// manual runs are both previews: they report what would change without
-// mutating any install.
+// IsPreview reports whether the run is a preview run (has AppBranchRunPreview child).
+// PlanOnly and git-preview-run are legacy signals mapped to preview at create time.
 func (a *AppBranchRun) IsPreview() bool {
+	if a.Preview != nil {
+		return true
+	}
 	return a.RunType == AppBranchRunTypeGitPreview || a.PlanOnly
+}
+
+func (a *AppBranchRun) PreviewGitHubSetStatuses() bool {
+	if a.Preview != nil {
+		return a.Preview.GitHubSetStatuses()
+	}
+	return a.IsPreview()
+}
+
+func (a *AppBranchRun) PreviewGitHubComment() bool {
+	if a.Preview != nil {
+		return a.Preview.GitHubComment()
+	}
+	return a.IsPreview()
+}
+
+func (a *AppBranchRun) PreviewInstallPlanOnly() bool {
+	if a.Preview != nil {
+		return a.Preview.Mode == AppBranchRunPreviewModePlanOnly
+	}
+	return a.PlanOnly
 }
 
 func (a *AppBranchRun) Indexes(db *gorm.DB) []migrations.Index {

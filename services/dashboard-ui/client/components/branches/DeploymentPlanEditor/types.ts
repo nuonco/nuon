@@ -13,5 +13,4 @@ export interface IInstallGroup {
   selection_mode: InstallSelectionMode
   order: number
   max_parallel: number
-  use_for_previews: boolean
 }

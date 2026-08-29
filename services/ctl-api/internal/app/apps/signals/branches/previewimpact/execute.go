@@ -161,8 +161,9 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 	var diff *activities.ComputeAppConfigDiffOutput
 	if run.AppConfigID != "" {
 		var oldConfigID string
-		baseline, baselineErr := activities.AwaitFindLatestNonPreviewAppConfig(ctx, &activities.FindLatestNonPreviewAppConfigInput{
-			AppID: branch.AppID,
+		baseline, baselineErr := activities.AwaitResolvePreviewBaselineAppConfig(ctx, &activities.ResolvePreviewBaselineAppConfigInput{
+			RunID:       s.RunID,
+			AppBranchID: s.AppBranchID,
 		})
 		if baselineErr == nil && baseline.AppConfigID != "" {
 			oldConfigID = baseline.AppConfigID

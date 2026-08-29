@@ -86,23 +86,32 @@ func Parse(obj any) ([]Ref, error) {
 //
 // https://pkg.go.dev/text/template/parse
 func ParseFieldRefs(inputVar string) []Ref {
-	refPatterns := map[RefType]string{
-		RefTypeComponents:    `nuon\.components\.([^.}]+)\.outputs\.([^}\s]+)`,
-		RefTypeActions:       `nuon\.actions\.([^.}]+)\.outputs\.([^.}\s]+)`,
-		RefTypeSecrets:       `nuon\.secrets\.([^.}\s]+)`,
-		RefTypeInputs:        `nuon\.inputs\.inputs\.([^.}\s]+)`,
-		RefTypeInstallInputs: `nuon\.install\.inputs\.([^.}\s]+)`,
-		RefTypeInstallStack:  `nuon\.install_stack\.outputs\.([^.}\s]+)`,
-		RefTypeSandbox:       `nuon\.sandbox\.outputs\.([^.}\s]+)`,
+	// Order matters: more-specific patterns (workflows, legacy install.* paths) run first.
+	orderedPatterns := []struct {
+		refType RefType
+		pattern string
+	}{
+		{RefTypeActions, `nuon\.actions\.workflows\.([^.}\s]+)`},
+		{RefTypeComponents, `nuon\.install\.components\.([^.}]+)\.outputs\.([^}\s]+)`},
+		{RefTypeSandbox, `nuon\.install\.sandbox\.outputs\.([^}\s]+)`},
+		{RefTypeComponents, `nuon\.components\.([^.}]+)\.outputs\.([^}\s]+)`},
+		{RefTypeActions, `nuon\.actions\.([^.}]+)\.outputs\.([^.}\s]+)`},
+		{RefTypeSecrets, `nuon\.secrets\.([^.}\s]+)`},
+		{RefTypeInputs, `nuon\.inputs\.inputs\.([^.}\s]+)`},
+		{RefTypeInstallInputs, `nuon\.install\.inputs\.([^.}\s]+)`},
+		{RefTypeInstallStack, `nuon\.install_stack\.outputs\.([^.}\s]+)`},
+		{RefTypeSandbox, `nuon\.sandbox\.outputs\.([^.}\s]+)`},
 	}
 
 	refs := make([]Ref, 0)
-	for refType, pattern := range refPatterns {
+	for _, entry := range orderedPatterns {
+		refType := entry.refType
+		pattern := entry.pattern
 		re := regexp.MustCompile(pattern)
 		matches := re.FindAllStringSubmatch(inputVar, -1)
 
 		for _, match := range matches {
-			if len(match) < 1 {
+			if len(match) < 2 {
 				continue
 			}
 

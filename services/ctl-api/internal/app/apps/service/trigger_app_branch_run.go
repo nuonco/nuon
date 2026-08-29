@@ -16,27 +16,32 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
-type TriggerAppBranchRunRequest struct {
-	ConfigID    string `json:"config_id"`     // optional - use latest if not provided
-	Force       bool   `json:"force"`         // force run even if no changes detected
-	PlanOnly    bool   `json:"plan_only"`     // plan-only preview mode (no apply)
-	AppConfigID string `json:"app_config_id"` // optional - use pre-existing app config (skips VCS fetch + config parse)
-	SkipBuilds  bool   `json:"skip_builds"`   // skip builds step (e.g. rollback to existing config with existing builds)
+type PreviewRunRequest struct {
+	Source   app.AppBranchRunPreviewSource `json:"source"`
+	PRNumber *int                          `json:"pr_number,omitempty"`
+	GitRef   string                        `json:"git_ref,omitempty"`
+	HeadSHA  string                        `json:"head_sha,omitempty"`
 
-	// SyncAppConfig syncs AppConfigID inside the run rather than assuming it was
-	// already synced. Set by callers that compiled the config themselves, such
-	// as `nuon apps sync`.
+	Mode      *app.AppBranchRunPreviewMode `json:"mode,omitempty"`
+	InstallID *string                      `json:"install_id,omitempty"`
+}
+
+type TriggerAppBranchRunRequest struct {
+	ConfigID    string `json:"config_id"`
+	Force       bool   `json:"force"`
+	PlanOnly    bool   `json:"plan_only"`
+	AppConfigID string `json:"app_config_id"`
+	SkipBuilds  bool   `json:"skip_builds"`
+
 	SyncAppConfig bool `json:"sync_app_config"`
 
-	// AutoApprove skips the approval gate on the plan steps. Without it the
-	// approval option is derived from the installs the branch targets.
 	AutoApprove bool `json:"auto_approve"`
 
-	// PR context, for previews triggered from CI rather than a GitHub webhook.
-	// Supplying PRNumber is what lets the run report back onto the pull request.
 	PRNumber   *int   `json:"pr_number,omitempty"`
 	HeadSHA    string `json:"head_sha,omitempty"`
 	BaseBranch string `json:"base_branch,omitempty"`
+
+	PreviewRun *PreviewRunRequest `json:"preview_run,omitempty"`
 }
 
 func (c *TriggerAppBranchRunRequest) Validate(v *validator.Validate) error {
@@ -48,6 +53,14 @@ func (c *TriggerAppBranchRunRequest) Validate(v *validator.Validate) error {
 	}
 	if c.SyncAppConfig && c.SkipBuilds {
 		return fmt.Errorf("sync_app_config cannot be combined with skip_builds: a freshly synced config has no builds yet")
+	}
+	if c.PreviewRun != nil {
+		if !c.PreviewRun.Source.Valid() || c.PreviewRun.Source == "" {
+			return fmt.Errorf("preview_run.source is required")
+		}
+		if c.PlanOnly {
+			return fmt.Errorf("plan_only cannot be combined with preview_run")
+		}
 	}
 	return nil
 }
@@ -167,14 +180,55 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	if req.SyncAppConfig {
 		workflowMeta["sync_app_config"] = "true"
 	}
-	if req.PRNumber != nil {
-		workflowMeta["pr_number"] = strconv.Itoa(*req.PRNumber)
+	// fetchcommit only honours HeadSHA on a git-preview run.
+	runType := app.AppBranchRunTypeManual
+	planOnly := req.PlanOnly
+	prNumber := req.PRNumber
+	headSHA := req.HeadSHA
+	baseBranch := req.BaseBranch
+
+	var previewInput *helpers.PreviewRunInput
+	if req.PreviewRun != nil {
+		previewInput = &helpers.PreviewRunInput{
+			Source:           req.PreviewRun.Source,
+			PRNumber:         req.PreviewRun.PRNumber,
+			GitRef:           req.PreviewRun.GitRef,
+			HeadSHA:          req.PreviewRun.HeadSHA,
+			InputAppConfigID: req.AppConfigID,
+		}
+		if req.PreviewRun.Mode != nil || req.PreviewRun.InstallID != nil {
+			previewInput.Override = &app.AppBranchPreviewOverride{
+				Mode:      req.PreviewRun.Mode,
+				InstallID: req.PreviewRun.InstallID,
+			}
+		}
+		if previewInput.PRNumber != nil {
+			prNumber = previewInput.PRNumber
+		}
+		if previewInput.HeadSHA != "" {
+			headSHA = previewInput.HeadSHA
+		}
+		switch previewInput.Source {
+		case app.AppBranchRunPreviewSourcePR, app.AppBranchRunPreviewSourceCommit, app.AppBranchRunPreviewSourceBranch:
+			runType = app.AppBranchRunTypeGitPreview
+		case app.AppBranchRunPreviewSourceLocal:
+			if req.AppConfigID == "" {
+				ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("preview_run with source local requires app_config_id")))
+				return
+			}
+		}
+	} else if req.PlanOnly && (req.PRNumber != nil || req.HeadSHA != "") {
+		runType = app.AppBranchRunTypeGitPreview
 	}
-	if req.HeadSHA != "" {
-		workflowMeta["head_sha"] = req.HeadSHA
+
+	if prNumber != nil {
+		workflowMeta["pr_number"] = strconv.Itoa(*prNumber)
 	}
-	if req.BaseBranch != "" {
-		workflowMeta["base_branch"] = req.BaseBranch
+	if headSHA != "" {
+		workflowMeta["head_sha"] = headSHA
+	}
+	if baseBranch != "" {
+		workflowMeta["base_branch"] = baseBranch
 	}
 
 	approvalOption := app.InstallApprovalOptionApproveAll
@@ -186,25 +240,19 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		}
 	}
 
-	// fetchcommit only honours HeadSHA on a git-preview run.
-	// PlanOnly: a head SHA without --preview must not apply a PR's config to installs.
-	runType := app.AppBranchRunTypeManual
-	if req.PlanOnly && (req.PRNumber != nil || req.HeadSHA != "") {
-		runType = app.AppBranchRunTypeGitPreview
-	}
-
 	triggerResp, err := s.helpers.TriggerAppBranchRun(ctx, &helpers.TriggerAppBranchRunRequest{
 		Run: helpers.CreateAppBranchRunRequest{
 			AppBranchID:       appBranchID,
 			AppBranchConfigID: config.ID,
 			AppConfigID:       req.AppConfigID,
 			Force:             req.Force,
-			PlanOnly:          req.PlanOnly,
+			PlanOnly:          planOnly,
 			RunType:           runType,
 			EventType:         "manual",
-			PRNumber:          req.PRNumber,
-			HeadSHA:           req.HeadSHA,
-			BaseBranch:        req.BaseBranch,
+			PRNumber:          prNumber,
+			HeadSHA:           headSHA,
+			BaseBranch:        baseBranch,
+			Preview:           previewInput,
 		},
 		QueueID:        branch.Queue.ID,
 		Metadata:       workflowMeta,
@@ -233,6 +281,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		Preload("AppBranch").
 		Preload("AppBranchConfig").
 		Preload("CreatedBy").
+		Preload("Preview").
 		First(&run, "id = ?", run.ID)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to reload run: %w", res.Error))

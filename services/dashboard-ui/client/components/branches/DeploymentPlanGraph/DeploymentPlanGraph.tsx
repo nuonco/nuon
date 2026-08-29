@@ -30,7 +30,6 @@ interface GroupNodeData {
   installs: PlanGroupInstall[]
   labelEntries: [string, string][]
   maxParallel: number
-  useForPreviews: boolean
   compact: boolean
   orgId: string
   panelKey: string
@@ -62,17 +61,6 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
       compact={compact}
       headerRight={
         <span className="flex shrink-0 items-center gap-1">
-          {data.useForPreviews && (
-            <span
-              className={cn(
-                'rounded px-1.5 py-0.5',
-                compact ? 'text-[9px]' : 'text-[10px]',
-                accent.pill
-              )}
-            >
-              preview
-            </span>
-          )}
           {compact ? (
             <span className="text-[9px] opacity-70">{installs.length}</span>
           ) : data.maxParallel > 1 ? (
@@ -135,7 +123,6 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
           installs={installs}
           orgId={orgId}
           maxParallel={data.maxParallel}
-          useForPreviews={data.useForPreviews}
           labelEntries={data.labelEntries}
         />
       )}
@@ -185,7 +172,6 @@ export const DeploymentPlanGraph = ({ config, installsById, orgId, compact = fal
           installs,
           labelEntries,
           maxParallel: group.max_parallel ?? 1,
-          useForPreviews: group.use_for_previews ?? false,
           compact,
           orgId,
           panelKey: `install-group-plan:${groupId}`,
