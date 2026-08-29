@@ -10,8 +10,8 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { createBranchConfig, getAppInstalls, getRunbooks } from '@/lib'
-import type { TCreateBranchConfigRequest } from '@/lib/ctl-api/apps/branches/create-branch-config'
 import type { TAPIError, TAppBranch, TAppBranchConfig } from '@/types'
+import { carryForwardBranchConfigRequest } from '@/components/branches/shared/branch-config-request'
 import { DeploymentPlanEditor } from './DeploymentPlanEditor'
 import type { IInstallGroup } from './types'
 
@@ -26,7 +26,6 @@ const toEditorGroups = (config?: TAppBranchConfig): IInstallGroup[] =>
       selection_mode: hasLabelSelector ? 'labels' as const : 'manual' as const,
       order: g.order ?? idx,
       max_parallel: g.max_parallel || 1,
-      use_for_previews: g.use_for_previews || false,
     }
   }) || []
 
@@ -100,38 +99,17 @@ export const DeploymentPlanEditorContainer = ({
           label_selector: useLabels ? group.label_selector : undefined,
           order: index,
           max_parallel: group.max_parallel || 1,
-          use_for_previews: group.use_for_previews || false,
         }
       })
-
-      const request: TCreateBranchConfigRequest = {
-        install_groups: installGroupsForApi,
-        post_deploy_runbook_ids: postDeployRunbookIds,
-      }
-
-      if (currentConfig?.connected_github_vcs_config) {
-        request.connected_github_vcs_config = {
-          vcs_connection_id:
-            currentConfig.connected_github_vcs_config.vcs_connection_id || '',
-          repo: currentConfig.connected_github_vcs_config.repo || '',
-          branch: currentConfig.connected_github_vcs_config.branch || '',
-          directory: currentConfig.connected_github_vcs_config.directory,
-          path_filter: currentConfig.connected_github_vcs_config.path_filter,
-        }
-      } else if (currentConfig?.public_git_vcs_config) {
-        request.public_git_vcs_config = {
-          repo: currentConfig.public_git_vcs_config.repo || '',
-          branch: currentConfig.public_git_vcs_config.branch || '',
-          directory: currentConfig.public_git_vcs_config.directory,
-          path_filter: currentConfig.public_git_vcs_config.path_filter,
-        }
-      }
 
       return createBranchConfig({
         appId: app.id!,
         branchId: branch.id || '',
         orgId: org.id!,
-        request,
+        request: carryForwardBranchConfigRequest(currentConfig, {
+          install_groups: installGroupsForApi,
+          post_deploy_runbook_ids: postDeployRunbookIds,
+        }),
       })
     },
     onSuccess: () => {

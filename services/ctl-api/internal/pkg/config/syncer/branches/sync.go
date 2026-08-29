@@ -172,6 +172,18 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 			break
 		}
 	}
+	if branchCfg.Preview != nil && branchCfg.Preview.InstallName != "" {
+		if nameToID == nil {
+			var err error
+			nameToID, err = resolveInstallNames(ctx, db, appID)
+			if err != nil {
+				return sync.SyncInternalErr{
+					Description: "unable to resolve preview install names",
+					Err:         err,
+				}
+			}
+		}
+	}
 
 	var parentApp app.App
 	if err := db.WithContext(ctx).
@@ -223,6 +235,11 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		return err
 	}
 
+	previewConfig, err := buildPreviewConfig(branchCfg, nameToID)
+	if err != nil {
+		return err
+	}
+
 	postDeployRunbookIDs, err := resolvePostDeployRunbooks(ctx, db, appID, branchCfg)
 	if err != nil {
 		return err
@@ -230,7 +247,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 
 	// Config-as-code is declarative: no post_deploy_runbooks in the TOML means
 	// none, so always pass a non-nil pointer rather than inheriting.
-	if _, err := appsHelper.CreateAppBranchConfigWithDB(ctx, db, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs, nil); err != nil {
+	if _, err := appsHelper.CreateAppBranchConfigWithDB(ctx, db, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs, nil, previewConfig); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create config for branch %q", branchCfg.Name),
 			Err:         err,
@@ -270,10 +287,9 @@ func buildInstallGroups(branchCfg *config.AppBranchConfig, nameToID map[string]s
 		}
 
 		ig := app.AppBranchInstallGroup{
-			Name:           group.Name,
-			Order:          order,
-			InstallIDs:     installIDs,
-			UseForPreviews: group.UseForPreviews,
+			Name:       group.Name,
+			Order:      order,
+			InstallIDs: installIDs,
 		}
 
 		if len(group.LabelSelector) > 0 {
@@ -285,6 +301,52 @@ func buildInstallGroups(branchCfg *config.AppBranchConfig, nameToID map[string]s
 		installGroups = append(installGroups, ig)
 	}
 	return installGroups, nil
+}
+
+func buildPreviewConfig(branchCfg *config.AppBranchConfig, nameToID map[string]string) (*app.AppBranchPreviewConfig, error) {
+	if branchCfg.Preview == nil {
+		return nil, nil
+	}
+	p := branchCfg.Preview
+	out := app.AppBranchPreviewConfig{
+		Mode: app.AppBranchRunPreviewMode(p.Mode),
+	}
+	if out.Mode == "" {
+		out.Mode = app.AppBranchRunPreviewModePlanOnly
+	}
+	if p.InstallID != "" {
+		id := p.InstallID
+		out.InstallID = &id
+	}
+	if p.InstallName != "" {
+		id, ok := nameToID[p.InstallName]
+		if !ok {
+			return nil, sync.SyncErr{
+				Resource:    "app-branches",
+				Description: fmt.Sprintf("branch %q preview: unknown install name: %s", branchCfg.Name, p.InstallName),
+			}
+		}
+		out.InstallID = &id
+		name := p.InstallName
+		out.InstallName = &name
+	}
+	if len(p.LabelSelector) > 0 {
+		out.LabelSelector = &labels.Selector{MatchLabels: labels.Labels(p.LabelSelector)}
+	}
+	if p.SetStatuses != nil {
+		out.SetStatuses = *p.SetStatuses
+	} else {
+		out.SetStatuses = true
+	}
+	if p.Comment != nil {
+		out.Comment = *p.Comment
+	} else {
+		out.Comment = true
+	}
+	if err := out.Validate(); err != nil {
+		return nil, sync.SyncErr{Resource: "app-branches", Description: err.Error()}
+	}
+	return &out, nil
 }
 
 // resolvePostDeployRunbooks maps the branch's runbook names to IDs. This runs

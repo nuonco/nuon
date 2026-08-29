@@ -117,16 +117,6 @@ export const GroupEditor = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-4 px-4 py-2 border-b text-xs">
-        <CheckboxInput
-          id={`group-preview-${group.id}`}
-          checked={group.use_for_previews ?? false}
-          onChange={(e) => onUpdate({ use_for_previews: e.target.checked })}
-          disabled={disabled}
-          labelProps={{ labelText: 'Use for previews' }}
-        />
-      </div>
-
       <div className="flex flex-col gap-3 p-4">
         {group.selection_mode === 'labels' ? (
           <LabelSelectorEditor

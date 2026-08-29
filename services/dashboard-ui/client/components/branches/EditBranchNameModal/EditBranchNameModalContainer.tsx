@@ -134,7 +134,6 @@ export const EditBranchNameModalContainer = ({
             name: g.name ?? '',
             order: g.order ?? idx,
             max_parallel: g.max_parallel || 1,
-            use_for_previews: g.use_for_previews,
             ...(hasSelector
               ? { label_selector: g.label_selector }
               : { install_ids: g.install_ids || [] }),

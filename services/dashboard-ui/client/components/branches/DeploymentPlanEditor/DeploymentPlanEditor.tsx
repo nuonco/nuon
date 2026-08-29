@@ -71,14 +71,12 @@ export const DeploymentPlanEditor = ({
       install_ids: g.selection_mode === 'manual' ? g.install_ids : [],
       label_selector: g.selection_mode === 'labels' ? g.label_selector : undefined,
       max_parallel: g.max_parallel,
-      use_for_previews: g.use_for_previews,
     })),
   } as TAppBranchConfig), [groups])
 
   const assignedInstallIds = useMemo(() => {
     const assigned = new Set<string>()
     groups.forEach((g) => {
-      if (g.use_for_previews) return
       if (g.selection_mode === 'labels') {
         const matchLabels = g.label_selector?.match_labels
         if (matchLabels && Object.keys(matchLabels).length > 0) {

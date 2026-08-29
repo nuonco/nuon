@@ -153,7 +153,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to serialize intermediate config: %w", err)
 	}
 
-	isPreview := run.RunType == app.AppBranchRunTypeGitPreview
+	isPreview := run.IsPreview()
 
 	// For preview runs, diff intermediate configs before creating the DB AppConfig.
 	// If nothing changed, short-circuit and skip the rest of the workflow.
@@ -161,8 +161,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	var previewBaselineConfigID string
 	if isPreview {
 		var oldConfigID string
-		baseline, baselineErr := activities.AwaitFindLatestNonPreviewAppConfig(ctx, &activities.FindLatestNonPreviewAppConfigInput{
-			AppID: branch.AppID,
+		baseline, baselineErr := activities.AwaitResolvePreviewBaselineAppConfig(ctx, &activities.ResolvePreviewBaselineAppConfigInput{
+			RunID:       s.RunID,
+			AppBranchID: s.AppBranchID,
 		})
 		if baselineErr == nil && baseline.AppConfigID != "" {
 			oldConfigID = baseline.AppConfigID
@@ -181,7 +182,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				RunID: s.RunID,
 			})
 
-			if run.PRNumber != nil {
+			if run.PRNumber != nil && run.PreviewGitHubComment() {
 				commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
 					AppName: branch.Name,
 					RunID:   s.RunID,
@@ -193,6 +194,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 					ExistingCommentID: run.GithubCommentID,
 					Body:              commentBody,
 				})
+			}
+			if run.HeadSHA != "" && run.PreviewGitHubSetStatuses() {
 				_ = activities.AwaitSetGithubCommitStatus(ctx, &activities.SetGithubCommitStatusInput{
 					VcsConfigID: vcsConfigID,
 					CommitSHA:   run.HeadSHA,
@@ -370,7 +373,7 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLo
 			},
 		})
 
-		if p.isPreview && run.PRNumber != nil {
+		if p.isPreview && run.PRNumber != nil && run.PreviewGitHubComment() {
 			commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
 				AppName: branch.Name,
 				RunID:   s.RunID,

@@ -50,15 +50,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	groupRunResult, err := activities.AwaitCreateInstallGroupRun(ctx, &activities.CreateInstallGroupRunInput{
-		AppBranchRunID:   s.RunID,
-		InstallGroupID:   s.InstallGroupID,
-		InstallGroupName: groupName,
-		TotalInstalls:    len(installIDs),
-	})
-	if err != nil {
-		return fmt.Errorf("unable to create install group run: %w", err)
-	}
+	isPreviewApply := s.PreviewInstallID != ""
 
 	enqueued, err := s.enqueueInstallUpdates(ctx, installIDs, run)
 	if err != nil {
@@ -75,18 +67,32 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		})
 	}
 
-	_ = activities.AwaitUpdateInstallGroupRun(ctx, &activities.UpdateInstallGroupRunInput{
-		InstallGroupRunID: groupRunResult.InstallGroupRunID,
-		Installs:          installEntries,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusInProgress,
-			StatusHumanDescription: fmt.Sprintf("deploying to %d installs", len(enqueued)),
-		},
-	})
+	var groupRunID string
+	if !isPreviewApply {
+		groupRunResult, err := activities.AwaitCreateInstallGroupRun(ctx, &activities.CreateInstallGroupRunInput{
+			AppBranchRunID:   s.RunID,
+			InstallGroupID:   s.InstallGroupID,
+			InstallGroupName: groupName,
+			TotalInstalls:    len(installIDs),
+		})
+		if err != nil {
+			return fmt.Errorf("unable to create install group run: %w", err)
+		}
+		groupRunID = groupRunResult.InstallGroupRunID
 
-	s.updateInstallMetadata(ctx, enqueued, nil)
+		_ = activities.AwaitUpdateInstallGroupRun(ctx, &activities.UpdateInstallGroupRunInput{
+			InstallGroupRunID: groupRunID,
+			Installs:          installEntries,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusInProgress,
+				StatusHumanDescription: fmt.Sprintf("deploying to %d installs", len(enqueued)),
+			},
+		})
+	}
 
-	completed, failed, awaitErr := s.awaitInstallUpdates(ctx, enqueued, groupRunResult.InstallGroupRunID, installEntries)
+	s.updateInstallMetadata(ctx, groupName, enqueued, nil)
+
+	completed, failed, awaitErr := s.awaitInstallUpdates(ctx, groupName, enqueued, groupRunID, installEntries)
 
 	// workflow.Now, not time.Now: wall-clock reads are non-deterministic across
 	// replay, so the recorded completion time has to come from workflow time.
@@ -98,22 +104,31 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		desc += fmt.Sprintf(" (%d failed)", failed)
 	}
 
-	_ = activities.AwaitUpdateInstallGroupRun(ctx, &activities.UpdateInstallGroupRunInput{
-		InstallGroupRunID: groupRunResult.InstallGroupRunID,
-		Installs:          installEntries,
-		CompletedInstalls: completed,
-		FailedInstalls:    failed,
-		CompletedAt:       &now,
-		Status: app.CompositeStatus{
-			Status:                 finalStatus,
-			StatusHumanDescription: desc,
-		},
-	})
+	if groupRunID != "" {
+		_ = activities.AwaitUpdateInstallGroupRun(ctx, &activities.UpdateInstallGroupRunInput{
+			InstallGroupRunID: groupRunID,
+			Installs:          installEntries,
+			CompletedInstalls: completed,
+			FailedInstalls:    failed,
+			CompletedAt:       &now,
+			Status: app.CompositeStatus{
+				Status:                 finalStatus,
+				StatusHumanDescription: desc,
+			},
+		})
+	}
 
 	return awaitErr
 }
 
 func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, string, error) {
+	if s.PreviewInstallID != "" {
+		name := s.SyntheticGroupName
+		if name == "" {
+			name = "preview"
+		}
+		return []string{s.PreviewInstallID}, name, nil
+	}
 	resolved, err := installgroups.Resolve(ctx, s.InstallGroupID, s.AppBranchID)
 	if err != nil {
 		return nil, "", err
@@ -137,7 +152,7 @@ func (s *Signal) enqueueInstallUpdates(
 			NewAppConfigID: run.AppConfigID,
 			AppBranchRunID: s.RunID,
 			InstallGroupID: s.InstallGroupID,
-			PlanOnly:       run.PlanOnly,
+			PlanOnly:       run.PreviewInstallPlanOnly(),
 			Callback:       cb,
 		})
 		if err != nil {
@@ -166,6 +181,7 @@ func (s *Signal) enqueueInstallUpdates(
 
 func (s *Signal) awaitInstallUpdates(
 	ctx workflow.Context,
+	groupName string,
 	enqueued []enqueuedInstall,
 	groupRunID string,
 	installEntries []app.InstallGroupRunInstall,
@@ -220,18 +236,20 @@ func (s *Signal) awaitInstallUpdates(
 			desc += fmt.Sprintf(" (%d failed)", failed)
 		}
 
-		_ = activities.AwaitUpdateInstallGroupRun(ctx, &activities.UpdateInstallGroupRunInput{
-			InstallGroupRunID: groupRunID,
-			Installs:          installEntries,
-			CompletedInstalls: completed,
-			FailedInstalls:    failed,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusInProgress,
-				StatusHumanDescription: desc,
-			},
-		})
+		if groupRunID != "" {
+			_ = activities.AwaitUpdateInstallGroupRun(ctx, &activities.UpdateInstallGroupRunInput{
+				InstallGroupRunID: groupRunID,
+				Installs:          installEntries,
+				CompletedInstalls: completed,
+				FailedInstalls:    failed,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusInProgress,
+					StatusHumanDescription: desc,
+				},
+			})
+		}
 
-		s.updateInstallMetadata(ctx, enqueued, results)
+		s.updateInstallMetadata(ctx, groupName, enqueued, results)
 	}
 
 	if len(errs) > 0 {
@@ -311,7 +329,7 @@ func (s *Signal) updateInstallAppConfigVersionStatus(ctx workflow.Context, insta
 	})
 }
 
-func (s *Signal) updateInstallMetadata(ctx workflow.Context, enqueued []enqueuedInstall, results map[string]string) {
+func (s *Signal) updateInstallMetadata(ctx workflow.Context, groupName string, enqueued []enqueuedInstall, results map[string]string) {
 	if s.StepID == "" {
 		return
 	}
@@ -353,14 +371,18 @@ func (s *Signal) updateInstallMetadata(ctx workflow.Context, enqueued []enqueued
 		}
 	}
 
+	metadata := map[string]any{
+		"install_group_name": groupName,
+		"total_installs":     len(enqueued),
+		"installs":           installs,
+	}
+
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: s.StepID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusInProgress,
 			StatusHumanDescription: desc,
-			Metadata: map[string]any{
-				"installs": installs,
-			},
+			Metadata:               metadata,
 		},
 	})
 }
