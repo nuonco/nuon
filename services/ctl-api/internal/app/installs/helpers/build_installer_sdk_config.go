@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	awsstacks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/aws"
+	azurestacks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/azure"
 	gcpstacks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 )
 
@@ -27,6 +28,7 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		// Install.AfterQuery does not load cloud accounts, so without this the gcp
 		// branch below always sees a nil GCPAccount and serves an empty target.
 		Preload("GCPAccount").
+		Preload("AzureAccount").
 		// Newest row only: AfterQuery promotes it to CurrentInstallInputs, which the
 		// input values and cluster_name below both read.
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
@@ -265,6 +267,39 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			CustomRoles:     gcpRolesToSDKMap(customRoles, true),
 		}
 
+	case app.AppRunnerTypeAzure:
+		// The Azure runner authenticates to Nuon as its own managed identity, so
+		// unlike GCP no token is minted here. It does need the container image to
+		// run, which its cloud-init records as the mng monitor's initial config.
+		if install.AzureAccount == nil || install.AzureAccount.Location == "" {
+			return nil, fmt.Errorf("install %s has no Azure location; azure SDK provisioner requires it", installID)
+		}
+
+		prov, maint, deprov := azurestacks.ExtractAzureStandardRolesRaw(appCfg)
+		breakGlass := azurestacks.ExtractAzureRolesRaw(appCfg.BreakGlassConfig.Roles)
+		customRoles := azurestacks.ExtractAzureRolesRaw(appCfg.PermissionsConfig.CustomRoles)
+
+		cfg.Cloud = "azure"
+		cfg.Azure = &app.InstallerSDKAzureConfig{
+			Location:             install.AzureAccount.Location,
+			SubscriptionID:       install.AzureAccount.SubscriptionID,
+			SubscriptionTenantID: install.AzureAccount.SubscriptionTenantID,
+
+			RunnerVMSize:      instanceType,
+			ContainerImageURL: install.RunnerGroup.Settings.ContainerImageURL,
+			ContainerImageTag: install.RunnerGroup.Settings.ContainerImageTag,
+
+			ProvisionActions:        prov.Actions,
+			ProvisionBuiltInRoles:   prov.BuiltInRoles,
+			MaintenanceActions:      maint.Actions,
+			MaintenanceBuiltInRoles: maint.BuiltInRoles,
+			DeprovisionActions:      deprov.Actions,
+			DeprovisionBuiltInRoles: deprov.BuiltInRoles,
+
+			BreakGlassRoles: azureRolesToSDKMap(breakGlass, false),
+			CustomRoles:     azureRolesToSDKMap(customRoles, true),
+		}
+
 	default:
 		return nil, fmt.Errorf("install %s: runner type %q is not supported by the SDK provisioner", installID, appCfg.RunnerConfig.Type)
 	}
@@ -298,6 +333,21 @@ func gcpRolesToSDKMap(rs []gcpstacks.GCPRoleRaw, enabled bool) map[string]app.In
 			PredefinedRole: r.PredefinedRole,
 			Enabled:        enabled,
 			Policies:       r.Policies,
+		}
+	}
+	return out
+}
+
+func azureRolesToSDKMap(rs []azurestacks.AzureRoleRaw, enabled bool) map[string]app.InstallerSDKAzureRole {
+	if len(rs) == 0 {
+		return nil
+	}
+	out := make(map[string]app.InstallerSDKAzureRole, len(rs))
+	for _, r := range rs {
+		out[r.Name] = app.InstallerSDKAzureRole{
+			Actions:      r.Actions,
+			BuiltInRoles: r.BuiltInRoles,
+			Enabled:      enabled,
 		}
 	}
 	return out
