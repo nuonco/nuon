@@ -36,7 +36,7 @@ export const Default = () => (
     deleteButton={<MockDeleteButton />}
     isTriggerPending={false}
     onTriggerRun={noop}
-    onTriggerPreview={noop}
+    onTriggerPreviewModal={noop}
   />
 )
 
@@ -47,7 +47,7 @@ export const TriggerPending = () => (
     deleteButton={<MockDeleteButton />}
     isTriggerPending={true}
     onTriggerRun={noop}
-    onTriggerPreview={noop}
+    onTriggerPreviewModal={noop}
   />
 )
 
@@ -59,6 +59,6 @@ export const WithNudge = () => (
     isTriggerPending={false}
     showTriggerNudge
     onTriggerRun={noop}
-    onTriggerPreview={noop}
+    onTriggerPreviewModal={noop}
   />
 )

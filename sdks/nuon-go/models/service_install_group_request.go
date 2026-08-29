@@ -40,9 +40,6 @@ type ServiceInstallGroupRequest struct {
 	// order
 	// Minimum: 0
 	Order *int64 `json:"order,omitempty"`
-
-	// use for previews
-	UseForPreviews bool `json:"use_for_previews,omitempty"`
 }
 
 // Validate validates this service install group request

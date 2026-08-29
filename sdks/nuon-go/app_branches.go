@@ -123,6 +123,37 @@ func (c *client) GetAppBranchLatestConfig(ctx context.Context, appID, appBranchI
 	return resp.Payload, nil
 }
 
+func (c *client) GetAppBranchPreviewSources(ctx context.Context, appID, appBranchID string) (*models.HelpersListPreviewSourcesResult, error) {
+	resp, err := c.genClient.Operations.GetAppBranchPreviewSources(&operations.GetAppBranchPreviewSourcesParams{
+		Context:     ctx,
+		AppID:       appID,
+		AppBranchID: appBranchID,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) GetAppBranchPreviewInstallCandidates(ctx context.Context, appID, appBranchID, configID string) (*models.ServicePreviewInstallCandidatesResponse, error) {
+	params := &operations.GetAppBranchPreviewInstallCandidatesParams{
+		Context:     ctx,
+		AppID:       appID,
+		AppBranchID: appBranchID,
+	}
+	if configID != "" {
+		params.ConfigID = &configID
+	}
+
+	resp, err := c.genClient.Operations.GetAppBranchPreviewInstallCandidates(params, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) TriggerAppBranchRun(ctx context.Context, appID, appBranchID string, req *models.ServiceTriggerAppBranchRunRequest) (*models.AppAppBranchRun, error) {
 	resp, err := c.genClient.Operations.TriggerAppBranchRun(&operations.TriggerAppBranchRunParams{
 		Context:     ctx,

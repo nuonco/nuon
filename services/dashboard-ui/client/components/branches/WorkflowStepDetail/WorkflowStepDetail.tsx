@@ -38,12 +38,12 @@ export const WorkflowStepDetail = ({
     step.name?.toLowerCase().includes('config') &&
     !step.name?.toLowerCase().includes('diff') &&
     !step.name?.toLowerCase().includes('differences')
-  const isPlanGroupStep = step.name
-    ?.toLowerCase()
-    .includes('plan install group')
-  const isDeployGroupStep = step.name
-    ?.toLowerCase()
-    .includes('deploy install group')
+  const isPlanGroupStep =
+    step.name?.toLowerCase().includes('plan install group') ||
+    step.name?.toLowerCase() === 'plan preview install'
+  const isDeployGroupStep =
+    step.name?.toLowerCase().includes('deploy install group') ||
+    step.name?.toLowerCase() === 'apply preview install'
   const isPostDeployRunbooksStep = step.name
     ?.toLowerCase()
     .includes('post-deploy runbooks')

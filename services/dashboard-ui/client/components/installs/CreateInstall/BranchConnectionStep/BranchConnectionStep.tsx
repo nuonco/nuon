@@ -42,7 +42,6 @@ const buildConfigRequest = (
       label_selector: isLabelGroup ? g.label_selector : undefined,
       order: index,
       max_parallel: g.max_parallel || 1,
-      use_for_previews: g.use_for_previews || false,
     }
   })
 

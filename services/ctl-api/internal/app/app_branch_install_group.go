@@ -43,9 +43,6 @@ type AppBranchInstallGroup struct {
 	AllInstalls bool `json:"all_installs,omitzero" gorm:"default:false" temporaljson:"all_installs,omitzero,omitempty"`
 
 	MaxParallel int `json:"max_parallel,omitzero" gorm:"default:0" temporaljson:"max_parallel,omitzero,omitempty"`
-
-	// UseForPreviews marks this group for plan-only preview runs (e.g., PR previews).
-	UseForPreviews bool `json:"use_for_previews,omitzero" gorm:"default:false" temporaljson:"use_for_previews,omitzero,omitempty"`
 }
 
 func (a *AppBranchInstallGroup) Indexes(db *gorm.DB) []migrations.Index {

@@ -485,10 +485,15 @@ func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.Ap
 		errMsg = buildErr.Error()
 	}
 
+	if !run.PreviewGitHubComment() && !run.PreviewGitHubSetStatuses() {
+		return
+	}
+
 	var diff *activities.ComputeAppConfigDiffOutput
 	if run.AppConfigID != "" {
-		baseline, baselineErr := activities.AwaitFindLatestNonPreviewAppConfig(ctx, &activities.FindLatestNonPreviewAppConfigInput{
-			AppID: branch.AppID,
+		baseline, baselineErr := activities.AwaitResolvePreviewBaselineAppConfig(ctx, &activities.ResolvePreviewBaselineAppConfigInput{
+			RunID:       s.RunID,
+			AppBranchID: s.AppBranchID,
 		})
 		var oldConfigID string
 		if baselineErr == nil && baseline.AppConfigID != "" {
@@ -513,14 +518,16 @@ func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.Ap
 		ErrorMessage: errMsg,
 	})
 
-	_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
-		VcsConfigID:       vcsConfigID,
-		PRNumber:          *run.PRNumber,
-		ExistingCommentID: run.GithubCommentID,
-		Body:              commentBody,
-	})
+	if run.PreviewGitHubComment() {
+		_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
+			VcsConfigID:       vcsConfigID,
+			PRNumber:          *run.PRNumber,
+			ExistingCommentID: run.GithubCommentID,
+			Body:              commentBody,
+		})
+	}
 
-	if run.HeadSHA != "" {
+	if run.HeadSHA != "" && run.PreviewGitHubSetStatuses() {
 		_ = activities.AwaitSetGithubCommitStatus(ctx, &activities.SetGithubCommitStatusInput{
 			VcsConfigID: vcsConfigID,
 			CommitSHA:   run.HeadSHA,

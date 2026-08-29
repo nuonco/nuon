@@ -47,11 +47,13 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 
 	update := app.InstallAppConfigVersion{
 		AppBranchRunID: &input.AppBranchRunID,
-		InstallGroupID: &input.InstallGroupID,
 		InstallID:      input.InstallID,
 		OldAppConfigID: install.AppConfigID,
 		NewAppConfigID: input.NewAppConfigID,
 		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
+	}
+	if input.InstallGroupID != "" {
+		update.InstallGroupID = &input.InstallGroupID
 	}
 	if err := a.db.WithContext(ctx).Create(&update).Error; err != nil {
 		return nil, fmt.Errorf("unable to create install config update: %w", err)
@@ -64,8 +66,10 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 	metadata := map[string]string{
 		"new_app_config_id":        input.NewAppConfigID,
 		"app_branch_run_id":        input.AppBranchRunID,
-		"install_group_id":         input.InstallGroupID,
 		"install_config_update_id": update.ID,
+	}
+	if input.InstallGroupID != "" {
+		metadata["install_group_id"] = input.InstallGroupID
 	}
 
 	wf, err := a.installHelpers.CreateWorkflow(

@@ -1,10 +1,11 @@
 import { api } from '@/lib/api'
-import type { TInstallWorkflow } from '@/types'
+import type { TInstallWorkflow, TPreviewRunRequest } from '@/types'
 
 export type TTriggerBranchRunRequest = {
   config_id?: string
   force?: boolean
   plan_only?: boolean
+  preview_run?: TPreviewRunRequest
 }
 
 export const triggerBranchRun = ({

@@ -9,6 +9,7 @@ export interface IDeployGroupStep {
   deployedCount: number
   rows: IInstallDeployRow[]
   emptyMessage?: string
+  variant?: 'group' | 'preview'
 }
 
 export const DeployGroupStep = ({
@@ -17,15 +18,25 @@ export const DeployGroupStep = ({
   deployedCount,
   rows,
   emptyMessage,
+  variant = 'group',
 }: IDeployGroupStep) => {
+  const title =
+    variant === 'preview' ? (
+      <span className="font-semibold text-cool-grey-900 dark:text-white">Preview install</span>
+    ) : (
+      <>
+        install group:{' '}
+        <span className="font-semibold text-cool-grey-900 dark:text-white">{groupName}</span>
+      </>
+    )
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon variant="PackageIcon" size={16} className="text-cool-grey-500 dark:text-cool-grey-400 shrink-0" />
           <Text variant="body" theme="neutral">
-            install group:{' '}
-            <span className="font-semibold text-cool-grey-900 dark:text-white">{groupName}</span>
+            {title}
           </Text>
           <Text variant="subtext" theme="neutral">
             {totalInstalls} {totalInstalls === 1 ? 'install' : 'installs'}

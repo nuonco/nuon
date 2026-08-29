@@ -14,9 +14,12 @@ import (
 const SignalType signal.SignalType = "app-branch-plan-install-group"
 
 type Signal struct {
-	InstallGroupID string `json:"install_group_id" validate:"required"`
+	InstallGroupID string `json:"install_group_id"`
 	AppBranchID    string `json:"app_branch_id" validate:"required"`
 	RunID          string `json:"run_id" validate:"required"`
+
+	PreviewInstallID   string `json:"preview_install_id,omitempty"`
+	SyntheticGroupName string `json:"synthetic_group_name,omitempty"`
 
 	FlowID string `json:"flow_id,omitempty"`
 	StepID string `json:"step_id,omitempty"`
@@ -50,15 +53,20 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if err := v.Struct(s); err != nil {
 		return errors.Wrap(err, "validation failed")
 	}
+	if s.InstallGroupID == "" && s.PreviewInstallID == "" {
+		return fmt.Errorf("install_group_id or preview_install_id is required")
+	}
 
 	_, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return errors.Wrap(err, "app branch not found")
 	}
 
-	_, err = activities.AwaitGetInstallGroupByID(ctx, s.InstallGroupID)
-	if err != nil {
-		return errors.Wrap(err, "install group not found")
+	if s.InstallGroupID != "" {
+		_, err = activities.AwaitGetInstallGroupByID(ctx, s.InstallGroupID)
+		if err != nil {
+			return errors.Wrap(err, "install group not found")
+		}
 	}
 
 	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
