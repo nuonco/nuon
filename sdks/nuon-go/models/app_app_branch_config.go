@@ -59,6 +59,9 @@ type AppAppBranchConfig struct {
 	// branch's synced app config produced.
 	PostDeployRunbookIds []string `json:"post_deploy_runbook_ids"`
 
+	// preview config
+	PreviewConfig *AppAppBranchPreviewConfig `json:"preview_config,omitempty"`
+
 	// public git vcs config
 	PublicGitVcsConfig *AppPublicGitVCSConfig `json:"public_git_vcs_config,omitempty"`
 
@@ -81,6 +84,10 @@ func (m *AppAppBranchConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateInstallGroups(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePreviewConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -151,6 +158,29 @@ func (m *AppAppBranchConfig) validateInstallGroups(formats strfmt.Registry) erro
 	return nil
 }
 
+func (m *AppAppBranchConfig) validatePreviewConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.PreviewConfig) { // not required
+		return nil
+	}
+
+	if m.PreviewConfig != nil {
+		if err := m.PreviewConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppAppBranchConfig) validatePublicGitVcsConfig(formats strfmt.Registry) error {
 	if swag.IsZero(m.PublicGitVcsConfig) { // not required
 		return nil
@@ -213,6 +243,10 @@ func (m *AppAppBranchConfig) ContextValidate(ctx context.Context, formats strfmt
 	}
 
 	if err := m.contextValidateInstallGroups(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePreviewConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -279,6 +313,31 @@ func (m *AppAppBranchConfig) contextValidateInstallGroups(ctx context.Context, f
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchConfig) contextValidatePreviewConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PreviewConfig != nil {
+
+		if swag.IsZero(m.PreviewConfig) { // not required
+			return nil
+		}
+
+		if err := m.PreviewConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview_config")
+			}
+
+			return err
+		}
 	}
 
 	return nil

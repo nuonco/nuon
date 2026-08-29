@@ -85,7 +85,10 @@ type AppAppBranchRun struct {
 	// pr number
 	PrNumber int64 `json:"pr_number,omitempty"`
 
-	// queue signal
+        // preview
+	Preview *AppAppBranchRunPreview `json:"preview,omitempty"`
+
+        // queue signal
 	QueueSignal *AppQueueSignal `json:"queue_signal,omitempty"`
 
 	// run type
@@ -141,6 +144,13 @@ func (m *AppAppBranchRun) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+<<<<<<< HEAD
+=======
+	if err := m.validatePreview(formats); err != nil {
+		res = append(res, err)
+	}
+
+>>>>>>> 32989ab9e (feat: add preview app branch runs)
 	if err := m.validateQueueSignal(formats); err != nil {
 		res = append(res, err)
 	}
@@ -301,6 +311,48 @@ func (m *AppAppBranchRun) validateLogStream(formats strfmt.Registry) error {
 	return nil
 }
 
+<<<<<<< HEAD
+func (m *AppAppBranchRun) validateQueueSignal(formats strfmt.Registry) error {
+	if swag.IsZero(m.QueueSignal) { // not required
+		return nil
+	}
+
+	if m.QueueSignal != nil {
+		if err := m.QueueSignal.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("queue_signal")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("queue_signal")
+=======
+func (m *AppAppBranchRun) validatePreview(formats strfmt.Registry) error {
+	if swag.IsZero(m.Preview) { // not required
+		return nil
+	}
+
+	if m.Preview != nil {
+		if err := m.Preview.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview")
+>>>>>>> 32989ab9e (feat: add preview app branch runs)
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+<<<<<<< HEAD
+=======
 func (m *AppAppBranchRun) validateQueueSignal(formats strfmt.Registry) error {
 	if swag.IsZero(m.QueueSignal) { // not required
 		return nil
@@ -324,6 +376,7 @@ func (m *AppAppBranchRun) validateQueueSignal(formats strfmt.Registry) error {
 	return nil
 }
 
+>>>>>>> 32989ab9e (feat: add preview app branch runs)
 func (m *AppAppBranchRun) validateRunType(formats strfmt.Registry) error {
 	if swag.IsZero(m.RunType) { // not required
 		return nil
@@ -419,6 +472,13 @@ func (m *AppAppBranchRun) ContextValidate(ctx context.Context, formats strfmt.Re
 		res = append(res, err)
 	}
 
+<<<<<<< HEAD
+=======
+	if err := m.contextValidatePreview(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+>>>>>>> 32989ab9e (feat: add preview app branch runs)
 	if err := m.contextValidateQueueSignal(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -588,6 +648,52 @@ func (m *AppAppBranchRun) contextValidateLogStream(ctx context.Context, formats 
 	return nil
 }
 
+<<<<<<< HEAD
+func (m *AppAppBranchRun) contextValidateQueueSignal(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.QueueSignal != nil {
+
+		if swag.IsZero(m.QueueSignal) { // not required
+			return nil
+		}
+
+		if err := m.QueueSignal.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("queue_signal")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("queue_signal")
+=======
+func (m *AppAppBranchRun) contextValidatePreview(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Preview != nil {
+
+		if swag.IsZero(m.Preview) { // not required
+			return nil
+		}
+
+		if err := m.Preview.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview")
+>>>>>>> 32989ab9e (feat: add preview app branch runs)
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+<<<<<<< HEAD
+=======
 func (m *AppAppBranchRun) contextValidateQueueSignal(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.QueueSignal != nil {
@@ -613,6 +719,7 @@ func (m *AppAppBranchRun) contextValidateQueueSignal(ctx context.Context, format
 	return nil
 }
 
+>>>>>>> 32989ab9e (feat: add preview app branch runs)
 func (m *AppAppBranchRun) contextValidateRunType(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.RunType) { // not required

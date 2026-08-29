@@ -43,6 +43,7 @@ export interface ISelect
   size?: 'sm' | 'md' | 'lg'
   placeholder?: string
   searchable?: boolean
+  menuPlacement?: 'auto' | 'bottom'
 }
 
 export const Select = forwardRef<HTMLInputElement, ISelect>(
@@ -65,6 +66,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       name,
       required,
       searchable = false,
+      menuPlacement = 'auto',
       ...props
     },
     ref
@@ -113,8 +115,14 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       const desiredMax = 288 // matches max-h-72
       const spaceBelow = window.innerHeight - rect.bottom - margin
       const spaceAbove = rect.top - margin
-      const openUpward = spaceBelow < desiredMax && spaceAbove > spaceBelow
-      const available = Math.max(120, openUpward ? spaceAbove : spaceBelow)
+      const openUpward =
+        menuPlacement !== 'bottom' &&
+        spaceBelow < desiredMax &&
+        spaceAbove > spaceBelow
+      const available = Math.max(
+        120,
+        menuPlacement === 'bottom' ? spaceBelow : openUpward ? spaceAbove : spaceBelow
+      )
       return {
         top: openUpward ? undefined : rect.bottom + 4,
         bottom: openUpward ? window.innerHeight - rect.top + 4 : undefined,
