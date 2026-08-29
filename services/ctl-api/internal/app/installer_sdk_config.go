@@ -3,7 +3,7 @@ package app
 // InstallerSDKConfig is the JSON shape the stack SDK expects for a stack
 // version's rendered configuration. Field tags match sdks/stack/internal/core
 // (Config + per-cloud sub-structs) exactly: common fields here, cloud-specific
-// inputs on AWS/GCP, selected by Cloud. Served read-only by the config endpoint
+// inputs on AWS/GCP/Azure, selected by Cloud. Served read-only by the config endpoint
 // the Terraform provider's nuon_stack data source consumes.
 type InstallerSDKConfig struct {
 	Cloud        string `json:"cloud,omitempty"`
@@ -26,8 +26,9 @@ type InstallerSDKConfig struct {
 	AutoGenerateSecrets []string                      `json:"auto_generate_secrets,omitempty"`
 	Secrets             map[string]InstallerSDKSecret `json:"secrets,omitempty"`
 
-	AWS *InstallerSDKAWSConfig `json:"aws,omitempty"`
-	GCP *InstallerSDKGCPConfig `json:"gcp,omitempty"`
+	AWS   *InstallerSDKAWSConfig   `json:"aws,omitempty"`
+	GCP   *InstallerSDKGCPConfig   `json:"gcp,omitempty"`
+	Azure *InstallerSDKAzureConfig `json:"azure,omitempty"`
 }
 
 // InstallerSDKAWSConfig mirrors sdks/stack core.AWSConfig.
@@ -83,6 +84,45 @@ type InstallerSDKGCPConfig struct {
 
 	BreakGlassRoles map[string]InstallerSDKGCPRole `json:"break_glass_roles,omitempty"`
 	CustomRoles     map[string]InstallerSDKGCPRole `json:"custom_roles,omitempty"`
+}
+
+// InstallerSDKAzureConfig mirrors sdks/stack core.AzureConfig.
+//
+// Azure grants come on two axes and the Terraform module treats them
+// differently: Actions become a subscription-scoped custom role definition (the
+// module always adds */register/action to it), and BuiltInRoles become direct
+// assignments at resource-group scope. Built-in roles are served as GUIDs,
+// already resolved by pkg/azureroles.
+//
+// There is no runner API token here, unlike GCP: the Azure runner authenticates
+// as its own managed identity, so the config carries the container image it
+// should run instead.
+type InstallerSDKAzureConfig struct {
+	Location             string `json:"location,omitempty"`
+	SubscriptionID       string `json:"subscription_id,omitempty"`
+	SubscriptionTenantID string `json:"subscription_tenant_id,omitempty"`
+
+	RunnerVMSize      string `json:"runner_vm_size,omitempty"`
+	ContainerImageURL string `json:"container_image_url,omitempty"`
+	ContainerImageTag string `json:"container_image_tag,omitempty"`
+
+	ProvisionActions        []string `json:"provision_actions,omitempty"`
+	ProvisionBuiltInRoles   []string `json:"provision_built_in_roles,omitempty"`
+	MaintenanceActions      []string `json:"maintenance_actions,omitempty"`
+	MaintenanceBuiltInRoles []string `json:"maintenance_built_in_roles,omitempty"`
+	DeprovisionActions      []string `json:"deprovision_actions,omitempty"`
+	DeprovisionBuiltInRoles []string `json:"deprovision_built_in_roles,omitempty"`
+
+	BreakGlassRoles map[string]InstallerSDKAzureRole `json:"break_glass_roles,omitempty"`
+	CustomRoles     map[string]InstallerSDKAzureRole `json:"custom_roles,omitempty"`
+}
+
+// InstallerSDKAzureRole is the per-role payload for Azure break-glass/custom
+// roles.
+type InstallerSDKAzureRole struct {
+	Actions      []string `json:"actions,omitempty"`
+	BuiltInRoles []string `json:"built_in_roles,omitempty"`
+	Enabled      bool     `json:"enabled"`
 }
 
 // InstallerSDKSecret is the customer-provided secret shape (cloud-agnostic).
