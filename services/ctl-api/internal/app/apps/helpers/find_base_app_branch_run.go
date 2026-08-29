@@ -14,7 +14,10 @@ import (
 func (h *Helpers) FindBaseAppBranchRun(ctx context.Context, appBranchID string) (*app.AppBranchRun, error) {
 	var baseRun app.AppBranchRun
 	err := h.db.WithContext(ctx).
-		Where(app.AppBranchRun{AppBranchID: appBranchID}).
+		Where(app.AppBranchRun{
+			AppBranchID: appBranchID,
+			Status:      "success",
+		}).
 		Where(buildsCompletedLabelClause(h.db), "true").
 		Where("run_type IN ?", []app.AppBranchRunType{
 			app.AppBranchRunTypeGit,
@@ -42,8 +45,10 @@ func buildsCompletedLabelClause(db *gorm.DB) string {
 // shouldCreateComparison reports whether a run of this type gets an AppBranchRunComparison row.
 func shouldCreateComparison(runType app.AppBranchRunType, planOnly bool) bool {
 	switch runType {
-	case app.AppBranchRunTypeGit, app.AppBranchRunTypeGitPreview:
+	case app.AppBranchRunTypeGit:
 		return true
+	case app.AppBranchRunTypeGitPreview:
+		return false
 	case app.AppBranchRunTypeManual:
 		return !planOnly
 	default:

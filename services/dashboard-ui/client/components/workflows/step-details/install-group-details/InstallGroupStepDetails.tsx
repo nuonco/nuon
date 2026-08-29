@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Expand } from '@/components/common/Expand'
 import { ID } from '@/components/common/ID'
@@ -41,6 +42,7 @@ interface IInstallGroupPlan {
 
 interface IInstallMetadataEntry {
   install_id?: string
+  install_name?: string
   status?: string
   workflow_id?: string
   added?: number
@@ -145,6 +147,29 @@ const DiffSummaryBadges = ({ entry }: { entry: IInstallMetadataEntry }) => {
   )
 }
 
+const InstallCardHeading = ({
+  entry,
+  children,
+  trailing,
+}: {
+  entry: IInstallMetadataEntry
+  children?: ReactNode
+  trailing?: ReactNode
+}) => (
+  <div className="flex items-center justify-between w-full pr-2 gap-3">
+    <span className="flex items-center gap-3 min-w-0">
+      {entry?.install_name ? (
+        <Text variant="subtext" weight="strong" className="truncate">
+          {entry.install_name}
+        </Text>
+      ) : null}
+      {entry?.install_id ? <ID>{entry.install_id}</ID> : null}
+      {children}
+    </span>
+    {trailing}
+  </div>
+)
+
 const PlanInstallCard = ({
   entry,
   planEntry,
@@ -162,13 +187,10 @@ const PlanInstallCard = ({
       className="border rounded-lg"
       isOpen={isFirst}
       heading={
-        <div className="flex items-center justify-between w-full pr-2">
-          <span className="flex items-center gap-3">
-            <ID>{entry?.install_id}</ID>
-            <Status variant="badge" status={entry?.status} />
-            <DiffSummaryBadges entry={entry} />
-          </span>
-        </div>
+        <InstallCardHeading entry={entry}>
+          <Status variant="badge" status={entry?.status} />
+          <DiffSummaryBadges entry={entry} />
+        </InstallCardHeading>
       }
     >
       <div className="border-t p-4">
@@ -199,13 +221,10 @@ const DeployInstallCard = ({
       className="border rounded-lg"
       isOpen={isFirst}
       heading={
-        <div className="flex items-center justify-between w-full pr-2">
-          <span className="flex items-center gap-3">
-            <ID>{entry?.install_id}</ID>
-            <Status variant="badge" status={entry?.status} />
-          </span>
-          <span className="flex items-center gap-3">
-            {entry?.workflow_id ? (
+        <InstallCardHeading
+          entry={entry}
+          trailing={
+            entry?.workflow_id ? (
               <Link
                 href={`/${orgId}/installs/${entry.install_id}/workflows/${entry.workflow_id}`}
               >
@@ -213,9 +232,11 @@ const DeployInstallCard = ({
                   View workflow
                 </Text>
               </Link>
-            ) : null}
-          </span>
-        </div>
+            ) : null
+          }
+        >
+          <Status variant="badge" status={entry?.status} />
+        </InstallCardHeading>
       }
     >
       <div className="border-t p-4 flex flex-col gap-2">
@@ -246,7 +267,9 @@ export const InstallGroupStepDetails = ({ step }: { step?: TWorkflowStep }) => {
   const groupName = metadata?.install_group_name as string | undefined
   const totalInstalls = metadata?.total_installs as number | undefined
 
-  const isPlan = step?.name?.startsWith('plan install group')
+  const isPlan =
+    step?.name?.startsWith('plan install group') ||
+    step?.name === 'plan preview install'
   const hasApproval = step?.execution_type === 'approval' && !!step?.approval
 
   const { plan, isLoading: planLoading } = useQueryApprovalPlan({

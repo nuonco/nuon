@@ -24,6 +24,7 @@ func (a *Activities) getAppBranchRunByID(ctx context.Context, runID string) (*ap
 		Preload("VCSConnectionCommit").
 		Preload("Comparison").
 		Preload("Comparison.BaseRun").
+		Preload("Preview").
 		First(&run, "id = ?", runID)
 
 	if res.Error != nil {

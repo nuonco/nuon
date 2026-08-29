@@ -73,7 +73,17 @@ func setupAppBranchRunComparisonDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+func insertBranchRunWithConfig(t *testing.T, db *gorm.DB, id, branchID, appConfigID, runType string, planOnly bool, buildsCompleted *bool, status string, createdAt time.Time) {
+	t.Helper()
+	insertBranchRunFull(t, db, id, branchID, appConfigID, runType, planOnly, buildsCompleted, status, createdAt)
+}
+
 func insertBranchRun(t *testing.T, db *gorm.DB, id, branchID, runType string, planOnly bool, buildsCompleted *bool, createdAt time.Time) {
+	t.Helper()
+	insertBranchRunFull(t, db, id, branchID, "", runType, planOnly, buildsCompleted, "success", createdAt)
+}
+
+func insertBranchRunFull(t *testing.T, db *gorm.DB, id, branchID, appConfigID, runType string, planOnly bool, buildsCompleted *bool, status string, createdAt time.Time) {
 	t.Helper()
 
 	var labelsJSON any
@@ -93,9 +103,9 @@ func insertBranchRun(t *testing.T, db *gorm.DB, id, branchID, runType string, pl
 	require.NoError(t, db.Exec(`
 		INSERT INTO app_branch_runs (
 			id, org_id, app_branch_id, app_branch_config_id, created_by_id,
-			created_at, updated_at, status, run_type, plan_only, labels
-		) VALUES (?, 'org-1', ?, 'cfg-1', 'acc-1', ?, ?, 'success', ?, ?, ?)
-	`, id, branchID, createdAt, createdAt, runType, planOnlyInt, labelsJSON).Error)
+			created_at, updated_at, status, run_type, plan_only, labels, app_config_id
+		) VALUES (?, 'org-1', ?, 'cfg-1', 'acc-1', ?, ?, ?, ?, ?, ?, ?)
+	`, id, branchID, createdAt, createdAt, status, runType, planOnlyInt, labelsJSON, appConfigID).Error)
 }
 
 func TestFindBaseAppBranchRun(t *testing.T) {
@@ -144,6 +154,29 @@ func TestFindBaseAppBranchRun(t *testing.T) {
 		_, err := h.FindBaseAppBranchRun(context.Background(), "branch-1")
 		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
+
+	t.Run("scopes to app branch", func(t *testing.T) {
+		db := setupAppBranchRunComparisonDB(t)
+		insertBranchRunWithConfig(t, db, "seed-deploy", "branch-seed", "cfg-seed", string(app.AppBranchRunTypeGit), false, &trueVal, "success", now)
+		insertBranchRunWithConfig(t, db, "main-deploy", "branch-main", "cfg-main", string(app.AppBranchRunTypeManual), false, &trueVal, "success", now.Add(-time.Hour))
+
+		h := &Helpers{db: db}
+		base, err := h.FindBaseAppBranchRun(context.Background(), "branch-main")
+		require.NoError(t, err)
+		require.Equal(t, "main-deploy", base.ID)
+		require.Equal(t, "cfg-main", base.AppConfigID)
+	})
+
+	t.Run("excludes non-success status", func(t *testing.T) {
+		db := setupAppBranchRunComparisonDB(t)
+		insertBranchRunWithConfig(t, db, "failed", "branch-1", "cfg-failed", string(app.AppBranchRunTypeGit), false, &trueVal, "failed", now)
+		insertBranchRunWithConfig(t, db, "ok", "branch-1", "cfg-ok", string(app.AppBranchRunTypeGit), false, &trueVal, "success", now.Add(-time.Hour))
+
+		h := &Helpers{db: db}
+		base, err := h.FindBaseAppBranchRun(context.Background(), "branch-1")
+		require.NoError(t, err)
+		require.Equal(t, "ok", base.ID)
+	})
 }
 
 func TestCreateAppBranchRunCreatesComparison(t *testing.T) {
@@ -172,21 +205,18 @@ func TestCreateAppBranchRunCreatesComparison(t *testing.T) {
 		require.Equal(t, "base-run", *comparison.BaseRunID)
 	})
 
-	t.Run("first run has nil base", func(t *testing.T) {
+	t.Run("git-preview without preview config falls back to legacy path", func(t *testing.T) {
 		db := setupAppBranchRunComparisonDB(t)
 		h := &Helpers{db: db}
 		run, err := h.CreateAppBranchRun(context.Background(), &CreateAppBranchRunRequest{
 			AppBranchID:       "branch-1",
 			AppBranchConfigID: "cfg-1",
 			RunType:           app.AppBranchRunTypeGitPreview,
+			HeadSHA:           "abc123",
 		})
 		require.NoError(t, err)
-		require.NotNil(t, run.Comparison)
-
-		var comparison app.AppBranchRunComparison
-		require.NoError(t, db.Where(app.AppBranchRunComparison{HeadRunID: run.ID}).First(&comparison).Error)
-		require.Equal(t, run.ID, comparison.HeadRunID)
-		require.Nil(t, comparison.BaseRunID)
+		require.Nil(t, run.Preview)
+		require.Nil(t, run.Comparison)
 	})
 
 	t.Run("plan-only manual run skips comparison", func(t *testing.T) {
@@ -209,7 +239,7 @@ func TestCreateAppBranchRunCreatesComparison(t *testing.T) {
 
 func TestShouldCreateComparison(t *testing.T) {
 	require.True(t, shouldCreateComparison(app.AppBranchRunTypeGit, false))
-	require.True(t, shouldCreateComparison(app.AppBranchRunTypeGitPreview, false))
+	require.False(t, shouldCreateComparison(app.AppBranchRunTypeGitPreview, false))
 	require.True(t, shouldCreateComparison(app.AppBranchRunTypeManual, false))
 	require.False(t, shouldCreateComparison(app.AppBranchRunTypeManual, true))
 }

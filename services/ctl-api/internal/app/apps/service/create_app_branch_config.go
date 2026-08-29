@@ -16,10 +16,9 @@ import (
 )
 
 type InstallGroupRequest struct {
-	Name           string   `json:"name" validate:"required,min=1"`
-	Order          int      `json:"order" validate:"min=0"`
-	InstallIDs     []string `json:"install_ids"`
-	UseForPreviews bool     `json:"use_for_previews"`
+	Name       string   `json:"name" validate:"required,min=1"`
+	Order      int      `json:"order" validate:"min=0"`
+	InstallIDs []string `json:"install_ids"`
 
 	// LabelSelector dynamically resolves installs at deploy time.
 	// Mutually exclusive with InstallIDs.
@@ -42,6 +41,9 @@ type CreateAppBranchConfigRequest struct {
 	// DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
 	// branch runs. Omit to carry the current setting forward.
 	DisableBranchTriggers *bool `json:"disable_branch_triggers,omitempty"`
+
+	// PreviewConfig sets branch-level preview defaults. Omit to carry forward.
+	PreviewConfig *app.AppBranchPreviewConfig `json:"preview_config,omitempty"`
 }
 
 func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
@@ -92,6 +94,13 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 					Description: "label_selector must have non-empty match_labels",
 				}
 			}
+		}
+	}
+
+	if c.PreviewConfig != nil {
+		c.PreviewConfig.Normalize()
+		if err := c.PreviewConfig.Validate(); err != nil {
+			return stderr.NewInvalidRequest(err)
 		}
 	}
 
@@ -236,12 +245,11 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 			selector = nil
 		}
 		installGroups[i] = app.AppBranchInstallGroup{
-			Name:           g.Name,
-			Order:          g.Order,
-			InstallIDs:     g.InstallIDs,
-			LabelSelector:  selector,
-			AllInstalls:    g.AllInstalls,
-			UseForPreviews: g.UseForPreviews,
+			Name:          g.Name,
+			Order:         g.Order,
+			InstallIDs:    g.InstallIDs,
+			LabelSelector: selector,
+			AllInstalls:   g.AllInstalls,
 		}
 	}
 
@@ -253,6 +261,7 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		installGroups,
 		req.PostDeployRunbookIDs,
 		req.DisableBranchTriggers,
+		req.PreviewConfig,
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch config: %w", err))

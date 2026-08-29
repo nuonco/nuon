@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -17,48 +19,113 @@ import (
 // swagger:model service.TriggerAppBranchRunRequest
 type ServiceTriggerAppBranchRunRequest struct {
 
-	// optional - use pre-existing app config (skips VCS fetch + config parse)
+	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
-	// AutoApprove skips the approval gate on the plan steps. Without it the
-	// approval option is derived from the installs the branch targets.
+	// auto approve
 	AutoApprove bool `json:"auto_approve,omitempty"`
 
 	// base branch
 	BaseBranch string `json:"base_branch,omitempty"`
 
-	// optional - use latest if not provided
+	// config id
 	ConfigID string `json:"config_id,omitempty"`
 
-	// force run even if no changes detected
+	// force
 	Force bool `json:"force,omitempty"`
 
 	// head sha
 	HeadSha string `json:"head_sha,omitempty"`
 
-	// plan-only preview mode (no apply)
+	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
 
-	// PR context, for previews triggered from CI rather than a GitHub webhook.
-	// Supplying PRNumber is what lets the run report back onto the pull request.
+	// pr number
 	PrNumber int64 `json:"pr_number,omitempty"`
 
-	// skip builds step (e.g. rollback to existing config with existing builds)
+	// preview run
+	PreviewRun *ServicePreviewRunRequest `json:"preview_run,omitempty"`
+
+	// skip builds
 	SkipBuilds bool `json:"skip_builds,omitempty"`
 
-	// SyncAppConfig syncs AppConfigID inside the run rather than assuming it was
-	// already synced. Set by callers that compiled the config themselves, such
-	// as `nuon apps sync`.
+	// sync app config
 	SyncAppConfig bool `json:"sync_app_config,omitempty"`
 }
 
 // Validate validates this service trigger app branch run request
 func (m *ServiceTriggerAppBranchRunRequest) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validatePreviewRun(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this service trigger app branch run request based on context it is used
+func (m *ServiceTriggerAppBranchRunRequest) validatePreviewRun(formats strfmt.Registry) error {
+	if swag.IsZero(m.PreviewRun) { // not required
+		return nil
+	}
+
+	if m.PreviewRun != nil {
+		if err := m.PreviewRun.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview_run")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview_run")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this service trigger app branch run request based on the context it is used
 func (m *ServiceTriggerAppBranchRunRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidatePreviewRun(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceTriggerAppBranchRunRequest) contextValidatePreviewRun(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PreviewRun != nil {
+
+		if swag.IsZero(m.PreviewRun) { // not required
+			return nil
+		}
+
+		if err := m.PreviewRun.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview_run")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview_run")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
