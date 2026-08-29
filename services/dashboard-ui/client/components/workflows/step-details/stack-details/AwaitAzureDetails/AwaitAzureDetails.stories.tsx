@@ -63,6 +63,7 @@ export const Default = () => (
     <AwaitAzureDetails
       stack={mockStack}
       step={mockStep}
+      orgId="org-1"
       installId="install-1"
       azureLocation="eastus"
     />
@@ -74,6 +75,7 @@ export const WithQuickLink = () => (
     <AwaitAzureDetails
       stack={mockStackWithQuickLink}
       step={mockStep}
+      orgId="org-1"
       installId="install-1"
       azureLocation="eastus"
       deploymentScope="subscription"
@@ -86,6 +88,7 @@ export const QuickLinkHiddenAtResourceGroupScope = () => (
     <AwaitAzureDetails
       stack={mockStackWithQuickLink}
       step={mockStep}
+      orgId="org-1"
       installId="install-1"
       azureLocation="eastus"
       deploymentScope="resource_group"
@@ -98,6 +101,7 @@ export const WithApplicationSecrets = () => (
     <AwaitAzureDetails
       stack={mockStack}
       step={mockStep}
+      orgId="org-1"
       installId="install-1"
       azureLocation="eastus"
       secrets={mockSecrets}
@@ -110,6 +114,7 @@ export const WithCustomerInputs = () => (
     <AwaitAzureDetails
       stack={mockStack}
       step={mockStep}
+      orgId="org-1"
       installId="install-1"
       azureLocation="eastus"
       inputs={mockInputs}
@@ -124,6 +129,7 @@ export const WithCustomerInputsAlreadySet = () => (
     <AwaitAzureDetails
       stack={mockStack}
       step={mockStep}
+      orgId="org-1"
       installId="install-1"
       azureLocation="eastus"
       inputs={mockInputs}
@@ -137,8 +143,23 @@ export const Loading = () => (
     <AwaitAzureDetails
       stack={mockStack}
       step={mockStep}
+      orgId="org-1"
       installId="install-1"
       loading
+    />
+  </div>
+)
+
+export const TFModule = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitAzureDetails
+      stack={mockStack}
+      step={mockStep}
+      orgId="org-1"
+      installId="install-1"
+      azureLocation="eastus"
+      azureSubscriptionId="00000000-0000-0000-0000-000000000000"
+      tfProvider
     />
   </div>
 )

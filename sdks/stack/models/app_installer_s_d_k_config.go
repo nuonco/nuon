@@ -29,6 +29,9 @@ type AppInstallerSDKConfig struct {
 	// aws
 	Aws *AppInstallerSDKAWSConfig `json:"aws,omitempty"`
 
+	// azure
+	Azure *AppInstallerSDKAzureConfig `json:"azure,omitempty"`
+
 	// cloud
 	Cloud string `json:"cloud,omitempty"`
 
@@ -74,6 +77,10 @@ func (m *AppInstallerSDKConfig) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateAzure(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateGcp(formats); err != nil {
 		res = append(res, err)
 	}
@@ -102,6 +109,29 @@ func (m *AppInstallerSDKConfig) validateAws(formats strfmt.Registry) error {
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("aws")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallerSDKConfig) validateAzure(formats strfmt.Registry) error {
+	if swag.IsZero(m.Azure) { // not required
+		return nil
+	}
+
+	if m.Azure != nil {
+		if err := m.Azure.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("azure")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("azure")
 			}
 
 			return err
@@ -172,6 +202,10 @@ func (m *AppInstallerSDKConfig) ContextValidate(ctx context.Context, formats str
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateAzure(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateGcp(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -202,6 +236,31 @@ func (m *AppInstallerSDKConfig) contextValidateAws(ctx context.Context, formats 
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("aws")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallerSDKConfig) contextValidateAzure(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Azure != nil {
+
+		if swag.IsZero(m.Azure) { // not required
+			return nil
+		}
+
+		if err := m.Azure.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("azure")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("azure")
 			}
 
 			return err
