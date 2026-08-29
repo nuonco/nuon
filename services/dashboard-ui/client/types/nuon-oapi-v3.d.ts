@@ -323,6 +323,20 @@ export interface paths {
      */
     get: operations["GetAppBranchLatestConfig"];
   };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/preview-install-candidates": {
+    /**
+     * list preview install candidates for an app branch
+     * @description Resolves the branch preview config label selector (or fixed install) to install records
+     */
+    get: operations["GetAppBranchPreviewInstallCandidates"];
+  };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/preview-sources": {
+    /**
+     * list preview sources for an app branch
+     * @description Returns open pull requests targeting the branch and other git branches in the repo
+     */
+    get: operations["GetAppBranchPreviewSources"];
+  };
   "/v1/apps/{app_id}/branches/{app_branch_id}/runs": {
     /**
      * get app branch workflow runs
@@ -3614,6 +3628,7 @@ export interface components {
        * branch's synced app config produced.
        */
       post_deploy_runbook_ids?: string[];
+      preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       runbook_ids?: string[];
       updated_at?: string;
@@ -3637,8 +3652,18 @@ export interface components {
       order?: number;
       org_id?: string;
       updated_at?: string;
-      /** @description UseForPreviews marks this group for plan-only preview runs (e.g., PR previews). */
-      use_for_previews?: boolean;
+    };
+    "app.AppBranchPreviewConfig": {
+      comment?: boolean;
+      install_id?: string;
+      install_name?: string;
+      label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
+      mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
+      set_statuses?: boolean;
+    };
+    "app.AppBranchPreviewOverride": {
+      install_id?: string;
+      mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
     };
     "app.AppBranchRun": {
       app_branch?: components["schemas"]["app.AppBranch"];
@@ -3663,6 +3688,7 @@ export interface components {
       no_config_changes?: boolean;
       plan_only?: boolean;
       pr_number?: number;
+      preview?: components["schemas"]["app.AppBranchRunPreview"];
       queue_signal?: components["schemas"]["app.QueueSignal"];
       run_type?: components["schemas"]["app.AppBranchRunType"];
       started_at?: string;
@@ -3687,6 +3713,27 @@ export interface components {
       org_id?: string;
       updated_at?: string;
     };
+    "app.AppBranchRunPreview": {
+      app_branch_run_id?: string;
+      branch_preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      git_ref?: string;
+      id?: string;
+      input_app_config_id?: string;
+      install_id?: string;
+      install_name?: string;
+      mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
+      org_id?: string;
+      override_preview_config?: components["schemas"]["app.AppBranchPreviewOverride"];
+      resolved_preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
+      source?: components["schemas"]["app.AppBranchRunPreviewSource"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.AppBranchRunPreviewMode": "plan-only" | "apply" | "build-only";
+    /** @enum {string} */
+    "app.AppBranchRunPreviewSource": "pr" | "commit" | "branch" | "local";
     /** @enum {string} */
     "app.AppBranchRunType": "manual-run" | "git-run" | "git-preview-run";
     "app.AppBreakGlassConfig": {
@@ -7150,6 +7197,21 @@ export interface components {
     "helpers.InstallMetadata": {
       managed_by?: string;
     };
+    "helpers.ListPreviewSourcesResult": {
+      branches?: components["schemas"]["helpers.PreviewSourceBranch"][];
+      pull_requests?: components["schemas"]["helpers.PreviewSourcePR"][];
+    };
+    "helpers.PreviewSourceBranch": {
+      name?: string;
+      sha?: string;
+    };
+    "helpers.PreviewSourcePR": {
+      head_ref?: string;
+      head_sha?: string;
+      pr_number?: number;
+      title?: string;
+      url?: string;
+    };
     "helpers.PublicGitVCSConfigRequest": {
       branch: string;
       directory: string;
@@ -8011,6 +8073,8 @@ export interface components {
        * Omit to carry the current setting forward; send an empty array to clear it.
        */
       post_deploy_runbook_ids?: string[];
+      /** @description PreviewConfig sets branch-level preview defaults. Omit to carry forward. */
+      preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
     };
     "service.CreateAppBranchRequest": {
@@ -8762,7 +8826,6 @@ export interface components {
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       name: string;
       order?: number;
-      use_for_previews?: boolean;
     };
     "service.InstallHealthSummary": {
       app_id?: string;
@@ -8919,6 +8982,17 @@ export interface components {
       group_by?: string[];
       interval?: string;
       start?: string;
+    };
+    "service.PreviewInstallCandidatesResponse": {
+      installs?: components["schemas"]["app.Install"][];
+    };
+    "service.PreviewRunRequest": {
+      git_ref?: string;
+      head_sha?: string;
+      install_id?: string;
+      mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
+      pr_number?: number;
+      source?: components["schemas"]["app.AppBranchRunPreviewSource"];
     };
     "service.PruneTokensResponse": {
       invalidated_count?: number;
@@ -9082,33 +9156,16 @@ export interface components {
       plan_only?: boolean;
     };
     "service.TriggerAppBranchRunRequest": {
-      /** @description optional - use pre-existing app config (skips VCS fetch + config parse) */
       app_config_id?: string;
-      /**
-       * @description AutoApprove skips the approval gate on the plan steps. Without it the
-       * approval option is derived from the installs the branch targets.
-       */
       auto_approve?: boolean;
       base_branch?: string;
-      /** @description optional - use latest if not provided */
       config_id?: string;
-      /** @description force run even if no changes detected */
       force?: boolean;
       head_sha?: string;
-      /** @description plan-only preview mode (no apply) */
       plan_only?: boolean;
-      /**
-       * @description PR context, for previews triggered from CI rather than a GitHub webhook.
-       * Supplying PRNumber is what lets the run report back onto the pull request.
-       */
       pr_number?: number;
-      /** @description skip builds step (e.g. rollback to existing config with existing builds) */
+      preview_run?: components["schemas"]["service.PreviewRunRequest"];
       skip_builds?: boolean;
-      /**
-       * @description SyncAppConfig syncs AppConfigID inside the run rather than assuming it was
-       * already synced. Set by callers that compiled the config themselves, such
-       * as `nuon apps sync`.
-       */
       sync_app_config?: boolean;
     };
     "service.TriggerInstallConfigSyncRequest": {
@@ -11922,6 +11979,114 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.AppBranchConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * list preview install candidates for an app branch
+   * @description Resolves the branch preview config label selector (or fixed install) to install records
+   */
+  GetAppBranchPreviewInstallCandidates: {
+    parameters: {
+      query?: {
+        /** @description branch config ID (defaults to latest) */
+        config_id?: string;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.PreviewInstallCandidatesResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * list preview sources for an app branch
+   * @description Returns open pull requests targeting the branch and other git branches in the repo
+   */
+  GetAppBranchPreviewSources: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["helpers.ListPreviewSourcesResult"];
         };
       };
       /** @description Bad Request */

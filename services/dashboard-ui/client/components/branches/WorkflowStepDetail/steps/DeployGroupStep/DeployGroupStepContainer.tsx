@@ -16,9 +16,18 @@ export const DeployGroupStepContainer = ({ step, metadata }: IDeployGroupStepCon
   const { org } = useOrg()
   const { app } = useApp()
 
-  const groupName = step.name?.replace(/^deploy install group:\s*/i, '') || 'unknown'
+  const isPreviewApply = step.name?.toLowerCase() === 'apply preview install'
+  const groupName = isPreviewApply
+    ? (metadata.install_group_name as string) || 'preview install'
+    : step.name?.replace(/^deploy install group:\s*/i, '') ||
+      (metadata.install_group_name as string) ||
+      'unknown'
   const installEntries = (metadata.installs as any[]) || []
-  const totalInstalls = installEntries.length || (metadata.install_count as number) || 0
+  const totalInstalls =
+    installEntries.length ||
+    (metadata.total_installs as number) ||
+    (metadata.install_count as number) ||
+    0
   const deployedCount = installEntries.filter((e: any) => e.status === 'success' || e.status === 'deployed').length
 
   const { data: appInstalls } = useQuery({
@@ -47,7 +56,12 @@ export const DeployGroupStepContainer = ({ step, metadata }: IDeployGroupStepCon
         : undefined,
   }))
 
-  const emptyMessage = step.status?.status === 'in-progress' ? 'Deploying to install group' : undefined
+  const emptyMessage =
+    step.status?.status === 'in-progress'
+      ? isPreviewApply
+        ? 'Deploying to preview install'
+        : 'Deploying to install group'
+      : undefined
 
   return (
     <DeployGroupStep
@@ -56,6 +70,7 @@ export const DeployGroupStepContainer = ({ step, metadata }: IDeployGroupStepCon
       deployedCount={deployedCount}
       rows={rows}
       emptyMessage={emptyMessage}
+      variant={isPreviewApply ? 'preview' : 'group'}
     />
   )
 }

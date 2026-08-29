@@ -30,58 +30,36 @@ const groups: IInstallGroup[] = [
     selection_mode: 'manual',
     order: 0,
     max_parallel: 1,
-    use_for_previews: false,
   },
 ]
 
+const baseProps = {
+  availableInstalls: installs,
+  loadingInstalls: false,
+  isSaving: false,
+  onSave: noop,
+  onCancel: noop,
+  orgId: 'org123',
+  runbooks,
+  loadingRunbooks: false,
+  initialPostDeployRunbookIds: [] as string[],
+}
+
 export const WithGroups = () => (
   <ModalStory label="Open deployment plan">
-    <DeploymentPlanEditor
-      initialGroups={groups}
-      availableInstalls={installs}
-      loadingInstalls={false}
-      isSaving={false}
-      onSave={noop}
-      onCancel={noop}
-      orgId="org123"
-      runbooks={runbooks}
-      loadingRunbooks={false}
-      initialPostDeployRunbookIds={[]}
-    />
+    <DeploymentPlanEditor initialGroups={groups} {...baseProps} />
   </ModalStory>
 )
 
 export const WithUnassigned = () => (
   <ModalStory label="Open deployment plan">
-    <DeploymentPlanEditor
-      initialGroups={groups}
-      availableInstalls={installs}
-      loadingInstalls={false}
-      isSaving={false}
-      onSave={noop}
-      onCancel={noop}
-      orgId="org123"
-      runbooks={runbooks}
-      loadingRunbooks={false}
-      initialPostDeployRunbookIds={[]}
-    />
+    <DeploymentPlanEditor initialGroups={groups} {...baseProps} />
   </ModalStory>
 )
 
 export const NoGroups = () => (
   <ModalStory label="Open deployment plan">
-    <DeploymentPlanEditor
-      initialGroups={[]}
-      availableInstalls={installs}
-      loadingInstalls={false}
-      isSaving={false}
-      onSave={noop}
-      onCancel={noop}
-      orgId="org123"
-      runbooks={runbooks}
-      loadingRunbooks={false}
-      initialPostDeployRunbookIds={[]}
-    />
+    <DeploymentPlanEditor initialGroups={[]} {...baseProps} />
   </ModalStory>
 )
 
@@ -123,14 +101,7 @@ export const WithPostDeployRunbooks = () => (
   <ModalStory label="Open deployment plan">
     <DeploymentPlanEditor
       initialGroups={groups}
-      availableInstalls={installs}
-      loadingInstalls={false}
-      isSaving={false}
-      onSave={noop}
-      onCancel={noop}
-      orgId="org123"
-      runbooks={runbooks}
-      loadingRunbooks={false}
+      {...baseProps}
       initialPostDeployRunbookIds={['rb1', 'rb2']}
     />
   </ModalStory>
@@ -138,17 +109,6 @@ export const WithPostDeployRunbooks = () => (
 
 export const Saving = () => (
   <ModalStory label="Open deployment plan">
-    <DeploymentPlanEditor
-      initialGroups={groups}
-      availableInstalls={installs}
-      loadingInstalls={false}
-      isSaving
-      onSave={noop}
-      onCancel={noop}
-      orgId="org123"
-      runbooks={runbooks}
-      loadingRunbooks={false}
-      initialPostDeployRunbookIds={[]}
-    />
+    <DeploymentPlanEditor initialGroups={groups} {...baseProps} isSaving />
   </ModalStory>
 )

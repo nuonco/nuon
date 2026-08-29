@@ -1,4 +1,3 @@
-import { Badge } from '@/components/common/Badge'
 import { EmptyState } from '@/components/common/EmptyState'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
@@ -87,9 +86,6 @@ export const InstallGroupsSection = ({
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
                 <Text variant="base" weight="strong">{group.name}</Text>
-                {group.use_for_previews && (
-                  <Badge size="sm" theme="info">Preview only</Badge>
-                )}
                 {labelEntries.map(([k, v]) => (
                   <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" customColor={labelColors?.[k]} />
                 ))}

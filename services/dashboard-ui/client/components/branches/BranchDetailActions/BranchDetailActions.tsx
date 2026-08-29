@@ -3,7 +3,15 @@ import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
+import { Text } from '@/components/common/Text'
 import { useNudge } from '@/hooks/use-nudge'
+import type { TAppBranchRunPreviewMode } from '@/types'
+
+export type PreviewQuickAction = {
+  label: string
+  mode: TAppBranchRunPreviewMode
+  onClick: () => void
+}
 
 interface IBranchDetailActions {
   editButton: ReactNode
@@ -12,8 +20,9 @@ interface IBranchDetailActions {
   isTriggerPending: boolean
   showManage?: boolean
   showTriggerNudge?: boolean
+  previewQuickActions?: PreviewQuickAction[]
   onTriggerRun: () => void
-  onTriggerPreview: () => void
+  onTriggerPreviewModal: () => void
 }
 
 export const BranchDetailActions = ({
@@ -23,8 +32,9 @@ export const BranchDetailActions = ({
   isTriggerPending,
   showManage = true,
   showTriggerNudge = false,
+  previewQuickActions = [],
   onTriggerRun,
-  onTriggerPreview,
+  onTriggerPreviewModal,
 }: IBranchDetailActions) => {
   const { isOpen: nudgeOpen, close: closeNudge } = useNudge(showTriggerNudge)
 
@@ -81,10 +91,29 @@ export const BranchDetailActions = ({
           buttonText={<Icon variant="CaretDownIcon" size={14} />}
         >
           <Menu>
-            <Button isMenuButton onClick={onTriggerPreview}>
-              Preview run (plan only)
+            <Text variant="subtext" theme="neutral" className="px-3 py-1">
+              Preview run
+            </Text>
+            <Button isMenuButton onClick={onTriggerPreviewModal}>
+              Preview run…
               <Icon variant="EyeIcon" size={16} />
             </Button>
+            {previewQuickActions.length > 0 && (
+              <>
+                <hr />
+                <Text variant="subtext" theme="neutral" className="px-3 py-1">
+                  Quick preview
+                </Text>
+                {previewQuickActions.map((action) => (
+                  <Button key={action.label} isMenuButton onClick={action.onClick}>
+                    {action.label}
+                    <Text variant="subtext" theme="neutral">
+                      {action.mode}
+                    </Text>
+                  </Button>
+                ))}
+              </>
+            )}
           </Menu>
         </Dropdown>
       </div>

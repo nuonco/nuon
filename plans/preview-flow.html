@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Branch Preview — Flow Diagram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    padding: 40px 24px 80px;
+    line-height: 1.5;
+  }
+  h1 { text-align: center; color: #58a6ff; font-size: 26px; margin-bottom: 6px; }
+  .subtitle {
+    text-align: center; color: #8b949e; font-size: 14px; margin-bottom: 40px;
+    max-width: 860px; margin-left: auto; margin-right: auto;
+  }
+
+  section { max-width: 1100px; margin: 0 auto 56px; }
+  h2 {
+    font-size: 13px; font-weight: 600; color: #8b949e;
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px;
+  }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 32px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #8b949e; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid; }
+
+  .model-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .model-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .card.highlight { border-color: #bc8cff55; background: #bc8cff0a; }
+  .card-title {
+    font-size: 14px; font-weight: 600; color: #f0f6fc; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .card-title .id { font-family: monospace; font-size: 11px; color: #79c0ff; font-weight: 400; }
+  .card-rel { font-size: 10px; color: #8b949e; margin-bottom: 10px; font-style: italic; }
+
+  .field { font-size: 11px; font-family: monospace; padding: 2px 0; display: flex; gap: 8px; flex-wrap: wrap; }
+  .field .k { color: #7ee787; min-width: 140px; }
+  .field .note { color: #8b949e; font-family: -apple-system, sans-serif; font-size: 10px; }
+
+  svg.diagram { width: 100%; max-width: 1060px; display: block; margin: 0 auto; }
+
+  .mode-bar {
+    display: flex; gap: 0; max-width: 1060px; margin: 0 auto 24px;
+    border-radius: 8px; overflow: hidden; border: 1px solid #30363d;
+  }
+  .mode { flex: 1; padding: 12px 14px; text-align: center; border-right: 1px solid #30363d; font-size: 11px; }
+  .mode:last-child { border-right: none; }
+  .mode-name { font-family: monospace; font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+  .mode-desc { color: #8b949e; line-height: 1.4; }
+  .m-build { background: #f0883e18; } .m-build .mode-name { color: #f0883e; }
+  .m-plan { background: #23863618; } .m-plan .mode-name { color: #7ee787; }
+  .m-apply { background: #bc8cff18; } .m-apply .mode-name { color: #d2a8ff; }
+
+  .fork-box { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 1060px; margin: 0 auto; }
+  @media (max-width: 700px) { .fork-box { grid-template-columns: 1fr; } }
+  .fork-path { border-radius: 10px; padding: 18px 20px; border: 1.5px solid; }
+  .fork-path.deploy { background: #1f6feb12; border-color: #1f6feb55; }
+  .fork-path.preview { background: #bc8cff12; border-color: #bc8cff55; }
+  .fork-path h3 { font-size: 14px; margin-bottom: 8px; }
+  .fork-path.deploy h3 { color: #58a6ff; }
+  .fork-path.preview h3 { color: #d2a8ff; }
+  .fork-path ol { margin-left: 18px; font-size: 12px; color: #c9d1d9; }
+  .fork-path li { margin-bottom: 6px; }
+  .fork-path code { background: #21262d; padding: 1px 5px; border-radius: 3px; font-size: 11px; color: #79c0ff; }
+
+  code { color: #79c0ff; font-size: 0.9em; }
+  .removed { text-decoration: line-through; color: #6e7681; }
+
+  .ui-mockup-wrap {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start;
+    max-width: 1060px; margin: 0 auto;
+  }
+  @media (max-width: 900px) { .ui-mockup-wrap { grid-template-columns: 1fr; } }
+
+  .ui-panel {
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    overflow: hidden;
+  }
+  .ui-panel-header {
+    padding: 12px 16px; background: #21262d; border-bottom: 1px solid #30363d;
+    font-size: 11px; color: #8b949e; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .ui-panel-body { padding: 24px 20px; }
+
+  .ui-branch-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; background: #0d1117; border-bottom: 1px solid #30363d;
+  }
+  .ui-branch-name { font-size: 18px; font-weight: 600; color: #f0f6fc; }
+  .ui-branch-meta { font-size: 12px; color: #8b949e; margin-top: 2px; }
+
+  .ui-actions { display: flex; align-items: center; gap: 12px; position: relative; }
+
+  .ui-btn-manage {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  }
+
+  .ui-split-btn { display: flex; align-items: stretch; position: relative; }
+  .ui-btn-primary {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 6px 0 0 6px; font-size: 13px; font-weight: 500;
+    background: #238636; border: 1px solid #238636; color: #fff;
+  }
+  .ui-btn-caret {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 8px 10px; border-radius: 0 6px 6px 0;
+    background: #238636; border: 1px solid #238636; border-left: 1px solid #196c2e;
+    color: #fff; cursor: pointer;
+  }
+  .ui-btn-caret.active { background: #2ea043; box-shadow: 0 0 0 2px #388bfd66; }
+
+  .ui-dropdown {
+    position: absolute; top: calc(100% + 6px); right: 0; min-width: 260px;
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    box-shadow: 0 8px 24px #01040988; z-index: 10; overflow: hidden;
+  }
+  .ui-dropdown-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    width: 100%; padding: 10px 14px; font-size: 13px; color: #c9d1d9;
+    background: transparent; border: none; text-align: left; cursor: pointer;
+  }
+  .ui-dropdown-item:hover { background: #21262d; }
+  .ui-dropdown-item.selected { background: #388bfd22; }
+  .ui-dropdown-divider { height: 1px; background: #30363d; margin: 4px 0; }
+  .ui-dropdown-label {
+    padding: 8px 14px 4px; font-size: 10px; font-weight: 600;
+    color: #8b949e; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .ui-dropdown-hint {
+    padding: 0 14px 10px; font-size: 10px; color: #6e7681; line-height: 1.4;
+  }
+  .ui-default-badge {
+    font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px;
+    background: #388bfd22; color: #58a6ff; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+
+  .ui-modal-overlay { background: #01040999; padding: 20px; }
+  .ui-modal {
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    max-width: 480px; margin: 0 auto; overflow: hidden;
+  }
+  .ui-modal-head {
+    padding: 20px 24px 0; font-size: 18px; font-weight: 600; color: #f0f6fc;
+  }
+  .ui-modal-sub { padding: 6px 24px 0; font-size: 12px; color: #8b949e; }
+  .ui-modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .ui-field label {
+    display: block; font-size: 12px; font-weight: 500; color: #c9d1d9; margin-bottom: 6px;
+  }
+  .ui-field .hint { font-size: 10px; color: #8b949e; margin-top: 4px; }
+  .ui-select {
+    width: 100%; padding: 8px 12px; border-radius: 6px; font-size: 13px;
+    background: #0d1117; border: 1px solid #30363d; color: #c9d1d9;
+  }
+  .ui-source-tabs { display: flex; gap: 0; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+  .ui-source-tab {
+    flex: 1; padding: 6px 10px; font-size: 12px; text-align: center;
+    background: #0d1117; color: #8b949e; border: none; cursor: pointer;
+  }
+  .ui-source-tab + .ui-source-tab { border-left: 1px solid #30363d; }
+  .ui-source-tab.on { background: #21262d; color: #f0f6fc; font-weight: 500; }
+
+  .ui-mode-compact { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ui-mode-compact-label { font-size: 11px; color: #8b949e; min-width: 36px; }
+  .ui-mode-segment { display: inline-flex; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+  .ui-mode-seg-btn {
+    padding: 4px 10px; font-size: 11px; background: #0d1117; color: #8b949e;
+    border: none; cursor: pointer; border-right: 1px solid #30363d;
+  }
+  .ui-mode-seg-btn:last-child { border-right: none; }
+  .ui-mode-seg-btn.on { background: #bc8cff22; color: #d2a8ff; font-weight: 500; }
+
+  .ui-modal-foot {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 12px 24px 16px; border-top: 1px solid #30363d; background: #21262d;
+  }
+  .ui-modal-foot-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .ui-btn-secondary {
+    padding: 8px 14px; border-radius: 6px; font-size: 13px;
+    background: transparent; border: 1px solid #30363d; color: #c9d1d9;
+  }
+  .ui-btn-submit {
+    padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    background: #bc8cff; border: 1px solid #bc8cff; color: #0d1117;
+  }
+
+  .ui-arrow-annotation {
+    text-align: center; font-size: 11px; color: #8b949e; margin-top: 12px; padding-bottom: 16px;
+  }
+  .ui-arrow-annotation span { color: #d2a8ff; font-weight: 600; }
+
+  .config-snippet {
+    background: #0d1117; border: 1px solid #30363d; border-radius: 8px;
+    padding: 14px 16px; font-family: monospace; font-size: 11px; line-height: 1.6;
+    max-width: 1060px; margin: 0 auto; color: #c9d1d9;
+  }
+  .config-snippet .key { color: #7ee787; }
+  .config-snippet .val { color: #79c0ff; }
+  .config-snippet .comment { color: #6e7681; }
+
+  /* Runs list mockup */
+  .runs-page { max-width: 720px; margin: 0 auto; }
+  .runs-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 20px; gap: 16px;
+  }
+  .runs-heading { font-size: 20px; font-weight: 600; color: #f0f6fc; }
+  .runs-sub { font-size: 13px; color: #8b949e; margin-top: 4px; }
+  .runs-filter {
+    display: flex; align-items: center; gap: 8px; font-size: 13px; color: #c9d1d9;
+    white-space: nowrap;
+  }
+  .runs-filter input { accent-color: #388bfd; }
+
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 9px; top: 8px; bottom: 8px;
+    width: 2px; background: #30363d;
+  }
+  .tl-event { position: relative; padding-bottom: 24px; }
+  .tl-event:last-child { padding-bottom: 0; }
+  .tl-dot {
+    position: absolute; left: -28px; top: 4px; width: 18px; height: 18px;
+    border-radius: 50%; border: 2px solid #30363d; background: #161b22;
+    display: flex; align-items: center; justify-content: center; font-size: 9px;
+  }
+  .tl-dot.success { border-color: #238636; color: #7ee787; }
+  .tl-dot.progress { border-color: #388bfd; color: #58a6ff; }
+  .tl-dot.preview-dot { border-color: #bc8cff; color: #d2a8ff; }
+
+  .tl-title { font-size: 14px; font-weight: 500; color: #58a6ff; margin-bottom: 6px; }
+  .tl-title a { color: #58a6ff; text-decoration: none; }
+  .tl-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .tl-badge {
+    font-size: 10px; font-family: monospace; padding: 2px 7px; border-radius: 4px;
+    background: #21262d; border: 1px solid #30363d; color: #8b949e;
+  }
+  .tl-badge.preview { border-color: #bc8cff55; color: #d2a8ff; background: #bc8cff14; }
+  .tl-badge.mode { border-color: #23863655; color: #7ee787; background: #23863614; }
+  .tl-badge.pr { border-color: #388bfd55; color: #58a6ff; }
+  .tl-badge.install { border-color: #30363d; color: #c9d1d9; }
+  .tl-badge.progress-badge { border-color: #388bfd55; color: #58a6ff; background: #388bfd14; }
+
+  .tl-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 11px; color: #8b949e; }
+  .tl-id { font-family: monospace; font-size: 10px; color: #6e7681; margin-top: 4px; }
+  .tl-event.deploy .tl-title a { color: #58a6ff; }
+  .tl-event.preview-entry { opacity: 1; }
+</style>
+</head>
+<body>
+
+<h1>App Branch Preview</h1>
+<p class="subtitle">
+  Branch-level <code>preview_config</code> defaults on <code>AppBranchConfig</code>, optional per-run
+  <code>override_preview_config</code> on <code>AppBranchRunPreview</code>. Single install per run;
+  label selector defines the default candidate pool.
+</p>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-swatch" style="background:#1f6feb33;border-color:#58a6ff"></span> Deploy run</div>
+  <div class="legend-item"><span class="legend-swatch" style="background:#bc8cff33;border-color:#d2a8ff"></span> Preview run</div>
+  <div class="legend-item"><span class="legend-swatch" style="background:#23863633;border-color:#7ee787"></span> Workflow step</div>
+  <div class="legend-item"><span class="legend-swatch" style="background:#388bfd33;border-color:#58a6ff"></span> Branch default</div>
+</div>
+
+<section>
+<h2>Dashboard UI — trigger-run dropdown + preview modal</h2>
+
+<div class="ui-mockup-wrap">
+
+  <div class="ui-panel">
+    <div class="ui-panel-header">Branch detail — Trigger run split button (BranchDetailActions)</div>
+    <div class="ui-branch-bar">
+      <div>
+        <div class="ui-branch-name">main</div>
+        <div class="ui-branch-meta">Connected repo · 3 install groups</div>
+      </div>
+      <div class="ui-actions">
+        <div class="ui-btn-manage">⚙ Manage</div>
+        <div class="ui-split-btn">
+          <div class="ui-btn-primary">▶ Trigger run</div>
+          <div class="ui-btn-caret active">▾</div>
+          <div class="ui-dropdown">
+            <div class="ui-dropdown-label">Preview run</div>
+            <button class="ui-dropdown-item selected">
+              <span>
+                Preview run…
+                <span class="ui-default-badge" style="margin-left:6px">opens modal</span>
+              </span>
+              <span>👁</span>
+            </button>
+            <div class="ui-dropdown-divider"></div>
+            <div class="ui-dropdown-label">Quick preview (branch defaults)</div>
+            <button class="ui-dropdown-item">
+              <span>Plan only · acme-staging</span>
+              <span style="font-size:10px;color:#8b949e">plan-only</span>
+            </button>
+            <button class="ui-dropdown-item">
+              <span>Apply · acme-staging</span>
+              <span style="font-size:10px;color:#8b949e">apply-only</span>
+            </button>
+            <div class="ui-dropdown-divider"></div>
+            <div class="ui-dropdown-hint" style="padding-top:4px">
+              Replaces today's single item <span class="removed">Preview run (plan only)</span>.
+              Primary button = full deploy. Caret = preview options from branch <code>preview_config</code>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ui-panel-body" style="padding-top:16px">
+      <p style="font-size:12px;color:#8b949e;line-height:1.5">
+        Matches existing split button in <code>BranchDetailActions</code> (<code>id="trigger-run-options"</code>).
+        Quick actions appear when branch has a resolved default install; otherwise only "Preview run…" opens the modal.
+      </p>
+    </div>
+  </div>
+
+  <div class="ui-panel">
+    <div class="ui-panel-header">PreviewBranchRunModal — opened from dropdown</div>
+    <div class="ui-modal-overlay">
+      <div class="ui-modal">
+        <div class="ui-modal-head">Preview run</div>
+        <div class="ui-modal-sub">Branch <strong style="color:#f0f6fc">main</strong></div>
+        <div class="ui-modal-body">
+
+          <div class="ui-field">
+            <label>Source</label>
+            <div class="ui-source-tabs">
+              <button class="ui-source-tab on">Pull request</button>
+              <button class="ui-source-tab">Branch</button>
+            </div>
+            <select class="ui-select">
+              <option selected>#42 · jm/test-component → main · Add test component</option>
+              <option>#38 · feature/auth → main · Auth refactor</option>
+            </select>
+            <div class="hint">Open PRs onto <code>main</code> from <code>preview-sources</code> API</div>
+          </div>
+
+          <div class="ui-field">
+            <label>Install</label>
+            <select class="ui-select">
+              <option selected>acme-staging (default)</option>
+              <option>acme-dev</option>
+              <option>acme-qa</option>
+            </select>
+            <div class="hint">Pre-filled from branch <code>preview_config</code></div>
+          </div>
+
+        </div>
+        <div class="ui-modal-foot">
+          <div class="ui-mode-compact">
+            <span class="ui-mode-compact-label">Mode</span>
+            <div class="ui-mode-segment">
+              <button class="ui-mode-seg-btn on">Plan only</button>
+              <button class="ui-mode-seg-btn">Apply</button>
+              <button class="ui-mode-seg-btn">Build only</button>
+            </div>
+          </div>
+          <div class="ui-modal-foot-actions">
+            <button class="ui-btn-secondary">Cancel</button>
+            <button class="ui-btn-submit">Trigger preview</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="ui-arrow-annotation">
+      No override callout — mode at bottom, compact. Branch tab swaps PR picker for git ref combobox.
+    </p>
+  </div>
+
+</div>
+</section>
+
+<section>
+<h2>Dashboard UI — runs list with previews (BranchRunsTab)</h2>
+<div class="ui-panel runs-page">
+  <div class="ui-panel-header">Branch → Runs tab · WorkflowTimeline</div>
+  <div class="ui-panel-body">
+    <div class="runs-header">
+      <div>
+        <div class="runs-heading">Workflow runs</div>
+        <div class="runs-sub">Every deployment of this branch, newest first.</div>
+      </div>
+      <label class="runs-filter">
+        <input type="checkbox" checked> Preview runs
+      </label>
+    </div>
+
+    <div class="timeline">
+
+      <div class="tl-event preview-entry">
+        <div class="tl-dot preview-dot">◉</div>
+        <div class="tl-title"><a href="#">Add test component</a> <span class="tl-badge progress-badge">In progress</span></div>
+        <div class="tl-badges">
+          <span class="tl-badge preview">preview</span>
+          <span class="tl-badge mode">plan-only</span>
+          <span class="tl-badge pr">PR #42</span>
+          <span class="tl-badge install">acme-staging</span>
+        </div>
+        <div class="tl-meta">
+          <span>⎇ abc1234</span>
+          <span>📅 2 min ago</span>
+          <span>⏱ running</span>
+        </div>
+        <div class="tl-id">wfl_01k2…</div>
+      </div>
+
+      <div class="tl-event preview-entry">
+        <div class="tl-dot success">✓</div>
+        <div class="tl-title"><a href="#">Build PR #41 artifacts</a></div>
+        <div class="tl-badges">
+          <span class="tl-badge preview">preview</span>
+          <span class="tl-badge mode">build-only</span>
+          <span class="tl-badge pr">PR #41</span>
+        </div>
+        <div class="tl-meta">
+          <span>⎇ def5678</span>
+          <span>📅 1 hr ago</span>
+          <span>⏱ 3m 12s</span>
+        </div>
+        <div class="tl-id">wfl_01k2…</div>
+      </div>
+
+      <div class="tl-event deploy">
+        <div class="tl-dot success">✓</div>
+        <div class="tl-title"><a href="#">Merge pull request #40 from jm/fix-deploy</a></div>
+        <div class="tl-badges"></div>
+        <div class="tl-meta">
+          <span>⎇ 9fa2bc1</span>
+          <span>📅 yesterday</span>
+          <span>⏱ 8m 44s</span>
+        </div>
+        <div class="tl-id">wfl_01k1…</div>
+      </div>
+
+      <div class="tl-event preview-entry">
+        <div class="tl-dot success">✓</div>
+        <div class="tl-title"><a href="#">Preview jm/test-component on acme-staging</a></div>
+        <div class="tl-badges">
+          <span class="tl-badge preview">preview</span>
+          <span class="tl-badge mode">apply-only</span>
+          <span class="tl-badge">jm/test-component</span>
+          <span class="tl-badge install">acme-staging</span>
+        </div>
+        <div class="tl-meta">
+          <span>⎇ abc1234</span>
+          <span>📅 2 days ago</span>
+          <span>⏱ 5m 01s</span>
+        </div>
+        <div class="tl-id">wfl_01k1…</div>
+      </div>
+
+    </div>
+
+    <p style="font-size:11px;color:#8b949e;margin-top:20px;line-height:1.5">
+      Replaces <span class="removed">plan_only</span> badge with <code>preview</code> + mode + source badges from
+      <code>AppBranchRunPreview</code>. Unchecking <strong>Preview runs</strong> hides preview rows (<code>?preview=false</code>).
+      Deploy runs have no preview badges.
+    </p>
+  </div>
+</div>
+</section>
+
+<section>
+<h2>Branch TOML — preview defaults (replaces use_for_previews)</h2>
+<pre class="config-snippet"><span class="comment"># branch.toml</span>
+[<span class="key">branch</span>]
+<span class="key">name</span> = <span class="val">"main"</span>
+
+[<span class="key">branch.preview</span>]
+<span class="key">mode</span> = <span class="val">"plan-only"</span>
+<span class="key">install_name</span> = <span class="val">"acme-staging"</span>
+<span class="comment"># OR label selector → UI shows matched installs as candidates:</span>
+<span class="comment"># [branch.preview.label_selector]</span>
+<span class="comment"># env = "preview"</span>
+
+[[<span class="key">branch.install_groups</span>]]
+<span class="key">name</span> = <span class="val">"production"</span>
+<span class="comment"># use_for_previews removed</span></pre>
+</section>
+
+<section>
+<h2>Data model</h2>
+<div class="model-grid">
+  <div class="card">
+    <div class="card-title">AppBranchConfig <span class="id">abc_*</span></div>
+    <div class="card-rel">Branch config — synced from TOML</div>
+    <div class="field"><span class="k">preview_config</span><span class="note">JSONB — branch defaults</span></div>
+    <div class="field"><span class="k">  .mode</span><span class="note">plan-only | apply-only | build-only</span></div>
+    <div class="field"><span class="k">  .install_id</span><span class="note">OR install_name (sync resolves)</span></div>
+    <div class="field"><span class="k">  .label_selector</span><span class="note">candidate pool for UI picker</span></div>
+    <div class="field"><span class="k">install_groups</span><span class="note">fleet deploy only</span></div>
+    <div class="field"><span class="k">use_for_previews</span><span class="note removed">removed from groups</span></div>
+  </div>
+  <div class="card highlight">
+    <div class="card-title">AppBranchRunPreview <span class="id">abp_*</span></div>
+    <div class="card-rel">Child 1:1 — FK app_branch_run_id UNIQUE</div>
+    <div class="field"><span class="k">source</span><span class="note">pr | commit | branch | local</span></div>
+    <div class="field"><span class="k">mode</span><span class="note">effective mode after merge</span></div>
+    <div class="field"><span class="k">install_id</span><span class="note">single install (resolved)</span></div>
+    <div class="field"><span class="k">branch_preview_config</span><span class="note">snapshot at trigger</span></div>
+    <div class="field"><span class="k">override_preview_config</span><span class="note">null = used defaults</span></div>
+    <div class="field"><span class="k">resolved_preview_config</span><span class="note">merged effective config</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">AppBranchRun <span class="id">arn_*</span></div>
+    <div class="card-rel">Parent workflow row</div>
+    <div class="field"><span class="k">run_type</span><span class="note">git-run | manual-run</span></div>
+    <div class="field"><span class="k">Preview</span><span class="note">Preload — nil = deploy run</span></div>
+    <div class="field"><span class="k">IsPreview()</span><span class="note">Preview != nil</span></div>
+    <div class="field"><span class="k">plan_only</span><span class="note removed">deprecated</span></div>
+    <div class="field"><span class="k">git-preview-run</span><span class="note removed">deprecated run_type</span></div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2>Config merge at trigger time</h2>
+<svg class="diagram" viewBox="0 0 1060 200" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <defs>
+    <marker id="a-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#7ee787"/></marker>
+    <marker id="a-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#d2a8ff"/></marker>
+  </defs>
+
+  <rect x="30" y="40" width="180" height="56" rx="8" fill="#388bfd18" stroke="#388bfd"/>
+  <text x="120" y="62" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="600">AppBranchConfig</text>
+  <text x="120" y="78" text-anchor="middle" fill="#8b949e" font-size="9">preview_config defaults</text>
+
+  <rect x="250" y="40" width="180" height="56" rx="8" fill="#bc8cff18" stroke="#bc8cff"/>
+  <text x="340" y="62" text-anchor="middle" fill="#d2a8ff" font-size="11" font-weight="600">UI / API request</text>
+  <text x="340" y="78" text-anchor="middle" fill="#8b949e" font-size="9">override_preview_config?</text>
+
+  <line x1="210" y1="68" x2="250" y2="68" stroke="#7ee787" stroke-width="2"/>
+  <text x="230" y="60" fill="#8b949e" font-size="9">+</text>
+
+  <line x1="430" y1="68" x2="480" y2="68" stroke="#7ee787" stroke-width="2" marker-end="url(#a-green)"/>
+
+  <rect x="484" y="32" width="160" height="72" rx="8" fill="#21262d" stroke="#30363d"/>
+  <text x="564" y="54" text-anchor="middle" fill="#7ee787" font-size="10" font-weight="600">Merge + resolve</text>
+  <text x="564" y="70" text-anchor="middle" fill="#8b949e" font-size="9">label → pick install</text>
+  <text x="564" y="84" text-anchor="middle" fill="#8b949e" font-size="9">build-only skips install</text>
+  <text x="564" y="98" text-anchor="middle" fill="#8b949e" font-size="9">400 if unresolved</text>
+
+  <line x1="644" y1="68" x2="694" y2="68" stroke="#d2a8ff" stroke-width="2" marker-end="url(#a-purple)"/>
+
+  <rect x="698" y="40" width="200" height="56" rx="8" fill="#bc8cff22" stroke="#bc8cff"/>
+  <text x="798" y="60" text-anchor="middle" fill="#d2a8ff" font-size="11" font-weight="600">AppBranchRunPreview</text>
+  <text x="798" y="76" text-anchor="middle" fill="#8b949e" font-size="9">branch snapshot + override + resolved</text>
+
+  <line x1="898" y1="68" x2="948" y2="68" stroke="#7ee787" stroke-width="2" marker-end="url(#a-green)"/>
+
+  <rect x="952" y="48" width="80" height="40" rx="8" fill="#23863622" stroke="#238636"/>
+  <text x="992" y="72" text-anchor="middle" fill="#7ee787" font-size="10" font-weight="600">Workflow</text>
+
+  <text x="30" y="140" fill="#8b949e" font-size="10">Quick actions in dropdown: if branch has single default install + mode, trigger immediately (no modal).</text>
+  <text x="30" y="158" fill="#8b949e" font-size="10">"Preview run…" opens modal when label selector matches multiple installs or user may override.</text>
+  <text x="30" y="176" fill="#8b949e" font-size="10">PR webhook: source=pr, mode=build-only — ignores branch preview install defaults.</text>
+</svg>
+</section>
+
+<section>
+<h2>Preview modes</h2>
+<div class="mode-bar">
+  <div class="mode m-build">
+    <div class="mode-name">build-only</div>
+    <div class="mode-desc">Fetch + build, stop<br/>PR auto webhook default</div>
+  </div>
+  <div class="mode m-plan">
+    <div class="mode-name">plan-only</div>
+    <div class="mode-desc">Synthetic group, one install<br/>plan, auto-approve, no deploy</div>
+  </div>
+  <div class="mode m-apply">
+    <div class="mode-name">apply-only</div>
+    <div class="mode-desc">Synthetic group, one install<br/>plan + apply (still preview)</div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2>Workflow — synthetic preview install group</h2>
+<svg class="diagram" viewBox="0 0 1060 380" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <defs>
+    <marker id="b-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#d2a8ff"/></marker>
+  </defs>
+
+  <rect x="30" y="30" width="120" height="44" rx="8" fill="#23863622" stroke="#238636"/>
+  <text x="90" y="50" text-anchor="middle" fill="#7ee787" font-size="10" font-weight="600">fetch + build</text>
+  <text x="90" y="64" text-anchor="middle" fill="#8b949e" font-size="9">shared steps</text>
+
+  <line x1="150" y1="52" x2="190" y2="52" stroke="#d2a8ff" stroke-width="2" marker-end="url(#b-purple)"/>
+
+  <polygon points="220,52 260,32 300,52 260,72" fill="#21262d" stroke="#d2a8ff"/>
+  <text x="260" y="50" text-anchor="middle" fill="#d2a8ff" font-size="9" font-weight="600">Preview</text>
+  <text x="260" y="62" text-anchor="middle" fill="#d2a8ff" font-size="9" font-weight="600">row?</text>
+
+  <line x1="300" y1="52" x2="360" y2="52" stroke="#58a6ff" stroke-width="2"/>
+  <text x="320" y="44" fill="#58a6ff" font-size="9">no → deploy groups</text>
+
+  <line x1="220" y1="72" x2="220" y2="110" stroke="#d2a8ff" stroke-width="2" marker-end="url(#b-purple)"/>
+  <text x="232" y="96" fill="#d2a8ff" font-size="9">yes</text>
+
+  <polygon points="220,112 260,92 300,112 260,132" fill="#21262d" stroke="#d2a8ff"/>
+  <text x="260" y="116" text-anchor="middle" fill="#d2a8ff" font-size="9" font-weight="600">mode?</text>
+
+  <line x1="220" y1="132" x2="220" y2="170" stroke="#f0883e" stroke-width="2"/>
+  <text x="180" y="158" fill="#f0883e" font-size="9">build-only</text>
+  <rect x="160" y="174" width="120" height="36" rx="8" fill="#f0883e18" stroke="#f0883e"/>
+  <text x="220" y="196" text-anchor="middle" fill="#f0883e" font-size="10" font-weight="600">Done</text>
+
+  <line x1="300" y1="112" x2="400" y2="112" stroke="#d2a8ff" stroke-width="2" marker-end="url(#b-purple)"/>
+  <text x="340" y="104" fill="#d2a8ff" font-size="9">plan-only | apply-only</text>
+
+  <rect x="404" y="88" width="280" height="72" rx="8" fill="#bc8cff22" stroke="#bc8cff"/>
+  <text x="544" y="108" text-anchor="middle" fill="#d2a8ff" font-size="11" font-weight="700">Synthetic preview install group</text>
+  <text x="544" y="126" text-anchor="middle" fill="#c9d1d9" font-size="10">preview:acme-staging (one install)</text>
+  <text x="544" y="142" text-anchor="middle" fill="#c9d1d9" font-size="10">plan preview install group → apply if apply-only</text>
+  <text x="544" y="156" text-anchor="middle" fill="#8b949e" font-size="9">Never walks branch install_groups</text>
+
+  <rect x="30" y="240" width="1000" height="120" rx="8" fill="#161b22" stroke="#30363d" stroke-dasharray="4,3"/>
+  <text x="44" y="262" fill="#d2a8ff" font-size="10" font-weight="700">NOT USED FOR PREVIEWS</text>
+  <text x="44" y="282" fill="#8b949e" font-size="10">AppBranchInstallGroup.use_for_previews — removed; replaced by AppBranchConfig.preview_config</text>
+  <text x="44" y="302" fill="#8b949e" font-size="10">Fleet-wide preview install impact step — removed</text>
+  <text x="44" y="322" fill="#8b949e" font-size="10">Install target comes from resolved preview config (branch default ± override)</text>
+  <text x="44" y="342" fill="#8b949e" font-size="10">Deployment plan editor gains "Preview defaults" section; install group editor loses preview toggle</text>
+</section>
+
+<section>
+<h2>Deploy run vs preview run</h2>
+<div class="fork-box">
+  <div class="fork-path deploy">
+    <h3>Deploy run (Preview = nil)</h3>
+    <ol>
+      <li>Primary <code>Trigger run</code> button</li>
+      <li>No <code>AppBranchRunPreview</code> row</li>
+      <li>Workflow iterates <code>install_groups</code></li>
+      <li>Steps: plan → approve → deploy per group</li>
+    </ol>
+  </div>
+  <div class="fork-path preview">
+    <h3>Preview run (Preview ≠ nil)</h3>
+    <ol>
+      <li>Caret menu → Preview run / quick action</li>
+      <li>Defaults from <code>preview_config</code>, optional override</li>
+      <li>Single synthetic install group at runtime</li>
+      <li>Excluded from baseline / trigger active sets</li>
+    </ol>
+  </div>
+</div>
+</section>
+
+<section>
+<h2>Implementation phases</h2>
+<div class="mode-bar">
+  <div class="mode m-build">
+    <div class="mode-name">Phase 1</div>
+    <div class="mode-desc">preview_config on branch<br/>AppBranchRunPreview table<br/>API + workflow</div>
+  </div>
+  <div class="mode m-plan">
+    <div class="mode-name">Phase 2</div>
+    <div class="mode-desc">Trigger-run dropdown<br/>PreviewBranchRunModal<br/>branch editor preview section</div>
+  </div>
+  <div class="mode m-apply">
+    <div class="mode-name">Phase 3+</div>
+    <div class="mode-desc">CLI · PR build-only<br/>MCP · run collapsing</div>
+  </div>
+</div>
+</section>
+
+</body>
+</html>
