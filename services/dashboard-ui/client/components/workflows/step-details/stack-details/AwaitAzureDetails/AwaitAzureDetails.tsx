@@ -5,6 +5,7 @@ import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
+import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import type {
   TAppInput,
@@ -12,12 +13,18 @@ import type {
   TStackDeploymentScope,
 } from '@/types'
 import { createFileDownload } from '@/utils/file-download'
+import { TFModuleTab } from '../tf-module'
+import type { IMainTfParts } from '../tf-module'
 import type { IStackDetails } from '../types'
 import { DeployToAzureBadge } from './DeployToAzureBadge'
 
 interface IAwaitAzureDetails extends IStackDetails {
+  orgId: string
   installId: string
   azureLocation?: string
+  azureSubscriptionId?: string
+  // Gates the TF Module tab on the org feature flag, matching AWS and GCP.
+  tfProvider?: boolean
   secrets?: TAppSecretConfig[]
   inputs?: TAppInput[]
   // Presence only, never the value: sensitive inputs come back redacted, and the
@@ -51,8 +58,11 @@ exporters:
 
 export const AwaitAzureDetails = ({
   stack,
+  orgId,
   installId,
   azureLocation,
+  azureSubscriptionId,
+  tfProvider,
   secrets,
   inputs,
   setInputNames,
@@ -178,7 +188,7 @@ export const AwaitAzureDetails = ({
     )
   }
 
-  return (
+  const armFlow = (
     <>
       {quickLink && (
         <Card>
@@ -455,5 +465,88 @@ export const AwaitAzureDetails = ({
         </Card>
       </div>
     </>
+  )
+
+  // Without the module there is only one way to install, so the tab strip would
+  // be a single tab.
+  if (!tfProvider) return armFlow
+
+  return (
+    <Tabs
+      // The published module is the recommended path, so it opens first.
+      initActiveTab="tfmodule"
+      tabLabels={{ tfmodule: 'TF Module', arm: 'ARM Template' }}
+      tabs={{
+        tfmodule: (
+          <AzureTFModuleTab
+            orgId={orgId}
+            installId={installId}
+            azureSubscriptionId={azureSubscriptionId}
+          />
+        ),
+        arm: armFlow,
+      }}
+    />
+  )
+}
+
+interface IAzureTFModuleTab {
+  orgId: string
+  installId?: string
+  azureSubscriptionId?: string
+}
+
+// The Azure half of the TF Module tab: which providers to require, and the
+// module source. Auth, inputs, secrets and the step layout are shared.
+//
+// The subscription goes in the azurerm provider block only — the module reads
+// the install's location from the control plane, and compares the provider's
+// subscription against it. purge_soft_delete_on_destroy is what lets a
+// destroyed install's Key Vault name be reused immediately.
+const AzureTFModuleTab = ({
+  orgId,
+  installId,
+  azureSubscriptionId,
+}: IAzureTFModuleTab) => {
+  const subscription = azureSubscriptionId || '<azure-subscription-id>'
+
+  const buildMainTf = ({
+    installId: id,
+    providerBlock,
+    inputsBlock,
+    secretsBlock,
+    secretVariablesBlock,
+  }: IMainTfParts) => `terraform {
+  required_providers {
+    azurerm = { source = "hashicorp/azurerm" }
+    stack   = { source = "nuonco/stack" }
+  }
+}
+
+provider "azurerm" {
+  subscription_id = "${subscription}"
+
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy = true
+    }
+  }
+}
+
+${providerBlock}
+
+module "azure_stack" {
+  source  = "nuonco/stack/azure"
+  version = "~> 1.0"
+
+  install_id = "${id}"${inputsBlock}${secretsBlock}
+}${secretVariablesBlock}`
+
+  return (
+    <TFModuleTab
+      orgId={orgId}
+      installId={installId}
+      buildMainTf={buildMainTf}
+    />
   )
 }
