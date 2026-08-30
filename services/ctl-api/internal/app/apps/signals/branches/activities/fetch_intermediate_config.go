@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse"
+	"github.com/nuonco/nuon/pkg/config/validate"
 )
 
 // @temporal-gen-v2 activity
@@ -19,13 +20,18 @@ import (
 func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir string) (*config.AppConfig, error) {
 	defer os.RemoveAll(sourceDir)
 
+	v := validator.New()
 	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
 		Dirname:       sourceDir,
-		V:             validator.New(),
+		V:             v,
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse config from repo: %w", err)
+	}
+
+	if err := validate.Validate(ctx, v, cfg); err != nil {
+		return nil, err
 	}
 
 	return cfg, nil

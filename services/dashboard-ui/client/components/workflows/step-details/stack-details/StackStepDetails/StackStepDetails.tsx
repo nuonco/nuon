@@ -1,4 +1,7 @@
-import type { TInstallStack } from '@/types'
+import type {
+  TInstallStack,
+  TInstallStackVersionWithCompositeError,
+} from '@/types'
 import type { IStepDetails } from '../../types'
 import { AwaitStackDetailsContainer } from '../AwaitStackDetails'
 import { GenerateStackDetails } from '../GenerateStackDetails'
@@ -17,10 +20,15 @@ export const StackStepDetails = ({
   const version = stack?.versions?.at(0)
   const linksReady = !!version?.template_url || !!version?.contents
 
+  const stackVersion = (
+    stack?.versions?.find((v) => v?.id === step?.step_target_id) ??
+    stack?.versions?.at(0)
+  ) as TInstallStackVersionWithCompositeError | undefined
+
   return (
     <div>
       {isGenerateStack ? (
-        <GenerateStackDetails />
+        <GenerateStackDetails stackVersion={stackVersion} />
       ) : (
         <AwaitStackDetailsContainer
           stack={stack}

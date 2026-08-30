@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/config"
@@ -20,6 +21,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
+
+// compositeErrorVersion gates the composite-error recording behaviour for
+// template render failures. New histories record the error; replaying old
+// histories (DefaultVersion) skip it to stay deterministic.
+const compositeErrorVersion = "generate-install-stack-version-composite-error-v1"
 
 const SignalType signal.SignalType = "generate-install-stack-version"
 
@@ -107,40 +113,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to generate install map data")
 	}
-	if err := render.RenderStruct(&cfg.PermissionsConfig, stateData); err != nil {
-		return errors.Wrap(err, "unable to render permissions config")
-	}
-	if err := render.RenderStruct(&cfg.BreakGlassConfig, stateData); err != nil {
-		return errors.Wrap(err, "unable to render break glass permissions config")
-	}
-
-	if err := render.RenderStruct(&cfg.SecretsConfig, stateData); err != nil {
-		return errors.Wrap(err, "unable to render secrets config")
-	}
-
-	// Apply per-install stack template overrides before rendering so
-	// template variables in override URLs get expanded.
-	stackoverrides.ApplyInstallStackOverrides(install, &cfg.StackConfig)
-
-	if stackErr := render.RenderStruct(&cfg.StackConfig, stateData); stackErr != nil {
-		return errors.Wrap(stackErr, "unable to render stack config")
-	}
-
-	// update cf stack param name post rendering variables
-	for i := range cfg.SecretsConfig.Secrets {
-		secret := &cfg.SecretsConfig.Secrets[i]
-		secret.UpdateCloudformationStackInfo()
-	}
-
-	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
-		return errors.Wrap(err, "unable to render cloudformation stack config")
-	}
-
-	// Custom nested stack parameters are rendered separately so they do not go
-	// through html/template. The stack renderers below receive literal values.
-	if err := config.RenderCustomNestedStackParameters(cfg.StackConfig.CustomNestedStacks, stateData); err != nil {
-		return errors.Wrap(err, "unable to render custom nested stack parameters")
-	}
 
 	runner, err := activities.AwaitGetRunnerByID(ctx, install.RunnerID)
 	if err != nil {
@@ -188,6 +160,60 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
+	compositeErrorsEnabled := workflow.GetVersion(ctx, compositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if compositeErrorsEnabled {
+		if err := activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
+			StackVersionID: stackVersion.ID,
+		}); err != nil {
+			workflow.GetLogger(ctx).Warn("unable to clear stale stack version composite error", "error", err.Error(), "stack_version_id", stackVersion.ID)
+		}
+	}
+
+	// Config rendering happens after the stack version row exists and its step
+	// target is set, so any render failure can be persisted as a CompositeError
+	// on the version row. Failures here are terminal config mistakes (bad
+	// template variables, missing fields) that won't resolve by retrying.
+	platform := string(cfg.RunnerConfig.Type)
+	if err := render.RenderStruct(&cfg.PermissionsConfig, stateData); err != nil {
+		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
+		return temporal.NewNonRetryableApplicationError("permissions config render failed", "render_failed", errors.Wrap(err, "unable to render permissions config"))
+	}
+	if err := render.RenderStruct(&cfg.BreakGlassConfig, stateData); err != nil {
+		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
+		return temporal.NewNonRetryableApplicationError("break glass config render failed", "render_failed", errors.Wrap(err, "unable to render break glass permissions config"))
+	}
+	if err := render.RenderStruct(&cfg.SecretsConfig, stateData); err != nil {
+		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
+		return temporal.NewNonRetryableApplicationError("secrets config render failed", "render_failed", errors.Wrap(err, "unable to render secrets config"))
+	}
+
+	// Apply per-install stack template overrides before rendering so
+	// template variables in override URLs get expanded.
+	stackoverrides.ApplyInstallStackOverrides(install, &cfg.StackConfig)
+
+	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
+		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
+		return temporal.NewNonRetryableApplicationError("stack config render failed", "render_failed", errors.Wrap(err, "unable to render stack config"))
+	}
+
+	// update cf stack param name post rendering variables
+	for i := range cfg.SecretsConfig.Secrets {
+		secret := &cfg.SecretsConfig.Secrets[i]
+		secret.UpdateCloudformationStackInfo()
+	}
+
+	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
+		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
+		return temporal.NewNonRetryableApplicationError("cloudformation stack config render failed", "render_failed", errors.Wrap(err, "unable to render cloudformation stack config"))
+	}
+
+	// Custom nested stack parameters are rendered separately so they do not go
+	// through html/template. The stack renderers below receive literal values.
+	if err := config.RenderCustomNestedStackParameters(cfg.StackConfig.CustomNestedStacks, stateData); err != nil {
+		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
+		return temporal.NewNonRetryableApplicationError("custom nested stack parameters render failed", "render_failed", errors.Wrap(err, "unable to render custom nested stack parameters"))
+	}
+
 	// Above the cloud split: the GCP path returns below, and every cloud's stack
 	// needs this account before its directions are rendered.
 	if _, err := activities.AwaitEnsureInstallStackServiceAccountByInstallStackID(ctx, stack.ID); err != nil {
@@ -224,7 +250,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 		tmplByts, checksum, err := gcp.Render(inp)
 		if err != nil {
-			return errors.Wrap(err, "unable to render gcp tfvars")
+			if compositeErrorsEnabled {
+				_ = activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
+					StackVersionID: stackVersion.ID,
+					Platform:       "gcp",
+					Detail:         err.Error(),
+				})
+			}
+			return temporal.NewNonRetryableApplicationError("gcp tfvars render failed", "render_failed", errors.Wrap(err, "unable to render gcp tfvars"))
 		}
 
 		if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{
@@ -302,11 +335,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 		// render the template via activity to avoid blocking the workflow goroutine
 		// (the template rendering fetches nested stack templates over HTTP)
-		renderedTemplate, err := activities.AwaitRenderAWSStackTemplate(ctx, &activities.RenderAWSStackTemplateRequest{
+		renderedTemplate, renderErr := activities.AwaitRenderAWSStackTemplate(ctx, &activities.RenderAWSStackTemplateRequest{
 			Input: *inp,
 		})
-		if err != nil {
-			return errors.Wrap(err, "unable to render stack template")
+		if renderErr != nil {
+			if compositeErrorsEnabled {
+				_ = activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
+					StackVersionID: stackVersion.ID,
+					Platform:       "aws",
+					Detail:         renderErr.Error(),
+				})
+			}
+			return temporal.NewNonRetryableApplicationError("aws stack template render failed", "render_failed", errors.Wrap(renderErr, "unable to render stack template"))
 		}
 		tmplByts = renderedTemplate.RAWJson
 		checksum = renderedTemplate.Checksum
@@ -348,11 +388,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
 		inp.DeploymentScope = cfg.StackConfig.DeploymentScope
 
-		armResult, err := activities.AwaitRenderARMStackTemplate(ctx, &activities.RenderARMStackTemplateRequest{
+		armResult, armErr := activities.AwaitRenderARMStackTemplate(ctx, &activities.RenderARMStackTemplateRequest{
 			Input: *inp,
 		})
-		if err != nil {
-			return errors.Wrap(err, "unable to create ARM template")
+		if armErr != nil {
+			if compositeErrorsEnabled {
+				_ = activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
+					StackVersionID: stackVersion.ID,
+					Platform:       "azure",
+					Detail:         armErr.Error(),
+				})
+			}
+			return temporal.NewNonRetryableApplicationError("azure arm template render failed", "render_failed", errors.Wrap(armErr, "unable to create ARM template"))
 		}
 		tmplByts = armResult.RAWJson
 		checksum = armResult.Checksum
@@ -407,4 +454,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 func isLegacyGCPInitScript(url string) bool {
 	return strings.HasSuffix(url, "/scripts/gcp/init.sh") || url == DefaultGCPRunnerInitScript
+}
+
+// setStackVersionCompositeRenderError records a StackTemplateRenderError on the
+// given stack version when enabled. Errors from the recording activity are
+// logged and swallowed so they do not shadow the original render failure.
+func setStackVersionCompositeRenderError(ctx workflow.Context, stackVersionID, platform, detail string, enabled bool) {
+	if !enabled {
+		return
+	}
+	if err := activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
+		StackVersionID: stackVersionID,
+		Platform:       platform,
+		Detail:         detail,
+	}); err != nil {
+		workflow.GetLogger(ctx).Warn("unable to set stack version composite error", "error", err.Error(), "stack_version_id", stackVersionID)
+	}
 }
