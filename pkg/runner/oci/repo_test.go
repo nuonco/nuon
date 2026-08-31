@@ -50,9 +50,8 @@ func TestGetRepoDoesNotShareAuthCache(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		remoteRepo := repo.(*remote.Repository)
-		remoteRepo.Client.(*auth.Client).Client = server.Client()
-		return remoteRepo
+		repo.Client.(*auth.Client).Client = server.Client()
+		return repo
 	}
 
 	firstRepo := getRepo("first")
@@ -76,10 +75,9 @@ func TestGetRepoAnonymousDoesNotUseSharedGlobalClient(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	remoteRepo := repo.(*remote.Repository)
-	require.NotNil(t, remoteRepo.Client, "anonymous repo must get an isolated client, not fall back to auth.DefaultClient")
+	require.NotNil(t, repo.Client, "anonymous repo must get an isolated client, not fall back to auth.DefaultClient")
 
-	authClient, ok := remoteRepo.Client.(*auth.Client)
+	authClient, ok := repo.Client.(*auth.Client)
 	require.True(t, ok)
 	require.NotSame(t, auth.DefaultClient, authClient, "must not reuse the process-global default client")
 	require.NotNil(t, authClient.Cache, "anonymous repo must have its own cache")

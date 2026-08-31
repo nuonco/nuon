@@ -67,7 +67,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to create metadata job", err))
-		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to create metadata job")
+		w.failRunnerJob(ctx, buildJobID, "unable to create metadata job")
 		return fmt.Errorf("unable to create metadata job: %w", err)
 	}
 
@@ -78,7 +78,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		IsControlPlaneBuild: metadataJob.Executor == app.RunnerJobExecutorControlPlane,
 	}); err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to save metadata job plan", err))
-		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to save metadata job plan")
+		w.failRunnerJob(ctx, buildJobID, "unable to save metadata job plan")
 		return fmt.Errorf("unable to save metadata job plan: %w", err)
 	}
 
@@ -97,7 +97,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 	}
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to fetch image metadata", err))
-		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to fetch image metadata")
+		w.failRunnerJob(ctx, buildJobID, "unable to fetch image metadata")
 		return fmt.Errorf("unable to fetch image metadata: %w", err)
 	}
 
@@ -107,7 +107,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get image metadata", err))
-		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to get image metadata")
+		w.failRunnerJob(ctx, buildJobID, "unable to get image metadata")
 		return fmt.Errorf("unable to get image metadata: %w", err)
 	}
 
@@ -117,7 +117,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to prepare policy evaluation", err))
-		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to prepare policy evaluation")
+		w.failRunnerJob(ctx, buildJobID, "unable to prepare policy evaluation")
 		return fmt.Errorf("unable to prepare policy evaluation: %w", err)
 	}
 
@@ -212,7 +212,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		description := formatPolicyViolations("policy violations", denyViolations)
 		l.Error("policy evaluation failed", zap.Int("deny_count", len(denyViolations)))
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPolicyFailed, description)
-		w.updateJobStatusForPolicyFailure(ctx, buildJobID, description)
+		w.failRunnerJob(ctx, buildJobID, description)
 		return fmt.Errorf("image policy check failed: %s", description)
 	}
 
@@ -251,14 +251,6 @@ func (w *Workflows) recordComponentPolicyEvaluationFailure(ctx workflow.Context,
 		"step_target_type": "component_builds",
 		"workflow_type":    "component_build",
 	})...)
-}
-
-func (w *Workflows) updateJobStatusForPolicyFailure(ctx workflow.Context, jobID, description string) {
-	_ = activities.AwaitUpdateJobStatus(ctx, &activities.UpdateJobStatusRequest{
-		JobID:             jobID,
-		Status:            app.RunnerJobStatusFailed,
-		StatusDescription: description,
-	})
 }
 
 const maxDescriptionLength = 500

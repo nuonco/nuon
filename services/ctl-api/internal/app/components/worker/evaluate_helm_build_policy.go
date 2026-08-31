@@ -179,7 +179,7 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 		description := formatPolicyViolations("policy violations", denyViolations)
 		l.Error("policy evaluation failed", zap.Int("deny_count", len(denyViolations)))
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPolicyFailed, description)
-		w.updateJobStatusForPolicyFailure(ctx, buildJobID, description)
+		w.failRunnerJob(ctx, buildJobID, description)
 		return fmt.Errorf("helm policy check failed: %s", description)
 	}
 
