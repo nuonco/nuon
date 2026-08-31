@@ -41,7 +41,7 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		return err
 	}
 
-	l.Info("cron ticker fired",
+	l.Debug("cron ticker fired",
 		zap.String("emitter-id", req.EmitterID),
 		zap.String("queue-id", req.QueueID),
 	)
@@ -72,16 +72,39 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		l.Error("failed to get emitter", zap.Error(err))
 		return err
 	}
+	if emitter.SignalTemplate.Signal == nil {
+		if emitter.Status.Status != app.StatusError {
+			l.Error("invalid emitter configuration; stopping emitter",
+				zap.String("emitter-id", emitter.ID),
+				zap.String("queue-id", emitter.QueueID),
+				zap.String("signal-type", string(emitter.SignalType)),
+				zap.String("owner-id", emitter.Queue.OwnerID),
+				zap.String("owner-type", emitter.Queue.OwnerType))
+			if _, err := activities.AwaitUpdateEmitterStatus(ctx, &activities.UpdateEmitterStatusRequest{
+				EmitterID: emitter.ID,
+				Status:    app.StatusError,
+			}); err != nil {
+				return err
+			}
+		}
+		info := workflow.GetInfo(ctx)
+		_ = activities.AwaitTerminateWorkflow(ctx, &activities.TerminateWorkflowRequest{
+			WorkflowID: info.WorkflowExecution.ID,
+			Namespace:  info.Namespace,
+			Reason:     "emitter has no signal template configured",
+		})
+		return nil
+	}
 
 	// Check if emitter is paused (status is cancelled)
 	if emitter.Status.Status == app.StatusCancelled {
-		l.Info("emitter is paused, skipping emit")
+		l.Debug("emitter is paused, skipping emit")
 		return nil
 	}
 
 	// Check if emitter signals are globally disabled
 	if w.cfg.DisableEmitterSignals {
-		l.Info("emitter signals disabled globally, skipping emit",
+		l.Debug("emitter signals disabled globally, skipping emit",
 			zap.String("queue-id", req.QueueID))
 		return nil
 	}
@@ -92,7 +115,7 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		return err
 	}
 
-	l.Info("emit complete")
+	l.Debug("emit complete")
 	return nil
 }
 
@@ -119,7 +142,7 @@ func (w *Workflows) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app
 
 	if resp.Skipped {
 		w.emitSignalMetric(ctx, emitter, "skipped")
-		l.Info("signal emission skipped - emitter already has in-flight signal",
+		l.Debug("signal emission skipped - emitter already has in-flight signal",
 			zap.String("emitter-id", emitter.ID),
 			zap.String("queue-id", emitter.QueueID),
 		)
@@ -128,7 +151,7 @@ func (w *Workflows) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app
 
 	w.emitSignalMetric(ctx, emitter, "ok")
 
-	l.Info("signal emitted, updating relationship",
+	l.Debug("signal emitted, updating relationship",
 		zap.String("queue-signal-id", resp.QueueSignalID),
 		zap.String("workflow-id", resp.WorkflowID),
 	)
