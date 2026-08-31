@@ -200,7 +200,11 @@ func ExternalImageComponentConfig(obj *config.ExternalImageComponentConfig) (*ap
 		return nil, errors.New("external_image config is required")
 	}
 
-	cfg := &app.ExternalImageComponentConfig{}
+	if err := obj.Verification.Validate(); err != nil {
+		return nil, err
+	}
+
+	cfg := &app.ExternalImageComponentConfig{Verification: obj.Verification}
 	sources := 0
 
 	if src := obj.AWSECRImageConfig; src != nil {

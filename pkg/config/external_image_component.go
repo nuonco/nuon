@@ -6,6 +6,7 @@ import (
 
 	"github.com/invopop/jsonschema"
 
+	"github.com/nuonco/nuon/pkg/oci/signature"
 	"github.com/nuonco/nuon/pkg/oci/updatepolicy"
 )
 
@@ -65,10 +66,11 @@ type AzureACRConfig struct {
 }
 
 type ExternalImageComponentConfig struct {
-	AWSECRImageConfig   *AWSECRConfig      `mapstructure:"aws_ecr,omitempty" toml:"aws_ecr,omitempty" jsonschema:"oneof_required=ecr_source"`
-	GCPGARImageConfig   *GCPGARConfig      `mapstructure:"gcp_gar,omitempty" toml:"gcp_gar,omitempty" jsonschema:"oneof_required=gar_source"`
-	AzureACRImageConfig *AzureACRConfig    `mapstructure:"azure_acr,omitempty" toml:"azure_acr,omitempty" jsonschema:"oneof_required=acr_source"`
-	PublicImageConfig   *PublicImageConfig `mapstructure:"public,omitempty" toml:"public,omitempty" jsonschema:"oneof_required=public_source"`
+	AWSECRImageConfig   *AWSECRConfig           `mapstructure:"aws_ecr,omitempty" toml:"aws_ecr,omitempty" jsonschema:"oneof_required=ecr_source"`
+	GCPGARImageConfig   *GCPGARConfig           `mapstructure:"gcp_gar,omitempty" toml:"gcp_gar,omitempty" jsonschema:"oneof_required=gar_source"`
+	AzureACRImageConfig *AzureACRConfig         `mapstructure:"azure_acr,omitempty" toml:"azure_acr,omitempty" jsonschema:"oneof_required=acr_source"`
+	PublicImageConfig   *PublicImageConfig      `mapstructure:"public,omitempty" toml:"public,omitempty" jsonschema:"oneof_required=public_source"`
+	Verification        *signature.Verification `mapstructure:"verification,omitempty" toml:"verification,omitempty"`
 
 	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
@@ -232,6 +234,8 @@ func (e ExternalImageComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema
 		Long("Configuration for pulling images from Azure Container Registry. Use when deploying images from private ACR repositories").
 		Field("public").Short("public registry image configuration").OneOfRequired("image_source").
 		Long("Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc)").
+		Field("verification").Short("container image signature verification policy").
+		Long("Require the resolved image digest to satisfy at least one configured Sigstore keyless identity or Cosign public key before Nuon copies it").
 		Field("build_timeout").Short("build operation timeout").
 		Long("Duration string for build operations (e.g., \"30m\", \"1h\"). Default: 15m. Max: 1h").
 		Default("15m").
@@ -245,6 +249,10 @@ func (e ExternalImageComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema
 }
 
 func (t *ExternalImageComponentConfig) Validate() error {
+	if err := t.Verification.Validate(); err != nil {
+		return err
+	}
+
 	// Every image source must declare either a literal tag or an
 	// `update_policy` semver constraint (or both); update_policy syntax is
 	// validated up-front so users get a clear error before the API ever
