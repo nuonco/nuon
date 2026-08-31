@@ -16,7 +16,7 @@ func TestVerificationValidate(t *testing.T) {
 		{
 			name: "keyless exact subject",
 			config: &Verification{RequireSignature: true, Authorities: []Authority{{
-				Type:    AuthorityTypeSigstoreKeyless,
+				Type:    AuthorityTypeKeyless,
 				Issuer:  "https://issuer.example.com",
 				Subject: "https://example.com/workflow",
 			}}},
@@ -24,7 +24,7 @@ func TestVerificationValidate(t *testing.T) {
 		{
 			name: "keyless subject regexp",
 			config: &Verification{RequireSignature: true, Authorities: []Authority{{
-				Type:          AuthorityTypeSigstoreKeyless,
+				Type:          AuthorityTypeKeyless,
 				Issuer:        "https://issuer.example.com",
 				SubjectRegexp: `^https://example\.com/.+$`,
 			}}},
@@ -32,7 +32,7 @@ func TestVerificationValidate(t *testing.T) {
 		{
 			name: "public key",
 			config: &Verification{RequireSignature: true, Authorities: []Authority{{
-				Type:      AuthorityTypeCosignKey,
+				Type:      AuthorityTypePublicKey,
 				PublicKey: "public key contents",
 			}}},
 		},
@@ -44,7 +44,7 @@ func TestVerificationValidate(t *testing.T) {
 		{
 			name: "keyless missing issuer",
 			config: &Verification{RequireSignature: true, Authorities: []Authority{{
-				Type:    AuthorityTypeSigstoreKeyless,
+				Type:    AuthorityTypeKeyless,
 				Subject: "subject",
 			}}},
 			wantErr: "issuer is required",
@@ -52,7 +52,7 @@ func TestVerificationValidate(t *testing.T) {
 		{
 			name: "keyless ambiguous subject",
 			config: &Verification{RequireSignature: true, Authorities: []Authority{{
-				Type:          AuthorityTypeSigstoreKeyless,
+				Type:          AuthorityTypeKeyless,
 				Issuer:        "issuer",
 				Subject:       "subject",
 				SubjectRegexp: ".*",
@@ -62,7 +62,7 @@ func TestVerificationValidate(t *testing.T) {
 		{
 			name: "invalid regexp",
 			config: &Verification{RequireSignature: true, Authorities: []Authority{{
-				Type:          AuthorityTypeSigstoreKeyless,
+				Type:          AuthorityTypeKeyless,
 				Issuer:        "issuer",
 				SubjectRegexp: "[",
 			}}},
@@ -71,7 +71,7 @@ func TestVerificationValidate(t *testing.T) {
 		{
 			name: "key missing public key",
 			config: &Verification{RequireSignature: true, Authorities: []Authority{{
-				Type: AuthorityTypeCosignKey,
+				Type: AuthorityTypePublicKey,
 			}}},
 			wantErr: "public_key is required",
 		},

@@ -11,8 +11,8 @@ import (
 type AuthorityType string
 
 const (
-	AuthorityTypeSigstoreKeyless AuthorityType = "sigstore_keyless"
-	AuthorityTypeCosignKey       AuthorityType = "cosign_key"
+	AuthorityTypeKeyless   AuthorityType = "keyless"
+	AuthorityTypePublicKey AuthorityType = "public_key"
 )
 
 type Verification struct {
@@ -21,7 +21,7 @@ type Verification struct {
 }
 
 type Authority struct {
-	Type          AuthorityType `json:"type" mapstructure:"type" toml:"type" jsonschema:"required,enum=sigstore_keyless,enum=cosign_key"`
+	Type          AuthorityType `json:"type" mapstructure:"type" toml:"type" jsonschema:"required,enum=keyless,enum=public_key"`
 	Issuer        string        `json:"issuer,omitempty" mapstructure:"issuer,omitempty" toml:"issuer,omitempty"`
 	Subject       string        `json:"subject,omitempty" mapstructure:"subject,omitempty" toml:"subject,omitempty"`
 	SubjectRegexp string        `json:"subject_regexp,omitempty" mapstructure:"subject_regexp,omitempty" toml:"subject_regexp,omitempty"`
@@ -50,27 +50,27 @@ func (v *Verification) Validate() error {
 
 func (a Authority) validate() error {
 	switch a.Type {
-	case AuthorityTypeSigstoreKeyless:
+	case AuthorityTypeKeyless:
 		if a.Issuer == "" {
-			return errors.New("issuer is required for sigstore_keyless")
+			return errors.New("issuer is required for keyless")
 		}
 		if (a.Subject == "") == (a.SubjectRegexp == "") {
-			return errors.New("exactly one of subject or subject_regexp is required for sigstore_keyless")
+			return errors.New("exactly one of subject or subject_regexp is required for keyless")
 		}
 		if a.PublicKey != "" {
-			return errors.New("public_key is not valid for sigstore_keyless")
+			return errors.New("public_key is not valid for keyless")
 		}
 		if a.SubjectRegexp != "" {
 			if _, err := regexp.Compile(a.SubjectRegexp); err != nil {
 				return fmt.Errorf("invalid subject_regexp: %w", err)
 			}
 		}
-	case AuthorityTypeCosignKey:
+	case AuthorityTypePublicKey:
 		if a.PublicKey == "" {
-			return errors.New("public_key is required for cosign_key")
+			return errors.New("public_key is required for a public_key authority")
 		}
 		if a.Issuer != "" || a.Subject != "" || a.SubjectRegexp != "" {
-			return errors.New("issuer, subject, and subject_regexp are not valid for cosign_key")
+			return errors.New("issuer, subject, and subject_regexp are not valid for a public_key authority")
 		}
 	default:
 		return fmt.Errorf("unsupported type %q", a.Type)
