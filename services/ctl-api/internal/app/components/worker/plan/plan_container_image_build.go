@@ -32,6 +32,7 @@ func (p *Planner) createContainerImageBuildPlan(ctx workflow.Context, bld *app.C
 		Image:        bld.ComponentConfigConnection.ExternalImageComponentConfig.ImageURL,
 		Tag:          bld.ComponentConfigConnection.ExternalImageComponentConfig.Tag,
 		UpdatePolicy: bld.ComponentConfigConnection.ExternalImageComponentConfig.UpdatePolicy,
+		Verification: bld.ComponentConfigConnection.ExternalImageComponentConfig.Verification,
 
 		RepoCfg: srcRepo,
 	}

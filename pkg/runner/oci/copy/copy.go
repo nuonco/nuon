@@ -3,6 +3,7 @@ package ocicopy
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/errdef"
 
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
@@ -22,6 +24,8 @@ import (
 const (
 	defaultCopyConcurrency int = 10
 )
+
+var legacyCosignTagSuffixes = [...]string{".sig", ".att", ".sbom"}
 
 func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (_ *ocispec.Descriptor, retErr error) {
 	opCtx, end := op.Tool(ctx, "oci", "copy")
@@ -82,10 +86,7 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 		},
 	}
 
-	res, err := oras.Copy(ctx, srcRepo, srcTag, dstRepo, dstTag,
-		oras.CopyOptions{
-			CopyGraphOptions: cpo,
-		})
+	res, err := copyWithReferrers(ctx, srcRepo, srcTag, dstRepo, dstTag, cpo)
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +96,38 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 	}
 
 	return &res, nil
+}
+
+func copyWithReferrers(ctx context.Context, src oras.ReadOnlyGraphTarget, srcRef string, dst oras.Target, dstRef string, opts oras.CopyGraphOptions) (ocispec.Descriptor, error) {
+	root, err := oras.ExtendedCopy(ctx, src, srcRef, dst, dstRef, oras.ExtendedCopyOptions{
+		ExtendedCopyGraphOptions: oras.ExtendedCopyGraphOptions{
+			CopyGraphOptions: opts,
+		},
+	})
+	if err != nil {
+		return ocispec.Descriptor{}, err
+	}
+
+	if err := copyLegacyCosignArtifacts(ctx, src, dst, root, opts); err != nil {
+		return ocispec.Descriptor{}, err
+	}
+
+	return root, nil
+}
+
+func copyLegacyCosignArtifacts(ctx context.Context, src oras.ReadOnlyTarget, dst oras.Target, subject ocispec.Descriptor, opts oras.CopyGraphOptions) error {
+	tagPrefix := strings.Replace(subject.Digest.String(), ":", "-", 1)
+	for _, suffix := range legacyCosignTagSuffixes {
+		tag := tagPrefix + suffix
+		if _, err := oras.Copy(ctx, src, tag, dst, tag, oras.CopyOptions{CopyGraphOptions: opts}); err != nil {
+			if errors.Is(err, errdef.ErrNotFound) {
+				continue
+			}
+			return errors.Wrapf(err, "unable to copy legacy cosign artifact %s", tag)
+		}
+	}
+
+	return nil
 }
 
 func mediaNoun(mediatype string) string {
