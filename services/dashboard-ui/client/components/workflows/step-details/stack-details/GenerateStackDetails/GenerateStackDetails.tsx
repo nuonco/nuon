@@ -1,19 +1,22 @@
 import { Card } from '@/components/common/Card'
+import { CompositeError } from '@/components/common/CompositeError/CompositeError'
 import {
   KeyValueList,
   KeyValueListSkeleton,
 } from '@/components/common/KeyValueList'
 import { Text } from '@/components/common/Text'
-import type { TAppConfig } from '@/types'
+import type { TAppConfig, TInstallStackVersion } from '@/types'
 
 export interface IGenerateStackDetails {
   appConfig?: TAppConfig
   isLoading: boolean
+  stackVersion?: TInstallStackVersion
 }
 
 export const GenerateStackDetails = ({
   appConfig,
   isLoading,
+  stackVersion,
 }: IGenerateStackDetails) => {
   const values = [
     { key: 'name', value: appConfig?.stack?.name },
@@ -30,13 +33,18 @@ export const GenerateStackDetails = ({
   ]
 
   return (
-    <Card>
-      <Text>Stack template details</Text>
-      {isLoading ? (
-        <KeyValueListSkeleton />
-      ) : (
-        <KeyValueList values={values} />
-      )}
-    </Card>
+    <div className="flex flex-col gap-6">
+      {stackVersion?.composite_error ? (
+        <CompositeError error={stackVersion.composite_error} />
+      ) : null}
+      <Card>
+        <Text>Stack template details</Text>
+        {isLoading ? (
+          <KeyValueListSkeleton />
+        ) : (
+          <KeyValueList values={values} />
+        )}
+      </Card>
+    </div>
   )
 }
