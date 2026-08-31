@@ -15,6 +15,7 @@ title: 'Branch'
 | **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected GitHub repo the branch tracks | **Optional** | - |
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public git repo the branch tracks | **Optional** | - |
 | **`install_groups`**<br/>[array](#install_groups) | ordered deployment groups for this branch | **Optional** | - |
+| **`preview`**<br/>[AppBranchPreviewConfig](#preview) | default preview run settings for this branch | **Optional** | - |
 | **`post_deploy_runbooks`**<br/>array | names of runbooks to run on each install, in order, after its deploy succeeds; resolved to IDs at sync time | **Optional** | - |
 
 ### `connected_repo`
@@ -42,4 +43,15 @@ title: 'Branch'
 | **`install_ids`**<br/>array | static list of install IDs | **Optional** | - |
 | **`install_names`**<br/>array | static list of install names, resolved to IDs at sync time | **Optional** | - |
 | **`label_selector`**<br/>object | label key-value pairs to dynamically match installs | **Optional** | - |
+
+### `preview`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`mode`**<br/>string | preview run mode: plan-only, apply, or build-only | **Optional** | - |
+| **`install_id`**<br/>string | default install ID for preview runs | **Optional** | - |
+| **`install_name`**<br/>string | default install name for preview runs, resolved to an ID at sync time | **Optional** | - |
+| **`label_selector`**<br/>object | label key-value pairs to select the default preview install | **Optional** | - |
+| **`set_statuses`**<br/>boolean | whether to set GitHub commit statuses for preview runs | **Optional** | - |
+| **`comment`**<br/>boolean | whether to comment on the pull request with preview results | **Optional** | - |
 
