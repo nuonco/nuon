@@ -378,7 +378,7 @@ func (s *service) tailProbe(parent context.Context, orgID, logStreamID string, c
 		Limit(tailPageSize + 1).
 		Find(&rows)
 	if res.Error != nil {
-		return nil, "", false, errors.Wrap(res.Error, "unable to query log tail")
+		return nil, "", false, errors.Wrap(tailProbeQueryError(ctx, res.Error), "unable to query log tail")
 	}
 
 	hasMore := len(rows) > tailPageSize

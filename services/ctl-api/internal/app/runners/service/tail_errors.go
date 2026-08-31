@@ -23,6 +23,13 @@ func writeTailUnavailable(ctx *gin.Context) {
 	})
 }
 
+func tailProbeQueryError(ctx context.Context, err error) error {
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return errors.Join(err, ctxErr)
+	}
+	return err
+}
+
 func isTransientTailProbeError(err error) bool {
 	if errors.Is(err, context.DeadlineExceeded) ||
 		errors.Is(err, driver.ErrBadConn) ||
