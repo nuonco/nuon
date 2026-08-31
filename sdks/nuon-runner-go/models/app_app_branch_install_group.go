@@ -56,9 +56,6 @@ type AppAppBranchInstallGroup struct {
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
-
-	// UseForPreviews marks this group for plan-only preview runs (e.g., PR previews).
-	UseForPreviews bool `json:"use_for_previews,omitempty"`
 }
 
 // Validate validates this app app branch install group
