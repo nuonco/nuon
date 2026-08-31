@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
@@ -37,4 +38,23 @@ func TestIsTransientTailProbeError(t *testing.T) {
 			assert.Equal(t, tt.transient, isTransientTailProbeError(tt.err))
 		})
 	}
+}
+
+func TestTailProbeQueryError(t *testing.T) {
+	queryErr := errors.New("driver timeout")
+
+	t.Run("expired query", func(t *testing.T) {
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+		defer cancel()
+
+		err := tailProbeQueryError(ctx, queryErr)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		assert.ErrorIs(t, err, queryErr)
+		assert.True(t, isTransientTailProbeError(err))
+	})
+
+	t.Run("active query", func(t *testing.T) {
+		err := tailProbeQueryError(context.Background(), queryErr)
+		assert.Same(t, queryErr, err)
+	})
 }
