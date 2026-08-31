@@ -30,11 +30,11 @@ func (m SignatureAuthorityType) Pointer() *SignatureAuthorityType {
 
 const (
 
-	// SignatureAuthorityTypeSigstoreKeyless captures enum value "sigstore_keyless"
-	SignatureAuthorityTypeSigstoreKeyless SignatureAuthorityType = "sigstore_keyless"
+	// SignatureAuthorityTypeKeyless captures enum value "keyless"
+	SignatureAuthorityTypeKeyless SignatureAuthorityType = "keyless"
 
-	// SignatureAuthorityTypeCosignKey captures enum value "cosign_key"
-	SignatureAuthorityTypeCosignKey SignatureAuthorityType = "cosign_key"
+	// SignatureAuthorityTypePublicKey captures enum value "public_key"
+	SignatureAuthorityTypePublicKey SignatureAuthorityType = "public_key"
 )
 
 // for schema
@@ -42,7 +42,7 @@ var signatureAuthorityTypeEnum []any
 
 func init() {
 	var res []SignatureAuthorityType
-	if err := json.Unmarshal([]byte(`["sigstore_keyless","cosign_key"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["keyless","public_key"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

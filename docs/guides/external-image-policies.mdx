@@ -9,6 +9,10 @@ External image policies allow you to enforce security requirements on container 
 
 Nuon automatically fetches rich metadata about container images including SBOMs, signatures, attestations, and in-toto statements, making this data available to your OPA policies.
 
+<Warning>
+OPA policies inspect the metadata Nuon discovers, but they do not cryptographically verify a signature. To prove that a trusted identity or key signed the resolved image digest, configure [native container image signature verification](/guides/image-signature-verification). Use OPA for additional requirements such as SBOM presence, provenance contents, registry allowlists, and tag rules.
+</Warning>
+
 ## Policy Input Structure
 
 When evaluating external image policies, Nuon provides the following input structure:
@@ -42,7 +46,7 @@ When evaluating external image policies, Nuon provides the following input struc
 | `input.image` | string | Image name (e.g., `nginx`, `gcr.io/project/app`) |
 | `input.tag` | string | Image tag (e.g., `latest`, `v1.2.3`) |
 | `input.digest` | string | Image digest (e.g., `sha256:abc...`) |
-| `input.metadata.signed` | bool | Whether the image has signatures |
+| `input.metadata.signed` | bool | Whether signature metadata was discovered; this does not indicate cryptographic verification |
 | `input.metadata.sbom.present` | bool | Whether an SBOM is present |
 | `input.metadata.sbom.format` | string | SBOM format: `spdx`, `cyclonedx`, or `unknown` |
 | `input.metadata.signatures` | array | List of signature details |
@@ -54,9 +58,9 @@ When evaluating external image policies, Nuon provides the following input struc
 
 ## Basic Image Requirements
 
-### Require Image Signing
+### Require Signature Metadata
 
-Ensure all images are cryptographically signed:
+Require Nuon to discover signature metadata for an image. This is useful as a metadata-presence rule, but it does not replace native cryptographic verification:
 
 ```rego
 package nuon
@@ -69,7 +73,7 @@ allow if {
 
 deny contains msg if {
     not input.metadata.signed
-    msg := sprintf("Image %s:%s must be signed", [input.image, input.tag])
+    msg := sprintf("Image %s:%s must include signature metadata", [input.image, input.tag])
 }
 ```
 
@@ -123,9 +127,9 @@ deny contains msg if {
 
 ## Signature Inspection
 
-### Check Signature Algorithm
+### Inspect Signature Algorithm
 
-Require a specific signing algorithm:
+Require discovered signature metadata to identify a specific signing format:
 
 ```rego
 package nuon
@@ -145,7 +149,7 @@ deny contains msg if {
 deny contains msg if {
     count(input.metadata.signatures) > 0
     not has_cosign_signature
-    msg := sprintf("Image %s:%s must be signed with cosign", [input.image, input.tag])
+    msg := sprintf("Image %s:%s must include Cosign signature metadata", [input.image, input.tag])
 }
 
 has_cosign_signature if {
@@ -154,9 +158,9 @@ has_cosign_signature if {
 }
 ```
 
-### Require Signature from Trusted Issuer
+### Inspect Signature Issuer
 
-Validate signature issuer for keyless signing (e.g., Sigstore):
+Check the issuer recorded in discovered keyless signature metadata. This does not validate the certificate chain or signature; use [native signature verification](/guides/image-signature-verification#verify-a-keyless-signature) to trust the issuer cryptographically.
 
 ```rego
 package nuon
@@ -175,7 +179,7 @@ allow if {
 
 deny contains msg if {
     not has_trusted_signature
-    msg := sprintf("Image %s:%s must be signed by a trusted issuer: %v", 
+    msg := sprintf("Image %s:%s must include signature metadata from an allowed issuer: %v", 
         [input.image, input.tag, trusted_issuers])
 }
 
@@ -262,7 +266,7 @@ deny contains msg if {
 
 When attestation layers are fetched with content decoding enabled, you can inspect the decoded in-toto statements.
 
-### Validate In-Toto Statement Type
+### Inspect In-Toto Statement Type
 
 ```rego
 package nuon
@@ -288,9 +292,9 @@ has_valid_intoto if {
 }
 ```
 
-### Verify Subject Digest Matches Image
+### Check the Declared Subject Digest
 
-Ensure attestation subjects match the image being validated:
+Check whether decoded attestation metadata declares the image digest as its subject. This is not proof that the attestation itself has a valid signature:
 
 ```rego
 package nuon
@@ -492,9 +496,9 @@ deny contains msg if {
 
 ## Combining Multiple Requirements
 
-### Production-Ready Image Policy
+### Image Metadata Policy
 
-A comprehensive policy combining multiple security requirements:
+A policy combining several image metadata requirements. Pair this with native signature verification when signer trust is required:
 
 ```rego
 package nuon
@@ -503,14 +507,14 @@ default allow := false
 
 # Image must meet ALL requirements
 allow if {
-    is_signed
+    has_signature_metadata
     has_sbom
     has_provenance
     not uses_blocked_tag
 }
 
-# Check if image is signed
-is_signed if {
+# Check whether signature metadata was discovered
+has_signature_metadata if {
     input.metadata.signed == true
 }
 
@@ -540,8 +544,8 @@ uses_blocked_tag if {
 
 # Generate specific denial messages
 deny contains msg if {
-    not is_signed
-    msg := sprintf("Image %s:%s must be signed", [input.image, input.tag])
+    not has_signature_metadata
+    msg := sprintf("Image %s:%s must include signature metadata", [input.image, input.tag])
 }
 
 deny contains msg if {
@@ -583,17 +587,21 @@ package nuon
 default allow := false
 
 allow if {
-    input.metadata.signed == true
+    has_signature_metadata
     input.metadata.sbom.present == true
 }
 
-deny contains msg if {
-    not input.metadata.signed
-    msg := sprintf("Image %s:%s must be signed", [input.image, input.tag])
+has_signature_metadata if {
+    input.metadata.signed == true
 }
 
 deny contains msg if {
-    not input.metadata.sbom.present  
+    not has_signature_metadata
+    msg := sprintf("Image %s:%s must include signature metadata", [input.image, input.tag])
+}
+
+deny contains msg if {
+    not input.metadata.sbom.present
     msg := sprintf("Image %s:%s must include an SBOM", [input.image, input.tag])
 }
 """
@@ -633,10 +641,10 @@ contents   = "file://policies/rego/container-image.rego"
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `key_id` | string | Key identifier (for keyed signing) |
-| `issuer` | string | OIDC issuer (for keyless signing) |
-| `subject` | string | OIDC subject identity |
-| `algorithm` | string | Signature algorithm/media type |
+| `key_id` | string | Discovered key identifier (for keyed signing) |
+| `issuer` | string | Discovered OIDC issuer (for keyless signing) |
+| `subject` | string | Discovered OIDC subject identity |
+| `algorithm` | string | Discovered signature algorithm/media type |
 
 ### `input.metadata.attestations`
 
