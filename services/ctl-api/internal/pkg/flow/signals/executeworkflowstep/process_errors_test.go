@@ -15,6 +15,7 @@ func TestTargetSupportsCompositeErrorHints(t *testing.T) {
 		{app.WorkflowStepTargetTypeInstallDeploys, true},
 		{app.WorkflowStepTargetTypeInstallSandboxRun, true},
 		{app.WorkflowStepTargetTypeInstallSandboxRuns, true},
+		{app.WorkflowStepTargetTypeInstallStackVersions, true},
 		{app.WorkflowStepTargetTypeInstallActionWorkflowRun, false},
 		{app.WorkflowStepTargetTypeInstallActionWorkflowRuns, false},
 	}
