@@ -428,7 +428,7 @@ func TestExternalImageKeepsSignatureVerification(t *testing.T) {
 	verification := &signature.Verification{
 		RequireSignature: true,
 		Authorities: []signature.Authority{{
-			Type:    signature.AuthorityTypeSigstoreKeyless,
+			Type:    signature.AuthorityTypeKeyless,
 			Issuer:  "https://issuer.example.com",
 			Subject: "https://example.com/workflow",
 		}},
