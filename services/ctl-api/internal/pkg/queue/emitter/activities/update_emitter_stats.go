@@ -36,7 +36,7 @@ func (a *Activities) UpdateEmitterStats(ctx context.Context, req *UpdateEmitterS
 		return nil, errors.Wrap(res.Error, "unable to update emitter stats")
 	}
 
-	a.l.Info("updated emitter stats",
+	a.l.Debug("updated emitter stats",
 		zap.String("emitter-id", req.EmitterID),
 	)
 
