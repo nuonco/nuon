@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import 'tailwindcss' source(none);
+@source './';
+
+@font-face {
+  font-family: 'Hack';
+  src: url('/fonts/hack-regular.woff2') format('woff2'),
+       url('/fonts/hack-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light dark;
+
+  --brand-primary: #4cc9f0;
+  --brand-primary-deep: #3187a2;
+  --brand-primary-light: #79dcfa;
+  --brand-indigo: #3a00ff;
+  --brand-pink: #f72585;
+  --brand-positive: #4aa578;
+
+  --neutral-000: #ffffff;
+  --neutral-050: #fefefe;
+  --neutral-100: #f7f7f7;
+  --neutral-400: #bababa;
+  --neutral-500: #828282;
+  --neutral-600: #5a5a5a;
+  --neutral-800: #2a2a2b;
+  --neutral-900: #1d1d1d;
+  --neutral-950: #141217;
+  --neutral-inverted: #0c0033;
+
+  --surface-default: light-dark(var(--neutral-000), var(--neutral-950));
+  --surface-primary: light-dark(var(--neutral-050), var(--neutral-900));
+  --surface-secondary: light-dark(var(--neutral-100), #19171c);
+  --surface-01: light-dark(var(--neutral-000), rgba(254, 254, 254, 0.04));
+  --surface-02: light-dark(var(--neutral-050), rgba(254, 254, 254, 0.08));
+  --surface-03: light-dark(var(--neutral-100), rgba(254, 254, 254, 0.08));
+  --surface-accent: light-dark(#e3f8ff, rgba(76, 201, 240, 0.16));
+  --surface-inverted: light-dark(var(--neutral-inverted), var(--neutral-050));
+
+  --text-primary: light-dark(var(--neutral-900), var(--neutral-050));
+  --text-secondary: light-dark(var(--neutral-800), var(--neutral-100));
+  --text-tertiary: light-dark(var(--neutral-600), var(--neutral-400));
+  --text-accent: light-dark(var(--brand-primary-deep), var(--brand-primary));
+  --text-brand-tint: light-dark(var(--brand-indigo), var(--brand-primary-light));
+  --text-positive: var(--brand-positive);
+
+  --divider: light-dark(rgba(29, 29, 29, 0.04), rgba(254, 254, 254, 0.08));
+  --divider-accent: var(--brand-primary);
+
+  --action-primary: var(--brand-primary);
+  --action-primary-hover: light-dark(var(--brand-primary-deep), var(--brand-primary-light));
+
+  --shadow-default: light-dark(rgba(29, 29, 29, 0.04), rgba(29, 29, 29, 0.16));
+  --shadow-strong: light-dark(rgba(29, 29, 29, 0.08), rgba(29, 29, 29, 0.6));
+
+  --gradient-brand: linear-gradient(88.14deg, #f72585 7.25%, #3a00ff 62.82%, #4cc9f0 100%);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='high-contrast'] {
+  color-scheme: dark;
+
+  --hc-blue: #0000aa;
+  --hc-blue-deep: #000088;
+  --hc-yellow: #ffff00;
+
+  --surface-default: var(--hc-blue);
+  --surface-primary: var(--hc-blue);
+  --surface-secondary: var(--hc-blue-deep);
+  --surface-01: rgba(255, 255, 255, 0.08);
+  --surface-02: rgba(255, 255, 255, 0.12);
+  --surface-03: rgba(255, 255, 255, 0.16);
+  --surface-accent: rgba(255, 255, 0, 0.16);
+  --surface-inverted: var(--neutral-000);
+
+  --text-primary: var(--neutral-000);
+  --text-secondary: var(--neutral-000);
+  --text-tertiary: var(--hc-yellow);
+  --text-accent: var(--hc-yellow);
+  --text-brand-tint: var(--hc-yellow);
+  --text-positive: var(--neutral-000);
+
+  --divider: rgba(255, 255, 255, 0.4);
+  --divider-accent: var(--hc-yellow);
+
+  --action-primary: var(--hc-yellow);
+  --action-primary-hover: var(--neutral-000);
+
+  --shadow-default: rgba(0, 0, 0, 0.4);
+  --shadow-strong: rgba(0, 0, 0, 0.7);
+}
+
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Hack', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-surface-default: var(--surface-default);
+  --color-surface-primary: var(--surface-primary);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-01: var(--surface-01);
+  --color-surface-02: var(--surface-02);
+  --color-surface-03: var(--surface-03);
+  --color-surface-accent: var(--surface-accent);
+  --color-surface-inverted: var(--surface-inverted);
+
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-tertiary: var(--text-tertiary);
+  --color-accent: var(--text-accent);
+  --color-brand-tint: var(--text-brand-tint);
+  --color-positive: var(--text-positive);
+
+  --color-divider: var(--divider);
+  --color-divider-accent: var(--divider-accent);
+
+  --color-action-primary: var(--action-primary);
+  --color-action-primary-hover: var(--action-primary-hover);
+}
+
+@layer base {
+  * {
+    border-color: var(--divider);
+  }
+
+  body {
+    background-color: var(--surface-default);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+  }
+}
