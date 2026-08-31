@@ -58,6 +58,9 @@ type AppExternalImageComponentConfig struct {
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// verification
+	Verification *SignatureVerification `json:"verification,omitempty"`
 }
 
 // Validate validates this app external image component config
@@ -73,6 +76,10 @@ func (m *AppExternalImageComponentConfig) Validate(formats strfmt.Registry) erro
 	}
 
 	if err := m.validateGcpGarImageConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateVerification(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -151,6 +158,29 @@ func (m *AppExternalImageComponentConfig) validateGcpGarImageConfig(formats strf
 	return nil
 }
 
+func (m *AppExternalImageComponentConfig) validateVerification(formats strfmt.Registry) error {
+	if swag.IsZero(m.Verification) { // not required
+		return nil
+	}
+
+	if m.Verification != nil {
+		if err := m.Verification.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("verification")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("verification")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app external image component config based on the context it is used
 func (m *AppExternalImageComponentConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -164,6 +194,10 @@ func (m *AppExternalImageComponentConfig) ContextValidate(ctx context.Context, f
 	}
 
 	if err := m.contextValidateGcpGarImageConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVerification(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -239,6 +273,31 @@ func (m *AppExternalImageComponentConfig) contextValidateGcpGarImageConfig(ctx c
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("gcp_gar_image_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppExternalImageComponentConfig) contextValidateVerification(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Verification != nil {
+
+		if swag.IsZero(m.Verification) { // not required
+			return nil
+		}
+
+		if err := m.Verification.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("verification")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("verification")
 			}
 
 			return err

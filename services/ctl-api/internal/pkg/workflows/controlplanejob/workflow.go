@@ -35,15 +35,15 @@ func (w *Workflows) ExecuteControlPlaneJob(ctx workflow.Context, req *ExecuteReq
 		StartToCloseTimeout: execution.JobExecutionTimeout,
 		HeartbeatTimeout:    30 * time.Second,
 		WaitForCancellation: true,
-		RetryPolicy: &temporal.RetryPolicy{
-			MaximumAttempts: 1,
-		},
 	})
 	outcome := FinalizeOutcome{Status: app.RunnerJobExecutionStatusFinished}
 	runErr := AwaitRunJob(
 		runCtx,
 		RunJobRequest{JobID: req.JobID, ExecutionID: execution.ExecutionID},
-		&workflow.ActivityOptions{StartToCloseTimeout: execution.JobExecutionTimeout},
+		&workflow.ActivityOptions{
+			StartToCloseTimeout: execution.JobExecutionTimeout,
+			RetryPolicy:         &temporal.RetryPolicy{MaximumAttempts: 1},
+		},
 	)
 	if runErr != nil {
 		outcome.Status = executionStatusForError(runErr)
