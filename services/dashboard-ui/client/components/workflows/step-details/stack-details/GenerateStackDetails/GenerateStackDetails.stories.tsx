@@ -3,7 +3,7 @@ export default {
 }
 
 import { GenerateStackDetails } from './GenerateStackDetails'
-import type { TAppConfig } from '@/types'
+import type { TAppConfig, TInstallStackVersion } from '@/types'
 
 const mockConfig = {
   stack: {
@@ -15,8 +15,39 @@ const mockConfig = {
   },
 } as TAppConfig
 
+const mockVersionWithError: TInstallStackVersion = {
+  id: 'isv-abc123',
+  composite_error: {
+    type: 'stack.template_render_failed',
+    severity: 'fatal',
+    message: 'stack template rendering failed for aws',
+    sections: [
+      {
+        heading: 'Why',
+        body: 'The app config references a runner nested template URL that could not be fetched.',
+      },
+      {
+        heading: 'How to fix',
+        body: 'Verify that `runner_nested_template_url` in your app config points to a publicly accessible YAML file, then re-sync.',
+      },
+    ],
+  },
+}
+
 export const Default = () => (
   <GenerateStackDetails appConfig={mockConfig} isLoading={false} />
 )
 
 export const Loading = () => <GenerateStackDetails isLoading={true} />
+
+export const WithCompositeError = () => (
+  <GenerateStackDetails
+    appConfig={mockConfig}
+    isLoading={false}
+    stackVersion={mockVersionWithError}
+  />
+)
+
+export const CompositeErrorOnly = () => (
+  <GenerateStackDetails isLoading={false} stackVersion={mockVersionWithError} />
+)

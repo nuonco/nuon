@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -84,6 +85,12 @@ type InstallStackVersion struct {
 	TerraformChecksum string `json:"terraform_checksum,omitzero" temporaljson:"terraform_checksum,omitzero,omitempty"`
 
 	CallbackRef callback.Ref `json:"callback_ref,omitzero" gorm:"type:jsonb" temporaljson:"callback_ref,omitzero,omitempty"`
+
+	// CompositeError holds a typed, structured error frozen at write time when
+	// stack template generation fails due to a config or rendering problem. It
+	// is nil for successful versions and for failures not attributed to template
+	// rendering (e.g. transient infrastructure upload errors).
+	CompositeError *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb" temporaljson:"composite_error,omitzero,omitempty"`
 }
 
 // PhoneHomeTokenEligibleStatuses are the statuses for which a stack version should
