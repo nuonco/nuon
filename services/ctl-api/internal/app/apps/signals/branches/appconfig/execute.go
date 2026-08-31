@@ -5,14 +5,18 @@ import (
 	"fmt"
 	"strconv"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/branchrunerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
+
+const configValidationCompositeErrorVersion = "app-branch-config-validation-composite-error-v1"
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
@@ -121,6 +125,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	})
 	if err != nil {
 		closeLogStream()
+		if detail, ok := branchrunerrors.ValidationDetail(err); ok {
+			if workflow.GetVersion(ctx, configValidationCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+				if setErr := activities.AwaitSetAppBranchRunCompositeError(ctx, activities.SetAppBranchRunCompositeErrorRequest{
+					RunID:  s.RunID,
+					Detail: detail,
+				}); setErr != nil {
+					l.Warn("unable to set app branch run composite error", "error", setErr)
+				}
+				return temporal.NewNonRetryableApplicationError(
+					detail,
+					branchrunerrors.ConfigValidationFailedTemporalType,
+					err,
+				)
+			}
+		}
 		return fmt.Errorf("unable to fetch intermediate config: %w", err)
 	}
 

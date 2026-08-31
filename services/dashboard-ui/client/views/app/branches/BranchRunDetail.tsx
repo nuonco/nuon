@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { CompositeError } from '@/components/common/CompositeError'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
@@ -174,7 +175,14 @@ const BranchRunDetailContent = () => {
               }
             />
           }
-          banners={<BranchRunApproval run={run} />}
+          banners={
+            <>
+              {branchRun?.composite_error ? (
+                <CompositeError error={branchRun.composite_error} />
+              ) : null}
+              <BranchRunApproval run={run} />
+            </>
+          }
         >
           <div className="flex flex-col gap-4">
             {showRunComparison && branchRun?.id ? (
