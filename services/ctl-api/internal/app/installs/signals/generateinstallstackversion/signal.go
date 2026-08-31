@@ -114,6 +114,49 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to generate install map data")
 	}
 
+	platform := string(cfg.RunnerConfig.Type)
+	region := ""
+	switch {
+	case install.AWSAccount != nil:
+		region = install.AWSAccount.Region
+	case install.AzureAccount != nil:
+		region = install.AzureAccount.Location
+	case install.GCPAccount != nil:
+		region = install.GCPAccount.Region
+	}
+
+	if err := render.RenderStruct(&cfg.PermissionsConfig, stateData); err != nil {
+		return s.failStackConfigRender(ctx, install, stack, cfg, region, platform, err, "permissions config render failed", "unable to render permissions config")
+	}
+	if err := render.RenderStruct(&cfg.BreakGlassConfig, stateData); err != nil {
+		return s.failStackConfigRender(ctx, install, stack, cfg, region, platform, err, "break glass config render failed", "unable to render break glass permissions config")
+	}
+	if err := render.RenderStruct(&cfg.SecretsConfig, stateData); err != nil {
+		return s.failStackConfigRender(ctx, install, stack, cfg, region, platform, err, "secrets config render failed", "unable to render secrets config")
+	}
+
+	// Apply per-install stack template overrides before rendering so
+	// template variables in override URLs get expanded.
+	stackoverrides.ApplyInstallStackOverrides(install, &cfg.StackConfig)
+
+	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
+		return s.failStackConfigRender(ctx, install, stack, cfg, region, platform, err, "stack config render failed", "unable to render stack config")
+	}
+
+	// update cf stack param name post rendering variables
+	for i := range cfg.SecretsConfig.Secrets {
+		secret := &cfg.SecretsConfig.Secrets[i]
+		secret.UpdateCloudformationStackInfo()
+	}
+
+	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
+		return s.failStackConfigRender(ctx, install, stack, cfg, region, platform, err, "cloudformation stack config render failed", "unable to render cloudformation stack config")
+	}
+
+	if err := config.RenderCustomNestedStackParameters(cfg.StackConfig.CustomNestedStacks, stateData); err != nil {
+		return s.failStackConfigRender(ctx, install, stack, cfg, region, platform, err, "custom nested stack parameters render failed", "unable to render custom nested stack parameters")
+	}
+
 	runner, err := activities.AwaitGetRunnerByID(ctx, install.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner")
@@ -126,16 +169,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	runner.RunnerGroup.Settings.AWSInstanceType = instanceType
 
-	// need to generate a token
-	region := ""
-	switch {
-	case install.AWSAccount != nil:
-		region = install.AWSAccount.Region
-	case install.AzureAccount != nil:
-		region = install.AzureAccount.Location
-	case install.GCPAccount != nil:
-		region = install.GCPAccount.Region
-	}
 	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
 		InstallID:       install.ID,
 		InstallStackID:  stack.ID,
@@ -161,58 +194,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	compositeErrorsEnabled := workflow.GetVersion(ctx, compositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if compositeErrorsEnabled {
-		if err := activities.AwaitSetInstallStackVersionCompositeError(ctx, activities.SetInstallStackVersionCompositeErrorRequest{
-			StackVersionID: stackVersion.ID,
-		}); err != nil {
-			workflow.GetLogger(ctx).Warn("unable to clear stale stack version composite error", "error", err.Error(), "stack_version_id", stackVersion.ID)
-		}
-	}
-
-	// Config rendering happens after the stack version row exists and its step
-	// target is set, so any render failure can be persisted as a CompositeError
-	// on the version row. Failures here are terminal config mistakes (bad
-	// template variables, missing fields) that won't resolve by retrying.
-	platform := string(cfg.RunnerConfig.Type)
-	if err := render.RenderStruct(&cfg.PermissionsConfig, stateData); err != nil {
-		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
-		return temporal.NewNonRetryableApplicationError("permissions config render failed", "render_failed", errors.Wrap(err, "unable to render permissions config"))
-	}
-	if err := render.RenderStruct(&cfg.BreakGlassConfig, stateData); err != nil {
-		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
-		return temporal.NewNonRetryableApplicationError("break glass config render failed", "render_failed", errors.Wrap(err, "unable to render break glass permissions config"))
-	}
-	if err := render.RenderStruct(&cfg.SecretsConfig, stateData); err != nil {
-		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
-		return temporal.NewNonRetryableApplicationError("secrets config render failed", "render_failed", errors.Wrap(err, "unable to render secrets config"))
-	}
-
-	// Apply per-install stack template overrides before rendering so
-	// template variables in override URLs get expanded.
-	stackoverrides.ApplyInstallStackOverrides(install, &cfg.StackConfig)
-
-	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
-		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
-		return temporal.NewNonRetryableApplicationError("stack config render failed", "render_failed", errors.Wrap(err, "unable to render stack config"))
-	}
-
-	// update cf stack param name post rendering variables
-	for i := range cfg.SecretsConfig.Secrets {
-		secret := &cfg.SecretsConfig.Secrets[i]
-		secret.UpdateCloudformationStackInfo()
-	}
-
-	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
-		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
-		return temporal.NewNonRetryableApplicationError("cloudformation stack config render failed", "render_failed", errors.Wrap(err, "unable to render cloudformation stack config"))
-	}
-
-	// Custom nested stack parameters are rendered separately so they do not go
-	// through html/template. The stack renderers below receive literal values.
-	if err := config.RenderCustomNestedStackParameters(cfg.StackConfig.CustomNestedStacks, stateData); err != nil {
-		setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, err.Error(), compositeErrorsEnabled)
-		return temporal.NewNonRetryableApplicationError("custom nested stack parameters render failed", "render_failed", errors.Wrap(err, "unable to render custom nested stack parameters"))
-	}
 
 	// Above the cloud split: the GCP path returns below, and every cloud's stack
 	// needs this account before its directions are rendered.
@@ -456,9 +437,40 @@ func isLegacyGCPInitScript(url string) bool {
 	return strings.HasSuffix(url, "/scripts/gcp/init.sh") || url == DefaultGCPRunnerInitScript
 }
 
-// setStackVersionCompositeRenderError records a StackTemplateRenderError on the
-// given stack version when enabled. Errors from the recording activity are
-// logged and swallowed so they do not shadow the original render failure.
+func (s *Signal) failStackConfigRender(ctx workflow.Context, install *app.Install, stack *app.InstallStack, cfg *app.AppConfig, region, platform string, cause error, nonRetryableMsg, wrapMsg string) error {
+	wrapped := errors.Wrap(cause, wrapMsg)
+	if workflow.GetVersion(ctx, compositeErrorVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return wrapped
+	}
+
+	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
+		InstallID:       install.ID,
+		InstallStackID:  stack.ID,
+		AppConfigID:     cfg.ID,
+		StackName:       cfg.StackConfig.Name,
+		Region:          region,
+		Platform:        platform,
+		PublicAPIURL:    cfg.RunnerConfig.PublicAPIURL,
+		DeploymentScope: string(cfg.StackConfig.DeploymentScope),
+	})
+	if err != nil {
+		return wrapped
+	}
+
+	if s.WorkflowStepID != "" {
+		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+			StepID:         s.WorkflowStepID,
+			StepTargetID:   stackVersion.ID,
+			StepTargetType: "install_stack_versions",
+		}); err != nil {
+			workflow.GetLogger(ctx).Warn("unable to update stack version step target after render failure", "error", err.Error(), "stack_version_id", stackVersion.ID)
+		}
+	}
+
+	setStackVersionCompositeRenderError(ctx, stackVersion.ID, platform, cause.Error(), true)
+	return temporal.NewNonRetryableApplicationError(nonRetryableMsg, "render_failed", wrapped)
+}
+
 func setStackVersionCompositeRenderError(ctx workflow.Context, stackVersionID, platform, detail string, enabled bool) {
 	if !enabled {
 		return

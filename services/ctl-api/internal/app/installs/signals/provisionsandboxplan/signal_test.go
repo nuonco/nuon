@@ -2,6 +2,8 @@ package provisionsandboxplan
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -17,6 +19,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/stackerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -73,7 +76,7 @@ func (s *SignalTestSuite) TestExecutePlanFailureRecordsCompositeError() {
 	env.OnActivity((*activities.Activities).CreateSandboxJob, mock.Anything, mock.Anything, mock.Anything).
 		Return(runnerJob, nil)
 
-	planErr := temporal.NewNonRetryableApplicationError("env var {{.Missing}} undefined", "RENDER_FAILED", nil)
+	planErr := temporal.NewNonRetryableApplicationError("env var {{.Missing}} undefined", stackerrors.PlanRenderFailedTemporalType, nil)
 	env.OnWorkflow(plan.CreateSandboxRunPlan, mock.Anything, mock.Anything).
 		Return(plan.CreateSandboxPlanResponse{}, planErr)
 	env.OnActivity((*activities.Activities).CloseLogStream, mock.Anything, mock.Anything, mock.Anything).
@@ -98,7 +101,7 @@ func (s *SignalTestSuite) TestExecutePlanFailureRecordsCompositeError() {
 	require.ErrorAs(s.T(), env.GetWorkflowError(), &appErr)
 	require.True(s.T(), appErr.NonRetryable(), "plan render failure must produce a non-retryable error")
 
-	require.GreaterOrEqual(s.T(), len(compositeErrCalls), 2, "expected clear-on-start and error-recording calls")
+	require.Equal(s.T(), 1, len(compositeErrCalls), "expected one error-recording call")
 	var errorCall *activities.SetInstallSandboxRunPlanCompositeErrorRequest
 	for i := range compositeErrCalls {
 		if compositeErrCalls[i].Detail != "" {
@@ -107,4 +110,60 @@ func (s *SignalTestSuite) TestExecutePlanFailureRecordsCompositeError() {
 	}
 	require.NotNil(s.T(), errorCall, "expected a SetInstallSandboxRunPlanCompositeError call with non-empty Detail")
 	require.Equal(s.T(), "run-1", errorCall.SandboxRunID)
+}
+
+func (s *SignalTestSuite) TestExecutePlanFailureDoesNotRecordCompositeErrorForGenericErrors() {
+	env := s.NewTestWorkflowEnvironment()
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+
+	sig := &Signal{
+		InstallSandboxID: "sandbox-1",
+		cfg:              &internal.Config{},
+	}
+
+	install := &app.Install{
+		ID:       "install-1",
+		RunnerID: "runner-1",
+		AppSandboxConfig: app.AppSandboxConfig{
+			ID: "sandbox-config-1",
+		},
+	}
+	sandboxRun := &app.InstallSandboxRun{ID: "run-1", RunType: app.SandboxRunTypeProvision}
+	logStream := &app.LogStream{ID: "log-1"}
+	runnerJob := &app.RunnerJob{ID: "job-1"}
+
+	env.OnActivity((*activities.Activities).GetInstallForSandbox, mock.Anything, mock.Anything, mock.Anything).
+		Return(install, nil)
+	env.OnActivity((*activities.Activities).CreateSandboxRun, mock.Anything, mock.Anything, mock.Anything).
+		Return(sandboxRun, nil)
+	env.OnActivity((*activities.Activities).UpdateRunStatus, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil)
+	env.OnActivity((*statusactivities.Activities).UpdateRunStatusV2, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil)
+	env.OnActivity((*activities.Activities).CreateLogStream, mock.Anything, mock.Anything, mock.Anything).
+		Return(logStream, nil)
+	env.OnActivity((*activities.Activities).CreateSandboxJob, mock.Anything, mock.Anything, mock.Anything).
+		Return(runnerJob, nil)
+	env.OnWorkflow(plan.CreateSandboxRunPlan, mock.Anything, mock.Anything).
+		Return(plan.CreateSandboxPlanResponse{}, fmt.Errorf("database unavailable"))
+	env.OnActivity((*activities.Activities).CloseLogStream, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil)
+
+	var compositeErrCalls int
+	env.SetOnActivityStartedListener(func(info *activity.Info, _ context.Context, args converter.EncodedValues) {
+		if info.ActivityType.Name == "SetInstallSandboxRunPlanCompositeError" {
+			compositeErrCalls++
+		}
+	})
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.Execute(ctx)
+	})
+
+	require.Error(s.T(), env.GetWorkflowError())
+	var appErr *temporal.ApplicationError
+	if errors.As(env.GetWorkflowError(), &appErr) {
+		require.False(s.T(), appErr.NonRetryable(), "generic plan failures must remain retryable")
+	}
+	require.Zero(s.T(), compositeErrCalls)
 }

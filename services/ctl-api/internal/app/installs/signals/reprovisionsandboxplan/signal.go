@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalrequest"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/stackerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -254,15 +255,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if planCompositeErrorsEnabled {
-		if err := activities.AwaitSetInstallSandboxRunPlanCompositeError(ctx, activities.SetInstallSandboxRunPlanCompositeErrorRequest{
-			SandboxRunID: installRun.ID,
-		}); err != nil {
-			workflow.GetLogger(ctx).Warn("unable to clear stale sandbox run plan composite error", "error", err.Error(), "sandbox_run_id", installRun.ID)
-		}
-	}
-
 	defer func() {
 		if pan := recover(); pan != nil {
 			s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "internal error")
@@ -304,8 +296,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, installRun *app.InstallSandboxRun, stepID string, sandboxMode bool, dnsRootDomain string) error {
 	l := workflow.GetLogger(ctx)
 
-	planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-
 	op := app.RunnerJobOperationTypeCreateApplyPlan
 	if installRun.RunType == app.SandboxRunTypeDeprovision {
 		op = app.RunnerJobOperationTypeCreateTeardownPlan
@@ -338,13 +328,17 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 	})
 	if planErr != nil {
 		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan request")
-		if planCompositeErrorsEnabled {
-			_ = activities.AwaitSetInstallSandboxRunPlanCompositeError(ctx, activities.SetInstallSandboxRunPlanCompositeErrorRequest{
-				SandboxRunID: installRun.ID,
-				Detail:       planErr.Error(),
-			})
+		if stackerrors.IsPlanRenderFailed(planErr) {
+			planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+			if planCompositeErrorsEnabled {
+				_ = activities.AwaitSetInstallSandboxRunPlanCompositeError(ctx, activities.SetInstallSandboxRunPlanCompositeErrorRequest{
+					SandboxRunID: installRun.ID,
+					Detail:       planErr.Error(),
+				})
+			}
+			return temporal.NewNonRetryableApplicationError("sandbox plan render failed", stackerrors.PlanRenderFailedTemporalType, errors.Wrap(planErr, "unable to create plan"))
 		}
-		return temporal.NewNonRetryableApplicationError("sandbox plan render failed", "plan_render_failed", errors.Wrap(planErr, "unable to create plan"))
+		return fmt.Errorf("unable to create plan: %w", planErr)
 	}
 
 	planJSON, err := json.Marshal(planResponse.Plan)

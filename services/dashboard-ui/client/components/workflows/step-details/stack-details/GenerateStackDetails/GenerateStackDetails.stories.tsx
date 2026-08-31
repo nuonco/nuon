@@ -18,9 +18,9 @@ const mockConfig = {
 const mockVersionWithError: TInstallStackVersionWithCompositeError = {
   id: 'isv-abc123',
   composite_error: {
-    type: 'stack.generation_failed',
-    severity: 'error',
-    message: 'Stack template generation failed',
+    type: 'stack.template_render_failed',
+    severity: 'fatal',
+    message: 'stack template rendering failed for aws',
     sections: [
       {
         heading: 'Why',

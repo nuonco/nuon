@@ -3,6 +3,8 @@ package stackerrors
 import (
 	"testing"
 
+	"go.temporal.io/sdk/temporal"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
@@ -90,6 +92,20 @@ func TestSandboxPlanRenderError_roundtrip(t *testing.T) {
 	}
 	if data.SourceType != "install_sandbox_runs" || data.SourceID != "run123" {
 		t.Errorf("source = %q/%q, want install_sandbox_runs/run123", data.SourceType, data.SourceID)
+	}
+}
+
+func TestIsPlanRenderFailed(t *testing.T) {
+	if IsPlanRenderFailed(nil) {
+		t.Fatal("nil should not be a plan render failure")
+	}
+	retryable := temporal.NewApplicationError("db down", "unavailable")
+	if IsPlanRenderFailed(retryable) {
+		t.Fatal("generic application error should not match")
+	}
+	renderErr := temporal.NewNonRetryableApplicationError("bad template", PlanRenderFailedTemporalType, nil)
+	if !IsPlanRenderFailed(renderErr) {
+		t.Fatal("expected plan_render_failed application error to match")
 	}
 }
 

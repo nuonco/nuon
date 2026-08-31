@@ -7,6 +7,9 @@ package stackerrors
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
@@ -97,4 +100,14 @@ func (e *SandboxPlanRenderError) Sections() []compositeerrors.Section {
 
 func (e *SandboxPlanRenderError) Hints() compositeerrors.Hints {
 	return compositeerrors.NewHints().WithTerminal()
+}
+
+// PlanRenderFailedTemporalType is the Temporal ApplicationError type returned
+// by CreateSandboxRunPlan when template rendering fails. Signals use it to
+// distinguish terminal config mistakes from retryable plan-prep errors.
+const PlanRenderFailedTemporalType = "plan_render_failed"
+
+func IsPlanRenderFailed(err error) bool {
+	var appErr *temporal.ApplicationError
+	return errors.As(err, &appErr) && appErr.Type() == PlanRenderFailedTemporalType
 }
