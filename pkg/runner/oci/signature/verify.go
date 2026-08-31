@@ -52,7 +52,7 @@ func Verify(ctx context.Context, cfg *configs.OCIRegistryRepository, digest stri
 
 	var trustedRoot root.TrustedMaterial
 	for _, authority := range verification.Authorities {
-		if authority.Type == signaturecfg.AuthorityTypeSigstoreKeyless {
+		if authority.Type == signaturecfg.AuthorityTypeKeyless {
 			trustedRoot, err = cosign.TrustedRoot()
 			if err != nil {
 				return fmt.Errorf("load Sigstore trusted root: %w", err)
@@ -82,13 +82,13 @@ func verifyAuthority(ctx context.Context, ref name.Reference, nameOpts []name.Op
 	}
 
 	switch authority.Type {
-	case signaturecfg.AuthorityTypeSigstoreKeyless:
+	case signaturecfg.AuthorityTypeKeyless:
 		checkOpts.Identities = []cosign.Identity{{
 			Issuer:        authority.Issuer,
 			Subject:       authority.Subject,
 			SubjectRegExp: authority.SubjectRegexp,
 		}}
-	case signaturecfg.AuthorityTypeCosignKey:
+	case signaturecfg.AuthorityTypePublicKey:
 		verifier, err := cosignsignature.LoadPublicKeyRaw([]byte(authority.PublicKey), crypto.SHA256)
 		if err != nil {
 			return fmt.Errorf("load public key: %w", err)
