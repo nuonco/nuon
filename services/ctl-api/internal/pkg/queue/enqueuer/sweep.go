@@ -2,6 +2,7 @@ package enqueuer
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"go.uber.org/zap"
@@ -19,10 +20,11 @@ const (
 type SweepRequest struct{}
 
 type SweepResponse struct {
-	EnqueuedByType map[string]int `json:"enqueued_by_type"`
-	TotalEnqueued  int            `json:"total_enqueued"`
-	TotalErrors    int            `json:"total_errors"`
-	DurationMS     int64          `json:"duration_ms"`
+	EnqueuedByType   map[string]int `json:"enqueued_by_type"`
+	TotalEnqueued    int            `json:"total_enqueued"`
+	TotalQuarantined int            `json:"total_quarantined"`
+	TotalErrors      int            `json:"total_errors"`
+	DurationMS       int64          `json:"duration_ms"`
 }
 
 // @temporal-gen-v2 activity
@@ -31,6 +33,7 @@ func (a *Activities) Sweep(ctx context.Context, _ *SweepRequest) (*SweepResponse
 	start := time.Now()
 	enqueuedByType := make(map[string]int)
 	totalEnqueued := 0
+	totalQuarantined := 0
 	totalErrors := 0
 	cutoff := time.Now().Add(-sweepGracePeriod)
 
@@ -56,6 +59,10 @@ func (a *Activities) Sweep(ctx context.Context, _ *SweepRequest) (*SweepResponse
 
 		for _, s := range signals {
 			if err := a.e.EnqueueInline(ctx, s.ID, EnqueueSourceSweep); err != nil {
+				if errors.Is(err, errOrphanedQueueSignal) {
+					totalQuarantined++
+					continue
+				}
 				totalErrors++
 				a.e.l.Warn("sweep enqueue failed",
 					zap.String("queue-signal-id", s.ID),
@@ -75,20 +82,23 @@ func (a *Activities) Sweep(ctx context.Context, _ *SweepRequest) (*SweepResponse
 
 	tags := metrics.ToTags(map[string]string{"general": "true"})
 	a.e.mw.Gauge("queue_signals.sweep.enqueued", float64(totalEnqueued), tags)
+	a.e.mw.Gauge("queue_signals.sweep.quarantined", float64(totalQuarantined), tags)
 	a.e.mw.Gauge("queue_signals.sweep.errors", float64(totalErrors), tags)
 	a.e.mw.Timing("queue_signals.sweep.duration_ms", duration, tags)
 
-	if totalEnqueued > 0 || totalErrors > 0 {
+	if totalEnqueued > 0 || totalQuarantined > 0 || totalErrors > 0 {
 		a.e.l.Info("sweep completed",
 			zap.Int("enqueued", totalEnqueued),
+			zap.Int("quarantined", totalQuarantined),
 			zap.Int("errors", totalErrors),
 			zap.Duration("duration", duration))
 	}
 
 	return &SweepResponse{
-		EnqueuedByType: enqueuedByType,
-		TotalEnqueued:  totalEnqueued,
-		TotalErrors:    totalErrors,
-		DurationMS:     duration.Milliseconds(),
+		EnqueuedByType:   enqueuedByType,
+		TotalEnqueued:    totalEnqueued,
+		TotalQuarantined: totalQuarantined,
+		TotalErrors:      totalErrors,
+		DurationMS:       duration.Milliseconds(),
 	}, nil
 }
