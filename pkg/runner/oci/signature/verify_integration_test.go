@@ -22,7 +22,7 @@ func TestVerifyPublicKeylessImage(t *testing.T) {
 	verification := &signaturecfg.Verification{
 		RequireSignature: true,
 		Authorities: []signaturecfg.Authority{{
-			Type:    signaturecfg.AuthorityTypeSigstoreKeyless,
+			Type:    signaturecfg.AuthorityTypeKeyless,
 			Issuer:  "https://token.actions.githubusercontent.com",
 			Subject: "https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main",
 		}},
