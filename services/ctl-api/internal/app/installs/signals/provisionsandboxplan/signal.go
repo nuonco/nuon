@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalrequest"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/stackerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -22,6 +24,10 @@ import (
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
+
+// planCompositeErrorVersion gates composite-error recording for plan render
+// failures. New histories write the error; replaying old histories skip it.
+const planCompositeErrorVersion = "provision-sandbox-plan-composite-error-v1"
 
 const SignalType signal.SignalType = "provision-sandbox-plan"
 
@@ -315,15 +321,25 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 	}
 	s.runnerJobID = runnerJob.ID
 
-	planResponse, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
+	planResponse, planErr := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
 		RunID:      installRun.ID,
 		InstallID:  install.ID,
 		RootDomain: dnsRootDomain,
 		WorkflowID: fmt.Sprintf("%s-create-api-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
-	if err != nil {
+	if planErr != nil {
 		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create install plan request")
-		return errors.Wrap(err, "unable to create plan")
+		if stackerrors.IsPlanRenderFailed(planErr) {
+			planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+			if planCompositeErrorsEnabled {
+				_ = activities.AwaitSetInstallSandboxRunPlanCompositeError(ctx, activities.SetInstallSandboxRunPlanCompositeErrorRequest{
+					SandboxRunID: installRun.ID,
+					Detail:       planErr.Error(),
+				})
+			}
+			return temporal.NewNonRetryableApplicationError("sandbox plan render failed", stackerrors.PlanRenderFailedTemporalType, errors.Wrap(planErr, "unable to create plan"))
+		}
+		return fmt.Errorf("unable to create plan: %w", planErr)
 	}
 
 	planJSON, err := json.Marshal(planResponse.Plan)

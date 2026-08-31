@@ -326,7 +326,7 @@ export interface paths {
   "/v1/apps/{app_id}/branches/{app_branch_id}/preview-install-candidates": {
     /**
      * list preview install candidates for an app branch
-     * @description Resolves the branch preview config label selector (or fixed install) to install records
+     * @description Lists all installs on the app for preview run selection (includes installs on other branches)
      */
     get: operations["GetAppBranchPreviewInstallCandidates"];
   };
@@ -3673,6 +3673,7 @@ export interface components {
       base_branch?: string;
       comparison?: components["schemas"]["app.AppBranchRunComparison"];
       completed_at?: string;
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
@@ -5293,6 +5294,13 @@ export interface components {
       aws_bucket_name?: string;
       callback_ref?: components["schemas"]["callback.Ref"];
       checksum?: string;
+      /**
+       * @description CompositeError holds a typed, structured error frozen at write time when
+       * stack template generation fails due to a config or rendering problem. It
+       * is nil for successful versions and for failures not attributed to template
+       * rendering (e.g. transient infrastructure upload errors).
+       */
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       composite_status?: components["schemas"]["app.CompositeStatus"];
       contents?: string;
       created_at?: string;
@@ -12015,7 +12023,7 @@ export interface operations {
   };
   /**
    * list preview install candidates for an app branch
-   * @description Resolves the branch preview config label selector (or fixed install) to install records
+   * @description Lists all installs on the app for preview run selection (includes installs on other branches)
    */
   GetAppBranchPreviewInstallCandidates: {
     parameters: {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"maps"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/stackerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -97,7 +99,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, nil, errors.Wrap(err, "unable to render environment variables")
+		return nil, nil, sandboxPlanRenderFailed(err, "unable to render environment variables")
 	}
 
 	if err := render.RenderStruct(&appCfg.SandboxConfig, stateData); err != nil {
@@ -105,7 +107,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, nil, errors.Wrap(err, "unable to render config")
+		return nil, nil, sandboxPlanRenderFailed(err, "unable to render config")
 	}
 
 	if isPulumi {
@@ -116,7 +118,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 				zap.Error(err),
 				zap.Any("state", stateData),
 			)
-			return nil, nil, errors.Wrap(err, "unable to render pulumi config")
+			return nil, nil, sandboxPlanRenderFailed(err, "unable to render pulumi config")
 		}
 		l.Info("rendered pulumi config", zap.Any("config", pulumiCfg))
 	} else {
@@ -127,7 +129,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 				zap.Error(err),
 				zap.Any("state", stateData),
 			)
-			return nil, nil, errors.Wrap(err, "unable to render variables")
+			return nil, nil, sandboxPlanRenderFailed(err, "unable to render variables")
 		}
 		l.Info("rendered terraform vars", zap.Any("vars", vars))
 	}
@@ -138,7 +140,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, nil, errors.Wrap(err, "unable to render policies")
+		return nil, nil, sandboxPlanRenderFailed(err, "unable to render policies")
 	}
 
 	l.Info("getting policies")
@@ -582,4 +584,8 @@ func (p *Planner) getSandboxModeOutputs(install app.Install, stack app.InstallSt
 			},
 		}
 	}
+}
+
+func sandboxPlanRenderFailed(err error, msg string) error {
+	return temporal.NewNonRetryableApplicationError(msg, stackerrors.PlanRenderFailedTemporalType, errors.Wrap(err, msg))
 }
