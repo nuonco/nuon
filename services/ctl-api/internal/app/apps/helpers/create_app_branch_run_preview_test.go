@@ -74,6 +74,7 @@ func setupAppBranchRunPreviewDB(t *testing.T) *gorm.DB {
 			event_type TEXT NOT NULL DEFAULT '',
 			no_config_changes INTEGER NOT NULL DEFAULT 0,
 			error_message TEXT NOT NULL DEFAULT '',
+			composite_error TEXT,
 			trigger_event_dispatch_id TEXT,
 			workflow_id TEXT,
 			pr_number INTEGER,
