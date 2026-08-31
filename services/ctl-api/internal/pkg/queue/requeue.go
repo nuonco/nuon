@@ -16,17 +16,17 @@ func (w *queue) requeueSignals(ctx workflow.Context) error {
 	}
 
 	// fetching jobs from the queue in the DB
-	l.Info("fetching previous signals from database and requeueing them")
+	l.Debug("fetching previous signals from database and requeueing them")
 	queueSignals, err := activities.AwaitGetQueueSignalsByQueueID(ctx, w.queueID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get queue signals")
 	}
 	for _, queueSignal := range queueSignals {
 		if w.inFlightSignals[queueSignal.ID] {
-			l.Info("skipping already in-flight signal", zap.String("queue-signal-id", queueSignal.ID))
+			l.Debug("skipping already in-flight signal", zap.String("queue-signal-id", queueSignal.ID))
 			continue
 		}
-		l.Info("requeuing signal", zap.String("queue-signal-id", queueSignal.ID), zap.Any("type", queueSignal.Type))
+		l.Debug("requeuing signal", zap.String("queue-signal-id", queueSignal.ID), zap.Any("type", queueSignal.Type))
 		w.inFlightSignals[queueSignal.ID] = true
 		if !w.ch.SendAsync(QueueRef{
 			WorkflowID: queueSignal.Workflow.ID,

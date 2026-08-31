@@ -38,7 +38,7 @@ func (q *queue) directExecuteHandler(ctx workflow.Context, req DirectExecuteRequ
 		return nil, err
 	}
 
-	l.Info("direct executing queue signal", zap.String("queue-signal-id", req.QueueSignalID))
+	l.Debug("direct executing queue signal", zap.String("queue-signal-id", req.QueueSignalID))
 
 	queueSignal, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, req.QueueSignalID)
 	if err != nil {

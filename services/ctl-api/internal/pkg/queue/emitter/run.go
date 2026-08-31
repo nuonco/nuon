@@ -20,7 +20,7 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 		return false, err
 	}
 
-	l.Info("registering emitter handlers")
+	l.Debug("registering emitter handlers")
 	if err := e.registerHandlers(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to register handlers")
 	}
@@ -66,7 +66,13 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 		return false, errors.Wrap(err, "unable to check emitter status")
 	}
 	if e.stopped {
-		l.Info("emitter not found, stopping")
+		l.Debug("emitter not found, stopping")
+		return true, nil
+	}
+	if emitter.SignalTemplate.Signal == nil {
+		l.Debug("emitter has no signal template, stopping",
+			zap.String("emitter-id", emitter.ID),
+			zap.String("queue-id", emitter.QueueID))
 		return true, nil
 	}
 
@@ -75,7 +81,7 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 		return false, errors.Wrap(err, "unable to check queue status")
 	}
 	if e.stopped {
-		l.Info("queue terminated, stopping emitter")
+		l.Debug("queue terminated, stopping emitter")
 		return true, nil
 	}
 
@@ -112,7 +118,7 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 	// Check if emitter signals are globally disabled
 	if e.cfg.DisableEmitterSignals {
 		e.emitSignalMetric(ctx, emitter, "disabled")
-		l.Info("emitter signals disabled globally, skipping emit",
+		l.Debug("emitter signals disabled globally, skipping emit",
 			zap.String("queue-id", emitter.QueueID))
 		return nil
 	}
@@ -129,7 +135,7 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 
 	if resp.Skipped {
 		e.emitSignalMetric(ctx, emitter, "skipped")
-		l.Info("signal emission skipped - emitter already has in-flight signal",
+		l.Debug("signal emission skipped - emitter already has in-flight signal",
 			zap.String("emitter-id", e.emitterID),
 			zap.String("queue-id", emitter.QueueID),
 		)
@@ -138,7 +144,7 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 
 	e.emitSignalMetric(ctx, emitter, "ok")
 
-	l.Info("signal emitted, updating relationship",
+	l.Debug("signal emitted, updating relationship",
 		zap.String("queue-signal-id", resp.QueueSignalID),
 		zap.String("workflow-id", resp.WorkflowID),
 	)
