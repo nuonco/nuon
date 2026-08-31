@@ -15,6 +15,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-playground/validator/v10"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 
 	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
 	"github.com/nuonco/nuon/pkg/aws/credentials"
@@ -84,6 +87,13 @@ func WithBucketName(s string) uploaderOptions {
 	}
 }
 
+// WithUploader reuses a caller-owned uploader and its underlying S3 client.
+func WithUploader(uploader s3UploaderClient) uploaderOptions {
+	return func(obj *s3Uploader) {
+		obj.uploader = uploader
+	}
+}
+
 type s3Uploader struct {
 	v *validator.Validate
 
@@ -94,6 +104,7 @@ type s3Uploader struct {
 	assumeRoleARN         string
 	assumeRoleSessionName string
 	creds                 *credentials.Config
+	uploader              s3UploaderClient
 }
 
 func (s *s3Uploader) loadAWSConfig(ctx context.Context) (aws.Config, error) {
@@ -127,13 +138,10 @@ func (s *s3Uploader) loadAWSConfig(ctx context.Context) (aws.Config, error) {
 }
 
 func (s *s3Uploader) UploadFile(ctx context.Context, srcFp, outputName string) (string, error) {
-	cfg, err := s.loadAWSConfig(ctx)
+	uploader, err := s.getUploader(ctx)
 	if err != nil {
-		return "", fmt.Errorf("unable to load aws config: %w", err)
+		return "", err
 	}
-
-	client := s3.NewFromConfig(cfg)
-	uploader := manager.NewUploader(client)
 
 	f, err := os.Open(srcFp)
 	if err != nil {
@@ -155,26 +163,20 @@ func (s *s3Uploader) UploadFile(ctx context.Context, srcFp, outputName string) (
 }
 
 func (s *s3Uploader) UploadBlob(ctx context.Context, byts []byte, outputName string) error {
-	cfg, err := s.loadAWSConfig(ctx)
+	uploader, err := s.getUploader(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to load aws config: %w", err)
+		return err
 	}
-
-	client := s3.NewFromConfig(cfg)
-	uploader := manager.NewUploader(client)
 	f := bytes.NewReader(byts)
 
 	return s.upload(ctx, uploader, f, outputName)
 }
 
 func (s *s3Uploader) UploadStream(ctx context.Context, reader io.Reader, outputName string) (string, error) {
-	cfg, err := s.loadAWSConfig(ctx)
+	uploader, err := s.getUploader(ctx)
 	if err != nil {
-		return "", fmt.Errorf("unable to load aws config: %w", err)
+		return "", err
 	}
-
-	client := s3.NewFromConfig(cfg)
-	uploader := manager.NewUploader(client)
 
 	// Calculate SHA256 checksum as we read the stream
 	hash := sha256.New()
@@ -193,14 +195,37 @@ type s3UploaderClient interface {
 	Upload(context.Context, *s3.PutObjectInput, ...func(*manager.Uploader)) (*manager.UploadOutput, error)
 }
 
+func (s *s3Uploader) getUploader(ctx context.Context) (s3UploaderClient, error) {
+	if s.uploader != nil {
+		return s.uploader, nil
+	}
+
+	cfg, err := s.loadAWSConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load aws config: %w", err)
+	}
+
+	return manager.NewUploader(s3.NewFromConfig(cfg)), nil
+}
+
 func (s *s3Uploader) upload(ctx context.Context, client s3UploaderClient, f io.Reader, name string) error {
 	key := filepath.Join(s.prefix, name)
 	bucket := s.Bucket
+	ctx, span := otel.Tracer("github.com/nuonco/nuon/pkg/aws/s3uploader").Start(
+		ctx,
+		"s3.upload",
+		trace.WithSpanKind(trace.SpanKindClient),
+	)
 	_, err := client.Upload(ctx, &s3.PutObjectInput{
 		Bucket:            &bucket,
 		Key:               &key,
 		Body:              f,
 		ChecksumAlgorithm: types.ChecksumAlgorithmCrc32,
 	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	span.End()
 	return err
 }
