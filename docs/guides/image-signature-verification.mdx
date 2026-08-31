@@ -1,0 +1,101 @@
+---
+title: 'Verify Container Image Signatures'
+description: 'Require container images to be signed by trusted Sigstore identities or Cosign keys before Nuon copies them.'
+icon: "signature"
+keywords: ["container image", "signature verification", "sigstore", "cosign", "keyless", "public key", "software supply chain"]
+---
+
+Nuon can require a container image to have a valid signature before copying it into Nuon's registry. Verification runs when the container image component builds, after Nuon resolves the configured tag to an immutable digest and before it copies that digest.
+
+Add a `verification` block to any `container_image` component. If the image does not satisfy a configured authority, the component build fails and the image is not copied.
+
+## Verify a keyless signature
+
+Use `keyless` for images signed with a certificate issued through Sigstore. Pin both the OIDC issuer and the certificate subject so a valid signature from an unrelated identity is not accepted.
+
+```toml components/api.toml
+name = "api"
+type = "container_image"
+
+[public]
+image_url = "ghcr.io/acme/api"
+tag       = "v1.4.0"
+
+[verification]
+require_signature = true
+
+[[verification.authorities]]
+type    = "keyless"
+issuer  = "https://token.actions.githubusercontent.com"
+subject = "https://github.com/acme/api/.github/workflows/release.yaml@refs/heads/main"
+```
+
+For identities that intentionally vary, use `subject_regexp` instead of `subject`. Exactly one of the two fields is required.
+
+```toml
+[[verification.authorities]]
+type           = "keyless"
+issuer         = "https://token.actions.githubusercontent.com"
+subject_regexp = '^https://github\.com/acme/api/\.github/workflows/release\.yaml@refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$'
+```
+
+Prefer an exact subject when one identity signs all releases. Keep regular expressions narrow enough that they cannot match pull request workflows, forks, or other repositories.
+
+## Verify with a Cosign public key
+
+Use `public_key` for images signed with a managed key pair. Commit the public key with the app configuration and reference it by relative path. Nuon reads the public key into the configuration during sync; the private key is never provided to Nuon.
+
+```toml components/api.toml
+name = "api"
+type = "container_image"
+
+[public]
+image_url = "ghcr.io/acme/api"
+tag       = "v1.4.0"
+
+[verification]
+require_signature = true
+
+[[verification.authorities]]
+type       = "public_key"
+public_key = "./cosign.pub"
+```
+
+The path is relative to the app's `components` directory. You can also provide the PEM-encoded public key directly.
+
+## Trust more than one authority
+
+Multiple authorities use **OR** semantics. A build succeeds when any one authority verifies the resolved image digest. This supports key rotation or a transition between key-based and keyless signing without an unsigned window.
+
+```toml
+[verification]
+require_signature = true
+
+[[verification.authorities]]
+type       = "public_key"
+public_key = "./current-cosign.pub"
+
+[[verification.authorities]]
+type       = "public_key"
+public_key = "./next-cosign.pub"
+```
+
+Remove the old authority after all published images are signed by the replacement authority.
+
+## What Nuon copies
+
+After verification succeeds, Nuon copies the resolved image and its attached OCI metadata. This includes recursively linked OCI referrers such as signatures, SBOMs, provenance, and other attestations. Nuon also copies legacy Cosign digest tags ending in `.sig`, `.att`, and `.sbom`.
+
+This preserves the metadata so the copied image can be inspected and verified in its destination registry. Registry credentials configured on the component are used for both image discovery and signature verification.
+
+## Signature verification and OPA policies
+
+Native signature verification and [external image policies](/guides/external-image-policies) solve different problems:
+
+| Requirement | Use |
+|---|---|
+| Prove that a trusted identity or key signed the exact image digest | Native `verification` block |
+| Require an SBOM, provenance predicate, approved registry, or allowed tag | OPA external image policy |
+| Inspect fields inside an attestation | OPA external image policy |
+
+OPA policies evaluate image metadata. They do not perform Cosign's certificate-chain, transparency-log, payload, or cryptographic signature checks. Use the native `verification` block whenever trust in the signer is required, then add OPA only for metadata or attestation rules that provide additional value.
