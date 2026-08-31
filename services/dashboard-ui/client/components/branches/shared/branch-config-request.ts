@@ -50,7 +50,8 @@ export const carryForwardBranchConfigRequest = (
   install_groups: installGroupsForApi(currentConfig) ?? [],
   post_deploy_runbook_ids: currentConfig?.post_deploy_runbook_ids ?? [],
   preview_config: currentConfig?.preview_config,
-  disable_branch_triggers: currentConfig?.disable_branch_triggers,
+  ignore_changes_regex: currentConfig?.ignore_changes_regex,
+  send_statuses_on_ignore: currentConfig?.send_statuses_on_ignore,
   ...vcsConfigForApi(currentConfig),
   ...overrides,
 })

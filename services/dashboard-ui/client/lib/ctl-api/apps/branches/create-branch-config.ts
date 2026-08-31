@@ -24,7 +24,8 @@ export type TCreateBranchConfigRequest = {
   }>
   // Omit to carry the current setting forward; send [] to clear it.
   post_deploy_runbook_ids?: string[]
-  disable_branch_triggers?: boolean
+  ignore_changes_regex?: string
+  send_statuses_on_ignore?: boolean
   preview_config?: {
     mode?: 'plan-only' | 'apply' | 'build-only'
     install_id?: string

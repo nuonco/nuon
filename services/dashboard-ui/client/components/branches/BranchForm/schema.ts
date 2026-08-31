@@ -8,7 +8,7 @@ export const branchFormSchema = z.object({
   useVcs: z.boolean(),
   directory: z.string(),
   pathFilter: z.string(),
-  disableBranchTriggers: z.boolean(),
+  ignoreAllChanges: z.boolean(),
 })
 
 export type BranchFormValues = z.infer<typeof branchFormSchema>
@@ -21,5 +21,5 @@ export interface BranchFormOutput {
   selectedBranch: string
   directory: string
   pathFilter: string
-  disableBranchTriggers: boolean
+  ignoreAllChanges: boolean
 }

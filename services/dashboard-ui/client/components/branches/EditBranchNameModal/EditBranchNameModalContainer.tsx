@@ -84,6 +84,9 @@ export const EditBranchNameModalContainer = ({
     return 'An error occurred'
   }
 
+  const currentIgnoreRegex = currentConfig?.ignore_changes_regex ?? ''
+  const defaultIgnoreAllChanges = currentIgnoreRegex === '.*'
+
   const { mutate: handleSave, isPending: isSubmitting, error: submitError } = useMutation({
     mutationFn: async (data: BranchFormOutput) => {
       if (data.name !== branch.name) {
@@ -99,10 +102,7 @@ export const EditBranchNameModalContainer = ({
         }
       }
 
-      const defaultDisableBranchTriggers =
-        currentConfig?.disable_branch_triggers ?? false
-      const toggleChanged =
-        data.disableBranchTriggers !== defaultDisableBranchTriggers
+      const ignoreAllChangesToggled = data.ignoreAllChanges !== defaultIgnoreAllChanges
 
       const request: TCreateBranchConfigRequest = {}
 
@@ -145,8 +145,12 @@ export const EditBranchNameModalContainer = ({
       const hasGroups = (request.install_groups?.length ?? 0) > 0
 
       if (hasVCS || hasGroups) {
-        if (toggleChanged) {
-          request.disable_branch_triggers = data.disableBranchTriggers
+        if (ignoreAllChangesToggled) {
+          if (data.ignoreAllChanges) {
+            request.ignore_changes_regex = '.*'
+          } else if (currentIgnoreRegex === '.*') {
+            request.ignore_changes_regex = ''
+          }
         }
         try {
           await createBranchConfig({
@@ -158,20 +162,30 @@ export const EditBranchNameModalContainer = ({
         } catch (err) {
           throw new Error(formatError(err as TAPIError))
         }
-      } else if (toggleChanged) {
+      } else if (ignoreAllChangesToggled) {
         if (!currentConfig?.id) {
           throw new Error('Sync the app config before changing trigger settings.')
         }
-        try {
-          await updateBranchConfig({
-            appId: app.id,
-            branchId: branch.id || '',
-            configId: currentConfig.id,
-            orgId: org.id,
-            request: { disable_branch_triggers: data.disableBranchTriggers },
-          })
-        } catch (err) {
-          throw new Error(formatError(err as TAPIError))
+
+        let regexUpdate: string | undefined
+        if (data.ignoreAllChanges) {
+          regexUpdate = '.*'
+        } else if (currentIgnoreRegex === '.*') {
+          regexUpdate = ''
+        }
+
+        if (regexUpdate !== undefined) {
+          try {
+            await updateBranchConfig({
+              appId: app.id,
+              branchId: branch.id || '',
+              configId: currentConfig.id,
+              orgId: org.id,
+              request: { ignore_changes_regex: regexUpdate },
+            })
+          } catch (err) {
+            throw new Error(formatError(err as TAPIError))
+          }
         }
       }
     },
@@ -222,9 +236,7 @@ export const EditBranchNameModalContainer = ({
       defaultUseVcs={defaultUseVcs}
       defaultDirectory={defaultDirectory}
       defaultPathFilter={defaultPathFilter}
-      defaultDisableBranchTriggers={
-        currentConfig?.disable_branch_triggers ?? false
-      }
+      defaultIgnoreAllChanges={defaultIgnoreAllChanges}
       isSubmitting={isSubmitting}
       submitError={submitError}
       onSubmit={(output) => handleSave(output)}
