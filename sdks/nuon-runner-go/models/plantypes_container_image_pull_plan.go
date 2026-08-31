@@ -45,6 +45,9 @@ type PlantypesContainerImagePullPlan struct {
 	//
 	// Empty for components that don't use update_policy.
 	UpdatePolicy string `json:"update_policy,omitempty"`
+
+	// verification
+	Verification *SignatureVerification `json:"verification,omitempty"`
 }
 
 // Validate validates this plantypes container image pull plan
@@ -52,6 +55,10 @@ func (m *PlantypesContainerImagePullPlan) Validate(formats strfmt.Registry) erro
 	var res []error
 
 	if err := m.validateRepoConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateVerification(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -84,11 +91,38 @@ func (m *PlantypesContainerImagePullPlan) validateRepoConfig(formats strfmt.Regi
 	return nil
 }
 
+func (m *PlantypesContainerImagePullPlan) validateVerification(formats strfmt.Registry) error {
+	if swag.IsZero(m.Verification) { // not required
+		return nil
+	}
+
+	if m.Verification != nil {
+		if err := m.Verification.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("verification")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("verification")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this plantypes container image pull plan based on the context it is used
 func (m *PlantypesContainerImagePullPlan) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateRepoConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVerification(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -114,6 +148,31 @@ func (m *PlantypesContainerImagePullPlan) contextValidateRepoConfig(ctx context.
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("repo_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesContainerImagePullPlan) contextValidateVerification(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Verification != nil {
+
+		if swag.IsZero(m.Verification) { // not required
+			return nil
+		}
+
+		if err := m.Verification.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("verification")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("verification")
 			}
 
 			return err

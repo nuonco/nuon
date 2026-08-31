@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/oci/imageref"
 	"github.com/nuonco/nuon/pkg/oci/updatepolicy"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	signatureverify "github.com/nuonco/nuon/pkg/runner/oci/signature"
 	"github.com/nuonco/nuon/pkg/runner/registry"
 )
 
@@ -66,6 +67,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	resolvedDigest := string(desc.Digest)
+	if err := signatureverify.Verify(ctx, srcCfg, resolvedDigest, h.state.cfg.Verification); err != nil {
+		h.writeErrorResult(ctx, "verify image signature", err)
+		return fmt.Errorf("unable to verify image signature: %w", err)
+	}
 	noOp := h.state.cfg.PreviousSourceDigest != "" && h.state.cfg.PreviousSourceDigest == resolvedDigest
 
 	// Each build gets its own result tag (the build id), so the copy must run
@@ -81,7 +86,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 	if _, err := h.ociCopy.Copy(ctx,
 		srcCfg,
-		srcTag,
+		resolvedDigest,
 		dstCfg,
 		h.state.resultTag,
 	); err != nil {

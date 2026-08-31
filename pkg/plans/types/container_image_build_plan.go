@@ -1,6 +1,7 @@
 package plantypes
 
 import (
+	"github.com/nuonco/nuon/pkg/oci/signature"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
@@ -15,7 +16,8 @@ type ContainerImagePullPlan struct {
 	// tag at build time. Tag is then ignored as the source ref.
 	//
 	// Empty for components that don't use update_policy.
-	UpdatePolicy string `json:"update_policy,omitempty"`
+	UpdatePolicy string                  `json:"update_policy,omitempty"`
+	Verification *signature.Verification `json:"verification,omitempty"`
 
 	RepoCfg *configs.OCIRegistryRepository `json:"repo_config"`
 
