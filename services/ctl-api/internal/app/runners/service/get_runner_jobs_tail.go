@@ -224,7 +224,7 @@ func (s *service) tailJobProbe(parent context.Context, runnerID string, grp app.
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
-		return nil, errors.Wrap(res.Error, "unable to query runner job tail")
+		return nil, errors.Wrap(tailProbeQueryError(ctx, res.Error), "unable to query runner job tail")
 	}
 	return &job, nil
 }
