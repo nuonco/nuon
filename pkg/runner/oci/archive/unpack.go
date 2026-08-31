@@ -2,7 +2,9 @@ package ociarchive
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -120,6 +122,44 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 		return fmt.Errorf("unable to fetch contents: %w", err)
 	}
 	l.Info("finished fetching artifact contents", zap.String("duration", time.Since(fetchStart).String()))
+
+	return a.expandTarball(ctx, l, manifest)
+}
+
+func (a *archive) expandTarball(ctx context.Context, l *zap.Logger, manifest ocispec.Descriptor) error {
+	byts, err := content.FetchAll(ctx, a.store, manifest)
+	if err != nil {
+		return fmt.Errorf("unable to read manifest: %w", err)
+	}
+
+	var m ocispec.Manifest
+	if err := json.Unmarshal(byts, &m); err != nil {
+		return fmt.Errorf("unable to parse manifest: %w", err)
+	}
+
+	for _, layer := range m.Layers {
+		if layer.MediaType != tarballMediaType {
+			continue
+		}
+
+		name := layer.Annotations[ocispec.AnnotationTitle]
+		if name == "" {
+			name = tarballName
+		}
+		path, err := safeJoin(a.basePath, name)
+		if err != nil {
+			return err
+		}
+
+		l.Info("expanding tarball layer", zap.String("path", path))
+		if err := extractTarGz(path, a.basePath); err != nil {
+			return fmt.Errorf("unable to expand tarball layer: %w", err)
+		}
+		if err := os.Remove(path); err != nil {
+			return fmt.Errorf("unable to remove tarball layer: %w", err)
+		}
+		return nil
+	}
 
 	return nil
 }
