@@ -5,12 +5,12 @@ import {
   KeyValueListSkeleton,
 } from '@/components/common/KeyValueList'
 import { Text } from '@/components/common/Text'
-import type { TAppConfig, TInstallStackVersionWithCompositeError } from '@/types'
+import type { TAppConfig, TInstallStackVersion } from '@/types'
 
 export interface IGenerateStackDetails {
   appConfig?: TAppConfig
   isLoading: boolean
-  stackVersion?: TInstallStackVersionWithCompositeError
+  stackVersion?: TInstallStackVersion
 }
 
 export const GenerateStackDetails = ({

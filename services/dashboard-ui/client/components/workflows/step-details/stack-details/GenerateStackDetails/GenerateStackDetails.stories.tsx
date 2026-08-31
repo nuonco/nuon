@@ -3,7 +3,7 @@ export default {
 }
 
 import { GenerateStackDetails } from './GenerateStackDetails'
-import type { TAppConfig, TInstallStackVersionWithCompositeError } from '@/types'
+import type { TAppConfig, TInstallStackVersion } from '@/types'
 
 const mockConfig = {
   stack: {
@@ -15,7 +15,7 @@ const mockConfig = {
   },
 } as TAppConfig
 
-const mockVersionWithError: TInstallStackVersionWithCompositeError = {
+const mockVersionWithError: TInstallStackVersion = {
   id: 'isv-abc123',
   composite_error: {
     type: 'stack.template_render_failed',

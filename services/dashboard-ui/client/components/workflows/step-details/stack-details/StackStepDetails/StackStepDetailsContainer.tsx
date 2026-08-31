@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallStack } from '@/lib'
-import type { TInstallStack, TInstallStackVersionWithCompositeError } from '@/types'
+import type { TInstallStack, TInstallStackVersion } from '@/types'
 import type { IStepDetails } from '../../types'
 import { StackStepDetails } from './StackStepDetails'
 
@@ -32,13 +32,12 @@ export const StackStepDetailsContainer = ({
 
       const stepStatus = step?.status?.status
       const isStepTerminal = GENERATE_STACK_TERMINAL_STATUSES.has(
-        stepStatus ?? '',
+        stepStatus ?? ''
       )
 
       const versions = query.state.data?.versions ?? []
-      const version = (
-        versions.find((v) => v?.id === step?.step_target_id) ?? versions.at(0)
-      ) as TInstallStackVersionWithCompositeError | undefined
+      const version = (versions.find((v) => v?.id === step?.step_target_id) ??
+        versions.at(0)) as TInstallStackVersion | undefined
       const hasVersionData = !!(
         version?.composite_error ||
         version?.template_url ||

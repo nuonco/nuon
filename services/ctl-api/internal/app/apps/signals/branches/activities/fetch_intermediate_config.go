@@ -2,14 +2,17 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/go-playground/validator/v10"
+	"go.temporal.io/sdk/temporal"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse"
 	"github.com/nuonco/nuon/pkg/config/validate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/branchrunerrors"
 )
 
 // @temporal-gen-v2 activity
@@ -31,6 +34,14 @@ func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir stri
 	}
 
 	if err := validate.Validate(ctx, v, cfg); err != nil {
+		var configErr config.ErrConfig
+		if errors.As(err, &configErr) {
+			return nil, temporal.NewNonRetryableApplicationError(
+				configErr.Description,
+				branchrunerrors.ConfigValidationFailedTemporalType,
+				err,
+			)
+		}
 		return nil, err
 	}
 

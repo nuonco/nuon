@@ -1,9 +1,9 @@
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
-import type { TInstallStackVersionWithCompositeError } from '@/types'
+import type { TInstallStackVersion } from '@/types'
 import { GenerateStackDetails } from './GenerateStackDetails'
 
 interface IGenerateStackDetailsContainer {
-  stackVersion?: TInstallStackVersionWithCompositeError
+  stackVersion?: TInstallStackVersion
 }
 
 export const GenerateStackDetailsContainer = ({

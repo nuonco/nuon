@@ -959,9 +959,6 @@ export type TAppSecretsConfig = components['schemas']['app.AppSecretsConfig']
 export type TInstallStack = components['schemas']['app.InstallStack']
 export type TInstallStackVersion =
   components['schemas']['app.InstallStackVersion']
-export type TInstallStackVersionWithCompositeError = TInstallStackVersion & {
-  composite_error?: TCompositeError
-}
 export type TInstallStackVersionRun =
   components['schemas']['app.InstallStackVersionRun']
 export type TInstallStackOutputs =

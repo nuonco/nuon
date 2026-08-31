@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -69,6 +70,8 @@ type AppBranchRun struct {
 	CompletedAt *time.Time `json:"completed_at,omitempty" temporaljson:"completed_at,omitzero,omitempty"`
 
 	ErrorMessage string `json:"error_message,omitempty" temporaljson:"error_message,omitzero,omitempty"`
+
+	CompositeError *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb" temporaljson:"composite_error,omitzero,omitempty"`
 
 	AppConfigID string `json:"app_config_id,omitempty" temporaljson:"app_config_id,omitzero,omitempty"`
 
