@@ -57,7 +57,13 @@ const mockInstall = {
   updated_at: "2024-01-01T00:00:00Z",
 } as any
 
-export const Provider: GlobalProvider = ({ children }) => {
+const fullBleedStyles = `
+  .ladle-main { padding: 0 !important; height: 100vh !important; overflow: hidden !important; }
+`
+
+export const Provider: GlobalProvider = ({ children, storyMeta }) => {
+  const isFullBleed = Boolean((storyMeta as { fullBleed?: boolean })?.fullBleed)
+
   return (
     <MemoryRouter>
       <QueryClientProvider client={queryClient}>
@@ -71,7 +77,14 @@ export const Provider: GlobalProvider = ({ children }) => {
                         follows its own toggle — paint the canvas with the app's
                         background/foreground vars so stories stay readable when
                         the OS is in dark mode. */}
-                    <div className="min-h-screen bg-background text-foreground">
+                    {isFullBleed && <style>{fullBleedStyles}</style>}
+                    <div
+                      className={
+                        isFullBleed
+                          ? "h-full bg-background text-foreground"
+                          : "min-h-screen bg-background text-foreground"
+                      }
+                    >
                       {children}
                     </div>
                   </SurfacesProvider>
