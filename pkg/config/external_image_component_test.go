@@ -20,12 +20,12 @@ tag = "latest"
 require_signature = true
 
 [[verification.authorities]]
-type = "sigstore_keyless"
+type = "keyless"
 issuer = "https://issuer.example.com"
 subject_regexp = "^https://example.com/.+$"
 
 [[verification.authorities]]
-type = "cosign_key"
+type = "public_key"
 public_key = "./cosign.pub"
 `), &cfg))
 
@@ -33,12 +33,12 @@ public_key = "./cosign.pub"
 	require.True(t, cfg.Verification.RequireSignature)
 	require.Equal(t, []signature.Authority{
 		{
-			Type:          signature.AuthorityTypeSigstoreKeyless,
+			Type:          signature.AuthorityTypeKeyless,
 			Issuer:        "https://issuer.example.com",
 			SubjectRegexp: "^https://example.com/.+$",
 		},
 		{
-			Type:      signature.AuthorityTypeCosignKey,
+			Type:      signature.AuthorityTypePublicKey,
 			PublicKey: "./cosign.pub",
 		},
 	}, cfg.Verification.Authorities)
