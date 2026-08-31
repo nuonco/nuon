@@ -116,6 +116,12 @@ in a customer cloud account, and it is shared across all installs of the app
 rather than configured per install.
 </Note>
 
+## Verifying signed images
+
+Container image components can require the resolved image digest to be signed by a trusted Sigstore keyless identity or Cosign public key. Verification happens before Nuon copies the image, and a failed verification fails the component build.
+
+See [Verify Container Image Signatures](/guides/image-signature-verification) for keyless and key-based configuration, authority matching, and guidance on combining verification with OPA policies.
+
 ## Deployments
 
 Container image components _cannot_ be deployed directly in a customer install. When an image is released, it will be _synced_
@@ -166,7 +172,7 @@ tag       = "{{.nuon.components.app_image.image.tag}}"
 ## Image Syncing
 
 When a Container image component is released, Nuon will automatically sync the image into the end customer account. This
-image is stored in a local registry that is provisioned in the customer account.
+image is stored in a local registry that is provisioned in the customer account. OCI referrers and legacy Cosign digest tags are copied with the image so signatures, SBOMs, provenance, and other attestations remain available in the destination registry.
 
 Nuon image syncing allows you to sync images into accounts, without worrying about cross account permissions, registry
 authentication or publishing public images. Any `Dockerfile` in a repo can be built, and synced.
