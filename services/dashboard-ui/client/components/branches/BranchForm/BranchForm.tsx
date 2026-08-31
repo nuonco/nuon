@@ -234,7 +234,7 @@ export const BranchFormModal = ({
             </form.Field>
             <Text variant="subtext" theme="neutral" className="px-2">
               Git push and pull request events still create a run, but the run
-              becomes not-attempted immediately.
+              is marked not attempted immediately.
             </Text>
           </div>
         ) : null}

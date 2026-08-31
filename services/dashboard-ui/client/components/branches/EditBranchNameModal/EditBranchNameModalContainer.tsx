@@ -79,7 +79,8 @@ export const EditBranchNameModalContainer = ({
 
   const formatError = (err: TAPIError | Error): string => {
     if ('error' in err && typeof err.error === 'string') return err.error
-    if ('user_error' in err && typeof err.user_error === 'string') return err.user_error
+    if ('user_error' in err && typeof err.user_error === 'string')
+      return err.user_error
     if ('message' in err && typeof err.message === 'string') return err.message
     return 'An error occurred'
   }
@@ -87,7 +88,11 @@ export const EditBranchNameModalContainer = ({
   const currentIgnoreRegex = currentConfig?.ignore_changes_regex ?? ''
   const defaultIgnoreAllChanges = currentIgnoreRegex === '.*'
 
-  const { mutate: handleSave, isPending: isSubmitting, error: submitError } = useMutation({
+  const {
+    mutate: handleSave,
+    isPending: isSubmitting,
+    error: submitError,
+  } = useMutation({
     mutationFn: async (data: BranchFormOutput) => {
       if (data.name !== branch.name) {
         try {
@@ -102,7 +107,8 @@ export const EditBranchNameModalContainer = ({
         }
       }
 
-      const ignoreAllChangesToggled = data.ignoreAllChanges !== defaultIgnoreAllChanges
+      const ignoreAllChangesToggled =
+        data.ignoreAllChanges !== defaultIgnoreAllChanges
 
       const request: TCreateBranchConfigRequest = {}
 
@@ -125,7 +131,10 @@ export const EditBranchNameModalContainer = ({
         }
       }
 
-      if (currentConfig?.install_groups && currentConfig.install_groups.length > 0) {
+      if (
+        currentConfig?.install_groups &&
+        currentConfig.install_groups.length > 0
+      ) {
         request.install_groups = currentConfig.install_groups.map((g, idx) => {
           const hasSelector =
             !!g.label_selector?.match_labels &&
@@ -141,7 +150,8 @@ export const EditBranchNameModalContainer = ({
         })
       }
 
-      const hasVCS = request.connected_github_vcs_config || request.public_git_vcs_config
+      const hasVCS =
+        request.connected_github_vcs_config || request.public_git_vcs_config
       const hasGroups = (request.install_groups?.length ?? 0) > 0
 
       if (hasVCS || hasGroups) {
@@ -164,7 +174,9 @@ export const EditBranchNameModalContainer = ({
         }
       } else if (ignoreAllChangesToggled) {
         if (!currentConfig?.id) {
-          throw new Error('Sync the app config before changing trigger settings.')
+          throw new Error(
+            'Sync the app config before changing trigger settings.'
+          )
         }
 
         let regexUpdate: string | undefined
@@ -190,9 +202,15 @@ export const EditBranchNameModalContainer = ({
       }
     },
     onSuccess: (_result, data) => {
-      queryClient.invalidateQueries({ queryKey: ['app-branch', org.id, app.id, branch.id] })
-      queryClient.invalidateQueries({ queryKey: ['app-branches', org.id, app.id] })
-      queryClient.invalidateQueries({ queryKey: ['branch-configs', org.id, app.id, branch.id] })
+      queryClient.invalidateQueries({
+        queryKey: ['app-branch', org.id, app.id, branch.id],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['app-branches', org.id, app.id],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['branch-configs', org.id, app.id, branch.id],
+      })
       addToast(
         <Toast heading="Branch updated" theme="success">
           <Text>Updated branch {data.name}.</Text>
@@ -251,14 +269,28 @@ export const EditBranchButton = ({
   currentConfig,
   onSuccess,
   ...props
-}: { branch: TAppBranch; currentConfig?: TAppBranchConfig; onSuccess?: () => void } & Omit<IButtonAsButton, 'children'>) => {
+}: {
+  branch: TAppBranch
+  currentConfig?: TAppBranchConfig
+  onSuccess?: () => void
+} & Omit<IButtonAsButton, 'children'>) => {
   const { addModal } = useSurfaces()
-  const modal = <EditBranchNameModalContainer branch={branch} currentConfig={currentConfig} onSuccess={onSuccess} />
+  const modal = (
+    <EditBranchNameModalContainer
+      branch={branch}
+      currentConfig={currentConfig}
+      onSuccess={onSuccess}
+    />
+  )
   return (
     <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
-      {props?.isMenuButton ? null : <Icon variant="PencilSimpleLineIcon" size={16} />}
+      {props?.isMenuButton ? null : (
+        <Icon variant="PencilSimpleLineIcon" size={16} />
+      )}
       Edit branch
-      {props?.isMenuButton ? <Icon variant="PencilSimpleLineIcon" size={16} /> : null}
+      {props?.isMenuButton ? (
+        <Icon variant="PencilSimpleLineIcon" size={16} />
+      ) : null}
     </Button>
   )
 }

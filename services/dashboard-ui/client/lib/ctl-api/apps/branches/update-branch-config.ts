@@ -2,7 +2,6 @@ import { api } from '@/lib/api'
 import type { TAppBranchConfig } from '@/types'
 
 export type TUpdateBranchConfigRequest = {
-  // Send '' to clear; send '.*' to ignore all GitHub events.
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean
 }

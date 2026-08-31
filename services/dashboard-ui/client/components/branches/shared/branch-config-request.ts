@@ -1,7 +1,9 @@
 import type { TCreateBranchConfigRequest } from '@/lib/ctl-api/apps/branches/create-branch-config'
 import type { TAppBranchConfig } from '@/types'
 
-export const installGroupsForApi = (config?: TAppBranchConfig): TCreateBranchConfigRequest['install_groups'] =>
+export const installGroupsForApi = (
+  config?: TAppBranchConfig
+): TCreateBranchConfigRequest['install_groups'] =>
   config?.install_groups?.map((g, idx) => {
     const hasSelector =
       !!g.label_selector?.match_labels &&
@@ -18,11 +20,15 @@ export const installGroupsForApi = (config?: TAppBranchConfig): TCreateBranchCon
 
 export const vcsConfigForApi = (
   config?: TAppBranchConfig
-): Pick<TCreateBranchConfigRequest, 'connected_github_vcs_config' | 'public_git_vcs_config'> => {
+): Pick<
+  TCreateBranchConfigRequest,
+  'connected_github_vcs_config' | 'public_git_vcs_config'
+> => {
   if (config?.connected_github_vcs_config) {
     return {
       connected_github_vcs_config: {
-        vcs_connection_id: config.connected_github_vcs_config.vcs_connection_id || '',
+        vcs_connection_id:
+          config.connected_github_vcs_config.vcs_connection_id || '',
         repo: config.connected_github_vcs_config.repo || '',
         branch: config.connected_github_vcs_config.branch || '',
         directory: config.connected_github_vcs_config.directory,
