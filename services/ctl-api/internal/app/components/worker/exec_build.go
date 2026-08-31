@@ -18,7 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
-func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, currentApp *app.App, sandboxMode bool) error {
+func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, currentApp *app.App, sandboxMode bool) (retErr error) {
 	comp, err := activities.AwaitGetComponent(ctx, activities.GetComponentRequest{
 		ComponentID: compID,
 	})
@@ -29,6 +29,7 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get build log stream")
 		return err
 	}
 
@@ -49,10 +50,18 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")
 		return fmt.Errorf("unable to create job: %w", err)
 	}
+	defer func() {
+		if retErr == nil {
+			return
+		}
+		failureCtx, cancel := workflow.NewDisconnectedContext(ctx)
+		defer cancel()
+		w.failQueuedRunnerJob(failureCtx, runnerJob.ID, truncateErrorMessage("build failed before job execution", retErr))
+	}()
 	if runnerJob.RunnerID == "" {
 		if runnerJob.Executor != app.RunnerJobExecutorControlPlane {
 			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "no runners available in runner group")
-			w.updateJobStatusForPolicyFailure(ctx, runnerJob.ID, "no runners available in runner group")
+			w.failRunnerJob(ctx, runnerJob.ID, "no runners available in runner group")
 			return fmt.Errorf("no runners available in runner group for org %s", comp.Org.ID)
 		}
 	}
@@ -78,19 +87,18 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 
 	if runPlan.ContainerImagePullPlan != nil {
 		if err := sharedactivities.EnsureGARAuth(ctx, runPlan.ContainerImagePullPlan.RepoCfg); err != nil {
+			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get GAR access token")
 			return errors.Wrap(err, "unable to get GAR access token")
 		}
 		if err := sharedactivities.EnsureACRAuth(ctx, runPlan.ContainerImagePullPlan.RepoCfg); err != nil {
+			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get ACR access token")
 			return errors.Wrap(err, "unable to get ACR access token")
 		}
 	}
 
 	planJSON, err := json.Marshal(runPlan)
 	if err != nil {
-		return errors.Wrap(err, "unable to create json")
-	}
-	if err != nil {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get convert build plan to JSON")
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to convert build plan to JSON")
 		return fmt.Errorf("unable to convert plan to json: %w", err)
 	}
 

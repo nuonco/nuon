@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/oci/signature"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -421,6 +422,23 @@ func TestExternalImageRejectsMultipleSources(t *testing.T) {
 	})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "exactly one")
+}
+
+func TestExternalImageKeepsSignatureVerification(t *testing.T) {
+	verification := &signature.Verification{
+		RequireSignature: true,
+		Authorities: []signature.Authority{{
+			Type:    signature.AuthorityTypeSigstoreKeyless,
+			Issuer:  "https://issuer.example.com",
+			Subject: "https://example.com/workflow",
+		}},
+	}
+	cfg, err := ExternalImageComponentConfig(&config.ExternalImageComponentConfig{
+		PublicImageConfig: &config.PublicImageConfig{ImageURL: "ghcr.io/acme/image", Tag: "v1"},
+		Verification:      verification,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, verification, cfg.Verification)
 }
 
 func TestActionWorkflowConfigDefaultsEnableKubeConfig(t *testing.T) {

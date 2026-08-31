@@ -36,3 +36,20 @@ func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status
 	}
 
 }
+
+func (w *Workflows) failRunnerJob(ctx workflow.Context, jobID, description string) {
+	_ = activities.AwaitUpdateJobStatus(ctx, &activities.UpdateJobStatusRequest{
+		JobID:             jobID,
+		Status:            app.RunnerJobStatusFailed,
+		StatusDescription: description,
+	})
+}
+
+func (w *Workflows) failQueuedRunnerJob(ctx workflow.Context, jobID, description string) {
+	_ = activities.AwaitUpdateJobStatus(ctx, &activities.UpdateJobStatusRequest{
+		JobID:             jobID,
+		Status:            app.RunnerJobStatusFailed,
+		StatusDescription: description,
+		ExpectedStatus:    app.RunnerJobStatusQueued,
+	})
+}

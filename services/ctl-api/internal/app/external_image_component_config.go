@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/nuonco/nuon/pkg/oci/signature"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -37,10 +38,11 @@ type ExternalImageComponentConfig struct {
 	// the resolved tag is recorded on ComponentBuild.ResolvedTag.
 	//
 	// When empty, the runner uses Tag literally.
-	UpdatePolicy        string               `json:"update_policy,omitzero" gorm:"default null" temporaljson:"update_policy,omitzero,omitempty"`
-	AWSECRImageConfig   *AWSECRImageConfig   `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"aws_ecr_image_config,omitzero,omitempty" temporaljson:"awsecr_image_config,omitzero,omitempty"`
-	GCPGARImageConfig   *GCPGARImageConfig   `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"gcp_gar_image_config,omitzero,omitempty" temporaljson:"gcp_gar_image_config,omitzero,omitempty"`
-	AzureACRImageConfig *AzureACRImageConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"azure_acr_image_config,omitzero,omitempty" temporaljson:"azure_acr_image_config,omitzero,omitempty"`
+	UpdatePolicy        string                  `json:"update_policy,omitzero" gorm:"default null" temporaljson:"update_policy,omitzero,omitempty"`
+	Verification        *signature.Verification `json:"verification,omitzero,omitempty" gorm:"type:jsonb;serializer:json" temporaljson:"verification,omitzero,omitempty"`
+	AWSECRImageConfig   *AWSECRImageConfig      `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"aws_ecr_image_config,omitzero,omitempty" temporaljson:"awsecr_image_config,omitzero,omitempty"`
+	GCPGARImageConfig   *GCPGARImageConfig      `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"gcp_gar_image_config,omitzero,omitempty" temporaljson:"gcp_gar_image_config,omitzero,omitempty"`
+	AzureACRImageConfig *AzureACRImageConfig    `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"azure_acr_image_config,omitzero,omitempty" temporaljson:"azure_acr_image_config,omitzero,omitempty"`
 }
 
 func (e *ExternalImageComponentConfig) Indexes(db *gorm.DB) []migrations.Index {
