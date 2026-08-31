@@ -1,7 +1,7 @@
 import { Icon } from '@/components/common/Icon'
 import { cn } from '@/utils/classnames'
-import { useTheme } from '../hooks/use-theme'
-import type { TThemePreference } from '../providers/theme-provider'
+import { useTheme } from '../../hooks/use-theme'
+import type { TThemePreference } from '../../providers/theme-provider'
 
 const OPTIONS: Array<{
   preference: TThemePreference

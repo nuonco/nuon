@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { getMe, getOrgs } from '@/lib'
 import { useConfig } from '@/hooks/use-config'
-import { ThemeSwitcher } from '../components/ThemeSwitcher'
+import { ThemeSwitcher } from '../components/molecules/ThemeSwitcher'
 import { useTheme } from '../hooks/use-theme'
 
 export const Home = () => {
