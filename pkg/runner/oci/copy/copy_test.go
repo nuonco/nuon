@@ -48,6 +48,23 @@ func TestCopyWithReferrers(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	legacyArtifacts := make(map[string]ocispec.Descriptor)
+	legacyTagPrefix := "sha256-" + image.Digest.Encoded()
+	for _, artifact := range []struct {
+		suffix       string
+		artifactType string
+	}{
+		{suffix: ".sig", artifactType: "application/vnd.dev.cosign.simplesigning.v1+json"},
+		{suffix: ".att", artifactType: "application/vnd.dsse.envelope.v1+json"},
+		{suffix: ".sbom", artifactType: "application/spdx+json"},
+	} {
+		desc, err := oras.PackManifest(ctx, src, oras.PackManifestVersion1_1, artifact.artifactType, oras.PackManifestOptions{})
+		require.NoError(t, err)
+		tag := legacyTagPrefix + artifact.suffix
+		require.NoError(t, src.Tag(ctx, desc, tag))
+		legacyArtifacts[tag] = desc
+	}
+
 	got, err := copyWithReferrers(ctx, src, "latest", dst, "copied", oras.DefaultCopyGraphOptions)
 	require.NoError(t, err)
 	require.Equal(t, image, got)
@@ -65,6 +82,14 @@ func TestCopyWithReferrers(t *testing.T) {
 			exists, err := dst.Exists(ctx, artifact.desc)
 			require.NoError(t, err)
 			require.True(t, exists)
+		})
+	}
+
+	for tag, want := range legacyArtifacts {
+		t.Run("legacy "+tag, func(t *testing.T) {
+			got, err := dst.Resolve(ctx, tag)
+			require.NoError(t, err)
+			require.Equal(t, want, got)
 		})
 	}
 }
