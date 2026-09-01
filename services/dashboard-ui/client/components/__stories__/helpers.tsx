@@ -3,6 +3,8 @@ import { Button } from '@/components/common/Button'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { IModal } from '@/components/surfaces/Modal'
 import type { IPanel } from '@/components/surfaces/Panel'
+import { StepCard } from '@/components/branches/WorkflowStepDetail/StepCard'
+import type { TInstallWorkflowStep } from '@/types'
 
 export const ModalStory = ({
   children,
@@ -41,3 +43,28 @@ export const PanelStory = ({
     </Button>
   )
 }
+
+export const StepCardStory = ({
+  children,
+  name = 'step details',
+  status = 'success',
+}: {
+  children: ReactNode
+  name?: string
+  status?: string
+}) => (
+  <StepCard
+    step={
+      {
+        id: 'step-preview',
+        name,
+        group_idx: 1,
+        started_at: '2024-06-15T10:30:00Z',
+        execution_time: 25200000000,
+        status: { status },
+      } as TInstallWorkflowStep
+    }
+  >
+    {children}
+  </StepCard>
+)
