@@ -10,7 +10,14 @@ Before installing Nuon BYOC, you will need to prepare the following dependencies
 
 ## Cloud Account
 
-You will need either an AWS, GCP, or Azure account to provision Nuon BYOC to. Specifics are detailed in the installation guide for each platform.
+You will need either an AWS, GCP, or Azure account to run Nuon BYOC in.
+Most of the installation process is the same for all platforms.
+Steps specific to each platform are detailed in the guide for each one.
+
+<Note>
+If you are hosting Nuon BYOC on GCP or Azure, a public S3 bucket is still required to support Cloudformation Quicklinks for install stacks.
+By default, we will provision a bucket for you, but if you would like to own the bucket yourself, you will need an AWS account.
+</Note>
 
 ## DNS
 
