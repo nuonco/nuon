@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/profiles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 )
 
 func (c *cli) registerMCPAPI() error {
@@ -28,6 +29,7 @@ func (c *cli) runMCPAPI(cmd *cobra.Command, _ []string) {
 	providers = append(providers,
 		fxmodules.MiddlewaresModule,
 		fxmodules.AllServicesModule,
+		fx.Provide(api.NewEndpointAudit),
 		fxmodules.MCPAPIModule,
 	)
 
