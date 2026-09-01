@@ -56,8 +56,8 @@
                 "pages": [
                   "guides/byoc/requirements",
                   "guides/byoc/aws",
-                  "guides/byoc/azure",
-                  "guides/byoc/gcp"
+                  "guides/byoc/gcp",
+                  "guides/byoc/azure"
                 ]
               },
               {
