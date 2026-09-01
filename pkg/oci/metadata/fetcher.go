@@ -550,8 +550,7 @@ func fetchAttestationLayer(
 	bytesRead := int64(len(rawJSON))
 	layer.RawJSON = rawJSON
 
-	// Try to decode as DSSE envelope
-	decoded, err := decodeDSSEEnvelope(rawJSON)
+	decoded, err := decodeInTotoStatement(rawJSON)
 	if err == nil && decoded != nil {
 		layer.Decoded = decoded
 		if layer.PredicateType == "" && decoded.PredicateType != "" {
@@ -560,6 +559,15 @@ func fetchAttestationLayer(
 	}
 
 	return layer, bytesRead, nil
+}
+
+func decodeInTotoStatement(data []byte) (*InTotoStatement, error) {
+	var statement InTotoStatement
+	if err := json.Unmarshal(data, &statement); err == nil && statement.Type != "" && statement.PredicateType != "" {
+		return &statement, nil
+	}
+
+	return decodeDSSEEnvelope(data)
 }
 
 // decodeDSSEEnvelope decodes a DSSE envelope and extracts the in-toto statement.
