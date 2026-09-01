@@ -8,7 +8,8 @@ keywords: ['Nuon BYOC AWS', 'AWS deployment', 'CloudFormation', 'Terraform', 'EK
 
 ## Architecture
 
-Nuon Cloud manages your BYOC control plane as an install — the same way your control plane will manage installs for your own customers. Upgrades, provisioning, and lifecycle operations are all driven remotely by Nuon.
+On AWS, Nuon BYOC runs on an EKS cluster in a dedicated VPC.
+Ensure you have admin permissions, and that the account has not reached it's quota limits for VPCs, EIPs, and Internet Gateways.
 
 ```mermaid
 flowchart TD
@@ -55,21 +56,110 @@ flowchart TD
     R -->|"deploys"| I
 ```
 
-## AWS Account
-
-You will need an AWS account. A VPC and other network infrastructure will be created during the installation. Ensure
-your user has admin permissions, and that the account has not reached it's quota limits for VPCs, EIPs, and Internet
-Gateways.
-
 The following regions have been tested and confirmed to support Nuon BYOC.
 
 - us-east-1
 - eu-west-1
 
 <Note>Nuon's resource requirements are not compatible with AWS Free Tier. You will need a paid account.</Note>
-## Inputs
 
-After configuring all dependencies, update your install inputs in the customer dashboard.
+## Select installation method
+
+Nuon supports provisioning the install stacks to AWS using either a Terraform module or a Cloudformation stack.
+Both options will provision the same architecture, and accept the same configuration.
+When using Terraform, provide them to the stack module using variables.
+When using Cloudformation, provide the inputs and secrets below manually through the AWS Cloudformation UI.
+
+<Note>
+When using using Terraform, we strongly recommend storing secret values in a secret store and passing them in using env vars or an ephemeral tfvars file.
+</Note>
+
+<Tabs>
+
+<Tab title="Terraform">
+```hcl main.tf
+terraform {
+  required_providers {
+    aws   = { source = "hashicorp/aws" }
+    stack = { source = "nuonco/stack" }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+provider "stack" {
+  api_url = "https://runner.nuon.co"
+}
+
+module "aws_stack" {
+  source  = "nuonco/stack/aws"
+  version = "~> 1.0"
+
+  install_id = "inl28f8vtvldqp6wjj5cobfzm0"
+
+  inputs = {
+    github_app_client_id            = ""
+    github_app_id                   = ""
+    github_app_name                 = ""
+    nuon_auth_allow_all_users       = ""
+    nuon_auth_allowed_domains       = ""
+    nuon_auth_client_id             = ""
+    nuon_auth_issuer_url            = ""
+    nuon_auth_provider_type         = ""
+    read_only_enable_cluster_access = "false"
+    read_only_role_arn              = ""
+  }
+
+  secrets = {
+    nuon_auth_client_secret = { value = var.nuon_auth_client_secret }
+    github_app_key          = { value = var.github_app_key }
+    slack_client_secret     = { value = var.slack_client_secret }
+    slack_signing_secret    = { value = var.slack_signing_secret }
+  }
+}
+
+variable "nuon_auth_client_secret" {
+  type        = string
+  sensitive   = true
+  description = "OIDC Client Secret from your identity provider."
+}
+
+variable "github_app_key" {
+  type        = string
+  sensitive   = true
+  description = "Base64 encoded Github App Key"
+}
+
+variable "slack_client_secret" {
+  type        = string
+  sensitive   = true
+  description = "Client Secret from your Slack app's Basic Information page. Managed out-of-band: the central AWS Secrets Manager entry referenced by slack_secrets_arn is the source of truth, and the sync_slack_secrets action writes the value into k8s."
+}
+
+variable "slack_signing_secret" {
+  type        = string
+  sensitive   = true
+  description = "Signing Secret from your Slack app's Basic Information page. Used to verify signed Slack webhook requests (events, slash commands, interactions). Managed out-of-band: the central AWS Secrets Manager entry referenced by slack_secrets_arn is the source of truth, and the sync_slack_secrets action writes the value into k8s."
+}
+```
+
+```sh sh
+export TF_VAR_nuon_auth_client_secret='<nuon-auth-client-secret-value>'
+export TF_VAR_github_app_key='<github-app-key-value>'
+export TF_VAR_slack_client_secret='<slack-client-secret-value>'
+export TF_VAR_slack_signing_secret='<slack-signing-secret-value>'
+```
+</Tab>
+
+<Tab title="Cloudformation">
+![Cloudformation stack provision](/images/guides/cloudformation-stack-provision.png)
+</Tab>
+
+</Tabs>
+
+## Inputs
 
 ### Authentication Configuration
 
@@ -120,8 +210,6 @@ Provide these only if you created a Slack app in the [Slack App](#slack-app-opti
 
 ## Secrets
 
-When provisioning the install stack, provide these secrets:
-
 | Secret               | Value                                  |
 | -------------------- | -------------------------------------- |
 | `github_app_key`     | Your base64-encoded GitHub App PEM key |
@@ -141,37 +229,11 @@ base64 -i your-github-app-key.pem
 
 </Note>
 
-## Provision
-
-Once all inputs and secrets are configured
-
-1. Return to your install in the Nuon dashboard
-2. Click **Reprovision Install** from the Manage menu
-3. Wait for the provision workflow to complete
-
 ### Configure Telemetry Export (Optional)
 
 The `nuon/<install-id>/telemetry-export-config` is automatically generated by the stack, and grants the runner read access.
 Update the secret to configure telemetry export to your own OTLP-compatible backend, starting with runner audit logs.
 See [Export Runner Audit Logs](/guides/export-runner-audit-logs) for the configuration reference, cloud-specific steps, and verification guidance.
-
-## Configure DNS (Optional)
-
-To host your Nuon BYOC instance under a custom domain, configure DNS for your root domain to point to the Route53 Zone
-created in the sandbox.
-
-After the sandbox provisions, you'll receive:
-
-- A **Zone ID** for your public domain
-- **Nameserver records** to add to your domain's DNS
-
-Create NS records in your domain's DNS pointing to the Route53 nameservers provided.
-
-<Tip>
-  See [Creating a subdomain that uses Amazon Route 53 as the DNS
-  service](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html) for detailed
-  instructions.
-</Tip>
 
 ## Verify Installation
 
