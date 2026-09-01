@@ -102,7 +102,9 @@ func setupAppBranchRunPreviewDB(t *testing.T) *gorm.DB {
 			input_app_config_id TEXT,
 			branch_preview_config TEXT NOT NULL DEFAULT '{}',
 			override_preview_config TEXT,
-			resolved_preview_config TEXT NOT NULL DEFAULT '{}'
+			resolved_preview_config TEXT NOT NULL DEFAULT '{}',
+			ignore_changes_regex TEXT,
+			send_statuses_on_ignore BOOLEAN NOT NULL DEFAULT false
 		)
 	`).Error)
 	require.NoError(t, db.Exec(`

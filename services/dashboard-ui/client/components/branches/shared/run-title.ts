@@ -1,5 +1,6 @@
 import type { TInstallWorkflow } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
+import { isPreviewWorkflow } from './preview-run-utils'
 
 export const WORKFLOW_TYPE_LABELS: Record<string, string> = {
   app_branches_manual_update: 'Manual app config update',
@@ -10,9 +11,15 @@ export const WORKFLOW_TYPE_LABELS: Record<string, string> = {
 
 export const getRunTitle = (run?: TInstallWorkflow): string => {
   const branchRun = run?.app_branch_runs?.at(0)
+  if (isPreviewWorkflow(run) && branchRun?.event_type === 'manual') {
+    return 'Manual Preview'
+  }
+
   const commitMessage = branchRun?.vcs_connection_commit?.message
     ?.split('\n')[0]
     ?.trim()
   const typeLabel = run?.type ? WORKFLOW_TYPE_LABELS[run.type] : undefined
-  return toSentenceCase(commitMessage || typeLabel || run?.name || 'Workflow run')
+  return toSentenceCase(
+    commitMessage || typeLabel || run?.name || 'Workflow run'
+  )
 }

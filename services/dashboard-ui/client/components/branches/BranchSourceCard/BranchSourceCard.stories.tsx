@@ -11,9 +11,9 @@ export const Connected = () => (
         repo: 'acme/platform-configs',
         branch: 'main',
         directory: 'apps/api',
-        path_filter: 'apps/api/**',
       },
     }}
+    onEdit={() => {}}
   />
 )
 

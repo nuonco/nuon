@@ -38,8 +38,9 @@ interface IBranchFormModal extends Omit<IModal, 'onSubmit'> {
   defaultName?: string
   defaultUseVcs?: boolean
   defaultDirectory?: string
-  defaultPathFilter?: string
-  defaultDisableBranchTriggers?: boolean
+  defaultIgnoreAllChanges?: boolean
+  showName?: boolean
+  showIgnoreAllChanges?: boolean
   isSubmitting: boolean
   submitError?: TAPIError | Error | null
   onSubmit: (output: BranchFormOutput) => void
@@ -64,8 +65,9 @@ export const BranchFormModal = ({
   defaultName = '',
   defaultUseVcs = true,
   defaultDirectory = '.',
-  defaultPathFilter = '',
-  defaultDisableBranchTriggers = false,
+  defaultIgnoreAllChanges = false,
+  showName = true,
+  showIgnoreAllChanges = true,
   isSubmitting,
   submitError,
   onSubmit,
@@ -80,8 +82,7 @@ export const BranchFormModal = ({
       name: defaultName,
       useVcs: defaultUseVcs,
       directory: defaultDirectory,
-      pathFilter: defaultPathFilter,
-      disableBranchTriggers: defaultDisableBranchTriggers,
+      ignoreAllChanges: defaultIgnoreAllChanges,
     } as BranchFormValues,
     validators: { onMount: branchFormSchema, onChange: branchFormSchema },
     onSubmit: ({ value }) => {
@@ -100,8 +101,7 @@ export const BranchFormModal = ({
         selectedRepo,
         selectedBranch,
         directory: value.directory.trim(),
-        pathFilter: value.pathFilter.trim(),
-        disableBranchTriggers: value.disableBranchTriggers,
+        ignoreAllChanges: value.ignoreAllChanges,
       })
     },
   })
@@ -126,7 +126,13 @@ export const BranchFormModal = ({
 
   return (
     <Modal
-      heading={mode === 'create' ? 'Create app branch' : 'Edit branch'}
+      heading={
+        mode === 'create'
+          ? 'Create app branch'
+          : showName
+            ? 'Edit branch'
+            : 'Edit source'
+      }
       size="lg"
       primaryActionTrigger={{
         children: isSubmitting ? (
@@ -165,18 +171,20 @@ export const BranchFormModal = ({
           </div>
         )}
 
-        <form.Field name="name">
-          {(field) => (
-            <FormInput
-              field={field}
-              id="branch-name"
-              type="text"
-              placeholder="production"
-              disabled={isSubmitting}
-              labelProps={{ labelText: 'Branch name' }}
-            />
-          )}
-        </form.Field>
+        {showName ? (
+          <form.Field name="name">
+            {(field) => (
+              <FormInput
+                field={field}
+                id="branch-name"
+                type="text"
+                placeholder="production"
+                disabled={isSubmitting}
+                labelProps={{ labelText: 'Branch name' }}
+              />
+            )}
+          </form.Field>
+        ) : null}
 
         <div className="flex flex-col gap-1">
           <form.Field name="useVcs">
@@ -214,27 +222,25 @@ export const BranchFormModal = ({
             onBranchChange={onBranchChange}
             directory={values.directory}
             onDirectoryChange={(v) => form.setFieldValue('directory', v)}
-            pathFilter={values.pathFilter}
-            onPathFilterChange={(v) => form.setFieldValue('pathFilter', v)}
             isSubmitting={isSubmitting}
           />
         )}
 
-        {mode === 'edit' ? (
+        {mode === 'edit' && showIgnoreAllChanges ? (
           <div className="flex flex-col gap-1">
-            <form.Field name="disableBranchTriggers">
+            <form.Field name="ignoreAllChanges">
               {(field) => (
                 <FormCheckbox
                   field={field}
-                  id="disable-branch-triggers"
+                  id="ignore-all-changes"
                   disabled={isSubmitting}
-                  labelProps={{ labelText: 'Disable webhook triggers' }}
+                  labelProps={{ labelText: 'Ignore all GitHub changes' }}
                 />
               )}
             </form.Field>
             <Text variant="subtext" theme="neutral" className="px-2">
-              When enabled, git push and pull request events will not start runs
-              on this branch.
+              Git push and pull request events still create a run, but the run
+              is marked not attempted immediately.
             </Text>
           </div>
         ) : null}

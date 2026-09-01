@@ -23,6 +23,19 @@ func (m AppBranchRunPreviewMode) Valid() bool {
 	}
 }
 
+func (m AppBranchRunPreviewMode) Label() string {
+	switch m {
+	case AppBranchRunPreviewModeBuildOnly:
+		return "build and validate"
+	case AppBranchRunPreviewModePlanOnly:
+		return "plan-only"
+	case AppBranchRunPreviewModeApply:
+		return "apply"
+	default:
+		return ""
+	}
+}
+
 type AppBranchRunPreviewSource string
 
 const (
