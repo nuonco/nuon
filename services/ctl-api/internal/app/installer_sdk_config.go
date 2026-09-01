@@ -29,6 +29,19 @@ type InstallerSDKConfig struct {
 	AWS   *InstallerSDKAWSConfig   `json:"aws,omitempty"`
 	GCP   *InstallerSDKGCPConfig   `json:"gcp,omitempty"`
 	Azure *InstallerSDKAzureConfig `json:"azure,omitempty"`
+
+	CustomStacks            []InstallerSDKCustomStack `json:"custom_stacks,omitempty"`
+	CustomStacksTemplateURL string                    `json:"custom_stacks_template_url,omitempty"`
+}
+
+// InstallerSDKCustomStack is a custom nested stack.
+type InstallerSDKCustomStack struct {
+	Name            string            `json:"name,omitempty"`
+	Index           int               `json:"index"`
+	Parameters      map[string]string `json:"parameters,omitempty"`
+	Module          string            `json:"module,omitempty"`
+	Outputs         map[string]string `json:"outputs,omitempty"`
+	InputParameters map[string]string `json:"input_parameters,omitempty"`
 }
 
 // InstallerSDKAWSConfig mirrors sdks/stack core.AWSConfig.

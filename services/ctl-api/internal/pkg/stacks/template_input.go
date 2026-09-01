@@ -66,6 +66,14 @@ type TemplateInput struct {
 	// fetch. Empty whenever Azure phone-home auth is not active for the install, which
 	// is what leaves the script unauthenticated for stacks that predate it.
 	PhoneHomeIdentityName string
+
+	// Switches the AWS renderer to custom-stacks-only mode.
+	CustomStacksOnly bool
+
+	// Each custom stack's Parameters as authored, keyed by stack name, before
+	// RenderCustomNestedStackParameters rewrites install-input references into
+	// literals.
+	UnrenderedCustomStackParameters map[string]map[string]string
 }
 
 // PhoneHomeRoleName is the deterministic IAM role name for an install's phone-home
