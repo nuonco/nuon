@@ -13,22 +13,30 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
 var logicalIDRegexp = regexp.MustCompile(`[^A-Za-z0-9]`)
 
+// AWSCustomStacksOnlyContractParams are the frozen top-level parameter names
+// the custom-stacks-only template always declares, standing in for the
+// VPC/runner nested stack outputs that don't exist in this mode.
+var AWSCustomStacksOnlyContractParams = []string{"VPC", "RunnerSubnet", "PublicSubnets", "PrivateSubnets"}
+
 type customNestedStackOutput struct {
-	Name       string   // original stack name from config (e.g., "k8s-namespaces")
-	OutputKeys []string // output names declared by the template
+	Name       string
+	OutputKeys []string
 }
 
 type customNestedStackResult struct {
-	resources     map[string]*nestedcloudformation.Stack
-	params        map[string]cloudformation.Parameter
-	paramGroups   []map[string]any
-	stackOutputs  map[string]customNestedStackOutput // logicalID -> output info
-	lastLogicalID string                             // last custom stack logical ID for DependsOn
+	resources              map[string]*nestedcloudformation.Stack
+	params                 map[string]cloudformation.Parameter
+	paramGroups            []map[string]any
+	stackOutputs           map[string]customNestedStackOutput
+	lastLogicalID          string
+	inputParameters        map[string]map[string]string
+	nameMatchedInputParams map[string]bool
 }
 
 func sanitizeLogicalID(name string) string {
@@ -60,18 +68,26 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 		seenIndices[stack.Index] = stack.Name
 	}
 
-	firstClassStacks := map[string]string{
-		"VPC": inp.AppCfg.StackConfig.VPCNestedTemplateURL,
+	// CustomStacksOnly mode has no VPC/runner nested stack to fetch outputs from,
+	// so first-class seeding is skipped in favor of the contract-parameter wiring
+	// in buildCustomNestedStack.
+	fcOutputs := map[string]firstClassOutput{}
+	if !inp.CustomStacksOnly {
+		firstClassStacks := map[string]string{
+			"VPC": inp.AppCfg.StackConfig.VPCNestedTemplateURL,
+		}
+		if _, hasASG := existingResourceKeys["RunnerAutoScalingGroup"]; hasASG {
+			firstClassStacks["RunnerAutoScalingGroup"] = inp.AppCfg.StackConfig.RunnerNestedTemplateURL
+		}
+		fcOutputs = tpl.extractFirstClassOutputs(firstClassStacks)
 	}
-	if _, hasASG := existingResourceKeys["RunnerAutoScalingGroup"]; hasASG {
-		firstClassStacks["RunnerAutoScalingGroup"] = inp.AppCfg.StackConfig.RunnerNestedTemplateURL
-	}
-	fcOutputs := tpl.extractFirstClassOutputs(firstClassStacks)
 
 	result := &customNestedStackResult{
-		resources:    map[string]*nestedcloudformation.Stack{},
-		params:       map[string]cloudformation.Parameter{},
-		stackOutputs: map[string]customNestedStackOutput{},
+		resources:              map[string]*nestedcloudformation.Stack{},
+		params:                 map[string]cloudformation.Parameter{},
+		stackOutputs:           map[string]customNestedStackOutput{},
+		inputParameters:        map[string]map[string]string{},
+		nameMatchedInputParams: map[string]bool{},
 	}
 
 	allParamNames := map[string]string{}
@@ -103,7 +119,7 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): duplicate logical ID %q", i, stack.Name, logicalID)
 		}
 
-		nestedStack, defaultParams, templateOutputs, err := tpl.buildCustomNestedStack(inp, stack, t, logicalID, prevLogicalID, fcOutputs)
+		nestedStack, defaultParams, templateOutputs, hoistedParams, installInputParams, err := tpl.buildCustomNestedStack(inp, stack, t, logicalID, prevLogicalID, fcOutputs, allParamNames)
 		if err != nil {
 			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): %w", i, stack.Name, err)
 		}
@@ -117,6 +133,23 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 
 		result.resources[logicalID] = nestedStack
 		maps.Copy(result.params, defaultParams)
+
+		// hoistedParams (explicit config) need a fresh top-level String parameter
+		// declared here, tracked in allParamNames since two stacks hoisting the
+		// same name is a collision.
+		if len(hoistedParams) > 0 || len(installInputParams) > 0 {
+			merged := make(map[string]string, len(hoistedParams)+len(installInputParams))
+			maps.Copy(merged, hoistedParams)
+			maps.Copy(merged, installInputParams)
+			result.inputParameters[stack.Name] = merged
+			for topLevelParamName := range installInputParams {
+				result.nameMatchedInputParams[topLevelParamName] = true
+			}
+		}
+		for topLevelParamName := range hoistedParams {
+			allParamNames[topLevelParamName] = stack.Name
+			result.params[topLevelParamName] = cloudformation.Parameter{Type: "String"}
+		}
 
 		if len(defaultParams) > 0 {
 			result.paramGroups = append(result.paramGroups, map[string]any{
@@ -152,7 +185,7 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 	return result, nil
 }
 
-func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack config.CustomNestedStack, t tagBuilder, logicalID string, prevLogicalID string, fcOutputs map[string]firstClassOutput) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter, map[string]struct{}, error) {
+func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack config.CustomNestedStack, t tagBuilder, logicalID string, prevLogicalID string, fcOutputs map[string]firstClassOutput, reservedParamNames map[string]string) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter, map[string]struct{}, map[string]string, map[string]string, error) {
 	// Build role param lookup so we can treat them as reserved during extraction.
 	type roleRef struct {
 		paramValue string
@@ -189,7 +222,7 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 
 	parameters, defaultParameters, reservedInTemplate, templateOutputs, err := tpl.extractNestedStackParameters(templateURL, roleParamNames...)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	// Inject reserved Nuon params only if the template declares them
@@ -222,7 +255,29 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 	// version is generated -- so they are used verbatim. The install-input
 	// reference form is still resolved here as a fallback for callers that read the
 	// config without rendering it first.
+	hoistedParams := map[string]string{}
+	installInputParams := map[string]string{}
+	explicitlyConfigured := map[string]bool{}
+
 	for cfnParamName, templateValue := range stack.Parameters {
+		explicitlyConfigured[cfnParamName] = true
+		if inp.CustomStacksOnly {
+			if unrendered, ok := inp.UnrenderedCustomStackParameters[stack.Name][cfnParamName]; ok {
+				if inputName, err := config.ParseInstallInputReference(unrendered); err == nil {
+					topLevelParamName := logicalID + cfnParamName
+					_, contractCollision := roleParams[topLevelParamName]
+					_, reservedCollision := reservedParamNames[topLevelParamName]
+					contractCollision = contractCollision || slices.Contains(AWSCustomStacksOnlyContractParams, topLevelParamName)
+					if !contractCollision && !reservedCollision {
+						hoistedParams[topLevelParamName] = inputName
+						parameters[cfnParamName] = cloudformation.Ref(topLevelParamName)
+						delete(defaultParameters, cfnParamName)
+						continue
+					}
+				}
+			}
+		}
+
 		resolved := templateValue
 		if inputName, err := config.ParseInstallInputReference(templateValue); err == nil {
 			resolved = ""
@@ -245,6 +300,52 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 		}
 	}
 
+	if inp.CustomStacksOnly {
+		// No VPC/runner nested stack exists in this mode, so a parameter matching
+		// one of the frozen contract names is wired to the top-level template
+		// parameter of the same name instead of an fcOutputs GetAtt.
+		for paramName := range parameters {
+			if slices.Contains(AWSCustomStacksOnlyContractParams, paramName) {
+				parameters[paramName] = cloudformation.Ref(paramName)
+				delete(defaultParameters, paramName)
+			}
+		}
+
+		// A custom stack's own template parameter can share a name with an
+		// install input's CloudFormationStackParamName. getAWSCustomStacksOnlyTemplate
+		// already declares that top-level parameter, so it's wired here the same
+		// way rather than requiring a Default in the vendor's template.
+		installInputNameByParam := make(map[string]string, len(inp.AppCfg.InputConfig.AppInputs))
+		for _, appInput := range inp.AppCfg.InputConfig.AppInputs {
+			if appInput.Source != app.AppInputSourceCustomer {
+				continue
+			}
+			installInputNameByParam[appInput.CloudFormationStackParamName] = appInput.Name
+		}
+		for paramName := range parameters {
+			if explicitlyConfigured[paramName] {
+				continue
+			}
+			if inputName, ok := installInputNameByParam[paramName]; ok {
+				parameters[paramName] = cloudformation.Ref(paramName)
+				delete(defaultParameters, paramName)
+				installInputParams[paramName] = inputName
+			}
+		}
+
+		// Anything still unbound and without a template default can never
+		// resolve. Fail loudly here rather than deploy a broken template.
+		for paramName, cfnParam := range defaultParameters {
+			if cfnParam.Default != nil {
+				continue
+			}
+			return nil, nil, nil, nil, nil, fmt.Errorf(
+				"parameter %q has no contract match (contract: %s), no explicit config value, and no template default",
+				paramName, strings.Join(AWSCustomStacksOnlyContractParams, ", "),
+			)
+		}
+	}
+
 	nestedStack := &nestedcloudformation.Stack{
 		Parameters: parameters,
 		TemplateURL: cloudformation.Join("", []any{
@@ -254,9 +355,13 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 	}
 
 	var dependsOn []string
-	if prevLogicalID != "" {
+	switch {
+	case prevLogicalID != "":
 		dependsOn = append(dependsOn, prevLogicalID)
-	} else {
+	case inp.CustomStacksOnly:
+		// No VPC or runner ASG resource exists in this template, so the first
+		// custom stack has nothing to depend on.
+	default:
 		dependsOn = append(dependsOn, "VPC")
 		if !tpl.cfg.UseLocalRunners {
 			dependsOn = append(dependsOn, "RunnerAutoScalingGroup")
@@ -264,5 +369,5 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 	}
 	nestedStack.AWSCloudFormationDependsOn = dependsOn
 
-	return nestedStack, defaultParameters, templateOutputs, nil
+	return nestedStack, defaultParameters, templateOutputs, hoistedParams, installInputParams, nil
 }

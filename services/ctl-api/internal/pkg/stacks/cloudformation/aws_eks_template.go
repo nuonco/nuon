@@ -12,6 +12,10 @@ import (
 )
 
 func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.Template, error) {
+	if inp.CustomStacksOnly {
+		return t.getAWSCustomStacksOnlyTemplate(inp)
+	}
+
 	tmpl := cloudformation.NewTemplate()
 
 	tb := tagBuilder{
