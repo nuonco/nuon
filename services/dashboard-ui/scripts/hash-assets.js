@@ -1,3 +1,5 @@
+import { unlinkSync } from "fs";
+
 const dist = new URL("../dist/", import.meta.url).pathname;
 
 const meta = await Bun.file(`${dist}meta.json`).json();
@@ -14,19 +16,23 @@ const basename = (f) => f.split("/").pop();
 const jsBasename = jsFile ? basename(jsFile) : null;
 const cssFromBundlerBasename = cssFromBundler ? basename(cssFromBundler) : null;
 
-const stylesFile = Bun.file(`${dist}assets/styles.css`);
-let stylesHashedName = null;
-if (await stylesFile.exists()) {
-  const content = await stylesFile.arrayBuffer();
+async function hashStylesheet(name) {
+  const file = Bun.file(`${dist}assets/${name}.css`);
+  if (!(await file.exists())) return null;
+
+  const content = await file.arrayBuffer();
   const hash = new Bun.CryptoHasher("md5")
     .update(content)
     .digest("hex")
     .slice(0, 8);
-  stylesHashedName = `styles-${hash}.css`;
-  await Bun.write(`${dist}assets/${stylesHashedName}`, stylesFile);
-  const { unlinkSync } = require("fs");
-  unlinkSync(`${dist}assets/styles.css`);
+  const hashedName = `${name}-${hash}.css`;
+  await Bun.write(`${dist}assets/${hashedName}`, file);
+  unlinkSync(`${dist}assets/${name}.css`);
+  return hashedName;
 }
+
+const stylesHashedName = await hashStylesheet("styles");
+const liteHashedName = await hashStylesheet("lite");
 
 let html = await Bun.file(new URL("../client/index.html", import.meta.url).pathname).text();
 
@@ -38,13 +44,17 @@ if (cssFromBundlerBasename) {
   html = html.replace(`/assets/app.css`, `/assets/${cssFromBundlerBasename}`);
 } else {
   html = html.replace(
-    /\s*<link\s+rel="stylesheet"\s+href="\/assets\/app\.css"\s*\/?\s*>\s*/,
-    "\n",
+    /[\t ]*<link[^>]*href="\/assets\/app\.css"[^>]*>\n?/,
+    "",
   );
 }
 
 if (stylesHashedName) {
   html = html.replace(`/assets/styles.css`, `/assets/${stylesHashedName}`);
+}
+
+if (liteHashedName) {
+  html = html.replace(`/assets/lite.css`, `/assets/${liteHashedName}`);
 }
 
 await Bun.write(`${dist}index.html`, html);
@@ -53,5 +63,5 @@ console.log("Asset hashing complete:");
 if (jsBasename) console.log(`  JS:     /assets/${jsBasename}`);
 if (cssFromBundlerBasename)
   console.log(`  CSS:    /assets/${cssFromBundlerBasename}`);
-if (stylesHashedName)
-  console.log(`  Styles: /assets/${stylesHashedName}`);
+if (stylesHashedName) console.log(`  Styles: /assets/${stylesHashedName}`);
+if (liteHashedName) console.log(`  Lite:   /assets/${liteHashedName}`);

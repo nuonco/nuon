@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,22 @@ var localFaviconRewrites = map[string]string{
 	"favicon.svg": "favicon-local.svg",
 }
 
+const (
+	shellDefault = "default"
+	shellLite    = "lite"
+)
+
+var shellLinkRE = regexp.MustCompile(`(?i)[\t ]*<link[^>]*data-shell="([a-z]+)"[^>]*>\n?`)
+
+func selectShellLinks(html []byte, shell string) []byte {
+	return shellLinkRE.ReplaceAllFunc(html, func(tag []byte) []byte {
+		if m := shellLinkRE.FindSubmatch(tag); len(m) > 1 && string(m[1]) == shell {
+			return tag
+		}
+		return nil
+	})
+}
+
 type clientConfig struct {
 	APIUrl                string `json:"apiUrl"`
 	RunnerAPIUrl          string `json:"runnerApiUrl,omitempty"`
@@ -54,6 +71,7 @@ type clientConfig struct {
 	BYOCColor             string `json:"byocColor,omitempty"`
 	BYOCTextColor         string `json:"byocTextColor,omitempty"`
 	OnboardingV2          bool   `json:"onboardingV2,omitempty"`
+	DashboardLite         bool   `json:"dashboardLite,omitempty"`
 	AdminDashboardUrl     string `json:"adminDashboardUrl,omitempty"`
 	PostHogKey            string `json:"posthogKey,omitempty"`
 	PostHogHost           string `json:"posthogHost,omitempty"`
@@ -77,6 +95,7 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		GitRef:                cfg.GitRef,
 		IsBYOC:                cfg.IsBYOC,
 		OnboardingV2:          cfg.OnboardingV2,
+		DashboardLite:         cfg.DashboardLite,
 		AdminDashboardUrl:     cfg.AdminDashboardUrl,
 	}
 
@@ -140,13 +159,20 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 	configScript := []byte(fmt.Sprintf(`<script id="nuon-config">window.__NUON_CONFIG__=%s;</script>`, ccJSON))
 	h.l.Info("prepared client config", zap.String("apiUrl", cc.APIUrl), zap.String("appUrl", cc.AppUrl))
 
+	shell := shellDefault
+	if h.cfg.DashboardLite {
+		shell = shellLite
+	}
+	h.l.Info("serving dashboard shell", zap.String("shell", shell))
+
 	serveIndex := func(c *gin.Context) {
 		raw, err := fs.ReadFile(distFS, "index.html")
 		if err != nil {
 			c.Status(http.StatusNotFound)
 			return
 		}
-		html := bytes.Replace(raw, []byte("</head>"), append(configScript, []byte("</head>")...), 1)
+		html := selectShellLinks(raw, shell)
+		html = bytes.Replace(html, []byte("</head>"), append(configScript, []byte("</head>")...), 1)
 		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 		c.Data(http.StatusOK, "text/html; charset=utf-8", html)
 	}
