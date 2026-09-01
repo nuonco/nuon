@@ -4,7 +4,15 @@ import (
 	"strings"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
+
+func previewBranchName(defaultBranch string, preview *app.AppBranchRunPreview) string {
+	if preview != nil && preview.GitRef != "" {
+		return preview.GitRef
+	}
+	return defaultBranch
+}
 
 func overrideBranches(cfg *config.AppConfig, branchRepo, branchName string) {
 	for _, comp := range cfg.Components {

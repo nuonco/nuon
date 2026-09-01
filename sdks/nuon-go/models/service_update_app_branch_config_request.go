@@ -17,8 +17,12 @@ import (
 // swagger:model service.UpdateAppBranchConfigRequest
 type ServiceUpdateAppBranchConfigRequest struct {
 
-	// disable branch triggers
-	DisableBranchTriggers bool `json:"disable_branch_triggers,omitempty"`
+	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
+	// it matches this RE2 pattern. Send an empty string to clear it.
+	IgnoreChangesRegex string `json:"ignore_changes_regex,omitempty"`
+
+	// SendStatusesOnIgnore posts a successful commit status for ignored runs.
+	SendStatusesOnIgnore bool `json:"send_statuses_on_ignore,omitempty"`
 }
 
 // Validate validates this service update app branch config request

@@ -41,12 +41,14 @@ type AppAppBranchConfig struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
-	// DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
-	// branch runs for this config. Manual triggers are unaffected.
-	DisableBranchTriggers bool `json:"disable_branch_triggers,omitempty"`
-
 	// id
 	ID string `json:"id,omitempty"`
+
+	// IgnoreChangesRegex is an RE2 pattern matched against every changed file path
+	// in a git-run or git-preview run. When every changed file matches, the run is
+	// marked not-attempted instead of building and deploying. Empty disables the
+	// check, and a forced run bypasses it.
+	IgnoreChangesRegex string `json:"ignore_changes_regex,omitempty"`
 
 	// install groups
 	InstallGroups []*AppAppBranchInstallGroup `json:"install_groups"`
@@ -67,6 +69,10 @@ type AppAppBranchConfig struct {
 
 	// runbook ids
 	RunbookIds []string `json:"runbook_ids"`
+
+	// SendStatusesOnIgnore posts a successful commit status when a run is ignored
+	// by IgnoreChangesRegex, so a required check does not block the pull request.
+	SendStatusesOnIgnore bool `json:"send_statuses_on_ignore,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`

@@ -54,7 +54,6 @@ func (a *Activities) findMatchesByConfigType(ctx context.Context, req FindMatchi
 		Where("connected_github_vcs_configs.branch = ?", req.Branch).
 		Where("connected_github_vcs_configs.deleted_at = 0").
 		Where("app_branch_configs.deleted_at = 0").
-		Where("app_branch_configs.disable_branch_triggers = ?", false).
 		Order("app_branch_configs.created_at DESC").
 		Scan(&results).Error
 	if err != nil {
@@ -72,7 +71,6 @@ func (a *Activities) findMatchesByConfigType(ctx context.Context, req FindMatchi
 		Where("public_git_vcs_configs.branch = ?", req.Branch).
 		Where("public_git_vcs_configs.deleted_at = 0").
 		Where("app_branch_configs.deleted_at = 0").
-		Where("app_branch_configs.disable_branch_triggers = ?", false).
 		Order("app_branch_configs.created_at DESC").
 		Scan(&publicResults).Error
 	if err != nil {

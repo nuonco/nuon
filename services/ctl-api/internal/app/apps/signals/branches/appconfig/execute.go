@@ -160,6 +160,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		branchRepo = cfg.Repo
 		branchName = cfg.Branch
 	}
+	branchName = previewBranchName(branchName, run.Preview)
 	if branchRepo != "" {
 		overrideBranches(intermediateConfig, branchRepo, branchName)
 	}
@@ -202,10 +203,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			})
 
 			if run.PRNumber != nil && run.PreviewGitHubComment() {
+				commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
+					RunID: s.RunID,
+				})
 				commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
-					AppName: branch.Name,
-					RunID:   s.RunID,
-					Status:  activities.PRCommentStatusSkipped,
+					OrgName:    branch.Org.Name,
+					AppName:    branch.App.Name,
+					BranchName: branch.Name,
+					RunID:      s.RunID,
+					RunURL:     previewRunURL(commentContext),
+					Status:     activities.PRCommentStatusSkipped,
+					Mode:       run.PreviewMode(),
 				})
 				_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 					VcsConfigID:       vcsConfigID,
@@ -214,16 +222,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 					Body:              commentBody,
 				})
 			}
-			if run.HeadSHA != "" && run.PreviewGitHubSetStatuses() {
-				_ = activities.AwaitSetGithubCommitStatus(ctx, &activities.SetGithubCommitStatusInput{
-					VcsConfigID: vcsConfigID,
-					CommitSHA:   run.HeadSHA,
-					State:       "success",
-					Context:     "nuon/preview",
-					Description: "No config changes detected",
-				})
-			}
-
 			if s.StepID != "" {
 				_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 					ID: s.StepID,
@@ -393,11 +391,18 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLo
 		})
 
 		if p.isPreview && run.PRNumber != nil && run.PreviewGitHubComment() {
+			commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
+				RunID: s.RunID,
+			})
 			commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
-				AppName: branch.Name,
-				RunID:   s.RunID,
-				Status:  activities.PRCommentStatusPending,
-				Diff:    configDiff,
+				OrgName:    branch.Org.Name,
+				AppName:    branch.App.Name,
+				BranchName: branch.Name,
+				RunID:      s.RunID,
+				RunURL:     previewRunURL(commentContext),
+				Status:     activities.PRCommentStatusPending,
+				Mode:       run.PreviewMode(),
+				Diff:       configDiff,
 			})
 			_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 				VcsConfigID:       p.vcsConfigID,
@@ -410,4 +415,11 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLo
 
 	closeLogStream()
 	return nil
+}
+
+func previewRunURL(commentContext *activities.GetPreviewCommentContextOutput) string {
+	if commentContext == nil {
+		return ""
+	}
+	return commentContext.RunURL
 }
