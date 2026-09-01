@@ -1,16 +1,14 @@
-package stack
+package app
 
 import (
 	"github.com/nuonco/nuon/pkg/config"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// applyInstallStackOverrides applies per-install stack template overrides
-// from the InstallConfig onto the app-level AppStackConfig.
-// Install-level overrides take precedence over app-level defaults.
-// For CustomNestedStacks, entries with the same Name replace the app-level
-// entry; entries with new Names are appended. Original ordering is preserved.
-func ApplyInstallStackOverrides(install *app.Install, stackCfg *app.AppStackConfig) {
+// ApplyInstallStackOverrides applies per-install stack overrides from
+// InstallConfig onto the app-level AppStackConfig, taking precedence over
+// app-level defaults. CustomNestedStacks entries matching by Name replace
+// the app-level entry in place, and new names are appended.
+func ApplyInstallStackOverrides(install *Install, stackCfg *AppStackConfig) {
 	if install.InstallConfig == nil {
 		return
 	}

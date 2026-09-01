@@ -40,6 +40,9 @@ type AppAppBranchRun struct {
 	// completed at
 	CompletedAt string `json:"completed_at,omitempty"`
 
+	// composite error
+	CompositeError *CompositeerrorsCompositeErrorData `json:"composite_error,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -129,6 +132,10 @@ func (m *AppAppBranchRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateComparison(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCompositeError(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -230,6 +237,29 @@ func (m *AppAppBranchRun) validateComparison(formats strfmt.Registry) error {
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("comparison")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) validateCompositeError(formats strfmt.Registry) error {
+	if swag.IsZero(m.CompositeError) { // not required
+		return nil
+	}
+
+	if m.CompositeError != nil {
+		if err := m.CompositeError.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("composite_error")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("composite_error")
 			}
 
 			return err
@@ -437,6 +467,10 @@ func (m *AppAppBranchRun) ContextValidate(ctx context.Context, formats strfmt.Re
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateCompositeError(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCreatedBy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -541,6 +575,31 @@ func (m *AppAppBranchRun) contextValidateComparison(ctx context.Context, formats
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("comparison")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) contextValidateCompositeError(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CompositeError != nil {
+
+		if swag.IsZero(m.CompositeError) { // not required
+			return nil
+		}
+
+		if err := m.CompositeError.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("composite_error")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("composite_error")
 			}
 
 			return err

@@ -62,6 +62,11 @@ type InstallStackVersion struct {
 	AWSBucketName string `json:"aws_bucket_name,omitzero" temporaljson:"aws_bucket_name,omitzero,omitempty"`
 	AWSBucketKey  string `json:"aws_bucket_key,omitzero" temporaljson:"aws_bucket_key,omitzero,omitempty"`
 
+	CustomStacksTemplateURL        string                       `json:"custom_stacks_template_url,omitzero" temporaljson:"custom_stacks_template_url,omitzero,omitempty"`
+	CustomStacksAWSBucketKey       string                       `json:"custom_stacks_aws_bucket_key,omitzero" temporaljson:"custom_stacks_aws_bucket_key,omitzero,omitempty"`
+	CustomStacksOutputMap          map[string]map[string]string `json:"custom_stacks_output_map,omitzero" gorm:"type:jsonb;serializer:json" swaggertype:"object" temporaljson:"custom_stacks_output_map,omitzero,omitempty"`
+	CustomStacksInputParametersMap map[string]map[string]string `json:"custom_stacks_input_parameters_map,omitzero" gorm:"type:jsonb;serializer:json" swaggertype:"object" temporaljson:"custom_stacks_input_parameters_map,omitzero,omitempty"`
+
 	// QuickLinkURL opens the cloud console pre-loaded with this version's stack:
 	// CloudFormation quick-create on AWS, Deploy to Azure on Azure. Empty on GCP,
 	// on any install whose template bucket is unconfigured, and on an Azure install
