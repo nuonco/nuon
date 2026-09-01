@@ -192,5 +192,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "129-identity-providers-multi-per-type",
 			Fn:   m.Migration129IdentityProvidersMultiPerType,
 		},
+		{
+			Name: "130-runner-job-dashboard-index",
+			Fn:   m.Migration130RunnerJobDashboardIndex,
+		},
 	}
 }
