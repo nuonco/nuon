@@ -26,12 +26,19 @@ func (stubMCPService) RegisterAdminDashboardRoutes(*gin.Engine) error { return n
 func (stubMCPService) RegisterSlackRoutes(*gin.Engine) error          { return nil }
 
 func (stubMCPService) RegisterMCPTools(server *mcp.Server) {
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "echo_org",
-		Description: "returns the org resolved for the calling request",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
+	mcp.AddTool(server, api.MCPReadTool(
+		"echo_org",
+		"Echo org",
+		"returns the org resolved for the calling request",
+	), func(ctx context.Context, _ *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
 		return api.MCPJSONResult(map[string]string{"org_id": keys.OrgIDFromContext(ctx)})
 	})
+}
+
+func withMCPAuth(ctx context.Context, orgID, accountID string) context.Context {
+	ctx = context.WithValue(ctx, keys.AccountIDCtxKey, accountID)
+	ctx = context.WithValue(ctx, keys.OrgIDCtxKey, orgID)
+	return ctx
 }
 
 // newStatelessTestServer serves the real MCP handler behind a stub auth layer
@@ -39,7 +46,7 @@ func (stubMCPService) RegisterMCPTools(server *mcp.Server) {
 func newStatelessTestServer(t *testing.T, orgID string) *httptest.Server {
 	t.Helper()
 
-	s := &Server{services: []api.Service{stubMCPService{}}}
+	s := &Server{services: []api.Service{stubMCPService{}}, schemaCache: mcp.NewSchemaCache()}
 
 	handler := s.newMCPHandler()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

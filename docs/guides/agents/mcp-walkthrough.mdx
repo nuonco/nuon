@@ -1,0 +1,67 @@
+---
+title: "MCP walkthrough"
+description: "Connect an LLM client to Nuon and run your first MCP tool calls."
+icon: "route"
+---
+
+## Prerequisites
+
+- [Nuon CLI](/cli) installed and authenticated (`nuon auth login`, `nuon orgs select`)
+- An LLM client that supports MCP (Cursor, Claude Code, etc.)
+
+## Steps
+
+<Steps>
+<Step title="Register the MCP server">
+
+Add the stdio proxy to your MCP client. It injects your token and org from `~/.nuon`:
+
+```json
+{"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp"]}}}
+```
+
+Claude Code:
+
+```bash
+claude mcp add nuon -- nuon agents mcp
+```
+
+For a direct HTTP connection instead, see [Connect](/guides/agents/overview#connect).
+
+</Step>
+
+<Step title="Verify context">
+
+```bash
+nuon agents context
+```
+
+Confirm you are authenticated and an org is selected. If not, run `nuon auth login` and `nuon orgs select`.
+
+</Step>
+
+<Step title="First tool calls">
+
+In the LLM client, call:
+
+1. `whoami` — confirm account and org
+2. `list_installs` — list installs in that org
+
+You do not need `select_org` when using the stdio proxy (org is already in `X-Nuon-Org-ID`).
+
+</Step>
+
+<Step title="Writes (optional)">
+
+Restart the proxy with `--allow-writes` only when you need to mutate (approve steps, run actions, preview branches, and so on):
+
+```bash
+nuon agents mcp --allow-writes
+```
+
+Your token must also have create permission.
+
+</Step>
+</Steps>
+
+Tool catalog and prompt → tool examples: [Agents](/guides/agents/overview).

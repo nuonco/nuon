@@ -8,7 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type mcpGetBuildInput struct {
@@ -28,10 +28,13 @@ type mcpBuildDetail struct {
 }
 
 func (s *service) mcpGetBuild(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetBuildInput) (*mcp.CallToolResult, any, error) {
-	orgID := keys.OrgIDFromContext(ctx)
+	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var build app.ComponentBuild
-	err := s.db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Preload("ComponentConfigConnection").
 		Preload("ComponentConfigConnection.Component").
 		Preload("LogStream").

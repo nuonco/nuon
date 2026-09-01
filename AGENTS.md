@@ -351,7 +351,7 @@ receiver.
 ### Driving the Nuon CLI as an agent
 
 The `nuon` CLI has an agent-facing surface (see `bins/cli/AGENTS.md` "Output format" / "MCP" / "Read-only
-mode" for details). When running `nuon` commands from a Claude session, prefer:
+mode"). Public MCP docs: `docs/guides/agents/`. When running `nuon` from a Claude session, prefer:
 
 - **`--output agent`** — stdout is exactly one `{"ok":true,"data":...}` / `{"ok":false,"error":{"code","message"}}`
   JSON envelope; progress goes to stderr. Error codes: `not_found`, `unauthorized`, `forbidden`, `invalid_request`,

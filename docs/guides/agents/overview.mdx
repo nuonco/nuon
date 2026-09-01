@@ -1,0 +1,143 @@
+---
+title: "Agents"
+description: "Operate Nuon from LLM clients via MCP."
+icon: "robot"
+keywords: ["MCP", "agents", "Claude Code", "Cursor", "nuon agents mcp"]
+---
+
+<Note>
+**AI agent** here means an LLM client (Claude Code, Cursor, etc.) driving the control plane. This is not the [install runner](/concepts/runners) in customer clouds.
+</Note>
+
+To scaffold app config from example repos, see [AI and App Building](/guides/ai-and-apps). This page covers **reading and operating** orgs, apps, installs, and workflows via MCP.
+
+New to MCP? Follow the [walkthrough](/guides/agents/mcp-walkthrough).
+
+## Prerequisites
+
+```bash
+nuon auth login
+nuon orgs select
+```
+
+`nuon agents context` prints your auth, selected org/app/install, and MCP HTTP URL.
+
+## Connect
+
+**Recommended:** the CLI stdio proxy forwards to the control-plane MCP server and injects your token and org ID from `~/.nuon`. Read-only by default.
+
+```json
+{"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp"]}}}
+```
+
+```bash
+claude mcp add nuon -- nuon agents mcp
+```
+
+Pass `--allow-writes` on that command (or in `args`) to expose tools whose descriptions start with `WRITE OPERATION:`. Those tools also need a token with create permission.
+
+**Direct HTTP:** point an MCP HTTP client at the URL from `nuon agents context`. The server is stateless Streamable HTTP (POST-only, no durable session), so auth and org go on every request as headers:
+
+```json
+{
+  "mcpServers": {
+    "nuon": {
+      "url": "https://api.nuon.co/mcp",
+      "headers": {
+        "Authorization": "Bearer <api_token>",
+        "X-Nuon-Org-ID": "<org_id>"
+      }
+    }
+  }
+}
+```
+
+Create the token with `nuon orgs api-tokens create --name <name>`. Because both paths set the org, you do not need `select_org` — only call it on HTTP without the header, and note it is a write tool.
+
+## Tools
+
+Writes are hidden from the stdio proxy unless `--allow-writes` is set. HTTP MCP lists them whenever the token can create.
+
+| Domain | Read | Write |
+| --- | --- | --- |
+| Orgs | `whoami`, `list_orgs` | `select_org` |
+| Apps | `list_apps`, `get_app`, `list_app_branches`, `get_app_branch`, `list_app_branch_preview_sources` | `preview_app_branch` |
+| Components | `list_components`, `get_component`, `list_builds`, `get_build` | |
+| Installs | `list_installs`, `get_install`, `list_install_components`, `get_install_inputs`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `reject_step`, `retry_step`, `cancel_workflow` |
+| Actions | `list_install_actions`, `get_action` | `run_action` |
+| Logs | `get_workflow_step_logs`, `get_deploy_logs`, `get_build_logs` | |
+| Runbooks | `list_runbooks`, `get_runbook` | |
+
+## Common queries
+
+Copy these into your LLM client after MCP is connected. Call tools in the order given. Write sequences need `--allow-writes` on the stdio proxy.
+
+<AccordionGroup>
+  <Accordion title="What’s in this org?">
+    `list_apps` → `list_installs` (optional: filter installs with `app_id`)
+  </Accordion>
+  <Accordion title="Status of install X?">
+    `get_install` → `list_install_components` → `list_workflows`
+  </Accordion>
+  <Accordion title="Any pending approvals?">
+    `get_pending_approvals` → `get_workflow` (use `approval_id` from the response)
+  </Accordion>
+  <Accordion title="Approve or reject a pending plan">
+    `get_workflow` → `approve_step` or `reject_step` (write)
+  </Accordion>
+  <Accordion title="Why did this deploy fail?">
+    `list_deploys` → `get_deploy` → `get_deploy_logs` / `get_workflow_step_logs`
+  </Accordion>
+  <Accordion title="Why did this build fail?">
+    `list_builds` → `get_build` → `get_build_logs`
+  </Accordion>
+  <Accordion title="Watch a workflow until it finishes">
+    `watch_workflow` (loop with `last_known_status` until the status is terminal)
+  </Accordion>
+  <Accordion title="What actions can I run on this install?">
+    `list_install_actions` → `get_action`
+  </Accordion>
+  <Accordion title="Run an action on an install">
+    `get_action` → `run_action` (write)
+  </Accordion>
+  <Accordion title="Show runbooks for an app">
+    `list_runbooks` → `get_runbook`
+  </Accordion>
+  <Accordion title="Overview of an app branch">
+    `list_app_branches` → `get_app_branch`
+
+    Returns `answers.last_run_succeeded`, `answers.change_summary` (config/git), and `answers.deployment_summary` (per install-group progress). Requires the app-branches org feature.
+  </Accordion>
+  <Accordion title="Preview this PR (or git ref) against an install">
+    `list_app_branch_preview_sources` → `preview_app_branch` (write) → `watch_workflow` → `get_app_branch`
+
+    Same as `nuon apps branches preview`. Pass `pr_number` or `git_ref` plus `install` (name or ID). Default `mode` is `plan-only`; ask before `apply`.
+
+    HTTP MCP cannot read the local workspace. For local toml, `nuon apps sync` first then pass `app_config_id`.
+  </Accordion>
+  <Accordion title="Deprovision or reprovision an install">
+    `get_install` → `deprovision_install` / `reprovision_install` / `deploy_install_components` (write) → `watch_workflow`
+
+    Deprovision requires `confirm=true` (ask the user first). `plan_only` does not require confirm.
+  </Accordion>
+  <Accordion title="Inspect or update install inputs">
+    `get_install_inputs` → `update_install_inputs` (write)
+  </Accordion>
+  <Accordion title="Retry a failed workflow step">
+    `get_workflow` → `retry_step` (write)
+  </Accordion>
+  <Accordion title="Cancel an in-progress workflow">
+    `get_workflow` → `cancel_workflow` (write)
+  </Accordion>
+</AccordionGroup>
+
+## Related CLI flags
+
+These apply to `nuon` commands, not MCP tools:
+
+| Flag | Purpose |
+| --- | --- |
+| `--output agent` | Single JSON envelope on stdout (`{"ok":true,"data":...}`) |
+| `--read-only` | Block mutating CLI commands (exit 2) |
+
+See [CLI commands](/cli-commands) for the full reference.
