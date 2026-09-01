@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -32,6 +33,7 @@ import (
 const SignalType signal.SignalType = "install-action-workflow-run"
 const runbookEventOutputsVersion = "runbook-event-outputs-v1"
 const preparationCompositeErrorVersion = "action-preparation-composite-error-v1"
+const actionImageDepSyncVersion = "action-image-dep-sync-v1"
 
 type Signal struct {
 	signal.LifecycleBase
@@ -299,6 +301,19 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		return errors.Wrap(err, "unable to get log stream")
 	}
 
+	// An image-backed action's image is rendered from install state when the
+	// plan is built, so the image components it depends on have to be current
+	// in the install registry before that happens.
+	if workflow.GetVersion(ctx, actionImageDepSyncVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if err := s.syncActionImageDeps(ctx, run, ls.ID, metadata); err != nil {
+			if preparationCompositeErrorsEnabled {
+				s.recordPreparationCompositeError(ctx, run.ID, err)
+			}
+			s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to sync action image dependencies")
+			return errors.Wrap(err, "unable to sync action image dependencies")
+		}
+	}
+
 	l.Info("creating plan for executing action run")
 	planResponse, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
 		ActionWorkflowRunID: actionWorkflowRunID,
@@ -527,11 +542,30 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 	// rather than the mutable tag. This fails closed. If the digest can't be
 	// resolved and validated we don't dispatch the action job at all, otherwise
 	// the runner would execute whatever the mutable tag points at.
-	digestRef, err := resolveMirroredDigestRef(ctx, syncJob.ID)
+	digestRef, outputs, err := resolveMirroredDigestRef(ctx, syncJob.ID)
 	if err != nil {
 		return err
 	}
 	awPlan.ImageDigestRef = digestRef
+
+	// Record what the run pulled. A component sync records an artifact against
+	// its deploy; the mirror had no equivalent, so the only trace of the image
+	// an action ran was inside the sync job's outputs.
+	if workflow.GetVersion(ctx, actionImageDepSyncVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		// One attempt only. There is one artifact row per owner, so a retried
+		// run that re-mirrors hits a duplicate key, and the generated wrapper
+		// would otherwise retry that for hours before the run could continue.
+		// This is a record of the pull, not part of it.
+		if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
+			OwnerID:   run.ID,
+			OwnerType: "install_action_workflow_runs",
+			Outputs:   outputs,
+		}, &workflow.ActivityOptions{
+			RetryPolicy: &temporal.RetryPolicy{MaximumAttempts: 1},
+		}); err != nil {
+			l.Warn("unable to record mirrored action image artifact", zap.Error(err))
+		}
+	}
 
 	l.Info("bound image-backed action to mirrored manifest",
 		zap.String("image_digest_ref", digestRef))
@@ -541,35 +575,37 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 
 // resolveMirroredDigestRef reads the digest-pinned image ref the oci-sync job
 // recorded and verifies it actually carries a digest, so execution can only
-// ever run the manifest that was just mirrored.
-func resolveMirroredDigestRef(ctx workflow.Context, syncJobID string) (string, error) {
+// ever run the manifest that was just mirrored. It returns the job's full
+// artifact outputs alongside it so the caller can record what was pulled.
+func resolveMirroredDigestRef(ctx workflow.Context, syncJobID string) (string, state.OCIArtifactOutputs, error) {
+	var out state.OCIArtifactOutputs
+
 	syncedJob, err := activities.AwaitGetJobByID(ctx, syncJobID)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to get image sync job to resolve mirrored digest")
+		return "", out, errors.Wrap(err, "unable to get image sync job to resolve mirrored digest")
 	}
 
 	raw, ok := syncedJob.ParsedOutputs["image"]
 	if !ok {
-		return "", errors.New("image sync job recorded no image output, unable to pin action image to a digest")
+		return "", out, errors.New("image sync job recorded no image output, unable to pin action image to a digest")
 	}
 
-	var out state.OCIArtifactOutputs
 	if err := mapstructure.Decode(raw, &out); err != nil {
-		return "", errors.Wrap(err, "unable to decode image sync job output")
+		return "", out, errors.Wrap(err, "unable to decode image sync job output")
 	}
 	if out.Ref == "" {
-		return "", errors.New("image sync job recorded an empty image ref, unable to pin action image to a digest")
+		return "", out, errors.New("image sync job recorded an empty image ref, unable to pin action image to a digest")
 	}
 
 	parsed, err := reference.Parse(out.Ref)
 	if err != nil {
-		return "", fmt.Errorf("mirrored image ref %q is not a valid reference: %w", out.Ref, err)
+		return "", out, fmt.Errorf("mirrored image ref %q is not a valid reference: %w", out.Ref, err)
 	}
 	if _, ok := parsed.(reference.Digested); !ok {
-		return "", fmt.Errorf("mirrored image ref %q is not digest-pinned", out.Ref)
+		return "", out, fmt.Errorf("mirrored image ref %q is not digest-pinned", out.Ref)
 	}
 
-	return out.Ref, nil
+	return out.Ref, out, nil
 }
 
 // supportedImageActionPlatform gates image-backed actions to the platforms that

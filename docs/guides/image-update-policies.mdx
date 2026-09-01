@@ -101,6 +101,8 @@ copying image from containous/whoami:v1.10.1 to <install-registry>
 
 The new build is recorded with `resolved_tag: v1.10.1` and a fresh `source_digest`. Because `whoami` depends on `img_whoami`, the deploy flow detects that the install's currently-deployed `img_whoami` build no longer matches the latest active build, and prepends an image sync before redeploying `whoami`. The pod rolls to `v1.10.1`.
 
+A [container action](/guides/container-actions) that points its `image` at `img_whoami`'s `image.ref` output picks the new build up the same way, without waiting for a deploy: its next run syncs the newer build into the install registry before the action's steps start.
+
 ## Step 5: Upstream ships v2.0.0 — your installs stay put
 
 When `containous/whoami:v2.0.0` lands, the next sync sees it but rejects it: it falls outside `~1.10.0`. The runner stays on the highest matching `1.10.x` tag. Major bumps still require you to update the constraint deliberately — for example `update_policy = "~1.11.0"` or `update_policy = "^1.0.0"` if you want to track any `1.x`.
