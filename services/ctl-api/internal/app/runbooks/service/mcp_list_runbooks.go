@@ -8,7 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type mcpListRunbooksInput struct {
@@ -16,10 +16,13 @@ type mcpListRunbooksInput struct {
 }
 
 func (s *service) mcpListRunbooks(ctx context.Context, _ *mcp.CallToolRequest, in mcpListRunbooksInput) (*mcp.CallToolResult, any, error) {
-	orgID := keys.OrgIDFromContext(ctx)
+	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var runbooks []app.Runbook
-	err := s.db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Where(app.Runbook{OrgID: orgID, AppID: in.AppID}).
 		Order("created_at DESC").
 		Find(&runbooks).Error
