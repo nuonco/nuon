@@ -19,8 +19,8 @@ export interface IAppInputs {
 
 export const AppInputs = ({ appConfig }: IAppInputs) => {
   const inputGroups = normalizeAppInputGroups(
-    appConfig.input.input_groups,
-    appConfig.input.inputs
+    appConfig?.input?.input_groups,
+    appConfig?.input?.inputs
   )
 
   const {

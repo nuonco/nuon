@@ -2,6 +2,7 @@ export default {
   title: 'Branches/WorkflowStepsPipeline',
 }
 
+import { useState } from 'react'
 import { WorkflowStepsPipeline } from './WorkflowStepsPipeline'
 
 const noop = () => {}
@@ -65,6 +66,28 @@ export const ManySteps = () => (
     <WorkflowStepsPipeline steps={manySteps} selectedStepId="s3" onSelectStep={noop} />
   </div>
 )
+
+export const InsideClippedPanel = () => {
+  const [selected, setSelected] = useState('s1')
+
+  return (
+    <div
+      data-testid="panel-clip"
+      className="h-96 w-[760px] overflow-y-auto overflow-x-hidden rounded-lg border"
+    >
+      <div className="flex flex-col gap-4 px-6 py-4">
+        <div className="text-sm font-medium">Workflow progress</div>
+        <WorkflowStepsPipeline
+          steps={manySteps}
+          selectedStepId={selected}
+          onSelectStep={(step) => setSelected(step.id)}
+        />
+        <div className="text-sm font-medium">Step details</div>
+        <pre className="whitespace-pre text-xs">{'wide-content '.repeat(40)}</pre>
+      </div>
+    </div>
+  )
+}
 
 export const WithError = () => (
   <WorkflowStepsPipeline

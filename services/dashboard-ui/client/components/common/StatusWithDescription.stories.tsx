@@ -4,7 +4,6 @@ export default {
 
 import { StatusWithDescription } from './StatusWithDescription'
 import { Text } from './Text'
-import { Badge } from './Badge'
 import { Button } from './Button'
 
 export const BasicUsage = () => (
@@ -331,6 +330,26 @@ export const LongDescription = () => (
         }}
       />
       <Text>Deployment with long error description</Text>
+    </div>
+  </div>
+)
+
+export const WithoutTooltip = () => (
+  <div className="space-y-4">
+    <h3 className="text-lg font-semibold">No description available</h3>
+    <Text variant="subtext" theme="neutral">
+      When no tooltip content is supplied the status renders on its own, with no
+      tooltip wrapper and no empty tip on hover.
+    </Text>
+    <div className="flex items-center gap-6">
+      <StatusWithDescription statusProps={{ status: 'active' }} />
+      <StatusWithDescription
+        statusProps={{ status: 'suspended' }}
+        tooltipProps={{ tipContent: undefined }}
+      />
+      <StatusWithDescription
+        statusProps={{ status: 'unknown', variant: 'timeline' }}
+      />
     </div>
   </div>
 )

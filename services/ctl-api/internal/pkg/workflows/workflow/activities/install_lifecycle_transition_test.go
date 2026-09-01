@@ -67,3 +67,43 @@ func TestInstallLifecycleTransitionStackOnlyFailureKeepsFailureDescription(t *te
 		}
 	}
 }
+
+func TestInstallLifecycleTransitionReprovision(t *testing.T) {
+	a := &Activities{}
+
+	for _, tc := range []struct {
+		status      app.Status
+		description string
+	}{
+		{status: app.StatusSuccess, description: "Reprovision workflow completed"},
+		{status: app.StatusError, description: "Reprovision workflow failed"},
+		{status: app.StatusCancelled, description: "Reprovision workflow failed"},
+	} {
+		got := a.installLifecycleTransition(&app.Workflow{
+			Type:   app.WorkflowTypeReprovision,
+			Status: app.CompositeStatus{Status: tc.status},
+		})
+		if got == nil {
+			t.Fatalf("%s: expected a lifecycle phase", tc.status)
+		}
+		if got.Phase != lifecyclephase.Provisioned {
+			t.Fatalf("%s: phase = %q, want %q", tc.status, got.Phase, lifecyclephase.Provisioned)
+		}
+		if got.Description != tc.description {
+			t.Fatalf("%s: description = %q, want %q", tc.status, got.Description, tc.description)
+		}
+	}
+}
+
+func TestInstallLifecycleTransitionPlanOnlyReprovision(t *testing.T) {
+	a := &Activities{}
+
+	got := a.installLifecycleTransition(&app.Workflow{
+		Type:     app.WorkflowTypeReprovision,
+		PlanOnly: true,
+		Status:   app.CompositeStatus{Status: app.StatusSuccess},
+	})
+	if got != nil {
+		t.Fatalf("phase = %q, want no lifecycle transition", got.Phase)
+	}
+}

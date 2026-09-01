@@ -8,13 +8,11 @@ import { ConfigStep } from './ConfigStep'
 interface IConfigStepContainer {
   metadata: Record<string, any>
   status?: string
-  statusDescription?: string
 }
 
 export const ConfigStepContainer = ({
   metadata,
   status,
-  statusDescription,
 }: IConfigStepContainer) => {
   const { org } = useOrg()
   const { app } = useApp()
@@ -38,7 +36,6 @@ export const ConfigStepContainer = ({
     <ConfigStep
       appConfigId={appConfigId}
       status={status}
-      statusDescription={statusDescription}
       sections={sections}
       isLoading={isLoading && !data}
       isError={isError}

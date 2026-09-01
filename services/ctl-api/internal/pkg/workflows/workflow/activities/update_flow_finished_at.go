@@ -59,6 +59,15 @@ func (a *Activities) installLifecycleTransition(wf *app.Workflow) *lifecyclephas
 			description = "Stack and runner ready, waiting to provision the sandbox and components"
 		}
 		return &lifecyclephase.LifecyclePhase{Phase: phase, Description: description}
+	case app.WorkflowTypeReprovision:
+		if wf.PlanOnly {
+			return nil
+		}
+		description := "Reprovision workflow completed"
+		if failed {
+			description = "Reprovision workflow failed"
+		}
+		return &lifecyclephase.LifecyclePhase{Phase: lifecyclephase.Provisioned, Description: description}
 	case app.WorkflowTypeDeprovision:
 		description := "Deprovision workflow completed"
 		if failed {
