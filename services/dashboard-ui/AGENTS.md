@@ -1072,7 +1072,8 @@ bun run build:css      # Build CSS only
 bun run lint           # ESLint for the SPA
 bun run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types + checks full codebase)
 bunx tsc --noEmit --project client/tsconfig.json  # Use this for type checking — scope to changed files
-bun run dev:ladle      # Ladle component stories
+bun run dev:ladle      # Ladle component stories (dashboard, :61000)
+bun run dev:ladle:lite # Ladle component stories (lite, :61001)
 bun run test           # bun test (unit tests)
 bun run test:e2e       # Playwright E2E tests (requires running local stack + env vars)
 bun run test:e2e:ui    # Playwright interactive UI mode
