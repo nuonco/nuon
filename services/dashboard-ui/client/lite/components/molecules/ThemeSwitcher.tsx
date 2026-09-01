@@ -1,5 +1,5 @@
-import { Icon } from '@/components/common/Icon'
 import { cn } from '@/utils/classnames'
+import { Icon } from '../atoms/Icon'
 import { useTheme } from '../../hooks/use-theme'
 import type { TThemePreference } from '../../providers/theme-provider'
 
@@ -34,7 +34,7 @@ export const ThemeSwitcher = () => {
             aria-label={option.label}
             onClick={() => setPreference(option.preference)}
             className={cn(
-              'flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors',
+              'flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-caption transition-colors',
               isSelected
                 ? 'bg-surface-default text-primary shadow-sm'
                 : 'text-tertiary hover:text-secondary'

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { getMe, getOrgs } from '@/lib'
 import { useConfig } from '@/hooks/use-config'
+import { Text } from '../components/atoms/Text'
 import { ThemeSwitcher } from '../components/molecules/ThemeSwitcher'
 import { useTheme } from '../hooks/use-theme'
 
@@ -26,44 +27,61 @@ export const Home = () => {
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-8 px-6 py-16">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold text-primary">Nuon lite</h1>
-        <p className="text-sm text-tertiary">
+        <Text as="h1" variant="title" color="primary">
+          Nuon lite
+        </Text>
+        <Text variant="caption" color="tertiary">
           Lite dashboard shell. Version {config?.version ?? 'dev'}.
-        </p>
+        </Text>
       </div>
 
       <div className="flex flex-col gap-3">
         <ThemeSwitcher />
-        <p className="text-sm text-tertiary">
-          Preference <span className="font-mono text-secondary">{preference}</span>,
-          showing <span className="font-mono text-secondary">{theme}</span>.
-        </p>
+        <Text variant="caption" color="tertiary">
+          Preference{' '}
+          <Text family="mono" variant="caption" color="secondary">
+            {preference}
+          </Text>
+          , showing{' '}
+          <Text family="mono" variant="caption" color="secondary">
+            {theme}
+          </Text>
+          .
+        </Text>
       </div>
 
       <div className="rounded-xl border border-divider bg-surface-01 p-5">
-        {isLoading ? (
-          <p className="text-sm text-tertiary">Loading account…</p>
-        ) : meError ? (
-          <p className="text-sm text-secondary">
+        {meError ? (
+          <Text variant="body" color="secondary">
             Unable to load the current account.
-          </p>
+          </Text>
         ) : (
-          <dl className="flex flex-col gap-4 text-sm">
+          <dl className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
-              <dt className="text-tertiary">Account</dt>
-              <dd className="font-mono text-primary">{me?.email}</dd>
+              <Text as="dt" variant="label" color="tertiary">
+                Account
+              </Text>
+              <Text as="dd" variant="body" family="mono" color="primary" loading={isLoading}>
+                {me?.email}
+              </Text>
             </div>
             <div className="flex flex-col gap-1">
-              <dt className="text-tertiary">Orgs</dt>
-              <dd className="flex flex-col gap-1 font-mono text-primary">
-                {orgs?.length ? (
+              <Text as="dt" variant="label" color="tertiary">
+                Orgs
+              </Text>
+              <dd className="flex flex-col gap-1">
+                {isLoading ? (
+                  <Text variant="body" family="mono" loading loadingWidth={24} />
+                ) : orgs?.length ? (
                   orgs.map((org) => (
-                    <span key={org.id}>
+                    <Text key={org.id} variant="body" family="mono" color="primary">
                       {org.name} — {org.id}
-                    </span>
+                    </Text>
                   ))
                 ) : (
-                  <span className="font-sans text-tertiary">No orgs yet</span>
+                  <Text variant="body" color="tertiary">
+                    No orgs yet
+                  </Text>
                 )}
               </dd>
             </div>

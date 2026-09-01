@@ -20,7 +20,7 @@
           {
             "name": "react-router",
             "importNames": ["Link"],
-            "message": "Use Link from @/components/common/Link (href, not to). For nav buttons use Button with href and variant=\"ghost\"."
+            "message": "Use Link from @/components/common/Link in the dashboard, or @/lite/components/atoms/Link in lite (href, not to). For nav buttons use Button with href and variant=\"ghost\"."
           },
           {
             "name": "@/components/surfaces/Modal",
@@ -48,13 +48,17 @@
   },
   "overrides": [
     {
-      "files": ["**/components/common/Icon.tsx"],
+      "files": [
+        "**/components/common/Icon.tsx",
+        "**/lite/components/atoms/Icon.tsx"
+      ],
       "rules": { "no-restricted-imports": "off" }
     },
     {
       "files": [
         "**/components/common/Link.tsx",
-        "**/components/common/Button.tsx"
+        "**/components/common/Button.tsx",
+        "**/lite/components/atoms/Link.tsx"
       ],
       "rules": { "no-restricted-imports": "off" }
     },
