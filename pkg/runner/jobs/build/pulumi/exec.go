@@ -71,6 +71,9 @@ func (h *handler) getSourceFiles(ctx context.Context, root string) ([]ociarchive
 			return err
 		}
 
+		if info.IsDir() && info.Name() == ".git" {
+			return filepath.SkipDir
+		}
 		if info.IsDir() {
 			return nil
 		}
