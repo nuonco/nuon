@@ -44,7 +44,9 @@ func (s *Service) mcpEndpoint() string {
 func EndpointFromAPIURL(apiURL string) string {
 	switch apiURL {
 	case "https://api.nuon.co":
-		return "https://ctl.nuon.co/mcp"
+		return "https://mcp.nuon.co/mcp"
+	case "https://api.stage.nuon.co":
+		return "https://mcp.stage.nuon.co/mcp"
 	default:
 		return "http://localhost:8088/mcp"
 	}

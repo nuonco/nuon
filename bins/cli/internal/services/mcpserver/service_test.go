@@ -127,3 +127,17 @@ func TestProxyListApps(t *testing.T) {
 	text := res.Content[0].(*mcp.TextContent).Text
 	require.Contains(t, text, "my-app")
 }
+
+func TestEndpointFromAPIURL(t *testing.T) {
+	tests := map[string]string{
+		"https://api.nuon.co":       "https://mcp.nuon.co/mcp",
+		"https://api.stage.nuon.co": "https://mcp.stage.nuon.co/mcp",
+		"http://localhost:8081":     "http://localhost:8088/mcp",
+	}
+
+	for apiURL, expected := range tests {
+		t.Run(apiURL, func(t *testing.T) {
+			require.Equal(t, expected, EndpointFromAPIURL(apiURL))
+		})
+	}
+}

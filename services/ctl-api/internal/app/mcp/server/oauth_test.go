@@ -22,9 +22,9 @@ func TestRequestBaseURL(t *testing.T) {
 		want    string
 	}{
 		{name: "plain http", host: "localhost:8088", want: "http://localhost:8088"},
-		{name: "tls", host: "ctl.nuon.co", tls: true, want: "https://ctl.nuon.co"},
-		{name: "forwarded proto", host: "ctl.nuon.co", fwdSch: "https", want: "https://ctl.nuon.co"},
-		{name: "forwarded host", host: "internal:8088", fwdSch: "https", fwdHost: "ctl.nuon.co", want: "https://ctl.nuon.co"},
+		{name: "tls", host: "mcp.nuon.co", tls: true, want: "https://mcp.nuon.co"},
+		{name: "forwarded proto", host: "mcp.nuon.co", fwdSch: "https", want: "https://mcp.nuon.co"},
+		{name: "forwarded host", host: "internal:8088", fwdSch: "https", fwdHost: "mcp.nuon.co", want: "https://mcp.nuon.co"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestRequestBaseURL(t *testing.T) {
 func TestWriteUnauthorizedSetsWWWAuthenticate(t *testing.T) {
 	s := &Server{}
 	r := httptest.NewRequest(http.MethodPost, "/mcp", nil)
-	r.Host = "ctl.nuon.co"
+	r.Host = "mcp.nuon.co"
 	r.TLS = &tls.ConnectionState{}
 	w := httptest.NewRecorder()
 
@@ -55,7 +55,7 @@ func TestWriteUnauthorizedSetsWWWAuthenticate(t *testing.T) {
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Equal(t,
-		`Bearer resource_metadata="https://ctl.nuon.co/.well-known/oauth-protected-resource"`,
+		`Bearer resource_metadata="https://mcp.nuon.co/.well-known/oauth-protected-resource"`,
 		w.Header().Get("WWW-Authenticate"))
 }
 
