@@ -10,14 +10,20 @@ export interface IStatusWithDescription {
 
 export const StatusWithDescription = ({
   statusProps: { variant = 'badge', ...statusProps },
-  tooltipProps: {
+  tooltipProps,
+  maxWidth = 'max-w-xs',
+}: IStatusWithDescription) => {
+  const {
     position = 'bottom',
     tipContent,
     tipContentClassName,
-    ...tooltipProps
-  },
-  maxWidth = 'max-w-xs',
-}: IStatusWithDescription) => {
+    ...rest
+  } = tooltipProps ?? {}
+
+  const status = <Status variant={variant} {...statusProps} />
+
+  if (!tipContent) return status
+
   const content =
     typeof tipContent === 'string' ? (
       <Text variant="subtext">{tipContent}</Text>
@@ -30,9 +36,9 @@ export const StatusWithDescription = ({
       position={position}
       tipContent={content}
       tipContentClassName={`${maxWidth} whitespace-normal ${tipContentClassName || ''}`}
-      {...tooltipProps}
+      {...rest}
     >
-      <Status variant={variant} {...statusProps} />
+      {status}
     </Tooltip>
   )
 }
