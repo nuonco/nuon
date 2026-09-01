@@ -16,6 +16,8 @@ func (a *Activities) getAppBranchRunByID(ctx context.Context, runID string) (*ap
 	res := a.db.WithContext(ctx).
 		Preload("AppBranch").
 		Preload("AppBranchConfig").
+		Preload("AppBranchConfig.ConnectedGithubVCSConfig").
+		Preload("AppBranchConfig.PublicGitVCSConfig").
 		Preload("AppBranchConfig.InstallGroups").
 		Preload("Workflow").
 		Preload("CreatedBy").

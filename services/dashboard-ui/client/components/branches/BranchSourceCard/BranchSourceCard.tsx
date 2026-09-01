@@ -1,4 +1,5 @@
 import { Card } from '@/components/common/Card'
+import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
@@ -24,9 +25,14 @@ const SourceField = ({ label, value }: { label: string; value?: string }) => {
 export interface IBranchSourceCard {
   config?: TAppBranchConfig
   latestRun?: IBranchRunCommit
+  onEdit?: () => void
 }
 
-export const BranchSourceCard = ({ config, latestRun }: IBranchSourceCard) => {
+export const BranchSourceCard = ({
+  config,
+  latestRun,
+  onEdit,
+}: IBranchSourceCard) => {
   const connectedVCS = config?.connected_github_vcs_config
   const publicVCS = config?.public_git_vcs_config
   const vcs = connectedVCS ?? publicVCS
@@ -52,18 +58,25 @@ export const BranchSourceCard = ({ config, latestRun }: IBranchSourceCard) => {
               : 'No repository connected. Set a source when creating a deployment plan config.'}
           </Text>
         </div>
-        {repoHref ? (
-          <Link href={repoHref} isExternal>
-            View on GitHub
-          </Link>
-        ) : null}
+        <div className="flex items-center gap-3">
+          {repoHref ? (
+            <Link href={repoHref} isExternal>
+              View on GitHub
+            </Link>
+          ) : null}
+          {onEdit ? (
+            <Button variant="secondary" onClick={onEdit}>
+              <Icon variant="PencilSimpleLineIcon" size={16} />
+              Edit source
+            </Button>
+          ) : null}
+        </div>
       </div>
       {vcs ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SourceField label="Repository" value={vcs.repo} />
           <SourceField label="Branch" value={vcs.branch} />
           <SourceField label="Directory" value={vcs.directory} />
-          <SourceField label="Path filter" value={vcs.path_filter} />
         </div>
       ) : null}
       {latestRun ? (

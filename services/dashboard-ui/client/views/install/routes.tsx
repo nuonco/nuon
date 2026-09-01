@@ -111,8 +111,21 @@ export const installRoutes: RouteObject[] = [
         element: <WorkflowDetail />,
       },
       { path: ':orgId/installs/:installId/stacks', element: <Stacks /> },
-      { path: ':orgId/installs/:installId/versions', element: <Versions /> },
-      { path: ':orgId/installs/:installId/configs', element: <InstallConfigs /> },
+      {
+        path: ':orgId/installs/:installId/app-branch-runs',
+        element: <Versions />,
+      },
+      {
+        path: ':orgId/installs/:installId/versions',
+        loader: ({ params }) =>
+          redirect(
+            `/${params.orgId}/installs/${params.installId}/app-branch-runs`
+          ),
+      },
+      {
+        path: ':orgId/installs/:installId/configs',
+        element: <InstallConfigs />,
+      },
       { path: ':orgId/installs/:installId/workflows', element: <Workflows /> },
       { path: ':orgId/installs/:installId/readme', element: <Readme /> },
       {
