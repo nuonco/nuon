@@ -2,7 +2,9 @@ export default {
   title: 'Branches/WorkflowStepDetail/PlanGroupStep',
 }
 
+import type { ComponentProps } from 'react'
 import { Button } from '@/components/common/Button'
+import { StepCardStory } from '@/components/__stories__/helpers'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import { PlanGroupStep, type PlanInstallDiff } from './PlanGroupStep'
 
@@ -139,8 +141,14 @@ const actions = (
   </>
 )
 
+const StepInCard = (props: ComponentProps<typeof PlanGroupStep>) => (
+  <StepCardStory name="plan install group" status="awaiting-approval">
+    <PlanGroupStep {...props} />
+  </StepCardStory>
+)
+
 export const AwaitingApproval = () => (
-  <PlanGroupStep
+  <StepInCard
     installs={uatInstalls}
     groupName="uat"
     hasResponse={false}
@@ -151,7 +159,7 @@ export const AwaitingApproval = () => (
 )
 
 export const SingleInstall = () => (
-  <PlanGroupStep
+  <StepInCard
     installs={[uatInstalls[2]]}
     groupName="production"
     hasResponse={false}
@@ -162,7 +170,7 @@ export const SingleInstall = () => (
 )
 
 export const WithLabels = () => (
-  <PlanGroupStep
+  <StepInCard
     installs={labeledInstalls}
     groupName="production"
     hasResponse={false}
@@ -173,7 +181,7 @@ export const WithLabels = () => (
 )
 
 export const OverflowingLabels = () => (
-  <PlanGroupStep
+  <StepInCard
     installs={overflowingInstalls}
     groupName="canary"
     hasResponse
@@ -184,7 +192,7 @@ export const OverflowingLabels = () => (
 )
 
 export const Loading = () => (
-  <PlanGroupStep
+  <StepInCard
     installs={uatInstalls.map((i) => ({ ...i, sections: [], summary: null, isLoading: true }))}
     groupName="uat"
     hasResponse={false}
@@ -195,7 +203,7 @@ export const Loading = () => (
 )
 
 export const Approved = () => (
-  <PlanGroupStep
+  <StepInCard
     installs={uatInstalls}
     groupName="uat"
     hasResponse
@@ -206,7 +214,7 @@ export const Approved = () => (
 )
 
 export const Skipped = () => (
-  <PlanGroupStep
+  <StepInCard
     installs={uatInstalls}
     groupName="uat"
     hasResponse

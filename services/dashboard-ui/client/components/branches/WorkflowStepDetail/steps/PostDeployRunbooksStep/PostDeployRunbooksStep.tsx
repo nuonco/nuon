@@ -2,6 +2,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { InstallRunbooksRow, type IInstallRunbooksRow } from './InstallRunbooksRow'
 import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
+import { StepBlock, StepRowList } from '../../shared/StepLayout'
 
 export interface IPostDeployRunbooksStep {
   groupName: string
@@ -23,48 +24,54 @@ export const PostDeployRunbooksStep = ({
   ).length
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon
-            variant="PlayIcon"
-            size={16}
-            className="text-cool-grey-500 dark:text-cool-grey-400 shrink-0"
-          />
-          <Text variant="body" theme="neutral">
-            post-deploy runbooks:{' '}
-            <span className="font-semibold text-cool-grey-900 dark:text-white">
-              {runbookNames.join(' → ')}
-            </span>
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            on {groupName}
-          </Text>
+    <>
+      <StepBlock>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Icon
+              variant="PlayIcon"
+              size={16}
+              className="text-cool-grey-500 dark:text-cool-grey-400 shrink-0"
+            />
+            <Text variant="body" theme="neutral">
+              post-deploy runbooks:{' '}
+              <span className="font-semibold text-cool-grey-900 dark:text-white">
+                {runbookNames.join(' → ')}
+              </span>
+            </Text>
+            <Text variant="subtext" theme="neutral">
+              on {groupName}
+            </Text>
+          </div>
+          {rows.length > 0 && (
+            <Text variant="subtext" family="mono" theme="neutral">
+              {completed} / {rows.length} installs
+            </Text>
+          )}
         </div>
-        {rows.length > 0 && (
-          <Text variant="subtext" family="mono" theme="neutral">
-            {completed} / {rows.length} installs
-          </Text>
-        )}
-      </div>
 
-      {rows.length > 0 ? (
-        <div className="border rounded-[10px] divide-y overflow-hidden">
+        {rows.length === 0 ? (
+          emptyMessage ? (
+            <StepStatePlaceholder variant="loading">{emptyMessage}</StepStatePlaceholder>
+          ) : statusDescription ? (
+            <Text variant="subtext" theme="neutral">
+              {statusDescription}
+            </Text>
+          ) : (
+            <StepStatePlaceholder variant="pending">
+              No post-deploy runbooks ran for this group.
+            </StepStatePlaceholder>
+          )
+        ) : null}
+      </StepBlock>
+
+      {rows.length > 0 && (
+        <StepRowList>
           {rows.map((row) => (
             <InstallRunbooksRow key={row.installId} {...row} />
           ))}
-        </div>
-      ) : emptyMessage ? (
-        <StepStatePlaceholder variant="loading">{emptyMessage}</StepStatePlaceholder>
-      ) : statusDescription ? (
-        <div className="p-3 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
-          <Text variant="base">{statusDescription}</Text>
-        </div>
-      ) : (
-        <StepStatePlaceholder variant="pending">
-          No post-deploy runbooks ran for this group.
-        </StepStatePlaceholder>
+        </StepRowList>
       )}
-    </div>
+    </>
   )
 }

@@ -21,6 +21,8 @@ import {
   type TBuildTypeFilterKey,
 } from '@/components/branches/BuildTypeFilter'
 import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
+import { STEP_GUTTER, StepBlock, StepRowList } from '../../shared/StepLayout'
+import { cn } from '@/utils/classnames'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import {
@@ -81,7 +83,12 @@ export const BuildRowDetail = ({
   isLoading = false,
 }: IBuildRowDetail) => {
   return (
-    <div className="px-4 py-4 pl-[44px] border-t bg-cool-grey-50/60 dark:bg-dark-grey-800/40">
+    <div
+      className={cn(
+        'py-4 border-t bg-cool-grey-50/60 dark:bg-dark-grey-800/40',
+        STEP_GUTTER
+      )}
+    >
       {isLoading ? (
         <div className="flex items-center gap-2">
           <Loading size={14} className="text-cool-grey-400" />
@@ -256,7 +263,7 @@ export const BuildRow = ({
   return (
     <Expand
       id={`build-${rowId}`}
-      headerClassName="px-4 py-3"
+      headerClassName={cn(STEP_GUTTER, 'py-3')}
       onExpandedChange={setIsExpanded}
       heading={
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -408,14 +415,18 @@ export const BuildStep = ({
   }, [builds])
 
   if (builds.length === 0) {
-    return status === 'in-progress' ? (
-      <StepStatePlaceholder variant="loading">
-        Starting component builds
-      </StepStatePlaceholder>
-    ) : (
-      <StepStatePlaceholder variant="pending">
-        Waiting to start component builds
-      </StepStatePlaceholder>
+    return (
+      <StepBlock>
+        {status === 'in-progress' ? (
+          <StepStatePlaceholder variant="loading">
+            Starting component builds
+          </StepStatePlaceholder>
+        ) : (
+          <StepStatePlaceholder variant="pending">
+            Waiting to start component builds
+          </StepStatePlaceholder>
+        )}
+      </StepBlock>
     )
   }
 
@@ -437,37 +448,37 @@ export const BuildStep = ({
   )
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <>
+      <StepBlock>
+        <div className="flex items-center justify-between">
           <Text variant="body" theme="neutral">
             {summaryParts.length > 0 ? summaryParts.join(' · ') : `${builds.length} components`}
           </Text>
-        </div>
-        {totalDuration > 0 && (
-          <Text variant="subtext" family="mono" theme="neutral">
-            {totalDuration.toFixed(1)}s total
-          </Text>
-        )}
-      </div>
-
-      {filterTypes.length > 1 && (
-        <BuildTypeFilter
-          types={filter.types}
-          deselected={filter.deselected}
-          onToggle={filter.toggle}
-        />
-      )}
-
-      <div className="border rounded-[10px] divide-y overflow-hidden">
-        {visibleBuilds.length === 0 ? (
-          <div className="px-4 py-3">
-            <Text variant="subtext" theme="neutral">
-              No builds match filters
+          {totalDuration > 0 && (
+            <Text variant="subtext" family="mono" theme="neutral">
+              {totalDuration.toFixed(1)}s total
             </Text>
-          </div>
-        ) : (
-          visibleBuilds.map((build: any, i: number) => {
+          )}
+        </div>
+
+        {filterTypes.length > 1 && (
+          <BuildTypeFilter
+            types={filter.types}
+            deselected={filter.deselected}
+            onToggle={filter.toggle}
+          />
+        )}
+      </StepBlock>
+
+      {visibleBuilds.length === 0 ? (
+        <StepBlock>
+          <Text variant="subtext" theme="neutral">
+            No builds match filters
+          </Text>
+        </StepBlock>
+      ) : (
+        <StepRowList>
+          {visibleBuilds.map((build: any, i: number) => {
             const rowId = String(build.component_id || i)
             return (
               <BuildRow
@@ -484,9 +495,9 @@ export const BuildStep = ({
                 isLoadingBuilds={isLoadingBuilds}
               />
             )
-          })
-        )}
-      </div>
-    </div>
+          })}
+        </StepRowList>
+      )}
+    </>
   )
 }
