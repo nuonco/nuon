@@ -44,7 +44,7 @@ type ServiceVCSConnectionStatusResponse struct {
 	SuspendedAt string `json:"suspended_at,omitempty"`
 
 	// suspended by
-	SuspendedBy *GithubComGoogleGoGithubV50GithubUser `json:"suspended_by,omitempty"`
+	SuspendedBy *ServiceVCSConnectionUser `json:"suspended_by,omitempty"`
 }
 
 // Validate validates this service v c s connection status response

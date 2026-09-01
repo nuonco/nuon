@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -13,7 +18,11 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { useVcsRepoBrowser } from '@/hooks/use-vcs-repo-browser'
 import { createAppBranch, createBranchConfig, getAppBranches } from '@/lib'
-import type { TAppBranchConfig, TCreateAppBranchRequest, TVCSConnectionRepo } from '@/types'
+import type {
+  TAppBranchConfig,
+  TCreateAppBranchRequest,
+  TVCSConnectionRepo,
+} from '@/types'
 import { BranchFormModal } from '@/components/branches/BranchForm'
 import type { BranchFormOutput } from '@/components/branches/BranchForm/schema'
 
@@ -23,13 +32,11 @@ type TCreateBranchBody = TCreateAppBranchRequest & {
     repo: string
     branch: string
     directory: string
-    path_filter?: string
   }
   public_git_vcs_config?: {
     repo: string
     branch: string
     directory: string
-    path_filter?: string
   }
 }
 
@@ -40,7 +47,6 @@ const buildCreateBranchBody = (output: BranchFormOutput): TCreateBranchBody => {
       repo: output.selectedRepo.full_name,
       branch: output.selectedBranch,
       directory: output.directory,
-      ...(output.pathFilter ? { path_filter: output.pathFilter } : {}),
     }
     if (output.selectedRepo.private) {
       body.vcs_connection_id = output.selectedVcsConnectionId
@@ -112,12 +118,15 @@ export const CreateBranchModalContainer = ({
   const { removeModal } = useSurfaces()
 
   const vcsConnections = org?.vcs_connections || []
-  const [vcsConnectionId, setVcsConnectionId] = useState(vcsConnections[0]?.id || '')
+  const [vcsConnectionId, setVcsConnectionId] = useState(
+    vcsConnections[0]?.id || ''
+  )
 
   const { data: existingBranches } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-branches', org?.id, app?.id, 0],
-    queryFn: () => getAppBranches({ appId: app!.id, orgId: org!.id, limit: 20, offset: 0 }),
+    queryFn: () =>
+      getAppBranches({ appId: app!.id, orgId: org!.id, limit: 20, offset: 0 }),
     enabled: !!org?.id && !!app?.id,
   })
 
@@ -159,19 +168,36 @@ export const CreateBranchModalContainer = ({
       vcsBrowser.setSelectedBranch(existingRepoInfo.branch)
     }
     setDidAutofill(true)
-  }, [existingRepoInfo, didAutofill, vcsConnections, vcsBrowser.setSelectedRepo, vcsBrowser.setSelectedBranch])
+  }, [
+    existingRepoInfo,
+    didAutofill,
+    vcsConnections,
+    vcsBrowser.setSelectedRepo,
+    vcsBrowser.setSelectedBranch,
+  ])
 
   const repos = useMemo(() => {
     const list = vcsBrowser.repos ?? []
-    if (vcsBrowser.selectedRepo && !list.some((r) => r.full_name === vcsBrowser.selectedRepo!.full_name)) {
+    if (
+      vcsBrowser.selectedRepo &&
+      !list.some((r) => r.full_name === vcsBrowser.selectedRepo!.full_name)
+    ) {
       return [vcsBrowser.selectedRepo, ...list]
     }
     return list
   }, [vcsBrowser.repos, vcsBrowser.selectedRepo])
 
-  const { mutate, isPending: isLoading, error: submitError } = useMutation({
+  const {
+    mutate,
+    isPending: isLoading,
+    error: submitError,
+  } = useMutation({
     mutationFn: async (body: TCreateBranchBody) => {
-      const branch = await createAppBranch({ appId: app.id, body: { name: body.name }, orgId: org.id })
+      const branch = await createAppBranch({
+        appId: app.id,
+        body: { name: body.name },
+        orgId: org.id,
+      })
 
       if (body.connected_github_vcs_config) {
         await createBranchConfig({
@@ -202,7 +228,13 @@ export const CreateBranchModalContainer = ({
       queryClient.invalidateQueries({ queryKey: ['app-branches'] })
       addToast(
         <Toast heading="Branch created" theme="success">
-          <Text>Created app branch <Badge variant="code" size="md">{data.name}</Badge>.</Text>
+          <Text>
+            Created app branch{' '}
+            <Badge variant="code" size="md">
+              {data.name}
+            </Badge>
+            .
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)

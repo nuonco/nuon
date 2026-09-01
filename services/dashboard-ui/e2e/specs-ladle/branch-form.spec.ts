@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test'
 
 const CREATE_STORY = '/?story=branches--branchform--create&mode=preview'
 const EDIT_STORY = '/?story=branches--branchform--edit&mode=preview'
+const EDIT_SOURCE_STORY =
+  '/?story=branches--branchform--edit-source&mode=preview'
 
 test.describe('BranchForm create behavior', () => {
   test.beforeEach(async ({ page }) => {
@@ -35,6 +37,10 @@ test.describe('BranchForm create behavior', () => {
 
     await name.fill('production')
     await expect(dialog.getByText('Branch name is required')).toBeHidden()
+  })
+
+  test('does not expose the deprecated path filter', async ({ page }) => {
+    await expect(page.getByLabel('Path filter (optional)')).toHaveCount(0)
   })
 })
 
@@ -72,4 +78,16 @@ test.describe('BranchForm edit behavior', () => {
       )
     ).toBeVisible()
   })
+})
+
+test('source editor does not include the Nuon branch name', async ({
+  page,
+}) => {
+  await page.goto(EDIT_SOURCE_STORY, { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: 'Open modal' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByText('Edit source', { exact: true })).toBeVisible()
+  await expect(dialog.getByLabel('Branch name')).toHaveCount(0)
+  await expect(dialog.getByLabel('Path filter (optional)')).toHaveCount(0)
 })
