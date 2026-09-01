@@ -20,15 +20,15 @@ func (c *cli) mcpSetupCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "setup",
 		Short: "Configure an MCP client to connect to the Nuon control plane",
-		Long: `Write MCP client configuration for your platform so your AI agent can
-interact with the Nuon control plane over HTTP.
+		Long: `Write MCP client configuration so an AI agent can reach the Nuon
+control-plane HTTP MCP server.
 
-Reads the API token and org ID from your current nuon auth context (~/.nuon).
-Run "nuon auth login" first if you haven't authenticated.
+Reads the API token and org ID from ~/.nuon. Run "nuon auth login" and
+"nuon orgs select" first.
 
-Supported platforms:
-  claude-code    Claude Code (~/.claude.json)
-  cursor         Cursor (.cursor/mcp.json in current directory)`,
+Writes in the current directory:
+  claude-code    .mcp.json
+  cursor         .cursor/mcp.json`,
 		PersistentPreRunE: c.persistentPreRunE,
 		Annotations:       outputsAnnotation(OutputTable),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {

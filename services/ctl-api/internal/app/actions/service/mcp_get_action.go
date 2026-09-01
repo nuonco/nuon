@@ -7,7 +7,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type mcpGetActionInput struct {
@@ -26,14 +26,14 @@ type mcpActionDetail struct {
 }
 
 func (s *service) mcpGetAction(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetActionInput) (*mcp.CallToolResult, any, error) {
-	orgID := keys.OrgIDFromContext(ctx)
+	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	install, err := s.getInstall(ctx, in.InstallID)
+	install, err := s.findInstall(ctx, orgID, in.InstallID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get install: %w", err)
-	}
-	if install.OrgID != orgID {
-		return nil, nil, fmt.Errorf("unable to find install %q", in.InstallID)
 	}
 
 	iaw, err := s.getInstallActionWorkflow(ctx, in.InstallID, in.ActionID)
