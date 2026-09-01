@@ -1,5 +1,6 @@
 import { ComponentDocs } from '../__stories__/ComponentDocs'
 import { ID } from './ID'
+import { Link } from '../atoms/Link'
 import { Text } from '../atoms/Text'
 
 export default {
@@ -19,6 +20,7 @@ export const Overview = () => (
     ]}
     avoid={[
       'Do not use it for human-readable names. Those are Text, or a Link if they navigate.',
+      'Never make the identifier itself a link. Navigation belongs on the resource name above it, or on a display name such as "Component build" where the resource has no name of its own.',
       'Do not truncate with copying turned off. A shortened identifier the user cannot copy in full is worse than none.',
     ]}
     rules={[
@@ -58,6 +60,27 @@ export const Truncated = () => (
 export const WithoutCopy = () => (
   <div className="p-8">
     <ID value={INSTALL} copyable={false} />
+  </div>
+)
+
+export const UnderAResourceName = () => (
+  <div className="flex flex-col gap-6 p-8">
+    <div className="flex flex-col gap-0.5">
+      <Link href="/org123/installs/inst456" variant="heading">
+        acme-production
+      </Link>
+      <ID value={INSTALL} />
+    </div>
+    <div className="flex flex-col gap-0.5">
+      <Link href="/org123/builds/bld789" variant="heading">
+        Component build
+      </Link>
+      <ID value="bld_01k4m6p8r0t2v4x6z8b0d2f4" label="Copy build ID" />
+    </div>
+    <Text variant="caption" color="tertiary">
+      The name carries the link. Where a resource has no name of its own, a
+      display name does the job.
+    </Text>
   </div>
 )
 
