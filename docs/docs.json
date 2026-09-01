@@ -64,7 +64,7 @@
                 "group": "Self-Hosted",
                 "root": "guides/self-hosted",
                 "expanded": false,
-                "pages": ["guides/self-hosted/supported-platforms"]
+                "pages": ["guides/self-hosted/dependencies"]
               }
             ]
           }
@@ -233,10 +233,7 @@
       {
         "tab": "Agents",
         "icon": "robot",
-        "pages": [
-          "guides/agents/overview",
-          "guides/agents/mcp-walkthrough"
-        ]
+        "pages": ["guides/agents/overview", "guides/agents/mcp-walkthrough"]
       },
       {
         "tab": "Reference",
@@ -414,6 +411,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/guides/self-hosted/supported-platforms",
+      "destination": "/guides/self-hosted/dependencies"
+    },
     {
       "source": "/",
       "destination": "/get-started/introduction"
