@@ -2,8 +2,16 @@ export default {
   title: 'Branches/WorkflowStepDetail/DeployGroupStep',
 }
 
+import type { ComponentProps } from 'react'
+import { StepCardStory } from '@/components/__stories__/helpers'
 import { DeployGroupStep } from './DeployGroupStep'
 import { InstallDeployRow, type IInstallDeployRow } from './InstallDeployRow'
+
+const StepInCard = (props: ComponentProps<typeof DeployGroupStep>) => (
+  <StepCardStory name="deploy install group" status="in-progress">
+    <DeployGroupStep {...props} />
+  </StepCardStory>
+)
 
 const mkInstall = (over: Record<string, any> = {}): any => ({
   id: 'ins_acme',
@@ -60,11 +68,11 @@ const rows: IInstallDeployRow[] = [
 ]
 
 export const GroupMixed = () => (
-  <DeployGroupStep groupName="UAT" totalInstalls={3} deployedCount={1} rows={rows} />
+  <StepInCard groupName="UAT" totalInstalls={3} deployedCount={1} rows={rows} />
 )
 
 export const GroupAllDeployed = () => (
-  <DeployGroupStep
+  <StepInCard
     groupName="production"
     totalInstalls={2}
     deployedCount={2}
@@ -73,15 +81,15 @@ export const GroupAllDeployed = () => (
 )
 
 export const GroupSingleInstall = () => (
-  <DeployGroupStep groupName="UAT" totalInstalls={1} deployedCount={1} rows={[rows[0]]} />
+  <StepInCard groupName="UAT" totalInstalls={1} deployedCount={1} rows={[rows[0]]} />
 )
 
 export const GroupDeploying = () => (
-  <DeployGroupStep groupName="UAT" totalInstalls={0} deployedCount={0} rows={[]} emptyMessage="Deploying to install group" />
+  <StepInCard groupName="UAT" totalInstalls={0} deployedCount={0} rows={[]} emptyMessage="Deploying to install group" />
 )
 
 export const PreviewApplyInProgress = () => (
-  <DeployGroupStep
+  <StepInCard
     variant="preview"
     groupName="preview install"
     totalInstalls={1}

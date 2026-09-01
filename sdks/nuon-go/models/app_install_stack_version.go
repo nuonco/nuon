@@ -55,23 +55,16 @@ type AppInstallStackVersion struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
-	// S3 key CustomStacksTemplateURL was uploaded to, mirroring AWSBucketKey.
+	// custom stacks aws bucket key
 	CustomStacksAwsBucketKey string `json:"custom_stacks_aws_bucket_key,omitempty"`
 
-	// stackName -> hoisted top-level CFN parameter name -> the install input it
-	// passes through, for parameters that were a simple whole-value install-input
-	// reference. Lets a Terraform consumer keep those parameters in sync with
-	// current input values on every apply, without a new stack version.
+	// custom stacks input parameters map
 	CustomStacksInputParametersMap any `json:"custom_stacks_input_parameters_map,omitempty"`
 
-	// stackName -> outputKey -> the flat top-level CFN output name, so a
-	// Terraform consumer can resolve an output without reimplementing the
-	// logicalID sanitize+concatenation scheme in HCL.
+	// custom stacks output map
 	CustomStacksOutputMap any `json:"custom_stacks_output_map,omitempty"`
 
-	// Second AWS-only template containing only custom_nested_stacks, for the
-	// Terraform install path (the quicklink path never reads this). Empty when
-	// the app config declares none.
+	// custom stacks template url
 	CustomStacksTemplateURL string `json:"custom_stacks_template_url,omitempty"`
 
 	// id

@@ -82,14 +82,15 @@ export const RemoveConnectionButton = ({
 
   return (
     <Button
+      variant="danger"
       onClick={() => {
         addModal(modal)
       }}
       {...props}
-      className="!text-red-800 dark:!text-red-500 !p-2 w-full justify-between"
     >
+      {props?.isMenuButton ? null : <Icon variant="TrashIcon" />}
       Remove connection
-      <Icon variant="TrashIcon" />
+      {props?.isMenuButton ? <Icon variant="TrashIcon" /> : null}
     </Button>
   )
 }
