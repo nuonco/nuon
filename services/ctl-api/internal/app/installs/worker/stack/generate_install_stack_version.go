@@ -1,6 +1,7 @@
 package stack
 
 import (
+	"maps"
 	"strings"
 
 	"go.temporal.io/sdk/workflow"
@@ -83,7 +84,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 
 	// Apply per-install stack template overrides before rendering so
 	// template variables in override URLs get expanded.
-	ApplyInstallStackOverrides(install, &cfg.StackConfig)
+	app.ApplyInstallStackOverrides(install, &cfg.StackConfig)
 
 	if stackErr := render.RenderStruct(&cfg.StackConfig, stateData); stackErr != nil {
 		return errors.Wrap(stackErr, "unable to render stack config")
@@ -97,6 +98,11 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 
 	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
 		return errors.Wrap(err, "unable to render cloudformation stack config")
+	}
+
+	unrenderedCustomStackParams := make(map[string]map[string]string, len(cfg.StackConfig.CustomNestedStacks))
+	for _, s := range cfg.StackConfig.CustomNestedStacks {
+		unrenderedCustomStackParams[s.Name] = maps.Clone(s.Parameters)
 	}
 
 	// Custom nested stack parameters are rendered separately so they do not go
@@ -128,14 +134,15 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		region = install.GCPAccount.Region
 	}
 	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
-		InstallID:       install.ID,
-		InstallStackID:  stack.ID,
-		AppConfigID:     cfg.ID,
-		StackName:       cfg.StackConfig.Name,
-		Region:          region,
-		Platform:        string(cfg.RunnerConfig.Type),
-		PublicAPIURL:    cfg.RunnerConfig.PublicAPIURL,
-		DeploymentScope: string(cfg.StackConfig.DeploymentScope),
+		InstallID:             install.ID,
+		InstallStackID:        stack.ID,
+		AppConfigID:           cfg.ID,
+		StackName:             cfg.StackConfig.Name,
+		Region:                region,
+		Platform:              string(cfg.RunnerConfig.Type),
+		PublicAPIURL:          cfg.RunnerConfig.PublicAPIURL,
+		DeploymentScope:       string(cfg.StackConfig.DeploymentScope),
+		HasCustomNestedStacks: len(cfg.StackConfig.CustomNestedStacks) > 0,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation stack version")
@@ -220,18 +227,19 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 	tmplByts := []byte{}
 	checksum := ""
 	inp := &stacks.TemplateInput{
-		Install:                      install,
-		CloudFormationStackVersion:   stackVersion,
-		InstallState:                 installState,
-		AppCfg:                       cfg,
-		Runner:                       runner,
-		Settings:                     &runner.RunnerGroup.Settings,
-		APIToken:                     generics.FromPtrStr(token),
-		ConfiguredRunnerInstanceType: cfg.RunnerConfig.InstanceType,
-		RunnerEnvVars:                stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),
-		PhoneHomeSecretARN:           phoneHome.SecretARN,
-		PhoneHomeSecretRegion:        phoneHome.SecretRegion,
-		PhoneHomeIdentityName:        phoneHome.IdentityName,
+		Install:                         install,
+		CloudFormationStackVersion:      stackVersion,
+		InstallState:                    installState,
+		AppCfg:                          cfg,
+		Runner:                          runner,
+		Settings:                        &runner.RunnerGroup.Settings,
+		APIToken:                        generics.FromPtrStr(token),
+		ConfiguredRunnerInstanceType:    cfg.RunnerConfig.InstanceType,
+		RunnerEnvVars:                   stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),
+		PhoneHomeSecretARN:              phoneHome.SecretARN,
+		PhoneHomeSecretRegion:           phoneHome.SecretRegion,
+		PhoneHomeIdentityName:           phoneHome.IdentityName,
+		UnrenderedCustomStackParameters: unrenderedCustomStackParams,
 	}
 
 	switch cfg.RunnerConfig.Type {
@@ -285,6 +293,10 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 			}); err != nil {
 				return errors.Wrap(err, "unable to save aws tfvars")
 			}
+		}
+
+		if err := RenderAndUploadCustomStacksTemplate(ctx, install.ID, stackVersion, *inp, w.cfg.AWSCloudFormationStackTemplateBucket); err != nil {
+			return err
 		}
 
 	case app.AppRunnerTypeAzure:
