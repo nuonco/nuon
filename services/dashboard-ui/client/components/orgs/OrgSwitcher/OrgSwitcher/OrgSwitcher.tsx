@@ -56,7 +56,6 @@ export const OrgSwitcher = ({ org, isSidebarOpen, ...props }: IOrgSwitcher) => {
             </Text>
             <ConnectGithubButton
               className="flex items-center gap-2 w-fit !border-transparent !p-2 !pl-1"
-              isIconFirst
               size="sm"
             />
           </div>

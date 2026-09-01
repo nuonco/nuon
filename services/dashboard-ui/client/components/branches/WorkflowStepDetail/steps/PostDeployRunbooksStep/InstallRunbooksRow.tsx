@@ -3,6 +3,7 @@ import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import type { TCloudPlatform, TInstall } from '@/types'
+import { StepRow } from '../../shared/StepLayout'
 
 export interface IRunbookRun {
   runbookId?: string
@@ -28,7 +29,7 @@ export const InstallRunbooksRow = ({
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center gap-3 px-4 py-3">
+      <StepRow>
         {installHref ? (
           <Text variant="body" weight="strong" nowrap className="truncate">
             <Link href={installHref} variant="inline">{install?.name || installId}</Link>
@@ -48,13 +49,13 @@ export const InstallRunbooksRow = ({
             className="shrink-0"
           />
         )}
-      </div>
+      </StepRow>
 
       <div className="flex flex-col border-t bg-cool-grey-50 dark:bg-dark-grey-900">
         {runbooks.map((runbook, idx) => (
           <div
             key={runbook.runbookId || runbook.runbookName}
-            className="flex items-center gap-3 pl-6 pr-4 py-2.5"
+            className="flex items-center gap-3 py-2.5 pl-8 pr-4 sm:pl-10 sm:pr-6"
           >
             <Text variant="subtext" family="mono" theme="neutral" className="shrink-0">
               {idx + 1}

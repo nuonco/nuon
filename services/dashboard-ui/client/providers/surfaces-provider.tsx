@@ -19,6 +19,7 @@ type TPanels = {
   key?: string
   content: TPanelEl
   isVisible: boolean
+  pathname: string
 }[]
 
 type TModalEl = ReactElement<IModal & { ref?: React.Ref<HTMLDivElement> }>
@@ -49,8 +50,11 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
+  // Panels are keyed to the route that opened them. A route change drops the
+  // previous route's panels, but not ones a newly mounted child opened for the
+  // route being navigated to — child effects run before this one.
   useEffect(() => {
-    setPanels([])
+    setPanels((ps) => ps.filter((p) => p.pathname === pathname))
   }, [pathname])
 
   const addPanel = useCallback(
@@ -58,7 +62,13 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       const id = panelId || uuid()
       setPanels((ps) => [
         ...ps,
-        { id, key: panelKey, content, isVisible: true },
+        {
+          id,
+          key: panelKey,
+          content,
+          isVisible: true,
+          pathname: window.location.pathname,
+        },
       ])
       if (panelKey) {
         const params = new URLSearchParams(window.location.search)

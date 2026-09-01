@@ -2,8 +2,16 @@ export default {
   title: 'Branches/WorkflowStepDetail/PostDeployRunbooksStep',
 }
 
+import type { ComponentProps } from 'react'
+import { StepCardStory } from '@/components/__stories__/helpers'
 import { PostDeployRunbooksStep } from './PostDeployRunbooksStep'
 import { InstallRunbooksRow, type IInstallRunbooksRow } from './InstallRunbooksRow'
+
+const StepInCard = (props: ComponentProps<typeof PostDeployRunbooksStep>) => (
+  <StepCardStory name="post-deploy runbooks">
+    <PostDeployRunbooksStep {...props} />
+  </StepCardStory>
+)
 
 const mkInstall = (over: Record<string, any> = {}): any => ({
   id: 'ins_acme',
@@ -59,7 +67,7 @@ const rows: IInstallRunbooksRow[] = [
 ]
 
 export const StepAllSucceeded = () => (
-  <PostDeployRunbooksStep
+  <StepInCard
     groupName="prod"
     runbookNames={['verify_status', 'deploy_verify_and_logs']}
     rows={rows}
@@ -67,7 +75,7 @@ export const StepAllSucceeded = () => (
 )
 
 export const StepSingleInstall = () => (
-  <PostDeployRunbooksStep
+  <StepInCard
     groupName="prod"
     runbookNames={['verify_status', 'deploy_verify_and_logs']}
     rows={[rows[0]]}
@@ -75,7 +83,7 @@ export const StepSingleInstall = () => (
 )
 
 export const StepWithFailure = () => (
-  <PostDeployRunbooksStep
+  <StepInCard
     groupName="prod"
     runbookNames={['verify_status', 'smoke_test']}
     rows={[
@@ -89,7 +97,7 @@ export const StepWithFailure = () => (
 )
 
 export const StepStarting = () => (
-  <PostDeployRunbooksStep
+  <StepInCard
     groupName="prod"
     runbookNames={[]}
     rows={[]}
