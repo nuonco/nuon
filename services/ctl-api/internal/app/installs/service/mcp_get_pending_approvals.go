@@ -8,16 +8,19 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type mcpGetPendingApprovalsInput struct{}
 
 func (s *service) mcpGetPendingApprovals(ctx context.Context, _ *mcp.CallToolRequest, _ mcpGetPendingApprovalsInput) (*mcp.CallToolResult, any, error) {
-	orgID := keys.OrgIDFromContext(ctx)
+	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var approvals []app.WorkflowStepApproval
-	err := s.db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Preload("InstallWorkflowStep").
 		Where(app.WorkflowStepApproval{OrgID: orgID}).
 		Where("id NOT IN (SELECT install_workflow_step_approval_id FROM install_workflow_step_approval_responses WHERE deleted_at = 0)").

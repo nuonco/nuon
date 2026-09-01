@@ -9,7 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type mcpGetWorkflowStepInput struct {
@@ -38,10 +38,13 @@ type mcpPolicyValidationInfo struct {
 }
 
 func (s *service) mcpGetWorkflowStep(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetWorkflowStepInput) (*mcp.CallToolResult, any, error) {
-	orgID := keys.OrgIDFromContext(ctx)
+	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var step app.WorkflowStep
-	err := s.db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Preload("Approval", func(db *gorm.DB) *gorm.DB {
 			return db.Omit("contents")
 		}).
