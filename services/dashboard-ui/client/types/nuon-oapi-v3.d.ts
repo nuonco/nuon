@@ -5306,6 +5306,10 @@ export interface components {
       contents?: string;
       created_at?: string;
       created_by_id?: string;
+      custom_stacks_aws_bucket_key?: string;
+      custom_stacks_input_parameters_map?: Record<string, never>;
+      custom_stacks_output_map?: Record<string, never>;
+      custom_stacks_template_url?: string;
       id?: string;
       install_id?: string;
       install_stack_id?: string;

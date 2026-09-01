@@ -57,15 +57,10 @@ export const ConnectGithubModalContainer = ({
   )
 }
 
-interface IConnectGithubButton extends IButtonAsButton {
-  isIconFirst?: boolean
-}
-
 export const ConnectGithubButton = ({
   children = 'Add',
-  isIconFirst = false,
   ...props
-}: IConnectGithubButton) => {
+}: IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const modal = <ConnectGithubModalContainer />
 
@@ -76,9 +71,9 @@ export const ConnectGithubButton = ({
       }}
       {...props}
     >
-      {isIconFirst ? <Icon variant="PlusIcon" /> : null}
+      {props?.isMenuButton ? null : <Icon variant="PlusIcon" />}
       {children}
-      {!isIconFirst ? <Icon variant="PlusIcon" /> : null}
+      {props?.isMenuButton ? <Icon variant="PlusIcon" /> : null}
     </Button>
   )
 }
