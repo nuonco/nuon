@@ -14,10 +14,21 @@ interface IWorkflowStepsPipeline {
   onSelectStep: (step: TInstallWorkflowStep) => void
 }
 
+const STEP_STATUS_LABELS: Record<TStepStatusCategory, string> = {
+  success: 'Completed',
+  error: 'Failed',
+  active: 'In progress',
+  awaiting: 'Awaiting approval',
+  pending: 'Pending',
+}
+
 const StatusIcon = ({ category }: { category: TStepStatusCategory }) => {
   if (category === 'success') {
     return (
-      <div className="w-[26px] h-[26px] rounded-full bg-green-500 flex items-center justify-center shrink-0">
+      <div
+        aria-hidden
+        className="w-[26px] h-[26px] rounded-full bg-green-500 flex items-center justify-center shrink-0"
+      >
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
           <path d="M2.5 6.5L5.5 9.5L10.5 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -27,7 +38,10 @@ const StatusIcon = ({ category }: { category: TStepStatusCategory }) => {
 
   if (category === 'error') {
     return (
-      <div className="w-[26px] h-[26px] rounded-full bg-red-500 flex items-center justify-center shrink-0">
+      <div
+        aria-hidden
+        className="w-[26px] h-[26px] rounded-full bg-red-500 flex items-center justify-center shrink-0"
+      >
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
           <path d="M4 4L9 9M9 4L4 9" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
@@ -37,7 +51,10 @@ const StatusIcon = ({ category }: { category: TStepStatusCategory }) => {
 
   if (category === 'active') {
     return (
-      <div className="w-[26px] h-[26px] rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+      <div
+        aria-hidden
+        className="w-[26px] h-[26px] rounded-full bg-blue-500 flex items-center justify-center shrink-0"
+      >
         <svg className="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
           <circle cx="8" cy="8" r="6" stroke="white" strokeOpacity="0.3" strokeWidth="2" />
           <path d="M8 2 A6 6 0 0 1 14 8" stroke="white" strokeWidth="2" strokeLinecap="round" />
@@ -48,7 +65,10 @@ const StatusIcon = ({ category }: { category: TStepStatusCategory }) => {
 
   if (category === 'awaiting') {
     return (
-      <div className="w-[26px] h-[26px] rounded-full bg-amber-500 flex items-center justify-center shrink-0">
+      <div
+        aria-hidden
+        className="w-[26px] h-[26px] rounded-full bg-amber-500 flex items-center justify-center shrink-0"
+      >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <circle cx="7" cy="7" r="5.25" stroke="white" strokeWidth="1.5" />
           <path d="M7 4.25V7L8.75 8.25" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -58,7 +78,10 @@ const StatusIcon = ({ category }: { category: TStepStatusCategory }) => {
   }
 
   return (
-    <div className="w-[26px] h-[26px] rounded-full flex items-center justify-center shrink-0 ring-1 ring-inset ring-cool-grey-400/40 dark:ring-dark-grey-500/40">
+    <div
+      aria-hidden
+      className="w-[26px] h-[26px] rounded-full flex items-center justify-center shrink-0 ring-1 ring-inset ring-cool-grey-400/40 dark:ring-dark-grey-500/40"
+    >
       <div className="w-[5px] h-[5px] rounded-full bg-cool-grey-400 dark:bg-dark-grey-500" />
     </div>
   )
@@ -66,6 +89,7 @@ const StatusIcon = ({ category }: { category: TStepStatusCategory }) => {
 
 const Arrow = ({ filled }: { filled: boolean }) => (
   <svg
+    aria-hidden
     width="20"
     height="20"
     viewBox="0 0 20 20"
@@ -110,7 +134,7 @@ export const WorkflowStepsPipeline = ({
   onSelectStep,
 }: IWorkflowStepsPipeline) => {
   const viewportRef = useRef<HTMLDivElement>(null)
-  const selectedCardRef = useRef<HTMLDivElement>(null)
+  const selectedCardRef = useRef<HTMLButtonElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
 
@@ -135,7 +159,21 @@ export const WorkflowStepsPipeline = ({
   }, [updateScrollState, steps.length])
 
   useEffect(() => {
-    selectedCardRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+    const viewport = viewportRef.current
+    const card = selectedCardRef.current
+    if (!viewport || !card) return
+
+    // Only ever move this strip's scrollLeft: native scrollIntoView also scrolls
+    // overflow-hidden ancestors (the surrounding panel), shifting the whole page.
+    const viewportBox = viewport.getBoundingClientRect()
+    const cardBox = card.getBoundingClientRect()
+    const delta =
+      cardBox.left +
+      cardBox.width / 2 -
+      (viewportBox.left + viewportBox.width / 2)
+
+    if (Math.abs(delta) < 1) return
+    viewport.scrollTo({ left: viewport.scrollLeft + delta, behavior: 'smooth' })
   }, [selectedStepId])
 
   const scrollByPage = (dir: 1 | -1) => {
@@ -201,9 +239,17 @@ export const WorkflowStepsPipeline = ({
               <div key={step.id || idx} className="flex items-stretch gap-2 flex-1 min-w-0">
                 {idx > 0 && <Arrow filled={prevSuccess} />}
 
-                <div
+                <button
+                  type="button"
                   ref={isSelected ? selectedCardRef : undefined}
-                  className={`snap-start scroll-mx-12 flex flex-col flex-1 min-w-[168px] items-center justify-center gap-2 px-4 py-4 rounded-[10px] cursor-pointer border transition-all ${cardBorder} ${cardBg} ${cardRing} hover:brightness-105`}
+                  aria-current={isSelected ? 'step' : undefined}
+                  className={cn(
+                    'snap-start scroll-mx-12 flex flex-col flex-1 min-w-[168px] items-center justify-center gap-2 px-4 py-4 rounded-[10px] cursor-pointer border transition-all hover:brightness-105',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400/80',
+                    cardBorder,
+                    cardBg,
+                    cardRing
+                  )}
                   onClick={() => onSelectStep(step)}
                 >
                   <StatusIcon category={category} />
@@ -216,6 +262,8 @@ export const WorkflowStepsPipeline = ({
                     {getWorkflowStepTitle(step) || 'Unknown'}
                   </Text>
 
+                  <span className="sr-only">{STEP_STATUS_LABELS[category]}</span>
+
                   {step.execution_time ? (
                     <Duration
                       nanoseconds={step.execution_time}
@@ -224,7 +272,7 @@ export const WorkflowStepsPipeline = ({
                       family="mono"
                     />
                   ) : null}
-                </div>
+                </button>
               </div>
             )
           })}

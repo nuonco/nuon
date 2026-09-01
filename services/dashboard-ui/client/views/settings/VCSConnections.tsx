@@ -22,7 +22,7 @@ export const VCSConnections = () => {
         title="VCS connections"
         description="Connect GitHub accounts so Nuon can build components from your repositories."
         createAction={
-          <ConnectGithubButton isIconFirst variant="primary">
+          <ConnectGithubButton variant="primary">
             Add connection
           </ConnectGithubButton>
         }

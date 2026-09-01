@@ -41,6 +41,7 @@ import { BranchRunsTab } from './branches/tabs/BranchRunsTab'
 import { BranchPlanTab } from './branches/tabs/BranchPlanTab'
 import { BranchPreviewTab } from './branches/tabs/BranchPreviewTab'
 import { BranchConfigsTab } from './branches/tabs/BranchConfigsTab'
+import { BranchInputs } from './branches/scoped/BranchInputs'
 import { BranchComponents } from './branches/scoped/BranchComponents'
 import { BranchActions } from './branches/scoped/BranchActions'
 import { BranchRunbooks } from './branches/scoped/BranchRunbooks'
@@ -151,6 +152,7 @@ export const appRoutes: RouteObject[] = [
           { path: 'plan', element: <BranchPlanTab /> },
           { path: 'preview', element: <BranchPreviewTab /> },
           { path: 'configs', element: <BranchConfigsTab /> },
+          { path: 'inputs', element: <BranchInputs /> },
           { path: 'components', element: <BranchComponents /> },
           { path: 'components/:componentId', element: <ComponentDetail /> },
           {

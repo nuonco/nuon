@@ -1,6 +1,15 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from 'react'
 import { Badge } from '@/components/common/Badge'
 import type { TBadgeTheme } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
@@ -82,6 +91,47 @@ export type TAppConfigDiffPresentation = 'diff' | 'snapshot'
 const PresentationContext = createContext<TAppConfigDiffPresentation>('diff')
 
 const usePresentation = () => useContext(PresentationContext)
+
+type TExpandAllContext = {
+  expandAll: boolean | null
+  toggle: () => void
+}
+
+const ExpandAllContext = createContext<TExpandAllContext | null>(null)
+
+const useExpandAll = () => useContext(ExpandAllContext)?.expandAll ?? null
+
+const ExpandAllToggle = () => {
+  const ctx = useContext(ExpandAllContext)
+  if (!ctx) return null
+
+  const isAllExpanded = ctx.expandAll === true
+
+  return (
+    <Button
+      className="!p-1 flex items-center gap-1.5"
+      variant="ghost"
+      size="sm"
+      aria-pressed={isAllExpanded}
+      onClick={ctx.toggle}
+    >
+      {isAllExpanded ? 'Collapse all' : 'Expand all'}
+      <Icon
+        variant={
+          isAllExpanded ? 'ArrowsInLineVerticalIcon' : 'ArrowsOutLineVerticalIcon'
+        }
+        size="14"
+      />
+    </Button>
+  )
+}
+
+const DiffToolbar = () => (
+  <div className="flex items-center gap-2">
+    <WrapLinesToggle />
+    <ExpandAllToggle />
+  </div>
+)
 
 const SNAPSHOT_ROW =
   'hover:!bg-black/5 dark:hover:!bg-white/5 focus:!bg-black/5 dark:focus:!bg-white/5'
@@ -324,7 +374,11 @@ export function computeSummary(sections: DiffSectionData[]) {
   return { added, removed, changed }
 }
 
-const AppConfigSummary = ({ summary }: { summary: { added: number; removed: number; changed: number } }) => (
+const AppConfigSummary = ({
+  summary,
+}: {
+  summary: { added: number; removed: number; changed: number }
+}) => (
   <div className="px-4 py-3 sm:px-6 border-b bg-cool-grey-100 dark:bg-dark-grey-800 flex items-center justify-between gap-4">
     <div className="flex space-x-4">
       <div className="flex items-center gap-1.5">
@@ -340,7 +394,7 @@ const AppConfigSummary = ({ summary }: { summary: { added: number; removed: numb
         <Text variant="subtext" theme="neutral">to remove</Text>
       </div>
     </div>
-    <WrapLinesToggle />
+    <DiffToolbar />
   </div>
 )
 
@@ -392,6 +446,43 @@ function langForFile(name: string): string {
   return 'yaml'
 }
 
+const EMBEDDED_CONTENT_KEYS = new Set([
+  'content',
+  'contents',
+  'inline_contents',
+  'var_file',
+])
+
+function decodeEscapedContent(value: string, quote: string): string {
+  return value
+    .replace(/\\r\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\n')
+    .replace(/\\t/g, '  ')
+    .replace(new RegExp(`\\\\${quote}`, 'g'), quote)
+}
+
+export function formatEmbeddedTomlContent(source: string): string {
+  return source
+    .split('\n')
+    .map((line) => {
+      const match = line.match(
+        /^(\s*)([A-Za-z0-9_-]+)(\s*=\s*)(["'])(.*)\4\s*$/
+      )
+      if (!match) return line
+
+      const [, indent, key, assignment, quote, value] = match
+      if (!EMBEDDED_CONTENT_KEYS.has(key) || !/\\[nrt]/.test(value)) {
+        return line
+      }
+
+      const decoded = decodeEscapedContent(value, quote)
+      const fence = quote.repeat(3)
+      return `${indent}${key}${assignment}${fence}\n${decoded}\n${indent}${fence}`
+    })
+    .join('\n')
+}
+
 const FileDiffRow = ({
   file,
   entityKey,
@@ -402,6 +493,7 @@ const FileDiffRow = ({
   idx: number
 }) => {
   const isSnapshot = usePresentation() === 'snapshot'
+  const expandAll = useExpandAll()
   const bgColor = isSnapshot ? SNAPSHOT_ROW : getOpBgColor(file.op)
   const borderColor = isSnapshot
     ? '!border-l-cool-grey-200 dark:!border-l-dark-grey-600'
@@ -413,6 +505,7 @@ const FileDiffRow = ({
   return (
     <Expand
       id={`file-${entityKey}-${file.name}-${idx}`}
+      isOpen={expandAll ?? false}
       className={`border-l-4 ${borderColor}`}
       headerClassName={`w-full px-4 py-2 gap-3 text-left focus:outline-none ${bgColor}`}
       heading={
@@ -460,6 +553,7 @@ const EntityRow = ({
   focus?: TConfigDiffFocus | null
 }) => {
   const isSnapshot = usePresentation() === 'snapshot'
+  const expandAll = useExpandAll()
   const bgColor = isSnapshot ? SNAPSHOT_ROW : getOpBgColor(entity.op)
   const borderColor = isSnapshot
     ? '!border-l-cool-grey-200 dark:!border-l-dark-grey-600'
@@ -485,6 +579,11 @@ const EntityRow = ({
       clearTimeout(timer)
     }
   }, [focus?.nonce])
+
+  useEffect(() => {
+    if (expandAll === null) return
+    setForcedOpen(expandAll)
+  }, [expandAll])
 
   const highlightClass = highlighted ? 'ring-2 ring-inset ring-primary-400/70 dark:ring-primary-500/60' : ''
 
@@ -595,7 +694,7 @@ const SectionContent = ({
     ? '!border-l-cool-grey-200 dark:!border-l-dark-grey-600'
     : getOpBorderColor(content.op)
   const body = isSnapshot
-    ? (content.after ?? content.before ?? '')
+    ? formatEmbeddedTomlContent(content.after ?? content.before ?? '')
     : diffLines(content.before, content.after)
 
   return (
@@ -620,6 +719,12 @@ const SectionGroup = ({
   const [highlighted, setHighlighted] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const sectionIcon = SECTION_CONFIG[section.sectionKey]?.icon
+  const expandAll = useExpandAll()
+
+  useEffect(() => {
+    if (expandAll === null) return
+    setOpen(expandAll)
+  }, [expandAll])
 
   useEffect(() => {
     if (!focus || focus.sectionKey !== section.sectionKey) return
@@ -691,8 +796,29 @@ const SectionGroup = ({
 
 const SKELETON_ROW_WIDTHS = ['7rem', '5.5rem', '9rem', '6.5rem', '8rem']
 
-const AppConfigDiffSkeleton = ({ rows = 4 }: { rows?: number }) => (
-  <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0 overflow-hidden">
+const DiffShell = ({
+  embedded,
+  children,
+}: {
+  embedded: boolean
+  children: ReactNode
+}) =>
+  embedded ? (
+    <div className="flex flex-col">{children}</div>
+  ) : (
+    <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0 overflow-hidden">
+      {children}
+    </Card>
+  )
+
+const AppConfigDiffSkeleton = ({
+  rows = 4,
+  embedded = false,
+}: {
+  rows?: number
+  embedded?: boolean
+}) => (
+  <DiffShell embedded={embedded}>
     <div className="flex flex-col">
       {Array.from({ length: rows }).map((_, idx) => (
         <div key={idx} className="border-t first:border-t-0">
@@ -710,7 +836,7 @@ const AppConfigDiffSkeleton = ({ rows = 4 }: { rows?: number }) => (
         </div>
       ))}
     </div>
-  </Card>
+  </DiffShell>
 )
 
 export interface IAppConfigDiff {
@@ -720,6 +846,7 @@ export interface IAppConfigDiff {
   defaultSectionsOpen?: boolean
   focus?: TConfigDiffFocus | null
   presentation?: TAppConfigDiffPresentation
+  embedded?: boolean
 }
 
 export const AppConfigDiff = ({
@@ -729,14 +856,24 @@ export const AppConfigDiff = ({
   defaultSectionsOpen = true,
   focus,
   presentation = 'diff',
+  embedded = false,
 }: IAppConfigDiff) => {
+  const [expandAll, setExpandAll] = useState<boolean | null>(null)
+  const expandAllValue = useMemo(
+    () => ({
+      expandAll,
+      toggle: () => setExpandAll((prev) => prev !== true),
+    }),
+    [expandAll]
+  )
+
   if (isLoading) {
-    return <AppConfigDiffSkeleton />
+    return <AppConfigDiffSkeleton embedded={embedded} />
   }
 
   if (sections.length === 0) {
     return (
-      <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+      <DiffShell embedded={embedded}>
         <div className="px-4 py-3 text-center">
           <EmptyState
             emptyTitle={presentation === 'snapshot' ? 'No configuration' : 'No config changes'}
@@ -749,34 +886,36 @@ export const AppConfigDiff = ({
             size="sm"
           />
         </div>
-      </Card>
+      </DiffShell>
     )
   }
 
   return (
     <WrapLinesProvider>
-      <PresentationContext.Provider value={presentation}>
-        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0 overflow-hidden">
-          {summary && presentation === 'diff' ? (
-            <AppConfigSummary summary={summary} />
-          ) : presentation === 'diff' ? (
-            <div className="px-4 sm:px-6 py-1.5 border-b bg-cool-grey-100 dark:bg-dark-grey-800 flex justify-end">
-              <WrapLinesToggle />
-            </div>
-          ) : null}
+      <ExpandAllContext.Provider value={expandAllValue}>
+        <PresentationContext.Provider value={presentation}>
+          <DiffShell embedded={embedded}>
+            {summary && presentation === 'diff' ? (
+              <AppConfigSummary summary={summary} />
+            ) : (
+              <div className="px-4 sm:px-6 py-1.5 border-b bg-cool-grey-100 dark:bg-dark-grey-800 flex justify-end">
+                <DiffToolbar />
+              </div>
+            )}
 
-          <div className="flex flex-col">
-            {sections.map((section) => (
-              <SectionGroup
-                key={section.name}
-                section={section}
-                defaultOpen={defaultSectionsOpen}
-                focus={focus}
-              />
-            ))}
-          </div>
-        </Card>
-      </PresentationContext.Provider>
+            <div className="flex flex-col">
+              {sections.map((section) => (
+                <SectionGroup
+                  key={section.name}
+                  section={section}
+                  defaultOpen={defaultSectionsOpen}
+                  focus={focus}
+                />
+              ))}
+            </div>
+          </DiffShell>
+        </PresentationContext.Provider>
+      </ExpandAllContext.Provider>
     </WrapLinesProvider>
   )
 }
