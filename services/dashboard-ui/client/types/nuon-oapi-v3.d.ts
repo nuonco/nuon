@@ -4494,6 +4494,7 @@ export interface components {
        */
       update_policy?: string;
       updated_at?: string;
+      verification?: components["schemas"]["signature.Verification"];
     };
     "app.GCPAccount": {
       created_at?: string;
@@ -7022,11 +7023,11 @@ export interface components {
       /** @description Valid is true if Time is not NULL */
       valid?: boolean;
     };
-    "github.Match": {
+    "github_com_google_go-github_v50_github.Match": {
       indices?: number[];
       text?: string;
     };
-    "github.Plan": {
+    "github_com_google_go-github_v50_github.Plan": {
       collaborators?: number;
       filled_seats?: number;
       name?: string;
@@ -7034,23 +7035,23 @@ export interface components {
       seats?: number;
       space?: number;
     };
-    "github.TextMatch": {
+    "github_com_google_go-github_v50_github.TextMatch": {
       fragment?: string;
-      matches?: components["schemas"]["github.Match"][];
+      matches?: components["schemas"]["github_com_google_go-github_v50_github.Match"][];
       object_type?: string;
       object_url?: string;
       property?: string;
     };
-    "github.Timestamp": {
+    "github_com_google_go-github_v50_github.Timestamp": {
       "time.Time"?: string;
     };
-    "github.User": {
+    "github_com_google_go-github_v50_github.User": {
       avatar_url?: string;
       bio?: string;
       blog?: string;
       collaborators?: number;
       company?: string;
-      created_at?: components["schemas"]["github.Timestamp"];
+      created_at?: components["schemas"]["github_com_google_go-github_v50_github.Timestamp"];
       disk_usage?: number;
       email?: string;
       events_url?: string;
@@ -7077,7 +7078,7 @@ export interface components {
       permissions?: {
         [key: string]: boolean;
       };
-      plan?: components["schemas"]["github.Plan"];
+      plan?: components["schemas"]["github_com_google_go-github_v50_github.Plan"];
       private_gists?: number;
       public_gists?: number;
       public_repos?: number;
@@ -7087,17 +7088,17 @@ export interface components {
       site_admin?: boolean;
       starred_url?: string;
       subscriptions_url?: string;
-      suspended_at?: components["schemas"]["github.Timestamp"];
+      suspended_at?: components["schemas"]["github_com_google_go-github_v50_github.Timestamp"];
       /**
        * @description TextMatches is only populated from search results that request text matches
        * See: search.go and https://docs.github.com/en/rest/search/#text-match-metadata
        */
-      text_matches?: components["schemas"]["github.TextMatch"][];
+      text_matches?: components["schemas"]["github_com_google_go-github_v50_github.TextMatch"][];
       total_private_repos?: number;
       twitter_username?: string;
       two_factor_authentication?: boolean;
       type?: string;
-      updated_at?: components["schemas"]["github.Timestamp"];
+      updated_at?: components["schemas"]["github_com_google_go-github_v50_github.Timestamp"];
       /** @description API URLs */
       url?: string;
     };
@@ -7374,6 +7375,7 @@ export interface components {
        * Empty for components that don't use update_policy.
        */
       update_policy?: string;
+      verification?: components["schemas"]["signature.Verification"];
     };
     "plantypes.DeployPlan": {
       app_config_id?: string;
@@ -9374,7 +9376,7 @@ export interface components {
       repository_selection?: string;
       status?: string;
       suspended_at?: string;
-      suspended_by?: components["schemas"]["github.User"];
+      suspended_by?: components["schemas"]["github_com_google_go-github_v50_github.User"];
     };
     "service.WaitlistRequest": {
       org_name: string;
@@ -9440,6 +9442,19 @@ export interface components {
       run_id?: string;
       /** @description empty means workflows.APITaskQueue (back-compat for pre-isolation rows) */
       task_queue?: string;
+    };
+    "signature.Authority": {
+      issuer?: string;
+      public_key?: string;
+      subject?: string;
+      subject_regexp?: string;
+      type?: components["schemas"]["signature.AuthorityType"];
+    };
+    /** @enum {string} */
+    "signature.AuthorityType": "keyless" | "public_key";
+    "signature.Verification": {
+      authorities?: components["schemas"]["signature.Authority"][];
+      require_signature?: boolean;
     };
     "sql.NullBool": {
       bool?: boolean;
