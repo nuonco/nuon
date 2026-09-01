@@ -5,13 +5,6 @@ import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { useNudge } from '@/hooks/use-nudge'
-import type { TAppBranchRunPreviewMode } from '@/types'
-
-export type PreviewQuickAction = {
-  label: string
-  mode: TAppBranchRunPreviewMode
-  onClick: () => void
-}
 
 interface IBranchDetailActions {
   editButton: ReactNode
@@ -20,7 +13,6 @@ interface IBranchDetailActions {
   isTriggerPending: boolean
   showManage?: boolean
   showTriggerNudge?: boolean
-  previewQuickActions?: PreviewQuickAction[]
   onTriggerRun: () => void
   onTriggerPreviewModal: () => void
 }
@@ -32,7 +24,6 @@ export const BranchDetailActions = ({
   isTriggerPending,
   showManage = true,
   showTriggerNudge = false,
-  previewQuickActions = [],
   onTriggerRun,
   onTriggerPreviewModal,
 }: IBranchDetailActions) => {
@@ -98,22 +89,6 @@ export const BranchDetailActions = ({
               Preview run…
               <Icon variant="EyeIcon" size={16} />
             </Button>
-            {previewQuickActions.length > 0 && (
-              <>
-                <hr />
-                <Text variant="subtext" theme="neutral" className="px-3 py-1">
-                  Quick preview
-                </Text>
-                {previewQuickActions.map((action) => (
-                  <Button key={action.label} isMenuButton onClick={action.onClick}>
-                    {action.label}
-                    <Text variant="subtext" theme="neutral">
-                      {action.mode}
-                    </Text>
-                  </Button>
-                ))}
-              </>
-            )}
           </Menu>
         </Dropdown>
       </div>

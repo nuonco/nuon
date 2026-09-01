@@ -5,10 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import {
-  Button,
-  type IButtonAsButton,
-} from '@/components/common/Button'
+import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import type { IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
@@ -30,6 +27,7 @@ interface IPreviewConfigSectionContainer {
   currentConfig?: TAppBranchConfig
   orgId: string
   appId: string
+  onSuccess?: () => void
 }
 
 const useAvailableInstalls = ({
@@ -47,7 +45,8 @@ const useAvailableInstalls = ({
   const installs = useMemo(
     () =>
       (query.data?.data ?? []).filter(
-        (install) => !install.app_branch_id || install.app_branch_id === branch.id
+        (install) =>
+          !install.app_branch_id || install.app_branch_id === branch.id
       ),
     [query.data, branch.id]
   )
@@ -60,6 +59,7 @@ export const PreviewConfigSectionContainer = ({
   currentConfig,
   orgId,
   appId,
+  onSuccess,
 }: IPreviewConfigSectionContainer) => {
   const { installs, isLoading } = useAvailableInstalls({
     branch,
@@ -77,6 +77,15 @@ export const PreviewConfigSectionContainer = ({
       installs={installs}
       hasGithubVCS={hasGithubVCS}
       isLoading={isLoading}
+      headerAction={
+        <EditPreviewConfigButton
+          branch={branch}
+          currentConfig={currentConfig}
+          orgId={orgId}
+          appId={appId}
+          onSuccess={onSuccess}
+        />
+      }
     />
   )
 }
@@ -108,7 +117,11 @@ const PreviewConfigEditorContainer = ({
     currentConfig?.public_git_vcs_config
   )
 
-  const { mutate: save, isPending, error } = useMutation<
+  const {
+    mutate: save,
+    isPending,
+    error,
+  } = useMutation<
     Awaited<ReturnType<typeof createBranchConfig>>,
     TAPIError,
     TAppBranchPreviewConfig

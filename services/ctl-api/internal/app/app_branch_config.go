@@ -42,9 +42,15 @@ type AppBranchConfig struct {
 	// branch's synced app config produced.
 	PostDeployRunbookIDs pq.StringArray `gorm:"type:text[]" json:"post_deploy_runbook_ids,omitzero" temporaljson:"post_deploy_runbook_ids,omitzero,omitempty" swaggertype:"array,string"`
 
-	// DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
-	// branch runs for this config. Manual triggers are unaffected.
-	DisableBranchTriggers bool `json:"disable_branch_triggers" temporaljson:"disable_branch_triggers,omitempty"`
+	// IgnoreChangesRegex is an RE2 pattern matched against every changed file path
+	// in a git-run or git-preview run. When every changed file matches, the run is
+	// marked not-attempted instead of building and deploying. Empty disables the
+	// check, and a forced run bypasses it.
+	IgnoreChangesRegex string `json:"ignore_changes_regex,omitempty" temporaljson:"ignore_changes_regex,omitzero,omitempty"`
+
+	// SendStatusesOnIgnore posts a successful commit status when a run is ignored
+	// by IgnoreChangesRegex, so a required check does not block the pull request.
+	SendStatusesOnIgnore bool `json:"send_statuses_on_ignore,omitempty" temporaljson:"send_statuses_on_ignore,omitzero,omitempty"`
 
 	PreviewConfig *AppBranchPreviewConfig `json:"preview_config,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"preview_config,omitzero,omitempty"`
 

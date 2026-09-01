@@ -17,6 +17,8 @@ title: 'Branch'
 | **`install_groups`**<br/>[array](#install_groups) | ordered deployment groups for this branch | **Optional** | - |
 | **`preview`**<br/>[AppBranchPreviewConfig](#preview) | default preview run settings for this branch | **Optional** | - |
 | **`post_deploy_runbooks`**<br/>array | names of runbooks to run on each install, in order, after its deploy succeeds; resolved to IDs at sync time | **Optional** | - |
+| **`ignore_changes_regex`**<br/>string | RE2 regex matched against every changed file path; a run whose entire changed file set matches is not attempted | **Optional** | - |
+| **`send_statuses_on_ignore`**<br/>boolean | whether to send a successful commit status when a run is ignored by ignore_changes_regex | **Optional** | - |
 
 ### `connected_repo`
 

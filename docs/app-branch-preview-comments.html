@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Branch Preview — PR Comment Samples</title>
+<style>
+:root {
+  --canvas: #0d1117;
+  --canvas-inset: #010409;
+  --surface: #161b22;
+  --border: #30363d;
+  --border-muted: #21262d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --link: #2f81f7;
+  --green: #3fb950;
+  --red: #f85149;
+  --yellow: #d29922;
+  --purple: #a371f7;
+  --neutral: #6e7681;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  background: var(--canvas);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+code, pre, .mono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* ─── Page chrome ─── */
+.page-header {
+  border-bottom: 1px solid var(--border);
+  padding: 28px 24px 20px;
+}
+.page-header-inner { max-width: 920px; margin: 0 auto; }
+.page-header h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+.page-header p { color: var(--muted); font-size: 14px; }
+.page-header .note {
+  margin-top: 12px; padding: 10px 14px;
+  border: 1px solid var(--border); border-left: 3px solid var(--purple);
+  border-radius: 6px; background: var(--surface);
+  color: var(--muted); font-size: 13px;
+}
+
+.container { max-width: 920px; margin: 0 auto; padding: 24px; }
+
+.mode-section { margin-bottom: 44px; }
+.mode-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); margin-bottom: 4px;
+}
+.mode-title .rule { flex: 1; height: 1px; background: var(--border); }
+.mode-context {
+  color: var(--muted); font-size: 13px; margin-bottom: 18px;
+}
+.mode-context code {
+  background: rgba(110,118,129,0.4); padding: 0.15em 0.4em;
+  border-radius: 6px; font-size: 12px; color: var(--text);
+}
+
+/* ─── PR timeline ─── */
+.timeline { position: relative; padding-left: 56px; }
+.timeline::before {
+  content: ""; position: absolute; left: 19px; top: 0; bottom: 0;
+  width: 2px; background: var(--border-muted);
+}
+.timeline-item { position: relative; margin-bottom: 20px; }
+
+.avatar {
+  position: absolute; left: -56px; top: 0;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, #6e40c9, #a371f7);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; color: #fff;
+  border: 2px solid var(--canvas);
+}
+
+.comment {
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--canvas); position: relative;
+}
+.comment::before {
+  content: ""; position: absolute; left: -8px; top: 11px;
+  width: 0; height: 0;
+  border-top: 8px solid transparent; border-bottom: 8px solid transparent;
+  border-right: 8px solid var(--border);
+}
+.comment::after {
+  content: ""; position: absolute; left: -7px; top: 11px;
+  width: 0; height: 0;
+  border-top: 8px solid transparent; border-bottom: 8px solid transparent;
+  border-right: 8px solid var(--surface);
+}
+.comment-header {
+  background: var(--surface); padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 5px 5px 0 0;
+  font-size: 13px; color: var(--muted);
+}
+.comment-header strong { color: var(--text); font-weight: 600; }
+.badge-bot {
+  display: inline-block; border: 1px solid var(--border);
+  border-radius: 2em; padding: 0 7px; margin: 0 4px;
+  font-size: 11px; font-weight: 500; color: var(--muted);
+  line-height: 18px; vertical-align: 1px;
+}
+.comment-body { padding: 16px; }
+
+/* ─── Markdown rendering ─── */
+.md h2 {
+  font-size: 20px; font-weight: 600; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-muted); margin-bottom: 16px;
+}
+.md h3 {
+  font-size: 15px; font-weight: 600; margin: 20px 0 10px;
+}
+.md p { margin-bottom: 14px; }
+.md p:last-child { margin-bottom: 0; }
+.md strong { font-weight: 600; }
+.md a { color: var(--link); text-decoration: none; }
+.md a:hover { text-decoration: underline; }
+.md code {
+  background: rgba(110,118,129,0.4); padding: 0.2em 0.4em;
+  border-radius: 6px; font-size: 85%;
+}
+.md pre {
+  background: var(--surface); border-radius: 6px; padding: 16px;
+  overflow-x: auto; margin-bottom: 14px;
+}
+.md pre code { background: none; padding: 0; font-size: 85%; line-height: 1.45; }
+.md hr {
+  height: 1px; border: 0; background: var(--border);
+  margin: 20px 0 14px;
+}
+.md em { color: var(--muted); font-size: 12px; font-style: italic; }
+.md ul { margin: 0 0 14px 0; padding-left: 22px; }
+.md li { margin-bottom: 4px; }
+
+.md table {
+  border-collapse: collapse; margin-bottom: 14px; display: block;
+  width: max-content; max-width: 100%; overflow: auto;
+}
+.md th, .md td {
+  border: 1px solid var(--border); padding: 6px 13px; font-size: 13px;
+}
+.md th { font-weight: 600; background: var(--surface); text-align: left; }
+.md tr:nth-child(2n) td { background: var(--surface); }
+
+.md details {
+  border: 1px solid var(--border-muted); border-radius: 6px;
+  padding: 8px 12px; margin-bottom: 14px; background: var(--surface);
+}
+.md details[open] { padding-bottom: 4px; }
+.md summary {
+  cursor: pointer; font-weight: 600; font-size: 13px;
+  list-style: revert; color: var(--text);
+}
+.md details > *:not(summary) { margin-top: 10px; }
+.md details table { margin-bottom: 6px; }
+.md details h4 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.md details ul { margin-bottom: 10px; }
+.md details ul + h4 { margin-top: 14px; }
+
+.status-line { font-size: 14px; margin-bottom: 16px; }
+.run-link {
+  display: inline-block; margin: -4px 0 16px; font-weight: 600;
+}
+.gh-alert {
+  border-left: 4px solid var(--yellow); padding: 8px 12px;
+  margin: 0 0 16px; background: rgba(210,153,34,0.08);
+}
+.gh-alert .alert-title { color: var(--yellow); font-weight: 600; margin-bottom: 3px; }
+.change-source { color: #79c0ff; }
+.change-config { color: #e3b341; }
+
+/* ─── Checks widget ─── */
+.checks {
+  border: 1px solid var(--border); border-radius: 6px;
+  margin-top: 12px; overflow: hidden;
+}
+.checks-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; background: var(--surface);
+}
+.checks-header .icon {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.icon.pass { background: var(--green); }
+.icon.fail { background: var(--red); }
+.checks-header .label { font-weight: 600; font-size: 14px; }
+.checks-header .sub { color: var(--muted); font-size: 13px; }
+
+.check-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.check-row .dot {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #fff;
+}
+.dot.pass { background: var(--green); }
+.dot.fail { background: var(--red); }
+.dot.pending { background: var(--yellow); }
+.check-row .name { font-weight: 600; }
+.check-row .desc { color: var(--muted); }
+.check-row .details-link { margin-left: auto; color: var(--link); text-decoration: none; }
+.check-row .details-link:hover { text-decoration: underline; }
+.check-row .ctx {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px; color: var(--text);
+}
+
+.legend {
+  margin-top: 40px; padding: 16px 18px;
+  border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
+}
+.legend h2 { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+.legend table { border-collapse: collapse; width: 100%; }
+.legend th, .legend td {
+  border: 1px solid var(--border); padding: 6px 12px;
+  font-size: 13px; text-align: left;
+}
+.legend th { background: var(--canvas); font-weight: 600; }
+.legend td.mono {
+  font-size: 12px; color: var(--purple);
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>App Branch Preview — PR comment samples</h1>
+    <p>Proposed pull request comment and commit status output for each preview mode, in success and failure.</p>
+    <div class="note">
+      Mockup only. Placeholders: org <code style="color:inherit">acme</code>, app
+      <code style="color:inherit">payments</code>, branch <code style="color:inherit">production</code>,
+      preview install <code style="color:inherit">preview-us-west</code>.
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ══════════ BUILD AND VALIDATE ══════════ -->
+  <div class="mode-section">
+    <div class="mode-title">1 — Build and validate<span class="rule"></span></div>
+    <div class="mode-context">
+      Preview mode <code>build-only</code>. Components build and the config is validated. No install is planned
+      or applied, so there is no install impact table.
+    </div>
+
+    <div class="timeline">
+
+      <!-- 1a success -->
+      <div class="timeline-item">
+        <div class="avatar">N</div>
+        <div class="comment">
+          <div class="comment-header">
+            <strong>nuon</strong><span class="badge-bot">bot</span> commented on Sep 1, 2026
+          </div>
+          <div class="comment-body md">
+            <h2>Nuon Preview — acme/payments/production (build and validate)</h2>
+            <a class="run-link" href="#">View preview run →</a>
+            <div class="gh-alert">
+              <div class="alert-title">Warning</div>
+              🚨 Stack changes require customers to reprovision the stack. Learn more <a href="https://docs.nuon.co/concepts/stacks">here</a>.
+            </div>
+            <p class="status-line"><strong>Status</strong>: ✅ Complete</p>
+
+            <details>
+              <summary><strong>Config changes</strong> <code>+1</code> <code>~2</code></summary>
+              <h4>components</h4>
+              <ul>
+                <li><code>+</code> <code>api</code></li>
+                <li><code>~</code> <code>worker</code> — image tag</li>
+              </ul>
+              <h4>Stack</h4>
+              <p><code>~1</code></p>
+            </details>
+
+            <h3>Builds</h3>
+            <table>
+              <thead><tr><th>Component</th><th>Change</th></tr></thead>
+              <tbody>
+                <tr><td><a href="/acme/apps/payments/components/component-api/builds/build-api"><code>api</code></a></td><td class="change-source">Source changed</td></tr>
+                <tr><td><a href="/acme/apps/payments/components/component-worker/builds/build-worker"><code>worker</code></a></td><td class="change-config">Config changed</td></tr>
+                <tr><td><a href="/acme/apps/payments/sandbox/builds/sandbox-build"><code>Sandbox</code></a></td><td class="change-source">Source changed</td></tr>
+              </tbody>
+            </table>
+
+            <p>Builds and config validation succeeded. No install was planned or applied.</p>
+
+            <h3>Debug with MCP</h3>
+            <p>Copy this prompt into an MCP-enabled assistant:</p>
+            <pre><code>Fetch the overview of app branch run abrun-example and diagnose any failures.</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="checks">
+      <div class="checks-header">
+        <div class="icon pass">✓</div>
+        <div>
+          <div class="label">All checks have passed</div>
+          <div class="sub">1 successful check</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="dot pass">✓</div>
+        <span class="ctx">nuon/acme/payments/production preview (build and validate)</span>
+        <span class="desc">— Preview complete</span>
+        <a class="details-link" href="#">Details</a>
+      </div>
+    </div>
+
+    <div class="timeline" style="margin-top:28px">
+      <!-- 1b failed -->
+      <div class="timeline-item">
+        <div class="avatar">N</div>
+        <div class="comment">
+          <div class="comment-header">
+            <strong>nuon</strong><span class="badge-bot">bot</span> commented on Sep 1, 2026
+          </div>
+          <div class="comment-body md">
+            <h2>Nuon Preview — acme/payments/production (build and validate)</h2>
+            <a class="run-link" href="#">View preview run →</a>
+            <p class="status-line"><strong>Status</strong>: ❌ Failed</p>
+
+            <details>
+              <summary><strong>Config changes</strong> <code>+1</code></summary>
+              <h4>components</h4>
+              <ul>
+                <li><code>+</code> <code>api</code></li>
+              </ul>
+            </details>
+
+            <h3>Builds</h3>
+            <table>
+              <thead><tr><th>Component</th><th>Change</th></tr></thead>
+              <tbody><tr><td><a href="/acme/apps/payments/components/component-api/builds/build-api"><code>api</code></a></td><td class="change-source">Source changed</td></tr></tbody>
+            </table>
+
+            <h3>Error</h3>
+            <pre><code>component "api" build failed: unable to pull image</code></pre>
+
+            <h3>Debug with MCP</h3>
+            <p>Copy this prompt into an MCP-enabled assistant:</p>
+            <pre><code>Fetch the overview of app branch run abrun-example and diagnose any failures.</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="checks">
+      <div class="checks-header">
+        <div class="icon fail">✕</div>
+        <div>
+          <div class="label">Some checks were not successful</div>
+          <div class="sub">1 failing check</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="dot fail">✕</div>
+        <span class="ctx">nuon/acme/payments/production preview (build and validate)</span>
+        <span class="desc">— Preview failed</span>
+        <a class="details-link" href="#">Details</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ PLAN ONLY ══════════ -->
+  <div class="mode-section">
+    <div class="mode-title">2 — Plan only<span class="rule"></span></div>
+    <div class="mode-context">
+      Preview mode <code>plan-only</code>. The preview install is planned but never applied, so the impact table
+      is included with the read-only disclaimer.
+    </div>
+
+    <div class="timeline">
+      <!-- 2a success -->
+      <div class="timeline-item">
+        <div class="avatar">N</div>
+        <div class="comment">
+          <div class="comment-header">
+            <strong>nuon</strong><span class="badge-bot">bot</span> commented on Sep 1, 2026
+          </div>
+          <div class="comment-body md">
+            <h2>Nuon Preview — acme/payments/production (plan-only)</h2>
+            <a class="run-link" href="#">View preview run →</a>
+            <div class="gh-alert">
+              <div class="alert-title">Warning</div>
+              🚨 Stack changes require customers to reprovision the stack. Learn more <a href="https://docs.nuon.co/concepts/stacks">here</a>.
+            </div>
+            <p class="status-line"><strong>Status</strong>: ✅ Complete</p>
+
+            <details>
+              <summary><strong>Config changes</strong> <code>+1</code> <code>~1</code></summary>
+              <h4>components</h4>
+              <ul>
+                <li><code>+</code> <code>api</code></li>
+                <li><code>~</code> <code>worker</code> — image tag</li>
+              </ul>
+            </details>
+
+            <h3>Builds</h3>
+            <table>
+              <thead><tr><th>Component</th><th>Change</th></tr></thead>
+              <tbody>
+                <tr><td><a href="/acme/apps/payments/components/component-api/builds/build-api"><code>api</code></a></td><td class="change-source">Source changed</td></tr>
+                <tr><td><a href="/acme/apps/payments/components/component-worker/builds/build-worker"><code>worker</code></a></td><td class="change-config">Config changed</td></tr>
+                <tr><td><a href="/acme/apps/payments/sandbox/builds/sandbox-build"><code>Sandbox</code></a></td><td class="change-source">Source changed</td></tr>
+              </tbody>
+            </table>
+
+            <h3>Install Impact — 1 install(s)</h3>
+            <p>Preview only — nothing was applied to these installs.</p>
+
+            <details open>
+              <summary><b>preview</b> (1)</summary>
+              <table>
+                <thead><tr><th>Install</th><th>Added</th><th>Changed</th><th>Removed</th><th>Sandbox</th><th>Stack</th></tr></thead>
+                <tbody><tr><td>preview-us-west</td><td>+1</td><td>1</td><td>0</td><td>—</td><td>⚠️ changed</td></tr></tbody>
+              </table>
+            </details>
+
+            <h3>Debug with MCP</h3>
+            <p>Copy this prompt into an MCP-enabled assistant:</p>
+            <pre><code>Fetch the overview of app branch run abrun-example and diagnose any failures.</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="checks">
+      <div class="checks-header">
+        <div class="icon pass">✓</div>
+        <div>
+          <div class="label">All checks have passed</div>
+          <div class="sub">1 successful check</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="dot pass">✓</div>
+        <span class="ctx">nuon/acme/payments/production preview (plan-only)</span>
+        <span class="desc">— Preview complete</span>
+        <a class="details-link" href="#">Details</a>
+      </div>
+    </div>
+
+    <div class="timeline" style="margin-top:28px">
+      <!-- 2b failed -->
+      <div class="timeline-item">
+        <div class="avatar">N</div>
+        <div class="comment">
+          <div class="comment-header">
+            <strong>nuon</strong><span class="badge-bot">bot</span> commented on Sep 1, 2026
+          </div>
+          <div class="comment-body md">
+            <h2>Nuon Preview — acme/payments/production (plan-only)</h2>
+            <a class="run-link" href="#">View preview run →</a>
+            <p class="status-line"><strong>Status</strong>: ❌ Failed</p>
+
+            <details>
+              <summary><strong>Config changes</strong> <code>+1</code></summary>
+              <h4>components</h4>
+              <ul>
+                <li><code>+</code> <code>api</code></li>
+              </ul>
+            </details>
+
+            <h3>Builds</h3>
+            <table>
+              <thead><tr><th>Component</th><th>Change</th></tr></thead>
+              <tbody><tr><td><a href="/acme/apps/payments/components/component-api/builds/build-api"><code>api</code></a></td><td class="change-config">Config changed</td></tr></tbody>
+            </table>
+
+            <h3>Error</h3>
+            <pre><code>plan failed on install preview-us-west: sandbox outputs missing</code></pre>
+
+            <h3>Debug with MCP</h3>
+            <p>Copy this prompt into an MCP-enabled assistant:</p>
+            <pre><code>Fetch the overview of app branch run abrun-example and diagnose any failures.</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="checks">
+      <div class="checks-header">
+        <div class="icon fail">✕</div>
+        <div>
+          <div class="label">Some checks were not successful</div>
+          <div class="sub">1 failing check</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="dot fail">✕</div>
+        <span class="ctx">nuon/acme/payments/production preview (plan-only)</span>
+        <span class="desc">— Preview failed</span>
+        <a class="details-link" href="#">Details</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ APPLY ══════════ -->
+  <div class="mode-section">
+    <div class="mode-title">3 — Apply<span class="rule"></span></div>
+    <div class="mode-context">
+      Preview mode <code>apply</code>. Changes are actually applied to the preview install, so the read-only
+      impact table is replaced by a statement of what was applied.
+    </div>
+
+    <div class="timeline">
+      <!-- 3a success -->
+      <div class="timeline-item">
+        <div class="avatar">N</div>
+        <div class="comment">
+          <div class="comment-header">
+            <strong>nuon</strong><span class="badge-bot">bot</span> commented on Sep 1, 2026
+          </div>
+          <div class="comment-body md">
+            <h2>Nuon Preview — acme/payments/production (apply)</h2>
+            <a class="run-link" href="#">View preview run →</a>
+            <div class="gh-alert">
+              <div class="alert-title">Warning</div>
+              🚨 Stack changes require customers to reprovision the stack. Learn more <a href="https://docs.nuon.co/concepts/stacks">here</a>.
+            </div>
+            <p class="status-line"><strong>Status</strong>: ✅ Complete</p>
+
+            <details>
+              <summary><strong>Config changes</strong> <code>+1</code> <code>~1</code></summary>
+              <h4>components</h4>
+              <ul>
+                <li><code>+</code> <code>api</code></li>
+                <li><code>~</code> <code>worker</code> — image tag</li>
+              </ul>
+            </details>
+
+            <h3>Builds</h3>
+            <table>
+              <thead><tr><th>Component</th><th>Change</th></tr></thead>
+              <tbody>
+                <tr><td><a href="/acme/apps/payments/components/component-api/builds/build-api"><code>api</code></a></td><td class="change-source">Source changed</td></tr>
+                <tr><td><a href="/acme/apps/payments/components/component-worker/builds/build-worker"><code>worker</code></a></td><td class="change-config">Config changed</td></tr>
+                <tr><td><a href="/acme/apps/payments/sandbox/builds/sandbox-build"><code>Sandbox</code></a></td><td class="change-source">Source changed</td></tr>
+              </tbody>
+            </table>
+
+            <h3>Preview install</h3>
+            <p>Applied to <a href="/acme/installs/install-preview/app-branch-runs"><code>preview-us-west</code></a>.</p>
+
+            <h3>Debug with MCP</h3>
+            <p>Copy this prompt into an MCP-enabled assistant:</p>
+            <pre><code>Fetch the overview of app branch run abrun-example and diagnose any failures.</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="checks">
+      <div class="checks-header">
+        <div class="icon pass">✓</div>
+        <div>
+          <div class="label">All checks have passed</div>
+          <div class="sub">1 successful check</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="dot pass">✓</div>
+        <span class="ctx">nuon/acme/payments/production preview (apply)</span>
+        <span class="desc">— Preview complete</span>
+        <a class="details-link" href="#">Details</a>
+      </div>
+    </div>
+
+    <div class="timeline" style="margin-top:28px">
+      <!-- 3b failed -->
+      <div class="timeline-item">
+        <div class="avatar">N</div>
+        <div class="comment">
+          <div class="comment-header">
+            <strong>nuon</strong><span class="badge-bot">bot</span> commented on Sep 1, 2026
+          </div>
+          <div class="comment-body md">
+            <h2>Nuon Preview — acme/payments/production (apply)</h2>
+            <a class="run-link" href="#">View preview run →</a>
+            <p class="status-line"><strong>Status</strong>: ❌ Failed</p>
+
+            <details>
+              <summary><strong>Config changes</strong> <code>+1</code></summary>
+              <h4>components</h4>
+              <ul>
+                <li><code>+</code> <code>api</code></li>
+              </ul>
+            </details>
+
+            <h3>Builds</h3>
+            <table>
+              <thead><tr><th>Component</th><th>Change</th></tr></thead>
+              <tbody><tr><td><a href="/acme/apps/payments/components/component-api/builds/build-api"><code>api</code></a></td><td class="change-source">Source changed</td></tr></tbody>
+            </table>
+
+            <h3>Error</h3>
+            <pre><code>apply failed on install preview-us-west: helm release timed out</code></pre>
+
+            <h3>Debug with MCP</h3>
+            <p>Copy this prompt into an MCP-enabled assistant:</p>
+            <pre><code>Fetch the overview of app branch run abrun-example and diagnose any failures.</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="checks">
+      <div class="checks-header">
+        <div class="icon fail">✕</div>
+        <div>
+          <div class="label">Some checks were not successful</div>
+          <div class="sub">1 failing check</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="dot fail">✕</div>
+        <span class="ctx">nuon/acme/payments/production preview (apply)</span>
+        <span class="desc">— Preview failed</span>
+        <a class="details-link" href="#">Details</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h2>Commit status names</h2>
+    <table>
+      <thead>
+        <tr><th>Run</th><th>Check name</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Non-preview branch run</td><td class="mono">nuon/acme/payments/production</td></tr>
+        <tr><td>Preview — build and validate</td><td class="mono">nuon/acme/payments/production preview (build and validate)</td></tr>
+        <tr><td>Preview — plan only</td><td class="mono">nuon/acme/payments/production preview (plan-only)</td></tr>
+        <tr><td>Preview — apply</td><td class="mono">nuon/acme/payments/production preview (apply)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+</body>
+</html>

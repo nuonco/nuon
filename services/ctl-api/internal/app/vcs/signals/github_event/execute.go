@@ -56,7 +56,7 @@ func (s *Signal) handlePushEvent(ctx workflow.Context, l *zap.Logger, connEvent 
 	l.Info(fmt.Sprintf("processing push event for repo=%s branch=%s vcs_connection=%s",
 		pushInfo.Repo, pushInfo.Branch, connEvent.VCSConnectionID))
 
-	return s.fanOutToAppBranches(ctx, l, connEvent, pushInfo.Repo, pushInfo.Branch, false, "push", nil, pushInfo.HeadSHA, "", pushInfo.PusherEmails, pushInfo.SenderLogin, pushInfo.ChangedFiles)
+	return s.fanOutToAppBranches(ctx, l, connEvent, pushInfo.Repo, pushInfo.Branch, false, "push", nil, pushInfo.HeadSHA, "", pushInfo.BeforeSHA, pushInfo.PusherEmails, pushInfo.SenderLogin, pushInfo.ChangedFiles)
 }
 
 func (s *Signal) handlePullRequestEvent(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, event *app.GithubEvent, payload map[string]any) error {
@@ -74,10 +74,10 @@ func (s *Signal) handlePullRequestEvent(ctx workflow.Context, l *zap.Logger, con
 	l.Info(fmt.Sprintf("processing pull_request event for repo=%s base=%s pr=%d head=%s vcs_connection=%s",
 		prInfo.Repo, prInfo.BaseBranch, prInfo.PRNumber, prInfo.HeadSHA, connEvent.VCSConnectionID))
 
-	return s.fanOutToAppBranches(ctx, l, connEvent, prInfo.Repo, prInfo.BaseBranch, true, "pull_request", &prInfo.PRNumber, prInfo.HeadSHA, prInfo.BaseBranch, nil, "", nil)
+	return s.fanOutToAppBranches(ctx, l, connEvent, prInfo.Repo, prInfo.BaseBranch, true, "pull_request", &prInfo.PRNumber, prInfo.HeadSHA, prInfo.BaseBranch, "", nil, "", nil)
 }
 
-func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, repo, branch string, planOnly bool, eventType string, prNumber *int, headSHA, baseBranch string, pusherEmails []string, senderLogin string, changedFiles []string) error {
+func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, repo, branch string, planOnly bool, eventType string, prNumber *int, headSHA, baseBranch, baseSHA string, pusherEmails []string, senderLogin string, changedFiles []string) error {
 	matches, err := activities.AwaitFindMatchingAppBranches(ctx, activities.FindMatchingAppBranchesRequest{
 		OrgID:  connEvent.OrgID,
 		Repo:   repo,
@@ -99,6 +99,8 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 				PRNumber:            prNumber,
 				HeadSHA:             headSHA,
 				BaseBranch:          baseBranch,
+				BaseSHA:             baseSHA,
+				ChangedFiles:        changedFiles,
 				PusherEmails:        pusherEmails,
 				SenderLogin:         senderLogin,
 				FallbackCreatedByID: connEvent.CreatedByID,
