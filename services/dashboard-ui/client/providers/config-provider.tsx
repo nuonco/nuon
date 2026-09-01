@@ -24,6 +24,7 @@ export type TRuntimeConfig = {
   byocColor?: string
   byocTextColor?: string
   onboardingV2?: boolean
+  dashboardLite?: boolean
   adminDashboardUrl?: string
   posthogKey?: string
   posthogHost?: string
