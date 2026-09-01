@@ -9,7 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 )
 
@@ -18,14 +18,13 @@ type mcpApproveStepInput struct {
 }
 
 func (s *service) mcpApproveStep(ctx context.Context, _ *mcp.CallToolRequest, in mcpApproveStepInput) (*mcp.CallToolResult, any, error) {
-	if err := requireWriteScope(ctx); err != nil {
+	orgID, err := require.Write(ctx)
+	if err != nil {
 		return nil, nil, err
 	}
 
-	orgID := keys.OrgIDFromContext(ctx)
-
 	var approval app.WorkflowStepApproval
-	err := s.db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Where("id = ? AND org_id = ?", in.ApprovalID, orgID).
 		Preload("InstallWorkflowStep").
 		Preload("Response").
