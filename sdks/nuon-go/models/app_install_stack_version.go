@@ -35,6 +35,14 @@ type AppInstallStackVersion struct {
 	// checksum
 	Checksum string `json:"checksum,omitempty"`
 
+	// CompositeError holds a typed, structured error frozen at write time when
+	// stack template generation fails due to a config or rendering problem. It
+	// is nil for successful versions and for failures not attributed to template
+	// rendering (e.g. transient infrastructure upload errors).
+	CompositeError struct {
+		CompositeerrorsCompositeErrorData
+	} `json:"composite_error,omitempty"`
+
 	// composite status
 	CompositeStatus *AppCompositeStatus `json:"composite_status,omitempty"`
 
@@ -46,6 +54,25 @@ type AppInstallStackVersion struct {
 
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
+
+	// S3 key CustomStacksTemplateURL was uploaded to, mirroring AWSBucketKey.
+	CustomStacksAwsBucketKey string `json:"custom_stacks_aws_bucket_key,omitempty"`
+
+	// stackName -> hoisted top-level CFN parameter name -> the install input it
+	// passes through, for parameters that were a simple whole-value install-input
+	// reference. Lets a Terraform consumer keep those parameters in sync with
+	// current input values on every apply, without a new stack version.
+	CustomStacksInputParametersMap any `json:"custom_stacks_input_parameters_map,omitempty"`
+
+	// stackName -> outputKey -> the flat top-level CFN output name, so a
+	// Terraform consumer can resolve an output without reimplementing the
+	// logicalID sanitize+concatenation scheme in HCL.
+	CustomStacksOutputMap any `json:"custom_stacks_output_map,omitempty"`
+
+	// Second AWS-only template containing only custom_nested_stacks, for the
+	// Terraform install path (the quicklink path never reads this). Empty when
+	// the app config declares none.
+	CustomStacksTemplateURL string `json:"custom_stacks_template_url,omitempty"`
 
 	// id
 	ID string `json:"id,omitempty"`
@@ -112,6 +139,10 @@ func (m *AppInstallStackVersion) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateCompositeError(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateCompositeStatus(formats); err != nil {
 		res = append(res, err)
 	}
@@ -144,6 +175,14 @@ func (m *AppInstallStackVersion) validateCallbackRef(formats strfmt.Registry) er
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallStackVersion) validateCompositeError(formats strfmt.Registry) error {
+	if swag.IsZero(m.CompositeError) { // not required
+		return nil
 	}
 
 	return nil
@@ -210,6 +249,10 @@ func (m *AppInstallStackVersion) ContextValidate(ctx context.Context, formats st
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateCompositeError(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCompositeStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -245,6 +288,11 @@ func (m *AppInstallStackVersion) contextValidateCallbackRef(ctx context.Context,
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (m *AppInstallStackVersion) contextValidateCompositeError(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }

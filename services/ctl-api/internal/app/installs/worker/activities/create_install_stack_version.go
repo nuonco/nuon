@@ -13,14 +13,15 @@ import (
 )
 
 type CreateInstallStackVersionRequest struct {
-	InstallID       string `validate:"required"`
-	InstallStackID  string `validate:"required"`
-	AppConfigID     string `validate:"required"`
-	Region          string `json:"region"`
-	StackName       string `json:"stack_name"`
-	Platform        string `json:"platform"`
-	PublicAPIURL    string `json:"public_api_url"`
-	DeploymentScope string `json:"deployment_scope"`
+	InstallID             string `validate:"required"`
+	InstallStackID        string `validate:"required"`
+	AppConfigID           string `validate:"required"`
+	Region                string `json:"region"`
+	StackName             string `json:"stack_name"`
+	Platform              string `json:"platform"`
+	PublicAPIURL          string `json:"public_api_url"`
+	DeploymentScope       string `json:"deployment_scope"`
+	HasCustomNestedStacks bool   `json:"has_custom_nested_stacks"`
 }
 
 // azurePortalCustomDeployBaseURL is the documented Deploy-to-Azure form. The
@@ -126,6 +127,12 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 			loc := stackTemplateLocations(a.cfg.AWSCloudFormationStackTemplateBaseURL, obj.AWSBucketKey, req)
 			obj.TemplateURL = loc.templateURL
 			obj.QuickLinkURL = loc.quickLinkURL
+
+			if req.Platform == "aws" && req.HasCustomNestedStacks {
+				obj.CustomStacksAWSBucketKey = fmt.Sprintf("templates/%s/%s-custom.json", req.InstallID, id)
+				baseURL := strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/")
+				obj.CustomStacksTemplateURL = fmt.Sprintf("%s/%s", baseURL, obj.CustomStacksAWSBucketKey)
+			}
 		}
 	}
 
