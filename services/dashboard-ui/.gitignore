@@ -9,6 +9,7 @@
 
 # production
 /build
+/build-ladle-lite
 /.next/
 /out/
 

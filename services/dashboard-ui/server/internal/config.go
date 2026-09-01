@@ -63,6 +63,7 @@ type Config struct {
 	BYOCIconText          string `config:"nuon_byoc_icon_text"`
 	BYOCColor             string `config:"nuon_byoc_color"`
 	OnboardingV2          bool   `config:"nuon_onboarding_v2"`
+	DashboardLite         bool   `config:"nuon_dashboard_lite"`
 	AdminDashboardUrl     string `config:"nuon_admin_dashboard_url"`
 	PostHogKey            string `config:"posthog_key"`
 	PostHogHost           string `config:"posthog_host"`
