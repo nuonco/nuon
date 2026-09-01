@@ -17,18 +17,14 @@ import type {
   TAPIError,
   TAppBranch,
   TAppBranchConfig,
-  TAppBranchPreviewConfig,
   TAppBranchRunPreviewMode,
   TAppBranchRunPreviewSource,
   TPreviewSourcePR,
 } from '@/types'
-import {
-  previewDefaultsFromConfig,
-} from '@/components/branches/shared/PreviewDefaultsEditor'
+import { previewDefaultsFromConfig } from '@/components/branches/shared/PreviewDefaultsEditor'
 import {
   formatPreviewDefaultsSummary,
   isPreviewOverride,
-  resolveInstallName,
   sortPreviewInstallCandidates,
 } from '@/components/branches/shared/preview-run-utils'
 
@@ -163,7 +159,11 @@ export const PreviewBranchRunModal = ({
                   const pr = prOptions.find((p) => String(p.pr_number) === val)
                   if (pr) onSelectPR(pr)
                 }}
-                placeholder={loadingSources ? 'Loading pull requests...' : 'Select a pull request'}
+                placeholder={
+                  loadingSources
+                    ? 'Loading pull requests...'
+                    : 'Select a pull request'
+                }
                 disabled={isPending || loadingSources || prOptions.length === 0}
               />
               <Text variant="subtext" theme="neutral">
@@ -182,8 +182,12 @@ export const PreviewBranchRunModal = ({
                   const branch = branchOptions.find((b) => b.name === name)
                   if (branch) onSelectBranch(branch)
                 }}
-                placeholder={loadingSources ? 'Loading branches...' : 'Select a branch'}
-                disabled={isPending || loadingSources || branchOptions.length === 0}
+                placeholder={
+                  loadingSources ? 'Loading branches...' : 'Select a branch'
+                }
+                disabled={
+                  isPending || loadingSources || branchOptions.length === 0
+                }
               />
               <Text variant="subtext" theme="neutral">
                 Git branches available for preview.
@@ -201,8 +205,12 @@ export const PreviewBranchRunModal = ({
               options={installOptions}
               value={selectedInstallId}
               onChange={onSelectInstallId}
-              placeholder={loadingInstalls ? 'Loading installs...' : 'Select an install'}
-              disabled={isPending || loadingInstalls || installOptions.length === 0}
+              placeholder={
+                loadingInstalls ? 'Loading installs...' : 'Select an install'
+              }
+              disabled={
+                isPending || loadingInstalls || installOptions.length === 0
+              }
               searchable={installOptions.length > 5}
               menuPlacement="bottom"
             />
@@ -212,9 +220,12 @@ export const PreviewBranchRunModal = ({
               </Text>
             ) : (
               <Text variant="subtext" theme="neutral">
-                Installs on other branches are labeled in the list. Pre-filled from branch preview
-                settings
-                {defaultInstallId && selectedInstallId === defaultInstallId ? ' (default)' : ''}.
+                Installs on other branches are labeled in the list. Pre-filled
+                from branch preview settings
+                {defaultInstallId && selectedInstallId === defaultInstallId
+                  ? ' (default)'
+                  : ''}
+                .
               </Text>
             )}
           </div>
@@ -244,7 +255,13 @@ export const PreviewBranchRunModalContainer = ({
   const { removeModal } = useSurfaces()
 
   const { data: candidates, isLoading: loadingInstalls } = useQuery({
-    queryKey: ['preview-install-candidates', orgId, appId, branch.id, currentConfig?.id],
+    queryKey: [
+      'preview-install-candidates',
+      orgId,
+      appId,
+      branch.id,
+      currentConfig?.id,
+    ],
     queryFn: () =>
       getPreviewInstallCandidates({
         orgId,
@@ -261,25 +278,37 @@ export const PreviewBranchRunModalContainer = ({
   )
 
   const branchDefaults = useMemo(
-    () => previewDefaultsFromConfig(currentConfig?.preview_config, availableInstalls),
+    () =>
+      previewDefaultsFromConfig(
+        currentConfig?.preview_config,
+        availableInstalls
+      ),
     [currentConfig?.preview_config, availableInstalls]
   )
 
   const hasGithubVCS = !!(
-    currentConfig?.connected_github_vcs_config || currentConfig?.public_git_vcs_config
+    currentConfig?.connected_github_vcs_config ||
+    currentConfig?.public_git_vcs_config
   )
 
   const branchDefaultsSummary = useMemo(
     () =>
-      formatPreviewDefaultsSummary(currentConfig?.preview_config, availableInstalls, {
-        includeGithub: hasGithubVCS,
-      }),
+      formatPreviewDefaultsSummary(
+        currentConfig?.preview_config,
+        availableInstalls,
+        {
+          includeGithub: hasGithubVCS,
+        }
+      ),
     [currentConfig?.preview_config, availableInstalls, hasGithubVCS]
   )
 
   const [sourceTab, setSourceTab] = useState<'pr' | 'branch'>('pr')
   const [selectedPR, setSelectedPR] = useState<TPreviewSourcePR>()
-  const [selectedBranch, setSelectedBranch] = useState<{ name: string; sha?: string }>()
+  const [selectedBranch, setSelectedBranch] = useState<{
+    name: string
+    sha?: string
+  }>()
   const [selectedInstallId, setSelectedInstallId] = useState('')
   const [mode, setMode] = useState<TAppBranchRunPreviewMode>('plan-only')
   const [defaultsSynced, setDefaultsSynced] = useState(false)
@@ -289,12 +318,16 @@ export const PreviewBranchRunModalContainer = ({
     setMode(branchDefaults.mode)
     setSelectedInstallId((prev) => prev || branchDefaults.installId)
     setDefaultsSynced(true)
-  }, [loadingInstalls, defaultsSynced, branchDefaults.installId, branchDefaults.mode])
+  }, [
+    loadingInstalls,
+    defaultsSynced,
+    branchDefaults.installId,
+    branchDefaults.mode,
+  ])
 
   const { data: sources, isLoading: loadingSources } = useQuery({
     queryKey: ['preview-sources', orgId, appId, branch.id],
-    queryFn: () =>
-      getPreviewSources({ orgId, appId, branchId: branch.id! }),
+    queryFn: () => getPreviewSources({ orgId, appId, branchId: branch.id! }),
     enabled: !!orgId && !!appId && !!branch.id,
   })
 
@@ -317,9 +350,7 @@ export const PreviewBranchRunModalContainer = ({
       availableInstalls.map((i) => ({
         value: i.id,
         label:
-          i.id === branchDefaults.installId
-            ? `${i.name} (default)`
-            : i.name,
+          i.id === branchDefaults.installId ? `${i.name} (default)` : i.name,
         description:
           i.app_branch_id && i.app_branch_id !== branch.id
             ? `On branch ${i.app_branch?.name ?? 'another branch'}`
@@ -332,10 +363,13 @@ export const PreviewBranchRunModalContainer = ({
 
   const { mutate, isPending } = useMutation({
     mutationFn: () => {
-      const source: TAppBranchRunPreviewSource = sourceTab === 'pr' ? 'pr' : 'branch'
+      const source: TAppBranchRunPreviewSource =
+        sourceTab === 'pr' ? 'pr' : 'branch'
       const overrideMode = mode !== branchDefaults.mode ? mode : undefined
       const installId =
-        mode !== 'build-only' && selectedInstallId ? selectedInstallId : undefined
+        mode !== 'build-only' && selectedInstallId
+          ? selectedInstallId
+          : undefined
 
       return triggerBranchRun({
         appId,
@@ -346,11 +380,10 @@ export const PreviewBranchRunModalContainer = ({
           preview_run: {
             source,
             pr_number: sourceTab === 'pr' ? selectedPR?.pr_number : undefined,
-            git_ref: sourceTab === 'branch' ? selectedBranch?.name : undefined,
+            git_ref:
+              sourceTab === 'pr' ? selectedPR?.head_ref : selectedBranch?.name,
             head_sha:
-              sourceTab === 'pr'
-                ? selectedPR?.head_sha
-                : selectedBranch?.sha,
+              sourceTab === 'pr' ? selectedPR?.head_sha : selectedBranch?.sha,
             mode: overrideMode,
             install_id: installId,
           },
@@ -402,19 +435,4 @@ export const PreviewBranchRunModalContainer = ({
       {...props}
     />
   )
-}
-
-export const quickPreviewFromDefaults = (
-  config: TAppBranchPreviewConfig | undefined,
-  modeOverride?: TAppBranchRunPreviewMode,
-  installs?: { id: string; name?: string }[]
-) => {
-  const defaults = previewDefaultsFromConfig(config, installs as import('@/types').TInstall[])
-  return {
-    mode: modeOverride ?? defaults.mode,
-    installId: defaults.installId,
-    installName: defaults.installId
-      ? resolveInstallName(defaults.installId, config, installs as import('@/types').TInstall[])
-      : '',
-  }
 }

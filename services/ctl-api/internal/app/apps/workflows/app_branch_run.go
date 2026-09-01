@@ -1,6 +1,8 @@
 package workflows
 
 import (
+	"encoding/json"
+
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -12,12 +14,15 @@ import (
 	builds "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
 	comparison "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/comparison"
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/ignorechanges"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/planinstallgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/postdeployrunbooks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/previewimpact"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/setuppreview"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
+
+const ignoreChangesStepVersion = "app-branch-ignore-changes-step-v1"
 
 // AppBranchRun builds the workflow steps for an app branch run
 // This workflow orchestrates:
@@ -57,6 +62,27 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
+
+	var changedFiles []string
+	if raw := generics.FromPtrStr(flw.Metadata["changed_files"]); raw != "" {
+		if err := json.Unmarshal([]byte(raw), &changedFiles); err != nil {
+			return nil, errors.Wrap(err, "unable to decode changed files")
+		}
+	}
+
+	if workflow.GetVersion(ctx, ignoreChangesStepVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		sg.nextGroup()
+		ignoreStep, err := sg.appBranchSignalStep(ctx, appBranchID, "check ignored changes", pgtype.Hstore{}, &ignorechanges.Signal{
+			RunID:        runID,
+			AppBranchID:  appBranchID,
+			BaseSHA:      generics.FromPtrStr(flw.Metadata["base_sha"]),
+			ChangedFiles: changedFiles,
+		}, WithSkippable(false), WithExecutionType(app.WorkflowStepExecutionTypeHidden))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create ignored changes step")
+		}
+		steps = append(steps, ignoreStep)
+	}
 
 	if isPreview {
 		sg.nextGroup()

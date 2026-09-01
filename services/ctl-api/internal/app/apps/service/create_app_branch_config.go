@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -38,9 +39,14 @@ type CreateAppBranchConfigRequest struct {
 	// Omit to carry the current setting forward; send an empty array to clear it.
 	PostDeployRunbookIDs *[]string `json:"post_deploy_runbook_ids,omitempty"`
 
-	// DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
-	// branch runs. Omit to carry the current setting forward.
-	DisableBranchTriggers *bool `json:"disable_branch_triggers,omitempty"`
+	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
+	// it matches this RE2 pattern. Omit to carry the current setting forward; send
+	// an empty string to clear it.
+	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty"`
+
+	// SendStatusesOnIgnore posts a successful commit status for runs ignored by
+	// IgnoreChangesRegex. Omit to carry the current setting forward.
+	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty"`
 
 	// PreviewConfig sets branch-level preview defaults. Omit to carry forward.
 	PreviewConfig *app.AppBranchPreviewConfig `json:"preview_config,omitempty"`
@@ -53,6 +59,12 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 
 	if err := c.VCSConfigRequest.Validate(); err != nil {
 		return err
+	}
+
+	if c.IgnoreChangesRegex != nil {
+		if err := helpers.ValidateIgnoreChangesRegex(*c.IgnoreChangesRegex); err != nil {
+			return err
+		}
 	}
 
 	// Validate install groups have unique orders
@@ -260,7 +272,10 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		publicGitVCSConfig,
 		installGroups,
 		req.PostDeployRunbookIDs,
-		req.DisableBranchTriggers,
+		&helpers.IgnoreChangesSettings{
+			Regex:                req.IgnoreChangesRegex,
+			SendStatusesOnIgnore: req.SendStatusesOnIgnore,
+		},
 		req.PreviewConfig,
 	)
 	if err != nil {

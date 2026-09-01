@@ -262,7 +262,8 @@ starts a plan-only run, and Nuon reports back on the pull request:
 
 - a comment headed `## Nuon Preview — <BranchName>` (the branch's `name`, so usually `main`) with a table of config
   changes by section, edited in place on each later push rather than added to.
-- a commit status with the context `nuon/preview`, moving from pending to success or failure.
+- a mode-specific commit status such as `nuon/<org>/<app>/<branch> preview (plan-only)`, linking to the preview run and moving from pending to
+  success or failure.
 
 If the pull request does not change the app config, the run stops early and the comment reports that the preview
 was skipped.
