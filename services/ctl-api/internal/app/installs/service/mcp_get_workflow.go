@@ -9,7 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type mcpGetWorkflowInput struct {
@@ -47,10 +47,13 @@ type mcpWorkflowStepSummary struct {
 }
 
 func (s *service) mcpGetWorkflow(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetWorkflowInput) (*mcp.CallToolResult, any, error) {
-	orgID := keys.OrgIDFromContext(ctx)
+	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var workflow app.Workflow
-	err := s.db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Preload("CreatedBy").
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {
 			return db.Order("group_idx, group_retry_idx, idx, created_at asc")

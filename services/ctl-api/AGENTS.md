@@ -1076,12 +1076,16 @@ ctl-api hosts a Streamable HTTP MCP server (`api-mcp` / `MCPHTTPPort`, default `
 `SchemaCache`. Domain services optionally implement `api.MCPService.RegisterMCPTools`.
 
 **Same as a stateful MCP server:** `mcp.AddTool` registration, handler signatures, Bearer auth,
-`WRITE OPERATION:` + write-scope checks, org via `X-Nuon-Org-ID` / `select_org` / single-org auto-select.
+`require.Read` / `require.Write` (org RBAC + OAuth read-only scope), org via
+`X-Nuon-Org-ID` / `select_org` / single-org auto-select. Full account is in context via
+`cctx.SetAccountContext`. Register tools with `api.MCPReadTool` / `api.MCPWriteTool` so
+Title and Annotations are set.
 
 **Different:** no durable `Mcp-Session-Id`; POST-only; no server-initiated client RPCs. Org sticky
 selection is an in-process map keyed by token ID — prefer the org header for multi-replica.
 
-Adding a tool: see `.agents/skills/mcp-api-tool/SKILL.md`.
+Adding a tool: `.agents/skills/mcp-api-tool/SKILL.md`. Keep the catalog in
+`docs/guides/agents/overview.mdx` and `agentsContextMarkdown()` in sync.
 
 ## Logging Conventions
 

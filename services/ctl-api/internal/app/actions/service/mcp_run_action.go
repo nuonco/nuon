@@ -7,7 +7,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type mcpRunActionInput struct {
@@ -25,21 +25,14 @@ type mcpRunActionResult struct {
 }
 
 func (s *service) mcpRunAction(ctx context.Context, _ *mcp.CallToolRequest, in mcpRunActionInput) (*mcp.CallToolResult, any, error) {
-	if err := requireWriteScope(ctx); err != nil {
+	orgID, err := require.Write(ctx)
+	if err != nil {
 		return nil, nil, err
 	}
 
-	orgID := keys.OrgIDFromContext(ctx)
-	if orgID == "" {
-		return nil, nil, fmt.Errorf("no org selected; call list_orgs then select_org, or pass X-Nuon-Org-ID")
-	}
-
-	install, err := s.getInstall(ctx, in.InstallID)
+	install, err := s.findInstall(ctx, orgID, in.InstallID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get install: %w", err)
-	}
-	if install.OrgID != orgID {
-		return nil, nil, fmt.Errorf("unable to find install %q", in.InstallID)
 	}
 
 	var configID string
