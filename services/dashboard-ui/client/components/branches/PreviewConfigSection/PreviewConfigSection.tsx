@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { LabelBadge } from '@/components/common/LabelBadge'
@@ -5,15 +6,14 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import type { TAppBranchConfig, TInstall } from '@/types'
 import { humanize } from '@/utils/string-utils'
-import {
-  previewDefaultsFromConfig,
-} from '@/components/branches/shared/PreviewDefaultsEditor'
+import { previewDefaultsFromConfig } from '@/components/branches/shared/PreviewDefaultsEditor'
 
 export interface IPreviewConfigSection {
   currentConfig?: TAppBranchConfig
   installs?: TInstall[]
   hasGithubVCS?: boolean
   isLoading?: boolean
+  headerAction?: ReactNode
 }
 
 export const PreviewConfigSection = ({
@@ -21,8 +21,12 @@ export const PreviewConfigSection = ({
   installs = [],
   hasGithubVCS = false,
   isLoading = false,
+  headerAction,
 }: IPreviewConfigSection) => {
-  const defaults = previewDefaultsFromConfig(currentConfig?.preview_config, installs)
+  const defaults = previewDefaultsFromConfig(
+    currentConfig?.preview_config,
+    installs
+  )
   const labels = Object.entries(defaults.labelSelector)
   const installName =
     installs.find((install) => install.id === defaults.installId)?.name ??
@@ -32,7 +36,7 @@ export const PreviewConfigSection = ({
       ? 'Not used'
       : labels.length > 0
         ? null
-        : installName ?? 'Not set'
+        : (installName ?? 'Not set')
 
   return (
     <Card>
@@ -40,20 +44,27 @@ export const PreviewConfigSection = ({
         <Text variant="base" weight="strong">
           Defaults
         </Text>
-        {isLoading ? (
-          <Badge loading size="sm" loadingWidth={4} />
-        ) : currentConfig?.config_number != null ? (
-          <Badge variant="code" size="sm">
-            v{currentConfig.config_number}
-          </Badge>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {isLoading ? (
+            <Badge loading size="sm" loadingWidth={4} />
+          ) : currentConfig?.config_number != null ? (
+            <Badge variant="code" size="sm">
+              v{currentConfig.config_number}
+            </Badge>
+          ) : null}
+          {headerAction}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <LabeledValue label="Mode" loading={isLoading} loadingWidth={10}>
           <Badge size="sm">{humanize(defaults.mode)}</Badge>
         </LabeledValue>
-        <LabeledValue label="Default install" loading={isLoading} loadingWidth={16}>
+        <LabeledValue
+          label="Default install"
+          loading={isLoading}
+          loadingWidth={16}
+        >
           {labels.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {labels.map(([key, value]) => (
@@ -73,7 +84,11 @@ export const PreviewConfigSection = ({
         </LabeledValue>
         {hasGithubVCS ? (
           <>
-            <LabeledValue label="Commit statuses" loading={isLoading} loadingWidth={8}>
+            <LabeledValue
+              label="Commit statuses"
+              loading={isLoading}
+              loadingWidth={8}
+            >
               <Badge
                 size="sm"
                 theme={defaults.setStatuses ? 'success' : 'neutral'}
@@ -81,11 +96,12 @@ export const PreviewConfigSection = ({
                 {defaults.setStatuses ? 'Enabled' : 'Disabled'}
               </Badge>
             </LabeledValue>
-            <LabeledValue label="Pull request comments" loading={isLoading} loadingWidth={8}>
-              <Badge
-                size="sm"
-                theme={defaults.comment ? 'success' : 'neutral'}
-              >
+            <LabeledValue
+              label="Pull request comments"
+              loading={isLoading}
+              loadingWidth={8}
+            >
+              <Badge size="sm" theme={defaults.comment ? 'success' : 'neutral'}>
                 {defaults.comment ? 'Enabled' : 'Disabled'}
               </Badge>
             </LabeledValue>

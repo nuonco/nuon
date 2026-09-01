@@ -11,7 +11,7 @@ import (
 
 type UpdateAppBranchRunStatusRequest struct {
 	RunID        string `json:"run_id" validate:"required"`
-	Status       string `json:"status" validate:"required,oneof=pending running success failed cancelled"`
+	Status       string `json:"status" validate:"required,oneof=pending running success failed cancelled not-attempted"`
 	ErrorMessage string `json:"error_message"`
 }
 
@@ -38,7 +38,7 @@ func (a *Activities) UpdateAppBranchRunStatus(ctx context.Context, req *UpdateAp
 		if run.StartedAt == nil {
 			updates["started_at"] = now
 		}
-	case "success", "failed", "cancelled":
+	case "success", "failed", "cancelled", "not-attempted":
 		if run.CompletedAt == nil {
 			updates["completed_at"] = now
 		}

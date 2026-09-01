@@ -23,9 +23,10 @@ type ServiceCreateAppBranchConfigRequest struct {
 	// connected github vcs config
 	ConnectedGithubVcsConfig *HelpersConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
-	// DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
-	// branch runs. Omit to carry the current setting forward.
-	DisableBranchTriggers bool `json:"disable_branch_triggers,omitempty"`
+	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
+	// it matches this RE2 pattern. Omit to carry the current setting forward; send
+	// an empty string to clear it.
+	IgnoreChangesRegex string `json:"ignore_changes_regex,omitempty"`
 
 	// install groups
 	InstallGroups []*ServiceInstallGroupRequest `json:"install_groups"`
@@ -41,6 +42,10 @@ type ServiceCreateAppBranchConfigRequest struct {
 
 	// public git vcs config
 	PublicGitVcsConfig *HelpersPublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
+
+	// SendStatusesOnIgnore posts a successful commit status for runs ignored by
+	// IgnoreChangesRegex. Omit to carry the current setting forward.
+	SendStatusesOnIgnore bool `json:"send_statuses_on_ignore,omitempty"`
 }
 
 // Validate validates this service create app branch config request

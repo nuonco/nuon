@@ -3,12 +3,12 @@ package apps
 import (
 	"context"
 	"fmt"
+	"os/exec"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
-	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	previewui "github.com/nuonco/nuon/bins/cli/internal/ui/v3/preview"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -34,12 +34,14 @@ func (s *Service) PreviewBranchRun(ctx context.Context, appID, branchID string, 
 		return view.Error(err)
 	}
 
-	branchID, err = s.selectBranchID(ctx, appID, branchID)
-	if err != nil {
-		return view.Error(err)
+	if s.cfg.Interactive && !asJSON {
+		return s.previewBranchRunInteractive(ctx, appID, branchID, opts)
 	}
 
-	branch, err := s.api.GetAppBranch(ctx, appID, branchID)
+	if branchID == "" {
+		return view.Error(fmt.Errorf("app branch required: use --branch-id or run interactively"))
+	}
+	branchID, err = s.selectBranchID(ctx, appID, branchID)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -53,7 +55,7 @@ func (s *Service) PreviewBranchRun(ctx context.Context, appID, branchID string, 
 		configID = latest.ID
 	}
 
-	previewReq, err := s.resolvePreviewRunRequest(ctx, appID, branchID, branch.Name, configID, opts)
+	previewReq, err := s.resolvePreviewRunRequest(ctx, appID, branchID, configID, opts)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -96,9 +98,110 @@ func (s *Service) PreviewBranchRun(ctx context.Context, appID, branchID string, 
 	return nil
 }
 
+func (s *Service) previewBranchRunInteractive(ctx context.Context, appID, branchID string, opts PreviewBranchRunOptions) error {
+	if opts.PRNumber != nil && opts.GitRef != "" {
+		return fmt.Errorf("specify either --pr-number or --git-ref, not both")
+	}
+	mode, err := parsePreviewMode(opts.Mode)
+	if err != nil {
+		return err
+	}
+
+	branches := make([]previewui.Branch, 0)
+	if branchID != "" {
+		resolved, err := s.resolveAppBranchID(ctx, appID, branchID)
+		if err != nil {
+			return err
+		}
+		branchID = resolved
+	} else {
+		appBranches, err := s.api.GetAppBranches(ctx, appID)
+		if err != nil {
+			return fmt.Errorf("unable to list app branches: %w", err)
+		}
+		if len(appBranches) == 0 {
+			return fmt.Errorf("no branches found for this app; create one with: nuon apps branches create")
+		}
+		for _, branch := range appBranches {
+			branches = append(branches, previewui.Branch{ID: branch.ID, Name: branch.Name})
+		}
+	}
+
+	loadBranch := func(ctx context.Context, selectedBranchID string) (*previewui.Data, error) {
+		branch, err := s.api.GetAppBranch(ctx, appID, selectedBranchID)
+		if err != nil {
+			return nil, fmt.Errorf("unable to load app branch: %w", err)
+		}
+		latest, err := s.api.GetAppBranchLatestConfig(ctx, appID, selectedBranchID)
+		if err != nil {
+			return nil, fmt.Errorf("unable to load branch config: %w", err)
+		}
+		sources, err := s.api.GetAppBranchPreviewSources(ctx, appID, selectedBranchID)
+		if err != nil {
+			return nil, fmt.Errorf("unable to list preview sources: %w", err)
+		}
+		configID := opts.ConfigID
+		if configID == "" {
+			configID = latest.ID
+		}
+		candidates, err := s.api.GetAppBranchPreviewInstallCandidates(ctx, appID, selectedBranchID, configID)
+		if err != nil {
+			return nil, fmt.Errorf("unable to list preview install candidates: %w", err)
+		}
+		return &previewui.Data{
+			BranchName:    branch.Name,
+			ConfigID:      configID,
+			PreviewConfig: latest.PreviewConfig,
+			Sources:       sources,
+			Installs:      sortPreviewInstallCandidates(candidates.Installs, selectedBranchID),
+		}, nil
+	}
+
+	result, err := previewui.App(ctx, branches, loadBranch, previewui.Options{
+		BranchID:   branchID,
+		Mode:       mode,
+		PRNumber:   opts.PRNumber,
+		GitRef:     opts.GitRef,
+		HeadSHA:    opts.HeadSHA,
+		InstallID:  opts.InstallID,
+		CurrentRef: currentGitRef(ctx),
+	})
+	if err != nil {
+		return err
+	}
+
+	run, err := s.api.TriggerAppBranchRun(ctx, appID, result.BranchID, &models.ServiceTriggerAppBranchRunRequest{
+		ConfigID:    result.ConfigID,
+		Force:       opts.Force,
+		AutoApprove: opts.AutoApprove,
+		PreviewRun:  result.Request,
+	})
+	if err != nil {
+		return err
+	}
+
+	if opts.Wait && !opts.NoWait && run.WorkflowID != "" {
+		if err := s.waitForWorkflowComplete(ctx, run.WorkflowID, false); err != nil {
+			return err
+		}
+		fmt.Printf("Preview run %s completed\n", run.ID)
+		return nil
+	}
+	if opts.NoWait {
+		ui.PrintJSON(run)
+		return nil
+	}
+	if run.WorkflowID == "" {
+		fmt.Printf("Triggered preview run %s\n", run.ID)
+		return nil
+	}
+	workflow.WorkflowApp(ctx, s.cfg, s.api, "", run.WorkflowID, false)
+	return nil
+}
+
 func (s *Service) resolvePreviewRunRequest(
 	ctx context.Context,
-	appID, branchID, branchName, configID string,
+	appID, branchID, configID string,
 	opts PreviewBranchRunOptions,
 ) (*models.ServicePreviewRunRequest, error) {
 	mode, err := s.resolvePreviewMode(ctx, opts.Mode, configID, appID, branchID)
@@ -112,8 +215,6 @@ func (s *Service) resolvePreviewRunRequest(
 
 	hasPR := opts.PRNumber != nil
 	hasBranch := opts.GitRef != ""
-	needsInteractiveSource := !hasPR && !hasBranch
-
 	sources, err := s.api.GetAppBranchPreviewSources(ctx, appID, branchID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to list preview sources: %w", err)
@@ -127,25 +228,32 @@ func (s *Service) resolvePreviewRunRequest(
 		req.Source = models.AppAppBranchRunPreviewSourcePr
 		req.PrNumber = int64(*opts.PRNumber)
 		req.HeadSha = opts.HeadSHA
+		if req.HeadSha == "" {
+			for _, pr := range sources.PullRequests {
+				if pr.PrNumber == req.PrNumber {
+					req.HeadSha = pr.HeadSha
+					break
+				}
+			}
+		}
 	} else if hasBranch {
 		req.Source = models.AppAppBranchRunPreviewSourceBranch
 		req.GitRef = opts.GitRef
 		req.HeadSha = opts.HeadSHA
-	} else if needsInteractiveSource {
-		if !s.cfg.Interactive {
-			return nil, fmt.Errorf("preview source required: use --pr-number or --git-ref, or run interactively")
+		if req.HeadSha == "" {
+			for _, branch := range sources.Branches {
+				if branch.Name == req.GitRef {
+					req.HeadSha = branch.Sha
+					break
+				}
+			}
 		}
-		if err := s.fillInteractiveSource(req, sources, opts.HeadSHA); err != nil {
-			return nil, err
-		}
+	} else {
+		return nil, fmt.Errorf("preview source required: use --pr-number or --git-ref, or run interactively")
 	}
 
 	if mode != models.AppAppBranchRunPreviewModeBuildDashOnly {
-		installID, err := s.resolvePreviewInstallID(ctx, appID, branchID, configID, branchName, opts.InstallID)
-		if err != nil {
-			return nil, err
-		}
-		req.InstallID = installID
+		req.InstallID = opts.InstallID
 	}
 
 	return req, nil
@@ -153,16 +261,7 @@ func (s *Service) resolvePreviewRunRequest(
 
 func (s *Service) resolvePreviewMode(ctx context.Context, flagMode, configID, appID, branchID string) (models.AppAppBranchRunPreviewMode, error) {
 	if flagMode != "" {
-		switch flagMode {
-		case "plan-only":
-			return models.AppAppBranchRunPreviewModePlanDashOnly, nil
-		case "apply":
-			return models.AppAppBranchRunPreviewModeApply, nil
-		case "build-only":
-			return models.AppAppBranchRunPreviewModeBuildDashOnly, nil
-		default:
-			return "", fmt.Errorf("invalid mode %q: use plan-only, apply, or build-only", flagMode)
-		}
+		return parsePreviewMode(flagMode)
 	}
 
 	if configID != "" {
@@ -172,133 +271,30 @@ func (s *Service) resolvePreviewMode(ctx context.Context, flagMode, configID, ap
 		}
 	}
 
-	if s.cfg.Interactive {
-		selected, err := bubbles.SelectFromItems("Select preview mode", []bubbles.SelectorItem{
-			bubbles.NewSelectorItem("Plan only", "", string(models.AppAppBranchRunPreviewModePlanDashOnly)),
-			bubbles.NewSelectorItem("Apply", "", string(models.AppAppBranchRunPreviewModeApply)),
-			bubbles.NewSelectorItem("Build only", "", string(models.AppAppBranchRunPreviewModeBuildDashOnly)),
-		}, true)
-		if err != nil {
-			return "", err
-		}
-		return models.AppAppBranchRunPreviewMode(selected), nil
-	}
-
 	return models.AppAppBranchRunPreviewModePlanDashOnly, nil
 }
 
-func (s *Service) fillInteractiveSource(
-	req *models.ServicePreviewRunRequest,
-	sources *models.HelpersListPreviewSourcesResult,
-	headSHA string,
-) error {
-	sourceKind, err := bubbles.SelectFromItems("Select preview source", []bubbles.SelectorItem{
-		bubbles.NewSelectorItem("Pull request", "", "pr"),
-		bubbles.NewSelectorItem("Git branch", "", "branch"),
-	}, true)
-	if err != nil {
-		return err
-	}
-
-	switch sourceKind {
-	case "pr":
-		if len(sources.PullRequests) == 0 {
-			return fmt.Errorf("no open pull requests found for this branch")
-		}
-		items := make([]bubbles.SelectorItem, len(sources.PullRequests))
-		for i, pr := range sources.PullRequests {
-			items[i] = bubbles.NewSelectorItem(
-				fmt.Sprintf("#%d · %s", pr.PrNumber, pr.Title),
-				pr.HeadRef,
-				strconv.FormatInt(pr.PrNumber, 10),
-			)
-		}
-		selected, err := bubbles.SelectFromItems("Select a pull request", items, true)
-		if err != nil {
-			return err
-		}
-		prNum, err := strconv.ParseInt(selected, 10, 64)
-		if err != nil {
-			return fmt.Errorf("invalid pull request number: %w", err)
-		}
-		req.Source = models.AppAppBranchRunPreviewSourcePr
-		req.PrNumber = prNum
-		for _, pr := range sources.PullRequests {
-			if pr.PrNumber == prNum {
-				if headSHA != "" {
-					req.HeadSha = headSHA
-				} else {
-					req.HeadSha = pr.HeadSha
-				}
-				break
-			}
-		}
-	case "branch":
-		if len(sources.Branches) == 0 {
-			return fmt.Errorf("no git branches available for preview")
-		}
-		items := make([]bubbles.SelectorItem, len(sources.Branches))
-		for i, b := range sources.Branches {
-			items[i] = bubbles.NewSelectorItem(b.Name, "", b.Name)
-		}
-		selected, err := bubbles.SelectFromItems("Select a git branch", items, true)
-		if err != nil {
-			return err
-		}
-		req.Source = models.AppAppBranchRunPreviewSourceBranch
-		req.GitRef = selected
-		for _, b := range sources.Branches {
-			if b.Name == selected {
-				if headSHA != "" {
-					req.HeadSha = headSHA
-				} else {
-					req.HeadSha = b.Sha
-				}
-				break
-			}
-		}
+func parsePreviewMode(mode string) (models.AppAppBranchRunPreviewMode, error) {
+	switch mode {
+	case "":
+		return "", nil
+	case "plan-only":
+		return models.AppAppBranchRunPreviewModePlanDashOnly, nil
+	case "apply":
+		return models.AppAppBranchRunPreviewModeApply, nil
+	case "build-only":
+		return models.AppAppBranchRunPreviewModeBuildDashOnly, nil
 	default:
-		return fmt.Errorf("unknown preview source %q", sourceKind)
+		return "", fmt.Errorf("invalid mode %q: use plan-only, apply, or build-only", mode)
 	}
-
-	return nil
 }
 
-func (s *Service) resolvePreviewInstallID(
-	ctx context.Context,
-	appID, branchID, configID, branchName, flagInstallID string,
-) (string, error) {
-	if flagInstallID != "" {
-		return flagInstallID, nil
-	}
-
-	if !s.cfg.Interactive {
-		return "", fmt.Errorf("install required for this preview mode: use --install-id or run interactively")
-	}
-
-	candidates, err := s.api.GetAppBranchPreviewInstallCandidates(ctx, appID, branchID, configID)
+func currentGitRef(ctx context.Context) string {
+	out, err := exec.CommandContext(ctx, "git", "symbolic-ref", "--quiet", "--short", "HEAD").Output()
 	if err != nil {
-		return "", fmt.Errorf("unable to list preview install candidates: %w", err)
+		return ""
 	}
-	if len(candidates.Installs) == 0 {
-		return "", fmt.Errorf("no installs found for this app")
-	}
-
-	sorted := sortPreviewInstallCandidates(candidates.Installs, branchID)
-	options := make([]bubbles.InstallOption, len(sorted))
-	for i, inst := range sorted {
-		opt := bubbles.InstallOption{ID: inst.ID, Name: inst.Name}
-		if inst.AppBranchID != "" && inst.AppBranchID != branchID {
-			branchLabel := branchName
-			if inst.AppBranch != nil && inst.AppBranch.Name != "" {
-				branchLabel = inst.AppBranch.Name
-			}
-			opt.Description = fmt.Sprintf("On branch %s", branchLabel)
-		}
-		options[i] = opt
-	}
-
-	return bubbles.SelectInstall(options, true)
+	return strings.TrimSpace(string(out))
 }
 
 func sortPreviewInstallCandidates(installs []*models.AppInstall, branchID string) []*models.AppInstall {

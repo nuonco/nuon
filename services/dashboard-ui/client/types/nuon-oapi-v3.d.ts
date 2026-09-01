@@ -3614,12 +3614,14 @@ export interface components {
       connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
       created_at?: string;
       created_by_id?: string;
-      /**
-       * @description DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
-       * branch runs for this config. Manual triggers are unaffected.
-       */
-      disable_branch_triggers?: boolean;
       id?: string;
+      /**
+       * @description IgnoreChangesRegex is an RE2 pattern matched against every changed file path
+       * in a git-run or git-preview run. When every changed file matches, the run is
+       * marked not-attempted instead of building and deploying. Empty disables the
+       * check, and a forced run bypasses it.
+       */
+      ignore_changes_regex?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
       org_id?: string;
       /**
@@ -3631,6 +3633,11 @@ export interface components {
       preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       runbook_ids?: string[];
+      /**
+       * @description SendStatusesOnIgnore posts a successful commit status when a run is ignored
+       * by IgnoreChangesRegex, so a required check does not block the pull request.
+       */
+      send_statuses_on_ignore?: boolean;
       updated_at?: string;
       workflows?: components["schemas"]["app.Workflow"][];
     };
@@ -3721,6 +3728,7 @@ export interface components {
       created_by_id?: string;
       git_ref?: string;
       id?: string;
+      ignore_changes_regex?: string;
       input_app_config_id?: string;
       install_id?: string;
       install_name?: string;
@@ -3728,6 +3736,7 @@ export interface components {
       org_id?: string;
       override_preview_config?: components["schemas"]["app.AppBranchPreviewOverride"];
       resolved_preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
+      send_statuses_on_ignore?: boolean;
       source?: components["schemas"]["app.AppBranchRunPreviewSource"];
       updated_at?: string;
     };
@@ -7027,85 +7036,6 @@ export interface components {
       /** @description Valid is true if Time is not NULL */
       valid?: boolean;
     };
-    "github_com_google_go-github_v50_github.Match": {
-      indices?: number[];
-      text?: string;
-    };
-    "github_com_google_go-github_v50_github.Plan": {
-      collaborators?: number;
-      filled_seats?: number;
-      name?: string;
-      private_repos?: number;
-      seats?: number;
-      space?: number;
-    };
-    "github_com_google_go-github_v50_github.TextMatch": {
-      fragment?: string;
-      matches?: components["schemas"]["github_com_google_go-github_v50_github.Match"][];
-      object_type?: string;
-      object_url?: string;
-      property?: string;
-    };
-    "github_com_google_go-github_v50_github.Timestamp": {
-      "time.Time"?: string;
-    };
-    "github_com_google_go-github_v50_github.User": {
-      avatar_url?: string;
-      bio?: string;
-      blog?: string;
-      collaborators?: number;
-      company?: string;
-      created_at?: components["schemas"]["github_com_google_go-github_v50_github.Timestamp"];
-      disk_usage?: number;
-      email?: string;
-      events_url?: string;
-      followers?: number;
-      followers_url?: string;
-      following?: number;
-      following_url?: string;
-      gists_url?: string;
-      gravatar_id?: string;
-      hireable?: boolean;
-      html_url?: string;
-      id?: number;
-      ldap_dn?: string;
-      location?: string;
-      login?: string;
-      name?: string;
-      node_id?: string;
-      organizations_url?: string;
-      owned_private_repos?: number;
-      /**
-       * @description Permissions and RoleName identify the permissions and role that a user has on a given
-       * repository. These are only populated when calling Repositories.ListCollaborators.
-       */
-      permissions?: {
-        [key: string]: boolean;
-      };
-      plan?: components["schemas"]["github_com_google_go-github_v50_github.Plan"];
-      private_gists?: number;
-      public_gists?: number;
-      public_repos?: number;
-      received_events_url?: string;
-      repos_url?: string;
-      role_name?: string;
-      site_admin?: boolean;
-      starred_url?: string;
-      subscriptions_url?: string;
-      suspended_at?: components["schemas"]["github_com_google_go-github_v50_github.Timestamp"];
-      /**
-       * @description TextMatches is only populated from search results that request text matches
-       * See: search.go and https://docs.github.com/en/rest/search/#text-match-metadata
-       */
-      text_matches?: components["schemas"]["github_com_google_go-github_v50_github.TextMatch"][];
-      total_private_repos?: number;
-      twitter_username?: string;
-      two_factor_authentication?: boolean;
-      type?: string;
-      updated_at?: components["schemas"]["github_com_google_go-github_v50_github.Timestamp"];
-      /** @description API URLs */
-      url?: string;
-    };
     "github_com_nuonco_nuon_pkg_aws_credentials.Config": {
       assume_role?: components["schemas"]["credentials.AssumeRoleConfig"];
       /** @description when cache ID is set, these credentials will be reused, up to the duration of the sessionTimeout (or default) */
@@ -8077,10 +8007,11 @@ export interface components {
     "service.CreateAppBranchConfigRequest": {
       connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
       /**
-       * @description DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
-       * branch runs. Omit to carry the current setting forward.
+       * @description IgnoreChangesRegex marks a run not-attempted when every changed file path in
+       * it matches this RE2 pattern. Omit to carry the current setting forward; send
+       * an empty string to clear it.
        */
-      disable_branch_triggers?: boolean;
+      ignore_changes_regex?: string;
       install_groups?: components["schemas"]["service.InstallGroupRequest"][];
       /**
        * @description PostDeployRunbookIDs run on each install, in order, after its deploy succeeds.
@@ -8090,6 +8021,11 @@ export interface components {
       /** @description PreviewConfig sets branch-level preview defaults. Omit to carry forward. */
       preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
+      /**
+       * @description SendStatusesOnIgnore posts a successful commit status for runs ignored by
+       * IgnoreChangesRegex. Omit to carry the current setting forward.
+       */
+      send_statuses_on_ignore?: boolean;
     };
     "service.CreateAppBranchRequest": {
       managed_by?: string;
@@ -9192,7 +9128,13 @@ export interface components {
       name?: string;
     };
     "service.UpdateAppBranchConfigRequest": {
-      disable_branch_triggers?: boolean;
+      /**
+       * @description IgnoreChangesRegex marks a run not-attempted when every changed file path in
+       * it matches this RE2 pattern. Send an empty string to clear it.
+       */
+      ignore_changes_regex?: string;
+      /** @description SendStatusesOnIgnore posts a successful commit status for ignored runs. */
+      send_statuses_on_ignore?: boolean;
     };
     "service.UpdateAppBranchRequest": {
       name: string;
@@ -9380,7 +9322,11 @@ export interface components {
       repository_selection?: string;
       status?: string;
       suspended_at?: string;
-      suspended_by?: components["schemas"]["github_com_google_go-github_v50_github.User"];
+      suspended_by?: components["schemas"]["service.VCSConnectionUser"];
+    };
+    "service.VCSConnectionUser": {
+      id?: number;
+      login?: string;
     };
     "service.WaitlistRequest": {
       org_name: string;

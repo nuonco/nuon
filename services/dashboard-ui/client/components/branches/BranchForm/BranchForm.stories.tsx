@@ -89,7 +89,7 @@ export const Edit = () => (
       vcsConnections={[]}
       defaultName="production"
       defaultUseVcs={false}
-      defaultDisableBranchTriggers={true}
+      defaultIgnoreAllChanges={true}
       isSubmitting={false}
       onSubmit={noop}
       onCancel={noop}
@@ -117,6 +117,24 @@ export const EditWithExistingConfig = () => (
       onCancel={noop}
       {...defaultVcsProps}
       selectedVcsConnectionId="conn-1"
+    />
+  </ModalStory>
+)
+
+export const EditSource = () => (
+  <ModalStory>
+    <BranchFormModal
+      mode="edit"
+      vcsConnections={[]}
+      defaultName="production"
+      defaultUseVcs
+      defaultDirectory="."
+      showName={false}
+      showIgnoreAllChanges={false}
+      isSubmitting={false}
+      onSubmit={noop}
+      onCancel={noop}
+      {...defaultVcsProps}
     />
   </ModalStory>
 )

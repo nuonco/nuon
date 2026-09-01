@@ -455,9 +455,13 @@ func (c *cli) branchesCmd() *cobra.Command {
 		previewNoWait      bool
 	)
 	previewCmd := &cobra.Command{
-		Use:         "preview",
-		Short:       "Trigger a git preview run against a PR or branch",
-		Annotations: annotations(tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputJSON, OutputAgent)),
+		Use:   "preview",
+		Short: "Trigger a git preview run against a PR or branch",
+		Long: `Trigger a git preview run against a pull request or branch.
+
+By default, an interactive wizard selects the app branch, preview mode, source,
+and installation. Use flags with --output json or --output agent for scripting.`,
+		Annotations: annotations(tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputTable, OutputJSON, OutputAgent)),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.apps
 			opts := apps.PreviewBranchRunOptions{
