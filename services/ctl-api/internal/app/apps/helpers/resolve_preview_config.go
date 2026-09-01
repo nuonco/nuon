@@ -156,6 +156,8 @@ func (h *Helpers) BuildAppBranchRunPreview(
 		BranchPreviewConfig:   branchSnapshot,
 		OverridePreviewConfig: input.Override,
 		ResolvedPreviewConfig: resolved,
+		IgnoreChangesRegex:    branchConfig.IgnoreChangesRegex,
+		SendStatusesOnIgnore:  branchConfig.SendStatusesOnIgnore,
 	}, nil
 }
 

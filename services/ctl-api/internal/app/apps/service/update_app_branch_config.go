@@ -8,20 +8,31 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
 type UpdateAppBranchConfigRequest struct {
-	DisableBranchTriggers *bool `json:"disable_branch_triggers,omitempty"`
+	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
+	// it matches this RE2 pattern. Send an empty string to clear it.
+	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty"`
+
+	// SendStatusesOnIgnore posts a successful commit status for ignored runs.
+	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty"`
 }
 
 func (c *UpdateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return err
 	}
-	if c.DisableBranchTriggers == nil {
+	if c.IgnoreChangesRegex == nil && c.SendStatusesOnIgnore == nil {
 		return fmt.Errorf("at least one field must be provided")
+	}
+	if c.IgnoreChangesRegex != nil {
+		if err := helpers.ValidateIgnoreChangesRegex(*c.IgnoreChangesRegex); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -100,8 +111,11 @@ func (s *service) UpdateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
-	if req.DisableBranchTriggers != nil {
-		config.DisableBranchTriggers = *req.DisableBranchTriggers
+	if req.IgnoreChangesRegex != nil {
+		config.IgnoreChangesRegex = *req.IgnoreChangesRegex
+	}
+	if req.SendStatusesOnIgnore != nil {
+		config.SendStatusesOnIgnore = *req.SendStatusesOnIgnore
 	}
 
 	res = s.db.WithContext(ctx).Save(&config)
