@@ -88,10 +88,12 @@ export const WorkflowRunPanelContainer = ({
 }
 
 export const WorkflowRunPanelButton = ({ runId }: { runId: string }) => {
-  const { addPanel, removePanel } = useSurfaces()
+  const { addPanel, removePanel, panels } = useSurfaces()
   const [searchParams, setSearchParams] = useSearchParams()
   const workflowParam = searchParams.get('workflow')
   const panelIdRef = useRef<string | null>(null)
+  const openPanelId =
+    panels.find((p) => p?.id === panelIdRef.current)?.id ?? null
 
   const clearParams = useCallback(() => {
     setSearchParams(
@@ -107,15 +109,15 @@ export const WorkflowRunPanelButton = ({ runId }: { runId: string }) => {
 
   useEffect(() => {
     const shouldOpen = workflowParam === runId
-    if (shouldOpen && !panelIdRef.current) {
+    if (shouldOpen && !openPanelId) {
       panelIdRef.current = addPanel(
         <WorkflowRunPanelContainer onClose={clearParams} />
       )
-    } else if (!shouldOpen && panelIdRef.current) {
-      removePanel(panelIdRef.current)
+    } else if (!shouldOpen && openPanelId) {
+      removePanel(openPanelId)
       panelIdRef.current = null
     }
-  }, [workflowParam, runId, addPanel, removePanel, clearParams])
+  }, [workflowParam, runId, openPanelId, addPanel, removePanel, clearParams])
 
   const openPanel = () => {
     setSearchParams(
