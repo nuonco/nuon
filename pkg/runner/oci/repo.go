@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/retry"
@@ -44,7 +43,7 @@ func FetchAccessInfo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*
 	return accessInfo, nil
 }
 
-func GetRepo(ctx context.Context, cfg *configs.OCIRegistryRepository) (registry.Repository, error) {
+func GetRepo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*remote.Repository, error) {
 	accessInfo, err := FetchAccessInfo(ctx, cfg)
 	if err != nil {
 		return nil, err

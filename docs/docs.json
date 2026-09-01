@@ -56,8 +56,8 @@
                 "pages": [
                   "guides/byoc/requirements",
                   "guides/byoc/aws",
-                  "guides/byoc/azure",
-                  "guides/byoc/gcp"
+                  "guides/byoc/gcp",
+                  "guides/byoc/azure"
                 ]
               },
               {
@@ -158,6 +158,7 @@
                 "group": "Components",
                 "pages": [
                   "guides/container-image-components",
+                  "guides/image-signature-verification",
                   "guides/image-update-policies",
                   "guides/helm-chart-components",
                   "guides/kubernetes-manifest-components",
@@ -226,6 +227,14 @@
               "guides/terraform-cli"
             ]
           }
+        ]
+      },
+      {
+        "tab": "Agents",
+        "icon": "robot",
+        "pages": [
+          "guides/agents/overview",
+          "guides/agents/mcp-walkthrough"
         ]
       },
       {

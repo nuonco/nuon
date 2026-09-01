@@ -8,7 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 )
 
@@ -18,11 +18,10 @@ type mcpRetryStepInput struct {
 }
 
 func (s *service) mcpRetryStep(ctx context.Context, _ *mcp.CallToolRequest, in mcpRetryStepInput) (*mcp.CallToolResult, any, error) {
-	if err := requireWriteScope(ctx); err != nil {
+	orgID, err := require.Write(ctx)
+	if err != nil {
 		return nil, nil, err
 	}
-
-	orgID := keys.OrgIDFromContext(ctx)
 
 	var workflow app.Workflow
 	if err := s.db.WithContext(ctx).

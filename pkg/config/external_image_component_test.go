@@ -1,6 +1,49 @@
 package config
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/pelletier/go-toml/v2"
+	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/oci/signature"
+)
+
+func TestExternalImageSignatureVerificationDecode(t *testing.T) {
+	var cfg ExternalImageComponentConfig
+	require.NoError(t, toml.Unmarshal([]byte(`
+[public]
+image_url = "cgr.dev/acme/image"
+tag = "latest"
+
+[verification]
+require_signature = true
+
+[[verification.authorities]]
+type = "keyless"
+issuer = "https://issuer.example.com"
+subject_regexp = "^https://example.com/.+$"
+
+[[verification.authorities]]
+type = "public_key"
+public_key = "./cosign.pub"
+`), &cfg))
+
+	require.NotNil(t, cfg.Verification)
+	require.True(t, cfg.Verification.RequireSignature)
+	require.Equal(t, []signature.Authority{
+		{
+			Type:          signature.AuthorityTypeKeyless,
+			Issuer:        "https://issuer.example.com",
+			SubjectRegexp: "^https://example.com/.+$",
+		},
+		{
+			Type:      signature.AuthorityTypePublicKey,
+			PublicKey: "./cosign.pub",
+		},
+	}, cfg.Verification.Authorities)
+	require.NoError(t, cfg.Validate())
+}
 
 func TestAzureACRConfigValidateCredentials(t *testing.T) {
 	const (

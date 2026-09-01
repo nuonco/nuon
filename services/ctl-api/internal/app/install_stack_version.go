@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -61,6 +62,11 @@ type InstallStackVersion struct {
 	AWSBucketName string `json:"aws_bucket_name,omitzero" temporaljson:"aws_bucket_name,omitzero,omitempty"`
 	AWSBucketKey  string `json:"aws_bucket_key,omitzero" temporaljson:"aws_bucket_key,omitzero,omitempty"`
 
+	CustomStacksTemplateURL        string                       `json:"custom_stacks_template_url,omitzero" temporaljson:"custom_stacks_template_url,omitzero,omitempty"`
+	CustomStacksAWSBucketKey       string                       `json:"custom_stacks_aws_bucket_key,omitzero" temporaljson:"custom_stacks_aws_bucket_key,omitzero,omitempty"`
+	CustomStacksOutputMap          map[string]map[string]string `json:"custom_stacks_output_map,omitzero" gorm:"type:jsonb;serializer:json" swaggertype:"object" temporaljson:"custom_stacks_output_map,omitzero,omitempty"`
+	CustomStacksInputParametersMap map[string]map[string]string `json:"custom_stacks_input_parameters_map,omitzero" gorm:"type:jsonb;serializer:json" swaggertype:"object" temporaljson:"custom_stacks_input_parameters_map,omitzero,omitempty"`
+
 	// QuickLinkURL opens the cloud console pre-loaded with this version's stack:
 	// CloudFormation quick-create on AWS, Deploy to Azure on Azure. Empty on GCP,
 	// on any install whose template bucket is unconfigured, and on an Azure install
@@ -84,6 +90,12 @@ type InstallStackVersion struct {
 	TerraformChecksum string `json:"terraform_checksum,omitzero" temporaljson:"terraform_checksum,omitzero,omitempty"`
 
 	CallbackRef callback.Ref `json:"callback_ref,omitzero" gorm:"type:jsonb" temporaljson:"callback_ref,omitzero,omitempty"`
+
+	// CompositeError holds a typed, structured error frozen at write time when
+	// stack template generation fails due to a config or rendering problem. It
+	// is nil for successful versions and for failures not attributed to template
+	// rendering (e.g. transient infrastructure upload errors).
+	CompositeError *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb" temporaljson:"composite_error,omitzero,omitempty"`
 }
 
 // PhoneHomeTokenEligibleStatuses are the statuses for which a stack version should

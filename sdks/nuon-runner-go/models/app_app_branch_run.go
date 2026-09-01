@@ -40,6 +40,9 @@ type AppAppBranchRun struct {
 	// completed at
 	CompletedAt string `json:"completed_at,omitempty"`
 
+	// composite error
+	CompositeError *CompositeerrorsCompositeErrorData `json:"composite_error,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -85,6 +88,9 @@ type AppAppBranchRun struct {
 	// pr number
 	PrNumber int64 `json:"pr_number,omitempty"`
 
+	// preview
+	Preview *AppAppBranchRunPreview `json:"preview,omitempty"`
+
 	// queue signal
 	QueueSignal *AppQueueSignal `json:"queue_signal,omitempty"`
 
@@ -129,6 +135,10 @@ func (m *AppAppBranchRun) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateCompositeError(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateCreatedBy(formats); err != nil {
 		res = append(res, err)
 	}
@@ -138,6 +148,10 @@ func (m *AppAppBranchRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLogStream(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePreview(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -232,6 +246,29 @@ func (m *AppAppBranchRun) validateComparison(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppAppBranchRun) validateCompositeError(formats strfmt.Registry) error {
+	if swag.IsZero(m.CompositeError) { // not required
+		return nil
+	}
+
+	if m.CompositeError != nil {
+		if err := m.CompositeError.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("composite_error")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("composite_error")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppAppBranchRun) validateCreatedBy(formats strfmt.Registry) error {
 	if swag.IsZero(m.CreatedBy) { // not required
 		return nil
@@ -292,6 +329,29 @@ func (m *AppAppBranchRun) validateLogStream(formats strfmt.Registry) error {
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("log_stream")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) validatePreview(formats strfmt.Registry) error {
+	if swag.IsZero(m.Preview) { // not required
+		return nil
+	}
+
+	if m.Preview != nil {
+		if err := m.Preview.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview")
 			}
 
 			return err
@@ -407,6 +467,10 @@ func (m *AppAppBranchRun) ContextValidate(ctx context.Context, formats strfmt.Re
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateCompositeError(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCreatedBy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -416,6 +480,10 @@ func (m *AppAppBranchRun) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateLogStream(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePreview(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -516,6 +584,31 @@ func (m *AppAppBranchRun) contextValidateComparison(ctx context.Context, formats
 	return nil
 }
 
+func (m *AppAppBranchRun) contextValidateCompositeError(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CompositeError != nil {
+
+		if swag.IsZero(m.CompositeError) { // not required
+			return nil
+		}
+
+		if err := m.CompositeError.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("composite_error")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("composite_error")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppAppBranchRun) contextValidateCreatedBy(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.CreatedBy != nil {
@@ -579,6 +672,31 @@ func (m *AppAppBranchRun) contextValidateLogStream(ctx context.Context, formats 
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("log_stream")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) contextValidatePreview(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Preview != nil {
+
+		if swag.IsZero(m.Preview) { // not required
+			return nil
+		}
+
+		if err := m.Preview.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview")
 			}
 
 			return err

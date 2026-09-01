@@ -4,6 +4,7 @@ import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import type { TCloudPlatform, TInstall } from '@/types'
+import { StepRow } from '../../shared/StepLayout'
 
 export interface IInstallDeployRow {
   installId: string
@@ -20,7 +21,7 @@ export const InstallDeployRow = ({ installId, install, deployStatus, workflowHre
   const hasRegion = platform !== 'unknown' && !!(region || location)
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
+    <StepRow>
       <div className="flex items-center gap-5 min-w-0">
         {installHref ? (
           <Text variant="body" weight="strong" nowrap className="truncate">
@@ -60,6 +61,6 @@ export const InstallDeployRow = ({ installId, install, deployStatus, workflowHre
       {workflowHref && (
         <Link href={workflowHref} className="shrink-0">View workflow</Link>
       )}
-    </div>
+    </StepRow>
   )
 }

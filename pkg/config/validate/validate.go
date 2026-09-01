@@ -72,6 +72,9 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		},
 
 		func() error {
+			return ValidateTemplateRefs(a)
+		},
+		func() error {
 			return ValidateCustomNestedStackOutputs(a)
 		},
 		func() error {

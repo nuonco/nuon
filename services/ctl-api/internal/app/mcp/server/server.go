@@ -253,7 +253,8 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 		orgID := s.resolveOrg(acct, tok.ID, r.Header.Get("X-Nuon-Org-ID"))
 		s.touchOrgSelection(tok.ID)
 
-		ctx = withMCPAuth(ctx, orgID, acct.ID)
+		ctx = cctx.SetAccountContext(ctx, acct)
+		ctx = context.WithValue(ctx, keys.OrgIDCtxKey, orgID)
 		ctx = keys.WithTokenRole(ctx, tok.Role)
 		// Let the select_org tool change the active org for this token.
 		ctx = keys.WithOrgSelector(ctx, func(newOrgID string) {
@@ -261,10 +262,4 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 		})
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-}
-
-func withMCPAuth(ctx context.Context, orgID, accountID string) context.Context {
-	ctx = context.WithValue(ctx, keys.OrgIDCtxKey, orgID)
-	ctx = context.WithValue(ctx, keys.AccountIDCtxKey, accountID)
-	return ctx
 }

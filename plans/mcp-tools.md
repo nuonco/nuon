@@ -29,7 +29,19 @@ Describe an app branch:
 
 Work with an app branch run:
 
-## App Overview
+1. see progress
+2. see what has changed
+3. see what installs have been updated and what's left
+4. see the delta
+
+## Install Operations
+
+1. understand when / what updated it
+2. standard operations - reprovision, stack, etc.
+3. see components and health checks.
+4. show a description.
+5. get the README
+6. get a runbook.
 
 ## MCP Context
 
@@ -41,3 +53,5 @@ Any command should be able to pass the context in. The CLI should decorate all t
 information, and pull this info out, so if you pass a context name "with this context" we pull it in and use it.
 
 next, you should be able to pin a context in a session.
+
+
