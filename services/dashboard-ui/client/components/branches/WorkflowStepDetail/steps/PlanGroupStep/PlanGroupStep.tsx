@@ -136,8 +136,13 @@ export const PlanGroupStep = ({
                 heading={heading}
                 headerClassName="px-4 py-3"
               >
-                <div className="px-4 py-4 border-t border-cool-grey-100 dark:border-dark-grey-800 bg-black/[0.015] dark:bg-white/[0.0075]">
-                  <AppConfigDiff sections={inst.sections} summary={null} defaultSectionsOpen />
+                <div className="border-t border-cool-grey-100 dark:border-dark-grey-800 bg-black/[0.015] dark:bg-white/[0.0075]">
+                  <AppConfigDiff
+                    sections={inst.sections}
+                    summary={null}
+                    defaultSectionsOpen
+                    embedded
+                  />
                 </div>
               </Expand>
             )

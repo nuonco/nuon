@@ -159,7 +159,21 @@ export const WorkflowStepsPipeline = ({
   }, [updateScrollState, steps.length])
 
   useEffect(() => {
-    selectedCardRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+    const viewport = viewportRef.current
+    const card = selectedCardRef.current
+    if (!viewport || !card) return
+
+    // Only ever move this strip's scrollLeft: native scrollIntoView also scrolls
+    // overflow-hidden ancestors (the surrounding panel), shifting the whole page.
+    const viewportBox = viewport.getBoundingClientRect()
+    const cardBox = card.getBoundingClientRect()
+    const delta =
+      cardBox.left +
+      cardBox.width / 2 -
+      (viewportBox.left + viewportBox.width / 2)
+
+    if (Math.abs(delta) < 1) return
+    viewport.scrollTo({ left: viewport.scrollLeft + delta, behavior: 'smooth' })
   }, [selectedStepId])
 
   const scrollByPage = (dir: 1 | -1) => {
