@@ -52,7 +52,7 @@ export const Badge = ({
       <span
         aria-hidden
         className={cn(
-          'skeleton inline-block px-2 py-0.5 text-caption',
+          'skeleton inline-block w-fit px-2 py-0.5 text-caption',
           SHAPE_CLASSES[variant],
           className
         )}
@@ -83,7 +83,7 @@ export const Badge = ({
       <span
         className={cn(
           CELL_CLASSES,
-          'shrink-0',
+          'w-fit shrink-0',
           SHAPE_CLASSES[variant],
           TONE_CLASSES[tone],
           className
@@ -101,7 +101,7 @@ export const Badge = ({
     : undefined
 
   return (
-    <span className={cn('inline-flex max-w-full', className)} {...props}>
+    <span className={cn('inline-flex w-fit max-w-full', className)} {...props}>
       <span
         className={cn(
           CELL_CLASSES,

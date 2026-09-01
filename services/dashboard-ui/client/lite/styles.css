@@ -21,6 +21,13 @@
   --brand-pink: #f72585;
   --brand-positive: #4aa578;
 
+  --error-300: #f97066;
+  --error-500: #d92d20;
+  --error-600: #c5221a;
+  --error-700: #b42318;
+  --error-800: #a81f16;
+  --error-900: #991c14;
+
   --neutral-000: #ffffff;
   --neutral-050: #fefefe;
   --neutral-100: #f7f7f7;
@@ -56,6 +63,13 @@
 
   --focus-ring: light-dark(var(--brand-primary-deep), var(--brand-primary));
 
+  --status-success: light-dark(#257052, #4aa578);
+  --status-error: light-dark(var(--error-700), var(--error-300));
+  --status-warn: light-dark(#8f5300, #f5b731);
+  --status-info: light-dark(#1a6579, #4cc9f0);
+  --status-brand: light-dark(#3a00ff, #8f93ff);
+  --status-neutral: light-dark(#5a5a5a, #bababa);
+
   --popover-bg: light-dark(var(--neutral-000), #201e25);
   --popover-text: var(--text-primary);
   --popover-border: light-dark(rgba(29, 29, 29, 0.12), rgba(254, 254, 254, 0.14));
@@ -84,9 +98,9 @@
   --button-ghost-bg-active: light-dark(rgba(29, 29, 29, 0.09), rgba(254, 254, 254, 0.12));
   --button-ghost-text: var(--text-secondary);
 
-  --button-danger-bg: light-dark(#b42318, #d92d20);
-  --button-danger-bg-hover: light-dark(#a81f16, #c5221a);
-  --button-danger-bg-active: light-dark(#991c14, #b42318);
+  --button-danger-bg: light-dark(var(--error-700), var(--error-500));
+  --button-danger-bg-hover: light-dark(var(--error-800), var(--error-600));
+  --button-danger-bg-active: light-dark(var(--error-900), var(--error-700));
   --button-danger-text: #ffffff;
 
   --shadow-default: light-dark(rgba(29, 29, 29, 0.04), rgba(29, 29, 29, 0.16));
@@ -150,6 +164,13 @@
   --skeleton-highlight: rgba(255, 255, 255, 0.34);
 
   --focus-ring: var(--hc-yellow);
+
+  --status-success: var(--neutral-000);
+  --status-error: var(--neutral-000);
+  --status-warn: var(--hc-yellow);
+  --status-info: var(--hc-yellow);
+  --status-brand: var(--hc-yellow);
+  --status-neutral: var(--neutral-000);
 
   --popover-bg: var(--hc-blue-deep);
   --popover-text: var(--neutral-000);
@@ -304,6 +325,15 @@
   .popover { transition: none; }
 }
 
+@utility status-tint {
+  background-color: color-mix(in srgb, var(--status-color) 18%, transparent);
+  color: var(--status-color);
+}
+
+:root[data-theme='high-contrast'] .status-tint {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
 @utility badge-custom {
   background-color: light-dark(
     color-mix(in srgb, var(--badge-color) 10%, #ffffff),
@@ -402,6 +432,13 @@
   --color-action-primary-hover: var(--action-primary-hover);
 
   --color-focus-ring: var(--focus-ring);
+
+  --color-status-success: var(--status-success);
+  --color-status-error: var(--status-error);
+  --color-status-warn: var(--status-warn);
+  --color-status-info: var(--status-info);
+  --color-status-brand: var(--status-brand);
+  --color-status-neutral: var(--status-neutral);
 
   --color-popover-bg: var(--popover-bg);
   --color-popover-text: var(--popover-text);
