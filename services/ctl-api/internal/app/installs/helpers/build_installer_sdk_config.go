@@ -2,10 +2,13 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sort"
 
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -86,6 +89,12 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		return nil, fmt.Errorf("render secrets config: %w", err)
 	}
 
+	app.ApplyInstallStackOverrides(&install, &appCfg.StackConfig)
+	customStacks, err := buildInstallerSDKCustomStacks(appCfg.StackConfig.CustomNestedStacks, stateData)
+	if err != nil {
+		return nil, fmt.Errorf("build custom nested stacks: %w", err)
+	}
+
 	// Real values, not names: the read is authenticated. Current value per
 	// customer-source input, falling back to the app input's default.
 	var currentInputs map[string]*string
@@ -150,6 +159,32 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		SensitiveInputs:     sensitiveInputs,
 		AutoGenerateSecrets: autoGen,
 		Secrets:             secrets,
+		CustomStacks:        customStacks,
+	}
+
+	if appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS && len(customStacks) > 0 {
+		var latestVersion app.InstallStackVersion
+		// No "latest version" FK exists — InstallStackVersion.InstallStackID
+		// only points the other way — so created_at ordering resolves "latest".
+		res := h.db.WithContext(ctx).
+			Where(app.InstallStackVersion{InstallID: install.ID}).
+			Order("created_at DESC").
+			Limit(1).
+			First(&latestVersion)
+		switch {
+		case res.Error == nil:
+			cfg.CustomStacksTemplateURL = latestVersion.CustomStacksTemplateURL
+			// Never re-derive this: it runs on every terraform plan and must not
+			// fetch or parse templates.
+			for i := range cfg.CustomStacks {
+				cfg.CustomStacks[i].Outputs = latestVersion.CustomStacksOutputMap[cfg.CustomStacks[i].Name]
+				cfg.CustomStacks[i].InputParameters = latestVersion.CustomStacksInputParametersMap[cfg.CustomStacks[i].Name]
+			}
+		case errors.Is(res.Error, gorm.ErrRecordNotFound):
+			// no stack version yet — leave empty
+		default:
+			return nil, fmt.Errorf("load latest install stack version: %w", res.Error)
+		}
 	}
 
 	// Runner machine/instance type from the app runner config, falling back to
@@ -320,6 +355,35 @@ func rolesToSDKConfigMap(rs []awsstacks.AWSRoleRaw, enabled bool) map[string]app
 		}
 	}
 	return out
+}
+
+// buildInstallerSDKCustomStacks renders custom nested stack parameter values
+// and sorts by Index.
+func buildInstallerSDKCustomStacks(stacks []config.CustomNestedStack, stateData map[string]any) ([]app.InstallerSDKCustomStack, error) {
+	if len(stacks) == 0 {
+		return nil, nil
+	}
+
+	if err := config.RenderCustomNestedStackParameters(stacks, stateData); err != nil {
+		return nil, fmt.Errorf("render custom nested stack parameters: %w", err)
+	}
+
+	rendered := make([]config.CustomNestedStack, len(stacks))
+	copy(rendered, stacks)
+	sort.SliceStable(rendered, func(i, j int) bool {
+		return rendered[i].Index < rendered[j].Index
+	})
+
+	out := make([]app.InstallerSDKCustomStack, len(rendered))
+	for i, s := range rendered {
+		out[i] = app.InstallerSDKCustomStack{
+			Name:       s.Name,
+			Index:      s.Index,
+			Parameters: s.Parameters,
+			Module:     s.GCPModuleName(),
+		}
+	}
+	return out, nil
 }
 
 func gcpRolesToSDKMap(rs []gcpstacks.GCPRoleRaw, enabled bool) map[string]app.InstallerSDKGCPRole {

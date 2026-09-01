@@ -12,6 +12,7 @@ import (
 	"go.uber.org/fx/fxtest"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
@@ -186,4 +187,112 @@ func (s *InstallerSDKConfigTestSuite) TestClusterNameFromCurrentInputs() {
 	cfg := s.build(install.ID)
 	require.NotNil(t, cfg.AWS)
 	assert.Equal(t, "my-cluster", cfg.AWS.ClusterName)
+}
+
+func (s *InstallerSDKConfigTestSuite) TestCustomStacksEmptyWhenAbsent() {
+	install := s.seedInstallWithRunner()
+
+	cfg := s.build(install.ID)
+	assert.Empty(s.T(), cfg.CustomStacks)
+}
+
+func (s *InstallerSDKConfigTestSuite) TestCustomStacksSortedByIndex() {
+	t := s.T()
+
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).
+		Model(&app.AppStackConfig{}).
+		Where("app_config_id = ?", s.appCfg.ID).
+		Update("custom_nested_stacks", []config.CustomNestedStack{
+			{Name: "second", Index: 2, Parameters: map[string]string{"a": "1"}},
+			{Name: "first", Index: 0, Parameters: map[string]string{"b": "2"}},
+			{Name: "third", Index: 1},
+		}).Error)
+
+	install := s.seedInstallWithRunner()
+
+	cfg := s.build(install.ID)
+	require.Len(t, cfg.CustomStacks, 3)
+	assert.Equal(t, []string{"first", "third", "second"}, []string{
+		cfg.CustomStacks[0].Name, cfg.CustomStacks[1].Name, cfg.CustomStacks[2].Name,
+	})
+	assert.Equal(t, map[string]string{"b": "2"}, cfg.CustomStacks[0].Parameters)
+}
+
+func (s *InstallerSDKConfigTestSuite) TestCustomStacksInstallOverrideMerge() {
+	t := s.T()
+
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).
+		Model(&app.AppStackConfig{}).
+		Where("app_config_id = ?", s.appCfg.ID).
+		Update("custom_nested_stacks", []config.CustomNestedStack{
+			{Name: "shared", Index: 0, Parameters: map[string]string{"env": "app-default"}},
+		}).Error)
+
+	install := s.seedInstallWithRunner()
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(&app.InstallConfig{
+		InstallID: install.ID,
+		CustomNestedStacks: []config.CustomNestedStack{
+			{Name: "shared", Index: 0, Parameters: map[string]string{"env": "install-override"}},
+			{Name: "extra", Index: 1, Parameters: map[string]string{"env": "install-only"}},
+		},
+	}).Error)
+
+	cfg := s.build(install.ID)
+	require.Len(t, cfg.CustomStacks, 2)
+	assert.Equal(t, "shared", cfg.CustomStacks[0].Name)
+	assert.Equal(t, "install-override", cfg.CustomStacks[0].Parameters["env"])
+	assert.Equal(t, "extra", cfg.CustomStacks[1].Name)
+}
+
+func (s *InstallerSDKConfigTestSuite) TestCustomStacksInputParametersFromLatestStackVersion() {
+	t := s.T()
+
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).
+		Model(&app.AppStackConfig{}).
+		Where("app_config_id = ?", s.appCfg.ID).
+		Update("custom_nested_stacks", []config.CustomNestedStack{
+			{Name: "k8s-namespaces", Index: 0, TemplateURL: "https://nuon-artifacts.s3.us-west-2.amazonaws.com/does-not-exist.yaml"},
+		}).Error)
+
+	install := s.seedInstallWithRunner()
+	installStack := &app.InstallStack{InstallID: install.ID}
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(installStack).Error)
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(&app.InstallStackVersion{
+		InstallID:      install.ID,
+		InstallStackID: installStack.ID,
+		CustomStacksInputParametersMap: map[string]map[string]string{
+			"k8s-namespaces": {"K8SNamespacesNamespaces": "namespaces"},
+		},
+	}).Error)
+
+	cfg := s.build(install.ID)
+	require.Len(t, cfg.CustomStacks, 1)
+	assert.Equal(t, map[string]string{"K8SNamespacesNamespaces": "namespaces"}, cfg.CustomStacks[0].InputParameters)
+}
+
+func (s *InstallerSDKConfigTestSuite) TestCustomStacksGCPModuleName() {
+	t := s.T()
+
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).
+		Model(&app.AppStackConfig{}).
+		Where("app_config_id = ?", s.appCfg.ID).
+		Update("custom_nested_stacks", []config.CustomNestedStack{
+			{
+				Name:        "bucket",
+				Index:       0,
+				TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket",
+			},
+			{
+				Name:        "cf-nested",
+				Index:       1,
+				TemplateURL: "https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/nested.yaml",
+			},
+		}).Error)
+
+	install := s.seedInstallWithRunner()
+
+	cfg := s.build(install.ID)
+	require.Len(t, cfg.CustomStacks, 2)
+	assert.Equal(t, "bucket", cfg.CustomStacks[0].Module)
+	assert.Equal(t, "", cfg.CustomStacks[1].Module)
 }
