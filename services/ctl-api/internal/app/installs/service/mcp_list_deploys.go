@@ -8,7 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type mcpListDeploysInput struct {
@@ -25,10 +25,13 @@ type mcpDeploySummary struct {
 }
 
 func (s *service) mcpListDeploys(ctx context.Context, _ *mcp.CallToolRequest, in mcpListDeploysInput) (*mcp.CallToolResult, any, error) {
-	orgID := keys.OrgIDFromContext(ctx)
+	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var deploys []app.InstallDeploy
-	err := s.db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Preload("InstallComponent").
 		Preload("InstallComponent.Component").
 		Where(app.InstallDeploy{OrgID: orgID}).

@@ -8,18 +8,21 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type mcpListAppsInput struct{}
 
 func (s *service) mcpListApps(ctx context.Context, _ *mcp.CallToolRequest, _ mcpListAppsInput) (*mcp.CallToolResult, any, error) {
-	orgID := keys.OrgIDFromContext(ctx)
+	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var apps []*app.App
 	org := &app.Org{ID: orgID}
 
-	err := s.db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Preload("Components").
 		Order("apps.name ASC").
 		Model(org).Association("Apps").Find(&apps)

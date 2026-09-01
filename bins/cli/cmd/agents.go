@@ -29,11 +29,8 @@ Or add to .mcp.json / Cursor:
 
   {"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp"]}}}
 
-You can also point an MCP client directly at the control-plane HTTP MCP
-endpoint (see "nuon agents context"). Auth is Bearer token + optional
-X-Nuon-Org-ID.
-
-Coming later: nuon agents skills (scaffolding for apps, installs, and more).`,
+Direct HTTP: point an MCP client at the URL from "nuon agents context"
+with Bearer token and X-Nuon-Org-ID headers.`,
 		GroupID:     AdditionalGroup.ID,
 		Annotations: annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
@@ -151,37 +148,36 @@ func (c *cli) agentsContextMarkdown() string {
 	b.WriteString("```bash\nclaude mcp add nuon -- nuon agents mcp\n# writes:\nclaude mcp add nuon -- nuon agents mcp --allow-writes\n```\n\n")
 	b.WriteString("Or MCP client config (.mcp.json):\n\n")
 	b.WriteString("```json\n{\"mcpServers\": {\"nuon\": {\"command\": \"nuon\", \"args\": [\"agents\", \"mcp\"]}}}\n```\n\n")
+	b.WriteString("The proxy sets `X-Nuon-Org-ID`. Do not call `select_org` unless the header is missing (`select_org` is a write tool).\n\n")
 	b.WriteString("### Direct: control-plane HTTP MCP\n\n")
 	b.WriteString(fmt.Sprintf("Point an MCP HTTP client at `%s` with:\n\n", mcpURL))
 	b.WriteString("- `Authorization: Bearer <api_token>`\n")
-	b.WriteString("- `X-Nuon-Org-ID: <org_id>` (recommended; required for multi-org accounts without a prior `select_org`)\n\n")
-	b.WriteString("The server is **stateless** Streamable HTTP (`Stateless: true`): no durable `Mcp-Session-Id`, POST-only.\n\n")
+	b.WriteString("- `X-Nuon-Org-ID: <org_id>` (required for multi-org accounts without `select_org`)\n\n")
+	b.WriteString("The server is **stateless** Streamable HTTP: no durable `Mcp-Session-Id`, POST-only.\n\n")
 
 	b.WriteString("## Creating something new (starter checklist)\n\n")
-	b.WriteString("1. Confirm org/app context (`nuon agents context` / `whoami` / `list_orgs`).\n")
+	b.WriteString("1. Confirm org/app context (`nuon agents context` / `whoami`).\n")
 	b.WriteString("2. Prefer MCP tools for reads; use `--allow-writes` (or a write-scoped token) only when mutating.\n")
 	b.WriteString("3. Typical create flow:\n")
 	b.WriteString("   - App config in a local directory → `nuon apps sync` (or ask the user to sync).\n")
-	b.WriteString("   - Install → create via dashboard/CLI/MCP write tools when available.\n")
-	b.WriteString("   - Deploys / workflow steps → list workflows, pending approvals, then approve/reject/retry/cancel as needed.\n")
+	b.WriteString("   - Installs: dashboard or CLI (`nuon installs create`).\n")
+	b.WriteString("   - Deploys / workflow steps → list workflows and pending approvals, then approve/reject/retry/cancel as needed.\n")
 	b.WriteString("4. Do not invent IDs; resolve names via `list_*` / `get_*` tools first.\n")
 	b.WriteString("5. Keep responses trimmed; MCP tools already return compact JSON.\n\n")
 
-	b.WriteString("## Tool categories (control plane)\n\n")
-	b.WriteString("| Domain | Examples |\n| --- | --- |\n")
-	b.WriteString("| Orgs | `whoami`, `list_orgs`, `select_org` |\n")
-	b.WriteString("| Apps | `list_apps`, `get_app` |\n")
-	b.WriteString("| Components | `list_components`, `get_component`, `list_builds`, `get_build` |\n")
-	b.WriteString("| Installs | `list_installs`, `get_install`, workflows, deploys, approvals |\n")
-	b.WriteString("| Runners | `get_workflow_step_logs` |\n")
-	b.WriteString("| Runbooks | `list_runbooks`, `get_runbook` |\n")
-	b.WriteString("| Writes | tools whose description starts with `WRITE OPERATION:` |\n\n")
+	b.WriteString("## Tools (control plane)\n\n")
+	b.WriteString("Writes are hidden from the stdio proxy unless `--allow-writes` is set. Descriptions start with `WRITE OPERATION:`.\n\n")
+	b.WriteString("| Domain | Read | Write |\n| --- | --- | --- |\n")
+	b.WriteString("| Orgs | `whoami`, `list_orgs` | `select_org` |\n")
+	b.WriteString("| Apps | `list_apps`, `get_app`, `list_app_branches`, `get_app_branch`, `list_app_branch_preview_sources` | `preview_app_branch` |\n")
+	b.WriteString("| Components | `list_components`, `get_component`, `list_builds`, `get_build` | |\n")
+	b.WriteString("| Installs | `list_installs`, `get_install`, `list_install_components`, `get_install_inputs`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `reject_step`, `retry_step`, `cancel_workflow` |\n")
+	b.WriteString("| Actions | `list_install_actions`, `get_action` | `run_action` |\n")
+	b.WriteString("| Logs | `get_workflow_step_logs`, `get_deploy_logs`, `get_build_logs` | |\n")
+	b.WriteString("| Runbooks | `list_runbooks`, `get_runbook` | |\n\n")
 
 	b.WriteString("## Deprecated CLI surface\n\n")
-	b.WriteString("`nuon mcp` still works but is deprecated — use `nuon agents mcp` instead.\n\n")
-
-	b.WriteString("## Roadmap\n\n")
-	b.WriteString("`nuon agents skills` will later expose scaffolding skills for creating apps, installs, and more.\n")
+	b.WriteString("`nuon mcp` is deprecated — use `nuon agents mcp`. It still proxies when an MCP client drives it over piped stdio, but exits immediately when run from a terminal.\n")
 
 	return b.String()
 }

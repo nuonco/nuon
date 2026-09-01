@@ -8,7 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type mcpGetWorkflowStepLogsInput struct {
@@ -29,7 +29,10 @@ type mcpStepLogResult struct {
 }
 
 func (s *service) mcpGetWorkflowStepLogs(ctx context.Context, _ *mcp.CallToolRequest, in mcpGetWorkflowStepLogsInput) (*mcp.CallToolResult, any, error) {
-	orgID := keys.OrgIDFromContext(ctx)
+	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var step app.WorkflowStep
 	if err := s.db.WithContext(ctx).

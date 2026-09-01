@@ -230,6 +230,14 @@
         ]
       },
       {
+        "tab": "Agents",
+        "icon": "robot",
+        "pages": [
+          "guides/agents/overview",
+          "guides/agents/mcp-walkthrough"
+        ]
+      },
+      {
         "tab": "Reference",
         "icon": "book",
         "pages": [
