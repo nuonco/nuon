@@ -457,6 +457,33 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatRunnerNotFound() {
 	})
 }
 
+func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatInactiveProcessReturnsConflict() {
+	process := app.RunnerProcess{
+		CreatedByID: s.testAcc.ID,
+		OrgID:       s.testOrg.ID,
+		RunnerID:    s.testRunner.ID,
+		Type:        app.RunnerProcessTypeInstall,
+		CompositeStatus: app.CompositeStatus{
+			Status: string(app.RunnerProcessStatusInactive),
+		},
+	}
+	require.NoError(s.T(), s.service.DB.Create(&process).Error)
+
+	before := len(s.getHeartbeatsFromCH(s.testRunner.ID))
+	req := CreateRunnerHeartBeatRequest{
+		AliveTime: 5 * time.Minute,
+		Version:   "v1.0.0",
+		Process:   app.RunnerProcessTypeInstall,
+		ProcessID: process.ID,
+	}
+	path := fmt.Sprintf("/v1/runners/%s/heart-beats", s.testRunner.ID)
+	rr := s.makeRequest(http.MethodPost, path, req)
+
+	require.Equal(s.T(), http.StatusConflict, rr.Code, rr.Body.String())
+	assert.Contains(s.T(), rr.Body.String(), inactiveRunnerProcessConflict)
+	assert.Len(s.T(), s.getHeartbeatsFromCH(s.testRunner.ID), before)
+}
+
 func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatDifferentProcesses() {
 	processes := []struct {
 		process     app.RunnerProcessType
