@@ -8,7 +8,6 @@ package models
 import (
 	"context"
 	stderrors "errors"
-	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -35,20 +34,6 @@ type AppInstallerSDKConfig struct {
 
 	// cloud
 	Cloud string `json:"cloud,omitempty"`
-
-	// CustomStacks are the vendor's custom_nested_stacks, install-override-merged
-	// and parameter-rendered, sorted by Index. Served for every cloud so
-	// consumers that cannot yet deploy them fail loudly on a non-empty list
-	// instead of silently dropping them.
-	CustomStacks []*AppInstallerSDKCustomStack `json:"custom_stacks"`
-
-	// CustomStacksTemplateURL is the S3 URL of the AWS-only CloudFormation
-	// template containing ONLY this install's custom_nested_stacks (see
-	// specs/cloudformation-substacks.md, Phase 3). The Terraform module deploys it
-	// as a single aws_cloudformation_stack alongside natively-created VPC/runner
-	// resources. Empty for every cloud besides aws-cloudformation, and empty on aws
-	// when CustomStacks is empty or no install stack version has rendered it yet.
-	CustomStacksTemplateURL string `json:"custom_stacks_template_url,omitempty"`
 
 	// gcp
 	Gcp *AppInstallerSDKGCPConfig `json:"gcp,omitempty"`
@@ -93,10 +78,6 @@ func (m *AppInstallerSDKConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateAzure(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateCustomStacks(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -155,36 +136,6 @@ func (m *AppInstallerSDKConfig) validateAzure(formats strfmt.Registry) error {
 
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *AppInstallerSDKConfig) validateCustomStacks(formats strfmt.Registry) error {
-	if swag.IsZero(m.CustomStacks) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(m.CustomStacks); i++ {
-		if swag.IsZero(m.CustomStacks[i]) { // not required
-			continue
-		}
-
-		if m.CustomStacks[i] != nil {
-			if err := m.CustomStacks[i].Validate(formats); err != nil {
-				ve := new(errors.Validation)
-				if stderrors.As(err, &ve) {
-					return ve.ValidateName("custom_stacks" + "." + strconv.Itoa(i))
-				}
-				ce := new(errors.CompositeError)
-				if stderrors.As(err, &ce) {
-					return ce.ValidateName("custom_stacks" + "." + strconv.Itoa(i))
-				}
-
-				return err
-			}
-		}
-
 	}
 
 	return nil
@@ -255,10 +206,6 @@ func (m *AppInstallerSDKConfig) ContextValidate(ctx context.Context, formats str
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateCustomStacks(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateGcp(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -318,35 +265,6 @@ func (m *AppInstallerSDKConfig) contextValidateAzure(ctx context.Context, format
 
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *AppInstallerSDKConfig) contextValidateCustomStacks(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.CustomStacks); i++ {
-
-		if m.CustomStacks[i] != nil {
-
-			if swag.IsZero(m.CustomStacks[i]) { // not required
-				return nil
-			}
-
-			if err := m.CustomStacks[i].ContextValidate(ctx, formats); err != nil {
-				ve := new(errors.Validation)
-				if stderrors.As(err, &ve) {
-					return ve.ValidateName("custom_stacks" + "." + strconv.Itoa(i))
-				}
-				ce := new(errors.CompositeError)
-				if stderrors.As(err, &ce) {
-					return ce.ValidateName("custom_stacks" + "." + strconv.Itoa(i))
-				}
-
-				return err
-			}
-		}
-
 	}
 
 	return nil
