@@ -14,15 +14,15 @@ export const Versions = () => {
 
   return (
     <PageSection>
-      <PageTitle segments={['Versions', install?.name]} />
+      <PageTitle segments={['App branch runs', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/installs`, text: 'Installs' },
           { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
           {
-            path: `/${org?.id}/installs/${install?.id}/versions`,
-            text: 'Versions',
+            path: `/${org?.id}/installs/${install?.id}/app-branch-runs`,
+            text: 'App branch runs',
           },
         ]}
       />

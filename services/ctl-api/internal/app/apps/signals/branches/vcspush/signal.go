@@ -21,6 +21,8 @@ type Signal struct {
 	PRNumber            *int     `json:"pr_number,omitempty"`
 	HeadSHA             string   `json:"head_sha,omitempty"`
 	BaseBranch          string   `json:"base_branch,omitempty"`
+	BaseSHA             string   `json:"base_sha,omitempty"`
+	ChangedFiles        []string `json:"changed_files,omitempty"`
 	PusherEmails        []string `json:"pusher_emails,omitempty"`
 	SenderLogin         string   `json:"sender_login,omitempty"`
 	FallbackCreatedByID string   `json:"fallback_created_by_id,omitempty"`

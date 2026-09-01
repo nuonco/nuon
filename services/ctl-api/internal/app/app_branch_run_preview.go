@@ -37,6 +37,9 @@ type AppBranchRunPreview struct {
 	BranchPreviewConfig   AppBranchPreviewConfig    `json:"branch_preview_config,omitzero" gorm:"type:jsonb;serializer:json;not null" temporaljson:"branch_preview_config,omitzero,omitempty"`
 	OverridePreviewConfig *AppBranchPreviewOverride `json:"override_preview_config,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"override_preview_config,omitzero,omitempty"`
 	ResolvedPreviewConfig AppBranchPreviewConfig    `json:"resolved_preview_config,omitzero" gorm:"type:jsonb;serializer:json;not null" temporaljson:"resolved_preview_config,omitzero,omitempty"`
+
+	IgnoreChangesRegex   string `json:"ignore_changes_regex,omitempty" temporaljson:"ignore_changes_regex,omitzero,omitempty"`
+	SendStatusesOnIgnore bool   `json:"send_statuses_on_ignore,omitempty" temporaljson:"send_statuses_on_ignore,omitzero,omitempty"`
 }
 
 func (p *AppBranchRunPreview) Indexes(db *gorm.DB) []migrations.Index {

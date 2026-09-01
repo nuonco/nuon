@@ -24,6 +24,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		PRNumber:            s.PRNumber,
 		HeadSHA:             s.HeadSHA,
 		BaseBranch:          s.BaseBranch,
+		BaseSHA:             s.BaseSHA,
+		ChangedFiles:        s.ChangedFiles,
 		PusherEmails:        s.PusherEmails,
 		SenderLogin:         s.SenderLogin,
 		FallbackCreatedByID: s.FallbackCreatedByID,

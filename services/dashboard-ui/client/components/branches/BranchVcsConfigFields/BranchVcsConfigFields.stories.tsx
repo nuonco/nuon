@@ -17,7 +17,11 @@ const repos = [
   { full_name: 'acme-co/public-docs', private: false },
 ] as any
 
-const branches = [{ name: 'main' }, { name: 'develop' }, { name: 'release/1.x' }] as any
+const branches = [
+  { name: 'main' },
+  { name: 'develop' },
+  { name: 'release/1.x' },
+] as any
 
 const Wrap = ({ children }: { children: React.ReactNode }) => (
   <div className="flex flex-col gap-4 max-w-md">{children}</div>
@@ -27,7 +31,6 @@ export const Default = () => {
   const [repo, setRepo] = useState<any>(repos[0])
   const [branch, setBranch] = useState('main')
   const [directory, setDirectory] = useState('.')
-  const [pathFilter, setPathFilter] = useState('')
   return (
     <Wrap>
       <BranchVcsConfigFields
@@ -46,8 +49,6 @@ export const Default = () => {
         onBranchChange={setBranch}
         directory={directory}
         onDirectoryChange={setDirectory}
-        pathFilter={pathFilter}
-        onPathFilterChange={setPathFilter}
         isSubmitting={false}
       />
     </Wrap>
@@ -72,8 +73,6 @@ export const LoadingRepos = () => (
       onBranchChange={noop}
       directory="."
       onDirectoryChange={noop}
-      pathFilter=""
-      onPathFilterChange={noop}
       isSubmitting={false}
     />
   </Wrap>
@@ -97,8 +96,6 @@ export const NoConnections = () => (
       onBranchChange={noop}
       directory="."
       onDirectoryChange={noop}
-      pathFilter=""
-      onPathFilterChange={noop}
       isSubmitting={false}
     />
   </Wrap>
@@ -124,8 +121,6 @@ export const ManualBranchEntry = () => {
         onBranchChange={setBranch}
         directory="."
         onDirectoryChange={noop}
-        pathFilter=""
-        onPathFilterChange={noop}
         isSubmitting={false}
       />
     </Wrap>
@@ -136,7 +131,6 @@ export const PublicRepoNoConnections = () => {
   const [repo, setRepo] = useState<any>(null)
   const [branch, setBranch] = useState('main')
   const [directory, setDirectory] = useState('.')
-  const [pathFilter, setPathFilter] = useState('')
   return (
     <Wrap>
       <BranchVcsConfigFields
@@ -155,8 +149,6 @@ export const PublicRepoNoConnections = () => {
         onBranchChange={setBranch}
         directory={directory}
         onDirectoryChange={setDirectory}
-        pathFilter={pathFilter}
-        onPathFilterChange={setPathFilter}
         isSubmitting={false}
       />
     </Wrap>

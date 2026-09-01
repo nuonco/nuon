@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/lib/pq"
 	"gorm.io/gorm"
@@ -12,6 +13,31 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
+// IgnoreChangesSettings carries the ignore-changes fields through config
+// creation. A nil pointer on either field means "carry the previous config's
+// value forward", matching how the rest of this helper treats omitted input.
+type IgnoreChangesSettings struct {
+	Regex                *string
+	SendStatusesOnIgnore *bool
+}
+
+// ValidateIgnoreChangesRegex rejects patterns Go's regexp engine cannot compile
+// so a bad expression fails at config time rather than mid-run.
+func ValidateIgnoreChangesRegex(pattern string) error {
+	if pattern == "" {
+		return nil
+	}
+
+	if _, err := regexp.Compile(pattern); err != nil {
+		return stderr.ErrUser{
+			Err:         err,
+			Description: fmt.Sprintf("ignore_changes_regex %q is not a valid regular expression: %v", pattern, err),
+		}
+	}
+
+	return nil
+}
+
 func (h *Helpers) CreateAppBranchConfig(
 	ctx context.Context,
 	appBranchID string,
@@ -19,10 +45,10 @@ func (h *Helpers) CreateAppBranchConfig(
 	publicGitVCSConfig *app.PublicGitVCSConfig,
 	installGroups []app.AppBranchInstallGroup,
 	postDeployRunbookIDs *[]string,
-	disableBranchTriggers *bool,
+	ignoreChanges *IgnoreChangesSettings,
 	previewConfig *app.AppBranchPreviewConfig,
 ) (*app.AppBranchConfig, error) {
-	return h.CreateAppBranchConfigWithDB(ctx, h.db, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs, disableBranchTriggers, previewConfig)
+	return h.CreateAppBranchConfigWithDB(ctx, h.db, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs, ignoreChanges, previewConfig)
 }
 
 // Callers inside a transaction must use this, or the app_branch_id FK fails.
@@ -34,9 +60,15 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 	publicGitVCSConfig *app.PublicGitVCSConfig,
 	installGroups []app.AppBranchInstallGroup,
 	postDeployRunbookIDs *[]string,
-	disableBranchTriggers *bool,
+	ignoreChanges *IgnoreChangesSettings,
 	previewConfig *app.AppBranchPreviewConfig,
 ) (*app.AppBranchConfig, error) {
+	if ignoreChanges != nil && ignoreChanges.Regex != nil {
+		if err := ValidateIgnoreChangesRegex(*ignoreChanges.Regex); err != nil {
+			return nil, err
+		}
+	}
+
 	if postDeployRunbookIDs != nil && len(*postDeployRunbookIDs) > 0 {
 		if err := h.validatePostDeployRunbooks(ctx, db, appBranchID, *postDeployRunbookIDs); err != nil {
 			return nil, err
@@ -74,10 +106,17 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 		config.PostDeployRunbookIDs = previous.PostDeployRunbookIDs
 	}
 
-	if disableBranchTriggers != nil {
-		config.DisableBranchTriggers = *disableBranchTriggers
-	} else if hasPrevious {
-		config.DisableBranchTriggers = previous.DisableBranchTriggers
+	if hasPrevious {
+		config.IgnoreChangesRegex = previous.IgnoreChangesRegex
+		config.SendStatusesOnIgnore = previous.SendStatusesOnIgnore
+	}
+	if ignoreChanges != nil {
+		if ignoreChanges.Regex != nil {
+			config.IgnoreChangesRegex = *ignoreChanges.Regex
+		}
+		if ignoreChanges.SendStatusesOnIgnore != nil {
+			config.SendStatusesOnIgnore = *ignoreChanges.SendStatusesOnIgnore
+		}
 	}
 
 	if previewConfig != nil {
