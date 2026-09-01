@@ -511,28 +511,31 @@ resources exits 2 with a clear error.
 
 ### MCP (`nuon agents mcp`)
 
-Preferred surface for LLM clients is **`nuon agents`**:
+Preferred LLM surface is **`nuon agents`**:
 
-- `nuon agents context` — markdown orientation (auth, org/app/install selection, how to reach MCP).
-- `nuon agents mcp` — stdio MCP proxy to the control-plane HTTP MCP server. Implementation:
-  `internal/services/mcpserver/`. Auth reuses `~/.nuon` (`Authorization` + `X-Nuon-Org-ID`).
+- `nuon agents context` — markdown orientation (auth, selection, MCP URL). Keep the tool table in
+  `agentsContextMarkdown()` in sync with `docs/guides/agents/overview.mdx`.
+- `nuon agents mcp` — stdio proxy to ctl-api MCP (`internal/services/mcpserver/`). Auth from `~/.nuon`
+  (`Authorization` + `X-Nuon-Org-ID`). Read-only unless `--allow-writes`.
+- `nuon mcp setup --platform cursor|claude-code` — writes HTTP client config in the current directory
+  (`.cursor/mcp.json` or `.mcp.json`) with token + org headers. Undocumented and reachable only under
+  the deprecated `nuon mcp`; do not re-attach it to `agents` without deciding whether we want to keep
+  writing tokens to disk.
 
-`nuon mcp` remains as a **deprecated** alias of `nuon agents mcp`.
+`nuon mcp` is a deprecated alias of `nuon agents mcp`: it proxies only when stdio is piped (a real MCP
+client); on a TTY it prints a notice and exits 0.
 
-Control-plane MCP (ctl-api) is **stateless** Streamable HTTP (`StreamableHTTPOptions.Stateless: true`):
+ctl-api MCP is **stateless** Streamable HTTP (`StreamableHTTPOptions.Stateless: true`):
 
-- **Same as stateful:** tool registration (`mcp.AddTool`), handler signatures, Bearer auth, write gating
-  (`WRITE OPERATION:` + `requireWriteScope`), org via header / `select_org` / single-org auto-select.
-- **Different:** no durable `Mcp-Session-Id`; POST-only (GET/DELETE → 405); any replica can serve if auth is
-  on the request; server→client RPCs unsupported. Org sticky selection is in-process by token ID — prefer
+- **Same as stateful:** `mcp.AddTool`, handler signatures, Bearer auth, write gating
+  (`WRITE OPERATION:` + `require.Write`), org via header / `select_org` / single-org auto-select.
+- **Different:** no durable `Mcp-Session-Id`; POST-only (GET/DELETE → 405); any replica can serve if
+  auth is on the request; no server→client RPCs. Sticky org is in-process by token ID — send
   `X-Nuon-Org-ID` for multi-replica.
 
-Read-only by default. `--allow-writes` also exposes tools whose description starts with `WRITE OPERATION:`.
-stdout carries the MCP protocol: handlers/proxy must never print.
+stdout is the MCP protocol: handlers and the proxy must never print.
 
-Claude Code config: `{"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp"]}}}`
-
-To add a new API MCP tool, use the `.agents/skills/mcp-api-tool` skill.
+Add API tools with `.agents/skills/mcp-api-tool`. Public docs: `docs/guides/agents/`.
 
 ### No-TTY / Non-Interactive Support
 
