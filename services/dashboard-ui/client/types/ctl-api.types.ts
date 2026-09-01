@@ -36,6 +36,8 @@ export type TAppBranchRunPreview = {
   install_name?: string
   git_ref?: string
   resolved_preview_config?: TAppBranchPreviewConfig
+  ignore_changes_regex?: string
+  send_statuses_on_ignore?: boolean
 }
 
 export type TPreviewSourcePR = {

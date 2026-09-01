@@ -10,11 +10,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
+const previewCommitStatusesVersion = "app-branch-preview-commit-statuses-v1"
+
 func (s *Signal) Execute(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
+	previewStatusesEnabled := workflow.GetVersion(ctx, previewCommitStatusesVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 
 	// Fetch run from DB
 	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
@@ -58,6 +62,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	})
 	if err != nil {
 		logger.Error("unable to enqueue execute-workflow signal", "error", err)
+		if previewStatusesEnabled {
+			s.setPreviewCommitStatus(ctx, run, "failure", "Preview failed")
+		}
 		if _, updateErr := activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 			RunID:        run.ID,
 			Status:       "failed",
@@ -74,7 +81,27 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Await the execute-workflow signal completion
 	if _, err = callback.AwaitWithTimeout(ctx, cb, callback.FallbackAwaitTimeout); err != nil {
+		if previewStatusesEnabled {
+			latestRun, getErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, run.ID)
+			if getErr == nil && latestRun.Status == "not-attempted" {
+				_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: *run.WorkflowID,
+					Status: app.CompositeStatus{
+						Status:                 app.StatusNotAttempted,
+						StatusHumanDescription: latestRun.ErrorMessage,
+						Metadata: map[string]any{
+							"ignored_by_regex": true,
+						},
+					},
+				})
+				return nil
+			}
+		}
+
 		logger.Error("workflow execution failed", "error", err)
+		if previewStatusesEnabled {
+			s.setPreviewCommitStatus(ctx, run, "failure", "Preview failed")
+		}
 		if _, updateErr := activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 			RunID:        run.ID,
 			Status:       "failed",
@@ -91,6 +118,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if wfErr == nil && wf.Status.Status != "" {
 		switch wf.Status.Status {
 		case app.StatusCancelled:
+			if previewStatusesEnabled {
+				s.setPreviewCommitStatus(ctx, run, "failure", "Preview cancelled")
+			}
 			if _, updateErr := activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 				RunID:        run.ID,
 				Status:       "cancelled",
@@ -100,6 +130,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			}
 			return nil
 		case app.StatusError:
+			if previewStatusesEnabled {
+				s.setPreviewCommitStatus(ctx, run, "failure", "Preview failed")
+			}
 			errMsg := "workflow completed with errors"
 			if wf.Status.StatusHumanDescription != "" {
 				errMsg = wf.Status.StatusHumanDescription
@@ -115,6 +148,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
+	if previewStatusesEnabled {
+		s.setPreviewCommitStatus(ctx, run, "success", "Preview complete")
+	}
 	if _, err = activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 		RunID:  run.ID,
 		Status: "success",
@@ -129,4 +165,30 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	)
 
 	return nil
+}
+
+func (s *Signal) setPreviewCommitStatus(ctx workflow.Context, run *app.AppBranchRun, state, description string) {
+	if !run.IsPreview() || !run.PreviewGitHubSetStatuses() || run.HeadSHA == "" {
+		return
+	}
+
+	vcsConfigID := ""
+	switch {
+	case run.AppBranchConfig.ConnectedGithubVCSConfig != nil:
+		vcsConfigID = run.AppBranchConfig.ConnectedGithubVCSConfig.ID
+	case run.AppBranchConfig.PublicGitVCSConfig != nil:
+		vcsConfigID = run.AppBranchConfig.PublicGitVCSConfig.ID
+	}
+	if vcsConfigID == "" {
+		return
+	}
+
+	_ = activities.AwaitSetGithubCommitStatus(ctx, &activities.SetGithubCommitStatusInput{
+		VcsConfigID: vcsConfigID,
+		CommitSHA:   run.HeadSHA,
+		State:       state,
+		Description: description,
+		AppBranchID: run.AppBranchID,
+		RunID:       run.ID,
+	})
 }

@@ -451,7 +451,7 @@ func (s *Signal) finalizeBuildMetadata(ctx workflow.Context, builds []buildEntry
 }
 
 func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.AppBranchRun, buildErr error) {
-	if run.PRNumber == nil {
+	if run.PRNumber == nil || !run.PreviewGitHubComment() {
 		return
 	}
 
@@ -474,19 +474,10 @@ func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.Ap
 	}
 
 	status := activities.PRCommentStatusSuccess
-	commitState := "success"
-	commitDesc := "Preview complete"
 	var errMsg string
-
 	if buildErr != nil {
 		status = activities.PRCommentStatusFailed
-		commitState = "failure"
-		commitDesc = "Preview failed"
 		errMsg = buildErr.Error()
-	}
-
-	if !run.PreviewGitHubComment() && !run.PreviewGitHubSetStatuses() {
-		return
 	}
 
 	var diff *activities.ComputeAppConfigDiffOutput
@@ -518,24 +509,12 @@ func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.Ap
 		ErrorMessage: errMsg,
 	})
 
-	if run.PreviewGitHubComment() {
-		_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
-			VcsConfigID:       vcsConfigID,
-			PRNumber:          *run.PRNumber,
-			ExistingCommentID: run.GithubCommentID,
-			Body:              commentBody,
-		})
-	}
-
-	if run.HeadSHA != "" && run.PreviewGitHubSetStatuses() {
-		_ = activities.AwaitSetGithubCommitStatus(ctx, &activities.SetGithubCommitStatusInput{
-			VcsConfigID: vcsConfigID,
-			CommitSHA:   run.HeadSHA,
-			State:       commitState,
-			Context:     "nuon/preview",
-			Description: commitDesc,
-		})
-	}
+	_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
+		VcsConfigID:       vcsConfigID,
+		PRNumber:          *run.PRNumber,
+		ExistingCommentID: run.GithubCommentID,
+		Body:              commentBody,
+	})
 }
 
 func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger) error {

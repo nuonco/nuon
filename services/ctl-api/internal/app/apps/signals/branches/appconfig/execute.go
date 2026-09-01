@@ -214,16 +214,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 					Body:              commentBody,
 				})
 			}
-			if run.HeadSHA != "" && run.PreviewGitHubSetStatuses() {
-				_ = activities.AwaitSetGithubCommitStatus(ctx, &activities.SetGithubCommitStatusInput{
-					VcsConfigID: vcsConfigID,
-					CommitSHA:   run.HeadSHA,
-					State:       "success",
-					Context:     "nuon/preview",
-					Description: "No config changes detected",
-				})
-			}
-
 			if s.StepID != "" {
 				_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 					ID: s.StepID,
