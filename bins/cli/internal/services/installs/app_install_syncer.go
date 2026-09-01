@@ -81,22 +81,11 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 
 	// Use defaults for any missing inputs. Customer-owned inputs are excluded: they
 	// are set by the customer during onboarding, not by the vendor's install config.
-	{
-		inputDefaults := make(map[string]string)
-		for _, ic := range appInputCfg.Inputs {
-			if ic.Source == string(models.AppAppInputSourceCustomer) {
-				continue
-			}
-			if !ic.Required && !ic.Sensitive && ic.Default != "" {
-				inputDefaults[ic.Name] = ic.Default
-			}
-		}
-		installCfg.InputGroups = append([]config.InputGroup{
-			{
-				Inputs: inputDefaults,
-			},
-		}, installCfg.InputGroups...)
-	}
+	installCfg.InputGroups = append([]config.InputGroup{
+		{
+			Inputs: inputDefaults(appInputCfg.Inputs),
+		},
+	}, installCfg.InputGroups...)
 
 	sensitiveInputs := make(map[string]struct{})
 	for _, ic := range appInputCfg.Inputs {
@@ -226,25 +215,12 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 
 	definedInputs := installCfg.FlattenedInputs()
-	var inputErrs []error
-	for _, ic := range appConfig.Input.Inputs {
-		_, defined := definedInputs[ic.Name]
-
-		// user_configurable (source=customer) inputs are owned by the customer/install
-		// stack, not the install config, so they cannot be set via sync.
-		if ic.Source == string(models.AppAppInputSourceCustomer) {
-			if defined {
-				inputErrs = append(inputErrs, fmt.Errorf("refusing to set user_configurable input %s", ic.Name))
-			}
-			continue
-		}
-
-		if ic.Required && !defined {
-			inputErrs = append(inputErrs, fmt.Errorf("missing required input %s", ic.Name))
-		}
-	}
+	fill, inputErrs := resolveRequiredInputs(appConfig.Input.Inputs, definedInputs, currInputs.Values)
 	if len(inputErrs) > 0 {
 		return nil, fmt.Errorf("\n%w", errors.Join(inputErrs...))
+	}
+	for name, val := range fill {
+		definedInputs[name] = val
 	}
 
 	upstreamRawConfig, err := s.api.GenerateCLIInstallConfig(ctx, appInstall.ID)
@@ -585,4 +561,65 @@ func installDiffKey(key string) string {
 		return fmt.Sprintf("components.%s.%s", component, kind)
 	}
 	return key
+}
+
+// inputDefaults returns the values the install config does not have to spell out
+// because the app declares a default for them. Sensitive inputs are excluded
+// because their values never round-trip through the config file, and
+// customer-owned (source=customer) inputs because they belong to the install
+// stack rather than the vendor's config.
+func inputDefaults(appInputs []*models.AppAppInput) map[string]string {
+	defaults := make(map[string]string)
+	for _, ic := range appInputs {
+		if ic.Source == string(models.AppAppInputSourceCustomer) || ic.Sensitive {
+			continue
+		}
+		if ic.Default != "" {
+			defaults[ic.Name] = ic.Default
+		}
+	}
+	return defaults
+}
+
+// resolveRequiredInputs checks an install config's inputs against the app's
+// declared inputs, returning the values to add to the update so the merged set
+// stays valid plus any user-facing errors.
+//
+// A required input that declares a default does not need to appear in the
+// install config. If the install has no value for it yet, its default is filled
+// in — the inputs API validates the full merged set, so leaving it absent would
+// fail server-side. An input already set on the install is left alone rather
+// than reverted to the default, matching the merge semantics every other
+// omitted input gets.
+func resolveRequiredInputs(appInputs []*models.AppAppInput, defined, current map[string]string) (map[string]string, []error) {
+	fill := make(map[string]string)
+	var errs []error
+	for _, ic := range appInputs {
+		_, isDefined := defined[ic.Name]
+
+		// user_configurable (source=customer) inputs are owned by the customer/install
+		// stack, not the install config, so they cannot be set via sync.
+		if ic.Source == string(models.AppAppInputSourceCustomer) {
+			if isDefined {
+				errs = append(errs, fmt.Errorf("refusing to set user_configurable input %s", ic.Name))
+			}
+			continue
+		}
+
+		if !ic.Required || isDefined {
+			continue
+		}
+
+		if _, isSet := current[ic.Name]; isSet {
+			continue
+		}
+
+		if ic.Default == "" {
+			errs = append(errs, fmt.Errorf("missing required input %s", ic.Name))
+			continue
+		}
+
+		fill[ic.Name] = ic.Default
+	}
+	return fill, errs
 }
