@@ -2,9 +2,23 @@ export default {
   title: 'Branches/WorkflowStepDetail',
 }
 
+import type { ReactNode } from 'react'
+import { AppContext } from '@/providers/app-provider'
 import { WorkflowStepDetail } from './WorkflowStepDetail'
 
 const noop = () => {}
+
+const WithApp = ({ children }: { children: ReactNode }) => (
+  <AppContext.Provider
+    value={{
+      app: { id: 'app-1', name: 'demo-app' } as any,
+      labelColors: {},
+      refresh: noop,
+    }}
+  >
+    {children}
+  </AppContext.Provider>
+)
 
 const mockStep = {
   id: 'step-abc123',
@@ -73,24 +87,26 @@ export const CommitStepShell = () => (
 )
 
 export const BuildStepShell = () => (
-  <WorkflowStepDetail
-    step={{
-      id: 'step-build',
-      name: 'Build components',
-      group_idx: 1,
-      execution_type: 'system',
-      status: {
-        status: 'success',
-        metadata: {
-          builds: [
-            { component_id: 'c1', component_name: 'api', status: 'success', cache_status: 'cache hit', duration: 2.4 },
-            { component_id: 'c2', component_name: 'web', status: 'success', cache_status: 'no cache', duration: 41.7 },
-          ],
+  <WithApp>
+    <WorkflowStepDetail
+      step={{
+        id: 'step-build',
+        name: 'Build components',
+        group_idx: 1,
+        execution_type: 'system',
+        status: {
+          status: 'success',
+          metadata: {
+            builds: [
+              { component_id: 'c1', component_name: 'api', status: 'success', cache_status: 'cache hit', duration: 2.4 },
+              { component_id: 'c2', component_name: 'web', status: 'success', cache_status: 'no cache', duration: 41.7 },
+            ],
+          },
         },
-      },
-    } as any}
-    onClose={noop}
-  />
+      } as any}
+      onClose={noop}
+    />
+  </WithApp>
 )
 
 export const Minimal = () => (
