@@ -150,7 +150,8 @@ and reports it on the pull request itself:
 - a comment titled `## Nuon Preview — <BranchName>` (the branch's `name`, so usually `main`), containing a table of
   config changes broken down by section
   (Section / Added / Changed / Removed) with the individual entries expandable underneath.
-- a commit status with the context `nuon/preview`, which moves from pending to success or failure.
+- a mode-specific commit status such as `nuon/<org>/<app>/<branch> preview (plan-only)`, which links to the preview run and moves from pending to
+  success or failure.
 
 If the pull request does not change the app config, the run stops early and the comment reads
 ``No changes to `nuon.toml` detected in this PR. Preview skipped.``

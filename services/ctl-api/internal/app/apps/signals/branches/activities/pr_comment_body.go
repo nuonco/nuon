@@ -3,7 +3,8 @@ package activities
 import (
 	"fmt"
 	"strings"
-	"time"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type PRCommentStatus string
@@ -33,25 +34,49 @@ type InstallGroupImpact struct {
 	Installs  []InstallImpact
 }
 
+type ComponentBuildChange struct {
+	ComponentName string `json:"component_name"`
+	ComponentID   string `json:"component_id"`
+	BuildID       string `json:"build_id"`
+	ChangeReason  string `json:"change_reason"`
+	BuildURL      string `json:"build_url"`
+}
+
 type PRCommentParams struct {
-	AppName       string
-	RunID         string
-	RunURL        string
-	Status        PRCommentStatus
-	Diff          *ComputeAppConfigDiffOutput
-	InstallImpact []InstallGroupImpact
-	ErrorMessage  string
+	OrgName            string
+	AppName            string
+	BranchName         string
+	RunID              string
+	RunURL             string
+	Status             PRCommentStatus
+	Mode               app.AppBranchRunPreviewMode
+	Diff               *ComputeAppConfigDiffOutput
+	ComponentChanges   []ComponentBuildChange
+	InstallImpact      []InstallGroupImpact
+	PreviewInstallName string
+	PreviewInstallURL  string
+	ErrorMessage       string
 }
 
 func BuildPRCommentBody(p *PRCommentParams) string {
 	var b strings.Builder
 
-	appName := p.AppName
-	if appName == "" {
-		appName = "App"
+	title := fmt.Sprintf("## Nuon Preview \u2014 %s", previewTitleName(p))
+	if label := p.Mode.Label(); label != "" {
+		title += fmt.Sprintf(" (%s)", label)
+	}
+	b.WriteString(title + "\n\n")
+
+	if p.RunURL != "" {
+		b.WriteString(fmt.Sprintf("[View preview run \u2192](%s)\n\n", p.RunURL))
+	} else {
+		b.WriteString(fmt.Sprintf("Preview run: `%s`\n\n", p.RunID))
 	}
 
-	b.WriteString(fmt.Sprintf("## Nuon Preview \u2014 %s\n\n", appName))
+	if hasStackChanges(p) {
+		b.WriteString("> [!WARNING]\n")
+		b.WriteString("> \U0001f6a8 Stack changes require customers to reprovision the stack. Learn more [here](https://docs.nuon.co/concepts/stacks).\n\n")
+	}
 
 	switch p.Status {
 	case PRCommentStatusPending:
@@ -83,63 +108,168 @@ func BuildPRCommentBody(p *PRCommentParams) string {
 		writeDiffSection(&b, p.Diff)
 	}
 
-	if p.Status != PRCommentStatusSkipped && len(p.InstallImpact) > 0 {
+	if p.Status != PRCommentStatusPending && p.Status != PRCommentStatusSkipped && len(p.ComponentChanges) > 0 {
+		writeBuildsSection(&b, p.ComponentChanges)
+	}
+
+	if p.Status == PRCommentStatusSuccess && p.Mode == app.AppBranchRunPreviewModeBuildOnly {
+		b.WriteString("Builds and config validation succeeded. No install was planned or applied.\n")
+	}
+
+	if p.Status == PRCommentStatusSuccess && p.Mode == app.AppBranchRunPreviewModeApply && p.PreviewInstallName != "" {
+		b.WriteString("### Preview install\n\n")
+		if p.PreviewInstallURL != "" {
+			b.WriteString(fmt.Sprintf("Applied to [`%s`](%s).\n", p.PreviewInstallName, p.PreviewInstallURL))
+		} else {
+			b.WriteString(fmt.Sprintf("Applied to `%s`.\n", p.PreviewInstallName))
+		}
+	} else if p.Status != PRCommentStatusSkipped &&
+		p.Mode != app.AppBranchRunPreviewModeBuildOnly &&
+		p.Mode != app.AppBranchRunPreviewModeApply &&
+		len(p.InstallImpact) > 0 {
 		writeInstallImpactSection(&b, p.InstallImpact)
 	}
 
-	b.WriteString("\n---\n")
-	runLink := fmt.Sprintf("`%s`", p.RunID)
-	if p.RunURL != "" {
-		runLink = fmt.Sprintf("[View Run](%s)", p.RunURL)
+	if p.Status != PRCommentStatusSkipped {
+		b.WriteString("\n### Debug with MCP\n\n")
+		b.WriteString("Copy this prompt into an MCP-enabled assistant:\n\n")
+		b.WriteString(fmt.Sprintf("```text\nFetch the overview of app branch run %s and diagnose any failures.\n```\n", p.RunID))
 	}
-	b.WriteString(fmt.Sprintf("*[Nuon](https://nuon.co) \u2022 %s \u2022 Updated: %s*\n",
-		runLink, time.Now().UTC().Format("Jan 2, 2006 3:04 PM UTC")))
 
 	return b.String()
 }
 
-func writeDiffSection(b *strings.Builder, diff *ComputeAppConfigDiffOutput) {
-	b.WriteString(fmt.Sprintf("### Config Changes \u2014 `%s`\n\n", diff.ConfigFile))
+func previewTitleName(p *PRCommentParams) string {
+	parts := make([]string, 0, 3)
+	for _, part := range []string{p.OrgName, p.AppName, p.BranchName} {
+		if part != "" {
+			parts = append(parts, part)
+		}
+	}
+	if len(parts) == 0 {
+		return "App"
+	}
+	return strings.Join(parts, "/")
+}
 
-	if len(diff.Sections) == 0 {
-		b.WriteString("No sections changed.\n\n")
+func hasStackChanges(p *PRCommentParams) bool {
+	if p.Diff != nil {
+		for _, section := range p.Diff.Sections {
+			if strings.EqualFold(section.Name, "stack") &&
+				(section.Additions > 0 || section.Changed > 0 || section.Removals > 0) {
+				return true
+			}
+		}
+	}
+	for _, group := range p.InstallImpact {
+		for _, install := range group.Installs {
+			if install.StackChanged {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func writeBuildsSection(b *strings.Builder, changes []ComponentBuildChange) {
+	var rows strings.Builder
+	for _, change := range changes {
+		label := ""
+		switch change.ChangeReason {
+		case ChangeReasonSourceChanged:
+			label = "Source changed"
+		case ChangeReasonConfigChanged:
+			label = "Config changed"
+		default:
+			continue
+		}
+		component := fmt.Sprintf("`%s`", change.ComponentName)
+		if change.BuildURL != "" {
+			component = fmt.Sprintf("[`%s`](%s)", change.ComponentName, change.BuildURL)
+		}
+		rows.WriteString(fmt.Sprintf("| %s | `%s` |\n", component, label))
+	}
+	if rows.Len() == 0 {
 		return
 	}
 
-	b.WriteString("| Section | Added | Changed | Removed |\n")
-	b.WriteString("|---------|-------|---------|--------|\n")
-	for _, s := range diff.Sections {
-		b.WriteString(fmt.Sprintf("| %s | %s | %s | %s |\n",
-			s.Name,
-			formatCount(s.Additions, "+"),
-			formatCount(s.Changed, ""),
-			formatCount(s.Removals, ""),
-		))
-	}
+	b.WriteString("### Builds\n\n")
+	b.WriteString("| Component | Change |\n")
+	b.WriteString("|-----------|--------|\n")
+	b.WriteString(rows.String())
 	b.WriteString("\n")
+}
+
+// writeDiffSection mirrors the dashboard overview's config diff card: a single
+// collapsed disclosure whose summary carries the aggregate counts, expanding to
+// operation-prefixed entity rows grouped by section.
+func writeDiffSection(b *strings.Builder, diff *ComputeAppConfigDiffOutput) {
+	var added, changed, removed int
+	for _, s := range diff.Sections {
+		added += s.Additions
+		changed += s.Changed
+		removed += s.Removals
+	}
+
+	b.WriteString("<details>\n")
+	b.WriteString(fmt.Sprintf("<summary><strong>Config changes</strong> %s</summary>\n\n",
+		diffCountSummary(added, changed, removed)))
+
+	if len(diff.Sections) == 0 {
+		b.WriteString("No config changes.\n\n</details>\n\n")
+		return
+	}
 
 	for _, s := range diff.Sections {
+		b.WriteString(fmt.Sprintf("#### %s\n\n", s.Name))
+
 		if len(s.Entries) == 0 {
+			b.WriteString(diffCountSummary(s.Additions, s.Changed, s.Removals) + "\n\n")
 			continue
 		}
-		b.WriteString(fmt.Sprintf("<details><summary>%s (%d)</summary>\n\n", s.Name, len(s.Entries)))
+
 		for _, e := range s.Entries {
-			prefix := "\u2022"
-			switch e.Op {
-			case "add":
-				prefix = "**+**"
-			case "remove":
-				prefix = "**-**"
-			case "change":
-				prefix = "**~**"
-			}
-			desc := ""
+			row := fmt.Sprintf("- `%s` `%s`", diffOpSymbol(e.Op), e.Name)
 			if e.Description != "" {
-				desc = fmt.Sprintf(" \u2014 %s", e.Description)
+				row += fmt.Sprintf(" \u2014 %s", e.Description)
 			}
-			b.WriteString(fmt.Sprintf("- %s `%s`%s\n", prefix, e.Name, desc))
+			b.WriteString(row + "\n")
 		}
-		b.WriteString("\n</details>\n\n")
+		b.WriteString("\n")
+	}
+
+	b.WriteString("</details>\n\n")
+}
+
+// Counts are wrapped in literal <code> rather than backticks because GitHub
+// does not render markdown inside a <summary>.
+func diffCountSummary(added, changed, removed int) string {
+	parts := make([]string, 0, 3)
+	if added > 0 {
+		parts = append(parts, fmt.Sprintf("<code>+%d</code>", added))
+	}
+	if changed > 0 {
+		parts = append(parts, fmt.Sprintf("<code>~%d</code>", changed))
+	}
+	if removed > 0 {
+		parts = append(parts, fmt.Sprintf("<code>-%d</code>", removed))
+	}
+	if len(parts) == 0 {
+		return "<code>no changes</code>"
+	}
+	return strings.Join(parts, " ")
+}
+
+func diffOpSymbol(op string) string {
+	switch op {
+	case "add":
+		return "+"
+	case "remove":
+		return "-"
+	case "change":
+		return "~"
+	default:
+		return "\u2022"
 	}
 }
 

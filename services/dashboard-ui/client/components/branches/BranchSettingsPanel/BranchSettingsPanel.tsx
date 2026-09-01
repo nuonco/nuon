@@ -38,7 +38,8 @@ export const BranchSettingsPanel = () => {
                 <Icon variant="GearIcon" /> Settings
               </Text>
               <Text variant="subtext" theme="neutral">
-                Manage this branch's name, source, triggers, and lifecycle.
+                Manage this branch&apos;s name, source, triggers, previews, and
+                lifecycle.
               </Text>
             </span>
           }

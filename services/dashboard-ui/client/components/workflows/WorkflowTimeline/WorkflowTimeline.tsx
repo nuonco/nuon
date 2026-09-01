@@ -123,7 +123,9 @@ export const WorkflowTimeline = ({
                     </Badge>
                     {(() => {
                       const branchRun = getBranchRunFromWorkflow(workflow)
-                      const mode = previewModeLabel(branchRun?.preview) ?? (branchRun?.plan_only ? 'plan-only' : undefined)
+                      const mode =
+                        previewModeLabel(branchRun?.preview) ??
+                        (branchRun?.plan_only ? 'plan-only' : undefined)
                       const source = previewSourceLabel(branchRun)
                       const install = branchRun?.preview?.install_name
                       return (
@@ -140,7 +142,7 @@ export const WorkflowTimeline = ({
                           ) : null}
                           {install ? (
                             <Badge variant="code" size="sm">
-                              {install}
+                              install: {install}
                             </Badge>
                           ) : null}
                         </>
