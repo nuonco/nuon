@@ -9,8 +9,7 @@ import { cn } from '@/utils/classnames'
 import type { TInstallWorkflowStep } from '@/types'
 import { DetailStatusIcon } from './shared/icons'
 import { formatDuration } from './shared/format'
-
-const GUTTER = 'px-4 sm:px-6'
+import { STEP_GUTTER as GUTTER } from './shared/StepLayout'
 
 const AdminFooter = ({ workflowId }: { workflowId: string }) => {
   const { isAdmin } = useAuth()
@@ -25,11 +24,10 @@ const AdminFooter = ({ workflowId }: { workflowId: string }) => {
 
 export interface IStepCard {
   step: TInstallWorkflowStep
-  flush?: boolean
   children?: ReactNode
 }
 
-export const StepCard = ({ step, flush = false, children }: IStepCard) => {
+export const StepCard = ({ step, children }: IStepCard) => {
   const isInProgress = step.status?.status === 'in-progress'
   const duration = formatDuration(step.execution_time)
   const description = step.status?.status_human_description
@@ -108,11 +106,7 @@ export const StepCard = ({ step, flush = false, children }: IStepCard) => {
         )}
       </div>
 
-      {children && (
-        <div className={cn('flex flex-col', !flush && cn('py-5 gap-4', GUTTER))}>
-          {children}
-        </div>
-      )}
+      {children && <div className="flex flex-col divide-y">{children}</div>}
 
       {step.install_workflow_id && (
         <AdminFooter workflowId={step.install_workflow_id} />

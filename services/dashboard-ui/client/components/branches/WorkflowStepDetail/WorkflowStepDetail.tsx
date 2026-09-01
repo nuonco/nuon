@@ -73,9 +73,5 @@ export const WorkflowStepDetail = ({
     return null
   })()
 
-  return (
-    <StepCard step={step} flush={isConfigStep}>
-      {body}
-    </StepCard>
-  )
+  return <StepCard step={step}>{body}</StepCard>
 }
