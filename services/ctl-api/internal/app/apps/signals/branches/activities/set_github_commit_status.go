@@ -25,8 +25,13 @@ type SetGithubCommitStatusInput struct {
 	AppBranchID string `json:"app_branch_id"`
 	RunID       string `json:"run_id"`
 
-	// Context overrides the derived {org}/{app}/{branch} context. Left empty by
-	// callers that want the branch-derived one.
+	// Preview suffixes the derived context so preview runs get their own check
+	// rather than overwriting the branch's regular one.
+	Preview     bool                        `json:"preview,omitempty"`
+	PreviewMode app.AppBranchRunPreviewMode `json:"preview_mode,omitempty"`
+
+	// Context overrides the derived nuon/{org}/{app}/{branch} context. Left
+	// empty by callers that want the branch-derived one.
 	Context string `json:"context,omitempty"`
 
 	// TargetURL overrides the derived run link.
@@ -35,19 +40,25 @@ type SetGithubCommitStatusInput struct {
 
 // CommitStatusContext is the check name GitHub displays. Scoping it to the
 // org, app and branch keeps two branches of the same app from overwriting each
-// other's status on a shared commit.
-func CommitStatusContext(orgName, appName, branchName string) string {
-	parts := make([]string, 0, 3)
+// other's status on a shared commit, and the preview suffix keeps a preview
+// from overwriting the branch's regular status.
+func CommitStatusContext(orgName, appName, branchName string, preview bool, previewMode app.AppBranchRunPreviewMode) string {
+	parts := make([]string, 0, 4)
+	parts = append(parts, "nuon")
 	for _, p := range []string{orgName, appName, branchName} {
 		if p != "" {
 			parts = append(parts, p)
 		}
 	}
-	if len(parts) == 0 {
-		return "nuon"
-	}
 
 	ctxStr := strings.Join(parts, "/")
+	if preview {
+		ctxStr += " preview"
+		if label := previewMode.Label(); label != "" {
+			ctxStr += fmt.Sprintf(" (%s)", label)
+		}
+	}
+
 	runes := []rune(ctxStr)
 	if len(runes) > maxCommitStatusContextLen {
 		ctxStr = string(runes[:maxCommitStatusContextLen])
@@ -74,7 +85,7 @@ func (a *Activities) SetGithubCommitStatus(ctx context.Context, input *SetGithub
 			Where(app.AppBranch{ID: input.AppBranchID}).
 			First(&branch); res.Error == nil {
 			if statusContext == "" {
-				statusContext = CommitStatusContext(branch.Org.Name, branch.App.Name, branch.Name)
+				statusContext = CommitStatusContext(branch.Org.Name, branch.App.Name, branch.Name, input.Preview, input.PreviewMode)
 			}
 			if targetURL == "" {
 				workflowID := ""
@@ -92,7 +103,7 @@ func (a *Activities) SetGithubCommitStatus(ctx context.Context, input *SetGithub
 		}
 	}
 	if statusContext == "" {
-		statusContext = "nuon"
+		statusContext = CommitStatusContext("", "", "", input.Preview, input.PreviewMode)
 	}
 
 	status := &github.RepoStatus{

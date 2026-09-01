@@ -45,10 +45,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	var vcsCommit *app.VCSConnectionCommit
-	if run.RunType == app.AppBranchRunTypeGitPreview && run.HeadSHA != "" {
+	previewRef := previewCommitRef(run)
+	if previewRef != "" {
 		vcsCommit, err = activities.AwaitFetchCommitBySHA(ctx, &activities.FetchCommitBySHAInput{
 			VcsConfigID: vcsConfigID,
-			SHA:         run.HeadSHA,
+			SHA:         previewRef,
 		})
 	} else {
 		vcsCommit, err = activities.AwaitFetchLatestCommitByVcsConfigID(ctx, vcsConfigID)
@@ -167,4 +168,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"commit_sha", vcsCommit.SHA)
 
 	return nil
+}
+
+func previewCommitRef(run *app.AppBranchRun) string {
+	if run.RunType != app.AppBranchRunTypeGitPreview {
+		return ""
+	}
+	if run.HeadSHA != "" {
+		return run.HeadSHA
+	}
+	if run.Preview != nil {
+		return run.Preview.GitRef
+	}
+	return ""
 }

@@ -92,6 +92,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				Description: "Ignored by app branch changes regex",
 				AppBranchID: s.AppBranchID,
 				RunID:       s.RunID,
+				Preview:     run.IsPreview(),
+				PreviewMode: run.PreviewMode(),
 			})
 		}
 	}

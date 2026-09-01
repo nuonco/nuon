@@ -185,12 +185,20 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 		}
 	}
 
+	commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
+		RunID: s.RunID,
+	})
 	body := activities.BuildPRCommentBody(&activities.PRCommentParams{
-		AppName:       branch.Name,
-		RunID:         s.RunID,
-		Status:        activities.PRCommentStatusSuccess,
-		Diff:          diff,
-		InstallImpact: groups,
+		OrgName:          branch.Org.Name,
+		AppName:          branch.App.Name,
+		BranchName:       branch.Name,
+		RunID:            s.RunID,
+		RunURL:           previewRunURL(commentContext),
+		Status:           activities.PRCommentStatusSuccess,
+		Mode:             run.PreviewMode(),
+		Diff:             diff,
+		ComponentChanges: previewComponentChanges(commentContext),
+		InstallImpact:    groups,
 	})
 
 	if _, err := activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
@@ -201,4 +209,18 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 	}); err != nil {
 		l.Warn("unable to update preview PR comment", "error", err)
 	}
+}
+
+func previewRunURL(commentContext *activities.GetPreviewCommentContextOutput) string {
+	if commentContext == nil {
+		return ""
+	}
+	return commentContext.RunURL
+}
+
+func previewComponentChanges(commentContext *activities.GetPreviewCommentContextOutput) []activities.ComponentBuildChange {
+	if commentContext == nil {
+		return nil
+	}
+	return commentContext.ComponentChanges
 }

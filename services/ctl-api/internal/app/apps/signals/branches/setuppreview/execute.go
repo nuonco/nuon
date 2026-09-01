@@ -58,6 +58,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			Description: "Preview starting...",
 			AppBranchID: s.AppBranchID,
 			RunID:       s.RunID,
+			Preview:     true,
+			PreviewMode: run.PreviewMode(),
 		})
 	}
 
@@ -79,10 +81,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		existingCommentID = prevComment.CommentID
 	}
 
+	commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
+		RunID: s.RunID,
+	})
 	commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
-		AppName: branch.Name,
-		RunID:   s.RunID,
-		Status:  activities.PRCommentStatusPending,
+		OrgName:    branch.Org.Name,
+		AppName:    branch.App.Name,
+		BranchName: branch.Name,
+		RunID:      s.RunID,
+		Status:     activities.PRCommentStatusPending,
+		Mode:       run.PreviewMode(),
+		RunURL:     previewRunURL(commentContext),
 	})
 
 	commentResult, err := activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
@@ -155,22 +164,32 @@ func (s *Signal) executeLegacy(ctx workflow.Context, logger log.Logger, run *app
 			VcsConfigID: vcsConfigID,
 			CommitSHA:   run.HeadSHA,
 			State:       "pending",
-			Context:     "nuon/preview",
 			Description: "Preview starting...",
+			AppBranchID: s.AppBranchID,
+			RunID:       s.RunID,
+			Preview:     true,
+			PreviewMode: run.PreviewMode(),
 		})
 	}
 	if !run.PreviewGitHubComment() {
 		return nil
 	}
 
+	commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
+		RunID: s.RunID,
+	})
 	commentResult, err := activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 		VcsConfigID:       vcsConfigID,
 		PRNumber:          *run.PRNumber,
 		ExistingCommentID: existingCommentID,
 		Body: activities.BuildPRCommentBody(&activities.PRCommentParams{
-			AppName: branch.Name,
-			RunID:   s.RunID,
-			Status:  activities.PRCommentStatusPending,
+			OrgName:    branch.Org.Name,
+			AppName:    branch.App.Name,
+			BranchName: branch.Name,
+			RunID:      s.RunID,
+			Status:     activities.PRCommentStatusPending,
+			Mode:       run.PreviewMode(),
+			RunURL:     previewRunURL(commentContext),
 		}),
 	})
 	if err != nil {
@@ -185,4 +204,11 @@ func (s *Signal) executeLegacy(ctx workflow.Context, logger log.Logger, run *app
 	}
 
 	return nil
+}
+
+func previewRunURL(commentContext *activities.GetPreviewCommentContextOutput) string {
+	if commentContext == nil {
+		return ""
+	}
+	return commentContext.RunURL
 }

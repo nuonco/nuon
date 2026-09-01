@@ -302,8 +302,9 @@ you cannot push to. To get the push-triggered behavior, point the branch at a re
   </Step>
   <Step title="Open a pull request">
     Open a pull request against `main` with a config change in it. Nuon runs a plan-only preview and posts a comment
-    headed `## Nuon Preview — main` (the branch's `name`, not the app's) with a table of what changed, plus a
-    `nuon/preview` commit status. Push another commit and the same comment is updated in place.
+    headed `## Nuon Preview — main` (the branch's `name`, not the app's) with a table of what changed, plus a commit
+    status named `nuon/<org>/<app>/main preview (plan-only)` linked to the preview run. Push another commit and the same comment is
+    updated in place.
   </Step>
 </Steps>
 

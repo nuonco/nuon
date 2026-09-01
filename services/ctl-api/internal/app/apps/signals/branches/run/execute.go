@@ -190,5 +190,7 @@ func (s *Signal) setPreviewCommitStatus(ctx workflow.Context, run *app.AppBranch
 		Description: description,
 		AppBranchID: run.AppBranchID,
 		RunID:       run.ID,
+		Preview:     true,
+		PreviewMode: run.PreviewMode(),
 	})
 }
