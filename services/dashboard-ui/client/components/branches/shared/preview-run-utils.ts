@@ -28,16 +28,23 @@ export const getBranchRunFromWorkflow = (
 export const isPreviewWorkflow = (workflow?: TInstallWorkflow): boolean =>
   isPreviewBranchRun(getBranchRunFromWorkflow(workflow))
 
-export const previewModeLabel = (preview?: TAppBranchRunPreview): string | undefined =>
-  preview?.mode
+export const previewModeLabel = (
+  preview?: TAppBranchRunPreview
+): string | undefined => preview?.mode
 
-export const previewSourceLabel = (branchRun?: TAppBranchRun): string | undefined => {
+export const previewSourceLabel = (
+  branchRun?: TAppBranchRun
+): string | undefined => {
   const preview = branchRun?.preview
   if (preview?.source === 'pr' && branchRun?.pr_number != null) {
     return `PR #${branchRun.pr_number}`
   }
-  if (preview?.git_ref) return preview.git_ref
-  if (preview?.source === 'branch' && branchRun?.base_branch) return branchRun.base_branch
+  if (preview?.git_ref && preview.git_ref !== branchRun?.app_branch?.name) {
+    return `git ref: ${preview.git_ref}`
+  }
+  if (preview?.source === 'branch' && branchRun?.base_branch) {
+    return `git ref: ${branchRun.base_branch}`
+  }
   return undefined
 }
 
@@ -72,7 +79,10 @@ export const formatPreviewDefaultsSummary = (
   const parts: string[] = [modeDisplayLabel(defaults.mode)]
 
   if (defaults.mode !== 'build-only') {
-    if (defaults.installTargetMode === 'labels' && Object.keys(defaults.labelSelector).length > 0) {
+    if (
+      defaults.installTargetMode === 'labels' &&
+      Object.keys(defaults.labelSelector).length > 0
+    ) {
       const labels = Object.entries(defaults.labelSelector)
         .map(([k, v]) => `${k}=${v}`)
         .join(', ')
@@ -103,7 +113,8 @@ export const isPreviewOverride = (
 export const effectivePreviewDefaults = (
   config?: TAppBranchPreviewConfig,
   installs?: TInstall[]
-): IPreviewDefaults => previewDefaultsFromConfig(config, installs) ?? defaultPreviewDefaults()
+): IPreviewDefaults =>
+  previewDefaultsFromConfig(config, installs) ?? defaultPreviewDefaults()
 
 export const sortPreviewInstallCandidates = (
   installs: TInstall[],
@@ -120,7 +131,9 @@ export const sortPreviewInstallCandidates = (
     if (rankDiff !== 0) return rankDiff
 
     if (rank(a) === 2) {
-      const branchNameDiff = (a.app_branch?.name ?? '').localeCompare(b.app_branch?.name ?? '')
+      const branchNameDiff = (a.app_branch?.name ?? '').localeCompare(
+        b.app_branch?.name ?? ''
+      )
       if (branchNameDiff !== 0) return branchNameDiff
     }
 

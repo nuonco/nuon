@@ -37,6 +37,9 @@ type AppAppBranchRunPreview struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// ignore changes regex
+	IgnoreChangesRegex string `json:"ignore_changes_regex,omitempty"`
+
 	// input app config id
 	InputAppConfigID string `json:"input_app_config_id,omitempty"`
 
@@ -57,6 +60,9 @@ type AppAppBranchRunPreview struct {
 
 	// resolved preview config
 	ResolvedPreviewConfig *AppAppBranchPreviewConfig `json:"resolved_preview_config,omitempty"`
+
+	// send statuses on ignore
+	SendStatusesOnIgnore bool `json:"send_statuses_on_ignore,omitempty"`
 
 	// source
 	Source AppAppBranchRunPreviewSource `json:"source,omitempty"`

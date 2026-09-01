@@ -18,13 +18,17 @@ export type TCreateBranchConfigRequest = {
   install_groups?: Array<{
     name: string
     install_ids?: string[]
-    label_selector?: { match_labels?: Record<string, string>; not_match_labels?: Record<string, string> } | null
+    label_selector?: {
+      match_labels?: Record<string, string>
+      not_match_labels?: Record<string, string>
+    } | null
     order: number
     max_parallel?: number
   }>
   // Omit to carry the current setting forward; send [] to clear it.
   post_deploy_runbook_ids?: string[]
-  disable_branch_triggers?: boolean
+  ignore_changes_regex?: string
+  send_statuses_on_ignore?: boolean
   preview_config?: {
     mode?: 'plan-only' | 'apply' | 'build-only'
     install_id?: string

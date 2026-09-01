@@ -12,6 +12,8 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
+const optionalPreviewImpactCommentVersion = "app-branch-optional-preview-impact-comment-v1"
+
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
@@ -139,6 +141,10 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 	if run.PRNumber == nil {
 		return
 	}
+	if workflow.GetVersion(ctx, optionalPreviewImpactCommentVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion &&
+		!run.PreviewGitHubComment() {
+		return
+	}
 
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
@@ -179,12 +185,20 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 		}
 	}
 
+	commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
+		RunID: s.RunID,
+	})
 	body := activities.BuildPRCommentBody(&activities.PRCommentParams{
-		AppName:       branch.Name,
-		RunID:         s.RunID,
-		Status:        activities.PRCommentStatusSuccess,
-		Diff:          diff,
-		InstallImpact: groups,
+		OrgName:          branch.Org.Name,
+		AppName:          branch.App.Name,
+		BranchName:       branch.Name,
+		RunID:            s.RunID,
+		RunURL:           previewRunURL(commentContext),
+		Status:           activities.PRCommentStatusSuccess,
+		Mode:             run.PreviewMode(),
+		Diff:             diff,
+		ComponentChanges: previewComponentChanges(commentContext),
+		InstallImpact:    groups,
 	})
 
 	if _, err := activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
@@ -195,4 +209,18 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 	}); err != nil {
 		l.Warn("unable to update preview PR comment", "error", err)
 	}
+}
+
+func previewRunURL(commentContext *activities.GetPreviewCommentContextOutput) string {
+	if commentContext == nil {
+		return ""
+	}
+	return commentContext.RunURL
+}
+
+func previewComponentChanges(commentContext *activities.GetPreviewCommentContextOutput) []activities.ComponentBuildChange {
+	if commentContext == nil {
+		return nil
+	}
+	return commentContext.ComponentChanges
 }

@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -26,6 +27,8 @@ type TriggerAppBranchRunFromVCSPushRequest struct {
 	PRNumber          *int     `json:"pr_number,omitempty"`
 	HeadSHA           string   `json:"head_sha,omitempty"`
 	BaseBranch        string   `json:"base_branch,omitempty"`
+	BaseSHA           string   `json:"base_sha,omitempty"`
+	ChangedFiles      []string `json:"changed_files,omitempty"`
 	PusherEmails      []string `json:"pusher_emails,omitempty"`
 
 	SenderLogin         string `json:"sender_login,omitempty"`
@@ -52,14 +55,6 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		return nil, fmt.Errorf("unable to find app branch config: %w", err)
 	}
 
-	if config.DisableBranchTriggers {
-		a.l.Info("skipping vcs push trigger: branch triggers disabled for app branch config",
-			zap.String("app_branch_id", appBranchID),
-			zap.String("app_branch_config_id", appBranchConfigID),
-		)
-		return &TriggerAppBranchRunFromVCSPushResponse{}, nil
-	}
-
 	ctx = a.resolvePusherAccount(ctx, branch.OrgID, req.PusherEmails, req.FallbackCreatedByID)
 
 	runType := RunTypeFromEventType(req.EventType)
@@ -81,6 +76,16 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 	}
 	if req.BaseBranch != "" {
 		metadata["base_branch"] = req.BaseBranch
+	}
+	if req.BaseSHA != "" {
+		metadata["base_sha"] = req.BaseSHA
+	}
+	if len(req.ChangedFiles) > 0 {
+		changedFiles, err := json.Marshal(req.ChangedFiles)
+		if err != nil {
+			return nil, fmt.Errorf("unable to encode changed files: %w", err)
+		}
+		metadata["changed_files"] = string(changedFiles)
 	}
 
 	triggerResp, err := a.helpers.TriggerAppBranchRun(ctx, &appshelpers.TriggerAppBranchRunRequest{

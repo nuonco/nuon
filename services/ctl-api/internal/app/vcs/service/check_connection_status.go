@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v50/github"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -17,7 +18,7 @@ type VCSConnectionStatusResponse struct {
 	GithubInstallID     string                `json:"github_install_id"`
 	Account             *VCSConnectionAccount `json:"account"`
 	SuspendedAt         *time.Time            `json:"suspended_at,omitempty"`
-	SuspendedBy         *github.User          `json:"suspended_by,omitempty"`
+	SuspendedBy         *VCSConnectionUser    `json:"suspended_by,omitempty"`
 	Permissions         map[string]string     `json:"permissions"`
 	RepositorySelection string                `json:"repository_selection"`
 	CheckedAt           time.Time             `json:"checked_at"`
@@ -28,6 +29,11 @@ type VCSConnectionAccount struct {
 	Login string `json:"login"`
 	ID    int64  `json:"id"`
 	Type  string `json:"type"`
+}
+
+type VCSConnectionUser struct {
+	Login string `json:"login"`
+	ID    int64  `json:"id"`
 }
 
 // @ID                      CheckVCSConnectionStatus
@@ -104,7 +110,10 @@ func buildStatusResponse(
 		resp.Status = "suspended"
 		resp.SuspendedAt = &installation.SuspendedAt.Time
 		if installation.SuspendedBy != nil {
-			resp.SuspendedBy = installation.SuspendedBy
+			resp.SuspendedBy = &VCSConnectionUser{
+				Login: installation.SuspendedBy.GetLogin(),
+				ID:    installation.SuspendedBy.GetID(),
+			}
 		}
 	} else {
 		resp.Status = "active"
