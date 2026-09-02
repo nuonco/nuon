@@ -18,7 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 )
 
-func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, autoApprove, wait, dryRun, asJSON bool) error {
+func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, confirm, approveAll, wait, dryRun, asJSON bool) error {
 	if fileOrDir == "" {
 		return ui.PrintError(fmt.Errorf("file or directory path is required"))
 	}
@@ -38,7 +38,7 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 		return ui.PrintError(fmt.Errorf("error listing installs for app %s: %w", appID, err))
 	}
 
-	is := newAppInstallSyncer(s.api, appID, s.cfg.OrgID, s.cfg.Interactive, asJSON)
+	is := newAppInstallSyncer(s.api, appID, s.cfg.OrgID, s.cfg.Interactive, asJSON, approveAll)
 
 	results := make([]syncedInstall, 0, len(installCfgs))
 	for _, installCfg := range installCfgs {
@@ -63,7 +63,7 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 			}
 		}
 
-		synced, err := is.syncInstall(ctx, installCfg, installID, autoApprove, wait, dryRun)
+		synced, err := is.syncInstall(ctx, installCfg, installID, confirm, wait, dryRun)
 		if err != nil {
 			return ui.PrintError(fmt.Errorf("error syncing install %s: %w", installCfg.Name, err))
 		}
