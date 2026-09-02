@@ -31,20 +31,22 @@ type appInstallSyncer struct {
 	appID, orgID string
 	interactive  bool
 	asJSON       bool
+	approveAll   bool
 }
 
-func newAppInstallSyncer(api nuon.Client, appID, orgID string, interactive, asJSON bool) *appInstallSyncer {
+func newAppInstallSyncer(api nuon.Client, appID, orgID string, interactive, asJSON, approveAll bool) *appInstallSyncer {
 	return &appInstallSyncer{
 		api:         api,
 		appID:       appID,
 		orgID:       orgID,
 		interactive: interactive,
 		asJSON:      asJSON,
+		approveAll:  approveAll,
 	}
 }
 
 func (s *appInstallSyncer) syncInstall(
-	ctx context.Context, installCfg *config.Install, installID string, autoApprove, wait, dryRun bool,
+	ctx context.Context, installCfg *config.Install, installID string, confirm, wait, dryRun bool,
 ) (*models.AppInstall, error) {
 	var err error
 	if !s.asJSON {
@@ -60,7 +62,7 @@ func (s *appInstallSyncer) syncInstall(
 	}
 
 	if installID == "" {
-		appInstall, err := s.syncNewInstall(ctx, installCfg, autoApprove, wait, dryRun)
+		appInstall, err := s.syncNewInstall(ctx, installCfg, confirm, wait, dryRun)
 		return appInstall, err
 	}
 
@@ -69,11 +71,11 @@ func (s *appInstallSyncer) syncInstall(
 		return nil, fmt.Errorf("error getting install %s: %w", installCfg.Name, err)
 	}
 
-	appInstall, err = s.syncExistingInstall(ctx, installCfg, appInstall, autoApprove, wait, dryRun)
+	appInstall, err = s.syncExistingInstall(ctx, installCfg, appInstall, confirm, wait, dryRun)
 	return appInstall, err
 }
 
-func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, autoApprove, wait, dryRun bool) (*models.AppInstall, error) {
+func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, confirm, wait, dryRun bool) (*models.AppInstall, error) {
 	appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
@@ -116,7 +118,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		return nil, nil
 	}
 
-	if !autoApprove {
+	if !confirm {
 		ok, err := bubbles.ShowConfirmDialogWithNote(
 			"Do you want to proceed with creating this install?",
 			fmt.Sprintf("Install %q does not exist and will be created.", installCfg.Name),
@@ -184,7 +186,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		return nil, fmt.Errorf("error creating install %s: %w", installCfg.Name, err)
 	}
 
-	err = s.handleWorkflow(ctx, appInstall.WorkflowID, appInstall.ID, autoApprove, wait)
+	err = s.handleWorkflow(ctx, appInstall.WorkflowID, appInstall.ID, wait)
 	if err != nil {
 		return nil, fmt.Errorf("error handling workflow for install %s: %w", installCfg.Name, err)
 	}
@@ -196,7 +198,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 }
 
 func (s *appInstallSyncer) syncExistingInstall(
-	ctx context.Context, installCfg *config.Install, appInstall *models.AppInstall, autoApprove, wait, dryRun bool,
+	ctx context.Context, installCfg *config.Install, appInstall *models.AppInstall, confirm, wait, dryRun bool,
 ) (*models.AppInstall, error) {
 	var err error
 
@@ -256,7 +258,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, nil
 	}
 
-	if !autoApprove {
+	if !confirm {
 		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with updating this install?", s.interactive)
 		if err != nil {
 			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
@@ -365,7 +367,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 			return nil, fmt.Errorf("error updating inputs for install %s: %w", appInstall.Name, err)
 		}
 
-		err = s.handleWorkflow(ctx, installInputs.WorkflowID, appInstall.ID, autoApprove, wait)
+		err = s.handleWorkflow(ctx, installInputs.WorkflowID, appInstall.ID, wait)
 		if err != nil {
 			return nil, fmt.Errorf("error handling workflow for install %s: %w", appInstall.Name, err)
 		}
@@ -409,14 +411,14 @@ func (s *appInstallSyncer) syncLabels(ctx context.Context, installID string, des
 	return nil
 }
 
-func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string, installID string, autoApprove, wait bool) error {
+func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string, installID string, wait bool) error {
 	workflow, err := s.api.GetWorkflow(ctx, workflowID)
 	if err != nil {
 		return nil
 	}
 
 	if workflow.ApprovalOption == models.AppInstallApprovalOptionPrompt {
-		if autoApprove && workflow.Status.Status == models.AppStatusPending {
+		if s.approveAll && workflow.Status.Status == models.AppStatusPending {
 			_, err := s.api.UpdateWorkflow(ctx, workflow.ID, &models.ServiceUpdateWorkflowRequest{
 				ApprovalOption: models.AppInstallApprovalOptionApproveDashAll.Pointer(),
 			})
