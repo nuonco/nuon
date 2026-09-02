@@ -32,6 +32,67 @@ func (s *InstallsServiceTestSuite) TestGetOrgInstallsReturnsList() {
 	assert.Len(s.T(), resp, 2)
 }
 
+func (s *InstallsServiceTestSuite) TestGetOrgInstallsCanExcludeComponents() {
+	install := s.createTestInstall()
+	component := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeHelmChart)
+	s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), install.ID, component.ID)
+
+	rr := s.makeRequest(http.MethodGet, "/v1/installs?include_components=false", nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+
+	var resp []app.Install
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+	require.Len(s.T(), resp, 1)
+	assert.Nil(s.T(), resp[0].InstallComponents)
+}
+
+func (s *InstallsServiceTestSuite) TestGetOrgInstallsReturnsAllComponentsGroupedByInstall() {
+	firstInstall := s.createTestInstall()
+	secondInstall := s.createTestInstall()
+
+	configConnection := s.testAppConfig.ComponentConfigConnections[0]
+	firstInstallComponent := s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), firstInstall.ID, configConnection.ComponentID)
+	build := s.deps.Seeder.CreateComponentBuild(s.ctx, s.T(), configConnection.ID)
+	s.deps.Seeder.CreateInstallDeploy(s.ctx, s.T(), firstInstallComponent.ID, build.ID)
+
+	for range 10 {
+		component := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeHelmChart)
+		s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), firstInstall.ID, component.ID)
+	}
+	secondComponent := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeTerraformModule)
+	s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), secondInstall.ID, secondComponent.ID)
+
+	rr := s.makeRequest(http.MethodGet, "/v1/installs", nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+
+	var resp []app.Install
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+	require.Len(s.T(), resp, 2)
+
+	first := findInstallByID(resp, firstInstall.ID)
+	require.NotNil(s.T(), first)
+	require.Len(s.T(), first.InstallComponents, 11)
+	for _, installComponent := range first.InstallComponents {
+		assert.Equal(s.T(), firstInstall.ID, installComponent.InstallID)
+		assert.NotEmpty(s.T(), installComponent.Component.Name)
+	}
+
+	second := findInstallByID(resp, secondInstall.ID)
+	require.NotNil(s.T(), second)
+	require.Len(s.T(), second.InstallComponents, 1)
+	assert.Equal(s.T(), secondComponent.ID, second.InstallComponents[0].ComponentID)
+	assert.Equal(s.T(), secondComponent.Name, second.InstallComponents[0].Component.Name)
+
+	for _, installComponent := range first.InstallComponents {
+		if installComponent.ID == firstInstallComponent.ID {
+			require.Len(s.T(), installComponent.InstallDeploys, 1)
+			assert.Equal(s.T(), build.ID, installComponent.InstallDeploys[0].ComponentBuildID)
+			return
+		}
+	}
+	s.T().Fatalf("install component %s not found", firstInstallComponent.ID)
+}
+
 func (s *InstallsServiceTestSuite) TestGetOrgInstallsSearch() {
 	install := s.createTestInstall()
 
