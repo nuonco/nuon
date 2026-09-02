@@ -2,10 +2,13 @@ package heartbeater
 
 import (
 	"context"
+	"errors"
 	"math/rand/v2"
 	"time"
 
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -14,8 +17,28 @@ import (
 )
 
 const (
-	heartBeatErrBackoff time.Duration = time.Second * 5
+	heartBeatErrBackoff           time.Duration = time.Second * 5
+	inactiveRunnerProcessConflict               = "process_inactive"
 )
+
+func shouldRestartForHeartBeatError(err error) bool {
+	var conflict *operations.CreateRunnerHeartBeatConflict
+	return errors.As(err, &conflict) && conflict.Payload != nil && conflict.Payload.Description == inactiveRunnerProcessConflict
+}
+
+func (h *HeartBeater) handleHeartBeatError(err error) bool {
+	h.l.Error("unable to write heart beat", zap.Error(err))
+	if !shouldRestartForHeartBeatError(err) {
+		return false
+	}
+
+	h.l.Error("runner process is inactive; restarting")
+	if shutdownErr := h.shutdowner.Shutdown(fx.ExitCode(1)); shutdownErr != nil {
+		h.l.Error("unable to request runner restart", zap.Error(shutdownErr))
+		return false
+	}
+	return true
+}
 
 func (h *HeartBeater) writeHeartBeat(ctx context.Context) error {
 	tags := metrics.ToTags(
@@ -75,8 +98,8 @@ func (h *HeartBeater) loop(ctx context.Context) {
 		writeCtx, cancel := context.WithTimeout(ctx, heartBeatErrBackoff)
 		err := h.writeHeartBeat(writeCtx)
 		cancel()
-		if err != nil {
-			h.l.Error("unable to write heart beat", zap.Error(err))
+		if err != nil && h.handleHeartBeatError(err) {
+			return
 		}
 	}
 }
