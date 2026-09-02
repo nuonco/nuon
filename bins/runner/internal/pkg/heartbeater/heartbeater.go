@@ -27,6 +27,7 @@ type Params struct {
 	MW               metrics.Writer
 	Process          string `name:"process"`
 	ProcessRegistrar *process.Registrar
+	Shutdowner       fx.Shutdowner
 }
 
 type HeartBeater struct {
@@ -34,6 +35,7 @@ type HeartBeater struct {
 	apiClient        nuonrunner.Client
 	l                *zap.Logger
 	processRegistrar *process.Registrar
+	shutdowner       fx.Shutdowner
 
 	// internal state
 	ctx      context.Context
@@ -59,6 +61,7 @@ func New(params Params) (*HeartBeater, error) {
 		mw:               params.MW,
 		process:          params.Process,
 		processRegistrar: params.ProcessRegistrar,
+		shutdowner:       params.Shutdowner,
 	}
 
 	params.LC.Append(hb.LifecycleHook())
