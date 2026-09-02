@@ -11,14 +11,8 @@ import (
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// MaybeEnqueueInitialHealthCheck fetches the process, checks if it has already
-// received its initial health check, and if not enqueues one and updates the flag.
-func (h *Helpers) MaybeEnqueueInitialHealthCheck(ctx context.Context, runnerID, processID string) error {
-	var process app.RunnerProcess
-	if res := h.db.WithContext(ctx).First(&process, "id = ?", processID); res.Error != nil {
-		return fmt.Errorf("unable to fetch process %s: %w", processID, res.Error)
-	}
-
+// MaybeEnqueueInitialHealthCheck ensures the process has an initial health check queued.
+func (h *Helpers) MaybeEnqueueInitialHealthCheck(ctx context.Context, runnerID string, process *app.RunnerProcess) error {
 	if process.InitialHealthCheck {
 		return nil
 	}
@@ -31,7 +25,7 @@ func (h *Helpers) MaybeEnqueueInitialHealthCheck(ctx context.Context, runnerID, 
 		return nil
 	}
 
-	queueName := fmt.Sprintf("runner-process-%s", processID)
+	queueName := fmt.Sprintf("runner-process-%s", process.ID)
 
 	var q app.Queue
 	if res := h.db.WithContext(ctx).
@@ -46,19 +40,19 @@ func (h *Helpers) MaybeEnqueueInitialHealthCheck(ctx context.Context, runnerID, 
 	expiresAt := time.Now().Add(1 * time.Hour)
 	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID:   q.ID,
-		OwnerID:   processID,
+		OwnerID:   process.ID,
 		OwnerType: plugins.TableName(h.db, app.RunnerProcess{}),
 		ExpiresAt: &expiresAt,
 		Signal: queuesignal.NewRaw("process_healthcheck", map[string]any{
 			"runner_id":  runnerID,
-			"process_id": processID,
+			"process_id": process.ID,
 		}),
 	}); err != nil {
 		return fmt.Errorf("unable to enqueue initial health check signal: %w", err)
 	}
 
 	if res := h.db.WithContext(ctx).
-		Model(&app.RunnerProcess{ID: processID}).
+		Model(&app.RunnerProcess{ID: process.ID}).
 		Update("initial_health_check", true); res.Error != nil {
 		return fmt.Errorf("unable to mark initial health check: %w", res.Error)
 	}
