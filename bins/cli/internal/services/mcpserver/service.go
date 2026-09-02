@@ -15,10 +15,30 @@ import (
 type Service struct {
 	cfg         *config.Config
 	allowWrites bool
+	endpoint    string
+	name        string
 }
 
-func New(cfg *config.Config, allowWrites bool) *Service {
-	return &Service{cfg: cfg, allowWrites: allowWrites}
+type Option func(*Service)
+
+func WithEndpoint(endpoint string) Option {
+	return func(s *Service) {
+		s.endpoint = endpoint
+	}
+}
+
+func WithName(name string) Option {
+	return func(s *Service) {
+		s.name = name
+	}
+}
+
+func New(cfg *config.Config, allowWrites bool, opts ...Option) *Service {
+	svc := &Service{cfg: cfg, allowWrites: allowWrites}
+	for _, opt := range opts {
+		opt(svc)
+	}
+	return svc
 }
 
 func (s *Service) Run(ctx context.Context) error {
@@ -37,17 +57,40 @@ func (s *Service) Run(ctx context.Context) error {
 }
 
 func (s *Service) mcpEndpoint() string {
+	if s.endpoint != "" {
+		return s.endpoint
+	}
 	return EndpointFromAPIURL(s.cfg.APIURL)
 }
 
 // EndpointFromAPIURL returns the control-plane MCP HTTP URL for a given API URL.
 func EndpointFromAPIURL(apiURL string) string {
-	switch apiURL {
+	switch strings.TrimRight(apiURL, "/") {
 	case "https://api.nuon.co":
-		return "https://ctl.nuon.co/mcp"
+		return "https://mcp.nuon.co/mcp"
+	case "https://api.stage.nuon.co":
+		return "https://mcp.stage.nuon.co/mcp"
 	default:
 		return "http://localhost:8088/mcp"
 	}
+}
+
+func NameFromAPIURL(apiURL string) string {
+	switch strings.TrimRight(apiURL, "/") {
+	case "https://api.nuon.co":
+		return "nuon"
+	case "https://api.stage.nuon.co":
+		return "nuon-stage"
+	default:
+		return "nuon-local"
+	}
+}
+
+func (s *Service) serverName() string {
+	if s.name != "" {
+		return s.name
+	}
+	return NameFromAPIURL(s.cfg.APIURL)
 }
 
 func (s *Service) connectUpstream(ctx context.Context) (*mcp.ClientSession, error) {
@@ -82,7 +125,7 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 	}
 
 	server := mcp.NewServer(&mcp.Implementation{
-		Name:    "nuon",
+		Name:    s.serverName(),
 		Version: version.Version,
 	}, nil)
 
