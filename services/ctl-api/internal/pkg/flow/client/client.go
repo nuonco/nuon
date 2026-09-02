@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.uber.org/fx"
@@ -10,6 +11,7 @@ import (
 
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -51,6 +53,14 @@ func (c *Client) findQueueSignalByOwner(ctx context.Context, ownerID, ownerType 
 		}).
 		Order("created_at DESC").
 		First(&qs)
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) && signalType == executeflow.SignalType {
+		// Older enqueue paths left owner_id empty; the payload still names the workflow.
+		res = c.db.WithContext(ctx).
+			Where(app.QueueSignal{Type: signalType}).
+			Where("signal->'data'->>'workflow_id' = ?", ownerID).
+			Order("created_at DESC").
+			First(&qs)
+	}
 	if res.Error != nil {
 		return nil, fmt.Errorf("queue signal not found for owner %s type %s: %w", ownerID, signalType, res.Error)
 	}
