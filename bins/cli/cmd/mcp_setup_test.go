@@ -38,9 +38,20 @@ func TestStdioMCPArgsIncludesOverrides(t *testing.T) {
 	ConfigFile = DefaultConfigFilePath
 	t.Cleanup(func() { ConfigFile = prev })
 
-	args, err := stdioMCPArgs(true, "http://localhost:8088/mcp", true, "nuon-local")
+	args, err := stdioMCPArgs(true, "http://localhost:8088/mcp", true, "nuon-local", false)
 	require.NoError(t, err)
 	require.Equal(t, []string{"agents", "mcp", "--url", "http://localhost:8088/mcp", "--name", "nuon-local"}, args)
+}
+
+func TestStdioMCPArgsIncludesAllowWrites(t *testing.T) {
+	t.Setenv("NUON_CONFIG_FILE", "")
+	prev := ConfigFile
+	ConfigFile = DefaultConfigFilePath
+	t.Cleanup(func() { ConfigFile = prev })
+
+	args, err := stdioMCPArgs(true, "https://mcp.nuon.co/mcp", true, "nuon-byoc", true)
+	require.NoError(t, err)
+	require.Equal(t, []string{"agents", "mcp", "--url", "https://mcp.nuon.co/mcp", "--name", "nuon-byoc", "--allow-writes"}, args)
 }
 
 func TestStdioMCPArgsIncludesConfigFile(t *testing.T) {
@@ -53,7 +64,7 @@ func TestStdioMCPArgsIncludesConfigFile(t *testing.T) {
 	ConfigFile = cfgPath
 	t.Cleanup(func() { ConfigFile = prev })
 
-	args, err := stdioMCPArgs(false, "", false, "")
+	args, err := stdioMCPArgs(false, "", false, "", false)
 	require.NoError(t, err)
 	require.Equal(t, []string{"-C", cfgPath, "agents", "mcp"}, args)
 }
