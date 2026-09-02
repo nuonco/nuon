@@ -186,16 +186,46 @@ export const Overview = () => (
       'value is a required string. Never infer the content from children.',
       'Pass the language you know it is; an unknown one renders as plain text and warns in development.',
       'Above a few hundred lines it switches to a virtualized scroll region and grows a search field, because browser find stops working once rows leave the DOM.',
+      'In the search field, Down and Up step through matches and wrap around. Enter and Shift+Enter do the same.',
       'Colours come from the --syntax-* tokens, so a theme change needs no work here.',
     ]}
     props={[
       { name: 'value', type: 'string', description: 'The code. Required.' },
-      { name: 'language', type: 'string', description: 'Language or alias. Unknown values fall back to plain text.' },
-      { name: 'filename', type: 'string', description: 'Shows the file header. Omitted means no header.' },
-      { name: 'defaultWrap', type: 'boolean', default: 'false', description: 'Starting state of the wrap toggle. The block owns it after that.' },
-      { name: 'copy', type: 'boolean', default: 'false', description: 'Show a copy button.' },
-      { name: 'lineNumbers', type: 'boolean', description: 'Defaults to on for anything longer than a line.' },
-      { name: 'maxHeight', type: 'number', default: '480', description: 'Height of the scroll region, virtualized mode only.' },
+      {
+        name: 'language',
+        type: 'string',
+        description:
+          'Language or alias. Unknown values fall back to plain text.',
+      },
+      {
+        name: 'filename',
+        type: 'string',
+        description: 'Shows the file header. Omitted means no header.',
+      },
+      {
+        name: 'defaultWrap',
+        type: 'boolean',
+        default: 'false',
+        description:
+          'Starting state of the wrap toggle. The block owns it after that.',
+      },
+      {
+        name: 'copy',
+        type: 'boolean',
+        default: 'false',
+        description: 'Show a copy button.',
+      },
+      {
+        name: 'lineNumbers',
+        type: 'boolean',
+        description: 'Defaults to on for anything longer than a line.',
+      },
+      {
+        name: 'maxHeight',
+        type: 'number',
+        default: '480',
+        description: 'Height of the scroll region, virtualized mode only.',
+      },
     ]}
     sections={[
       {
@@ -242,7 +272,12 @@ export const WithAndWithoutHeader = () => {
         <Text variant="label" color="tertiary">
           With a filename
         </Text>
-        <CodeBlock language="yaml" filename="deployment.yaml" value={yaml} copy />
+        <CodeBlock
+          language="yaml"
+          filename="deployment.yaml"
+          value={yaml}
+          copy
+        />
       </div>
       <div className="flex flex-col gap-1.5">
         <Text variant="label" color="tertiary">
@@ -273,12 +308,16 @@ export const LongLines = () => (
     </Text>
     <CodeBlock
       language="bash"
-      value={'export NUON_API_TOKEN="a-very-long-token-value-that-keeps-going-well-past-the-edge-of-the-block-and-then-some-more-for-good-measure-because-real-tokens-are-long"'}
+      value={
+        'export NUON_API_TOKEN="a-very-long-token-value-that-keeps-going-well-past-the-edge-of-the-block-and-then-some-more-for-good-measure-because-real-tokens-are-long"'
+      }
     />
     <CodeBlock
       defaultWrap
       language="bash"
-      value={'export NUON_API_TOKEN="a-very-long-token-value-that-keeps-going-well-past-the-edge-of-the-block-and-then-some-more-for-good-measure-because-real-tokens-are-long"'}
+      value={
+        'export NUON_API_TOKEN="a-very-long-token-value-that-keeps-going-well-past-the-edge-of-the-block-and-then-some-more-for-good-measure-because-real-tokens-are-long"'
+      }
     />
   </div>
 )

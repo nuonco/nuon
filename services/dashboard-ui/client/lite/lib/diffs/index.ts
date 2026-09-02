@@ -38,6 +38,7 @@ export interface IPlanDiffGroup {
   id: string
   title: string
   description?: string
+  searchPlaceholder: string
   sections: IPlanDiffSection[]
   summary: IPlanDiffSummary
   diagnostics?: IPlanDiffDiagnostic[]

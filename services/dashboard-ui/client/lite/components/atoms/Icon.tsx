@@ -1,5 +1,6 @@
 import {
   ArrowClockwiseIcon,
+  ArrowDownIcon,
   ArrowUpIcon,
   ArrowElbowDownLeftIcon,
   ArrowsHorizontalIcon,
@@ -39,6 +40,7 @@ const ICONS = {
   ArrowsInLineVerticalIcon,
   ArrowsOutLineVerticalIcon,
   ArrowElbowDownLeftIcon,
+  ArrowDownIcon,
   ArrowUpIcon,
   ArrowSquareOutIcon,
   CaretDownIcon,

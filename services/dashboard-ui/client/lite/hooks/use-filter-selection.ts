@@ -13,8 +13,6 @@ export const useFilterSelection = <T extends string>(
     [available, defaultSelected, options]
   )
 
-  // Keyed by contents rather than array identity so an inline options or
-  // defaults array does not throw the selection away on every render.
   const key = `${[...available].join('\u0000')}|${[...defaults].join('\u0000')}`
   const [state, setState] = useState(() => ({
     key,

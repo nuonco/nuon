@@ -49,23 +49,26 @@ export const HelmDiff = ({
         />
       </header>
 
-      <DiffFilter
-        title="changes"
-        operations={filter.operations}
-        selectedOperations={filter.selectedOperations}
-        selectedCount={filter.selectedCount}
-        totalCount={filter.totalCount}
-        searchValue={filter.searchQuery}
-        searchPlaceholder="Search by release, resource, or type"
-        onSearchChange={filter.setSearchQuery}
-        onOperationToggle={filter.toggleOperation}
-        onOperationOnly={filter.onlyOperation}
-        onReset={filter.reset}
-      />
-
-      {filter.filteredSections.length ? (
-        <DiffSections defaultOpen={defaultOpen}>
-          {filter.filteredSections.map((section) => (
+      <DiffSections
+        defaultOpen={defaultOpen}
+        toolbar={
+          <DiffFilter
+            title="changes"
+            operations={filter.operations}
+            selectedOperations={filter.selectedOperations}
+            selectedCount={filter.selectedCount}
+            totalCount={filter.totalCount}
+            searchValue={filter.searchQuery}
+            searchPlaceholder={group.searchPlaceholder}
+            onSearchChange={filter.setSearchQuery}
+            onOperationToggle={filter.toggleOperation}
+            onOperationOnly={filter.onlyOperation}
+            onReset={filter.reset}
+          />
+        }
+      >
+        {filter.filteredSections.length ? (
+          filter.filteredSections.map((section) => (
             <DiffSection
               key={section.id}
               title={section.title}
@@ -77,18 +80,18 @@ export const HelmDiff = ({
               filename={section.filename}
               error={section.error}
             />
-          ))}
-        </DiffSections>
-      ) : (
-        <div className="rounded-lg bg-surface-02 px-4 py-8 text-center">
-          <Text as="p" variant="body" weight="medium">
-            No changes to show
-          </Text>
-          <Text as="p" variant="caption" color="tertiary">
-            Clear the search or reset the filters.
-          </Text>
-        </div>
-      )}
+          ))
+        ) : (
+          <div className="rounded-lg bg-surface-02 px-4 py-8 text-center">
+            <Text as="p" variant="body" weight="medium">
+              No changes to show
+            </Text>
+            <Text as="p" variant="caption" color="tertiary">
+              Clear the search or reset the filters.
+            </Text>
+          </div>
+        )}
+      </DiffSections>
     </Card>
   )
 }

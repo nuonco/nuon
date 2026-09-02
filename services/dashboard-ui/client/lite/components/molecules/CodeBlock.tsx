@@ -7,6 +7,7 @@ import {
   type FileContents,
 } from '@pierre/diffs/react'
 import { cn } from '@/utils/classnames'
+import { MATCH_NAV_TOOLTIP, matchNavKeyDown } from '../../lib/code-search'
 import {
   LITE_SYNTAX_THEME,
   registerSyntax,
@@ -16,8 +17,8 @@ import {
 import { Button } from '../atoms/Button'
 import { CopyButton } from '../atoms/CopyButton'
 import { Icon } from '../atoms/Icon'
-import { Input } from '../atoms/Input'
 import { Text } from '../atoms/Text'
+import { SearchInput } from './SearchInput'
 
 registerSyntax()
 
@@ -88,7 +89,9 @@ export const CodeBlock = ({
     const needle = query.toLowerCase()
     return value
       .split('\n')
-      .map((line, index) => (line.toLowerCase().includes(needle) ? index + 1 : 0))
+      .map((line, index) =>
+        line.toLowerCase().includes(needle) ? index + 1 : 0
+      )
       .filter(Boolean)
   }, [query, value])
 
@@ -97,7 +100,9 @@ export const CodeBlock = ({
   // is zero-based, while scrollTo takes a one-based line number.
   const highlightCSS = useMemo(() => {
     if (!matches.length) return undefined
-    const all = matches.map((line) => `[data-line-index="${line - 1}"]`).join(',')
+    const all = matches
+      .map((line) => `[data-line-index="${line - 1}"]`)
+      .join(',')
     const current = `[data-line-index="${(matches[matchIndex] ?? matches[0]) - 1}"]`
     return (
       `${all}{background-color:var(--code-match);}` +
@@ -134,43 +139,39 @@ export const CodeBlock = ({
     })
   }
 
-  const copyButton = copy ? <CopyButton value={value} label="Copy code" /> : null
+  const copyButton = copy ? (
+    <CopyButton value={value} label="Copy code" />
+  ) : null
 
   const search = virtualized ? (
     <div className="flex items-center gap-2 border-b border-divider px-2 py-1.5">
-      <label className="relative min-w-0 flex-1">
-        <span className="sr-only">Find in block</span>
-        <Icon
-          variant="MagnifyingGlassIcon"
-          size={14}
-          aria-hidden
-          className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-tertiary"
-        />
-        <Input
-          type="search"
-          size="sm"
-          value={query}
-          placeholder="Find in block"
-          onChange={(event) => {
-            setQuery(event.target.value)
-            setMatchIndex(0)
-          }}
-          onKeyDown={(event) => {
-            if (event.key !== 'Enter') return
-            event.preventDefault()
-            goTo(event.shiftKey ? matchIndex - 1 : matchIndex + 1)
-          }}
-          className="pl-8"
-        />
-      </label>
-      <Text variant="caption" color="tertiary">
-        {query ? `${matches.length ? matchIndex + 1 : 0} of ${matches.length}` : `${lineCount} lines`}
+      <SearchInput
+        size="sm"
+        value={query}
+        placeholder="Find in block"
+        aria-label="Find in block"
+        onValueChange={(nextQuery) => {
+          setQuery(nextQuery)
+          setMatchIndex(0)
+        }}
+        onKeyDown={matchNavKeyDown(matchIndex, goTo)}
+        className="w-full max-w-xl flex-1"
+      />
+      <Text
+        variant="caption"
+        color="tertiary"
+        className="w-20 shrink-0 text-right tabular-nums"
+      >
+        {query
+          ? `${matches.length ? matchIndex + 1 : 0} of ${matches.length}`
+          : `${lineCount} lines`}
       </Text>
       <Button
         size="sm"
         variant="ghost"
         iconOnly
         aria-label="Previous match"
+        tooltip={MATCH_NAV_TOOLTIP.previous}
         disabled={!matches.length}
         onClick={() => goTo(matchIndex - 1)}
       >
@@ -181,6 +182,7 @@ export const CodeBlock = ({
         variant="ghost"
         iconOnly
         aria-label="Next match"
+        tooltip={MATCH_NAV_TOOLTIP.next}
         disabled={!matches.length}
         onClick={() => goTo(matchIndex + 1)}
       >

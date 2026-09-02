@@ -163,6 +163,7 @@ export const helmPlanDiff = (plan?: THelmPlan): IPlanDiffGroup => {
     id: 'helm',
     title: 'Helm changes',
     description: plan?.op ? `Operation: ${humanize(plan.op)}` : undefined,
+    searchPlaceholder: 'Search by release, resource, or namespace',
     sections,
     summary: planSummary(planText) ?? summarizeDiffSections(sections),
   }

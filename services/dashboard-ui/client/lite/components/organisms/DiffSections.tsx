@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { cn } from '@/utils/classnames'
+import { useDisclosureGroup } from '../../hooks/use-disclosure'
 import { Button } from '../atoms/Button'
 import { Icon } from '../atoms/Icon'
 import { DisclosureGroup, ExpandAllButton } from '../molecules/DisclosureGroup'
@@ -16,6 +17,7 @@ import { DiffSection, type IDiffSection } from './DiffSection'
 export interface IDiffSections
   extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   children: ReactNode
+  toolbar?: ReactNode
   defaultOpen?: boolean
   defaultView?: TDiffView
 }
@@ -26,11 +28,15 @@ interface IDiffControls {
 }
 
 const DiffControls = ({ view, setView }: IDiffControls) => {
+  const group = useDisclosureGroup()
   const split = view === 'split'
+
+  if (!group?.count) return null
+
   return (
     <div
       aria-label="Diff controls"
-      className="flex flex-wrap items-center justify-end gap-1 pb-2"
+      className="ml-auto flex items-center gap-0.5"
     >
       <ExpandAllButton />
       <Button
@@ -55,6 +61,7 @@ const DiffControls = ({ view, setView }: IDiffControls) => {
 
 export const DiffSections = ({
   children,
+  toolbar,
   defaultOpen = false,
   defaultView = 'unified',
   className,
@@ -73,7 +80,10 @@ export const DiffSections = ({
       className={cn('gap-1', className)}
       {...props}
     >
-      <DiffControls view={view} setView={setView} />
+      <div className="flex flex-wrap items-center gap-4 pb-2">
+        {toolbar}
+        <DiffControls view={view} setView={setView} />
+      </div>
       {sections}
     </DisclosureGroup>
   )

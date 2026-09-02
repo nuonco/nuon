@@ -29,6 +29,7 @@ export const Overview = () => (
     ]}
     rules={[
       'Unified or split applies to every section in the group. Wrapping and back to top belong to each diff toolbar.',
+      'The expand and view controls share the toolbar row, and disappear when the group has no sections.',
       'Unified is the default so a plan remains readable at narrow widths.',
       'Collapsed sections do not mount a renderer or enter the worker queue.',
       'Each open section scrolls independently when its diff reaches the height limit.',
@@ -38,6 +39,12 @@ export const Overview = () => (
         name: 'children',
         type: 'ReactNode',
         description: 'DiffSection children. Required.',
+      },
+      {
+        name: 'toolbar',
+        type: 'ReactNode',
+        description:
+          'Filter row rendered beside the expand and view controls, usually a DiffFilter.',
       },
       {
         name: 'defaultOpen',

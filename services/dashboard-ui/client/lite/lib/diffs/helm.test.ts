@@ -83,6 +83,12 @@ describe('helmPlanDiff', () => {
     )
   })
 
+  test('names the searchable fields in its placeholder', () => {
+    expect(helmPlanDiff(vmagentSingleRemovalPlan).searchPlaceholder).toBe(
+      'Search by release, resource, or namespace'
+    )
+  })
+
   test('marks missing planner content without inventing a diff', () => {
     const result = helmPlanDiff({
       op: 'install',

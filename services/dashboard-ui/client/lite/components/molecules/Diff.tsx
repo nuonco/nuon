@@ -8,6 +8,7 @@ import {
 } from '@pierre/diffs/react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
+import { MATCH_NAV_TOOLTIP, matchNavKeyDown } from '../../lib/code-search'
 import {
   LITE_SYNTAX_THEME,
   registerSyntax,
@@ -16,8 +17,8 @@ import {
 import { endWithNewline } from '../../lib/diffs'
 import { Button } from '../atoms/Button'
 import { Icon } from '../atoms/Icon'
-import { Input } from '../atoms/Input'
 import { Text } from '../atoms/Text'
+import { SearchInput } from './SearchInput'
 
 registerSyntax()
 
@@ -209,29 +210,20 @@ export const Diff = ({
           ) : null}
           {search ? (
             <>
-              <label className="relative min-w-0 flex-1">
-                <span className="sr-only">Find in diff</span>
-                <Icon
-                  variant="MagnifyingGlassIcon"
-                  size={14}
-                  aria-hidden
-                  className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-tertiary"
-                />
-                <Input
-                  type="search"
-                  size="sm"
-                  value={query}
-                  placeholder="Find in diff"
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter') return
-                    event.preventDefault()
-                    goTo(event.shiftKey ? matchIndex - 1 : matchIndex + 1)
-                  }}
-                  className="pl-8"
-                />
-              </label>
-              <Text variant="caption" color="tertiary">
+              <SearchInput
+                size="sm"
+                value={query}
+                placeholder="Find in diff"
+                aria-label="Find in diff"
+                onValueChange={setQuery}
+                onKeyDown={matchNavKeyDown(matchIndex, goTo)}
+                className="w-full max-w-xl flex-1"
+              />
+              <Text
+                variant="caption"
+                color="tertiary"
+                className="w-20 shrink-0 text-right tabular-nums"
+              >
                 {query
                   ? `${matches.length ? matchIndex + 1 : 0} of ${matches.length}`
                   : `${lineCount} lines`}
@@ -241,6 +233,7 @@ export const Diff = ({
                 variant="ghost"
                 iconOnly
                 aria-label="Previous match"
+                tooltip={MATCH_NAV_TOOLTIP.previous}
                 disabled={!matches.length}
                 onClick={() => goTo(matchIndex - 1)}
               >
@@ -251,6 +244,7 @@ export const Diff = ({
                 variant="ghost"
                 iconOnly
                 aria-label="Next match"
+                tooltip={MATCH_NAV_TOOLTIP.next}
                 disabled={!matches.length}
                 onClick={() => goTo(matchIndex + 1)}
               >

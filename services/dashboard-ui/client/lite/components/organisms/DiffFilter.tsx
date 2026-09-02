@@ -1,10 +1,9 @@
 import type { HTMLAttributes } from 'react'
 import { cn } from '@/utils/classnames'
 import type { TDiffOperation } from '../../lib/diffs'
-import { Icon } from '../atoms/Icon'
-import { Input } from '../atoms/Input'
 import { Text } from '../atoms/Text'
 import { FilterDropdown } from '../molecules/FilterMenu'
+import { SearchInput } from '../molecules/SearchInput'
 
 const LABELS: Record<TDiffOperation, string> = {
   create: 'Create',
@@ -56,27 +55,19 @@ export const DiffFilter = ({
 }: IDiffFilter) => (
   <div
     className={cn(
-      'flex flex-wrap items-center gap-3 rounded-lg bg-surface-02 p-2',
+      'flex min-w-0 flex-1 flex-wrap items-center gap-2',
       className
     )}
     {...props}
   >
-    <label className="relative min-w-56 flex-1">
-      <span className="sr-only">{searchPlaceholder}</span>
-      <Icon
-        variant="MagnifyingGlassIcon"
-        size={14}
-        className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-tertiary"
-      />
-      <Input
-        type="search"
-        size="sm"
-        value={searchValue}
-        placeholder={searchPlaceholder}
-        onChange={(event) => onSearchChange(event.target.value)}
-        className="pl-8"
-      />
-    </label>
+    <SearchInput
+      size="sm"
+      value={searchValue}
+      placeholder={searchPlaceholder}
+      aria-label={searchPlaceholder}
+      onValueChange={onSearchChange}
+      className="min-w-56 flex-1"
+    />
 
     <Text variant="caption" color="tertiary" className="whitespace-nowrap">
       {selectedCount} of {totalCount} {title}

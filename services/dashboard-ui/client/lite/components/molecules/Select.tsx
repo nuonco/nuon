@@ -13,10 +13,10 @@ import { Icon } from '../atoms/Icon'
 import {
   FIELD_CONTROL_CLASSES,
   FIELD_SIZE_CLASSES,
-  Input,
   type TFieldSize,
 } from '../atoms/Input'
 import { Text } from '../atoms/Text'
+import { SearchInput } from './SearchInput'
 
 export interface ISelectOption {
   value: string
@@ -178,14 +178,13 @@ const OptionList = ({
   return (
     <div className="flex min-w-56 flex-col gap-1 p-1">
       {searchable ? (
-        <Input
+        <SearchInput
           ref={searchRef}
           size="sm"
-          type="search"
           value={query}
           placeholder={searchPlaceholder}
           aria-label={searchPlaceholder}
-          onChange={(event) => setQuery(event.target.value)}
+          onValueChange={setQuery}
           onKeyDown={(event) => {
             if (event.key !== 'ArrowDown') return
             event.preventDefault()

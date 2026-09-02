@@ -30,6 +30,7 @@ export const Overview = () => (
       'before and after are plain source strings. The renderer computes the diff.',
       'Unified is the default because it remains readable in a narrow section.',
       'Search covers both sides and expands collapsed context when it jumps to a match.',
+      'In the search field, Down and Up step through matches and wrap around. Enter and Shift+Enter do the same.',
       'Added and removed rows tint the background without replacing syntax colours.',
     ]}
     props={[
