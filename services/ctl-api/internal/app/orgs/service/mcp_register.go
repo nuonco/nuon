@@ -19,11 +19,9 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"List the organizations the authenticated account can access. Use this to find an org ID to pass to select_org.",
 	), s.mcpListOrgs)
 
-	mcp.AddTool(server, apiPkg.MCPWriteTool(
+	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"select_org",
 		"Select organization",
 		"Set the active organization for subsequent tool calls. Required before using org-scoped tools when the account belongs to more than one org. Takes an org_id from list_orgs.",
-		false,
-		true,
 	), s.mcpSelectOrg)
 }
