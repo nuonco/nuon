@@ -225,19 +225,11 @@ export const PlacementPlayground = () => {
 }
 
 export const FlipsAtViewportEdge = () => (
-  <div className="flex h-[85vh] flex-col justify-between p-4">
+  <div className="flex h-screen flex-col justify-between p-4">
     <div className="flex justify-center">
       <Dropdown trigger={<Button>Pinned to the top edge</Button>}>
         <Menu className="min-w-44">
           <MenuItem onSelect={() => {}}>Opened below, as asked</MenuItem>
-        </Menu>
-      </Dropdown>
-    </div>
-    <div className="flex justify-center">
-      <Dropdown trigger={<Button>Pinned to the bottom edge</Button>}>
-        <Menu className="min-w-44">
-          <MenuItem onSelect={() => {}}>Asked for below</MenuItem>
-          <MenuItem onSelect={() => {}}>Flipped above</MenuItem>
         </Menu>
       </Dropdown>
     </div>
@@ -250,6 +242,14 @@ export const FlipsAtViewportEdge = () => (
       <Dropdown side="right" trigger={<Button>Asked for right</Button>}>
         <Menu className="min-w-44">
           <MenuItem onSelect={() => {}}>Flipped to the left</MenuItem>
+        </Menu>
+      </Dropdown>
+    </div>
+    <div className="flex justify-center">
+      <Dropdown trigger={<Button>Pinned to the bottom edge</Button>}>
+        <Menu className="min-w-44">
+          <MenuItem onSelect={() => {}}>Asked for below</MenuItem>
+          <MenuItem onSelect={() => {}}>Flipped above</MenuItem>
         </Menu>
       </Dropdown>
     </div>

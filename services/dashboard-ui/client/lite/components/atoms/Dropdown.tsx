@@ -150,10 +150,16 @@ export const Dropdown = ({
 
   const openWith = useCallback(
     (focus: 'first' | 'last' | null) => {
+      if (isOpen && focus) {
+        const entry = focus === 'first' ? focusFirst.current : focusLast.current
+        if (entry) entry()
+        else contentRef.current?.focus()
+        return
+      }
       pendingFocus.current = focus
       setOpen(true)
     },
-    [setOpen]
+    [isOpen, contentRef, setOpen]
   )
 
   const context = useMemo<IDropdownContext>(
