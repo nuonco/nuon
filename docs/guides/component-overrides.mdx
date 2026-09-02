@@ -88,7 +88,7 @@ key they set. For Terraform, they're applied as the last `-var-file`, so they wi
 Overrides are applied by syncing the install config with the CLI:
 
 ```bash
-nuon installs sync --file install.toml --app-id <your-app-id> --yes
+nuon installs sync --file install.toml --app-id <your-app-id> --confirm
 ```
 
 The CLI validates override syntax locally before making any API calls: `helm_values` must be valid YAML and `tf_vars`
