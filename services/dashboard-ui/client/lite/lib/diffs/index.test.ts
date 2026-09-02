@@ -1,5 +1,20 @@
 import { describe, expect, test } from 'bun:test'
-import { serializeTerraform, terraformDiff } from '.'
+import { normalizeDiffOperation, serializeTerraform, terraformDiff } from '.'
+
+describe('normalizeDiffOperation', () => {
+  test('normalizes provider action vocabularies', () => {
+    expect(normalizeDiffOperation('added')).toBe('create')
+    expect(normalizeDiffOperation('modified')).toBe('update')
+    expect(normalizeDiffOperation('create-replacement')).toBe('replace')
+    expect(normalizeDiffOperation('destroyed')).toBe('delete')
+    expect(normalizeDiffOperation('refresh')).toBe('read')
+    expect(normalizeDiffOperation('same')).toBe('no-op')
+  })
+
+  test('rejects unknown operations', () => {
+    expect(normalizeDiffOperation('mystery')).toBeUndefined()
+  })
+})
 
 describe('serializeTerraform', () => {
   test('sorts every object deterministically', () => {

@@ -1,5 +1,99 @@
 import { parseDiffFromFile } from '@pierre/diffs'
 
+export const DIFF_OPERATIONS = [
+  'create',
+  'update',
+  'replace',
+  'delete',
+  'read',
+  'no-op',
+] as const
+
+export type TDiffOperation = (typeof DIFF_OPERATIONS)[number]
+
+export interface IPlanDiffSection {
+  id: string
+  title: string
+  description?: string
+  operation: TDiffOperation
+  before: string
+  after: string
+  language: string
+  filename?: string
+  searchable: string[]
+  error?: string
+}
+
+export type IPlanDiffSummary = Record<TDiffOperation, number>
+
+export interface IPlanDiffDiagnostic {
+  id: string
+  message: string
+  severity: 'info' | 'warning' | 'error'
+  title?: string
+  searchable?: string[]
+}
+
+export interface IPlanDiffGroup {
+  id: string
+  title: string
+  description?: string
+  sections: IPlanDiffSection[]
+  summary: IPlanDiffSummary
+  diagnostics?: IPlanDiffDiagnostic[]
+}
+
+const OPERATION_ALIASES: Record<string, TDiffOperation> = {
+  add: 'create',
+  added: 'create',
+  create: 'create',
+  created: 'create',
+  change: 'update',
+  changed: 'update',
+  modify: 'update',
+  modified: 'update',
+  update: 'update',
+  updated: 'update',
+  replace: 'replace',
+  replaced: 'replace',
+  'create-replacement': 'replace',
+  'delete-replaced': 'replace',
+  delete: 'delete',
+  deleted: 'delete',
+  destroy: 'delete',
+  destroyed: 'delete',
+  remove: 'delete',
+  removed: 'delete',
+  read: 'read',
+  refresh: 'read',
+  same: 'no-op',
+  unchanged: 'no-op',
+  'no-op': 'no-op',
+  noop: 'no-op',
+}
+
+export const normalizeDiffOperation = (
+  operation: string
+): TDiffOperation | undefined =>
+  OPERATION_ALIASES[operation.trim().toLowerCase()]
+
+export const emptyDiffSummary = (): IPlanDiffSummary => ({
+  create: 0,
+  update: 0,
+  replace: 0,
+  delete: 0,
+  read: 0,
+  'no-op': 0,
+})
+
+export const summarizeDiffSections = (
+  sections: IPlanDiffSection[]
+): IPlanDiffSummary =>
+  sections.reduce((summary, section) => {
+    summary[section.operation] += 1
+    return summary
+  }, emptyDiffSummary())
+
 export interface IChangeCounts {
   added: number
   removed: number

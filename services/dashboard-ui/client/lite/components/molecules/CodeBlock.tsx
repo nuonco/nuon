@@ -16,6 +16,7 @@ import {
 import { Button } from '../atoms/Button'
 import { CopyButton } from '../atoms/CopyButton'
 import { Icon } from '../atoms/Icon'
+import { Input } from '../atoms/Input'
 import { Text } from '../atoms/Text'
 
 registerSyntax()
@@ -137,23 +138,31 @@ export const CodeBlock = ({
 
   const search = virtualized ? (
     <div className="flex items-center gap-2 border-b border-divider px-2 py-1.5">
-      <Icon variant="MagnifyingGlassIcon" size={14} aria-hidden className="text-tertiary" />
-      <input
-        type="search"
-        value={query}
-        placeholder="Find in block"
-        aria-label="Find in block"
-        onChange={(event) => {
-          setQuery(event.target.value)
-          setMatchIndex(0)
-        }}
-        onKeyDown={(event) => {
-          if (event.key !== 'Enter') return
-          event.preventDefault()
-          goTo(event.shiftKey ? matchIndex - 1 : matchIndex + 1)
-        }}
-        className="min-w-0 flex-1 bg-transparent text-caption text-primary outline-none placeholder:text-tertiary"
-      />
+      <label className="relative min-w-0 flex-1">
+        <span className="sr-only">Find in block</span>
+        <Icon
+          variant="MagnifyingGlassIcon"
+          size={14}
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-tertiary"
+        />
+        <Input
+          type="search"
+          size="sm"
+          value={query}
+          placeholder="Find in block"
+          onChange={(event) => {
+            setQuery(event.target.value)
+            setMatchIndex(0)
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return
+            event.preventDefault()
+            goTo(event.shiftKey ? matchIndex - 1 : matchIndex + 1)
+          }}
+          className="pl-8"
+        />
+      </label>
       <Text variant="caption" color="tertiary">
         {query ? `${matches.length ? matchIndex + 1 : 0} of ${matches.length}` : `${lineCount} lines`}
       </Text>

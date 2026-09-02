@@ -109,7 +109,7 @@ export const Dropdown = ({
   const [triggerWidth, setTriggerWidth] = useState<number>()
 
   const baseId = useId()
-  const triggerId = `${baseId}-trigger`
+  const triggerId = trigger.props.id ?? `${baseId}-trigger`
   const contentId = `${baseId}-content`
 
   const focusFirst = useRef<TFocusEntry>(null)

@@ -1,17 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { cn } from '@/utils/classnames'
-import { changeCounts } from '../../lib/diffs'
+import { changeCounts, type TDiffOperation } from '../../lib/diffs'
 import { Text } from '../atoms/Text'
 import { Diff, type IDiff, type TDiffView } from '../molecules/Diff'
 import { Disclosure, type IDisclosure } from '../molecules/Disclosure'
 
-export type TDiffOperation =
-  | 'create'
-  | 'update'
-  | 'replace'
-  | 'delete'
-  | 'read'
-  | 'no-op'
+export type { TDiffOperation } from '../../lib/diffs'
 
 const RAIL_CLASSES: Record<TDiffOperation, string> = {
   create: 'border-l-diff-add',
@@ -45,6 +39,7 @@ export interface IDiffSection
     Omit<IDiff, 'className' | 'view'> {
   operation: TDiffOperation
   view?: TDiffView
+  error?: ReactNode
 }
 
 export const DiffSection = ({
@@ -58,6 +53,7 @@ export const DiffSection = ({
   lineNumbers,
   search,
   maxHeight,
+  error,
   className,
   headerClassName,
   contentClassName,
@@ -98,17 +94,24 @@ export const DiffSection = ({
       contentClassName={cn('p-2', contentClassName)}
       {...props}
     >
-      <Diff
-        before={before}
-        after={after}
-        language={language}
-        filename={filename}
-        view={viewProp}
-        defaultWrap={defaultWrap}
-        lineNumbers={lineNumbers}
-        search={search}
-        maxHeight={maxHeight}
-      />
+      {error ? (
+        <Text as="div" variant="caption" color="tertiary" className="p-3">
+          {error}
+        </Text>
+      ) : null}
+      {before || after ? (
+        <Diff
+          before={before}
+          after={after}
+          language={language}
+          filename={filename}
+          view={viewProp}
+          defaultWrap={defaultWrap}
+          lineNumbers={lineNumbers}
+          search={search}
+          maxHeight={maxHeight}
+        />
+      ) : null}
     </Disclosure>
   )
 }

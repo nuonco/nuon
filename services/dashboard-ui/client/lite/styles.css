@@ -79,6 +79,19 @@
   --badge-border: light-dark(rgba(29, 29, 29, 0.16), rgba(254, 254, 254, 0.18));
   --badge-text: var(--text-secondary);
 
+  --card-bg: light-dark(rgba(29, 29, 29, 0.035), rgba(254, 254, 254, 0.05));
+  --card-bg-hover: light-dark(rgba(29, 29, 29, 0.06), rgba(254, 254, 254, 0.08));
+  --card-border: transparent;
+  --card-shadow: 0 1px 2px var(--shadow-default);
+
+  --field-bg: light-dark(rgba(29, 29, 29, 0.035), rgba(254, 254, 254, 0.05));
+  --field-bg-hover: light-dark(rgba(29, 29, 29, 0.055), rgba(254, 254, 254, 0.075));
+  --field-border: transparent;
+  --field-text: var(--text-primary);
+  --field-placeholder: var(--text-tertiary);
+  --field-invalid: light-dark(var(--error-700), var(--error-300));
+  --field-option-selected: light-dark(rgba(76, 201, 240, 0.12), rgba(76, 201, 240, 0.14));
+
   --link: light-dark(var(--brand-indigo), var(--brand-primary-light));
   --link-hover: light-dark(#2e00cc, #a5e9fc);
   --link-active: light-dark(#25009f, var(--brand-primary));
@@ -238,6 +251,19 @@
   --badge-bg: rgba(255, 255, 255, 0.16);
   --badge-border: var(--neutral-000);
   --badge-text: var(--neutral-000);
+
+  --card-bg: var(--hc-blue-deep);
+  --card-bg-hover: rgba(255, 255, 255, 0.16);
+  --card-border: var(--neutral-000);
+  --card-shadow: none;
+
+  --field-bg: var(--hc-blue-deep);
+  --field-bg-hover: rgba(255, 255, 255, 0.16);
+  --field-border: var(--neutral-000);
+  --field-text: var(--neutral-000);
+  --field-placeholder: var(--hc-yellow);
+  --field-invalid: #ffb3b3;
+  --field-option-selected: rgba(255, 255, 0, 0.16);
 
   --link: var(--hc-yellow);
   --link-hover: var(--neutral-000);
@@ -547,6 +573,18 @@ diffs-container {
   --color-badge-bg: var(--badge-bg);
   --color-badge-border: var(--badge-border);
   --color-badge-text: var(--badge-text);
+
+  --color-card-bg: var(--card-bg);
+  --color-card-bg-hover: var(--card-bg-hover);
+  --color-card-border: var(--card-border);
+
+  --color-field-bg: var(--field-bg);
+  --color-field-bg-hover: var(--field-bg-hover);
+  --color-field-border: var(--field-border);
+  --color-field-text: var(--field-text);
+  --color-field-placeholder: var(--field-placeholder);
+  --color-field-invalid: var(--field-invalid);
+  --color-field-option-selected: var(--field-option-selected);
 
   --color-link: var(--link);
   --color-link-hover: var(--link-hover);

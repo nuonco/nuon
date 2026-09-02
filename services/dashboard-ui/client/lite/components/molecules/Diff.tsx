@@ -16,6 +16,7 @@ import {
 import { endWithNewline } from '../../lib/diffs'
 import { Button } from '../atoms/Button'
 import { Icon } from '../atoms/Icon'
+import { Input } from '../atoms/Input'
 import { Text } from '../atoms/Text'
 
 registerSyntax()
@@ -98,7 +99,10 @@ export const Diff = ({
 
   const lineCount = useMemo(
     () =>
-      Math.max(before ? before.split('\n').length : 0, after ? after.split('\n').length : 0),
+      Math.max(
+        before ? before.split('\n').length : 0,
+        after ? after.split('\n').length : 0
+      ),
     [after, before]
   )
 
@@ -138,7 +142,7 @@ export const Diff = ({
   const options = useMemo(
     () => ({
       theme: LITE_SYNTAX_THEME,
-      disableFileHeader: !filename,
+      disableFileHeader: true,
       disableLineNumbers: !lineNumbers,
       overflow: (wrap ? 'wrap' : 'scroll') as 'wrap' | 'scroll',
       diffStyle: view,
@@ -149,7 +153,7 @@ export const Diff = ({
       lineDiffType: 'word' as const,
       unsafeCSS: DIFF_CSS,
     }),
-    [filename, lineNumbers, view, wrap]
+    [lineNumbers, view, wrap]
   )
 
   const items = useMemo<CodeViewItem<undefined>[]>(
@@ -180,54 +184,83 @@ export const Diff = ({
         className
       )}
     >
-      {search ? (
+      {search || filename ? (
         <div className="flex items-center gap-2 border-b border-divider px-2 py-1.5">
-          <Icon
-            variant="MagnifyingGlassIcon"
-            size={14}
-            aria-hidden
-            className="text-tertiary"
-          />
-          <input
-            type="search"
-            value={query}
-            placeholder="Find in diff"
-            aria-label="Find in diff"
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter') return
-              event.preventDefault()
-              goTo(event.shiftKey ? matchIndex - 1 : matchIndex + 1)
-            }}
-            className="min-w-0 flex-1 bg-transparent text-caption text-primary outline-none placeholder:text-tertiary"
-          />
-          <Text variant="caption" color="tertiary">
-            {query
-              ? `${matches.length ? matchIndex + 1 : 0} of ${matches.length}`
-              : `${lineCount} lines`}
-          </Text>
-          <Button
-            size="sm"
-            variant="ghost"
-            iconOnly
-            aria-label="Previous match"
-            disabled={!matches.length}
-            onClick={() => goTo(matchIndex - 1)}
-          >
-            <Icon variant="CaretUpIcon" size={14} />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            iconOnly
-            aria-label="Next match"
-            disabled={!matches.length}
-            onClick={() => goTo(matchIndex + 1)}
-          >
-            <Icon variant="CaretDownIcon" size={14} />
-          </Button>
-
-          <span aria-hidden className="mx-0.5 h-4 w-px bg-divider" />
+          {filename ? (
+            <span className="flex min-w-0 items-center gap-1.5">
+              <Icon
+                variant="FileIcon"
+                size={14}
+                aria-hidden
+                className="text-tertiary"
+              />
+              <Text
+                variant="caption"
+                family="mono"
+                color="secondary"
+                className="truncate"
+              >
+                {filename}
+              </Text>
+            </span>
+          ) : null}
+          {filename && search ? (
+            <span aria-hidden className="mx-0.5 h-4 w-px bg-divider" />
+          ) : null}
+          {search ? (
+            <>
+              <label className="relative min-w-0 flex-1">
+                <span className="sr-only">Find in diff</span>
+                <Icon
+                  variant="MagnifyingGlassIcon"
+                  size={14}
+                  aria-hidden
+                  className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-tertiary"
+                />
+                <Input
+                  type="search"
+                  size="sm"
+                  value={query}
+                  placeholder="Find in diff"
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter') return
+                    event.preventDefault()
+                    goTo(event.shiftKey ? matchIndex - 1 : matchIndex + 1)
+                  }}
+                  className="pl-8"
+                />
+              </label>
+              <Text variant="caption" color="tertiary">
+                {query
+                  ? `${matches.length ? matchIndex + 1 : 0} of ${matches.length}`
+                  : `${lineCount} lines`}
+              </Text>
+              <Button
+                size="sm"
+                variant="ghost"
+                iconOnly
+                aria-label="Previous match"
+                disabled={!matches.length}
+                onClick={() => goTo(matchIndex - 1)}
+              >
+                <Icon variant="CaretUpIcon" size={14} />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                iconOnly
+                aria-label="Next match"
+                disabled={!matches.length}
+                onClick={() => goTo(matchIndex + 1)}
+              >
+                <Icon variant="CaretDownIcon" size={14} />
+              </Button>
+              <span aria-hidden className="mx-0.5 h-4 w-px bg-divider" />
+            </>
+          ) : (
+            <span className="flex-1" />
+          )}
 
           <Button
             size="sm"
