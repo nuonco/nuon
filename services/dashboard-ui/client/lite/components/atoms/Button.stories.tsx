@@ -8,7 +8,11 @@ export default {
   title: 'lite/atoms/Button',
 }
 
-const VARIANTS: Array<{ variant: TButtonVariant; label: string; usage: string }> = [
+const VARIANTS: Array<{
+  variant: TButtonVariant
+  label: string
+  usage: string
+}> = [
   {
     variant: 'primary',
     label: 'Create install',
@@ -55,13 +59,49 @@ export const Overview = () => (
       'A leading icon gets -ml-0.5 to cancel the transparent padding inside the SVG, so optical left and right insets both land at 14px.',
     ]}
     props={[
-      { name: 'variant', type: "'primary' | 'secondary' | 'ghost' | 'danger'", default: "'secondary'", description: 'Emphasis level.' },
-      { name: 'loading', type: 'boolean', default: 'false', description: 'Shows a spinner before the label, disables the button and sets aria-busy.' },
-      { name: 'icon', type: 'ReactNode', description: 'Leading icon. Swapped out by the spinner while loading.' },
-      { name: 'iconOnly', type: 'boolean', default: 'false', description: 'Square button. Icon goes in children; aria-label is required.' },
-      { name: 'tooltip', type: 'ReactNode', description: 'Wraps the button in a Tooltip. The way to explain a disabled state.' },
-      { name: 'tooltipSide', type: "'top' | 'bottom' | 'left' | 'right'", default: "'top'", description: 'Preferred tooltip side.' },
-      { name: 'disabled', type: 'boolean', description: 'Renders aria-disabled, suppresses hover/active and blocks onClick, while staying focusable so its tooltip is reachable.' },
+      {
+        name: 'variant',
+        type: "'primary' | 'secondary' | 'ghost' | 'danger'",
+        default: "'secondary'",
+        description: 'Emphasis level.',
+      },
+      {
+        name: 'loading',
+        type: 'boolean',
+        default: 'false',
+        description:
+          'Shows a spinner before the label, disables the button and sets aria-busy.',
+      },
+      {
+        name: 'icon',
+        type: 'ReactNode',
+        description: 'Leading icon. Swapped out by the spinner while loading.',
+      },
+      {
+        name: 'iconOnly',
+        type: 'boolean',
+        default: 'false',
+        description:
+          'Square button. Icon goes in children; aria-label is required.',
+      },
+      {
+        name: 'tooltip',
+        type: 'ReactNode',
+        description:
+          'Wraps the button in a Tooltip. The way to explain a disabled state.',
+      },
+      {
+        name: 'tooltipSide',
+        type: "'top' | 'bottom' | 'left' | 'right'",
+        default: "'top'",
+        description: 'Preferred tooltip side.',
+      },
+      {
+        name: 'disabled',
+        type: 'boolean',
+        description:
+          'Renders aria-disabled, suppresses hover/active and blocks onClick, while staying focusable so its tooltip is reachable.',
+      },
     ]}
     sections={[
       {
@@ -140,7 +180,9 @@ export const WithIcon = () => (
     <Button variant="primary" icon={<Icon variant="PlusIcon" size={16} />}>
       Create install
     </Button>
-    <Button icon={<Icon variant="ArrowClockwiseIcon" size={16} />}>Retry</Button>
+    <Button icon={<Icon variant="ArrowClockwiseIcon" size={16} />}>
+      Retry
+    </Button>
     <Button variant="danger" icon={<Icon variant="TrashIcon" size={16} />}>
       Delete
     </Button>
@@ -167,12 +209,16 @@ export const LoadingDoesNotJump = () => {
   return (
     <div className="flex flex-col items-start gap-6 p-8">
       <Text variant="caption" color="tertiary">
-        The spinner column animates from 0fr to 1fr, so the button grows into the
-        spinner rather than snapping. The label never moves abruptly and the row
-        beside it stays put.
+        The spinner column animates from 0fr to 1fr, so the button grows into
+        the spinner rather than snapping. The label never moves abruptly and the
+        row beside it stays put.
       </Text>
       <div className="flex items-center gap-3">
-        <Button variant="primary" loading={loading} onClick={() => setLoading(true)}>
+        <Button
+          variant="primary"
+          loading={loading}
+          onClick={() => setLoading(true)}
+        >
           Deploy component
         </Button>
         <Button variant="ghost" onClick={() => setLoading(false)}>
@@ -188,13 +234,21 @@ export const WithTooltip = () => (
     <Button variant="primary" disabled tooltip="Sync the app config first">
       Create install
     </Button>
-    <Button variant="danger" disabled tooltip="You need admin access to delete this install">
+    <Button
+      variant="danger"
+      disabled
+      tooltip="You need admin access to delete this install"
+    >
       Delete install
     </Button>
     <Button variant="ghost" iconOnly aria-label="Close" tooltip="Close">
       <Icon variant="XIcon" size={16} />
     </Button>
-    <Button variant="secondary" tooltip="Runs the deploy again from the last successful build" tooltipSide="bottom">
+    <Button
+      variant="secondary"
+      tooltip="Runs the deploy again from the last successful build"
+      tooltipSide="bottom"
+    >
       Retry
     </Button>
   </div>

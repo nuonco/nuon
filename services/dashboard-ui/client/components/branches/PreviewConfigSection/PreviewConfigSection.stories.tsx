@@ -1,10 +1,6 @@
 import type { ReactNode } from 'react'
 import { ModalStory } from '@/components/__stories__/helpers'
-import type {
-  TAPIError,
-  TAppBranchConfig,
-  TInstall,
-} from '@/types'
+import type { TAPIError, TAppBranchConfig, TInstall } from '@/types'
 import { PreviewConfigEditorModal } from './PreviewConfigEditorModal'
 import { PreviewConfigSection } from './PreviewConfigSection'
 

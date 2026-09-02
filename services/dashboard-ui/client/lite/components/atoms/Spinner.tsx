@@ -6,7 +6,12 @@ export interface ISpinner extends SVGAttributes<SVGSVGElement> {
   label?: string
 }
 
-export const Spinner = ({ size = 16, label, className, ...props }: ISpinner) => (
+export const Spinner = ({
+  size = 16,
+  label,
+  className,
+  ...props
+}: ISpinner) => (
   <svg
     width={size}
     height={size}

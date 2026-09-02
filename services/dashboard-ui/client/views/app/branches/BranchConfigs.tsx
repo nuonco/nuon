@@ -19,7 +19,10 @@ const BranchConfigsContent = () => {
   return (
     <PageSection>
       <PageTitle
-        segments={[branch?.name ? `${branch.name} configs` : 'Configs', app?.name]}
+        segments={[
+          branch?.name ? `${branch.name} configs` : 'Configs',
+          app?.name,
+        ]}
       />
       <Breadcrumbs
         breadcrumbs={[
@@ -27,8 +30,14 @@ const BranchConfigsContent = () => {
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
           { path: `/${org?.id}/apps/${app?.id}/branches`, text: 'Branches' },
-          { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}`, text: branch?.name },
-          { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}/configs`, text: 'Configs' },
+          {
+            path: `/${org?.id}/apps/${app?.id}/branches/${branchId}`,
+            text: branch?.name,
+          },
+          {
+            path: `/${org?.id}/apps/${app?.id}/branches/${branchId}/configs`,
+            text: 'Configs',
+          },
         ]}
       />
       <SectionHeader

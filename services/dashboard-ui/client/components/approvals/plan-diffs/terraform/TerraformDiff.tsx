@@ -79,126 +79,126 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
 
   return (
     <WrapLinesProvider>
-    <div className="flex flex-col gap-6">
-      <Modal
-        heading={
-          <Text flex className="gap-4" variant="h3" weight="strong">
-            <Icon variant="NetworkXIcon" size="24" /> Plan graph
-          </Text>
-        }
-        triggerButton={{
-          className: 'self-end',
-          children: (
-            <>
-              View plan graph <Icon variant="NetworkXIcon" />
-            </>
-          ),
-          variant: 'secondary',
-        }}
-        size="xl"
-      >
-        <TerraformPlanGraph
-          resources={resources.changes}
-          drift={drift.changes}
-          outputs={outputs.changes}
-        />
-      </Modal>
-
-      {drift?.changes?.length ? (
-        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-          <div className="px-4 sm:px-6 py-4 border-b">
-            <Text variant="base" weight="strong">
-              Resource drift
+      <div className="flex flex-col gap-6">
+        <Modal
+          heading={
+            <Text flex className="gap-4" variant="h3" weight="strong">
+              <Icon variant="NetworkXIcon" size="24" /> Plan graph
             </Text>
-          </div>
-
-          <TerraformSummary summary={drift.summary} />
-
-          <DiffFilter
-            title="drift"
-            selectedActions={driftFilter.selectedActions}
-            onInputToggle={driftFilter.handleInputToggle}
-            onButtonClick={driftFilter.handleButtonClick}
-            onReset={driftFilter.handleReset}
-            selectedCount={driftFilter.filterStats.selectedCount}
-            totalCount={driftFilter.filterStats.totalCount}
-            searchValue={driftFilter.searchQuery}
-            onSearchChange={driftFilter.handleSearchChange}
-            searchPlaceholder="Search by address, resource, or name"
-            isAllExpanded={driftExpanded}
-            onToggleExpandAll={() => setDriftExpanded((v) => !v)}
+          }
+          triggerButton={{
+            className: 'self-end',
+            children: (
+              <>
+                View plan graph <Icon variant="NetworkXIcon" />
+              </>
+            ),
+            variant: 'secondary',
+          }}
+          size="xl"
+        >
+          <TerraformPlanGraph
+            resources={resources.changes}
+            drift={drift.changes}
+            outputs={outputs.changes}
           />
+        </Modal>
 
-          <ResourceChangesList
-            changes={driftFilter.filteredItems}
-            isOpen={driftExpanded}
-          />
-        </Card>
-      ) : null}
+        {drift?.changes?.length ? (
+          <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+            <div className="px-4 sm:px-6 py-4 border-b">
+              <Text variant="base" weight="strong">
+                Resource drift
+              </Text>
+            </div>
 
-      {resources?.changes?.length ? (
-        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-          <div className="px-4 sm:px-6 py-4 border-b">
-            <Text variant="base" weight="strong">
-              Resource changes
-            </Text>
-          </div>
+            <TerraformSummary summary={drift.summary} />
 
-          <TerraformSummary summary={resources.summary} />
+            <DiffFilter
+              title="drift"
+              selectedActions={driftFilter.selectedActions}
+              onInputToggle={driftFilter.handleInputToggle}
+              onButtonClick={driftFilter.handleButtonClick}
+              onReset={driftFilter.handleReset}
+              selectedCount={driftFilter.filterStats.selectedCount}
+              totalCount={driftFilter.filterStats.totalCount}
+              searchValue={driftFilter.searchQuery}
+              onSearchChange={driftFilter.handleSearchChange}
+              searchPlaceholder="Search by address, resource, or name"
+              isAllExpanded={driftExpanded}
+              onToggleExpandAll={() => setDriftExpanded((v) => !v)}
+            />
 
-          <DiffFilter
-            title="resources"
-            selectedActions={resourceFilter.selectedActions}
-            onInputToggle={resourceFilter.handleInputToggle}
-            onButtonClick={resourceFilter.handleButtonClick}
-            onReset={resourceFilter.handleReset}
-            selectedCount={resourceFilter.filterStats.selectedCount}
-            totalCount={resourceFilter.filterStats.totalCount}
-            searchValue={resourceFilter.searchQuery}
-            onSearchChange={resourceFilter.handleSearchChange}
-            searchPlaceholder="Search by address, resource, or name"
-            isAllExpanded={resourcesExpanded}
-            onToggleExpandAll={() => setResourcesExpanded((v) => !v)}
-          />
+            <ResourceChangesList
+              changes={driftFilter.filteredItems}
+              isOpen={driftExpanded}
+            />
+          </Card>
+        ) : null}
 
-          <ResourceChangesList
-            changes={resourceFilter.filteredItems}
-            isOpen={resourcesExpanded}
-          />
-        </Card>
-      ) : null}
+        {resources?.changes?.length ? (
+          <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+            <div className="px-4 sm:px-6 py-4 border-b">
+              <Text variant="base" weight="strong">
+                Resource changes
+              </Text>
+            </div>
 
-      {outputs?.changes?.length ? (
-        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-          <div className="px-4 sm:px-6 py-4 border-b">
-            <Text variant="base" weight="strong">
-              Output changes
-            </Text>
-          </div>
+            <TerraformSummary summary={resources.summary} />
 
-          <DiffFilter
-            title="outputs"
-            selectedActions={outputFilter.selectedActions}
-            onInputToggle={outputFilter.handleInputToggle}
-            onButtonClick={outputFilter.handleButtonClick}
-            onReset={outputFilter.handleReset}
-            selectedCount={outputFilter.filterStats.selectedCount}
-            totalCount={outputFilter.filterStats.totalCount}
-            searchValue={outputFilter.searchQuery}
-            onSearchChange={outputFilter.handleSearchChange}
-            searchPlaceholder="Search outputs by name"
-            isAllExpanded={outputsExpanded}
-            onToggleExpandAll={() => setOutputsExpanded((v) => !v)}
-          />
+            <DiffFilter
+              title="resources"
+              selectedActions={resourceFilter.selectedActions}
+              onInputToggle={resourceFilter.handleInputToggle}
+              onButtonClick={resourceFilter.handleButtonClick}
+              onReset={resourceFilter.handleReset}
+              selectedCount={resourceFilter.filterStats.selectedCount}
+              totalCount={resourceFilter.filterStats.totalCount}
+              searchValue={resourceFilter.searchQuery}
+              onSearchChange={resourceFilter.handleSearchChange}
+              searchPlaceholder="Search by address, resource, or name"
+              isAllExpanded={resourcesExpanded}
+              onToggleExpandAll={() => setResourcesExpanded((v) => !v)}
+            />
 
-          <TerraformSummary summary={outputs.summary} />
-          <OutputChangesList
-            changes={outputFilter.filteredItems}
-            isOpen={outputsExpanded}
-          />
-        </Card>
-      ) : null}
-    </div>
+            <ResourceChangesList
+              changes={resourceFilter.filteredItems}
+              isOpen={resourcesExpanded}
+            />
+          </Card>
+        ) : null}
+
+        {outputs?.changes?.length ? (
+          <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+            <div className="px-4 sm:px-6 py-4 border-b">
+              <Text variant="base" weight="strong">
+                Output changes
+              </Text>
+            </div>
+
+            <DiffFilter
+              title="outputs"
+              selectedActions={outputFilter.selectedActions}
+              onInputToggle={outputFilter.handleInputToggle}
+              onButtonClick={outputFilter.handleButtonClick}
+              onReset={outputFilter.handleReset}
+              selectedCount={outputFilter.filterStats.selectedCount}
+              totalCount={outputFilter.filterStats.totalCount}
+              searchValue={outputFilter.searchQuery}
+              onSearchChange={outputFilter.handleSearchChange}
+              searchPlaceholder="Search outputs by name"
+              isAllExpanded={outputsExpanded}
+              onToggleExpandAll={() => setOutputsExpanded((v) => !v)}
+            />
+
+            <TerraformSummary summary={outputs.summary} />
+            <OutputChangesList
+              changes={outputFilter.filteredItems}
+              isOpen={outputsExpanded}
+            />
+          </Card>
+        ) : null}
+      </div>
     </WrapLinesProvider>
   )
 }

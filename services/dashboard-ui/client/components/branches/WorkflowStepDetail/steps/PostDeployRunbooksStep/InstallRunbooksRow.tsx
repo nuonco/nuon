@@ -34,7 +34,9 @@ export const InstallRunbooksRow = ({
       <StepRow>
         {installHref ? (
           <Text variant="body" weight="strong" nowrap className="truncate">
-            <Link href={installHref} variant="inline">{install?.name || installId}</Link>
+            <Link href={installHref} variant="inline">
+              {install?.name || installId}
+            </Link>
           </Text>
         ) : (
           <Text
@@ -85,7 +87,9 @@ export const InstallRunbooksRow = ({
             />
 
             {runbook.workflowHref && (
-              <Link href={runbook.workflowHref} className="shrink-0">View run</Link>
+              <Link href={runbook.workflowHref} className="shrink-0">
+                View run
+              </Link>
             )}
           </div>
         ))}

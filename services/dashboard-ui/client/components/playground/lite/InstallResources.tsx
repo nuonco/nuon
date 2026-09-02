@@ -29,7 +29,10 @@ export const InstallResources = () => (
       {resources.map((resource) => (
         <div key={resource.id} className={rowClass}>
           <div className="flex min-w-0 flex-col gap-1.5">
-            <Block className="h-[12px] max-w-full" style={{ width: resource.nameWidth }} />
+            <Block
+              className="h-[12px] max-w-full"
+              style={{ width: resource.nameWidth }}
+            />
             <Block
               className="h-[8px] w-[110px] max-w-full opacity-50"
               title={resource.id}

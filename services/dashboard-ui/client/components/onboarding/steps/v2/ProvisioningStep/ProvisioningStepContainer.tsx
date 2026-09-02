@@ -6,14 +6,26 @@ import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
-import { completeDeployStep, getApp, getCurrentOnboarding, getInstall, getInstallStack, getRunnerLatestHeartbeat, getWorkflow, getWorkflowSteps } from '@/lib'
+import {
+  completeDeployStep,
+  getApp,
+  getCurrentOnboarding,
+  getInstall,
+  getInstallStack,
+  getRunnerLatestHeartbeat,
+  getWorkflow,
+  getWorkflowSteps,
+} from '@/lib'
 import { isRecentTimestamp } from '@/utils/time-utils'
 import { getStatusTheme } from '@/utils/status-utils'
 import { cn } from '@/utils/classnames'
 import type { TOnboarding, TWorkflow, TWorkflowStep } from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 
-function useOnboardingWorkflow(onboarding: TOnboarding | undefined, setSharedData: (key: string, val: unknown) => void) {
+function useOnboardingWorkflow(
+  onboarding: TOnboarding | undefined,
+  setSharedData: (key: string, val: unknown) => void
+) {
   const orgId = onboarding?.org_id
   const workflowId = onboarding?.workflow_id
 
@@ -36,7 +48,8 @@ function useOnboardingWorkflow(onboarding: TOnboarding | undefined, setSharedDat
   const { data: workflow } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['onboarding-workflow', effectiveWorkflowId],
-    queryFn: () => getWorkflow({ workflowId: effectiveWorkflowId!, orgId: orgId! }),
+    queryFn: () =>
+      getWorkflow({ workflowId: effectiveWorkflowId!, orgId: orgId! }),
     enabled: !!effectiveWorkflowId && !!orgId,
     refetchInterval: (query) => {
       const wf = query.state.data as TWorkflow | undefined
@@ -47,7 +60,8 @@ function useOnboardingWorkflow(onboarding: TOnboarding | undefined, setSharedDat
   const { data: steps = [] } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['onboarding-workflow-steps', effectiveWorkflowId],
-    queryFn: () => getWorkflowSteps({ workflowId: effectiveWorkflowId!, orgId: orgId! }),
+    queryFn: () =>
+      getWorkflowSteps({ workflowId: effectiveWorkflowId!, orgId: orgId! }),
     enabled: !!effectiveWorkflowId && !!orgId,
     refetchInterval: () => {
       return workflow?.finished ? false : 4000
@@ -68,10 +82,23 @@ interface IRow {
   total: number
 }
 
-const HIDDEN_STEPS = new Set(['provision runner service account', 'generate install state', 'await runner healthy'])
+const HIDDEN_STEPS = new Set([
+  'provision runner service account',
+  'generate install state',
+  'await runner healthy',
+])
 const RUNNER_STEPS = new Set(['await runner health'])
-const STACK_STEPS = new Set(['generate install stack', 'await install stack', 'update install stack outputs'])
-const SANDBOX_STEPS = new Set(['provision sandbox plan', 'provision sandbox apply plan', 'sync secrets', 'provision sandbox dns if enabled'])
+const STACK_STEPS = new Set([
+  'generate install stack',
+  'await install stack',
+  'update install stack outputs',
+])
+const SANDBOX_STEPS = new Set([
+  'provision sandbox plan',
+  'provision sandbox apply plan',
+  'sync secrets',
+  'provision sandbox dns if enabled',
+])
 
 function getComponentName(stepName: string): string | null {
   const syncMatch = stepName.match(/^sync and plan (.+)$/)
@@ -85,17 +112,30 @@ function getComponentName(stepName: string): string | null {
 
 function resolveStatus(steps: TWorkflowStep[]): IRow['status'] {
   if (steps.length === 0) return 'pending'
-  if (steps.some((s) => getStatusTheme(s.status?.status || 'pending') === 'error')) return 'error'
-  if (steps.every((s) => getStatusTheme(s.status?.status || 'pending') === 'success')) return 'done'
-  if (steps.some((s) => {
-    const st = s.status?.status || 'pending'
-    return st !== 'pending' && st !== 'success'
-  })) return 'active'
+  if (
+    steps.some((s) => getStatusTheme(s.status?.status || 'pending') === 'error')
+  )
+    return 'error'
+  if (
+    steps.every(
+      (s) => getStatusTheme(s.status?.status || 'pending') === 'success'
+    )
+  )
+    return 'done'
+  if (
+    steps.some((s) => {
+      const st = s.status?.status || 'pending'
+      return st !== 'pending' && st !== 'success'
+    })
+  )
+    return 'active'
   return 'pending'
 }
 
 function countDone(steps: TWorkflowStep[]): number {
-  return steps.filter((s) => getStatusTheme(s.status?.status || 'pending') === 'success').length
+  return steps.filter(
+    (s) => getStatusTheme(s.status?.status || 'pending') === 'success'
+  ).length
 }
 
 function isHumanReadable(desc: string): boolean {
@@ -120,8 +160,13 @@ function getStepDescription(steps: TWorkflowStep[]): string | undefined {
   return undefined
 }
 
-function getErrorInfo(steps: TWorkflowStep[]): { description?: string; stepId?: string } {
-  const errorStep = steps.find((s) => getStatusTheme(s.status?.status || 'pending') === 'error')
+function getErrorInfo(steps: TWorkflowStep[]): {
+  description?: string
+  stepId?: string
+} {
+  const errorStep = steps.find(
+    (s) => getStatusTheme(s.status?.status || 'pending') === 'error'
+  )
   if (!errorStep) return {}
   const desc = errorStep.status?.status_human_description
   return {
@@ -131,9 +176,24 @@ function getErrorInfo(steps: TWorkflowStep[]): { description?: string; stepId?: 
 }
 
 const FALLBACK_COPY: Record<string, Record<IRow['status'], string>> = {
-  stack: { pending: 'Waiting to provision...', active: 'Provisioning stack...', done: 'Stack provisioned', error: 'Stack failed' },
-  runner: { pending: 'Waiting to start...', active: 'Awaiting health check...', done: 'Healthy', error: 'Runner failed' },
-  sandbox: { pending: 'Waiting to configure...', active: 'Setting up your sandbox...', done: 'Sandbox ready', error: 'Sandbox failed' },
+  stack: {
+    pending: 'Waiting to provision...',
+    active: 'Provisioning stack...',
+    done: 'Stack provisioned',
+    error: 'Stack failed',
+  },
+  runner: {
+    pending: 'Waiting to start...',
+    active: 'Awaiting health check...',
+    done: 'Healthy',
+    error: 'Runner failed',
+  },
+  sandbox: {
+    pending: 'Waiting to configure...',
+    active: 'Setting up your sandbox...',
+    done: 'Sandbox ready',
+    error: 'Sandbox failed',
+  },
 }
 
 function useProvisioningRows(steps: TWorkflowStep[]): IRow[] {
@@ -144,7 +204,8 @@ function useProvisioningRows(steps: TWorkflowStep[]): IRow[] {
     const componentMap = new Map<string, TWorkflowStep[]>()
 
     for (const step of steps) {
-      if (step.execution_type === 'hidden' || HIDDEN_STEPS.has(step.name)) continue
+      if (step.execution_type === 'hidden' || HIDDEN_STEPS.has(step.name))
+        continue
 
       if (RUNNER_STEPS.has(step.name)) {
         runnerSteps.push(step)
@@ -163,10 +224,15 @@ function useProvisioningRows(steps: TWorkflowStep[]): IRow[] {
 
     const rows: IRow[] = []
 
-    const addInfraRow = (id: string, label: string, bucket: TWorkflowStep[]) => {
+    const addInfraRow = (
+      id: string,
+      label: string,
+      bucket: TWorkflowStep[]
+    ) => {
       const status = resolveStatus(bucket)
       const fallback = FALLBACK_COPY[id]?.[status] ?? ''
-      const apiDesc = status === 'error' ? undefined : getStepDescription(bucket)
+      const apiDesc =
+        status === 'error' ? undefined : getStepDescription(bucket)
       const errorInfo = status === 'error' ? getErrorInfo(bucket) : {}
       rows.push({
         id,
@@ -192,7 +258,8 @@ function useProvisioningRows(steps: TWorkflowStep[]): IRow[] {
         done: 'Deployed',
         error: 'Failed',
       }
-      const apiDesc = status === 'error' ? undefined : getStepDescription(compSteps)
+      const apiDesc =
+        status === 'error' ? undefined : getStepDescription(compSteps)
       const errorInfo = status === 'error' ? getErrorInfo(compSteps) : {}
       rows.push({
         id: `component-${compName}`,
@@ -254,7 +321,11 @@ interface IRunnerMeta {
   connected: boolean
 }
 
-function useRunnerMeta(orgId?: string, installId?: string, runnerDone?: boolean): IRunnerMeta | undefined {
+function useRunnerMeta(
+  orgId?: string,
+  installId?: string,
+  runnerDone?: boolean
+): IRunnerMeta | undefined {
   const { data: install } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['onboarding-install', installId],
@@ -267,13 +338,15 @@ function useRunnerMeta(orgId?: string, installId?: string, runnerDone?: boolean)
   const { data: heartbeats } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['onboarding-runner-heartbeat', runnerId],
-    queryFn: () => getRunnerLatestHeartbeat({ runnerId: runnerId!, orgId: orgId! }),
+    queryFn: () =>
+      getRunnerLatestHeartbeat({ runnerId: runnerId!, orgId: orgId! }),
     enabled: !!runnerId && !!orgId,
   })
 
   if (!runnerId || !runnerDone) return undefined
 
-  const heartbeat = heartbeats?.install ?? heartbeats?.org ?? heartbeats?.[''] ?? undefined
+  const heartbeat =
+    heartbeats?.install ?? heartbeats?.org ?? heartbeats?.[''] ?? undefined
 
   return {
     version: heartbeat?.version,
@@ -312,15 +385,26 @@ function ProgressRing({
 
   if (status === 'done') {
     return (
-      <div className="flex items-center justify-center shrink-0 animate-[scale-in_0.3s_ease-out]" style={{ width: size, height: size }}>
-        <Icon variant="CheckCircleIcon" size={size} weight="fill" theme="success" />
+      <div
+        className="flex items-center justify-center shrink-0 animate-[scale-in_0.3s_ease-out]"
+        style={{ width: size, height: size }}
+      >
+        <Icon
+          variant="CheckCircleIcon"
+          size={size}
+          weight="fill"
+          theme="success"
+        />
       </div>
     )
   }
 
   if (status === 'error') {
     return (
-      <div className="flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+      <div
+        className="flex items-center justify-center shrink-0"
+        style={{ width: size, height: size }}
+      >
         <Icon variant="XCircleIcon" size={size} weight="fill" theme="error" />
       </div>
     )
@@ -328,7 +412,10 @@ function ProgressRing({
 
   if (status === 'pending') {
     return (
-      <div className="flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+      <div
+        className="flex items-center justify-center shrink-0"
+        style={{ width: size, height: size }}
+      >
         <svg width={size} height={size}>
           <circle
             cx={size / 2}
@@ -345,7 +432,10 @@ function ProgressRing({
 
   if (isAppSize && ratio > 0) {
     return (
-      <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+      <div
+        className="relative flex items-center justify-center shrink-0"
+        style={{ width: size, height: size }}
+      >
         <svg width={size} height={size} className="-rotate-90">
           <circle
             cx={size / 2}
@@ -369,7 +459,10 @@ function ProgressRing({
           />
         </svg>
         {showPercentage && pct > 0 && (
-          <span className="absolute text-xs font-semibold leading-none" style={{ color: 'var(--foreground)' }}>
+          <span
+            className="absolute text-xs font-semibold leading-none"
+            style={{ color: 'var(--foreground)' }}
+          >
             {pct}%
           </span>
         )}
@@ -380,7 +473,10 @@ function ProgressRing({
   const arcLen = circumference * 0.25
 
   return (
-    <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+    <div
+      className="relative flex items-center justify-center shrink-0"
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}
@@ -395,7 +491,10 @@ function ProgressRing({
         width={size}
         height={size}
         className="absolute inset-0"
-        style={{ transformOrigin: 'center', animation: 'spinner-rotate 1s linear infinite' }}
+        style={{
+          transformOrigin: 'center',
+          animation: 'spinner-rotate 1s linear infinite',
+        }}
       >
         <circle
           cx={size / 2}
@@ -425,35 +524,70 @@ function useInstallStackQuickLink(orgId?: string, installId?: string) {
   return stack?.versions?.[0]?.quick_link_url ?? undefined
 }
 
-function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl, workflowUrl }: { row: IRow; isLast: boolean; runnerMeta?: IRunnerMeta; quickLinkUrl?: string; workflowUrl?: string }) {
+function ProvisioningRow({
+  row,
+  isLast,
+  runnerMeta,
+  quickLinkUrl,
+  workflowUrl,
+}: {
+  row: IRow
+  isLast: boolean
+  runnerMeta?: IRunnerMeta
+  quickLinkUrl?: string
+  workflowUrl?: string
+}) {
   const isActive = row.status === 'active'
-  const isRunnerDone = row.id === 'runner' && row.status === 'done' && runnerMeta
+  const isRunnerDone =
+    row.id === 'runner' && row.status === 'done' && runnerMeta
 
   return (
     <div
       className={cn(
         'flex items-center gap-4 px-5 py-4 transition-colors duration-300',
         !isLast && 'border-b',
-        isActive && 'bg-cool-grey-50/50 dark:bg-dark-grey-50/30',
+        isActive && 'bg-cool-grey-50/50 dark:bg-dark-grey-50/30'
       )}
     >
       <div className="flex flex-col flex-1 min-w-0 gap-0">
-        <Text variant="base" weight="strong">{row.label}</Text>
+        <Text variant="base" weight="strong">
+          {row.label}
+        </Text>
         {isRunnerDone ? (
           <div className="flex items-center gap-4 mt-0.5">
             <Text variant="body" className="text-green-700 dark:text-green-500">
               Healthy
             </Text>
             <div className="flex items-center gap-1">
-              <Text variant="body" className="text-cool-grey-500 dark:text-cool-grey-500">Status:</Text>
-              <Text variant="body" className={runnerMeta.connected ? 'text-green-700 dark:text-green-500' : 'text-cool-grey-600 dark:text-cool-grey-400'}>
+              <Text
+                variant="body"
+                className="text-cool-grey-500 dark:text-cool-grey-500"
+              >
+                Status:
+              </Text>
+              <Text
+                variant="body"
+                className={
+                  runnerMeta.connected
+                    ? 'text-green-700 dark:text-green-500'
+                    : 'text-cool-grey-600 dark:text-cool-grey-400'
+                }
+              >
                 {runnerMeta.connected ? 'Connected' : 'Disconnected'}
               </Text>
             </div>
             {runnerMeta.version && (
               <div className="flex items-center gap-1">
-                <Text variant="body" className="text-cool-grey-500 dark:text-cool-grey-500">Version:</Text>
-                <Text variant="body" className="text-cool-grey-700 dark:text-cool-grey-300">
+                <Text
+                  variant="body"
+                  className="text-cool-grey-500 dark:text-cool-grey-500"
+                >
+                  Version:
+                </Text>
+                <Text
+                  variant="body"
+                  className="text-cool-grey-700 dark:text-cool-grey-300"
+                >
                   {runnerMeta.version}
                 </Text>
               </div>
@@ -462,11 +596,13 @@ function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl, workflowUrl }:
         ) : (
           <Text
             variant="body"
-            theme={row.status === 'error' && row.errorDescription
-              ? 'error'
-              : row.status === 'done' || row.status === 'active'
-                ? 'success'
-                : 'neutral'}
+            theme={
+              row.status === 'error' && row.errorDescription
+                ? 'error'
+                : row.status === 'done' || row.status === 'active'
+                  ? 'success'
+                  : 'neutral'
+            }
           >
             {row.status === 'error' && row.errorDescription
               ? row.errorDescription
@@ -480,7 +616,9 @@ function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl, workflowUrl }:
           variant="secondary"
           size="sm"
           className="shrink-0"
-          onClick={() => window.open(quickLinkUrl, '_blank', 'noopener,noreferrer')}
+          onClick={() =>
+            window.open(quickLinkUrl, '_blank', 'noopener,noreferrer')
+          }
         >
           Launch in AWS <Icon variant="ArrowSquareOutIcon" size={14} />
         </Button>
@@ -495,7 +633,12 @@ function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl, workflowUrl }:
           View details
         </Button>
       )}
-      <ProgressRing completed={row.completed} total={row.total} status={row.status} size={ROW_RING_SIZE} />
+      <ProgressRing
+        completed={row.completed}
+        total={row.total}
+        status={row.status}
+        size={ROW_RING_SIZE}
+      />
     </div>
   )
 }
@@ -509,7 +652,8 @@ export const ProvisioningStepContainer = ({
   const onboarding = sharedData.onboarding as TOnboarding | undefined
   const orgId = onboarding?.org_id
   const appId = onboarding?.app_id
-  const cloudProvider = (onboarding?.cloud_provider as 'aws' | 'gcp' | 'azure') || 'aws'
+  const cloudProvider =
+    (onboarding?.cloud_provider as 'aws' | 'gcp' | 'azure') || 'aws'
 
   const { data: app } = useQuery({
     placeholderData: keepPreviousData,
@@ -518,7 +662,10 @@ export const ProvisioningStepContainer = ({
     enabled: !!appId && !!orgId,
   })
 
-  const { workflow, steps, workflowId } = useOnboardingWorkflow(onboarding, setSharedData)
+  const { workflow, steps, workflowId } = useOnboardingWorkflow(
+    onboarding,
+    setSharedData
+  )
 
   const isFinished = !!workflow?.finished
   const isError = workflow?.status?.status === 'error'
@@ -529,11 +676,15 @@ export const ProvisioningStepContainer = ({
   const eta = useEta(doneCount, rows.length, isProvisioning)
 
   const runnerRow = rows.find((r) => r.id === 'runner')
-  const runnerMeta = useRunnerMeta(orgId, onboarding?.install_id, runnerRow?.status === 'done')
+  const runnerMeta = useRunnerMeta(
+    orgId,
+    onboarding?.install_id,
+    runnerRow?.status === 'done'
+  )
   const isCloudInstall = onboarding?.install_mode === 'cloud'
   const quickLinkUrl = useInstallStackQuickLink(
     isCloudInstall ? orgId : undefined,
-    isCloudInstall ? onboarding?.install_id : undefined,
+    isCloudInstall ? onboarding?.install_id : undefined
   )
 
   const activeRow = rows.find((r) => r.status === 'active')
@@ -561,27 +712,49 @@ export const ProvisioningStepContainer = ({
   return (
     <div className="flex flex-col gap-8">
       {isError && workflow?.status?.status_human_description && (
-        <Banner theme="error">{workflow.status.status_human_description}</Banner>
+        <Banner theme="error">
+          {workflow.status.status_human_description}
+        </Banner>
       )}
 
       <Card className="!gap-0 !p-4">
         <div className="flex items-center gap-4">
-          <CloudPlatform platform={cloudProvider} colorVariant="color" displayVariant="icon-only" iconSize="24" className="shrink-0" />
+          <CloudPlatform
+            platform={cloudProvider}
+            colorVariant="color"
+            displayVariant="icon-only"
+            iconSize="24"
+            className="shrink-0"
+          />
           <div className="flex flex-col flex-1 min-w-0 gap-0">
-            <Text variant="base" weight="strong" className="truncate">{appName}</Text>
-            <Text variant="body" className="text-cool-grey-600 dark:text-cool-grey-400">
+            <Text variant="base" weight="strong" className="truncate">
+              {appName}
+            </Text>
+            <Text
+              variant="body"
+              className="text-cool-grey-600 dark:text-cool-grey-400"
+            >
               {appDone ? 'Deployed' : dynamicMessage}
             </Text>
           </div>
           {appDone ? (
             <div className="flex items-center gap-2 shrink-0">
-              <Icon variant="CheckCircleIcon" size={20} weight="fill" theme="success" />
-              <Text variant="body" weight="strong" theme="success">All resources provisioned</Text>
+              <Icon
+                variant="CheckCircleIcon"
+                size={20}
+                weight="fill"
+                theme="success"
+              />
+              <Text variant="body" weight="strong" theme="success">
+                All resources provisioned
+              </Text>
             </div>
           ) : (
             <ProgressRing
               completed={doneCount}
-              total={allRowsDone && !isFinished ? rows.length + 1 : rows.length || 1}
+              total={
+                allRowsDone && !isFinished ? rows.length + 1 : rows.length || 1
+              }
               status="active"
               size={APP_RING_SIZE}
               strokeWidth={APP_RING_STROKE}
@@ -605,12 +778,27 @@ export const ProvisioningStepContainer = ({
         <Card className="!p-0 !gap-0 overflow-hidden">
           {rows.length === 0 ? (
             ['CloudFormation Stack', 'Runner', 'Sandbox'].map((label, i) => (
-              <div key={label} className={cn('flex items-center gap-4 px-5 py-4', i < 2 && 'border-b')}>
+              <div
+                key={label}
+                className={cn(
+                  'flex items-center gap-4 px-5 py-4',
+                  i < 2 && 'border-b'
+                )}
+              >
                 <div className="flex flex-col flex-1 min-w-0 gap-0.5">
-                  <Text weight="strong" theme="neutral">{label}</Text>
-                  <Text variant="subtext" theme="neutral">Waiting to start...</Text>
+                  <Text weight="strong" theme="neutral">
+                    {label}
+                  </Text>
+                  <Text variant="subtext" theme="neutral">
+                    Waiting to start...
+                  </Text>
                 </div>
-                <ProgressRing completed={0} total={0} status="pending" size={ROW_RING_SIZE} />
+                <ProgressRing
+                  completed={0}
+                  total={0}
+                  status="pending"
+                  size={ROW_RING_SIZE}
+                />
               </div>
             ))
           ) : (
@@ -624,19 +812,37 @@ export const ProvisioningStepContainer = ({
                     isLast={!hasMore && i === rows.length - 1}
                     runnerMeta={row.id === 'runner' ? runnerMeta : undefined}
                     quickLinkUrl={row.id === 'stack' ? quickLinkUrl : undefined}
-                    workflowUrl={row.status === 'error' && row.errorStepId && orgId && onboarding?.install_id && workflowId
-                      ? `/${orgId}/installs/${onboarding.install_id}/workflows/${workflowId}?panel=${row.errorStepId}`
-                      : undefined}
+                    workflowUrl={
+                      row.status === 'error' &&
+                      row.errorStepId &&
+                      orgId &&
+                      onboarding?.install_id &&
+                      workflowId
+                        ? `/${orgId}/installs/${onboarding.install_id}/workflows/${workflowId}?panel=${row.errorStepId}`
+                        : undefined
+                    }
                   />
                 )
               })}
               {allRowsDone && !isFinished && (
                 <div className="flex items-center gap-4 px-5 py-4">
                   <div className="flex flex-col flex-1 min-w-0 gap-0">
-                    <Text variant="base" weight="strong">Deploying components</Text>
-                    <Text variant="body" className="text-blue-700 dark:text-blue-500">Preparing deployments...</Text>
+                    <Text variant="base" weight="strong">
+                      Deploying components
+                    </Text>
+                    <Text
+                      variant="body"
+                      className="text-blue-700 dark:text-blue-500"
+                    >
+                      Preparing deployments...
+                    </Text>
                   </div>
-                  <ProgressRing completed={0} total={0} status="active" size={ROW_RING_SIZE} />
+                  <ProgressRing
+                    completed={0}
+                    total={0}
+                    status="active"
+                    size={ROW_RING_SIZE}
+                  />
                 </div>
               )}
             </>
@@ -658,7 +864,8 @@ export const ProvisioningStepContainer = ({
           disabled={!isFinished || isError || deployPending}
           onClick={() => completeDeploy()}
         >
-          {deployPending ? 'Completing...' : 'Continue'} {!deployPending && <Icon variant="CaretRightIcon" weight="bold" />}
+          {deployPending ? 'Completing...' : 'Continue'}{' '}
+          {!deployPending && <Icon variant="CaretRightIcon" weight="bold" />}
         </Button>
       </div>
     </div>

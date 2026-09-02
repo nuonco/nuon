@@ -16,7 +16,14 @@ const CANVAS_WIDTH = 1080
 const CANVAS_HEIGHT = 420
 
 export const graphNodes: IGraphNode[] = [
-  { id: 'install', label: 'Install', kind: 'install', x: 0, y: 174, width: 150 },
+  {
+    id: 'install',
+    label: 'Install',
+    kind: 'install',
+    x: 0,
+    y: 174,
+    width: 150,
+  },
   { id: 'stack', label: 'Stack', kind: 'stack', x: 175, y: 174, width: 140 },
   { id: 'access', label: 'Access', kind: 'access', x: 350, y: 174, width: 140 },
   {

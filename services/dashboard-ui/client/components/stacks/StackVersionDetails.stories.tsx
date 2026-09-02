@@ -92,6 +92,8 @@ export const WithRunDiffs = () => (
 
 export const NoRuns = () => (
   <PanelStory>
-    <StackVersionDetails version={{ ...mockVersion, runs: [] } as TStackVersion} />
+    <StackVersionDetails
+      version={{ ...mockVersion, runs: [] } as TStackVersion}
+    />
   </PanelStory>
 )

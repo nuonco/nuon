@@ -4,7 +4,10 @@ export default {
 
 import { Button } from '@/components/common/Button'
 import { LabelBadge } from '@/components/common/LabelBadge'
-import { InstallActionsTable, type InstallActionRow } from './InstallActionsTable'
+import {
+  InstallActionsTable,
+  type InstallActionRow,
+} from './InstallActionsTable'
 
 const mockRows: InstallActionRow[] = Array.from({ length: 3 }, (_, i) => ({
   actionId: `action-${i + 1}`,
@@ -13,7 +16,10 @@ const mockRows: InstallActionRow[] = Array.from({ length: 3 }, (_, i) => ({
   actionTrigger: <span className="text-sm">post-deploy-component</span>,
   actionRunDatetime: <span className="text-sm">2 hours ago</span>,
   actionRunDuration: <span className="text-sm">1m 30s</span>,
-  labels: i === 0 ? <LabelBadge labelKey="category" labelValue="setup" size="sm" /> : null,
+  labels:
+    i === 0 ? (
+      <LabelBadge labelKey="category" labelValue="setup" size="sm" />
+    ) : null,
   href: `/org-1/installs/install-1/actions/action-${i + 1}`,
 }))
 

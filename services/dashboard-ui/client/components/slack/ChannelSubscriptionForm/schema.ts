@@ -22,9 +22,7 @@ export type ChannelSubscriptionOutput = {
 export const buildChannelSubscriptionSchema = (mode: ChannelSubscriptionMode) =>
   z.object({
     channelId:
-      mode === 'create'
-        ? z.string().min(1, 'Select a channel')
-        : z.string(),
+      mode === 'create' ? z.string().min(1, 'Select a channel') : z.string(),
     channelName: z.string(),
     match: z.custom<SubscriptionMatch | undefined>(() => true),
     interests: z.custom<Interests>(() => true),

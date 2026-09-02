@@ -50,7 +50,7 @@ import {
   getConnectedReleases,
   getConnectedReleaseUpdates,
   getConnectedWorkflow,
-  getConnectedWorkflowStepLogs,
+  getConnectedLogStreamLogs,
   getConnectedWorkflows,
   retryConnectedWorkflowStep,
   respondToConnectedApproval,
@@ -799,16 +799,15 @@ const normalizeSeverity = (severity?: string) => {
 };
 
 const StepLogs = ({
-  workflowId,
   step,
 }: {
-  workflowId: string;
   step: TConnectedWorkflowStep;
 }) => {
+  const logStreamId = step.log_stream?.id;
   const logs = useQuery({
-    queryKey: ["connected-workflow-step-logs", workflowId, step.id],
-    queryFn: () => getConnectedWorkflowStepLogs(workflowId, step.id),
-    enabled: Boolean(step.log_stream?.id),
+    queryKey: ["connected-workflow-step-logs", logStreamId],
+    queryFn: () => getConnectedLogStreamLogs(logStreamId!),
+    enabled: Boolean(logStreamId),
     refetchInterval: step.status?.status === "in-progress" ? 3000 : false,
   });
   const records = useMemo<TConnectedLog[]>(
@@ -877,7 +876,7 @@ const ConnectedWorkflowStepDetails = ({
     );
   }
   if (step.log_stream?.id) {
-    tabs.logs = <StepLogs workflowId={workflowId} step={step} />;
+    tabs.logs = <StepLogs step={step} />;
   }
 
   return (

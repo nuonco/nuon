@@ -20,7 +20,9 @@ export const HistoryRail = ({
   title = 'History',
 }: IHistoryRail) => (
   <div className={cn('grid grid-cols-1 @5xl:grid-cols-12 gap-6', className)}>
-    <div className="@5xl:col-span-8 flex flex-col gap-6 min-w-0">{children}</div>
+    <div className="@5xl:col-span-8 flex flex-col gap-6 min-w-0">
+      {children}
+    </div>
     <div className="hidden @5xl:flex flex-col @5xl:col-span-4 gap-4 min-w-0">
       <Text variant="base" weight="strong">
         {title}

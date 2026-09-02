@@ -59,7 +59,8 @@ export const CompareDrawer = ({ onClose }: ICompareDrawer) => {
               className={cn(
                 'flex items-center gap-3',
                 rowHoverClass,
-                (isBase || isCompare) && 'bg-cool-grey-200 dark:bg-dark-grey-700'
+                (isBase || isCompare) &&
+                  'bg-cool-grey-200 dark:bg-dark-grey-700'
               )}
             >
               <Block
@@ -97,9 +98,7 @@ export const CompareDrawer = ({ onClose }: ICompareDrawer) => {
         onClick={() => {
           if (!canCompare) return
           onClose()
-          navigate(
-            `${branchBase(appId, branchId)}/compare/${base}/${compare}`
-          )
+          navigate(`${branchBase(appId, branchId)}/compare/${base}/${compare}`)
         }}
       />
     </Drawer>

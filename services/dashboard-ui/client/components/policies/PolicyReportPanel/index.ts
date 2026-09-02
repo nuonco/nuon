@@ -1,4 +1,1 @@
-export {
-  PolicyReportPanel,
-  type IPolicyReportPanel,
-} from './PolicyReportPanel'
+export { PolicyReportPanel, type IPolicyReportPanel } from './PolicyReportPanel'

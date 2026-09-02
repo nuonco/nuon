@@ -43,7 +43,11 @@ export const BranchRunComparisonCard = ({
         </Text>
         <div className="flex items-center gap-2 shrink-0">
           {githubHeaderHref ? (
-            <Link href={githubHeaderHref} isExternal className="text-[13px] inline-flex items-center gap-1">
+            <Link
+              href={githubHeaderHref}
+              isExternal
+              className="text-[13px] inline-flex items-center gap-1"
+            >
               <Icon variant="GitHub" size={14} />
               View in GitHub
             </Link>

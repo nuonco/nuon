@@ -71,12 +71,7 @@ const InstallConfigVersionEvent = ({
 
   const { data: diff, isLoading: isDiffLoading } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: [
-      'install-config-version-diff',
-      orgId,
-      installId,
-      version?.id,
-    ],
+    queryKey: ['install-config-version-diff', orgId, installId, version?.id],
     queryFn: () =>
       getInstallConfigVersionDiff({
         orgId: orgId!,

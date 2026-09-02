@@ -34,7 +34,9 @@ const CreateWebhookModalContainer = (props: Record<string, any>) => {
       queryClient.invalidateQueries({ queryKey: ['webhooks', org.id] })
       addToast(
         <Toast heading="Webhook created" theme="success">
-          <Text>The webhook will receive future workflow lifecycle events.</Text>
+          <Text>
+            The webhook will receive future workflow lifecycle events.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)

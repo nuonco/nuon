@@ -18,7 +18,11 @@ export const ReleaseDetail = () => {
   const { releaseId } = useParams()
   const { app } = useApp()
   const { org } = useOrg()
-  const { data: release, isLoading, error } = useQuery({
+  const {
+    data: release,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['app-release', org?.id, app?.id, releaseId],
     queryFn: () =>
       getAppRelease({
@@ -86,7 +90,9 @@ export const ReleaseDetail = () => {
         }
       >
         {error ? (
-          <Text theme="error">Release failed to load. Try refreshing the page.</Text>
+          <Text theme="error">
+            Release failed to load. Try refreshing the page.
+          </Text>
         ) : release && org?.id && app?.id ? (
           <ReleaseFilesContainer
             appId={app.id}

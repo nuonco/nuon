@@ -50,21 +50,24 @@ func (p *portalServer) handler() http.Handler {
 	mux.HandleFunc("GET /api/connected/releases/{release_id}/files/content", func(w http.ResponseWriter, r *http.Request) {
 		p.connected.proxy(w, r, "/releases/"+url.PathEscape(r.PathValue("release_id"))+"/files/content")
 	})
-	mux.HandleFunc("GET /api/connected/release-packages/{package_id}", func(w http.ResponseWriter, r *http.Request) {
-		p.connected.proxy(w, r, "/release-packages/"+url.PathEscape(r.PathValue("package_id")))
+	mux.HandleFunc("GET /api/connected/workflows", func(w http.ResponseWriter, r *http.Request) {
+		p.connected.proxyRaw(w, r, "/v1/installs/"+p.connected.installID+"/workflows")
 	})
-	mux.HandleFunc("GET /api/connected/workflows", func(w http.ResponseWriter, r *http.Request) { p.connected.proxy(w, r, "/workflows") })
 	mux.HandleFunc("GET /api/connected/workflows/{workflow_id}", func(w http.ResponseWriter, r *http.Request) {
-		p.connected.proxy(w, r, "/workflows/"+url.PathEscape(r.PathValue("workflow_id")))
+		p.connected.proxyRaw(w, r, "/v1/workflows/"+url.PathEscape(r.PathValue("workflow_id")))
 	})
-	mux.HandleFunc("GET /api/connected/workflows/{workflow_id}/steps/{step_id}/logs", func(w http.ResponseWriter, r *http.Request) {
-		p.connected.proxy(w, r, "/workflows/"+url.PathEscape(r.PathValue("workflow_id"))+"/steps/"+url.PathEscape(r.PathValue("step_id"))+"/logs")
+	mux.HandleFunc("GET /api/connected/log-streams/{log_stream_id}/logs", func(w http.ResponseWriter, r *http.Request) {
+		p.connected.proxyRaw(w, r, "/v1/log-streams/"+url.PathEscape(r.PathValue("log_stream_id"))+"/logs")
 	})
 	mux.HandleFunc("POST /api/connected/workflows/{workflow_id}/steps/{step_id}/retry", func(w http.ResponseWriter, r *http.Request) {
-		p.connected.proxy(w, r, "/workflows/"+url.PathEscape(r.PathValue("workflow_id"))+"/steps/"+url.PathEscape(r.PathValue("step_id"))+"/retry")
+		p.connected.proxyRaw(w, r, "/v1/workflows/"+url.PathEscape(r.PathValue("workflow_id"))+"/steps/"+url.PathEscape(r.PathValue("step_id"))+"/retry")
 	})
-	mux.HandleFunc("GET /api/connected/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/contents", p.connectedApprovalContents)
-	mux.HandleFunc("POST /api/connected/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/response", p.connectedApprovalResponse)
+	mux.HandleFunc("GET /api/connected/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/contents", func(w http.ResponseWriter, r *http.Request) {
+		p.connected.proxyRaw(w, r, connectedApprovalPath(r)+"/contents")
+	})
+	mux.HandleFunc("POST /api/connected/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/response", func(w http.ResponseWriter, r *http.Request) {
+		p.connected.proxyRaw(w, r, connectedApprovalPath(r)+"/response")
+	})
 	mux.HandleFunc("POST /api/connected/releases/{release_id}/deploy", func(w http.ResponseWriter, r *http.Request) {
 		p.connected.proxy(w, r, "/releases/"+url.PathEscape(r.PathValue("release_id"))+"/deploy")
 	})
@@ -77,16 +80,8 @@ func (p *portalServer) getBranding(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, p.branding)
 }
 
-func (p *portalServer) connectedApprovalContents(w http.ResponseWriter, r *http.Request) {
-	p.connected.proxy(w, r, connectedApprovalPath(r)+"/contents")
-}
-
-func (p *portalServer) connectedApprovalResponse(w http.ResponseWriter, r *http.Request) {
-	p.connected.proxy(w, r, connectedApprovalPath(r)+"/response")
-}
-
 func connectedApprovalPath(r *http.Request) string {
-	return "/workflows/" + url.PathEscape(r.PathValue("workflow_id")) + "/steps/" + url.PathEscape(r.PathValue("step_id")) + "/approvals/" + url.PathEscape(r.PathValue("approval_id"))
+	return "/v1/workflows/" + url.PathEscape(r.PathValue("workflow_id")) + "/steps/" + url.PathEscape(r.PathValue("step_id")) + "/approvals/" + url.PathEscape(r.PathValue("approval_id"))
 }
 
 func (p *portalServer) middleware(mux *http.ServeMux) http.Handler {

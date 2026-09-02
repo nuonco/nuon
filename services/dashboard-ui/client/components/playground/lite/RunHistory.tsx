@@ -18,7 +18,10 @@ export const RunHistory = ({ filters = ['Status'], basePath }: IRunHistory) => (
         const runId = `run-${String(i + 1).padStart(2, '0')}`
 
         return (
-          <div key={runId} className={`flex items-center gap-4 ${rowHoverClass}`}>
+          <div
+            key={runId}
+            className={`flex items-center gap-4 ${rowHoverClass}`}
+          >
             <Block className="h-[16px] w-[16px] flex-none rounded-full" />
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               {basePath ? (

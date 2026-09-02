@@ -3,29 +3,43 @@ import { InstallGroupsSection } from './InstallGroupsSection'
 export default { title: 'Branches/InstallGroups/InstallGroupsSection' }
 
 const installsById = {
-  'inst-1': { id: 'inst-1', name: 'Production US East', status_v2: { status: 'installed' } },
-  'inst-2': { id: 'inst-2', name: 'Production EU West', status_v2: { status: 'installed' } },
-  'inst-3': { id: 'inst-3', name: 'Staging', status_v2: { status: 'deploying' } },
+  'inst-1': {
+    id: 'inst-1',
+    name: 'Production US East',
+    status_v2: { status: 'installed' },
+  },
+  'inst-2': {
+    id: 'inst-2',
+    name: 'Production EU West',
+    status_v2: { status: 'installed' },
+  },
+  'inst-3': {
+    id: 'inst-3',
+    name: 'Staging',
+    status_v2: { status: 'deploying' },
+  },
 } as any
 
 export const Default = () => (
   <InstallGroupsSection
-    config={{
-      install_groups: [
-        {
-          id: 'group-1',
-          name: 'Canary',
-          max_parallel: 1,
-          install_ids: ['inst-1'],
-        },
-        {
-          id: 'group-2',
-          name: 'Production',
-          max_parallel: 3,
-          install_ids: ['inst-2', 'inst-3'],
-        },
-      ],
-    } as any}
+    config={
+      {
+        install_groups: [
+          {
+            id: 'group-1',
+            name: 'Canary',
+            max_parallel: 1,
+            install_ids: ['inst-1'],
+          },
+          {
+            id: 'group-2',
+            name: 'Production',
+            max_parallel: 3,
+            install_ids: ['inst-2', 'inst-3'],
+          },
+        ],
+      } as any
+    }
     installsById={installsById}
     orgId="org-1"
   />

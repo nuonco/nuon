@@ -6,7 +6,10 @@ interface IShowPreviewRuns {
   onChange: (e: ChangeEvent<HTMLInputElement>) => void
 }
 
-export const ShowPreviewRuns = ({ showPreviews, onChange }: IShowPreviewRuns) => {
+export const ShowPreviewRuns = ({
+  showPreviews,
+  onChange,
+}: IShowPreviewRuns) => {
   return (
     <CheckboxInput
       labelProps={{ labelText: 'Preview runs' }}

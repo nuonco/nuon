@@ -9,7 +9,8 @@ const releases = [
     id: 'apr123456789',
     app_config_id: 'abc123456789',
     created_at: '2026-08-31T12:00:00Z',
-    semantic_digest: 'sha256:87c21aa1111111111111111111111111111111111111111111111111111111',
+    semantic_digest:
+      'sha256:87c21aa1111111111111111111111111111111111111111111111111111111',
     status: 'ready',
   },
 ]

@@ -35,9 +35,7 @@ export const QuickComponentManagementDropdown = ({
         variant="ghost"
       >
         <Menu>
-          <Button href={href}>
-            View component
-          </Button>
+          <Button href={href}>View component</Button>
           <hr />
           <Text variant="label" theme="neutral">
             Controls

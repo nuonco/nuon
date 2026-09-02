@@ -37,9 +37,7 @@ export const Readme = () => {
           },
         ]}
       />
-      <SectionHeader
-        title="Install readme"
-      />
+      <SectionHeader title="Install readme" />
 
       {isLoading ? null : readme?.readme ? (
         <div className="flex flex-col gap-3">

@@ -64,10 +64,7 @@ export const Workflows = () => {
         ]}
       />
 
-      <ActiveWorkflows
-        workflows={activeWorkflows}
-        install={install}
-      />
+      <ActiveWorkflows workflows={activeWorkflows} install={install} />
 
       <SectionHeader
         title="Workflow history"

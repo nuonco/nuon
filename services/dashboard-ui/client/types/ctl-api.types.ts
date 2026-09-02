@@ -16,7 +16,11 @@ export type TAppBranchRun = components['schemas']['app.AppBranchRun'] & {
   preview?: TAppBranchRunPreview
 }
 
-export type TAppBranchRunPreviewMode = 'plan-only' | 'plan-infra' | 'apply' | 'build-only'
+export type TAppBranchRunPreviewMode =
+  | 'plan-only'
+  | 'plan-infra'
+  | 'apply'
+  | 'build-only'
 export type TAppBranchRunPreviewSource = 'pr' | 'commit' | 'branch' | 'local'
 
 export type TAppBranchPreviewConfig = {

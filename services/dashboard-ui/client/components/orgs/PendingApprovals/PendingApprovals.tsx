@@ -14,7 +14,11 @@ interface IPendingApprovals {
   activeWorkflows: TWorkflow[]
 }
 
-export const PendingApprovals = ({ orgId, approvals, activeWorkflows }: IPendingApprovals) => {
+export const PendingApprovals = ({
+  orgId,
+  approvals,
+  activeWorkflows,
+}: IPendingApprovals) => {
   const workflowsById = new Map(
     activeWorkflows.filter((w) => w.id).map((w) => [w.id!, w])
   )

@@ -29,9 +29,22 @@ export const RoleSelectorContainer = ({
 
   const { data, isLoading, isError } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['available-roles', org.id, installId, operationType, principalType, principalId],
+    queryKey: [
+      'available-roles',
+      org.id,
+      installId,
+      operationType,
+      principalType,
+      principalId,
+    ],
     queryFn: () =>
-      getAvailableRoles({ installId, operationType, principalType, principalId, orgId: org.id }),
+      getAvailableRoles({
+        installId,
+        operationType,
+        principalType,
+        principalId,
+        orgId: org.id,
+      }),
     enabled: !!installId && !!org.id,
   })
 

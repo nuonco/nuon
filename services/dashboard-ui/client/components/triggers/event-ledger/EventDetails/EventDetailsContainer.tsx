@@ -1,5 +1,11 @@
 import type { InfiniteData } from '@tanstack/react-query'
-import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'

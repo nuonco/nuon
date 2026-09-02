@@ -6,7 +6,9 @@ import { LoadRunnerJob } from './LoadRunnerJob'
 interface LoadRunnerJobContainerProps {
   runnerId: string
   groups?: Array<'operations'>
-  statuses?: Array<'finished' | 'failed' | 'timed-out' | 'cancelled' | 'not-attempted'>
+  statuses?: Array<
+    'finished' | 'failed' | 'timed-out' | 'cancelled' | 'not-attempted'
+  >
   title: string
 }
 
@@ -19,7 +21,11 @@ export const LoadRunnerJobContainer = ({
   const { org } = useOrg()
   const orgId = org.id
 
-  const { data, error: queryError, isLoading } = useQuery({
+  const {
+    data,
+    error: queryError,
+    isLoading,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['runner-jobs', orgId, runnerId, groups, statuses],
     queryFn: () =>

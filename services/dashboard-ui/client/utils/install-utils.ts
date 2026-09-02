@@ -225,7 +225,10 @@ function getStatusTitle(
 }
 
 export function isCustomerManagedInstall(
-  install: { operating_model?: { approval_authority?: string } } | undefined | null
+  install:
+    | { operating_model?: { approval_authority?: string } }
+    | undefined
+    | null
 ): boolean {
   return install?.operating_model?.approval_authority === 'customer'
 }

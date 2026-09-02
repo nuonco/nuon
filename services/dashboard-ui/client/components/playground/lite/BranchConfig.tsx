@@ -9,11 +9,7 @@ import { ConfigSection } from './ConfigSection'
 import { Panel } from './Panel'
 import { nodePath } from './BranchOverview'
 import { branchBase } from './nav'
-import {
-  branchConfigItems,
-  runRows,
-  type IBranchConfigItem,
-} from './fixtures'
+import { branchConfigItems, runRows, type IBranchConfigItem } from './fixtures'
 import { rowHoverClass } from './utils'
 
 const sections: {
@@ -97,10 +93,7 @@ export const BranchConfig = () => {
       )}
 
       {isHistoryOpen && (
-        <Drawer
-          title="Config history"
-          onClose={() => setIsHistoryOpen(false)}
-        >
+        <Drawer title="Config history" onClose={() => setIsHistoryOpen(false)}>
           <div className="flex flex-col gap-2">
             {runRows.map((width, i) => (
               <div

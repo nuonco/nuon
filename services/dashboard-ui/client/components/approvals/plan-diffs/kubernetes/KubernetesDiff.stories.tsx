@@ -717,7 +717,9 @@ const added = (payload: string) => ({ type: 2, payload, path: '' })
 const envVarLines = (count: number, offset = 0) =>
   Array.from({ length: count }, (_, i) => [
     unchanged(`        - name: FEATURE_FLAG_${offset + i}`),
-    unchanged(`          value: "${(offset + i) % 2 === 0 ? 'enabled' : 'disabled'}"`),
+    unchanged(
+      `          value: "${(offset + i) % 2 === 0 ? 'enabled' : 'disabled'}"`
+    ),
   ]).flat()
 
 const largeSingleChangePlan = {

@@ -1,7 +1,12 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstallsById } from '@/hooks/use-installs-by-id'
 import { useOrg } from '@/hooks/use-org'
-import { getBranchRunBuilds, getBranchRunInstallGroups, getBranchInstallGroupRuns, getSandboxBuilds } from '@/lib'
+import {
+  getBranchRunBuilds,
+  getBranchRunInstallGroups,
+  getBranchInstallGroupRuns,
+  getSandboxBuilds,
+} from '@/lib'
 import { BranchRunSummary } from './BranchRunSummary'
 import type { TAppBranchRun } from '@/types'
 
@@ -30,23 +35,53 @@ export const BranchRunSummaryContainer = ({
   const { data: builds } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['branch-run-builds', orgId, appId, branchId, branchRunId],
-    queryFn: () => getBranchRunBuilds({ orgId: orgId!, appId, branchId, runId: branchRunId! }),
+    queryFn: () =>
+      getBranchRunBuilds({
+        orgId: orgId!,
+        appId,
+        branchId,
+        runId: branchRunId!,
+      }),
     enabled: !!orgId && !!branchRunId,
     refetchInterval: isTerminal ? false : 5000,
   })
 
   const { data: installUpdates } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['branch-run-install-groups', orgId, appId, branchId, branchRunId],
-    queryFn: () => getBranchRunInstallGroups({ orgId: orgId!, appId, branchId, runId: branchRunId! }),
+    queryKey: [
+      'branch-run-install-groups',
+      orgId,
+      appId,
+      branchId,
+      branchRunId,
+    ],
+    queryFn: () =>
+      getBranchRunInstallGroups({
+        orgId: orgId!,
+        appId,
+        branchId,
+        runId: branchRunId!,
+      }),
     enabled: !!orgId && !!branchRunId,
     refetchInterval: isTerminal ? false : 5000,
   })
 
   const { data: installGroupRuns } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['branch-install-group-runs', orgId, appId, branchId, branchRunId],
-    queryFn: () => getBranchInstallGroupRuns({ orgId: orgId!, appId, branchId, runId: branchRunId! }),
+    queryKey: [
+      'branch-install-group-runs',
+      orgId,
+      appId,
+      branchId,
+      branchRunId,
+    ],
+    queryFn: () =>
+      getBranchInstallGroupRuns({
+        orgId: orgId!,
+        appId,
+        branchId,
+        runId: branchRunId!,
+      }),
     enabled: !!orgId && !!branchRunId,
     refetchInterval: isTerminal ? false : 5000,
   })

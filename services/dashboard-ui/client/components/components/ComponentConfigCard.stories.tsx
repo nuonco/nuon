@@ -389,7 +389,9 @@ export const WithLatestCommit = () => (
   <SurfacesProvider>
     <div className="space-y-6">
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold">Configuration with latest commit</h3>
+        <h3 className="text-lg font-semibold">
+          Configuration with latest commit
+        </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Shows the latest commit for the component's most recent build (app) or
           deployed build (install), using the app branches commit treatment.

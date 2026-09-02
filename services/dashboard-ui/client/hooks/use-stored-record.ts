@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 export function useStoredRecord<V>(
   storageKey: string,
-  fallback: Record<string, V> = {},
+  fallback: Record<string, V> = {}
 ) {
   const [record, setRecord] = useState<Record<string, V>>(() => {
     try {

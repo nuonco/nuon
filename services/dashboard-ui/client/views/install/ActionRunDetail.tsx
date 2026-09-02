@@ -29,14 +29,16 @@ export const ActionRunDetail = () => {
           install?.name,
         ]}
       />
-      {hydratedSteps?.length ? (
-        <ActionStepGraph steps={hydratedSteps} />
-      ) : null}
-      <Text variant="base" weight="strong">Outputs</Text>
+      {hydratedSteps?.length ? <ActionStepGraph steps={hydratedSteps} /> : null}
+      <Text variant="base" weight="strong">
+        Outputs
+      </Text>
       <InstallActionRunOutputs />
       {envVarEntries.length > 0 && (
         <>
-          <Text variant="base" weight="strong">Environment variables</Text>
+          <Text variant="base" weight="strong">
+            Environment variables
+          </Text>
           <KeyValueList
             values={envVarEntries.map(([key, value]) => ({ key, value }))}
           />

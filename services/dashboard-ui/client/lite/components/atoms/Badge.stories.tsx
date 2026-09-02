@@ -6,7 +6,14 @@ export default {
   title: 'lite/atoms/Badge',
 }
 
-const LABEL_COLORS = ['#4cc9f0', '#f72585', '#3a00ff', '#4aa578', '#e8a33d', '#8b5cf6']
+const LABEL_COLORS = [
+  '#4cc9f0',
+  '#f72585',
+  '#3a00ff',
+  '#4aa578',
+  '#e8a33d',
+  '#8b5cf6',
+]
 
 export const Overview = () => (
   <ComponentDocs
@@ -29,13 +36,48 @@ export const Overview = () => (
       'A user-chosen colour is mixed against theme anchors so it works in light and dark, and is ignored entirely in high contrast, where an arbitrary hex cannot be made to clear AAA.',
     ]}
     props={[
-      { name: 'tone', type: "'neutral' | 'accent'", default: "'neutral'", description: 'Semantic tone. Anything meaning success/failure/pending waits for Status and the status palette.' },
-      { name: 'variant', type: "'default' | 'code'", default: "'default'", description: 'default is sans and pill-shaped; code is mono with a softer radius.' },
-      { name: 'color', type: 'string', description: 'User-chosen label colour, any CSS colour. Applies to the value half.' },
-      { name: 'labelKey', type: 'string', description: 'Left half. Presence of this switches to the key/value shape.' },
-      { name: 'labelValue', type: 'string', description: 'Right half, the coloured one.' },
-      { name: 'onRemove', type: '() => void', description: 'Renders a remove button inside the badge.' },
-      { name: 'loading', type: 'boolean', default: 'false', description: 'Shimmer in the badge shape.' },
+      {
+        name: 'tone',
+        type: "'neutral' | 'accent'",
+        default: "'neutral'",
+        description:
+          'Semantic tone. Anything meaning success/failure/pending waits for Status and the status palette.',
+      },
+      {
+        name: 'variant',
+        type: "'default' | 'code'",
+        default: "'default'",
+        description:
+          'default is sans and pill-shaped; code is mono with a softer radius.',
+      },
+      {
+        name: 'color',
+        type: 'string',
+        description:
+          'User-chosen label colour, any CSS colour. Applies to the value half.',
+      },
+      {
+        name: 'labelKey',
+        type: 'string',
+        description:
+          'Left half. Presence of this switches to the key/value shape.',
+      },
+      {
+        name: 'labelValue',
+        type: 'string',
+        description: 'Right half, the coloured one.',
+      },
+      {
+        name: 'onRemove',
+        type: '() => void',
+        description: 'Renders a remove button inside the badge.',
+      },
+      {
+        name: 'loading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Shimmer in the badge shape.',
+      },
     ]}
     sections={[
       {
@@ -90,7 +132,13 @@ export const CustomColors = () => (
     </Text>
     <div className="flex flex-wrap items-center gap-2">
       {LABEL_COLORS.map((color) => (
-        <Badge key={color} variant="code" labelKey="team" labelValue={color} color={color} />
+        <Badge
+          key={color}
+          variant="code"
+          labelKey="team"
+          labelValue={color}
+          color={color}
+        />
       ))}
     </div>
   </div>
@@ -98,10 +146,27 @@ export const CustomColors = () => (
 
 export const Removable = () => (
   <div className="flex flex-wrap items-center gap-2 p-8">
-    <Badge variant="code" labelKey="env" labelValue="production" onRemove={() => {}} />
-    <Badge variant="code" labelKey="team" labelValue="payments" color="#4cc9f0" onRemove={() => {}} />
+    <Badge
+      variant="code"
+      labelKey="env"
+      labelValue="production"
+      onRemove={() => {}}
+    />
+    <Badge
+      variant="code"
+      labelKey="team"
+      labelValue="payments"
+      color="#4cc9f0"
+      onRemove={() => {}}
+    />
     <Badge onRemove={() => {}}>dismissable</Badge>
-    <Badge variant="code" labelKey="env" labelValue="locked" onRemove={() => {}} disabled />
+    <Badge
+      variant="code"
+      labelKey="env"
+      labelValue="locked"
+      onRemove={() => {}}
+      disabled
+    />
   </div>
 )
 

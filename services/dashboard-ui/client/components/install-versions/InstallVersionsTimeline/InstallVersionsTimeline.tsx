@@ -56,7 +56,10 @@ export const InstallVersionsTimeline = ({
           <TimelineEvent
             createdAt={version?.created_at}
             status={resolveInstallVersionStatus(version)}
-            badge={{ children: installVersionSource(version), theme: 'neutral' }}
+            badge={{
+              children: installVersionSource(version),
+              theme: 'neutral',
+            }}
             title={
               <InstallVersionDetails
                 version={version}

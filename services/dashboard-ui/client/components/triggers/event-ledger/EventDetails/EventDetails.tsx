@@ -299,9 +299,7 @@ const WaiterMatch = ({
         </div>
       ) : null}
       {workflowHref ? (
-        <Link href={workflowHref}>
-          View resumed workflow step
-        </Link>
+        <Link href={workflowHref}>View resumed workflow step</Link>
       ) : null}
     </Card>
   )

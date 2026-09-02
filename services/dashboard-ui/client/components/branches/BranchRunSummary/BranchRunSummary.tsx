@@ -60,7 +60,8 @@ export const BranchRunSummary = ({
   branchId,
   runStatus,
 }: IBranchRunSummary) => {
-  if (builds.length === 0 && !sandboxBuild && installGroupRuns.length === 0) return null
+  if (builds.length === 0 && !sandboxBuild && installGroupRuns.length === 0)
+    return null
 
   return (
     <div className="flex flex-col gap-6">

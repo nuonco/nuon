@@ -84,7 +84,11 @@ export const Slack = () => {
               /nuon subscribe org=&lt;org-id&gt;
             </span>
             .{' '}
-            <Link href="https://docs.nuon.co/integrations/slack" isExternal variant="inline">
+            <Link
+              href="https://docs.nuon.co/integrations/slack"
+              isExternal
+              variant="inline"
+            >
               Read the docs
             </Link>
           </Text>

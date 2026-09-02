@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 
@@ -86,17 +87,28 @@ func (s *Helpers) CreateInstallFromRelease(ctx context.Context, release *app.App
 	return s.createInstall(ctx, release.AppID, release, req)
 }
 
-func (s *Helpers) createInstall(ctx context.Context, appID string, release *app.AppRelease, req *CreateInstallParams) (*app.Install, error) {
-	parentApp := app.App{}
-	appConfigScope := func(db *gorm.DB) *gorm.DB {
-		if release != nil {
-			return db.Where(views.TableOrViewName(s.db, &app.AppConfig{}, ".id = ?"), release.AppConfigID).Limit(1)
-		}
-		return db.
-			Where(views.TableOrViewName(s.db, &app.AppConfig{}, ".status_v2 ->> 'status' = ?"), string(app.AppConfigStatusActive)).
-			Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).
-			Limit(1)
+// installConfigSource is everything createInstall needs to know about which
+// config generation the new install is pinned to. The two resolvers own the
+// difference: the app path takes the app's newest rows, the release path takes
+// only what the release's app config pins.
+type installConfigSource struct {
+	parentApp         *app.App
+	selectedConfig    *app.AppConfig
+	sandboxConfigID   string
+	runnerConfigID    string
+	runnerType        app.AppRunnerType
+	permissionsConfig app.AppPermissionsConfig
+}
+
+func (s *Helpers) resolveInstallConfigSource(ctx context.Context, appID string, release *app.AppRelease) (*installConfigSource, error) {
+	if release != nil {
+		return s.resolveReleaseInstallSource(ctx, release)
 	}
+	return s.resolveAppInstallSource(ctx, appID)
+}
+
+func (s *Helpers) resolveAppInstallSource(ctx context.Context, appID string) (*installConfigSource, error) {
+	parentApp := app.App{}
 	res := s.db.WithContext(ctx).
 		Preload("Components").
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
@@ -108,10 +120,14 @@ func (s *Helpers) createInstall(ctx context.Context, appID string, release *app.
 		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC").Limit(1)
 		}).
-		Preload("AppConfigs", appConfigScope).
+		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.
+				Where(views.TableOrViewName(s.db, &app.AppConfig{}, ".status_v2 ->> 'status' = ?"), string(app.AppConfigStatusActive)).
+				Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).
+				Limit(1)
+		}).
 		Preload("AppConfigs.SandboxConfig").
 		Preload("AppConfigs.RunnerConfig").
-		Preload("AppConfigs.PermissionsConfig.Roles").
 		Preload("AppPermissionsConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_permissions_configs.created_at DESC").Limit(1)
 		}).
@@ -120,34 +136,82 @@ func (s *Helpers) createInstall(ctx context.Context, appID string, release *app.
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
-
 	if len(parentApp.AppConfigs) == 0 {
 		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("no active app config found for app %s", appID),
 			Description: "No active app config found. Please sync your app configuration before creating an install.",
 		}
 	}
+	if len(parentApp.AppSandboxConfigs) == 0 || len(parentApp.AppRunnerConfigs) == 0 {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("app %s has no sandbox or runner config", appID),
+			Description: "App has no sandbox or runner config. Please sync your app configuration before creating an install.",
+		}
+	}
+	selectedConfig := parentApp.AppConfigs[0]
+	return &installConfigSource{
+		parentApp:         &parentApp,
+		selectedConfig:    &selectedConfig,
+		sandboxConfigID:   parentApp.AppSandboxConfigs[0].ID,
+		runnerConfigID:    parentApp.AppRunnerConfigs[0].ID,
+		runnerType:        parentApp.AppRunnerConfigs[0].Type,
+		permissionsConfig: parentApp.AppPermissionsConfig,
+	}, nil
+}
+
+func (s *Helpers) resolveReleaseInstallSource(ctx context.Context, release *app.AppRelease) (*installConfigSource, error) {
+	parentApp := app.App{}
+	if err := s.db.WithContext(ctx).First(&parentApp, "id = ?", release.AppID).Error; err != nil {
+		return nil, fmt.Errorf("unable to get app: %w", err)
+	}
+	selectedConfig := app.AppConfig{}
+	res := s.db.WithContext(ctx).
+		Where(app.AppConfig{ID: release.AppConfigID, AppID: release.AppID}).
+		Preload("SandboxConfig").
+		Preload("RunnerConfig").
+		Preload("PermissionsConfig.Roles").
+		First(&selectedConfig)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("app config %s pinned by release %s was not found", release.AppConfigID, release.ID),
+				Description: "The app config this release was built from no longer exists.",
+			}
+		}
+		return nil, fmt.Errorf("unable to get app config pinned by release: %w", res.Error)
+	}
+	return &installConfigSource{
+		parentApp:         &parentApp,
+		selectedConfig:    &selectedConfig,
+		sandboxConfigID:   selectedConfig.SandboxConfig.ID,
+		runnerConfigID:    selectedConfig.RunnerConfig.ID,
+		runnerType:        selectedConfig.RunnerConfig.Type,
+		permissionsConfig: selectedConfig.PermissionsConfig,
+	}, nil
+}
+
+func (s *Helpers) createInstall(ctx context.Context, appID string, release *app.AppRelease, req *CreateInstallParams) (*app.Install, error) {
+	source, err := s.resolveInstallConfigSource(ctx, appID, release)
+	if err != nil {
+		return nil, err
+	}
+	parentApp := source.parentApp
+	selectedConfig := source.selectedConfig
+	sandboxConfigID := source.sandboxConfigID
+	runnerConfigID := source.runnerConfigID
+	permissionsConfig := source.permissionsConfig
 
 	// Validate and pin against the input config belonging to the app config this
 	// install is pinned to. Using the app's newest input config instead lets the
 	// two diverge whenever a newer app config exists, and the config-migration
 	// lookup then misses the install's inputs.
-	pinnedAppInputConfig, err := s.GetPinnedAppInputConfig(ctx, appID, parentApp.AppConfigs[0].ID)
+	pinnedAppInputConfig, err := s.GetPinnedAppInputConfig(ctx, appID, selectedConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get pinned app input config: %w", err)
 	}
 
 	if err := s.ValidateInstallInputs(ctx, pinnedAppInputConfig, req.Inputs); err != nil {
 		return nil, err
-	}
-	selectedConfig := parentApp.AppConfigs[0]
-	sandboxConfigID := parentApp.AppSandboxConfigs[0].ID
-	runnerConfigID := parentApp.AppRunnerConfigs[0].ID
-	permissionsConfig := parentApp.AppPermissionsConfig
-	if release != nil {
-		sandboxConfigID = selectedConfig.SandboxConfig.ID
-		runnerConfigID = selectedConfig.RunnerConfig.ID
-		permissionsConfig = selectedConfig.PermissionsConfig
 	}
 	install := app.Install{
 		AppID:              appID,
@@ -212,10 +276,7 @@ func (s *Helpers) createInstall(ctx context.Context, appID string, release *app.
 
 	targetSource := ""
 
-	runnerType := selectedConfig.RunnerConfig.Type
-	if release == nil {
-		runnerType = parentApp.AppRunnerConfigs[0].Type
-	}
+	runnerType := source.runnerType
 	switch runnerType {
 	case app.AppRunnerTypeGCP, app.AppRunnerTypeGCPGKE:
 		if req.GCPAccount == nil {
@@ -380,7 +441,7 @@ func (s *Helpers) createInstall(ctx context.Context, appID string, release *app.
 		}
 	}
 
-	res = s.db.WithContext(ctx).Create(&install)
+	res := s.db.WithContext(ctx).Create(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install: %w", res.Error)
 	}

@@ -26,13 +26,19 @@ export const RecoverHelmReleaseButton = ({
   ...props
 }: IRecoverHelmRelease & IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <RecoverHelmReleaseModalContainer component={component} status={status} />
+  const modal = (
+    <RecoverHelmReleaseModalContainer component={component} status={status} />
+  )
 
   return (
     <Button onClick={() => addModal(modal)} {...props}>
-      {props?.isMenuButton ? null : <Icon variant="ArrowCounterClockwiseIcon" />}
+      {props?.isMenuButton ? null : (
+        <Icon variant="ArrowCounterClockwiseIcon" />
+      )}
       Recover Helm release
-      {props?.isMenuButton ? <Icon variant="ArrowCounterClockwiseIcon" /> : null}
+      {props?.isMenuButton ? (
+        <Icon variant="ArrowCounterClockwiseIcon" />
+      ) : null}
     </Button>
   )
 }
@@ -66,13 +72,17 @@ export const RecoverHelmReleaseModalContainer = ({
         event: 'component_helm_release_recover',
         status: 'ok',
         user,
-        props: { orgId: org.id, installId: install.id, componentId: component.id },
+        props: {
+          orgId: org.id,
+          installId: install.id,
+          componentId: component.id,
+        },
       })
       addToast(
         <Toast heading="Recovering Helm release" theme="info">
           <Text>
-            Recovering the Helm release for {component.name} on {install.name}. This may take a
-            few minutes.
+            Recovering the Helm release for {component.name} on {install.name}.
+            This may take a few minutes.
           </Text>
         </Toast>
       )

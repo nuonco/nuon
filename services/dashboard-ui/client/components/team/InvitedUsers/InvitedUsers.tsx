@@ -54,9 +54,7 @@ export const InvitedUsers = ({
       {
         accessorKey: 'email',
         header: 'Email',
-        cell: ({ row }) => (
-          <Text variant="body">{row.original?.email}</Text>
-        ),
+        cell: ({ row }) => <Text variant="body">{row.original?.email}</Text>,
       },
       {
         id: 'role',

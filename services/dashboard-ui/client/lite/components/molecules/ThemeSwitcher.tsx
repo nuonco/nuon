@@ -10,7 +10,11 @@ const OPTIONS: Array<{
 }> = [
   { preference: 'light', label: 'Light', icon: 'SunIcon' },
   { preference: 'dark', label: 'Dark', icon: 'MoonIcon' },
-  { preference: 'high-contrast', label: 'High contrast', icon: 'CircleHalfIcon' },
+  {
+    preference: 'high-contrast',
+    label: 'High contrast',
+    icon: 'CircleHalfIcon',
+  },
   { preference: 'system', label: 'System', icon: 'DesktopIcon' },
 ]
 

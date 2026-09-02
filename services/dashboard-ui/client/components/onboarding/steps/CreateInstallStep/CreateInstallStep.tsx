@@ -50,9 +50,7 @@ export const CompletedInstallCard = ({
 
       <InstallStatuses install={install} />
 
-      <Link href={`/${orgId}/installs/${installId}`}>
-        View install
-      </Link>
+      <Link href={`/${orgId}/installs/${installId}`}>View install</Link>
     </Card>
   )
 }

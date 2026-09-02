@@ -33,7 +33,9 @@ export const InstallDeployRow = ({
       <div className="flex items-center gap-5 min-w-0">
         {installHref ? (
           <Text variant="body" weight="strong" nowrap className="truncate">
-            <Link href={installHref} variant="inline">{install?.name || installId}</Link>
+            <Link href={installHref} variant="inline">
+              {install?.name || installId}
+            </Link>
           </Text>
         ) : (
           <Text
@@ -76,7 +78,9 @@ export const InstallDeployRow = ({
       />
 
       {workflowHref && (
-        <Link href={workflowHref} className="shrink-0">View workflow</Link>
+        <Link href={workflowHref} className="shrink-0">
+          View workflow
+        </Link>
       )}
     </StepRow>
   )

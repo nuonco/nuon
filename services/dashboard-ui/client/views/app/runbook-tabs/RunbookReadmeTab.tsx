@@ -12,7 +12,9 @@ export const RunbookReadmeTab = () => {
 
   return (
     <>
-      <PageTitle segments={[`${runbook?.name ?? 'Runbook'} readme`, app?.name]} />
+      <PageTitle
+        segments={[`${runbook?.name ?? 'Runbook'} readme`, app?.name]}
+      />
       {!latestConfig?.readme ? (
         <Text theme="neutral">No readme configured.</Text>
       ) : (

@@ -11,7 +11,16 @@ import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { VCSConnectionsStatusIndicator } from '@/components/vcs-connections/VCSConnectionsStatusIndicator'
 import { humanize } from '@/utils/string-utils'
 import { getStatusTheme } from '@/utils/status-utils'
-import type { TApp, TAppBranch, TAppConfig, TInstall, TInstallStack, TOrg, TWorkflow, TWorkflowStepApproval } from '@/types'
+import type {
+  TApp,
+  TAppBranch,
+  TAppConfig,
+  TInstall,
+  TInstallStack,
+  TOrg,
+  TWorkflow,
+  TWorkflowStepApproval,
+} from '@/types'
 
 interface IOrgStatusBar {
   org: TOrg
@@ -46,9 +55,21 @@ export const OrgStatusBar = ({
 }: IOrgStatusBar) => {
   return (
     <div className="hidden md:flex border-t w-full px-4 py-1.5 items-center flex-none bg-code z-[1] gap-3">
-      <Text family="mono" variant="subtext" className="!flex items-center gap-1.5">
+      <Text
+        family="mono"
+        variant="subtext"
+        className="!flex items-center gap-1.5"
+      >
         {org.sandbox_mode && (
-          <Tooltip tipContent={<Text variant="subtext" as="span">Sandbox mode</Text>} tipContentClassName="!py-0.5" position="top">
+          <Tooltip
+            tipContent={
+              <Text variant="subtext" as="span">
+                Sandbox mode
+              </Text>
+            }
+            tipContentClassName="!py-0.5"
+            position="top"
+          >
             <Icon
               variant="TestTubeIcon"
               className="!w-[14px] !h-[14px] shrink-0"
@@ -113,7 +134,11 @@ export const OrgStatusBar = ({
               <span className="text-cool-grey-300 dark:text-white/20 text-xs">
                 ›
               </span>
-              <Icon variant="GitBranchIcon" size={12} className="text-cool-grey-500 dark:text-cool-grey-400" />
+              <Icon
+                variant="GitBranchIcon"
+                size={12}
+                className="text-cool-grey-500 dark:text-cool-grey-400"
+              />
               <Text family="mono" variant="subtext">
                 {branch.name}
               </Text>

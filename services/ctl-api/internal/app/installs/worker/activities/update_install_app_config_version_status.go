@@ -8,8 +8,7 @@ import (
 )
 
 type UpdateInstallAppConfigVersionStatusInput struct {
-	ID             string            `json:"id,omitempty"`
-	AppBranchRunID string            `json:"app_branch_run_id,omitempty"`
+	AppBranchRunID string            `json:"app_branch_run_id" validate:"required"`
 	InstallID      string            `json:"install_id" validate:"required"`
 	Status         app.Status        `json:"status,omitempty"`
 	StatusDesc     string            `json:"status_description,omitempty"`
@@ -24,16 +23,13 @@ type UpdateInstallAppConfigVersionStatusOutput struct {
 // @start-to-close-timeout 30s
 func (a *Activities) UpdateInstallAppConfigVersionStatus(ctx context.Context, input *UpdateInstallAppConfigVersionStatusInput) (*UpdateInstallAppConfigVersionStatusOutput, error) {
 	var version app.InstallAppConfigVersion
-	query := a.db.WithContext(ctx).Where(app.InstallAppConfigVersion{InstallID: input.InstallID})
-	if input.ID != "" {
-		query = query.Where(app.InstallAppConfigVersion{ID: input.ID})
-	} else if input.AppBranchRunID != "" {
-		query = query.Where(app.InstallAppConfigVersion{AppBranchRunID: &input.AppBranchRunID})
-	} else {
-		return nil, fmt.Errorf("install app config version id or app branch run id is required")
-	}
-	if err := query.First(&version).Error; err != nil {
-		return nil, fmt.Errorf("unable to find install app config version for install %s: %w", input.InstallID, err)
+	if err := a.db.WithContext(ctx).
+		Where(app.InstallAppConfigVersion{
+			InstallID: input.InstallID,
+		}).
+		Where("app_branch_run_id = ?", input.AppBranchRunID).
+		First(&version).Error; err != nil {
+		return nil, fmt.Errorf("unable to find install app config version for run %s install %s: %w", input.AppBranchRunID, input.InstallID, err)
 	}
 
 	status := input.Status

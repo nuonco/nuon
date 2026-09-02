@@ -50,7 +50,8 @@ export const LabelBadge = ({
     }
   }
 
-  const iconSize = size === 'lg' ? 13 : size === 'md' ? 12 : size === 'sm' ? 11 : 10
+  const iconSize =
+    size === 'lg' ? 13 : size === 'md' ? 12 : size === 'sm' ? 11 : 10
 
   const customStyle = customColor
     ? ({ '--label-color': customColor } as CSSProperties)
@@ -64,7 +65,9 @@ export const LabelBadge = ({
     const isOverflowing = (el: HTMLSpanElement | null) =>
       !!el && el.scrollWidth > el.clientWidth
     const check = () =>
-      setTruncated(isOverflowing(keyRef.current) || isOverflowing(valueRef.current))
+      setTruncated(
+        isOverflowing(keyRef.current) || isOverflowing(valueRef.current)
+      )
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
@@ -72,7 +75,12 @@ export const LabelBadge = ({
 
   const badge = (
     <span className={cn('inline-flex', className)} {...props}>
-      <Badge size={size} theme={keyTheme} variant={variant} className="rounded-r-none">
+      <Badge
+        size={size}
+        theme={keyTheme}
+        variant={variant}
+        className="rounded-r-none"
+      >
         <span ref={keyRef} className="block max-w-[14rem] truncate">
           {key}
         </span>
@@ -81,7 +89,11 @@ export const LabelBadge = ({
         size={size}
         theme={customStyle ? 'none' : theme}
         variant={variant}
-        className={cn('rounded-l-none border-l-0', customStyle && 'label-badge-value', onRemove && 'pr-1')}
+        className={cn(
+          'rounded-l-none border-l-0',
+          customStyle && 'label-badge-value',
+          onRemove && 'pr-1'
+        )}
         style={customStyle}
       >
         <span ref={valueRef} className="block max-w-[22rem] truncate">
@@ -109,7 +121,11 @@ export const LabelBadge = ({
   return (
     <Tooltip
       tipContent={
-        <Text variant="subtext" className="break-all" style={{ whiteSpace: 'normal' }}>
+        <Text
+          variant="subtext"
+          className="break-all"
+          style={{ whiteSpace: 'normal' }}
+        >
           {fullLabel}
         </Text>
       }

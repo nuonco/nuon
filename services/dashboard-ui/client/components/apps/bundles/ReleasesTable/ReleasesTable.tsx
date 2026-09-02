@@ -56,9 +56,7 @@ export const ReleasesTable = ({
     {
       accessorKey: 'semantic_digest',
       header: 'Digest',
-      cell: ({ row }) => (
-        <Hash hash={row.original.semantic_digest ?? ''} />
-      ),
+      cell: ({ row }) => <Hash hash={row.original.semantic_digest ?? ''} />,
     },
     {
       accessorKey: 'created_at',

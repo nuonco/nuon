@@ -6,7 +6,10 @@ export default {
 
 export const Default = () => (
   <span className="flex items-center gap-2 flex-wrap">
-    <BranchVcsBadges repo="nuonco/example-app-configs" branch="nh/test-app-branches" />
+    <BranchVcsBadges
+      repo="nuonco/example-app-configs"
+      branch="nh/test-app-branches"
+    />
   </span>
 )
 

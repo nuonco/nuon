@@ -29,7 +29,7 @@ export const ConsentToast = forwardRef<HTMLDivElement, IConsentToast>(
         className="!w-106"
         toastId={toastId}
         pauseTimeout={pauseTimeout}
-        heading="Help us improve Nuon"        
+        heading="Help us improve Nuon"
         theme="default"
         timeout={CONSENT_TIMEOUT}
       >

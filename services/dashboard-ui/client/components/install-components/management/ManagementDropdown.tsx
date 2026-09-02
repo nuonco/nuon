@@ -24,7 +24,11 @@ const DisabledMenuItem = ({
     isMenuButton
     disabled
     className="w-full"
-    tooltipProps={{ className: 'block !w-full', position: 'left', tipContent: reason }}
+    tooltipProps={{
+      className: 'block !w-full',
+      position: 'left',
+      tipContent: reason,
+    }}
   >
     {label}
     <Icon variant={icon} />

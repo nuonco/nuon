@@ -40,7 +40,9 @@ export const BuildSummaryTab = () => {
           ) : null
         }
       >
-        {build && isImageBuild(build) ? <BuildImageSource build={build} /> : null}
+        {build && isImageBuild(build) ? (
+          <BuildImageSource build={build} />
+        ) : null}
       </RunSummary>
     </>
   )

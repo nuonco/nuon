@@ -15,7 +15,7 @@ type RunnerContextValue = {
 }
 
 export const RunnerContext = createContext<RunnerContextValue | undefined>(
-  undefined,
+  undefined
 )
 
 export function RunnerProvider({
@@ -32,7 +32,11 @@ export function RunnerProvider({
   const { org } = useOrg()
   const { addToast } = useToast()
 
-  const { data: runner, isLoading, error } = useQuery({
+  const {
+    data: runner,
+    isLoading,
+    error,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['runner', org.id!, runnerId],
     queryFn: () => getRunner({ orgId: org.id!, runnerId }),
@@ -62,7 +66,9 @@ export function RunnerProvider({
   if (isLoading || !runner) return <ProviderLoading />
 
   return (
-    <RunnerContext.Provider value={{ runner, isManaged: Boolean(heartbeat?.mng) }}>
+    <RunnerContext.Provider
+      value={{ runner, isManaged: Boolean(heartbeat?.mng) }}
+    >
       {children}
     </RunnerContext.Provider>
   )

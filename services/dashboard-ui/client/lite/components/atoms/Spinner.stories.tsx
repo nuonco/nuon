@@ -27,8 +27,18 @@ export const Overview = () => (
       'Stops animating under prefers-reduced-motion, leaving the static ring.',
     ]}
     props={[
-      { name: 'size', type: 'number', default: '16', description: 'Width and height in px. Stroke stays proportional.' },
-      { name: 'label', type: 'string', description: 'Makes it a live status with this accessible name. Omit when something else announces the wait.' },
+      {
+        name: 'size',
+        type: 'number',
+        default: '16',
+        description: 'Width and height in px. Stroke stays proportional.',
+      },
+      {
+        name: 'label',
+        type: 'string',
+        description:
+          'Makes it a live status with this accessible name. Omit when something else announces the wait.',
+      },
     ]}
   />
 )

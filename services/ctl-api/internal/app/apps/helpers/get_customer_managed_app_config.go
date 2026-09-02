@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
-	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
@@ -19,16 +18,12 @@ func (h *Helpers) GetCustomerManagedAppConfig(ctx context.Context, orgID, appID,
 	res := h.db.WithContext(ctx).
 		Where(app.AppConfig{ID: appConfigID, OrgID: orgID, AppID: appID}).
 		Scopes(
-			PreloadAppConfigRunnerConfig,
 			PreloadAppConfigSandboxConfig,
-			PreloadAppConfigStackConfig,
-			PreloadAppConfigPermissionsConfig,
-			PreloadAppBreakGlassConfig,
-			PreloadAppSecretsConfig,
-			PreloadAppConfigInputConfig,
-			PreloadAppActionWorkflowConfigs,
 		).
+		Preload("ActionWorkflowConfigs").
 		Preload("ActionWorkflowConfigs.ActionWorkflow").
+		Preload("ActionWorkflowConfigs.Triggers").
+		Preload("ActionWorkflowConfigs.Steps").
 		First(&appConfig)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get exact app config for customer-managed bundle: %w", res.Error)
@@ -38,30 +33,10 @@ func (h *Helpers) GetCustomerManagedAppConfig(ctx context.Context, orgID, appID,
 	if err := json.Unmarshal([]byte(appConfig.State), &state); err != nil {
 		return nil, fmt.Errorf("decode exact app config state: %w", err)
 	}
-	connections := make([]app.ComponentConfigConnection, 0, len(state.Components))
-	for _, component := range state.Components {
-		if component.ConfigID == "" {
-			continue
-		}
-		var connection app.ComponentConfigConnection
-		res = h.db.WithContext(ctx).
-			Scopes(preloadComponentConfigConnectionsForCustomerManaged).
-			Where(app.ComponentConfigConnection{ID: component.ConfigID, OrgID: orgID, ComponentID: component.ID}).
-			First(&connection)
-		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			connectionID, cerr := h.connectionIDFromTypedComponentConfig(ctx, orgID, component)
-			if cerr != nil {
-				return nil, fmt.Errorf("load exact component config %s for customer-managed bundle: %w", component.ConfigID, cerr)
-			}
-			res = h.db.WithContext(ctx).
-				Scopes(preloadComponentConfigConnectionsForCustomerManaged).
-				Where(app.ComponentConfigConnection{ID: connectionID, OrgID: orgID, ComponentID: component.ID}).
-				First(&connection)
-		}
-		if res.Error != nil {
-			return nil, fmt.Errorf("load exact component config %s for customer-managed bundle: %w", component.ConfigID, res.Error)
-		}
-		connections = append(connections, connection)
+
+	connections, err := h.loadComponentConfigConnections(ctx, orgID, state.Components)
+	if err != nil {
+		return nil, err
 	}
 	appConfig.ComponentConfigConnections = connections
 	appConfig.ActionIDs = appConfig.ActionIDs[:0]
@@ -94,6 +69,68 @@ func (h *Helpers) GetCustomerManagedAppConfig(ctx context.Context, orgID, appID,
 		appConfig.CustomerManagedRuntime = runtime
 	}
 	return &appConfig, nil
+}
+
+func (h *Helpers) loadComponentConfigConnections(ctx context.Context, orgID string, components []configsync.ComponentState) ([]app.ComponentConfigConnection, error) {
+	configIDs := make([]string, 0, len(components))
+	for _, c := range components {
+		if c.ConfigID != "" {
+			configIDs = append(configIDs, c.ConfigID)
+		}
+	}
+	if len(configIDs) == 0 {
+		return nil, nil
+	}
+
+	var direct []app.ComponentConfigConnection
+	if err := h.db.WithContext(ctx).
+		Scopes(PreloadComponentConfigConnection).
+		Where("org_id = ? AND id IN ?", orgID, configIDs).
+		Find(&direct).Error; err != nil {
+		return nil, fmt.Errorf("load component config connections: %w", err)
+	}
+
+	byConfigID := make(map[string]app.ComponentConfigConnection, len(components))
+	for _, c := range direct {
+		byConfigID[c.ID] = c
+	}
+
+	var missing []configsync.ComponentState
+	for _, c := range components {
+		if c.ConfigID == "" {
+			continue
+		}
+		if _, ok := byConfigID[c.ConfigID]; !ok {
+			missing = append(missing, c)
+		}
+	}
+
+	for _, c := range missing {
+		connectionID, err := h.connectionIDFromTypedComponentConfig(ctx, orgID, c)
+		if err != nil {
+			return nil, fmt.Errorf("load exact component config %s for customer-managed bundle: %w", c.ConfigID, err)
+		}
+		var connection app.ComponentConfigConnection
+		res := h.db.WithContext(ctx).
+			Scopes(PreloadComponentConfigConnection).
+			Where(app.ComponentConfigConnection{ID: connectionID, OrgID: orgID, ComponentID: c.ID}).
+			First(&connection)
+		if res.Error != nil {
+			return nil, fmt.Errorf("load exact component config %s for customer-managed bundle: %w", c.ConfigID, res.Error)
+		}
+		byConfigID[c.ConfigID] = connection
+	}
+
+	ordered := make([]app.ComponentConfigConnection, 0, len(components))
+	for _, c := range components {
+		if c.ConfigID == "" {
+			continue
+		}
+		if conn, ok := byConfigID[c.ConfigID]; ok {
+			ordered = append(ordered, conn)
+		}
+	}
+	return ordered, nil
 }
 
 func (h *Helpers) connectionIDFromTypedComponentConfig(ctx context.Context, orgID string, component configsync.ComponentState) (string, error) {
@@ -145,7 +182,7 @@ func (h *Helpers) connectionIDFromTypedComponentConfig(ctx context.Context, orgI
 	return "", fmt.Errorf("unsupported component type %q", component.Type)
 }
 
-func preloadComponentConfigConnectionsForCustomerManaged(db *gorm.DB) *gorm.DB {
+func PreloadComponentConfigConnection(db *gorm.DB) *gorm.DB {
 	return db.
 		Preload("Component").
 		Preload("TerraformModuleComponentConfig").

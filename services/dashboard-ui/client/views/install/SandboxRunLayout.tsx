@@ -33,15 +33,21 @@ const SandboxRunLayoutInner = () => {
     placeholderData: keepPreviousData,
     queryKey: ['workflow', org?.id, sandboxRun?.install_workflow_id],
     queryFn: () =>
-      getWorkflow({ orgId: org.id, workflowId: sandboxRun!.install_workflow_id }),
+      getWorkflow({
+        orgId: org.id,
+        workflowId: sandboxRun!.install_workflow_id,
+      }),
     enabled: !!org?.id && !!sandboxRun?.install_workflow_id,
   })
 
-  const step = workflow?.steps
-    ?.filter(
-      (s) => s?.step_target_id === sandboxRun?.id && s?.execution_type === 'approval'
-    )
-    ?.at(-1) ?? null
+  const step =
+    workflow?.steps
+      ?.filter(
+        (s) =>
+          s?.step_target_id === sandboxRun?.id &&
+          s?.execution_type === 'approval'
+      )
+      ?.at(-1) ?? null
 
   const { hasResponded } = useRespondedApprovals()
   const responded = step ? hasResponded(step.id) : false
@@ -56,7 +62,11 @@ const SandboxRunLayoutInner = () => {
     step?.approval?.type === 'approve-all' ||
     step?.approval?.response?.type === 'auto-approve'
   const pendingApproval =
-    step?.approval && !step?.approval?.response && !responded && !isTerminal && stepStatus !== 'auto-skipped'
+    step?.approval &&
+    !step?.approval?.response &&
+    !responded &&
+    !isTerminal &&
+    stepStatus !== 'auto-skipped'
 
   const basePath = `/${org?.id}/installs/${install?.id}/sandbox/runs/${runId}`
   const traceEnabled = !!org?.features?.['trace-view']
@@ -76,7 +86,10 @@ const SandboxRunLayoutInner = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/installs`, text: 'Installs' },
           { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
-          { path: `/${org?.id}/installs/${install?.id}/sandbox`, text: 'Sandbox' },
+          {
+            path: `/${org?.id}/installs/${install?.id}/sandbox`,
+            text: 'Sandbox',
+          },
           {
             path: basePath,
             text: sandboxRun?.run_type ?? 'Run',

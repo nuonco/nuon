@@ -3,7 +3,18 @@ import { Panel } from './Panel'
 import { StatTile } from './StatTile'
 
 const logLines = [
-  '84%', '62%', '91%', '48%', '76%', '58%', '88%', '44%', '70%', '95%', '52%', '80%',
+  '84%',
+  '62%',
+  '91%',
+  '48%',
+  '76%',
+  '58%',
+  '88%',
+  '44%',
+  '70%',
+  '95%',
+  '52%',
+  '80%',
 ]
 
 export const InstallRunner = () => (

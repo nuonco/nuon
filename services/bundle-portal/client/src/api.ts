@@ -56,12 +56,9 @@ export const getConnectedWorkflow = (workflowId: string) =>
   request<TConnectedWorkflow>(
     `/api/connected/workflows/${encodeURIComponent(workflowId)}`,
   );
-export const getConnectedWorkflowStepLogs = (
-  workflowId: string,
-  stepId: string,
-) =>
+export const getConnectedLogStreamLogs = (logStreamId: string) =>
   request<TConnectedLog[]>(
-    `/api/connected/workflows/${encodeURIComponent(workflowId)}/steps/${encodeURIComponent(stepId)}/logs`,
+    `/api/connected/log-streams/${encodeURIComponent(logStreamId)}/logs`,
   );
 export const retryConnectedWorkflowStep = (
   workflowId: string,

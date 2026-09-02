@@ -12,7 +12,11 @@ import type { TAppBranchConfig, TInstall } from '@/types'
 
 import { groupAccent, type GraphAccent } from '../graph/accents'
 import { GraphCanvas } from '../graph/GraphCanvas'
-import { GroupNodeCard, NODE_WIDTH, NODE_WIDTH_COMPACT } from '../graph/GroupNodeCard'
+import {
+  GroupNodeCard,
+  NODE_WIDTH,
+  NODE_WIDTH_COMPACT,
+} from '../graph/GroupNodeCard'
 import { layoutSequential, sequentialEdges } from '../graph/layout'
 import { DeploymentPlanGroupPanel } from './DeploymentPlanGroupPanel'
 
@@ -64,7 +68,9 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
           {compact ? (
             <span className="text-[9px] opacity-70">{installs.length}</span>
           ) : data.maxParallel > 1 ? (
-            <span className={cn('rounded px-1.5 py-0.5 text-[10px]', accent.pill)}>
+            <span
+              className={cn('rounded px-1.5 py-0.5 text-[10px]', accent.pill)}
+            >
               {data.maxParallel}x parallel
             </span>
           ) : null}
@@ -103,7 +109,9 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
           ))}
           {hidden > 0 &&
             (compact ? (
-              <span className="text-[9px] text-cool-grey-500">+{hidden} more</span>
+              <span className="text-[9px] text-cool-grey-500">
+                +{hidden} more
+              </span>
             ) : (
               <button
                 type="button"
@@ -141,19 +149,30 @@ interface IDeploymentPlanGraph {
   compact?: boolean
 }
 
-export const DeploymentPlanGraph = ({ config, installsById, orgId, compact = false }: IDeploymentPlanGraph) => {
+export const DeploymentPlanGraph = ({
+  config,
+  installsById,
+  orgId,
+  compact = false,
+}: IDeploymentPlanGraph) => {
   const groups = config.install_groups ?? []
 
   const { nodes, edges, height } = useMemo(() => {
     if (groups.length === 0) return { nodes: [], edges: [], height: 0 }
 
     const built: Node<GroupNodeData>[] = groups.map((group, idx) => {
-      const labelEntries = Object.entries(group.label_selector?.match_labels ?? {})
+      const labelEntries = Object.entries(
+        group.label_selector?.match_labels ?? {}
+      )
       const installs: PlanGroupInstall[] =
         labelEntries.length > 0
           ? Object.values(installsById)
               .filter((i) => matchesSelector(i.labels, group.label_selector))
-              .map((i) => ({ id: i.id, name: i.name ?? i.id, labels: i.labels }))
+              .map((i) => ({
+                id: i.id,
+                name: i.name ?? i.id,
+                labels: i.labels,
+              }))
           : (group.install_ids ?? []).map((id) => ({
               id,
               name: installsById[id]?.name ?? id,

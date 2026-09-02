@@ -37,9 +37,23 @@ export const Overview = () => (
       'Phosphor glyphs sit inside a 256 viewBox with transparent padding — about 12.5% a side. Cancel it with a negative margin when an icon sits at the edge of a control.',
     ]}
     props={[
-      { name: 'variant', type: 'TIconVariant', description: 'Key from the ICONS map.' },
-      { name: 'size', type: 'number | string', default: '16', description: 'Use "1em" to track surrounding font size.' },
-      { name: 'weight', type: "'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone'", default: "'regular'", description: 'Phosphor stroke weight.' },
+      {
+        name: 'variant',
+        type: 'TIconVariant',
+        description: 'Key from the ICONS map.',
+      },
+      {
+        name: 'size',
+        type: 'number | string',
+        default: '16',
+        description: 'Use "1em" to track surrounding font size.',
+      },
+      {
+        name: 'weight',
+        type: "'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone'",
+        default: "'regular'",
+        description: 'Phosphor stroke weight.',
+      },
     ]}
   />
 )

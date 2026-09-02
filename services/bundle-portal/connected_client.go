@@ -35,8 +35,12 @@ func newConnectedClient(controlPlaneURL, orgID, installID, apiToken string) (*co
 }
 
 func (c *connectedClient) proxy(w http.ResponseWriter, r *http.Request, suffix string) {
+	c.proxyRaw(w, r, path.Join("/v1/customer-managed/installs/", c.installID, suffix))
+}
+
+func (c *connectedClient) proxyRaw(w http.ResponseWriter, r *http.Request, fullPath string) {
 	target := *c.baseURL
-	target.Path = path.Join(strings.TrimSuffix(c.baseURL.Path, "/"), "/v1/customer-managed/installs/", c.installID, suffix)
+	target.Path = path.Join(strings.TrimSuffix(c.baseURL.Path, "/"), fullPath)
 	target.RawQuery = r.URL.RawQuery
 	request, err := http.NewRequestWithContext(r.Context(), r.Method, target.String(), r.Body)
 	if err != nil {

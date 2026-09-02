@@ -29,27 +29,63 @@ import {
 } from '../wrap-lines-context'
 import { humanize } from '@/utils/string-utils'
 
-const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant; grouped: boolean }> = {
+const SECTION_CONFIG: Record<
+  string,
+  { displayName: string; icon: TIconVariant; grouped: boolean }
+> = {
   components: { displayName: 'Components', icon: 'CubeIcon', grouped: true },
   actions: { displayName: 'Actions', icon: 'LightningIcon', grouped: true },
   runbooks: { displayName: 'Runbooks', icon: 'BookOpenIcon', grouped: true },
-  inputs: { displayName: 'Install inputs', icon: 'ListBulletsIcon', grouped: true },
+  inputs: {
+    displayName: 'Install inputs',
+    icon: 'ListBulletsIcon',
+    grouped: true,
+  },
   secrets: { displayName: 'Secrets', icon: 'KeyIcon', grouped: true },
-  sandbox: { displayName: 'Sandbox', icon: 'TerminalWindowIcon', grouped: false },
+  sandbox: {
+    displayName: 'Sandbox',
+    icon: 'TerminalWindowIcon',
+    grouped: false,
+  },
   runner: { displayName: 'Runner', icon: 'GearIcon', grouped: false },
-  permissions: { displayName: 'Permissions', icon: 'ShieldIcon', grouped: false },
+  permissions: {
+    displayName: 'Permissions',
+    icon: 'ShieldIcon',
+    grouped: false,
+  },
   stack: { displayName: 'Stack', icon: 'StackIcon', grouped: false },
 }
 
-const COMPONENT_TYPE_ICON: Record<string, { icon: TIconVariant; brandClass: string }> = {
-  helm_chart: { icon: 'Helm', brandClass: 'text-[#0F1689] dark:text-[#6A70D6]' },
-  terraform_module: { icon: 'Terraform', brandClass: 'text-[#7B42BC] dark:text-[#A878E0]' },
-  docker_build: { icon: 'Docker', brandClass: 'text-[#2496ED] dark:text-[#56B4F9]' },
-  external_image: { icon: 'OCI', brandClass: 'text-[#262261] dark:text-[#8B87D1]' },
-  kubernetes_manifest: { icon: 'Kubernetes', brandClass: 'text-[#326CE5] dark:text-[#5A8DEF]' },
+const COMPONENT_TYPE_ICON: Record<
+  string,
+  { icon: TIconVariant; brandClass: string }
+> = {
+  helm_chart: {
+    icon: 'Helm',
+    brandClass: 'text-[#0F1689] dark:text-[#6A70D6]',
+  },
+  terraform_module: {
+    icon: 'Terraform',
+    brandClass: 'text-[#7B42BC] dark:text-[#A878E0]',
+  },
+  docker_build: {
+    icon: 'Docker',
+    brandClass: 'text-[#2496ED] dark:text-[#56B4F9]',
+  },
+  external_image: {
+    icon: 'OCI',
+    brandClass: 'text-[#262261] dark:text-[#8B87D1]',
+  },
+  kubernetes_manifest: {
+    icon: 'Kubernetes',
+    brandClass: 'text-[#326CE5] dark:text-[#5A8DEF]',
+  },
   job: { icon: 'AWSLambda', brandClass: 'text-[#FF9900] dark:text-[#FFB340]' },
   pulumi: { icon: 'Pulumi', brandClass: 'text-[#8A3391] dark:text-[#B06AB8]' },
-  pulumi_module: { icon: 'Pulumi', brandClass: 'text-[#8A3391] dark:text-[#C48BCC]' },
+  pulumi_module: {
+    icon: 'Pulumi',
+    brandClass: 'text-[#8A3391] dark:text-[#C48BCC]',
+  },
 }
 
 export type DiffFieldEntry = {
@@ -118,7 +154,9 @@ const ExpandAllToggle = () => {
       {isAllExpanded ? 'Collapse all' : 'Expand all'}
       <Icon
         variant={
-          isAllExpanded ? 'ArrowsInLineVerticalIcon' : 'ArrowsOutLineVerticalIcon'
+          isAllExpanded
+            ? 'ArrowsInLineVerticalIcon'
+            : 'ArrowsOutLineVerticalIcon'
         }
         size="14"
       />
@@ -193,7 +231,8 @@ function getOpBorderColor(op: string): string {
 const DIFF_STYLES: Record<string, string> = {
   add: 'bg-green-500/15 dark:bg-green-500/5 text-green-800 dark:text-green-400',
   remove: 'bg-red-500/15 dark:bg-red-500/5 text-red-800 dark:text-red-400',
-  change: 'bg-orange-500/15 dark:bg-orange-500/5 text-orange-800 dark:text-orange-400',
+  change:
+    'bg-orange-500/15 dark:bg-orange-500/5 text-orange-800 dark:text-orange-400',
 }
 
 function getDiffPrefix(op: string) {
@@ -233,19 +272,24 @@ function getEntityOp(node: TDiffNode): 'add' | 'remove' | 'change' {
 }
 
 function isFileNode(n: TDiffNode): boolean {
-  return (
-    !!n.diff &&
-    (n.diff.before !== undefined || n.diff.after !== undefined)
-  )
+  return !!n.diff && (n.diff.before !== undefined || n.diff.after !== undefined)
 }
 
-const GENERIC_FILE_KEYS = new Set(['inline_contents', 'contents', 'content', 'file'])
+const GENERIC_FILE_KEYS = new Set([
+  'inline_contents',
+  'contents',
+  'content',
+  'file',
+])
 
 // Inline-content file nodes carry a generic/empty key (e.g. "inline_contents"),
 // so fall back to the parent node's key (e.g. "step.coder-health") for a label.
 function fileLabel(nodeKey: string, parentKey: string): string {
   if (nodeKey && !GENERIC_FILE_KEYS.has(nodeKey)) return nodeKey
-  const fromParent = parentKey.replace(/^(step|component|action|app_config)\./, '')
+  const fromParent = parentKey.replace(
+    /^(step|component|action|app_config)\./,
+    ''
+  )
   return fromParent || 'Inline contents'
 }
 
@@ -315,7 +359,8 @@ export function extractSections(node?: TDiffNode): DiffSectionData[] {
         const { fields, files } = collectEntries(entityNode)
         if (fields.length === 0 && files.length === 0) continue
 
-        const componentType = child.key === 'components' ? findComponentType(entityNode) : undefined
+        const componentType =
+          child.key === 'components' ? findComponentType(entityNode) : undefined
 
         section.entities.push({
           name: entityNode.key,
@@ -365,7 +410,9 @@ export function extractSections(node?: TDiffNode): DiffSectionData[] {
 }
 
 export function computeSummary(sections: DiffSectionData[]) {
-  let added = 0, removed = 0, changed = 0
+  let added = 0,
+    removed = 0,
+    changed = 0
   for (const s of sections) {
     added += s.additions
     removed += s.removals
@@ -382,16 +429,28 @@ const AppConfigSummary = ({
   <div className="px-4 py-3 sm:px-6 border-b bg-cool-grey-100 dark:bg-dark-grey-800 flex items-center justify-between gap-4">
     <div className="flex space-x-4">
       <div className="flex items-center gap-1.5">
-        <Text variant="base" theme="success" weight="strong">{summary.added}</Text>
-        <Text variant="subtext" theme="neutral">to add</Text>
+        <Text variant="base" theme="success" weight="strong">
+          {summary.added}
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          to add
+        </Text>
       </div>
       <div className="flex items-center gap-1.5">
-        <Text variant="base" theme="warn" weight="strong">{summary.changed}</Text>
-        <Text variant="subtext" theme="neutral">to change</Text>
+        <Text variant="base" theme="warn" weight="strong">
+          {summary.changed}
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          to change
+        </Text>
       </div>
       <div className="flex items-center gap-1.5">
-        <Text variant="base" theme="error" weight="strong">{summary.removed}</Text>
-        <Text variant="subtext" theme="neutral">to remove</Text>
+        <Text variant="base" theme="error" weight="strong">
+          {summary.removed}
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          to remove
+        </Text>
       </div>
     </div>
     <DiffToolbar />
@@ -437,10 +496,18 @@ function langForFile(name: string): string {
   const lower = name.toLowerCase()
   if (lower.endsWith('.yaml') || lower.endsWith('.yml')) return 'yaml'
   if (lower.endsWith('.json')) return 'json'
-  if (lower.endsWith('.tf') || lower.endsWith('.tfvars') || lower.startsWith('var_file')) {
+  if (
+    lower.endsWith('.tf') ||
+    lower.endsWith('.tfvars') ||
+    lower.startsWith('var_file')
+  ) {
     return 'hcl'
   }
-  if (lower === 'dockerfile' || lower.endsWith('inline_contents') || lower.endsWith('.sh')) {
+  if (
+    lower === 'dockerfile' ||
+    lower.endsWith('inline_contents') ||
+    lower.endsWith('.sh')
+  ) {
     return 'bash'
   }
   return 'yaml'
@@ -510,7 +577,12 @@ const FileDiffRow = ({
       headerClassName={`w-full px-4 py-2 gap-3 text-left focus:outline-none ${bgColor}`}
       heading={
         <div className="flex items-center justify-between w-full">
-          <Text family="mono" variant="subtext" weight="strong" className="truncate">
+          <Text
+            family="mono"
+            variant="subtext"
+            weight="strong"
+            className="truncate"
+          >
             {file.name}
           </Text>
           {!isSnapshot && (
@@ -561,7 +633,10 @@ const EntityRow = ({
   const isComponent = sectionKey === 'components'
   const hasDetail = entity.fields.length > 0 || (entity.files?.length ?? 0) > 0
   const entityId = `${sectionKey}-${entity.name}-${idx}`
-  const isFocused = !!focus && focus.sectionKey === sectionKey && focus.entityName === entity.name
+  const isFocused =
+    !!focus &&
+    focus.sectionKey === sectionKey &&
+    focus.entityName === entity.name
 
   const [forcedOpen, setForcedOpen] = useState(false)
   const [highlighted, setHighlighted] = useState(false)
@@ -571,7 +646,9 @@ const EntityRow = ({
     setForcedOpen(true)
     setHighlighted(true)
     const raf = requestAnimationFrame(() => {
-      scrollElementIntoView(document.getElementById(entityId), { block: 'nearest' })
+      scrollElementIntoView(document.getElementById(entityId), {
+        block: 'nearest',
+      })
     })
     const timer = setTimeout(() => setHighlighted(false), 1600)
     return () => {
@@ -585,7 +662,9 @@ const EntityRow = ({
     setForcedOpen(expandAll)
   }, [expandAll])
 
-  const highlightClass = highlighted ? 'ring-2 ring-inset ring-primary-400/70 dark:ring-primary-500/60' : ''
+  const highlightClass = highlighted
+    ? 'ring-2 ring-inset ring-primary-400/70 dark:ring-primary-500/60'
+    : ''
 
   const heading = (
     <div className="text-left w-full">
@@ -613,7 +692,17 @@ const EntityRow = ({
   )
 
   if (!hasDetail) {
-    return <div id={entityId} className={cn(`border-l-4 ${borderColor} px-4 py-3 ${bgColor}`, highlightClass)}>{heading}</div>
+    return (
+      <div
+        id={entityId}
+        className={cn(
+          `border-l-4 ${borderColor} px-4 py-3 ${bgColor}`,
+          highlightClass
+        )}
+      >
+        {heading}
+      </div>
+    )
   }
 
   return (
@@ -645,13 +734,20 @@ const FieldRow = ({ field }: { field: DiffFieldEntry }) => {
     : getOpBorderColor(field.op)
 
   return (
-    <div className={`flex items-center justify-between border-l-4 px-4 py-3 ${borderColor} ${bgColor}`}>
+    <div
+      className={`flex items-center justify-between border-l-4 px-4 py-3 ${borderColor} ${bgColor}`}
+    >
       <div className="flex items-center gap-2">
         <Text weight="strong">{field.key}</Text>
-        <Text variant="subtext" theme="neutral" family="mono">{field.diff}</Text>
+        <Text variant="subtext" theme="neutral" family="mono">
+          {field.diff}
+        </Text>
       </div>
       {!isSnapshot && (
-        <Badge theme={OP_BADGE_THEME[field.op as AppConfigOp] || 'neutral'} size="sm">
+        <Badge
+          theme={OP_BADGE_THEME[field.op as AppConfigOp] || 'neutral'}
+          size="sm"
+        >
           {humanize(field.op)}
         </Badge>
       )}
@@ -699,7 +795,11 @@ const SectionContent = ({
 
   return (
     <div className={`border-l-4 ${borderColor}`}>
-      <DiffCodeBlock className="!rounded-none" language="toml" isDiff={!isSnapshot}>
+      <DiffCodeBlock
+        className="!rounded-none"
+        language="toml"
+        isDiff={!isSnapshot}
+      >
         {body}
       </DiffCodeBlock>
     </div>
@@ -747,7 +847,8 @@ const SectionGroup = ({
       ref={ref}
       className={cn(
         'border-t first:border-t-0 transition-shadow',
-        highlighted && 'ring-2 ring-inset ring-primary-400/70 dark:ring-primary-500/60'
+        highlighted &&
+          'ring-2 ring-inset ring-primary-400/70 dark:ring-primary-500/60'
       )}
     >
       <button
@@ -756,7 +857,12 @@ const SectionGroup = ({
         aria-expanded={open}
         className={`w-full flex items-center justify-between gap-3 px-4 sm:px-6 py-3 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${open ? 'border-b' : ''}`}
       >
-        <Text flex className="gap-2 items-center" variant="base" weight="strong">
+        <Text
+          flex
+          className="gap-2 items-center"
+          variant="base"
+          weight="strong"
+        >
           {sectionIcon && <Icon variant={sectionIcon} size="16" />}
           {section.name}
         </Text>
@@ -776,7 +882,13 @@ const SectionGroup = ({
             <SectionContent content={section.content} />
           ) : section.grouped ? (
             section.entities.map((entity, idx) => (
-              <EntityRow key={`${entity.name}-${idx}`} entity={entity} sectionKey={section.sectionKey} idx={idx} focus={focus} />
+              <EntityRow
+                key={`${entity.name}-${idx}`}
+                entity={entity}
+                sectionKey={section.sectionKey}
+                idx={idx}
+                focus={focus}
+              />
             ))
           ) : (
             <>
@@ -784,7 +896,12 @@ const SectionGroup = ({
                 <FieldRow key={`field-${field.key}-${idx}`} field={field} />
               ))}
               {(section.files ?? []).map((file, idx) => (
-                <FileDiffRow key={`file-${file.name}-${idx}`} file={file} entityKey={section.sectionKey} idx={idx} />
+                <FileDiffRow
+                  key={`file-${file.name}-${idx}`}
+                  file={file}
+                  entityKey={section.sectionKey}
+                  idx={idx}
+                />
               ))}
             </>
           )}
@@ -825,7 +942,10 @@ const AppConfigDiffSkeleton = ({
           <div className="w-full flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
             <div className="flex items-center gap-2">
               <Skeleton width="16px" height="16px" />
-              <Skeleton width={SKELETON_ROW_WIDTHS[idx % SKELETON_ROW_WIDTHS.length]} height="0.875rem" />
+              <Skeleton
+                width={SKELETON_ROW_WIDTHS[idx % SKELETON_ROW_WIDTHS.length]}
+                height="0.875rem"
+              />
             </div>
             <div className="flex items-center gap-2.5">
               <Skeleton width="1.5rem" height="0.75rem" />
@@ -876,7 +996,11 @@ export const AppConfigDiff = ({
       <DiffShell embedded={embedded}>
         <div className="px-4 py-3 text-center">
           <EmptyState
-            emptyTitle={presentation === 'snapshot' ? 'No configuration' : 'No config changes'}
+            emptyTitle={
+              presentation === 'snapshot'
+                ? 'No configuration'
+                : 'No config changes'
+            }
             emptyMessage={
               presentation === 'snapshot'
                 ? 'This config has nothing to display.'

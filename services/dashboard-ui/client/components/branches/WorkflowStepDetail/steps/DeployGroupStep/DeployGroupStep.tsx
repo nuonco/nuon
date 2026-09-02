@@ -23,11 +23,15 @@ export const DeployGroupStep = ({
 }: IDeployGroupStep) => {
   const title =
     variant === 'preview' ? (
-      <span className="font-semibold text-cool-grey-900 dark:text-white">Preview install</span>
+      <span className="font-semibold text-cool-grey-900 dark:text-white">
+        Preview install
+      </span>
     ) : (
       <>
         install group:{' '}
-        <span className="font-semibold text-cool-grey-900 dark:text-white">{groupName}</span>
+        <span className="font-semibold text-cool-grey-900 dark:text-white">
+          {groupName}
+        </span>
       </>
     )
 
@@ -36,7 +40,11 @@ export const DeployGroupStep = ({
       <StepBlock>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Icon variant="PackageIcon" size={16} className="text-cool-grey-500 dark:text-cool-grey-400 shrink-0" />
+            <Icon
+              variant="PackageIcon"
+              size={16}
+              className="text-cool-grey-500 dark:text-cool-grey-400 shrink-0"
+            />
             <Text variant="body" theme="neutral">
               {title}
             </Text>
@@ -52,7 +60,9 @@ export const DeployGroupStep = ({
         </div>
 
         {rows.length === 0 && emptyMessage ? (
-          <StepStatePlaceholder variant="loading">{emptyMessage}</StepStatePlaceholder>
+          <StepStatePlaceholder variant="loading">
+            {emptyMessage}
+          </StepStatePlaceholder>
         ) : null}
       </StepBlock>
 

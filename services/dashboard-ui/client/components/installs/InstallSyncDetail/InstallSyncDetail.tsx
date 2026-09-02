@@ -142,7 +142,9 @@ export const InstallSyncDetail = ({
                 format="relative"
               />
             </LabeledValue>
-            <LabeledValue label="Triggered by">{sync.triggered_by}</LabeledValue>
+            <LabeledValue label="Triggered by">
+              {sync.triggered_by}
+            </LabeledValue>
             {sync.workflow_id && (
               <LabeledValue label="Workflow">
                 <AdminDashboardLink

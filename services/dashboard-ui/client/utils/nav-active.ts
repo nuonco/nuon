@@ -5,7 +5,7 @@ export function isNavLinkActive(
   basePath: string,
   path: string,
   pathname: string,
-  matchPaths?: string[],
+  matchPaths?: string[]
 ): boolean {
   const normalizedPathName = normalizePath(pathname)
   const fullPath = normalizePath(`${basePath}${path}`)

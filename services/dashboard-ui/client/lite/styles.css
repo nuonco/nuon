@@ -4,8 +4,9 @@
 
 @font-face {
   font-family: 'Hack';
-  src: url('/fonts/hack-regular.woff2') format('woff2'),
-       url('/fonts/hack-regular.woff') format('woff');
+  src:
+    url('/fonts/hack-regular.woff2') format('woff2'),
+    url('/fonts/hack-regular.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -45,21 +46,31 @@
   --text-secondary: light-dark(var(--neutral-800), var(--neutral-100));
   --text-tertiary: light-dark(var(--neutral-600), var(--neutral-400));
   --text-accent: light-dark(var(--brand-primary-deep), var(--brand-primary));
-  --text-brand-tint: light-dark(var(--brand-indigo), var(--brand-primary-light));
+  --text-brand-tint: light-dark(
+    var(--brand-indigo),
+    var(--brand-primary-light)
+  );
   --text-positive: var(--brand-positive);
 
   --divider: light-dark(rgba(29, 29, 29, 0.04), rgba(254, 254, 254, 0.08));
   --divider-accent: var(--brand-primary);
 
   --action-primary: var(--brand-primary);
-  --action-primary-hover: light-dark(var(--brand-primary-deep), var(--brand-primary-light));
+  --action-primary-hover: light-dark(
+    var(--brand-primary-deep),
+    var(--brand-primary-light)
+  );
 
   --focus-ring: light-dark(var(--brand-primary-deep), var(--brand-primary));
 
   --popover-bg: light-dark(var(--neutral-000), #201e25);
   --popover-text: var(--text-primary);
-  --popover-border: light-dark(rgba(29, 29, 29, 0.12), rgba(254, 254, 254, 0.14));
-  --popover-shadow: 0 8px 24px light-dark(rgba(29, 29, 29, 0.14), rgba(0, 0, 0, 0.55));
+  --popover-border: light-dark(
+    rgba(29, 29, 29, 0.12),
+    rgba(254, 254, 254, 0.14)
+  );
+  --popover-shadow: 0 8px 24px
+    light-dark(rgba(29, 29, 29, 0.14), rgba(0, 0, 0, 0.55));
 
   --badge-bg: light-dark(rgba(29, 29, 29, 0.05), rgba(254, 254, 254, 0.07));
   --badge-border: light-dark(rgba(29, 29, 29, 0.16), rgba(254, 254, 254, 0.18));
@@ -75,13 +86,28 @@
   --button-primary-text: var(--neutral-900);
 
   --button-secondary-bg: transparent;
-  --button-secondary-bg-hover: light-dark(rgba(29, 29, 29, 0.05), rgba(254, 254, 254, 0.07));
-  --button-secondary-bg-active: light-dark(rgba(29, 29, 29, 0.09), rgba(254, 254, 254, 0.12));
-  --button-secondary-border: light-dark(rgba(29, 29, 29, 0.18), rgba(254, 254, 254, 0.22));
+  --button-secondary-bg-hover: light-dark(
+    rgba(29, 29, 29, 0.05),
+    rgba(254, 254, 254, 0.07)
+  );
+  --button-secondary-bg-active: light-dark(
+    rgba(29, 29, 29, 0.09),
+    rgba(254, 254, 254, 0.12)
+  );
+  --button-secondary-border: light-dark(
+    rgba(29, 29, 29, 0.18),
+    rgba(254, 254, 254, 0.22)
+  );
   --button-secondary-text: var(--text-primary);
 
-  --button-ghost-bg-hover: light-dark(rgba(29, 29, 29, 0.05), rgba(254, 254, 254, 0.07));
-  --button-ghost-bg-active: light-dark(rgba(29, 29, 29, 0.09), rgba(254, 254, 254, 0.12));
+  --button-ghost-bg-hover: light-dark(
+    rgba(29, 29, 29, 0.05),
+    rgba(254, 254, 254, 0.07)
+  );
+  --button-ghost-bg-active: light-dark(
+    rgba(29, 29, 29, 0.09),
+    rgba(254, 254, 254, 0.12)
+  );
   --button-ghost-text: var(--text-secondary);
 
   --button-danger-bg: light-dark(#b42318, #d92d20);
@@ -92,8 +118,14 @@
   --shadow-default: light-dark(rgba(29, 29, 29, 0.04), rgba(29, 29, 29, 0.16));
   --shadow-strong: light-dark(rgba(29, 29, 29, 0.08), rgba(29, 29, 29, 0.6));
 
-  --skeleton-base: light-dark(rgba(29, 29, 29, 0.07), rgba(254, 254, 254, 0.08));
-  --skeleton-highlight: light-dark(rgba(29, 29, 29, 0.13), rgba(254, 254, 254, 0.16));
+  --skeleton-base: light-dark(
+    rgba(29, 29, 29, 0.07),
+    rgba(254, 254, 254, 0.08)
+  );
+  --skeleton-highlight: light-dark(
+    rgba(29, 29, 29, 0.13),
+    rgba(254, 254, 254, 0.16)
+  );
   --skeleton-animation: shimmer 1.6s ease-in-out infinite;
   --skeleton-image: linear-gradient(
     90deg,
@@ -103,7 +135,12 @@
   );
   --skeleton-text-band: 0.85em;
 
-  --gradient-brand: linear-gradient(88.14deg, #f72585 7.25%, #3a00ff 62.82%, #4cc9f0 100%);
+  --gradient-brand: linear-gradient(
+    88.14deg,
+    #f72585 7.25%,
+    #3a00ff 62.82%,
+    #4cc9f0 100%
+  );
 }
 
 :root[data-theme='light'] {
@@ -225,10 +262,18 @@
     visibility: hidden;
   }
 
-  &[data-state='closed'][data-side='top'] { translate: 0 -0.5rem; }
-  &[data-state='closed'][data-side='bottom'] { translate: 0 0.5rem; }
-  &[data-state='closed'][data-side='left'] { translate: -0.5rem 0; }
-  &[data-state='closed'][data-side='right'] { translate: 0.5rem 0; }
+  &[data-state='closed'][data-side='top'] {
+    translate: 0 -0.5rem;
+  }
+  &[data-state='closed'][data-side='bottom'] {
+    translate: 0 0.5rem;
+  }
+  &[data-state='closed'][data-side='left'] {
+    translate: -0.5rem 0;
+  }
+  &[data-state='closed'][data-side='right'] {
+    translate: 0.5rem 0;
+  }
 }
 
 @utility popover-arrow {
@@ -240,8 +285,12 @@
     border-color: transparent;
   }
 
-  &::before { border-width: 6px; }
-  &::after { border-width: 5px; }
+  &::before {
+    border-width: 6px;
+  }
+  &::after {
+    border-width: 5px;
+  }
 
   &[data-side='top']::before {
     top: 100%;
@@ -301,7 +350,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .popover { transition: none; }
+  .popover {
+    transition: none;
+  }
 }
 
 @utility badge-custom {
@@ -377,7 +428,8 @@
 
 @theme inline {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Hack', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-mono:
+    'Hack', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   --color-surface-default: var(--surface-default);
   --color-surface-primary: var(--surface-primary);

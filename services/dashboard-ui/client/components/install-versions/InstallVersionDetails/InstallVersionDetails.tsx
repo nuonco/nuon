@@ -111,7 +111,10 @@ export const InstallVersionDetails = ({
       ) : null}
 
       <div className="flex flex-wrap items-center gap-4">
-        {orgId && appId && branchRun?.workflow_id && branchRun?.app_branch?.id ? (
+        {orgId &&
+        appId &&
+        branchRun?.workflow_id &&
+        branchRun?.app_branch?.id ? (
           <Link
             href={`/${orgId}/apps/${appId}/branches/${branchRun.app_branch.id}/runs/${branchRun.workflow_id}`}
           >
@@ -119,7 +122,9 @@ export const InstallVersionDetails = ({
           </Link>
         ) : null}
         {orgId && installId && version?.workflow_id ? (
-          <Link href={`/${orgId}/installs/${installId}/workflows/${version.workflow_id}`}>
+          <Link
+            href={`/${orgId}/installs/${installId}/workflows/${version.workflow_id}`}
+          >
             View workflow
           </Link>
         ) : null}

@@ -91,31 +91,31 @@ export const ModalBase = ({
           {...props}
         >
           {showHeader && (
-          <div className="py-6 px-4 border-b flex items-center justify-between">
-            {heading ? (
-              typeof heading === 'string' ? (
-                <HeadingGroup>
-                  <Text variant="h3" weight="strong">
-                    {heading}
-                  </Text>
-                </HeadingGroup>
-              ) : (
-                <HeadingGroup>{heading}</HeadingGroup>
-              )
-            ) : null}
-            <div className="flex items-center gap-4">
-              {actions}
-              <Button
-                className="!p-2"
-                onClick={handleClose}
-                title="Close modal"
-                aria-label="Close modal"
-                variant="ghost"
-              >
-                <Icon variant="XIcon" />
-              </Button>
+            <div className="py-6 px-4 border-b flex items-center justify-between">
+              {heading ? (
+                typeof heading === 'string' ? (
+                  <HeadingGroup>
+                    <Text variant="h3" weight="strong">
+                      {heading}
+                    </Text>
+                  </HeadingGroup>
+                ) : (
+                  <HeadingGroup>{heading}</HeadingGroup>
+                )
+              ) : null}
+              <div className="flex items-center gap-4">
+                {actions}
+                <Button
+                  className="!p-2"
+                  onClick={handleClose}
+                  title="Close modal"
+                  aria-label="Close modal"
+                  variant="ghost"
+                >
+                  <Icon variant="XIcon" />
+                </Button>
+              </div>
             </div>
-          </div>
           )}
           <div
             className={cn(
@@ -126,35 +126,33 @@ export const ModalBase = ({
             {children}
           </div>
           {showFooter && (
-          <div className="py-6 px-4 border-t flex items-center gap-4 justify-between">
-            <div className="flex items-center gap-4">
-              {footerActions}
-            </div>
-            <div className="flex items-center gap-4">
-              {secondaryActionTrigger ? (
-                <Button {...secondaryActionTrigger} />
-              ) : (
-                <Button type="button" onClick={handleClose}>
-                  {primaryActionTrigger ? 'Cancel' : 'Close'}
-                </Button>
-              )}
-              {primaryActionTrigger ? (
-                primaryActionTooltip ? (
-                  <Tooltip tipContent={primaryActionTooltip} position="top">
-                    <Button
-                      {...primaryActionTrigger}
-                      className={cn(
-                        primaryActionTrigger.className,
-                        'disabled:pointer-events-none'
-                      )}
-                    />
-                  </Tooltip>
+            <div className="py-6 px-4 border-t flex items-center gap-4 justify-between">
+              <div className="flex items-center gap-4">{footerActions}</div>
+              <div className="flex items-center gap-4">
+                {secondaryActionTrigger ? (
+                  <Button {...secondaryActionTrigger} />
                 ) : (
-                  <Button {...primaryActionTrigger} />
-                )
-              ) : null}
+                  <Button type="button" onClick={handleClose}>
+                    {primaryActionTrigger ? 'Cancel' : 'Close'}
+                  </Button>
+                )}
+                {primaryActionTrigger ? (
+                  primaryActionTooltip ? (
+                    <Tooltip tipContent={primaryActionTooltip} position="top">
+                      <Button
+                        {...primaryActionTrigger}
+                        className={cn(
+                          primaryActionTrigger.className,
+                          'disabled:pointer-events-none'
+                        )}
+                      />
+                    </Tooltip>
+                  ) : (
+                    <Button {...primaryActionTrigger} />
+                  )
+                ) : null}
+              </div>
             </div>
-          </div>
           )}
         </div>
       </TransitionDiv>

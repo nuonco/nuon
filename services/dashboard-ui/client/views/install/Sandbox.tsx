@@ -56,10 +56,7 @@ export const Sandbox = () => {
             id={install?.sandbox?.id}
             actions={
               <>
-                <HistoryPanelButton
-                  title="Sandbox history"
-                  history={history}
-                />
+                <HistoryPanelButton title="Sandbox history" history={history} />
                 <ManagementDropdown />
               </>
             }

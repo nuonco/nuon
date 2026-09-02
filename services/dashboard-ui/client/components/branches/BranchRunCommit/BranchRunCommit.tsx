@@ -65,7 +65,11 @@ export const BranchRunCommit = ({
             />
           ) : null}
           {author ? (
-            <Text variant="subtext" theme="neutral" className="truncate min-w-0">
+            <Text
+              variant="subtext"
+              theme="neutral"
+              className="truncate min-w-0"
+            >
               {author}
             </Text>
           ) : null}

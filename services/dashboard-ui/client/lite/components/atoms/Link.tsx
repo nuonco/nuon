@@ -49,7 +49,12 @@ export const Link = ({
 }: ILink) => {
   if (loading) {
     return (
-      <Text variant={variant} loading loadingWidth={loadingWidth} className={className} />
+      <Text
+        variant={variant}
+        loading
+        loadingWidth={loadingWidth}
+        className={className}
+      />
     )
   }
 
@@ -57,7 +62,7 @@ export const Link = ({
 
   if (disabled) {
     return (
-      <span aria-disabled className={cn(sizing, DISABLED_CLASSES, className)} >
+      <span aria-disabled className={cn(sizing, DISABLED_CLASSES, className)}>
         {children}
       </span>
     )
@@ -71,7 +76,12 @@ export const Link = ({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className={cn('inline-flex items-center gap-1', sizing, LINK_CLASSES, className)}
+        className={cn(
+          'inline-flex items-center gap-1',
+          sizing,
+          LINK_CLASSES,
+          className
+        )}
         {...props}
       >
         {children}

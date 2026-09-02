@@ -7,9 +7,7 @@ const githubConnections = [
   { id: 'ghc-02', label: 'acme-labs', meta: 92 },
 ]
 
-const slackConnections = [
-  { id: 'slk-01', label: 'acme.slack.com', meta: 134 },
-]
+const slackConnections = [{ id: 'slk-01', label: 'acme.slack.com', meta: 134 }]
 
 const ConnectionRows = ({
   rows,

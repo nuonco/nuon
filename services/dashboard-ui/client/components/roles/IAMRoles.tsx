@@ -305,9 +305,7 @@ export const IAMRoles = ({ appConfig }: { appConfig: TAppConfig }) => {
               </LabeledValue>
               <LabeledValue label="Name">{role?.name}</LabeledValue>
               <LabeledValue label="Type">
-                <Badge size="sm">
-                  {humanize(role?.type)}
-                </Badge>
+                <Badge size="sm">{humanize(role?.type)}</Badge>
               </LabeledValue>
             </div>
           </Card>
@@ -362,9 +360,7 @@ export const InstallIAMRoles = ({
                 </LabeledValue>
                 <LabeledValue label="Name">{role.name}</LabeledValue>
                 <LabeledValue label="Type">
-                  <Badge size="sm">
-                    {humanize(role.type)}
-                  </Badge>
+                  <Badge size="sm">{humanize(role.type)}</Badge>
                 </LabeledValue>
                 <LabeledValue label="Status">
                   <Status
