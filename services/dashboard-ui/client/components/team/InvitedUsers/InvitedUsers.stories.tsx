@@ -72,5 +72,10 @@ export const Error = () => (
 )
 
 export const Loading = () => (
-  <InvitedUsers invites={[]} roleTitles={roleTitles} isLoading isError={false} />
+  <InvitedUsers
+    invites={[]}
+    roleTitles={roleTitles}
+    isLoading
+    isError={false}
+  />
 )

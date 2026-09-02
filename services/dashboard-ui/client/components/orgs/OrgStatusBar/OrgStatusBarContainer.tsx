@@ -43,7 +43,8 @@ export const OrgStatusBarContainer = () => {
   const { data: branch } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-branch', org.id, appId, branchId],
-    queryFn: () => getAppBranch({ orgId: org.id, appId: appId!, branchId: branchId! }),
+    queryFn: () =>
+      getAppBranch({ orgId: org.id, appId: appId!, branchId: branchId! }),
     enabled: !!appId && !!branchId,
   })
 
@@ -62,22 +63,25 @@ export const OrgStatusBarContainer = () => {
     refetchInterval: 30_000,
   })
 
-  const workflowItems: TContextTooltipItem[] = activeWorkflows.map((workflow) => ({
-    id: workflow.id ?? '',
-    title: workflow.name || humanize(workflow.type),
-    subtitle: workflow.metadata?.owner_name || workflow.status?.status || undefined,
-    href: workflow.owner_id
-      ? `/${org.id}/installs/${workflow.owner_id}/workflows/${workflow.id}`
-      : undefined,
-    leftContent: (
-      <Status
-        status={workflow.status?.status ?? ''}
-        isWithoutText
-        variant="timeline"
-        iconSize={16}
-      />
-    ),
-  }))
+  const workflowItems: TContextTooltipItem[] = activeWorkflows.map(
+    (workflow) => ({
+      id: workflow.id ?? '',
+      title: workflow.name || humanize(workflow.type),
+      subtitle:
+        workflow.metadata?.owner_name || workflow.status?.status || undefined,
+      href: workflow.owner_id
+        ? `/${org.id}/installs/${workflow.owner_id}/workflows/${workflow.id}`
+        : undefined,
+      leftContent: (
+        <Status
+          status={workflow.status?.status ?? ''}
+          isWithoutText
+          variant="timeline"
+          iconSize={16}
+        />
+      ),
+    })
+  )
 
   const ownerNames = new Map(
     activeWorkflows
@@ -91,7 +95,9 @@ export const OrgStatusBarContainer = () => {
       step?.owner_id && step?.install_workflow_id
         ? `/${org.id}/installs/${step.owner_id}/workflows/${step.install_workflow_id}`
         : undefined
-    const installName = step?.owner_id ? ownerNames.get(step.owner_id) : undefined
+    const installName = step?.owner_id
+      ? ownerNames.get(step.owner_id)
+      : undefined
     return {
       id: approval.id ?? '',
       title: step?.name ? getWorkflowStepTitle(step) : 'Approval required',

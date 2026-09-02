@@ -22,7 +22,9 @@ export const RunbookStepsTab = () => {
 
   return (
     <>
-      <PageTitle segments={[`${runbook?.name ?? 'Runbook'} steps`, app?.name]} />
+      <PageTitle
+        segments={[`${runbook?.name ?? 'Runbook'} steps`, app?.name]}
+      />
       {!steps.length ? (
         <Text theme="neutral">No steps configured.</Text>
       ) : (

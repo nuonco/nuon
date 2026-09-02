@@ -52,7 +52,7 @@ export const ComponentDependencies = ({
         ))}
         {overflow.length > 0 && (
           <ComponentsTooltip
-            title={tooltipTitle ?? "More dependencies"}
+            title={tooltipTitle ?? 'More dependencies'}
             componentSummaries={overflowItems}
           >
             <Badge variant="code">+{overflow.length}</Badge>
@@ -73,7 +73,7 @@ export const ComponentDependencies = ({
     <Icon variant="MinusIcon" />
   ) : (
     <ComponentsTooltip
-      title={tooltipTitle ?? "Total dependencies"}
+      title={tooltipTitle ?? 'Total dependencies'}
       componentSummaries={depSummaries}
     >
       <Badge variant="code">{depSummaries?.length}</Badge>

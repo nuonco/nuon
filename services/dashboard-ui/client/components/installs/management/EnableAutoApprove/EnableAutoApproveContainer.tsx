@@ -13,7 +13,9 @@ import { EnableAutoApproveModal } from './EnableAutoApprove'
 
 const MANAGED_BY_CONFIG_TIP = 'Managed by config. Disable config sync to edit.'
 
-export const EnableAutoApproveModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'>) => {
+export const EnableAutoApproveModalContainer = ({
+  ...props
+}: Omit<IModal, 'onSubmit'>) => {
   const queryClient = useQueryClient()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
@@ -21,9 +23,16 @@ export const EnableAutoApproveModalContainer = ({ ...props }: Omit<IModal, 'onSu
   const { addToast } = useToast()
 
   const hasInstallConfig = Boolean(install?.install_config)
-  const isApproveAll = hasInstallConfig && install?.install_config?.approval_option === 'approve-all'
+  const isApproveAll =
+    hasInstallConfig &&
+    install?.install_config?.approval_option === 'approve-all'
 
-  const { mutate, isPending: isLoading, data, error } = useMutation({
+  const {
+    mutate,
+    isPending: isLoading,
+    data,
+    error,
+  } = useMutation({
     mutationFn: async () => {
       if (hasInstallConfig) {
         return updateInstallConfig({
@@ -41,18 +50,32 @@ export const EnableAutoApproveModalContainer = ({ ...props }: Omit<IModal, 'onSu
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['install', org.id, install.id] })
+      queryClient.invalidateQueries({
+        queryKey: ['install', org.id, install.id],
+      })
       addToast(
-        <Toast heading={`Auto approve ${isApproveAll ? 'disabled' : 'enabled'}`} theme="success">
-          <Text>Auto approve {isApproveAll ? 'disabled' : 'enabled'} for {install.name}.</Text>
+        <Toast
+          heading={`Auto approve ${isApproveAll ? 'disabled' : 'enabled'}`}
+          theme="success"
+        >
+          <Text>
+            Auto approve {isApproveAll ? 'disabled' : 'enabled'} for{' '}
+            {install.name}.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)
     },
     onError: (error) => {
       addToast(
-        <Toast heading={`Auto approve ${isApproveAll ? 'disable' : 'enable'} failed`} theme="error">
-          <Text>Unable to {isApproveAll ? 'disable' : 'enable'} auto approve for {install.name}.</Text>
+        <Toast
+          heading={`Auto approve ${isApproveAll ? 'disable' : 'enable'} failed`}
+          theme="error"
+        >
+          <Text>
+            Unable to {isApproveAll ? 'disable' : 'enable'} auto approve for{' '}
+            {install.name}.
+          </Text>
         </Toast>
       )
     },
@@ -70,17 +93,20 @@ export const EnableAutoApproveModalContainer = ({ ...props }: Omit<IModal, 'onSu
   )
 }
 
-export const EnableAutoApproveButton = ({
-  ...props
-}: IButtonAsButton) => {
+export const EnableAutoApproveButton = ({ ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const { install } = useInstall()
 
   const hasInstallConfig = Boolean(install?.install_config)
-  const isApproveAll = hasInstallConfig && install?.install_config?.approval_option === 'approve-all'
-  const isManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
+  const isApproveAll =
+    hasInstallConfig &&
+    install?.install_config?.approval_option === 'approve-all'
+  const isManagedByConfig =
+    install?.metadata?.managed_by === 'nuon/cli/install-config'
 
-  const buttonText = isApproveAll ? 'Disable auto approval' : 'Enable auto approval'
+  const buttonText = isApproveAll
+    ? 'Disable auto approval'
+    : 'Enable auto approval'
   const buttonIcon = isApproveAll ? 'ToggleRightIcon' : 'ToggleLeftIcon'
 
   const handleClick = () => {

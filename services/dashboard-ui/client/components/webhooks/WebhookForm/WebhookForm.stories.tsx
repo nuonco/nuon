@@ -20,13 +20,23 @@ const baseWebhook: TWebhook = {
 
 export const Create = () => (
   <ModalStory>
-    <WebhookFormModal mode="create" isPending={false} error={null} onSubmit={noop} />
+    <WebhookFormModal
+      mode="create"
+      isPending={false}
+      error={null}
+      onSubmit={noop}
+    />
   </ModalStory>
 )
 
 export const CreatePending = () => (
   <ModalStory>
-    <WebhookFormModal mode="create" isPending={true} error={null} onSubmit={noop} />
+    <WebhookFormModal
+      mode="create"
+      isPending={true}
+      error={null}
+      onSubmit={noop}
+    />
   </ModalStory>
 )
 

@@ -12,19 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-func (s *service) connectedInstallContext(ctx *gin.Context) {
-	orgID := ctx.Request.Header.Get("X-Nuon-Org-ID")
-	if orgID == "" {
-		orgID = ctx.Query("org_id")
-	}
-	if orgID == "" {
-		ctx.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-	cctx.SetOrgGinContext(ctx, &app.Org{ID: orgID})
-	ctx.Next()
-}
-
 type portalContext struct {
 	Install        app.Install
 	OperatingModel app.InstallOperatingModel
@@ -135,29 +122,6 @@ func (s *service) PortalGetReleaseFileContent(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, content)
-}
-
-func (s *service) PortalGetReleasePackage(ctx *gin.Context) {
-	portal, ok := s.connectedPortal(ctx)
-	if !ok {
-		return
-	}
-	var pkg app.ReleasePackage
-	if err := s.db.WithContext(ctx).
-		Preload("Members", func(db *gorm.DB) *gorm.DB { return db.Where(app.ReleasePackageMember{OrgID: portal.Install.OrgID}) }).
-		Joins("JOIN app_releases ON app_releases.id = release_packages.release_id").
-		Where(app.ReleasePackage{ID: ctx.Param("package_id"), OrgID: portal.Install.OrgID}).
-		Where("app_releases.app_id = ?", portal.Install.AppID).
-		Where("app_releases.status = ?", app.AppReleaseStatusReady).
-		First(&pkg).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.Status(http.StatusNotFound)
-			return
-		}
-		ctx.Error(err)
-		return
-	}
-	ctx.JSON(http.StatusOK, pkg)
 }
 
 func (s *service) activeInstallRelease(ctx context.Context, install app.Install) (app.InstallReleaseDeployment, error) {

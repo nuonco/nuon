@@ -38,7 +38,11 @@ const CommitSection = ({ branchRun }: { branchRun?: TAppBranchRun }) => {
 
   return (
     <div className="flex items-start gap-2.5">
-      <Icon variant="GitCommitIcon" size={14} className="mt-0.5 shrink-0 text-cool-grey-400" />
+      <Icon
+        variant="GitCommitIcon"
+        size={14}
+        className="mt-0.5 shrink-0 text-cool-grey-400"
+      />
       <div className="flex flex-col gap-0.5 min-w-0">
         <Text variant="body" weight="strong" className="truncate">
           {commit.message?.split('\n')[0]?.trim()}
@@ -60,7 +64,13 @@ const CommitSection = ({ branchRun }: { branchRun?: TAppBranchRun }) => {
   )
 }
 
-const BuildsList = ({ builds, orgId }: { builds: TComponentBuild[]; orgId: string }) => {
+const BuildsList = ({
+  builds,
+  orgId,
+}: {
+  builds: TComponentBuild[]
+  orgId: string
+}) => {
   if (builds.length === 0) return null
 
   return (
@@ -75,7 +85,11 @@ const BuildsList = ({ builds, orgId }: { builds: TComponentBuild[]; orgId: strin
             className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-md bg-cool-grey-50 dark:bg-dark-grey-700"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <Icon variant="PackageIcon" size={12} className="shrink-0 text-cool-grey-400" />
+              <Icon
+                variant="PackageIcon"
+                size={12}
+                className="shrink-0 text-cool-grey-400"
+              />
               <Text variant="subtext" className="truncate">
                 {build.component_name || build.component_id}
               </Text>
@@ -109,13 +123,22 @@ const InstallUpdatesList = ({
             className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-md bg-cool-grey-50 dark:bg-dark-grey-700"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <Icon variant="CloudIcon" size={12} className="shrink-0 text-cool-grey-400" />
+              <Icon
+                variant="CloudIcon"
+                size={12}
+                className="shrink-0 text-cool-grey-400"
+              />
               {update.install_id ? (
-                <Link href={`/${orgId}/installs/${update.install_id}`} className="truncate">
+                <Link
+                  href={`/${orgId}/installs/${update.install_id}`}
+                  className="truncate"
+                >
                   {update.install_id}
                 </Link>
               ) : (
-                <Text variant="subtext" theme="neutral">Unknown</Text>
+                <Text variant="subtext" theme="neutral">
+                  Unknown
+                </Text>
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -136,7 +159,9 @@ const InstallUpdatesList = ({
   )
 }
 
-const resolveInstallAppConfigVersionStatus = (version: TInstallAppConfigVersion): string => {
+const resolveInstallAppConfigVersionStatus = (
+  version: TInstallAppConfigVersion
+): string => {
   const iacvStatus = version.status?.status
   const workflowStatus = version.workflow?.status?.status
   if (
@@ -167,7 +192,11 @@ const ConfigVersionSummary = ({
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-md bg-cool-grey-50 dark:bg-dark-grey-700">
       <div className="flex items-center gap-2 min-w-0">
-        <Icon variant="ArrowsClockwiseIcon" size={12} className="shrink-0 text-cool-grey-400" />
+        <Icon
+          variant="ArrowsClockwiseIcon"
+          size={12}
+          className="shrink-0 text-cool-grey-400"
+        />
         <Text variant="subtext" className="truncate">
           {version.metadata?.triggered_by || 'config update'}
         </Text>
@@ -215,7 +244,11 @@ const BranchCard = ({
     <Card className="!p-4 !gap-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <Icon variant="GitBranchIcon" size={16} className="shrink-0 text-cool-grey-400" />
+          <Icon
+            variant="GitBranchIcon"
+            size={16}
+            className="shrink-0 text-cool-grey-400"
+          />
           <Link
             href={`/${orgId}/apps/${appId}/branches/${branchId}`}
             className="truncate font-strong"
@@ -244,7 +277,11 @@ const BranchCard = ({
             </div>
             <div className="flex items-center gap-2">
               {latestRun.finished_at && (
-                <Time time={latestRun.finished_at} format="relative" variant="subtext" />
+                <Time
+                  time={latestRun.finished_at}
+                  format="relative"
+                  variant="subtext"
+                />
               )}
               <Link
                 href={`/${orgId}/apps/${appId}/branches/${branchId}/runs/${latestRun.id}`}
@@ -295,7 +332,12 @@ interface IInstallBranches {
   installId: string
 }
 
-export const InstallBranches = ({ branches, orgId, appId, installId }: IInstallBranches) => {
+export const InstallBranches = ({
+  branches,
+  orgId,
+  appId,
+  installId,
+}: IInstallBranches) => {
   if (branches.length === 0) {
     return (
       <EmptyState

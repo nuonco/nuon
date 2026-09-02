@@ -19,7 +19,11 @@ export const DeployOutputsTab = () => {
   const { deploy } = useDeploy()
   const { install } = useInstall()
 
-  const { data: outputs, isLoading, error } = useQuery({
+  const {
+    data: outputs,
+    isLoading,
+    error,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-component-outputs', org?.id, installId, componentId],
     queryFn: () =>

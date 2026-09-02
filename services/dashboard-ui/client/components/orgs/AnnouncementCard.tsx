@@ -43,8 +43,12 @@ export const AnnouncementCard = ({
   variant?: 'default' | 'compact'
   disableDismissMemory?: boolean
 }) => {
-  const [phase, setPhase] = useState<'visible' | 'sliding' | 'collapsing' | 'removed'>(
-    !disableDismissMemory && getDismissedIds().includes(announcement.id) ? 'removed' : 'visible'
+  const [phase, setPhase] = useState<
+    'visible' | 'sliding' | 'collapsing' | 'removed'
+  >(
+    !disableDismissMemory && getDismissedIds().includes(announcement.id)
+      ? 'removed'
+      : 'visible'
   )
   const wrapperRef = useRef<HTMLDivElement>(null)
 
@@ -70,8 +74,13 @@ export const AnnouncementCard = ({
 
   if (variant === 'compact') {
     return (
-      <div ref={wrapperRef} className={`announcement-wrapper ${collapsingClass}`}>
-        <div className={`border rounded-lg overflow-hidden bg-white dark:bg-dark-grey-800 p-4 flex flex-col gap-2 relative ${slidingClass} ${hiddenClass}`}>
+      <div
+        ref={wrapperRef}
+        className={`announcement-wrapper ${collapsingClass}`}
+      >
+        <div
+          className={`border rounded-lg overflow-hidden bg-white dark:bg-dark-grey-800 p-4 flex flex-col gap-2 relative ${slidingClass} ${hiddenClass}`}
+        >
           {announcement.dismissible && (
             <Button
               variant="ghost"
@@ -86,7 +95,12 @@ export const AnnouncementCard = ({
             {announcement.date}
           </Text>
           <Text variant="base" weight="strong">
-            <Link href={announcement.ctaUrl} isExternal variant="inline" className="!text-inherit hover:!text-primary-600 dark:hover:!text-primary-400">
+            <Link
+              href={announcement.ctaUrl}
+              isExternal
+              variant="inline"
+              className="!text-inherit hover:!text-primary-600 dark:hover:!text-primary-400"
+            >
               {announcement.title}
             </Link>
           </Text>
@@ -97,7 +111,9 @@ export const AnnouncementCard = ({
 
   return (
     <div ref={wrapperRef} className={`announcement-wrapper ${collapsingClass}`}>
-      <div className={`border rounded-lg overflow-hidden bg-white dark:bg-dark-grey-800 ${slidingClass} ${hiddenClass}`}>
+      <div
+        className={`border rounded-lg overflow-hidden bg-white dark:bg-dark-grey-800 ${slidingClass} ${hiddenClass}`}
+      >
         {announcement.image && (
           <div className="relative w-full aspect-video bg-cool-grey-100 dark:bg-dark-grey-700 overflow-hidden">
             <img
@@ -130,11 +146,7 @@ export const AnnouncementCard = ({
               <Icon variant="ArrowRightIcon" size={14} />
             </Button>
             {announcement.dismissible && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDismiss}
-              >
+              <Button variant="ghost" size="sm" onClick={handleDismiss}>
                 Dismiss
               </Button>
             )}

@@ -10,7 +10,10 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallPolicyReports, getAppPoliciesConfigs } from '@/lib'
-import type { TPolicyReportOwnerType, TPolicyReportStatus } from '@/lib/ctl-api/installs/get-install-policy-reports'
+import type {
+  TPolicyReportOwnerType,
+  TPolicyReportStatus,
+} from '@/lib/ctl-api/installs/get-install-policy-reports'
 
 export const Policies = () => {
   const { org } = useOrg()
@@ -18,11 +21,19 @@ export const Policies = () => {
   const [searchParams] = useSearchParams()
 
   const status = searchParams.get('status') as TPolicyReportStatus | null
-  const ownerType = searchParams.get('owner_type') as TPolicyReportOwnerType | null
+  const ownerType = searchParams.get(
+    'owner_type'
+  ) as TPolicyReportOwnerType | null
 
   const { data: reportsResult, isLoading } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['install-policy-reports', org?.id, install?.id, status, ownerType],
+    queryKey: [
+      'install-policy-reports',
+      org?.id,
+      install?.id,
+      status,
+      ownerType,
+    ],
     queryFn: () =>
       getInstallPolicyReports({
         orgId: org.id,

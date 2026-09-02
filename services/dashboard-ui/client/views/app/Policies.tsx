@@ -1,6 +1,9 @@
 import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { PoliciesTable, policiesTableColumns } from '@/components/policies/PoliciesTable'
+import {
+  PoliciesTable,
+  policiesTableColumns,
+} from '@/components/policies/PoliciesTable'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'

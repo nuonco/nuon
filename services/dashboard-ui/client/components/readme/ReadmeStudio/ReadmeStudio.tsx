@@ -100,7 +100,9 @@ const newBlock = (type: TBlockType): TBlock => {
       return {
         key,
         type,
-        items: [{ key: crypto.randomUUID(), label: '', kind: 'status', path: '' }],
+        items: [
+          { key: crypto.randomUUID(), label: '', kind: 'status', path: '' },
+        ],
       }
     case 'table':
       return {
@@ -205,11 +207,19 @@ function SortableBlock({
   onRemove: () => void
   children: React.ReactNode
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: block.key })
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.key })
 
   const isEntityBlock =
-    block.type === 'runbook' || block.type === 'action' || block.type === 'component'
+    block.type === 'runbook' ||
+    block.type === 'action' ||
+    block.type === 'component'
   const isEmpty = !preview.trim() || (isEntityBlock && !block.id)
 
   return (
@@ -241,7 +251,11 @@ function SortableBlock({
             <Text variant="subtext" weight="strong">
               {blockMeta[block.type].label}
             </Text>
-            <Text variant="subtext" theme="neutral" className="hidden md:block truncate">
+            <Text
+              variant="subtext"
+              theme="neutral"
+              className="hidden md:block truncate"
+            >
               {blockMeta[block.type].hint}
             </Text>
             <div className="ml-auto flex items-center gap-1">
@@ -478,7 +492,9 @@ export function ReadmeStudio({
                   </span>
                 }
               >
-                <BlockMenuItems onAdd={(type) => insertAt(blocks.length, type)} />
+                <BlockMenuItems
+                  onAdd={(type) => insertAt(blocks.length, type)}
+                />
               </Dropdown>
             </div>
           </Card>
@@ -552,10 +568,14 @@ export function ReadmeStudio({
             )}
           </Card>
           <div className="flex items-start gap-1.5 px-1">
-            <Icon variant="InfoIcon" size="14" className="mt-0.5 shrink-0 text-cool-grey-400" />
+            <Icon
+              variant="InfoIcon"
+              size="14"
+              className="mt-0.5 shrink-0 text-cool-grey-400"
+            />
             <Text variant="subtext" theme="neutral">
-              Copy the template into your app config as the install README —
-              it renders with live install state on every install page.
+              Copy the template into your app config as the install README — it
+              renders with live install state on every install page.
             </Text>
           </div>
         </div>

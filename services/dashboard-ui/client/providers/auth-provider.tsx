@@ -30,7 +30,11 @@ function meToUser(me: TMe): IUser {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { data: me, isLoading, error } = useQuery({
+  const {
+    data: me,
+    isLoading,
+    error,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['auth', 'me'],
     queryFn: getMe,

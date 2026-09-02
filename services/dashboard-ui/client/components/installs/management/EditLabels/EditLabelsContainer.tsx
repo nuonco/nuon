@@ -28,7 +28,7 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
     Object.entries({
       ...(install?.labels || {}),
       ...(install?.label_templates || {}),
-    }).filter(([key]) => !(key in defaultLabels)),
+    }).filter(([key]) => !(key in defaultLabels))
   )
 
   const { mutate, isPending, error } = useMutation({
@@ -59,7 +59,7 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
       addToast(
         <Toast heading="Labels updated" theme="success">
           <Text>Labels updated for {install.name}.</Text>
-        </Toast>,
+        </Toast>
       )
       removeModal(props.modalId)
     },
@@ -81,7 +81,8 @@ export const EditLabelsButton = ({ ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const { install } = useInstall()
 
-  const isManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
+  const isManagedByConfig =
+    install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   const handleClick = () => {
     const modal = <EditLabelsModalContainer />

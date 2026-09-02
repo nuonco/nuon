@@ -321,13 +321,10 @@ export interface IConfigRun {
   labelWidth: number
 }
 
-export const configRuns: IConfigRun[] = Array.from(
-  { length: 8 },
-  (_, i) => ({
-    id: `run-${String(8 - i).padStart(2, '0')}`,
-    labelWidth: 150 + ((i * 31) % 70),
-  })
-)
+export const configRuns: IConfigRun[] = Array.from({ length: 8 }, (_, i) => ({
+  id: `run-${String(8 - i).padStart(2, '0')}`,
+  labelWidth: 150 + ((i * 31) % 70),
+}))
 
 export type TDiffKind = 'added' | 'removed' | 'changed'
 
@@ -363,22 +360,55 @@ export interface IBranchConfigItem {
 }
 
 const componentNames = [
-  'api', 'worker', 'web', 'scheduler', 'gateway', 'ingest', 'billing',
-  'search', 'notifier', 'reporting', 'auth', 'cache', 'queue', 'migrator',
-  'proxy', 'exporter', 'collector', 'indexer', 'streamer', 'archiver',
-  'audit', 'metrics', 'tracing', 'docs',
+  'api',
+  'worker',
+  'web',
+  'scheduler',
+  'gateway',
+  'ingest',
+  'billing',
+  'search',
+  'notifier',
+  'reporting',
+  'auth',
+  'cache',
+  'queue',
+  'migrator',
+  'proxy',
+  'exporter',
+  'collector',
+  'indexer',
+  'streamer',
+  'archiver',
+  'audit',
+  'metrics',
+  'tracing',
+  'docs',
 ]
 
 const actionNames = [
-  'Rotate credentials', 'Health check', 'Drain traffic', 'Resume traffic',
-  'Flush cache', 'Reindex search', 'Scale up', 'Scale down',
-  'Collect diagnostics', 'Verify connectivity', 'Refresh inputs',
+  'Rotate credentials',
+  'Health check',
+  'Drain traffic',
+  'Resume traffic',
+  'Flush cache',
+  'Reindex search',
+  'Scale up',
+  'Scale down',
+  'Collect diagnostics',
+  'Verify connectivity',
+  'Refresh inputs',
   'Export audit log',
 ]
 
 const runbookNames = [
-  'Restore backup', 'Snapshot database', 'Migrate database',
-  'Rollback release', 'Recycle runner', 'Reconcile drift', 'Teardown',
+  'Restore backup',
+  'Snapshot database',
+  'Migrate database',
+  'Rollback release',
+  'Recycle runner',
+  'Reconcile drift',
+  'Teardown',
   'Failover region',
 ]
 
@@ -436,7 +466,12 @@ export interface IPolicyCheck {
 }
 
 export const policyChecks: IPolicyCheck[] = [
-  { id: 'pol-01', label: 'require-approval', severity: 'blocking', passed: true },
+  {
+    id: 'pol-01',
+    label: 'require-approval',
+    severity: 'blocking',
+    passed: true,
+  },
   {
     id: 'pol-02',
     label: 'block-public-buckets',

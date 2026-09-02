@@ -17,7 +17,11 @@ export const ActionCardContainer = ({ id, name }: IActionCardContainer) => {
   const { install } = useInstall()
   const { addModal } = useSurfaces()
 
-  const { data: result, isLoading, error } = useQuery({
+  const {
+    data: result,
+    isLoading,
+    error,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-actions-card', org?.id, install?.id, name, id],
     queryFn: () =>
@@ -63,14 +67,18 @@ export const ActionCardContainer = ({ id, name }: IActionCardContainer) => {
       error={error ? 'Failed to load action' : undefined}
       hasRun={!!recentRun}
       canRun={canRun}
-      onRun={canRun && actionWorkflow && actionConfigId ? () => {
-        addModal(
-          <InstallActionManualRunModalContainer
-            action={actionWorkflow}
-            actionConfigId={actionConfigId}
-          />
-        )
-      } : undefined}
+      onRun={
+        canRun && actionWorkflow && actionConfigId
+          ? () => {
+              addModal(
+                <InstallActionManualRunModalContainer
+                  action={actionWorkflow}
+                  actionConfigId={actionConfigId}
+                />
+              )
+            }
+          : undefined
+      }
     />
   )
 }

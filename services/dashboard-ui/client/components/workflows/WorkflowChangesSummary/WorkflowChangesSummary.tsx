@@ -31,11 +31,7 @@ const isActionable = (summary: TStepChangeSummary): boolean =>
   summary.status === 'generating' ||
   summary.status === 'error'
 
-const ChangesHeader = ({
-  summaries,
-}: {
-  summaries: TStepChangeSummary[]
-}) => {
+const ChangesHeader = ({ summaries }: { summaries: TStepChangeSummary[] }) => {
   const totals = sumCounts(summaries)
   const changedSteps = summaries.filter((s) => hasChanges(s.counts))
 
@@ -46,8 +42,8 @@ const ChangesHeader = ({
           No changes
         </Text>
         <Text variant="subtext" theme="neutral">
-          {summaries.length} {summaries.length === 1 ? 'step' : 'steps'}, nothing
-          to apply
+          {summaries.length} {summaries.length === 1 ? 'step' : 'steps'},
+          nothing to apply
         </Text>
       </div>
     )
@@ -70,7 +66,11 @@ const LoadingRow = ({ step }: { step: IWorkflowChangesSummaryLoadingStep }) => (
   <div className="flex items-center justify-between gap-4 px-4 py-3 border-b last:border-b-0">
     <div className="flex items-center gap-3 min-w-0 flex-1">
       <span className="w-4 shrink-0" />
-      <Icon variant={PLAN_TYPE_META[step.planType].icon} size={18} className="shrink-0" />
+      <Icon
+        variant={PLAN_TYPE_META[step.planType].icon}
+        size={18}
+        className="shrink-0"
+      />
       <div className="flex flex-col min-w-0">
         <Text variant="base" weight="strong" nowrap className="truncate">
           {step.stepName}

@@ -13,7 +13,12 @@ interface IThemeContext {
 
 export const ThemeContext = createContext<IThemeContext | undefined>(undefined)
 
-const PREFERENCES: TThemePreference[] = ['light', 'dark', 'high-contrast', 'system']
+const PREFERENCES: TThemePreference[] = [
+  'light',
+  'dark',
+  'high-contrast',
+  'system',
+]
 
 const isPreference = (value: unknown): value is TThemePreference =>
   PREFERENCES.includes(value as TThemePreference)

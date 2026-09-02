@@ -6,7 +6,10 @@ import { ContextTooltip } from '@/components/common/ContextTooltip'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { ComponentType, componentTypeName } from '@/components/components/ComponentType'
+import {
+  ComponentType,
+  componentTypeName,
+} from '@/components/components/ComponentType'
 import type { TIconVariant } from '@/components/common/Icon'
 import type { TComponentType } from '@/types'
 import { cn } from '@/utils/classnames'
@@ -111,8 +114,7 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
         {
           id: 'status',
           title: 'Status',
-          subtitle:
-            (data.statusDescription as string) || humanize(status),
+          subtitle: (data.statusDescription as string) || humanize(status),
           leftContent: (
             <Status
               status={status}

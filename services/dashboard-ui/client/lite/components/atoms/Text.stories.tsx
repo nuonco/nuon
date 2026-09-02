@@ -6,11 +6,17 @@ export default {
 }
 
 const VARIANTS: Array<{ variant: TTextVariant; usage: string }> = [
-  { variant: 'display', usage: 'Empty states, onboarding, the one big line on a page' },
+  {
+    variant: 'display',
+    usage: 'Empty states, onboarding, the one big line on a page',
+  },
   { variant: 'title', usage: 'Page title' },
   { variant: 'heading', usage: 'Section heading, card heading' },
   { variant: 'body', usage: 'Default. Prose, table cells, most everything' },
-  { variant: 'caption', usage: 'Supporting text under a heading, timestamps, hints' },
+  {
+    variant: 'caption',
+    usage: 'Supporting text under a heading, timestamps, hints',
+  },
   { variant: 'label', usage: 'Form labels, table headers, metadata keys' },
 ]
 
@@ -28,7 +34,9 @@ export const Overview = () => (
     name="Text"
     tier="atom"
     summary="Every piece of type in lite. Variants name a role in the page, not a tag or a size."
-    use={['All rendered text — headings, prose, table cells, labels, IDs, timestamps.']}
+    use={[
+      'All rendered text — headings, prose, table cells, labels, IDs, timestamps.',
+    ]}
     avoid={[
       'Choosing a variant for its size. Pick the role; if none fits, the scale is missing a step.',
       'Wrapping a Link to size it — links inherit surrounding type on their own.',
@@ -39,14 +47,53 @@ export const Overview = () => (
       'The scale lives in styles.css as Tailwind text tokens, carrying size, line-height and tracking together. It is not duplicated in TS.',
     ]}
     props={[
-      { name: 'as', type: 'ElementType', default: "'span'", description: 'The rendered element. Pass a real h1/h2/p/label.' },
-      { name: 'variant', type: "'display' | 'title' | 'heading' | 'body' | 'caption' | 'label'", default: "'body'", description: 'Role in the page. Sets size, line-height, tracking and a default weight.' },
-      { name: 'color', type: "'inherit' | 'primary' | 'secondary' | 'tertiary' | 'accent' | 'positive'", default: "'inherit'", description: 'Semantic colour token.' },
-      { name: 'weight', type: "'normal' | 'medium' | 'semibold'", description: "Overrides the variant's default weight." },
-      { name: 'family', type: "'sans' | 'mono'", default: "'sans'", description: 'Mono for IDs, timestamps and code.' },
-      { name: 'lines', type: 'number', description: 'Clamps to n lines. Also sets the number of skeleton rows while loading.' },
-      { name: 'loading', type: 'boolean', default: 'false', description: 'Renders a shimmer in place of the text.' },
-      { name: 'loadingWidth', type: 'number', description: 'Skeleton width in ch. Defaults per variant.' },
+      {
+        name: 'as',
+        type: 'ElementType',
+        default: "'span'",
+        description: 'The rendered element. Pass a real h1/h2/p/label.',
+      },
+      {
+        name: 'variant',
+        type: "'display' | 'title' | 'heading' | 'body' | 'caption' | 'label'",
+        default: "'body'",
+        description:
+          'Role in the page. Sets size, line-height, tracking and a default weight.',
+      },
+      {
+        name: 'color',
+        type: "'inherit' | 'primary' | 'secondary' | 'tertiary' | 'accent' | 'positive'",
+        default: "'inherit'",
+        description: 'Semantic colour token.',
+      },
+      {
+        name: 'weight',
+        type: "'normal' | 'medium' | 'semibold'",
+        description: "Overrides the variant's default weight.",
+      },
+      {
+        name: 'family',
+        type: "'sans' | 'mono'",
+        default: "'sans'",
+        description: 'Mono for IDs, timestamps and code.',
+      },
+      {
+        name: 'lines',
+        type: 'number',
+        description:
+          'Clamps to n lines. Also sets the number of skeleton rows while loading.',
+      },
+      {
+        name: 'loading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Renders a shimmer in place of the text.',
+      },
+      {
+        name: 'loadingWidth',
+        type: 'number',
+        description: 'Skeleton width in ch. Defaults per variant.',
+      },
     ]}
     sections={[
       {
@@ -64,7 +111,9 @@ export const Scale = () => (
         <Text variant="label" color="tertiary" family="mono">
           {variant}
         </Text>
-        <Text variant={variant}>The quick brown fox jumps over the lazy dog</Text>
+        <Text variant={variant}>
+          The quick brown fox jumps over the lazy dog
+        </Text>
         <Text variant="caption" color="tertiary">
           {usage}
         </Text>

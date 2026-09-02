@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -76,37 +81,42 @@ const CreateInstallModalContainer = ({ ...props }: IModal) => {
     enabled: !!configId,
   })
 
-  const { data: awsAccountConnections, isLoading: awsAccountConnectionsLoading } =
-    useQuery({
-      placeholderData: keepPreviousData,
-      queryKey: ['aws-account-connections', org?.id],
-      queryFn: () => getAWSAccountConnections({ orgId: org.id }),
-      enabled: !!org?.id && awsConnectionsEnabled,
-    })
+  const {
+    data: awsAccountConnections,
+    isLoading: awsAccountConnectionsLoading,
+  } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: ['aws-account-connections', org?.id],
+    queryFn: () => getAWSAccountConnections({ orgId: org.id }),
+    enabled: !!org?.id && awsConnectionsEnabled,
+  })
 
-  const { mutateAsync, isPending: isSubmitting, error: submitError } =
-    useMutation({
-      mutationFn: (body: ReturnType<typeof buildCreateInstallBody>) =>
-        createAppInstall({ appId: app?.id || '', body, orgId: org?.id || '' }),
-      onSuccess: (result) => {
-        addToast(
-          <Toast heading="Install created" theme="success">
-            <Text>Install created.</Text>
-          </Toast>
-        )
-        queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
-        queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
-        removeModal(props.modalId)
-        const workflowId = result.data.workflow_id
-        const suffix =
-          result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
-        navigate(
-          workflowId
-            ? `/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
-            : `/${org?.id}/installs/${result.data.id}/workflows${suffix}`
-        )
-      },
-    })
+  const {
+    mutateAsync,
+    isPending: isSubmitting,
+    error: submitError,
+  } = useMutation({
+    mutationFn: (body: ReturnType<typeof buildCreateInstallBody>) =>
+      createAppInstall({ appId: app?.id || '', body, orgId: org?.id || '' }),
+    onSuccess: (result) => {
+      addToast(
+        <Toast heading="Install created" theme="success">
+          <Text>Install created.</Text>
+        </Toast>
+      )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
+      removeModal(props.modalId)
+      const workflowId = result.data.workflow_id
+      const suffix =
+        result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
+      navigate(
+        workflowId
+          ? `/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
+          : `/${org?.id}/installs/${result.data.id}/workflows${suffix}`
+      )
+    },
+  })
 
   const isLoading =
     configsLoading ||

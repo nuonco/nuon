@@ -104,7 +104,8 @@ export const InstallationProfileWizard = ({
         </Banner>
         {error ? (
           <Banner theme="error">
-            {(error as any)?.error || 'Customer-managed install creation failed'}
+            {(error as any)?.error ||
+              'Customer-managed install creation failed'}
           </Banner>
         ) : null}
         <Input

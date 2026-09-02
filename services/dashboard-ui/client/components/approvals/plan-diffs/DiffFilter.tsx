@@ -132,64 +132,64 @@ export function DiffFilter({
         )}
 
         <Dropdown
-        buttonClassName="!p-1"
-        buttonText={`Filter ${title} (${selectedActions.size})`}
-        icon={<Icon variant="FunnelIcon" size="14" />}
-        id={`${title}-fitler`}
-        alignment="right"
-        variant="ghost"
-        size="sm"
-      >
-        <Menu className="min-w-56">
-          {actionOptions.map((option) => (
-            <div key={option.value} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id={`${title.toLowerCase().replace(' ', '-')}-action-${option.value}`}
-                checked={selectedActions.has(option.value)}
-                onChange={() => onInputToggle(option.value)}
-                className="focus:ring-primary-500 focus:border-primary-500 accent-primary-600"
-              />
-              <Button
-                className="!p-1 flex items-center justify-between group w-full"
-                variant="ghost"
-                size="sm"
-                onClick={() => onButtonClick(option.value)}
-              >
-                <span className="flex items-center gap-1.5 h-full">
-                  <span
-                    className={cn('inline-block border-l-2 h-full', {
-                      [getTerraformActionBorderColor(
-                        option.value as TTerraformChangeAction
-                      )]: diffType === 'terraform',
-                      [getHelmActionBorderColor(
-                        option.value as THelmK8sChangeAction
-                      )]: diffType === 'helm-k8s',
-                      [getPulumiActionBorderColor(
-                        option.value as TPulumiChangeAction
-                      )]: diffType === 'pulumi',
-                    })}
-                  />
-                  {option.label}
-                </span>
-                <span className="hidden group-hover:inline-flex text-xs">
-                  {getButtonText(option.value)}
-                </span>
-              </Button>
-            </div>
-          ))}
+          buttonClassName="!p-1"
+          buttonText={`Filter ${title} (${selectedActions.size})`}
+          icon={<Icon variant="FunnelIcon" size="14" />}
+          id={`${title}-fitler`}
+          alignment="right"
+          variant="ghost"
+          size="sm"
+        >
+          <Menu className="min-w-56">
+            {actionOptions.map((option) => (
+              <div key={option.value} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={`${title.toLowerCase().replace(' ', '-')}-action-${option.value}`}
+                  checked={selectedActions.has(option.value)}
+                  onChange={() => onInputToggle(option.value)}
+                  className="focus:ring-primary-500 focus:border-primary-500 accent-primary-600"
+                />
+                <Button
+                  className="!p-1 flex items-center justify-between group w-full"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onButtonClick(option.value)}
+                >
+                  <span className="flex items-center gap-1.5 h-full">
+                    <span
+                      className={cn('inline-block border-l-2 h-full', {
+                        [getTerraformActionBorderColor(
+                          option.value as TTerraformChangeAction
+                        )]: diffType === 'terraform',
+                        [getHelmActionBorderColor(
+                          option.value as THelmK8sChangeAction
+                        )]: diffType === 'helm-k8s',
+                        [getPulumiActionBorderColor(
+                          option.value as TPulumiChangeAction
+                        )]: diffType === 'pulumi',
+                      })}
+                    />
+                    {option.label}
+                  </span>
+                  <span className="hidden group-hover:inline-flex text-xs">
+                    {getButtonText(option.value)}
+                  </span>
+                </Button>
+              </div>
+            ))}
 
-          <hr />
-          <Button
-            className="w-full !p-1 shrink-0"
-            variant="ghost"
-            size="sm"
-            onClick={onReset}
-          >
-            Reset
-          </Button>
-        </Menu>
-      </Dropdown>
+            <hr />
+            <Button
+              className="w-full !p-1 shrink-0"
+              variant="ghost"
+              size="sm"
+              onClick={onReset}
+            >
+              Reset
+            </Button>
+          </Menu>
+        </Dropdown>
       </div>
     </div>
   )

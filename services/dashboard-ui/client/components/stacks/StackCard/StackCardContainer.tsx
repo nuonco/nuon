@@ -8,7 +8,11 @@ export const StackCardContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const { data: stack, isLoading, error } = useQuery({
+  const {
+    data: stack,
+    isLoading,
+    error,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-stack', org.id, install.id],
     queryFn: () =>

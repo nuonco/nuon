@@ -24,9 +24,7 @@ interface IQuickManagementMenu {
 const QuickManagementMenu = ({ orgId, installId }: IQuickManagementMenu) => {
   return (
     <Menu>
-      <Button href={`/${orgId}/installs/${installId}`}>
-        View details
-      </Button>
+      <Button href={`/${orgId}/installs/${installId}`}>View details</Button>
       <hr />
       <Text variant="label" theme="neutral">
         Settings

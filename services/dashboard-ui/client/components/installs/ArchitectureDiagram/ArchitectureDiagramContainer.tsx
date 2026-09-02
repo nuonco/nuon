@@ -17,7 +17,12 @@ import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getInstallComponents, getInstallStack, getInstallAppPermissionsConfig, getInstallAuditLog } from '@/lib'
+import {
+  getInstallComponents,
+  getInstallStack,
+  getInstallAppPermissionsConfig,
+  getInstallAuditLog,
+} from '@/lib'
 import type { TCloudPlatform } from '@/types'
 import { downloadFileOnClick } from '@/utils/file-download'
 import { slugify } from '@/utils/string-utils'
@@ -49,8 +54,7 @@ const ArchitectureDiagramContainer = () => {
   const { data: stack } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-stack-diagram', org?.id, install?.id],
-    queryFn: () =>
-      getInstallStack({ orgId: org.id!, installId: install.id! }),
+    queryFn: () => getInstallStack({ orgId: org.id!, installId: install.id! }),
     enabled: !!org?.id && !!install?.id,
   })
 
@@ -103,8 +107,7 @@ const InstallDetailsTab = () => {
         ? 'azure'
         : undefined
 
-  const region =
-    install.gcp_account?.region || install.aws_account?.region
+  const region = install.gcp_account?.region || install.aws_account?.region
   const location = install.azure_account?.location
 
   const isManagedByConfig =
@@ -113,7 +116,9 @@ const InstallDetailsTab = () => {
   return (
     <div className="flex flex-col gap-5 p-5 overflow-y-auto h-full">
       <div className="flex flex-col gap-1">
-        <Text variant="body" weight="strong">Install details</Text>
+        <Text variant="body" weight="strong">
+          Install details
+        </Text>
         <Text variant="subtext" theme="neutral">
           Metadata and configuration for this install.
         </Text>
@@ -152,11 +157,19 @@ const InstallDetailsTab = () => {
       )}
 
       <LabeledValue label="Created">
-        <Time variant="subtext" time={install.created_at} format="long-datetime" />
+        <Time
+          variant="subtext"
+          time={install.created_at}
+          format="long-datetime"
+        />
       </LabeledValue>
 
       <LabeledValue label="Updated">
-        <Time variant="subtext" time={install.updated_at} format="long-datetime" />
+        <Time
+          variant="subtext"
+          time={install.updated_at}
+          format="long-datetime"
+        />
       </LabeledValue>
 
       {install.cloud_platform && (
@@ -198,7 +211,13 @@ const AuditLogsTab = () => {
     isLoading,
   } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['install-audit-log', org.id, install.id, dateRange.start.toISOString(), dateRange.end.toISOString()],
+    queryKey: [
+      'install-audit-log',
+      org.id,
+      install.id,
+      dateRange.start.toISOString(),
+      dateRange.end.toISOString(),
+    ],
     queryFn: () =>
       getInstallAuditLog({
         orgId: org.id,
@@ -228,7 +247,9 @@ const AuditLogsTab = () => {
   return (
     <div className="flex flex-col gap-5 p-5 overflow-y-auto h-full">
       <div className="flex flex-col gap-1">
-        <Text variant="body" weight="strong">Audit logs</Text>
+        <Text variant="body" weight="strong">
+          Audit logs
+        </Text>
         <Text variant="subtext" theme="neutral">
           See a complete record of all activities performed in this install.
         </Text>
@@ -236,7 +257,8 @@ const AuditLogsTab = () => {
 
       {error ? (
         <Banner theme="error">
-          {error?.error || 'Unable to load audit logs for the selected date range'}
+          {error?.error ||
+            'Unable to load audit logs for the selected date range'}
         </Banner>
       ) : null}
 
@@ -300,7 +322,11 @@ const InstallDetailsModal = ({ ...props }: IModal) => {
   return (
     <Modal
       heading={
-        <Text className="inline-flex gap-2 items-center" variant="h3" weight="strong">
+        <Text
+          className="inline-flex gap-2 items-center"
+          variant="h3"
+          weight="strong"
+        >
           <Icon variant="InfoIcon" size="20" />
           Install details
         </Text>

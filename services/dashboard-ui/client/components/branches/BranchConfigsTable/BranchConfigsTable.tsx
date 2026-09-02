@@ -33,7 +33,8 @@ export const BranchConfigsTable = ({
       },
       {
         id: 'status',
-        accessorFn: (config) => config?.status_v2?.status || config?.status || '',
+        accessorFn: (config) =>
+          config?.status_v2?.status || config?.status || '',
         header: 'Status',
         enableSorting: false,
         cell: ({ row }) => (
@@ -50,7 +51,9 @@ export const BranchConfigsTable = ({
       {
         id: 'source',
         accessorFn: (config) =>
-          config?.vcs_connection_commit?.author_name || config?.cli_version || '',
+          config?.vcs_connection_commit?.author_name ||
+          config?.cli_version ||
+          '',
         header: 'Source',
         cell: ({ row }) => {
           const commit = row.original?.vcs_connection_commit

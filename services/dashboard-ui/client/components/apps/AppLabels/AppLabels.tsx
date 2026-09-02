@@ -135,11 +135,13 @@ export const AppLabels = ({
         header: 'Used on',
         cell: ({ row }) => (
           <span className="flex flex-wrap gap-1">
-            {[...(row.original?.entity_types ?? [])].sort().map((entityType) => (
-              <Badge key={entityType} size="sm" theme="neutral">
-                {entityType}
-              </Badge>
-            ))}
+            {[...(row.original?.entity_types ?? [])]
+              .sort()
+              .map((entityType) => (
+                <Badge key={entityType} size="sm" theme="neutral">
+                  {entityType}
+                </Badge>
+              ))}
           </span>
         ),
       },

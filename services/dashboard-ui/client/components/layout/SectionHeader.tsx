@@ -43,25 +43,27 @@ export const SectionHeaderRow = ({
       className
     )}
   >
-      <HeadingGroup className="gap-1.5 min-w-0">
-        <div className="flex flex-wrap items-center gap-2 min-w-0">
-          <Text
-            {...TITLE_PROPS[variant]}
-            loading={loading}
-            loadingWidth={loadingWidth}
-          >
-            {title}
-          </Text>
-          {status}
-        </div>
-        {description ? (
-          <Text variant={DESCRIPTION_VARIANT[variant]} theme="neutral">
-            {description}
-          </Text>
-        ) : null}
-      </HeadingGroup>
+    <HeadingGroup className="gap-1.5 min-w-0">
+      <div className="flex flex-wrap items-center gap-2 min-w-0">
+        <Text
+          {...TITLE_PROPS[variant]}
+          loading={loading}
+          loadingWidth={loadingWidth}
+        >
+          {title}
+        </Text>
+        {status}
+      </div>
+      {description ? (
+        <Text variant={DESCRIPTION_VARIANT[variant]} theme="neutral">
+          {description}
+        </Text>
+      ) : null}
+    </HeadingGroup>
     {actions ? (
-      <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>
+      <div className="flex flex-wrap items-center gap-2 shrink-0">
+        {actions}
+      </div>
     ) : null}
   </div>
 )

@@ -32,12 +32,41 @@ export const Overview = () => (
       'Rendered in a portal on document.body, so overflow and stacking contexts cannot clip it.',
     ]}
     props={[
-      { name: 'content', type: 'ReactNode', description: 'Tooltip body. A string is wrapped in Text.' },
-      { name: 'side', type: "'top' | 'bottom' | 'left' | 'right'", default: "'top'", description: 'Preferred side. Flips to the opposite side if it does not fit.' },
-      { name: 'open', type: 'boolean', description: 'Controlled mode, for nudges driven by app state.' },
-      { name: 'defaultOpen', type: 'boolean', default: 'false', description: 'Uncontrolled initial state.' },
-      { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Fires on hover and focus changes.' },
-      { name: 'disableHover', type: 'boolean', default: 'false', description: 'Ignores hover and focus. Pair with open for a pure nudge.' },
+      {
+        name: 'content',
+        type: 'ReactNode',
+        description: 'Tooltip body. A string is wrapped in Text.',
+      },
+      {
+        name: 'side',
+        type: "'top' | 'bottom' | 'left' | 'right'",
+        default: "'top'",
+        description:
+          'Preferred side. Flips to the opposite side if it does not fit.',
+      },
+      {
+        name: 'open',
+        type: 'boolean',
+        description: 'Controlled mode, for nudges driven by app state.',
+      },
+      {
+        name: 'defaultOpen',
+        type: 'boolean',
+        default: 'false',
+        description: 'Uncontrolled initial state.',
+      },
+      {
+        name: 'onOpenChange',
+        type: '(open: boolean) => void',
+        description: 'Fires on hover and focus changes.',
+      },
+      {
+        name: 'disableHover',
+        type: 'boolean',
+        default: 'false',
+        description:
+          'Ignores hover and focus. Pair with open for a pure nudge.',
+      },
     ]}
     sections={[
       {

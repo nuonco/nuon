@@ -213,7 +213,10 @@ function buildInstallResourceGroups(
 
   resources.forEach((resource) => {
     const key = keyOf(resource) || 'unknown'
-    groups.set(key, [...(groups.get(key) ?? []), toInstallResourceRow(resource)])
+    groups.set(key, [
+      ...(groups.get(key) ?? []),
+      toInstallResourceRow(resource),
+    ])
   })
 
   return Array.from(groups.entries())
@@ -251,9 +254,13 @@ function groupTier(group: { failing: number; fullyStale: boolean }): number {
 // rows say nothing about live health, and unknown is the absence of
 // information, not a failure. What the group header adds over the per-row
 // badges is the count — how many of the live resources are actually bad.
-function failingCounts(rows: TInstallResourceRow[]): { failing: number; live: number } {
+function failingCounts(rows: TInstallResourceRow[]): {
+  failing: number
+  live: number
+} {
   const live = rows.filter(
-    (row) => !row.removed && !isStaleObservation(row.observedAt, row.staleAfterSeconds)
+    (row) =>
+      !row.removed && !isStaleObservation(row.observedAt, row.staleAfterSeconds)
   )
   const failing = live.filter((row) => isFailingHealth(row.health)).length
   return { failing, live: live.length }
@@ -289,97 +296,107 @@ function buildColumns({
   hideStaleBadge = false,
 }: { hideStaleBadge?: boolean } = {}): ColumnDef<TInstallResourceRow>[] {
   return [
-  {
-    accessorKey: 'kind',
-    header: 'Kind',
-    cell: (info) => <Text>{info.getValue() as string}</Text>,
-  },
-  {
-    accessorKey: 'namespace',
-    header: 'Namespace',
-    cell: (info) =>
-      info.getValue() ? (
-        <Text>{info.getValue() as string}</Text>
-      ) : (
-        <Icon variant="MinusIcon" />
-      ),
-  },
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    cell: (info) => (
-      <Text variant="body" weight="strong">
-        {info.getValue() as string}
-      </Text>
-    ),
-  },
-  {
-    accessorKey: 'health',
-    header: 'Health',
-    cell: (info) => {
-      if (info.row.original?.removed) {
-        return <RemovedFromAppConfigBadge kind="probe" />
-      }
-      const stale = !hideStaleBadge && isStaleRow(info.row.original)
-      const badge = <Status variant="badge" status={info.getValue() as string} />
-      if (!stale) return badge
-
-      // A green badge on an observation nobody has refreshed is the most
-      // misleading thing this table can show, so say so next to it.
-      return (
-        <span className="flex items-center gap-1.5">
-          {badge}
-          <Tooltip
-            position="top"
-            tipContent={
-              <Text variant="subtext">
-                Last reported longer ago than this check's staleness window, so
-                it no longer counts toward the component verdict. A pushed check
-                reports only when something pushes it.
-              </Text>
-            }
-          >
-            <Badge size="sm" theme="warn">
-              Stale
-            </Badge>
-          </Tooltip>
-        </span>
-      )
+    {
+      accessorKey: 'kind',
+      header: 'Kind',
+      cell: (info) => <Text>{info.getValue() as string}</Text>,
     },
-  },
-  {
-    accessorKey: 'message',
-    header: 'Message',
-    cell: (info) =>
-      info.getValue() ? (
-        <Text variant="subtext" theme="neutral" className="line-clamp-2 max-w-[320px]">
+    {
+      accessorKey: 'namespace',
+      header: 'Namespace',
+      cell: (info) =>
+        info.getValue() ? (
+          <Text>{info.getValue() as string}</Text>
+        ) : (
+          <Icon variant="MinusIcon" />
+        ),
+    },
+    {
+      accessorKey: 'name',
+      header: 'Name',
+      cell: (info) => (
+        <Text variant="body" weight="strong">
           {info.getValue() as string}
         </Text>
-      ) : (
-        <Icon variant="MinusIcon" />
       ),
-    enableSorting: false,
-  },
-  {
-    accessorKey: 'observedAt',
-    header: 'Age',
-    cell: (info) =>
-      info.getValue() ? (
-        <Time variant="subtext" time={info.getValue() as string} format="relative" />
-      ) : (
-        <Icon variant="MinusIcon" />
+    },
+    {
+      accessorKey: 'health',
+      header: 'Health',
+      cell: (info) => {
+        if (info.row.original?.removed) {
+          return <RemovedFromAppConfigBadge kind="probe" />
+        }
+        const stale = !hideStaleBadge && isStaleRow(info.row.original)
+        const badge = (
+          <Status variant="badge" status={info.getValue() as string} />
+        )
+        if (!stale) return badge
+
+        // A green badge on an observation nobody has refreshed is the most
+        // misleading thing this table can show, so say so next to it.
+        return (
+          <span className="flex items-center gap-1.5">
+            {badge}
+            <Tooltip
+              position="top"
+              tipContent={
+                <Text variant="subtext">
+                  Last reported longer ago than this check's staleness window,
+                  so it no longer counts toward the component verdict. A pushed
+                  check reports only when something pushes it.
+                </Text>
+              }
+            >
+              <Badge size="sm" theme="warn">
+                Stale
+              </Badge>
+            </Tooltip>
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: 'message',
+      header: 'Message',
+      cell: (info) =>
+        info.getValue() ? (
+          <Text
+            variant="subtext"
+            theme="neutral"
+            className="line-clamp-2 max-w-[320px]"
+          >
+            {info.getValue() as string}
+          </Text>
+        ) : (
+          <Icon variant="MinusIcon" />
+        ),
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'observedAt',
+      header: 'Age',
+      cell: (info) =>
+        info.getValue() ? (
+          <Time
+            variant="subtext"
+            time={info.getValue() as string}
+            format="relative"
+          />
+        ) : (
+          <Icon variant="MinusIcon" />
+        ),
+    },
+    {
+      id: 'action',
+      enableSorting: false,
+      header: '',
+      cell: (info) => (
+        <InstallResourceDetailPanelButton
+          installResource={info.row.original.resource}
+        />
       ),
-  },
-  {
-    id: 'action',
-    enableSorting: false,
-    header: '',
-    cell: (info) => (
-      <InstallResourceDetailPanelButton
-        installResource={info.row.original.resource}
-      />
-    ),
-  },
+    },
   ]
 }
 
@@ -519,7 +536,8 @@ const NoSignalDisclosure = ({
     isOpen={isOpen}
     isIconBeforeHeading
     className={cn(
-      variant === 'row' && 'border-t border-cool-grey-200 dark:border-dark-grey-700'
+      variant === 'row' &&
+        'border-t border-cool-grey-200 dark:border-dark-grey-700'
     )}
     headerClassName="!px-0 !justify-start"
     heading={
@@ -813,7 +831,9 @@ export const InstallResourcesTable = ({
       {!hasResources ? (
         <EmptyState
           variant="table"
-          emptyTitle={forceExpanded ? 'No matching resources' : 'No resources yet'}
+          emptyTitle={
+            forceExpanded ? 'No matching resources' : 'No resources yet'
+          }
           emptyMessage={
             forceExpanded
               ? 'No resources match the current filters. Clear them to see everything this install manages.'

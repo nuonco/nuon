@@ -35,7 +35,12 @@ export function parseNotebooksToTableData(
     ) : null,
     cellCount: nb.cell_count ?? 0,
     lastRun: nb.latest_run_at ? (
-      <Time time={nb.latest_run_at} format="relative" variant="subtext" nowrap />
+      <Time
+        time={nb.latest_run_at}
+        format="relative"
+        variant="subtext"
+        nowrap
+      />
     ) : null,
     lastUpdated: nb.updated_at ? (
       <Time time={nb.updated_at} format="relative" variant="subtext" nowrap />
@@ -69,9 +74,7 @@ const columns: ColumnDef<TNotebookRow>[] = [
   {
     accessorKey: 'cellCount',
     header: 'Cells',
-    cell: (info) => (
-      <Text variant="subtext">{info.getValue() as number}</Text>
-    ),
+    cell: (info) => <Text variant="subtext">{info.getValue() as number}</Text>,
     enableSorting: true,
   },
   {

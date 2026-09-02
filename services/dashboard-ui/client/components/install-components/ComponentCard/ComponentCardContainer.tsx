@@ -9,7 +9,10 @@ interface IComponentCardContainer {
   name?: string
 }
 
-export const ComponentCardContainer = ({ id, name }: IComponentCardContainer) => {
+export const ComponentCardContainer = ({
+  id,
+  name,
+}: IComponentCardContainer) => {
   const { org } = useOrg()
   const { install } = useInstall()
 
@@ -21,7 +24,11 @@ export const ComponentCardContainer = ({ id, name }: IComponentCardContainer) =>
 
   const componentId = id || resolvedComponent?.component_id
 
-  const { data: installComponent, isLoading, error } = useQuery({
+  const {
+    data: installComponent,
+    isLoading,
+    error,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-component', componentId],
     queryFn: () =>

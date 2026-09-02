@@ -25,7 +25,13 @@ type TStatusEntry = {
   history?: TStatusEntry[]
 }
 
-const HEALTH_ORDER = ['unhealthy', 'degraded', 'progressing', 'unknown', 'healthy']
+const HEALTH_ORDER = [
+  'unhealthy',
+  'degraded',
+  'progressing',
+  'unknown',
+  'healthy',
+]
 
 function healthRank(health?: string): number {
   const idx = HEALTH_ORDER.indexOf(health || 'unknown')
@@ -71,7 +77,11 @@ export function narrationHistory(step?: TWorkflowStep): TStatusEntry[] {
   for (const entry of all) {
     const description = entry?.status_human_description
     if (!description) continue
-    if (out.length > 0 && out[out.length - 1].status_human_description === description) continue
+    if (
+      out.length > 0 &&
+      out[out.length - 1].status_human_description === description
+    )
+      continue
     out.push(entry)
   }
   return out
@@ -118,7 +128,9 @@ export const VerifyHealthStepDetails = ({
             Health checks
           </Text>
           {orgId && componentId ? (
-            <Link href={`/${orgId}/installs/${step?.owner_id}/components/${componentId}`}>
+            <Link
+              href={`/${orgId}/installs/${step?.owner_id}/components/${componentId}`}
+            >
               View component
             </Link>
           ) : null}
@@ -203,7 +215,9 @@ export const VerifyHealthStepDetails = ({
                   <Time
                     variant="label"
                     className="shrink-0"
-                    time={DateTime.fromSeconds(entry.created_at_ts).toISO() ?? ''}
+                    time={
+                      DateTime.fromSeconds(entry.created_at_ts).toISO() ?? ''
+                    }
                     format="time-only"
                   />
                 ) : null}

@@ -9,7 +9,11 @@ export interface IUseQueryApprovalPlan {
 export function useQueryApprovalPlan({ step }: IUseQueryApprovalPlan) {
   const { org } = useOrg()
 
-  const { data: plan, isLoading, error } = useQuery({
+  const {
+    data: plan,
+    isLoading,
+    error,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['approval-plan', org?.id, step?.id, step?.approval?.id],
     queryFn: async () => {
@@ -21,7 +25,11 @@ export function useQueryApprovalPlan({ step }: IUseQueryApprovalPlan) {
       }
       return res.json()
     },
-    enabled: !!org?.id && !!step?.id && !!step?.install_workflow_id && !!step?.approval?.id,
+    enabled:
+      !!org?.id &&
+      !!step?.id &&
+      !!step?.install_workflow_id &&
+      !!step?.approval?.id,
   })
 
   return { plan, isLoading, error: error?.error }

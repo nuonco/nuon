@@ -32,7 +32,10 @@ export const SandboxBuildHeader = ({
     }
     actions={
       build?.runner_job?.id ? (
-        <Button href={`/${orgId}/runner/jobs/${build.runner_job.id}`} variant="secondary">
+        <Button
+          href={`/${orgId}/runner/jobs/${build.runner_job.id}`}
+          variant="secondary"
+        >
           View execution
         </Button>
       ) : null

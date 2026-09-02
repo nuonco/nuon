@@ -37,7 +37,8 @@ const failedJobs = [
     ...jobs[1],
     status: 'failed',
     status_v2: { status: 'error' },
-    status_description: 'AccessDenied: iam:PassRole is not allowed on the execution role.',
+    status_description:
+      'AccessDenied: iam:PassRole is not allowed on the execution role.',
   },
 ] as unknown as TRunnerJob[]
 

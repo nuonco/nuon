@@ -1,4 +1,9 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Navigate } from 'react-router'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { AppInstallSyncsTimeline } from '@/components/apps/AppInstallSyncsTimeline'

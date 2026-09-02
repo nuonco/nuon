@@ -34,7 +34,7 @@ const buildConfigRequest = (
       ? []
       : index === targetGroupIndex
         ? Array.from(new Set([...(g.install_ids ?? []), installId]))
-        : g.install_ids ?? []
+        : (g.install_ids ?? [])
 
     return {
       name: g.name ?? '',
@@ -49,7 +49,8 @@ const buildConfigRequest = (
 
   if (config.connected_github_vcs_config) {
     request.connected_github_vcs_config = {
-      vcs_connection_id: config.connected_github_vcs_config.vcs_connection_id || '',
+      vcs_connection_id:
+        config.connected_github_vcs_config.vcs_connection_id || '',
       repo: config.connected_github_vcs_config.repo || '',
       branch: config.connected_github_vcs_config.branch || '',
       directory: config.connected_github_vcs_config.directory,
@@ -103,7 +104,9 @@ const BranchGroupRow = ({
   const alreadyAdded = isLabels ? alreadyAddedByLabels : alreadyAddedById
 
   const invalidateBranch = () => {
-    queryClient.invalidateQueries({ queryKey: ['app-branch-with-config', orgId, appId, branchId] })
+    queryClient.invalidateQueries({
+      queryKey: ['app-branch-with-config', orgId, appId, branchId],
+    })
     queryClient.invalidateQueries({ queryKey: ['install'] })
   }
 
@@ -150,7 +153,9 @@ const BranchGroupRow = ({
     onError: (err: any) => {
       addToast(
         <Toast heading="Add to group failed" theme="error">
-          <Text>{err?.error || 'Unable to add this install to the group.'}</Text>
+          <Text>
+            {err?.error || 'Unable to add this install to the group.'}
+          </Text>
         </Toast>
       )
     },
@@ -159,13 +164,16 @@ const BranchGroupRow = ({
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-md bg-cool-grey-50 dark:bg-dark-grey-700">
       <div className="flex items-center gap-2 flex-wrap min-w-0">
-        <Text variant="body" weight="strong">{group.name}</Text>
+        <Text variant="body" weight="strong">
+          {group.name}
+        </Text>
         {labelEntries.map(([k, v]) => (
           <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" />
         ))}
         {!isLabels && installIds.length > 0 && (
           <Text variant="subtext" theme="neutral">
-            {installIds.length} install{installIds.length !== 1 ? 's' : ''} by ID
+            {installIds.length} install{installIds.length !== 1 ? 's' : ''} by
+            ID
           </Text>
         )}
       </div>
@@ -182,14 +190,21 @@ const BranchGroupRow = ({
           disabled={isJoining || conflictsWithLabels}
           tooltipProps={
             conflictsWithLabels
-              ? { tipContent: 'Conflicts with labels already applied to this install' }
+              ? {
+                  tipContent:
+                    'Conflicts with labels already applied to this install',
+                }
               : undefined
           }
         >
           {isJoining ? 'Adding...' : 'Join group'}
         </Button>
       ) : (
-        <Button variant="secondary" onClick={() => addToGroup()} disabled={isAdding}>
+        <Button
+          variant="secondary"
+          onClick={() => addToGroup()}
+          disabled={isAdding}
+        >
           {isAdding ? 'Adding...' : 'Add to group'}
         </Button>
       )}
@@ -215,7 +230,9 @@ export const BranchConnectionStep = ({
           emptyMessage="You can connect this install to app branches later."
         />
         <div className="flex justify-end">
-          <Button variant="primary" onClick={onDone}>Done</Button>
+          <Button variant="primary" onClick={onDone}>
+            Done
+          </Button>
         </div>
       </div>
     )
@@ -224,7 +241,8 @@ export const BranchConnectionStep = ({
   return (
     <div className="flex flex-col gap-4">
       <Text variant="subtext" theme="neutral">
-        Add this install to an install group so app branch runs deploy to it. You can skip this and do it later.
+        Add this install to an install group so app branch runs deploy to it.
+        You can skip this and do it later.
       </Text>
 
       <div className="flex flex-col gap-3">
@@ -239,8 +257,12 @@ export const BranchConnectionStep = ({
               heading={
                 <div className="flex items-center gap-2">
                   <Icon variant="GitBranchIcon" size={14} />
-                  <Text variant="body" weight="strong">{branch.name}</Text>
-                  <Badge size="sm" theme="info">{groups.length} group{groups.length !== 1 ? 's' : ''}</Badge>
+                  <Text variant="body" weight="strong">
+                    {branch.name}
+                  </Text>
+                  <Badge size="sm" theme="info">
+                    {groups.length} group{groups.length !== 1 ? 's' : ''}
+                  </Badge>
                 </div>
               }
               headerClassName="!px-3"
@@ -248,7 +270,9 @@ export const BranchConnectionStep = ({
             >
               <div className="flex flex-col gap-2 p-3 border-t">
                 {!latestConfig || groups.length === 0 ? (
-                  <Text variant="subtext" theme="neutral">No install groups in this branch</Text>
+                  <Text variant="subtext" theme="neutral">
+                    No install groups in this branch
+                  </Text>
                 ) : (
                   groups.map((group, idx) => (
                     <BranchGroupRow
@@ -271,8 +295,12 @@ export const BranchConnectionStep = ({
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button variant="ghost" onClick={onSkip}>Skip for now</Button>
-        <Button variant="primary" onClick={onDone}>Go to install</Button>
+        <Button variant="ghost" onClick={onSkip}>
+          Skip for now
+        </Button>
+        <Button variant="primary" onClick={onDone}>
+          Go to install
+        </Button>
       </div>
     </div>
   )

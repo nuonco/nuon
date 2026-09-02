@@ -133,7 +133,8 @@ export const Text = ({
             key={index}
             className="skeleton-text block"
             style={{
-              width: index === count - 1 ? `${Math.round(width * 0.6)}ch` : '100%',
+              width:
+                index === count - 1 ? `${Math.round(width * 0.6)}ch` : '100%',
             }}
           >
             {ZERO_WIDTH_SPACE}

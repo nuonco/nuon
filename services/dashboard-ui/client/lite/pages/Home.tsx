@@ -9,7 +9,11 @@ export const Home = () => {
   const config = useConfig()
   const { preference, theme } = useTheme()
 
-  const { data: me, isLoading: isLoadingMe, error: meError } = useQuery({
+  const {
+    data: me,
+    isLoading: isLoadingMe,
+    error: meError,
+  } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: getMe,
     staleTime: Infinity,
@@ -61,7 +65,13 @@ export const Home = () => {
               <Text as="dt" variant="label" color="tertiary">
                 Account
               </Text>
-              <Text as="dd" variant="body" family="mono" color="primary" loading={isLoading}>
+              <Text
+                as="dd"
+                variant="body"
+                family="mono"
+                color="primary"
+                loading={isLoading}
+              >
                 {me?.email}
               </Text>
             </div>
@@ -71,10 +81,20 @@ export const Home = () => {
               </Text>
               <dd className="flex flex-col gap-1">
                 {isLoading ? (
-                  <Text variant="body" family="mono" loading loadingWidth={24} />
+                  <Text
+                    variant="body"
+                    family="mono"
+                    loading
+                    loadingWidth={24}
+                  />
                 ) : orgs?.length ? (
                   orgs.map((org) => (
-                    <Text key={org.id} variant="body" family="mono" color="primary">
+                    <Text
+                      key={org.id}
+                      variant="body"
+                      family="mono"
+                      color="primary"
+                    >
                       {org.name} — {org.id}
                     </Text>
                   ))

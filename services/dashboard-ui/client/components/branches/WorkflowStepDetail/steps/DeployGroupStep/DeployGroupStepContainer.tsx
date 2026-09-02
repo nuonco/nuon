@@ -12,7 +12,10 @@ interface IDeployGroupStepContainer {
   metadata: Record<string, any>
 }
 
-export const DeployGroupStepContainer = ({ step, metadata }: IDeployGroupStepContainer) => {
+export const DeployGroupStepContainer = ({
+  step,
+  metadata,
+}: IDeployGroupStepContainer) => {
   const { org } = useOrg()
   const { app } = useApp()
 
@@ -28,12 +31,15 @@ export const DeployGroupStepContainer = ({ step, metadata }: IDeployGroupStepCon
     (metadata.total_installs as number) ||
     (metadata.install_count as number) ||
     0
-  const deployedCount = installEntries.filter((e: any) => e.status === 'success' || e.status === 'deployed').length
+  const deployedCount = installEntries.filter(
+    (e: any) => e.status === 'success' || e.status === 'deployed'
+  ).length
 
   const { data: appInstalls } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-installs', org?.id, app?.id],
-    queryFn: () => getAppInstalls({ orgId: org!.id, appId: app!.id, limit: 100 }),
+    queryFn: () =>
+      getAppInstalls({ orgId: org!.id, appId: app!.id, limit: 100 }),
     enabled: !!org?.id && !!app?.id && installEntries.length > 0,
   })
 
@@ -49,7 +55,10 @@ export const DeployGroupStepContainer = ({ step, metadata }: IDeployGroupStepCon
     installId: entry.install_id,
     install: installsById[entry.install_id],
     deployStatus: entry.status,
-    installHref: org?.id && entry.install_id ? `/${org.id}/installs/${entry.install_id}` : undefined,
+    installHref:
+      org?.id && entry.install_id
+        ? `/${org.id}/installs/${entry.install_id}`
+        : undefined,
     workflowHref:
       org?.id && entry.install_id && entry.workflow_id
         ? `/${org.id}/installs/${entry.install_id}/workflows/${entry.workflow_id}`

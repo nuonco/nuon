@@ -64,15 +64,20 @@ export const DeploymentPlanEditor = ({
     return map
   }, [availableInstalls])
 
-  const previewConfig = useMemo<TAppBranchConfig>(() => ({
-    install_groups: groups.map((g) => ({
-      id: g.id,
-      name: g.name || `Group ${g.order + 1}`,
-      install_ids: g.selection_mode === 'manual' ? g.install_ids : [],
-      label_selector: g.selection_mode === 'labels' ? g.label_selector : undefined,
-      max_parallel: g.max_parallel,
-    })),
-  } as TAppBranchConfig), [groups])
+  const previewConfig = useMemo<TAppBranchConfig>(
+    () =>
+      ({
+        install_groups: groups.map((g) => ({
+          id: g.id,
+          name: g.name || `Group ${g.order + 1}`,
+          install_ids: g.selection_mode === 'manual' ? g.install_ids : [],
+          label_selector:
+            g.selection_mode === 'labels' ? g.label_selector : undefined,
+          max_parallel: g.max_parallel,
+        })),
+      }) as TAppBranchConfig,
+    [groups]
+  )
 
   const assignedInstallIds = useMemo(() => {
     const assigned = new Set<string>()
@@ -98,7 +103,10 @@ export const DeploymentPlanEditor = ({
 
   const groupContentError = (g: IInstallGroup): string | undefined => {
     if (g.selection_mode === 'labels') {
-      if (!g.label_selector?.match_labels || Object.keys(g.label_selector.match_labels).length === 0) {
+      if (
+        !g.label_selector?.match_labels ||
+        Object.keys(g.label_selector.match_labels).length === 0
+      ) {
         return 'Add at least one label to match installs.'
       }
     } else if (g.install_ids.length === 0) {
@@ -108,7 +116,8 @@ export const DeploymentPlanEditor = ({
   }
 
   const hasErrors = groups.some((g) => !g.name.trim() || !!groupContentError(g))
-  const canSave = !isSaving && !loadingInstalls && groups.length > 0 && !hasErrors
+  const canSave =
+    !isSaving && !loadingInstalls && groups.length > 0 && !hasErrors
   const isDisabled = isSaving || loadingInstalls
 
   const saveDisabledReason = (() => {
@@ -237,7 +246,11 @@ export const DeploymentPlanEditor = ({
           </Text>
 
           {groups.length >= 2 && (
-            <DeploymentPlanGraph config={previewConfig} installsById={installsById} orgId={orgId} />
+            <DeploymentPlanGraph
+              config={previewConfig}
+              installsById={installsById}
+              orgId={orgId}
+            />
           )}
 
           {groups.length === 0 ? (
@@ -302,14 +315,21 @@ export const DeploymentPlanEditor = ({
           {groups.length > 0 && unassignedInstalls.length > 0 && (
             <div className="border-t pt-4">
               <div className="flex items-baseline gap-2 mb-2">
-                <Text variant="base" weight="strong">Unassigned</Text>
+                <Text variant="base" weight="strong">
+                  Unassigned
+                </Text>
                 <Text variant="subtext" theme="neutral">
-                  — {unassignedInstalls.length} install{unassignedInstalls.length !== 1 ? 's' : ''} won&apos;t deploy
+                  — {unassignedInstalls.length} install
+                  {unassignedInstalls.length !== 1 ? 's' : ''} won&apos;t deploy
                 </Text>
               </div>
               <div className="flex flex-col gap-1.5">
                 {unassignedInstalls.map((install) => (
-                  <InstallRow key={install.id} install={install} labelColors={labelColors} />
+                  <InstallRow
+                    key={install.id}
+                    install={install}
+                    labelColors={labelColors}
+                  />
                 ))}
               </div>
             </div>

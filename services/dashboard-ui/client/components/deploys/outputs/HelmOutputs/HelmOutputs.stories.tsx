@@ -24,7 +24,11 @@ const mockOutputs = {
           availableReplicas: 3,
           updatedReplicas: 3,
           conditions: [
-            { type: 'Available', status: 'True', reason: 'MinimumReplicasAvailable' },
+            {
+              type: 'Available',
+              status: 'True',
+              reason: 'MinimumReplicasAvailable',
+            },
           ],
         },
       },
@@ -38,13 +42,20 @@ const mockOutputs = {
           uid: 'svc-abc-123',
           resourceVersion: '11111',
         },
-        spec: { type: 'ClusterIP', clusterIP: '10.100.0.1', sessionAffinity: 'None' },
+        spec: {
+          type: 'ClusterIP',
+          clusterIP: '10.100.0.1',
+          sessionAffinity: 'None',
+        },
       },
     },
   },
   ingresses: {},
   resources: {
-    'my-app-configmap': { Kind: 'ConfigMap', Content: 'apiVersion: v1\nkind: ConfigMap' },
+    'my-app-configmap': {
+      Kind: 'ConfigMap',
+      Content: 'apiVersion: v1\nkind: ConfigMap',
+    },
   },
   manifest: `---
 # Source: my-app/templates/deployment.yaml
@@ -54,4 +65,6 @@ metadata:
   name: my-app`,
 }
 
-export const Default = () => <HelmOutputs createdAt="2024-01-15T10:30:00Z" outputs={mockOutputs} />
+export const Default = () => (
+  <HelmOutputs createdAt="2024-01-15T10:30:00Z" outputs={mockOutputs} />
+)

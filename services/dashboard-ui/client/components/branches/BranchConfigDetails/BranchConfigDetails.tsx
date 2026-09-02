@@ -47,7 +47,11 @@ export const BranchConfigDetails = ({
       <div className="grid grid-cols-2 gap-4">
         <LabeledValue label="Created">
           {config?.created_at ? (
-            <Time variant="subtext" time={config.created_at} format="relative" />
+            <Time
+              variant="subtext"
+              time={config.created_at}
+              format="relative"
+            />
           ) : (
             <Icon variant="MinusIcon" />
           )}

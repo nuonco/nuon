@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -102,13 +107,15 @@ export const CreateInstallFromAppContainer = ({
     enabled: !!org?.id && !!configId,
   })
 
-  const { data: awsAccountConnections, isLoading: awsAccountConnectionsLoading } =
-    useQuery({
-      placeholderData: keepPreviousData,
-      queryKey: ['aws-account-connections', org?.id],
-      queryFn: () => getAWSAccountConnections({ orgId: org.id }),
-      enabled: !!org?.id && awsConnectionsEnabled,
-    })
+  const {
+    data: awsAccountConnections,
+    isLoading: awsAccountConnectionsLoading,
+  } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: ['aws-account-connections', org?.id],
+    queryFn: () => getAWSAccountConnections({ orgId: org.id }),
+    enabled: !!org?.id && awsConnectionsEnabled,
+  })
 
   const { data: branchList, isSuccess: branchesLoaded } = useQuery({
     placeholderData: keepPreviousData,
@@ -118,51 +125,54 @@ export const CreateInstallFromAppContainer = ({
   })
   const hasBranches = (branchList?.data ?? []).length > 0
 
-  const { mutateAsync, isPending: isSubmitting, error: submitError } =
-    useMutation({
-      mutationFn: (body: ReturnType<typeof buildCreateInstallBody>) =>
-        createAppInstall({ appId: app.id, body, orgId: org?.id || '' }),
-      onSuccess: (result) => {
-        trackEvent({
-          event: 'install_create',
-          status: 'ok',
-          user,
-          props: {
-            appId: app.id,
-            installId: result.data.id,
-          },
-        })
-        addToast(
-          <Toast heading="Install created" theme="success">
-            <Text>
-              Created {result.data?.name ?? 'install'}. Provisioning may take a
-              few minutes.
-            </Text>
-          </Toast>
-        )
-        queryClient.invalidateQueries({ queryKey: ['installs'] })
-        queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
-        queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
-        const suffix =
-          result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
-        setCreatedInstall({
-          id: result.data.id,
-          workflowId: result.data.workflow_id,
-          suffix,
-        })
-      },
-      onError: (err: any) => {
-        trackEvent({
-          event: 'install_create',
-          status: 'error',
-          user,
-          props: {
-            appId: app.id,
-            err: err?.error,
-          },
-        })
-      },
-    })
+  const {
+    mutateAsync,
+    isPending: isSubmitting,
+    error: submitError,
+  } = useMutation({
+    mutationFn: (body: ReturnType<typeof buildCreateInstallBody>) =>
+      createAppInstall({ appId: app.id, body, orgId: org?.id || '' }),
+    onSuccess: (result) => {
+      trackEvent({
+        event: 'install_create',
+        status: 'ok',
+        user,
+        props: {
+          appId: app.id,
+          installId: result.data.id,
+        },
+      })
+      addToast(
+        <Toast heading="Install created" theme="success">
+          <Text>
+            Created {result.data?.name ?? 'install'}. Provisioning may take a
+            few minutes.
+          </Text>
+        </Toast>
+      )
+      queryClient.invalidateQueries({ queryKey: ['installs'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
+      const suffix =
+        result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
+      setCreatedInstall({
+        id: result.data.id,
+        workflowId: result.data.workflow_id,
+        suffix,
+      })
+    },
+    onError: (err: any) => {
+      trackEvent({
+        event: 'install_create',
+        status: 'error',
+        user,
+        props: {
+          appId: app.id,
+          err: err?.error,
+        },
+      })
+    },
+  })
 
   const isLoading =
     configsLoading ||

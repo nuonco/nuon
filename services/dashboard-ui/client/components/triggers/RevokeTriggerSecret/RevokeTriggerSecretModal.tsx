@@ -56,7 +56,9 @@ export const RevokeTriggerSecretButton = ({
   return (
     <Button
       variant="danger"
-      onClick={() => addModal(<RevokeTriggerSecretModal onConfirm={onConfirm} />)}
+      onClick={() =>
+        addModal(<RevokeTriggerSecretModal onConfirm={onConfirm} />)
+      }
       {...props}
     >
       Revoke

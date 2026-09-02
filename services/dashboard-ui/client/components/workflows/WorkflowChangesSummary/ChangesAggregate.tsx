@@ -16,12 +16,7 @@ export const ChangesAggregate = ({
 }: IChangesAggregate) => {
   if (loading) {
     return (
-      <Text
-        variant="subtext"
-        loading
-        loadingWidth={40}
-        className={className}
-      />
+      <Text variant="subtext" loading loadingWidth={40} className={className} />
     )
   }
 

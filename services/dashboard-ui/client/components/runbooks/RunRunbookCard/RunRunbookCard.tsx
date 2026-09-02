@@ -44,7 +44,13 @@ export const RunRunbookCard = ({
     <div className="flex w-fit items-center gap-3 rounded-lg border px-3 py-2.5">
       <Icon variant="BookIcon" size={16} className="text-cool-grey-500" />
       <Text variant="body" className="text-sm">
-        {href ? <Link href={href} variant="inline">{name}</Link> : name}
+        {href ? (
+          <Link href={href} variant="inline">
+            {name}
+          </Link>
+        ) : (
+          name
+        )}
       </Text>
       {typeof stepCount === 'number' && (
         <Badge size="sm" theme="neutral">

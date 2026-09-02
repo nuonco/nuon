@@ -8,7 +8,10 @@ interface IStuckHelmReleaseBanner {
   status?: string
 }
 
-export const StuckHelmReleaseBanner = ({ component, status }: IStuckHelmReleaseBanner) => {
+export const StuckHelmReleaseBanner = ({
+  component,
+  status,
+}: IStuckHelmReleaseBanner) => {
   return (
     <Banner theme="warn">
       <div className="flex items-center gap-8">
@@ -18,8 +21,8 @@ export const StuckHelmReleaseBanner = ({ component, status }: IStuckHelmReleaseB
           </Text>
           <Text className="text-pretty" theme="neutral">
             The last deploy could not run because Helm left this release
-            {status ? ` in ${status}` : ''} part-way through an earlier operation. Deploys will
-            keep failing until the release is recovered.
+            {status ? ` in ${status}` : ''} part-way through an earlier
+            operation. Deploys will keep failing until the release is recovered.
           </Text>
         </div>
         <RecoverHelmReleaseButton

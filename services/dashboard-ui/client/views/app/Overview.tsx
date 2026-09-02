@@ -34,7 +34,12 @@ export const Overview = () => {
     placeholderData: keepPreviousData,
     queryKey: ['app-config', org?.id, app?.id, appConfigId, 'recurse'],
     queryFn: () =>
-      getAppConfig({ orgId: org.id, appId: app.id, appConfigId, recurse: true }),
+      getAppConfig({
+        orgId: org.id,
+        appId: app.id,
+        appConfigId,
+        recurse: true,
+      }),
     enabled: !!org?.id && !!app?.id && !!appConfigId,
   })
 
@@ -144,7 +149,6 @@ export const Overview = () => {
           </div>
         </div>
       </div>
-
     </PageSection>
   )
 }
@@ -173,7 +177,10 @@ const InputsSkeleton = () => (
 const SandboxSkeleton = () => (
   <Card className="h-full flex flex-col gap-4">
     <Skeleton height="20px" width="140px" />
-    <div className="grid gap-6" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
+    <div
+      className="grid gap-6"
+      style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}
+    >
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="flex flex-col gap-1">
           <Skeleton height="14px" width="80px" />

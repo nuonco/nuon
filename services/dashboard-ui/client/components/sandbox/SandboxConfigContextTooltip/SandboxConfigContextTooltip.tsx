@@ -9,8 +9,16 @@ import {
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
-import { SandboxEnvironmentVariablesModal, SandboxVariablesFilesModal } from '../SandboxConfigModals'
-import type { TSandboxConfig, TVCSGit, TVCSGitHub, TCloudPlatform } from '@/types'
+import {
+  SandboxEnvironmentVariablesModal,
+  SandboxVariablesFilesModal,
+} from '../SandboxConfigModals'
+import type {
+  TSandboxConfig,
+  TVCSGit,
+  TVCSGitHub,
+  TCloudPlatform,
+} from '@/types'
 
 function getConfigVCSItems(
   vcsConfig: TVCSGit | TVCSGitHub
@@ -77,7 +85,9 @@ function getSandboxConfigItems(
     items.push({
       id: `config-cloud-platform`,
       title: 'Cloud platform',
-      subtitle: <CloudPlatform platform={config.cloud_platform as TCloudPlatform} />,
+      subtitle: (
+        <CloudPlatform platform={config.cloud_platform as TCloudPlatform} />
+      ),
     })
   }
 
@@ -105,7 +115,9 @@ function getSandboxConfigItems(
       title: 'Drift schedule',
       subtitle: (
         <div className="flex flex-col gap-1">
-          <Text variant="label" theme="neutral">{scheduleDescription}</Text>
+          <Text variant="label" theme="neutral">
+            {scheduleDescription}
+          </Text>
           <Text variant="label" family="mono" theme="neutral">
             {config.drift_schedule}
           </Text>
@@ -121,9 +133,7 @@ function getSandboxConfigItems(
       leftContent: <Icon variant="ListIcon" />,
       onClick: () => {
         const modal = (
-          <SandboxEnvironmentVariablesModal
-            envVars={config.env_vars!}
-          />
+          <SandboxEnvironmentVariablesModal envVars={config.env_vars!} />
         )
         addModal(modal)
       },
@@ -139,7 +149,8 @@ function getSandboxConfigItems(
     })
   }
 
-  const vcsConfig = config?.connected_github_vcs_config || config?.public_git_vcs_config
+  const vcsConfig =
+    config?.connected_github_vcs_config || config?.public_git_vcs_config
   if (vcsConfig) {
     items.push(...getConfigVCSItems(vcsConfig))
   }

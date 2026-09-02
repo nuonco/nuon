@@ -55,39 +55,45 @@ export const EditInstallModal = ({
   const { addModal, removeModal } = useSurfaces()
   const draftShownRef = useRef(false)
 
-  const { form, canSubmit, hasDraft, draftTimestamp, clearDraft, restoreDraft } =
-    useInstallForm({
-      mode: 'edit',
-      inputConfig,
-      install,
-      showNameField,
-      storageKey: `install-update-draft:${install.id}`,
-      onSubmit: async (values) => {
-        const nameChanged =
-          !!showNameField && values.name.trim() !== (install.name ?? '')
-        const baseline = buildInstallInputDefaults(inputConfig, install)
-        const inputsChanged =
-          JSON.stringify(values.inputs) !== JSON.stringify(baseline)
-        const roleSet = !!values.role
+  const {
+    form,
+    canSubmit,
+    hasDraft,
+    draftTimestamp,
+    clearDraft,
+    restoreDraft,
+  } = useInstallForm({
+    mode: 'edit',
+    inputConfig,
+    install,
+    showNameField,
+    storageKey: `install-update-draft:${install.id}`,
+    onSubmit: async (values) => {
+      const nameChanged =
+        !!showNameField && values.name.trim() !== (install.name ?? '')
+      const baseline = buildInstallInputDefaults(inputConfig, install)
+      const inputsChanged =
+        JSON.stringify(values.inputs) !== JSON.stringify(baseline)
+      const roleSet = !!values.role
 
-        try {
-          if (nameChanged && !inputsChanged && !roleSet) {
-            await onSubmitName(values.name.trim())
-          } else {
-            await onSubmitInputs({
-              name: nameChanged ? values.name.trim() : undefined,
-              inputs: toInputsPayload(values.inputs),
-              role: values.role || undefined,
-              deployDependents: values.deployDependents,
-              inputsOnly: values.inputsOnly,
-            })
-          }
-          clearDraft()
-        } catch {
-          // error surfaced via submitError → FormErrorBanner
+      try {
+        if (nameChanged && !inputsChanged && !roleSet) {
+          await onSubmitName(values.name.trim())
+        } else {
+          await onSubmitInputs({
+            name: nameChanged ? values.name.trim() : undefined,
+            inputs: toInputsPayload(values.inputs),
+            role: values.role || undefined,
+            deployDependents: values.deployDependents,
+            inputsOnly: values.inputsOnly,
+          })
         }
-      },
-    })
+        clearDraft()
+      } catch {
+        // error surfaced via submitError → FormErrorBanner
+      }
+    },
+  })
 
   useEffect(() => {
     if (!hasDraft || draftShownRef.current || !draftTimestamp) return
@@ -207,7 +213,10 @@ export const EditInstallModal = ({
       }
     >
       <div className="flex flex-col gap-6">
-        <FormErrorBanner error={submitError} fallback="Unable to update install" />
+        <FormErrorBanner
+          error={submitError}
+          fallback="Unable to update install"
+        />
         <InstallForm
           form={form}
           mode="edit"

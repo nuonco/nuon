@@ -23,8 +23,6 @@ type CreateAppConfigRequest struct {
 	// IntermediateConfigJSON is the serialized intermediate config (parsed nuon.toml).
 	// When provided, stored on the AppConfig for diffing in PR previews.
 	IntermediateConfigJSON string `json:"intermediate_config_json,omitempty"`
-	// SourceConfigJSON contains the exact authored TOML files and their release-member index.
-	SourceConfigJSON string `json:"source_config_json,omitempty"`
 
 	// AppBranchID optionally links this config to an app branch.
 	// When set, triggers an app branch run after sync.
@@ -130,14 +128,9 @@ func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req 
 		Readme:             req.Readme,
 		CLIVersion:         req.CLIVersion,
 		IntermediateConfig: &blobstore.Blob{},
-		SourceConfig:       &blobstore.Blob{},
 	}
 	if req.IntermediateConfigJSON != "" {
 		inputs.IntermediateConfig.Set(req.IntermediateConfigJSON)
-	}
-	if req.SourceConfigJSON != "" {
-		inputs.SourceConfig.Set(req.SourceConfigJSON)
-		inputs.SourceConfig.SetContentType("application/json")
 	}
 
 	dbCtx := blobstore.WithBlobService(ctx, s.blobSvc)

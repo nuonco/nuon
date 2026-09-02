@@ -37,9 +37,6 @@ type ServiceCreateAppConfigRequest struct {
 	// SkipNotification suppresses the app-config-synced signal emission.
 	// Used when creating a config as part of app deletion cleanup.
 	SkipNotification bool `json:"skip_notification,omitempty"`
-
-	// SourceConfigJSON contains the exact authored TOML files and their release-member index.
-	SourceConfigJSON string `json:"source_config_json,omitempty"`
 }
 
 // Validate validates this service create app config request

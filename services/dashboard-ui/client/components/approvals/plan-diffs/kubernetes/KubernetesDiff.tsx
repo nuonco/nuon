@@ -36,127 +36,127 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
 
   return (
     <WrapLinesProvider>
-    <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-      <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
-        <Text variant="base" weight="strong">
-          Kubernetes changes
-        </Text>
-      </div>
+      <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+        <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
+          <Text variant="base" weight="strong">
+            Kubernetes changes
+          </Text>
+        </div>
 
-      <KubernetesDiffSummary summary={summary} />
+        <KubernetesDiffSummary summary={summary} />
 
-      <DiffFilter
-        title="changes"
-        diffType="helm-k8s"
-        selectedActions={selectedActions}
-        onInputToggle={handleInputToggle}
-        onButtonClick={handleButtonClick}
-        onReset={handleReset}
-        selectedCount={filterStats.selectedCount}
-        totalCount={filterStats.totalCount}
-        searchValue={searchQuery}
-        onSearchChange={handleSearchChange}
-        searchPlaceholder="Search by name, resource, type, or namespace"
-        isAllExpanded={allExpanded}
-        onToggleExpandAll={() => setAllExpanded((v) => !v)}
-      />
+        <DiffFilter
+          title="changes"
+          diffType="helm-k8s"
+          selectedActions={selectedActions}
+          onInputToggle={handleInputToggle}
+          onButtonClick={handleButtonClick}
+          onReset={handleReset}
+          selectedCount={filterStats.selectedCount}
+          totalCount={filterStats.totalCount}
+          searchValue={searchQuery}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Search by name, resource, type, or namespace"
+          isAllExpanded={allExpanded}
+          onToggleExpandAll={() => setAllExpanded((v) => !v)}
+        />
 
-      {errors.length > 0 && (
-        <div className="divide-y">
-          {errors.map((error, idx) => (
-            <div
-              key={`error-${idx}`}
-              className="border-l-4 border-red-500 px-4 py-4 sm:px-6 bg-red-50 dark:bg-red-900/20"
-            >
-              <div className="flex items-start justify-between w-full">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <Text weight="strong">{error.name}</Text>
-                    <Badge size="sm" theme="error">
-                      error
-                    </Badge>
-                  </div>
-                  <Text variant="subtext" theme="neutral">
-                    {error.resource} ({error.resourceType})
-                  </Text>
-                  <Text variant="subtext" theme="neutral">
-                    Namespace: {error.namespace}
-                  </Text>
-                  <div className="mt-2">
-                    <Text
-                      variant="subtext"
-                      className="text-red-600 dark:text-red-400"
-                    >
-                      Error: {error.error}
+        {errors.length > 0 && (
+          <div className="divide-y">
+            {errors.map((error, idx) => (
+              <div
+                key={`error-${idx}`}
+                className="border-l-4 border-red-500 px-4 py-4 sm:px-6 bg-red-50 dark:bg-red-900/20"
+              >
+                <div className="flex items-start justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <Text weight="strong">{error.name}</Text>
+                      <Badge size="sm" theme="error">
+                        error
+                      </Badge>
+                    </div>
+                    <Text variant="subtext" theme="neutral">
+                      {error.resource} ({error.resourceType})
                     </Text>
+                    <Text variant="subtext" theme="neutral">
+                      Namespace: {error.namespace}
+                    </Text>
+                    <div className="mt-2">
+                      <Text
+                        variant="subtext"
+                        className="text-red-600 dark:text-red-400"
+                      >
+                        Error: {error.error}
+                      </Text>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {filteredChanges.length > 0 ? (
-        <div className="divide-y">
-          {filteredChanges.map((change, idx) => {
-            const bgColor = getHelmActionBgColor(change.action)
-            const borderColor = getHelmActionBorderColor(change.action)
+        {filteredChanges.length > 0 ? (
+          <div className="divide-y">
+            {filteredChanges.map((change, idx) => {
+              const bgColor = getHelmActionBgColor(change.action)
+              const borderColor = getHelmActionBorderColor(change.action)
 
-            return (
-              <Expand
-                key={idx}
-                id={`change-${idx}`}
-                isOpen={allExpanded}
-                className={`border-l-4 ${borderColor}`}
-                headerClassName={`!px-4 sm:!px-6 ${bgColor}`}
-                heading={
-                  <div className="text-left w-full">
-                    <div className="flex items-start justify-between w-full">
-                      <div className="flex flex-col">
-                        <Text weight="strong">{change.name}</Text>
-                        <Text variant="subtext" theme="neutral">
-                          {change.resource} ({change.resourceType})
-                        </Text>
-                        <Text variant="subtext" theme="neutral">
-                          Namespace: {change.namespace}
-                        </Text>
-                      </div>
+              return (
+                <Expand
+                  key={idx}
+                  id={`change-${idx}`}
+                  isOpen={allExpanded}
+                  className={`border-l-4 ${borderColor}`}
+                  headerClassName={`!px-4 sm:!px-6 ${bgColor}`}
+                  heading={
+                    <div className="text-left w-full">
+                      <div className="flex items-start justify-between w-full">
+                        <div className="flex flex-col">
+                          <Text weight="strong">{change.name}</Text>
+                          <Text variant="subtext" theme="neutral">
+                            {change.resource} ({change.resourceType})
+                          </Text>
+                          <Text variant="subtext" theme="neutral">
+                            Namespace: {change.namespace}
+                          </Text>
+                        </div>
 
-                      <div className="flex items-center pr-4 self-center">
-                        <Badge
-                          size="sm"
-                          theme={HELM_ACTION_BADGE_THEME[change.action]}
-                        >
-                          {change.action}
-                        </Badge>
+                        <div className="flex items-center pr-4 self-center">
+                          <Badge
+                            size="sm"
+                            theme={HELM_ACTION_BADGE_THEME[change.action]}
+                          >
+                            {change.action}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                }
-              >
-                <DiffCodeBlock
-                  className="!rounded-none border-t"
-                  language="yaml"
-                  isDiff
+                  }
                 >
-                  {change.diff}
-                </DiffCodeBlock>
-              </Expand>
-            )
-          })}
-        </div>
-      ) : (
-        <div className="px-4 py-3 text-center">
-          <EmptyState
-            emptyMessage="Try clearing the search term or resetting the filter"
-            emptyTitle="No changes to show"
-            variant="search"
-            size="sm"
-          />
-        </div>
-      )}
-    </Card>
+                  <DiffCodeBlock
+                    className="!rounded-none border-t"
+                    language="yaml"
+                    isDiff
+                  >
+                    {change.diff}
+                  </DiffCodeBlock>
+                </Expand>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="px-4 py-3 text-center">
+            <EmptyState
+              emptyMessage="Try clearing the search term or resetting the filter"
+              emptyTitle="No changes to show"
+              variant="search"
+              size="sm"
+            />
+          </div>
+        )}
+      </Card>
     </WrapLinesProvider>
   )
 }

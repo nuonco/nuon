@@ -1,5 +1,9 @@
 import { api } from '@/lib/api'
-import type { TAppBranchConfig, TAppBranchInstallGroup, TAppBranchRunPreviewMode } from '@/types'
+import type {
+  TAppBranchConfig,
+  TAppBranchInstallGroup,
+  TAppBranchRunPreviewMode,
+} from '@/types'
 
 export type TCreateBranchConfigRequest = {
   connected_github_vcs_config?: {

@@ -110,7 +110,11 @@ export const Status = ({
         {...props}
       >
         <span
-          className={cn(INDICATOR_BASE, INDICATOR_SIZE[variant], SKELETON_CLASSES)}
+          className={cn(
+            INDICATOR_BASE,
+            INDICATOR_SIZE[variant],
+            SKELETON_CLASSES
+          )}
         />
         {isWithoutText ? null : (
           <Text variant="subtext" loading loadingWidth={loadingWidth} />

@@ -118,3 +118,7 @@ sdks/nuon-runner-go/models/cctx_signal_context.go
 
 # worktrees
 .worktrees
+.agents/offline-staging/
+
+# stray build artifact
+/bundle-portal

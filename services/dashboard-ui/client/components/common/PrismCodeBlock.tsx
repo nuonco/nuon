@@ -27,7 +27,11 @@ function lineOp(line: string): DiffOp | null {
   return null
 }
 
-function colorFirstChar(node: any, colorClass: string, state: { done: boolean }): any {
+function colorFirstChar(
+  node: any,
+  colorClass: string,
+  state: { done: boolean }
+): any {
   if (state.done) return node
   if (typeof node === 'string') {
     if (node.length === 0) return node
@@ -44,7 +48,11 @@ function colorFirstChar(node: any, colorClass: string, state: { done: boolean })
   }
   if (isValidElement(node)) {
     const el = node as any
-    return cloneElement(el, { ...el.props }, colorFirstChar(el.props.children, colorClass, state))
+    return cloneElement(
+      el,
+      { ...el.props },
+      colorFirstChar(el.props.children, colorClass, state)
+    )
   }
   return node
 }
@@ -151,7 +159,11 @@ function DiffCollapsedLines({
         </span>
       }
     >
-      <div className={wrapLongLines ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'}>
+      <div
+        className={
+          wrapLongLines ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'
+        }
+      >
         {children}
       </div>
     </Expand>
@@ -227,7 +239,10 @@ export function PrismCodeBlock({
   wrapLongLines = false,
 }: IPrismCodeBlock) {
   const colorScheme = useSystemTheme()
-  const bgCode = colorScheme === 'dark' ? 'var(--color-dark-grey-800)' : 'var(--color-cool-grey-100)'
+  const bgCode =
+    colorScheme === 'dark'
+      ? 'var(--color-dark-grey-800)'
+      : 'var(--color-cool-grey-100)'
   const baseTheme = colorScheme === 'dark' ? oneDark : oneLight
   const theme = {
     ...baseTheme,
@@ -254,7 +269,7 @@ export function PrismCodeBlock({
       showLineNumbers={showLineNumbers || isDiff}
       lineProps={(lineNumber: number) => {
         if (typeof lineNumber !== 'number') return {}
-        const line = isDiff ? (lines[lineNumber - 1] || '') : ''
+        const line = isDiff ? lines[lineNumber - 1] || '' : ''
         let className = ''
 
         if (isDiff) {

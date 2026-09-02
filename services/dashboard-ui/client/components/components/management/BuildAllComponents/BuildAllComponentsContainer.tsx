@@ -12,9 +12,15 @@ import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { buildComponents } from '@/lib'
 import { trackEvent } from '@/lib/posthog-analytics'
-import { BuildAllComponentsButton as BuildAllComponentsButtonComponent, BuildAllComponentsModal } from './BuildAllComponents'
+import {
+  BuildAllComponentsButton as BuildAllComponentsButtonComponent,
+  BuildAllComponentsModal,
+} from './BuildAllComponents'
 
-export const BuildAllComponentsButtonContainer = ({ onClick: _onClick, ...props }: IButtonAsButton) => {
+export const BuildAllComponentsButtonContainer = ({
+  onClick: _onClick,
+  ...props
+}: IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const modal = <BuildAllComponentsModalContainer />
   return (
@@ -32,12 +38,23 @@ export const BuildAllComponentsModalContainer = ({ ...props }: IModal) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
 
-  const { data: buildOk, error, mutate, isPending: isLoading } = useMutation({
+  const {
+    data: buildOk,
+    error,
+    mutate,
+    isPending: isLoading,
+  } = useMutation({
     mutationFn: () => buildComponents({ appId: app.id, orgId: org.id }),
     onSuccess: () => {
       addToast(
         <Toast heading="Builds started" theme="info">
-          <Text>Building all components for <Badge variant="code" size="md">{app.name}</Badge>. This may take a few minutes.</Text>
+          <Text>
+            Building all components for{' '}
+            <Badge variant="code" size="md">
+              {app.name}
+            </Badge>
+            . This may take a few minutes.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)
@@ -45,7 +62,13 @@ export const BuildAllComponentsModalContainer = ({ ...props }: IModal) => {
     onError: () => {
       addToast(
         <Toast heading="Builds failed" theme="error">
-          <Text>Unable to build components for <Badge variant="code" size="md">{app.name}</Badge>.</Text>
+          <Text>
+            Unable to build components for{' '}
+            <Badge variant="code" size="md">
+              {app.name}
+            </Badge>
+            .
+          </Text>
         </Toast>
       )
     },

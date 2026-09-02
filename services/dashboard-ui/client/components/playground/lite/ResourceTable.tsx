@@ -25,11 +25,7 @@ export const makeRows = (
   Array.from({ length: count }, (_, i) => ({
     id: `${prefix}-${String(i + 1).padStart(2, '0')}`,
     label: `${label} ${i + 1}`,
-    widths: [
-      110 + ((i * 37) % 90),
-      80 + ((i * 23) % 60),
-      70 + ((i * 17) % 40),
-    ],
+    widths: [110 + ((i * 37) % 90), 80 + ((i * 23) % 60), 70 + ((i * 17) % 40)],
   }))
 
 export const ResourceTable = ({
@@ -92,20 +88,22 @@ export const ResourceTable = ({
               />
             </div>
 
-            {headers.slice(1).map((header, i) =>
-              i === statusColumn - 1 ? (
-                <Block
-                  key={header}
-                  className="h-[16px] w-[64px] max-w-full rounded-full"
-                />
-              ) : (
-                <Block
-                  key={header}
-                  className="h-[10px] max-w-full opacity-60"
-                  style={{ width: row.widths[(i % 2) + 1] }}
-                />
-              )
-            )}
+            {headers
+              .slice(1)
+              .map((header, i) =>
+                i === statusColumn - 1 ? (
+                  <Block
+                    key={header}
+                    className="h-[16px] w-[64px] max-w-full rounded-full"
+                  />
+                ) : (
+                  <Block
+                    key={header}
+                    className="h-[10px] max-w-full opacity-60"
+                    style={{ width: row.widths[(i % 2) + 1] }}
+                  />
+                )
+              )}
           </div>
         ))}
       </div>

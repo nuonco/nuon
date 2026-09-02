@@ -32,26 +32,26 @@ function getTabsForComponentType(
         { path: '/plan', text: 'Plan' },
         { path: '/variables', text: 'Variables' },
         { path: '/state', text: 'State' },
-        { path: '/outputs', text: 'Outputs' },
+        { path: '/outputs', text: 'Outputs' }
       )
       break
     case 'pulumi':
       tabs.push(
         { path: '/plan', text: 'Plan' },
-        { path: '/state', text: 'State' },
+        { path: '/state', text: 'State' }
       )
       break
     case 'helm_chart':
       tabs.push(
         { path: '/plan', text: 'Plan' },
         { path: '/values', text: 'Values' },
-        { path: '/outputs', text: 'Outputs' },
+        { path: '/outputs', text: 'Outputs' }
       )
       break
     case 'kubernetes_manifest':
       tabs.push(
         { path: '/plan', text: 'Plan' },
-        { path: '/manifest', text: 'Manifest' },
+        { path: '/manifest', text: 'Manifest' }
       )
       break
     case 'docker_build':
@@ -80,7 +80,8 @@ const DeployLayoutInner = () => {
   const { data: workflow } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['workflow', org?.id, deploy?.install_workflow_id],
-    queryFn: () => getWorkflow({ orgId: org.id, workflowId: deploy!.install_workflow_id }),
+    queryFn: () =>
+      getWorkflow({ orgId: org.id, workflowId: deploy!.install_workflow_id }),
     enabled: !!org?.id && !!deploy?.install_workflow_id,
   })
 
@@ -88,11 +89,13 @@ const DeployLayoutInner = () => {
 
   if (!deploy || !component) return null
 
-  const step = workflow?.steps
-    ?.filter(
-      (s) => s?.step_target_id === deploy?.id && s?.execution_type === 'approval'
-    )
-    ?.at(-1) ?? null
+  const step =
+    workflow?.steps
+      ?.filter(
+        (s) =>
+          s?.step_target_id === deploy?.id && s?.execution_type === 'approval'
+      )
+      ?.at(-1) ?? null
   const responded = step ? hasResponded(step.id) : false
   const stepStatus = step?.status?.status
   const isTerminal =
@@ -105,7 +108,11 @@ const DeployLayoutInner = () => {
     step?.approval?.type === 'approve-all' ||
     step?.approval?.response?.type === 'auto-approve'
   const pendingApproval =
-    step?.approval && !step?.approval?.response && !responded && !isTerminal && stepStatus !== 'auto-skipped'
+    step?.approval &&
+    !step?.approval?.response &&
+    !responded &&
+    !isTerminal &&
+    stepStatus !== 'auto-skipped'
 
   const basePath = `/${org?.id}/installs/${installId}/components/${componentId}/deploys/${deployId}`
   const tabs = getTabsForComponentType(
@@ -125,7 +132,10 @@ const DeployLayoutInner = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/installs`, text: 'Installs' },
           { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
-          { path: `/${org?.id}/installs/${install?.id}/components`, text: 'Components' },
+          {
+            path: `/${org?.id}/installs/${install?.id}/components`,
+            text: 'Components',
+          },
           {
             path: `/${org?.id}/installs/${install?.id}/components/${componentId}`,
             text: deploy?.component_name,

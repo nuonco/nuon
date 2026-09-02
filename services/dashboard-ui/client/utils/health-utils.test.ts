@@ -10,9 +10,15 @@ import {
 describe('health-utils', () => {
   describe('healthSeverity', () => {
     test('ranks assessed statuses worst-first', () => {
-      expect(healthSeverity('unhealthy')).toBeGreaterThan(healthSeverity('degraded'))
-      expect(healthSeverity('degraded')).toBeGreaterThan(healthSeverity('progressing'))
-      expect(healthSeverity('progressing')).toBeGreaterThan(healthSeverity('healthy'))
+      expect(healthSeverity('unhealthy')).toBeGreaterThan(
+        healthSeverity('degraded')
+      )
+      expect(healthSeverity('degraded')).toBeGreaterThan(
+        healthSeverity('progressing')
+      )
+      expect(healthSeverity('progressing')).toBeGreaterThan(
+        healthSeverity('healthy')
+      )
     })
 
     test('unknown and not-applicable share zero severity', () => {
@@ -51,12 +57,16 @@ describe('health-utils', () => {
 
   describe('worstHealth', () => {
     test('returns the worst assessed status', () => {
-      expect(worstHealth(['healthy', 'degraded', 'progressing'])).toBe('degraded')
+      expect(worstHealth(['healthy', 'degraded', 'progressing'])).toBe(
+        'degraded'
+      )
       expect(worstHealth(['degraded', 'unhealthy'])).toBe('unhealthy')
     })
 
     test('an assessed status always beats unknown and not-applicable', () => {
-      expect(worstHealth(['unknown', 'healthy', 'not-applicable'])).toBe('healthy')
+      expect(worstHealth(['unknown', 'healthy', 'not-applicable'])).toBe(
+        'healthy'
+      )
     })
 
     test('falls back to unknown when nothing was assessed', () => {
@@ -65,14 +75,18 @@ describe('health-utils', () => {
     })
 
     test('falls back to not-applicable only when nothing tried', () => {
-      expect(worstHealth(['not-applicable', 'not-applicable'])).toBe('not-applicable')
+      expect(worstHealth(['not-applicable', 'not-applicable'])).toBe(
+        'not-applicable'
+      )
     })
   })
 
   describe('compareHealthSeverityDesc', () => {
     test('sorts worst-first', () => {
       expect(
-        ['healthy', 'unhealthy', 'unknown', 'degraded'].sort(compareHealthSeverityDesc)
+        ['healthy', 'unhealthy', 'unknown', 'degraded'].sort(
+          compareHealthSeverityDesc
+        )
       ).toEqual(['unhealthy', 'degraded', 'healthy', 'unknown'])
     })
   })

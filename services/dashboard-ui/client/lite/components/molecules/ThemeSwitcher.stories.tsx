@@ -11,7 +11,9 @@ export const Overview = () => (
     name="ThemeSwitcher"
     tier="molecule"
     summary="Picks the theme preference: light, dark, high contrast, or system."
-    use={['Anywhere the user should be able to change the theme — settings, the account menu.']}
+    use={[
+      'Anywhere the user should be able to change the theme — settings, the account menu.',
+    ]}
     avoid={['Reading the current theme for display. Use useTheme() for that.']}
     rules={[
       'It sets the preference, not the theme. system is a preference that resolves to light or dark and tracks the OS live.',

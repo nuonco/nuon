@@ -9,7 +9,10 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { OperationRolesList } from '@/components/common/OperationRolesList'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { BranchRunCommit, type IBranchRunCommit } from '@/components/branches/BranchRunCommit'
+import {
+  BranchRunCommit,
+  type IBranchRunCommit,
+} from '@/components/branches/BranchRunCommit'
 import { ComponentType } from '@/components/components/ComponentType'
 import {
   HelmValuesFilesModal,
@@ -343,4 +346,3 @@ const LatestResolvedImage = ({ build }: { build: TBuild }) => {
     </div>
   )
 }
-

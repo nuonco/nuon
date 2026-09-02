@@ -57,7 +57,9 @@ function isSupportedCloudPlatform(
   return platform === 'aws' || platform === 'azure' || platform === 'gcp'
 }
 
-function getCreatedBySubtitle(install: TInstall): { email: string; source: string } | undefined {
+function getCreatedBySubtitle(
+  install: TInstall
+): { email: string; source: string } | undefined {
   const account = install?.created_by
   if (!account?.email) return undefined
   const source = account.account_type === 'service' ? 'API / CLI' : 'Dashboard'
@@ -86,7 +88,11 @@ function ActivityCell({ install }: { install: TInstall }) {
           id: 'created',
           title: 'Created',
           subtitle: (
-            <Time variant="label" time={install?.created_at} format="long-datetime" />
+            <Time
+              variant="label"
+              time={install?.created_at}
+              format="long-datetime"
+            />
           ),
           leftContent: <Icon variant="PlusCircleIcon" size={16} />,
         },
@@ -94,7 +100,11 @@ function ActivityCell({ install }: { install: TInstall }) {
           id: 'updated',
           title: 'Updated',
           subtitle: (
-            <Time variant="label" time={install?.updated_at} format="long-datetime" />
+            <Time
+              variant="label"
+              time={install?.updated_at}
+              format="long-datetime"
+            />
           ),
           leftContent: <Icon variant="ClockCounterClockwiseIcon" size={16} />,
         },
@@ -123,25 +133,30 @@ export function parseInstallsToTableData(
       nameHref: `/${orgId}/installs/${install.id}`,
       installId: install.id,
       management: <ManagementBadge install={install} />,
-    region: (
-      <CloudRegion
-        variant="subtext"
-        platform={(install?.cloud_platform as TCloudPlatform) || 'unknown'}
-        region={install.gcp_account?.region || install.aws_account?.region}
-        location={install.azure_account?.location}
-      />
-    ),
-    statuses: (
-      <InstallStatuses install={install} isLabelHidden lazyComponents={lazyComponents} tooltipPosition="top" />
-    ),
+      region: (
+        <CloudRegion
+          variant="subtext"
+          platform={(install?.cloud_platform as TCloudPlatform) || 'unknown'}
+          region={install.gcp_account?.region || install.aws_account?.region}
+          location={install.azure_account?.location}
+        />
+      ),
+      statuses: (
+        <InstallStatuses
+          install={install}
+          isLabelHidden
+          lazyComponents={lazyComponents}
+          tooltipPosition="top"
+        />
+      ),
       platform: isSupportedCloudPlatform(platform) ? (
-      <CloudPlatform
-        platform={platform}
-        variant="subtext"
-        colorVariant="color"
-        displayVariant="icon-only"
-        iconSize="20"
-      />
+        <CloudPlatform
+          platform={platform}
+          variant="subtext"
+          colorVariant="color"
+          displayVariant="icon-only"
+          iconSize="20"
+        />
       ) : (
         <CloudPlatform
           platform="unknown"
@@ -151,41 +166,48 @@ export function parseInstallsToTableData(
           iconSize="20"
         />
       ),
-    labels: (() => {
-      const lbls = install.labels
-      if (!lbls || Object.keys(lbls).length === 0) return <Icon variant="MinusIcon" />
-      return (
-        <span className="flex flex-wrap gap-1">
-          {Object.keys(lbls)
-            .sort()
-            .map((k) => (
-              <LabelBadge key={k} size="sm" labelKey={k} labelValue={lbls[k]} customColor={labelColorsByApp?.[install.app_id ?? '']?.[k]} />
-            ))}
+      labels: (() => {
+        const lbls = install.labels
+        if (!lbls || Object.keys(lbls).length === 0)
+          return <Icon variant="MinusIcon" />
+        return (
+          <span className="flex flex-wrap gap-1">
+            {Object.keys(lbls)
+              .sort()
+              .map((k) => (
+                <LabelBadge
+                  key={k}
+                  size="sm"
+                  labelKey={k}
+                  labelValue={lbls[k]}
+                  customColor={labelColorsByApp?.[install.app_id ?? '']?.[k]}
+                />
+              ))}
+          </span>
+        )
+      })(),
+      branch: install.app_branch?.id ? (
+        <span className="flex items-center gap-1.5">
+          <Icon variant="GitBranchIcon" size={14} />
+          <Link
+            href={`/${orgId}/apps/${install.app_id}/branches/${install.app_branch.id}`}
+            variant="inline"
+          >
+            {install.app_branch.name}
+          </Link>
         </span>
-      )
-    })(),
-    branch: install.app_branch?.id ? (
-      <span className="flex items-center gap-1.5">
-        <Icon variant="GitBranchIcon" size={14} />
-        <Link
-          href={`/${orgId}/apps/${install.app_id}/branches/${install.app_branch.id}`}
-          variant="inline"
-        >
-          {install.app_branch.name}
-        </Link>
-      </span>
-    ) : (
-      <Text variant="subtext" theme="neutral">
-        —
-      </Text>
-    ),
-    activity: <ActivityCell install={install} />,
-    updatedAt: install?.updated_at ?? '',
-    action: (
-      <div className="hidden md:block">
-        <QuickManagementDropdown install={install} />
-      </div>
-    ),
+      ) : (
+        <Text variant="subtext" theme="neutral">
+          —
+        </Text>
+      ),
+      activity: <ActivityCell install={install} />,
+      updatedAt: install?.updated_at ?? '',
+      action: (
+        <div className="hidden md:block">
+          <QuickManagementDropdown install={install} />
+        </div>
+      ),
     }
   })
 }

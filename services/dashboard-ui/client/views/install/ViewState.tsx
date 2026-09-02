@@ -20,7 +20,11 @@ export const ViewState = () => {
   const { install } = useInstall()
   const [isCopied, setIsCopied] = useState(false)
 
-  const { data: state, error, isLoading } = useQuery({
+  const {
+    data: state,
+    error,
+    isLoading,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-state', org?.id, install?.id],
     queryFn: () => getInstallState({ orgId: org.id, installId: install.id }),

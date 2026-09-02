@@ -36,7 +36,10 @@ export const InstallComponentDependencies = ({
 
     const visible = components.slice(0, INLINE_LIMIT)
     const overflow = components.slice(INLINE_LIMIT)
-    const overflowItems = getContextTooltipItemsFromComponents(overflow, basePath)
+    const overflowItems = getContextTooltipItemsFromComponents(
+      overflow,
+      basePath
+    )
 
     return (
       <div className="flex items-center gap-2 flex-wrap">
@@ -49,7 +52,7 @@ export const InstallComponentDependencies = ({
         ))}
         {overflow.length > 0 && (
           <ComponentsTooltip
-            title={tooltipTitle ?? "More dependencies"}
+            title={tooltipTitle ?? 'More dependencies'}
             componentSummaries={overflowItems}
           >
             <Badge variant="code">+{overflow.length}</Badge>
@@ -70,7 +73,7 @@ export const InstallComponentDependencies = ({
     <Icon variant="MinusIcon" />
   ) : (
     <ComponentsTooltip
-      title={tooltipTitle ?? "Total dependencies"}
+      title={tooltipTitle ?? 'Total dependencies'}
       componentSummaries={depSummaries}
     >
       <Badge variant="code">{depSummaries?.length}</Badge>

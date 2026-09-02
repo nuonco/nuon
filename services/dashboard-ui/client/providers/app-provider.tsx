@@ -31,7 +31,12 @@ export function AppProvider({
 }) {
   const { org } = useOrg()
   const { addToast } = useToast()
-  const { data: app, isLoading, error, refetch } = useQuery({
+  const {
+    data: app,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app', org.id!, appId],
     queryFn: () => getApp({ orgId: org.id!, appId }),

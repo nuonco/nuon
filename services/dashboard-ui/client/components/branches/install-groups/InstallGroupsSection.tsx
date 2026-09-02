@@ -29,14 +29,24 @@ const InstallListRow = ({
           {install.name}
         </Link>
       ) : (
-        <Text variant="subtext" theme="neutral" family="mono" className="truncate">
+        <Text
+          variant="subtext"
+          theme="neutral"
+          family="mono"
+          className="truncate"
+        >
           {installId}
         </Text>
       )}
     </div>
     {install && (
       <div className="shrink-0">
-        <InstallStatuses install={install} isLabelHidden lazyComponents tooltipPosition="top" />
+        <InstallStatuses
+          install={install}
+          isLabelHidden
+          lazyComponents
+          tooltipPosition="top"
+        />
       </div>
     )}
   </div>
@@ -44,7 +54,9 @@ const InstallListRow = ({
 
 const EmptyGroupHint = ({ children }: { children: string }) => (
   <div className="px-3 py-3 rounded-md border border-dashed text-center">
-    <Text variant="subtext" theme="neutral">{children}</Text>
+    <Text variant="subtext" theme="neutral">
+      {children}
+    </Text>
   </div>
 )
 
@@ -71,10 +83,14 @@ export const InstallGroupsSection = ({
   return (
     <div className="flex flex-col gap-4">
       {groups.map((group, idx) => {
-        const labelEntries = Object.entries(group.label_selector?.match_labels ?? {})
+        const labelEntries = Object.entries(
+          group.label_selector?.match_labels ?? {}
+        )
         const isLabels = labelEntries.length > 0
         const matched = isLabels
-          ? Object.values(installsById).filter((i) => matchesSelector(i.labels, group.label_selector))
+          ? Object.values(installsById).filter((i) =>
+              matchesSelector(i.labels, group.label_selector)
+            )
           : []
         const installIds = group.install_ids ?? []
 
@@ -85,9 +101,17 @@ export const InstallGroupsSection = ({
           >
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <Text variant="base" weight="strong">{group.name}</Text>
+                <Text variant="base" weight="strong">
+                  {group.name}
+                </Text>
                 {labelEntries.map(([k, v]) => (
-                  <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" customColor={labelColors?.[k]} />
+                  <LabelBadge
+                    key={k}
+                    labelKey={k}
+                    labelValue={v}
+                    size="sm"
+                    customColor={labelColors?.[k]}
+                  />
                 ))}
               </div>
               {(group.max_parallel || 1) > 1 && (
@@ -101,11 +125,18 @@ export const InstallGroupsSection = ({
               matched.length > 0 ? (
                 <div className="flex flex-col gap-1.5">
                   {matched.map((install) => (
-                    <InstallListRow key={install.id} install={install} installId={install.id ?? ''} orgId={orgId} />
+                    <InstallListRow
+                      key={install.id}
+                      install={install}
+                      installId={install.id ?? ''}
+                      orgId={orgId}
+                    />
                   ))}
                 </div>
               ) : (
-                <EmptyGroupHint>No installs currently match this group&apos;s labels</EmptyGroupHint>
+                <EmptyGroupHint>
+                  No installs currently match this group&apos;s labels
+                </EmptyGroupHint>
               )
             ) : installIds.length > 0 ? (
               <div className="flex flex-col gap-1.5">

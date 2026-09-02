@@ -133,7 +133,9 @@ export const InsideClippedPanel = () => {
           onSelectStep={(step) => setSelected(step.id)}
         />
         <div className="text-sm font-medium">Step details</div>
-        <pre className="whitespace-pre text-xs">{'wide-content '.repeat(40)}</pre>
+        <pre className="whitespace-pre text-xs">
+          {'wide-content '.repeat(40)}
+        </pre>
       </div>
     </div>
   )

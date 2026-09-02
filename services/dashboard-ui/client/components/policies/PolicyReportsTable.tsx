@@ -19,7 +19,10 @@ export interface IPolicyReportRow {
   history: TPolicyReport[]
 }
 
-const OWNER_TYPE_LABELS: Record<string, { label: string; theme: 'info' | 'brand' | 'neutral' }> = {
+const OWNER_TYPE_LABELS: Record<
+  string,
+  { label: string; theme: 'info' | 'brand' | 'neutral' }
+> = {
   install_deploys: { label: 'Deploy', theme: 'info' },
   install_sandbox_runs: { label: 'Sandbox', theme: 'brand' },
   component_builds: { label: 'Build', theme: 'neutral' },
@@ -27,7 +30,9 @@ const OWNER_TYPE_LABELS: Record<string, { label: string; theme: 'info' | 'brand'
 
 function getGroupKey(report: TPolicyReport): string {
   const ownerType = report?.owner_type ?? 'unknown'
-  return report?.component_id ? `${ownerType}:${report.component_id}` : ownerType
+  return report?.component_id
+    ? `${ownerType}:${report.component_id}`
+    : ownerType
 }
 
 function getReportTime(report: TPolicyReport): number {
@@ -45,7 +50,9 @@ export function groupPolicyReports(
 
   return Array.from(groups.entries())
     .map(([key, items]) => {
-      const sorted = [...items].sort((a, b) => getReportTime(b) - getReportTime(a))
+      const sorted = [...items].sort(
+        (a, b) => getReportTime(b) - getReportTime(a)
+      )
       const [latest, ...history] = sorted
       return { key, report: latest, history }
     })
@@ -192,7 +199,9 @@ export const PolicyReportsTable = ({
       initialSorting={[{ id: 'evaluated', desc: true }]}
       emptyStateProps={{
         variant: 'policy',
-        emptyTitle: hasActiveFilters ? 'No matching reports' : 'No evaluations yet',
+        emptyTitle: hasActiveFilters
+          ? 'No matching reports'
+          : 'No evaluations yet',
         emptyMessage: hasActiveFilters
           ? 'No reports match the current filters.'
           : 'Evaluations appear here once a deploy or sandbox run triggers a policy check.',

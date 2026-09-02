@@ -193,7 +193,12 @@ export const OverflowingLabels = () => (
 
 export const Loading = () => (
   <StepInCard
-    installs={uatInstalls.map((i) => ({ ...i, sections: [], summary: null, isLoading: true }))}
+    installs={uatInstalls.map((i) => ({
+      ...i,
+      sections: [],
+      summary: null,
+      isLoading: true,
+    }))}
     groupName="uat"
     hasResponse={false}
     showApproveBar

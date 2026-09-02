@@ -77,10 +77,15 @@ export const AdminOrgFeaturesPanel = ({
                 <CheckboxInput
                   key={feature.name}
                   name={feature.name}
-                  defaultChecked={feature.forced || org?.features?.[feature.name] || false}
+                  defaultChecked={
+                    feature.forced || org?.features?.[feature.name] || false
+                  }
                   disabled={feature.forced}
                   labelProps={{
-                    className: cn('!items-start', feature.forced && 'cursor-not-allowed'),
+                    className: cn(
+                      '!items-start',
+                      feature.forced && 'cursor-not-allowed'
+                    ),
                     labelText: (
                       <div className="flex flex-col gap-0.5">
                         <span className="flex items-center gap-2">

@@ -19,7 +19,8 @@ describe('formatEmbeddedTomlContent', () => {
   })
 
   test('preserves assignment indentation', () => {
-    expect(formatEmbeddedTomlContent(`  inline_contents = "echo one\\necho two"`))
-      .toBe(`  inline_contents = """\necho one\necho two\n  """`)
+    expect(
+      formatEmbeddedTomlContent(`  inline_contents = "echo one\\necho two"`)
+    ).toBe(`  inline_contents = """\necho one\necho two\n  """`)
   })
 })

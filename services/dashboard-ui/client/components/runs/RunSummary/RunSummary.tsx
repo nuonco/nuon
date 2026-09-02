@@ -45,7 +45,8 @@ export const RunSummary = ({
 }: IRunSummary) => {
   const hasFailed = getStatusTheme(status?.status ?? '') === 'error'
   const failedJobs = (jobs ?? []).filter(
-    (job) => getStatusTheme(job?.status_v2?.status ?? job?.status ?? '') === 'error'
+    (job) =>
+      getStatusTheme(job?.status_v2?.status ?? job?.status ?? '') === 'error'
   )
   const reason =
     status?.status_human_description ||

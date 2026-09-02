@@ -1,4 +1,8 @@
-import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
 import { getTriggerEventsForTrigger, getTriggerEventTypes } from '@/lib'

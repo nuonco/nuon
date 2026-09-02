@@ -29,10 +29,7 @@ const mockPulumiConfig = {
 
 export const Default = () => (
   <div className="max-w-2xl p-4">
-    <SandboxConfigCard
-      config={mockTerraformConfig}
-      onViewEnvVars={() => {}}
-    />
+    <SandboxConfigCard config={mockTerraformConfig} onViewEnvVars={() => {}} />
   </div>
 )
 

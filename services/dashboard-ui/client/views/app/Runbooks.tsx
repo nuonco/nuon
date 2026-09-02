@@ -28,7 +28,10 @@ export const Runbooks = () => {
         description="Define and manage operational procedures for your installs."
         actions={
           hasRunbookStudio ? (
-            <Button variant="primary" href={`/${org?.id}/apps/${app?.id}/studio`}>
+            <Button
+              variant="primary"
+              href={`/${org?.id}/apps/${app?.id}/studio`}
+            >
               <Icon variant="ListChecksIcon" size={16} />
               Open runbook studio
             </Button>
