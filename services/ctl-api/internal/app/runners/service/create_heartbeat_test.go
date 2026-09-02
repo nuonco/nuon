@@ -464,7 +464,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatInactiveProcessReturnsConf
 		RunnerID:    s.testRunner.ID,
 		Type:        app.RunnerProcessTypeInstall,
 		CompositeStatus: app.CompositeStatus{
-			Status: string(app.RunnerProcessStatusInactive),
+			Status: app.Status(app.RunnerProcessStatusInactive),
 		},
 	}
 	require.NoError(s.T(), s.service.DB.Create(&process).Error)
