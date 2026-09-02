@@ -24,6 +24,7 @@ import (
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					runner_id				query	string	false	"filter by runner ID"
 // @Param					branches				query	string	false	"filter installs by branch name (comma-separated; use __none__ for installs with no branch)"
+// @Param					include_components	query	bool	false	"include install components"	Default(true)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Tags					installs
@@ -49,8 +50,9 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	runnerID := ctx.Query("runner_id")
 	branches := ctx.Query("branches")
+	includeComponents := ctx.Query("include_components") != "false"
 
-	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branches)
+	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branches, includeComponents)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs for org %s: %w", org.ID, err))
 		return
@@ -79,7 +81,7 @@ func parseBranchesFilter(raw string) (names []string, none bool) {
 	return names, none
 }
 
-func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branches string) ([]app.Install, error) {
+func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branches string, includeComponents bool) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -149,13 +151,10 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 		return nil, fmt.Errorf("unable to get org installs: %w", res.Error)
 	}
 
-	for i := range installs {
-		// WARN: (rb) Get install components in batches to avoid loading too many components into memory at once
-		installComponents, err := s.getOrgInstallsComponentsInBatches(ctx, orgID, installs[i])
-		if err != nil {
-			return nil, fmt.Errorf("unable to get install components for org %s: %w", orgID, err)
+	if includeComponents {
+		if err := s.loadOrgInstallsComponents(ctx, orgID, installs); err != nil {
+			return nil, err
 		}
-		installs[i].InstallComponents = installComponents
 	}
 
 	installs, err := db.HandlePaginatedResponse(ctx, installs)
@@ -166,38 +165,40 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 	return installs, nil
 }
 
-func (s *service) getOrgInstallsComponentsInBatches(ctx *gin.Context, orgID string, install app.Install) ([]app.InstallComponent, error) {
-	installComponents := make([]app.InstallComponent, 0)
-	batchSize := 10
-	offset := 0
-	hasMore := true
-
-	for hasMore {
-		var installComponentsBatch []app.InstallComponent
-		tx := s.db.WithContext(ctx).
-			Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-				return db.
-					Scopes(scopes.WithOverrideTable(views.CustomViewName(s.db, &app.InstallDeploy{}, "latest_view_v1"))).
-					Order("install_deploys_latest_view_v1.created_at DESC")
-			}).
-			Preload("Component").
-			Where("install_id = ?", install.ID).
-			Limit(batchSize).
-			Offset(offset).
-			Find(&installComponents)
-
-		if tx.Error != nil {
-			return nil, fmt.Errorf("unable to get install components for org %s: %w", orgID, tx.Error)
-		}
-
-		installComponents = append(installComponents, installComponentsBatch...)
-
-		if len(installComponentsBatch) < batchSize {
-			hasMore = false
-		} else {
-			offset += batchSize
-		}
+func (s *service) loadOrgInstallsComponents(ctx *gin.Context, orgID string, installs []app.Install) error {
+	if len(installs) == 0 {
+		return nil
 	}
 
-	return installComponents, nil
+	installIDs := make([]string, 0, len(installs))
+	for _, install := range installs {
+		installIDs = append(installIDs, install.ID)
+	}
+
+	componentsByInstallID := make(map[string][]app.InstallComponent, len(installs))
+	var installComponentsBatch []app.InstallComponent
+	tx := s.db.WithContext(ctx).
+		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
+			return db.
+				Scopes(scopes.WithOverrideTable(views.CustomViewName(s.db, &app.InstallDeploy{}, "latest_view_v1"))).
+				Order("install_deploys_latest_view_v1.created_at DESC")
+		}).
+		Preload("Component").
+		Where(app.InstallComponent{OrgID: orgID}).
+		Where(map[string]any{"install_id": installIDs}).
+		FindInBatches(&installComponentsBatch, 10, func(_ *gorm.DB, _ int) error {
+			for _, installComponent := range installComponentsBatch {
+				componentsByInstallID[installComponent.InstallID] = append(componentsByInstallID[installComponent.InstallID], installComponent)
+			}
+			return nil
+		})
+	if tx.Error != nil {
+		return fmt.Errorf("unable to get install components for org %s: %w", orgID, tx.Error)
+	}
+
+	for i := range installs {
+		installs[i].InstallComponents = componentsByInstallID[installs[i].ID]
+	}
+
+	return nil
 }
