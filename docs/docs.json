@@ -50,7 +50,7 @@
             "pages": [
               "guides/nuon-cloud",
               {
-                "group": "Nuon BYOC",
+                "group": "BYOC",
                 "root": "guides/byoc",
                 "expanded": false,
                 "pages": [
@@ -61,7 +61,7 @@
                 ]
               },
               {
-                "group": "Nuon Self-Hosted",
+                "group": "Self-Hosted",
                 "root": "guides/self-hosted",
                 "expanded": false,
                 "pages": ["guides/self-hosted/supported-platforms"]
