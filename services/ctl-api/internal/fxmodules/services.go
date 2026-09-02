@@ -98,6 +98,12 @@ var AdminDashboardServicesModule = fx.Module("admin-dashboard-services",
 // SlackServicesModule provides services for the dedicated Slack API.
 var SlackServicesModule = fx.Module("slack-services", sharedServices)
 
+// MCPServicesModule provides services for the MCP server (excludes authservice).
+// The MCP server validates bearer tokens itself and no service registers MCP
+// tools through authservice, so pulling it in would only impose authservice's
+// config requirements (NUON_AUTH_CLIENT_SECRET et al) on the mcp deployment.
+var MCPServicesModule = fx.Module("mcp-services", sharedServices)
+
 // AllServicesModule provides all services including authservice (for dev mode).
 var AllServicesModule = fx.Module("all-services",
 	sharedServices,
