@@ -20,8 +20,10 @@ export interface IHealthBars {
   animated?: boolean
   grow?: boolean
   barClassName?: string
+  barWrapperClassName?: string
   emptyMessage?: string
   className?: string
+  leading?: React.ReactNode
 }
 
 export const HealthBars = ({
@@ -29,10 +31,12 @@ export const HealthBars = ({
   animated = false,
   grow = false,
   barClassName,
+  barWrapperClassName,
   emptyMessage,
   className,
+  leading,
 }: IHealthBars) => {
-  if (!bars.length) {
+  if (!bars.length && !leading) {
     if (!emptyMessage) return null
     return (
       <div className="flex items-center justify-center h-10 rounded-md border border-white/5 bg-white/[0.02] dark:border-white/5 dark:bg-white/[0.02]">
@@ -45,11 +49,16 @@ export const HealthBars = ({
 
   return (
     <div className={cn('flex items-center gap-0.5', className)}>
+      {leading}
       {bars.map((bar) => (
         <Tooltip
           key={bar.key}
           position="top"
-          className={cn(grow && 'flex-auto', animated && HEARTBEAT_WRAPPER_CLASS)}
+          className={cn(
+            grow && 'flex-auto',
+            animated && HEARTBEAT_WRAPPER_CLASS,
+            barWrapperClassName
+          )}
           tipContentClassName="!whitespace-normal !w-auto !p-2"
           tipContent={bar.tooltip}
         >
