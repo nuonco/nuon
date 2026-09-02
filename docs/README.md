@@ -5,10 +5,11 @@ configuration live in `docs.json`.
 
 ### Development
 
-Preview the docs locally with nuonctl:
+Preview the docs locally with nuonctl. `--skip-all` keeps it from also starting
+every other service:
 
 ```
-nuonctl dev --dev=docs
+nuonctl dev --dev=docs --skip-all
 ```
 
 Or run the dev server directly from this directory:
