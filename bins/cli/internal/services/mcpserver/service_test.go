@@ -54,13 +54,10 @@ func fakeUpstream(t *testing.T) (*mcp.Server, *mcp.ClientSession) {
 	return server, session
 }
 
-func connectProxy(t *testing.T, upstream *mcp.ClientSession, allowWrites bool) *mcp.ClientSession {
+func connectProxy(t *testing.T, upstream *mcp.ClientSession, allowWrites bool, opts ...Option) *mcp.ClientSession {
 	t.Helper()
 
-	svc := &Service{
-		cfg:         &config.Config{},
-		allowWrites: allowWrites,
-	}
+	svc := New(&config.Config{}, allowWrites, opts...)
 
 	server, err := svc.buildProxyServer(context.Background(), upstream)
 	require.NoError(t, err)
@@ -126,4 +123,52 @@ func TestProxyListApps(t *testing.T) {
 
 	text := res.Content[0].(*mcp.TextContent).Text
 	require.Contains(t, text, "my-app")
+}
+
+func TestEndpointAndNameFromAPIURL(t *testing.T) {
+	tests := []struct {
+		apiURL   string
+		endpoint string
+		name     string
+	}{
+		{
+			apiURL:   "https://api.nuon.co",
+			endpoint: "https://mcp.nuon.co/mcp",
+			name:     "nuon",
+		},
+		{
+			apiURL:   "https://api.stage.nuon.co/",
+			endpoint: "https://mcp.stage.nuon.co/mcp",
+			name:     "nuon-stage",
+		},
+		{
+			apiURL:   "http://localhost:8081",
+			endpoint: "http://localhost:8088/mcp",
+			name:     "nuon-local",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			require.Equal(t, test.endpoint, EndpointFromAPIURL(test.apiURL))
+			require.Equal(t, test.name, NameFromAPIURL(test.apiURL))
+		})
+	}
+}
+
+func TestProxyServerNameOverride(t *testing.T) {
+	_, upstream := fakeUpstream(t)
+
+	session := connectProxy(t, upstream, false, WithName("custom-server"))
+	require.Equal(t, "custom-server", session.InitializeResult().ServerInfo.Name)
+}
+
+func TestEndpointOverride(t *testing.T) {
+	svc := New(
+		&config.Config{APIURL: "https://api.stage.nuon.co"},
+		false,
+		WithEndpoint("https://example.com/mcp"),
+	)
+
+	require.Equal(t, "https://example.com/mcp", svc.mcpEndpoint())
 }
