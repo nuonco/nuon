@@ -15,20 +15,25 @@ func (c *cli) mcpSetupCmd() *cobra.Command {
 	var (
 		platform string
 		mcpURL   string
+		name     string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "setup",
-		Short: "Configure an MCP client to connect to the Nuon control plane",
+		Short: "Write MCP client config for Claude Code, Cursor, or Amp",
 		Long: `Write MCP client configuration so an AI agent can reach the Nuon
 control-plane HTTP MCP server.
 
-Reads the API token and org ID from ~/.nuon. Run "nuon auth login" and
-"nuon orgs select" first.
+Reads the API token and org ID from the current CLI config (~/.nuon or -C).
+Run "nuon auth login" and "nuon orgs select" first.
 
 Writes in the current directory:
-  claude-code    .mcp.json
-  cursor         .cursor/mcp.json`,
+  claude-code, claude    .mcp.json
+  cursor                 .cursor/mcp.json
+  amp                    .amp/settings.json
+
+--url overrides the MCP HTTP URL (defaults from the configured API URL).
+--name overrides the client list name (nuon, nuon-stage, or nuon-local).`,
 		PersistentPreRunE: c.persistentPreRunE,
 		Annotations:       outputsAnnotation(OutputTable),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
@@ -40,36 +45,27 @@ Writes in the current directory:
 			}
 
 			if mcpURL == "" {
-				mcpURL = defaultMCPURL(c.cfg.APIURL)
+				mcpURL = mcpserver.EndpointFromAPIURL(c.cfg.APIURL)
+			}
+			if name == "" {
+				name = mcpserver.NameFromAPIURL(c.cfg.APIURL)
 			}
 
-			switch platform {
-			case "claude-code", "cursor":
-				return setupProjectMCP(mcpURL, c.cfg.APIToken, c.cfg.OrgID, platform)
-			default:
-				return fmt.Errorf("unsupported platform %q — supported: claude-code, cursor", platform)
-			}
+			return setupProjectMCP(mcpURL, c.cfg.APIToken, c.cfg.OrgID, platform, name)
 		}),
 	}
 
-	cmd.Flags().StringVar(&platform, "platform", "", "MCP client platform (claude-code, cursor)")
-	cmd.Flags().StringVar(&mcpURL, "url", "", "MCP server URL (defaults based on environment)")
+	cmd.Flags().StringVar(&platform, "platform", "", "MCP client platform (claude-code, cursor, amp)")
+	cmd.Flags().StringVar(&mcpURL, "url", "", "MCP server URL (defaults based on the configured API URL)")
+	cmd.Flags().StringVar(&name, "name", "", "name in the client's MCP list (defaults based on the configured API URL)")
 	_ = cmd.MarkFlagRequired("platform")
 
 	return cmd
 }
 
-func defaultMCPURL(apiURL string) string {
-	return mcpserver.EndpointFromAPIURL(apiURL)
-}
-
-type mcpClientConfig struct {
-	MCPServers map[string]mcpServerEntry `json:"mcpServers"`
-}
-
 type mcpServerEntry struct {
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
+	URL     string            `json:"url,omitempty"`
+	Headers map[string]string `json:"headers,omitempty"`
 }
 
 func nuonMCPEntry(mcpURL, apiToken, orgID string) mcpServerEntry {
@@ -82,40 +78,91 @@ func nuonMCPEntry(mcpURL, apiToken, orgID string) mcpServerEntry {
 	}
 }
 
-func setupProjectMCP(mcpURL, apiToken, orgID, platform string) error {
+func normalizeMCPPlatform(platform string) (string, error) {
+	switch platform {
+	case "claude-code", "claude":
+		return "claude-code", nil
+	case "cursor":
+		return "cursor", nil
+	case "amp":
+		return "amp", nil
+	default:
+		return "", fmt.Errorf("unsupported platform %q — supported: claude-code, cursor, amp", platform)
+	}
+}
+
+func setupProjectMCP(mcpURL, apiToken, orgID, platform, name string) error {
+	platform, err := normalizeMCPPlatform(platform)
+	if err != nil {
+		return err
+	}
+
+	entry := nuonMCPEntry(mcpURL, apiToken, orgID)
 	var configPath string
 	switch platform {
 	case "claude-code":
 		configPath = ".mcp.json"
+		if err := writeMCPServersFile(configPath, "mcpServers", name, entry); err != nil {
+			return err
+		}
 	case "cursor":
 		configPath = filepath.Join(".cursor", "mcp.json")
-		if err := os.MkdirAll(".cursor", 0755); err != nil {
+		if err := os.MkdirAll(".cursor", 0o755); err != nil {
 			return fmt.Errorf("unable to create .cursor directory: %w", err)
+		}
+		if err := writeMCPServersFile(configPath, "mcpServers", name, entry); err != nil {
+			return err
+		}
+	case "amp":
+		configPath = filepath.Join(".amp", "settings.json")
+		if err := os.MkdirAll(".amp", 0o755); err != nil {
+			return fmt.Errorf("unable to create .amp directory: %w", err)
+		}
+		if err := writeMCPServersFile(configPath, "amp.mcpServers", name, entry); err != nil {
+			return err
 		}
 	}
 
-	cfg := mcpClientConfig{MCPServers: map[string]mcpServerEntry{}}
+	fmt.Printf("Configured %s MCP at %s\n", platform, configPath)
+	fmt.Printf("  Name: %s\n", name)
+	fmt.Printf("  URL: %s\n", mcpURL)
+	fmt.Printf("  Org: %s\n", orgID)
+	return nil
+}
 
-	if data, err := os.ReadFile(configPath); err == nil {
-		_ = json.Unmarshal(data, &cfg)
+func writeMCPServersFile(configPath, serversKey, name string, entry mcpServerEntry) error {
+	root := map[string]json.RawMessage{}
+	if data, err := os.ReadFile(configPath); err == nil && len(data) > 0 {
+		if err := json.Unmarshal(data, &root); err != nil {
+			return fmt.Errorf("unable to parse %s: %w", configPath, err)
+		}
 	}
-	if cfg.MCPServers == nil {
-		cfg.MCPServers = map[string]mcpServerEntry{}
+
+	servers := map[string]mcpServerEntry{}
+	if raw, ok := root[serversKey]; ok {
+		if err := json.Unmarshal(raw, &servers); err != nil {
+			return fmt.Errorf("unable to parse %s %s: %w", configPath, serversKey, err)
+		}
 	}
+	if servers == nil {
+		servers = map[string]mcpServerEntry{}
+	}
+	servers[name] = entry
 
-	cfg.MCPServers["nuon-api"] = nuonMCPEntry(mcpURL, apiToken, orgID)
+	encoded, err := json.Marshal(servers)
+	if err != nil {
+		return fmt.Errorf("unable to marshal MCP servers: %w", err)
+	}
+	root[serversKey] = encoded
 
-	data, err := json.MarshalIndent(cfg, "", "  ")
+	data, err := json.MarshalIndent(root, "", "  ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal config: %w", err)
 	}
+	data = append(data, '\n')
 
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
+	if err := os.WriteFile(configPath, data, 0o600); err != nil {
 		return fmt.Errorf("unable to write %s: %w", configPath, err)
 	}
-
-	fmt.Printf("Configured %s MCP at %s\n", platform, configPath)
-	fmt.Printf("  URL: %s\n", mcpURL)
-	fmt.Printf("  Org: %s\n", orgID)
 	return nil
 }
