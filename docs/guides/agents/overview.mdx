@@ -24,33 +24,28 @@ nuon orgs select
 
 ## Connect
 
-Two ways to register MCP:
+**Recommended:** register the stdio proxy so the client runs `nuon agents mcp`. Token and org stay in `~/.nuon` (or `-C`).
 
-1. **Stdio proxy (recommended)** — the client runs `nuon agents mcp`. Token and org stay in `~/.nuon` (or `-C`).
-2. **`nuon agents mcp setup`** — writes an HTTP client config for Claude Code, Cursor, or Amp. Token and org are copied into that file.
+`nuon agents mcp setup` writes that stdio config for Claude Code, Cursor, or Amp. List name defaults from `api_url`. Use `-C` for a non-default CLI config (stage). `--url` and `--name` are passed through to `nuon agents mcp` when set.
 
-Defaults for MCP URL and list name come from `api_url` in the current CLI config. Use `-C` for a non-default file (stage). `--url` and `--name` override those defaults.
-
-| `api_url` | MCP URL | List name |
+| `api_url` | Upstream MCP URL (proxy default) | List name |
 | --- | --- | --- |
 | `https://api.nuon.co` | `https://mcp.nuon.co/mcp` | `nuon` |
 | `https://api.stage.nuon.co` | `https://mcp.stage.nuon.co/mcp` | `nuon-stage` |
 | anything else | `http://localhost:8088/mcp` | `nuon-local` |
 
-### HTTP setup
-
-Writes a Streamable HTTP entry (POST-only, no durable session) with `Authorization` and `X-Nuon-Org-ID` from the CLI config.
+### Setup (stdio)
 
 ```bash
 nuon agents mcp setup --platform claude-code
 nuon agents mcp setup --platform cursor
 nuon agents mcp setup --platform amp
 
-# stage (URL + name from that file's api_url)
-nuon -C /path/to/stage-config agents mcp setup --platform amp
+# stage (-C is copied into the generated command)
+nuon -C /path/to/stage-config agents mcp setup --platform cursor
 
-# overrides
-nuon agents mcp setup --platform cursor --url http://localhost:8088/mcp --name nuon-local
+# overrides passed through to nuon agents mcp
+nuon agents mcp setup --platform amp --url http://localhost:8088/mcp --name nuon-local
 ```
 
 `--platform claude` is an alias for `claude-code`. `nuon mcp setup` is the same command.
@@ -61,11 +56,11 @@ nuon agents mcp setup --platform cursor --url http://localhost:8088/mcp --name n
 | `cursor` | `.cursor/mcp.json` |
 | `amp` | `.amp/settings.json` (`amp.mcpServers`) |
 
-Existing servers in the file are kept. Prefer stdio (below) if you do not want the API token written into the client config.
+Existing servers in the file are kept. Cursor Agent: `agent mcp enable <name>` after setup.
 
-### Stdio proxy
+### Client CLIs
 
-Read-only by default. The name you pass to the client (`nuon`, `nuon-stage`, `nuon-local`) is what appears in its MCP list.
+You can also register stdio yourself. Read-only by default. The name you pass (`nuon`, `nuon-stage`, `nuon-local`) is what appears in the client's MCP list.
 
 <CodeGroup>
 ```bash Claude Code
@@ -108,13 +103,13 @@ amp mcp add nuon --workspace -- nuon agents mcp
 ```
 </CodeGroup>
 
-Cursor / Cursor Agent has no `mcp add`. Save the JSON above as `~/.cursor/mcp.json` or project `.cursor/mcp.json`, then `agent mcp enable <name>` — or run `nuon agents mcp setup --platform cursor` and enable the name it printed.
+Cursor / Cursor Agent has no `mcp add`. Save the JSON above as `~/.cursor/mcp.json` or project `.cursor/mcp.json`, then `agent mcp enable <name>` — or run `nuon agents mcp setup --platform cursor`.
 
 Use an absolute path for `-C` in Cursor JSON; it does not expand `~`. Pass `--allow-writes` in stdio `args` when you need writes. Your token must have create permission.
 
 On the proxy itself, `--url` and `--name` override the upstream URL and handshake identity. That does not change the name in the client's list.
 
-Create a token with `nuon orgs api-tokens create --name <name>` if you are not using CLI login. You do not need `select_org` when the org is already set (stdio header or setup file). `select_org` is a write tool.
+You do not need `select_org` when the org is already in the CLI config (the stdio proxy sends `X-Nuon-Org-ID`). `select_org` is a write tool.
 
 ## Tools
 

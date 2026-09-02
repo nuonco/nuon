@@ -14,9 +14,15 @@ icon: "route"
 <Steps>
 <Step title="Register the MCP server">
 
-Add the MCP server. Stdio keeps the token in `~/.nuon` (or `-C`). HTTP setup copies token + org into the client file.
+Add the stdio proxy. Token and org stay in `~/.nuon` (or `-C`).
 
-Stdio:
+```bash
+nuon agents mcp setup --platform claude-code
+nuon agents mcp setup --platform cursor
+nuon agents mcp setup --platform amp
+```
+
+Or register with the client CLI:
 
 <CodeGroup>
 ```bash Claude Code
@@ -28,15 +34,7 @@ amp mcp add nuon -- nuon agents mcp
 ```
 </CodeGroup>
 
-Or HTTP (Claude Code, Cursor, Amp):
-
-```bash
-nuon agents mcp setup --platform claude-code
-nuon agents mcp setup --platform cursor
-nuon agents mcp setup --platform amp
-```
-
-Stage: pass `-C /path/to/stage-config` so URL and list name follow that file's `api_url`. Overrides: `--url` and `--name`. Cursor Agent: `agent mcp enable <name>` after setup. Full examples: [Connect](/guides/agents/overview#connect).
+Stage: `nuon -C /path/to/stage-config agents mcp setup --platform cursor`. Overrides: `--url` and `--name`. Cursor Agent: `agent mcp enable <name>` after setup. Full examples: [Connect](/guides/agents/overview#connect).
 
 </Step>
 

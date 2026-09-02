@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/mcpserver"
@@ -20,43 +21,36 @@ func (c *cli) mcpSetupCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "setup",
-		Short: "Write MCP client config for Claude Code, Cursor, or Amp",
-		Long: `Write MCP client configuration so an AI agent can reach the Nuon
-control-plane HTTP MCP server.
+		Short: "Write stdio MCP client config for Claude Code, Cursor, or Amp",
+		Long: `Write MCP client configuration that runs "nuon agents mcp" over stdio.
 
-Reads the API token and org ID from the current CLI config (~/.nuon or -C).
-Run "nuon auth login" and "nuon orgs select" first.
+Auth stays in the CLI config (~/.nuon or -C). The client never stores the API token.
 
 Writes in the current directory:
   claude-code, claude    .mcp.json
   cursor                 .cursor/mcp.json
   amp                    .amp/settings.json
 
---url overrides the MCP HTTP URL (defaults from the configured API URL).
---name overrides the client list name (nuon, nuon-stage, or nuon-local).`,
+List name defaults from api_url (nuon, nuon-stage, nuon-local).
+--url and --name are passed through to "nuon agents mcp" when set.`,
 		PersistentPreRunE: c.persistentPreRunE,
 		Annotations:       outputsAnnotation(OutputTable),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			if c.cfg.APIToken == "" {
-				return fmt.Errorf("no API token found — run \"nuon auth login\" first")
-			}
-			if c.cfg.OrgID == "" {
-				return fmt.Errorf("no org selected — run \"nuon orgs select\" first")
-			}
-
-			if mcpURL == "" {
-				mcpURL = mcpserver.EndpointFromAPIURL(c.cfg.APIURL)
-			}
 			if name == "" {
 				name = mcpserver.NameFromAPIURL(c.cfg.APIURL)
 			}
 
-			return setupProjectMCP(mcpURL, c.cfg.APIToken, c.cfg.OrgID, platform, name)
+			args, err := stdioMCPArgs(cmd.Flags().Changed("url"), mcpURL, cmd.Flags().Changed("name"), name)
+			if err != nil {
+				return err
+			}
+
+			return setupProjectMCP(mcpSetupCommand(), args, platform, name)
 		}),
 	}
 
 	cmd.Flags().StringVar(&platform, "platform", "", "MCP client platform (claude-code, cursor, amp)")
-	cmd.Flags().StringVar(&mcpURL, "url", "", "MCP server URL (defaults based on the configured API URL)")
+	cmd.Flags().StringVar(&mcpURL, "url", "", "MCP server URL passed through to nuon agents mcp")
 	cmd.Flags().StringVar(&name, "name", "", "name in the client's MCP list (defaults based on the configured API URL)")
 	_ = cmd.MarkFlagRequired("platform")
 
@@ -64,18 +58,86 @@ Writes in the current directory:
 }
 
 type mcpServerEntry struct {
+	Command string            `json:"command,omitempty"`
+	Args    []string          `json:"args,omitempty"`
 	URL     string            `json:"url,omitempty"`
 	Headers map[string]string `json:"headers,omitempty"`
 }
 
-func nuonMCPEntry(mcpURL, apiToken, orgID string) mcpServerEntry {
-	return mcpServerEntry{
-		URL: mcpURL,
-		Headers: map[string]string{
-			"Authorization": "Bearer " + apiToken,
-			"X-Nuon-Org-ID": orgID,
-		},
+func stdioMCPEntry(command string, args []string) mcpServerEntry {
+	return mcpServerEntry{Command: command, Args: args}
+}
+
+func mcpSetupCommand() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return "nuon"
 	}
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		exe = resolved
+	}
+	return exe
+}
+
+func stdioMCPArgs(urlSet bool, url string, nameSet bool, name string) ([]string, error) {
+	var args []string
+
+	configArgs, err := mcpSetupConfigFlagArgs()
+	if err != nil {
+		return nil, err
+	}
+	args = append(args, configArgs...)
+	args = append(args, "agents", "mcp")
+	if urlSet {
+		args = append(args, "--url", url)
+	}
+	if nameSet {
+		args = append(args, "--name", name)
+	}
+	return args, nil
+}
+
+func mcpSetupConfigFlagArgs() ([]string, error) {
+	path := ConfigFile
+	if env := os.Getenv("NUON_CONFIG_FILE"); env != "" {
+		path = env
+	}
+	if isDefaultNuonConfig(path) {
+		return nil, nil
+	}
+
+	expanded, err := homedir.Expand(path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to expand config path: %w", err)
+	}
+	abs, err := filepath.Abs(expanded)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve config path: %w", err)
+	}
+	return []string{"-C", abs}, nil
+}
+
+func isDefaultNuonConfig(path string) bool {
+	if path == "" || path == DefaultConfigFilePath {
+		return true
+	}
+	left, err := homedir.Expand(path)
+	if err != nil {
+		return false
+	}
+	right, err := homedir.Expand(DefaultConfigFilePath)
+	if err != nil {
+		return false
+	}
+	left, err = filepath.Abs(left)
+	if err != nil {
+		return false
+	}
+	right, err = filepath.Abs(right)
+	if err != nil {
+		return false
+	}
+	return left == right
 }
 
 func normalizeMCPPlatform(platform string) (string, error) {
@@ -91,13 +153,13 @@ func normalizeMCPPlatform(platform string) (string, error) {
 	}
 }
 
-func setupProjectMCP(mcpURL, apiToken, orgID, platform, name string) error {
+func setupProjectMCP(command string, args []string, platform, name string) error {
 	platform, err := normalizeMCPPlatform(platform)
 	if err != nil {
 		return err
 	}
 
-	entry := nuonMCPEntry(mcpURL, apiToken, orgID)
+	entry := stdioMCPEntry(command, args)
 	var configPath string
 	switch platform {
 	case "claude-code":
@@ -125,8 +187,7 @@ func setupProjectMCP(mcpURL, apiToken, orgID, platform, name string) error {
 
 	fmt.Printf("Configured %s MCP at %s\n", platform, configPath)
 	fmt.Printf("  Name: %s\n", name)
-	fmt.Printf("  URL: %s\n", mcpURL)
-	fmt.Printf("  Org: %s\n", orgID)
+	fmt.Printf("  Command: %s %v\n", command, args)
 	return nil
 }
 
@@ -161,7 +222,7 @@ func writeMCPServersFile(configPath, serversKey, name string, entry mcpServerEnt
 	}
 	data = append(data, '\n')
 
-	if err := os.WriteFile(configPath, data, 0o600); err != nil {
+	if err := os.WriteFile(configPath, data, 0o644); err != nil {
 		return fmt.Errorf("unable to write %s: %w", configPath, err)
 	}
 	return nil

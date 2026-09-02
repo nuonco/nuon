@@ -18,17 +18,44 @@ func TestNormalizeMCPPlatform(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestSetupProjectMCPWritesPlatformsAndOverrides(t *testing.T) {
+func TestSetupProjectMCPWritesStdioConfig(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir)
 
-	require.NoError(t, setupProjectMCP("http://localhost:8088/mcp", "tok_test", "org_test", "cursor", "nuon-local"))
-	require.NoError(t, setupProjectMCP("https://mcp.stage.nuon.co/mcp", "tok_test", "org_test", "claude", "nuon-stage"))
-	require.NoError(t, setupProjectMCP("https://mcp.nuon.co/mcp", "tok_test", "org_test", "amp", "nuon"))
+	args := []string{"-C", "/tmp/stage.yml", "agents", "mcp"}
+	require.NoError(t, setupProjectMCP("nuon", args, "cursor", "nuon-local"))
+	require.NoError(t, setupProjectMCP("nuon", args, "claude", "nuon-stage"))
+	require.NoError(t, setupProjectMCP("nuon", args, "amp", "nuon"))
 
-	assertHTTPServer(t, filepath.Join(dir, ".cursor", "mcp.json"), "mcpServers", "nuon-local", "http://localhost:8088/mcp")
-	assertHTTPServer(t, filepath.Join(dir, ".mcp.json"), "mcpServers", "nuon-stage", "https://mcp.stage.nuon.co/mcp")
-	assertHTTPServer(t, filepath.Join(dir, ".amp", "settings.json"), "amp.mcpServers", "nuon", "https://mcp.nuon.co/mcp")
+	assertStdioServer(t, filepath.Join(dir, ".cursor", "mcp.json"), "mcpServers", "nuon-local", args)
+	assertStdioServer(t, filepath.Join(dir, ".mcp.json"), "mcpServers", "nuon-stage", args)
+	assertStdioServer(t, filepath.Join(dir, ".amp", "settings.json"), "amp.mcpServers", "nuon", args)
+}
+
+func TestStdioMCPArgsIncludesOverrides(t *testing.T) {
+	t.Setenv("NUON_CONFIG_FILE", "")
+	prev := ConfigFile
+	ConfigFile = DefaultConfigFilePath
+	t.Cleanup(func() { ConfigFile = prev })
+
+	args, err := stdioMCPArgs(true, "http://localhost:8088/mcp", true, "nuon-local")
+	require.NoError(t, err)
+	require.Equal(t, []string{"agents", "mcp", "--url", "http://localhost:8088/mcp", "--name", "nuon-local"}, args)
+}
+
+func TestStdioMCPArgsIncludesConfigFile(t *testing.T) {
+	t.Setenv("NUON_CONFIG_FILE", "")
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "stage.yml")
+	require.NoError(t, os.WriteFile(cfgPath, []byte("api_url: https://api.stage.nuon.co\n"), 0o600))
+
+	prev := ConfigFile
+	ConfigFile = cfgPath
+	t.Cleanup(func() { ConfigFile = prev })
+
+	args, err := stdioMCPArgs(false, "", false, "")
+	require.NoError(t, err)
+	require.Equal(t, []string{"-C", cfgPath, "agents", "mcp"}, args)
 }
 
 func TestWriteMCPServersFilePreservesExistingServers(t *testing.T) {
@@ -36,7 +63,7 @@ func TestWriteMCPServersFilePreservesExistingServers(t *testing.T) {
 	path := filepath.Join(dir, "settings.json")
 	require.NoError(t, os.WriteFile(path, []byte(`{"other":true,"amp.mcpServers":{"datadog":{"url":"https://example"}}}`), 0o600))
 
-	require.NoError(t, writeMCPServersFile(path, "amp.mcpServers", "nuon-stage", nuonMCPEntry("https://mcp.stage.nuon.co/mcp", "tok", "org")))
+	require.NoError(t, writeMCPServersFile(path, "amp.mcpServers", "nuon-stage", stdioMCPEntry("nuon", []string{"agents", "mcp"})))
 
 	raw, err := os.ReadFile(path)
 	require.NoError(t, err)
@@ -48,11 +75,11 @@ func TestWriteMCPServersFilePreservesExistingServers(t *testing.T) {
 	servers := map[string]mcpServerEntry{}
 	require.NoError(t, json.Unmarshal(root["amp.mcpServers"], &servers))
 	require.Equal(t, "https://example", servers["datadog"].URL)
-	require.Equal(t, "https://mcp.stage.nuon.co/mcp", servers["nuon-stage"].URL)
-	require.Equal(t, "Bearer tok", servers["nuon-stage"].Headers["Authorization"])
+	require.Equal(t, "nuon", servers["nuon-stage"].Command)
+	require.Equal(t, []string{"agents", "mcp"}, servers["nuon-stage"].Args)
 }
 
-func assertHTTPServer(t *testing.T, path, key, name, url string) {
+func assertStdioServer(t *testing.T, path, key, name string, args []string) {
 	t.Helper()
 
 	raw, err := os.ReadFile(path)
@@ -63,6 +90,8 @@ func assertHTTPServer(t *testing.T, path, key, name, url string) {
 
 	servers := map[string]mcpServerEntry{}
 	require.NoError(t, json.Unmarshal(root[key], &servers))
-	require.Equal(t, url, servers[name].URL)
-	require.Equal(t, "org_test", servers[name].Headers["X-Nuon-Org-ID"])
+	require.Equal(t, "nuon", servers[name].Command)
+	require.Equal(t, args, servers[name].Args)
+	require.Empty(t, servers[name].URL)
+	require.Empty(t, servers[name].Headers)
 }
