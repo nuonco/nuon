@@ -120,6 +120,13 @@ func (i *InstallSandboxRun) Indexes(db *gorm.DB) []migrations.Index {
 			},
 			Option: "WHERE status = 'drifted'",
 		},
+		{
+			Name: indexes.Name(db, &InstallSandboxRun{}, "install_sandbox_created_at"),
+			Columns: []string{
+				"install_sandbox_id",
+				"created_at DESC",
+			},
+		},
 		// Without this the install_audit_logs_view arm seq scans the whole table.
 		{
 			Name: indexes.Name(db, &InstallSandboxRun{}, "install_created_at"),
