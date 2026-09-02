@@ -14,19 +14,27 @@ icon: "route"
 <Steps>
 <Step title="Register the MCP server">
 
-Add the stdio proxy to your MCP client. It injects your token and org from `~/.nuon`:
-
-```json
-{"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp"]}}}
-```
-
-Claude Code:
+Add the stdio proxy. Token and org stay in `~/.nuon` (or `-C`).
 
 ```bash
-claude mcp add nuon -- nuon agents mcp
+nuon agents mcp setup --platform claude-code
+nuon agents mcp setup --platform cursor
+nuon agents mcp setup --platform amp
 ```
 
-For a direct HTTP connection instead, see [Connect](/guides/agents/overview#connect).
+Or register with the client CLI:
+
+<CodeGroup>
+```bash Claude Code
+claude mcp add --transport stdio nuon -- nuon agents mcp
+```
+
+```bash Amp
+amp mcp add nuon -- nuon agents mcp
+```
+</CodeGroup>
+
+Stage: `nuon -C /path/to/stage-config agents mcp setup --platform cursor`. Overrides: `--url` and `--name`. Cursor Agent: `agent mcp enable <name>` after setup. Full examples: [Connect](/guides/agents/overview#connect).
 
 </Step>
 
