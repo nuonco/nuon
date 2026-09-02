@@ -13,6 +13,7 @@ type pushEventInfo struct {
 	PusherEmails []string // all unique emails from the payload (pusher, commit author/committer)
 	ChangedFiles []string // deduplicated list of added/modified/removed files across all commits
 	HeadSHA      string   // SHA of the head commit
+	BeforeSHA    string   // SHA before the push, used to fetch the complete comparison
 }
 
 type pullRequestEventInfo struct {
@@ -64,6 +65,7 @@ func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
 	if hc, ok := payload["head_commit"].(map[string]any); ok {
 		headSHA, _ = hc["id"].(string)
 	}
+	beforeSHA, _ := payload["before"].(string)
 
 	return &pushEventInfo{
 		Repo:         fullName,
@@ -73,6 +75,7 @@ func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
 		PusherEmails: emails,
 		ChangedFiles: changedFiles,
 		HeadSHA:      headSHA,
+		BeforeSHA:    beforeSHA,
 	}, nil
 }
 

@@ -72,6 +72,8 @@ sdks/stack/.swagger.stamp
 .DS_Store
 .vscode/
 .zed/
+.cursor/
+.amp/
 
 # ignore binaries
 services/ctl-api/ctl-api

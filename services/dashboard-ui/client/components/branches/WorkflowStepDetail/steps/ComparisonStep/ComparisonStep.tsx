@@ -1,5 +1,7 @@
 import { BranchRunChanges } from '@/components/branches/BranchRunChanges'
 import { Text } from '@/components/common/Text'
+import { StepBlock } from '../../shared/StepLayout'
+import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 
 interface IComparisonStep {
   metadata: Record<string, any>
@@ -18,37 +20,45 @@ export const ComparisonStep = ({
 
   if (skipReason) {
     return (
-      <div className="p-3 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
-        <Text variant="base">Differences skipped: {skipReason}</Text>
-      </div>
+      <StepBlock>
+        <Text variant="subtext" theme="neutral">
+          Differences skipped: {skipReason}
+        </Text>
+      </StepBlock>
     )
   }
 
   if (status === 'pending' || status === 'in-progress') {
     return (
-      <div className="p-3 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
-        <Text variant="base" theme="neutral">
-          Computing differences…
-        </Text>
-      </div>
+      <StepBlock>
+        <StepStatePlaceholder
+          variant={status === 'pending' ? 'pending' : 'loading'}
+        >
+          {status === 'pending'
+            ? 'Waiting to compute differences'
+            : 'Computing differences'}
+        </StepStatePlaceholder>
+      </StepBlock>
     )
   }
 
   if (!appBranchId || !appBranchRunId) {
     return (
-      <div className="p-3 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
-        <Text variant="base" theme="neutral">
+      <StepBlock>
+        <Text variant="subtext" theme="neutral">
           Run comparison unavailable.
         </Text>
-      </div>
+      </StepBlock>
     )
   }
 
   return (
-    <BranchRunChanges
-      branchId={appBranchId}
-      appBranchRunId={appBranchRunId}
-      showRunComparison
-    />
+    <StepBlock>
+      <BranchRunChanges
+        branchId={appBranchId}
+        appBranchRunId={appBranchRunId}
+        showRunComparison
+      />
+    </StepBlock>
   )
 }

@@ -35,8 +35,7 @@ const BranchTemplate = () => {
   )
   const openSettings = useOpenBranchSettings()
   const [searchParams] = useSearchParams()
-  const isSettingsOpen =
-    searchParams.get('panel') === BRANCH_SETTINGS_PANEL_KEY
+  const isSettingsOpen = searchParams.get('panel') === BRANCH_SETTINGS_PANEL_KEY
   const branchId = params.branchId as string
   const orgId = org.id!
   const appId = app.id!
@@ -67,31 +66,27 @@ const BranchTemplate = () => {
     { path: `/`, iconVariant: 'HouseSimpleIcon', text: 'Overview' },
     { path: `/runs`, iconVariant: 'PlayIcon', text: 'Updates' },
     { type: 'section', label: 'Installs', defaultOpen: false },
-    { path: `/runs`, iconVariant: 'PlayIcon', text: 'Runs' },
-    { path: `/plan`, iconVariant: 'TreeStructureIcon', text: 'Deployment plan' },
-    { path: `/preview`, iconVariant: 'EyeIcon', text: 'Preview' },
-    { type: 'section', label: 'Definition' },
-    { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },
-    { path: `/actions`, iconVariant: 'TerminalWindowIcon', text: 'Actions' },
-    { path: `/runbooks`, iconVariant: 'BookIcon', text: 'Runbooks' },
-    { path: `/sandbox`, iconVariant: 'ShippingContainerIcon', text: 'Sandbox builds' },
-    { type: 'section', label: 'Distribution' },
     { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
     { path: `/plan`, iconVariant: 'TreeStructureIcon', text: 'Install groups' },
     ...(hasInstallSyncing
       ? [
-        {
-          path: `/install-configs`,
-          iconVariant: 'ArrowsClockwiseIcon' as const,
-          text: 'Install configs',
-        },
-      ]
+          {
+            path: `/install-configs`,
+            iconVariant: 'ArrowsClockwiseIcon' as const,
+            text: 'Install configs',
+          },
+        ]
       : []),
     { type: 'section', label: 'Template' },
+    { path: `/inputs`, iconVariant: 'ListChecksIcon', text: 'Inputs' },
     { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },
     { path: `/actions`, iconVariant: 'TerminalWindowIcon', text: 'Actions' },
     { path: `/runbooks`, iconVariant: 'BookIcon', text: 'Runbooks' },
-    { path: `/sandbox`, iconVariant: 'ShippingContainerIcon', text: 'Sandboxes' },
+    {
+      path: `/sandbox`,
+      iconVariant: 'ShippingContainerIcon',
+      text: 'Sandboxes',
+    },
     { path: `/policies`, iconVariant: 'ShieldCheckIcon', text: 'Policies' },
     { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
     { type: 'section', label: 'Configuration' },
@@ -151,7 +146,11 @@ const BranchTemplate = () => {
       ) : null}
       <BranchSettingsPanel />
       <PageContent className="border-t" variant="row">
-        <SubNav basePath={basePath} links={navLinks} storageKey="subnav:branch" />
+        <SubNav
+          basePath={basePath}
+          links={navLinks}
+          storageKey="subnav:branch"
+        />
         <div className="flex flex-col flex-1 min-w-0">
           {latestRun && params.runId !== latestRun.id ? (
             <BranchPendingApprovals

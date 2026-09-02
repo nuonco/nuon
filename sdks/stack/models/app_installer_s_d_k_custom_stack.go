@@ -20,20 +20,16 @@ type AppInstallerSDKCustomStack struct {
 	// index
 	Index int64 `json:"index,omitempty"`
 
-	// InputParameters maps a top-level template parameter name to the install
-	// input whose current value should be passed for it.
+	// input parameters
 	InputParameters map[string]string `json:"input_parameters,omitempty"`
 
-	// Module is the curated gcp-terraform module name (e.g. "bucket"). Empty
-	// for aws-cloudformation and azure-bicep stacks.
+	// module
 	Module string `json:"module,omitempty"`
 
-	// Name is the raw config name, not a sanitized logical ID — it keys the
-	// phone-home payload.
+	// name
 	Name string `json:"name,omitempty"`
 
-	// Outputs maps each output key the stack's template declares to the flat
-	// top-level output name the generated custom-stacks template emits for it.
+	// outputs
 	Outputs map[string]string `json:"outputs,omitempty"`
 
 	// parameters

@@ -36,18 +36,10 @@ type AppInstallerSDKConfig struct {
 	// cloud
 	Cloud string `json:"cloud,omitempty"`
 
-	// CustomStacks are the vendor's custom_nested_stacks, install-override-merged
-	// and parameter-rendered, sorted by Index. Served for every cloud so
-	// consumers that cannot yet deploy them fail loudly on a non-empty list
-	// instead of silently dropping them.
+	// custom stacks
 	CustomStacks []*AppInstallerSDKCustomStack `json:"custom_stacks"`
 
-	// CustomStacksTemplateURL is the S3 URL of the AWS-only CloudFormation
-	// template containing ONLY this install's custom_nested_stacks (see
-	// specs/cloudformation-substacks.md, Phase 3). The Terraform module deploys it
-	// as a single aws_cloudformation_stack alongside natively-created VPC/runner
-	// resources. Empty for every cloud besides aws-cloudformation, and empty on aws
-	// when CustomStacks is empty or no install stack version has rendered it yet.
+	// custom stacks template url
 	CustomStacksTemplateURL string `json:"custom_stacks_template_url,omitempty"`
 
 	// gcp

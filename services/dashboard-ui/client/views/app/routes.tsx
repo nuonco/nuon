@@ -39,18 +39,17 @@ import { BranchLayout } from './branches/BranchLayout'
 import { BranchOverviewTab } from './branches/tabs/BranchOverviewTab'
 import { BranchRunsTab } from './branches/tabs/BranchRunsTab'
 import { BranchPlanTab } from './branches/tabs/BranchPlanTab'
-import { BranchPreviewTab } from './branches/tabs/BranchPreviewTab'
 import { BranchConfigsTab } from './branches/tabs/BranchConfigsTab'
+import { BranchInputs } from './branches/scoped/BranchInputs'
 import { BranchComponents } from './branches/scoped/BranchComponents'
 import { BranchActions } from './branches/scoped/BranchActions'
 import { BranchRunbooks } from './branches/scoped/BranchRunbooks'
 import { BranchInstalls } from './branches/scoped/BranchInstalls'
 import { BranchRunDetail } from './branches/BranchRunDetail'
 
-const legacy = (
-  element: ReactNode,
-  subPath?: (params: Params) => string
-) => <LegacyAppRoute subPath={subPath}>{element}</LegacyAppRoute>
+const legacy = (element: ReactNode, subPath?: (params: Params) => string) => (
+  <LegacyAppRoute subPath={subPath}>{element}</LegacyAppRoute>
+)
 
 const buildTabRoutes: RouteObject[] = [
   { index: true, element: <BuildSummaryTab /> },
@@ -133,7 +132,14 @@ export const appRoutes: RouteObject[] = [
         element: legacy(<PoliciesLayout />, () => 'policies'),
         children: [
           { index: true, element: <Policies /> },
-          { path: 'analytics', element: <Suspense><PolicyAnalytics /></Suspense> },
+          {
+            path: 'analytics',
+            element: (
+              <Suspense>
+                <PolicyAnalytics />
+              </Suspense>
+            ),
+          },
         ],
       },
       {
@@ -149,8 +155,15 @@ export const appRoutes: RouteObject[] = [
           { path: 'runs', element: <BranchRunsTab /> },
           { path: 'runs/:runId', element: <BranchRunDetail /> },
           { path: 'plan', element: <BranchPlanTab /> },
-          { path: 'preview', element: <BranchPreviewTab /> },
+          {
+            path: 'preview',
+            loader: ({ params }) =>
+              redirect(
+                `/${params.orgId}/apps/${params.appId}/branches/${params.branchId}?panel=branch-settings`
+              ),
+          },
           { path: 'configs', element: <BranchConfigsTab /> },
+          { path: 'inputs', element: <BranchInputs /> },
           { path: 'components', element: <BranchComponents /> },
           { path: 'components/:componentId', element: <ComponentDetail /> },
           {
@@ -175,7 +188,14 @@ export const appRoutes: RouteObject[] = [
             element: <PoliciesLayout />,
             children: [
               { index: true, element: <Policies /> },
-              { path: 'analytics', element: <Suspense><PolicyAnalytics /></Suspense> },
+              {
+                path: 'analytics',
+                element: (
+                  <Suspense>
+                    <PolicyAnalytics />
+                  </Suspense>
+                ),
+              },
             ],
           },
           { path: 'policies/:policyId', element: <PolicyDetail /> },

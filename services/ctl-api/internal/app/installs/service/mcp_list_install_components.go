@@ -9,7 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -19,10 +19,13 @@ type mcpListInstallComponentsInput struct {
 }
 
 func (s *service) mcpListInstallComponents(ctx context.Context, _ *mcp.CallToolRequest, in mcpListInstallComponentsInput) (*mcp.CallToolResult, any, error) {
-	orgID := keys.OrgIDFromContext(ctx)
+	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var install app.Install
-	err := s.db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Where(app.Install{OrgID: orgID}).
 		Where("id = ? OR name = ?", in.Install, in.Install).
 		First(&install).Error

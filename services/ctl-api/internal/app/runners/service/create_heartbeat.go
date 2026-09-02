@@ -27,6 +27,8 @@ type CreateRunnerHeartBeatRequest struct {
 	ProcessID string                `json:"process_id"`
 }
 
+const inactiveRunnerProcessConflict = "process_inactive"
+
 // @ID						CreateRunnerHeartBeat
 // @Summary				create a runner heart beat
 // @Description.markdown	create_runner_heart_beat.md
@@ -54,14 +56,26 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		return
 	}
 
+	process, err := s.heartbeatGetRunnerProcess(ctx, runnerID, req.ProcessID)
+	if err != nil {
+		s.l.Warn("unable to get runner process for heartbeat", zap.String("process_id", req.ProcessID), zap.Error(err))
+	}
+	if process != nil && process.ProcessStatus() == app.RunnerProcessStatusInactive {
+		ctx.Error(stderr.ErrConflict{
+			Err:         errors.New("runner process is inactive"),
+			Description: inactiveRunnerProcessConflict,
+		})
+		return
+	}
+
 	heartBeat, err := s.createRunnerHeartBeat(ctx, runnerID, req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create runner heart beat: %w", err))
 		return
 	}
 
-	if req.ProcessID != "" {
-		if err := s.helpers.MaybeEnqueueInitialHealthCheck(ctx, runnerID, req.ProcessID); err != nil {
+	if process != nil {
+		if err := s.helpers.MaybeEnqueueInitialHealthCheck(ctx, runnerID, process); err != nil {
 			s.l.Warn("unable to maybe enqueue initial health check", zap.String("process_id", req.ProcessID), zap.Error(err))
 		}
 	}
@@ -102,6 +116,21 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 	)
 
 	ctx.JSON(http.StatusCreated, heartBeat)
+}
+
+func (s *service) heartbeatGetRunnerProcess(ctx context.Context, runnerID, processID string) (*app.RunnerProcess, error) {
+	if processID == "" {
+		return nil, nil
+	}
+
+	var process app.RunnerProcess
+	if err := s.db.WithContext(ctx).
+		Where(app.RunnerProcess{ID: processID, RunnerID: runnerID}).
+		First(&process).Error; err != nil {
+		return nil, fmt.Errorf("unable to get runner process: %w", err)
+	}
+
+	return &process, nil
 }
 
 func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, req CreateRunnerHeartBeatRequest) (*app.RunnerHeartBeat, error) {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type mcpListWorkflowsInput struct {
@@ -16,10 +16,13 @@ type mcpListWorkflowsInput struct {
 }
 
 func (s *service) mcpListWorkflows(ctx context.Context, _ *mcp.CallToolRequest, in mcpListWorkflowsInput) (*mcp.CallToolResult, any, error) {
-	orgID := keys.OrgIDFromContext(ctx)
+	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var workflows []app.Workflow
-	err := s.db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Where(app.Workflow{OrgID: orgID, OwnerID: in.InstallID}).
 		Order("created_at DESC").
 		Limit(20).

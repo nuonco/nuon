@@ -96,7 +96,7 @@ const InstallTemplate = () => {
       text: 'Workflows',
     },
     {
-      path: `/versions`,
+      path: `/app-branch-runs`,
       iconVariant: 'GitBranchIcon' as const,
       text: 'App branch runs',
     },
@@ -296,7 +296,10 @@ const InstallTemplate = () => {
                 storageKey="subnav:install"
               />
               <div className="flex flex-col flex-1 min-w-0">
-                <ErrorBoundary key={pathname} fallback={<InstallContentError />}>
+                <ErrorBoundary
+                  key={pathname}
+                  fallback={<InstallContentError />}
+                >
                   <Outlet />
                 </ErrorBoundary>
               </div>

@@ -115,6 +115,16 @@ func (a *AppBranchRun) PreviewGitHubComment() bool {
 	return a.IsPreview()
 }
 
+func (a *AppBranchRun) PreviewMode() AppBranchRunPreviewMode {
+	if a.Preview != nil && a.Preview.Mode != "" {
+		return a.Preview.Mode
+	}
+	if a.IsPreview() {
+		return AppBranchRunPreviewModePlanOnly
+	}
+	return ""
+}
+
 func (a *AppBranchRun) PreviewInstallPlanOnly() bool {
 	if a.Preview != nil {
 		return a.Preview.Mode == AppBranchRunPreviewModePlanOnly
