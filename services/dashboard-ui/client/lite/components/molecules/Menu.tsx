@@ -267,7 +267,8 @@ export const MenuSubmenu = ({
   </Dropdown>
 )
 
-export interface IMenuLabel extends HTMLAttributes<HTMLDivElement> {}
+export interface IMenuLabel
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'color'> {}
 
 export const MenuLabel = ({ className, children, ...props }: IMenuLabel) => (
   <Text

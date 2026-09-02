@@ -12,7 +12,7 @@ import { Text } from '../atoms/Text'
 
 export interface IDisclosure
   extends IUseDisclosure,
-    Omit<HTMLAttributes<HTMLDivElement>, 'id' | 'onChange'> {
+    Omit<HTMLAttributes<HTMLDivElement>, 'id' | 'onChange' | 'title'> {
   title: ReactNode
   description?: ReactNode
   status?: ReactNode

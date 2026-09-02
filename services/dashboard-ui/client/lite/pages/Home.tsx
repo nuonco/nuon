@@ -1,9 +1,12 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getMe, getOrgs } from '@/lib'
 import { useConfig } from '@/hooks/use-config'
+import { CodeBlock } from '../components/molecules/CodeBlock'
 import { Text } from '../components/atoms/Text'
 import { ThemeSwitcher } from '../components/molecules/ThemeSwitcher'
 import { useTheme } from '../hooks/use-theme'
+import { installStateJSON } from '../lib/fixtures/install-state'
 
 export const Home = () => {
   const config = useConfig()
@@ -23,9 +26,10 @@ export const Home = () => {
   })
 
   const isLoading = isLoadingMe || isLoadingOrgs
+  const installState = useMemo(() => installStateJSON(), [])
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-8 px-6 py-16">
+    <main className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-16">
       <div className="flex flex-col gap-2">
         <Text as="h1" variant="title" color="primary">
           Nuon lite
@@ -87,6 +91,27 @@ export const Home = () => {
             </div>
           </dl>
         )}
+      </div>
+
+      {/* Temporary: a production-sized install state, here to exercise the
+          worker pool and virtualization in the real app rather than in Ladle. */}
+      <div className="flex flex-col gap-3">
+        <Text as="h2" variant="heading" color="primary">
+          Install state
+        </Text>
+        <Text variant="caption" color="tertiary">
+          {installState.split('\n').length.toLocaleString()} lines, including one
+          line of{' '}
+          {Math.max(...installState.split('\n').map((line) => line.length)).toLocaleString()}{' '}
+          characters.
+        </Text>
+        <CodeBlock
+          language="json"
+          filename="install-state.json"
+          value={installState}
+          maxHeight={560}
+          copy
+        />
       </div>
     </main>
   )

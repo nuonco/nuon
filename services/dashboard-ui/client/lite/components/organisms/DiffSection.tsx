@@ -1,0 +1,114 @@
+import { useMemo } from 'react'
+import { cn } from '@/utils/classnames'
+import { changeCounts } from '../../lib/diffs'
+import { Text } from '../atoms/Text'
+import { Diff, type IDiff, type TDiffView } from '../molecules/Diff'
+import { Disclosure, type IDisclosure } from '../molecules/Disclosure'
+
+export type TDiffOperation =
+  | 'create'
+  | 'update'
+  | 'replace'
+  | 'delete'
+  | 'read'
+  | 'no-op'
+
+const RAIL_CLASSES: Record<TDiffOperation, string> = {
+  create: 'border-l-diff-add',
+  update: 'border-l-diff-change',
+  replace: 'border-l-divider-accent',
+  delete: 'border-l-diff-remove',
+  read: 'border-l-divider',
+  'no-op': 'border-l-divider',
+}
+
+const TINT_CLASSES: Record<TDiffOperation, string> = {
+  create: 'bg-diff-add-section',
+  update: 'bg-diff-change-section',
+  replace: 'bg-surface-accent',
+  delete: 'bg-diff-remove-section',
+  read: '',
+  'no-op': '',
+}
+
+const HOVER_CLASSES: Record<TDiffOperation, string> = {
+  create: 'hover:bg-diff-add-row!',
+  update: 'hover:bg-diff-change-row!',
+  replace: '',
+  delete: 'hover:bg-diff-remove-row!',
+  read: '',
+  'no-op': '',
+}
+
+export interface IDiffSection
+  extends Omit<IDisclosure, 'children' | 'status'>,
+    Omit<IDiff, 'className' | 'view'> {
+  operation: TDiffOperation
+  view?: TDiffView
+}
+
+export const DiffSection = ({
+  operation,
+  before,
+  after,
+  language,
+  filename,
+  view: viewProp,
+  defaultWrap,
+  lineNumbers,
+  search,
+  maxHeight,
+  className,
+  headerClassName,
+  contentClassName,
+  ...props
+}: IDiffSection) => {
+  const counts = useMemo(() => changeCounts(before, after), [after, before])
+
+  return (
+    <Disclosure
+      status={
+        <span
+          className="flex items-center gap-1.5"
+          aria-label={`${counts.added} added, ${counts.removed} removed`}
+        >
+          {counts.added ? (
+            <Text variant="caption" family="mono" className="text-diff-add">
+              +{counts.added}
+            </Text>
+          ) : null}
+          {counts.removed ? (
+            <Text variant="caption" family="mono" className="text-diff-remove">
+              -{counts.removed}
+            </Text>
+          ) : null}
+        </span>
+      }
+      className={cn(
+        'overflow-hidden rounded-r-md border-l-4',
+        RAIL_CLASSES[operation],
+        TINT_CLASSES[operation],
+        className
+      )}
+      headerClassName={cn(
+        'rounded-none',
+        HOVER_CLASSES[operation],
+        headerClassName
+      )}
+      contentClassName={cn('p-2', contentClassName)}
+      {...props}
+    >
+      <Diff
+        before={before}
+        after={after}
+        language={language}
+        filename={filename}
+        view={viewProp}
+        defaultWrap={defaultWrap}
+        lineNumbers={lineNumbers}
+        search={search}
+        maxHeight={maxHeight}
+      />
+    </Disclosure>
+  )
+}

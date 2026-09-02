@@ -92,7 +92,7 @@ export const WithStatusAndActions = () => (
     <Disclosure
       title="acme-production"
       description="Deployment · apps/api"
-      status={<Badge tone="warn">update</Badge>}
+      status={<Badge tone="accent">update</Badge>}
       actions={
         <Dropdown
           align="end"

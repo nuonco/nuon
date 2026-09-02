@@ -45,22 +45,26 @@ export const ExpandAllButton = ({
 
   const expanded = group.allOpen
 
+  const label = expanded ? collapseLabel : expandLabel
+
   return (
     <Button
       variant="ghost"
       size="sm"
+      iconOnly
       aria-pressed={expanded}
+      aria-label={label}
+      tooltip={label}
       onClick={() => (expanded ? group.closeAll() : group.openAll())}
-      icon={
-        <Icon
-          variant={expanded ? 'CaretUpIcon' : 'CaretDownIcon'}
-          size={14}
-          aria-hidden
-        />
-      }
       {...props}
     >
-      {expanded ? collapseLabel : expandLabel}
+      <Icon
+        variant={
+          expanded ? 'ArrowsInLineVerticalIcon' : 'ArrowsOutLineVerticalIcon'
+        }
+        size={14}
+        aria-hidden
+      />
     </Button>
   )
 }
