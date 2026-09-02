@@ -31,8 +31,11 @@ Writes in the current directory:
   cursor                 .cursor/mcp.json
   amp                    .amp/settings.json
 
-List name defaults from api_url (nuon, nuon-stage, nuon-local).
---url and --name are passed through to "nuon agents mcp" when set.`,
+The server is registered as "nuon" and connects to https://mcp.nuon.co/mcp.
+Override either with --url and --name; both are written into the generated
+command. A non-default -C config path is copied in as well.
+
+  nuon agents mcp setup --platform cursor --url https://mcp.example.com/mcp --name nuon-example`,
 		PersistentPreRunE: c.persistentPreRunE,
 		Annotations:       outputsAnnotation(OutputTable),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
@@ -50,8 +53,8 @@ List name defaults from api_url (nuon, nuon-stage, nuon-local).
 	}
 
 	cmd.Flags().StringVar(&platform, "platform", "", "MCP client platform (claude-code, cursor, amp)")
-	cmd.Flags().StringVar(&mcpURL, "url", "", "MCP server URL passed through to nuon agents mcp")
-	cmd.Flags().StringVar(&name, "name", "", "name in the client's MCP list (defaults based on the configured API URL)")
+	cmd.Flags().StringVar(&mcpURL, "url", "", "upstream MCP server URL passed through to nuon agents mcp (default https://mcp.nuon.co/mcp)")
+	cmd.Flags().StringVar(&name, "name", "", "name in the client's MCP list (default nuon, derived from the configured API URL)")
 	_ = cmd.MarkFlagRequired("platform")
 
 	return cmd
