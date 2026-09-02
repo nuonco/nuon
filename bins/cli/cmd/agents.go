@@ -179,7 +179,7 @@ func (c *cli) agentsContextMarkdown() string {
 	b.WriteString("```json\n{\"mcpServers\": {\"nuon\": {\"command\": \"nuon\", \"args\": [\"agents\", \"mcp\"]}}}\n```\n\n")
 	b.WriteString(fmt.Sprintf("The upstream URL above (`%s`) comes from `api_url` in the CLI config. Override it with `--url`, and the name in the client's MCP list with `--name`:\n\n", mcpURL))
 	b.WriteString("```bash\nnuon agents mcp --url https://mcp.example.com/mcp --name nuon-example\n```\n\n")
-	b.WriteString("Both flags pass through `nuon agents mcp setup`, which also copies a non-default `-C` config path into the command it writes.\n\n")
+	b.WriteString("`--url`, `--name`, and `--allow-writes` pass through `nuon agents mcp setup`, which also copies a non-default `-C` config path into the command it writes.\n\n")
 	b.WriteString("The proxy sets `X-Nuon-Org-ID`. Do not call `select_org` unless the header is missing.\n\n")
 	b.WriteString("### Direct: control-plane HTTP MCP\n\n")
 	b.WriteString(fmt.Sprintf("Point an MCP HTTP client at `%s` with:\n\n", mcpURL))
