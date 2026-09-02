@@ -196,5 +196,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "130-runner-job-dashboard-index",
 			Fn:   m.Migration130RunnerJobDashboardIndex,
 		},
+		{
+			Name: "131-repoint-orphaned-install-role-usages",
+			Fn:   m.Migration131RepointOrphanedInstallRoleUsages,
+		},
 	}
 }
