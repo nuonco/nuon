@@ -28,7 +28,7 @@ func (c *cli) runMCPAPI(cmd *cobra.Command, _ []string) {
 
 	providers = append(providers,
 		fxmodules.MiddlewaresModule,
-		fxmodules.AllServicesModule,
+		fxmodules.MCPServicesModule,
 		fx.Provide(api.NewEndpointAudit),
 		fxmodules.MCPAPIModule,
 	)
