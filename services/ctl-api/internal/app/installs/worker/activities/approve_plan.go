@@ -2,9 +2,11 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	tclient "go.temporal.io/sdk/client"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
@@ -51,6 +53,14 @@ func (a *Activities) ApprovePlan(ctx context.Context, req *ApprovePlanRequest) (
 		}).
 		Order("created_at DESC").
 		First(&qs)
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		// Older enqueue paths left owner_id empty; the payload still names the workflow.
+		res = a.db.WithContext(ctx).
+			Where(app.QueueSignal{Type: signal.SignalType("execute-workflow")}).
+			Where("signal->'data'->>'workflow_id' = ?", req.InstallWorkflowID).
+			Order("created_at DESC").
+			First(&qs)
+	}
 	if res.Error != nil {
 		return nil, fmt.Errorf("queue signal not found for install_workflow %s: %w", req.InstallWorkflowID, res.Error)
 	}
