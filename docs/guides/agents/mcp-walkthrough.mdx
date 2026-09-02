@@ -14,7 +14,7 @@ icon: "route"
 <Steps>
 <Step title="Register the MCP server">
 
-Add the stdio proxy. Token and org stay in `~/.nuon` (or `-C`).
+Add the stdio proxy. Token and org stay in `~/.nuon`.
 
 ```bash
 nuon agents mcp setup --platform claude-code
@@ -34,7 +34,7 @@ amp mcp add nuon -- nuon agents mcp
 ```
 </CodeGroup>
 
-Stage: `nuon -C /path/to/stage-config agents mcp setup --platform cursor`. Overrides: `--url` and `--name`. Cursor Agent: `agent mcp enable <name>` after setup. Full examples: [Connect](/guides/agents/overview#connect).
+The proxy connects to `https://mcp.nuon.co/mcp`; override it with `--url` (and `--name` for the client's MCP list). Cursor Agent: `agent mcp enable <name>` after setup. Full examples: [Connect](/guides/agents/overview#connect) and [Override the server](/guides/agents/overview#override-the-server).
 
 </Step>
 

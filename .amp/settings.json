@@ -1,0 +1,15 @@
+{
+  "amp.mcpServers": {
+    "nuon-local": {
+      "command": "/Users/robertbruce/bin/nuon-dev",
+      "args": [
+        "agents",
+        "mcp",
+        "--url",
+        "http://localhost:8088/mcp",
+        "--name",
+        "nuon-local"
+      ]
+    }
+  }
+}
