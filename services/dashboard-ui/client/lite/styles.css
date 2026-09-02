@@ -103,6 +103,13 @@
   --button-danger-bg-active: light-dark(var(--error-900), var(--error-700));
   --button-danger-text: #ffffff;
 
+  --menu-item-text: var(--text-secondary);
+  --menu-item-bg-hover: light-dark(rgba(29, 29, 29, 0.05), rgba(254, 254, 254, 0.07));
+  --menu-item-bg-active: light-dark(rgba(29, 29, 29, 0.09), rgba(254, 254, 254, 0.12));
+  --menu-item-bg-selected: light-dark(rgba(29, 29, 29, 0.07), rgba(254, 254, 254, 0.1));
+  --menu-item-text-danger: light-dark(var(--error-700), var(--error-300));
+  --menu-item-bg-danger-hover: light-dark(rgba(180, 35, 24, 0.09), rgba(249, 112, 102, 0.16));
+
   --shadow-default: light-dark(rgba(29, 29, 29, 0.04), rgba(29, 29, 29, 0.16));
   --shadow-strong: light-dark(rgba(29, 29, 29, 0.08), rgba(29, 29, 29, 0.6));
 
@@ -204,6 +211,13 @@
   --button-danger-bg-hover: #ff9999;
   --button-danger-bg-active: #ff6b6b;
   --button-danger-text: #000000;
+
+  --menu-item-text: var(--neutral-000);
+  --menu-item-bg-hover: rgba(255, 255, 255, 0.16);
+  --menu-item-bg-active: rgba(255, 255, 255, 0.26);
+  --menu-item-bg-selected: rgba(255, 255, 255, 0.22);
+  --menu-item-text-danger: var(--neutral-000);
+  --menu-item-bg-danger-hover: rgba(255, 255, 255, 0.16);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -470,6 +484,13 @@
   --color-button-danger-hover: var(--button-danger-bg-hover);
   --color-button-danger-active: var(--button-danger-bg-active);
   --color-button-danger-text: var(--button-danger-text);
+
+  --color-menu-item-text: var(--menu-item-text);
+  --color-menu-item-hover: var(--menu-item-bg-hover);
+  --color-menu-item-active: var(--menu-item-bg-active);
+  --color-menu-item-selected: var(--menu-item-bg-selected);
+  --color-menu-item-danger: var(--menu-item-text-danger);
+  --color-menu-item-danger-hover: var(--menu-item-bg-danger-hover);
 }
 
 @layer base {
