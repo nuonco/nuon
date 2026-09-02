@@ -111,7 +111,7 @@ command: "apps branches trigger --branch-id main --no-wait --force"
 The `command` input takes any CLI command, so the same action covers whatever else your pipeline needs — for example, syncing install config files from your repo:
 
 ```yaml
-command: "installs sync -a ${{ vars.nuon_app_id }} -d ./installs --confirm --auto-approve"
+command: "installs sync -a ${{ vars.nuon_app_id }} -d ./installs --confirm --approve-all"
 ```
 
 ### Action inputs

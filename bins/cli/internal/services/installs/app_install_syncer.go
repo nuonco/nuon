@@ -31,17 +31,17 @@ type appInstallSyncer struct {
 	appID, orgID string
 	interactive  bool
 	asJSON       bool
-	autoApprove  bool
+	approveAll   bool
 }
 
-func newAppInstallSyncer(api nuon.Client, appID, orgID string, interactive, asJSON, autoApprove bool) *appInstallSyncer {
+func newAppInstallSyncer(api nuon.Client, appID, orgID string, interactive, asJSON, approveAll bool) *appInstallSyncer {
 	return &appInstallSyncer{
 		api:         api,
 		appID:       appID,
 		orgID:       orgID,
 		interactive: interactive,
 		asJSON:      asJSON,
-		autoApprove: autoApprove,
+		approveAll:  approveAll,
 	}
 }
 
@@ -418,7 +418,7 @@ func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string
 	}
 
 	if workflow.ApprovalOption == models.AppInstallApprovalOptionPrompt {
-		if s.autoApprove && workflow.Status.Status == models.AppStatusPending {
+		if s.approveAll && workflow.Status.Status == models.AppStatusPending {
 			_, err := s.api.UpdateWorkflow(ctx, workflow.ID, &models.ServiceUpdateWorkflowRequest{
 				ApprovalOption: models.AppInstallApprovalOptionApproveDashAll.Pointer(),
 			})

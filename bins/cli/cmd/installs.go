@@ -40,7 +40,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		planOnly            bool
 		fileOrDir           string
 		confirm             bool
-		autoApprove         bool
+		syncApproveAll      bool
 		deprecatedYes       bool
 		wait                bool
 		enable              bool
@@ -207,17 +207,17 @@ sandbox and components unprovisioned:
 			svc := c.installs
 			if deprecatedYes {
 				confirm = true
-				autoApprove = true
+				syncApproveAll = true
 			}
-			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm, autoApprove, wait, dryRun, PrintJSON)
+			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm, syncApproveAll, wait, dryRun, PrintJSON)
 		}),
 	}
 	syncCmd.Flags().StringVarP(&fileOrDir, "file", "d", "", "Path to an install config file or a directory with install config files to sync")
 	syncCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the install belongs to")
 	syncCmd.Flags().BoolVar(&confirm, "confirm", false, "Set to skip the diff confirmation prompt for synced installs")
-	syncCmd.Flags().BoolVar(&autoApprove, "auto-approve", false, "Set to auto-approve workflows triggered by the sync, overriding each install's configured approval_option")
+	syncCmd.Flags().BoolVar(&syncApproveAll, "approve-all", false, "Set to approve all steps in the workflows triggered by the sync, overriding each install's configured approval_option")
 	syncCmd.Flags().BoolVarP(&deprecatedYes, "yes", "y", false, "Set to automatically approve diffs and workflows for synced installs")
-	syncCmd.Flags().MarkDeprecated("yes", "use --confirm to skip the diff prompt and --auto-approve to auto-approve workflows")
+	syncCmd.Flags().MarkDeprecated("yes", "use --confirm to skip the diff prompt and --approve-all to approve triggered workflows")
 	syncCmd.Flags().BoolVarP(&wait, "wait", "w", false, "Set to wait for workflows to complete after syncing installs")
 	syncCmd.Flags().BoolVar(&dryRun, "dry-run", false, "If set the changes will not be applied, only the diffs will be shown")
 	syncCmd.MarkFlagRequired("file")
