@@ -1,31 +1,38 @@
-# Mintlify Starter Kit
+# Nuon Docs
 
-Click on `Use this template` to copy the Mintlify starter kit. The starter kit contains examples including
-
-- Guide pages
-- Navigation
-- Customizations
-- API Reference pages
-- Use of popular components
+The public Nuon documentation, built with [Mintlify](https://mintlify.com). Navigation and
+configuration live in `docs.json`.
 
 ### Development
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mintlify) to preview the documentation changes locally. To install, use the following command
+Preview the docs locally with nuonctl. `--skip-all` keeps it from also starting
+every other service:
 
 ```
-npm i -g mint
+nuonctl dev --dev=docs --skip-all
 ```
 
-Run the following command at the root of your documentation (where mint.json is)
+Or run the dev server directly from this directory:
 
 ```
-mintlify dev
+./dev.sh
 ```
+
+Either way the preview is served at http://localhost:3333.
+
+`dev.sh` pins the mint version to match `Dockerfile` and picks a node that mint
+supports. mint refuses to run on node 25, which bun reports itself as, so
+running `mint` under bun or an active node 25 fails. Overrides: `MINT_NODE`,
+`MINT_VERSION`, `PORT`.
+
 ### Publishing Changes
 
 Install our Github App to autopropagate changes from youre repo to your deployment. Changes will be deployed to production automatically after pushing to the default branch. Find the link to install on your dashboard.
 
 #### Troubleshooting
 
-- Mintlify dev isn't running - Run `mintlify install` it'll re-install dependencies.
-- Page loads as a 404 - Make sure you are running in a folder with `mint.json`
+- `mintlify is not supported on node 25` - `dev.sh` should avoid this; if it
+  can't find a supported node, install one (`brew install node@24`) or point
+  `MINT_NODE` at one.
+- Page loads as a 404 - Make sure you are running in this directory, where
+  `docs.json` lives.
