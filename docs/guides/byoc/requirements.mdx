@@ -1,7 +1,7 @@
 ---
 title: 'Nuon BYOC Requirements'
 sidebarTitle: 'Requirements'
-description: 'Prerequisites for installing Nuon BYOC on any cloud platform'
+description: 'Prerequisites for installing Nuon BYOC on AWS or GCP'
 icon: 'list-check'
 keywords: ['Nuon BYOC requirements', 'BYOC prerequisites', 'DNS setup', 'GitHub App', 'Identity Provider', 'Slack integration']
 ---
@@ -10,12 +10,11 @@ Before installing Nuon BYOC, you will need to prepare the following dependencies
 
 ## Cloud Account
 
-You will need either an AWS, GCP, or Azure account to run Nuon BYOC in.
-Most of the installation process is the same for all platforms.
-Steps specific to each platform are detailed in the guide for each one.
+You will need an AWS or GCP account to run Nuon BYOC in.
+The installation process is the same on both platforms. Platform-specific architecture is covered in [Architecture](/guides/byoc#architecture).
 
 <Note>
-If you are hosting Nuon BYOC on GCP or Azure, a public S3 bucket is still required to support Cloudformation Quicklinks for install stacks.
+If you are hosting Nuon BYOC on GCP, a public S3 bucket is still required to support CloudFormation Quick create links for customer AWS install stacks.
 By default, we will provision a bucket for you, but if you would like to own the bucket yourself, you will need an AWS account.
 </Note>
 
@@ -23,7 +22,7 @@ By default, we will provision a bucket for you, but if you would like to own the
 
 ### Root DNS
 
-In order to serve Nuon BYOC at your own domain -- for example, `nuon.my-domain.com` -- you will need a DNS zone to place the records in.
+In order to serve Nuon BYOC at your own domain — for example, `nuon.my-domain.com` — you will need a DNS zone to place the records in.
 
 <Steps>
 
@@ -36,11 +35,11 @@ While provisioning the install stack, provide `nuon.my-domain.com` as the value 
 </Step>
 
 <Step>
-Once Nuon BYOC has fully provisioned, the Cloud DNS nameservers for the install will be available in the outputs.
+Once Nuon BYOC has fully provisioned, the nameservers for the install will be available in the outputs.
 </Step>
 
 <Step>
-Create an NS record named `nuon.my-domain.com` using the Cloud DNS nameserver values.
+Create an NS record named `nuon.my-domain.com` using the nameserver values from the install outputs.
 </Step>
 
 <Step>
@@ -66,7 +65,7 @@ We strongly recommend creating a Nuon-specific subdomain to avoid leaking auth c
 
 ### Install Delegation DNS (Optional)
 
-If you don't want your customers to have set up DNS when installing your app, you can configure DNS delegation.
+If you don't want your customers to have to set up DNS when installing your app, you can configure DNS delegation.
 A subdomain is provisioned for each install under a subdomain you control.
 Nuon Cloud, for example, creates a subdomain for each install at `<install_id>.nuon.run` by default.
 
@@ -74,7 +73,7 @@ For details, see [Custom Domains](/guides/custom-domains).
 
 ## GitHub App
 
-Create a GitHub App so Nuon can access your Github org.
+Create a GitHub App so Nuon can access your GitHub org.
 This allows it to access private repos and receive webhook events.
 
 <Steps>
@@ -113,7 +112,7 @@ Organization permissions
 | Webhooks   | Read and write |
 
 <Note>
-The **Webhooks** permission lets Nuon register a webhook to trigger [app branch runs](/concepts/app-branches). If you do not want grant this access, you can instead trigger runs from your own CI using the [Nuon GitHub Action](/guides/github-actions).
+The **Webhooks** permission lets Nuon register a webhook to trigger [app branch runs](/concepts/app-branches). If you do not want to grant this access, you can instead trigger runs from your own CI using the [Nuon GitHub Action](/guides/github-actions).
 </Note>
 </Step>
 
@@ -186,7 +185,7 @@ To use Okta as your IdP, set up an OIDC Application in Okta.
 <Step>
 In the Okta Admin Console, navigate to **Applications** and create a new **OIDC application**.
   1. For Sign-in method, select **OIDC - OpenID Connect**
-  1. For Application type, select **Web Application**
+  2. For Application type, select **Web Application**
 </Step>
 
 <Step>
@@ -202,7 +201,7 @@ Click **Save**.
 </Step>
 
 <Step>
-After creation, save the **client id** to provide as an input, and the **secret** to provider as a secret.
+After creation, save the **Client ID** to provide as an input, and the **secret** to provide as a secret.
 </Step>
 
 </Steps>
@@ -304,86 +303,3 @@ Create a Native Application for CLI authentication.
 </Step>
 
 </Steps>
-
-## Slack App (Optional)
-
-By default, Nuon will create a Slack app to power the Slack integration.
-If you would prefer to use your own Slack app, you can create one and send us the configuration info before we create the install.
-
-<Steps>
-
-<Step>
-Create a Slack app using this manifest file, replacing `<your-root-domain>` with the domain you have chosen.
-
-```json
-{
-  "display_information": {
-    "name": "<your-root-domain>",
-    "description": "Nuon BYOC Slack integration for <your-root-domain>",
-    "background_color": "#0b0b0f",
-    "long_description": "Nuon BYOC posts deployment lifecycle events from your installs, sandboxes, runners, and actions into the Slack channels you choose. Subscribe per org, filter by interest (failures, components, sandboxes, runners, actions)."
-  },
-  "features": {
-    "bot_user": {
-      "display_name": "Nuon BYOC",
-      "always_online": true
-    },
-    "slash_commands": [
-      {
-        "command": "/nuon-byoc",
-        "url": "https://slack.<your-root-domain>/slack/commands/nuon",
-        "description": "Manage Nuon BYOC notifications in Slack",
-        "usage_hint": "subscribe [install] | unsubscribe | status | help",
-        "should_escape": false
-      }
-    ]
-  },
-  "oauth_config": {
-    "redirect_urls": [
-      "https://slack.<your-root-domain>/slack/oauth/callback"
-    ],
-    "scopes": {
-      "bot": [
-        "chat:write",
-        "chat:write.public",
-        "channels:read",
-        "groups:read",
-        "team:read",
-        "commands"
-      ]
-    },
-    "pkce_enabled": false
-  },
-  "settings": {
-    "event_subscriptions": {
-      "request_url": "https://slack.<your-root-domain>/slack/events",
-      "bot_events": [
-        "app_uninstalled",
-        "channel_archive",
-        "channel_left",
-        "channel_rename",
-        "tokens_revoked"
-      ]
-    },
-    "interactivity": {
-      "is_enabled": true,
-      "request_url": "https://slack.<your-root-domain>/slack/interactions",
-      "message_menu_options_url": "https://slack.<your-root-domain>/slack/interactions"
-    },
-    "org_deploy_enabled": false,
-    "socket_mode_enabled": false,
-    "token_rotation_enabled": false,
-    "is_mcp_enabled": false
-  }
-}
-```
-</Step>
-
-<Step>
-After creation, save the **Client ID** and send it to us.
-Save the **Client Secret**, **Signing Secret**, and **JWT Secret**, and provide them as secrets to the install stack.
-</Step>
-
-</Steps>
-
-For detailed instructions on setting up the Slack app, see the [Slack integration guide](/guides/slack).

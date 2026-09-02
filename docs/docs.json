@@ -55,9 +55,9 @@
                 "expanded": false,
                 "pages": [
                   "guides/byoc/requirements",
-                  "guides/byoc/aws",
-                  "guides/byoc/gcp",
-                  "guides/byoc/azure"
+                  "guides/byoc/installation",
+                  "guides/byoc/optional",
+                  "guides/byoc/updates"
                 ]
               },
               {
@@ -462,6 +462,22 @@
     {
       "source": "/guides/notifications",
       "destination": "/guides/slack"
+    },
+    {
+      "source": "/guides/byoc/aws",
+      "destination": "/guides/byoc"
+    },
+    {
+      "source": "/guides/byoc/gcp",
+      "destination": "/guides/byoc"
+    },
+    {
+      "source": "/guides/byoc/azure",
+      "destination": "/guides/byoc"
+    },
+    {
+      "source": "/guides/byoc/upgrading",
+      "destination": "/guides/byoc/updates"
     }
   ]
 }
