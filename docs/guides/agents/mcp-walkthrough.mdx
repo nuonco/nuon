@@ -61,9 +61,10 @@ You do not need `select_org` when using the stdio proxy (org is already in `X-Nu
 
 <Step title="Writes (optional)">
 
-Restart the proxy with `--allow-writes` only when you need to mutate (approve steps, run actions, preview branches, and so on):
+Pass `--allow-writes` only when you need to mutate (approve steps, run actions, preview branches, and so on). Re-run setup so the client config includes it, or start the proxy directly:
 
 ```bash
+nuon agents mcp setup --platform cursor --allow-writes
 nuon agents mcp --allow-writes
 ```
 

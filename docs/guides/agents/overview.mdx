@@ -54,10 +54,11 @@ The proxy derives its upstream URL from `api_url` in your CLI config, which reso
 nuon agents mcp --url https://mcp.example.com/mcp --name nuon-example
 ```
 
-Both flags pass through `setup`, so the generated client config keeps them:
+`--url`, `--name`, and `--allow-writes` pass through `setup`, so the generated client config keeps them:
 
 ```bash
 nuon agents mcp setup --platform cursor --url https://mcp.example.com/mcp --name nuon-example
+nuon agents mcp setup --platform cursor --allow-writes
 ```
 
 A non-default CLI config (`-C /path/to/config`) carries its own token, org, and `api_url`. `setup` copies the `-C` into the command it writes, so the client keeps using that config.

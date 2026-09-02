@@ -14,9 +14,10 @@ import (
 
 func (c *cli) mcpSetupCmd() *cobra.Command {
 	var (
-		platform string
-		mcpURL   string
-		name     string
+		platform    string
+		mcpURL      string
+		name        string
+		allowWrites bool
 	)
 
 	cmd := &cobra.Command{
@@ -33,9 +34,11 @@ Writes in the current directory:
 
 The server is registered as "nuon" and connects to https://mcp.nuon.co/mcp.
 Override either with --url and --name; both are written into the generated
-command. A non-default -C config path is copied in as well.
+command. Pass --allow-writes to include it on the generated command so the
+client exposes mutating tools. A non-default -C config path is copied in as well.
 
-  nuon agents mcp setup --platform cursor --url https://mcp.example.com/mcp --name nuon-example`,
+  nuon agents mcp setup --platform cursor --url https://mcp.example.com/mcp --name nuon-example
+  nuon agents mcp setup --platform cursor --allow-writes`,
 		PersistentPreRunE: c.persistentPreRunE,
 		Annotations:       outputsAnnotation(OutputTable),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
@@ -43,7 +46,7 @@ command. A non-default -C config path is copied in as well.
 				name = mcpserver.NameFromAPIURL(c.cfg.APIURL)
 			}
 
-			args, err := stdioMCPArgs(cmd.Flags().Changed("url"), mcpURL, cmd.Flags().Changed("name"), name)
+			args, err := stdioMCPArgs(cmd.Flags().Changed("url"), mcpURL, cmd.Flags().Changed("name"), name, allowWrites)
 			if err != nil {
 				return err
 			}
@@ -55,6 +58,7 @@ command. A non-default -C config path is copied in as well.
 	cmd.Flags().StringVar(&platform, "platform", "", "MCP client platform (claude-code, cursor, amp)")
 	cmd.Flags().StringVar(&mcpURL, "url", "", "upstream MCP server URL passed through to nuon agents mcp (default https://mcp.nuon.co/mcp)")
 	cmd.Flags().StringVar(&name, "name", "", "name in the client's MCP list (default nuon, derived from the configured API URL)")
+	cmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "pass --allow-writes through to nuon agents mcp")
 	_ = cmd.MarkFlagRequired("platform")
 
 	return cmd
@@ -82,7 +86,7 @@ func mcpSetupCommand() string {
 	return exe
 }
 
-func stdioMCPArgs(urlSet bool, url string, nameSet bool, name string) ([]string, error) {
+func stdioMCPArgs(urlSet bool, url string, nameSet bool, name string, allowWrites bool) ([]string, error) {
 	var args []string
 
 	configArgs, err := mcpSetupConfigFlagArgs()
@@ -96,6 +100,9 @@ func stdioMCPArgs(urlSet bool, url string, nameSet bool, name string) ([]string,
 	}
 	if nameSet {
 		args = append(args, "--name", name)
+	}
+	if allowWrites {
+		args = append(args, "--allow-writes")
 	}
 	return args, nil
 }
