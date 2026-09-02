@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -34,6 +35,12 @@ type AppInstallerSDKConfig struct {
 
 	// cloud
 	Cloud string `json:"cloud,omitempty"`
+
+	// custom stacks
+	CustomStacks []*AppInstallerSDKCustomStack `json:"custom_stacks"`
+
+	// custom stacks template url
+	CustomStacksTemplateURL string `json:"custom_stacks_template_url,omitempty"`
 
 	// gcp
 	Gcp *AppInstallerSDKGCPConfig `json:"gcp,omitempty"`
@@ -78,6 +85,10 @@ func (m *AppInstallerSDKConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateAzure(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCustomStacks(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -136,6 +147,36 @@ func (m *AppInstallerSDKConfig) validateAzure(formats strfmt.Registry) error {
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallerSDKConfig) validateCustomStacks(formats strfmt.Registry) error {
+	if swag.IsZero(m.CustomStacks) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.CustomStacks); i++ {
+		if swag.IsZero(m.CustomStacks[i]) { // not required
+			continue
+		}
+
+		if m.CustomStacks[i] != nil {
+			if err := m.CustomStacks[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("custom_stacks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("custom_stacks" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil
@@ -206,6 +247,10 @@ func (m *AppInstallerSDKConfig) ContextValidate(ctx context.Context, formats str
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateCustomStacks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateGcp(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -265,6 +310,35 @@ func (m *AppInstallerSDKConfig) contextValidateAzure(ctx context.Context, format
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallerSDKConfig) contextValidateCustomStacks(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.CustomStacks); i++ {
+
+		if m.CustomStacks[i] != nil {
+
+			if swag.IsZero(m.CustomStacks[i]) { // not required
+				return nil
+			}
+
+			if err := m.CustomStacks[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("custom_stacks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("custom_stacks" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil
