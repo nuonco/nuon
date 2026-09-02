@@ -8,11 +8,15 @@ _August 24, 2026_
 
 ## Terraform stack modules
 
-<Note>This feature is behind a feature flag. Reach out to our team if you would like it enabled for your organization.</Note>
+<Note>The TF Module tab is behind the `stack-tf-provider` org feature. Reach out to our team if you would like it
+enabled for your organization.</Note>
 
 Install stacks can be provisioned from a versioned Terraform module on the public registry, using an install ID and
 an API token instead of a generated `tfvars` file. The module reads the stack config from the control plane, and
 each stack gets its own service account, so the phone home ID no longer has to be rotated on every reprovision.
+
+Creating an install now offers a **TF Module** tab with the code for that install's cloud. There are published
+modules for AWS, Azure, and GCP.
 
 ```hcl
 provider "stack" {}

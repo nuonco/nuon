@@ -1,6 +1,6 @@
 ---
-title: 043 - Container actions and Azure install parity
-description: Ship a tooling image with an action, and give Azure customers the same one-click install AWS customers already get.
+title: 043 - Container actions, signed images, and Azure install parity
+description: Ship a tooling image with an action, require signed container images, and give Azure customers the same one-click install AWS customers already get.
 boost: 0.3
 ---
 
@@ -40,6 +40,44 @@ image = "{{.nuon.components.runbook_tools.outputs.image.ref}}"
 
 Images are pinned by digest, not tag. Every step in a container action must use `inline_contents`. See the
 [Container actions](/guides/container-actions) guide.
+
+## Container images
+
+Two additions to `container_image` components.
+
+**Signature verification.** A component can require a valid signature before Nuon copies the image into its
+registry. Verification runs at build time, after the tag resolves to an immutable digest and before the copy, so
+an unsigned or wrongly-signed image fails the build rather than reaching a customer.
+
+```toml components/api.toml
+[verification]
+require_signature = true
+
+[[verification.authorities]]
+type    = "keyless"
+issuer  = "https://token.actions.githubusercontent.com"
+subject = "https://github.com/acme/api/.github/workflows/release.yaml@refs/heads/main"
+```
+
+Sigstore keyless identities take `subject` or `subject_regexp`. Cosign key pairs use `type = "public_key"` with the
+public key committed alongside the app config; the private key is never provided to Nuon. See
+[Verify container image signatures](/guides/image-signature-verification).
+
+**Private Azure Container Registry.** An `azure_acr` block pulls from a private ACR through a service principal in
+your own tenant, authenticated with a client secret or certificate stored as an app secret and referenced by name.
+
+```toml components/acr_image.toml
+[azure_acr]
+image_url    = "vendoracr.azurecr.io/private-app"
+tag          = "latest"
+registry_url = "vendoracr.azurecr.io"
+tenant_id    = "00000000-0000-0000-0000-000000000000"
+client_id    = "11111111-1111-1111-1111-111111111111"
+
+client_secret_name = "acr_pull_secret"
+```
+
+See [Container image components](/guides/container-image-components).
 
 ## Azure installs
 
