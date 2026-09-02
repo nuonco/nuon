@@ -1,4 +1,5 @@
 import type React from 'react'
+import { DateTime } from 'luxon'
 import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
@@ -11,6 +12,7 @@ import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
+import { Tooltip } from '@/components/common/Tooltip'
 import { HealthBars } from '@/components/common/HealthBars'
 import type {
   THealthTimelineDay,
@@ -26,6 +28,67 @@ import { humanize } from '@/utils/string-utils'
 import { formatToRelativeDay } from '@/utils/timeline-utils'
 
 const BAR_NEUTRAL_CLASS = 'bg-cool-grey-200 dark:bg-dark-grey-700'
+
+const UNMONITORED_REGION_WRAPPER_CLASS = 'flex-1 min-w-[8rem]'
+const UNMONITORED_REGION_CLASS = [
+  'flex w-full items-center justify-center h-8 px-2 overflow-hidden',
+  'rounded-xs border border-dashed border-cool-grey-300 dark:border-dark-grey-600',
+  'focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary-400/80',
+  'bg-[repeating-linear-gradient(135deg,rgba(148,163,184,0.16)_0px,rgba(148,163,184,0.16)_2px,transparent_2px,transparent_7px)]',
+].join(' ')
+
+const OBSERVED_BAR_CAP_CLASS = 'max-w-[18px]'
+
+function dayHasData(day: THealthTimelineDay): boolean {
+  return (day?.observed_seconds ?? 0) > 0
+}
+
+function formatDayShort(date?: string): string | undefined {
+  if (!date) return undefined
+  const parsed = DateTime.fromISO(date)
+  return parsed.isValid ? parsed.toLocaleString(DateTime.DATE_MED) : undefined
+}
+
+function UnmonitoredRegion({
+  dayCount,
+  startDate,
+}: {
+  dayCount: number
+  startDate?: string
+}) {
+  const started = formatDayShort(startDate)
+  const dayLabel = dayCount === 1 ? 'day' : 'days'
+
+  return (
+    <Tooltip
+      position="top"
+      className={UNMONITORED_REGION_WRAPPER_CLASS}
+      tipContentClassName="!whitespace-normal !w-auto !p-2"
+      tipContent={
+        <div className="flex flex-col gap-1 w-48">
+          <Text variant="subtext" weight="strong">
+            {dayCount} {dayLabel} not monitored
+          </Text>
+          <Text variant="label" theme="neutral">
+            {started
+              ? `Health checks started ${started}. These days sit outside the uptime window.`
+              : 'Uptime starts once the health engine records its first observation.'}
+          </Text>
+        </div>
+      }
+    >
+      <div
+        aria-label={`${dayCount} ${dayLabel} not monitored${started ? `, health checks started ${started}` : ''}`}
+        tabIndex={0}
+        className={UNMONITORED_REGION_CLASS}
+      >
+        <Text variant="label" theme="neutral" className="truncate">
+          {started ? 'No health data' : 'No health data yet'}
+        </Text>
+      </div>
+    </Tooltip>
+  )
+}
 
 // Severity shading, statuspage-style: the bar encodes how much of the day was
 // bad (unhealthy + degraded over observed time), not just the worst moment —
@@ -238,6 +301,28 @@ export const HealthTimeline = ({
   const hasOverallData = (observedSeconds ?? 0) > 0
   const hasDaily = !!daily?.length
 
+  const dailyDays = daily ?? []
+  const firstObservedIdx = dailyDays.findIndex(dayHasData)
+  const hasObservations = firstObservedIdx !== -1
+  const unmonitoredDays = hasObservations ? firstObservedIdx : dailyDays.length
+  const observedDays = dailyDays.filter(dayHasData).length
+  const shouldCollapseLead =
+    unmonitoredDays > 0 && unmonitoredDays * 2 >= dailyDays.length
+  const barDays = shouldCollapseLead
+    ? dailyDays.slice(unmonitoredDays)
+    : dailyDays
+
+  const uptimeSummary = hasOverallData
+    ? shouldCollapseLead && observedDays > 0
+      ? `${formatUptime(uptimePercent, observedSeconds)} uptime across ${observedDays} observed ${observedDays === 1 ? 'day' : 'days'}`
+      : `${formatUptime(uptimePercent, observedSeconds)} uptime over the last ${days} days`
+    : `No uptime data for the last ${days} days`
+
+  const startAxisLabel =
+    shouldCollapseLead && hasObservations
+      ? `Monitoring began ${formatDayShort(barDays[0]?.date) ?? 'recently'}`
+      : `${dailyDays.length} days ago`
+
   const ranked = [...(components ?? [])].sort(
     (a, b) =>
       compareHealthSeverityDesc(a.current_health, b.current_health) ||
@@ -264,9 +349,7 @@ export const HealthTimeline = ({
             ) : null}
           </span>
           <Text variant="subtext" theme="neutral">
-            {hasOverallData
-              ? `${formatUptime(uptimePercent, observedSeconds)} uptime over the last ${days} days`
-              : `No uptime data for the last ${days} days`}
+            {uptimeSummary}
           </Text>
         </HeadingGroup>
         {headerAction}
@@ -284,7 +367,18 @@ export const HealthTimeline = ({
             animated
             grow
             barClassName="h-8 rounded-xs"
-            bars={daily!.map((day, idx) => ({
+            barWrapperClassName={
+              shouldCollapseLead ? OBSERVED_BAR_CAP_CLASS : undefined
+            }
+            leading={
+              shouldCollapseLead ? (
+                <UnmonitoredRegion
+                  dayCount={unmonitoredDays}
+                  startDate={barDays[0]?.date}
+                />
+              ) : undefined
+            }
+            bars={barDays.map((day, idx) => ({
               key: day?.date || idx,
               colorClass: dayBarClass(day),
               ariaLabel: dayAriaLabel(day),
@@ -293,7 +387,7 @@ export const HealthTimeline = ({
           />
           <div className="flex items-center justify-between">
             <Text variant="label" theme="neutral">
-              {daily!.length} days ago
+              {startAxisLabel}
             </Text>
             <Text variant="label" theme="neutral">
               Today
