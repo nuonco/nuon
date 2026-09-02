@@ -443,6 +443,8 @@ func (s *Signal) processOutputs(ctx workflow.Context, install *app.Install, vers
 				Signal: &executeflow.Signal{
 					WorkflowID: inputResp.WorkflowID,
 				},
+				SignalOwnerID:   inputResp.WorkflowID,
+				SignalOwnerType: (&app.Workflow{}).TableName(),
 			}); err != nil {
 				l.Warn("unable to enqueue input update workflow signal", zap.Error(err))
 			}
