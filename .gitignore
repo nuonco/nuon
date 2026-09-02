@@ -73,6 +73,7 @@ sdks/stack/.swagger.stamp
 .vscode/
 .zed/
 .cursor/
+.amp/
 
 # ignore binaries
 services/ctl-api/ctl-api
