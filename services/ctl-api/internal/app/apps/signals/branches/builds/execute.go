@@ -85,7 +85,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.markBuildsCompleted(ctx, l, false)
 		s.finalizeBuildMetadata(ctx, builds, false)
 		if isPreview && run.PRNumber != nil {
-			s.finalizePreview(ctx, l, run, err)
+			s.finalizePreview(ctx, l, run, builds, err)
 		}
 		return fmt.Errorf("component builds failed: %w", err)
 	}
@@ -100,7 +100,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	if ociArtifacts {
 		sandboxEntry := buildEntry{
-			ComponentID:   "sandbox",
+			ComponentID:   activities.SandboxComponentID,
 			ComponentName: "Sandbox",
 			ComponentType: "sandbox",
 			Status:        "in-progress",
@@ -110,22 +110,22 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.updateBuildMetadata(ctx, builds)
 
 		if err := s.buildSandbox(ctx, l); err != nil {
-			s.setBuildStatus(builds, "sandbox", "error")
+			s.setBuildStatus(builds, activities.SandboxComponentID, "error")
 			s.markBuildsCompleted(ctx, l, false)
 			s.finalizeBuildMetadata(ctx, builds, false)
 			if isPreview && run.PRNumber != nil {
-				s.finalizePreview(ctx, l, run, err)
+				s.finalizePreview(ctx, l, run, builds, err)
 			}
 			return fmt.Errorf("sandbox build failed: %w", err)
 		}
-		s.setBuildStatus(builds, "sandbox", "success")
+		s.setBuildStatus(builds, activities.SandboxComponentID, "success")
 		s.updateBuildMetadata(ctx, builds)
 	} else {
 		l.Info("sandbox-oci-artifacts disabled, skipping sandbox build")
 	}
 
 	if isPreview && run.PRNumber != nil {
-		s.finalizePreview(ctx, l, run, nil)
+		s.finalizePreview(ctx, l, run, builds, nil)
 	}
 
 	s.markBuildsCompleted(ctx, l, true)
@@ -450,8 +450,8 @@ func (s *Signal) finalizeBuildMetadata(ctx workflow.Context, builds []buildEntry
 	s.updateBuildMetadataWithCompleted(ctx, builds, &completed)
 }
 
-func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.AppBranchRun, buildErr error) {
-	if run.PRNumber == nil {
+func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.AppBranchRun, builds []buildEntry, buildErr error) {
+	if run.PRNumber == nil || !run.PreviewGitHubComment() {
 		return
 	}
 
@@ -474,19 +474,10 @@ func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.Ap
 	}
 
 	status := activities.PRCommentStatusSuccess
-	commitState := "success"
-	commitDesc := "Preview complete"
 	var errMsg string
-
 	if buildErr != nil {
 		status = activities.PRCommentStatusFailed
-		commitState = "failure"
-		commitDesc = "Preview failed"
 		errMsg = buildErr.Error()
-	}
-
-	if !run.PreviewGitHubComment() && !run.PreviewGitHubSetStatuses() {
-		return
 	}
 
 	var diff *activities.ComputeAppConfigDiffOutput
@@ -510,32 +501,76 @@ func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.Ap
 		}
 	}
 
+	commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
+		RunID: s.RunID,
+	})
 	commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
-		AppName:      branch.Name,
-		RunID:        s.RunID,
-		Status:       status,
-		Diff:         diff,
-		ErrorMessage: errMsg,
+		OrgName:            branch.Org.Name,
+		AppName:            branch.App.Name,
+		BranchName:         branch.Name,
+		RunID:              s.RunID,
+		RunURL:             previewRunURL(commentContext),
+		Status:             status,
+		Mode:               run.PreviewMode(),
+		Diff:               diff,
+		ComponentChanges:   componentBuildChanges(builds, commentContext),
+		PreviewInstallName: previewInstallName(commentContext),
+		PreviewInstallURL:  previewInstallURL(commentContext),
+		ErrorMessage:       errMsg,
 	})
 
-	if run.PreviewGitHubComment() {
-		_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
-			VcsConfigID:       vcsConfigID,
-			PRNumber:          *run.PRNumber,
-			ExistingCommentID: run.GithubCommentID,
-			Body:              commentBody,
-		})
+	_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
+		VcsConfigID:       vcsConfigID,
+		PRNumber:          *run.PRNumber,
+		ExistingCommentID: run.GithubCommentID,
+		Body:              commentBody,
+	})
+}
+
+func componentBuildChanges(builds []buildEntry, commentContext *activities.GetPreviewCommentContextOutput) []activities.ComponentBuildChange {
+	buildURLs := make(map[string]string)
+	if commentContext != nil {
+		for _, change := range commentContext.ComponentChanges {
+			buildURLs[change.ComponentID] = change.BuildURL
+		}
 	}
 
-	if run.HeadSHA != "" && run.PreviewGitHubSetStatuses() {
-		_ = activities.AwaitSetGithubCommitStatus(ctx, &activities.SetGithubCommitStatusInput{
-			VcsConfigID: vcsConfigID,
-			CommitSHA:   run.HeadSHA,
-			State:       commitState,
-			Context:     "nuon/preview",
-			Description: commitDesc,
+	changes := make([]activities.ComponentBuildChange, 0, len(builds))
+	for _, build := range builds {
+		if build.ChangeReason != activities.ChangeReasonSourceChanged &&
+			build.ChangeReason != activities.ChangeReasonConfigChanged {
+			continue
+		}
+		changes = append(changes, activities.ComponentBuildChange{
+			ComponentName: build.ComponentName,
+			ComponentID:   build.ComponentID,
+			BuildID:       build.BuildID,
+			ChangeReason:  build.ChangeReason,
+			BuildURL:      buildURLs[build.ComponentID],
 		})
 	}
+	return changes
+}
+
+func previewRunURL(commentContext *activities.GetPreviewCommentContextOutput) string {
+	if commentContext == nil {
+		return ""
+	}
+	return commentContext.RunURL
+}
+
+func previewInstallName(commentContext *activities.GetPreviewCommentContextOutput) string {
+	if commentContext == nil {
+		return ""
+	}
+	return commentContext.PreviewInstallName
+}
+
+func previewInstallURL(commentContext *activities.GetPreviewCommentContextOutput) string {
+	if commentContext == nil {
+		return ""
+	}
+	return commentContext.PreviewInstallURL
 }
 
 func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger) error {

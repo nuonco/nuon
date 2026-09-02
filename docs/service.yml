@@ -8,7 +8,7 @@ env_secrets: {}
 disable_watch: true
 local_startup_cmds: []
 local_cmds:
-  - npx --yes mint dev --no-open --port 3333
+  - ./dev.sh
 disable_config_map: true
 docker_cmds:
   - cmd: mint

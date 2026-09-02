@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/invopop/jsonschema"
 )
@@ -51,6 +52,10 @@ type AppBranchConfig struct {
 	Preview *AppBranchPreviewConfig `mapstructure:"preview,omitempty" toml:"preview,omitempty"`
 
 	PostDeployRunbooks []string `mapstructure:"post_deploy_runbooks,omitempty" toml:"post_deploy_runbooks,omitempty" json:"post_deploy_runbooks,omitempty"`
+
+	IgnoreChangesRegex string `mapstructure:"ignore_changes_regex,omitempty" toml:"ignore_changes_regex,omitempty" json:"ignore_changes_regex,omitempty"`
+
+	SendStatusesOnIgnore bool `mapstructure:"send_statuses_on_ignore,omitempty" toml:"send_statuses_on_ignore,omitempty" json:"send_statuses_on_ignore,omitempty"`
 }
 
 func (c AppBranchConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -60,9 +65,19 @@ func (c AppBranchConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "install_groups", "ordered deployment groups for this branch")
 	addDescription(schema, "preview", "default preview run settings for this branch")
 	addDescription(schema, "post_deploy_runbooks", "names of runbooks to run on each install, in order, after its deploy succeeds; resolved to IDs at sync time")
+	addDescription(schema, "ignore_changes_regex", "RE2 regex matched against every changed file path; a run whose entire changed file set matches is not attempted")
+	addDescription(schema, "send_statuses_on_ignore", "whether to send a successful commit status when a run is ignored by ignore_changes_regex")
 }
 
 func (c *AppBranchConfig) Validate() error {
+	if c.IgnoreChangesRegex != "" {
+		if _, err := regexp.Compile(c.IgnoreChangesRegex); err != nil {
+			return ErrConfig{
+				Description: fmt.Sprintf("branch %q: ignore_changes_regex is not a valid regular expression: %v", c.Name, err),
+			}
+		}
+	}
+
 	for _, name := range c.PostDeployRunbooks {
 		if name == "" {
 			return ErrConfig{

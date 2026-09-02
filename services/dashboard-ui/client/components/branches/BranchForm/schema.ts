@@ -7,8 +7,7 @@ export const branchFormSchema = z.object({
   name: z.string().trim().min(1, 'Branch name is required'),
   useVcs: z.boolean(),
   directory: z.string(),
-  pathFilter: z.string(),
-  disableBranchTriggers: z.boolean(),
+  ignoreAllChanges: z.boolean(),
 })
 
 export type BranchFormValues = z.infer<typeof branchFormSchema>
@@ -20,6 +19,5 @@ export interface BranchFormOutput {
   selectedRepo: TVCSConnectionRepo | null
   selectedBranch: string
   directory: string
-  pathFilter: string
-  disableBranchTriggers: boolean
+  ignoreAllChanges: boolean
 }

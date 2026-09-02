@@ -5,7 +5,8 @@ export type TAppBranch = components['schemas']['app.AppBranch'] & {
   latest_run?: TAppBranchRun
 }
 export type TAppBranchConfig = components['schemas']['app.AppBranchConfig'] & {
-  disable_branch_triggers?: boolean
+  ignore_changes_regex?: string
+  send_statuses_on_ignore?: boolean
   preview_config?: TAppBranchPreviewConfig
 }
 export type TAppBranchInstallGroup =
@@ -35,6 +36,8 @@ export type TAppBranchRunPreview = {
   install_name?: string
   git_ref?: string
   resolved_preview_config?: TAppBranchPreviewConfig
+  ignore_changes_regex?: string
+  send_statuses_on_ignore?: boolean
 }
 
 export type TPreviewSourcePR = {

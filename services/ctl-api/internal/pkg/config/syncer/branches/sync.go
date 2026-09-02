@@ -245,9 +245,14 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		return err
 	}
 
-	// Config-as-code is declarative: no post_deploy_runbooks in the TOML means
-	// none, so always pass a non-nil pointer rather than inheriting.
-	if _, err := appsHelper.CreateAppBranchConfigWithDB(ctx, db, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs, nil, previewConfig); err != nil {
+	// Config-as-code is declarative: an omitted field in the TOML means "unset",
+	// so always pass non-nil pointers rather than inheriting the previous config.
+	ignoreChanges := &appshelpers.IgnoreChangesSettings{
+		Regex:                &branchCfg.IgnoreChangesRegex,
+		SendStatusesOnIgnore: &branchCfg.SendStatusesOnIgnore,
+	}
+
+	if _, err := appsHelper.CreateAppBranchConfigWithDB(ctx, db, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs, ignoreChanges, previewConfig); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create config for branch %q", branchCfg.Name),
 			Err:         err,

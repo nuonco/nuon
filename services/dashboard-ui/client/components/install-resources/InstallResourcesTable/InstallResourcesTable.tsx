@@ -777,34 +777,36 @@ export const InstallResourcesTable = ({
           active={health}
           onChange={onHealthChange}
         />
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-row flex-wrap items-center justify-between gap-3">
           <DebouncedSearchInput
             className="w-full md:w-64"
             labelClassName="w-full md:w-64"
             placeholder="Search resources"
           />
-          <SingleSelectFilterDropdown
-            id="resource-filter-kind"
-            label="Kind"
-            options={kindOptions}
-            value={kind}
-            onChange={onKindChange}
-          />
-          <SingleSelectFilterDropdown
-            id="resource-filter-namespace"
-            label="Namespace"
-            options={namespaceOptions}
-            value={namespace}
-            onChange={onNamespaceChange}
-          />
-          <SingleSelectFilterDropdown
-            id="resource-filter-health"
-            label="Health"
-            options={HEALTH_FILTER_OPTIONS}
-            value={health}
-            onChange={onHealthChange}
-            formatOption={healthFilterLabel}
-          />
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-fit">
+            <SingleSelectFilterDropdown
+              id="resource-filter-kind"
+              label="Kind"
+              options={kindOptions}
+              value={kind}
+              onChange={onKindChange}
+            />
+            <SingleSelectFilterDropdown
+              id="resource-filter-namespace"
+              label="Namespace"
+              options={namespaceOptions}
+              value={namespace}
+              onChange={onNamespaceChange}
+            />
+            <SingleSelectFilterDropdown
+              id="resource-filter-health"
+              label="Health"
+              options={HEALTH_FILTER_OPTIONS}
+              value={health}
+              onChange={onHealthChange}
+              formatOption={healthFilterLabel}
+            />
+          </div>
         </div>
       </div>
 

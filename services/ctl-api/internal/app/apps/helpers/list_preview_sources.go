@@ -39,8 +39,10 @@ func (h *Helpers) ListPreviewSources(ctx context.Context, branch *app.AppBranch,
 		return result, err
 	}
 
+	gitBase := previewGitBase(branch, config)
+
 	prs, _, err := client.PullRequests.List(ctx, owner, repo, &github.PullRequestListOptions{
-		Base:  branch.Name,
+		Base:  gitBase,
 		State: "open",
 		ListOptions: github.ListOptions{
 			PerPage: 100,
@@ -75,7 +77,7 @@ func (h *Helpers) ListPreviewSources(ctx context.Context, branch *app.AppBranch,
 
 	for _, b := range branches {
 		name := b.GetName()
-		if name == branch.Name {
+		if name == gitBase {
 			continue
 		}
 		entry := PreviewSourceBranch{Name: name}
@@ -86,6 +88,21 @@ func (h *Helpers) ListPreviewSources(ctx context.Context, branch *app.AppBranch,
 	}
 
 	return result, nil
+}
+
+func previewGitBase(branch *app.AppBranch, config *app.AppBranchConfig) string {
+	if config != nil {
+		if cfg := config.ConnectedGithubVCSConfig; cfg != nil && cfg.Branch != "" {
+			return cfg.Branch
+		}
+		if cfg := config.PublicGitVCSConfig; cfg != nil && cfg.Branch != "" {
+			return cfg.Branch
+		}
+	}
+	if branch != nil {
+		return branch.Name
+	}
+	return ""
 }
 
 func (h *Helpers) resolveGithubClientForBranchConfig(ctx context.Context, config *app.AppBranchConfig) (owner, repo string, client *github.Client, err error) {
