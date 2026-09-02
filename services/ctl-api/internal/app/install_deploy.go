@@ -156,6 +156,13 @@ func (c *InstallDeploy) Indexes(db *gorm.DB) []migrations.Index {
 				"deleted_at",
 			},
 		},
+		{
+			Name: indexes.Name(db, &InstallDeploy{}, "install_component_created_at"),
+			Columns: []string{
+				"install_component_id",
+				"created_at DESC",
+			},
+		},
 	}
 }
 
