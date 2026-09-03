@@ -112,7 +112,7 @@ Run "nuon agents context" to see which MCP URL resolves from your config.`,
 		}),
 	}
 	cmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "expose mutating tools whose descriptions start with WRITE OPERATION:")
-	cmd.Flags().StringVar(&mcpURL, "url", "", "upstream MCP server URL (default https://mcp.nuon.co/mcp, derived from the configured API URL)")
+	cmd.Flags().StringVar(&mcpURL, "url", "", "upstream MCP server URL (derived from api.<hostname>, or localhost; otherwise required)")
 	cmd.Flags().StringVar(&serverName, "name", "", "MCP server name exposed to the client (default nuon, derived from the configured API URL)")
 	cmd.AddCommand(c.mcpSetupCmd())
 
@@ -131,7 +131,12 @@ func (c *cli) agentsContextMarkdown() string {
 	authed := "no"
 	if cfg != nil {
 		apiURL = cfg.APIURL
-		mcpURL = mcpserver.EndpointFromAPIURL(cfg.APIURL)
+		derived, err := mcpserver.EndpointFromAPIURL(cfg.APIURL)
+		if err != nil {
+			mcpURL = err.Error()
+		} else {
+			mcpURL = derived
+		}
 		if cfg.OrgID != "" {
 			orgID = cfg.OrgID
 		}
@@ -207,6 +212,24 @@ func (c *cli) agentsContextMarkdown() string {
 	b.WriteString("| Actions | `list_install_actions`, `get_action` | `run_action` |\n")
 	b.WriteString("| Logs | `get_workflow_step_logs`, `get_deploy_logs`, `get_build_logs` | |\n")
 	b.WriteString("| Runbooks | `list_runbooks`, `get_runbook` | |\n\n")
+	b.WriteString("Catalog: https://docs.nuon.co/guides/agents/tools\n\n")
+
+	b.WriteString("## Sample queries\n\n")
+	b.WriteString("Paste these into the LLM client after MCP is connected. The client should pick tools; do not require the user to name them. Writes need `--allow-writes`.\n\n")
+	b.WriteString("- What's in this org? What apps and installs are there, and what's each install's status?\n")
+	b.WriteString("- What's the status of install <name>? Include components, recent workflows, and anything unhealthy.\n")
+	b.WriteString("- Are there any pending workflow approvals? For each, tell me the install, workflow, and what is waiting.\n")
+	b.WriteString("- Why did the latest deploy on install <name> fail? Quote the relevant log lines.\n")
+	b.WriteString("- Why did the latest build for component <name> fail?\n")
+	b.WriteString("- Watch workflow <id> until it finishes and tell me when the status changes.\n")
+	b.WriteString("- What actions can I run on install <name>?\n")
+	b.WriteString("- Show the runbooks for app <name>.\n")
+	b.WriteString("- What's the latest on the default branch for app <name>?\n")
+	b.WriteString("- Preview PR <number> for app <name> against install <name> (plan-only unless I ask to apply).\n")
+	b.WriteString("- Review the pending plan on workflow <id>, then ask me before approving or rejecting (write).\n")
+	b.WriteString("- Plan a reprovision of install <name>. Do not apply until I confirm (write).\n")
+	b.WriteString("- What are the current inputs on install <name>? Propose an update and wait for approval before writing (write).\n\n")
+	b.WriteString("More: https://docs.nuon.co/guides/agents/sample-queries\n\n")
 
 	b.WriteString("## Deprecated CLI surface\n\n")
 	b.WriteString("`nuon mcp` is deprecated — use `nuon agents mcp`. It still proxies when an MCP client drives it over piped stdio, but exits immediately when run from a terminal.\n")

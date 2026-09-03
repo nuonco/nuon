@@ -1,0 +1,28 @@
+---
+title: "Tools"
+description: "Control-plane tools available to LLM clients via MCP."
+icon: "wrench"
+keywords: ["MCP", "tools", "agents", "whoami", "list_installs"]
+---
+
+Writes are hidden from the stdio proxy unless `--allow-writes` is set. HTTP MCP lists them whenever the token can create.
+
+For prompts to paste into a client, see [Sample queries](/guides/agents/sample-queries). To connect, see [Agents](/guides/agents/overview).
+
+## Catalog
+
+| Domain | Read | Write |
+| --- | --- | --- |
+| Orgs | `whoami`, `list_orgs`, `select_org` | |
+| Apps | `list_apps`, `get_app`, `list_app_branches`, `get_app_branch`, `list_app_branch_preview_sources` | `preview_app_branch` |
+| Components | `list_components`, `get_component`, `list_builds`, `get_build` | |
+| Installs | `list_installs`, `get_install`, `list_install_components`, `get_install_inputs`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `reject_step`, `retry_step`, `cancel_workflow` |
+| Actions | `list_install_actions`, `get_action` | `run_action` |
+| Logs | `get_workflow_step_logs`, `get_deploy_logs`, `get_build_logs` | |
+| Runbooks | `list_runbooks`, `get_runbook` | |
+
+## Writes
+
+Mutating tools are prefixed with `WRITE OPERATION:` in their descriptions. The stdio proxy hides them unless you pass `--allow-writes`. Your token must also have create permission.
+
+Destructive tools (deprovision, approve/reject, preview apply, and similar) should be confirmed with the user before the client sets flags such as `confirm=true` or `mode=apply`.

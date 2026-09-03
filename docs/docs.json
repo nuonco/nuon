@@ -211,8 +211,7 @@
               "guides/triggers",
               "guides/export-runner-audit-logs",
               "guides/component-health",
-              "guides/slack",
-              "guides/ai-and-apps"
+              "guides/slack"
             ]
           },
           {
@@ -233,7 +232,13 @@
       {
         "tab": "Agents",
         "icon": "robot",
-        "pages": ["guides/agents/overview", "guides/agents/mcp-walkthrough"]
+        "pages": [
+          "guides/agents/overview",
+          "guides/agents/mcp-walkthrough",
+          "guides/agents/tools",
+          "guides/agents/sample-queries",
+          "guides/agents/ai-and-apps"
+        ]
       },
       {
         "tab": "Reference",
@@ -478,6 +483,10 @@
     {
       "source": "/guides/byoc/upgrading",
       "destination": "/guides/byoc/updates"
+    },
+    {
+      "source": "/guides/ai-and-apps",
+      "destination": "/guides/agents/ai-and-apps"
     }
   ]
 }
