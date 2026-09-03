@@ -158,6 +158,26 @@ func TestTelemetryTokenIssuerRequiresOnePrivateSigningKey(t *testing.T) {
 	})
 }
 
+func TestRunnerServiceTelemetryTokenIssuerConfiguration(t *testing.T) {
+	t.Run("disabled", func(t *testing.T) {
+		svc, err := New(Params{})
+
+		require.NoError(t, err)
+		require.Nil(t, svc.telemetryTokenIssuer)
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		svc, err := New(Params{Cfg: &internal.Config{
+			PublicAPIURL:  "https://ctl.example.com",
+			TelemetryJWKS: "not-json",
+		}})
+
+		require.Nil(t, svc)
+		require.ErrorContains(t, err, "initialize telemetry token issuer")
+		require.ErrorContains(t, err, "decode telemetry JWKS")
+	})
+}
+
 func TestCreateTelemetryAccessToken(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	issuer, _ := newTelemetryTestTokenIssuer(t)

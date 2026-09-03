@@ -3,6 +3,7 @@ package nuonpartialsuccessextension
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -109,6 +110,23 @@ func TestFullSuccessResponseIsPreserved(t *testing.T) {
 	require.Equal(t, body, contents)
 }
 
+func TestVendorConfigurationFailuresBecomeRetryable(t *testing.T) {
+	for _, statusCode := range []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound} {
+		t.Run(http.StatusText(statusCode), func(t *testing.T) {
+			guard := responseGuardRoundTripper{base: staticStatusResponse(statusCode)}
+			request, err := http.NewRequest(http.MethodPost, "https://vendor.example.com/v1/logs", nil)
+			require.NoError(t, err)
+
+			response, err := guard.RoundTrip(request)
+
+			require.NoError(t, err)
+			require.Equal(t, http.StatusServiceUnavailable, response.StatusCode)
+			require.Equal(t, "503 Service Unavailable", response.Status)
+			require.Equal(t, retryAfterSeconds, response.Header.Get("Retry-After"))
+		})
+	}
+}
+
 func TestUninspectableResponseIsPreserved(t *testing.T) {
 	tests := map[string]struct {
 		body          []byte
@@ -167,6 +185,18 @@ func staticResponseWithLength(body []byte, contentType string, contentLength int
 			Body:          io.NopCloser(bytes.NewReader(body)),
 			ContentLength: contentLength,
 			Request:       request,
+		}, nil
+	})
+}
+
+func staticStatusResponse(statusCode int) http.RoundTripper {
+	return roundTripperFunc(func(request *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: statusCode,
+			Status:     fmt.Sprintf("%d %s", statusCode, http.StatusText(statusCode)),
+			Header:     make(http.Header),
+			Body:       http.NoBody,
+			Request:    request,
 		}, nil
 	})
 }

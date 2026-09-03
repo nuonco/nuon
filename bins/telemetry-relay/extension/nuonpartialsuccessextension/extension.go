@@ -24,6 +24,7 @@ const (
 	protobufContentType = "application/x-protobuf"
 	jsonContentType     = "application/json"
 	maxResponseBodySize = 64 * 1024
+	retryAfterSeconds   = "30"
 )
 
 type partialSuccessExtension struct {
@@ -57,8 +58,21 @@ type responseGuardRoundTripper struct {
 
 func (r *responseGuardRoundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
 	response, err := r.base.RoundTrip(request)
-	if err != nil || response == nil || response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+	if err != nil || response == nil {
 		return response, err
+	}
+	switch response.StatusCode {
+	case http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound:
+		response.StatusCode = http.StatusServiceUnavailable
+		response.Status = fmt.Sprintf("%d %s", http.StatusServiceUnavailable, http.StatusText(http.StatusServiceUnavailable))
+		response.Header = response.Header.Clone()
+		if response.Header == nil {
+			response.Header = make(http.Header)
+		}
+		response.Header.Set("Retry-After", retryAfterSeconds)
+	}
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+		return response, nil
 	}
 
 	signal := signalFromPath(request.URL.Path)
