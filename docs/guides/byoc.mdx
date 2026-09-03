@@ -2,18 +2,26 @@
 title: 'Nuon BYOC'
 description: 'Let Nuon install and manage Nuon in your own cloud account'
 icon: "cloud-arrow-up"
-keywords: ["self-hosted Nuon", "Nuon BYOC", "self-hosted Nuon", "install Nuon", "AWS deployment", "Azure deployment", "GCP deployment", "Nuon setup", "BYOC installation", "Cloud-Prem"]
+keywords: ["self-hosted Nuon", "Nuon BYOC", "install Nuon", "AWS deployment", "GCP deployment", "Nuon setup", "BYOC installation", "Cloud-Prem"]
 ---
 
-Nuon BYOC gives you a single-tenant Nuon control plane running in your own AWS, Azure, or Google Cloud account. Nuon uses its own platform to remotely deploy and manage the control plane as an install, the same mechanism you use to deploy software to your customers. You get automatic upgrades, operational visibility, and lifecycle management while retaining full ownership of your data, networking, and compliance posture.
+Nuon BYOC gives you a single-tenant Nuon control plane, running in your own cloud, managed as a Nuon install.
+You will get all the benefits of Nuon as a managed SaaS service, but in your own cloud.
 
-This deployment option is often referred to as Bring Your Own Cloud (BYOC), Cloud-Prem, or Vendor-Managed Self-Hosted.
+We use Nuon Cloud to deploy and manage Nuon BYOC as an install — the same process you use to manage apps for your own customers.
+We will operate and update Nuon BYOC, while you retain full ownership of your data, networking, and compliance posture.
 
 Nuon BYOC requires a paid license. [Contact sales](https://nuon.co/contact-sales) to get started.
 
 ## Architecture
 
-Nuon Cloud manages your BYOC control plane as an install, the same way your control plane will manage installs for your own customers. Upgrades, provisioning, and lifecycle operations are all driven remotely by Nuon.
+We support running Nuon BYOC on AWS and GCP.
+The shape of the architecture is the same across platforms, but using the services native to each cloud.
+
+<Tabs>
+
+<Tab title="AWS">
+On AWS, Nuon BYOC runs on an EKS cluster in a dedicated VPC. It uses RDS for the Nuon control-plane and Temporal databases.
 
 ```mermaid
 flowchart TD
@@ -21,10 +29,10 @@ flowchart TD
         NC_CTL["ctl-api"]
     end
 
-    subgraph YourCloud["Your Cloud Account: AWS · Azure · GCP"]
+    subgraph CustomerAWS["Your AWS Account"]
         NR["Nuon Runner"]
 
-        subgraph CP["Control Plane: EKS · AKS · GKE"]
+        subgraph CP["Control Plane — EKS"]
             DASH["dashboard-ui"]
             CTL["ctl-api"]
             BR["Build Runner"]
@@ -33,9 +41,63 @@ flowchart TD
         subgraph Deps["Dependencies"]
             TMP["Temporal"]
             CH["ClickHouse"]
-            DB[("Postgres")]
-            REG[("Container Registry")]
-            BLOB[("Blob Storage")]
+            RDS[("RDS")]
+            ECR[("ECR")]
+            S3[("S3")]
+        end
+    end
+
+    subgraph EndCustomers["Customer Clouds — AWS · Azure · GCP"]
+        R["Nuon Runner"]
+        I["Installs"]
+    end
+
+    NR -->|"polls for jobs"| NC_CTL
+    NR -->|"deploys & manages\ncontrol plane"| CP
+
+    DASH -->|"API calls"| CTL
+    CTL --> TMP
+    CTL --> CH
+    CTL --> RDS
+    CTL --> S3
+    CTL -->|"trigger builds"| BR
+    BR -->|"push OCI artifacts"| ECR
+
+    R -->|"polls for jobs"| CTL
+    R -->|"pull artifacts"| ECR
+    R -->|"deploys"| I
+```
+
+Ensure you have admin permissions, and that the account has not reached its quota limits for VPCs, EIPs, and Internet Gateways.
+
+Nuon's resource requirements are not compatible with AWS Free Tier. You will need a paid account.
+</Tab>
+
+<Tab title="GCP">
+
+On GCP, Nuon BYOC runs in a GKE cluster in a dedicated VPC Network. Cloud SQL is used for the Nuon control-plane and Temporal databases.
+
+```mermaid
+flowchart TD
+    subgraph NuonCloud["Nuon Cloud"]
+        NC_CTL["ctl-api"]
+    end
+
+    subgraph CustomerGCP["Your GCP Project"]
+        NR["Nuon Runner"]
+
+        subgraph CP["Control Plane — GKE"]
+            DASH["dashboard-ui"]
+            CTL["ctl-api"]
+            BR["Build Runner"]
+        end
+
+        subgraph Deps["Dependencies"]
+            TMP["Temporal"]
+            CH["ClickHouse"]
+            DB[("Cloud SQL")]
+            GAR[("Artifact Registry")]
+            GCS[("Cloud Storage")]
         end
     end
 
@@ -51,17 +113,27 @@ flowchart TD
     CTL --> TMP
     CTL --> CH
     CTL --> DB
-    CTL --> BLOB
+    CTL --> GCS
     CTL -->|"trigger builds"| BR
-    BR -->|"push OCI artifacts"| REG
+    BR -->|"push OCI artifacts"| GAR
 
     R -->|"polls for jobs"| CTL
-    R -->|"pull artifacts"| REG
+    R -->|"pull artifacts"| GAR
     R -->|"deploys"| I
 ```
 
-## Supported Platforms
+The following APIs must be enabled in your GCP Project.
 
-- [AWS](/guides/byoc/aws): Nuon deploys on EKS with RDS, ECR, Route 53, ACM, and Secrets Manager.
-- [Azure](/guides/byoc/azure): AKS with Azure SQL, ACR, Blob Storage, and Key Vault.
-- [GCP](/guides/byoc/gcp): GKE with Cloud SQL, GAR, GCS, and Secret Manager.
+- Secret Manager API
+- Compute Engine API
+- IAM Service Account Credentials API
+- Cloud Resource Manager API
+- Kubernetes Engine API
+- Cloud DNS API
+- Artifact Registry API
+- Certificate Manager API
+- Service Networking API
+- Cloud SQL Admin API
+</Tab>
+
+</Tabs>
