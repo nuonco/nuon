@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
@@ -33,6 +34,31 @@ func (s *InstallsServiceTestSuite) TestGetWorkflowSuccess() {
 func (s *InstallsServiceTestSuite) TestGetWorkflowNotFound() {
 	rr := s.makeRequest(http.MethodGet, "/v1/workflows/iwf_nonexistent_00000000", nil)
 	require.Equal(s.T(), http.StatusNotFound, rr.Code)
+}
+
+func (s *InstallsServiceTestSuite) TestGetWorkflowIncludesPreflightErrors() {
+	install := s.createTestInstall()
+	workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeManualDeploy)
+	warning := &compositeerrors.CompositeErrorData{
+		Version:  compositeerrors.SchemaVersion,
+		Type:     "preflight.test",
+		Severity: compositeerrors.SeverityWarning,
+		Message:  "Preflight warning",
+		Data:     json.RawMessage(`{}`),
+	}
+	require.NoError(s.T(), s.deps.DB.
+		Model(workflow).
+		Select("preflight_errors").
+		Updates(app.Workflow{PreflightErrors: []*compositeerrors.CompositeErrorData{warning}}).Error)
+
+	path := fmt.Sprintf("/v1/workflows/%s", workflow.ID)
+	rr := s.makeRequest(http.MethodGet, path, nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, "body: %s", rr.Body.String())
+
+	var loaded app.Workflow
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &loaded))
+	require.Len(s.T(), loaded.PreflightErrors, 1)
+	assert.Equal(s.T(), warning, loaded.PreflightErrors[0])
 }
 
 func (s *InstallsServiceTestSuite) TestGetWorkflowOmitsGroupStepsAndApprovalContents() {

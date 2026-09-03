@@ -149,7 +149,7 @@ func TestStackConfigEqualIgnoresID(t *testing.T) {
 	b := a
 	b.ID = "appstackcfgnew"
 
-	if !stackConfigEqual(a, b) {
+	if !StackConfigEqual(a, b) {
 		t.Fatal("stack configs with identical content should compare equal regardless of ID")
 	}
 }
@@ -166,13 +166,14 @@ func TestStackConfigEqualDetectsContentChange(t *testing.T) {
 		"name":                       func(c *app.AppStackConfig) { c.Name = "nuon-install-2" },
 		"runner_nested_template_url": func(c *app.AppStackConfig) { c.RunnerNestedTemplateURL = "https://example.com/runner-v2.yaml" },
 		"vpc_nested_template_url":    func(c *app.AppStackConfig) { c.VPCNestedTemplateURL = "https://example.com/vpc.yaml" },
+		"deployment_scope":           func(c *app.AppStackConfig) { c.DeploymentScope = app.StackDeploymentScopeSubscription },
 	}
 
 	for name, mutate := range cases {
 		t.Run(name, func(t *testing.T) {
 			b := a
 			mutate(&b)
-			if stackConfigEqual(a, b) {
+			if StackConfigEqual(a, b) {
 				t.Fatalf("expected a %s change to be detected", name)
 			}
 		})

@@ -95,7 +95,7 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 				diff.SandboxNewID = newAppCfg.SandboxConfig.ID
 			}
 			if oldAppCfg.StackConfig.ID != newAppCfg.StackConfig.ID &&
-				!stackConfigEqual(oldAppCfg.StackConfig, newAppCfg.StackConfig) {
+				!StackConfigEqual(oldAppCfg.StackConfig, newAppCfg.StackConfig) {
 				diff.StackChanged = true
 				diff.StackOldID = oldAppCfg.StackConfig.ID
 				diff.StackNewID = newAppCfg.StackConfig.ID
@@ -272,17 +272,34 @@ func sandboxConfigEqual(a, b app.AppSandboxConfig) bool {
 	return contentHashEqual(sandboxContentOf(a), sandboxContentOf(b))
 }
 
-func stackConfigEqual(a, b app.AppStackConfig) bool {
+func StackConfigEqual(a, b app.AppStackConfig) bool {
 	type content struct {
-		Type                    string `json:"type"`
-		Name                    string `json:"name"`
-		Description             string `json:"description"`
-		RunnerNestedTemplateURL string `json:"runner_nested_template_url"`
-		VPCNestedTemplateURL    string `json:"vpc_nested_template_url"`
-		CustomNestedStacks      any    `json:"custom_nested_stacks"`
+		Type                    string                   `json:"type"`
+		Name                    string                   `json:"name"`
+		Description             string                   `json:"description"`
+		RunnerNestedTemplateURL string                   `json:"runner_nested_template_url"`
+		VPCNestedTemplateURL    string                   `json:"vpc_nested_template_url"`
+		DeploymentScope         app.StackDeploymentScope `json:"deployment_scope"`
+		CustomNestedStacks      any                      `json:"custom_nested_stacks"`
 	}
-	ac := content{string(a.Type), a.Name, a.Description, a.RunnerNestedTemplateURL, a.VPCNestedTemplateURL, a.CustomNestedStacks}
-	bc := content{string(b.Type), b.Name, b.Description, b.RunnerNestedTemplateURL, b.VPCNestedTemplateURL, b.CustomNestedStacks}
+	ac := content{
+		Type:                    string(a.Type),
+		Name:                    a.Name,
+		Description:             a.Description,
+		RunnerNestedTemplateURL: a.RunnerNestedTemplateURL,
+		VPCNestedTemplateURL:    a.VPCNestedTemplateURL,
+		DeploymentScope:         a.DeploymentScope,
+		CustomNestedStacks:      a.CustomNestedStacks,
+	}
+	bc := content{
+		Type:                    string(b.Type),
+		Name:                    b.Name,
+		Description:             b.Description,
+		RunnerNestedTemplateURL: b.RunnerNestedTemplateURL,
+		VPCNestedTemplateURL:    b.VPCNestedTemplateURL,
+		DeploymentScope:         b.DeploymentScope,
+		CustomNestedStacks:      b.CustomNestedStacks,
+	}
 	return contentHashEqual(ac, bc)
 }
 
