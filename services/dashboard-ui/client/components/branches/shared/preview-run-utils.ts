@@ -11,6 +11,7 @@ import {
   previewDefaultsFromConfig,
   type IPreviewDefaults,
 } from '@/components/branches/shared/PreviewDefaultsEditor'
+import { previewModeDisplayLabel } from './preview-mode'
 
 export const isPreviewBranchRun = (branchRun?: TAppBranchRun): boolean => {
   if (!branchRun) return false
@@ -28,10 +29,6 @@ export const getBranchRunFromWorkflow = (
 export const isPreviewWorkflow = (workflow?: TInstallWorkflow): boolean =>
   isPreviewBranchRun(getBranchRunFromWorkflow(workflow))
 
-export const previewModeLabel = (
-  preview?: TAppBranchRunPreview
-): string | undefined => preview?.mode
-
 export const previewSourceLabel = (
   branchRun?: TAppBranchRun
 ): string | undefined => {
@@ -48,16 +45,10 @@ export const previewSourceLabel = (
   return undefined
 }
 
-const modeDisplayLabel = (mode: TAppBranchRunPreviewMode): string => {
-  switch (mode) {
-    case 'apply':
-      return 'apply'
-    case 'build-only':
-      return 'build-only'
-    default:
-      return 'plan-only'
-  }
-}
+export const previewModeLabel = (
+  preview?: TAppBranchRunPreview
+): string | undefined =>
+  preview?.mode ? previewModeDisplayLabel(preview.mode) : undefined
 
 export const resolveInstallName = (
   installId: string,
@@ -76,7 +67,7 @@ export const formatPreviewDefaultsSummary = (
   options?: { includeGithub?: boolean }
 ): string => {
   const defaults = previewDefaultsFromConfig(config, installs)
-  const parts: string[] = [modeDisplayLabel(defaults.mode)]
+  const parts: string[] = [previewModeDisplayLabel(defaults.mode)]
 
   if (defaults.mode !== 'build-only') {
     if (
