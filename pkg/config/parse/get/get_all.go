@@ -184,6 +184,7 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	prefixes := []string{
 		"http",
 		"./",
+		"../",
 		"git",
 		"file",
 	}
@@ -213,6 +214,9 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	detected, err := getter.Detect(inputVal, pwd, GetDetectors())
 	if err != nil {
 		return inputVal, nil
+	}
+	if err := g.recordLocalFile(inputVal, pwd); err != nil {
+		return "", err
 	}
 
 	// Create a temporary directory to store the downloaded file
@@ -261,6 +265,34 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	}
 
 	return string(content), nil
+}
+
+func (g *get) recordLocalFile(inputVal, pwd string) error {
+	if g.opts.OnLocalFile == nil || (!strings.HasPrefix(inputVal, "./") && !strings.HasPrefix(inputVal, "../")) {
+		return nil
+	}
+
+	root, err := filepath.Abs(g.opts.RootDir)
+	if err != nil {
+		return errors.Wrap(err, "resolve config root")
+	}
+	resolved, err := filepath.Abs(filepath.Join(pwd, inputVal))
+	if err != nil {
+		return errors.Wrap(err, "resolve local source file")
+	}
+	relative, err := filepath.Rel(root, resolved)
+	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		return nil
+	}
+	info, err := os.Lstat(resolved)
+	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+		return nil
+	}
+	contents, err := os.ReadFile(resolved)
+	if err != nil {
+		return errors.Wrap(err, "read local source file")
+	}
+	return g.opts.OnLocalFile(filepath.ToSlash(relative), contents)
 }
 
 // fetchGitFile clones a git repo and reads a single file from it. detected

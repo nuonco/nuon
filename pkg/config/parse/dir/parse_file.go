@@ -1,7 +1,9 @@
 package dir
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -45,7 +47,7 @@ func (e ErrParseFile) Unwrap() error {
 	return e.Err
 }
 
-func (p *parser) parseFile(path string, obj any) (bool, error) {
+func (p *parser) parseFile(path, group string, obj any) (bool, error) {
 	if !strings.HasSuffix(path, p.opts.Ext) {
 		path = path + p.opts.Ext
 	}
@@ -66,15 +68,25 @@ func (p *parser) parseFile(path string, obj any) (bool, error) {
 		return false, nil
 	}
 
-	fh, err := p.fs.Open(path)
+	contents, err := p.fs.ReadFile(path)
 	if err != nil {
-		return false, errors.Wrap(err, "unable to open path")
+		return false, errors.Wrap(err, "unable to read path")
 	}
 
-	if err := p.opts.ParserFn(fh, path, obj); err != nil {
+	if err := p.opts.ParserFn(io.NopCloser(bytes.NewReader(contents)), path, obj); err != nil {
 		return false, ErrParseFile{
 			Err:  err,
 			Name: path,
+		}
+	}
+	if p.opts.OnParsedFile != nil {
+		if err := p.opts.OnParsedFile(ParsedFile{
+			Path:     path,
+			Group:    group,
+			Contents: contents,
+			Value:    obj,
+		}); err != nil {
+			return false, errors.Wrap(err, "unable to record parsed file")
 		}
 	}
 
