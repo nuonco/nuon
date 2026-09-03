@@ -45,6 +45,6 @@ func (m MetadataConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Map of label key names to hex color codes for customizing label display in the dashboard").
 		Example(`{"env": "#FF5733", "region": "#33FF57"}`).
 		Field("default_labels").Short("default labels for all installs").
-		Long("Labels applied to every install of the app. Values may use the interpolation syntax ({{ .nuon.* }}). These labels cannot be edited or removed on individual installs — only via the app config").
+		Long("Labels applied to every install of the app. Values may use the templating syntax ({{ .nuon.* }}). These labels cannot be edited or removed on individual installs — only via the app config").
 		Example(`{"tier": "prod", "region": "{{ .nuon.cloud_account.aws.region }}"}`)
 }

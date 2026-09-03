@@ -94,7 +94,7 @@ Apply labels to every install of an app with a `default_labels` table in `metada
 service_tier   = "{{ .nuon.inputs.service_tier }}"
 ```
 
-Values can use the [interpolation syntax](/guides/using-variables) to render per install from install state,
+Values can use [Nuon templating](/guides/using-variables) to render per install from install state,
 and re-render automatically as that state changes.
 
 Default labels are owned by the app config. They locked on each install and cannot be updated manually or via install config.
