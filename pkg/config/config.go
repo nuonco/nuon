@@ -101,7 +101,7 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("label_colors").Short("label key color codes").
 		Long("Map of label key names to hex color codes for customizing label display in the dashboard").
 		Field("default_labels").Short("default labels for all installs").
-		Long("Labels applied to every install of the app. Values may use the interpolation syntax. Editable only via app config").
+		Long("Labels applied to every install of the app. Values may use the templating syntax. Editable only via app config").
 		Field("branch").Short("default app branch configuration").
 		Long("Default branch configuration for all installs. Can be overridden per install").
 		Field("inputs").Short("input configuration").
