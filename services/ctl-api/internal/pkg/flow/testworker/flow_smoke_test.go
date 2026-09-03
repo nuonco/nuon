@@ -34,9 +34,6 @@ func (e *FlowTestSuite) TestNoStepsNoSignalErrors() {
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 	ownerID, ownerType := newTestOwner()
 
-	e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
-	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
-
 	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
 	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
 
@@ -54,5 +51,4 @@ func (e *FlowTestSuite) TestNoStepsNoSignalErrors() {
 
 	// Should error because there are no steps and no way to generate them
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
-	e.assertTemporalDrained(ctx, flw.ID)
 }

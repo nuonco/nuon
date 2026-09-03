@@ -231,14 +231,6 @@ var _ signal.SignalWithRetryGroup = (*PlanApplyFailSignal)(nil)
 var _ signal.SignalWithMaxRetries = (*PlanApplyFailSignal)(nil)
 var _ signal.SignalWithCloneSteps = (*PlanApplyFailSignal)(nil)
 
-// --- ManualRetryGroupCountdownSignal: auto-retries once (group retry), then
-// requires manual retry to succeed. Uses SignalWithRetryCount to branch on
-// the group retry generation.
-//
-// MaxRetries=2, AutoRetry=true, RetryGroup=true.
-// - GroupRetryCount < 2: fail (auto-retry produces generation 1, which also fails)
-// - GroupRetryCount >= 2: succeed (manual retry via RetryStep creates generation 2)
-
 const ManualRetryGroupCountdownSignalType signal.SignalType = "test-flow-manual-retry-group-countdown"
 
 type ManualRetryGroupCountdownSignal struct {
@@ -258,7 +250,10 @@ func (s *ManualRetryGroupCountdownSignal) Validate(workflow.Context) error { ret
 func (s *ManualRetryGroupCountdownSignal) AutoRetry() bool                 { return true }
 func (s *ManualRetryGroupCountdownSignal) RetryGroup() bool                { return true }
 func (s *ManualRetryGroupCountdownSignal) MaxRetries() int                 { return 2 }
-func (s *ManualRetryGroupCountdownSignal) SleepAfter() time.Duration       { return time.Second }
+func (s *ManualRetryGroupCountdownSignal) MaxAutoRetries(workflow.Context) int {
+	return 0
+}
+func (s *ManualRetryGroupCountdownSignal) SleepAfter() time.Duration { return time.Second }
 func (s *ManualRetryGroupCountdownSignal) SetStepContext(stepID, flowID string) {
 	s.StepID = stepID
 	s.FlowID = flowID
@@ -267,16 +262,21 @@ func (s *ManualRetryGroupCountdownSignal) SetRetryCount(retryIndex, groupRetryIn
 	s.GroupRetryCount = groupRetryIndex
 }
 
-func (s *ManualRetryGroupCountdownSignal) Execute(workflow.Context) error {
-	if s.GroupRetryCount >= 2 {
+func (s *ManualRetryGroupCountdownSignal) Execute(ctx workflow.Context) error {
+	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, s.StepID)
+	if err != nil {
+		return fmt.Errorf("manual-retry-group-countdown: unable to get step: %w", err)
+	}
+	if step.GroupRetryIdx >= 1 {
 		return nil // success on manual retry
 	}
-	return fmt.Errorf("manual-retry-group-countdown: group retry %d < 2", s.GroupRetryCount)
+	return fmt.Errorf("manual-retry-group-countdown: group retry %d < 1", step.GroupRetryIdx)
 }
 
 var _ signal.SignalWithAutoRetry = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithRetryGroup = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithMaxRetries = (*ManualRetryGroupCountdownSignal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithStepContext = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithRetryCount = (*ManualRetryGroupCountdownSignal)(nil)
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -88,6 +89,7 @@ func (s *ComponentsServiceTestSuite) SetupSuite() {
 	s.mockTC.EXPECT().ExecuteWorkflowInNamespace(
 		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Return(&mockWorkflowRun{}, nil).AnyTimes()
+	s.mockTC.EXPECT().GetNamespaceClient(gomock.Any()).Return(nil, errors.New("not available in test")).AnyTimes()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
@@ -107,6 +109,18 @@ func (s *ComponentsServiceTestSuite) SetupSuite() {
 
 	// Store DB reference for automatic truncation
 	s.SetDB(s.deps.DB)
+	require.NoError(s.T(), s.deps.DB.Callback().Create().After("gorm:create").Register("components_service_test:queue", func(tx *gorm.DB) {
+		component, ok := tx.Statement.Dest.(*app.Component)
+		if !ok || component.ID == "" || s.testAcc == nil || s.testOrg == nil {
+			return
+		}
+		tx.AddError(tx.Session(&gorm.Session{NewDB: true}).Create(&app.Queue{
+			CreatedByID: s.testAcc.ID,
+			OrgID:       &s.testOrg.ID,
+			OwnerID:     component.ID,
+			OwnerType:   "components",
+		}).Error)
+	}))
 }
 
 func (s *ComponentsServiceTestSuite) SetupTest() {
@@ -138,6 +152,7 @@ func (s *ComponentsServiceTestSuite) setupTestData() {
 	s.ctx, s.testOrg = s.deps.Seeder.EnsureOrg(s.ctx, s.T())
 	s.testApp = s.deps.Seeder.CreateApp(s.ctx, s.T())
 	s.testAppConfig = s.deps.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
+	require.NoError(s.T(), s.deps.DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&app.QueueSignal{}).Error)
 }
 
 // makeRequest sends an HTTP request through the test router and returns the recorder.

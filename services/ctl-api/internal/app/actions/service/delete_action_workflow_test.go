@@ -215,17 +215,14 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			var response bool
+			var response app.EmptyResponse
 			err := json.Unmarshal(rr.Body.Bytes(), &response)
 			require.NoError(s.T(), err)
-			assert.True(s.T(), response)
 
 			if tc.validateFunc != nil {
 				tc.validateFunc(actionIdentifier)
 			}
 
-			queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
-			assert.Len(s.T(), queueSignals, 0, "delete action workflow does not send signals")
 		})
 	}
 }

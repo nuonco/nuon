@@ -26,7 +26,7 @@ func (s *GeneralInternalTestSuite) TestAdminDeleteAccount() {
 					EmailOrSubjectOrID: acct.Email,
 				}
 			},
-			expectedStatus: http.StatusCreated,
+			expectedStatus: http.StatusOK,
 			validateFunc: func(acct *app.Account) {
 				// Verify account is deleted
 				var count int64
@@ -46,7 +46,7 @@ func (s *GeneralInternalTestSuite) TestAdminDeleteAccount() {
 					EmailOrSubjectOrID: acct.Subject,
 				}
 			},
-			expectedStatus: http.StatusCreated,
+			expectedStatus: http.StatusOK,
 			validateFunc: func(acct *app.Account) {
 				// Verify account is deleted
 				var count int64
@@ -66,7 +66,7 @@ func (s *GeneralInternalTestSuite) TestAdminDeleteAccount() {
 					EmailOrSubjectOrID: acct.ID,
 				}
 			},
-			expectedStatus: http.StatusCreated,
+			expectedStatus: http.StatusOK,
 			validateFunc: func(acct *app.Account) {
 				// Verify account is deleted
 				var count int64

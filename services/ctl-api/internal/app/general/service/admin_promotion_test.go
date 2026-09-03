@@ -22,7 +22,7 @@ func (s *GeneralInternalTestSuite) TestAdminPromotion() {
 			requestBody: AdminPromotionRequest{
 				Tag: "v1.0.0",
 			},
-			expectedStatus: http.StatusCreated,
+			expectedStatus: http.StatusOK,
 			validateFunc: func(tag string) {
 				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected at least one signal to be sent")
@@ -43,7 +43,7 @@ func (s *GeneralInternalTestSuite) TestAdminPromotion() {
 		{
 			name:           "fails with missing tag",
 			requestBody:    AdminPromotionRequest{},
-			expectedStatus: http.StatusCreated, // Note: Handler doesn't validate tag, still succeeds
+			expectedStatus: http.StatusOK,
 			validateFunc: func(tag string) {
 				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected at least one signal to be sent")

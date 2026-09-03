@@ -16,7 +16,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -61,10 +60,7 @@ func (s *LatestReportTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// Provided locally on purpose: the shared test options leave flowclient
-		// out because its import tree would create a cycle.
-		fx.Provide(flowclient.New),
-		fx.Provide(New),
+		fx.Options(testServiceFXOptions()...),
 		fx.Populate(&s.service),
 	)
 	s.app = fxtest.New(s.T(), options...)

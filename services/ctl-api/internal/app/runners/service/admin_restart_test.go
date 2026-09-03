@@ -66,7 +66,7 @@ func (s *AdminRestartTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		fx.Provide(New),
+		testDependencyOptions(), fx.Provide(New),
 		fx.Populate(&s.service),
 	)
 
@@ -248,6 +248,7 @@ func (s *AdminRestartTestSuite) TestRestartRunner() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetQueueSignals(s.T(), s.service.DB)
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/runners/"+runnerID+"/restart", tc.requestBody)
 

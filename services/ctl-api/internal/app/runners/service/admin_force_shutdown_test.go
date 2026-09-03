@@ -61,7 +61,7 @@ func (s *AdminForceShutdownTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		fx.Provide(New),
+		testDependencyOptions(), fx.Provide(New),
 		fx.Populate(&s.service),
 	)
 
@@ -177,6 +177,10 @@ func (s *AdminForceShutdownTestSuite) TestAdminForceShutDown() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetQueueSignals(s.T(), s.service.DB)
+			if tc.expectedSignal {
+				seedRunnerSignalsQueue(s.T(), s.service.DB, tc.runnerID)
+			}
 			rr := s.makeRequest("POST", "/v1/runners/"+tc.runnerID+"/force-shutdown", tc.requestBody)
 
 			if rr.Code != tc.expectedCode {

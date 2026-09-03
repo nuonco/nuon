@@ -21,7 +21,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -61,10 +60,7 @@ func (s *GetAllInstallsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		// flowclient is intentionally not in tests.CtlApiFXOptions (see the note
-		// in tests/testfx.go); the installs service constructor needs it.
-		fx.Provide(flowclient.New),
-		fx.Provide(New),
+		fx.Options(testServiceFXOptions()...),
 		fx.Populate(&s.service),
 	)
 

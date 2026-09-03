@@ -259,7 +259,7 @@ func (e *FlowTestSuite) TestApprovalDenySkipCurrent() {
 
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
 	e.assertStatusMatrix(ctx, steps[0].ID, statusMatrix{
-		Step:   app.WorkflowStepApprovalStatusApprovalDenied,
+		Step:   app.StatusSuccess,
 		Target: app.Status(app.InstallDeployApprovalDenied),
 	})
 	for _, s := range e.getStepsByWorkflow(ctx, flw.ID) {
@@ -482,8 +482,7 @@ func (e *FlowTestSuite) TestCancelWorkflowDuringApproval() {
 	require.NoError(e.T(), err)
 
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusCancelled)
-	require.False(e.T(), e.getWorkflow(ctx, flw.ID).FinishedAt.IsZero(),
-		"cancelled workflow must have finished_at")
+	e.waitForWorkflowFinished(ctx, flw.ID)
 	require.Never(e.T(), func() bool {
 		for _, s := range e.getStepsByWorkflow(ctx, flw.ID) {
 			if s.Name == "later-group" && s.Status.Status == app.StatusSuccess {

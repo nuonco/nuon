@@ -22,7 +22,7 @@ func (s *InstallsServiceTestSuite) TestForgetInstallSuccess() {
 
 	captured := tests.GetQueueSignals(s.T(), s.deps.DB)
 	require.Len(s.T(), captured, 1)
-	assert.Equal(s.T(), "forgotten", string(captured[0].Type))
+	assert.Equal(s.T(), "org-forget-install", string(captured[0].Type))
 
 	// Verify the install is gone
 	getPath := fmt.Sprintf("/v1/installs/%s", install.ID)

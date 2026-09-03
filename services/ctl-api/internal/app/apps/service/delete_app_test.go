@@ -23,6 +23,8 @@ func (s *AppCRUDTestSuite) TestDeleteApp() {
 		{
 			name: "delete app with no installs sets status to DeleteQueued and returns 200",
 			setupFunc: func() string {
+				ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
+				ctx = cctx.SetOrgContext(ctx, s.testOrg)
 				testApp := &app.App{
 					ID:          domains.NewAppID(),
 					Name:        "test-app-delete",
@@ -32,6 +34,7 @@ func (s *AppCRUDTestSuite) TestDeleteApp() {
 				}
 				err := s.service.DB.Create(testApp).Error
 				require.NoError(s.T(), err)
+				require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(&app.Queue{OwnerID: testApp.ID, OwnerType: "apps"}).Error)
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.App{}, "id = ?", testApp.ID)
@@ -72,6 +75,7 @@ func (s *AppCRUDTestSuite) TestDeleteApp() {
 				}
 				err := s.service.DB.Create(testApp).Error
 				require.NoError(s.T(), err)
+				require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(&app.Queue{OwnerID: testApp.ID, OwnerType: "apps"}).Error)
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.App{}, "id = ?", testApp.ID)
@@ -131,6 +135,7 @@ func (s *AppCRUDTestSuite) TestDeleteApp() {
 				}
 				err := s.service.DB.Create(testApp).Error
 				require.NoError(s.T(), err)
+				require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(&app.Queue{OwnerID: testApp.ID, OwnerType: "apps"}).Error)
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.App{}, "id = ?", testApp.ID)

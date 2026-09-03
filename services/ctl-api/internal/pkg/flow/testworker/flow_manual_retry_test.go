@@ -12,14 +12,14 @@ import (
 // failed step via the flow client. After retry:
 // - The original step should be marked as discarded
 // - A clone step should exist in the same group with RetryIndex=1
-// - The clone should execute (and fail again since it uses FailSignal)
-// - The workflow should re-enter error state
+// - The clone should execute successfully
+// - The workflow should continue to success
 func (e *FlowTestSuite) TestManualRetryOnErroredStep() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 	ownerID, ownerType := newTestOwner()
 
-	failSignal := &FailSignal{Reason: "manual retry test"}
+	failSignal := &ManualRetrySignal{}
 	afterSignal := &SuccessSignal{}
 
 	flw, queueID := e.setupFlowTest(ctx, ownerID, ownerType, []app.WorkflowStep{
@@ -31,7 +31,7 @@ func (e *FlowTestSuite) TestManualRetryOnErroredStep() {
 	})
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
-	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusFailedPendingRetry)
 
 	// Find the failed step
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
@@ -82,16 +82,12 @@ func (e *FlowTestSuite) TestManualRetryOnErroredStep() {
 	require.Equal(e.T(), app.StatusDiscarded, original.Status.Status,
 		"original step should be discarded after retry")
 
-	require.NotNil(e.T(), original, "original step should still exist")
-	require.Equal(e.T(), app.StatusDiscarded, original.Status.Status,
-		"original step should be discarded after retry")
-
 	require.NotNil(e.T(), clone, "clone step should exist with RetryIndex=1")
 	require.Equal(e.T(), 1, clone.GroupIdx, "clone should be in the same group")
-	require.Equal(e.T(), app.StatusError, clone.Status.Status,
-		"clone should have executed and failed (FailSignal always fails)")
+	require.Equal(e.T(), app.StatusSuccess, clone.Status.Status,
+		"clone should have executed successfully")
 	require.Equal(e.T(), "will-fail", clone.Name,
 		"clone should have the same name as the original")
-	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
 	e.assertTemporalDrained(ctx, flw.ID)
 }

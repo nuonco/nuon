@@ -132,10 +132,11 @@ func (s *RevokeOrgInviteTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(role).Error
 	require.NoError(s.T(), err)
 
-	err = s.service.DB.Exec(
-		"INSERT INTO account_roles (account_id, role_id) VALUES (?, ?)",
-		testAcc.ID, role.ID,
-	).Error
+	err = s.service.DB.WithContext(ctx).Create(&app.AccountRole{
+		OrgID:     generics.NewNullString(orgID),
+		AccountID: testAcc.ID,
+		RoleID:    role.ID,
+	}).Error
 	require.NoError(s.T(), err)
 
 	testAcc.Roles = []app.Role{*role}

@@ -96,24 +96,27 @@ type statusMatrix struct {
 }
 
 func (e *FlowTestSuite) assertStatusMatrix(ctx context.Context, stepID string, want statusMatrix) {
-	step := e.getStep(ctx, stepID)
 	if want.Step != "" {
-		require.Equal(e.T(), want.Step, step.Status.Status, "step status")
+		e.waitForStepStatus(ctx, stepID, want.Step)
 	}
 	if want.Workflow != "" {
-		require.Equal(e.T(), want.Workflow, e.getWorkflow(ctx, step.InstallWorkflowID).Status.Status, "workflow status")
+		step := e.getStep(ctx, stepID)
+		e.waitForWorkflowStatus(ctx, step.InstallWorkflowID, want.Workflow)
 	}
 	if want.Run != "" {
+		step := e.getStep(ctx, stepID)
 		require.Eventually(e.T(), func() bool {
 			runs := e.getWorkflowRuns(ctx, step.InstallWorkflowID)
 			return len(runs) > 0 && runs[len(runs)-1].Status.Status == want.Run
 		}, pollTimeout, pollInterval, "latest run did not reach status %s", want.Run)
 	}
 	if want.Target != "" {
+		step := e.getStep(ctx, stepID)
 		require.Equal(e.T(), string(app.WorkflowStepTargetTypeInstallDeploys), step.StepTargetType,
 			"target assertions only support install_deploys")
-		deploy := e.getDeploy(ctx, step.StepTargetID)
-		require.Equal(e.T(), app.InstallDeployStatus(want.Target), deploy.Status, "target status")
+		require.Eventually(e.T(), func() bool {
+			return e.getDeploy(ctx, step.StepTargetID).Status == app.InstallDeployStatus(want.Target)
+		}, pollTimeout, pollInterval, "target did not reach status %s", want.Target)
 	}
 }
 
@@ -145,6 +148,11 @@ func (e *FlowTestSuite) TestGeneratedStepsStartPending() {
 		return map[app.WorkflowType]flow.WorkflowStepGenerator{
 			workflowType: func(workflow.Context, *app.Workflow) (*app.GenerateStepsResult, error) {
 				return &app.GenerateStepsResult{
+					Groups: []*app.WorkflowStepGroup{
+						{GroupIdx: 1, Status: app.CompositeStatus{Status: app.StatusPending}},
+						{GroupIdx: 2, Status: app.CompositeStatus{Status: app.StatusPending}},
+						{GroupIdx: 3, Status: app.CompositeStatus{Status: app.StatusPending}},
+					},
 					Steps: []*app.WorkflowStep{
 						{
 							Name:          "blocking-first-step",

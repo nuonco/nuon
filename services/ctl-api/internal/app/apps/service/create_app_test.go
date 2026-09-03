@@ -11,15 +11,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
@@ -29,6 +33,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
+
+type createAppMockWorkflowRun struct{}
+
+func (m *createAppMockWorkflowRun) GetID() string    { return "mock-workflow-id" }
+func (m *createAppMockWorkflowRun) GetRunID() string { return "mock-run-id" }
+func (m *createAppMockWorkflowRun) Get(context.Context, interface{}) error {
+	return nil
+}
+func (m *createAppMockWorkflowRun) GetWithOptions(context.Context, interface{}, tclient.WorkflowRunGetOptions) error {
+	return nil
+}
 
 // CreateAppTestService holds all fx-injected dependencies for create app tests.
 type CreateAppTestService struct {
@@ -45,6 +60,7 @@ type CreateAppTestService struct {
 	AccountsHelpers *accountshelpers.Helpers
 	AppsService     *service
 	Seeder          *testseed.Seeder
+	TClient         temporalclient.Client
 }
 
 // CreateAppTestSuite is the testify suite for CreateApp endpoint.
@@ -93,6 +109,9 @@ func (s *CreateAppTestSuite) SetupSuite() {
 func (s *CreateAppTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
+	s.service.TClient.(*temporalclient.MockClient).EXPECT().ExecuteWorkflowInNamespace(
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	).Return(&createAppMockWorkflowRun{}, nil).AnyTimes()
 
 	// Reset mock before each test
 
@@ -199,7 +218,8 @@ func (s *CreateAppTestSuite) TestCreateAppValidationError() {
 
 func (s *CreateAppTestSuite) TestCreateAppDuplicateName() {
 	s.Run("within org", func() {
-		existingApp := s.service.Seeder.CreateApp(s.ctx, s.T())
+		existingApp := &app.App{ID: domains.NewAppID(), Name: "existing-app", OrgID: s.testOrg.ID, CreatedByID: s.testAcc.ID}
+		require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(existingApp).Error)
 
 		// Try to create duplicate app
 		req := CreateAppRequest{Name: existingApp.Name}
@@ -213,20 +233,18 @@ func (s *CreateAppTestSuite) TestCreateAppDuplicateName() {
 	})
 
 	s.Run("across orgs", func() {
-		// Create app in a different org
 		ctx2 := context.Background()
-		ctx2, _ = s.service.Seeder.EnsureAccount(ctx2, s.T())
-		ctx2, _ = s.service.Seeder.EnsureOrg(ctx2, s.T())
-		existingApp := s.service.Seeder.CreateApp(ctx2, s.T())
+		ctx2, account2 := s.service.Seeder.EnsureAccount(ctx2, s.T())
+		ctx2, org2 := s.service.Seeder.EnsureOrg(ctx2, s.T())
+		existingApp := &app.App{ID: domains.NewAppID(), Name: "existing-app", OrgID: org2.ID, CreatedByID: account2.ID}
+		require.NoError(s.T(), s.service.DB.WithContext(ctx2).Create(existingApp).Error)
 
-		// Create app with same name in test org — should succeed (different org)
 		req := CreateAppRequest{Name: existingApp.Name}
 		rr := s.makeRequest(http.MethodPost, "/v1/apps", req)
 
-		// Verify 201
-		if rr.Code != http.StatusCreated {
+		if rr.Code != http.StatusConflict {
 			s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 		}
-		require.Equal(s.T(), http.StatusCreated, rr.Code)
+		require.Equal(s.T(), http.StatusConflict, rr.Code)
 	})
 }

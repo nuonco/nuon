@@ -122,10 +122,13 @@ func (s *GetInstallActionWorkflowRecentRunsTestSuite) makeRequest(method, path s
 }
 
 func (s *GetInstallActionWorkflowRecentRunsTestSuite) createInstall(appID string) *app.Install {
+	appConfig := s.service.Seeder.CreateBareAppConfig(s.ctx, s.T(), appID)
+	require.NoError(s.T(), s.service.DB.Model(appConfig).Update("cli_version", "1.0.0").Error)
 	install := &app.Install{
-		ID:    domains.NewInstallID(),
-		Name:  fmt.Sprintf("test-install-%s", domains.NewInstallID()),
-		AppID: appID,
+		ID:          domains.NewInstallID(),
+		Name:        fmt.Sprintf("test-install-%s", domains.NewInstallID()),
+		AppID:       appID,
+		AppConfigID: appConfig.ID,
 	}
 	ctx := cctx.SetAccountContext(s.ctx, s.testAcc)
 	ctx = cctx.SetOrgContext(ctx, s.testOrg)
@@ -208,11 +211,7 @@ func (s *GetInstallActionWorkflowRecentRunsTestSuite) TestGetInstallActionRecent
 				return "inst-nonexistent123456789", action.ID
 			},
 			queryParams:  "",
-			expectedCode: http.StatusOK,
-			validateFunc: func(iaw *app.InstallActionWorkflow) {
-				// Handler returns 200 with null on error
-				require.Empty(s.T(), iaw.ID)
-			},
+			expectedCode: http.StatusNotFound,
 		},
 		{
 			name: "returns null for non-existent action",
@@ -221,11 +220,7 @@ func (s *GetInstallActionWorkflowRecentRunsTestSuite) TestGetInstallActionRecent
 				return install.ID, "actw-nonexistent123456789"
 			},
 			queryParams:  "",
-			expectedCode: http.StatusOK,
-			validateFunc: func(iaw *app.InstallActionWorkflow) {
-				// Handler returns 200 with null on error
-				require.Empty(s.T(), iaw.ID)
-			},
+			expectedCode: http.StatusNotFound,
 		},
 	}
 

@@ -43,7 +43,7 @@ func (e *FlowTestSuite) TestCancelledWorkflowHasCancelledStatusAndFinishedAt() {
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusCancelled)
 	got := e.getWorkflow(ctx, flw.ID)
 	require.Equal(e.T(), "workflow cancelled", got.Status.StatusHumanDescription)
-	require.False(e.T(), got.FinishedAt.IsZero(), "a cancelled workflow must be finished")
+	e.waitForWorkflowFinished(ctx, flw.ID)
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
@@ -147,7 +147,8 @@ func (e *FlowTestSuite) TestParkedRetryExpiresStopsWorkflow() {
 	require.Eventually(e.T(), func() bool {
 		step := e.getStep(ctx, steps[0].ID)
 		return step.Status.Status == app.StatusError &&
-			step.Status.StatusHumanDescription == "step abandoned: no retry or skip received"
+			step.Status.StatusHumanDescription == "step abandoned: no retry or skip received" &&
+			directive.Step(step.ResultDirective) == directive.StepStop
 	}, ceilingWait, pollInterval, "parked step was not abandoned at the wait ceiling")
 
 	step := e.getStep(ctx, steps[0].ID)

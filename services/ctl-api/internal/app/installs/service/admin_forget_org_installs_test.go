@@ -62,9 +62,10 @@ func (s *AdminForgetOrgInstallsTestSuite) SetupSuite() {
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
+			Mocks:           &tests.TestMocks{MockTC: newPermissiveTemporalMock(s.T())},
 			CustomValidator: true,
 		}),
-		fx.Provide(New),
+		fx.Options(testServiceFXOptions()...),
 		fx.Populate(&s.service),
 	)
 
@@ -79,8 +80,9 @@ func (s *AdminForgetOrgInstallsTestSuite) SetupTest() {
 
 	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.InstallsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -98,6 +100,7 @@ func (s *AdminForgetOrgInstallsTestSuite) setupTestData() {
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), ctx, s.service.DB, s.testInstall.ID)
 }
 
 func (s *AdminForgetOrgInstallsTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -202,6 +205,7 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			clearQueueSignals(s.T(), s.service.DB)
 			orgID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/orgs/"+orgID+"/admin-forget-installs", tc.requestBody)
 

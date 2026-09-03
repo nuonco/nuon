@@ -19,6 +19,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
@@ -41,6 +42,7 @@ type TestService struct {
 	AccountsHelpers *accountshelpers.Helpers
 	OrgsService     *service
 	Seeder          *testseed.Seeder
+	TClient         temporalclient.Client
 }
 
 // OrgsTestSuite is the testify suite for orgs endpoints.

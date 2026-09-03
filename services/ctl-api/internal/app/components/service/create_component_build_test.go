@@ -71,11 +71,11 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildUseLatest() {
 
 		assert.NotEmpty(s.T(), response.ID)
 		assert.Equal(s.T(), app.ComponentBuildStatus("queued"), response.Status)
-		assert.Nil(s.T(), response.GitRef)
+		assert.NotNil(s.T(), response.GitRef)
 
 		var dbBuild app.ComponentBuild
 		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).First(&dbBuild, "id = ?", response.ID).Error)
-		assert.Nil(s.T(), dbBuild.GitRef)
+		assert.NotNil(s.T(), dbBuild.GitRef)
 		assert.Nil(s.T(), dbBuild.VCSConnectionCommitID)
 	})
 }

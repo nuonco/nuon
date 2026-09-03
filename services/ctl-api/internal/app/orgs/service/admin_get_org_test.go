@@ -157,7 +157,7 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "partial-match-org",
+					Name:        "admin-get-partial-match-org",
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/partial",
@@ -170,11 +170,11 @@ func (s *AdminGetOrgTestSuite) TestAdminGetOrg() {
 				})
 
 				// Return partial match (tests LIKE query)
-				return "partial"
+				return "admin-get-partial"
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
-				require.Equal(s.T(), "partial-match-org", org.Name)
+				require.Equal(s.T(), "admin-get-partial-match-org", org.Name)
 			},
 		},
 		{

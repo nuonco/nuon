@@ -86,11 +86,14 @@ func (s *RestartOrgTestSuite) SetupSuite() {
 
 	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
+	s.T().Cleanup(func() { closeOrgServiceDB(s.T(), s.service.DB) })
 }
 
 func (s *RestartOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
+	resetOrgServiceSignals(s.T(), s.service.DB)
+	seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, s.testOrg)
 
 	// Reset mock before each test
 
@@ -160,6 +163,7 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, org)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -228,8 +232,10 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Setup test data
 			org := tc.setupFunc()
+			seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, org)
 
 			// Reset mock before test
 
@@ -319,6 +325,7 @@ func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Setup test data
 			orgID := tc.setupFunc()
 
@@ -354,6 +361,7 @@ func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 
 func (s *RestartOrgTestSuite) TestRestartOrgSignalDetails() {
 	s.Run("verifies signal type is OperationRestart", func() {
+		resetOrgServiceSignals(s.T(), s.service.DB)
 		ctx := context.Background()
 		ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
@@ -368,6 +376,7 @@ func (s *RestartOrgTestSuite) TestRestartOrgSignalDetails() {
 		}
 		err := s.service.DB.WithContext(ctx).Create(org).Error
 		require.NoError(s.T(), err)
+		seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, org)
 		s.T().Cleanup(func() {
 			s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 		})

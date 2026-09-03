@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
@@ -131,11 +132,8 @@ func (e *FlowTestSuite) getStepsByWorkflow(ctx context.Context, workflowID strin
 	return steps
 }
 
-// Dispatch resolves queues by (flow owner, queue name), so one run-scoped owner lets all tests reuse one queue set; assertions key on workflow/step IDs, never owner.
-var sharedTestOwnerID = generics.GetFakeObj[string]()
-
 func newTestOwner() (string, string) {
-	return sharedTestOwnerID, "test_installs"
+	return generics.GetFakeObj[string](), "test_installs"
 }
 
 func (e *FlowTestSuite) getLatestQueueSignal(ctx context.Context, ownerID, ownerType string, signalType signal.SignalType) *app.QueueSignal {
@@ -212,6 +210,20 @@ func (e *FlowTestSuite) waitForWorkflowTerminal(ctx context.Context, workflowID 
 		}
 		return false
 	}, pollTimeout, pollInterval, "workflow %s did not reach a terminal status", workflowID)
+}
+
+func (e *FlowTestSuite) waitForWorkflowFinished(ctx context.Context, workflowID string) {
+	require.Eventually(e.T(), func() bool {
+		return !e.getWorkflow(ctx, workflowID).FinishedAt.IsZero()
+	}, pollTimeout, pollInterval, "workflow %s did not set finished_at", workflowID)
+}
+
+func (e *FlowTestSuite) cancelWorkflow(ctx context.Context, workflowID string) {
+	_, err := e.service.FlowClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{
+		InstallWorkflowID: workflowID,
+	})
+	require.NoError(e.T(), err)
+	e.waitForWorkflowStatus(ctx, workflowID, app.StatusCancelled)
 }
 
 // ceilingWait bounds asserts that depend on the MaxWaitCeiling override (15s

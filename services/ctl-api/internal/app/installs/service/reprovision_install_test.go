@@ -24,7 +24,7 @@ func (s *InstallsServiceTestSuite) TestReprovisionInstallSuccess() {
 	require.Len(s.T(), captured, 1)
 	_ = captured[0] // signal type check via .Type
 
-	assert.Equal(s.T(), "ExecuteFlow-type", string(captured[0].Type))
+	assert.Equal(s.T(), "execute-workflow", string(captured[0].Type))
 }
 
 func (s *InstallsServiceTestSuite) TestReprovisionInstallNotFound() {

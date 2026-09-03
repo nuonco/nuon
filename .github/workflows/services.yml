@@ -110,11 +110,34 @@ jobs:
       disable_github_oidc: true
     secrets: inherit
 
+  ctl_api_integration:
+    name: ctl-api integration
+    needs:
+      - prepare
+    if: ${{ github.event_name == 'pull_request' && !cancelled() && contains(needs.prepare.outputs.services, 'ctl-api') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run ctl-api integration suite
+        env:
+          GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
+        run: |
+          run_url="$(gh workflow run ctl-api-integration.yml \
+            --repo nuonco/mono \
+            --field "nuon_ref=${{ github.event.pull_request.head.sha }}" \
+            --field "nuon_branch=${{ github.head_ref }}" \
+            --field "source_run_id=${{ github.run_id }}" \
+            --field "source_actor=${{ github.actor }}" \
+            --field local_nctl=false)"
+          run_id="${run_url##*/}"
+          [[ "$run_id" =~ ^[0-9]+$ ]]
+          gh run watch "$run_id" --repo nuonco/mono --exit-status
+
   update_status:
     name: update status
     if: github.event_name == 'pull_request' && always()
     needs:
       - services
+      - ctl_api_integration
     runs-on: ubuntu-latest
     steps:
       - uses: martialonline/workflow-status@v4.2

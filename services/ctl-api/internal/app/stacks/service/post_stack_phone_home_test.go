@@ -127,13 +127,17 @@ func (s *StackPhoneHomeTestSuite) seedInstall(orgID string) *app.Install {
 	return install
 }
 
-// seedQueue creates the install-signals queue the enqueue looks up by owner+name.
 func (s *StackPhoneHomeTestSuite) seedQueue(installID string) {
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.Queue{
-		OwnerID:   installID,
-		OwnerType: "installs",
-		Name:      installshelpers.InstallSignalsQueueName,
-	}).Error)
+	for _, name := range []string{
+		installshelpers.InstallSignalsQueueName,
+		installshelpers.InstallWorkflowsQueueName,
+	} {
+		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.Queue{
+			OwnerID:   installID,
+			OwnerType: "installs",
+			Name:      name,
+		}).Error)
+	}
 }
 
 func (s *StackPhoneHomeTestSuite) TestAppliesReportToLatestStackVersion() {

@@ -57,5 +57,19 @@ func (a *Activities) CheckWorkflowRetryable(ctx context.Context, req CheckWorkfl
 		return &CheckWorkflowRetryableResponse{Retryable: false}, nil
 	}
 
-	return &CheckWorkflowRetryableResponse{Retryable: true}, nil
+	var retryableSteps []app.WorkflowStep
+	res = a.db.WithContext(ctx).
+		Select("status").
+		Where(app.WorkflowStep{InstallWorkflowID: req.WorkflowID, Retryable: true}).
+		Find(&retryableSteps)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to check retryable workflow steps: %w", res.Error)
+	}
+	for _, step := range retryableSteps {
+		if step.Status.Status == app.StatusError {
+			return &CheckWorkflowRetryableResponse{Retryable: true}, nil
+		}
+	}
+
+	return &CheckWorkflowRetryableResponse{Retryable: false}, nil
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/go-github/v50/github"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
@@ -34,7 +35,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/testworker/seed"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
@@ -109,7 +109,7 @@ func (e *FlowTestSuite) SetupSuite() {
 		fx.Provide(log.New),
 		fx.Provide(dblog.New),
 		fx.Provide(loops.New),
-		fx.Provide(github.New),
+		fx.Provide(func() *github.Client { return github.NewClient(nil) }),
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
 		fx.Provide(func(cfg *internal.Config) *querycollector.Collector {

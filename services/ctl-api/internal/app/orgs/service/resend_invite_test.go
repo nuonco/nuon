@@ -84,11 +84,14 @@ func (s *ResendOrgInviteTestSuite) SetupSuite() {
 
 	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
+	s.T().Cleanup(func() { closeOrgServiceDB(s.T(), s.service.DB) })
 }
 
 func (s *ResendOrgInviteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
+	resetOrgServiceSignals(s.T(), s.service.DB)
+	seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, s.testOrg)
 
 	// Reset mock before each test
 
@@ -324,6 +327,7 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Reset mock before test
 
 			// Setup test data

@@ -63,7 +63,7 @@ func (s *ReprovisionInstallTestSuite) SetupSuite() {
 			T:               s.T(),
 			CustomValidator: true,
 		}),
-		fx.Provide(New),
+		fx.Options(testServiceFXOptions()...),
 		fx.Populate(&s.service),
 	)
 
@@ -99,6 +99,7 @@ func (s *ReprovisionInstallTestSuite) setupTestData() {
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), ctx, s.service.DB, s.testInstall.ID)
 }
 
 func (s *ReprovisionInstallTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
@@ -212,6 +213,7 @@ func (s *ReprovisionInstallTestSuite) TestReprovisionInstall() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			clearQueueSignals(s.T(), s.service.DB)
 			installID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/installs/"+installID+"/admin-reprovision", tc.requestBody)
 

@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -76,24 +75,19 @@ func (s *ComponentsServiceTestSuite) TestListOrgComponentBuildsRejectsInvalidCur
 }
 
 func (s *ComponentsServiceTestSuite) createComponentBuildJob(buildID string, group app.RunnerJobGroup, operation app.RunnerJobOperationType, typ app.RunnerJobType) *app.RunnerJob {
-	job := &app.RunnerJob{
-		ID:                domains.NewRunnerJobID(),
-		OrgID:             s.testOrg.ID,
-		OwnerID:           buildID,
-		OwnerType:         "component_builds",
-		Status:            app.RunnerJobStatusAvailable,
-		StatusDescription: "test job",
-		Group:             group,
-		Operation:         operation,
-		Type:              typ,
-		Executor:          app.RunnerJobExecutorControlPlane,
-		QueueTimeout:      5 * time.Minute,
-		AvailableTimeout:  10 * time.Minute,
-		ExecutionTimeout:  30 * time.Minute,
-		OverallTimeout:    45 * time.Minute,
-		MaxExecutions:     1,
-	}
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(job).Error)
+	job := s.deps.Seeder.CreateRunnerJob(s.ctx, s.T(), buildID, "component_builds")
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(job).Updates(map[string]any{
+		"status":             app.RunnerJobStatusAvailable,
+		"status_description": "test job",
+		"group":              group,
+		"operation":          operation,
+		"type":               typ,
+		"executor":           app.RunnerJobExecutorControlPlane,
+		"queue_timeout":      5 * time.Minute,
+		"available_timeout":  10 * time.Minute,
+		"execution_timeout":  30 * time.Minute,
+		"overall_timeout":    45 * time.Minute,
+	}).Error)
 	return job
 }
 

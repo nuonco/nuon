@@ -63,7 +63,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		fx.Provide(New),
+		testDependencyOptions(), fx.Provide(New),
 		fx.Populate(&s.service),
 	)
 
@@ -148,6 +148,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) createRunnerHeartBeat(runner
 	heartBeat := &app.RunnerHeartBeat{
 		ID:        domains.NewRunnerHeartBeatID(),
 		RunnerID:  runnerID,
+		ProcessID: runnerID + "-" + string(process),
 		Process:   process,
 		AliveTime: aliveTime,
 		Version:   version,
@@ -163,6 +164,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 		name         string
 		setupFunc    func() string
 		expectedCode int
+		readyFunc    func(LatestRunnerHeartBeats) bool
 		validateFunc func(LatestRunnerHeartBeats)
 	}{
 		{
@@ -196,6 +198,10 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				return runner.ID
 			},
 			expectedCode: http.StatusOK,
+			readyFunc: func(heartBeats LatestRunnerHeartBeats) bool {
+				hb := heartBeats[string(app.RunnerProcessTypeMng)]
+				return len(heartBeats) == 3 && hb != nil && hb.Version == "1.0.1"
+			},
 			validateFunc: func(heartBeats LatestRunnerHeartBeats) {
 				// Should have one entry per process
 				assert.Len(s.T(), heartBeats, 3, "Should have 3 process types")
@@ -254,6 +260,10 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				return runner.ID
 			},
 			expectedCode: http.StatusOK,
+			readyFunc: func(heartBeats LatestRunnerHeartBeats) bool {
+				hb := heartBeats[string(app.RunnerProcessTypeMng)]
+				return hb != nil && hb.Version == "1.0.3"
+			},
 			validateFunc: func(heartBeats LatestRunnerHeartBeats) {
 				// Should dedupe to one entry per process
 				assert.Len(s.T(), heartBeats, 1, "Should dedupe to single entry")
@@ -387,6 +397,9 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				return runner.ID
 			},
 			expectedCode: http.StatusOK,
+			readyFunc: func(heartBeats LatestRunnerHeartBeats) bool {
+				return heartBeats[string(app.RunnerProcessTypeMng)] != nil
+			},
 			validateFunc: func(heartBeats LatestRunnerHeartBeats) {
 				assert.Len(s.T(), heartBeats, 1)
 				mngHB, ok := heartBeats[string(app.RunnerProcessTypeMng)]
@@ -429,6 +442,9 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				return runner.ID
 			},
 			expectedCode: http.StatusOK,
+			readyFunc: func(heartBeats LatestRunnerHeartBeats) bool {
+				return len(heartBeats) == 3
+			},
 			validateFunc: func(heartBeats LatestRunnerHeartBeats) {
 				assert.Len(s.T(), heartBeats, 3, "Should have all three process types")
 
@@ -456,6 +472,19 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 			runnerID := tc.setupFunc()
 			path := fmt.Sprintf("/v1/runners/%s/heart-beats/latest", runnerID)
 			rr := s.makeRequest("GET", path)
+			if tc.expectedCode == http.StatusOK && tc.readyFunc != nil {
+				require.Eventually(s.T(), func() bool {
+					rr = s.makeRequest("GET", path)
+					if rr.Code != http.StatusOK {
+						return false
+					}
+					var heartBeats LatestRunnerHeartBeats
+					if err := json.Unmarshal(rr.Body.Bytes(), &heartBeats); err != nil {
+						return false
+					}
+					return tc.readyFunc(heartBeats)
+				}, 5*time.Second, 50*time.Millisecond)
+			}
 
 			if rr.Code != tc.expectedCode {
 				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())

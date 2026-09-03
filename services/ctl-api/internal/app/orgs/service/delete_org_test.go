@@ -83,11 +83,13 @@ func (s *DeleteOrgTestSuite) SetupSuite() {
 
 	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
+	s.T().Cleanup(func() { closeOrgServiceDB(s.T(), s.service.DB) })
 }
 
 func (s *DeleteOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
+	resetOrgServiceSignals(s.T(), s.service.DB)
 
 	// Reset mock before each test
 
@@ -148,6 +150,7 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
 				require.NoError(s.T(), err)
+				seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, org)
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 				})
@@ -189,6 +192,7 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Setup test data
 			org := tc.setupFunc()
 
