@@ -5,8 +5,8 @@ import { LabelBadge } from '@/components/common/LabelBadge'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import type { TAppBranchConfig, TInstall } from '@/types'
-import { humanize } from '@/utils/string-utils'
 import { previewDefaultsFromConfig } from '@/components/branches/shared/PreviewDefaultsEditor'
+import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
 
 export interface IPreviewConfigSection {
   currentConfig?: TAppBranchConfig
@@ -58,7 +58,7 @@ export const PreviewConfigSection = ({
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <LabeledValue label="Mode" loading={isLoading} loadingWidth={10}>
-          <Badge size="sm">{humanize(defaults.mode)}</Badge>
+          <Badge size="sm">{previewModeDisplayLabel(defaults.mode)}</Badge>
         </LabeledValue>
         <LabeledValue
           label="Default install"

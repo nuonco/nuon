@@ -49,7 +49,10 @@ export const WORKFLOW_BADGE_MAP: Record<
   'approval-denied': { children: 'Plan denied', theme: 'warn' },
   'approval-retry': { children: 'Plan retried', theme: 'info' },
   error: { children: 'Failed', theme: 'error' },
-  'failed-pending-retry': { children: 'Failed — awaiting retry', theme: 'error' },
+  'failed-pending-retry': {
+    children: 'Failed — awaiting retry',
+    theme: 'error',
+  },
   'not-attempted': { children: 'Not attempted' },
   noop: { children: 'NOOP' },
   cancelled: { children: 'Cancelled', theme: 'warn' },
@@ -136,7 +139,12 @@ function getStepLineageBadge(step: TWorkflowStep): TBadgeCfg | undefined {
 
   if (metadata?.is_retry) {
     const retryIdx = Number(metadata.retry_idx ?? metadata.group_retry_idx ?? 0)
-    const retryLabel = metadata.retry_type === 'manual' ? 'Manual retry' : metadata.retry_type === 'auto' ? 'Auto retry' : 'Retry'
+    const retryLabel =
+      metadata.retry_type === 'manual'
+        ? 'Manual retry'
+        : metadata.retry_type === 'auto'
+          ? 'Auto retry'
+          : 'Retry'
     return { children: `${retryLabel} #${retryIdx}`, theme: 'info' }
   }
 
@@ -159,9 +167,14 @@ function getStepOutcomeBadge(
   }
 
   if (step?.execution_type === 'approval' && !isApprovalPrompt) {
-    const metadata = step?.status?.metadata as Record<string, unknown> | undefined
+    const metadata = step?.status?.metadata as
+      | Record<string, unknown>
+      | undefined
     if (metadata?.auto_approved && metadata?.check === 'policy-auto-approve') {
-      return { children: 'Auto-approved (policies)', theme: 'success' as TBadgeTheme }
+      return {
+        children: 'Auto-approved (policies)',
+        theme: 'success' as TBadgeTheme,
+      }
     }
     if (step?.status?.status === 'approved') {
       if (planOnly) {
@@ -182,11 +195,22 @@ function getStepOutcomeBadge(
   const status = step?.status?.status
   const checkType = (step?.status?.metadata as Record<string, unknown>)?.check
 
-  if (status === 'error' && (checkType === 'stale-plan' || checkType === 'superseded')) {
-    return WORKFLOW_BADGE_MAP[checkType === 'stale-plan' ? 'stale-plan' : 'superseded']
+  if (
+    status === 'error' &&
+    (checkType === 'stale-plan' || checkType === 'superseded')
+  ) {
+    return WORKFLOW_BADGE_MAP[
+      checkType === 'stale-plan' ? 'stale-plan' : 'superseded'
+    ]
   }
 
-  if (status === 'failed-pending-retry' || (status === 'error' && step?.retryable && !step?.retried && !step?.status?.metadata?.retries_exhausted)) {
+  if (
+    status === 'failed-pending-retry' ||
+    (status === 'error' &&
+      step?.retryable &&
+      !step?.retried &&
+      !step?.status?.metadata?.retries_exhausted)
+  ) {
     const hints: string[] = []
     if (step?.retryable) hints.push('retryable')
     if (step?.skippable) hints.push('skippable')
@@ -217,7 +241,8 @@ export function getStepBadges(
   )
 
   return badges.filter(
-    (badge, idx) => badges.findIndex((b) => b.children === badge.children) === idx
+    (badge, idx) =>
+      badges.findIndex((b) => b.children === badge.children) === idx
   )
 }
 
@@ -268,8 +293,14 @@ export function getStepButtons(step: TWorkflowStep): TStepButtonsCfg {
   const status = step?.status?.status
   // A step that has already been superseded by a newer retry attempt
   // (`retried === true`) should never offer retry/skip controls.
-  const isFailedAwaitingRetry = status === 'failed-pending-retry' && !step?.retried
-  const isRetryableError = status === 'error' && !!step?.retryable && !step?.retried && !step?.status?.metadata?.retries_exhausted && step?.status?.metadata?.retry_type !== 'auto'
+  const isFailedAwaitingRetry =
+    status === 'failed-pending-retry' && !step?.retried
+  const isRetryableError =
+    status === 'error' &&
+    !!step?.retryable &&
+    !step?.retried &&
+    !step?.status?.metadata?.retries_exhausted &&
+    step?.status?.metadata?.retry_type !== 'auto'
   return {
     retry: isFailedAwaitingRetry || isRetryableError,
     cancel: status === 'in-progress' || status === 'approval-awaiting',
@@ -293,7 +324,8 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     const hints: string[] = []
     if (step?.retryable) hints.push('retry')
     if (step?.skippable) hints.push('skip')
-    const actions = hints.length > 0 ? ` You can ${hints.join(' or ')} this step.` : ''
+    const actions =
+      hints.length > 0 ? ` You can ${hints.join(' or ')} this step.` : ''
     return {
       copy: `Step failed and is awaiting action.${actions}`,
       theme: 'error',
@@ -325,7 +357,8 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
       }
     }
     if (metadata?.auto_retried) {
-      const attempt = typeof metadata.retry_idx === 'number' ? metadata.retry_idx : '?'
+      const attempt =
+        typeof metadata.retry_idx === 'number' ? metadata.retry_idx : '?'
       return {
         copy: `Step encountered an error and was automatically retried (attempt ${attempt} of ${metadata.max_retries ?? '?'}).`,
         theme: 'warn',
@@ -334,9 +367,10 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     }
     if (metadata?.auto_retries_exhausted) {
       const maxAuto = Number(metadata.max_auto_retries ?? 0)
-      const autoRetryCopy = maxAuto > 0
-        ? `All ${maxAuto} automatic retries have been used.`
-        : 'No automatic retries are configured for this step.'
+      const autoRetryCopy =
+        maxAuto > 0
+          ? `All ${maxAuto} automatic retries have been used.`
+          : 'No automatic retries are configured for this step.'
       const manualRetryCopy = metadata.max_retries
         ? ` You can still manually retry this step (${metadata.retry_index ?? 0} of ${metadata.max_retries} total retries used).`
         : ''
@@ -346,10 +380,9 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
         title: `Step ${step?.name} — auto-retries exhausted`,
       }
     }
-    const retryInfo =
-      metadata?.retry_type
-        ? ` (${metadata.retry_type} retry ${metadata.retry_idx ?? ''}/${metadata.max_retries ?? ''})`
-        : ''
+    const retryInfo = metadata?.retry_type
+      ? ` (${metadata.retry_type} retry ${metadata.retry_idx ?? ''}/${metadata.max_retries ?? ''})`
+      : ''
     return {
       copy: `Step encountered an error: ${status_human_description}${retryInfo}`,
       theme: 'error',

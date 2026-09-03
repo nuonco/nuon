@@ -125,7 +125,7 @@ export const WorkflowTimeline = ({
                       const branchRun = getBranchRunFromWorkflow(workflow)
                       const mode =
                         previewModeLabel(branchRun?.preview) ??
-                        (branchRun?.plan_only ? 'plan-only' : undefined)
+                        (branchRun?.plan_only ? 'Plan only' : undefined)
                       const source = previewSourceLabel(branchRun)
                       const install = branchRun?.preview?.install_name
                       return (

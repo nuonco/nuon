@@ -116,7 +116,7 @@ const BranchRunDetailContent = () => {
   const isPreview = isPreviewBranchRun(branchRun)
   const previewMode =
     previewModeLabel(branchRun?.preview) ??
-    (branchRun?.plan_only ? 'plan-only' : undefined)
+    (branchRun?.plan_only ? 'Plan only' : undefined)
   const previewSource = previewSourceLabel(branchRun)
   const previewInstall = branchRun?.preview?.install_name
 
