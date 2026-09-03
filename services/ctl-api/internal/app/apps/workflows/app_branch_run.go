@@ -22,7 +22,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
 
-const ignoreChangesStepVersion = "app-branch-ignore-changes-step-v1"
+const (
+	ignoreChangesStepVersion  = "app-branch-ignore-changes-step-v1"
+	setupPreviewHiddenVersion = "app-branch-setup-preview-hidden-v1"
+)
 
 // AppBranchRun builds the workflow steps for an app branch run
 // This workflow orchestrates:
@@ -86,10 +89,14 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 
 	if isPreview {
 		sg.nextGroup()
+		options := []WorkflowStepOptions{WithSkippable(false)}
+		if workflow.GetVersion(ctx, setupPreviewHiddenVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			options = append(options, WithExecutionType(app.WorkflowStepExecutionTypeHidden))
+		}
 		step, err := sg.appBranchSignalStep(ctx, appBranchID, "setup preview", pgtype.Hstore{}, &setuppreview.Signal{
 			RunID:       runID,
 			AppBranchID: appBranchID,
-		}, WithSkippable(false))
+		}, options...)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create setup preview step")
 		}

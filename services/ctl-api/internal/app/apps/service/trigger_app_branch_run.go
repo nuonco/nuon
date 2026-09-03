@@ -169,7 +169,6 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		"config_id":     config.ID,
 		"config_number": strconv.Itoa(config.ConfigNumber),
 		"force":         strconv.FormatBool(req.Force),
-		"event_type":    "manual",
 	}
 	if req.AppConfigID != "" {
 		workflowMeta["app_config_id"] = req.AppConfigID
@@ -182,6 +181,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	}
 	// fetchcommit only honours HeadSHA on a git-preview run.
 	runType := app.AppBranchRunTypeManual
+	eventType := "manual"
 	planOnly := req.PlanOnly
 	prNumber := req.PRNumber
 	headSHA := req.HeadSHA
@@ -209,7 +209,9 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			headSHA = previewInput.HeadSHA
 		}
 		switch previewInput.Source {
-		case app.AppBranchRunPreviewSourcePR, app.AppBranchRunPreviewSourceCommit, app.AppBranchRunPreviewSourceBranch:
+		case app.AppBranchRunPreviewSourcePR:
+			runType = app.AppBranchRunTypeGitPreview
+		case app.AppBranchRunPreviewSourceCommit, app.AppBranchRunPreviewSourceBranch:
 			runType = app.AppBranchRunTypeGitPreview
 		case app.AppBranchRunPreviewSourceLocal:
 			if req.AppConfigID == "" {
@@ -217,9 +219,14 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 				return
 			}
 		}
+		eventType = previewEventType(previewInput.Source)
 	} else if req.PlanOnly && (req.PRNumber != nil || req.HeadSHA != "") {
 		runType = app.AppBranchRunTypeGitPreview
+		if req.PRNumber != nil {
+			eventType = "pull_request"
+		}
 	}
+	workflowMeta["event_type"] = eventType
 
 	if prNumber != nil {
 		workflowMeta["pr_number"] = strconv.Itoa(*prNumber)
@@ -248,7 +255,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			Force:             req.Force,
 			PlanOnly:          planOnly,
 			RunType:           runType,
-			EventType:         "manual",
+			EventType:         eventType,
 			PRNumber:          prNumber,
 			HeadSHA:           headSHA,
 			BaseBranch:        baseBranch,

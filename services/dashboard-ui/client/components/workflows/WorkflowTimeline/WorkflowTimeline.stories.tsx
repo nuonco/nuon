@@ -51,7 +51,7 @@ const unnamedWorkflow: TWorkflow = {
 const branchRunWorkflow: TWorkflow = {
   ...mockWorkflow,
   id: 'inwykcx31yhqs8sb3w9ynmuig3',
-  name: 'Manual run',
+  name: 'Run',
   type: 'app_branch_run',
   owner_type: 'app_branches',
   finished: true,
@@ -60,11 +60,30 @@ const branchRunWorkflow: TWorkflow = {
   app_branch_runs: [{ head_sha: '83061cbabc123' }],
 } as unknown as TWorkflow
 
+const manualBranchRunWorkflow: TWorkflow = {
+  ...branchRunWorkflow,
+  id: 'inwmanual1234567890abcdef',
+  app_branch_runs: [{ head_sha: '83061cbabc123', event_type: 'manual' }],
+} as unknown as TWorkflow
+
 const previewBranchRunWorkflow: TWorkflow = {
   ...branchRunWorkflow,
   id: 'inw5lhpdxb26o9qdrgp3zpq0zq',
   plan_only: true,
 } as TWorkflow
+
+const manualPreviewBranchRunWorkflow: TWorkflow = {
+  ...previewBranchRunWorkflow,
+  id: 'inwmanualpreview1234567890',
+  app_branch_runs: [
+    {
+      head_sha: '83061cbabc123',
+      event_type: 'manual',
+      preview: { mode: 'plan-only' },
+      plan_only: true,
+    },
+  ],
+} as unknown as TWorkflow
 
 const serviceAccountBranchRunWorkflow: TWorkflow = {
   ...previewBranchRunWorkflow,
@@ -108,7 +127,9 @@ export const BranchRuns = () => (
       ]}
       pagination={{ hasNext: false, offset: 0, limit: 10 }}
       orgId="org-123"
-      getWorkflowHref={(wf) => `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`}
+      getWorkflowHref={(wf) =>
+        `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`
+      }
     />
   </ApprovalsProvider>
 )
@@ -119,7 +140,35 @@ export const BranchRunPreview = () => (
       workflows={[previewBranchRunWorkflow]}
       pagination={{ hasNext: false, offset: 0, limit: 10 }}
       orgId="org-123"
-      getWorkflowHref={(wf) => `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`}
+      getWorkflowHref={(wf) =>
+        `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`
+      }
+    />
+  </ApprovalsProvider>
+)
+
+export const BranchRunManual = () => (
+  <ApprovalsProvider>
+    <WorkflowTimeline
+      workflows={[manualBranchRunWorkflow]}
+      pagination={{ hasNext: false, offset: 0, limit: 10 }}
+      orgId="org-123"
+      getWorkflowHref={(wf) =>
+        `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`
+      }
+    />
+  </ApprovalsProvider>
+)
+
+export const BranchRunManualPreview = () => (
+  <ApprovalsProvider>
+    <WorkflowTimeline
+      workflows={[manualPreviewBranchRunWorkflow]}
+      pagination={{ hasNext: false, offset: 0, limit: 10 }}
+      orgId="org-123"
+      getWorkflowHref={(wf) =>
+        `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`
+      }
     />
   </ApprovalsProvider>
 )
@@ -130,7 +179,9 @@ export const BranchRunServiceAccount = () => (
       workflows={[serviceAccountBranchRunWorkflow]}
       pagination={{ hasNext: false, offset: 0, limit: 10 }}
       orgId="org-123"
-      getWorkflowHref={(wf) => `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`}
+      getWorkflowHref={(wf) =>
+        `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`
+      }
     />
   </ApprovalsProvider>
 )

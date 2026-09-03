@@ -5,12 +5,14 @@ import { Badge } from '@/components/common/Badge'
 import { CompositeError } from '@/components/common/CompositeError'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
 import { PageSection } from '@/components/layout/PageSection'
+import { ProviderError } from '@/components/layout/ProviderError'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { BranchRunApproval } from '@/components/branches/BranchRunApproval'
@@ -19,7 +21,15 @@ import { BranchRunComparisonRuns } from '@/components/branches/BranchRunComparis
 import { BranchRunSummary } from '@/components/branches/BranchRunSummary'
 import { RuntimeChanges } from '@/components/branches/RuntimeChanges'
 import { WorkflowRunPanelButton } from '@/components/branches/WorkflowRunPanel'
-import { githubCommitUrl, resolvePrLink } from '@/components/branches/shared/pr-link'
+import {
+  isPreviewBranchRun,
+  previewModeLabel,
+  previewSourceLabel,
+} from '@/components/branches/shared/preview-run-utils'
+import {
+  githubCommitUrl,
+  resolvePrLink,
+} from '@/components/branches/shared/pr-link'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { useOrg } from '@/hooks/use-org'
@@ -30,6 +40,7 @@ import {
   ConfigDiffFocusContext,
   type TConfigDiffFocus,
 } from '@/components/approvals/plan-diffs/config-diff-focus'
+import type { TAPIError } from '@/types'
 import { getBranchRunComparison, getBranchWorkflowRun } from '@/lib'
 
 const BranchRunDetailContent = () => {
@@ -53,7 +64,11 @@ const BranchRunDetailContent = () => {
     []
   )
 
-  const { data: run, isLoading } = useQuery({
+  const {
+    data: run,
+    isLoading,
+    error,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['branch-run', orgId, appId, branchId, runId],
     queryFn: () => getBranchWorkflowRun({ orgId, appId, branchId, runId }),
@@ -62,7 +77,9 @@ const BranchRunDetailContent = () => {
   })
 
   const branchRun = run?.app_branch_runs?.at(0)
-  const repoSlug = branchRun?.app_branch_config?.connected_github_vcs_config?.repo
+  const repoSlug =
+    branchRun?.app_branch_config?.connected_github_vcs_config?.repo ||
+    branchRun?.app_branch_config?.public_git_vcs_config?.repo
 
   const { data: comparison } = useQuery({
     placeholderData: keepPreviousData,
@@ -79,6 +96,10 @@ const BranchRunDetailContent = () => {
     retry: 1,
   })
 
+  if (error && !run) {
+    return <ProviderError error={error as TAPIError} />
+  }
+
   if (isLoading || !run) {
     return (
       <PageSection>
@@ -92,13 +113,22 @@ const BranchRunDetailContent = () => {
   const status = run.status?.status || 'unknown'
   const statusDescription = run.status?.status_human_description || ''
   const runTitle = getRunTitle(run)
+  const isPreview = isPreviewBranchRun(branchRun)
+  const previewMode =
+    previewModeLabel(branchRun?.preview) ??
+    (branchRun?.plan_only ? 'Plan only' : undefined)
+  const previewSource = previewSourceLabel(branchRun)
+  const previewInstall = branchRun?.preview?.install_name
 
   const prLink = resolvePrLink({
     repoSlug,
     prNumber: branchRun?.pr_number,
     commitMessage: branchRun?.vcs_connection_commit?.message,
   })
-  const commitUrl = githubCommitUrl(repoSlug, branchRun?.vcs_connection_commit?.sha)
+  const commitUrl = githubCommitUrl(
+    repoSlug,
+    branchRun?.vcs_connection_commit?.sha
+  )
   const currentGithubHref = prLink?.url ?? commitUrl
 
   const showRunComparison =
@@ -108,7 +138,9 @@ const BranchRunDetailContent = () => {
     !!comparison?.base_run
 
   return (
-    <ConfigDiffFocusContext.Provider value={{ requestFocus: requestConfigFocus }}>
+    <ConfigDiffFocusContext.Provider
+      value={{ requestFocus: requestConfigFocus }}
+    >
       <>
         <PageTitle segments={[runTitle, app?.name]} />
         <Breadcrumbs
@@ -132,19 +164,57 @@ const BranchRunDetailContent = () => {
           className="max-w-full"
           header={
             <DetailHeader
-              title={runTitle}
-              status={
-                branch?.name ? (
-                  <Badge size="sm" variant="code" className="shrink-0">
-                    {branch.name}
-                  </Badge>
-                ) : null
+              title={
+                prLink ? (
+                  <Link href={prLink.url} isExternal variant="inline">
+                    {runTitle}
+                  </Link>
+                ) : (
+                  runTitle
+                )
               }
-              id={runId}
+              status={
+                <>
+                  {branch?.name ? (
+                    <Badge size="sm" variant="code" className="shrink-0">
+                      {branch.name}
+                    </Badge>
+                  ) : null}
+                  {isPreview ? (
+                    <Badge size="sm" variant="code" className="shrink-0">
+                      preview
+                    </Badge>
+                  ) : null}
+                  {previewMode ? (
+                    <Badge size="sm" variant="code" className="shrink-0">
+                      {previewMode}
+                    </Badge>
+                  ) : null}
+                  {previewSource ? (
+                    <Badge size="sm" variant="code" className="shrink-0">
+                      {previewSource}
+                    </Badge>
+                  ) : null}
+                  {previewInstall ? (
+                    <Badge size="sm" variant="code" className="shrink-0">
+                      install: {previewInstall}
+                    </Badge>
+                  ) : null}
+                  {branchRun?.event_type === 'manual' ? (
+                    <Badge size="sm" variant="code" className="shrink-0">
+                      manual
+                    </Badge>
+                  ) : null}
+                </>
+              }
+              id={run.id}
               actions={
                 <>
-                  <AdminDashboardLink path={`/workflows/${runId}`} label="admin" />
-                  <WorkflowRunPanelButton runId={runId} />
+                  <AdminDashboardLink
+                    path={`/workflows/${run.id}`}
+                    label="admin"
+                  />
+                  <WorkflowRunPanelButton runId={run.id!} />
                   <CancelWorkflowButton workflow={run} />
                 </>
               }
@@ -159,16 +229,28 @@ const BranchRunDetailContent = () => {
                     }}
                   />
                   <LabeledValue label="Created">
-                    <Time time={run.created_at} format="relative" variant="subtext" />
+                    <Time
+                      time={run.created_at}
+                      format="relative"
+                      variant="subtext"
+                    />
                   </LabeledValue>
                   {run.started_at ? (
                     <LabeledValue label="Started">
-                      <Time time={run.started_at} format="relative" variant="subtext" />
+                      <Time
+                        time={run.started_at}
+                        format="relative"
+                        variant="subtext"
+                      />
                     </LabeledValue>
                   ) : null}
                   {run.finished_at ? (
                     <LabeledValue label="Finished">
-                      <Time time={run.finished_at} format="relative" variant="subtext" />
+                      <Time
+                        time={run.finished_at}
+                        format="relative"
+                        variant="subtext"
+                      />
                     </LabeledValue>
                   ) : null}
                 </>
@@ -206,7 +288,10 @@ const BranchRunDetailContent = () => {
             />
 
             {branchRun?.id && (
-              <RuntimeChanges branchId={branchId} appBranchRunId={branchRun.id} />
+              <RuntimeChanges
+                branchId={branchId}
+                appBranchRunId={branchRun.id}
+              />
             )}
 
             {branchRun?.id && (

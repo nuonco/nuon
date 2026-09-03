@@ -6,6 +6,7 @@ import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { WorkflowStepsPipeline } from '@/components/branches/WorkflowStepsPipeline'
 import { WorkflowStepDetail } from '@/components/branches/WorkflowStepDetail'
 import type { TInstallWorkflowStep } from '@/types'
+import { getWorkflowStepTitle } from '@/utils/workflow-utils'
 
 export interface IWorkflowRunPanel extends IPanel {
   steps: TInstallWorkflowStep[]
@@ -80,7 +81,7 @@ export const WorkflowRunPanel = ({
                   Step details
                 </Text>
                 <Text variant="subtext" theme="neutral">
-                  {selectedStep.name}
+                  {getWorkflowStepTitle(selectedStep)}
                 </Text>
               </div>
               <WorkflowStepDetail
