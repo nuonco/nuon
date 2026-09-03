@@ -34,12 +34,16 @@ func addUntrustedAttributes(attributes pcommon.Map) {
 	attributes.PutStr("keep", "value")
 	attributes.PutStr("nuon.install.id", "forged")
 	attributes.PutStr("nuon.untrusted", "forged")
+	attributes.PutStr("nuon_install_id", "forged")
+	attributes.PutStr("Nuon_Org_ID", "forged")
 }
 
 func requireOnlyUnreservedAttributes(t *testing.T, attributes pcommon.Map) {
 	t.Helper()
 	attributes.Range(func(key string, _ pcommon.Value) bool {
+		key = strings.ToLower(key)
 		require.False(t, strings.HasPrefix(key, reservedAttributePrefix), key)
+		require.False(t, strings.HasPrefix(key, normalizedReservedAttributePrefix), key)
 		return true
 	})
 	requireAttribute(t, attributes, "keep", "value")

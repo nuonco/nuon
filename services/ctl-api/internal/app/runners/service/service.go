@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -387,10 +388,10 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(params Params) *service {
-	telemetryTokenIssuer, telemetryTokenErr := newTelemetryTokenIssuer(params.Cfg)
-	if telemetryTokenErr != nil && params.L != nil {
-		params.L.Error("telemetry token issuer configuration is invalid", zap.Error(telemetryTokenErr))
+func New(params Params) (*service, error) {
+	telemetryTokenIssuer, err := newTelemetryTokenIssuer(params.Cfg)
+	if err != nil {
+		return nil, fmt.Errorf("initialize telemetry token issuer: %w", err)
 	}
 
 	return &service{
@@ -417,7 +418,7 @@ func New(params Params) *service {
 		queueClient:          params.QueueClient,
 		telemetryTokenIssuer: telemetryTokenIssuer,
 		logStreamCache:       expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
-	}
+	}, nil
 }
 
 func (s *service) RegisterSlackRoutes(api *gin.Engine) error {

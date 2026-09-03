@@ -14,7 +14,10 @@ import (
 	"github.com/nuonco/nuon/bins/telemetry-relay/extension/nuonjwtauthextension"
 )
 
-const reservedAttributePrefix = "nuon."
+const (
+	reservedAttributePrefix           = "nuon."
+	normalizedReservedAttributePrefix = "nuon_"
+)
 
 var errMissingPrincipal = errors.New("verified Nuon telemetry principal is required")
 
@@ -118,7 +121,8 @@ func stampResource(attributes pcommon.Map, principal nuonjwtauthextension.Princi
 
 func stripReserved(attributes pcommon.Map) {
 	attributes.RemoveIf(func(key string, _ pcommon.Value) bool {
-		return strings.HasPrefix(key, reservedAttributePrefix)
+		key = strings.ToLower(key)
+		return strings.HasPrefix(key, reservedAttributePrefix) || strings.HasPrefix(key, normalizedReservedAttributePrefix)
 	})
 }
 
