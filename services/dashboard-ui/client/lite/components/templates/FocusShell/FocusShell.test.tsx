@@ -17,7 +17,8 @@ test('renders sticky global chrome inside the single scroll region', () => {
   const header = screen.getByRole('banner')
   const main = screen.getByRole('main')
 
-  expect(screen.getByRole('link', { name: 'Nuon home' })).toBeTruthy()
+  const home = screen.getByRole('link', { name: 'Nuon home' })
+  expect(home.getAttribute('href')).toBe('/')
   expect(screen.getByRole('button', { name: 'Account' })).toBeTruthy()
   expect(header.parentElement).toBe(main)
   expect(main.firstElementChild).toBe(header)

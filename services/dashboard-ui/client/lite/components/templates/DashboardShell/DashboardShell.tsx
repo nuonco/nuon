@@ -26,6 +26,7 @@ export interface IDashboardShell
   extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   primaryNav: INavItem[]
   secondaryNav?: INavItem[]
+  homeHref?: string
   userMenu?: ReactNode
   headerLeading?: ReactNode
   headerActions?: ReactNode
@@ -41,6 +42,7 @@ interface IDashboardShellLayout
 const DashboardShellLayout = ({
   primaryNav,
   secondaryNav = [],
+  homeHref = '/',
   userMenu,
   headerLeading,
   headerActions,
@@ -105,6 +107,7 @@ const DashboardShellLayout = ({
         <DashboardSidebar
           primaryNav={primaryNav}
           secondaryNav={secondaryNav}
+          homeHref={homeHref}
           userMenu={!desktop ? userMenu : undefined}
           containerRef={sidebarRef}
         />

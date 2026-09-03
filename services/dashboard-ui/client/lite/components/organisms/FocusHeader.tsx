@@ -32,6 +32,7 @@ export const FocusHeader = ({
   >
     <Link
       href={homeHref}
+      reloadDocument
       aria-label="Nuon home"
       className="block shrink-0"
       style={{ color: 'var(--text-primary)' }}

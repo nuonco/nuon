@@ -12,6 +12,7 @@ import { DashboardNav } from './DashboardNav'
 export interface IDashboardSidebar {
   primaryNav: INavItem[]
   secondaryNav?: INavItem[]
+  homeHref?: string
   userMenu?: ReactNode
   containerRef?: RefObject<HTMLDivElement | null>
 }
@@ -19,6 +20,7 @@ export interface IDashboardSidebar {
 export const DashboardSidebar = ({
   primaryNav,
   secondaryNav = [],
+  homeHref = '/',
   userMenu,
   containerRef,
 }: IDashboardSidebar) => {
@@ -60,7 +62,7 @@ export const DashboardSidebar = ({
             )}
           >
             <Link
-              href="/"
+              href={homeHref}
               aria-label="Nuon dashboard"
               className="block w-[3.375rem]"
               style={{ color: 'var(--text-primary)' }}
