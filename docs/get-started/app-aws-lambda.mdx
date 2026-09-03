@@ -233,7 +233,7 @@ region      = "{{.nuon.install_stack.outputs.region}}"
 
 The API Gateway component creates an API Gateway using Terraform that exposes
 the Lambda function to the internet. Notice how the certificate, Route53 zone,
-and Lambda function are all referenced in this component through interpolations.
+and Lambda function are all referenced in this component through template variables.
 
 ```toml 4-api-gateway.toml
 # terraform
