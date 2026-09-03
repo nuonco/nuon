@@ -38,3 +38,11 @@
   bottom: 88px !important;
   right: 24px !important;
 }
+
+/* Wistia popover placeholder for the BYOC reel (guides/byoc) */
+wistia-player[media-id='tsb1nu547c']:not(:defined) {
+  background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/tsb1nu547c/swatch');
+  display: block;
+  filter: blur(5px);
+  padding-top: 56.25%;
+}
