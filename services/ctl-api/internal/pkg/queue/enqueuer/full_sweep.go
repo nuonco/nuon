@@ -2,7 +2,6 @@ package enqueuer
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"go.uber.org/zap"
@@ -16,10 +15,9 @@ const fullSweepBatchSize = 5000
 type FullSweepRequest struct{}
 
 type FullSweepResponse struct {
-	Enqueued    int   `json:"enqueued"`
-	Quarantined int   `json:"quarantined"`
-	Errors      int   `json:"errors"`
-	DurationMS  int64 `json:"duration_ms"`
+	Enqueued   int   `json:"enqueued"`
+	Errors     int   `json:"errors"`
+	DurationMS int64 `json:"duration_ms"`
 }
 
 // FullSweep processes all unenqueued signals with no grace period or page cap.
@@ -27,7 +25,6 @@ type FullSweepResponse struct {
 func (e *Enqueuer) FullSweep(ctx context.Context) (*FullSweepResponse, error) {
 	start := time.Now()
 	totalEnqueued := 0
-	totalQuarantined := 0
 	totalErrors := 0
 
 	for {
@@ -51,10 +48,6 @@ func (e *Enqueuer) FullSweep(ctx context.Context) (*FullSweepResponse, error) {
 
 		for _, s := range signals {
 			if err := e.EnqueueInline(ctx, s.ID, EnqueueSourceSweep); err != nil {
-				if errors.Is(err, errOrphanedQueueSignal) {
-					totalQuarantined++
-					continue
-				}
 				totalErrors++
 				e.l.Warn("full sweep enqueue failed",
 					zap.String("queue-signal-id", s.ID),
@@ -73,20 +66,17 @@ func (e *Enqueuer) FullSweep(ctx context.Context) (*FullSweepResponse, error) {
 
 	tags := metrics.ToTags(map[string]string{"general": "true"})
 	e.mw.Gauge("queue_signals.full_sweep.enqueued", float64(totalEnqueued), tags)
-	e.mw.Gauge("queue_signals.full_sweep.quarantined", float64(totalQuarantined), tags)
 	e.mw.Gauge("queue_signals.full_sweep.errors", float64(totalErrors), tags)
 	e.mw.Timing("queue_signals.full_sweep.duration_ms", duration, tags)
 
 	e.l.Info("full sweep completed",
 		zap.Int("enqueued", totalEnqueued),
-		zap.Int("quarantined", totalQuarantined),
 		zap.Int("errors", totalErrors),
 		zap.Duration("duration", duration))
 
 	return &FullSweepResponse{
-		Enqueued:    totalEnqueued,
-		Quarantined: totalQuarantined,
-		Errors:      totalErrors,
-		DurationMS:  duration.Milliseconds(),
+		Enqueued:   totalEnqueued,
+		Errors:     totalErrors,
+		DurationMS: duration.Milliseconds(),
 	}, nil
 }
