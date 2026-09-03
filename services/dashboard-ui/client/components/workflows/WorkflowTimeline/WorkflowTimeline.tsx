@@ -170,6 +170,12 @@ export const WorkflowTimeline = ({
                     </>
                   )
                 ) : null}
+                {isBranchRun &&
+                getBranchRunFromWorkflow(workflow)?.event_type === 'manual' ? (
+                  <Badge variant="code" size="sm">
+                    manual
+                  </Badge>
+                ) : null}
                 {workflow?.type === 'drift_run_reprovision_sandbox' ||
                 workflow.type === 'drift_run' ? (
                   <Badge variant="code" size="sm">

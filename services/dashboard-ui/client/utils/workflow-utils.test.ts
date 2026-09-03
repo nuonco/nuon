@@ -44,6 +44,19 @@ describe('workflow-utils', () => {
       )
     })
 
+    test('uses the dashboard label for the build step', () => {
+      expect(
+        getWorkflowStepTitle({
+          name: 'building components and sandbox',
+        })
+      ).toBe('Build components and sandbox')
+      expect(
+        getWorkflowStepTitle({
+          name: 'building components and sandbox (skipped)',
+        })
+      ).toBe('Build components and sandbox (skipped)')
+    })
+
     test('handles undefined and empty names', () => {
       expect(getWorkflowStepTitle(eventWaitStep())).toBe('')
       expect(getWorkflowStepTitle(eventWaitStep(''))).toBe('')

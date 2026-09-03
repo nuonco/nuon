@@ -42,7 +42,7 @@ export const PreviewConfigSection = ({
     <Card>
       <div className="flex items-center justify-between gap-3">
         <Text variant="base" weight="strong">
-          Defaults
+          Previews
         </Text>
         <div className="flex items-center gap-2">
           {isLoading ? (

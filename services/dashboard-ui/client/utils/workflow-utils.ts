@@ -8,9 +8,19 @@ export type TBadgeCfg = {
   theme?: TBadgeTheme
 }
 
+const WORKFLOW_STEP_LABELS: Record<string, string> = {
+  'building components and sandbox': 'Build components and sandbox',
+  'building components and sandbox (skipped)':
+    'Build components and sandbox (skipped)',
+}
+
 export function getWorkflowStepTitle(
   step?: { name?: string; links?: { event_wait?: unknown } | null } | null
 ): string {
+  if (step?.name && WORKFLOW_STEP_LABELS[step.name]) {
+    return WORKFLOW_STEP_LABELS[step.name]
+  }
+
   if (step?.links?.event_wait) {
     const normalizedName = step?.name?.replace(/[-_]+/g, ' ').trim() ?? ''
     const waitForPrefix = /^wait\s+for(?:\s+|$)/i
