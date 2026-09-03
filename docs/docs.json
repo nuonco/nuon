@@ -190,6 +190,7 @@
             "pages": [
               "guides/app-branches",
               "guides/rollback-install-config",
+              "guides/reprovision-installs",
               "guides/actions",
               "guides/adhoc-actions",
               "guides/container-actions",
