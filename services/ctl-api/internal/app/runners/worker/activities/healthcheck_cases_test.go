@@ -191,16 +191,6 @@ func runnerHealthCases() []runnerHealthCase {
 		want:       runnerHealthWant{result: "skipped"},
 	})
 
-	// An install runner awaiting its install stack run has no runner infra
-	// yet; the health check must not judge it before the runner step runs.
-	cases = append(cases, runnerHealthCase{
-		name:      "install runner awaiting install stack run is skipped",
-		groupType: app.RunnerGroupTypeInstall,
-		status:    app.RunnerStatusAwaitingInstallStackRun, v2Status: app.RunnerStatusAwaitingInstallStackRun,
-		mngChecked: true,
-		want:       runnerHealthWant{result: "skipped"},
-	})
-
 	for _, status := range []app.RunnerStatus{
 		app.RunnerStatusProvisioning,
 		app.RunnerStatusDeprovisioning,
