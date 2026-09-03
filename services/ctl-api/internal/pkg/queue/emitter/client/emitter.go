@@ -51,14 +51,6 @@ type CreateEmitterRequest struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 2m
 func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (*app.QueueEmitter, error) {
-	if req.SignalTemplate == nil {
-		return nil, temporal.NewNonRetryableApplicationError(
-			"emitter signal_template is required",
-			"EMITTER_CONFIG_ERROR",
-			nil,
-		)
-	}
-
 	switch req.Mode {
 	case app.QueueEmitterModeCron:
 		if req.CronSchedule == "" {
