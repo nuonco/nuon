@@ -94,9 +94,11 @@ Some component types including terraform components will provide output values t
 
 ### Component Image Data from Other Components in an Application
 
-- `{{ .nuon.components.<component_name_slug>.image.tag }}`
-  - Docker/OCI Image tag used for the component deployment
-- `{{ .nuon.components.<component_name_slug>.image.repository }}`
-  - ECR Repository containing this component's images
-- `{{ .nuon.components.<component_name_slug>.image.registry }}`
-  - ECR Registry containing this component's images
+- `{{ .nuon.components.<component_name_slug>.outputs.image.repository }}`
+  - Repository containing the image synced into the install, without a tag or digest
+- `{{ .nuon.components.<component_name_slug>.outputs.image.tag }}`
+  - Resolved image tag
+- `{{ .nuon.components.<component_name_slug>.outputs.image.ref }}`
+  - Digest-pinned image reference
+- `{{ .nuon.components.<component_name_slug>.outputs.image.display_tag }}`
+  - Human-readable resolved tag for display purposes

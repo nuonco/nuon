@@ -141,8 +141,8 @@ directory = "components/helm-chart"
 branch    = "main"
 
 [values]
-"env.IMAGE_TAG"        = "{{.nuon.components.app_image.image.tag}}"
-"env.IMAGE_REPOSITORY" = "{{.nuon.components.app_image.image.repository.uri}}"
+"env.IMAGE_TAG"        = "{{.nuon.components.app_image.outputs.image.tag}}"
+"env.IMAGE_REPOSITORY" = "{{.nuon.components.app_image.outputs.image.repository}}"
 ```
 
 ```toml components/ecs_service.toml
@@ -157,16 +157,16 @@ directory = "components/ecs-service"
 branch    = "main"
 
 [vars]
-"image_tag"        = "{{.nuon.components.app_image.image.tag}}"
-"image_repository" = "{{.nuon.components.app_image.image.repository.uri}}"
+"image_tag"        = "{{.nuon.components.app_image.outputs.image.tag}}"
+"image_repository" = "{{.nuon.components.app_image.outputs.image.repository}}"
 ```
 
 ```toml components/eks_job.toml
 # action
 name      = "eks_job"
 type      = "job"
-image_url = "{{.nuon.components.app_image.image.repository.uri}}"
-tag       = "{{.nuon.components.app_image.image.tag}}"
+image_url = "{{.nuon.components.app_image.outputs.image.repository}}"
+tag       = "{{.nuon.components.app_image.outputs.image.tag}}"
 ```
 
 ## Image Syncing
