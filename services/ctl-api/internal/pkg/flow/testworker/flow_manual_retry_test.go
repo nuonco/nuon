@@ -92,4 +92,6 @@ func (e *FlowTestSuite) TestManualRetryOnErroredStep() {
 		"clone should have executed and failed (FailSignal always fails)")
 	require.Equal(e.T(), "will-fail", clone.Name,
 		"clone should have the same name as the original")
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+	e.assertTemporalDrained(ctx, flw.ID)
 }

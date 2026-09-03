@@ -24,6 +24,7 @@ func (e *FlowTestSuite) TestSingleStepSuccess() {
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 	require.Len(e.T(), steps, 1)
 	require.Equal(e.T(), app.StatusSuccess, steps[0].Status.Status)
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // TestNoStepsNoSignalErrors verifies that a workflow with no pre-created steps
@@ -53,4 +54,5 @@ func (e *FlowTestSuite) TestNoStepsNoSignalErrors() {
 
 	// Should error because there are no steps and no way to generate them
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+	e.assertTemporalDrained(ctx, flw.ID)
 }

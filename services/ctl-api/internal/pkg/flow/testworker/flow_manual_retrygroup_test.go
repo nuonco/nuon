@@ -77,6 +77,7 @@ func (e *FlowTestSuite) TestManualRetryGroup() {
 				"original step %s should be discarded", step.Name)
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // TestManualRetryStepWithRetryGroup verifies that calling RetryStep on a step
@@ -157,4 +158,5 @@ func (e *FlowTestSuite) TestManualRetryStepWithRetryGroup() {
 		}
 	}
 	require.True(e.T(), g2Succeeded, "group 2 finalize should have succeeded")
+	e.assertTemporalDrained(ctx, flw.ID)
 }
