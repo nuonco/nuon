@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -34,6 +35,25 @@ func phoneHomeAuthTestInput(installID string) *stacks.TemplateInput {
 	inp.PhoneHomeSecretRegion = "us-west-2"
 
 	return inp
+}
+
+func TestGetRunnerPhoneHomeProps_IncludesAllVPCOutputs(t *testing.T) {
+	tpl := &Templates{cfg: &internal.Config{}}
+	inp := phoneHomeTestInput("instabcdefghijklmnopqrstuv")
+	vpcOutputKeys := map[string]struct{}{
+		"VPC":                {},
+		"PrivateSubnets":     {},
+		"AdditionalResource": {},
+	}
+
+	props := tpl.getRunnerPhoneHomeProps(inp, nil, vpcOutputKeys)
+
+	vpcOutputs, ok := props.Properties["vpc_outputs"].(map[string]any)
+	require.True(t, ok)
+	require.Len(t, vpcOutputs, len(vpcOutputKeys))
+	for outputKey := range vpcOutputKeys {
+		assert.Equal(t, cloudformation.GetAtt("VPC", "Outputs."+outputKey), vpcOutputs[outputKey])
+	}
 }
 
 // The Lambda fetches its token at invocation time, so the template only has to carry
@@ -120,7 +140,7 @@ func TestGetRunnerPhoneHomeProps_DoesNotEchoSecretARN(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{AWSPhoneHomeCMKARN: testPhoneHomeCMKARN}}
 	inp := phoneHomeAuthTestInput("instabcdefghijklmnopqrstuv")
 
-	props := tpl.getRunnerPhoneHomeProps(inp, nil)
+	props := tpl.getRunnerPhoneHomeProps(inp, nil, nil)
 
 	require.NotNil(t, props)
 	for key, value := range props.Properties {
@@ -224,7 +244,7 @@ func TestGetRunnerPhoneHomeProps_DoesNotEchoRoleName(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{}}
 	inp := phoneHomeTestInput("instabcdefghijklmnopqrstuv")
 
-	props := tpl.getRunnerPhoneHomeProps(inp, nil)
+	props := tpl.getRunnerPhoneHomeProps(inp, nil, nil)
 
 	require.NotNil(t, props)
 	for key, value := range props.Properties {

@@ -26,7 +26,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	}
 
 	// build nested resources
-	stack, vpcParams, err := t.getVPCNestedStack(inp, tb)
+	stack, vpcParams, vpcOutputs, err := t.getVPCNestedStack(inp, tb)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	if err := validatePhoneHomeScript(inp.PhonehomeScript); err != nil {
 		return nil, err
 	}
-	tmpl.Resources["PhoneHomeProps"] = t.getRunnerPhoneHomeProps(inp, customResult)
+	tmpl.Resources["PhoneHomeProps"] = t.getRunnerPhoneHomeProps(inp, customResult, vpcOutputs)
 	tmpl.Resources["RunnerPhoneHome"] = t.getRunnerPhoneHomeLambda(inp, tb)
 	tmpl.Resources["RunnerPhoneHomeRole"] = t.getRunnerPhoneHomeLambdaRole(inp, tb)
 
