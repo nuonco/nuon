@@ -142,6 +142,16 @@ func TestEndpointAndNameFromAPIURL(t *testing.T) {
 			name:     "nuon-stage",
 		},
 		{
+			apiURL:   "https://api.test-aws.nuon.run",
+			endpoint: "https://mcp.test-aws.nuon.run/mcp",
+			name:     "nuon-local",
+		},
+		{
+			apiURL:   "https://api.example.com:8443/v1?debug=true",
+			endpoint: "https://mcp.example.com:8443/mcp",
+			name:     "nuon-local",
+		},
+		{
 			apiURL:   "http://localhost:8081",
 			endpoint: "http://localhost:8088/mcp",
 			name:     "nuon-local",
@@ -150,10 +160,18 @@ func TestEndpointAndNameFromAPIURL(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			require.Equal(t, test.endpoint, EndpointFromAPIURL(test.apiURL))
+			got, err := EndpointFromAPIURL(test.apiURL)
+			require.NoError(t, err)
+			require.Equal(t, test.endpoint, got)
 			require.Equal(t, test.name, NameFromAPIURL(test.apiURL))
 		})
 	}
+}
+
+func TestEndpointFromAPIURLRejectsNonAPIHost(t *testing.T) {
+	_, err := EndpointFromAPIURL("https://ctl.example.com")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "--url")
 }
 
 func TestProxyServerNameOverride(t *testing.T) {
@@ -170,5 +188,19 @@ func TestEndpointOverride(t *testing.T) {
 		WithEndpoint("https://example.com/mcp"),
 	)
 
-	require.Equal(t, "https://example.com/mcp", svc.mcpEndpoint())
+	got, err := svc.mcpEndpoint()
+	require.NoError(t, err)
+	require.Equal(t, "https://example.com/mcp", got)
+}
+
+func TestEndpointOverrideSkipsDerivation(t *testing.T) {
+	svc := New(
+		&config.Config{APIURL: "https://ctl.example.com"},
+		false,
+		WithEndpoint("https://mcp.example.com/mcp"),
+	)
+
+	got, err := svc.mcpEndpoint()
+	require.NoError(t, err)
+	require.Equal(t, "https://mcp.example.com/mcp", got)
 }
