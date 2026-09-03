@@ -41,32 +41,27 @@ export const APPROVAL_MODAL_COPY: Record<
   terraform_plan: {
     title: 'Approve Terraform plan',
     heading: 'This will immediately apply the proposed infrastructure changes.',
-    message:
-      'The Terraform plan will be applied to your environment.',
+    message: 'The Terraform plan will be applied to your environment.',
   },
   helm_approval: {
     title: 'Approve Helm chart plan',
     heading: 'This will immediately apply the proposed deployment changes.',
-    message:
-      'The Helm chart updates will be applied to your release.',
+    message: 'The Helm chart updates will be applied to your release.',
   },
   kubernetes_manifest_approval: {
     title: 'Approve Kubernetes manifest',
     heading: 'This will immediately apply the proposed configuration changes.',
-    message:
-      'The manifest changes will be applied to your cluster.',
+    message: 'The manifest changes will be applied to your cluster.',
   },
   pulumi_plan: {
     title: 'Approve Pulumi plan',
     heading: 'This will immediately apply the proposed infrastructure changes.',
-    message:
-      'The Pulumi plan will be applied to your environment.',
+    message: 'The Pulumi plan will be applied to your environment.',
   },
   app_branch_plan: {
     title: 'Approve install group plan',
     heading: 'This will deploy the planned changes to the install group.',
-    message:
-      'The install group plan will be applied.',
+    message: 'The install group plan will be applied.',
   },
   install_creation: {
     title: 'Approve install creation',
@@ -89,14 +84,12 @@ export const DENY_MODAL_COPY: Record<
   helm_approval: {
     title: 'Deny Helm chart plan',
     heading: 'The proposed deployment changes will be discarded.',
-    message:
-      'Denying prevents the updates from being applied to your release.',
+    message: 'Denying prevents the updates from being applied to your release.',
   },
   kubernetes_manifest_approval: {
     title: 'Deny Kubernetes manifest',
     heading: 'The proposed configuration changes will be discarded.',
-    message:
-      'Denying prevents the changes from being applied to your cluster.',
+    message: 'Denying prevents the changes from being applied to your cluster.',
   },
   pulumi_plan: {
     title: 'Deny Pulumi plan',
@@ -124,38 +117,37 @@ export const RETRY_MODAL_COPY: Record<
 > = {
   terraform_plan: {
     title: 'Retry Terraform plan',
-    heading: 'A new plan will be generated, replacing the current proposed changes.',
-    message:
-      'The existing infrastructure changes will be discarded.',
+    heading:
+      'A new plan will be generated, replacing the current proposed changes.',
+    message: 'The existing infrastructure changes will be discarded.',
   },
   helm_approval: {
     title: 'Retry Helm chart plan',
-    heading: 'A new plan will be generated, replacing the current proposed changes.',
-    message:
-      'The existing deployment updates will be discarded.',
+    heading:
+      'A new plan will be generated, replacing the current proposed changes.',
+    message: 'The existing deployment updates will be discarded.',
   },
   kubernetes_manifest_approval: {
     title: 'Retry Kubernetes manifest',
-    heading: 'A new manifest will be generated, replacing the current proposed changes.',
-    message:
-      'The existing configuration changes will be discarded.',
+    heading:
+      'A new manifest will be generated, replacing the current proposed changes.',
+    message: 'The existing configuration changes will be discarded.',
   },
   pulumi_plan: {
     title: 'Retry Pulumi plan',
-    heading: 'A new plan will be generated, replacing the current proposed changes.',
-    message:
-      'The existing Pulumi infrastructure changes will be discarded.',
+    heading:
+      'A new plan will be generated, replacing the current proposed changes.',
+    message: 'The existing Pulumi infrastructure changes will be discarded.',
   },
   app_branch_plan: {
     title: 'Retry install group plan',
     heading: 'A new plan will be generated for the install group.',
-    message:
-      'The existing plan will be discarded.',
+    message: 'The existing plan will be discarded.',
   },
   install_creation: {
     title: 'Retry install creation',
-    heading: 'The config repo will be re-read and the proposed installs recalculated.',
-    message:
-      'The existing list of proposed installs will be discarded.',
+    heading:
+      'The config repo will be re-read and the proposed installs recalculated.',
+    message: 'The existing list of proposed installs will be discarded.',
   },
 }

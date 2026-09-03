@@ -5,18 +5,11 @@ export default {
 import { AdminControls } from './AdminControls'
 
 export const OrgOnly = () => (
-  <AdminControls
-    isNuonEmployee={true}
-    orgId="org-123"
-  />
+  <AdminControls isNuonEmployee={true} orgId="org-123" />
 )
 
 export const WithApp = () => (
-  <AdminControls
-    isNuonEmployee={true}
-    orgId="org-123"
-    appId="app-456"
-  />
+  <AdminControls isNuonEmployee={true} orgId="org-123" appId="app-456" />
 )
 
 export const WithInstall = () => (
@@ -29,8 +22,5 @@ export const WithInstall = () => (
 )
 
 export const NonEmployee = () => (
-  <AdminControls
-    isNuonEmployee={false}
-    orgId="org-123"
-  />
+  <AdminControls isNuonEmployee={false} orgId="org-123" />
 )

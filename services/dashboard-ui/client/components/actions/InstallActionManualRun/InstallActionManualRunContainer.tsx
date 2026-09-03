@@ -16,7 +16,8 @@ import { trackEvent } from '@/lib/posthog-analytics'
 import type { TAction, TAPIError } from '@/types'
 import { InstallActionManualRunModal } from './InstallActionManualRun'
 
-interface IInstallActionManualRunModalContainer extends Omit<IModal, 'heading'> {
+interface IInstallActionManualRunModalContainer
+  extends Omit<IModal, 'heading'> {
   action: TAction
   actionConfigId: string
   isRerun?: boolean
@@ -39,9 +40,14 @@ export const InstallActionManualRunModalContainer = ({
   const { addToast } = useToast()
   const [selectedRole, setSelectedRole] = useState<string>('')
 
-  const { isPending: isLoading, error, mutate } = useMutation({
-    mutationFn: (body: Parameters<typeof runAction>[0]['body'] & { role?: string }) =>
-      runAction({ body, installId: install.id, orgId: org.id }),
+  const {
+    isPending: isLoading,
+    error,
+    mutate,
+  } = useMutation({
+    mutationFn: (
+      body: Parameters<typeof runAction>[0]['body'] & { role?: string }
+    ) => runAction({ body, installId: install.id, orgId: org.id }),
     onSuccess: (result) => {
       trackEvent({
         event: 'action_run',

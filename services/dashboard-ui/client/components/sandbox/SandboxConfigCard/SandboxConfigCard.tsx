@@ -44,7 +44,9 @@ export const SandboxConfigCard = ({
   const hasVariablesFiles =
     config.variables_files && config.variables_files.length > 0
   const hasPulumiConfig =
-    isPulumi && config.pulumi_config && Object.keys(config.pulumi_config).length > 0
+    isPulumi &&
+    config.pulumi_config &&
+    Object.keys(config.pulumi_config).length > 0
   const sandboxVariables = objectToKeyValueArray(config.variables)
 
   const vcsConfig =
@@ -57,11 +59,7 @@ export const SandboxConfigCard = ({
           <Text weight="strong">Configuration</Text>
           <div className="flex gap-2">
             {hasEnvVars && onViewEnvVars && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={onViewEnvVars}
-              >
+              <Button variant="secondary" size="sm" onClick={onViewEnvVars}>
                 View env vars
               </Button>
             )}

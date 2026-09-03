@@ -10,9 +10,10 @@ import (
 )
 
 type ResolveInstallGroupInstallsInput struct {
-	AppID    string           `json:"app_id"`
-	GroupID  string           `json:"group_id"`
-	Selector *labels.Selector `json:"selector"`
+	AppID      string           `json:"app_id"`
+	GroupID    string           `json:"group_id"`
+	InstallIDs []string         `json:"install_ids,omitempty"`
+	Selector   *labels.Selector `json:"selector"`
 
 	// AllInstalls resolves every install on the app that no other branch owns,
 	// ignoring Selector. AppBranchID is the owning branch.
@@ -27,37 +28,61 @@ type ResolveInstallGroupInstallsOutput struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (a *Activities) ResolveInstallGroupInstalls(ctx context.Context, input *ResolveInstallGroupInstallsInput) (*ResolveInstallGroupInstallsOutput, error) {
+	var candidateIDs []string
+	resolveByIDs := input.AllInstalls || input.InstallIDs != nil
 	if input.AllInstalls {
 		ids, err := a.helpers.ResolveAllInstallsForBranch(ctx, input.AppID, input.AppBranchID)
 		if err != nil {
 			return nil, err
 		}
-
-		a.l.Info("resolved install group",
-			zap.String("group_id", input.GroupID),
-			zap.String("resolved_via", "all_installs"),
-			zap.Int("resolved_count", len(ids)),
-		)
-
-		return &ResolveInstallGroupInstallsOutput{InstallIDs: ids}, nil
+		candidateIDs = ids
+	} else if len(input.InstallIDs) > 0 {
+		candidateIDs = input.InstallIDs
 	}
 
 	var installs []app.Install
-	if err := a.db.WithContext(ctx).
-		Where(app.Install{AppID: input.AppID}).
-		Scopes(labels.WithLabels("labels", input.Selector.MatchLabels)).
-		Find(&installs).Error; err != nil {
+	query := a.db.WithContext(ctx).Preload("OperatingModel")
+	if resolveByIDs {
+		query = query.Where("id IN ?", candidateIDs)
+	} else {
+		query = query.
+			Where(app.Install{AppID: input.AppID}).
+			Scopes(labels.WithLabels("labels", input.Selector.MatchLabels))
+	}
+	if err := query.Find(&installs).Error; err != nil {
 		return nil, err
 	}
 
-	ids := make([]string, len(installs))
-	for i, inst := range installs {
-		ids[i] = inst.ID
+	allowed := make(map[string]bool, len(installs))
+	for _, install := range installs {
+		if install.AppBranchUpdateEligible() {
+			allowed[install.ID] = true
+		}
+	}
+	ids := make([]string, 0, len(installs))
+	if resolveByIDs {
+		for _, id := range candidateIDs {
+			if allowed[id] {
+				ids = append(ids, id)
+			}
+		}
+	} else {
+		for _, install := range installs {
+			if allowed[install.ID] {
+				ids = append(ids, install.ID)
+			}
+		}
 	}
 
+	resolvedVia := "label_selector"
+	if input.AllInstalls {
+		resolvedVia = "all_installs"
+	} else if input.InstallIDs != nil {
+		resolvedVia = "install_ids"
+	}
 	a.l.Info("resolved install group",
 		zap.String("group_id", input.GroupID),
-		zap.String("resolved_via", "label_selector"),
+		zap.String("resolved_via", resolvedVia),
 		zap.Int("resolved_count", len(ids)),
 	)
 

@@ -1,5 +1,11 @@
 import type { InfiniteData } from '@tanstack/react-query'
-import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'
@@ -98,8 +104,7 @@ export const EventDetailsContainer = ({
     enabled: false,
   })
   const { mutate: replay, isPending: isReplaying } = useMutation({
-    mutationFn: () =>
-      replayTriggerEvent({ eventId: eventId!, orgId: org!.id }),
+    mutationFn: () => replayTriggerEvent({ eventId: eventId!, orgId: org!.id }),
     onSuccess: () => {
       queryClient.setQueryData<TTriggerEvent | undefined>(
         ['trigger-event', org?.id, eventId],

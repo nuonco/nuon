@@ -57,7 +57,9 @@ export const DisableConfigSyncModal = ({
 
         <Banner theme="warn">
           <Text variant="body">
-            <strong>Warning:</strong> Disabling config sync will stop future syncs from the install config file. Settings will need to be managed manually from the dashboard.
+            <strong>Warning:</strong> Disabling config sync will stop future
+            syncs from the install config file. Settings will need to be managed
+            manually from the dashboard.
           </Text>
         </Banner>
 
@@ -76,7 +78,11 @@ export const DisableConfigSyncModal = ({
             value={confirmName}
             onChange={(e) => setConfirmName(e.target.value)}
             error={confirmName.length > 0 && !isConfirmValid}
-            errorMessage={confirmName.length > 0 && !isConfirmValid ? "Install name doesn't match" : undefined}
+            errorMessage={
+              confirmName.length > 0 && !isConfirmValid
+                ? "Install name doesn't match"
+                : undefined
+            }
           />
         </div>
       </div>

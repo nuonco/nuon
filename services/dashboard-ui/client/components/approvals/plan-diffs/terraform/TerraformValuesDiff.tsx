@@ -12,9 +12,11 @@ type TTerraformValues = Pick<
 >
 
 const DIFF_STYLES = {
-  added: 'bg-green-500/15 dark:bg-green-500/5 text-green-800 dark:text-green-400',
+  added:
+    'bg-green-500/15 dark:bg-green-500/5 text-green-800 dark:text-green-400',
   removed: 'bg-red-500/15 dark:bg-red-500/5 text-red-800 dark:text-red-400',
-  changed: 'bg-orange-500/15 dark:bg-orange-500/5 text-orange-800 dark:text-orange-400',
+  changed:
+    'bg-orange-500/15 dark:bg-orange-500/5 text-orange-800 dark:text-orange-400',
   unchanged: '',
 }
 
@@ -61,120 +63,118 @@ export const TerraformValuesDiff = ({
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
       <div className={cn(wrapLines ? 'pr-4' : 'min-w-fit')}>
-      {valuesDiff.length ? (
-        valuesDiff.map((value, idx) => {
-          const prefix = getDiffPrefix(values.action, value.changed)
+        {valuesDiff.length ? (
+          valuesDiff.map((value, idx) => {
+            const prefix = getDiffPrefix(values.action, value.changed)
 
-          const hasComplexValue =
-            isComplex(value.before) ||
-            isComplex(value.after) ||
-            (typeof value.before === 'string' && isStringJson(value.before)) ||
-            (typeof value.after === 'string' && isStringJson(value.after))
+            const hasComplexValue =
+              isComplex(value.before) ||
+              isComplex(value.after) ||
+              (typeof value.before === 'string' &&
+                isStringJson(value.before)) ||
+              (typeof value.after === 'string' && isStringJson(value.after))
 
-          if (hasComplexValue) {
-            return (
-              <div key={value.key + idx}>
-                <div className={cn(lineClass, prefix.style)}>
-                  <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
-                    {prefix.char}
-                  </span>
-                  <span className="font-semibold">{value.key}:</span>
+            if (hasComplexValue) {
+              return (
+                <div key={value.key + idx}>
+                  <div className={cn(lineClass, prefix.style)}>
+                    <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
+                      {prefix.char}
+                    </span>
+                    <span className="font-semibold">{value.key}:</span>
+                  </div>
+                  <TreeDiffValue before={value.before} after={value.after} />
                 </div>
-                <TreeDiffValue
-                  before={value.before}
-                  after={value.after}
-                />
+              )
+            }
+
+            const formattedBefore = formatValue(value.before)
+            const formattedAfter = formatValue(value.after)
+            const isLongValue =
+              formattedBefore.length > 40 || formattedAfter.length > 40
+
+            return (
+              <div
+                className={cn(lineClass, prefix.style)}
+                key={value.key + idx}
+              >
+                <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
+                  {prefix.char}
+                </span>
+                <span className="min-w-0">
+                  <span className="font-semibold">{value.key}:</span>
+                  {value.changed ? (
+                    <>
+                      {'  '}
+                      <span
+                        className={cn(
+                          'text-red-800 dark:text-red-400 line-through opacity-70',
+                          wrapLines
+                            ? 'break-all'
+                            : 'inline-block max-w-[300px] truncate align-bottom'
+                        )}
+                        title={formattedBefore}
+                      >
+                        {formattedBefore}
+                      </span>
+                      <span className="opacity-50">{' -> '}</span>
+                      <span
+                        className={cn(
+                          wrapLines
+                            ? 'break-all'
+                            : 'inline-block max-w-[300px] truncate align-bottom',
+                          {
+                            'italic opacity-60':
+                              isKnownAfterApply(formattedAfter),
+                          }
+                        )}
+                        title={formattedAfter}
+                      >
+                        {formattedAfter}
+                      </span>
+                      {isLongValue && (
+                        <DiffLineExpandButton
+                          label={value.key}
+                          prefix={prefix.char as '~' | '+' | '-'}
+                          before={value.before}
+                          after={value.after}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {'  '}
+                      <span
+                        className={cn(
+                          wrapLines
+                            ? 'break-all'
+                            : 'inline-block max-w-[500px] truncate align-bottom',
+                          {
+                            'italic opacity-60':
+                              isKnownAfterApply(formattedAfter),
+                          }
+                        )}
+                        title={formattedAfter}
+                      >
+                        {formattedAfter}
+                      </span>
+                      {isLongValue && (
+                        <DiffLineExpandButton
+                          label={value.key}
+                          prefix={prefix.char as '~' | '+' | '-'}
+                          before={value.before}
+                          after={value.after}
+                        />
+                      )}
+                    </>
+                  )}
+                </span>
               </div>
             )
-          }
-
-          const formattedBefore = formatValue(value.before)
-          const formattedAfter = formatValue(value.after)
-          const isLongValue =
-            formattedBefore.length > 40 || formattedAfter.length > 40
-
-          return (
-            <div
-              className={cn(lineClass, prefix.style)}
-              key={value.key + idx}
-            >
-              <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
-                {prefix.char}
-              </span>
-              <span className="min-w-0">
-                <span className="font-semibold">{value.key}:</span>
-                {value.changed ? (
-                  <>
-                    {'  '}
-                    <span
-                      className={cn(
-                        'text-red-800 dark:text-red-400 line-through opacity-70',
-                        wrapLines
-                          ? 'break-all'
-                          : 'inline-block max-w-[300px] truncate align-bottom'
-                      )}
-                      title={formattedBefore}
-                    >
-                      {formattedBefore}
-                    </span>
-                    <span className="opacity-50">{' -> '}</span>
-                    <span
-                      className={cn(
-                        wrapLines
-                          ? 'break-all'
-                          : 'inline-block max-w-[300px] truncate align-bottom',
-                        {
-                          'italic opacity-60':
-                            isKnownAfterApply(formattedAfter),
-                        }
-                      )}
-                      title={formattedAfter}
-                    >
-                      {formattedAfter}
-                    </span>
-                    {isLongValue && (
-                      <DiffLineExpandButton
-                        label={value.key}
-                        prefix={prefix.char as '~' | '+' | '-'}
-                        before={value.before}
-                        after={value.after}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {'  '}
-                    <span
-                      className={cn(
-                        wrapLines
-                          ? 'break-all'
-                          : 'inline-block max-w-[500px] truncate align-bottom',
-                        {
-                          'italic opacity-60':
-                            isKnownAfterApply(formattedAfter),
-                        }
-                      )}
-                      title={formattedAfter}
-                    >
-                      {formattedAfter}
-                    </span>
-                    {isLongValue && (
-                      <DiffLineExpandButton
-                        label={value.key}
-                        prefix={prefix.char as '~' | '+' | '-'}
-                        before={value.before}
-                        after={value.after}
-                      />
-                    )}
-                  </>
-                )}
-              </span>
-            </div>
-          )
-        })
-      ) : (
-        <Text family="mono">No values to display.</Text>
-      )}
+          })
+        ) : (
+          <Text family="mono">No values to display.</Text>
+        )}
       </div>
     </div>
   )
@@ -222,4 +222,3 @@ function mapBeforeAfterToKeyValues(obj: BeforeAfterObject): KeyValuePair[] {
 
   return result
 }
-

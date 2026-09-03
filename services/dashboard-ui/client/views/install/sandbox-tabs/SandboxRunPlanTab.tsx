@@ -43,7 +43,8 @@ const SandboxRunPlanFallback = () => {
     )
   }
 
-  const parsed = typeof planDisplay === 'string' ? JSON.parse(planDisplay) : planDisplay
+  const parsed =
+    typeof planDisplay === 'string' ? JSON.parse(planDisplay) : planDisplay
 
   if (isPulumi) {
     return <PulumiDiff plan={parsed} />

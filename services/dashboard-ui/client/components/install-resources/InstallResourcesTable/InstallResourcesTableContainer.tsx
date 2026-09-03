@@ -83,8 +83,11 @@ export const InstallResourcesTableContainer = ({
   const downstreamOf = useMemo(() => {
     const map: Record<string, string> = {}
     componentsResult?.data?.forEach((component) => {
-      const value = (component?.health_status_v2?.metadata as Record<string, unknown> | undefined)
-        ?.downstream_of
+      const value = (
+        component?.health_status_v2?.metadata as
+          | Record<string, unknown>
+          | undefined
+      )?.downstream_of
       if (component?.id && typeof value === 'string' && value) {
         map[component.id] = value
       }
@@ -97,7 +100,9 @@ export const InstallResourcesTableContainer = ({
   const kindOptions = useMemo(
     () =>
       Array.from(
-        new Set(allResources.map((r) => r?.kind).filter((v): v is string => !!v))
+        new Set(
+          allResources.map((r) => r?.kind).filter((v): v is string => !!v)
+        )
       ).sort(),
     [allResources]
   )
@@ -134,7 +139,8 @@ export const InstallResourcesTableContainer = ({
   )
 
   const componentGroups = useMemo(
-    () => groupComponentResources(filteredResources, componentNames, downstreamOf),
+    () =>
+      groupComponentResources(filteredResources, componentNames, downstreamOf),
     [filteredResources, componentNames, downstreamOf]
   )
   const sandboxGroups = useMemo(

@@ -60,7 +60,9 @@ export const PulumiState = ({ pulumiState }: { pulumiState: TPulumiState }) => {
     (r) =>
       r.urn?.toLowerCase().includes(resourceSearch.toLowerCase()) ||
       r.type?.toLowerCase().includes(resourceSearch.toLowerCase()) ||
-      getResourceName(r.urn)?.toLowerCase().includes(resourceSearch.toLowerCase())
+      getResourceName(r.urn)
+        ?.toLowerCase()
+        .includes(resourceSearch.toLowerCase())
   )
 
   return (
@@ -75,7 +77,8 @@ export const PulumiState = ({ pulumiState }: { pulumiState: TPulumiState }) => {
                 onChange={setOutputSearch}
               />
               <Text variant="subtext" theme="neutral">
-                {filteredOutputEntries.length} of {Object.entries(outputs).length}
+                {filteredOutputEntries.length} of{' '}
+                {Object.entries(outputs).length}
               </Text>
             </div>
             <div className="flex flex-col gap-4">
@@ -90,7 +93,9 @@ export const PulumiState = ({ pulumiState }: { pulumiState: TPulumiState }) => {
                       <CodeBlock language="json">
                         {JSON.stringify(val, null, 2)}
                       </CodeBlock>
-                    ) : val !== null && val !== undefined && typeof val === 'object' ? (
+                    ) : val !== null &&
+                      val !== undefined &&
+                      typeof val === 'object' ? (
                       <JSONViewer
                         data={val}
                         expanded={1}
@@ -99,7 +104,10 @@ export const PulumiState = ({ pulumiState }: { pulumiState: TPulumiState }) => {
                         className="!border-0 !rounded-none"
                       />
                     ) : val !== null && val !== undefined ? (
-                      <Code className="w-full overflow-x-auto !text-xs !p-2" variant="inline">
+                      <Code
+                        className="w-full overflow-x-auto !text-xs !p-2"
+                        variant="inline"
+                      >
                         {String(val)}
                       </Code>
                     ) : (

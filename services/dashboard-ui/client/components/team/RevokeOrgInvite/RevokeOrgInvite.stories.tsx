@@ -34,7 +34,11 @@ export const WithError = () => (
     <RevokeOrgInviteModal
       email="pending@example.com"
       isPending={false}
-      error={{ error: 'Only org admins can revoke invites', description: '', user_error: true }}
+      error={{
+        error: 'Only org admins can revoke invites',
+        description: '',
+        user_error: true,
+      }}
       onSubmit={noop}
     />
   </ModalStory>

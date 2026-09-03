@@ -7,7 +7,8 @@ import { DriftScanSandboxButton } from '../DriftScanSandbox'
 import { ReprovisionSandboxButton } from '../ReprovisionSandbox'
 import { DeprovisionSandboxButton } from '../DeprovisionSandbox'
 
-interface IManagementDropdown extends Omit<IDropdown, 'id' | 'buttonText' | 'children'> {
+interface IManagementDropdown
+  extends Omit<IDropdown, 'id' | 'buttonText' | 'children'> {
   workspaceId?: string
 }
 
@@ -20,11 +21,7 @@ export const ManagementDropdown = ({
     <Dropdown
       id="sandbox-mgmt"
       variant="secondary"
-      buttonText={
-        <>
-          Sandbox controls
-        </>
-      }
+      buttonText={<>Sandbox controls</>}
       alignment={alignment}
       {...props}
     >

@@ -54,12 +54,12 @@ export function APIHealthProvider({
                   <DegradedBanner
                     key={d}
                     heading={
-                      DEGRADED_MESSAGE[d as keyof typeof DEGRADED_MESSAGE]?.heading ||
-                      DEGRADED_MESSAGE['generic']?.heading
+                      DEGRADED_MESSAGE[d as keyof typeof DEGRADED_MESSAGE]
+                        ?.heading || DEGRADED_MESSAGE['generic']?.heading
                     }
                     message={
-                      DEGRADED_MESSAGE[d as keyof typeof DEGRADED_MESSAGE]?.message ||
-                      DEGRADED_MESSAGE['generic']?.message
+                      DEGRADED_MESSAGE[d as keyof typeof DEGRADED_MESSAGE]
+                        ?.message || DEGRADED_MESSAGE['generic']?.message
                     }
                   />
                 ))

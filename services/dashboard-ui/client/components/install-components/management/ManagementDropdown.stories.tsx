@@ -64,6 +64,11 @@ export const TerraformComponent = () => (
     componentConfig={inConfig}
     currentBuildId="build-1"
     currentDeployStatus="active"
-    installComponent={{ ...mockInstallComponent, terraform_workspace: { id: 'ws-1' } } as TInstallComponent}
+    installComponent={
+      {
+        ...mockInstallComponent,
+        terraform_workspace: { id: 'ws-1' },
+      } as TInstallComponent
+    }
   />
 )

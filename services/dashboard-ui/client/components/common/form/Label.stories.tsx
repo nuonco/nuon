@@ -21,7 +21,9 @@ export const BasicUsage = () => (
     <div className="space-y-4">
       <div>
         <Label htmlFor="basic-input">
-          <Text variant="body" weight="strong">Basic Label</Text>
+          <Text variant="body" weight="strong">
+            Basic Label
+          </Text>
         </Label>
         <input
           id="basic-input"
@@ -33,7 +35,9 @@ export const BasicUsage = () => (
 
       <div>
         <Label htmlFor="email-input">
-          <Text variant="body" weight="strong">Email Address</Text>
+          <Text variant="body" weight="strong">
+            Email Address
+          </Text>
         </Label>
         <input
           id="email-input"
@@ -45,7 +49,9 @@ export const BasicUsage = () => (
 
       <div>
         <Label htmlFor="password-input">
-          <Text variant="body" weight="strong">Password</Text>
+          <Text variant="body" weight="strong">
+            Password
+          </Text>
         </Label>
         <input
           id="password-input"
@@ -115,13 +121,15 @@ export const WithText = () => (
 
     <div className="grid grid-cols-1 gap-3 text-sm mt-6">
       <div>
-        <strong>Text Integration:</strong> Use Text component for consistent typography
+        <strong>Text Integration:</strong> Use Text component for consistent
+        typography
       </div>
       <div>
         <strong>Weight Options:</strong> normal, strong, stronger for emphasis
       </div>
       <div>
-        <strong>Theme Support:</strong> All Text themes available (brand, neutral, error, etc.)
+        <strong>Theme Support:</strong> All Text themes available (brand,
+        neutral, error, etc.)
       </div>
     </div>
   </div>
@@ -133,14 +141,15 @@ export const CustomStyling = () => (
       <h3 className="text-lg font-semibold">Custom Label Styling</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Labels accept className and all standard HTML attributes for custom
-        styling. They can be styled for different layouts and visual hierarchies.
+        styling. They can be styled for different layouts and visual
+        hierarchies.
       </p>
     </div>
 
     <div className="space-y-4">
       <div>
-        <Label 
-          htmlFor="styled-1" 
+        <Label
+          htmlFor="styled-1"
           className="block p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800"
         >
           <Text variant="body" weight="strong" theme="info">
@@ -156,8 +165,8 @@ export const CustomStyling = () => (
       </div>
 
       <div>
-        <Label 
-          htmlFor="styled-2" 
+        <Label
+          htmlFor="styled-2"
           className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-md"
         >
           <Text variant="body" weight="strong">
@@ -177,8 +186,8 @@ export const CustomStyling = () => (
       </div>
 
       <div>
-        <Label 
-          htmlFor="styled-3" 
+        <Label
+          htmlFor="styled-3"
           className="block border-l-4 border-primary-500 pl-3"
         >
           <Text variant="body" weight="strong" theme="brand">
@@ -217,27 +226,27 @@ export const InlineLabels = () => (
       <h3 className="text-lg font-semibold">Inline Label Patterns</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Labels can be used in inline layouts for compact forms, checkboxes,
-        radio buttons, and toggle controls. Proper spacing and alignment
-        ensure good usability.
+        radio buttons, and toggle controls. Proper spacing and alignment ensure
+        good usability.
       </p>
     </div>
 
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Label htmlFor="inline-1" className="flex items-center gap-2 cursor-pointer">
-          <input
-            id="inline-1"
-            type="checkbox"
-            className="accent-primary-600"
-          />
-          <Text variant="body">
-            Accept terms and conditions
-          </Text>
+        <Label
+          htmlFor="inline-1"
+          className="flex items-center gap-2 cursor-pointer"
+        >
+          <input id="inline-1" type="checkbox" className="accent-primary-600" />
+          <Text variant="body">Accept terms and conditions</Text>
         </Label>
       </div>
 
       <div className="flex items-center gap-3">
-        <Label htmlFor="inline-2" className="flex items-center gap-2 cursor-pointer">
+        <Label
+          htmlFor="inline-2"
+          className="flex items-center gap-2 cursor-pointer"
+        >
           <input
             id="inline-2"
             type="radio"
@@ -245,14 +254,15 @@ export const InlineLabels = () => (
             value="option1"
             className="accent-primary-600"
           />
-          <Text variant="body">
-            Option 1
-          </Text>
+          <Text variant="body">Option 1</Text>
         </Label>
       </div>
 
       <div className="flex items-center gap-3">
-        <Label htmlFor="inline-3" className="flex items-center gap-2 cursor-pointer">
+        <Label
+          htmlFor="inline-3"
+          className="flex items-center gap-2 cursor-pointer"
+        >
           <input
             id="inline-3"
             type="radio"
@@ -260,9 +270,7 @@ export const InlineLabels = () => (
             value="option2"
             className="accent-primary-600"
           />
-          <Text variant="body">
-            Option 2
-          </Text>
+          <Text variant="body">Option 2</Text>
         </Label>
       </div>
 
@@ -271,11 +279,7 @@ export const InlineLabels = () => (
           Enable feature:
         </Label>
         <Label htmlFor="toggle" className="relative inline-flex cursor-pointer">
-          <input
-            id="toggle"
-            type="checkbox"
-            className="sr-only peer"
-          />
+          <input id="toggle" type="checkbox" className="sr-only peer" />
           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
         </Label>
       </div>
@@ -320,13 +324,21 @@ export const WithErrors = () => (
           aria-describedby="error-1-msg"
           className="mt-1 w-full px-3 py-2 border border-red-500 rounded-md focus:ring-2 focus:ring-red-500"
         />
-        <Text id="error-1-msg" variant="subtext" theme="error" className="mt-1 block">
+        <Text
+          id="error-1-msg"
+          variant="subtext"
+          theme="error"
+          className="mt-1 block"
+        >
           Username is required
         </Text>
       </div>
 
       <div>
-        <Label htmlFor="error-2" className="block p-2 bg-red-50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800">
+        <Label
+          htmlFor="error-2"
+          className="block p-2 bg-red-50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800"
+        >
           <Text variant="body" weight="strong" theme="error">
             Email Address *
           </Text>
@@ -339,7 +351,12 @@ export const WithErrors = () => (
           aria-describedby="error-2-msg"
           className="mt-1 w-full px-3 py-2 border border-red-500 rounded-md focus:ring-2 focus:ring-red-500"
         />
-        <Text id="error-2-msg" variant="subtext" theme="error" className="mt-1 block">
+        <Text
+          id="error-2-msg"
+          variant="subtext"
+          theme="error"
+          className="mt-1 block"
+        >
           Please enter a valid email address
         </Text>
       </div>

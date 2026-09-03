@@ -5,11 +5,11 @@ export default {
 import { KubernetesDiffSummary } from './KubernetesDiffSummary'
 
 export const Default = () => (
-    <KubernetesDiffSummary
-      summary={{
-        add: 2,
-        change: 5,
-        destroy: 0,
-      }}
-    />
-  )
+  <KubernetesDiffSummary
+    summary={{
+      add: 2,
+      change: 5,
+      destroy: 0,
+    }}
+  />
+)

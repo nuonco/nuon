@@ -20,7 +20,10 @@ export const EntityLink = () => (
         main
       </Link>
       <Text variant="body">
-        In a body-sized row: <Link href="#" variant="inline">acme-payments</Link>
+        In a body-sized row:{' '}
+        <Link href="#" variant="inline">
+          acme-payments
+        </Link>
       </Text>
     </div>
   </div>
@@ -55,7 +58,11 @@ export const ExternalLink = () => (
       <Link href="https://docs.nuon.co" isExternal>
         View documentation
       </Link>
-      <Link href="https://github.com/acme/payments" isExternal className="font-mono">
+      <Link
+        href="https://github.com/acme/payments"
+        isExternal
+        className="font-mono"
+      >
         <Icon variant="GitHub" size="1em" />
         acme/payments
       </Link>
@@ -79,8 +86,14 @@ export const InlineLink = () => (
     <div className="p-4 border rounded-lg">
       <Text>
         Welcome to the platform. Check out the{' '}
-        <Link href="/docs" variant="inline">documentation</Link> to get started, or browse the{' '}
-        <Link href="/examples" variant="inline">examples</Link>. For help, see the{' '}
+        <Link href="/docs" variant="inline">
+          documentation
+        </Link>{' '}
+        to get started, or browse the{' '}
+        <Link href="/examples" variant="inline">
+          examples
+        </Link>
+        . For help, see the{' '}
         <Link href="https://nuon.co/support" isExternal variant="inline">
           support center
         </Link>

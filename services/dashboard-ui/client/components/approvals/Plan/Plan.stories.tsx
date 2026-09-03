@@ -2,7 +2,11 @@ export default {
   title: 'Approvals/Plan',
 }
 
-import { mockWorkflowStep, mockHelmStep, mockK8sStep } from '@/components/__fixtures__/workflows'
+import {
+  mockWorkflowStep,
+  mockHelmStep,
+  mockK8sStep,
+} from '@/components/__fixtures__/workflows'
 import { Plan } from './Plan'
 
 export const LoadingTerraform = () => (
@@ -32,11 +36,13 @@ export const FailedToLoad = () => (
 
 export const NoApprovalOnStep = () => (
   <Plan
-    step={{
-      ...mockWorkflowStep,
-      approval: undefined,
-      finished: true,
-    } as any}
+    step={
+      {
+        ...mockWorkflowStep,
+        approval: undefined,
+        finished: true,
+      } as any
+    }
     plan={null}
     isLoading={false}
     error={null}
@@ -45,11 +51,13 @@ export const NoApprovalOnStep = () => (
 
 export const NoApprovalStillRunning = () => (
   <Plan
-    step={{
-      ...mockWorkflowStep,
-      approval: undefined,
-      finished: false,
-    } as any}
+    step={
+      {
+        ...mockWorkflowStep,
+        approval: undefined,
+        finished: false,
+      } as any
+    }
     plan={null}
     isLoading={false}
     error={null}

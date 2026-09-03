@@ -1,7 +1,15 @@
 export type ParsedNode = {
   id: string
   label: string
-  nodeShape: 'rect' | 'rounded' | 'diamond' | 'cylinder' | 'circle' | 'asymmetric' | 'parallelogram' | 'subroutine'
+  nodeShape:
+    | 'rect'
+    | 'rounded'
+    | 'diamond'
+    | 'cylinder'
+    | 'circle'
+    | 'asymmetric'
+    | 'parallelogram'
+    | 'subroutine'
   style?: { fill?: string; stroke?: string; color?: string }
 }
 
@@ -26,7 +34,9 @@ export type ParseResult = {
   subgraphs: ParsedSubgraph[]
 }
 
-function parseNodeDeclaration(token: string): { id: string; label: string; nodeShape: ParsedNode['nodeShape'] } | null {
+function parseNodeDeclaration(
+  token: string
+): { id: string; label: string; nodeShape: ParsedNode['nodeShape'] } | null {
   const patterns: Array<{ re: RegExp; nodeShape: ParsedNode['nodeShape'] }> = [
     { re: /^(\w+)\[\[(.+?)\]\]$/, nodeShape: 'subroutine' },
     { re: /^(\w+)\[\((.+?)\)\]$/, nodeShape: 'cylinder' },
@@ -52,8 +62,19 @@ function parseNodeDeclaration(token: string): { id: string; label: string; nodeS
   return null
 }
 
-function parseEdge(line: string): { source: string; target: string; label?: string; type: ParsedEdge['type']; hasArrow: boolean; sourceDecl?: string; targetDecl?: string } | null {
-  const edgeRe = /^(.+?)\s+(={3,}>|={2}>|-{3,}>?|--?>|-\.->|\.->|={2,}>)\s*(?:\|([^|]*)\|)?\s*(.+)$/
+function parseEdge(
+  line: string
+): {
+  source: string
+  target: string
+  label?: string
+  type: ParsedEdge['type']
+  hasArrow: boolean
+  sourceDecl?: string
+  targetDecl?: string
+} | null {
+  const edgeRe =
+    /^(.+?)\s+(={3,}>|={2}>|-{3,}>?|--?>|-\.->|\.->|={2,}>)\s*(?:\|([^|]*)\|)?\s*(.+)$/
   const m = line.match(edgeRe)
   if (!m) return null
 
@@ -86,7 +107,9 @@ function parseEdge(line: string): { source: string; target: string; label?: stri
   }
 }
 
-function parseStyleDirective(line: string): { nodeId: string; styles: Record<string, string> } | null {
+function parseStyleDirective(
+  line: string
+): { nodeId: string; styles: Record<string, string> } | null {
   const m = line.match(/^style\s+(\w+)\s+(.+)$/)
   if (!m) return null
 
@@ -101,11 +124,16 @@ function parseStyleDirective(line: string): { nodeId: string; styles: Record<str
   return { nodeId, styles }
 }
 
-function parseClassDefDirective(line: string): { names: string[]; styles: Record<string, string> } | null {
+function parseClassDefDirective(
+  line: string
+): { names: string[]; styles: Record<string, string> } | null {
   const m = line.match(/^classDef\s+([\w,]+)\s+(.+?);?$/)
   if (!m) return null
 
-  const names = m[1].split(',').map((s) => s.trim()).filter(Boolean)
+  const names = m[1]
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
   const styles: Record<string, string> = {}
 
   for (const part of m[2].split(',')) {
@@ -116,18 +144,23 @@ function parseClassDefDirective(line: string): { names: string[]; styles: Record
   return { names, styles }
 }
 
-function parseClassAssignment(line: string): { nodeIds: string[]; className: string } | null {
+function parseClassAssignment(
+  line: string
+): { nodeIds: string[]; className: string } | null {
   const m = line.match(/^class\s+([\w,]+)\s+(\w+);?$/)
   if (!m) return null
 
-  const nodeIds = m[1].split(',').map((s) => s.trim()).filter(Boolean)
+  const nodeIds = m[1]
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
   return { nodeIds, className: m[2] }
 }
 
 function collectAllDescendantNodes(
   sg: ParsedSubgraph,
   allSubgraphs: ParsedSubgraph[],
-  nodeMap: Map<string, ParsedNode>,
+  nodeMap: Map<string, ParsedNode>
 ): string[] {
   const result: string[] = []
   for (const childId of sg.children) {
@@ -136,7 +169,9 @@ function collectAllDescendantNodes(
     } else {
       const childSg = allSubgraphs.find((s) => s.id === childId)
       if (childSg) {
-        result.push(...collectAllDescendantNodes(childSg, allSubgraphs, nodeMap))
+        result.push(
+          ...collectAllDescendantNodes(childSg, allSubgraphs, nodeMap)
+        )
       }
     }
   }
@@ -144,7 +179,10 @@ function collectAllDescendantNodes(
 }
 
 export function parseMermaidFlowchart(code: string): ParseResult {
-  const lines = code.split('\n').map((l) => l.trim()).filter(Boolean)
+  const lines = code
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
 
   let direction = 'TB'
   const nodes = new Map<string, ParsedNode>()
@@ -154,7 +192,9 @@ export function parseMermaidFlowchart(code: string): ParseResult {
   const classDefMap = new Map<string, Record<string, string>>()
   const nodeClassMap = new Map<string, string>()
 
-  const headerMatch = lines[0]?.match(/^(?:graph|flowchart)\s+(TD|TB|LR|RL|BT)\s*$/i)
+  const headerMatch = lines[0]?.match(
+    /^(?:graph|flowchart)\s+(TD|TB|LR|RL|BT)\s*$/i
+  )
   if (headerMatch) {
     direction = headerMatch[1].toUpperCase()
     if (direction === 'TD') direction = 'TB'
@@ -183,7 +223,11 @@ export function parseMermaidFlowchart(code: string): ParseResult {
     const parsed = parseNodeDeclaration(token)
     if (parsed) {
       if (!nodes.has(parsed.id)) {
-        nodes.set(parsed.id, { id: parsed.id, label: parsed.label, nodeShape: parsed.nodeShape })
+        nodes.set(parsed.id, {
+          id: parsed.id,
+          label: parsed.label,
+          nodeShape: parsed.nodeShape,
+        })
       } else {
         const existing = nodes.get(parsed.id)!
         if (existing.label === existing.id) {
@@ -209,7 +253,8 @@ export function parseMermaidFlowchart(code: string): ParseResult {
 
     if (/^%%/.test(line)) continue
 
-    const subgraphMatch = line.match(/^subgraph\s+(\w+)\s*\["([^"]+)"\]\s*$/) ||
+    const subgraphMatch =
+      line.match(/^subgraph\s+(\w+)\s*\["([^"]+)"\]\s*$/) ||
       line.match(/^subgraph\s+(\w+)\s*\[([^\]]+)\]\s*$/) ||
       line.match(/^subgraph\s+(\w+)\s*$/)
     if (subgraphMatch) {
@@ -277,7 +322,11 @@ export function parseMermaidFlowchart(code: string): ParseResult {
       continue
     }
 
-    if (/^direction\s/.test(line) || /^click\s/.test(line) || /^linkStyle\s/.test(line)) {
+    if (
+      /^direction\s/.test(line) ||
+      /^click\s/.test(line) ||
+      /^linkStyle\s/.test(line)
+    ) {
       continue
     }
 

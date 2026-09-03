@@ -35,7 +35,13 @@ export const ChangeCountSummary = ({
   return (
     <div className={cn('flex items-center gap-2', className)}>
       {parts.map((part) => (
-        <Text key={part.text} variant="subtext" theme={part.theme} weight="strong" family="mono">
+        <Text
+          key={part.text}
+          variant="subtext"
+          theme={part.theme}
+          weight="strong"
+          family="mono"
+        >
           {part.text}
         </Text>
       ))}

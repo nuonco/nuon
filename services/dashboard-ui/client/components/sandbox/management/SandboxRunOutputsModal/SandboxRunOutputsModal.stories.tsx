@@ -14,9 +14,6 @@ const mockSandboxRun = {
 
 export const Default = () => (
   <div className="p-4">
-    <SandboxRunOutputsButton
-      sandboxRun={mockSandboxRun}
-      onOpen={() => {}}
-    />
+    <SandboxRunOutputsButton sandboxRun={mockSandboxRun} onOpen={() => {}} />
   </div>
 )

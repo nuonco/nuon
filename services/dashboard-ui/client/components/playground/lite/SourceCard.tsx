@@ -41,7 +41,10 @@ export const SourceCard = ({ meta = defaultMeta }: ISourceCard) => (
 
     <div className="flex flex-col gap-3">
       {meta.map((item) => (
-        <div key={item.label} className="flex items-center justify-between gap-4">
+        <div
+          key={item.label}
+          className="flex items-center justify-between gap-4"
+        >
           <Block
             className="h-[8px] opacity-50"
             style={{ width: labelWidth(item.label) }}

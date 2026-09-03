@@ -27,8 +27,14 @@ export const TeardownAllComponentsModalContainer = ({
   const queryClient = useQueryClient()
   const [isKickedOff, setIsKickedOff] = useState(false)
 
-  const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { body: Parameters<typeof teardownComponents>[0]['body'] }) =>
+  const {
+    mutate: execute,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: (params: {
+      body: Parameters<typeof teardownComponents>[0]['body']
+    }) =>
       teardownComponents({
         body: params.body,
         installId: install.id,
@@ -45,7 +51,10 @@ export const TeardownAllComponentsModalContainer = ({
         },
       })
       addToast(
-        <Toast heading={`${install.name} component teardowns started`} theme="success">
+        <Toast
+          heading={`${install.name} component teardowns started`}
+          theme="success"
+        >
           <Text>Teardown all components workflow was created.</Text>
         </Toast>
       )

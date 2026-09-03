@@ -4,8 +4,6 @@ interface IDevOrgSectionContainer {
   orgId: string
 }
 
-export const DevOrgSectionContainer = ({
-  orgId,
-}: IDevOrgSectionContainer) => {
+export const DevOrgSectionContainer = ({ orgId }: IDevOrgSectionContainer) => {
   return <DevOrgSection orgId={orgId} />
 }

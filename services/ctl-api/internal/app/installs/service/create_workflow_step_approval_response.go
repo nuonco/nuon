@@ -79,6 +79,32 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	stepID := ctx.Param("step_id")
 	approvalID := ctx.Param("approval_id")
 
+	workflow, err := s.getWorkflow(ctx, org.ID, workflowID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.Error(stderr.ErrNotFound{
+				Err:         err,
+				Description: "workflow not found",
+			})
+			return
+		}
+		ctx.Error(errors.Wrap(err, "unable to get workflow"))
+		return
+	}
+
+	var install app.Install
+	if err := s.db.WithContext(ctx).
+		Preload("OperatingModel").
+		Where(app.Install{ID: workflow.OwnerID}).
+		First(&install).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to load install: %w", err))
+		return
+	}
+	if install.OperatingModel != nil && install.OperatingModel.ApprovalAuthority == app.InstallAuthorityCustomer {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "approvals for customer-managed installs must be submitted through the customer portal"})
+		return
+	}
+
 	_, err = s.getWorkflowStep(ctx, org.ID, workflowID, stepID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

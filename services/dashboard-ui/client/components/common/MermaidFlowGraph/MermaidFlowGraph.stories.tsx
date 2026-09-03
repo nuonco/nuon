@@ -83,7 +83,9 @@ const architectureExample = `graph TD
   style D fill:#3062D4,stroke:#1e50c0,color:#fff
   style R fill:#059669,stroke:#047857,color:#fff`
 
-export const Architecture = () => <MermaidFlowGraph code={architectureExample} />
+export const Architecture = () => (
+  <MermaidFlowGraph code={architectureExample} />
+)
 
 const nestedSubgraphs = `graph TD
   subgraph VPC["Customer Cloud VPC (AWS)"]
@@ -144,7 +146,9 @@ const multipleTopLevel = `graph TD
   IDE -->|HTTPS| ALB
   ALB --> Coder`
 
-export const MultipleTopLevelSubgraphs = () => <MermaidFlowGraph code={multipleTopLevel} />
+export const MultipleTopLevelSubgraphs = () => (
+  <MermaidFlowGraph code={multipleTopLevel} />
+)
 
 const deeplyNested = `graph TD
   subgraph Cloud["Cloud Provider"]
@@ -204,7 +208,9 @@ const edgesToSubgraphs = `graph TD
   API -->|enqueue| Email
   API -->|enqueue| Search`
 
-export const CrossSubgraphEdges = () => <MermaidFlowGraph code={edgesToSubgraphs} />
+export const CrossSubgraphEdges = () => (
+  <MermaidFlowGraph code={edgesToSubgraphs} />
+)
 
 const branchDeploymentPlan = `flowchart LR
   subgraph b0["app branch · main · acme/example-app@main · nuon/example-app-aws"]
@@ -221,4 +227,6 @@ const branchDeploymentPlan = `flowchart LR
   classDef abClass0 fill:#D6B0FC,stroke:#8040BF,color:#000;
   classDef abClass1 fill:#A8E6A3,stroke:#4C9A48,color:#000;`
 
-export const BranchDeploymentPlan = () => <MermaidFlowGraph code={branchDeploymentPlan} />
+export const BranchDeploymentPlan = () => (
+  <MermaidFlowGraph code={branchDeploymentPlan} />
+)

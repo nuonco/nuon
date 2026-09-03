@@ -23,13 +23,14 @@ export const ComponentsGraphInlineContainer = ({
   const { data, error, isLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-config-graph', org?.id, appId, configId],
-    queryFn: () => getAppConfigGraph({ orgId: org.id, appId, appConfigId: configId }),
+    queryFn: () =>
+      getAppConfigGraph({ orgId: org.id, appId, appConfigId: configId }),
     enabled: !!org?.id,
   })
 
   const parsed = useMemo(
     () => (view === 'table' && data ? parseDotGraph(data) : undefined),
-    [view, data],
+    [view, data]
   )
 
   if (view === 'table') {

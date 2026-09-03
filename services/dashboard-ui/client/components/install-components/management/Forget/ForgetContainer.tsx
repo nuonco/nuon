@@ -22,9 +22,7 @@ interface IForgetComponentGates {
   isConfigLoading?: boolean
 }
 
-interface IForgetComponentModalContainer
-  extends IModal,
-    IForgetComponentGates {
+interface IForgetComponentModalContainer extends IModal, IForgetComponentGates {
   component: TComponent
 }
 
@@ -42,7 +40,11 @@ export const ForgetComponentModalContainer = ({
   const { install } = useInstall()
   const { addToast } = useToast()
 
-  const { mutate: execute, isPending: isLoading, error } = useMutation({
+  const {
+    mutate: execute,
+    isPending: isLoading,
+    error,
+  } = useMutation({
     mutationFn: () =>
       forgetComponent({
         orgId: org.id,
@@ -105,7 +107,9 @@ export const ForgetComponentModalContainer = ({
   )
 }
 
-interface IForgetComponentButton extends IButtonAsButton, IForgetComponentGates {
+interface IForgetComponentButton
+  extends IButtonAsButton,
+    IForgetComponentGates {
   component: TComponent
 }
 

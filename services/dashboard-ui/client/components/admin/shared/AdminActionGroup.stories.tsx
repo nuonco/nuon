@@ -13,7 +13,11 @@ export const Default = () => (
 )
 
 export const Warning = () => (
-  <AdminActionGroup title="Maintenance actions" icon="Warning" variant="warning">
+  <AdminActionGroup
+    title="Maintenance actions"
+    icon="Warning"
+    variant="warning"
+  >
     <Button variant="ghost">Disable auto-deploys</Button>
     <Button variant="ghost">Pause queue</Button>
   </AdminActionGroup>

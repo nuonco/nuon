@@ -17,7 +17,10 @@ const AdminFooter = ({ workflowId }: { workflowId: string }) => {
 
   return (
     <div className={cn('flex items-center gap-4 py-3 border-t', GUTTER)}>
-      <AdminDashboardLink path={`/workflows/${workflowId}`} label="admin panel" />
+      <AdminDashboardLink
+        path={`/workflows/${workflowId}`}
+        label="admin panel"
+      />
     </div>
   )
 }

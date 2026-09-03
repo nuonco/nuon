@@ -20,12 +20,7 @@ export const SyncSecretsModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="KeyIcon" size="24" />
           Sync secrets
         </Text>
@@ -47,8 +42,7 @@ export const SyncSecretsModal = ({
       <div className="flex flex-col gap-1">
         {error ? (
           <Banner theme="error">
-            {error?.error ||
-              'Something went wrong. Try refreshing the page.'}
+            {error?.error || 'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
         <Text variant="base">

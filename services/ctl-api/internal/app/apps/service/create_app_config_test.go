@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -42,7 +43,8 @@ func (s *AppConfigsTestSuite) TestCreateAppConfigV2Success() {
 	assert.Equal(s.T(), models.AppAppConfigStatus(app.AppConfigStatusPending), response.Status)
 
 	var dbConfig app.AppConfig
-	err = s.service.DB.First(&dbConfig, "id = ?", response.ID).Error
+	dbCtx := blobstore.WithBlobService(context.Background(), s.service.AppsService.blobSvc)
+	err = s.service.DB.WithContext(dbCtx).First(&dbConfig, "id = ?", response.ID).Error
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), s.testApp.ID, dbConfig.AppID)
 	assert.Equal(s.T(), s.testOrg.ID, dbConfig.OrgID)

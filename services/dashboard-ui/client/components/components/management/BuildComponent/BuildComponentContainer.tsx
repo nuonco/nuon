@@ -14,7 +14,10 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { buildComponent } from '@/lib'
 import { trackEvent } from '@/lib/posthog-analytics'
 import type { TComponent } from '@/types'
-import { BuildComponentButton as BuildComponentButtonComponent, BuildComponentModal } from './BuildComponent'
+import {
+  BuildComponentButton as BuildComponentButtonComponent,
+  BuildComponentModal,
+} from './BuildComponent'
 
 export const BuildComponentButtonContainer = ({
   component,
@@ -26,10 +29,7 @@ export const BuildComponentButtonContainer = ({
   const { addModal } = useSurfaces()
   const modal = <BuildComponentModalContainer component={component} />
   return (
-    <BuildComponentButtonComponent
-      onClick={() => addModal(modal)}
-      {...props}
-    />
+    <BuildComponentButtonComponent onClick={() => addModal(modal)} {...props} />
   )
 }
 
@@ -47,12 +47,24 @@ export const BuildComponentModalContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
 
-  const { data: build, error, mutate, isPending: isLoading } = useMutation({
-    mutationFn: () => buildComponent({ componentId: component.id, orgId: org.id }),
+  const {
+    data: build,
+    error,
+    mutate,
+    isPending: isLoading,
+  } = useMutation({
+    mutationFn: () =>
+      buildComponent({ componentId: component.id, orgId: org.id }),
     onSuccess: (build) => {
       addToast(
         <Toast heading="Build started" theme="info">
-          <Text>Building <Badge variant="code" size="md">{component.name}</Badge>. This may take a few minutes.</Text>
+          <Text>
+            Building{' '}
+            <Badge variant="code" size="md">
+              {component.name}
+            </Badge>
+            . This may take a few minutes.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)
@@ -63,7 +75,13 @@ export const BuildComponentModalContainer = ({
     onError: () => {
       addToast(
         <Toast heading="Build failed" theme="error">
-          <Text>Unable to build <Badge variant="code" size="md">{component.name}</Badge>.</Text>
+          <Text>
+            Unable to build{' '}
+            <Badge variant="code" size="md">
+              {component.name}
+            </Badge>
+            .
+          </Text>
         </Toast>
       )
     },

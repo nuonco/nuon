@@ -33,17 +33,31 @@ export interface IInstallGroupDiff {
 
 const SKELETON_ROW_WIDTHS = ['9rem', '7rem', '11rem', '8rem']
 
-const GroupHeader = ({ groupName, children }: { groupName: string; children?: React.ReactNode }) => (
+const GroupHeader = ({
+  groupName,
+  children,
+}: {
+  groupName: string
+  children?: React.ReactNode
+}) => (
   <div className="px-4 sm:px-6 py-4 border-b">
     <div className="flex items-center gap-3">
       <Icon variant="ListChecksIcon" size="16" />
-      <Text variant="base" weight="strong">{groupName}</Text>
+      <Text variant="base" weight="strong">
+        {groupName}
+      </Text>
       {children}
     </div>
   </div>
 )
 
-const InstallGroupDiffSkeleton = ({ groupName, rows = 3 }: { groupName: string; rows?: number }) => (
+const InstallGroupDiffSkeleton = ({
+  groupName,
+  rows = 3,
+}: {
+  groupName: string
+  rows?: number
+}) => (
   <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
     <GroupHeader groupName={groupName}>
       <Skeleton width="4rem" height="0.875rem" />
@@ -51,7 +65,10 @@ const InstallGroupDiffSkeleton = ({ groupName, rows = 3 }: { groupName: string; 
     <div className="flex flex-col divide-y">
       {Array.from({ length: rows }).map((_, idx) => (
         <div key={idx} className="flex items-center gap-3 px-4 py-3">
-          <Skeleton width={SKELETON_ROW_WIDTHS[idx % SKELETON_ROW_WIDTHS.length]} height="0.875rem" />
+          <Skeleton
+            width={SKELETON_ROW_WIDTHS[idx % SKELETON_ROW_WIDTHS.length]}
+            height="0.875rem"
+          />
           <div className="flex items-center gap-2 ml-auto">
             <Skeleton width="1.5rem" height="0.75rem" />
             <Skeleton width="1.5rem" height="0.75rem" />
@@ -63,10 +80,23 @@ const InstallGroupDiffSkeleton = ({ groupName, rows = 3 }: { groupName: string; 
   </Card>
 )
 
-const OP_VERB: Record<string, string> = { add: 'Add', change: 'Update', remove: 'Remove' }
-const OP_THEME: Record<string, TBadgeTheme> = { add: 'success', change: 'warn', remove: 'error' }
+const OP_VERB: Record<string, string> = {
+  add: 'Add',
+  change: 'Update',
+  remove: 'Remove',
+}
+const OP_THEME: Record<string, TBadgeTheme> = {
+  add: 'success',
+  change: 'warn',
+  remove: 'error',
+}
 
-type ImpactItem = { name: string; op: string; componentType?: string; isComponent: boolean }
+type ImpactItem = {
+  name: string
+  op: string
+  componentType?: string
+  isComponent: boolean
+}
 
 const flattenImpact = (sections: DiffSectionData[]): ImpactItem[] =>
   sections.flatMap((section) =>
@@ -80,7 +110,8 @@ const flattenImpact = (sections: DiffSectionData[]): ImpactItem[] =>
 
 const ChangeSummary = ({ install }: { install: InstallDiffEntry }) => {
   const { added, changed, removed } = install.summary
-  const updated = changed + (install.sandboxChanged ? 1 : 0) + (install.stackChanged ? 1 : 0)
+  const updated =
+    changed + (install.sandboxChanged ? 1 : 0) + (install.stackChanged ? 1 : 0)
   return (
     <ChangeCountSummary
       added={added}
@@ -91,7 +122,12 @@ const ChangeSummary = ({ install }: { install: InstallDiffEntry }) => {
   )
 }
 
-export const InstallGroupDiff = ({ groupName, installs, isLoading = false, labelColors }: IInstallGroupDiff) => {
+export const InstallGroupDiff = ({
+  groupName,
+  installs,
+  isLoading = false,
+  labelColors,
+}: IInstallGroupDiff) => {
   const focusCtx = useConfigDiffFocus()
 
   if (isLoading && installs.length === 0) {
@@ -123,15 +159,32 @@ export const InstallGroupDiff = ({ groupName, installs, isLoading = false, label
 
       <div className="flex flex-col divide-y">
         {installs.map((install) => {
-          const totalChanges = install.summary.added + install.summary.removed + install.summary.changed
-          const hasChanges = totalChanges > 0 || !!install.sandboxChanged || !!install.stackChanged
-          const labelEntries = install.installLabels ? Object.entries(install.installLabels) : []
+          const totalChanges =
+            install.summary.added +
+            install.summary.removed +
+            install.summary.changed
+          const hasChanges =
+            totalChanges > 0 ||
+            !!install.sandboxChanged ||
+            !!install.stackChanged
+          const labelEntries = install.installLabels
+            ? Object.entries(install.installLabels)
+            : []
 
           const heading = (
             <div className="flex items-center gap-3 w-full">
-              <Text weight="strong">{install.installName || install.installId}</Text>
+              <Text weight="strong">
+                {install.installName || install.installId}
+              </Text>
               {labelEntries.map(([k, v]) => (
-                <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" className="shrink-0" customColor={labelColors?.[k]} />
+                <LabelBadge
+                  key={k}
+                  labelKey={k}
+                  labelValue={v}
+                  size="sm"
+                  className="shrink-0"
+                  customColor={labelColors?.[k]}
+                />
               ))}
               <ChangeSummary install={install} />
             </div>
@@ -139,9 +192,16 @@ export const InstallGroupDiff = ({ groupName, installs, isLoading = false, label
 
           if (!hasChanges || install.sections.length === 0) {
             return (
-              <div key={install.installId} className="flex items-center gap-2 px-4 py-3">
+              <div
+                key={install.installId}
+                className="flex items-center gap-2 px-4 py-3"
+              >
                 {heading}
-                <Icon variant="CaretDownIcon" className="invisible shrink-0" aria-hidden />
+                <Icon
+                  variant="CaretDownIcon"
+                  className="invisible shrink-0"
+                  aria-hidden
+                />
               </div>
             )
           }
@@ -155,7 +215,8 @@ export const InstallGroupDiff = ({ groupName, installs, isLoading = false, label
             >
               <div className="px-4 py-4 flex flex-col gap-3 border-t border-cool-grey-100 dark:border-dark-grey-800 bg-black/[0.015] dark:bg-white/[0.0075]">
                 <Text variant="subtext" theme="neutral">
-                  The following will be redeployed to {install.installName || install.installId}:
+                  The following will be redeployed to{' '}
+                  {install.installName || install.installId}:
                 </Text>
                 <div className="flex flex-col divide-y divide-cool-grey-100 dark:divide-dark-grey-800">
                   {flattenImpact(install.sections).map((item, idx) => {
@@ -180,7 +241,11 @@ export const InstallGroupDiff = ({ groupName, installs, isLoading = false, label
                             />
                           ) : (
                             <Icon
-                              variant={item.name === 'Stack' ? 'StackIcon' : 'ShippingContainerIcon'}
+                              variant={
+                                item.name === 'Stack'
+                                  ? 'StackIcon'
+                                  : 'ShippingContainerIcon'
+                              }
                               size="16"
                               theme={OP_THEME[item.op] ?? 'neutral'}
                             />
@@ -203,14 +268,19 @@ export const InstallGroupDiff = ({ groupName, installs, isLoading = false, label
                               onClick={() =>
                                 focusCtx.requestFocus(
                                   sectionKey,
-                                  item.isComponent ? `component.${item.name}` : undefined
+                                  item.isComponent
+                                    ? `component.${item.name}`
+                                    : undefined
                                 )
                               }
                             >
                               View details
                             </Button>
                           )}
-                          <Badge theme={OP_THEME[item.op] ?? 'neutral'} size="sm">
+                          <Badge
+                            theme={OP_THEME[item.op] ?? 'neutral'}
+                            size="sm"
+                          >
                             {OP_VERB[item.op] ?? item.op}
                           </Badge>
                         </div>

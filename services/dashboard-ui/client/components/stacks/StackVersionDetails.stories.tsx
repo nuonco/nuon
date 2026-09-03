@@ -12,7 +12,8 @@ const mockVersion: TStackVersion = {
   id: 'sv-1',
   created_at: new Date(Date.now() - 3600000).toISOString(),
   updated_at: new Date(Date.now() - 1800000).toISOString(),
-  quick_link_url: 'https://console.aws.amazon.com/cloudformation/home?#/stacks/create/review?templateURL=https://example.com/template.json',
+  quick_link_url:
+    'https://console.aws.amazon.com/cloudformation/home?#/stacks/create/review?templateURL=https://example.com/template.json',
   template_url: 'https://s3.amazonaws.com/nuon-stacks/template.json',
   app_config_id: 'config-1',
   aws_bucket_key: 'stacks/sv-1/template.json',
@@ -32,7 +33,9 @@ const mockVersion: TStackVersion = {
       data_contents: {},
     },
   ],
-  contents: btoa(JSON.stringify({ template: 'cloudformation', version: '1.0' })),
+  contents: btoa(
+    JSON.stringify({ template: 'cloudformation', version: '1.0' })
+  ),
 } as TStackVersion
 
 export const Default = () => (
@@ -44,7 +47,13 @@ export const Default = () => (
 export const Expired = () => (
   <PanelStory>
     <StackVersionDetails
-      version={{ ...mockVersion, composite_status: { ...mockVersion.composite_status, status: 'expired' } }}
+      version={{
+        ...mockVersion,
+        composite_status: {
+          ...mockVersion.composite_status,
+          status: 'expired',
+        },
+      }}
     />
   </PanelStory>
 )
@@ -83,6 +92,8 @@ export const WithRunDiffs = () => (
 
 export const NoRuns = () => (
   <PanelStory>
-    <StackVersionDetails version={{ ...mockVersion, runs: [] } as TStackVersion} />
+    <StackVersionDetails
+      version={{ ...mockVersion, runs: [] } as TStackVersion}
+    />
   </PanelStory>
 )

@@ -3,7 +3,9 @@ import { composeTitle } from './PageTitle'
 
 describe('composeTitle', () => {
   test('joins segments with a pipe', () => {
-    expect(composeTitle(['Components', 'acme-app'])).toBe('Components | acme-app')
+    expect(composeTitle(['Components', 'acme-app'])).toBe(
+      'Components | acme-app'
+    )
   })
 
   test('omits undefined, null, false, and empty segments', () => {
@@ -23,6 +25,8 @@ describe('composeTitle', () => {
   })
 
   test('preserves order (specific first)', () => {
-    expect(composeTitle(['prod configs', 'acme-app'])).toBe('prod configs | acme-app')
+    expect(composeTitle(['prod configs', 'acme-app'])).toBe(
+      'prod configs | acme-app'
+    )
   })
 })

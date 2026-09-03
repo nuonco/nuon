@@ -54,9 +54,7 @@ export const InvitedUsers = ({
       {
         accessorKey: 'email',
         header: 'Email',
-        cell: ({ row }) => (
-          <Text variant="body">{row.original?.email}</Text>
-        ),
+        cell: ({ row }) => <Text variant="body">{row.original?.email}</Text>,
       },
       {
         id: 'role',
@@ -109,5 +107,7 @@ export const InvitedUsersError = ({
   message?: string
   title?: string
 }) => {
-  return <EmptyState variant="table" emptyMessage={message} emptyTitle={title} />
+  return (
+    <EmptyState variant="table" emptyMessage={message} emptyTitle={title} />
+  )
 }

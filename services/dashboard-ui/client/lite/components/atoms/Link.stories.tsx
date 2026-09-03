@@ -27,12 +27,42 @@ export const Overview = () => (
       'External links always open in a new tab.',
     ]}
     props={[
-      { name: 'href', type: 'string', description: 'Destination. Its shape decides internal vs external.' },
-      { name: 'variant', type: 'TTextVariant', default: 'inherit', description: 'Sizes a standalone link. Omit inside prose.' },
-      { name: 'external', type: 'boolean', description: 'Forces the external treatment for an href that lies about itself.' },
-      { name: 'reloadDocument', type: 'boolean', description: 'Same-origin full page load, for BFF endpoints and downloads.' },
-      { name: 'disabled', type: 'boolean', default: 'false', description: 'Renders a non-interactive span.' },
-      { name: 'loading', type: 'boolean', default: 'false', description: 'Delegates to Text, so a link labelled by a resource name shimmers like text.' },
+      {
+        name: 'href',
+        type: 'string',
+        description: 'Destination. Its shape decides internal vs external.',
+      },
+      {
+        name: 'variant',
+        type: 'TTextVariant',
+        default: 'inherit',
+        description: 'Sizes a standalone link. Omit inside prose.',
+      },
+      {
+        name: 'external',
+        type: 'boolean',
+        description:
+          'Forces the external treatment for an href that lies about itself.',
+      },
+      {
+        name: 'reloadDocument',
+        type: 'boolean',
+        description:
+          'Same-origin full page load, for BFF endpoints and downloads.',
+      },
+      {
+        name: 'disabled',
+        type: 'boolean',
+        default: 'false',
+        description: 'Renders a non-interactive span.',
+      },
+      {
+        name: 'loading',
+        type: 'boolean',
+        default: 'false',
+        description:
+          'Delegates to Text, so a link labelled by a resource name shimmers like text.',
+      },
     ]}
     sections={[
       {
@@ -86,7 +116,10 @@ export const SameOriginDownload = () => (
       reloadDocument so the browser handles the response.
     </Text>
     <div>
-      <Link href="/api/orgs/org123/log-streams/ls456/logs/download" reloadDocument>
+      <Link
+        href="/api/orgs/org123/log-streams/ls456/logs/download"
+        reloadDocument
+      >
         Download logs
       </Link>
     </div>

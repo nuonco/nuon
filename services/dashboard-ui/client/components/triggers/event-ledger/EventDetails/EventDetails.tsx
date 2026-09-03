@@ -299,9 +299,7 @@ const WaiterMatch = ({
         </div>
       ) : null}
       {workflowHref ? (
-        <Link href={workflowHref}>
-          View resumed workflow step
-        </Link>
+        <Link href={workflowHref}>View resumed workflow step</Link>
       ) : null}
     </Card>
   )
@@ -391,11 +389,7 @@ export const EventDetails = ({
                 Showing the most recently loaded event details.
               </Text>
             </div>
-            <Button
-              variant="secondary"
-              disabled={isRetrying}
-              onClick={onRetry}
-            >
+            <Button variant="secondary" disabled={isRetrying} onClick={onRetry}>
               <Icon variant={isRetrying ? 'Loading' : 'ArrowClockwiseIcon'} />
               {isRetrying ? 'Refreshing event' : 'Refresh event'}
             </Button>

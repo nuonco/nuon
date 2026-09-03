@@ -43,7 +43,9 @@ export const CellTerminal = ({
     const all = logs ?? []
     if (showAll) return all
     const output = all.filter(isCommandOutput)
-    return output.length ? output : all.filter((l) => l.scope_name === 'oteljob')
+    return output.length
+      ? output
+      : all.filter((l) => l.scope_name === 'oteljob')
   }, [logs, showAll])
 
   const hasChatter = (logs ?? []).some((l) => !isCommandOutput(l))
@@ -104,9 +106,7 @@ export const CellTerminal = ({
               {showAll ? 'Output only' : 'All logs'}
             </Button>
           ) : null}
-          <ClickToCopyButton
-            textToCopy={lines.map((l) => l.body).join('\n')}
-          />
+          <ClickToCopyButton textToCopy={lines.map((l) => l.body).join('\n')} />
         </div>
       </div>
 
@@ -116,7 +116,10 @@ export const CellTerminal = ({
         className="max-h-[400px] overflow-auto px-3 pb-2 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all"
       >
         {promptLines.map((line, i) => (
-          <div key={`prompt-${i}`} className="text-cool-grey-700 dark:text-cool-grey-400">
+          <div
+            key={`prompt-${i}`}
+            className="text-cool-grey-700 dark:text-cool-grey-400"
+          >
             <span className="select-none">{i === 0 ? '$ ' : '  '}</span>
             {line}
           </div>
@@ -163,7 +166,9 @@ export const CellTerminal = ({
         )}
         {runCreatedAt ? (
           <>
-            <span className="text-cool-grey-600 dark:text-cool-grey-500">·</span>
+            <span className="text-cool-grey-600 dark:text-cool-grey-500">
+              ·
+            </span>
             <Duration
               variant="subtext"
               family="mono"

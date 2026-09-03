@@ -33,8 +33,16 @@ export type TBranchCardData = {
 }
 
 export const BranchCard = ({ card }: { card: TBranchCardData }) => {
-  const { action, href, latestRun, managedBy, name, planSummary, repo, repoBranch } =
-    card
+  const {
+    action,
+    href,
+    latestRun,
+    managedBy,
+    name,
+    planSummary,
+    repo,
+    repoBranch,
+  } = card
 
   return (
     <Card className="gap-4 p-4 min-w-0">
@@ -46,7 +54,11 @@ export const BranchCard = ({ card }: { card: TBranchCardData }) => {
               {name}
             </Link>
             {managedBy ? (
-              <Badge size="sm" theme={managedBy === 'config' ? 'brand' : 'default'} variant="code">
+              <Badge
+                size="sm"
+                theme={managedBy === 'config' ? 'brand' : 'default'}
+                variant="code"
+              >
                 {managedBy}
               </Badge>
             ) : null}
@@ -93,8 +105,7 @@ export const BranchCard = ({ card }: { card: TBranchCardData }) => {
         </Text>
         {planSummary && planSummary.groups > 0 ? (
           <Text variant="subtext" theme="neutral">
-            {planSummary.groups}{' '}
-            {planSummary.groups === 1 ? 'group' : 'groups'}
+            {planSummary.groups} {planSummary.groups === 1 ? 'group' : 'groups'}
             {planSummary.hasSelector
               ? ', installs matched by label'
               : ` · ${planSummary.installs} ${

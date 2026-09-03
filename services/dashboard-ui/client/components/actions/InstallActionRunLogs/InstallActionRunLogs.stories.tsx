@@ -94,7 +94,8 @@ const failedStepLogs = [
   })),
   ...[0, 1].map((i) => ({
     id: `fail-deploy-${i}`,
-    body: i === 0 ? 'Starting deployment to cluster...' : 'Applying manifests...',
+    body:
+      i === 0 ? 'Starting deployment to cluster...' : 'Applying manifests...',
     timestamp: new Date(Date.now() - (7 - i) * 60000).toISOString(),
     severity_number: 9,
     severity_text: 'Info',
@@ -149,7 +150,9 @@ const failedStepStatuses: Record<string, string> = {
 }
 
 const FailedProviders = ({ children }: { children: React.ReactNode }) => (
-  <LogStreamContext.Provider value={{ ...mockLogStreamContext, logs: failedStepLogs }}>
+  <LogStreamContext.Provider
+    value={{ ...mockLogStreamContext, logs: failedStepLogs }}
+  >
     {children}
   </LogStreamContext.Provider>
 )
@@ -239,14 +242,18 @@ const longNameLogs = [
     severity_text: 'Info',
     service_name: 'action',
     scope_name: 'oteljob',
-    log_attributes: { workflow_step_name: 'alb-healthcheck-ctl-api-runner-internal' },
+    log_attributes: {
+      workflow_step_name: 'alb-healthcheck-ctl-api-runner-internal',
+    },
   })),
 ] as any
 
 const LongStepNamesStory = () => {
   const filters = useLogFilters(longNameLogs)
   return (
-    <LogStreamContext.Provider value={{ ...mockLogStreamContext, logs: longNameLogs }}>
+    <LogStreamContext.Provider
+      value={{ ...mockLogStreamContext, logs: longNameLogs }}
+    >
       <InstallActionRunLogs
         actionConfig={longNameConfig}
         layout="vertical"

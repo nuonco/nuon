@@ -61,7 +61,7 @@ export const StackLinks = ({
                   textToCopy={`curl -sLo template.json "${template_url}" && aws cloudformation create-stack --stack-name nuon-install --template-body file://template.json --capabilities CAPABILITY_NAMED_IAM --region us-east-1`}
                 />
                 <Code className="text-xs overflow-x-auto block whitespace-pre">
-{`curl -sLo template.json "${template_url}" \\
+                  {`curl -sLo template.json "${template_url}" \\
   && aws cloudformation create-stack \\
     --stack-name nuon-install \\
     --template-body file://template.json \\

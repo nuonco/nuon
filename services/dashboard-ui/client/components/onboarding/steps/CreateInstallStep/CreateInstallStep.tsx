@@ -50,9 +50,7 @@ export const CompletedInstallCard = ({
 
       <InstallStatuses install={install} />
 
-      <Link href={`/${orgId}/installs/${installId}`}>
-        View install
-      </Link>
+      <Link href={`/${orgId}/installs/${installId}`}>View install</Link>
     </Card>
   )
 }
@@ -84,7 +82,10 @@ const OnboardingInstallForm = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <FormErrorBanner error={submitError} fallback="Unable to create install" />
+      <FormErrorBanner
+        error={submitError}
+        fallback="Unable to create install"
+      />
       <InstallForm
         form={form}
         mode="create"

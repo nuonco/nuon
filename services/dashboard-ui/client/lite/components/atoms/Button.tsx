@@ -54,42 +54,42 @@ export const Button = ({
   const inactive = disabled || loading
 
   const button = (
-  <button
-    type={type}
-    aria-disabled={inactive || undefined}
-    onClick={(event: MouseEvent<HTMLButtonElement>) => {
-      if (inactive) {
-        event.preventDefault()
-        return
-      }
-      onClick?.(event)
-    }}
-    aria-busy={loading || undefined}
-    className={cn(
-      BASE_CLASSES,
-      VARIANT_CLASSES[variant],
-      iconOnly ? 'size-9' : 'h-9 px-3.5',
-      className
-    )}
-    {...props}
-  >
-    <span
-      aria-hidden={!loading}
+    <button
+      type={type}
+      aria-disabled={inactive || undefined}
+      onClick={(event: MouseEvent<HTMLButtonElement>) => {
+        if (inactive) {
+          event.preventDefault()
+          return
+        }
+        onClick?.(event)
+      }}
+      aria-busy={loading || undefined}
       className={cn(
-        'grid overflow-hidden transition-[grid-template-columns,margin-right] duration-200 ease-out motion-reduce:transition-none',
-        loading ? 'grid-cols-[1fr]' : 'grid-cols-[0fr]',
-        loading && !iconOnly && 'mr-1.5'
+        BASE_CLASSES,
+        VARIANT_CLASSES[variant],
+        iconOnly ? 'size-9' : 'h-9 px-3.5',
+        className
       )}
+      {...props}
     >
-      <span className="flex min-w-0 items-center justify-center">
-        <Spinner />
+      <span
+        aria-hidden={!loading}
+        className={cn(
+          'grid overflow-hidden transition-[grid-template-columns,margin-right] duration-200 ease-out motion-reduce:transition-none',
+          loading ? 'grid-cols-[1fr]' : 'grid-cols-[0fr]',
+          loading && !iconOnly && 'mr-1.5'
+        )}
+      >
+        <span className="flex min-w-0 items-center justify-center">
+          <Spinner />
+        </span>
       </span>
-    </span>
-    {!loading && icon && (
-      <span className="-ml-0.5 mr-1.5 flex items-center">{icon}</span>
-    )}
-    {!(iconOnly && loading) && children}
-  </button>
+      {!loading && icon && (
+        <span className="-ml-0.5 mr-1.5 flex items-center">{icon}</span>
+      )}
+      {!(iconOnly && loading) && children}
+    </button>
   )
 
   if (!tooltip) return button

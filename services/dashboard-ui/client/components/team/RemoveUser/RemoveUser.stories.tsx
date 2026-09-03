@@ -34,7 +34,11 @@ export const WithError = () => (
     <RemoveUserModal
       accountEmail="alice@example.com"
       isPending={false}
-      error={{ error: 'Cannot remove the last admin', description: '', user_error: true }}
+      error={{
+        error: 'Cannot remove the last admin',
+        description: '',
+        user_error: true,
+      }}
       onSubmit={noop}
     />
   </ModalStory>

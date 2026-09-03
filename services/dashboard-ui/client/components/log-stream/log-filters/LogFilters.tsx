@@ -6,7 +6,12 @@ import { LogSearch } from './LogSearch'
 import { LogSeverityDropdown } from './LogSeverityDropdown'
 import { DownloadLogsButton } from '../DownloadLogs'
 
-const viewModeOptions: { value: ViewMode; label: React.ReactNode; ariaLabel: string; title: string }[] = [
+const viewModeOptions: {
+  value: ViewMode
+  label: React.ReactNode
+  ariaLabel: string
+  title: string
+}[] = [
   {
     value: 'structured',
     label: (
@@ -33,9 +38,13 @@ const viewModeOptions: { value: ViewMode; label: React.ReactNode; ariaLabel: str
 
 interface LogFiltersProps {
   filters: TLogFiltersProps
+  showDownload?: boolean
 }
 
-export const LogFilters = ({ filters }: LogFiltersProps) => {
+export const LogFilters = ({
+  filters,
+  showDownload = true,
+}: LogFiltersProps) => {
   return (
     <div className="flex items-center flex-wrap justify-between gap-4 py-4 w-full">
       <LogSearch filters={filters} />
@@ -49,7 +58,9 @@ export const LogFilters = ({ filters }: LogFiltersProps) => {
           value={filters.viewMode}
           onChange={filters.handleViewModeChange}
         />
-        <DownloadLogsButton includeSystemLogs={filters.includeSystemLogs} />
+        {showDownload ? (
+          <DownloadLogsButton includeSystemLogs={filters.includeSystemLogs} />
+        ) : null}
       </div>
     </div>
   )

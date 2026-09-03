@@ -8,7 +8,8 @@ export default {
 const awsPermissionError: TCompositeError = {
   type: 'aws_permission_error',
   severity: 'error',
-  message: 'Deploy failed because the install role is missing required AWS IAM permissions.',
+  message:
+    'Deploy failed because the install role is missing required AWS IAM permissions.',
   sections: [
     {
       heading: 'Missing permissions',
@@ -28,7 +29,8 @@ export const NoSections = () => (
     error={{
       type: 'aws_permission_error',
       severity: 'error',
-      message: 'The install role is not authorized to perform this Terraform operation.',
+      message:
+        'The install role is not authorized to perform this Terraform operation.',
     }}
   />
 )
@@ -38,8 +40,11 @@ export const Warning = () => (
     error={{
       type: 'aws_permission_error',
       severity: 'warning',
-      message: 'Some optional permissions are missing and may limit functionality.',
-      sections: [{ heading: 'Details', body: 'Missing `s3:GetBucketTagging`.' }],
+      message:
+        'Some optional permissions are missing and may limit functionality.',
+      sections: [
+        { heading: 'Details', body: 'Missing `s3:GetBucketTagging`.' },
+      ],
     }}
   />
 )

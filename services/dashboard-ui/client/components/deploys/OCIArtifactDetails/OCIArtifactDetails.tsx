@@ -24,24 +24,32 @@ export const OCIArtifactDetails = ({ artifact }: IOCIArtifactDetails) => {
 
   return (
     <Card>
-      <Text variant="base" weight="strong">OCI artifact</Text>
+      <Text variant="base" weight="strong">
+        OCI artifact
+      </Text>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
         <LabeledValue label="Tag">
           <ClickToCopy>
-            <Text variant="subtext" family="mono">{artifact.tag}</Text>
+            <Text variant="subtext" family="mono">
+              {artifact.tag}
+            </Text>
           </ClickToCopy>
         </LabeledValue>
 
         <LabeledValue label="Repository" className="lg:col-span-2">
           <ClickToCopy>
-            <Text variant="subtext" family="mono" className="break-all">{artifact.repository}</Text>
+            <Text variant="subtext" family="mono" className="break-all">
+              {artifact.repository}
+            </Text>
           </ClickToCopy>
         </LabeledValue>
 
         <LabeledValue label="Digest">
           <ClickToCopy>
-            <Text variant="subtext" family="mono" className="break-all">{artifact.digest}</Text>
+            <Text variant="subtext" family="mono" className="break-all">
+              {artifact.digest}
+            </Text>
           </ClickToCopy>
         </LabeledValue>
 
@@ -50,7 +58,11 @@ export const OCIArtifactDetails = ({ artifact }: IOCIArtifactDetails) => {
         </LabeledValue>
 
         <LabeledValue label="Created">
-          <Time variant="subtext" time={artifact.created_at} format="relative" />
+          <Time
+            variant="subtext"
+            time={artifact.created_at}
+            format="relative"
+          />
         </LabeledValue>
 
         <LabeledValue label="Artifact type">
@@ -58,7 +70,9 @@ export const OCIArtifactDetails = ({ artifact }: IOCIArtifactDetails) => {
         </LabeledValue>
 
         <LabeledValue label="Media type">
-          <Text variant="subtext" family="mono">{artifact.media_type}</Text>
+          <Text variant="subtext" family="mono">
+            {artifact.media_type}
+          </Text>
         </LabeledValue>
 
         {artifact.os || artifact.architecture ? (

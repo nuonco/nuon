@@ -9,7 +9,10 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { OperationRolesList } from '@/components/common/OperationRolesList'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { BranchRunCommit, type IBranchRunCommit } from '@/components/branches/BranchRunCommit'
+import {
+  BranchRunCommit,
+  type IBranchRunCommit,
+} from '@/components/branches/BranchRunCommit'
 import { ComponentType } from '@/components/components/ComponentType'
 import {
   HelmValuesFilesModal,
@@ -167,9 +170,7 @@ export const ComponentConfigCard = ({
             label: 'View config',
             onClick: () => {
               const modal = (
-                <PulumiConfigModal
-                  config={config.pulumi!.config!}
-                />
+                <PulumiConfigModal config={config.pulumi!.config!} />
               )
               addModal(modal)
             },
@@ -183,9 +184,7 @@ export const ComponentConfigCard = ({
             label: 'View env vars',
             onClick: () => {
               const modal = (
-                <PulumiEnvVarsModal
-                  envVars={config.pulumi!.env_vars!}
-                />
+                <PulumiEnvVarsModal envVars={config.pulumi!.env_vars!} />
               )
               addModal(modal)
             },
@@ -256,17 +255,14 @@ export const ComponentConfigCard = ({
           ))}
         </div>
 
-        {operationRoles &&
-          Object.keys(operationRoles).length > 0 && (
-            <div className="flex flex-col gap-2">
-              <Text variant="body" weight="strong" level={5}>
-                Operation Roles
-              </Text>
-              <OperationRolesList
-                operationRoles={operationRoles}
-              />
-            </div>
-          )}
+        {operationRoles && Object.keys(operationRoles).length > 0 && (
+          <div className="flex flex-col gap-2">
+            <Text variant="body" weight="strong" level={5}>
+              Operation Roles
+            </Text>
+            <OperationRolesList operationRoles={operationRoles} />
+          </div>
+        )}
 
         {vcsInfo?.vcsConfig && (
           <div className="pt-6 border-t">
@@ -286,9 +282,7 @@ export const ComponentConfigCard = ({
         )}
 
         {footer && (
-          <div className="pt-6 border-t flex flex-col gap-6">
-            {footer}
-          </div>
+          <div className="pt-6 border-t flex flex-col gap-6">{footer}</div>
         )}
 
         {latestBuild && isImageBuild(latestBuild) ? (
@@ -352,4 +346,3 @@ const LatestResolvedImage = ({ build }: { build: TBuild }) => {
     </div>
   )
 }
-

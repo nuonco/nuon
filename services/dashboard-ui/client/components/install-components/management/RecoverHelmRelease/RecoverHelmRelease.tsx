@@ -62,15 +62,16 @@ export const RecoverHelmReleaseModal = ({
           </Text>
 
           <Text variant="body" theme="neutral">
-            Recovering should only be done when a previous operation left the release
-            {status ? ` in ${status}` : ' part-way through'}. Nothing is deployed — deploy{' '}
-            {componentName} afterwards.
+            Recovering should only be done when a previous operation left the
+            release
+            {status ? ` in ${status}` : ' part-way through'}. Nothing is
+            deployed — deploy {componentName} afterwards.
           </Text>
 
           <Banner theme="warn">
             <Text variant="body">
-              The release is rolled back to the last revision that rolled out. If
-              none ever did, it is removed instead.
+              The release is rolled back to the last revision that rolled out.
+              If none ever did, it is removed instead.
             </Text>
           </Banner>
         </div>

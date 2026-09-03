@@ -118,3 +118,6 @@ sdks/nuon-runner-go/models/cctx_signal_context.go
 
 # worktrees
 .worktrees
+
+# stray build artifact
+/bundle-portal

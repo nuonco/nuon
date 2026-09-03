@@ -63,7 +63,8 @@ export const PhoneHomeModal = ({
       size="lg"
       primaryActionTrigger={{
         children: isSubmitting ? 'Sending...' : 'Send phone home',
-        disabled: isSubmitting || isLoadingStack || !phoneHomeId || !isValidJson,
+        disabled:
+          isSubmitting || isLoadingStack || !phoneHomeId || !isValidJson,
         onClick: handleSubmit,
         variant: 'primary',
       }}
@@ -98,7 +99,8 @@ export const PhoneHomeModal = ({
           <>
             {latestRun?.created_at && (
               <Text variant="subtext" className="text-gray-500">
-                Last phone home: {new Date(latestRun.created_at).toLocaleString()}
+                Last phone home:{' '}
+                {new Date(latestRun.created_at).toLocaleString()}
               </Text>
             )}
 
@@ -172,7 +174,10 @@ export const PhoneHomeModal = ({
                     {result.error.error}
                   </Text>
                   {result.error.description && (
-                    <Text variant="subtext" className="text-red-600 dark:text-red-400">
+                    <Text
+                      variant="subtext"
+                      className="text-red-600 dark:text-red-400"
+                    >
                       {result.error.description}
                     </Text>
                   )}

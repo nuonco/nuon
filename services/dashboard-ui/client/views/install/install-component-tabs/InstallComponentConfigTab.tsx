@@ -70,7 +70,8 @@ export const InstallComponentConfigTab = () => {
             ) : null
           }
           footer={
-            config.component_dependency_ids?.length || dependentIds.length > 0 ? (
+            config.component_dependency_ids?.length ||
+            dependentIds.length > 0 ? (
               <>
                 {config.component_dependency_ids?.length ? (
                   <div className="flex flex-col gap-2">

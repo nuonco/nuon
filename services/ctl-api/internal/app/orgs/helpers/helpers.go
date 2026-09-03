@@ -8,9 +8,11 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/customer_managed/transport"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
 )
@@ -18,42 +20,48 @@ import (
 type Params struct {
 	fx.In
 
-	Cfg                 *internal.Config
-	DB                  *gorm.DB `name:"psql"`
-	Logger              *zap.Logger
-	V                   *validator.Validate
-	AcctClient          *account.Client
-	AuthzClient         *authz.Client
-	RunnersHelpers      *runnershelpers.Helpers
-	QueueClient         *queueclient.Client
-	SlackAutoLinkHelper *autolink.Helper
-	MW                  metrics.Writer
+	Cfg                  *internal.Config
+	DB                   *gorm.DB `name:"psql"`
+	Logger               *zap.Logger
+	V                    *validator.Validate
+	AcctClient           *account.Client
+	AuthzClient          *authz.Client
+	RunnersHelpers       *runnershelpers.Helpers
+	QueueClient          *queueclient.Client
+	SlackAutoLinkHelper  *autolink.Helper
+	MW                   metrics.Writer
+	BlobStore            blobstore.Service
+	CustomerManagedStore transport.Store
 }
 
 type Helpers struct {
-	cfg                 *internal.Config
-	db                  *gorm.DB
-	logger              *zap.Logger
-	v                   *validator.Validate
-	acctClient          *account.Client
-	authzClient         *authz.Client
-	runnersHelpers      *runnershelpers.Helpers
-	queueClient         *queueclient.Client
-	slackAutoLinkHelper *autolink.Helper
-	mw                  metrics.Writer
+	cfg                  *internal.Config
+	db                   *gorm.DB
+	logger               *zap.Logger
+	v                    *validator.Validate
+	acctClient           *account.Client
+	authzClient          *authz.Client
+	runnersHelpers       *runnershelpers.Helpers
+	queueClient          *queueclient.Client
+	slackAutoLinkHelper  *autolink.Helper
+	mw                   metrics.Writer
+	blobStore            blobstore.Service
+	customerManagedStore transport.Store
 }
 
 func New(params Params) *Helpers {
 	return &Helpers{
-		v:                   params.V,
-		cfg:                 params.Cfg,
-		db:                  params.DB,
-		logger:              params.Logger,
-		acctClient:          params.AcctClient,
-		authzClient:         params.AuthzClient,
-		runnersHelpers:      params.RunnersHelpers,
-		queueClient:         params.QueueClient,
-		slackAutoLinkHelper: params.SlackAutoLinkHelper,
-		mw:                  params.MW,
+		v:                    params.V,
+		cfg:                  params.Cfg,
+		db:                   params.DB,
+		logger:               params.Logger,
+		acctClient:           params.AcctClient,
+		authzClient:          params.AuthzClient,
+		runnersHelpers:       params.RunnersHelpers,
+		queueClient:          params.QueueClient,
+		slackAutoLinkHelper:  params.SlackAutoLinkHelper,
+		mw:                   params.MW,
+		blobStore:            params.BlobStore,
+		customerManagedStore: params.CustomerManagedStore,
 	}
 }

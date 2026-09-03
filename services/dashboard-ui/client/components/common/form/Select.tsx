@@ -121,7 +121,11 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
         spaceAbove > spaceBelow
       const available = Math.max(
         120,
-        menuPlacement === 'bottom' ? spaceBelow : openUpward ? spaceAbove : spaceBelow
+        menuPlacement === 'bottom'
+          ? spaceBelow
+          : openUpward
+            ? spaceAbove
+            : spaceBelow
       )
       return {
         top: openUpward ? undefined : rect.bottom + 4,

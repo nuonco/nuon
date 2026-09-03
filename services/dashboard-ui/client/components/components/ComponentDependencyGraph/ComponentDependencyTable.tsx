@@ -72,7 +72,7 @@ export const ComponentDependencyTable = ({
       .sort(
         (a, b) =>
           ROLE_ORDER[a.role] - ROLE_ORDER[b.role] ||
-          a.name.localeCompare(b.name),
+          a.name.localeCompare(b.name)
       )
   }, [nodes, edges])
 
@@ -138,7 +138,7 @@ export const ComponentDependencyTable = ({
         ),
       },
     ],
-    [basePath, currentId, onNavigate],
+    [basePath, currentId, onNavigate]
   )
 
   return (

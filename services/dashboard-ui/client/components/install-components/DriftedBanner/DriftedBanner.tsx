@@ -15,7 +15,11 @@ interface IDriftedBanner {
   installId: string
 }
 
-export const DriftedBanner = ({ drifted, orgId, installId }: IDriftedBanner) => {
+export const DriftedBanner = ({
+  drifted,
+  orgId,
+  installId,
+}: IDriftedBanner) => {
   return (
     <Banner theme="warn">
       <div className="flex items-center gap-8">

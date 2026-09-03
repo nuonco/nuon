@@ -70,7 +70,11 @@ const SettingsTemplate = () => {
     <PageLayout>
       <SectionHeader variant="page" title={`${org?.name} settings`} />
       <PageContent className="border-t" variant="row">
-        <SubNav basePath={`/${org?.id}/settings`} links={navLinks} storageKey="subnav:settings" />
+        <SubNav
+          basePath={`/${org?.id}/settings`}
+          links={navLinks}
+          storageKey="subnav:settings"
+        />
         <div className="flex flex-col flex-1 min-w-0">
           <Outlet />
         </div>

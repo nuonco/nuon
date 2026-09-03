@@ -2,7 +2,10 @@ import { useMemo } from 'react'
 import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { useResourceSSE } from '@/hooks/use-resource-sse'
 import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
-import { createSSEQueryListener, type TSSEListenerMap } from '@/lib/sse-listeners'
+import {
+  createSSEQueryListener,
+  type TSSEListenerMap,
+} from '@/lib/sse-listeners'
 
 const FALLBACK_POLL_MS = 4000
 const FINISHED_POLL_MS = 30_000
@@ -55,7 +58,11 @@ export function useSSEResourceQuery<TData>({
     [queryClient, eventName, onPrimaryEvent, extraListeners, ...queryKey]
   )
 
-  const { connected: sseConnected, suspended: sseSuspended, disconnect } = useResourceSSE({
+  const {
+    connected: sseConnected,
+    suspended: sseSuspended,
+    disconnect,
+  } = useResourceSSE({
     url: sseUrl,
     enabled: sseEnabled ?? shouldPoll,
     listeners,

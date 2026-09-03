@@ -33,7 +33,11 @@ export const AutoApproveToggle = () => {
 
   if (isManagedByConfig) {
     return (
-      <Tooltip tipContent={MANAGED_BY_CONFIG_TIP} position="left" tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs">
+      <Tooltip
+        tipContent={MANAGED_BY_CONFIG_TIP}
+        position="left"
+        tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs"
+      >
         {toggle}
       </Tooltip>
     )

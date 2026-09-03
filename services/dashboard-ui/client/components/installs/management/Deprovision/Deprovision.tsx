@@ -27,13 +27,7 @@ export const DeprovisionModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-          theme="error"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
           <Icon variant="ArrowDownIcon" size="24" />
           Deprovision install?
         </Text>
@@ -65,7 +59,8 @@ export const DeprovisionModal = ({
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Text variant="body" theme="neutral">
-              Deprovisioning {installName} will remove it from the cloud account.
+              Deprovisioning {installName} will remove it from the cloud
+              account.
             </Text>
           </div>
 
@@ -74,7 +69,10 @@ export const DeprovisionModal = ({
               This will create a workflow that attempts to:
             </Text>
             <ul className="flex flex-col gap-1 list-disc pl-6 text-sm text-cool-grey-700 dark:text-cool-grey-300">
-              <li>Teardown each install component according to the dependency order.</li>
+              <li>
+                Teardown each install component according to the dependency
+                order.
+              </li>
               <li>Teardown the install sandbox</li>
             </ul>
           </div>
@@ -94,13 +92,18 @@ export const DeprovisionModal = ({
               value={confirmName}
               onChange={(e) => setConfirmName(e.target.value)}
               error={confirmName.length > 0 && !isConfirmValid}
-              errorMessage={confirmName.length > 0 && !isConfirmValid ? "Install name doesn't match" : undefined}
+              errorMessage={
+                confirmName.length > 0 && !isConfirmValid
+                  ? "Install name doesn't match"
+                  : undefined
+              }
             />
           </div>
 
           <Banner theme="warn">
             <Text variant="body">
-              <strong>Important:</strong> After this workflow completes, manually teardown the install stack.
+              <strong>Important:</strong> After this workflow completes,
+              manually teardown the install stack.
             </Text>
           </Banner>
         </div>

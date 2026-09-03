@@ -173,9 +173,7 @@ export const InstallRoleDetail = ({
           </LabeledValue>
           <LabeledValue label="Name">{role.name}</LabeledValue>
           <LabeledValue label="Type">
-            <Badge size="sm">
-              {humanize(role.type)}
-            </Badge>
+            <Badge size="sm">{humanize(role.type)}</Badge>
           </LabeledValue>
           <LabeledValue label="Status">
             <Status status={installRole.provisioned ? 'active' : 'inactive'}>

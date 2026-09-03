@@ -41,9 +41,7 @@ export const AppRoleDetail = ({ role }: { role: TAppRole }) => {
           </LabeledValue>
           <LabeledValue label="Name">{role?.name}</LabeledValue>
           <LabeledValue label="Type">
-            <Badge size="sm">
-              {humanize(role?.type)}
-            </Badge>
+            <Badge size="sm">{humanize(role?.type)}</Badge>
           </LabeledValue>
         </div>
       </Card>

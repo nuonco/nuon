@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from 'react'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import type { TTheme } from '@/types'
+import type { TTheme } from '@/types/dashboard.types'
 import { cn } from '@/utils/classnames'
 
 export type TBannerTheme = TTheme

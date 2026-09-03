@@ -71,7 +71,12 @@ export function InstallProvider({
     }
   }, [error])
 
-  if (error && !install) return errorElement !== undefined ? <>{errorElement}</> : <ProviderError error={error} />
+  if (error && !install)
+    return errorElement !== undefined ? (
+      <>{errorElement}</>
+    ) : (
+      <ProviderError error={error} />
+    )
 
   if (isLoading || !install) return loadingElement
 

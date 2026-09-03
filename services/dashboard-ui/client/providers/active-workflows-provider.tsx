@@ -15,19 +15,11 @@ export const ActiveWorkflowsContext = createContext<
   ActiveWorkflowsContextValue | undefined
 >(undefined)
 
-export function ActiveWorkflowsProvider({
-  children,
-}: {
-  children: ReactNode
-}) {
+export function ActiveWorkflowsProvider({ children }: { children: ReactNode }) {
   const { org } = useOrg()
   const { sseConnected } = useOrgStatusSSE()
 
-  const {
-    data,
-    isLoading,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['active-workflows', org.id],
     queryFn: () =>

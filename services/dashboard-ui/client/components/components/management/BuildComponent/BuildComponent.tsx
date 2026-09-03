@@ -35,12 +35,7 @@ export const BuildComponentModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="HammerIcon" size="24" />
           Build {component.name} component?
         </Text>

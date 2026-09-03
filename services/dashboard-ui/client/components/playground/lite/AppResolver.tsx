@@ -9,9 +9,7 @@ export const AppResolver = () => {
     <Navigate
       replace
       to={
-        branch
-          ? `/apps/${appId}/branches/${branch.id}`
-          : `/apps/${appId}/setup`
+        branch ? `/apps/${appId}/branches/${branch.id}` : `/apps/${appId}/setup`
       }
     />
   )

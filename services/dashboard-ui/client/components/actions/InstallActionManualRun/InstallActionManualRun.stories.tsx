@@ -14,7 +14,12 @@ const mockAction = {
   configs: [
     {
       steps: [
-        { env_vars: { API_URL: 'https://api.example.com', NODE_ENV: 'production' } },
+        {
+          env_vars: {
+            API_URL: 'https://api.example.com',
+            NODE_ENV: 'production',
+          },
+        },
         { env_vars: { DB_HOST: 'db.example.com' } },
       ],
     },
@@ -48,7 +53,11 @@ export const WithError = () => (
     <InstallActionManualRunModal
       action={mockAction}
       isLoading={false}
-      error={{ error: 'Unable to run deploy-step', description: '', user_error: true }}
+      error={{
+        error: 'Unable to run deploy-step',
+        description: '',
+        user_error: true,
+      }}
       onSubmit={noop}
       roleSelector={<Text variant="subtext">Role selector placeholder</Text>}
     />

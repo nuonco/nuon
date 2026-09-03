@@ -1,4 +1,10 @@
-import { createContext, useCallback, useEffect, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react'
 import { DateTime } from 'luxon'
 
 export type TConsentStatus = 'unknown' | 'granted' | 'denied'

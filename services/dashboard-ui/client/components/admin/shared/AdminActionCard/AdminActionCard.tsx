@@ -11,16 +11,45 @@ export interface IAdminActionCard {
 }
 
 const getActionIcon = (title: string, variant: IAdminActionCard['variant']) => {
-  if (title.toLowerCase().includes('add') || title.toLowerCase().includes('support user')) return 'UserPlusIcon'
-  if (title.toLowerCase().includes('remove') || title.toLowerCase().includes('support user')) return 'UserMinusIcon'
+  if (
+    title.toLowerCase().includes('add') ||
+    title.toLowerCase().includes('support user')
+  )
+    return 'UserPlusIcon'
+  if (
+    title.toLowerCase().includes('remove') ||
+    title.toLowerCase().includes('support user')
+  )
+    return 'UserMinusIcon'
   if (title.toLowerCase().includes('reprovision')) return 'ArrowClockwiseIcon'
-  if (title.toLowerCase().includes('restart')) return 'ArrowCounterClockwiseIcon'
-  if (title.toLowerCase().includes('teardown') || title.toLowerCase().includes('force')) return 'TrashIcon'
-  if (title.toLowerCase().includes('shutdown') && title.toLowerCase().includes('graceful')) return 'PowerIcon'
-  if (title.toLowerCase().includes('shutdown') || title.toLowerCase().includes('stop')) return 'StopIcon'
-  if (title.toLowerCase().includes('invalidate') || title.toLowerCase().includes('token')) return 'KeyIcon'
+  if (title.toLowerCase().includes('restart'))
+    return 'ArrowCounterClockwiseIcon'
+  if (
+    title.toLowerCase().includes('teardown') ||
+    title.toLowerCase().includes('force')
+  )
+    return 'TrashIcon'
+  if (
+    title.toLowerCase().includes('shutdown') &&
+    title.toLowerCase().includes('graceful')
+  )
+    return 'PowerIcon'
+  if (
+    title.toLowerCase().includes('shutdown') ||
+    title.toLowerCase().includes('stop')
+  )
+    return 'StopIcon'
+  if (
+    title.toLowerCase().includes('invalidate') ||
+    title.toLowerCase().includes('token')
+  )
+    return 'KeyIcon'
   if (title.toLowerCase().includes('debug')) return 'BugIcon'
-  if (title.toLowerCase().includes('update') || title.toLowerCase().includes('sandbox')) return 'UploadIcon'
+  if (
+    title.toLowerCase().includes('update') ||
+    title.toLowerCase().includes('sandbox')
+  )
+    return 'UploadIcon'
 
   switch (variant) {
     case 'warning':

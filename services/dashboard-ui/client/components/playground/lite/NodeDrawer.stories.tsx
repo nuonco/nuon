@@ -5,5 +5,9 @@ export default {
 }
 
 export const Default = () => (
-  <NodeDrawer title="api" path="/apps/app-01/branches/br-main/components/cmp-01" onClose={() => {}} />
+  <NodeDrawer
+    title="api"
+    path="/apps/app-01/branches/br-main/components/cmp-01"
+    onClose={() => {}}
+  />
 )

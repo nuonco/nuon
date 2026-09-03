@@ -74,7 +74,13 @@ const runningPod = ({
   res('Pod', '', {
     apiVersion: 'v1',
     kind: 'Pod',
-    metadata: meta(name, namespace, days, { app, 'pod-template-hash': name.split('-').at(-2) ?? '' }, owner),
+    metadata: meta(
+      name,
+      namespace,
+      days,
+      { app, 'pod-template-hash': name.split('-').at(-2) ?? '' },
+      owner
+    ),
     spec: {
       nodeName: node,
       containers: [{ name: app, image }],
@@ -102,14 +108,21 @@ const mockResources: TInstallResource[] = [
   res('Deployment', 'apps', {
     apiVersion: 'apps/v1',
     kind: 'Deployment',
-    metadata: meta('web', 'acme-shop', 42, { app: 'web', 'app.kubernetes.io/part-of': 'acme-shop' }),
+    metadata: meta('web', 'acme-shop', 42, {
+      app: 'web',
+      'app.kubernetes.io/part-of': 'acme-shop',
+    }),
     spec: {
       replicas: 3,
       selector: { matchLabels: { app: 'web' } },
       template: {
         spec: {
           containers: [
-            { name: 'web', image: 'ghcr.io/acme/shop-web:1.24.3', ports: [{ containerPort: 8080 }] },
+            {
+              name: 'web',
+              image: 'ghcr.io/acme/shop-web:1.24.3',
+              ports: [{ containerPort: 8080 }],
+            },
           ],
         },
       },
@@ -120,15 +133,28 @@ const mockResources: TInstallResource[] = [
       updatedReplicas: 3,
       availableReplicas: 3,
       conditions: [
-        { type: 'Available', status: 'True', reason: 'MinimumReplicasAvailable', message: 'Deployment has minimum availability.' },
-        { type: 'Progressing', status: 'True', reason: 'NewReplicaSetAvailable', message: 'ReplicaSet "web-6f9d54c8b7" has successfully progressed.' },
+        {
+          type: 'Available',
+          status: 'True',
+          reason: 'MinimumReplicasAvailable',
+          message: 'Deployment has minimum availability.',
+        },
+        {
+          type: 'Progressing',
+          status: 'True',
+          reason: 'NewReplicaSetAvailable',
+          message: 'ReplicaSet "web-6f9d54c8b7" has successfully progressed.',
+        },
       ],
     },
   }),
   res('Deployment', 'apps', {
     apiVersion: 'apps/v1',
     kind: 'Deployment',
-    metadata: meta('api', 'acme-shop', 42, { app: 'api', 'app.kubernetes.io/part-of': 'acme-shop' }),
+    metadata: meta('api', 'acme-shop', 42, {
+      app: 'api',
+      'app.kubernetes.io/part-of': 'acme-shop',
+    }),
     spec: {
       replicas: 3,
       selector: { matchLabels: { app: 'api' } },
@@ -144,8 +170,18 @@ const mockResources: TInstallResource[] = [
       updatedReplicas: 3,
       availableReplicas: 2,
       conditions: [
-        { type: 'Available', status: 'False', reason: 'MinimumReplicasUnavailable', message: 'Deployment does not have minimum availability.' },
-        { type: 'Progressing', status: 'True', reason: 'ReplicaSetUpdated', message: 'ReplicaSet "api-7c4b9f6d55" is progressing.' },
+        {
+          type: 'Available',
+          status: 'False',
+          reason: 'MinimumReplicasUnavailable',
+          message: 'Deployment does not have minimum availability.',
+        },
+        {
+          type: 'Progressing',
+          status: 'True',
+          reason: 'ReplicaSetUpdated',
+          message: 'ReplicaSet "api-7c4b9f6d55" is progressing.',
+        },
       ],
     },
   }),
@@ -158,7 +194,9 @@ const mockResources: TInstallResource[] = [
       selector: { matchLabels: { app: 'worker' } },
       template: {
         spec: {
-          containers: [{ name: 'worker', image: 'ghcr.io/acme/shop-worker:2.1.0' }],
+          containers: [
+            { name: 'worker', image: 'ghcr.io/acme/shop-worker:2.1.0' },
+          ],
         },
       },
     },
@@ -168,7 +206,12 @@ const mockResources: TInstallResource[] = [
       updatedReplicas: 1,
       availableReplicas: 1,
       conditions: [
-        { type: 'Available', status: 'True', reason: 'MinimumReplicasAvailable', message: 'Deployment has minimum availability.' },
+        {
+          type: 'Available',
+          status: 'True',
+          reason: 'MinimumReplicasAvailable',
+          message: 'Deployment has minimum availability.',
+        },
       ],
     },
   }),
@@ -205,7 +248,9 @@ const mockResources: TInstallResource[] = [
         selector: { matchLabels: { app: 'log-agent' } },
         template: {
           spec: {
-            containers: [{ name: 'agent', image: 'public.ecr.aws/acme/log-agent:0.9.2' }],
+            containers: [
+              { name: 'agent', image: 'public.ecr.aws/acme/log-agent:0.9.2' },
+            ],
           },
         },
       },
@@ -222,14 +267,26 @@ const mockResources: TInstallResource[] = [
   res('ReplicaSet', 'apps', {
     apiVersion: 'apps/v1',
     kind: 'ReplicaSet',
-    metadata: meta('web-6f9d54c8b7', 'acme-shop', 3, { app: 'web' }, { kind: 'Deployment', name: 'web' }),
+    metadata: meta(
+      'web-6f9d54c8b7',
+      'acme-shop',
+      3,
+      { app: 'web' },
+      { kind: 'Deployment', name: 'web' }
+    ),
     spec: { replicas: 3 },
     status: { replicas: 3, readyReplicas: 3, availableReplicas: 3 },
   }),
   res('ReplicaSet', 'apps', {
     apiVersion: 'apps/v1',
     kind: 'ReplicaSet',
-    metadata: meta('api-7c4b9f6d55', 'acme-shop', 1, { app: 'api' }, { kind: 'Deployment', name: 'api' }),
+    metadata: meta(
+      'api-7c4b9f6d55',
+      'acme-shop',
+      1,
+      { app: 'api' },
+      { kind: 'Deployment', name: 'api' }
+    ),
     spec: { replicas: 3 },
     status: { replicas: 3, readyReplicas: 2, availableReplicas: 2 },
   }),
@@ -244,20 +301,69 @@ const mockResources: TInstallResource[] = [
       startTime: NOW,
       completionTime: NOW,
       conditions: [
-        { type: 'Complete', status: 'True', reason: 'CompletionsReached', message: 'Reached expected number of succeeded pods' },
+        {
+          type: 'Complete',
+          status: 'True',
+          reason: 'CompletionsReached',
+          message: 'Reached expected number of succeeded pods',
+        },
       ],
     },
   }),
 
-  runningPod({ name: 'web-6f9d54c8b7-x2lqp', namespace: 'acme-shop', app: 'web', image: 'ghcr.io/acme/shop-web:1.24.3', node: 'ip-10-0-12-41.us-west-2.compute.internal', days: 3, owner: { kind: 'ReplicaSet', name: 'web-6f9d54c8b7' } }),
-  runningPod({ name: 'web-6f9d54c8b7-m8dwt', namespace: 'acme-shop', app: 'web', image: 'ghcr.io/acme/shop-web:1.24.3', node: 'ip-10-0-14-102.us-west-2.compute.internal', days: 3, owner: { kind: 'ReplicaSet', name: 'web-6f9d54c8b7' } }),
-  runningPod({ name: 'web-6f9d54c8b7-kv4njis', namespace: 'acme-shop', app: 'web', image: 'ghcr.io/acme/shop-web:1.24.3', node: 'ip-10-0-15-77.us-west-2.compute.internal', days: 3, owner: { kind: 'ReplicaSet', name: 'web-6f9d54c8b7' } }),
-  runningPod({ name: 'api-7c4b9f6d55-p9qzw', namespace: 'acme-shop', app: 'api', image: 'ghcr.io/acme/shop-api:2.1.0', node: 'ip-10-0-12-41.us-west-2.compute.internal', days: 1, owner: { kind: 'ReplicaSet', name: 'api-7c4b9f6d55' } }),
-  runningPod({ name: 'api-7c4b9f6d55-h3kfm', namespace: 'acme-shop', app: 'api', image: 'ghcr.io/acme/shop-api:2.1.0', node: 'ip-10-0-14-102.us-west-2.compute.internal', days: 1, restarts: 2, owner: { kind: 'ReplicaSet', name: 'api-7c4b9f6d55' } }),
+  runningPod({
+    name: 'web-6f9d54c8b7-x2lqp',
+    namespace: 'acme-shop',
+    app: 'web',
+    image: 'ghcr.io/acme/shop-web:1.24.3',
+    node: 'ip-10-0-12-41.us-west-2.compute.internal',
+    days: 3,
+    owner: { kind: 'ReplicaSet', name: 'web-6f9d54c8b7' },
+  }),
+  runningPod({
+    name: 'web-6f9d54c8b7-m8dwt',
+    namespace: 'acme-shop',
+    app: 'web',
+    image: 'ghcr.io/acme/shop-web:1.24.3',
+    node: 'ip-10-0-14-102.us-west-2.compute.internal',
+    days: 3,
+    owner: { kind: 'ReplicaSet', name: 'web-6f9d54c8b7' },
+  }),
+  runningPod({
+    name: 'web-6f9d54c8b7-kv4njis',
+    namespace: 'acme-shop',
+    app: 'web',
+    image: 'ghcr.io/acme/shop-web:1.24.3',
+    node: 'ip-10-0-15-77.us-west-2.compute.internal',
+    days: 3,
+    owner: { kind: 'ReplicaSet', name: 'web-6f9d54c8b7' },
+  }),
+  runningPod({
+    name: 'api-7c4b9f6d55-p9qzw',
+    namespace: 'acme-shop',
+    app: 'api',
+    image: 'ghcr.io/acme/shop-api:2.1.0',
+    node: 'ip-10-0-12-41.us-west-2.compute.internal',
+    days: 1,
+    owner: { kind: 'ReplicaSet', name: 'api-7c4b9f6d55' },
+  }),
+  runningPod({
+    name: 'api-7c4b9f6d55-h3kfm',
+    namespace: 'acme-shop',
+    app: 'api',
+    image: 'ghcr.io/acme/shop-api:2.1.0',
+    node: 'ip-10-0-14-102.us-west-2.compute.internal',
+    days: 1,
+    restarts: 2,
+    owner: { kind: 'ReplicaSet', name: 'api-7c4b9f6d55' },
+  }),
   res('Pod', '', {
     apiVersion: 'v1',
     kind: 'Pod',
-    metadata: meta('api-7c4b9f6d55-t6vrb', 'acme-shop', 1, { app: 'api', 'pod-template-hash': '7c4b9f6d55' }),
+    metadata: meta('api-7c4b9f6d55-t6vrb', 'acme-shop', 1, {
+      app: 'api',
+      'pod-template-hash': '7c4b9f6d55',
+    }),
     spec: {
       nodeName: 'ip-10-0-15-77.us-west-2.compute.internal',
       containers: [{ name: 'api', image: 'ghcr.io/acme/shop-api:2.1.0' }],
@@ -266,7 +372,12 @@ const mockResources: TInstallResource[] = [
       phase: 'Running',
       podIP: '10.0.15.201',
       conditions: [
-        { type: 'Ready', status: 'False', reason: 'ContainersNotReady', message: 'containers with unready status: [api]' },
+        {
+          type: 'Ready',
+          status: 'False',
+          reason: 'ContainersNotReady',
+          message: 'containers with unready status: [api]',
+        },
       ],
       containerStatuses: [
         {
@@ -277,17 +388,50 @@ const mockResources: TInstallResource[] = [
           state: {
             waiting: {
               reason: 'CrashLoopBackOff',
-              message: 'back-off 5m0s restarting failed container=api pod=api-7c4b9f6d55-t6vrb_acme-shop',
+              message:
+                'back-off 5m0s restarting failed container=api pod=api-7c4b9f6d55-t6vrb_acme-shop',
             },
           },
         },
       ],
     },
   }),
-  runningPod({ name: 'worker-59fd7b8c44-q2mxs', namespace: 'acme-shop', app: 'worker', image: 'ghcr.io/acme/shop-worker:2.1.0', node: 'ip-10-0-12-41.us-west-2.compute.internal', days: 2, owner: { kind: 'ReplicaSet', name: 'worker-59fd7b8c44' } }),
-  runningPod({ name: 'postgres-0', namespace: 'acme-shop', app: 'postgres', image: 'postgres:16.4', node: 'ip-10-0-14-102.us-west-2.compute.internal', days: 42, owner: { kind: 'StatefulSet', name: 'postgres' } }),
-  runningPod({ name: 'log-agent-8fkzt', namespace: 'observability', app: 'log-agent', image: 'public.ecr.aws/acme/log-agent:0.9.2', node: 'ip-10-0-12-41.us-west-2.compute.internal', days: 90, owner: { kind: 'DaemonSet', name: 'log-agent' } }),
-  runningPod({ name: 'log-agent-vw2pj', namespace: 'observability', app: 'log-agent', image: 'public.ecr.aws/acme/log-agent:0.9.2', node: 'ip-10-0-14-102.us-west-2.compute.internal', days: 90, owner: { kind: 'DaemonSet', name: 'log-agent' } }),
+  runningPod({
+    name: 'worker-59fd7b8c44-q2mxs',
+    namespace: 'acme-shop',
+    app: 'worker',
+    image: 'ghcr.io/acme/shop-worker:2.1.0',
+    node: 'ip-10-0-12-41.us-west-2.compute.internal',
+    days: 2,
+    owner: { kind: 'ReplicaSet', name: 'worker-59fd7b8c44' },
+  }),
+  runningPod({
+    name: 'postgres-0',
+    namespace: 'acme-shop',
+    app: 'postgres',
+    image: 'postgres:16.4',
+    node: 'ip-10-0-14-102.us-west-2.compute.internal',
+    days: 42,
+    owner: { kind: 'StatefulSet', name: 'postgres' },
+  }),
+  runningPod({
+    name: 'log-agent-8fkzt',
+    namespace: 'observability',
+    app: 'log-agent',
+    image: 'public.ecr.aws/acme/log-agent:0.9.2',
+    node: 'ip-10-0-12-41.us-west-2.compute.internal',
+    days: 90,
+    owner: { kind: 'DaemonSet', name: 'log-agent' },
+  }),
+  runningPod({
+    name: 'log-agent-vw2pj',
+    namespace: 'observability',
+    app: 'log-agent',
+    image: 'public.ecr.aws/acme/log-agent:0.9.2',
+    node: 'ip-10-0-14-102.us-west-2.compute.internal',
+    days: 90,
+    owner: { kind: 'DaemonSet', name: 'log-agent' },
+  }),
 
   res('Service', '', {
     apiVersion: 'v1',
@@ -334,8 +478,16 @@ const mockResources: TInstallResource[] = [
           host: 'shop.acme.dev',
           http: {
             paths: [
-              { path: '/', pathType: 'Prefix', backend: { service: { name: 'web', port: { number: 80 } } } },
-              { path: '/api', pathType: 'Prefix', backend: { service: { name: 'api', port: { number: 80 } } } },
+              {
+                path: '/',
+                pathType: 'Prefix',
+                backend: { service: { name: 'web', port: { number: 80 } } },
+              },
+              {
+                path: '/api',
+                pathType: 'Prefix',
+                backend: { service: { name: 'api', port: { number: 80 } } },
+              },
             ],
           },
         },
@@ -344,7 +496,9 @@ const mockResources: TInstallResource[] = [
     },
     status: {
       loadBalancer: {
-        ingress: [{ hostname: 'k8s-acmeshop-1f2e3d4c.us-west-2.elb.amazonaws.com' }],
+        ingress: [
+          { hostname: 'k8s-acmeshop-1f2e3d4c.us-west-2.elb.amazonaws.com' },
+        ],
       },
     },
   }),
@@ -380,7 +534,12 @@ const mockResources: TInstallResource[] = [
       notAfter: '2026-09-29T00:00:00Z',
       renewalTime: '2026-08-30T00:00:00Z',
       conditions: [
-        { type: 'Ready', status: 'True', reason: 'Ready', message: 'Certificate is up to date and has not expired' },
+        {
+          type: 'Ready',
+          status: 'True',
+          reason: 'Ready',
+          message: 'Certificate is up to date and has not expired',
+        },
       ],
     },
   }),
@@ -391,17 +550,31 @@ const mockResources: TInstallResource[] = [
     metadata: meta('shop-api-secrets', 'acme-shop', 42, { app: 'api' }),
     spec: {
       refreshInterval: '1h',
-      secretStoreRef: { name: 'aws-secrets-manager', kind: 'ClusterSecretStore' },
+      secretStoreRef: {
+        name: 'aws-secrets-manager',
+        kind: 'ClusterSecretStore',
+      },
       target: { name: 'shop-api-secrets' },
       data: [
-        { secretKey: 'DATABASE_URL', remoteRef: { key: 'prod/acme-shop/database-url' } },
-        { secretKey: 'STRIPE_KEY', remoteRef: { key: 'prod/acme-shop/stripe-key' } },
+        {
+          secretKey: 'DATABASE_URL',
+          remoteRef: { key: 'prod/acme-shop/database-url' },
+        },
+        {
+          secretKey: 'STRIPE_KEY',
+          remoteRef: { key: 'prod/acme-shop/stripe-key' },
+        },
       ],
     },
     status: {
       refreshTime: NOW,
       conditions: [
-        { type: 'Ready', status: 'True', reason: 'SecretSynced', message: 'secret synced' },
+        {
+          type: 'Ready',
+          status: 'True',
+          reason: 'SecretSynced',
+          message: 'secret synced',
+        },
       ],
     },
   }),
@@ -412,13 +585,27 @@ const mockResources: TInstallResource[] = [
     metadata: meta('shop-worker-secrets', 'acme-shop', 42, { app: 'worker' }),
     spec: {
       refreshInterval: '1h',
-      secretStoreRef: { name: 'aws-secrets-manager', kind: 'ClusterSecretStore' },
+      secretStoreRef: {
+        name: 'aws-secrets-manager',
+        kind: 'ClusterSecretStore',
+      },
       target: { name: 'shop-worker-secrets' },
-      data: [{ secretKey: 'QUEUE_URL', remoteRef: { key: 'prod/acme-shop/queue-url' } }],
+      data: [
+        {
+          secretKey: 'QUEUE_URL',
+          remoteRef: { key: 'prod/acme-shop/queue-url' },
+        },
+      ],
     },
     status: {
       conditions: [
-        { type: 'Ready', status: 'False', reason: 'SecretSyncedError', message: 'could not get secret data from provider: AccessDeniedException' },
+        {
+          type: 'Ready',
+          status: 'False',
+          reason: 'SecretSyncedError',
+          message:
+            'could not get secret data from provider: AccessDeniedException',
+        },
       ],
     },
   }),

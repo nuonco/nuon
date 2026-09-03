@@ -50,7 +50,9 @@ describe('install-utils', () => {
   describe('getInputDisplayName', () => {
     test('decodes helm_values override input names', () => {
       expect(
-        getInputDisplayName('nuon_component_override_v1_helm_values_77686f616d69')
+        getInputDisplayName(
+          'nuon_component_override_v1_helm_values_77686f616d69'
+        )
       ).toBe('components.whoami.helm_values')
     })
 
@@ -78,7 +80,9 @@ describe('install-utils', () => {
 
     test('decodes component names containing dashes', () => {
       expect(
-        getInputDisplayName('nuon_component_override_v1_helm_values_666f6f2d626172')
+        getInputDisplayName(
+          'nuon_component_override_v1_helm_values_666f6f2d626172'
+        )
       ).toBe('components.foo-bar.helm_values')
     })
 
@@ -114,9 +118,7 @@ describe('install-utils', () => {
       expect(getInstallRunnerStatusTitle('deprovisioned')).toBe(
         'Runner is deprovisioned'
       )
-      expect(getInstallRunnerStatusTitle('disabled')).toBe(
-        'Runner is disabled'
-      )
+      expect(getInstallRunnerStatusTitle('disabled')).toBe('Runner is disabled')
       expect(getInstallRunnerStatusTitle('reprovisioning')).toBe(
         'Runner is reprovisioning'
       )
@@ -317,8 +319,14 @@ describe('install-utils', () => {
   describe('groupComponentOverrideInputs', () => {
     test('merges enabled + tf_vars for the same component into one card', () => {
       const cards = groupComponentOverrideInputs([
-        { name: `nuon_component_override_v1_tf_vars_${HEX.certificate}`, index: 3 },
-        { name: `nuon_component_override_v1_enabled_${HEX.certificate}`, index: 4 },
+        {
+          name: `nuon_component_override_v1_tf_vars_${HEX.certificate}`,
+          index: 3,
+        },
+        {
+          name: `nuon_component_override_v1_enabled_${HEX.certificate}`,
+          index: 4,
+        },
       ])
 
       expect(cards).toHaveLength(1)
@@ -331,7 +339,10 @@ describe('install-utils', () => {
 
     test('non-toggleable component (config only) has no enabled input', () => {
       const cards = groupComponentOverrideInputs([
-        { name: `nuon_component_override_v1_tf_vars_${HEX.certificate}`, index: 1 },
+        {
+          name: `nuon_component_override_v1_tf_vars_${HEX.certificate}`,
+          index: 1,
+        },
       ])
 
       expect(cards).toHaveLength(1)
@@ -354,7 +365,10 @@ describe('install-utils', () => {
 
     test('helm_values maps to helm_chart type', () => {
       const cards = groupComponentOverrideInputs([
-        { name: `nuon_component_override_v1_helm_values_${HEX.whoami}`, index: 1 },
+        {
+          name: `nuon_component_override_v1_helm_values_${HEX.whoami}`,
+          index: 1,
+        },
       ])
 
       expect(cards[0].configKind).toBe('helm_values')
@@ -364,7 +378,10 @@ describe('install-utils', () => {
     test('ignores non-override inputs', () => {
       const cards = groupComponentOverrideInputs([
         { name: 'domain', index: 0 },
-        { name: `nuon_component_override_v1_enabled_${HEX.certificate}`, index: 1 },
+        {
+          name: `nuon_component_override_v1_enabled_${HEX.certificate}`,
+          index: 1,
+        },
       ])
 
       expect(cards).toHaveLength(1)
@@ -373,12 +390,24 @@ describe('install-utils', () => {
 
     test('orders cards by each component earliest input index', () => {
       const cards = groupComponentOverrideInputs([
-        { name: `nuon_component_override_v1_enabled_${HEX.api_gateway}`, index: 10 },
-        { name: `nuon_component_override_v1_tf_vars_${HEX.certificate}`, index: 2 },
-        { name: `nuon_component_override_v1_tf_vars_${HEX.api_gateway}`, index: 9 },
+        {
+          name: `nuon_component_override_v1_enabled_${HEX.api_gateway}`,
+          index: 10,
+        },
+        {
+          name: `nuon_component_override_v1_tf_vars_${HEX.certificate}`,
+          index: 2,
+        },
+        {
+          name: `nuon_component_override_v1_tf_vars_${HEX.api_gateway}`,
+          index: 9,
+        },
       ])
 
-      expect(cards.map((c) => c.component)).toEqual(['certificate', 'api_gateway'])
+      expect(cards.map((c) => c.component)).toEqual([
+        'certificate',
+        'api_gateway',
+      ])
     })
   })
 })

@@ -27,9 +27,18 @@ export const InstallAdhocActionModal = withInstallProvider(RunAdhocActionModal)
 export const InstallEditInputsModal = withInstallProvider(EditInputsFormModal)
 export const InstallSyncSecretsModal = withInstallProvider(SyncSecretsModal)
 export const InstallReprovisionModal = withInstallProvider(ReprovisionModal)
-export const InstallReprovisionStackModal = withInstallProvider(ReprovisionStackModal)
-export const InstallReprovisionSandboxModal = withInstallProvider(ReprovisionSandboxModal)
-export const InstallDeployAllComponentsModal = withInstallProvider(DeployAllComponentsModal)
-export const InstallViewCurrentInputsModal = withInstallProvider(ViewCurrentInputsModal)
+export const InstallReprovisionStackModal = withInstallProvider(
+  ReprovisionStackModal
+)
+export const InstallReprovisionSandboxModal = withInstallProvider(
+  ReprovisionSandboxModal
+)
+export const InstallDeployAllComponentsModal = withInstallProvider(
+  DeployAllComponentsModal
+)
+export const InstallViewCurrentInputsModal = withInstallProvider(
+  ViewCurrentInputsModal
+)
 export const InstallViewStateModal = withInstallProvider(ViewStateModal)
-export const InstallEditStackOverridesModal = withInstallProvider(EditStackOverrides)
+export const InstallEditStackOverridesModal =
+  withInstallProvider(EditStackOverrides)

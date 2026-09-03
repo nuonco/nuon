@@ -77,13 +77,38 @@ export const KubernetesMetadata = () => (
 export const SecurityGroupRules = () => (
   <TreeDiffValue
     before={[
-      { from_port: 80, to_port: 80, protocol: 'tcp', cidr_blocks: ['0.0.0.0/0'] },
-      { from_port: 443, to_port: 443, protocol: 'tcp', cidr_blocks: ['0.0.0.0/0'] },
+      {
+        from_port: 80,
+        to_port: 80,
+        protocol: 'tcp',
+        cidr_blocks: ['0.0.0.0/0'],
+      },
+      {
+        from_port: 443,
+        to_port: 443,
+        protocol: 'tcp',
+        cidr_blocks: ['0.0.0.0/0'],
+      },
     ]}
     after={[
-      { from_port: 80, to_port: 80, protocol: 'tcp', cidr_blocks: ['10.0.0.0/8'] },
-      { from_port: 443, to_port: 443, protocol: 'tcp', cidr_blocks: ['10.0.0.0/8'] },
-      { from_port: 8080, to_port: 8080, protocol: 'tcp', cidr_blocks: ['10.0.0.0/8'] },
+      {
+        from_port: 80,
+        to_port: 80,
+        protocol: 'tcp',
+        cidr_blocks: ['10.0.0.0/8'],
+      },
+      {
+        from_port: 443,
+        to_port: 443,
+        protocol: 'tcp',
+        cidr_blocks: ['10.0.0.0/8'],
+      },
+      {
+        from_port: 8080,
+        to_port: 8080,
+        protocol: 'tcp',
+        cidr_blocks: ['10.0.0.0/8'],
+      },
     ]}
   />
 )
@@ -94,8 +119,18 @@ export const CreateWithComplexValue = () => (
     after={{
       cluster_config: {
         node_pools: [
-          { name: 'default', min_size: 1, max_size: 5, instance_type: 't3.medium' },
-          { name: 'gpu', min_size: 0, max_size: 2, instance_type: 'p3.2xlarge' },
+          {
+            name: 'default',
+            min_size: 1,
+            max_size: 5,
+            instance_type: 't3.medium',
+          },
+          {
+            name: 'gpu',
+            min_size: 0,
+            max_size: 2,
+            instance_type: 'p3.2xlarge',
+          },
         ],
         networking: {
           vpc_id: 'vpc-abc123',
@@ -225,20 +260,12 @@ export const TagsNullToEmpty = () => (
 export const UnchangedComplexValue = () => (
   <TreeDiffValue
     before={{
-      ingress: [
-        { from_port: 443, to_port: 443, protocol: 'tcp' },
-      ],
-      egress: [
-        { from_port: 0, to_port: 0, protocol: '-1' },
-      ],
+      ingress: [{ from_port: 443, to_port: 443, protocol: 'tcp' }],
+      egress: [{ from_port: 0, to_port: 0, protocol: '-1' }],
     }}
     after={{
-      ingress: [
-        { from_port: 443, to_port: 443, protocol: 'tcp' },
-      ],
-      egress: [
-        { from_port: 0, to_port: 0, protocol: '-1' },
-      ],
+      ingress: [{ from_port: 443, to_port: 443, protocol: 'tcp' }],
+      egress: [{ from_port: 0, to_port: 0, protocol: '-1' }],
     }}
   />
 )

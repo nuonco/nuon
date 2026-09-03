@@ -15,9 +15,7 @@ import './Tabs.css'
 interface ITabs extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   initActiveTab?: string
   tabs: Record<string, ReactNode>
-  // Overrides a tab's label. Otherwise derived from the key, which lowercases
-  // everything after the first character.
-  tabLabels?: Record<string, string>
+  tabLabels?: Record<string, ReactNode>
   tabsClassName?: string
   tabControlsClassName?: string
 }
@@ -26,8 +24,8 @@ export const Tabs = ({
   className,
   initActiveTab,
   tabControlsClassName,
-  tabs,
   tabLabels,
+  tabs,
   tabsClassName,
   ...props
 }: ITabs) => {

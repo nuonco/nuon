@@ -77,7 +77,12 @@ describe('buildCreateInstallBody', () => {
 
   test('azure and gcp account mapping', () => {
     const azure = buildCreateInstallBody(
-      { ...base, region: '', location: 'eastus', azure_subscription_id: 'sub-1' },
+      {
+        ...base,
+        region: '',
+        location: 'eastus',
+        azure_subscription_id: 'sub-1',
+      },
       'azure'
     )
     expect(azure.azure_account?.location).toBe('eastus')

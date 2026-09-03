@@ -53,6 +53,9 @@ const (
 
 	// AppRoleTypeStack captures enum value "stack"
 	AppRoleTypeStack AppRoleType = "stack"
+
+	// AppRoleTypeCustomerPortal captures enum value "customer_portal"
+	AppRoleTypeCustomerPortal AppRoleType = "customer_portal"
 )
 
 // for schema
@@ -60,7 +63,7 @@ var appRoleTypeEnum []any
 
 func init() {
 	var res []AppRoleType
-	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","hosted-installer","stack"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","hosted-installer","stack","customer_portal"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

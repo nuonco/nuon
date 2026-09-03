@@ -15,7 +15,12 @@ import {
 import dagre from '@dagrejs/dagre'
 import '@xyflow/react/dist/style.css'
 import { useSystemTheme } from '@/hooks/use-system-theme'
-import { parseMermaidFlowchart, type ParsedNode, type ParsedEdge, type ParsedSubgraph } from './parse-mermaid'
+import {
+  parseMermaidFlowchart,
+  type ParsedNode,
+  type ParsedEdge,
+  type ParsedSubgraph,
+} from './parse-mermaid'
 
 const MIN_NODE_WIDTH = 120
 const MAX_NODE_WIDTH = 260
@@ -67,7 +72,13 @@ function renderInline(text: string): React.ReactNode {
     if (match.index > lastIndex) nodes.push(text.slice(lastIndex, match.index))
     const tag = match[1].toLowerCase()
     const inner = renderInline(match[2])
-    nodes.push(tag === 'b' || tag === 'strong' ? <strong key={key++}>{inner}</strong> : <em key={key++}>{inner}</em>)
+    nodes.push(
+      tag === 'b' || tag === 'strong' ? (
+        <strong key={key++}>{inner}</strong>
+      ) : (
+        <em key={key++}>{inner}</em>
+      )
+    )
     lastIndex = regex.lastIndex
   }
   if (lastIndex < text.length) nodes.push(text.slice(lastIndex))
@@ -98,15 +109,24 @@ type ShapeConfig = {
 const shapeConfigs: Record<string, ShapeConfig> = {
   rect: { borderRadius: 4 },
   rounded: { borderRadius: 999 },
-  diamond: { clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)', sizeMultiplier: 1.6 },
+  diamond: {
+    clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+    sizeMultiplier: 1.6,
+  },
   cylinder: { svgShape: true, sizeMultiplier: 1.4 },
   circle: { borderRadius: '50%', sizeMultiplier: 1.2 },
   subroutine: { borderRadius: 4, borderWidth: 3 },
-  asymmetric: { clipPath: 'polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%)' },
+  asymmetric: {
+    clipPath: 'polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%)',
+  },
   parallelogram: { clipPath: 'polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)' },
 }
 
-function getNodeDimensions(shape: string, baseWidth: number, baseHeight: number): { width: number; height: number } {
+function getNodeDimensions(
+  shape: string,
+  baseWidth: number,
+  baseHeight: number
+): { width: number; height: number } {
   const config = shapeConfigs[shape] || shapeConfigs.rect
   const mult = config.sizeMultiplier || 1
   if (shape === 'circle') {
@@ -120,7 +140,7 @@ function getNodeStyle(
   node: ParsedNode,
   width: number,
   height: number,
-  theme: 'dark' | 'light',
+  theme: 'dark' | 'light'
 ): React.CSSProperties {
   const colors = THEME[theme]
   const bgColor = node.style?.fill || colors.nodeBg
@@ -132,8 +152,15 @@ function getNodeStyle(
 
   return {
     backgroundColor: noBorder ? 'transparent' : bgColor,
-    border: noBorder ? 'none' : `${config.borderWidth || 1}px solid ${borderColor}`,
-    ...(config.svgShape ? { '--node-fill': bgColor, '--node-stroke': borderColor } as React.CSSProperties : {}),
+    border: noBorder
+      ? 'none'
+      : `${config.borderWidth || 1}px solid ${borderColor}`,
+    ...(config.svgShape
+      ? ({
+          '--node-fill': bgColor,
+          '--node-stroke': borderColor,
+        } as React.CSSProperties)
+      : {}),
     color: textColor,
     display: 'flex',
     alignItems: 'center',
@@ -145,12 +172,22 @@ function getNodeStyle(
     padding: '4px 8px',
     textAlign: 'center',
     lineHeight: '1.3',
-    ...(config.borderRadius != null ? { borderRadius: config.borderRadius } : {}),
-    ...(config.clipPath ? { clipPath: config.clipPath, backgroundColor: bgColor } : {}),
+    ...(config.borderRadius != null
+      ? { borderRadius: config.borderRadius }
+      : {}),
+    ...(config.clipPath
+      ? { clipPath: config.clipPath, backgroundColor: bgColor }
+      : {}),
   }
 }
 
-const CylinderNode = ({ label, style }: { label: string; style: React.CSSProperties }) => {
+const CylinderNode = ({
+  label,
+  style,
+}: {
+  label: string
+  style: React.CSSProperties
+}) => {
   const w = Number(style.width) || 120
   const h = Number(style.height) || 56
   const ry = 8
@@ -222,12 +259,26 @@ const NodeLabel = ({ label }: { label: string }) => (
 )
 
 const MermaidNode = memo(({ data }: NodeProps) => {
-  const { label, nodeStyle, isCylinder } = data as { label: string; nodeStyle: React.CSSProperties; isCylinder?: boolean }
+  const { label, nodeStyle, isCylinder } = data as {
+    label: string
+    nodeStyle: React.CSSProperties
+    isCylinder?: boolean
+  }
 
   return (
     <>
-      <Handle id="top" type="target" position={Position.Top} style={{ opacity: 0 }} />
-      <Handle id="left" type="target" position={Position.Left} style={{ opacity: 0 }} />
+      <Handle
+        id="top"
+        type="target"
+        position={Position.Top}
+        style={{ opacity: 0 }}
+      />
+      <Handle
+        id="left"
+        type="target"
+        position={Position.Left}
+        style={{ opacity: 0 }}
+      />
       {isCylinder ? (
         <CylinderNode label={label} style={nodeStyle} />
       ) : (
@@ -235,8 +286,18 @@ const MermaidNode = memo(({ data }: NodeProps) => {
           <NodeLabel label={label} />
         </div>
       )}
-      <Handle id="bottom" type="source" position={Position.Bottom} style={{ opacity: 0 }} />
-      <Handle id="right" type="source" position={Position.Right} style={{ opacity: 0 }} />
+      <Handle
+        id="bottom"
+        type="source"
+        position={Position.Bottom}
+        style={{ opacity: 0 }}
+      />
+      <Handle
+        id="right"
+        type="source"
+        position={Position.Right}
+        style={{ opacity: 0 }}
+      />
     </>
   )
 })
@@ -246,7 +307,11 @@ MermaidNode.displayName = 'MermaidNode'
 const SubgraphLabel = memo(({ data }: NodeProps) => {
   const theme = useSystemTheme()
   const colors = THEME[theme]
-  const { label, width, height } = data as { label: string; width: number; height: number }
+  const { label, width, height } = data as {
+    label: string
+    width: number
+    height: number
+  }
 
   return (
     <div
@@ -272,7 +337,10 @@ SubgraphLabel.displayName = 'SubgraphLabel'
 
 const nodeTypes = { mermaid: MermaidNode, subgraphBox: SubgraphLabel }
 
-function collectAllChildren(sg: ParsedSubgraph, subgraphs: ParsedSubgraph[]): string[] {
+function collectAllChildren(
+  sg: ParsedSubgraph,
+  subgraphs: ParsedSubgraph[]
+): string[] {
   const all = [...sg.children]
   for (const childId of sg.children) {
     const childSg = subgraphs.find((s) => s.id === childId)
@@ -289,7 +357,7 @@ function buildLayout(
   subgraphs: ParsedSubgraph[],
   direction: string,
   theme: 'dark' | 'light',
-  colors: (typeof THEME)[keyof typeof THEME],
+  colors: (typeof THEME)[keyof typeof THEME]
 ): { nodes: Node[]; edges: Edge[] } {
   if (parsedNodes.length === 0) {
     return { nodes: [], edges: [] }
@@ -299,7 +367,10 @@ function buildLayout(
   for (const node of parsedNodes) {
     const baseWidth = measureNodeWidth(node.label)
     const baseHeight = measureNodeHeight(node.label)
-    nodeDims.set(node.id, getNodeDimensions(node.nodeShape, baseWidth, baseHeight))
+    nodeDims.set(
+      node.id,
+      getNodeDimensions(node.nodeShape, baseWidth, baseHeight)
+    )
   }
 
   const nodeMap = new Map(parsedNodes.map((n) => [n.id, n]))
@@ -337,7 +408,10 @@ function buildLayout(
   type LayoutItem = { id: string; width: number; height: number }
   type LayoutResult = Map<string, { x: number; y: number }>
 
-  function layoutItems(items: LayoutItem[], edges: Array<{ source: string; target: string }>): LayoutResult {
+  function layoutItems(
+    items: LayoutItem[],
+    edges: Array<{ source: string; target: string }>
+  ): LayoutResult {
     const g = new dagre.graphlib.Graph()
     g.setDefaultEdgeLabel(() => ({}))
     g.setGraph({ rankdir: direction, nodesep: 50, ranksep: 80 })
@@ -353,13 +427,21 @@ function buildLayout(
     const result: LayoutResult = new Map()
     for (const item of items) {
       const n = g.node(item.id)
-      if (n) result.set(item.id, { x: n.x - item.width / 2, y: n.y - item.height / 2 })
+      if (n)
+        result.set(item.id, {
+          x: n.x - item.width / 2,
+          y: n.y - item.height / 2,
+        })
     }
     return result
   }
 
   // Recursively layout subgraphs from leaves up
-  type SgLayout = { positions: Map<string, { x: number; y: number }>; width: number; height: number }
+  type SgLayout = {
+    positions: Map<string, { x: number; y: number }>
+    width: number
+    height: number
+  }
   const sgLayouts = new Map<string, SgLayout>()
 
   function layoutSubgraph(sgId: string): SgLayout {
@@ -382,8 +464,13 @@ function buildLayout(
 
     const allDescendantNodes = new Set(childNodeIds)
     for (const csId of childSgIds) {
-      const desc = collectAllChildren(subgraphs.find((s) => s.id === csId)!, subgraphs)
-      desc.forEach((id) => { if (allNodeIds.has(id)) allDescendantNodes.add(id) })
+      const desc = collectAllChildren(
+        subgraphs.find((s) => s.id === csId)!,
+        subgraphs
+      )
+      desc.forEach((id) => {
+        if (allNodeIds.has(id)) allDescendantNodes.add(id)
+      })
     }
 
     // Edges internal to this subgraph (both endpoints are descendants)
@@ -391,15 +478,26 @@ function buildLayout(
     const nodeToItem = new Map<string, string>()
     for (const nid of childNodeIds) nodeToItem.set(nid, nid)
     for (const csId of childSgIds) {
-      const desc = collectAllChildren(subgraphs.find((s) => s.id === csId)!, subgraphs)
-      desc.forEach((id) => { if (allNodeIds.has(id)) nodeToItem.set(id, csId) })
+      const desc = collectAllChildren(
+        subgraphs.find((s) => s.id === csId)!,
+        subgraphs
+      )
+      desc.forEach((id) => {
+        if (allNodeIds.has(id)) nodeToItem.set(id, csId)
+      })
     }
 
     const internalEdges: Array<{ source: string; target: string }> = []
     for (const e of parsedEdges) {
       const si = nodeToItem.get(e.source)
       const ti = nodeToItem.get(e.target)
-      if (si && ti && si !== ti && allDescendantNodes.has(e.source) && allDescendantNodes.has(e.target)) {
+      if (
+        si &&
+        ti &&
+        si !== ti &&
+        allDescendantNodes.has(e.source) &&
+        allDescendantNodes.has(e.target)
+      ) {
         internalEdges.push({ source: si, target: ti })
       }
     }
@@ -412,7 +510,10 @@ function buildLayout(
 
     const localPositions = layoutItems(items, internalEdges)
 
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity
     for (const item of items) {
       const pos = localPositions.get(item.id)
       if (!pos) continue
@@ -446,8 +547,8 @@ function buildLayout(
       }
     }
 
-    const totalW = (maxX - minX) + pad * 2
-    const totalH = (maxY - minY) + pad * 2 + labelH
+    const totalW = maxX - minX + pad * 2
+    const totalH = maxY - minY + pad * 2 + labelH
 
     const result = { positions, width: totalW, height: totalH }
     sgLayouts.set(sgId, result)
@@ -471,7 +572,9 @@ function buildLayout(
   for (const n of topOrphanNodes) nodeToTopItem.set(n.id, n.id)
   for (const sg of topSgs) {
     const allDesc = collectAllChildren(sg, subgraphs)
-    allDesc.forEach((id) => { if (allNodeIds.has(id)) nodeToTopItem.set(id, sg.id) })
+    allDesc.forEach((id) => {
+      if (allNodeIds.has(id)) nodeToTopItem.set(id, sg.id)
+    })
   }
 
   const topEdges: Array<{ source: string; target: string }> = []
@@ -529,9 +632,19 @@ function buildLayout(
     nodes.push({
       id: node.id,
       type: 'mermaid',
-      data: { label: node.label, nodeStyle: getNodeStyle(node, dims.width, dims.height, theme), isCylinder: node.nodeShape === 'cylinder' },
+      data: {
+        label: node.label,
+        nodeStyle: getNodeStyle(node, dims.width, dims.height, theme),
+        isCylinder: node.nodeShape === 'cylinder',
+      },
       position: pos,
-      style: { background: 'transparent', border: 'none', padding: 0, width: dims.width, height: dims.height },
+      style: {
+        background: 'transparent',
+        border: 'none',
+        padding: 0,
+        width: dims.width,
+        height: dims.height,
+      },
       zIndex: 1,
     })
   }
@@ -551,7 +664,11 @@ function buildLayout(
       targetHandle,
       type: 'smoothstep',
       label: e.label,
-      labelStyle: { fontSize: 9, fontFamily: 'var(--font-hack)', fill: colors.edgeLabelText },
+      labelStyle: {
+        fontSize: 9,
+        fontFamily: 'var(--font-hack)',
+        fill: colors.edgeLabelText,
+      },
       labelBgStyle: { fill: colors.edgeLabelBg, fillOpacity: 0.85 },
       labelBgPadding: [4, 2] as [number, number],
       labelBgBorderRadius: 3,
@@ -562,7 +679,12 @@ function buildLayout(
         ...(e.type === 'dashed' ? { strokeDasharray: '5,5' } : {}),
       },
       ...(e.hasArrow
-        ? { markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--mermaid-edge-color)' } }
+        ? {
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: 'var(--mermaid-edge-color)',
+            },
+          }
         : {}),
     }))
 
@@ -575,7 +697,14 @@ export const MermaidFlowGraph = ({ code }: { code: string }) => {
 
   const { nodes: layoutedNodes, edges: layoutedEdges } = useMemo(() => {
     const parsed = parseMermaidFlowchart(code)
-    return buildLayout(parsed.nodes, parsed.edges, parsed.subgraphs, parsed.direction, theme, colors)
+    return buildLayout(
+      parsed.nodes,
+      parsed.edges,
+      parsed.subgraphs,
+      parsed.direction,
+      theme,
+      colors
+    )
   }, [code, theme])
 
   const [nodes, , onNodesChange] = useNodesState(layoutedNodes as Node[])
@@ -586,9 +715,11 @@ export const MermaidFlowGraph = ({ code }: { code: string }) => {
   return (
     <div
       className="w-full h-[44rem] my-4 border rounded-lg border-color"
-      style={{
-        '--mermaid-edge-color': colors.edgeColor,
-      } as React.CSSProperties}
+      style={
+        {
+          '--mermaid-edge-color': colors.edgeColor,
+        } as React.CSSProperties
+      }
     >
       <ReactFlow
         nodes={nodes}
@@ -610,7 +741,11 @@ export const MermaidFlowGraph = ({ code }: { code: string }) => {
           orientation="horizontal"
           style={{ color: '#141217' }}
         />
-        <Background bgColor={colors.canvasBg} color={colors.dotColor} gap={16} />
+        <Background
+          bgColor={colors.canvasBg}
+          color={colors.dotColor}
+          gap={16}
+        />
       </ReactFlow>
     </div>
   )

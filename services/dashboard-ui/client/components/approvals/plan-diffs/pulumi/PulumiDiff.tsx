@@ -53,92 +53,98 @@ export function PulumiDiff({
 
   return (
     <WrapLinesProvider>
-    <div className="flex flex-col gap-6">
-      {hasResourceChanges && (
-        <Modal
-          heading={
-            <Text flex className="gap-4" variant="h3" weight="strong">
-              <Icon variant="NetworkXIcon" size="24" /> Preview graph
-            </Text>
-          }
-          triggerButton={{
-            className: 'self-end',
-            children: (
-              <>
-                View preview graph <Icon variant="NetworkXIcon" />
-              </>
-            ),
-            variant: 'secondary',
-          }}
-          size="xl"
-        >
-          <PulumiPlanGraph resources={plan.resource_changes!} />
-        </Modal>
-      )}
-
-      <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-        <div className="px-4 sm:px-6 py-4 border-b">
-          <Text variant="base" weight="strong">
-            Pulumi preview
-          </Text>
-        </div>
-
-        {plan.change_summary && (
-          <PulumiSummary changeSummary={plan.change_summary} />
+      <div className="flex flex-col gap-6">
+        {hasResourceChanges && (
+          <Modal
+            heading={
+              <Text flex className="gap-4" variant="h3" weight="strong">
+                <Icon variant="NetworkXIcon" size="24" /> Preview graph
+              </Text>
+            }
+            triggerButton={{
+              className: 'self-end',
+              children: (
+                <>
+                  View preview graph <Icon variant="NetworkXIcon" />
+                </>
+              ),
+              variant: 'secondary',
+            }}
+            size="xl"
+          >
+            <PulumiPlanGraph resources={plan.resource_changes!} />
+          </Modal>
         )}
 
-        {hasResourceChanges ? (
-          <>
-            <DiffFilter
-              title="resources"
-              diffType="pulumi"
-              selectedActions={resourceFilter.selectedActions}
-              onInputToggle={resourceFilter.handleInputToggle}
-              onButtonClick={resourceFilter.handleButtonClick}
-              onReset={resourceFilter.handleReset}
-              selectedCount={resourceFilter.filterStats.selectedCount}
-              totalCount={resourceFilter.filterStats.totalCount}
-              searchValue={resourceFilter.searchQuery}
-              onSearchChange={resourceFilter.handleSearchChange}
-              searchPlaceholder="Search by type, name, or URN"
-              isAllExpanded={allExpanded}
-              onToggleExpandAll={() => setAllExpanded((v) => !v)}
-            />
-
-            <PulumiResourceChangesList
-              changes={resourceFilter.filteredItems}
-              isOpen={allExpanded}
-            />
-          </>
-        ) : (
-          plan.stdout && (
-            <div className="px-4 sm:px-6 py-4">
-              <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto text-grey-700 dark:text-grey-300">
-                {plan.stdout}
-              </pre>
-            </div>
-          )
-        )}
-
-        {plan.diagnostics && plan.diagnostics.length > 0 && (
-          <div className="px-4 sm:px-6 py-4 border-t flex flex-col gap-3">
-            <Text variant="subtext" weight="strong">
-              Diagnostics
+        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+          <div className="px-4 sm:px-6 py-4 border-b">
+            <Text variant="base" weight="strong">
+              Pulumi preview
             </Text>
-            {plan.diagnostics.map((d, i) => {
-              const theme = d.startsWith('error') ? 'error' as const : 'warn' as const
-              return (
-                <Banner key={i} theme={theme} className="!rounded-md">
-                  <Text variant="subtext" family="mono" className="whitespace-pre-wrap">
-                    {d}
-                  </Text>
-                </Banner>
-              )
-            })}
           </div>
-        )}
-      </Card>
-    </div>
+
+          {plan.change_summary && (
+            <PulumiSummary changeSummary={plan.change_summary} />
+          )}
+
+          {hasResourceChanges ? (
+            <>
+              <DiffFilter
+                title="resources"
+                diffType="pulumi"
+                selectedActions={resourceFilter.selectedActions}
+                onInputToggle={resourceFilter.handleInputToggle}
+                onButtonClick={resourceFilter.handleButtonClick}
+                onReset={resourceFilter.handleReset}
+                selectedCount={resourceFilter.filterStats.selectedCount}
+                totalCount={resourceFilter.filterStats.totalCount}
+                searchValue={resourceFilter.searchQuery}
+                onSearchChange={resourceFilter.handleSearchChange}
+                searchPlaceholder="Search by type, name, or URN"
+                isAllExpanded={allExpanded}
+                onToggleExpandAll={() => setAllExpanded((v) => !v)}
+              />
+
+              <PulumiResourceChangesList
+                changes={resourceFilter.filteredItems}
+                isOpen={allExpanded}
+              />
+            </>
+          ) : (
+            plan.stdout && (
+              <div className="px-4 sm:px-6 py-4">
+                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto text-grey-700 dark:text-grey-300">
+                  {plan.stdout}
+                </pre>
+              </div>
+            )
+          )}
+
+          {plan.diagnostics && plan.diagnostics.length > 0 && (
+            <div className="px-4 sm:px-6 py-4 border-t flex flex-col gap-3">
+              <Text variant="subtext" weight="strong">
+                Diagnostics
+              </Text>
+              {plan.diagnostics.map((d, i) => {
+                const theme = d.startsWith('error')
+                  ? ('error' as const)
+                  : ('warn' as const)
+                return (
+                  <Banner key={i} theme={theme} className="!rounded-md">
+                    <Text
+                      variant="subtext"
+                      family="mono"
+                      className="whitespace-pre-wrap"
+                    >
+                      {d}
+                    </Text>
+                  </Banner>
+                )
+              })}
+            </div>
+          )}
+        </Card>
+      </div>
     </WrapLinesProvider>
   )
 }

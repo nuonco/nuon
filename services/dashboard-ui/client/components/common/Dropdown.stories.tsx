@@ -423,7 +423,9 @@ export const NestedDropdowns = () => (
                                           buttonText="Level 9"
                                           position="beside"
                                           alignment="left"
-                                          icon={<Icon variant="CaretLeftIcon" />}
+                                          icon={
+                                            <Icon variant="CaretLeftIcon" />
+                                          }
                                           variant="ghost"
                                           className="w-full justify-between"
                                         >

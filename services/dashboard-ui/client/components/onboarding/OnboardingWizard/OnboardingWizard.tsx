@@ -6,7 +6,9 @@ interface IOnboardingWizardLayout {
   skipHref: string | null
 }
 
-export const OnboardingWizardLayout = ({ skipHref }: IOnboardingWizardLayout) => {
+export const OnboardingWizardLayout = ({
+  skipHref,
+}: IOnboardingWizardLayout) => {
   const [isScrolled, setIsScrolled] = useState(false)
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {

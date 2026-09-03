@@ -1,4 +1,9 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Navigate } from 'react-router'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { AppInstallSyncsTimeline } from '@/components/apps/AppInstallSyncsTimeline'
@@ -34,8 +39,7 @@ export const InstallSyncs = () => {
   })
 
   const { mutate: triggerSync, isPending } = useMutation({
-    mutationFn: () =>
-      triggerAppInstallSync({ appId: app!.id, orgId: org!.id }),
+    mutationFn: () => triggerAppInstallSync({ appId: app!.id, orgId: org!.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['app-install-syncs', org?.id, app?.id],

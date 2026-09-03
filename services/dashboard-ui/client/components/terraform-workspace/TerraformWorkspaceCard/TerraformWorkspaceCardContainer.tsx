@@ -46,7 +46,13 @@ export const TerraformWorkspaceCardContainer = ({
   // For pulumi, use the raw endpoint (pulumi state isn't terraform JSON).
   const { data: currentRevision } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['workspace-state', org?.id, workspaceId, latestStateId, isPulumi],
+    queryKey: [
+      'workspace-state',
+      org?.id,
+      workspaceId,
+      latestStateId,
+      isPulumi,
+    ],
     queryFn: () =>
       isPulumi
         ? getWorkspaceStateRaw({

@@ -113,11 +113,20 @@ export const LongWithRemove = () => (
 export const WithRemove = () => (
   <div className="flex flex-wrap gap-2">
     <LabelBadge label="env:production" theme="success" onRemove={() => {}} />
-    <LabelBadge label="region:us-east-1" customColor="#2563eb" onRemove={() => {}} />
+    <LabelBadge
+      label="region:us-east-1"
+      customColor="#2563eb"
+      onRemove={() => {}}
+    />
     <LabelBadge label="size:sm" size="sm" onRemove={() => {}} />
   </div>
 )
 
 export const WithRemoveDisabled = () => (
-  <LabelBadge label="env:production" theme="success" disabled onRemove={() => {}} />
+  <LabelBadge
+    label="env:production"
+    theme="success"
+    disabled
+    onRemove={() => {}}
+  />
 )

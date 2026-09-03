@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"time"
@@ -59,6 +60,8 @@ type genCtx struct {
 	// sync step prepended in this workflow. Multiple non-image components
 	// may share the same image dep; we only sync it once per workflow.
 	addedImageDepSyncs map[string]struct{}
+	releaseBuildIDs    map[string]string
+	sandboxBuildID     string
 }
 
 func newGenCtx(sg *stepGroup, flw *app.Workflow, installID string, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow, opts ...genCtxOption) *genCtx {
@@ -92,6 +95,24 @@ func WithInstallInputs(ii *app.InstallInputs) genCtxOption {
 			dg.enabledInputs = ii.Values
 		}
 	}
+}
+
+func WithReleaseBuilds(componentBuildIDs map[string]string, sandboxBuildID string) genCtxOption {
+	return func(dg *genCtx) {
+		dg.releaseBuildIDs = componentBuildIDs
+		dg.sandboxBuildID = sandboxBuildID
+	}
+}
+
+func releaseBuildsFromWorkflow(flw *app.Workflow) (map[string]string, string, error) {
+	if generics.FromPtrStr(flw.Metadata["app_release_id"]) == "" {
+		return nil, "", nil
+	}
+	var componentBuildIDs map[string]string
+	if err := json.Unmarshal([]byte(generics.FromPtrStr(flw.Metadata["release_component_build_ids"])), &componentBuildIDs); err != nil {
+		return nil, "", errors.Wrap(err, "unable to decode release component builds")
+	}
+	return componentBuildIDs, generics.FromPtrStr(flw.Metadata["release_sandbox_build_id"]), nil
 }
 
 // componentEnabledFromInputs resolves whether a toggleable component is enabled
@@ -129,6 +150,13 @@ func resolvePinnedComponentBuild(ctx workflow.Context, dg *genCtx, compID string
 	ccc, ok := dg.cccByComp[compID]
 	if !ok || ccc == nil {
 		return nil, nil
+	}
+	if dg.releaseBuildIDs != nil {
+		buildID := dg.releaseBuildIDs[ccc.ID]
+		if buildID == "" {
+			return nil, fmt.Errorf("release does not pin a build for component config connection %s", ccc.ID)
+		}
+		return activities.AwaitGetComponentBuildByComponentBuildID(ctx, buildID)
 	}
 	return activities.AwaitGetComponentBuildForConfigConnectionByComponentConfigConnectionID(ctx, ccc.ID)
 }

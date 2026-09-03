@@ -28,7 +28,10 @@ export const UnlockTerraformWorkspaceModal = ({
             <Icon variant="LockOpenIcon" size="24" />
             Unlock Terraform workspace?
           </Text>
-          <Text variant="body" className="text-cool-grey-600 dark:text-cool-grey-400">
+          <Text
+            variant="body"
+            className="text-cool-grey-600 dark:text-cool-grey-400"
+          >
             Force unlock the Terraform state for {description}
           </Text>
         </div>
@@ -61,14 +64,14 @@ export const UnlockTerraformWorkspaceModal = ({
 
         <div className="flex flex-col gap-4">
           <Text variant="body" theme="neutral">
-            Force unlocking should only be done if a previous operation failed to
-            release the lock.
+            Force unlocking should only be done if a previous operation failed
+            to release the lock.
           </Text>
 
           <Banner theme="warn">
             <Text variant="body">
-              <strong>Warning:</strong> Force unlocking a workspace that is actively in use by a
-              running job may cause state corruption.
+              <strong>Warning:</strong> Force unlocking a workspace that is
+              actively in use by a running job may cause state corruption.
             </Text>
           </Banner>
         </div>

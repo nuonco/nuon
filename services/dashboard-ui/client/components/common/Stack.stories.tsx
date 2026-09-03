@@ -18,7 +18,9 @@ export const GapSizes = () => (
   <div className="flex gap-8">
     {([1, 2, 3, 4, 6, 8] as const).map((gap) => (
       <div key={gap}>
-        <Text variant="subtext" className="mb-1">gap={gap}</Text>
+        <Text variant="subtext" className="mb-1">
+          gap={gap}
+        </Text>
         <Stack gap={gap}>
           <Badge>One</Badge>
           <Badge>Two</Badge>
@@ -41,7 +43,11 @@ export const FormLayout = () => (
     </Stack>
     <Stack gap={1}>
       <Text variant="subtext">Description</Text>
-      <textarea className="border rounded px-2 py-1" rows={3} placeholder="Enter description" />
+      <textarea
+        className="border rounded px-2 py-1"
+        rows={3}
+        placeholder="Enter description"
+      />
     </Stack>
   </Stack>
 )

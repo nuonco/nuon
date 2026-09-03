@@ -25,6 +25,10 @@ import (
 
 func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
+	releaseComponentBuildIDs, releaseSandboxBuildID, err := releaseBuildsFromWorkflow(flw)
+	if err != nil {
+		return nil, err
+	}
 	steps := make([]*app.WorkflowStep, 0)
 
 	sg := newStepGroup(flw)
@@ -120,7 +124,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
+	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs), WithReleaseBuilds(releaseComponentBuildIDs, releaseSandboxBuildID))
 
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreProvision)
 	if err != nil {
@@ -139,6 +143,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	step, err = sg.installSignalStep(ctx, installID, "provision sandbox plan", pgtype.Hstore{}, &provisionsandboxplan.Signal{
 		InstallSandboxID: sandboxID,
 		InstallID:        installID,
+		SandboxBuildID:   releaseSandboxBuildID,
 		Role:             flw.Role,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {

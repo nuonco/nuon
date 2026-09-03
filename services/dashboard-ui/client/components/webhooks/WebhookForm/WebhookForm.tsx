@@ -115,8 +115,8 @@ export const WebhookFormModal = ({
         {mode === 'create' ? (
           <Text variant="body" theme="neutral">
             Receive workflow and workflow step lifecycle events for this org as
-            CloudEvents v1.0 payloads. When a signing secret is set, requests are
-            signed with HMAC-SHA256 in the{' '}
+            CloudEvents v1.0 payloads. When a signing secret is set, requests
+            are signed with HMAC-SHA256 in the{' '}
             <span className="font-mono">X-Nuon-Signature</span> header.
           </Text>
         ) : null}

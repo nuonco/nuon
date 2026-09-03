@@ -32,7 +32,11 @@ function groupItems(links: Array<TNavItem>): TNavGroup[] {
 
   links.forEach((item, i) => {
     if (isSection(item)) {
-      current = { key: `${item.label}-${i}`, header: i === 0 ? null : item, items: [] }
+      current = {
+        key: `${item.label}-${i}`,
+        header: i === 0 ? null : item,
+        items: [],
+      }
       groups.push(current)
     } else {
       if (!current) {
@@ -52,7 +56,11 @@ interface ISubNav {
   storageKey?: string
 }
 
-export const SubNav = ({ basePath, links, storageKey = 'subnav-sections' }: ISubNav) => {
+export const SubNav = ({
+  basePath,
+  links,
+  storageKey = 'subnav-sections',
+}: ISubNav) => {
   const {
     isPageSidebarOpen,
     closePageSidebar,
@@ -162,8 +170,10 @@ export const SubNav = ({ basePath, links, storageKey = 'subnav-sections' }: ISub
                   className={cn(
                     'uppercase tracking-wider text-[10px] !grid duration-fast transition-all ease-cubic',
                     {
-                      'md:grid-cols-[1fr] md:opacity-100 mr-2': isPageSidebarOpen,
-                      'md:grid-cols-[0fr] md:opacity-0 mr-0': !isPageSidebarOpen,
+                      'md:grid-cols-[1fr] md:opacity-100 mr-2':
+                        isPageSidebarOpen,
+                      'md:grid-cols-[0fr] md:opacity-0 mr-0':
+                        !isPageSidebarOpen,
                     }
                   )}
                 >

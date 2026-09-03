@@ -33,9 +33,9 @@ export const BasicUsage = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Basic Select Usage</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Basic select dropdown with different configurations. The select component
-        provides native HTML select functionality with custom styling and
-        accessibility support.
+        Basic select dropdown with different configurations. The select
+        component provides native HTML select functionality with custom styling
+        and accessibility support.
       </p>
     </div>
 
@@ -113,8 +113,9 @@ export const States = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Select States</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Select components support various states including error states, disabled
-        states, and helper text for better user experience and validation feedback.
+        Select components support various states including error states,
+        disabled states, and helper text for better user experience and
+        validation feedback.
       </p>
     </div>
 
@@ -125,7 +126,7 @@ export const States = () => (
         labelProps={{ labelText: 'Normal State' }}
         helperText="This is a normal select field"
       />
-      
+
       <Select
         options={sampleOptions}
         placeholder="Error select"
@@ -133,7 +134,7 @@ export const States = () => (
         error
         errorMessage="Please select a valid option"
       />
-      
+
       <Select
         options={sampleOptions}
         placeholder="Disabled select"
@@ -141,7 +142,7 @@ export const States = () => (
         disabled
         helperText="This field is currently disabled"
       />
-      
+
       <Select
         options={sampleOptions}
         placeholder="Required field"
@@ -174,7 +175,8 @@ export const WithLabelsAndText = () => (
       <h3 className="text-lg font-semibold">Labels and Helper Text</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Selects support labels and helper text to provide context and guidance
-        to users. Labels are automatically associated with selects for accessibility.
+        to users. Labels are automatically associated with selects for
+        accessibility.
       </p>
     </div>
 
@@ -182,20 +184,20 @@ export const WithLabelsAndText = () => (
       <Select
         options={sampleOptions}
         placeholder="Choose your preference"
-        labelProps={{ 
+        labelProps={{
           labelText: 'Preference',
-          labelTextProps: { weight: 'strong' }
+          labelTextProps: { weight: 'strong' },
         }}
         helperText="Select your preferred option"
       />
-      
+
       <Select
         options={awsRegionOptions}
         placeholder="Select region"
         labelProps={{ labelText: 'AWS Region' }}
         helperText="Choose the region closest to your users"
       />
-      
+
       <Select
         options={sampleOptions}
         placeholder="Optional selection"
@@ -205,13 +207,16 @@ export const WithLabelsAndText = () => (
 
     <div className="grid grid-cols-1 gap-3 text-sm mt-6">
       <div>
-        <strong>Labels:</strong> Automatically linked to selects with htmlFor attribute
+        <strong>Labels:</strong> Automatically linked to selects with htmlFor
+        attribute
       </div>
       <div>
-        <strong>Helper Text:</strong> Provides additional context below the select
+        <strong>Helper Text:</strong> Provides additional context below the
+        select
       </div>
       <div>
-        <strong>Styling:</strong> Labels support all Text component props for customization
+        <strong>Styling:</strong> Labels support all Text component props for
+        customization
       </div>
       <div>
         <strong>Accessibility:</strong> Proper ARIA attributes and associations
@@ -225,8 +230,9 @@ export const ErrorHandling = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Error Handling</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Error states provide visual feedback and error messages to guide users in
-        making correct selections. Error messages replace helper text when present.
+        Error states provide visual feedback and error messages to guide users
+        in making correct selections. Error messages replace helper text when
+        present.
       </p>
     </div>
 
@@ -238,7 +244,7 @@ export const ErrorHandling = () => (
         error
         errorMessage="This field is required"
       />
-      
+
       <Select
         options={awsRegionOptions}
         placeholder="Select region"
@@ -246,7 +252,7 @@ export const ErrorHandling = () => (
         error
         errorMessage="Please select a valid region"
       />
-      
+
       <Select
         options={sampleOptions}
         placeholder="Choose category"
@@ -275,7 +281,8 @@ export const RealWorldExamples = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Real World Examples</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Examples of select components as they might appear in real forms and applications.
+        Examples of select components as they might appear in real forms and
+        applications.
       </p>
     </div>
 
@@ -287,7 +294,7 @@ export const RealWorldExamples = () => (
         helperText="Choose the region for your deployment"
         required
       />
-      
+
       <Select
         options={[
           { value: 'development', label: 'Development' },
@@ -299,7 +306,7 @@ export const RealWorldExamples = () => (
         helperText="Target environment for this install"
         defaultValue="development"
       />
-      
+
       <Select
         options={[
           { value: 'small', label: 'Small (1-2 CPUs, 2-4GB RAM)' },
@@ -321,8 +328,8 @@ export function AWSRegions() {
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">AWS Regions</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          AWS region selector with flag emojis and region codes. This example uses
-          the actual AWS regions from the configuration.
+          AWS region selector with flag emojis and region codes. This example
+          uses the actual AWS regions from the configuration.
         </p>
       </div>
 
@@ -331,7 +338,7 @@ export function AWSRegions() {
           options={awsRegionOptions}
           labelProps={{
             labelText: 'AWS Region *',
-            labelTextProps: { variant: 'body' }
+            labelTextProps: { variant: 'body' },
           }}
           placeholder="Choose AWS region"
           helperText="Select the AWS region for your deployment"
@@ -348,8 +355,12 @@ export function WithSearch() {
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">Searchable Select</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Use the <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">searchable</code> prop
-          to enable filtering options by typing. Useful for selects with many options like cloud regions.
+          Use the{' '}
+          <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+            searchable
+          </code>{' '}
+          prop to enable filtering options by typing. Useful for selects with
+          many options like cloud regions.
         </p>
       </div>
 
@@ -379,8 +390,8 @@ export function AzureRegions() {
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">Azure Regions</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Azure location selector with flag emojis. This example uses
-          the actual Azure regions from the configuration.
+          Azure location selector with flag emojis. This example uses the actual
+          Azure regions from the configuration.
         </p>
       </div>
 
@@ -389,7 +400,7 @@ export function AzureRegions() {
           options={azureRegionOptions}
           labelProps={{
             labelText: 'Azure Location *',
-            labelTextProps: { variant: 'body' }
+            labelTextProps: { variant: 'body' },
           }}
           placeholder="Choose Azure location"
           helperText="Select the Azure location for your deployment"

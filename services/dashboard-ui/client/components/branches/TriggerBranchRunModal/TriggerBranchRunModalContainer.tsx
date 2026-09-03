@@ -43,7 +43,10 @@ export const TriggerBranchRunModalContainer = ({
       }),
     onSuccess: () => {
       addToast(
-        <Toast theme="success" heading={planOnly ? 'Preview run triggered' : 'Run triggered'}>
+        <Toast
+          theme="success"
+          heading={planOnly ? 'Preview run triggered' : 'Run triggered'}
+        >
           <Text>
             {planOnly
               ? 'A plan-only preview run has been queued.'

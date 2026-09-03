@@ -80,7 +80,8 @@ export const CreateServiceAccountModal = ({
         />
 
         <Text>
-          Service accounts are non-human identities for automating access to the Nuon API.
+          Service accounts are non-human identities for automating access to the
+          Nuon API.
         </Text>
 
         <form.Field name="name">

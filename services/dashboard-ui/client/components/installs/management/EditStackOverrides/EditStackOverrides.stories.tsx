@@ -32,12 +32,14 @@ export const WithOverrides = () => (
       currentCustomStacks={[
         {
           name: 'k8s_namespaces',
-          template_url: 'https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/k8s-namespaces.yaml',
+          template_url:
+            'https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/k8s-namespaces.yaml',
           index: 0,
         },
         {
           name: 'eks_access_entries',
-          template_url: 'https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/eks-access.yaml',
+          template_url:
+            'https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/eks-access.yaml',
           index: 1,
           parameters: { Namespaces: '{{.nuon.install.inputs.namespaces}}' },
         },
@@ -83,7 +85,11 @@ export const WithError = () => (
   <ModalStory label="Edit stack overrides (error)">
     <EditStackOverridesModal
       isPending={false}
-      error={{ error: 'vpc_nested_template_url must be an S3 URL', description: '', user_error: true }}
+      error={{
+        error: 'vpc_nested_template_url must be an S3 URL',
+        description: '',
+        user_error: true,
+      }}
       currentVpcUrl="https://example.com/not-s3.yaml"
       currentRunnerUrl=""
       currentCustomStacks={[]}

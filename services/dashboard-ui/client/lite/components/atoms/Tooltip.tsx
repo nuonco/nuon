@@ -32,10 +32,12 @@ export const Tooltip = ({
   const isOpen = isControlled ? controlledOpen : uncontrolledOpen
   const tooltipId = useId()
 
-  const { triggerRef, contentRef, side: placedSide, style } = usePopover<
-    HTMLSpanElement,
-    HTMLDivElement
-  >({ open: isOpen, side })
+  const {
+    triggerRef,
+    contentRef,
+    side: placedSide,
+    style,
+  } = usePopover<HTMLSpanElement, HTMLDivElement>({ open: isOpen, side })
 
   const setOpen = (next: boolean) => {
     if (disableHover) return

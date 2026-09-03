@@ -60,7 +60,10 @@ export function resolvePrLink({
   return null
 }
 
-export function githubCommitUrl(repoSlug: string | undefined, sha: string | undefined): string | undefined {
+export function githubCommitUrl(
+  repoSlug: string | undefined,
+  sha: string | undefined
+): string | undefined {
   if (!repoSlug || !sha) {
     return undefined
   }

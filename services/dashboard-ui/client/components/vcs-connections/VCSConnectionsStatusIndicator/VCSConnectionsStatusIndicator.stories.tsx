@@ -5,7 +5,9 @@ export default {
 import { Status } from '@/components/common/Status'
 import { VCSConnectionsStatusIndicator } from './VCSConnectionsStatusIndicator'
 
-const makeItems = (connections: Array<{ id: string; name: string; status: string }>) =>
+const makeItems = (
+  connections: Array<{ id: string; name: string; status: string }>
+) =>
   connections.map((conn) => ({
     id: conn.id,
     href: `/org-123/connections/vcs/${conn.id}`,
@@ -13,7 +15,13 @@ const makeItems = (connections: Array<{ id: string; name: string; status: string
     subtitle: conn.status,
     leftContent: (
       <Status
-        status={conn.status === 'active' ? 'success' : conn.status === 'suspended' ? 'error' : 'warn'}
+        status={
+          conn.status === 'active'
+            ? 'success'
+            : conn.status === 'suspended'
+              ? 'error'
+              : 'warn'
+        }
         isWithoutText
         variant="timeline"
         iconSize={16}

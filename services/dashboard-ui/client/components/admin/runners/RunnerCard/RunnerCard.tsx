@@ -49,11 +49,15 @@ export const RunnerCard = ({
       >
         <div className="px-3 flex flex-col gap-4">
           <div className="py-3 flex flex-col gap-3">
-            <Text variant="base" weight="strong">Heartbeat</Text>
+            <Text variant="base" weight="strong">
+              Heartbeat
+            </Text>
             <LoadRunnerHeartbeat runnerId={runner.id} />
           </div>
           <div className="py-3 flex flex-col gap-3 border-t">
-            <Text variant="base" weight="strong">Last shut-down job</Text>
+            <Text variant="base" weight="strong">
+              Last shut-down job
+            </Text>
             <LoadRunnerJob
               runnerId={runner.id}
               groups={['operations']}
@@ -61,10 +65,18 @@ export const RunnerCard = ({
             />
           </div>
           <div className="py-3 flex flex-col gap-3 border-t">
-            <Text variant="base" weight="strong">Recent job</Text>
+            <Text variant="base" weight="strong">
+              Recent job
+            </Text>
             <LoadRunnerJob
               runnerId={runner.id}
-              statuses={['finished', 'failed', 'timed-out', 'cancelled', 'not-attempted']}
+              statuses={[
+                'finished',
+                'failed',
+                'timed-out',
+                'cancelled',
+                'not-attempted',
+              ]}
               title="Recent job"
             />
           </div>

@@ -28,7 +28,11 @@ const mockRepos = [
   },
 ]
 
-const mockBranches = [{ name: 'main' }, { name: 'staging' }, { name: 'develop' }]
+const mockBranches = [
+  { name: 'main' },
+  { name: 'staging' },
+  { name: 'develop' },
+]
 
 const noop = () => {}
 

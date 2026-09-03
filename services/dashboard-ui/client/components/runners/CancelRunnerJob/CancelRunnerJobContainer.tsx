@@ -34,11 +34,19 @@ export const CancelRunnerJobModal = ({
   const { addToast } = useToast()
   const cancelJobData = cancelJobOptions[jobType]
 
-  const { mutate, isPending: isLoading, error } = useMutation<unknown, TAPIError>({
-    mutationFn: () => cancelRunnerJob({ orgId: org.id, runnerJobId: runnerJob.id }),
+  const {
+    mutate,
+    isPending: isLoading,
+    error,
+  } = useMutation<unknown, TAPIError>({
+    mutationFn: () =>
+      cancelRunnerJob({ orgId: org.id, runnerJobId: runnerJob.id }),
     onSuccess: () => {
       addToast(
-        <Toast heading={`${cancelJobData.buttonText} successful.`} theme="success">
+        <Toast
+          heading={`${cancelJobData.buttonText} successful.`}
+          theme="success"
+        >
           <Text>Successfully cancelled the {jobType} job.</Text>
         </Toast>
       )

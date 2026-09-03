@@ -11,6 +11,4 @@ export const Default = () => (
   />
 )
 
-export const Loading = () => (
-  <UserProfile isLoading user={null} />
-)
+export const Loading = () => <UserProfile isLoading user={null} />

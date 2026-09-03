@@ -16,7 +16,10 @@ import {
 import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
 import { useToast } from '@/hooks/use-toast'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
-import { CompletedInstallCard, CreateInstallStepContent } from './CreateInstallStep'
+import {
+  CompletedInstallCard,
+  CreateInstallStepContent,
+} from './CreateInstallStep'
 
 export const CreateInstallStepContainer = ({
   onAdvance: _onAdvance,
@@ -91,7 +94,11 @@ function CreateInstallStepContentContainer({
     queryFn: () => getApp({ appId, orgId }),
   })
 
-  const { mutateAsync, isPending, error: submitError } = useMutation({
+  const {
+    mutateAsync,
+    isPending,
+    error: submitError,
+  } = useMutation({
     mutationFn: (values: InstallFormValues) =>
       createAppInstall({
         appId: app!.id,

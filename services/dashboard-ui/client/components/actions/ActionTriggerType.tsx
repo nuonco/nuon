@@ -61,12 +61,7 @@ export const ActionTriggerType = ({
         className="inline-flex items-center gap-1.5 min-w-0"
       >
         {label}:
-        <Cron
-          cron={cronSchedule}
-          variant="subtext"
-          family="mono"
-          showTooltip
-        />
+        <Cron cron={cronSchedule} variant="subtext" family="mono" showTooltip />
       </Text>
     )
   }
@@ -89,7 +84,9 @@ export const ActionTriggerType = ({
         {label}:
         <Text variant="subtext" family="mono" className="truncate min-w-0">
           {componentPath ? (
-            <Link href={componentPath} variant="inline">{componentName}</Link>
+            <Link href={componentPath} variant="inline">
+              {componentName}
+            </Link>
           ) : (
             componentName
           )}

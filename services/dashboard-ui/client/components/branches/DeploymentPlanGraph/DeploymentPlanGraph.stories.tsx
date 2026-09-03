@@ -5,10 +5,26 @@ export default {
 }
 
 const mockInstalls: Record<string, any> = {
-  'inst-001': { id: 'inst-001', name: 'acme-prod', labels: { env: 'production', tier: 'primary' } },
-  'inst-002': { id: 'inst-002', name: 'acme-staging', labels: { env: 'staging', tier: 'primary' } },
-  'inst-003': { id: 'inst-003', name: 'widget-prod', labels: { env: 'production', tier: 'secondary' } },
-  'inst-004': { id: 'inst-004', name: 'widget-staging', labels: { env: 'staging' } },
+  'inst-001': {
+    id: 'inst-001',
+    name: 'acme-prod',
+    labels: { env: 'production', tier: 'primary' },
+  },
+  'inst-002': {
+    id: 'inst-002',
+    name: 'acme-staging',
+    labels: { env: 'staging', tier: 'primary' },
+  },
+  'inst-003': {
+    id: 'inst-003',
+    name: 'widget-prod',
+    labels: { env: 'production', tier: 'secondary' },
+  },
+  'inst-004': {
+    id: 'inst-004',
+    name: 'widget-staging',
+    labels: { env: 'staging' },
+  },
   'inst-005': { id: 'inst-005', name: 'demo-env', labels: {} },
 }
 
@@ -32,7 +48,9 @@ const mockConfig: any = {
       id: 'group-prod-secondary',
       name: 'Production secondary',
       order: 2,
-      label_selector: { match_labels: { env: 'production', tier: 'secondary' } },
+      label_selector: {
+        match_labels: { env: 'production', tier: 'secondary' },
+      },
       max_parallel: 1,
     },
   ],
@@ -135,9 +153,21 @@ export const Empty = () => (
 )
 
 const REGION_SUFFIXES = [
-  'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-west-1', 'eu-west-2',
-  'eu-central-1', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1',
-  'ca-central-1', 'sa-east-1', 'af-south-1', 'me-south-1',
+  'us-east-1',
+  'us-east-2',
+  'us-west-1',
+  'us-west-2',
+  'eu-west-1',
+  'eu-west-2',
+  'eu-central-1',
+  'ap-south-1',
+  'ap-southeast-1',
+  'ap-southeast-2',
+  'ap-northeast-1',
+  'ca-central-1',
+  'sa-east-1',
+  'af-south-1',
+  'me-south-1',
 ]
 
 function buildLargePlan(

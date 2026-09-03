@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -25,6 +26,8 @@ func setupIACVSyncDB(t *testing.T) *gorm.DB {
 			old_app_config_id TEXT NOT NULL DEFAULT '',
 			new_app_config_id TEXT NOT NULL DEFAULT '',
 			workflow_id TEXT,
+			app_release_id TEXT,
+			operating_model_id TEXT,
 			app_branch_run_id TEXT,
 			install_group_id TEXT,
 			created_by_id TEXT NOT NULL DEFAULT '',
@@ -34,6 +37,15 @@ func setupIACVSyncDB(t *testing.T) *gorm.DB {
 			status BLOB,
 			diff TEXT,
 			metadata TEXT
+		)
+	`).Error)
+	require.NoError(t, db.Exec(`
+		CREATE TABLE install_release_deployments (
+			id TEXT PRIMARY KEY, created_at DATETIME, org_id TEXT, install_id TEXT,
+			release_id TEXT, package_id TEXT, previous_release_id TEXT,
+			install_app_config_version_id TEXT, operating_model_id TEXT, method TEXT,
+			actor TEXT, executor TEXT, operation_id TEXT, plan_digest TEXT,
+			result_directive TEXT, status TEXT, started_at DATETIME, finished_at DATETIME
 		)
 	`).Error)
 	return db
@@ -65,7 +77,7 @@ func TestSyncInstallAppConfigVersionFromFlowStatus(t *testing.T) {
 	insertIACV(t, db, "iacv-other", "inst-2", "wf-other", app.CompositeStatus{Status: app.StatusInProgress})
 
 	a := &Activities{db: db, l: zap.NewNop()}
-	a.syncInstallAppConfigVersionFromFlowStatus(context.Background(), wfID, app.CompositeStatus{
+	a.syncInstallAppConfigVersionFromFlowStatus(context.Background(), app.Workflow{ID: wfID}, app.CompositeStatus{
 		Status:                 app.StatusError,
 		StatusHumanDescription: "workflow failed, awaiting retry",
 	})
@@ -82,7 +94,36 @@ func TestSyncInstallAppConfigVersionFromFlowStatusNoMatch(t *testing.T) {
 	db := setupIACVSyncDB(t)
 	a := &Activities{db: db, l: zap.NewNop()}
 
-	a.syncInstallAppConfigVersionFromFlowStatus(context.Background(), "wf-missing", app.CompositeStatus{
+	a.syncInstallAppConfigVersionFromFlowStatus(context.Background(), app.Workflow{ID: "wf-missing"}, app.CompositeStatus{
 		Status: app.StatusError,
 	})
+}
+
+func TestSyncInstallAppConfigVersionRecordsOnlyTerminalReleaseFailure(t *testing.T) {
+	db := setupIACVSyncDB(t)
+	releaseID := "release-1"
+	operatingModelID := "operating-model-1"
+	require.NoError(t, db.Exec(`
+		INSERT INTO install_app_config_versions
+			(id, org_id, install_id, workflow_id, app_release_id, operating_model_id, status, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+	`, "iacv-release", "org-1", "install-1", "workflow-1", releaseID, operatingModelID, `{}`).Error)
+	a := &Activities{db: db, l: zap.NewNop()}
+	workflow := app.Workflow{ID: "workflow-1", CreatedAt: time.Now()}
+
+	a.syncInstallAppConfigVersionFromFlowStatus(context.Background(), workflow, app.CompositeStatus{
+		Status: app.StatusError, Metadata: map[string]any{"awaiting_retry": true},
+	})
+	var count int64
+	require.NoError(t, db.Model(&app.InstallReleaseDeployment{}).Count(&count).Error)
+	require.Zero(t, count)
+
+	a.syncInstallAppConfigVersionFromFlowStatus(context.Background(), workflow, app.CompositeStatus{
+		Status: app.StatusError, Metadata: map[string]any{"stopped": true},
+	})
+	var deployment app.InstallReleaseDeployment
+	require.NoError(t, db.First(&deployment).Error)
+	require.Equal(t, releaseID, deployment.ReleaseID)
+	require.Equal(t, app.InstallDeploymentStatusFailed, deployment.Status)
+	require.Equal(t, "failed", deployment.ResultDirective)
 }

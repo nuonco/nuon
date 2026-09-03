@@ -23,7 +23,10 @@ const RunnerJobDetailContent = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/installs`, text: 'Installs' },
           { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
-          { path: `/${org?.id}/installs/${install?.id}/runner`, text: 'Install runner' },
+          {
+            path: `/${org?.id}/installs/${install?.id}/runner`,
+            text: 'Install runner',
+          },
           { path: '', text: getJobName(job) },
         ]}
       />

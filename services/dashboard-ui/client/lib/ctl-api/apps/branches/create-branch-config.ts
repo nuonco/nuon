@@ -1,5 +1,9 @@
 import { api } from '@/lib/api'
-import type { TAppBranchConfig, TAppBranchInstallGroup } from '@/types'
+import type {
+  TAppBranchConfig,
+  TAppBranchInstallGroup,
+  TAppBranchRunPreviewMode,
+} from '@/types'
 
 export type TCreateBranchConfigRequest = {
   connected_github_vcs_config?: {
@@ -30,7 +34,7 @@ export type TCreateBranchConfigRequest = {
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean
   preview_config?: {
-    mode?: 'plan-only' | 'apply' | 'build-only'
+    mode?: TAppBranchRunPreviewMode
     install_id?: string
     install_name?: string
     label_selector?: { match_labels?: Record<string, string> } | null

@@ -39,6 +39,18 @@ type ServiceCreateRunnerJobExecutionResultRequest struct {
 	// SourceDigest and the runner skipped the artifact push.
 	NoOp bool `json:"no_op,omitempty"`
 
+	// output digest
+	OutputDigest string `json:"output_digest,omitempty"`
+
+	// output media type
+	OutputMediaType string `json:"output_media_type,omitempty"`
+
+	// output repository
+	OutputRepository string `json:"output_repository,omitempty"`
+
+	// output size
+	OutputSize int64 `json:"output_size,omitempty"`
+
 	// ResolvedAt is when the runner resolved SourceRef to SourceDigest.
 	ResolvedAt string `json:"resolved_at,omitempty"`
 

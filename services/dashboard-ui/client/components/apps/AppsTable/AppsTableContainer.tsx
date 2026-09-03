@@ -21,12 +21,13 @@ export const AppsTableContainer = ({
 
   const { data: result, isLoading } = useQuery({
     queryKey: ['apps', org.id, offset, searchParams.get('q')],
-    queryFn: () => getApps({
-      orgId: org.id,
-      offset,
-      limit: LIMIT,
-      q: searchParams.get('q') || undefined,
-    }),
+    queryFn: () =>
+      getApps({
+        orgId: org.id,
+        offset,
+        limit: LIMIT,
+        q: searchParams.get('q') || undefined,
+      }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
   })
@@ -41,7 +42,11 @@ export const AppsTableContainer = ({
           Create app
         </Button>
       }
-      pagination={{ hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }}
+      pagination={{
+        hasNext: result?.pagination?.hasNext ?? false,
+        offset,
+        limit: LIMIT,
+      }}
     />
   )
 }

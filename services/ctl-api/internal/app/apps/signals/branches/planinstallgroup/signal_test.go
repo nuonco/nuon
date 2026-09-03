@@ -91,6 +91,8 @@ func (s *PlanInstallGroupTestSuite) TestNoStepIDSkipsApproval() {
 			Name:       "prod",
 			InstallIDs: []string{"install-1"},
 		}, nil)
+	s.env.OnActivity((*activities.Activities).ResolveInstallGroupInstalls, mock.Anything, mock.Anything, mock.Anything).Return(
+		&activities.ResolveInstallGroupInstallsOutput{InstallIDs: []string{"install-1"}}, nil)
 
 	s.env.OnActivity("GetInstall", mock.Anything, mock.Anything).Return(
 		&app.Install{

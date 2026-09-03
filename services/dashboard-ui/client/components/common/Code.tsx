@@ -30,7 +30,12 @@ export const Code = ({
   if (loading) {
     if (variant === 'inline') {
       return (
-        <Text family="mono" variant="body" loading loadingWidth={loadingWidth} />
+        <Text
+          family="mono"
+          variant="body"
+          loading
+          loadingWidth={loadingWidth}
+        />
       )
     }
     return (

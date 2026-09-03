@@ -39,11 +39,7 @@ export function OutputChangesList({
                 <div className="text-left w-full">
                   <div className="flex items-start justify-between w-full">
                     <div className="flex flex-col max-w-[550px]">
-                      <Text
-                        nowrap
-                        className="block truncate"
-                        weight="strong"
-                      >
+                      <Text nowrap className="block truncate" weight="strong">
                         {change.output}
                       </Text>
                       <span className="flex items-center gap-6">

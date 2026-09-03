@@ -17,7 +17,11 @@ import { matchesSelector } from '@/components/match/matches'
 import { parseLabelsQuery } from '@/components/match/parse'
 import { AddInstallPicker } from './AddInstallPicker'
 import { InstallRow } from './InstallRow'
-import type { IInstallGroup, ILabelSelector, InstallSelectionMode } from './types'
+import type {
+  IInstallGroup,
+  ILabelSelector,
+  InstallSelectionMode,
+} from './types'
 
 interface IGroupEditor {
   group: IInstallGroup
@@ -56,7 +60,9 @@ export const GroupEditor = ({
 }: IGroupEditor) => {
   const installs = useMemo(() => {
     const byId = new Map(availableInstalls.map((i) => [i.id, i]))
-    return group.install_ids.map((id) => byId.get(id)).filter((i): i is TInstall => !!i)
+    return group.install_ids
+      .map((id) => byId.get(id))
+      .filter((i): i is TInstall => !!i)
   }, [group.install_ids, availableInstalls])
 
   return (
@@ -103,7 +109,11 @@ export const GroupEditor = ({
                 Move up
                 <Icon variant="ArrowUpIcon" />
               </Button>
-              <Button isMenuButton onClick={onMoveDown} disabled={index === totalGroups - 1}>
+              <Button
+                isMenuButton
+                onClick={onMoveDown}
+                disabled={index === totalGroups - 1}
+              >
                 Move down
                 <Icon variant="ArrowDownIcon" />
               </Button>
@@ -148,7 +158,11 @@ export const GroupEditor = ({
                 emptyTitle="No installs"
                 emptyMessage="Add an install below, or delete this group — a group can't be saved empty."
                 action={
-                  <Button variant="danger" onClick={onDelete} disabled={disabled}>
+                  <Button
+                    variant="danger"
+                    onClick={onDelete}
+                    disabled={disabled}
+                  >
                     <Icon variant="TrashIcon" size={16} />
                     Delete group
                   </Button>
@@ -173,7 +187,9 @@ export const GroupEditor = ({
         )}
 
         {group.selection_mode === 'labels' && contentError && (
-          <Text variant="subtext" theme="error">{contentError}</Text>
+          <Text variant="subtext" theme="error">
+            {contentError}
+          </Text>
         )}
       </div>
     </Card>
@@ -217,7 +233,12 @@ const LabelSelectorEditor = ({
   }, [availableInstalls])
 
   const matchedInstalls = useMemo(
-    () => (hasSelector ? availableInstalls.filter((i) => matchesSelector(i.labels, labelSelector)) : []),
+    () =>
+      hasSelector
+        ? availableInstalls.filter((i) =>
+            matchesSelector(i.labels, labelSelector)
+          )
+        : [],
     [hasSelector, availableInstalls, labelSelector]
   )
 
@@ -286,7 +307,9 @@ const LabelSelectorEditor = ({
 
       {suggestedLabels.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <Text variant="subtext" theme="neutral">Labels from your installs</Text>
+          <Text variant="subtext" theme="neutral">
+            Labels from your installs
+          </Text>
           <div className="flex flex-wrap gap-1.5">
             {suggestedLabels.map(({ key, value }) => {
               const isActive = labels[key] === value
@@ -316,14 +339,26 @@ const LabelSelectorEditor = ({
         matchedInstalls.length > 0 ? (
           <div className="flex flex-col gap-1.5">
             <Text variant="subtext" theme="neutral">
-              {matchedInstalls.length} {matchedInstalls.length === 1 ? 'install matches' : 'installs match'}
+              {matchedInstalls.length}{' '}
+              {matchedInstalls.length === 1
+                ? 'install matches'
+                : 'installs match'}
             </Text>
             {matchedInstalls.map((install) => (
-              <InstallRow key={install.id} install={install} labelColors={labelColors} />
+              <InstallRow
+                key={install.id}
+                install={install}
+                labelColors={labelColors}
+              />
             ))}
           </div>
         ) : (
-          <EmptyState variant="search" size="sm" emptyTitle="No matches" emptyMessage="No installs match this selector." />
+          <EmptyState
+            variant="search"
+            size="sm"
+            emptyTitle="No matches"
+            emptyMessage="No installs match this selector."
+          />
         )
       ) : (
         <EmptyState

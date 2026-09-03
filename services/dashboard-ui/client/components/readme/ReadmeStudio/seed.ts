@@ -51,9 +51,19 @@ export const seedBlocks = (): TBlock[] => [
     limit: 5,
     emptyText: 'No components deployed yet',
     columns: [
-      { key: crypto.randomUUID(), header: 'Status', kind: 'status', path: 'status' },
+      {
+        key: crypto.randomUUID(),
+        header: 'Status',
+        kind: 'status',
+        path: 'status',
+      },
       { key: crypto.randomUUID(), header: 'Name', kind: 'text', path: 'name' },
-      { key: crypto.randomUUID(), header: 'Deployed', kind: 'time', path: 'updated_at' },
+      {
+        key: crypto.randomUUID(),
+        header: 'Deployed',
+        kind: 'time',
+        path: 'updated_at',
+      },
     ],
   },
   {

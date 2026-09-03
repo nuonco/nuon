@@ -1,5 +1,10 @@
 import { useMemo, useState, useEffect } from 'react'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -10,10 +15,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { useVcsRepoBrowser } from '@/hooks/use-vcs-repo-browser'
-import {
-  getAppInstallsConfig,
-  createAppInstallsConfig,
-} from '@/lib'
+import { getAppInstallsConfig, createAppInstallsConfig } from '@/lib'
 import type { TAPIError } from '@/types'
 import type { TCreateAppInstallsConfigBody } from '@/lib/ctl-api/apps/install-syncs/create-app-installs-config'
 import { ManageInstallsConfig } from './ManageInstallsConfig'
@@ -69,7 +71,12 @@ export const ManageInstallsConfigContainer = ({
     })
     vcsBrowser.setSelectedBranch(currentConfig.branch)
     setDidAutofill(true)
-  }, [currentConfig, didAutofill, vcsBrowser.setSelectedRepo, vcsBrowser.setSelectedBranch])
+  }, [
+    currentConfig,
+    didAutofill,
+    vcsBrowser.setSelectedRepo,
+    vcsBrowser.setSelectedBranch,
+  ])
 
   const repos = useMemo(() => {
     const list = vcsBrowser.repos ?? []

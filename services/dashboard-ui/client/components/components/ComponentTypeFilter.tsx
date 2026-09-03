@@ -73,30 +73,33 @@ export const ComponentTypeFilterDropdown: React.FC<
   const setTypesInUrl = (types: TComponentConfigTypeText[]) => {
     const newTypes = types.map(String)
 
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev)
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev)
 
-      const existingTypes = params.get('types')?.split(',') ?? []
-      const setsEqual = (a: string[], b: string[]) => {
-        if (a.length !== b.length) return false
-        const s = new Set(a)
-        return b.every((x) => s.has(x))
-      }
+        const existingTypes = params.get('types')?.split(',') ?? []
+        const setsEqual = (a: string[], b: string[]) => {
+          if (a.length !== b.length) return false
+          const s = new Set(a)
+          return b.every((x) => s.has(x))
+        }
 
-      if (!setsEqual(existingTypes, newTypes)) {
-        params.delete('offset')
-      }
+        if (!setsEqual(existingTypes, newTypes)) {
+          params.delete('offset')
+        }
 
-      if (newTypes.length === FILTER_OPTIONS.length) {
-        params.delete('types')
-      } else if (newTypes.length > 0) {
-        params.set('types', newTypes.join(','))
-      } else {
-        params.delete('types')
-      }
+        if (newTypes.length === FILTER_OPTIONS.length) {
+          params.delete('types')
+        } else if (newTypes.length > 0) {
+          params.set('types', newTypes.join(','))
+        } else {
+          params.delete('types')
+        }
 
-      return params
-    }, { replace: true })
+        return params
+      },
+      { replace: true }
+    )
   }
 
   const handleTypeFilter = (e: React.ChangeEvent<HTMLInputElement>) => {

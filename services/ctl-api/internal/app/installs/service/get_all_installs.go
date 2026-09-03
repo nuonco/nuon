@@ -54,6 +54,7 @@ func (s *service) getAllInstalls(ctx *gin.Context, limitVal int, orgTyp string) 
 	var installs []*app.Install
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Preload("OperatingModel").
 		Preload("AppSandboxConfig").
 		Preload("AppRunnerConfig").
 		Preload("AppConfig", func(db *gorm.DB) *gorm.DB {

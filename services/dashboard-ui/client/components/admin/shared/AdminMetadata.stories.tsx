@@ -5,26 +5,15 @@ export default {
 import { AdminInfoCard, AdminMetadataPanel } from './AdminMetadata'
 
 export const InfoCard = () => (
-  <AdminInfoCard
-    title="Install ID"
-    value="inst_abc123def456"
-    copyable
-  />
+  <AdminInfoCard title="Install ID" value="inst_abc123def456" copyable />
 )
 
 export const InfoCardLoading = () => (
-  <AdminInfoCard
-    title="Org ID"
-    value={null}
-    loading
-  />
+  <AdminInfoCard title="Org ID" value={null} loading />
 )
 
 export const InfoCardEmpty = () => (
-  <AdminInfoCard
-    title="Temporal Workflow ID"
-    value={null}
-  />
+  <AdminInfoCard title="Temporal Workflow ID" value={null} />
 )
 
 export const MetadataPanel = () => (

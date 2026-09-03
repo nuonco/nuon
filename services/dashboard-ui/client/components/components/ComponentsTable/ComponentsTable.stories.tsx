@@ -11,7 +11,10 @@ const mockRows: TComponentRow[] = Array.from({ length: 3 }, (_, i) => ({
   componentType: <span>terraform_module</span>,
   href: `/org-1/apps/app-1/components/comp-${i + 1}`,
   dependencies: <span>-</span>,
-  labels: i === 0 ? <span className="text-xs font-mono">tier: infrastructure</span> : null,
+  labels:
+    i === 0 ? (
+      <span className="text-xs font-mono">tier: infrastructure</span>
+    ) : null,
 }))
 
 export const Default = () => (

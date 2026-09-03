@@ -118,9 +118,7 @@ export const Default = () => {
 
 export const Empty = () => {
   const treeProps = useTreeProps([])
-  return (
-    <SpanTree spans={[]} onSelectSpan={() => undefined} {...treeProps} />
-  )
+  return <SpanTree spans={[]} onSelectSpan={() => undefined} {...treeProps} />
 }
 
 export const SingleRoot = () => {

@@ -122,6 +122,36 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 	return resource
 }
 
+// Empty S3 rendezvous parameters preserve connected phone-home behavior.
+const (
+	phoneHomeS3BucketParam      = "PhoneHomeS3Bucket"
+	phoneHomeS3KeyParam         = "PhoneHomeS3Key"
+	phoneHomeS3EnabledCondition = "PhoneHomeS3Enabled"
+)
+
+func (a *Templates) getPhoneHomeS3Parameters() map[string]cloudformation.Parameter {
+	return map[string]cloudformation.Parameter{
+		phoneHomeS3BucketParam: {
+			Type:        "String",
+			Default:     "",
+			Description: ptr("S3 bucket the phone-home Lambda writes stack outputs to, for offline customer-managed installs. Empty keeps the default control-plane phone-home."),
+		},
+		phoneHomeS3KeyParam: {
+			Type:        "String",
+			Default:     "",
+			Description: ptr("S3 object key for the phone-home stack outputs JSON, for offline customer-managed installs."),
+		},
+	}
+}
+
+func (a *Templates) getPhoneHomeS3Conditions() map[string]any {
+	return map[string]any{
+		phoneHomeS3EnabledCondition: cloudformation.Not([]string{
+			cloudformation.Equals(cloudformation.Ref(phoneHomeS3BucketParam), ""),
+		}),
+	}
+}
+
 // lambdaInlineCodeLimit is AWS's hard cap on Code.ZipFile, the inline source the
 // phone-home Lambda uses.
 const lambdaInlineCodeLimit = 4096
@@ -188,27 +218,50 @@ func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBui
 	// prop, so anything added to getRunnerPhoneHomeProps is echoed back into the
 	// phone-home body and lands in InstallStackVersionRun.Data. Env vars are read
 	// via os.environ and are never echoed.
-	if inp.PhoneHomeSecretARN != "" {
-		fn.Environment = &lambda.Function_Environment{
-			Variables: map[string]string{
-				"NUON_PHONE_HOME_SECRET_ARN": inp.PhoneHomeSecretARN,
-				// The region of the *secret* — Nuon's management region, not the
-				// install's. The Lambda has no VPC config, so a cross-region
-				// Secrets Manager call is fine.
-				"NUON_PHONE_HOME_SECRET_REGION": inp.PhoneHomeSecretRegion,
-				// Which entry to read out of the token map. Scoped to the stack
-				// version this template belongs to, so it can never go stale: a
-				// template never needs a phone_home_id other than its own.
-				"NUON_PHONE_HOME_ID": inp.CloudFormationStackVersion.PhoneHomeID,
-			},
-		}
+	variables := map[string]string{
+		"NUON_PHONE_HOME_S3_BUCKET": cloudformation.Ref(phoneHomeS3BucketParam),
+		"NUON_PHONE_HOME_S3_KEY":    cloudformation.Ref(phoneHomeS3KeyParam),
 	}
+	if inp.PhoneHomeSecretARN != "" {
+		variables["NUON_PHONE_HOME_SECRET_ARN"] = inp.PhoneHomeSecretARN
+		// The region of the *secret* — Nuon's management region, not the
+		// install's. The Lambda has no VPC config, so a cross-region
+		// Secrets Manager call is fine.
+		variables["NUON_PHONE_HOME_SECRET_REGION"] = inp.PhoneHomeSecretRegion
+		// Which entry to read out of the token map. Scoped to the stack
+		// version this template belongs to, so it can never go stale: a
+		// template never needs a phone_home_id other than its own.
+		variables["NUON_PHONE_HOME_ID"] = inp.CloudFormationStackVersion.PhoneHomeID
+	}
+	fn.Environment = &lambda.Function_Environment{Variables: variables}
 
 	return fn
 }
 
 func (a *Templates) getRunnerPhoneHomeLambdaRole(inp *stacks.TemplateInput, t tagBuilder) *iam.Role {
 	role := a.basePhoneHomeLambdaRole(inp, t)
+
+	// The write half of the offline customer-managed S3 rendezvous. IAM rejects a policy whose
+	// Resource is a malformed ARN, so when the stack parameters are empty the
+	// statement is pointed at a stack-scoped placeholder bucket that is never
+	// created (and never written: the script skips S3 when the env vars are empty).
+	role.Policies = append(role.Policies, iam.Role_Policy{
+		PolicyName: "PhoneHomeS3Policy",
+		PolicyDocument: map[string]any{
+			"Version": "2012-10-17",
+			"Statement": []map[string]any{
+				{
+					"Effect": "Allow",
+					"Action": []string{"s3:PutObject"},
+					"Resource": cloudformation.If(
+						phoneHomeS3EnabledCondition,
+						cloudformation.Sub(fmt.Sprintf("arn:aws:s3:::${%s}/${%s}", phoneHomeS3BucketParam, phoneHomeS3KeyParam)),
+						cloudformation.Sub("arn:aws:s3:::${AWS::StackName}-phone-home-disabled"),
+					),
+				},
+			},
+		},
+	})
 
 	// The identity half of the cross-account read. The secret's resource policy in
 	// Nuon's management account names this role as a principal; this narrows what the

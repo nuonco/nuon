@@ -18,7 +18,9 @@ export const Info = () => (
 
 export const Error = () => (
   <LogPanelHeading
-    log={{ ...baseLog, severity_number: 20, severity_text: 'ERROR' } as TOTELLog}
+    log={
+      { ...baseLog, severity_number: 20, severity_text: 'ERROR' } as TOTELLog
+    }
   />
 )
 

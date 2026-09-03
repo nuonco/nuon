@@ -55,12 +55,21 @@ export const BranchRunComparisonRuns = ({
         {hasBaseline ? (
           <>
             <div className="hidden md:flex items-center justify-center px-1">
-              <Icon variant="ArrowLeftIcon" size={20} className="text-cool-grey-400" />
+              <Icon
+                variant="ArrowLeftIcon"
+                size={20}
+                className="text-cool-grey-400"
+              />
             </div>
             <BranchRunComparisonCard
               label="Previous run"
               run={baseRun}
-              runHref={runDetailHref(orgId, appId, branchId, baseRun?.workflow_id)}
+              runHref={runDetailHref(
+                orgId,
+                appId,
+                branchId,
+                baseRun?.workflow_id
+              )}
               repoSlug={repoSlug}
             />
           </>

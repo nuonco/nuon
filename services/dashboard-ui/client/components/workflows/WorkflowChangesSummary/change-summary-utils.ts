@@ -39,9 +39,7 @@ export const emptyCounts = (): TStepChangeCounts => ({
 export const hasChanges = (counts: TStepChangeCounts): boolean =>
   counts.create + counts.update + counts.delete + counts.replace > 0
 
-export const sumCounts = (
-  summaries: TStepChangeSummary[]
-): TStepChangeCounts =>
+export const sumCounts = (summaries: TStepChangeSummary[]): TStepChangeCounts =>
   summaries.reduce(
     (acc, summary) => ({
       create: acc.create + summary.counts.create,

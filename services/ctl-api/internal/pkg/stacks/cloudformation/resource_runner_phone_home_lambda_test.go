@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -51,16 +52,22 @@ func TestGetRunnerPhoneHomeLambda_SecretEnvVars(t *testing.T) {
 	assert.Equal(t, "phv7g2k9x4m1qz8w3n6b5t0jrc", fn.Environment.Variables["NUON_PHONE_HOME_ID"])
 }
 
-// Backwards compatibility: an install without phone-home auth must render exactly as
-// before, so the script's "send the header only when the env vars are present" branch
-// keeps one script version serving both flagged and unflagged orgs.
-func TestGetRunnerPhoneHomeLambda_NoEnvWithoutSecret(t *testing.T) {
+// Backwards compatibility: an install without phone-home auth must not carry any of
+// the secret-related env vars, so the script's "send the header only when the env vars
+// are present" branch keeps one script version serving both flagged and unflagged orgs.
+// The S3 rendezvous refs are always present but resolve to empty strings unless the
+// customer sets the stack parameters.
+func TestGetRunnerPhoneHomeLambda_NoSecretEnvWithoutSecret(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{}}
 	inp := phoneHomeTestInput("instabcdefghijklmnopqrstuv")
 
 	fn := tpl.getRunnerPhoneHomeLambda(inp, tagBuilder{installID: inp.Install.ID})
 
-	assert.Nil(t, fn.Environment, "no phone-home secret means no environment block")
+	require.NotNil(t, fn.Environment)
+	assert.Equal(t, map[string]string{
+		"NUON_PHONE_HOME_S3_BUCKET": cloudformation.Ref(phoneHomeS3BucketParam),
+		"NUON_PHONE_HOME_S3_KEY":    cloudformation.Ref(phoneHomeS3KeyParam),
+	}, fn.Environment.Variables, "no phone-home secret means only the S3 rendezvous refs")
 }
 
 // The identity half of the cross-account read. Without kms:Decrypt the read fails no

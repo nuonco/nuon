@@ -1,5 +1,8 @@
 import { useContext } from 'react'
-import { LogStreamContext, type LogStreamContextValue } from '@/providers/log-stream-provider'
+import {
+  LogStreamContext,
+  type LogStreamContextValue,
+} from '@/providers/log-stream-provider'
 import { LogViewerContext } from '@/providers/log-viewer-provider'
 import type { TLogFiltersProps } from '@/hooks/use-log-filters'
 import type { TOTELLog, TAPIError } from '@/types'

@@ -4,6 +4,4 @@ export default {
 
 import { AdminRunnersCard } from './AdminRunnersCard'
 
-export const Default = () => (
-  <AdminRunnersCard onOpenPanel={() => {}} />
-)
+export const Default = () => <AdminRunnersCard onOpenPanel={() => {}} />

@@ -22,7 +22,9 @@ export const Default = () => (
   <NotificationContext.Provider value={mockNotifications}>
     <SidebarProvider>
       <MainTopbar>
-        <Text variant="subtext" theme="neutral">Dashboard</Text>
+        <Text variant="subtext" theme="neutral">
+          Dashboard
+        </Text>
       </MainTopbar>
     </SidebarProvider>
   </NotificationContext.Provider>
@@ -32,7 +34,9 @@ export const HideSidebarButtons = () => (
   <NotificationContext.Provider value={mockNotifications}>
     <SidebarProvider>
       <MainTopbar hideSidebarButtons>
-        <Text variant="subtext" theme="neutral">Single page layout</Text>
+        <Text variant="subtext" theme="neutral">
+          Single page layout
+        </Text>
       </MainTopbar>
     </SidebarProvider>
   </NotificationContext.Provider>

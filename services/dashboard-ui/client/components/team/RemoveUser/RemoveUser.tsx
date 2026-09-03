@@ -54,8 +54,8 @@ export const RemoveUserModal = ({
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Text variant="body" theme="neutral">
-              {accountEmail} will be removed from your organization and their access
-              revoked immediately.
+              {accountEmail} will be removed from your organization and their
+              access revoked immediately.
             </Text>
           </div>
 
@@ -74,7 +74,11 @@ export const RemoveUserModal = ({
               value={confirmEmail}
               onChange={(e) => setConfirmEmail(e.target.value)}
               error={confirmEmail.length > 0 && !isConfirmValid}
-              errorMessage={confirmEmail.length > 0 && !isConfirmValid ? "Email doesn't match" : undefined}
+              errorMessage={
+                confirmEmail.length > 0 && !isConfirmValid
+                  ? "Email doesn't match"
+                  : undefined
+              }
             />
           </div>
         </div>

@@ -99,9 +99,7 @@ export const AppRolesTable = ({
               variant: 'ghost',
               className: panelLinkClass,
               children: (
-                <span className="flex items-center gap-1.5">
-                  View role
-                </span>
+                <span className="flex items-center gap-1.5">View role</span>
               ),
             }}
           >

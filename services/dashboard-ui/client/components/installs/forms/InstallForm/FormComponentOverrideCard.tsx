@@ -52,7 +52,8 @@ export const FormComponentOverrideCard = ({
     : undefined
   const enabled = useStore(form.store, (s) =>
     enabledFieldName
-      ? (s.values.inputs?.[enabledInput!.name!] as boolean | undefined) ?? true
+      ? ((s.values.inputs?.[enabledInput!.name!] as boolean | undefined) ??
+        true)
       : true
   )
 

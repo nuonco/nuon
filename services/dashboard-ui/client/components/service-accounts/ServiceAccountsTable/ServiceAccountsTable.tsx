@@ -104,7 +104,10 @@ export const ServiceAccountsTable = ({
         header: 'Role',
         accessorKey: 'role',
         cell: (props) => (
-          <Text variant="body" className="text-primary-600 dark:text-primary-400">
+          <Text
+            variant="body"
+            className="text-primary-600 dark:text-primary-400"
+          >
             {props.getValue<string>()}
           </Text>
         ),
@@ -114,7 +117,11 @@ export const ServiceAccountsTable = ({
         accessorKey: 'createdAt',
         cell: (props) => {
           const value = props.getValue<string>()
-          return value ? <Time time={value} format="relative" /> : <Text>—</Text>
+          return value ? (
+            <Time time={value} format="relative" />
+          ) : (
+            <Text>—</Text>
+          )
         },
       },
       {
@@ -135,7 +142,8 @@ export const ServiceAccountsTable = ({
       enableSearch={false}
       emptyStateProps={{
         emptyTitle: 'No service accounts yet',
-        emptyMessage: 'Create a service account to automate access to the Nuon API.',
+        emptyMessage:
+          'Create a service account to automate access to the Nuon API.',
       }}
     />
   )

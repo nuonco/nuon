@@ -9,9 +9,14 @@ import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateInstall } from '@/lib'
-import { DisableConfigSyncModal, EnableConfigSyncModal } from './EnableConfigSync'
+import {
+  DisableConfigSyncModal,
+  EnableConfigSyncModal,
+} from './EnableConfigSync'
 
-const DisableConfigSyncModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'>) => {
+const DisableConfigSyncModalContainer = ({
+  ...props
+}: Omit<IModal, 'onSubmit'>) => {
   const queryClient = useQueryClient()
   const { org } = useOrg()
   const { install } = useInstall()
@@ -27,7 +32,9 @@ const DisableConfigSyncModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'>)
       }),
     onSuccess: () => {
       removeModal(props.modalId)
-      queryClient.invalidateQueries({ queryKey: ['install', org.id, install.id] })
+      queryClient.invalidateQueries({
+        queryKey: ['install', org.id, install.id],
+      })
       addToast(
         <Toast heading="Config sync disabled" theme="success">
           <Text>Config sync has been disabled for {install.name}.</Text>
@@ -54,7 +61,9 @@ const DisableConfigSyncModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'>)
   )
 }
 
-const EnableConfigSyncModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'>) => {
+const EnableConfigSyncModalContainer = ({
+  ...props
+}: Omit<IModal, 'onSubmit'>) => {
   const queryClient = useQueryClient()
   const { org } = useOrg()
   const { install } = useInstall()
@@ -70,7 +79,9 @@ const EnableConfigSyncModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'>) 
       }),
     onSuccess: () => {
       removeModal(props.modalId)
-      queryClient.invalidateQueries({ queryKey: ['install', org.id, install.id] })
+      queryClient.invalidateQueries({
+        queryKey: ['install', org.id, install.id],
+      })
       addToast(
         <Toast heading="Config sync enabled" theme="success">
           <Text>Config sync has been enabled for {install.name}.</Text>
@@ -100,7 +111,8 @@ export const EnableConfigSyncButton = ({ ...props }: IButtonAsButton) => {
   const { install } = useInstall()
   const { addModal } = useSurfaces()
 
-  const isManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
+  const isManagedByConfig =
+    install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   const handleClick = () => {
     if (isManagedByConfig) {

@@ -51,12 +51,7 @@ export const MainSidebarButton = ({
       position="bottom"
       tipContent={
         <div className="w-fit">
-          <Text
-            flex
-            nowrap
-            className="gap-2"
-            variant="subtext"
-          >
+          <Text flex nowrap className="gap-2" variant="subtext">
             {isSidebarOpen ? 'Collapse' : 'Expand'} sidebar
             <span className="inline-flex gap-0.5">
               <Badge variant="code" size="sm">

@@ -90,11 +90,7 @@ export const RunbookHistoryTab = () => {
                     variant="secondary"
                     size="sm"
                     onClick={() =>
-                      addPanel(
-                        <Panel heading="Run history">
-                          {timeline}
-                        </Panel>
-                      )
+                      addPanel(<Panel heading="Run history">{timeline}</Panel>)
                     }
                   >
                     <Icon variant="ClockCounterClockwiseIcon" size={16} />
@@ -119,7 +115,9 @@ export const RunbookHistoryTab = () => {
                   />
                 ))
               ) : (
-                <Text theme="neutral">No step data available for this run.</Text>
+                <Text theme="neutral">
+                  No step data available for this run.
+                </Text>
               )}
             </div>
 

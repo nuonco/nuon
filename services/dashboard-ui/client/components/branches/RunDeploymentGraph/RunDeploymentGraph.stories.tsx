@@ -36,7 +36,9 @@ const mockRuns: any[] = [
     id: 'igr-002',
     install_group_id: 'group-prod',
     install_group_name: 'Production',
-    install_group: { label_selector: { match_labels: { tier: 'prod', region: 'us-east-1' } } },
+    install_group: {
+      label_selector: { match_labels: { tier: 'prod', region: 'us-east-1' } },
+    },
     status: { status: 'in-progress' },
     completed_installs: 1,
     total_installs: 3,
@@ -50,7 +52,11 @@ const mockRuns: any[] = [
 
 export const InProgress = () => (
   <div className="p-4">
-    <RunDeploymentGraph installGroupRuns={mockRuns} installsById={installsById} orgId="org-demo" />
+    <RunDeploymentGraph
+      installGroupRuns={mockRuns}
+      installsById={installsById}
+      orgId="org-demo"
+    />
   </div>
 )
 
@@ -69,13 +75,19 @@ const failedRuns: any[] = [
     status: { status: 'error' },
     completed_installs: 0,
     total_installs: 1,
-    installs: [{ install_id: 'inst-006', workflow_id: 'inw-006', status: 'error' }],
+    installs: [
+      { install_id: 'inst-006', workflow_id: 'inw-006', status: 'error' },
+    ],
   },
 ]
 
 export const Failed = () => (
   <div className="p-4">
-    <RunDeploymentGraph installGroupRuns={failedRuns} installsById={installsById} orgId="org-demo" />
+    <RunDeploymentGraph
+      installGroupRuns={failedRuns}
+      installsById={installsById}
+      orgId="org-demo"
+    />
   </div>
 )
 
@@ -115,7 +127,11 @@ const postDeployRunbookRuns: any[] = [
 
 export const WithPostDeployRunbooks = () => (
   <div className="p-4">
-    <RunDeploymentGraph installGroupRuns={postDeployRunbookRuns} installsById={installsById} orgId="org-demo" />
+    <RunDeploymentGraph
+      installGroupRuns={postDeployRunbookRuns}
+      installsById={installsById}
+      orgId="org-demo"
+    />
   </div>
 )
 
@@ -126,15 +142,33 @@ export const Empty = () => (
 )
 
 const REGION_SUFFIXES = [
-  'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-west-1', 'eu-west-2',
-  'eu-central-1', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1',
-  'ca-central-1', 'sa-east-1', 'af-south-1', 'me-south-1',
+  'us-east-1',
+  'us-east-2',
+  'us-west-1',
+  'us-west-2',
+  'eu-west-1',
+  'eu-west-2',
+  'eu-central-1',
+  'ap-south-1',
+  'ap-southeast-1',
+  'ap-southeast-2',
+  'ap-northeast-1',
+  'ca-central-1',
+  'sa-east-1',
+  'af-south-1',
+  'me-south-1',
 ]
 
 const RUNBOOK_NAMES = ['db-migrate', 'smoke-test', 'cache-warm', 'notify-slack']
 
 function buildLargeRun(
-  specs: { name: string; count: number; completed: number; status: string; runbooks?: number }[]
+  specs: {
+    name: string
+    count: number
+    completed: number
+    status: string
+    runbooks?: number
+  }[]
 ) {
   const installsById: Record<string, any> = {}
   const runs: any[] = specs.map((spec, gi) => {
@@ -147,7 +181,8 @@ function buildLargeRun(
       }
       let status = 'pending'
       if (i < spec.completed) status = 'success'
-      else if (i === spec.completed && spec.status === 'in-progress') status = 'in-progress'
+      else if (i === spec.completed && spec.status === 'in-progress')
+        status = 'in-progress'
       else if (i === spec.completed && spec.status === 'error') status = 'error'
       const runbooks =
         spec.runbooks && status !== 'pending'
@@ -174,7 +209,11 @@ function buildLargeRun(
       id: `igr-${gi}`,
       install_group_id: `group-${gi}`,
       install_group_name: spec.name,
-      install_group: { label_selector: { match_labels: { group: spec.name.toLowerCase().replace(/\s+/g, '-') } } },
+      install_group: {
+        label_selector: {
+          match_labels: { group: spec.name.toLowerCase().replace(/\s+/g, '-') },
+        },
+      },
       status: { status: spec.status },
       completed_installs: spec.completed,
       total_installs: spec.count,
@@ -203,8 +242,20 @@ export const ManyGroupsLargeInstallCounts = () => (
 
 const largeRunWithRunbooks = buildLargeRun([
   { name: 'Canary', count: 4, completed: 4, status: 'success', runbooks: 2 },
-  { name: 'Production US', count: 30, completed: 12, status: 'in-progress', runbooks: 3 },
-  { name: 'Production EU', count: 18, completed: 0, status: 'pending', runbooks: 2 },
+  {
+    name: 'Production US',
+    count: 30,
+    completed: 12,
+    status: 'in-progress',
+    runbooks: 3,
+  },
+  {
+    name: 'Production EU',
+    count: 18,
+    completed: 0,
+    status: 'pending',
+    runbooks: 2,
+  },
   { name: 'Staging', count: 9, completed: 5, status: 'error', runbooks: 4 },
 ])
 

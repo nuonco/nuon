@@ -9,13 +9,16 @@ const mockAnnouncement: IAnnouncement = {
   id: 'ann-1',
   title: 'Nuon 2.0 is here',
   date: 'January 15, 2025',
-  description: 'We are excited to announce the release of Nuon 2.0, packed with new features and improvements.',
+  description:
+    'We are excited to announce the release of Nuon 2.0, packed with new features and improvements.',
   ctaText: 'Read more',
   ctaUrl: 'https://nuon.co/blog',
   dismissible: true,
 }
 
-export const Default = () => <AnnouncementCard announcement={mockAnnouncement} disableDismissMemory />
+export const Default = () => (
+  <AnnouncementCard announcement={mockAnnouncement} disableDismissMemory />
+)
 
 export const WithImage = () => (
   <AnnouncementCard
@@ -35,7 +38,11 @@ export const NonDismissible = () => (
 )
 
 export const Compact = () => (
-  <AnnouncementCard announcement={mockAnnouncement} variant="compact" disableDismissMemory />
+  <AnnouncementCard
+    announcement={mockAnnouncement}
+    variant="compact"
+    disableDismissMemory
+  />
 )
 
 export const CompactNonDismissible = () => (

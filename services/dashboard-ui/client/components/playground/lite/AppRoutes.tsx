@@ -27,12 +27,7 @@ import { InstallsPage } from './InstallsPage'
 import { Page } from './Page'
 import { PlaceholderGrid } from './PlaceholderGrid'
 import { RunPage } from './RunPage'
-import {
-  RunLogs,
-  RunOutputs,
-  RunSummary,
-  RunTrace,
-} from './RunDetail'
+import { RunLogs, RunOutputs, RunSummary, RunTrace } from './RunDetail'
 
 export const AppRoutes = () => (
   <Routes>
@@ -56,12 +51,7 @@ export const AppRoutes = () => (
     <Route
       path="/apps/:appId/setup"
       element={
-        <Page
-          crumbs={[
-            { label: 'Apps', path: '/apps' },
-            { label: 'Set up' },
-          ]}
-        >
+        <Page crumbs={[{ label: 'Apps', path: '/apps' }, { label: 'Set up' }]}>
           <AppSetup />
         </Page>
       }
@@ -236,7 +226,10 @@ export const AppRoutes = () => (
     <Route
       path="/installs/:installId/details"
       element={
-        <InstallDetail crumbs={[{ label: 'Details' }]} actions={['Edit inputs']}>
+        <InstallDetail
+          crumbs={[{ label: 'Details' }]}
+          actions={['Edit inputs']}
+        >
           <InstallDetails />
         </InstallDetail>
       }
@@ -265,7 +258,10 @@ export const AppRoutes = () => (
     <Route
       path="/installs/:installId/sandbox"
       element={
-        <InstallDetail crumbs={[{ label: 'Sandbox' }]} actions={['Reprovision']}>
+        <InstallDetail
+          crumbs={[{ label: 'Sandbox' }]}
+          actions={['Reprovision']}
+        >
           <EntityPage
             stats={['Status', 'Version', 'Last run', 'Drift']}
             historyTitle="Provisions"
@@ -278,7 +274,10 @@ export const AppRoutes = () => (
     <Route
       path="/installs/:installId/runner"
       element={
-        <InstallDetail crumbs={[{ label: 'Runner' }]} actions={['Restart runner']}>
+        <InstallDetail
+          crumbs={[{ label: 'Runner' }]}
+          actions={['Restart runner']}
+        >
           <InstallRunner />
         </InstallDetail>
       }
@@ -318,7 +317,10 @@ export const AppRoutes = () => (
     <Route
       path="/installs/:installId/runbooks/:actionId"
       element={
-        <InstallDetail crumbs={[{ label: 'Runbook' }]} actions={['Run runbook']}>
+        <InstallDetail
+          crumbs={[{ label: 'Runbook' }]}
+          actions={['Run runbook']}
+        >
           <ActionDetail />
         </InstallDetail>
       }

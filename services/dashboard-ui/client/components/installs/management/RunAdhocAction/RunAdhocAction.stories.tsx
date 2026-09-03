@@ -38,7 +38,11 @@ export const WithError = () => (
     <RunAdhocActionModal
       installId="inst-123"
       isPending={false}
-      error={{ error: 'Something went wrong', description: '', user_error: true }}
+      error={{
+        error: 'Something went wrong',
+        description: '',
+        user_error: true,
+      }}
       onSubmit={noop}
       onDraftResume={noop as any}
       roleSelector={null}
@@ -50,7 +54,11 @@ export const WithInitialValues = () => (
   <ModalStory>
     <RunAdhocActionModal
       installId="inst-123"
-      initialValues={{ command: 'echo hello', name: 'test action', timeout: 600 }}
+      initialValues={{
+        command: 'echo hello',
+        name: 'test action',
+        timeout: 600,
+      }}
       isPending={false}
       error={null}
       onSubmit={noop}

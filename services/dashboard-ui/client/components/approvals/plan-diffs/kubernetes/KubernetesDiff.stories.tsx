@@ -71,8 +71,16 @@ const deploymentUpgradePlan = {
         { type: 0, payload: '    spec:', path: '' },
         { type: 0, payload: '      containers:', path: '' },
         { type: 0, payload: '      - name: api-server', path: '' },
-        { type: 1, payload: '        image: registry.example.com/api-server:v2.14.0', path: '' },
-        { type: 2, payload: '        image: registry.example.com/api-server:v2.15.1', path: '' },
+        {
+          type: 1,
+          payload: '        image: registry.example.com/api-server:v2.14.0',
+          path: '',
+        },
+        {
+          type: 2,
+          payload: '        image: registry.example.com/api-server:v2.15.1',
+          path: '',
+        },
         { type: 0, payload: '        ports:', path: '' },
         { type: 0, payload: '        - containerPort: 8080', path: '' },
         { type: 0, payload: '        resources:', path: '' },
@@ -158,7 +166,11 @@ const freshInstallPlan = {
         { type: 2, payload: '    spec:', path: '' },
         { type: 2, payload: '      containers:', path: '' },
         { type: 2, payload: '      - name: worker', path: '' },
-        { type: 2, payload: '        image: registry.example.com/worker:v1.0.0', path: '' },
+        {
+          type: 2,
+          payload: '        image: registry.example.com/worker:v1.0.0',
+          path: '',
+        },
         { type: 2, payload: '        resources:', path: '' },
         { type: 2, payload: '          requests:', path: '' },
         { type: 2, payload: '            cpu: 100m', path: '' },
@@ -185,7 +197,12 @@ const freshInstallPlan = {
         { type: 2, payload: '  name: worker', path: '' },
         { type: 2, payload: '  namespace: jobs', path: '' },
         { type: 2, payload: '  annotations:', path: '' },
-        { type: 2, payload: '    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/worker', path: '' },
+        {
+          type: 2,
+          payload:
+            '    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/worker',
+          path: '',
+        },
       ],
     },
     {
@@ -247,7 +264,11 @@ const deleteResourcesPlan = {
         { type: 1, payload: '        spec:', path: '' },
         { type: 1, payload: '          containers:', path: '' },
         { type: 1, payload: '          - name: cleanup', path: '' },
-        { type: 1, payload: '            image: registry.example.com/cleanup:v0.3.2', path: '' },
+        {
+          type: 1,
+          payload: '            image: registry.example.com/cleanup:v0.3.2',
+          path: '',
+        },
         { type: 1, payload: '          restartPolicy: OnFailure', path: '' },
       ],
     },
@@ -273,7 +294,11 @@ const deleteResourcesPlan = {
         { type: 1, payload: '    spec:', path: '' },
         { type: 1, payload: '      containers:', path: '' },
         { type: 1, payload: '      - name: worker', path: '' },
-        { type: 1, payload: '        image: registry.example.com/legacy-worker:v1.8.0', path: '' },
+        {
+          type: 1,
+          payload: '        image: registry.example.com/legacy-worker:v1.8.0',
+          path: '',
+        },
       ],
     },
   ],
@@ -309,8 +334,16 @@ const mixedOperationsPlan = {
         { type: 0, payload: '    spec:', path: '' },
         { type: 0, payload: '      containers:', path: '' },
         { type: 0, payload: '      - name: web', path: '' },
-        { type: 1, payload: '        image: registry.example.com/web-app:v3.1.0', path: '' },
-        { type: 2, payload: '        image: registry.example.com/web-app:v3.2.0', path: '' },
+        {
+          type: 1,
+          payload: '        image: registry.example.com/web-app:v3.1.0',
+          path: '',
+        },
+        {
+          type: 2,
+          payload: '        image: registry.example.com/web-app:v3.2.0',
+          path: '',
+        },
         { type: 0, payload: '        ports:', path: '' },
         { type: 0, payload: '        - containerPort: 3000', path: '' },
         { type: 0, payload: '        env:', path: '' },
@@ -423,8 +456,16 @@ const withErrorsPlan = {
         { type: 0, payload: '    spec:', path: '' },
         { type: 0, payload: '      containers:', path: '' },
         { type: 0, payload: '      - name: gateway', path: '' },
-        { type: 1, payload: '        image: registry.example.com/gateway:v2.0.0', path: '' },
-        { type: 2, payload: '        image: registry.example.com/gateway:v2.1.0', path: '' },
+        {
+          type: 1,
+          payload: '        image: registry.example.com/gateway:v2.0.0',
+          path: '',
+        },
+        {
+          type: 2,
+          payload: '        image: registry.example.com/gateway:v2.1.0',
+          path: '',
+        },
         { type: 0, payload: '        ports:', path: '' },
         { type: 0, payload: '        - containerPort: 8080', path: '' },
       ],
@@ -439,7 +480,8 @@ const withErrorsPlan = {
       op: 'apply',
       type: 3,
       dry_run: false,
-      error: 'resource "gateway.networking.k8s.io/v1/GatewayRoute" not found: ensure the CRD is installed',
+      error:
+        'resource "gateway.networking.k8s.io/v1/GatewayRoute" not found: ensure the CRD is installed',
     },
     {
       _version: 'v1',
@@ -451,7 +493,8 @@ const withErrorsPlan = {
       op: 'apply',
       type: 3,
       dry_run: false,
-      error: 'field validation failed: data.RATE_LIMIT must be a positive integer',
+      error:
+        'field validation failed: data.RATE_LIMIT must be a positive integer',
     },
   ],
 } as any
@@ -480,13 +523,38 @@ const longConfigMapEntriesPlan = {
         { type: 0, payload: '  namespace: ingress', path: '' },
         { type: 0, payload: 'data:', path: '' },
         { type: 0, payload: '  proxy-body-size: 16m', path: '' },
-        { type: 1, payload: '  nginx.conf: "worker_processes auto; error_log /var/log/nginx/error.log warn; pid /var/run/nginx.pid; events { worker_connections 1024; } http { include /etc/nginx/mime.types; default_type application/octet-stream; }"', path: '' },
-        { type: 2, payload: '  nginx.conf: "worker_processes auto; worker_rlimit_nofile 65535; error_log /var/log/nginx/error.log warn; pid /var/run/nginx.pid; events { worker_connections 65535; use epoll; multi_accept on; } http { include /etc/nginx/mime.types; default_type application/octet-stream; sendfile on; tcp_nopush on; }"', path: '' },
+        {
+          type: 1,
+          payload:
+            '  nginx.conf: "worker_processes auto; error_log /var/log/nginx/error.log warn; pid /var/run/nginx.pid; events { worker_connections 1024; } http { include /etc/nginx/mime.types; default_type application/octet-stream; }"',
+          path: '',
+        },
+        {
+          type: 2,
+          payload:
+            '  nginx.conf: "worker_processes auto; worker_rlimit_nofile 65535; error_log /var/log/nginx/error.log warn; pid /var/run/nginx.pid; events { worker_connections 65535; use epoll; multi_accept on; } http { include /etc/nginx/mime.types; default_type application/octet-stream; sendfile on; tcp_nopush on; }"',
+          path: '',
+        },
         { type: 1, payload: '  proxy-next-upstream-tries: "3"', path: '' },
         { type: 2, payload: '  proxy-next-upstream-tries: "5"', path: '' },
-        { type: 1, payload: '  ssl-ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384', path: '' },
-        { type: 2, payload: '  ssl-ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305', path: '' },
-        { type: 2, payload: '  server-snippet: "more_set_headers \'X-Frame-Options: SAMEORIGIN\'; more_set_headers \'X-Content-Type-Options: nosniff\'; more_set_headers \'Strict-Transport-Security: max-age=31536000; includeSubDomains; preload\';"', path: '' },
+        {
+          type: 1,
+          payload:
+            '  ssl-ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384',
+          path: '',
+        },
+        {
+          type: 2,
+          payload:
+            '  ssl-ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305',
+          path: '',
+        },
+        {
+          type: 2,
+          payload:
+            "  server-snippet: \"more_set_headers 'X-Frame-Options: SAMEORIGIN'; more_set_headers 'X-Content-Type-Options: nosniff'; more_set_headers 'Strict-Transport-Security: max-age=31536000; includeSubDomains; preload';\"",
+          path: '',
+        },
       ],
     },
     {
@@ -507,14 +575,49 @@ const longConfigMapEntriesPlan = {
         { type: 0, payload: '  namespace: production', path: '' },
         { type: 0, payload: 'data:', path: '' },
         { type: 0, payload: '  LOG_LEVEL: info', path: '' },
-        { type: 1, payload: '  DATABASE_URL: postgresql://app_user@production-db.cluster-cabcdefghijk.us-west-2.rds.amazonaws.com:5432/app_production?sslmode=require', path: '' },
-        { type: 2, payload: '  DATABASE_URL: postgresql://app_user@production-db-v2.cluster-xyzabcdefghi.us-west-2.rds.amazonaws.com:5432/app_production?sslmode=require&connect_timeout=10&application_name=api-server&pool_max_conns=25', path: '' },
-        { type: 1, payload: '  REDIS_SENTINEL_HOSTS: sentinel-0.redis-sentinel.production.svc.cluster.local:26379,sentinel-1.redis-sentinel.production.svc.cluster.local:26379', path: '' },
-        { type: 2, payload: '  REDIS_SENTINEL_HOSTS: sentinel-0.redis-sentinel.production.svc.cluster.local:26379,sentinel-1.redis-sentinel.production.svc.cluster.local:26379,sentinel-2.redis-sentinel.production.svc.cluster.local:26379', path: '' },
+        {
+          type: 1,
+          payload:
+            '  DATABASE_URL: postgresql://app_user@production-db.cluster-cabcdefghijk.us-west-2.rds.amazonaws.com:5432/app_production?sslmode=require',
+          path: '',
+        },
+        {
+          type: 2,
+          payload:
+            '  DATABASE_URL: postgresql://app_user@production-db-v2.cluster-xyzabcdefghi.us-west-2.rds.amazonaws.com:5432/app_production?sslmode=require&connect_timeout=10&application_name=api-server&pool_max_conns=25',
+          path: '',
+        },
+        {
+          type: 1,
+          payload:
+            '  REDIS_SENTINEL_HOSTS: sentinel-0.redis-sentinel.production.svc.cluster.local:26379,sentinel-1.redis-sentinel.production.svc.cluster.local:26379',
+          path: '',
+        },
+        {
+          type: 2,
+          payload:
+            '  REDIS_SENTINEL_HOSTS: sentinel-0.redis-sentinel.production.svc.cluster.local:26379,sentinel-1.redis-sentinel.production.svc.cluster.local:26379,sentinel-2.redis-sentinel.production.svc.cluster.local:26379',
+          path: '',
+        },
         { type: 0, payload: '  OTEL_SERVICE_NAME: api-server', path: '' },
-        { type: 1, payload: '  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.monitoring.svc.cluster.local:4317', path: '' },
-        { type: 2, payload: '  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.monitoring.svc.cluster.local:4317/v1/traces', path: '' },
-        { type: 2, payload: '  OTEL_RESOURCE_ATTRIBUTES: service.namespace=production,service.version=v2.15.0,deployment.environment=production,cloud.provider=aws,cloud.region=us-west-2', path: '' },
+        {
+          type: 1,
+          payload:
+            '  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.monitoring.svc.cluster.local:4317',
+          path: '',
+        },
+        {
+          type: 2,
+          payload:
+            '  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.monitoring.svc.cluster.local:4317/v1/traces',
+          path: '',
+        },
+        {
+          type: 2,
+          payload:
+            '  OTEL_RESOURCE_ATTRIBUTES: service.namespace=production,service.version=v2.15.0,deployment.environment=production,cloud.provider=aws,cloud.region=us-west-2',
+          path: '',
+        },
       ],
     },
   ],
@@ -614,7 +717,9 @@ const added = (payload: string) => ({ type: 2, payload, path: '' })
 const envVarLines = (count: number, offset = 0) =>
   Array.from({ length: count }, (_, i) => [
     unchanged(`        - name: FEATURE_FLAG_${offset + i}`),
-    unchanged(`          value: "${(offset + i) % 2 === 0 ? 'enabled' : 'disabled'}"`),
+    unchanged(
+      `          value: "${(offset + i) % 2 === 0 ? 'enabled' : 'disabled'}"`
+    ),
   ]).flat()
 
 const largeSingleChangePlan = {

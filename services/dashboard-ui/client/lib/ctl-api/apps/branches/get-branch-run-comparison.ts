@@ -67,8 +67,10 @@ export const getBranchRunComparison = ({
   includeDiff?: Array<'git' | 'full' | 'config'>
 }) =>
   api<TBranchRunComparison>({
-    path: `apps/${appId}/branches/${branchId}/runs/${runId}/comparison${buildQueryParams({
-      include_diff: includeDiff?.length ? includeDiff.join(',') : undefined,
-    })}`,
+    path: `apps/${appId}/branches/${branchId}/runs/${runId}/comparison${buildQueryParams(
+      {
+        include_diff: includeDiff?.length ? includeDiff.join(',') : undefined,
+      }
+    )}`,
     orgId,
   })

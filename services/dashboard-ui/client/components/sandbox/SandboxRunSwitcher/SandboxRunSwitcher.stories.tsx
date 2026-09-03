@@ -4,6 +4,4 @@ export default {
 
 import { SandboxRunSwitcher } from './SandboxRunSwitcher'
 
-export const Default = () => (
-  <SandboxRunSwitcher sandboxRunId="sanrun-abc123" />
-)
+export const Default = () => <SandboxRunSwitcher sandboxRunId="sanrun-abc123" />

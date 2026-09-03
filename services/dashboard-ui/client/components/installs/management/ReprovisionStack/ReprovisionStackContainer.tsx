@@ -27,8 +27,14 @@ export const ReprovisionStackModalContainer = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { body: Parameters<typeof reprovisionStack>[0]['body'] }) =>
+  const {
+    mutate: execute,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: (params: {
+      body: Parameters<typeof reprovisionStack>[0]['body']
+    }) =>
       reprovisionStack({
         body: params.body,
         installId: install.id,
@@ -43,7 +49,13 @@ export const ReprovisionStackModalContainer = ({
       })
       addToast(
         <Toast heading="Stack reprovision started" theme="info">
-          <Text>Reprovisioning the stack for <Badge variant="code" size="md">{install.name}</Badge>. This may take a few minutes.</Text>
+          <Text>
+            Reprovisioning the stack for{' '}
+            <Badge variant="code" size="md">
+              {install.name}
+            </Badge>
+            . This may take a few minutes.
+          </Text>
         </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
@@ -66,7 +78,13 @@ export const ReprovisionStackModalContainer = ({
       })
       addToast(
         <Toast heading="Stack reprovision failed" theme="error">
-          <Text>Unable to reprovision the stack for <Badge variant="code" size="md">{install.name}</Badge>.</Text>
+          <Text>
+            Unable to reprovision the stack for{' '}
+            <Badge variant="code" size="md">
+              {install.name}
+            </Badge>
+            .
+          </Text>
         </Toast>
       )
     },

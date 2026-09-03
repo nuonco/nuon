@@ -27,13 +27,7 @@ export const TeardownAllComponentsModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-          theme="error"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
           <Icon variant="CloudArrowDownIcon" size="24" />
           Teardown all {installName} components?
         </Text>

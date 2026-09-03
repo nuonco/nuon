@@ -17,8 +17,7 @@ export const Readme = () => {
   const { data: result, isLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-readme', org?.id, install?.id],
-    queryFn: () =>
-      getInstallReadme({ orgId: org.id, installId: install.id }),
+    queryFn: () => getInstallReadme({ orgId: org.id, installId: install.id }),
     enabled: !!org?.id && !!install?.id,
   })
 
@@ -38,9 +37,7 @@ export const Readme = () => {
           },
         ]}
       />
-      <SectionHeader
-        title="Install readme"
-      />
+      <SectionHeader title="Install readme" />
 
       {isLoading ? null : readme?.readme ? (
         <div className="flex flex-col gap-3">

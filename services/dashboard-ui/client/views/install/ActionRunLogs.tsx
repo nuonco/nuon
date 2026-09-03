@@ -24,8 +24,12 @@ export const ActionRunLogsPage = () => {
         </LogStreamProvider>
       ) : (
         <div className="flex flex-col items-center gap-4 p-12">
-          <Text variant="base" weight="strong">Waiting on log stream</Text>
-          <Text variant="body" theme="neutral">Logs will appear here once the runner starts.</Text>
+          <Text variant="base" weight="strong">
+            Waiting on log stream
+          </Text>
+          <Text variant="body" theme="neutral">
+            Logs will appear here once the runner starts.
+          </Text>
           <Button variant="ghost" onClick={() => window.location.reload()}>
             <Icon variant="ArrowClockwiseIcon" />
             Refresh Page

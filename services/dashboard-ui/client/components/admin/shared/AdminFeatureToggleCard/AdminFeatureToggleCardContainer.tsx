@@ -8,7 +8,10 @@ interface IAdminFeatureToggleCardContainer {
   orgId: string
 }
 
-export const AdminFeatureToggleCardContainer = ({ org, orgId }: IAdminFeatureToggleCardContainer) => {
+export const AdminFeatureToggleCardContainer = ({
+  org,
+  orgId,
+}: IAdminFeatureToggleCardContainer) => {
   const { addPanel } = useSurfaces()
 
   const handleOpenPanel = () => {

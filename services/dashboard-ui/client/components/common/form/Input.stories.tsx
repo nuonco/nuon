@@ -146,21 +146,21 @@ export const States = () => (
         labelProps={{ labelText: 'Normal State' }}
         helperText="This is a normal input field"
       />
-      
+
       <Input
         placeholder="Error input"
         labelProps={{ labelText: 'Error State' }}
         error
         errorMessage="This field is required"
       />
-      
+
       <Input
         placeholder="Disabled input"
         labelProps={{ labelText: 'Disabled State' }}
         disabled
         helperText="This field is currently disabled"
       />
-      
+
       <Input
         placeholder="Required field"
         labelProps={{ labelText: 'Required Field' }}
@@ -191,8 +191,8 @@ export const WithLabelsAndText = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Labels and Helper Text</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Inputs support labels and helper text to provide context and guidance
-        to users. Labels are automatically associated with inputs for
+        Inputs support labels and helper text to provide context and guidance to
+        users. Labels are automatically associated with inputs for
         accessibility.
       </p>
     </div>
@@ -200,27 +200,27 @@ export const WithLabelsAndText = () => (
     <div className="space-y-4">
       <Input
         placeholder="Enter your full name"
-        labelProps={{ 
+        labelProps={{
           labelText: 'Full Name',
-          labelTextProps: { weight: 'strong' }
+          labelTextProps: { weight: 'strong' },
         }}
         helperText="Enter your first and last name"
       />
-      
+
       <Input
         type="email"
         placeholder="user@company.com"
         labelProps={{ labelText: 'Work Email' }}
         helperText="We'll use this for account notifications"
       />
-      
+
       <Input
         type="password"
         placeholder="••••••••••"
         labelProps={{ labelText: 'Password' }}
         helperText="Must be at least 8 characters long"
       />
-      
+
       <Input
         placeholder="Enter company name"
         labelProps={{ labelText: 'Company (Optional)' }}
@@ -265,7 +265,7 @@ export const ErrorHandling = () => (
         error
         errorMessage="Username is required"
       />
-      
+
       <Input
         type="email"
         placeholder="user@example.com"
@@ -273,7 +273,7 @@ export const ErrorHandling = () => (
         error
         errorMessage="Please enter a valid email address"
       />
-      
+
       <Input
         type="password"
         placeholder="••••••••"
@@ -281,7 +281,7 @@ export const ErrorHandling = () => (
         error
         errorMessage="Password must be at least 8 characters"
       />
-      
+
       <Input
         placeholder="Enter a number"
         labelProps={{ labelText: 'Age' }}

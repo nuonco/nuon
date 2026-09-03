@@ -26,9 +26,12 @@ export const BranchRunApproval = ({ items, className }: IBranchRunApproval) => {
         <Banner key={item.key} className="@container" theme="warn">
           <div className="flex flex-col gap-3">
             <div className="flex flex-col">
-              <Text weight="strong">Plan for {item.groupName} requires approval</Text>
+              <Text weight="strong">
+                Plan for {item.groupName} requires approval
+              </Text>
               <Text variant="subtext" theme="neutral">
-                Review the proposed changes, then approve to deploy to this install group.
+                Review the proposed changes, then approve to deploy to this
+                install group.
               </Text>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">

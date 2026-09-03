@@ -38,14 +38,22 @@ export const StackVersionDetails = ({
       <div className="grid grid-cols-2 gap-4">
         <LabeledValue label="Created">
           {version?.created_at ? (
-            <Time variant="subtext" time={version.created_at} format="relative" />
+            <Time
+              variant="subtext"
+              time={version.created_at}
+              format="relative"
+            />
           ) : (
             <Icon variant="MinusIcon" />
           )}
         </LabeledValue>
         <LabeledValue label="Updated">
           {version?.updated_at ? (
-            <Time variant="subtext" time={version.updated_at} format="relative" />
+            <Time
+              variant="subtext"
+              time={version.updated_at}
+              format="relative"
+            />
           ) : (
             <Icon variant="MinusIcon" />
           )}
@@ -211,11 +219,17 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
                 <Text variant="subtext" weight="strong">
                   {indexToOrdinal(ordinalIdx)} run
                 </Text>
-                <Time variant="subtext" theme="neutral" time={run?.created_at} />
+                <Time
+                  variant="subtext"
+                  theme="neutral"
+                  time={run?.created_at}
+                />
                 <RunTypeBadge runType={run?.run_type} />
               </span>
               <ClickToCopyButton
-                textToCopy={JSON.stringify(run?.data_contents || run?.data || {})}
+                textToCopy={JSON.stringify(
+                  run?.data_contents || run?.data || {}
+                )}
               />
             </div>
 
@@ -239,11 +253,7 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
   )
 }
 
-const StackVersionStatusHistory = ({
-  version,
-}: {
-  version: TStackVersion
-}) => {
+const StackVersionStatusHistory = ({ version }: { version: TStackVersion }) => {
   const history = version?.composite_status?.history ?? []
 
   return (

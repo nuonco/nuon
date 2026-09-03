@@ -136,7 +136,9 @@ export const ActionDetail = () => {
 
                   {config.break_glass_role_arn ? (
                     <LabeledValue label="Break glass role">
-                      <Code variant="inline">{config.break_glass_role_arn}</Code>
+                      <Code variant="inline">
+                        {config.break_glass_role_arn}
+                      </Code>
                       <Text variant="subtext" theme="neutral">
                         Must be enabled in the install stack before running this
                         action.

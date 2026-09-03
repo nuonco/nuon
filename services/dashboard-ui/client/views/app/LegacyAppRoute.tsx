@@ -25,7 +25,12 @@ export const LegacyAppRoute = ({
     placeholderData: keepPreviousData,
     queryKey: ['app-branches-source', org?.id, app?.id],
     queryFn: () =>
-      getAppBranches({ orgId: org!.id!, appId: app!.id!, limit: 50, offset: 0 }),
+      getAppBranches({
+        orgId: org!.id!,
+        appId: app!.id!,
+        limit: 50,
+        offset: 0,
+      }),
     enabled: hasNewAppIA && !!org?.id && !!app?.id,
   })
 
@@ -40,10 +45,9 @@ export const LegacyAppRoute = ({
     }
 
     const suffix = subPath ? `/${subPath(params)}` : ''
-    navigate(
-      `/${org.id}/apps/${app.id}/branches/${targetBranchId}${suffix}`,
-      { replace: true }
-    )
+    navigate(`/${org.id}/apps/${app.id}/branches/${targetBranchId}${suffix}`, {
+      replace: true,
+    })
   }, [
     hasNewAppIA,
     isLoading,

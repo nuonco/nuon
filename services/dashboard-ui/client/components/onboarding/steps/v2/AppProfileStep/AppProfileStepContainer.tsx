@@ -1,5 +1,10 @@
 import { useMemo, useState } from 'react'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Tabs } from '@/components/common/Tabs'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
@@ -12,7 +17,12 @@ import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
 import { getExampleApps, getApp, completeYourStackStep } from '@/lib'
 import { useOnboardingPoll } from '@/hooks/use-onboarding-poll'
-import type { TAPIError, TExampleApp, TOnboarding, TCloudPlatform as TCloudPlatformType } from '@/types'
+import type {
+  TAPIError,
+  TExampleApp,
+  TOnboarding,
+  TCloudPlatform as TCloudPlatformType,
+} from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TComponentType } from '@/types'
 
@@ -301,7 +311,9 @@ const SampleAppCard = ({ app, selected, onSelect }: ISampleAppCardProps) => (
           {app.tags
             .filter((tag) => !TAG_TO_COMPONENT_TYPE[tag])
             .map((tag) => (
-              <Badge key={tag} size="sm" variant="code">{tag}</Badge>
+              <Badge key={tag} size="sm" variant="code">
+                {tag}
+              </Badge>
             ))}
         </div>
       )}
@@ -371,9 +383,7 @@ const ExampleAppsTab = ({
         if (categoryApps.length === 0) return null
         return (
           <div className="flex flex-col gap-3" key={category}>
-            <Text weight="strong">
-              {CATEGORY_LABELS[category] ?? category}
-            </Text>
+            <Text weight="strong">{CATEGORY_LABELS[category] ?? category}</Text>
             <div className="grid grid-cols-3 gap-3">
               {categoryApps.map((app) => (
                 <SampleAppCard
@@ -437,13 +447,19 @@ export const AppProfileStepContainer = ({
     )
   }
 
-  const { mutate: submit, isPending, error } = useMutation({
+  const {
+    mutate: submit,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: () => {
       if (!orgId) throw new Error('Organization not created yet')
       if (selectedSampleApp) {
         const exApp = exampleApps.find((a) => a.slug === selectedSampleApp)
         if (!exApp?.cloud_provider) {
-          throw new Error(`cloud_provider missing for example app ${selectedSampleApp}`)
+          throw new Error(
+            `cloud_provider missing for example app ${selectedSampleApp}`
+          )
         }
         return completeYourStackStep({
           body: {

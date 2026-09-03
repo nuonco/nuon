@@ -11,7 +11,12 @@ interface IDeployHeaderContainer {
   stepId: string
 }
 
-export const DeployHeaderContainer = ({ children, component, workflow, stepId }: IDeployHeaderContainer) => {
+export const DeployHeaderContainer = ({
+  children,
+  component,
+  workflow,
+  stepId,
+}: IDeployHeaderContainer) => {
   const { deploy } = useDeploy()
   const { install } = useInstall()
 

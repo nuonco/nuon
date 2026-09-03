@@ -12,10 +12,5 @@ export const SandboxCardContainer = () => {
 
   const href = `/${org.id}/installs/${install.id}/sandbox`
 
-  return (
-    <SandboxCard
-      status={install.sandbox_status}
-      href={href}
-    />
-  )
+  return <SandboxCard status={install.sandbox_status} href={href} />
 }

@@ -127,7 +127,7 @@ func (a *AppBranchRun) PreviewMode() AppBranchRunPreviewMode {
 
 func (a *AppBranchRun) PreviewInstallPlanOnly() bool {
 	if a.Preview != nil {
-		return a.Preview.Mode == AppBranchRunPreviewModePlanOnly
+		return a.Preview.Mode == AppBranchRunPreviewModePlanOnly || a.Preview.Mode == AppBranchRunPreviewModePlanInfra
 	}
 	return a.PlanOnly
 }

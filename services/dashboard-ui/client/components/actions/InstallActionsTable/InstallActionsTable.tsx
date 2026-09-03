@@ -81,13 +81,20 @@ export function parseInstallActionsLatestRunsToTableData(
       ),
       labels: (() => {
         const lbls = actionWithRuns.action_workflow?.labels
-        if (!lbls || Object.keys(lbls).length === 0) return <Icon variant="MinusIcon" />
+        if (!lbls || Object.keys(lbls).length === 0)
+          return <Icon variant="MinusIcon" />
         return (
           <span className="flex flex-wrap gap-1">
             {Object.keys(lbls)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" customColor={labelColors?.[k]} />
+                <LabelBadge
+                  key={k}
+                  labelKey={k}
+                  labelValue={lbls[k]}
+                  size="sm"
+                  customColor={labelColors?.[k]}
+                />
               ))}
           </span>
         )
@@ -105,7 +112,9 @@ const columns: ColumnDef<InstallActionRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body" flex className="items-center gap-2">
-          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
+          <Link href={info.row.original.href} variant="inline">
+            {info.getValue() as string}
+          </Link>
           {info.row.original.removed ? (
             <RemovedFromAppConfigBadge kind="action" />
           ) : null}

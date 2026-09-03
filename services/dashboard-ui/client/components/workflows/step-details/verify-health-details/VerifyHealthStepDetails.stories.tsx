@@ -82,6 +82,12 @@ export const FailedLockedSnapshot = () => (
 
 export const NoChecksYet = () => (
   <VerifyHealthStepDetails
-    step={{ id: 's', owner_id: 'inl123', status: { status: 'in-progress' } } as unknown as TWorkflowStep}
+    step={
+      {
+        id: 's',
+        owner_id: 'inl123',
+        status: { status: 'in-progress' },
+      } as unknown as TWorkflowStep
+    }
   />
 )

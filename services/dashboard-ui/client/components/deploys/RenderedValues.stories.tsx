@@ -17,9 +17,11 @@ export const ObjectFormat = () => (
 
 export const ArrayFormat = () => (
   <RenderedValues
-    values={[
-      { name: 'database_url', value: 'postgres://host:5432/mydb' },
-      { name: 'redis_url', value: 'redis://cache:6379' },
-    ] as any}
+    values={
+      [
+        { name: 'database_url', value: 'postgres://host:5432/mydb' },
+        { name: 'redis_url', value: 'redis://cache:6379' },
+      ] as any
+    }
   />
 )

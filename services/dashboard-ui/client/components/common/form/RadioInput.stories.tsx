@@ -159,7 +159,7 @@ export const States = () => (
         labelProps={{ labelText: 'Selected state' }}
         defaultChecked
       />
-      
+
       <h4 className="text-sm font-medium">Disabled States</h4>
       <RadioInput
         name="states2"
@@ -225,7 +225,7 @@ export const CustomStyling = () => (
         value="bold"
         labelProps={{
           labelText: 'Bold label text',
-          labelTextProps: { weight: 'strong' }
+          labelTextProps: { weight: 'strong' },
         }}
       />
       <RadioInput
@@ -233,7 +233,7 @@ export const CustomStyling = () => (
         value="brand"
         labelProps={{
           labelText: 'Brand colored text',
-          labelTextProps: { theme: 'brand' }
+          labelTextProps: { theme: 'brand' },
         }}
         defaultChecked
       />
@@ -242,7 +242,7 @@ export const CustomStyling = () => (
         value="small"
         labelProps={{
           labelText: 'Small text variant',
-          labelTextProps: { variant: 'subtext' }
+          labelTextProps: { variant: 'subtext' },
         }}
       />
 
@@ -252,7 +252,8 @@ export const CustomStyling = () => (
         value="highlighted"
         labelProps={{
           labelText: 'Highlighted option',
-          className: 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+          className:
+            'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800',
         }}
         defaultChecked
       />
@@ -261,8 +262,9 @@ export const CustomStyling = () => (
         value="success"
         labelProps={{
           labelText: 'Success themed option',
-          className: 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800',
-          labelTextProps: { theme: 'success' }
+          className:
+            'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800',
+          labelTextProps: { theme: 'success' },
         }}
       />
 
@@ -272,7 +274,8 @@ export const CustomStyling = () => (
         value="card1"
         labelProps={{
           labelText: 'Premium Plan - $29/month',
-          className: 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow'
+          className:
+            'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow',
         }}
       />
       <RadioInput
@@ -280,8 +283,9 @@ export const CustomStyling = () => (
         value="card2"
         labelProps={{
           labelText: 'Enterprise Plan - $99/month',
-          className: 'bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-2 border-purple-200 dark:border-purple-800',
-          labelTextProps: { weight: 'strong', theme: 'brand' }
+          className:
+            'bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-2 border-purple-200 dark:border-purple-800',
+          labelTextProps: { weight: 'strong', theme: 'brand' },
         }}
         defaultChecked
       />
@@ -295,7 +299,8 @@ export const CustomStyling = () => (
         <strong>Container Styling:</strong> Apply className to the label wrapper
       </div>
       <div>
-        <strong>Visual Hierarchy:</strong> Use colors and styling to show importance
+        <strong>Visual Hierarchy:</strong> Use colors and styling to show
+        importance
       </div>
       <div>
         <strong>Card Patterns:</strong> Create card-like selection interfaces
@@ -310,8 +315,8 @@ export const InForms = () => (
       <h3 className="text-lg font-semibold">Radio Inputs in Forms</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Common form patterns using radio inputs for single-choice selections
-        including preferences, configurations, and user choices with proper
-        form structure and validation.
+        including preferences, configurations, and user choices with proper form
+        structure and validation.
       </p>
     </div>
 

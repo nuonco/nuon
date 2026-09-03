@@ -122,9 +122,14 @@ function formatHealth(health?: string): string {
 
 // A component nobody observed has 0% uptime arithmetically, which reads as
 // total downtime. Absence of data is not downtime, so it gets a dash.
-function formatUptime(uptimePercent?: number, observedSeconds?: number): string {
+function formatUptime(
+  uptimePercent?: number,
+  observedSeconds?: number
+): string {
   if (!observedSeconds) return '—'
-  return typeof uptimePercent === 'number' ? `${uptimePercent.toFixed(2)}%` : '—'
+  return typeof uptimePercent === 'number'
+    ? `${uptimePercent.toFixed(2)}%`
+    : '—'
 }
 
 function DayTooltipContent({ day }: { day: THealthTimelineDay }) {
@@ -239,12 +244,20 @@ function ComponentHealthRows({
               {component.component_name || component.component_id}
             </Link>
           ) : (
-            <Text>{component.component_name || component.install_component_id}</Text>
+            <Text>
+              {component.component_name || component.install_component_id}
+            </Text>
           )}
           <div className="flex items-center gap-3 shrink-0">
-            <Status status={component.current_health || 'unknown'} variant="badge" />
+            <Status
+              status={component.current_health || 'unknown'}
+              variant="badge"
+            />
             <Text variant="subtext" theme="neutral" className="w-16 text-right">
-              {formatUptime(component.uptime_percent, component.observed_seconds)}
+              {formatUptime(
+                component.uptime_percent,
+                component.observed_seconds
+              )}
             </Text>
           </div>
         </div>
@@ -357,7 +370,9 @@ export const HealthTimeline = ({
 
       {clusterAccessError ? (
         <Banner theme="warn">
-          <Text>Health cannot inspect this install's cluster: {clusterAccessError}</Text>
+          <Text>
+            Health cannot inspect this install's cluster: {clusterAccessError}
+          </Text>
         </Banner>
       ) : null}
 
@@ -442,13 +457,21 @@ export const HealthTimeline = ({
         <>
           <Divider dividerWord="Transitions" />
           {transitions?.length ? (
-            <Timeline<TInstallComponentHealthTransition & { created_at: string }>
+            <Timeline<
+              TInstallComponentHealthTransition & { created_at: string }
+            >
               events={transitions.map((transition) => ({
                 ...transition,
                 created_at: transition.observed_at,
               }))}
-              pagination={{ hasNext: false, offset: 0, limit: transitions.length }}
-              getEventKey={(transition, idx) => `${transition.observed_at}-${idx}`}
+              pagination={{
+                hasNext: false,
+                offset: 0,
+                limit: transitions.length,
+              }}
+              getEventKey={(transition, idx) =>
+                `${transition.observed_at}-${idx}`
+              }
               renderEvent={(transition) => {
                 const deployHref =
                   transition.correlated_deploy_id && deployBasePath

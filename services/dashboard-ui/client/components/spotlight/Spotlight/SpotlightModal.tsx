@@ -13,7 +13,12 @@ import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
-import { FILTER_PREFIXES, COMMANDS_BY_PREFIX, parseQuery, getAutocompletion } from '../types'
+import {
+  FILTER_PREFIXES,
+  COMMANDS_BY_PREFIX,
+  parseQuery,
+  getAutocompletion,
+} from '../types'
 import { useSpotlightResults } from '../use-spotlight-results'
 import { SpotlightResultItem } from '../SpotlightResultItem'
 import type { SpotlightResult } from '../types'
@@ -25,7 +30,13 @@ interface ISpotlightModal extends IModal {
   onAddModal?: (modal: React.ReactElement) => string
 }
 
-export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, ...props }: ISpotlightModal) => {
+export const SpotlightModal = ({
+  orgId,
+  onClose,
+  onNavigate,
+  onAddModal,
+  ...props
+}: ISpotlightModal) => {
   const [raw, setRaw] = useState('')
   const [debouncedRaw, setDebouncedRaw] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
@@ -55,7 +66,14 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, ...prop
   const parsed = useMemo(() => parseQuery(debouncedRaw), [debouncedRaw])
   const liveParsed = useMemo(() => parseQuery(raw), [raw])
 
-  const { results, isFetching } = useSpotlightResults(parsed, liveParsed, orgId, onClose, false, onAddModal)
+  const { results, isFetching } = useSpotlightResults(
+    parsed,
+    liveParsed,
+    orgId,
+    onClose,
+    false,
+    onAddModal
+  )
   const isSearching = raw !== debouncedRaw || isFetching
 
   useEffect(() => {
@@ -126,7 +144,12 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, ...prop
                 variant="MagnifyingGlassIcon"
                 className="text-cool-grey-500 dark:text-cool-grey-700 ml-2 shrink-0"
               />
-              <Badge size="sm" variant="code" theme="neutral" className="ml-1.5 shrink-0">
+              <Badge
+                size="sm"
+                variant="code"
+                theme="neutral"
+                className="ml-1.5 shrink-0"
+              >
                 {rawPrefix}
               </Badge>
               <input
@@ -198,17 +221,19 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, ...prop
             ))}
           </div>
         )}
-        {liveParsed.prefix && COMMANDS_BY_PREFIX[liveParsed.prefix] && liveParsed.command === null && (
-          <div className="px-2 py-1 flex items-center gap-1.5">
-            <Text variant="subtext" className="text-cool-grey-600" flex>
-              Type
-              <Badge size="sm" variant="code" theme="neutral">
-                /
-              </Badge>
-              to run commands
-            </Text>
-          </div>
-        )}
+        {liveParsed.prefix &&
+          COMMANDS_BY_PREFIX[liveParsed.prefix] &&
+          liveParsed.command === null && (
+            <div className="px-2 py-1 flex items-center gap-1.5">
+              <Text variant="subtext" className="text-cool-grey-600" flex>
+                Type
+                <Badge size="sm" variant="code" theme="neutral">
+                  /
+                </Badge>
+                to run commands
+              </Text>
+            </div>
+          )}
       </div>
       <div ref={listRef} className="max-h-72 overflow-y-auto py-1 px-2">
         <div className="flex flex-col gap-1">

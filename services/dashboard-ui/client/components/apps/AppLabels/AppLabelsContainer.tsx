@@ -1,4 +1,9 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -28,9 +33,15 @@ export const AppLabelsContainer = () => {
 
   const { mutate: saveLabelColors, isPending } = useMutation({
     mutationFn: (labelColors: Record<string, string>) =>
-      updateApp({ orgId: org.id, appId: app.id, body: { label_colors: labelColors } }),
+      updateApp({
+        orgId: org.id,
+        appId: app.id,
+        body: { label_colors: labelColors },
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['app-labels', org?.id, app?.id] })
+      queryClient.invalidateQueries({
+        queryKey: ['app-labels', org?.id, app?.id],
+      })
       queryClient.invalidateQueries({ queryKey: ['app', org?.id, app?.id] })
     },
     onError: (err: TAPIError) => {
@@ -57,7 +68,13 @@ export const AppLabelsContainer = () => {
   }
 
   const handleResetAll = () => {
-    addModal(<ResetLabelColorsModal orgId={org.id} appId={app.id} appName={app?.name} />)
+    addModal(
+      <ResetLabelColorsModal
+        orgId={org.id}
+        appId={app.id}
+        appName={app?.name}
+      />
+    )
   }
 
   return (

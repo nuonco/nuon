@@ -32,9 +32,7 @@ function formatTimeout(timeout?: string): string | undefined {
   return timeout
 }
 
-function getVCSInfo(
-  vcsConfig?: TVCSGit | TVCSGitHub
-): IConfigVCSInfo | null {
+function getVCSInfo(vcsConfig?: TVCSGit | TVCSGitHub): IConfigVCSInfo | null {
   if (!vcsConfig) return null
 
   return {

@@ -1,5 +1,8 @@
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { SandboxRunOutputsModal, SandboxRunOutputsButton } from './SandboxRunOutputsModal'
+import {
+  SandboxRunOutputsModal,
+  SandboxRunOutputsButton,
+} from './SandboxRunOutputsModal'
 import type { IButtonAsButton } from '@/components/common/Button'
 import type { TSandboxRun } from '@/types'
 
@@ -16,7 +19,12 @@ export const SandboxRunOutputsButtonContainer = ({
   const { addModal } = useSurfaces()
 
   const handleOpen = () => {
-    addModal(<SandboxRunOutputsModal sandboxRun={sandboxRun} headingText={headingText} />)
+    addModal(
+      <SandboxRunOutputsModal
+        sandboxRun={sandboxRun}
+        headingText={headingText}
+      />
+    )
   }
 
   return (

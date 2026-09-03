@@ -184,6 +184,12 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 					Registry: registry,
 					Tag:      sandboxBuild.ID,
 				}
+				if err := activities.AwaitRecordSandboxRunBuild(ctx, activities.RecordSandboxRunBuildRequest{
+					SandboxRunID: run.ID,
+					BuildID:      sandboxBuild.ID,
+				}); err != nil {
+					return nil, nil, errors.Wrap(err, "record sandbox build used by run")
+				}
 			}
 		}
 	}

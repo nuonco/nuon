@@ -22,12 +22,7 @@ export const DownloadLogsModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="FileArrowDownIcon" size={24} /> Download logs
         </Text>
       }

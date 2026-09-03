@@ -5,10 +5,7 @@ export default {
 import { SandboxCard } from './SandboxCard'
 
 export const Default = () => (
-  <SandboxCard
-    status="active"
-    href="/org-123/installs/inst-456/sandbox"
-  />
+  <SandboxCard status="active" href="/org-123/installs/inst-456/sandbox" />
 )
 
 export const Provisioning = () => (
@@ -19,18 +16,11 @@ export const Provisioning = () => (
 )
 
 export const Error = () => (
-  <SandboxCard
-    status="error"
-    href="/org-123/installs/inst-456/sandbox"
-  />
+  <SandboxCard status="error" href="/org-123/installs/inst-456/sandbox" />
 )
 
-export const NoSandbox = () => (
-  <SandboxCard error="No sandbox found" />
-)
+export const NoSandbox = () => <SandboxCard error="No sandbox found" />
 
-export const NoLink = () => (
-  <SandboxCard status="active" />
-)
+export const NoLink = () => <SandboxCard status="active" />
 
 export const Loading = () => <SandboxCard isLoading />

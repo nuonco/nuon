@@ -14,7 +14,11 @@ export const InvitedUsersContainer = ({
   const { org } = useOrg()
   const roleTitles = useRoleTitles()
 
-  const { data: invites, isLoading, isError } = useQuery({
+  const {
+    data: invites,
+    isLoading,
+    isError,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['org-invites', org?.id],
     queryFn: () => getOrgInvites({ orgId: org.id }),

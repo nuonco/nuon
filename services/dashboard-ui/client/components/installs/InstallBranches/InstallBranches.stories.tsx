@@ -34,11 +34,24 @@ const mockBranches: any[] = [
       },
     },
     builds: [
-      { id: 'bld-001', component_name: 'web-frontend', status_v2: { status: 'active' } },
-      { id: 'bld-002', component_name: 'api-server', status_v2: { status: 'active' } },
+      {
+        id: 'bld-001',
+        component_name: 'web-frontend',
+        status_v2: { status: 'active' },
+      },
+      {
+        id: 'bld-002',
+        component_name: 'api-server',
+        status_v2: { status: 'active' },
+      },
     ],
     installUpdates: [
-      { id: 'iacv-001', install_id: 'inst-001', workflow_id: 'wf-100', status: { status: 'success' } },
+      {
+        id: 'iacv-001',
+        install_id: 'inst-001',
+        workflow_id: 'wf-100',
+        status: { status: 'success' },
+      },
     ],
   },
   {
@@ -80,7 +93,11 @@ const mockBranches: any[] = [
       },
     },
     builds: [
-      { id: 'bld-003', component_name: 'api-server', status_v2: { status: 'error' } },
+      {
+        id: 'bld-003',
+        component_name: 'api-server',
+        status_v2: { status: 'error' },
+      },
     ],
     installUpdates: [],
   },
@@ -99,6 +116,11 @@ export const WithBranches = () => (
 
 export const Empty = () => (
   <div className="max-w-2xl p-4">
-    <InstallBranches branches={[]} orgId="org123" appId="app123" installId="inst-001" />
+    <InstallBranches
+      branches={[]}
+      orgId="org123"
+      appId="app123"
+      installId="inst-001"
+    />
   </div>
 )

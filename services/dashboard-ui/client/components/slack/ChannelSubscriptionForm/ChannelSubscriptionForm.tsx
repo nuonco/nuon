@@ -70,7 +70,9 @@ export const ChannelSubscriptionFormModal = ({
     () =>
       installations.map((i) => ({
         value: i.id ?? '',
-        label: i.team_name ? `${i.team_name} (${i.team_id})` : (i.team_id ?? ''),
+        label: i.team_name
+          ? `${i.team_name} (${i.team_id})`
+          : (i.team_id ?? ''),
       })),
     [installations]
   )
@@ -143,9 +145,7 @@ export const ChannelSubscriptionFormModal = ({
           'Save changes'
         ),
         disabled:
-          !canSubmit ||
-          isPending ||
-          (mode === 'create' && !matchingLink?.id),
+          !canSubmit || isPending || (mode === 'create' && !matchingLink?.id),
         onClick: () => form.handleSubmit(),
         variant: 'primary',
       }}

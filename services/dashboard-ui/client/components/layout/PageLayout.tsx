@@ -31,7 +31,10 @@ export const PageLayout = ({
       </MainTopbar>
       <div
         id={scrollContainerId}
-        className={cn('flex-auto flex flex-col overflow-y-auto min-h-0', className)}
+        className={cn(
+          'flex-auto flex flex-col overflow-y-auto min-h-0',
+          className
+        )}
         {...props}
       >
         {children}

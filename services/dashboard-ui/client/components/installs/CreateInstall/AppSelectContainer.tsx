@@ -10,7 +10,10 @@ interface AppSelectContainerProps {
   onClose: () => void
 }
 
-export const AppSelectContainer = ({ onSelectApp, onClose }: AppSelectContainerProps) => {
+export const AppSelectContainer = ({
+  onSelectApp,
+  onClose,
+}: AppSelectContainerProps) => {
   const { org } = useOrg()
   const [allApps, setAllApps] = useState<TApp[]>([])
   const [currentPage, setCurrentPage] = useState(0)
@@ -32,12 +35,13 @@ export const AppSelectContainer = ({ onSelectApp, onClose }: AppSelectContainerP
     error,
   } = useQuery({
     queryKey: ['apps', org?.id, currentPage, limit, searchQuery],
-    queryFn: () => getApps({
-      orgId: org.id,
-      offset: currentPage * limit,
-      limit,
-      q: searchQuery || undefined,
-    }),
+    queryFn: () =>
+      getApps({
+        orgId: org.id,
+        offset: currentPage * limit,
+        limit,
+        q: searchQuery || undefined,
+      }),
     enabled: !!org?.id,
     placeholderData: keepPreviousData,
   })

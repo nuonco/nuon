@@ -39,9 +39,15 @@ describe('hasHealthSignal', () => {
   })
 
   test('cloud identity rows never carry signal, even if assessed', () => {
-    expect(hasHealthSignal(resource({ provider: 'aws', health: 'healthy' }))).toBe(false)
-    expect(hasHealthSignal(resource({ provider: 'gcp', health: 'healthy' }))).toBe(false)
-    expect(hasHealthSignal(resource({ provider: 'azure', health: 'healthy' }))).toBe(false)
+    expect(
+      hasHealthSignal(resource({ provider: 'aws', health: 'healthy' }))
+    ).toBe(false)
+    expect(
+      hasHealthSignal(resource({ provider: 'gcp', health: 'healthy' }))
+    ).toBe(false)
+    expect(
+      hasHealthSignal(resource({ provider: 'azure', health: 'healthy' }))
+    ).toBe(false)
   })
 
   test('rows removed from config carry none', () => {
@@ -55,16 +61,27 @@ describe('matchesHealthFilter', () => {
   })
 
   test('an exact status filter matches on status', () => {
-    expect(matchesHealthFilter(resource({ health: 'degraded' }), 'degraded')).toBe(true)
-    expect(matchesHealthFilter(resource({ health: 'healthy' }), 'degraded')).toBe(false)
+    expect(
+      matchesHealthFilter(resource({ health: 'degraded' }), 'degraded')
+    ).toBe(true)
+    expect(
+      matchesHealthFilter(resource({ health: 'healthy' }), 'degraded')
+    ).toBe(false)
   })
 
   test('the no-signal filter matches every unassessed row', () => {
-    expect(matchesHealthFilter(resource({ health: 'unknown' }), NO_SIGNAL_FILTER)).toBe(true)
     expect(
-      matchesHealthFilter(resource({ provider: 'aws', health: 'healthy' }), NO_SIGNAL_FILTER)
+      matchesHealthFilter(resource({ health: 'unknown' }), NO_SIGNAL_FILTER)
     ).toBe(true)
-    expect(matchesHealthFilter(resource({ health: 'healthy' }), NO_SIGNAL_FILTER)).toBe(false)
+    expect(
+      matchesHealthFilter(
+        resource({ provider: 'aws', health: 'healthy' }),
+        NO_SIGNAL_FILTER
+      )
+    ).toBe(true)
+    expect(
+      matchesHealthFilter(resource({ health: 'healthy' }), NO_SIGNAL_FILTER)
+    ).toBe(false)
   })
 })
 
@@ -86,8 +103,16 @@ describe('groupComponentResources', () => {
   const groups = groupComponentResources(
     [
       resource({ install_component_id: 'a', name: 'a-ok', health: 'healthy' }),
-      resource({ install_component_id: 'a', name: 'a-cm', health: 'not-applicable' }),
-      resource({ install_component_id: 'b', name: 'b-bad', health: 'unhealthy' }),
+      resource({
+        install_component_id: 'a',
+        name: 'a-cm',
+        health: 'not-applicable',
+      }),
+      resource({
+        install_component_id: 'b',
+        name: 'b-bad',
+        health: 'unhealthy',
+      }),
       resource({ install_component_id: 'b', name: 'b-ok', health: 'healthy' }),
       resource({ install_component_id: 'c', name: 'c-iam', provider: 'aws' }),
     ],
@@ -130,7 +155,11 @@ describe('matchesResourceSearch', () => {
   })
 
   test('matches name, kind, and namespace case-insensitively', () => {
-    const r = resource({ name: 'web-app', kind: 'Deployment', namespace: 'prod' })
+    const r = resource({
+      name: 'web-app',
+      kind: 'Deployment',
+      namespace: 'prod',
+    })
     expect(matchesResourceSearch(r, 'WEB')).toBe(true)
     expect(matchesResourceSearch(r, 'deploy')).toBe(true)
     expect(matchesResourceSearch(r, 'PROD')).toBe(true)
@@ -142,8 +171,16 @@ describe('group staleness', () => {
   test('a group is fully stale only when every reporting row is stale', () => {
     const [group] = groupComponentResources(
       [
-        resource({ install_component_id: 'a', name: 'one', observed_at: longAgo }),
-        resource({ install_component_id: 'a', name: 'two', observed_at: longAgo }),
+        resource({
+          install_component_id: 'a',
+          name: 'one',
+          observed_at: longAgo,
+        }),
+        resource({
+          install_component_id: 'a',
+          name: 'two',
+          observed_at: longAgo,
+        }),
       ],
       { a: 'alpha' }
     )
@@ -154,7 +191,11 @@ describe('group staleness', () => {
   test('one fresh row keeps the group reporting', () => {
     const [group] = groupComponentResources(
       [
-        resource({ install_component_id: 'a', name: 'one', observed_at: longAgo }),
+        resource({
+          install_component_id: 'a',
+          name: 'one',
+          observed_at: longAgo,
+        }),
         resource({ install_component_id: 'a', name: 'two', observed_at: now }),
       ],
       { a: 'alpha' }
@@ -166,8 +207,16 @@ describe('group staleness', () => {
   test('identity and removed rows cannot make a group look stale', () => {
     const [group] = groupComponentResources(
       [
-        resource({ install_component_id: 'a', provider: 'aws', observed_at: longAgo }),
-        resource({ install_component_id: 'a', removed_from_config: true, observed_at: longAgo }),
+        resource({
+          install_component_id: 'a',
+          provider: 'aws',
+          observed_at: longAgo,
+        }),
+        resource({
+          install_component_id: 'a',
+          removed_from_config: true,
+          observed_at: longAgo,
+        }),
       ],
       { a: 'alpha' }
     )
@@ -181,7 +230,11 @@ describe('group ordering with staleness', () => {
       [
         resource({ install_component_id: 'a', health: 'healthy' }),
         resource({ install_component_id: 'b', health: 'progressing' }),
-        resource({ install_component_id: 'c', health: 'healthy', observed_at: longAgo }),
+        resource({
+          install_component_id: 'c',
+          health: 'healthy',
+          observed_at: longAgo,
+        }),
         resource({ install_component_id: 'd', health: 'unhealthy' }),
       ],
       { a: 'alpha', b: 'bravo', c: 'silent', d: 'broken' }
@@ -224,11 +277,16 @@ describe('visibleRowCount', () => {
     ])
     const visible = rows.slice(0, visibleRowCount(rows))
     expect(visible.filter((row) => row.health === 'unhealthy')).toHaveLength(15)
-    expect(rows.slice(visibleRowCount(rows)).every((r) => r.health === 'healthy')).toBe(true)
+    expect(
+      rows.slice(visibleRowCount(rows)).every((r) => r.health === 'healthy')
+    ).toBe(true)
   })
 
   test('progressing rows are never folded either', () => {
-    const rows = rowsFor([...Array(30).fill('healthy'), ...Array(4).fill('progressing')])
+    const rows = rowsFor([
+      ...Array(30).fill('healthy'),
+      ...Array(4).fill('progressing'),
+    ])
     const hidden = rows.slice(visibleRowCount(rows))
     expect(hidden.every((row) => row.health === 'healthy')).toBe(true)
   })
@@ -241,8 +299,16 @@ describe('group badge is the live roll-up', () => {
   test('a single degraded row shows immediately, undebounced', () => {
     const [group] = groupComponentResources(
       [
-        resource({ install_component_id: 'a', name: 'a-blip', health: 'degraded' }),
-        resource({ install_component_id: 'a', name: 'a-ok', health: 'healthy' }),
+        resource({
+          install_component_id: 'a',
+          name: 'a-blip',
+          health: 'degraded',
+        }),
+        resource({
+          install_component_id: 'a',
+          name: 'a-ok',
+          health: 'healthy',
+        }),
       ],
       { a: 'alpha' }
     )

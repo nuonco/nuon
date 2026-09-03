@@ -6,8 +6,16 @@
 
 @media (prefers-color-scheme: dark) {
   .label-badge-value {
-    background-color: color-mix(in srgb, var(--label-color) 25%, var(--color-dark-grey-700));
+    background-color: color-mix(
+      in srgb,
+      var(--label-color) 25%,
+      var(--color-dark-grey-700)
+    );
     color: color-mix(in srgb, var(--label-color) 62%, white);
-    border-color: color-mix(in srgb, var(--label-color) 45%, var(--color-dark-grey-700)) !important;
+    border-color: color-mix(
+      in srgb,
+      var(--label-color) 45%,
+      var(--color-dark-grey-700)
+    ) !important;
   }
 }

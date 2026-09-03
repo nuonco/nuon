@@ -8,7 +8,10 @@ import { ActionsTable, type TActionRow } from './ActionsTable'
 const mockRows: TActionRow[] = Array.from({ length: 3 }, (_, i) => ({
   actionId: `action-${i + 1}`,
   actionName: `deploy-step-${i + 1}`,
-  labels: i === 0 ? <LabelBadge labelKey="category" labelValue="setup" size="sm" /> : null,
+  labels:
+    i === 0 ? (
+      <LabelBadge labelKey="category" labelValue="setup" size="sm" />
+    ) : null,
   actionTriggers: <span className="text-sm">post-deploy-component</span>,
   actionSteps: (
     <ol className="flex flex-col gap-1 list-decimal">

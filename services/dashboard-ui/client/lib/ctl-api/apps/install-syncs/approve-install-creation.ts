@@ -31,4 +31,10 @@ export const approveInstallCreation = ({
   approvalId: string
   orgId: string
 }) =>
-  respondInstallCreationApproval({ appId, syncId, approvalId, responseType: 'approve', orgId })
+  respondInstallCreationApproval({
+    appId,
+    syncId,
+    approvalId,
+    responseType: 'approve',
+    orgId,
+  })

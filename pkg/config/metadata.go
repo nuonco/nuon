@@ -19,7 +19,8 @@ type MetadataConfig struct {
 	// Color codes for label keys, keyed by label key name
 	LabelColors map[string]string `mapstructure:"label_colors,omitempty" toml:"label_colors,omitempty"`
 	// Labels applied to every install of the app; editable only via app config
-	DefaultLabels map[string]string `mapstructure:"default_labels,omitempty" toml:"default_labels,omitempty"`
+	DefaultLabels   map[string]string      `mapstructure:"default_labels,omitempty" toml:"default_labels,omitempty"`
+	CustomerManaged *CustomerManagedConfig `mapstructure:"customer_managed,omitempty" toml:"customer_managed,omitempty"`
 }
 
 func (m MetadataConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -46,5 +47,7 @@ func (m MetadataConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example(`{"env": "#FF5733", "region": "#33FF57"}`).
 		Field("default_labels").Short("default labels for all installs").
 		Long("Labels applied to every install of the app. Values may use the interpolation syntax ({{ .nuon.* }}). These labels cannot be edited or removed on individual installs — only via the app config").
-		Example(`{"tier": "prod", "region": "{{ .nuon.cloud_account.aws.region }}"}`)
+		Example(`{"tier": "prod", "region": "{{ .nuon.cloud_account.aws.region }}"}`).
+		Field("customer_managed").Short("customer-managed package runtime").
+		Long("Vendor-controlled runtime artifacts included in customer-managed release packages")
 }

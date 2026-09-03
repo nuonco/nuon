@@ -67,12 +67,12 @@ export const TimelineEvent = ({
             {title}
           </Text>
 
-          <span className="flex items-center gap-2">           
+          <span className="flex items-center gap-2">
             <Text variant="subtext" theme="neutral">
               <Time time={createdAt} format="relative" variant="subtext" />{' '}
               {createdBy ? <>by {createdBy}</> : null}
             </Text>
-             {actions ? <span>{actions}</span> : null}
+            {actions ? <span>{actions}</span> : null}
           </span>
         </hgroup>
         <span className="flex items-center gap-2">

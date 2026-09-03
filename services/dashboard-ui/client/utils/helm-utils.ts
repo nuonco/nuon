@@ -60,7 +60,9 @@ export function parseHelmPlan(plan: THelmPlan): {
         release: match[2].trim(),
         resource: match[3].trim(),
         resourceType: match[4].trim(),
-        action: NORMALIZE_ACTION[match[5].trim()] || match[5].trim() as unknown as THelmK8sChangeAction,
+        action:
+          NORMALIZE_ACTION[match[5].trim()] ||
+          (match[5].trim() as unknown as THelmK8sChangeAction),
         before: before,
         after: after,
         diff: diffLines(before, after),

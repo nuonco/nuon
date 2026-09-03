@@ -25,7 +25,6 @@ export const appTabs = (appId: string, branchId: string): INavItem[] => {
   ]
 }
 
-
 export const installTabs = (installId: string): INavItem[] => [
   { label: 'Overview', path: `/installs/${installId}` },
   { label: 'Activity', path: `/installs/${installId}/activity` },

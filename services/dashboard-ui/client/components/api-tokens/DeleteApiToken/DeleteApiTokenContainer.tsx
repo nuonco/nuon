@@ -27,7 +27,9 @@ const DeleteApiTokenModalContainer = ({
       queryClient.invalidateQueries({ queryKey: ['static-tokens', org?.id] })
       addToast(
         <Toast heading="Token deleted" theme="success">
-          <Text>{tokenLabel(token)} was deleted and can no longer access the API.</Text>
+          <Text>
+            {tokenLabel(token)} was deleted and can no longer access the API.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)

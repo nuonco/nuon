@@ -3,8 +3,16 @@ import { Text } from '@/components/common/Text'
 import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 
 export function WizardStepView() {
-  const { steps, currentStepIndex, completedSteps, sharedData, setSharedData, goNext, goPrev, markComplete } =
-    useOnboardingWizard()
+  const {
+    steps,
+    currentStepIndex,
+    completedSteps,
+    sharedData,
+    setSharedData,
+    goNext,
+    goPrev,
+    markComplete,
+  } = useOnboardingWizard()
 
   const [visibleIndex, setVisibleIndex] = useState(currentStepIndex)
   const [isTransitioning, setIsTransitioning] = useState(false)
@@ -32,7 +40,9 @@ export function WizardStepView() {
   return (
     <div
       className={`transition-all duration-150 ease-out ${
-        isTransitioning ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
+        isTransitioning
+          ? 'opacity-0 translate-x-2'
+          : 'opacity-100 translate-x-0'
       }`}
     >
       {!visibleStep.hideTitle && (
@@ -41,7 +51,12 @@ export function WizardStepView() {
             {visibleStep.title}
           </Text>
           {visibleStep.description && (
-            <Text variant="body" theme="neutral" as="div" className="max-w-2xl !text-pretty">
+            <Text
+              variant="body"
+              theme="neutral"
+              as="div"
+              className="max-w-2xl !text-pretty"
+            >
               {visibleStep.description}
             </Text>
           )}

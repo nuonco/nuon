@@ -31,12 +31,7 @@ export const InstallComponentHeader = ({
         <div className="flex flex-col gap-4">
           <BackLink />
           <HeadingGroup className="gap-1">
-            <Text
-              flex
-              className="gap-2"
-              variant="h3"
-              weight="strong"
-            >
+            <Text flex className="gap-2" variant="h3" weight="strong">
               <ComponentType
                 type={installComponent?.component?.type}
                 displayVariant="icon-only"
@@ -71,10 +66,7 @@ export const InstallComponentHeader = ({
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4 md:gap-8">
             <div className="flex items-center gap-4">
-              <DeploySwitcher
-                componentId={componentId}
-                deployId={deployId}
-              />
+              <DeploySwitcher componentId={componentId} deployId={deployId} />
               <Dropdown
                 alignment="right"
                 variant="primary"

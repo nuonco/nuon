@@ -14,11 +14,9 @@ export const DeployManifestTab = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const planJob = deploy?.runner_jobs?.find(
-    (j) => j.operation === 'create-apply-plan'
-  ) ?? deploy?.runner_jobs?.find(
-    (j) => j.operation === 'apply-plan'
-  )
+  const planJob =
+    deploy?.runner_jobs?.find((j) => j.operation === 'create-apply-plan') ??
+    deploy?.runner_jobs?.find((j) => j.operation === 'apply-plan')
 
   const { data: compositePlan, isLoading } = useQuery({
     placeholderData: keepPreviousData,

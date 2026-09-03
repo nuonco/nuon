@@ -17,7 +17,10 @@ export const Components = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
-          { path: `/${org?.id}/apps/${app?.id}/components`, text: 'Components' },
+          {
+            path: `/${org?.id}/apps/${app?.id}/components`,
+            text: 'Components',
+          },
         ]}
       />
       <ListPage

@@ -27,7 +27,13 @@ export const AuditHistoryModalContainer = ({ ...props }: IModal) => {
     isLoading,
   } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['install-audit-log', org.id, install.id, dateRange.start.toISOString(), dateRange.end.toISOString()],
+    queryKey: [
+      'install-audit-log',
+      org.id,
+      install.id,
+      dateRange.start.toISOString(),
+      dateRange.end.toISOString(),
+    ],
     queryFn: () =>
       getInstallAuditLog({
         orgId: org.id,

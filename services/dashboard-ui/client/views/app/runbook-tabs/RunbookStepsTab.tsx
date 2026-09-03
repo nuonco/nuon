@@ -17,13 +17,14 @@ export const RunbookStepsTab = () => {
 
   const latestConfig = runbook?.configs?.[0]
   const steps =
-    latestConfig?.steps
-      ?.slice()
-      .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ?? []
+    latestConfig?.steps?.slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ??
+    []
 
   return (
     <>
-      <PageTitle segments={[`${runbook?.name ?? 'Runbook'} steps`, app?.name]} />
+      <PageTitle
+        segments={[`${runbook?.name ?? 'Runbook'} steps`, app?.name]}
+      />
       {!steps.length ? (
         <Text theme="neutral">No steps configured.</Text>
       ) : (

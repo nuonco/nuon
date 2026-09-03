@@ -2,20 +2,38 @@ import React, { lazy, Suspense } from 'react'
 import { cn } from '@/utils/classnames'
 import { CodeBlock } from '../CodeBlock'
 import { JSONViewer } from '../JSONViewer'
-import { buildNuonComponents, nuonTagNames, type MarkdownMode } from './nuon-components'
+import {
+  buildNuonComponents,
+  nuonTagNames,
+  type MarkdownMode,
+} from './nuon-components'
 import { makeSearchConfig } from './markdown-table'
 import { markdownAnchorClassName } from './markdown-styles'
 import { htmlTableToExtracted } from './markdown-html-table'
 import { MarkdownTable } from './MarkdownTable'
 import type { MarkdownVariant } from './Markdown'
 
-const MermaidFlowGraph = lazy(() => import('../MermaidFlowGraph').then((m) => ({ default: m.MermaidFlowGraph })))
+const MermaidFlowGraph = lazy(() =>
+  import('../MermaidFlowGraph').then((m) => ({ default: m.MermaidFlowGraph }))
+)
 
-const BLOCK_TAG_NAMES = new Set([...nuonTagNames, 'nuon-tabs-rendered', 'nuon-surface-rendered', 'nuon-table-rendered'])
+const BLOCK_TAG_NAMES = new Set([
+  ...nuonTagNames,
+  'nuon-tabs-rendered',
+  'nuon-surface-rendered',
+  'nuon-table-rendered',
+])
 
-const isFlowchart = (code: string) => /^(?:graph|flowchart)\s+(?:TD|TB|LR|RL|BT)\s*$/im.test(code.trim().split('\n')[0])
+const isFlowchart = (code: string) =>
+  /^(?:graph|flowchart)\s+(?:TD|TB|LR|RL|BT)\s*$/im.test(
+    code.trim().split('\n')[0]
+  )
 
-function renderCodeBlock(language: string, codeString: string, compact = false) {
+function renderCodeBlock(
+  language: string,
+  codeString: string,
+  compact = false
+) {
   if (compact) {
     return (
       <pre className="overflow-x-auto rounded-md border p-3 my-0 bg-code text-xs font-mono">
@@ -27,7 +45,11 @@ function renderCodeBlock(language: string, codeString: string, compact = false) 
   if (language === 'mermaid') {
     if (isFlowchart(codeString)) {
       return (
-        <Suspense fallback={<div className="w-full h-[44rem] my-4 border rounded-lg border-color animate-pulse" />}>
+        <Suspense
+          fallback={
+            <div className="w-full h-[44rem] my-4 border rounded-lg border-color animate-pulse" />
+          }
+        >
           <MermaidFlowGraph code={codeString} />
         </Suspense>
       )
@@ -37,7 +59,13 @@ function renderCodeBlock(language: string, codeString: string, compact = false) 
 
   if (language === 'json' || language === 'jsonc') {
     try {
-      return <JSONViewer data={JSON.parse(codeString)} expanded={2} className="my-4" />
+      return (
+        <JSONViewer
+          data={JSON.parse(codeString)}
+          expanded={2}
+          className="my-4"
+        />
+      )
     } catch {
       return <CodeBlock language="json">{codeString}</CodeBlock>
     }
@@ -45,7 +73,13 @@ function renderCodeBlock(language: string, codeString: string, compact = false) 
 
   if (!language || language === 'text') {
     try {
-      return <JSONViewer data={JSON.parse(codeString)} expanded={2} className="my-4" />
+      return (
+        <JSONViewer
+          data={JSON.parse(codeString)}
+          expanded={2}
+          className="my-4"
+        />
+      )
     } catch {
       return (
         <pre className="overflow-x-auto rounded-lg border p-4 my-4 bg-code text-sm font-mono">
@@ -65,23 +99,31 @@ const nuonComponentsByMode: Record<MarkdownMode, Record<string, any>> = {
 
 function hasBlockChild(node: any): boolean {
   return node?.children?.some(
-    (child: any) => child.type === 'element' && BLOCK_TAG_NAMES.has(child.tagName)
+    (child: any) =>
+      child.type === 'element' && BLOCK_TAG_NAMES.has(child.tagName)
   )
 }
 
-export function getMarkdownComponents(mode: MarkdownMode, variant: MarkdownVariant = 'default'): Record<string, any> {
+export function getMarkdownComponents(
+  mode: MarkdownMode,
+  variant: MarkdownVariant = 'default'
+): Record<string, any> {
   const compact = variant === 'compact'
   return {
-  ...nuonComponentsByMode[mode],
-  p({ node, children, ...props }: any) {
-    if (hasBlockChild(node)) {
-      return <div {...props}>{children}</div>
-    }
-    return <p {...props}>{children}</p>
-  },
-  code({ node, className, children, style, ...props }: any) {
+    ...nuonComponentsByMode[mode],
+    p({ node, children, ...props }: any) {
+      if (hasBlockChild(node)) {
+        return <div {...props}>{children}</div>
+      }
+      return <p {...props}>{children}</p>
+    },
+    code({ node, className, children, style, ...props }: any) {
       if (style || node?.properties?.style) {
-        return <code className={className} style={style} {...props}>{children}</code>
+        return (
+          <code className={className} style={style} {...props}>
+            {children}
+          </code>
+        )
       }
 
       return (
@@ -122,7 +164,9 @@ export function getMarkdownComponents(mode: MarkdownMode, variant: MarkdownVaria
       } = props
 
       const search =
-        searchEnabled != null ? makeSearchConfig(searchColumns, searchPlaceholder) : null
+        searchEnabled != null
+          ? makeSearchConfig(searchColumns, searchPlaceholder)
+          : null
       const extracted = htmlTableToExtracted(children, search)
       if (extracted) {
         return <MarkdownTable {...extracted} />
@@ -130,7 +174,9 @@ export function getMarkdownComponents(mode: MarkdownMode, variant: MarkdownVaria
 
       return (
         <div className="readme-table overflow-x-auto rounded-lg border my-4">
-          <table className="min-w-full text-sm !my-0" {...rest}>{children}</table>
+          <table className="min-w-full text-sm !my-0" {...rest}>
+            {children}
+          </table>
         </div>
       )
     },
@@ -139,7 +185,10 @@ export function getMarkdownComponents(mode: MarkdownMode, variant: MarkdownVaria
     },
     th({ children, ...props }: any) {
       return (
-        <th className="py-3 px-4 text-left bg-cool-grey-100 dark:bg-dark-grey-700 first:rounded-tl-lg last:rounded-tr-lg" {...props}>
+        <th
+          className="py-3 px-4 text-left bg-cool-grey-100 dark:bg-dark-grey-700 first:rounded-tl-lg last:rounded-tr-lg"
+          {...props}
+        >
           {children}
         </th>
       )
@@ -154,8 +203,14 @@ export function getMarkdownComponents(mode: MarkdownMode, variant: MarkdownVaria
 
     details({ children, ...props }: any) {
       const childrenArray = React.Children.toArray(children)
-      const summaryChild = childrenArray.find((child: any) => child?.type === 'summary' || child?.props?.node?.tagName === 'summary')
-      const contentChildren = childrenArray.filter((child: any) => child?.type !== 'summary' && child?.props?.node?.tagName !== 'summary')
+      const summaryChild = childrenArray.find(
+        (child: any) =>
+          child?.type === 'summary' || child?.props?.node?.tagName === 'summary'
+      )
+      const contentChildren = childrenArray.filter(
+        (child: any) =>
+          child?.type !== 'summary' && child?.props?.node?.tagName !== 'summary'
+      )
 
       return (
         <details
@@ -164,9 +219,7 @@ export function getMarkdownComponents(mode: MarkdownMode, variant: MarkdownVaria
         >
           {summaryChild}
           {contentChildren.length > 0 && (
-            <div className="p-4">
-              {contentChildren}
-            </div>
+            <div className="p-4">{contentChildren}</div>
           )}
         </details>
       )
@@ -185,34 +238,50 @@ export function getMarkdownComponents(mode: MarkdownMode, variant: MarkdownVaria
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </summary>
       )
     },
 
-  pre({ node, children, style, ...props }: any) {
-    if (style || node?.properties?.style) {
-      return <pre style={style} {...props}>{children}</pre>
-    }
-
-    const childArray = React.Children.toArray(children)
-    const child = childArray.length === 1 ? (childArray[0] as React.ReactElement<any>) : null
-
-    if (child?.props?.className) {
-      const match = /language-(\w+)/.exec(child.props.className)
-      if (match) {
-        const codeString = String(child.props.children).replace(/\n$/, '')
-        return renderCodeBlock(match[1], codeString, compact)
+    pre({ node, children, style, ...props }: any) {
+      if (style || node?.properties?.style) {
+        return (
+          <pre style={style} {...props}>
+            {children}
+          </pre>
+        )
       }
-    }
 
-    if (child?.props?.children != null) {
-      const codeString = String(child.props.children).replace(/\n$/, '')
-      return renderCodeBlock('text', codeString, compact)
-    }
+      const childArray = React.Children.toArray(children)
+      const child =
+        childArray.length === 1
+          ? (childArray[0] as React.ReactElement<any>)
+          : null
 
-    return <pre style={style} {...props}>{children}</pre>
-  },
+      if (child?.props?.className) {
+        const match = /language-(\w+)/.exec(child.props.className)
+        if (match) {
+          const codeString = String(child.props.children).replace(/\n$/, '')
+          return renderCodeBlock(match[1], codeString, compact)
+        }
+      }
+
+      if (child?.props?.children != null) {
+        const codeString = String(child.props.children).replace(/\n$/, '')
+        return renderCodeBlock('text', codeString, compact)
+      }
+
+      return (
+        <pre style={style} {...props}>
+          {children}
+        </pre>
+      )
+    },
   }
 }

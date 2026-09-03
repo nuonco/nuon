@@ -18,21 +18,13 @@ const noop = () => {}
 
 export const Default = () => (
   <ModalStory>
-    <RunnerJobPlanModal
-      plan={mockPlan as any}
-      isLoading={false}
-      error={null}
-    />
+    <RunnerJobPlanModal plan={mockPlan as any} isLoading={false} error={null} />
   </ModalStory>
 )
 
 export const Loading = () => (
   <ModalStory>
-    <RunnerJobPlanModal
-      plan={undefined}
-      isLoading={true}
-      error={null}
-    />
+    <RunnerJobPlanModal plan={undefined} isLoading={true} error={null} />
   </ModalStory>
 )
 
@@ -48,10 +40,6 @@ export const WithError = () => (
 
 export const NoPlan = () => (
   <ModalStory>
-    <RunnerJobPlanModal
-      plan={undefined}
-      isLoading={false}
-      error={null}
-    />
+    <RunnerJobPlanModal plan={undefined} isLoading={false} error={null} />
   </ModalStory>
 )

@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -32,13 +37,7 @@ const DeleteCellModal = ({
 }: IDeleteCellModal) => (
   <Modal
     heading={
-      <Text
-        flex
-        className="gap-4"
-        variant="h3"
-        weight="strong"
-        theme="error"
-      >
+      <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
         <Icon variant="TrashIcon" size="24" />
         Delete cell?
       </Text>
@@ -51,8 +50,7 @@ const DeleteCellModal = ({
     {...props}
   >
     <Text>
-      Deleting {cellName || 'this cell'} will remove its script and run
-      history.
+      Deleting {cellName || 'this cell'} will remove its script and run history.
     </Text>
   </Modal>
 )
@@ -143,9 +141,7 @@ export const NotebookCellCardContainer = ({
       setActiveRunId(newRun.id)
       addToast(
         <Toast heading="Running cell" theme="info">
-          <Text>
-            Running {cell.name || 'cell'}. Output will appear below.
-          </Text>
+          <Text>Running {cell.name || 'cell'}. Output will appear below.</Text>
         </Toast>
       )
       invalidateNotebook()
@@ -176,12 +172,7 @@ export const NotebookCellCardContainer = ({
   })
 
   const confirmDelete = () => {
-    const modal = (
-      <DeleteCellModal
-        cellName={name}
-        onConfirm={() => remove()}
-      />
-    )
+    const modal = <DeleteCellModal cellName={name} onConfirm={() => remove()} />
     addModal(modal)
   }
 

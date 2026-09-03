@@ -24,7 +24,9 @@ export function parseInstallRunbooksToTableData(
     const latestRun = ir.runs?.[0]
     const workflowId =
       latestRun?.install_workflow_id ?? latestRun?.install_workflow?.id
-    const latestRunHref = workflowId ? `${basePath}/workflows/${workflowId}` : null
+    const latestRunHref = workflowId
+      ? `${basePath}/workflows/${workflowId}`
+      : null
 
     return {
       runbookId,

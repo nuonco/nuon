@@ -404,9 +404,9 @@ export const Loading = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Loading state</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        With <code>loading</code>, the label renders as real text while the value
-        shows a shimmer. Override the shimmer width with <code>loadingWidth</code>{' '}
-        (in <code>ch</code>).
+        With <code>loading</code>, the label renders as real text while the
+        value shows a shimmer. Override the shimmer width with{' '}
+        <code>loadingWidth</code> (in <code>ch</code>).
       </p>
     </div>
 

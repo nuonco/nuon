@@ -110,7 +110,8 @@ export const orgRoutes: RouteObject[] = [
       },
       {
         path: ':orgId/api-tokens',
-        loader: ({ params }) => redirect(`/${params.orgId}/settings/api-tokens`),
+        loader: ({ params }) =>
+          redirect(`/${params.orgId}/settings/api-tokens`),
       },
       {
         path: ':orgId/service-accounts',

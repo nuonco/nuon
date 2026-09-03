@@ -25,7 +25,11 @@ export const Loading = () => (
 
 export const WithError = () => (
   <ModalStory>
-    <ViewStateModal state={null} error={{ error: 'Unable to load state' }} isLoading={false} />
+    <ViewStateModal
+      state={null}
+      error={{ error: 'Unable to load state' }}
+      isLoading={false}
+    />
   </ModalStory>
 )
 

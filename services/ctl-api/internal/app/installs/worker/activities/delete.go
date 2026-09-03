@@ -22,6 +22,10 @@ func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 		return err
 	}
 
+	if err := a.acctClient.DeleteServiceAccount(ctx, req.InstallID); err != nil {
+		return err
+	}
+
 	var queueIDs []string
 	if res := a.db.WithContext(ctx).
 		Model(&app.Queue{}).

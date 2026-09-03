@@ -21,7 +21,8 @@ export const TeamTableContainer = ({
 
   const { data: result, isLoading } = useQuery({
     queryKey: ['org-accounts', org.id, offset],
-    queryFn: () => getOrgAccounts({ orgId: org.id, offset, limit: TEAM_TABLE_LIMIT + 1 }),
+    queryFn: () =>
+      getOrgAccounts({ orgId: org.id, offset, limit: TEAM_TABLE_LIMIT + 1 }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
   })

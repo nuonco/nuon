@@ -22,7 +22,9 @@ export function useVcsRepoBrowser({
   initialRepo?: string
   initialBranch?: string
 }) {
-  const [selectedRepo, setSelectedRepo] = useState<TVCSConnectionRepo | null>(null)
+  const [selectedRepo, setSelectedRepo] = useState<TVCSConnectionRepo | null>(
+    null
+  )
   const [selectedBranch, setSelectedBranch] = useState(initialBranch)
 
   const {
@@ -32,13 +34,16 @@ export function useVcsRepoBrowser({
   } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['vcs-repos', orgId, vcsConnectionId],
-    queryFn: () => getVCSConnectionRepos({ orgId, connectionId: vcsConnectionId }),
+    queryFn: () =>
+      getVCSConnectionRepos({ orgId, connectionId: vcsConnectionId }),
     enabled: enabled && !!orgId && !!vcsConnectionId,
     retry: retryVCSRequest,
   })
 
   const repos = reposData?.repositories
-    ? [...reposData.repositories].sort((a, b) => a.full_name.localeCompare(b.full_name))
+    ? [...reposData.repositories].sort((a, b) =>
+        a.full_name.localeCompare(b.full_name)
+      )
     : []
 
   useEffect(() => {
@@ -46,7 +51,11 @@ export function useVcsRepoBrowser({
       if (initialRepo && !selectedRepo) {
         // Config has a repo that isn't in the VCS connection list (e.g. public repo).
         // Create a synthetic entry so the selector shows the correct value.
-        setSelectedRepo({ full_name: initialRepo, name: initialRepo.split('/')[1] || initialRepo, private: false } as TVCSConnectionRepo)
+        setSelectedRepo({
+          full_name: initialRepo,
+          name: initialRepo.split('/')[1] || initialRepo,
+          private: false,
+        } as TVCSConnectionRepo)
       } else {
         setSelectedRepo(null)
       }
@@ -58,7 +67,11 @@ export function useVcsRepoBrowser({
         setSelectedRepo(match)
       } else {
         // Repo not in this connection's list — keep the saved value
-        setSelectedRepo({ full_name: initialRepo, name: initialRepo.split('/')[1] || initialRepo, private: false } as TVCSConnectionRepo)
+        setSelectedRepo({
+          full_name: initialRepo,
+          name: initialRepo.split('/')[1] || initialRepo,
+          private: false,
+        } as TVCSConnectionRepo)
       }
     } else if (!selectedRepo) {
       setSelectedRepo(repos[0])
@@ -74,7 +87,8 @@ export function useVcsRepoBrowser({
   } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['vcs-branches', orgId, vcsConnectionId, owner, repoName],
-    queryFn: () => getConnectionBranches(orgId, vcsConnectionId, owner!, repoName!),
+    queryFn: () =>
+      getConnectionBranches(orgId, vcsConnectionId, owner!, repoName!),
     enabled: enabled && !!orgId && !!vcsConnectionId && !!owner && !!repoName,
     retry: retryVCSRequest,
   })
@@ -93,10 +107,14 @@ export function useVcsRepoBrowser({
   return {
     repos,
     loadingRepos,
-    reposError: reposQueryError ? 'Failed to load repositories. Please check your VCS connection.' : null,
+    reposError: reposQueryError
+      ? 'Failed to load repositories. Please check your VCS connection.'
+      : null,
     branches,
     loadingBranches,
-    branchesError: branchesQueryError ? 'Failed to load branches. Please try again.' : null,
+    branchesError: branchesQueryError
+      ? 'Failed to load branches. Please try again.'
+      : null,
     selectedRepo,
     setSelectedRepo,
     selectedBranch,

@@ -238,8 +238,11 @@ export const FlexLayout = () => (
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           flex
         </code>{' '}
-        prop adds <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">inline-flex items-center gap-1.5</code> for
-        inline icon + text patterns. Override the default gap via className.
+        prop adds{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          inline-flex items-center gap-1.5
+        </code>{' '}
+        for inline icon + text patterns. Override the default gap via className.
       </p>
     </div>
 
@@ -265,8 +268,13 @@ export const FlexLayout = () => (
       <div className="text-sm text-gray-600 dark:text-gray-400 mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
         <strong>Usage:</strong>
         <ul className="mt-2 space-y-1 list-disc list-inside">
-          <li>Use for icon + text pairs instead of <code>className="!flex items-center gap-1"</code></li>
-          <li>Default gap is <code>gap-1.5</code>, overridable via className</li>
+          <li>
+            Use for icon + text pairs instead of{' '}
+            <code>className="!flex items-center gap-1"</code>
+          </li>
+          <li>
+            Default gap is <code>gap-1.5</code>, overridable via className
+          </li>
           <li>Works with any variant, theme, or weight</li>
         </ul>
       </div>
@@ -284,15 +292,25 @@ export const Nowrap = () => (
           nowrap
         </code>{' '}
         prop prevents text from wrapping. By default, Text uses{' '}
-        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">text-wrap</code>.
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          text-wrap
+        </code>
+        .
       </p>
     </div>
 
     <div className="space-y-4">
       <div className="flex flex-col gap-4 max-w-[200px] border border-dashed border-gray-300 dark:border-gray-600 p-4 rounded">
-        <Text>This text will wrap when it overflows the container because text-wrap is the default</Text>
-        <Text nowrap>This text will not wrap and will overflow the container instead</Text>
-        <Text nowrap className="truncate">This text will truncate with an ellipsis instead of wrapping</Text>
+        <Text>
+          This text will wrap when it overflows the container because text-wrap
+          is the default
+        </Text>
+        <Text nowrap>
+          This text will not wrap and will overflow the container instead
+        </Text>
+        <Text nowrap className="truncate">
+          This text will truncate with an ellipsis instead of wrapping
+        </Text>
       </div>
     </div>
   </div>
@@ -328,8 +346,9 @@ export const AsElement = () => (
       </div>
 
       <div className="text-sm text-gray-600 dark:text-gray-400 mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
-        <strong>Precedence:</strong> <code>as</code> takes priority over <code>role</code> and <code>level</code> for
-        element resolution. Styling props (variant, weight, theme) still apply normally.
+        <strong>Precedence:</strong> <code>as</code> takes priority over{' '}
+        <code>role</code> and <code>level</code> for element resolution. Styling
+        props (variant, weight, theme) still apply normally.
       </div>
     </div>
   </div>
@@ -367,10 +386,12 @@ export const LevelHeadings = () => (
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-6">
         <div>
-          <strong>level alone:</strong> Renders as h1-h6 with heading role and aria-level
+          <strong>level alone:</strong> Renders as h1-h6 with heading role and
+          aria-level
         </div>
         <div>
-          <strong>role="heading" + level:</strong> Same result, backward compatible
+          <strong>role="heading" + level:</strong> Same result, backward
+          compatible
         </div>
       </div>
     </div>

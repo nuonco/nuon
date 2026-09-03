@@ -4,6 +4,4 @@ export default {
 
 import { CreateInstallButton } from './CreateInstallButton'
 
-export const Default = () => (
-  <CreateInstallButton onOpen={() => {}} />
-)
+export const Default = () => <CreateInstallButton onOpen={() => {}} />

@@ -9,10 +9,7 @@ import { useInstall } from '@/hooks/use-install'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
-import {
-  createInstallConfig,
-  updateInstallConfig,
-} from '@/lib'
+import { createInstallConfig, updateInstallConfig } from '@/lib'
 import { EditStackOverridesModal } from './EditStackOverrides'
 
 const MANAGED_BY_CONFIG_TIP = 'Managed by config. Disable config sync to edit.'
@@ -76,14 +73,12 @@ export const EditStackOverridesModalContainer = ({
       error={error}
       currentVpcUrl={ic?.vpc_nested_template_url || ''}
       currentRunnerUrl={ic?.runner_nested_template_url || ''}
-      currentCustomStacks={
-        (ic?.custom_nested_stacks || []).map((s) => ({
-          name: s.name || '',
-          template_url: s.template_url || '',
-          index: s.index || 0,
-          parameters: s.parameters,
-        }))
-      }
+      currentCustomStacks={(ic?.custom_nested_stacks || []).map((s) => ({
+        name: s.name || '',
+        template_url: s.template_url || '',
+        index: s.index || 0,
+        parameters: s.parameters,
+      }))}
       appDefaultVpcUrl={appConfig?.stack?.vpc_nested_template_url || ''}
       appDefaultRunnerUrl={appConfig?.stack?.runner_nested_template_url || ''}
       onSubmit={(data) => mutate(data)}
@@ -92,13 +87,12 @@ export const EditStackOverridesModalContainer = ({
   )
 }
 
-export const EditStackOverridesButton = ({
-  ...props
-}: IButtonAsButton) => {
+export const EditStackOverridesButton = ({ ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const { install } = useInstall()
 
-  const isManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
+  const isManagedByConfig =
+    install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   const handleClick = () => {
     const modal = <EditStackOverridesModalContainer />

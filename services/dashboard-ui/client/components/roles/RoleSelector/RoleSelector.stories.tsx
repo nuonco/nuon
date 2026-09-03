@@ -26,27 +26,15 @@ export const Default = () => {
 }
 
 export const Loading = () => (
-  <RoleSelector
-    roles={[]}
-    isLoading={true}
-    isError={false}
-  />
+  <RoleSelector roles={[]} isLoading={true} isError={false} />
 )
 
 export const Error = () => (
-  <RoleSelector
-    roles={[]}
-    isLoading={false}
-    isError={true}
-  />
+  <RoleSelector roles={[]} isLoading={false} isError={true} />
 )
 
 export const Empty = () => (
-  <RoleSelector
-    roles={[]}
-    isLoading={false}
-    isError={false}
-  />
+  <RoleSelector roles={[]} isLoading={false} isError={false} />
 )
 
 export const WithSelectedValue = () => (

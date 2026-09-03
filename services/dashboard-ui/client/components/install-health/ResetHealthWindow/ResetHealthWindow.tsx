@@ -22,8 +22,7 @@ export const ResetHealthWindowModal = ({
   const queryClient = useQueryClient()
 
   const { mutate: reset, isPending } = useMutation({
-    mutationFn: () =>
-      resetInstallHealthBaseline({ orgId: org!.id, installId }),
+    mutationFn: () => resetInstallHealthBaseline({ orgId: org!.id, installId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['install-health-timeline'] })
       queryClient.invalidateQueries({
@@ -31,7 +30,9 @@ export const ResetHealthWindowModal = ({
       })
       addToast(
         <Toast heading="Health window reset" theme="success">
-          <Text>Uptime and the health timeline now start from this moment.</Text>
+          <Text>
+            Uptime and the health timeline now start from this moment.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)

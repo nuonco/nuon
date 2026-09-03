@@ -1,8 +1,5 @@
 import { useState } from 'react'
-import type {
-  TAttributeFilter,
-  TSourceFilter,
-} from '@/hooks/use-inputs-filter'
+import type { TAttributeFilter, TSourceFilter } from '@/hooks/use-inputs-filter'
 import { InputsFilterBar } from './InputsFilterBar'
 import { InputsNoResults } from './InputsNoResults'
 

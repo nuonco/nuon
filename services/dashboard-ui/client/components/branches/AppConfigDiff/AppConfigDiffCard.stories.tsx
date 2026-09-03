@@ -57,7 +57,12 @@ export const NoChanges = () => (
 
 export const Loading = () => (
   <div className="max-w-3xl">
-    <AppConfigDiffCard sections={[]} summary={null} isLoading versionLabel="v6" />
+    <AppConfigDiffCard
+      sections={[]}
+      summary={null}
+      isLoading
+      versionLabel="v6"
+    />
   </div>
 )
 

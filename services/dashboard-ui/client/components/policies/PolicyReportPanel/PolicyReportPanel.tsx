@@ -93,7 +93,15 @@ export const PolicyReportPanel = ({
     []
 
   return (
-    <Panel heading={report.component_name ? `Component - ${report.component_name}` : 'Sandbox'} size="half" {...props}>
+    <Panel
+      heading={
+        report.component_name
+          ? `Component - ${report.component_name}`
+          : 'Sandbox'
+      }
+      size="half"
+      {...props}
+    >
       <div className="grid grid-cols-3 gap-4 text-center">
         <div className="flex flex-col gap-1 p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
           <Text
@@ -226,7 +234,9 @@ export const PolicyReportPanel = ({
                                 )}
                               >
                                 <Icon
-                                  variant={isDeny ? 'XCircleIcon' : 'WarningIcon'}
+                                  variant={
+                                    isDeny ? 'XCircleIcon' : 'WarningIcon'
+                                  }
                                   size={14}
                                   className="mt-0.5 shrink-0"
                                 />

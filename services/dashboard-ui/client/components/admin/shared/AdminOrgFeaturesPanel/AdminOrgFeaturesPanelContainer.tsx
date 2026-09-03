@@ -5,7 +5,11 @@ import { Toast } from '@/components/surfaces/Toast'
 import { type IPanel } from '@/components/surfaces/Panel'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
-import { adminGetOrgFeaturesList, adminUpdateOrgFeatures, type TOrgFeatureInfo } from '@/lib'
+import {
+  adminGetOrgFeaturesList,
+  adminUpdateOrgFeatures,
+  type TOrgFeatureInfo,
+} from '@/lib'
 import type { TOrg } from '@/types'
 import { AdminOrgFeaturesPanel } from './AdminOrgFeaturesPanel'
 
@@ -32,7 +36,8 @@ export const AdminOrgFeaturesPanelContainer = ({
     mutationFn: (formData: FormData) => {
       const features: Record<string, boolean> = {}
       featuresList.forEach((feature) => {
-        features[feature.name] = feature.forced || formData.get(feature.name) === 'on'
+        features[feature.name] =
+          feature.forced || formData.get(feature.name) === 'on'
       })
       return adminUpdateOrgFeatures({ orgId, features, adminEmail })
     },

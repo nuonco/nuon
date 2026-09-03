@@ -7,8 +7,12 @@ import { Text } from '@/components/common/Text'
 
 export const Default = () => (
   <PageSection>
-    <Text variant="h3" weight="strong">Section heading</Text>
-    <Text variant="body" theme="neutral">Section content goes here.</Text>
+    <Text variant="h3" weight="strong">
+      Section heading
+    </Text>
+    <Text variant="body" theme="neutral">
+      Section content goes here.
+    </Text>
   </PageSection>
 )
 

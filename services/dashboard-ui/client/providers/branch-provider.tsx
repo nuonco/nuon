@@ -15,7 +15,9 @@ type BranchContextValue = {
   refresh: () => void
 }
 
-export const BranchContext = createContext<BranchContextValue | undefined>(undefined)
+export const BranchContext = createContext<BranchContextValue | undefined>(
+  undefined
+)
 
 export function BranchProvider({
   children,
@@ -35,10 +37,21 @@ export function BranchProvider({
   const { org } = useOrg()
   const { app } = useApp()
   const { addToast } = useToast()
-  const { data: branch, isLoading, error, refetch } = useQuery({
+  const {
+    data: branch,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-branch', org.id!, app.id!, branchId, 'with-config'],
-    queryFn: () => getAppBranch({ orgId: org.id!, appId: app.id!, branchId, latestConfig: true }),
+    queryFn: () =>
+      getAppBranch({
+        orgId: org.id!,
+        appId: app.id!,
+        branchId,
+        latestConfig: true,
+      }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org.id && !!app.id && !!branchId,
   })
@@ -53,7 +66,12 @@ export function BranchProvider({
     }
   }, [error])
 
-  if (error && !branch) return errorElement !== undefined ? <>{errorElement}</> : <ProviderError error={error} />
+  if (error && !branch)
+    return errorElement !== undefined ? (
+      <>{errorElement}</>
+    ) : (
+      <ProviderError error={error} />
+    )
 
   if (isLoading || !branch) return <>{loadingElement}</>
 

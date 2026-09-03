@@ -249,9 +249,21 @@ export const ColorVariants = () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Color with display variants</h4>
       <div className="flex items-center gap-6 p-4 border rounded flex-wrap">
-        <CloudPlatform platform="aws" colorVariant="color" displayVariant="icon-only" />
-        <CloudPlatform platform="aws" colorVariant="color" displayVariant="abbr" />
-        <CloudPlatform platform="aws" colorVariant="color" displayVariant="name" />
+        <CloudPlatform
+          platform="aws"
+          colorVariant="color"
+          displayVariant="icon-only"
+        />
+        <CloudPlatform
+          platform="aws"
+          colorVariant="color"
+          displayVariant="abbr"
+        />
+        <CloudPlatform
+          platform="aws"
+          colorVariant="color"
+          displayVariant="name"
+        />
       </div>
       <Text variant="subtext" theme="neutral">
         Color variant works alongside all display variants

@@ -86,6 +86,7 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels(views.TableOrViewName(s.db, &app.Install{}, ".labels"), lbls)).
+		Preload("OperatingModel").
 		Preload("AppSandboxConfig").
 		Preload("AWSAccount").
 		Preload("AzureAccount").

@@ -24,9 +24,7 @@ interface IQuickManagementMenu {
 const QuickManagementMenu = ({ orgId, installId }: IQuickManagementMenu) => {
   return (
     <Menu>
-      <Button href={`/${orgId}/installs/${installId}`}>
-        View details
-      </Button>
+      <Button href={`/${orgId}/installs/${installId}`}>View details</Button>
       <hr />
       <Text variant="label" theme="neutral">
         Settings
@@ -63,7 +61,12 @@ export const QuickManagementDropdown = ({ install }: { install: TInstall }) => {
   const [hasOpened, setHasOpened] = useState(false)
 
   return (
-    <InstallProvider installId={install?.id} shouldPoll={false} loadingElement={<Skeleton height="24px" width="24px" />} errorElement={null}>
+    <InstallProvider
+      installId={install?.id}
+      shouldPoll={false}
+      loadingElement={<Skeleton height="24px" width="24px" />}
+      errorElement={null}
+    >
       <InstallAppConfigProvider enabled={hasOpened}>
         <SurfacesProvider>
           <Dropdown
@@ -77,7 +80,10 @@ export const QuickManagementDropdown = ({ install }: { install: TInstall }) => {
               if (isOpen) setHasOpened(true)
             }}
           >
-            <QuickManagementMenu orgId={install.org_id} installId={install.id} />
+            <QuickManagementMenu
+              orgId={install.org_id}
+              installId={install.id}
+            />
           </Dropdown>
         </SurfacesProvider>
       </InstallAppConfigProvider>

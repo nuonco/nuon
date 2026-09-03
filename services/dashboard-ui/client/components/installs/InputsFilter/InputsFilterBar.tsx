@@ -21,9 +21,7 @@ interface IInputsFilterBar {
   showFilters: boolean
   attributeFilters: TAttributeFilter[]
   sourceFilters: TSourceFilter[]
-  setAttributeFilters: React.Dispatch<
-    React.SetStateAction<TAttributeFilter[]>
-  >
+  setAttributeFilters: React.Dispatch<React.SetStateAction<TAttributeFilter[]>>
   setSourceFilters: React.Dispatch<React.SetStateAction<TSourceFilter[]>>
   toggleAttribute: (filter: TAttributeFilter) => void
   toggleSource: (filter: TSourceFilter) => void

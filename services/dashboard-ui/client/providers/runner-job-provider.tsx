@@ -13,7 +13,9 @@ type RunnerJobContextValue = {
   job: TRunnerJob
 }
 
-export const RunnerJobContext = createContext<RunnerJobContextValue | undefined>(undefined)
+export const RunnerJobContext = createContext<
+  RunnerJobContextValue | undefined
+>(undefined)
 
 const ACTIVE_STATUSES = ['in-progress', 'queued', 'available']
 
@@ -27,7 +29,11 @@ export function RunnerJobProvider({
   const { org } = useOrg()
   const { addToast } = useToast()
 
-  const { data: job, isLoading, error } = useQuery({
+  const {
+    data: job,
+    isLoading,
+    error,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['runner-job', org.id, runnerJobId],
     queryFn: () => getRunnerJob({ runnerJobId, orgId: org.id }),

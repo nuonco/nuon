@@ -25,7 +25,8 @@ export const SandboxConfigCardContainer = ({
   }
 
   const hasEnvVars = config.env_vars && Object.keys(config.env_vars).length > 0
-  const hasVariablesFiles = config.variables_files && config.variables_files.length > 0
+  const hasVariablesFiles =
+    config.variables_files && config.variables_files.length > 0
   const hasPulumiConfig =
     config.type === 'pulumi' &&
     config.pulumi_config &&
@@ -36,7 +37,9 @@ export const SandboxConfigCardContainer = ({
   }
 
   const handleViewVariablesFiles = () => {
-    addModal(<SandboxVariablesFilesModal variablesFiles={config.variables_files!} />)
+    addModal(
+      <SandboxVariablesFilesModal variablesFiles={config.variables_files!} />
+    )
   }
 
   const handleViewPulumiConfig = () => {
@@ -47,7 +50,9 @@ export const SandboxConfigCardContainer = ({
     <SandboxConfigCard
       config={config}
       onViewEnvVars={hasEnvVars ? handleViewEnvVars : undefined}
-      onViewVariablesFiles={hasVariablesFiles ? handleViewVariablesFiles : undefined}
+      onViewVariablesFiles={
+        hasVariablesFiles ? handleViewVariablesFiles : undefined
+      }
       onViewPulumiConfig={hasPulumiConfig ? handleViewPulumiConfig : undefined}
       {...props}
     />

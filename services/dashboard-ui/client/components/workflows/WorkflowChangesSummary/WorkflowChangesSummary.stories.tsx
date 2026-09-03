@@ -27,7 +27,11 @@ const smallTerraformPlan = {
       address: 'aws_s3_bucket.assets',
       type: 'aws_s3_bucket',
       name: 'assets',
-      change: { actions: ['create'], before: null, after: { bucket: 'assets' } },
+      change: {
+        actions: ['create'],
+        before: null,
+        after: { bucket: 'assets' },
+      },
     },
     {
       address: 'aws_instance.web',
@@ -304,9 +308,21 @@ export const Loading = () => (
     summaries={[]}
     isLoading
     loadingSteps={[
-      { stepName: 'Sync and plan api', componentName: 'api', planType: 'terraform_plan' },
-      { stepName: 'Sync and plan worker', componentName: 'worker', planType: 'helm_approval' },
-      { stepName: 'Sync and plan db', componentName: 'db', planType: 'terraform_plan' },
+      {
+        stepName: 'Sync and plan api',
+        componentName: 'api',
+        planType: 'terraform_plan',
+      },
+      {
+        stepName: 'Sync and plan worker',
+        componentName: 'worker',
+        planType: 'helm_approval',
+      },
+      {
+        stepName: 'Sync and plan db',
+        componentName: 'db',
+        planType: 'terraform_plan',
+      },
     ]}
   />
 )

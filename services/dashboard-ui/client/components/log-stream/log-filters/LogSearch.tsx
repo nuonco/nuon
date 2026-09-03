@@ -5,7 +5,7 @@ import type { TLogFiltersProps } from '@/hooks/use-log-filters'
 interface LogSearchProps {
   filters: {
     filterStats: TLogFiltersProps['filterStats']
-    handleSearchChange: TLogFiltersProps['handleSearchChange'] 
+    handleSearchChange: TLogFiltersProps['handleSearchChange']
     searchQuery: TLogFiltersProps['searchQuery']
   }
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 )
 
 type ComputeInstallConfigDiffInput struct {
@@ -19,7 +20,7 @@ type ComputeInstallConfigDiffOutput struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (a *Activities) ComputeInstallConfigDiff(ctx context.Context, input *ComputeInstallConfigDiffInput) (*ComputeInstallConfigDiffOutput, error) {
-	diff, err := a.computeInstallConfigDiff(ctx, input.OldAppConfigID, input.NewAppConfigID)
+	diff, err := configdiff.ComputeInstallConfigDiff(ctx, a.db, input.OldAppConfigID, input.NewAppConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to compute install config diff: %w", err)
 	}

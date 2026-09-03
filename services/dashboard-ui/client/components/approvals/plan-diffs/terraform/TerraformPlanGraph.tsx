@@ -41,7 +41,11 @@ const OutputNode = memo(({ data }: NodeProps) => {
   const action = data.action as TTerraformChangeAction
   return (
     <>
-      <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ visibility: 'hidden' }}
+      />
       <div
         className="flex items-center justify-center px-3 py-2"
         style={{
@@ -74,7 +78,7 @@ function buildGraph(
   resources: TTerraformResourceChange[],
   drift: TTerraformResourceChange[],
   outputs: TTerraformOutputChange[],
-  enabled: Set<Category>,
+  enabled: Set<Category>
 ) {
   const nodes: Node[] = []
   const edges: Edge[] = []
@@ -94,7 +98,7 @@ function buildGraph(
   const addResourceNodes = (
     items: TTerraformResourceChange[],
     prefix: string,
-    isDrift: boolean,
+    isDrift: boolean
   ) => {
     const byModule = new Map<string, TTerraformResourceChange[]>()
     for (const item of items) {
@@ -168,7 +172,7 @@ export function TerraformPlanGraph({
   outputs,
 }: ITerraformPlanGraph) {
   const [enabled, setEnabled] = useState<Set<Category>>(
-    new Set(['resources', 'drift', 'outputs']),
+    new Set(['resources', 'drift', 'outputs'])
   )
 
   const toggle = useCallback((cat: Category) => {
@@ -182,7 +186,7 @@ export function TerraformPlanGraph({
 
   const { nodes: layoutNodes, edges: layoutEdges } = useMemo(
     () => buildGraph(resources, drift, outputs, enabled),
-    [resources, drift, outputs, enabled],
+    [resources, drift, outputs, enabled]
   )
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes)

@@ -99,7 +99,10 @@ func PreloadAppConfigRunnerConfig(db *gorm.DB) *gorm.DB {
 func PreloadAppActionWorkflowConfigs(db *gorm.DB) *gorm.DB {
 	return db.
 		Preload("ActionWorkflowConfigs").
-		Preload("ActionWorkflowConfigs.Triggers")
+		Preload("ActionWorkflowConfigs.Triggers").
+		Preload("ActionWorkflowConfigs.Steps").
+		Preload("ActionWorkflowConfigs.Steps.PublicGitVCSConfig").
+		Preload("ActionWorkflowConfigs.Steps.ConnectedGithubVCSConfig")
 }
 
 // component config connections

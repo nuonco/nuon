@@ -38,7 +38,8 @@ const useMockSeverityFilters = (initial: string[]) => {
     severityStats: {
       selectedCount: selected.size,
       totalCount: KNOWN.length,
-      isDefault: selected.size === 4 && !selected.has('Trace') && !selected.has('Debug'),
+      isDefault:
+        selected.size === 4 && !selected.has('Trace') && !selected.has('Debug'),
     },
   } as unknown as TLogFiltersProps
 }

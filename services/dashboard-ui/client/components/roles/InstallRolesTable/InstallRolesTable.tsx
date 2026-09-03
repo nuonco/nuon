@@ -18,9 +18,7 @@ const panelLinkClass =
 function RolePanelHeading({ role }: { role: TInstallRole }) {
   return (
     <div className="flex flex-col">
-      <Text variant="h3">
-        {role.app_role_config?.display_name}
-      </Text>
+      <Text variant="h3">{role.app_role_config?.display_name}</Text>
       <Text variant="subtext" theme="neutral" weight="normal">
         {role.app_role_config?.description}
       </Text>
@@ -109,9 +107,7 @@ export const InstallRolesTable = ({
               variant: 'ghost',
               className: panelLinkClass,
               children: (
-                <span className="flex items-center gap-1.5">
-                  View role
-                </span>
+                <span className="flex items-center gap-1.5">View role</span>
               ),
             }}
           >
