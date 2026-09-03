@@ -38,7 +38,7 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, err
 	}
 
-	l.Debug("ensuring queue is active")
+	l.Info("ensuring queue is active")
 	if err := q.ensureActive(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to ensure queue is active")
 	}
@@ -56,30 +56,30 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		l.Warn("unable to clear restart hint", zap.Error(err))
 	}
 
-	l.Debug("registering handlers")
+	l.Info("registering handlers")
 	if err := q.registerHandlers(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to register handlers")
 	}
 
-	l.Debug("setting up queue channels")
+	l.Info("setting up queue channels")
 	if err := q.setupChannels(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to setup channels")
 	}
 
-	l.Debug("starting dispatcher")
+	l.Info("starting dispatcher")
 	if err := q.startDispatcher(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to start dispatcher")
 	}
 
-	l.Debug("starting enqueue signal loop")
+	l.Info("starting enqueue signal loop")
 	q.startEnqueueSignalLoop(ctx)
 
-	l.Debug("requeuing any remaining signals")
+	l.Info("requeuing any remaining signals")
 	if err := q.requeueSignals(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to requeue signals")
 	}
 
-	l.Debug("starting lifecycle manager")
+	l.Info("starting lifecycle manager")
 	historyMax := canDefaultHistoryMax
 	if q.cfg != nil && q.cfg.QueueContinueAsNewHistoryMax > 0 {
 		historyMax = q.cfg.QueueContinueAsNewHistoryMax
@@ -208,7 +208,7 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 }
 
 func (q *queue) setStatus(ctx workflow.Context, l *zap.Logger, status string) {
-	l.Debug("setting queue status", zap.String("status", status))
+	l.Info("setting queue status", zap.String("status", status))
 	if err := statusactivities.AwaitUpdateQueueStatusV2(ctx, statusactivities.UpdateQueueStatusV2Request{
 		QueueID: q.queueID,
 		Status:  app.Status(status),
@@ -234,7 +234,7 @@ func (q *queue) setStatusTimestamp(ctx workflow.Context, l *zap.Logger, key stri
 		}
 	}
 
-	l.Debug("setting queue status", zap.String("status", key))
+	l.Info("setting queue status", zap.String("status", key))
 	if err := activities.AwaitUpdateQueueMetadata(ctx, activities.UpdateQueueMetadataRequest{
 		QueueID:  q.queueID,
 		Metadata: metadata,
