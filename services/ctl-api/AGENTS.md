@@ -283,6 +283,9 @@ Configuration is handled through:
 
 ## Testing
 
+Do not add tests that use SQLite. For database-backed behavior, use the PostgreSQL test harness so tests exercise the
+same SQL dialect and database semantics as production. Unit tests should mock the persistence boundary instead.
+
 Integration tests in `/internal/integration/` cover:
 
 - API endpoint functionality
