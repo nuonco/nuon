@@ -56,6 +56,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Skip checking offline status for runners in these states
 	isNoop := generics.SliceContains(runner.Status, []app.RunnerStatus{
+		app.RunnerStatusPending,
+		app.RunnerStatusAwaitingInstallStackRun,
 		app.RunnerStatusProvisioning,
 		app.RunnerStatusDeprovisioning,
 		app.RunnerStatusReprovisioning,
