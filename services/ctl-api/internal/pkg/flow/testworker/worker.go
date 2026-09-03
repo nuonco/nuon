@@ -3,6 +3,7 @@ package testworker
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
@@ -18,9 +19,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
 
-const (
-	defaultNamespace string = "default"
-)
+// TESTWORKER_NAMESPACE isolates concurrent suite runs: task queues are namespace-scoped, so runs sharing one steal each other's tasks.
+var defaultNamespace = func() string {
+	if ns := os.Getenv("TESTWORKER_NAMESPACE"); ns != "" {
+		return ns
+	}
+	return "default"
+}()
 
 type Worker struct {
 	worker.Worker

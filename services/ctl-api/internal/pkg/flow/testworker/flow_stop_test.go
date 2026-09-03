@@ -35,6 +35,7 @@ func (e *FlowTestSuite) TestStepFailurePreventsNextGroup() {
 				"group 2 step should not have executed")
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // TestStepFailureInGroupDoesNotSkipGroup2 verifies that when a step in group 1
@@ -69,4 +70,5 @@ func (e *FlowTestSuite) TestStepFailureInGroupDoesNotSkipGroup2() {
 				"step after failure should not have executed")
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }

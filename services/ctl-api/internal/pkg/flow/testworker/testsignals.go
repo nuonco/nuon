@@ -329,3 +329,160 @@ func (s *CancellableTestSignal) SleepAfter() time.Duration { return time.Second 
 var _ signal.Signal = (*CancellableTestSignal)(nil)
 var _ signal.SignalWithCancel = (*CancellableTestSignal)(nil)
 var _ signal.SignalWithStepContext = (*CancellableTestSignal)(nil)
+
+// ApprovalInnerSignal implements no optional check interfaces so every pre-approval check passes and the step parks awaiting approval.
+
+const ApprovalInnerSignalType signal.SignalType = "test-flow-approval-inner"
+
+type ApprovalInnerSignal struct{}
+
+func init() {
+	catalog.Register(ApprovalInnerSignalType, func() signal.Signal { return &ApprovalInnerSignal{} })
+}
+
+func (s *ApprovalInnerSignal) Type() signal.SignalType         { return ApprovalInnerSignalType }
+func (s *ApprovalInnerSignal) Validate(workflow.Context) error { return nil }
+func (s *ApprovalInnerSignal) Execute(workflow.Context) error  { return nil }
+func (s *ApprovalInnerSignal) SleepAfter() time.Duration       { return time.Second }
+
+// SkipGroupApprovalSignal makes deny-skip-current skip the whole group instead of just the step.
+
+const SkipGroupApprovalSignalType signal.SignalType = "test-flow-skipgroup-approval"
+
+type SkipGroupApprovalSignal struct{}
+
+func init() {
+	catalog.Register(SkipGroupApprovalSignalType, func() signal.Signal { return &SkipGroupApprovalSignal{} })
+}
+
+func (s *SkipGroupApprovalSignal) Type() signal.SignalType         { return SkipGroupApprovalSignalType }
+func (s *SkipGroupApprovalSignal) Validate(workflow.Context) error { return nil }
+func (s *SkipGroupApprovalSignal) Execute(workflow.Context) error  { return nil }
+func (s *SkipGroupApprovalSignal) SkipGroup() bool                 { return true }
+func (s *SkipGroupApprovalSignal) SleepAfter() time.Duration       { return time.Second }
+
+var _ signal.SignalWithSkipGroup = (*SkipGroupApprovalSignal)(nil)
+
+// PolicyEvalApprovalSignal opts into the policy pre-approval check.
+
+const PolicyEvalApprovalSignalType signal.SignalType = "test-flow-policy-eval-approval"
+
+type PolicyEvalApprovalSignal struct{}
+
+func init() {
+	catalog.Register(PolicyEvalApprovalSignalType, func() signal.Signal { return &PolicyEvalApprovalSignal{} })
+}
+
+func (s *PolicyEvalApprovalSignal) Type() signal.SignalType         { return PolicyEvalApprovalSignalType }
+func (s *PolicyEvalApprovalSignal) Validate(workflow.Context) error { return nil }
+func (s *PolicyEvalApprovalSignal) Execute(workflow.Context) error  { return nil }
+func (s *PolicyEvalApprovalSignal) RequiresPolicyEvaluation() bool  { return true }
+func (s *PolicyEvalApprovalSignal) SleepAfter() time.Duration       { return time.Second }
+
+var _ signal.SignalWithPolicyEvaluation = (*PolicyEvalApprovalSignal)(nil)
+
+// SkippableFailSignal always fails; AutoRetry with MaxRetries 0 exhausts the budget on first failure so SkipOnFailure decides continue vs stop.
+
+const SkippableFailSignalType signal.SignalType = "test-flow-skippable-fail"
+
+type SkippableFailSignal struct{}
+
+func init() {
+	catalog.Register(SkippableFailSignalType, func() signal.Signal { return &SkippableFailSignal{} })
+}
+
+func (s *SkippableFailSignal) Type() signal.SignalType         { return SkippableFailSignalType }
+func (s *SkippableFailSignal) Validate(workflow.Context) error { return nil }
+func (s *SkippableFailSignal) Execute(workflow.Context) error {
+	return fmt.Errorf("skippable-fail: permanent failure")
+}
+func (s *SkippableFailSignal) AutoRetry() bool           { return true }
+func (s *SkippableFailSignal) MaxRetries() int           { return 0 }
+func (s *SkippableFailSignal) SleepAfter() time.Duration { return time.Second }
+
+var _ signal.SignalWithAutoRetry = (*SkippableFailSignal)(nil)
+var _ signal.SignalWithMaxRetries = (*SkippableFailSignal)(nil)
+
+// ManualRetrySignal fails until manually retried (no auto budget), then succeeds on the clone.
+
+const ManualRetrySignalType signal.SignalType = "test-flow-manual-retry"
+
+type ManualRetrySignal struct {
+	StepID string `json:"step_id,omitempty"`
+	FlowID string `json:"flow_id,omitempty"`
+}
+
+func init() {
+	catalog.Register(ManualRetrySignalType, func() signal.Signal { return &ManualRetrySignal{} })
+}
+
+func (s *ManualRetrySignal) Type() signal.SignalType         { return ManualRetrySignalType }
+func (s *ManualRetrySignal) Validate(workflow.Context) error { return nil }
+func (s *ManualRetrySignal) AutoRetry() bool                 { return true }
+func (s *ManualRetrySignal) MaxRetries() int                 { return 2 }
+func (s *ManualRetrySignal) MaxAutoRetries(workflow.Context) int {
+	return 0
+}
+func (s *ManualRetrySignal) SetStepContext(stepID, flowID string) {
+	s.StepID = stepID
+	s.FlowID = flowID
+}
+func (s *ManualRetrySignal) Execute(ctx workflow.Context) error {
+	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, s.StepID)
+	if err != nil {
+		return fmt.Errorf("manual retry signal: unable to get step: %w", err)
+	}
+	if step.RetryIndex > 0 {
+		return nil
+	}
+	return fmt.Errorf("manual retry signal: waiting for manual retry")
+}
+func (s *ManualRetrySignal) SleepAfter() time.Duration { return time.Second }
+
+var _ signal.SignalWithAutoRetry = (*ManualRetrySignal)(nil)
+var _ signal.SignalWithMaxRetries = (*ManualRetrySignal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*ManualRetrySignal)(nil)
+var _ signal.SignalWithStepContext = (*ManualRetrySignal)(nil)
+
+// ManualRetryThenBlockSignal fails until manually retried, then blocks until cancelled so tests can observe mid-retry status.
+
+const ManualRetryThenBlockSignalType signal.SignalType = "test-flow-manual-retry-then-block"
+
+type ManualRetryThenBlockSignal struct {
+	StepID string `json:"step_id,omitempty"`
+	FlowID string `json:"flow_id,omitempty"`
+}
+
+func init() {
+	catalog.Register(ManualRetryThenBlockSignalType, func() signal.Signal { return &ManualRetryThenBlockSignal{} })
+}
+
+func (s *ManualRetryThenBlockSignal) Type() signal.SignalType         { return ManualRetryThenBlockSignalType }
+func (s *ManualRetryThenBlockSignal) Validate(workflow.Context) error { return nil }
+func (s *ManualRetryThenBlockSignal) AutoRetry() bool                 { return true }
+func (s *ManualRetryThenBlockSignal) MaxRetries() int                 { return 2 }
+func (s *ManualRetryThenBlockSignal) MaxAutoRetries(workflow.Context) int {
+	return 0
+}
+func (s *ManualRetryThenBlockSignal) SetStepContext(stepID, flowID string) {
+	s.StepID = stepID
+	s.FlowID = flowID
+}
+func (s *ManualRetryThenBlockSignal) Execute(ctx workflow.Context) error {
+	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, s.StepID)
+	if err != nil {
+		return fmt.Errorf("manual-retry-then-block: unable to get step: %w", err)
+	}
+	if step.RetryIndex > 0 {
+		return workflow.Await(ctx, func() bool { return ctx.Err() != nil })
+	}
+	return fmt.Errorf("manual-retry-then-block: waiting for manual retry")
+}
+func (s *ManualRetryThenBlockSignal) Cancel(workflow.Context) error { return nil }
+func (s *ManualRetryThenBlockSignal) SleepAfter() time.Duration     { return time.Second }
+
+var _ signal.SignalWithAutoRetry = (*ManualRetryThenBlockSignal)(nil)
+var _ signal.SignalWithMaxRetries = (*ManualRetryThenBlockSignal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*ManualRetryThenBlockSignal)(nil)
+var _ signal.SignalWithStepContext = (*ManualRetryThenBlockSignal)(nil)
+var _ signal.SignalWithCancel = (*ManualRetryThenBlockSignal)(nil)
