@@ -46,7 +46,10 @@ func (a *Activities) ReconcileRunnerEnabled(ctx context.Context, req *ReconcileR
 
 	if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
 		RunnerID: req.RunnerID,
-		Metadata: map[string]any{app.RunnerOfflineTSMetadataKey: nil},
+		Metadata: map[string]any{
+			app.RunnerOfflineTSMetadataKey:         nil,
+			app.RunnerOfflineFromStatusMetadataKey: nil,
+		},
 	}); err != nil {
 		return fmt.Errorf("unable to clear runner offline metadata: %w", err)
 	}

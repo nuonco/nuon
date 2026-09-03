@@ -69,8 +69,8 @@ func (s *Signal) Validate(_ workflow.Context) error {
 		s.RunnerGroupType == "" || s.RunnerGroupOwnerID == "" || s.RunnerGroupOwnerType == "" {
 		return errors.New("runner unhealthy payload is incomplete")
 	}
-	if s.FromStatus != app.RunnerStatusActive || s.ToStatus != app.RunnerStatusOffline {
-		return errors.New("runner unhealthy requires an active to offline transition")
+	if s.ToStatus != app.RunnerStatusOffline || s.FromStatus == app.RunnerStatusOffline {
+		return errors.New("runner unhealthy requires a transition to offline")
 	}
 	return nil
 }

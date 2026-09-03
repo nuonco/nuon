@@ -36,7 +36,9 @@ func TestFirstFailedHealthCheckMarksRunnerOfflineWithoutAlerting(t *testing.T) {
 	var calls []string
 
 	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2Metadata, mock.MatchedBy(func(req statusactivities.UpdateRunnerStatusV2MetadataRequest) bool {
-		return len(req.Metadata) == 1 && req.Metadata[app.RunnerOfflineTSMetadataKey] == now.Unix()
+		return len(req.Metadata) == 2 &&
+			req.Metadata[app.RunnerOfflineTSMetadataKey] == now.Unix() &&
+			req.Metadata[app.RunnerOfflineFromStatusMetadataKey] == string(app.RunnerStatusActive)
 	})).Run(func(mock.Arguments) { calls = append(calls, "offline-ts") }).Return(nil).Once()
 	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
 		Run(func(mock.Arguments) { calls = append(calls, "status") }).
@@ -228,7 +230,9 @@ func TestHealthyCheckClearsOfflineMetadataAndRestoresActive(t *testing.T) {
 	var calls []string
 
 	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2Metadata, mock.MatchedBy(func(req statusactivities.UpdateRunnerStatusV2MetadataRequest) bool {
-		return len(req.Metadata) == 1 && req.Metadata[app.RunnerOfflineTSMetadataKey] == nil
+		return len(req.Metadata) == 2 &&
+			req.Metadata[app.RunnerOfflineTSMetadataKey] == nil &&
+			req.Metadata[app.RunnerOfflineFromStatusMetadataKey] == nil
 	})).Run(func(mock.Arguments) { calls = append(calls, "clear") }).Return(nil).Once()
 	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
 		Run(func(mock.Arguments) { calls = append(calls, "status") }).

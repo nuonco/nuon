@@ -10,15 +10,16 @@ import (
 var corpusNow = time.Date(2026, time.August, 6, 12, 0, 0, 0, time.UTC)
 
 type runnerHealthWant struct {
-	result         string
-	reason         string
-	setMissingMng  *bool
-	armOfflineTS   bool
-	clearOfflineTS bool
-	legacyStatus   *app.RunnerStatus
-	v2Status       *app.RunnerStatus
-	alert          bool
-	alertOfflineAt int64
+	result            string
+	reason            string
+	setMissingMng     *bool
+	armOfflineTS      bool
+	clearOfflineTS    bool
+	offlineFromStatus string
+	legacyStatus      *app.RunnerStatus
+	v2Status          *app.RunnerStatus
+	alert             bool
+	alertOfflineAt    int64
 }
 
 type runnerHealthCase struct {
@@ -74,7 +75,7 @@ func runnerHealthCases() []runnerHealthCase {
 			name: "org first failed check arms and transitions without alert", groupType: app.RunnerGroupTypeOrg,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyOrgReason, armOfflineTS: true,
+				result: "unhealthy", reason: unhealthyOrgReason, armOfflineTS: true, offlineFromStatus: string(app.RunnerStatusActive),
 				legacyStatus: runnerStatusPtr(app.RunnerStatusOffline), v2Status: runnerStatusPtr(app.RunnerStatusOffline),
 			},
 		},
@@ -108,7 +109,7 @@ func runnerHealthCases() []runnerHealthCase {
 		{
 			name: "org offline without timestamp arms only", groupType: app.RunnerGroupTypeOrg,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline,
-			want: runnerHealthWant{result: "unhealthy", reason: unhealthyOrgReason, armOfflineTS: true},
+			want: runnerHealthWant{result: "unhealthy", reason: unhealthyOrgReason, armOfflineTS: true, offlineFromStatus: string(app.RunnerStatusUnknown)},
 		},
 		{
 			name: "legacy offline but v2 stale repairs v2 only", groupType: app.RunnerGroupTypeOrg,
@@ -166,7 +167,7 @@ func runnerHealthCases() []runnerHealthCase {
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			activeMng: true, mngChecked: true,
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyInstallReason, armOfflineTS: true,
+				result: "unhealthy", reason: unhealthyInstallReason, armOfflineTS: true, offlineFromStatus: string(app.RunnerStatusActive),
 				setMissingMng: generics.ToPtr(false),
 				legacyStatus:  runnerStatusPtr(app.RunnerStatusOffline), v2Status: runnerStatusPtr(app.RunnerStatusOffline),
 			},
@@ -190,6 +191,16 @@ func runnerHealthCases() []runnerHealthCase {
 		want:       runnerHealthWant{result: "skipped"},
 	})
 
+	// An install runner awaiting its install stack run has no runner infra
+	// yet; the health check must not judge it before the runner step runs.
+	cases = append(cases, runnerHealthCase{
+		name:      "install runner awaiting install stack run is skipped",
+		groupType: app.RunnerGroupTypeInstall,
+		status:    app.RunnerStatusAwaitingInstallStackRun, v2Status: app.RunnerStatusAwaitingInstallStackRun,
+		mngChecked: true,
+		want:       runnerHealthWant{result: "skipped"},
+	})
+
 	for _, status := range []app.RunnerStatus{
 		app.RunnerStatusProvisioning,
 		app.RunnerStatusDeprovisioning,
@@ -197,6 +208,7 @@ func runnerHealthCases() []runnerHealthCase {
 		app.RunnerStatusDeprovisioned,
 		app.RunnerStatusPending,
 		app.RunnerStatusDisabled,
+		app.RunnerStatusAwaitingInstallStackRun,
 	} {
 		cases = append(cases, runnerHealthCase{
 			name:      "skippable status " + string(status),

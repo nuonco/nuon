@@ -26,6 +26,7 @@ var skippableRunnerStatuses = []app.RunnerStatus{
 	app.RunnerStatusDeprovisioned,
 	app.RunnerStatusPending,
 	app.RunnerStatusDisabled,
+	app.RunnerStatusAwaitingInstallStackRun,
 }
 
 func isSkippableRunnerStatus(status app.RunnerStatus) bool {
@@ -53,6 +54,10 @@ type runnerHealthDecision struct {
 
 	ClearOfflineTS bool
 	SetOfflineTS   bool
+
+	// OfflineFromStatus is persisted with offline_ts so the unhealthy alert
+	// can report the status the runner had before going offline.
+	OfflineFromStatus string
 
 	UpdateLegacy bool
 	UpdateV2     bool
@@ -108,6 +113,7 @@ func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProces
 	offlineAt, hasOfflineTS := runner.StatusV2.MetadataUnixTime(app.RunnerOfflineTSMetadataKey)
 	if !hasOfflineTS {
 		d.SetOfflineTS = true
+		d.OfflineFromStatus = app.RunnerOfflineFromStatus(runner.Status)
 		offlineAt = now
 	}
 
