@@ -69,6 +69,7 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 				"group 2 step should not have succeeded since group 1 never passed")
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // TestRetryGroupRetryOfRetryDiscardsAllPreviousGroups verifies that when a
@@ -145,4 +146,5 @@ func (e *FlowTestSuite) TestRetryGroupRetryOfRetryDiscardsAllPreviousGroups() {
 	}
 	require.GreaterOrEqual(e.T(), triggerCount, 1,
 		"trigger step should be present in at least the original generation")
+	e.assertTemporalDrained(ctx, flw.ID)
 }
