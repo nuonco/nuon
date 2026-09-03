@@ -1,0 +1,165 @@
+---
+title: "Reprovision an install"
+description: "Re-run provisioning against the current app config to recreate an install's stack, sandbox, and components."
+icon: "arrow-rotate-right"
+keywords: ["reprovision", "reprovision install", "reprovision stack", "reprovision sandbox", "recreate runner", "stack-only", "skip components", "AWS install", "ASG recreate", "install workflow"]
+---
+
+Reprovisioning re-runs provisioning for an install against its current app config. Used when customer stack facing app config changes needs to be
+rolled out, or, when we need to create/update the customer [stack](/concepts/stacks) resources like roles, secrets, policies, inputs etc. 
+
+Every reprovision runs as a [workflow](/concepts/workflows), so it is planned, approvable, and auditable.
+
+## Only trigger what's needed
+
+A **reprovision install** is the full chain: it reprovisions the stack, then the sandbox, then redeploys every
+component on top. A **reprovision stack** stops at the stack, so it only updates the customer stack and its runner and
+leaves the sandbox and components alone. If the change you are rolling out is stack-facing only, reprovision the stack.
+
+| Flavor | Recreates | Runner downtime | Use when |
+|--------|-----------|-----------------|----------|
+| **Full** | Stack, then sandbox, then all components | Yes | The install is broken end to end, or the customer deleted resources |
+| **Stack only** | Stack and runner infrastructure; sandbox untouched | Yes | The runner ASG was deleted, or the stack template changed |
+
+<Warning>
+  A stack reprovision recreates the runner. Deployments and actions are unavailable until the new runner is healthy.
+</Warning>
+
+## Full reprovision
+
+<Steps>
+  <Step title="Trigger it">
+    <Tabs>
+      <Tab title="CLI">
+        ```sh
+        nuon installs reprovision -i $INSTALL_ID
+        ```
+      </Tab>
+      <Tab title="Dashboard">
+        Open the install, choose <Icon icon="gear" /> **Settings** from install navigation panel, then **Reprovision install**. Pick an
+        [operation role](/concepts/operation-roles) if the install offers more than one, then confirm.
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Watch the workflow">
+    ```sh
+    nuon installs workflows watch -i $INSTALL_ID
+    ```
+
+    The install's **Workflows** view shows the same run.
+  </Step>
+  <Step title="Approve gated steps">
+    ```sh
+    nuon installs workflows steps approve -i $INSTALL_ID --workflow-id $WORKFLOW_ID --step-id $STEP_ID
+    ```
+  </Step>
+</Steps>
+
+## Stack only
+
+Recreates the runner and its infrastructure, leaving the sandbox alone.
+
+```sh
+nuon installs reprovision -i $INSTALL_ID --stack-only
+```
+
+`nuon installs stacks reprovision -i $INSTALL_ID` is the same operation. In the dashboard, it is
+<Icon icon="gear" /> **Settings**, then **Reprovision stack**.
+
+Add `--skip-components` to stop once the stack is healthy instead of redeploying components:
+
+```sh
+nuon installs reprovision -i $INSTALL_ID --stack-only --skip-components
+```
+
+<Note>
+  `--skip-components` is only valid with `--stack-only`. The CLI rejects it on a full reprovision.
+</Note>
+
+
+### On AWS
+
+Nuon regenerates the stack version from the current app config before applying it, so a stack reprovision picks up
+changes such as a new runner instance type. The ASG and EC2 instance are replaced. Resources the runner previously
+deployed are untouched by the stack run.
+
+### Update a CloudFormation stack
+
+Reprovisioning generates the new template, but it does not apply it. The reprovision workflow pauses on the await
+install stack step, and that step's details panel has everything the customer needs, prefilled with the install's
+stack name, region, and new template URL:
+
+- **CloudFormation template** URL, with copy and download buttons.
+- **Deploy with AWS CLI**, with ready-made **Create stack** and **Update existing stack** commands.
+
+Open the step, copy what you need, and send it to the customer. Customer needs to apply it to their existing root stack.
+
+<Frame caption="The await install stack step panel on a reprovision, with the regenerated template URL and prefilled create and update commands.">
+  <img src="/images/guides/await-install-stack-cloudformation.png" />
+</Frame>
+
+<Tabs>
+  <Tab title="AWS CLI">
+    Copy the **Update existing stack** command from the step panel. It looks like this:
+
+    ```sh
+    aws cloudformation update-stack \
+      --stack-name <stack-name> \
+      --template-url <template-url> \
+      --capabilities CAPABILITY_NAMED_IAM \
+      --region <region>
+    ```
+
+    Templates that are not served from S3 come through as a `curl` plus `--template-body file://template.json`
+    variant of the same command.
+  </Tab>
+  <Tab title="CloudFormation console">
+    <Steps>
+      <Step title="Open the root stack">
+        In the CloudFormation console, select the stack created for the install. Use the root stack, not one of its
+        nested stacks.
+      </Step>
+      <Step title="Create a change set">
+        Choose **Stack actions**, then **Create change set for current stack**.
+      </Step>
+      <Step title="Point it at the new template">
+        Choose **Replace existing template**, select **Amazon S3 URL**, and paste the **CloudFormation template**
+        link copied from the step panel.
+      </Step>
+      <Step title="Review the parameters">
+        Step through the parameters. Keep the existing values unless the reprovision introduced new inputs or secrets.
+      </Step>
+      <Step title="Execute the change set">
+        Review the listed changes, then choose **Execute change set**. CloudFormation applies the new template to the
+        existing stack.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Hooks that fire
+
+| Flavor | Action triggers |
+|--------|-----------------|
+| Full and stack only | `pre-reprovision`, `post-reprovision` |
+| Sandbox leg of a full reprovision | `pre-reprovision-sandbox`, `post-reprovision-sandbox` |
+
+`pre-reprovision` fires once the runner is healthy, not at the start of the workflow, because the stack run has to
+come up first. Subscribers to the `installs` and `sandboxes` `reprovision` [webhook](/guides/webhooks) events are
+notified for the same runs.
+
+## When to reach for it
+
+- The customer deleted the runner ASG or other stack resources.
+- A [secret or input](/guides/configuring-inputs-and-secrets) changed and redeploying individual components is not
+  enough.
+- The runner reports that the install stack version has expired.
+- Additions / modifications of roles, permissions, inputs in app config.
+
+## See also
+
+- [App and install life cycle](/guides/app-install-life-cycle)
+- [Customer-controlled runner shutdown](/guides/runner-kill-switch)
+- [Operation roles](/concepts/operation-roles)
+- [Configure policies](/guides/configuring-policies)
