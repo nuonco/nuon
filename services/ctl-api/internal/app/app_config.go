@@ -69,6 +69,7 @@ type AppConfig struct {
 	RunbookIDs   pq.StringArray `gorm:"type:text[]" json:"runbook_ids,omitzero" temporaljson:"runbook_ids,omitzero,omitempty" swaggertype:"array,string"`
 
 	IntermediateConfig *blobstore.Blob `json:"intermediate_config" temporaljson:"intermediate_config"`
+	SourceConfig       *blobstore.Blob `json:"source_config,omitempty" temporaljson:"source_config,omitempty"`
 
 	// OwnerID            string         `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
 	// OwnerType          string         `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
@@ -159,6 +160,9 @@ func (a *AppConfig) BeforeCreate(tx *gorm.DB) error {
 
 	// NOTE(JM): this will eventually be moved, so we can have hooks on specific nested types
 	if err := a.IntermediateConfig.BeforeCreate(tx); err != nil {
+		return err
+	}
+	if err := a.SourceConfig.BeforeCreate(tx); err != nil {
 		return err
 	}
 
