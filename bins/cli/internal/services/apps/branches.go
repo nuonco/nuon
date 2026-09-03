@@ -99,15 +99,11 @@ func (s *Service) CreateBranch(ctx context.Context, appID, name string, asJSON b
 	return nil
 }
 
-// TriggerBranchRunOptions carries the optional inputs for a branch run. PR
-// fields are set by CI so a preview can report back onto the pull request.
+// TriggerBranchRunOptions carries the optional inputs for a branch run. Preview
+// and pull request inputs live on `branches preview` instead.
 type TriggerBranchRunOptions struct {
-	PlanOnly   bool
-	Force      bool
-	NoWait     bool
-	PRNumber   *int
-	HeadSHA    string
-	BaseBranch string
+	Force  bool
+	NoWait bool
 }
 
 func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, opts TriggerBranchRunOptions, asJSON bool) error {
@@ -124,13 +120,7 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 	}
 
 	req := &models.ServiceTriggerAppBranchRunRequest{
-		Force:      opts.Force,
-		PlanOnly:   opts.PlanOnly,
-		HeadSha:    opts.HeadSHA,
-		BaseBranch: opts.BaseBranch,
-	}
-	if opts.PRNumber != nil {
-		req.PrNumber = int64(*opts.PRNumber)
+		Force: opts.Force,
 	}
 
 	run, err := s.api.TriggerAppBranchRun(ctx, appID, branchID, req)
