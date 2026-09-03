@@ -86,6 +86,7 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 		}
 	}
 	require.GreaterOrEqual(e.T(), g2StepCount, 2, "group 2 should have original + retry clone")
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // TestSkipErroredStep verifies that skipping a failed step causes the workflow
@@ -140,4 +141,5 @@ func (e *FlowTestSuite) TestSkipErroredStep() {
 				"step after skip should have succeeded")
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -37,8 +38,11 @@ func (e *FlowTestSuite) seedDeployWithSkipAutoRetry(ctx context.Context) *app.In
 			},
 		},
 	}
-	res := e.service.DB.WithContext(ctx).Create(&deploy)
-	require.Nil(e.T(), res.Error)
+	tx := e.service.DB.WithContext(ctx).Begin()
+	require.NoError(e.T(), tx.Error)
+	require.NoError(e.T(), tx.Exec("SET LOCAL session_replication_role = replica").Error)
+	require.NoError(e.T(), tx.Omit(clause.Associations).Create(&deploy).Error)
+	require.NoError(e.T(), tx.Commit().Error)
 	return &deploy
 }
 
