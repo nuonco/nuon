@@ -26,7 +26,7 @@ func (e *EnqueueTestSuite) TestCancelSignalDuringExecute() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), q)
 
-	err = e.service.Client.QueueReady(ctx, q.ID)
+	err = e.queueReady(ctx, q.ID)
 	require.Nil(e.T(), err)
 
 	// enqueue a slow signal that will block in execute
@@ -37,12 +37,14 @@ func (e *EnqueueTestSuite) TestCancelSignalDuringExecute() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), resp)
 
-	// wait for the signal to be in-progress (handler is executing)
-	pollTimeout := 5 * time.Second
+	// Wait until Execute has started so cancellation exercises the executing
+	// context rather than racing validation.
+	pollTimeout := integrationEventuallyTimeout
 	require.Eventually(e.T(), func() bool {
 		var qs app.QueueSignal
 		res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", resp.ID)
-		return res.Error == nil && qs.Status.Status == app.StatusInProgress
+		_, executing := qs.Status.Metadata["execute_started_at"]
+		return res.Error == nil && executing
 	}, pollTimeout, 200*time.Millisecond)
 
 	// cancel the signal while it's executing
@@ -50,11 +52,10 @@ func (e *EnqueueTestSuite) TestCancelSignalDuringExecute() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), cancelResp)
 
-	// verify DB status becomes cancelled
 	require.Eventually(e.T(), func() bool {
 		var qs app.QueueSignal
 		res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", resp.ID)
-		return res.Error == nil && qs.Status.Status == app.StatusCancelled
+		return res.Error == nil && statusHistoryContains(qs.Status, app.StatusCancelled, "")
 	}, pollTimeout, 200*time.Millisecond)
 }
 
@@ -73,7 +74,7 @@ func (e *EnqueueTestSuite) TestCancelCallbackInvoked() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), q)
 
-	err = e.service.Client.QueueReady(ctx, q.ID)
+	err = e.queueReady(ctx, q.ID)
 	require.Nil(e.T(), err)
 
 	// enqueue a cancellable signal that blocks in execute
@@ -84,12 +85,14 @@ func (e *EnqueueTestSuite) TestCancelCallbackInvoked() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), resp)
 
-	// wait for the signal to be in-progress (handler is executing)
-	pollTimeout := 5 * time.Second
+	// Wait until Execute has started so cancellation exercises the executing
+	// context rather than racing validation.
+	pollTimeout := integrationEventuallyTimeout
 	require.Eventually(e.T(), func() bool {
 		var qs app.QueueSignal
 		res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", resp.ID)
-		return res.Error == nil && qs.Status.Status == app.StatusInProgress
+		_, executing := qs.Status.Metadata["execute_started_at"]
+		return res.Error == nil && executing
 	}, pollTimeout, 200*time.Millisecond)
 
 	// cancel the signal while it's executing
@@ -97,14 +100,20 @@ func (e *EnqueueTestSuite) TestCancelCallbackInvoked() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), cancelResp)
 
-	// verify DB status becomes cancelled AND the cancel callback marker is set
 	require.Eventually(e.T(), func() bool {
 		var qs app.QueueSignal
 		res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", resp.ID)
-		return res.Error == nil &&
-			qs.Status.Status == app.StatusCancelled &&
-			qs.Status.StatusHumanDescription == example.CancelCallbackMarker
+		return res.Error == nil && statusHistoryContains(qs.Status, app.StatusCancelled, example.CancelCallbackMarker)
 	}, pollTimeout, 200*time.Millisecond)
+}
+
+func statusHistoryContains(status app.CompositeStatus, expected app.Status, description string) bool {
+	for _, entry := range status.History {
+		if entry.Status == expected && (description == "" || entry.StatusHumanDescription == description) {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *EnqueueTestSuite) TestCancelAlreadyFinishedSignal() {
@@ -122,7 +131,7 @@ func (e *EnqueueTestSuite) TestCancelAlreadyFinishedSignal() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), q)
 
-	err = e.service.Client.QueueReady(ctx, q.ID)
+	err = e.queueReady(ctx, q.ID)
 	require.Nil(e.T(), err)
 
 	// enqueue a fast signal that completes immediately
@@ -136,14 +145,7 @@ func (e *EnqueueTestSuite) TestCancelAlreadyFinishedSignal() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), resp)
 
-	// wait for the signal to finish
-	timeout := 5 * time.Second
-	status, err := e.service.Client.PollSignal(ctx, resp.ID, &client.PollSignalOptions{
-		Timeout:      &timeout,
-		PollInterval: 500 * time.Millisecond,
-	})
-	require.Nil(e.T(), err)
-	require.True(e.T(), status.Finished)
+	e.waitForSignalStatus(ctx, resp.ID, app.StatusSuccess)
 
 	// cancel should succeed gracefully (already terminal)
 	cancelResp, err := e.service.Client.CancelSignal(ctx, resp.ID)

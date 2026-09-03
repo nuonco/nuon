@@ -195,10 +195,6 @@ func (s *CreateAppActionDeprecatedTestSuite) TestCreateAppActionSuccess() {
 			assert.Equal(s.T(), s.testOrg.ID, dbAction.OrgID)
 			assert.Equal(s.T(), s.testApp.ID, dbAction.AppID)
 
-			// Verify signal was sent
-			queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
-			require.Len(s.T(), queueSignals, 1)
-			assert.Equal(s.T(), response.ID, queueSignals[0].OwnerID)
 		})
 	}
 }

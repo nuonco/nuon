@@ -35,16 +35,8 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeSuccess() {
 	assert.NotNil(s.T(), response.Identities)
 	assert.Empty(s.T(), response.Identities)
 
-	// Verify computed fields are present in the JSON response
-	var raw map[string]interface{}
-	err = json.Unmarshal(rr.Body.Bytes(), &raw)
-	require.NoError(s.T(), err)
-
-	_, hasOrgIDs := raw["org_ids"]
-	assert.True(s.T(), hasOrgIDs, "response should include org_ids field")
-
-	_, hasPermissions := raw["permissions"]
-	assert.True(s.T(), hasPermissions, "response should include permissions field")
+	assert.Empty(s.T(), response.Account.OrgIDs)
+	assert.Empty(s.T(), response.Account.AllPermissions)
 }
 
 // ---------------------------------------------------------------------------
@@ -87,18 +79,20 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeWithSingleIdentity() {
 func (s *AccountsServiceTestSuite) TestGetAuthMeWithMultipleIdentities() {
 	identities := []app.AccountIdentity{
 		{
-			AccountID:    s.testAcc.ID,
-			ProviderType: app.ProviderTypeGoogle,
-			Sub:          fmt.Sprintf("google-oauth2|multi-%s", s.testAcc.ID),
-			Name:         "Google User",
-			Picture:      "https://google.com/photo.jpg",
+			AccountID:          s.testAcc.ID,
+			IdentityProviderID: "idp-google",
+			ProviderType:       app.ProviderTypeGoogle,
+			Sub:                fmt.Sprintf("google-oauth2|multi-%s", s.testAcc.ID),
+			Name:               "Google User",
+			Picture:            "https://google.com/photo.jpg",
 		},
 		{
-			AccountID:    s.testAcc.ID,
-			ProviderType: app.ProviderTypeGitHub,
-			Sub:          fmt.Sprintf("github|multi-%s", s.testAcc.ID),
-			Name:         "GitHub User",
-			Picture:      "https://github.com/avatar.png",
+			AccountID:          s.testAcc.ID,
+			IdentityProviderID: "idp-github",
+			ProviderType:       app.ProviderTypeGitHub,
+			Sub:                fmt.Sprintf("github|multi-%s", s.testAcc.ID),
+			Name:               "GitHub User",
+			Picture:            "https://github.com/avatar.png",
 		},
 	}
 	for i := range identities {

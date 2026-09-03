@@ -15,26 +15,38 @@ import (
 	"github.com/google/go-github/v50/github"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
+type mockWorkflowRun struct{}
+
+func (m *mockWorkflowRun) GetID() string                          { return "mock-workflow-id" }
+func (m *mockWorkflowRun) GetRunID() string                       { return "mock-run-id" }
+func (m *mockWorkflowRun) Get(context.Context, interface{}) error { return nil }
+func (m *mockWorkflowRun) GetWithOptions(context.Context, interface{}, tclient.WorkflowRunGetOptions) error {
+	return nil
+}
+
 // VCSServiceTestDeps holds all fx-injected dependencies for VCS service tests.
 type VCSServiceTestDeps struct {
 	fx.In
 
-	DB     *gorm.DB `name:"psql"`
-	CHDB   *gorm.DB `name:"ch"`
-	V      *validator.Validate
-	L      *zap.Logger
-	Seeder *testseed.Seeder
+	DB      *gorm.DB `name:"psql"`
+	CHDB    *gorm.DB `name:"ch"`
+	V       *validator.Validate
+	L       *zap.Logger
+	Seeder  *testseed.Seeder
+	Helpers *vcshelpers.Helpers
 }
 
 // VCSServiceTestSuite is the shared testify suite for all VCS service endpoint tests.
@@ -49,6 +61,7 @@ type VCSServiceTestSuite struct {
 	testAcc *app.Account
 	ctrl    *gomock.Controller
 	mockGH  *vcshelpers.MockGithubClient
+	mockTC  *temporal.MockClient
 }
 
 func TestVCSServiceSuite(t *testing.T) {
@@ -67,12 +80,17 @@ func (s *VCSServiceTestSuite) SetupSuite() {
 	// Create gomock controller and mock GitHub client
 	s.ctrl = gomock.NewController(s.T())
 	s.mockGH = vcshelpers.NewMockGithubClient(s.ctrl)
+	s.mockTC = temporal.NewMockClient(s.ctrl)
+	s.mockTC.EXPECT().ExecuteWorkflowInNamespace(
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	).Return(&mockWorkflowRun{}, nil).AnyTimes()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
 			Mocks: &tests.TestMocks{
 				MockGH: s.mockGH,
+				MockTC: s.mockTC,
 			},
 			CustomValidator: true,
 		}),
@@ -128,6 +146,7 @@ func (s *VCSServiceTestSuite) SetupTest() {
 		l:        s.service.L,
 		db:       s.service.DB,
 		v:        s.service.V,
+		helpers:  s.service.Helpers,
 		ghClient: s.mockGH,
 	}
 

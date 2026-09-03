@@ -358,7 +358,21 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		}
 
 		if flw.GenerateStepsSignal == nil || flw.GenerateStepsSignal.Signal == nil {
-			return errors.Errorf("workflow %s has no steps and no generate-steps signal", s.WorkflowID)
+			missingStepsErr := errors.Errorf("workflow %s has no steps and no generate-steps signal", s.WorkflowID)
+			_ = statusactivities.AwaitUpdateFlowStatusMetadata(ctx, statusactivities.UpdateFlowStatusMetadataRequest{
+				WorkflowID: s.WorkflowID,
+				Metadata: map[string]any{
+					"error_message": missingStepsErr.Error(),
+				},
+			})
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: s.WorkflowID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusError,
+					StatusHumanDescription: missingStepsErr.Error(),
+				},
+			})
+			return missingStepsErr
 		}
 
 		// Use eager step groups: fetch and persist the eager groups so we can
@@ -968,6 +982,11 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 			app.WorkflowStepApprovalStatusApproved,
 			app.WorkflowStepNoDrift, app.WorkflowStepDrifted:
 			continue
+		case app.StatusError:
+			if flowdirective.Step(step.ResultDirective).IsTerminal() {
+				continue
+			}
+			return false
 		default:
 			return false
 		}

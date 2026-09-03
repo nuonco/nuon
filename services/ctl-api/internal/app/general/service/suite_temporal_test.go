@@ -25,6 +25,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -42,6 +43,7 @@ type GeneralTemporalTestDeps struct {
 	Cfg               *internal.Config
 	AuthzClient       *authz.Client
 	AcctClient        *account.Client
+	EndpointAudit     *apiPkg.EndpointAudit
 	GzipCodec         converter.PayloadCodec `name:"gzip"`
 	LargePayloadCodec converter.PayloadCodec `name:"largepayload"`
 	Seeder            *testseed.Seeder
@@ -102,6 +104,7 @@ func (s *GeneralTemporalTestSuite) SetupTest() {
 
 	// Manually create the service with the mock temporal client
 	svc := &service{
+		RouteRegister:  apiPkg.RouteRegister{EndpointAudit: s.deps.EndpointAudit},
 		l:              s.deps.L,
 		v:              s.deps.V,
 		db:             s.deps.DB,
@@ -125,10 +128,6 @@ func (s *GeneralTemporalTestSuite) SetupTest() {
 
 	err := svc.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
-}
-
-func (s *GeneralTemporalTestSuite) TearDownTest() {
-	s.ctrl.Finish()
 }
 
 func (s *GeneralTemporalTestSuite) TearDownSuite() {

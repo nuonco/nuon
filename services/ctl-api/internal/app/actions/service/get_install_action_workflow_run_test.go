@@ -289,12 +289,15 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunIncludesLa
 		Type:     "terraform.aws_permission",
 		Severity: compositeerrors.SeverityError,
 		Message:  "missing permission",
+		Data:     json.RawMessage("null"),
 	}
 	result := &app.RunnerJobExecutionResult{
 		RunnerJobExecutionID: execution.ID,
 		CompositeError:       expected,
 	}
 	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(result).Error)
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Model(job).
+		Update("status", app.RunnerJobStatusFailed).Error)
 
 	path := fmt.Sprintf("/v1/installs/%s/actions/runs/%s", install.ID, run.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
@@ -315,6 +318,7 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunIncludesPr
 		Type:     "action.preparation_failed",
 		Severity: compositeerrors.SeverityError,
 		Message:  "Unable to prepare action run",
+		Data:     json.RawMessage("null"),
 	}
 	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).
 		Model(&app.InstallActionWorkflowRun{ID: run.ID}).
@@ -352,6 +356,7 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunPrefersPre
 		Type:     "action.preparation_failed",
 		Severity: compositeerrors.SeverityError,
 		Message:  "Unable to prepare action run",
+		Data:     json.RawMessage("null"),
 	}
 	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).
 		Model(&app.InstallActionWorkflowRun{ID: run.ID}).
@@ -410,6 +415,7 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunPreservesC
 		Type:     joberrors.CancellationErrorType,
 		Severity: compositeerrors.SeverityError,
 		Message:  "Runner job cancelled",
+		Data:     json.RawMessage("null"),
 	}
 	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).
 		Model(&app.RunnerJob{ID: job.ID}).

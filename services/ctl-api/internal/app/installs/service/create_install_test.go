@@ -46,7 +46,7 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2Success() {
 	}
 	assert.Contains(s.T(), signalTypes, "install-created")
 	assert.Contains(s.T(), signalTypes, "poll-dependencies")
-	assert.Contains(s.T(), signalTypes, "install-action-workflow-run")
+	assert.Contains(s.T(), signalTypes, "appconfig-updated")
 	assert.Contains(s.T(), signalTypes, "execute-workflow")
 }
 
@@ -78,6 +78,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2WithInputs() {
 
 func (s *InstallsServiceTestSuite) TestCreateInstallV2AzureAccount() {
 	s.expectQueueCreation()
+	azureConfig := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
+	s.createAppRunnerConfig(azureConfig.ID, app.AppRunnerTypeAzure)
 
 	body := CreateInstallV2Request{
 		AppID: s.testApp.ID,

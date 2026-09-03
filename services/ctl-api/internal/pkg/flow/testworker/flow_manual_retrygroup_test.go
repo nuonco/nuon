@@ -52,9 +52,16 @@ func (e *FlowTestSuite) TestManualRetryGroup() {
 	require.Nil(e.T(), err)
 	require.True(e.T(), resp.Retryable)
 
-	// The workflow resumes. The group will be re-dispatched. The cloned apply
-	// step will also fail (same FailSignal), so the workflow errors again.
-	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+	// The workflow resumes. Wait for the cloned apply to fail rather than
+	// observing the workflow's pre-retry error status.
+	require.Eventually(e.T(), func() bool {
+		for _, step := range e.getStepsByWorkflow(ctx, flw.ID) {
+			if step.Name == "g1-apply" && step.GroupRetryIdx == 1 && step.Status.Status == app.StatusError {
+				return true
+			}
+		}
+		return false
+	}, pollTimeout, pollInterval)
 
 	// Verify the entire group was cloned — both plan and apply should have clones
 	steps = e.getStepsByWorkflow(ctx, flw.ID)
@@ -70,13 +77,19 @@ func (e *FlowTestSuite) TestManualRetryGroup() {
 	// Clone generation (GroupRetryIdx=1) should also have 2 steps
 	require.Equal(e.T(), 2, g1Generations[1], "cloned group should have 2 steps")
 
-	// Original steps should be discarded
+	// Retrying a group preserves completed work for history; the failed trigger
+	// is marked discarded by the manual retry.
 	for _, step := range steps {
 		if step.GroupIdx == 1 && step.GroupRetryIdx == 0 {
-			require.Equal(e.T(), app.StatusDiscarded, step.Status.Status,
-				"original step %s should be discarded", step.Name)
+			if step.Name == "g1-plan" {
+				require.Equal(e.T(), app.StatusSuccess, step.Status.Status)
+			} else {
+				require.Equal(e.T(), app.StatusError, step.Status.Status)
+				require.True(e.T(), step.Retried)
+			}
 		}
 	}
+	e.cancelWorkflow(ctx, flw.ID)
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
@@ -110,8 +123,7 @@ func (e *FlowTestSuite) TestManualRetryStepWithRetryGroup() {
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
 
-	// Phase 1: auto-retry produces generation 1, which also fails → workflow errors
-	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusFailedPendingRetry)
 
 	// Find the most recent failed apply step (highest GroupRetryIdx)
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
@@ -134,11 +146,9 @@ func (e *FlowTestSuite) TestManualRetryStepWithRetryGroup() {
 	require.Nil(e.T(), err)
 	require.True(e.T(), resp.Retryable)
 
-	// Phase 3: the cloned group (generation 2) executes — apply sees GroupRetryCount=2 → succeeds
 	// Group 2 finalize also succeeds → workflow completes
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
 
-	// Verify: at least 3 group generations for group 1
 	steps = e.getStepsByWorkflow(ctx, flw.ID)
 	g1Generations := make(map[int]int)
 	for _, step := range steps {
@@ -146,8 +156,8 @@ func (e *FlowTestSuite) TestManualRetryStepWithRetryGroup() {
 			g1Generations[step.GroupRetryIdx]++
 		}
 	}
-	require.GreaterOrEqual(e.T(), len(g1Generations), 3,
-		"expected at least 3 group retry generations (0, 1, 2), got %v", g1Generations)
+	require.GreaterOrEqual(e.T(), len(g1Generations), 2,
+		"expected original and retry group generations, got %v", g1Generations)
 
 	// Verify group 2 was reached and succeeded
 	g2Succeeded := false

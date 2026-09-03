@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
+	"github.com/google/go-github/v50/github"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
@@ -42,6 +43,41 @@ func (m *mockWorkflowRun) Get(ctx context.Context, valuePtr interface{}) error {
 }
 func (m *mockWorkflowRun) GetWithOptions(ctx context.Context, valuePtr interface{}, options tclient.WorkflowRunGetOptions) error {
 	return nil
+}
+
+func testServiceFXOptions() []fx.Option {
+	return []fx.Option{
+		fx.Replace(github.NewClient(nil)),
+		fx.Provide(flowclient.New),
+		fx.Provide(New),
+	}
+}
+
+func newPermissiveTemporalMock(t testing.TB) temporal.Client {
+	mock := temporal.NewMockClient(gomock.NewController(t))
+	mock.EXPECT().ExecuteWorkflowInNamespace(
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	).Return(&mockWorkflowRun{}, nil).AnyTimes()
+	return mock
+}
+
+func seedInstallQueues(t testing.TB, ctx context.Context, db *gorm.DB, installID string) {
+	for _, name := range []string{
+		helpers.InstallWorkflowsQueueName,
+		helpers.InstallSignalsQueueName,
+		helpers.InstallStateManagerQueueName,
+		helpers.InstallGenerateStepsQueueName,
+	} {
+		require.NoError(t, db.WithContext(ctx).Create(&app.Queue{
+			OwnerID:   installID,
+			OwnerType: "installs",
+			Name:      name,
+		}).Error)
+	}
+}
+
+func clearQueueSignals(t testing.TB, db *gorm.DB) {
+	require.NoError(t, db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&app.QueueSignal{}).Error)
 }
 
 // InstallsTestDeps holds all fx-injected dependencies for installs service tests.
@@ -100,8 +136,7 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 		}),
 		// Service under test. flowclient is provided here rather than in
 		// testfx — see the note in tests/testfx.go about import cycles.
-		fx.Provide(flowclient.New),
-		fx.Provide(New),
+		fx.Options(testServiceFXOptions()...),
 		fx.Populate(&s.deps, &s.installsService),
 	)
 
@@ -114,6 +149,8 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 
 func (s *InstallsServiceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
+	require.NoError(s.T(), s.deps.DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&app.QueueSignal{}).Error)
+	require.NoError(s.T(), s.deps.DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&app.Queue{}).Error)
 
 	// Reset mock before each test
 
@@ -161,7 +198,10 @@ func (s *InstallsServiceTestSuite) setupTestData() {
 
 // createTestInstall seeds an install via the database for read-only endpoint tests.
 func (s *InstallsServiceTestSuite) createTestInstall() *app.Install {
-	return s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+	install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), s.ctx, s.deps.DB, install.ID)
+	require.NoError(s.T(), s.deps.DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&app.QueueSignal{}).Error)
+	return install
 }
 
 // makeRequest sends an HTTP request through the test router and returns the recorder.

@@ -57,7 +57,7 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyCreatesServiceAccount() {
 	require.NotEmpty(s.T(), policy.ServiceAccountID)
 
 	var acct app.Account
-	require.NoError(s.T(), s.deps.DB.Preload("Roles").Where("id = ?", policy.ServiceAccountID).First(&acct).Error)
+	require.NoError(s.T(), s.deps.DB.Preload("Roles").Preload("Roles.Org").Where("id = ?", policy.ServiceAccountID).First(&acct).Error)
 	require.Equal(s.T(), app.AccountTypeService, acct.AccountType)
 	require.Len(s.T(), acct.Roles, 1)
 	require.Equal(s.T(), app.RoleTypeOrgReadOnly, acct.Roles[0].RoleType)
@@ -124,7 +124,7 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyAllowsAdminRole() {
 	require.Equal(s.T(), string(app.RoleTypeOrgAdmin), policy.Role)
 
 	var acct app.Account
-	require.NoError(s.T(), s.deps.DB.Preload("Roles").Where(app.Account{ID: policy.ServiceAccountID}).First(&acct).Error)
+	require.NoError(s.T(), s.deps.DB.Preload("Roles").Preload("Roles.Org").Where(app.Account{ID: policy.ServiceAccountID}).First(&acct).Error)
 	require.Len(s.T(), acct.Roles, 1)
 	require.Equal(s.T(), app.RoleTypeOrgAdmin, acct.Roles[0].RoleType)
 }
@@ -164,7 +164,7 @@ func (s *OIDCFederationTestSuite) TestUpdatePolicyRoleUpdatesServiceAccount() {
 	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
 
 	var acct app.Account
-	require.NoError(s.T(), s.deps.DB.Preload("Roles").Where("id = ?", policy.ServiceAccountID).First(&acct).Error)
+	require.NoError(s.T(), s.deps.DB.Preload("Roles").Preload("Roles.Org").Where("id = ?", policy.ServiceAccountID).First(&acct).Error)
 	require.Len(s.T(), acct.Roles, 1)
 	require.Equal(s.T(), app.RoleTypeOrgAdmin, acct.Roles[0].RoleType)
 }

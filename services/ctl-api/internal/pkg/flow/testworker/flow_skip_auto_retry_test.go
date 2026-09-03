@@ -2,11 +2,11 @@ package testworker
 
 import (
 	"context"
+	"time"
 
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm/clause"
 
-	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
@@ -14,36 +14,52 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// seedDeployWithSkipAutoRetry creates a minimal InstallDeploy row carrying a
-// composite error whose hints request skip_auto_retry, mirroring what the
-// runner-result chokepoint writes for e.g. a missing IAM permission.
-func (e *FlowTestSuite) seedDeployWithSkipAutoRetry(ctx context.Context) *app.InstallDeploy {
+func (e *FlowTestSuite) seedDeployJobWithSkipAutoRetry(ctx context.Context) string {
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	require.Nil(e.T(), err)
+	accountID, err := cctx.AccountIDFromContext(ctx)
+	require.Nil(e.T(), err)
 
-	deploy := app.InstallDeploy{
-		OrgID:              orgID,
-		CreatedByID:        generics.GetFakeObj[string](),
-		ComponentBuildID:   generics.GetFakeObj[string](),
-		InstallComponentID: generics.GetFakeObj[string](),
-		Status:             app.InstallDeployStatus(app.StatusError),
-		StatusDescription:  "permission denied",
-		CompositeError: &compositeerrors.CompositeErrorData{
-			Version:  compositeerrors.SchemaVersion,
-			Type:     "terraform.aws_permission",
-			Severity: compositeerrors.SeverityError,
-			Message:  "AccessDenied: not authorized to perform s3:CreateBucket",
-			Hints: compositeerrors.Hints{
-				compositeerrors.HintSkipAutoRetry: "true",
-			},
+	targetID := domains.NewDeployID()
+	now := time.Now()
+	jobID := domains.NewRunnerJobID()
+	compositeError := &compositeerrors.CompositeErrorData{
+		Version:  compositeerrors.SchemaVersion,
+		Type:     "terraform.aws_permission",
+		Severity: compositeerrors.SeverityError,
+		Message:  "AccessDenied: not authorized to perform s3:CreateBucket",
+		Hints: compositeerrors.Hints{
+			compositeerrors.HintSkipAutoRetry: "true",
 		},
 	}
-	tx := e.service.DB.WithContext(ctx).Begin()
-	require.NoError(e.T(), tx.Error)
-	require.NoError(e.T(), tx.Exec("SET LOCAL session_replication_role = replica").Error)
-	require.NoError(e.T(), tx.Omit(clause.Associations).Create(&deploy).Error)
-	require.NoError(e.T(), tx.Commit().Error)
-	return &deploy
+	job := map[string]any{
+		"id":                 jobID,
+		"created_by_id":      accountID,
+		"created_at":         now,
+		"updated_at":         now,
+		"deleted_at":         0,
+		"org_id":             orgID,
+		"owner_id":           targetID,
+		"owner_type":         "install_deploys",
+		"queue_timeout":      0,
+		"available_timeout":  0,
+		"execution_timeout":  0,
+		"overall_timeout":    0,
+		"max_executions":     1,
+		"status":             app.RunnerJobStatusFailed,
+		"status_description": "permission denied",
+		"status_v2":          app.NewCompositeStatus(ctx, app.Status(app.RunnerJobStatusFailed)),
+		"type":               app.RunnerJobTypeTerraformDeploy,
+		"group":              app.RunnerJobGroupDeploy,
+		"operation":          app.RunnerJobOperationTypeApplyPlan,
+		"composite_error":    compositeError,
+	}
+	require.NoError(e.T(), e.service.DB.WithContext(ctx).Table("runner_jobs").Create(job).Error)
+	execution := app.RunnerJobExecution{RunnerJobID: jobID, Status: app.RunnerJobExecutionStatusFailed}
+	require.NoError(e.T(), e.service.DB.WithContext(ctx).Create(&execution).Error)
+	result := app.RunnerJobExecutionResult{RunnerJobExecutionID: execution.ID, CompositeError: compositeError}
+	require.NoError(e.T(), e.service.DB.WithContext(ctx).Create(&result).Error)
+	return targetID
 }
 
 // TestSkipAutoRetryParksStepForManualRetry verifies that when a failed step's
@@ -56,13 +72,13 @@ func (e *FlowTestSuite) TestSkipAutoRetryParksStepForManualRetry() {
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 	ownerID, ownerType := newTestOwner()
 
-	deploy := e.seedDeployWithSkipAutoRetry(ctx)
+	deployID := e.seedDeployJobWithSkipAutoRetry(ctx)
 
 	flw, queueID := e.setupFlowTest(ctx, ownerID, ownerType, []app.WorkflowStep{
 		{Name: "skip-auto-retry-step", Idx: 100, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			Retryable:      true,
 			StepTargetType: string(app.WorkflowStepTargetTypeInstallDeploys),
-			StepTargetID:   deploy.ID,
+			StepTargetID:   deployID,
 			QueueSignal:    &signaldb.SignalData{Signal: &AutoRetrySignal{}}},
 	})
 

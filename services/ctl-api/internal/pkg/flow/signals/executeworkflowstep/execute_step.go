@@ -76,7 +76,13 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	}
 
 	defer func() {
-		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(ctx, step.ID); err != nil {
+		activityCtx := ctx
+		if ctx.Err() != nil {
+			var cancel workflow.CancelFunc
+			activityCtx, cancel = workflow.NewDisconnectedContext(ctx)
+			defer cancel()
+		}
+		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(activityCtx, step.ID); err != nil {
 			l.Error("unable to update finished at", zap.Error(err))
 		}
 	}()

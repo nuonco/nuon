@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -75,13 +76,14 @@ func (s *AppConfigsTestSuite) TestCreateAppConfigV2WithEmptyFields() {
 func (s *AppConfigsTestSuite) TestActivatingAPIAppConfigSyncsTriggers() {
 	ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
 	ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
-	trigger := &app.Trigger{OrgID: s.testOrg.ID, IngressKeyHash: "test-ingress-key-hash", Name: "pubsub", AuthType: app.TriggerAuthTypeNone, Envelope: app.EventEnvelopeTypeNone, Status: app.TriggerStatusActive}
+	triggerID := domains.NewTriggerID()
+	trigger := &app.Trigger{OrgID: s.testOrg.ID, IngressKeyHash: triggerID, Name: triggerID, AuthType: app.TriggerAuthTypeNone, Envelope: app.EventEnvelopeTypeNone, Status: app.TriggerStatusActive}
 	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(trigger).Error)
-	branch := &app.AppBranch{OrgID: s.testOrg.ID, AppID: s.testApp.ID, Name: "main", ManagedBy: app.AppBranchManagedByConfig}
+	branch := &app.AppBranch{OrgID: s.testOrg.ID, AppID: s.testApp.ID, Name: domains.NewAppBranchID(), ManagedBy: app.AppBranchManagedByConfig}
 	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(branch).Error)
 
 	intermediate, err := json.Marshal(config.AppConfig{
-		Branch: &config.AppBranchConfig{Name: "main"},
+		Branch: &config.AppBranchConfig{Name: branch.Name},
 		Triggers: &config.TriggersConfig{Rules: []*config.TriggerRuleConfig{{
 			Name: "deploy", Trigger: trigger.Name, EventTypes: []string{"INSERT"},
 			Target: &config.TriggerTargetConfig{Type: "app_branch_run", AppBranch: branch.Name},
@@ -96,16 +98,18 @@ func (s *AppConfigsTestSuite) TestActivatingAPIAppConfigSyncsTriggers() {
 	var rule app.TriggerRule
 	require.NoError(s.T(), s.service.DB.Where(app.TriggerRule{AppConfigID: appConfig.ID, Name: "deploy"}).First(&rule).Error)
 	assert.Equal(s.T(), trigger.ID, rule.TriggerID)
-	assert.Equal(s.T(), branch.ID, rule.AppBranchID)
+	require.NotNil(s.T(), rule.AppBranchID)
+	assert.Equal(s.T(), branch.ID, *rule.AppBranchID)
 	assert.True(s.T(), rule.Enabled)
 }
 
 func (s *AppConfigsTestSuite) TestActivatingAPIAppConfigRollsBackAllTriggersWhenLaterRuleFails() {
 	ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
 	ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
-	trigger := &app.Trigger{OrgID: s.testOrg.ID, IngressKeyHash: "rollback-test-ingress-key-hash", Name: "rollback-trigger", AuthType: app.TriggerAuthTypeNone, Envelope: app.EventEnvelopeTypeNone, Status: app.TriggerStatusActive}
+	triggerID := domains.NewTriggerID()
+	trigger := &app.Trigger{OrgID: s.testOrg.ID, IngressKeyHash: triggerID, Name: triggerID, AuthType: app.TriggerAuthTypeNone, Envelope: app.EventEnvelopeTypeNone, Status: app.TriggerStatusActive}
 	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(trigger).Error)
-	branch := &app.AppBranch{OrgID: s.testOrg.ID, AppID: s.testApp.ID, Name: "rollback-main", ManagedBy: app.AppBranchManagedByConfig}
+	branch := &app.AppBranch{OrgID: s.testOrg.ID, AppID: s.testApp.ID, Name: domains.NewAppBranchID(), ManagedBy: app.AppBranchManagedByConfig}
 	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(branch).Error)
 
 	intermediate, err := json.Marshal(config.AppConfig{

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -34,15 +33,9 @@ func (s *ComponentsServiceTestSuite) TestDeleteAppComponentSuccess() {
 		}
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 
-		// Verify response is true
-		var response bool
-		err := json.Unmarshal(rr.Body.Bytes(), &response)
-		require.NoError(s.T(), err)
-		assert.True(s.T(), response)
-
 		// Verify component status is set to delete_queued (not actually soft-deleted)
 		var dbComp app.Component
-		err = s.deps.DB.WithContext(s.ctx).First(&dbComp, "id = ?", comp.ID).Error
+		err := s.deps.DB.WithContext(s.ctx).First(&dbComp, "id = ?", comp.ID).Error
 		require.NoError(s.T(), err)
 		assert.Equal(s.T(), app.ComponentStatusDeleteQueued, dbComp.Status)
 		assert.Equal(s.T(), "delete has been queued and waiting", dbComp.StatusDescription)

@@ -12,18 +12,31 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	generalhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/general/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
+
+type generalWorkflowRun struct{}
+
+func (*generalWorkflowRun) GetID() string                          { return "workflow-id" }
+func (*generalWorkflowRun) GetRunID() string                       { return "run-id" }
+func (*generalWorkflowRun) Get(context.Context, interface{}) error { return nil }
+func (*generalWorkflowRun) GetWithOptions(context.Context, interface{}, tclient.WorkflowRunGetOptions) error {
+	return nil
+}
 
 // GeneralInternalTestDeps holds all fx-injected dependencies for general internal routes tests.
 type GeneralInternalTestDeps struct {
@@ -48,6 +61,7 @@ type GeneralInternalTestSuite struct {
 	ctx     context.Context
 	testOrg *app.Org
 	testAcc *app.Account
+	mockTC  *temporal.MockClient
 }
 
 func TestGeneralInternalTestSuite(t *testing.T) {
@@ -62,12 +76,15 @@ func TestGeneralInternalTestSuite(t *testing.T) {
 func (s *GeneralInternalTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
+	s.mockTC = temporal.NewMockClient(gomock.NewController(s.T()))
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
+			Mocks:           &tests.TestMocks{MockTC: s.mockTC},
 			CustomValidator: true,
 		}),
+		fx.Provide(generalhelpers.New),
 		// Service under test
 		fx.Provide(New),
 		fx.Populate(&s.service),
@@ -82,6 +99,9 @@ func (s *GeneralInternalTestSuite) SetupSuite() {
 
 func (s *GeneralInternalTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
+	s.mockTC.EXPECT().ExecuteWorkflowInNamespace(
+		gomock.Any(), "general", gomock.Any(), "Queue", gomock.Any(),
+	).Return(&generalWorkflowRun{}, nil).AnyTimes()
 	s.setupTestData()
 
 	// Reset mock before each test
