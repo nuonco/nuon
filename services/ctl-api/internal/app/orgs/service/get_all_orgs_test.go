@@ -345,6 +345,7 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			require.NoError(s.T(), s.service.DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&app.Org{}).Error)
 			// Setup test data
 			_ = tc.setupFunc()
 

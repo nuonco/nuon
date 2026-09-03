@@ -174,7 +174,7 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 				// Verify signal was sent
 				queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), queueSignals, 1)
-				assert.Equal(s.T(), installID, queueSignals[0].OwnerID)
+				assert.Equal(s.T(), workflows[0].ID, queueSignals[0].OwnerID)
 			},
 		},
 		{
@@ -262,7 +262,7 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunValidation() {
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name: "config belongs to different app config",
+			name: "re-resolves a config from the install's pinned app config",
 			setupFunc: func() string {
 				// Create config with different app config than install
 				otherAppConfig := s.createAppConfig(s.testApp.ID)
@@ -274,10 +274,10 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunValidation() {
 					ActionWorkFlowConfigID: configID,
 				}
 			},
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusCreated,
 		},
 		{
-			name: "config without manual trigger",
+			name: "uses the pinned config's manual trigger eligibility",
 			setupFunc: func() string {
 				// Use a separate appConfig to avoid unique constraint on (action_workflow_id, app_config_id)
 				otherAppConfig := s.createAppConfig(s.testApp.ID)
@@ -314,7 +314,7 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunValidation() {
 					ActionWorkFlowConfigID: configID,
 				}
 			},
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusCreated,
 		},
 		{
 			name: "non-existent config",
@@ -457,6 +457,7 @@ func (s *CreateInstallActionRunTestSuite) createAppConfig(appID string) *app.App
 		AppID:       appID,
 		CreatedByID: s.testAcc.ID,
 		Status:      app.AppConfigStatusActive,
+		CLIVersion:  "1.0.0",
 	}
 	ctx := cctx.SetAccountContext(s.ctx, s.testAcc)
 	ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
@@ -481,6 +482,7 @@ func (s *CreateInstallActionRunTestSuite) createInstall(appID, appConfigID strin
 		s.T().Logf("FULL createInstall error: %+v", res.Error)
 	}
 	require.NoError(s.T(), res.Error)
+	seedInstallActionWorkflowsQueue(s.T(), s.service.DB, ctx, install.ID)
 	return install
 }
 

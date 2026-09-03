@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -45,6 +46,7 @@ type InvalidateRunnerServiceAccountTokenTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
+	testToken     *app.Token
 }
 
 func TestInvalidateRunnerServiceAccountTokenSuite(t *testing.T) {
@@ -61,7 +63,7 @@ func (s *InvalidateRunnerServiceAccountTokenTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		fx.Provide(New),
+		testDependencyOptions(), fx.Provide(New),
 		fx.Populate(&s.service),
 	)
 
@@ -114,7 +116,6 @@ func (s *InvalidateRunnerServiceAccountTokenTestSuite) setupTestData() {
 	err = s.service.DB.WithContext(ctx).Create(s.testRunner).Error
 	require.NoError(s.T(), err)
 
-	// Create service account for runner (handler expects this)
 	serviceAcct := &app.Account{
 		ID:          domains.NewAccountID(),
 		Email:       account.ServiceAccountEmail(s.testRunner.ID),
@@ -122,6 +123,18 @@ func (s *InvalidateRunnerServiceAccountTokenTestSuite) setupTestData() {
 		AccountType: app.AccountTypeService,
 	}
 	err = s.service.DB.WithContext(ctx).Create(serviceAcct).Error
+	require.NoError(s.T(), err)
+
+	s.testToken = &app.Token{
+		CreatedByID: s.testAcc.ID,
+		AccountID:   serviceAcct.ID,
+		Token:       domains.NewUserTokenID(),
+		TokenType:   app.TokenTypeNuon,
+		ExpiresAt:   time.Now().Add(time.Hour),
+		IssuedAt:    time.Now(),
+		Issuer:      "test",
+	}
+	err = s.service.DB.WithContext(ctx).Create(s.testToken).Error
 	require.NoError(s.T(), err)
 }
 
@@ -160,12 +173,12 @@ func (s *InvalidateRunnerServiceAccountTokenTestSuite) TestAdminInvalidateRunner
 			expectedNotFound: true,
 		},
 		{
-			name: "empty body accepted",
+			name: "empty body invalidates token",
 			setupFunc: func() string {
 				return s.testRunner.ID
 			},
 			requestBody:  nil,
-			expectedCode: http.StatusCreated,
+			expectedCode: http.StatusOK,
 		},
 	}
 
@@ -181,6 +194,14 @@ func (s *InvalidateRunnerServiceAccountTokenTestSuite) TestAdminInvalidateRunner
 
 			if tc.expectedNotFound {
 				assert.Contains(s.T(), rr.Body.String(), "error")
+			} else {
+				assert.JSONEq(s.T(), `{}`, rr.Body.String())
+
+				var token app.Token
+				err := s.service.DB.First(&token, "id = ?", s.testToken.ID).Error
+				require.ErrorIs(s.T(), err, gorm.ErrRecordNotFound)
+				require.NoError(s.T(), s.service.DB.Unscoped().First(&token, "id = ?", s.testToken.ID).Error)
+				assert.NotZero(s.T(), token.DeletedAt)
 			}
 		})
 	}

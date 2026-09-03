@@ -78,8 +78,7 @@ func (e *FlowTestSuite) TestCancelWorkflowPropagatesDown() {
 	for _, step := range steps {
 		switch step.Name {
 		case "cancellable-step":
-			require.Equal(e.T(), app.StatusCancelled, step.Status.Status,
-				"in-flight step should be cancelled")
+			e.waitForStepStatus(ctx, step.ID, app.StatusCancelled)
 		case "after-cancel":
 			require.NotEqual(e.T(), app.StatusSuccess, step.Status.Status,
 				"step after cancel should not have executed")

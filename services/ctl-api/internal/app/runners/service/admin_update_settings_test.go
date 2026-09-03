@@ -67,7 +67,7 @@ func (s *AdminUpdateSettingsTestSuite) SetupSuite() {
 
 			CustomValidator: true,
 		}),
-		fx.Provide(New),
+		testDependencyOptions(), fx.Provide(New),
 		fx.Populate(&s.service),
 	)
 
@@ -333,6 +333,7 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetQueueSignals(s.T(), s.service.DB)
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("PATCH", "/v1/runners/"+runnerID+"/settings", tc.requestBody)
 

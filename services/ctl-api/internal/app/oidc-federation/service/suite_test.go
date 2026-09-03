@@ -106,6 +106,8 @@ func (s *OIDCFederationTestSuite) setupTestData() {
 	var acct app.Account
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
 		Preload("Roles").
+		Preload("Roles.Org").
+		Preload("Roles.Policies").
 		Where("id = ?", s.testAcc.ID).
 		First(&acct).Error)
 	s.testAcc = &acct

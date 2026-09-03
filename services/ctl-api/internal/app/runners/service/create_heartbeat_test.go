@@ -63,7 +63,7 @@ func (s *CreateHeartbeatTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		fx.Provide(New),
+		testDependencyOptions(), fx.Provide(New),
 		fx.Populate(&s.service),
 	)
 
@@ -123,6 +123,21 @@ func (s *CreateHeartbeatTestSuite) setupTestData() {
 	require.NoError(s.T(), err)
 }
 
+func (s *CreateHeartbeatTestSuite) createTestRunner() *app.Runner {
+	ctx := cctx.SetAccountContext(context.Background(), s.testAcc)
+	runner := &app.Runner{
+		ID:            domains.NewRunnerID(),
+		OrgID:         s.testOrg.ID,
+		RunnerGroupID: s.testRunnerGroup.ID,
+		Name:          "test-runner-" + domains.NewRunnerID(),
+		DisplayName:   "Test Runner",
+		Status:        app.RunnerStatusActive,
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(runner).Error)
+	s.T().Cleanup(func() { s.service.DB.Unscoped().Delete(runner) })
+	return runner
+}
+
 func (s *CreateHeartbeatTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {
 	var reqBody *bytes.Buffer
 	if body != nil {
@@ -180,12 +195,10 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				assert.Equal(s.T(), app.RunnerProcessTypeInstall, hb.Process)
 				assert.NotEmpty(s.T(), hb.ID)
 				assert.False(s.T(), hb.CreatedAt.IsZero())
-
-				// Verify stored in ClickHouse
-				chHeartbeats := s.getHeartbeatsFromCH(s.testRunner.ID)
-				require.NotEmpty(s.T(), chHeartbeats)
-				assert.Equal(s.T(), s.testRunner.ID, chHeartbeats[0].RunnerID)
-				assert.Equal(s.T(), 5*time.Minute, chHeartbeats[0].AliveTime)
+				require.Eventually(s.T(), func() bool {
+					heartbeats := s.getHeartbeatsFromCH(s.testRunner.ID)
+					return len(heartbeats) > 0 && heartbeats[0].RunnerID == s.testRunner.ID && heartbeats[0].AliveTime == 5*time.Minute
+				}, 5*time.Second, 50*time.Millisecond)
 			},
 		},
 		{
@@ -248,7 +261,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 			},
 		},
 		{
-			name: "stores multiple heartbeats for same runner",
+			name: "creates heartbeat when runner already has heartbeat",
 			setupFunc: func() (string, CreateRunnerHeartBeatRequest) {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -275,12 +288,11 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(hb *app.RunnerHeartBeat) {
-				// Allow ClickHouse eventual consistency for the API-created heartbeat
-				time.Sleep(200 * time.Millisecond)
-
-				// Verify both heartbeats exist in ClickHouse
-				chHeartbeats := s.getHeartbeatsFromCH(s.testRunner.ID)
-				assert.GreaterOrEqual(s.T(), len(chHeartbeats), 2)
+				assert.Equal(s.T(), 2*time.Minute, hb.AliveTime)
+				assert.Equal(s.T(), app.RunnerProcessTypeInstall, hb.Process)
+				require.Eventually(s.T(), func() bool {
+					return len(s.getHeartbeatsFromCH(s.testRunner.ID)) >= 2
+				}, 5*time.Second, 50*time.Millisecond)
 			},
 		},
 		{
@@ -347,6 +359,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			s.testRunner = s.createTestRunner()
 			runnerID, req := tc.setupFunc()
 			path := fmt.Sprintf("/v1/runners/%s/heart-beats", runnerID)
 			rr := s.makeRequest("POST", path, req)
@@ -496,6 +509,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatDifferentProcesses() {
 
 	for _, tc := range processes {
 		s.Run(tc.description, func() {
+			s.testRunner = s.createTestRunner()
 			req := CreateRunnerHeartBeatRequest{
 				AliveTime: 5 * time.Minute,
 				Version:   "v1.0.0",
@@ -514,17 +528,14 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatDifferentProcesses() {
 			err := json.Unmarshal(rr.Body.Bytes(), &heartbeat)
 			require.NoError(s.T(), err)
 			assert.Equal(s.T(), tc.process, heartbeat.Process)
-
-			// Verify in ClickHouse
-			chHeartbeats := s.getHeartbeatsFromCH(s.testRunner.ID)
-			found := false
-			for _, chHB := range chHeartbeats {
-				if chHB.Process == tc.process {
-					found = true
-					break
+			require.Eventually(s.T(), func() bool {
+				for _, stored := range s.getHeartbeatsFromCH(s.testRunner.ID) {
+					if stored.Process == tc.process {
+						return true
+					}
 				}
-			}
-			assert.True(s.T(), found, "Heartbeat with process %s should exist in ClickHouse", tc.process)
+				return false
+			}, 5*time.Second, 50*time.Millisecond)
 		})
 	}
 }

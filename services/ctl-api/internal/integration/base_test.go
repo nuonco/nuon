@@ -150,10 +150,13 @@ func (s *baseIntegrationTestSuite) createAppWithInputs() *models.AppApp {
 func (s *baseIntegrationTestSuite) createAppSandboxConfig(appID string) {
 	appConfigID := s.ensureAppConfig(appID)
 
-	cfgReq := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
-	cfgReq.ConnectedGithubVcsConfig = nil
-	cfgReq.OperationRoles = nil
-	cfgReq.AppConfigID = appConfigID
+	cfgReq := &models.ServiceCreateAppSandboxConfigRequest{
+		AppConfigID:      appConfigID,
+		EnvVars:          map[string]string{},
+		TerraformVersion: "1.5.0",
+		Type:             "terraform",
+		Variables:        map[string]string{},
+	}
 
 	cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, appID, cfgReq)
 	require.NoError(s.T(), err)
@@ -169,6 +172,8 @@ func (s *baseIntegrationTestSuite) ensureAppConfig(appID string) string {
 
 	cfgReq := generics.GetFakeObj[*models.ServiceCreateAppConfigRequest]()
 	cfgReq.CliVersion = "0.19.922"
+	cfgReq.AppBranchID = ""
+	cfgReq.IntermediateConfigJSON = ""
 	cfg, err := s.apiClient.CreateAppConfig(s.ctx, appID, cfgReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), cfg)
@@ -264,10 +269,10 @@ func (s *baseIntegrationTestSuite) createComponent(appID string) *models.AppComp
 }
 
 func (s *baseIntegrationTestSuite) createInstall(appID string) *models.AppInstall {
-	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
-	fakeReq.AwsAccount.Region = "us-west-2"
-	fakeReq.Inputs = nil
-	fakeReq.InstallConfig = nil
+	fakeReq := &models.ServiceCreateInstallRequest{
+		AwsAccount: &models.HelpersCreateInstallAWSAccountParams{Region: "us-west-2"},
+		Name:       generics.ToPtr(s.uniqueName("integration-install")),
+	}
 
 	install, err := s.apiClient.CreateInstall(s.ctx, appID, fakeReq)
 	require.NoError(s.T(), err)

@@ -170,8 +170,10 @@ func New(v *validator.Validate,
 		},
 		OnStop: func(_ context.Context) error {
 			primary.stopPoolBackgroundJob()
+			primary.pool.Close()
 			if replica != nil {
 				replica.stopPoolBackgroundJob()
+				replica.pool.Close()
 			}
 			return nil
 		},

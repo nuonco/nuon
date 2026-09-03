@@ -11,13 +11,16 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	orgcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/created"
 	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/provision"
@@ -65,13 +68,15 @@ func (s *CreateOrgTestSuite) SetupSuite() {
 
 	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
+	s.T().Cleanup(func() { closeOrgServiceDB(s.T(), s.service.DB) })
 }
 
 func (s *CreateOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
-
-	// Reset mock before each test
+	s.service.TClient.(*temporal.MockClient).EXPECT().ExecuteWorkflowInNamespace(
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	).Return(&orgServiceMockWorkflowRun{}, nil).AnyTimes()
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -203,7 +208,7 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Reset mock before test
+			resetOrgServiceSignals(s.T(), s.service.DB)
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/orgs", tc.request)
@@ -271,6 +276,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgValidation() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/orgs", tc.request)
 
@@ -326,12 +332,10 @@ func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
 	require.Contains(s.T(), rr.Body.String(), "not allowed to create new orgs")
 }
 
-func (s *CreateOrgTestSuite) TestCreateOrgCreatesRunnerGroup() {
+func (s *CreateOrgTestSuite) TestCreateOrgSkipsRunnerGroupWhenFeatureDisabled() {
 	request := CreateOrgRequest{
 		Name: fmt.Sprintf("test-org-runner-group-%s", domains.NewOrgID()[:8]),
 	}
-
-	// Reset mock
 
 	// Make request
 	rr := s.makeRequest(http.MethodPost, "/v1/orgs", request)
@@ -346,11 +350,9 @@ func (s *CreateOrgTestSuite) TestCreateOrgCreatesRunnerGroup() {
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", response.ID)
 	})
 
-	// Verify runner group was created
 	var runnerGroup app.RunnerGroup
-	err = s.service.DB.Where("owner_id = ? AND owner_type = ?", response.ID, "orgs").First(&runnerGroup).Error
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), response.ID, runnerGroup.OwnerID)
+	err = s.service.DB.Where(app.RunnerGroup{OwnerID: response.ID, OwnerType: "orgs"}).First(&runnerGroup).Error
+	require.ErrorIs(s.T(), err, gorm.ErrRecordNotFound)
 }
 
 func (s *CreateOrgTestSuite) TestCreateOrgCreatesRoles() {

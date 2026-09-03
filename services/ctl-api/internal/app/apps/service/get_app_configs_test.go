@@ -97,6 +97,9 @@ func (s *AppConfigsTestSuite) setupTestData() {
 		ID:          orgID,
 		Name:        fmt.Sprintf("test-org-%s", orgID),
 		SandboxMode: true,
+		Features: map[string]bool{
+			string(app.OrgFeatureTriggers): true,
+		},
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -115,6 +118,10 @@ func (s *AppConfigsTestSuite) setupTestData() {
 	err = s.service.DB.Create(testApp).Error
 	require.NoError(s.T(), err)
 	s.testApp = testApp
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(&app.Queue{
+		OwnerID:   testApp.ID,
+		OwnerType: "apps",
+	}).Error)
 }
 
 func (s *AppConfigsTestSuite) makeGetRequest(method, path string) *httptest.ResponseRecorder {

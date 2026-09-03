@@ -86,11 +86,14 @@ func (s *AdminDeleteOrgTestSuite) SetupSuite() {
 
 	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
+	s.T().Cleanup(func() { closeOrgServiceDB(s.T(), s.service.DB) })
 }
 
 func (s *AdminDeleteOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
+	resetOrgServiceSignals(s.T(), s.service.DB)
+	seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, s.testOrg)
 
 	// Reset mock before each test
 
@@ -349,8 +352,12 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Setup test data
 			org := tc.setupFunc()
+			if tc.validateSignal {
+				seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, org)
+			}
 
 			// Reset mock before test
 
@@ -429,6 +436,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgNotFound() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Reset mock before test
 
 			// Make request
@@ -471,6 +479,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgRequestParsing() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Create a test org
 			ctx := context.Background()
 			ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -486,6 +495,9 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgRequestParsing() {
 			}
 			err := s.service.DB.WithContext(ctx).Create(org).Error
 			require.NoError(s.T(), err)
+			if tc.expectedStatus == http.StatusOK {
+				seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, org)
+			}
 			s.T().Cleanup(func() {
 				s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 			})
@@ -534,6 +546,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgByName() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Create test org
 			ctx := context.Background()
 			ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -549,6 +562,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgByName() {
 			}
 			err := s.service.DB.WithContext(ctx).Create(org).Error
 			require.NoError(s.T(), err)
+			seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, org)
 			s.T().Cleanup(func() {
 				s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 			})

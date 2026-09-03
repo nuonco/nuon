@@ -20,6 +20,10 @@ type SkipStepResponse struct {
 }
 
 func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*SkipStepResponse, error) {
+	if s.cancelRequested {
+		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
+	}
+
 	// Look up the step to get its group ID for direct group lookup.
 	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 	if err != nil {

@@ -124,8 +124,13 @@ func (s *GetInstallActionWorkflowsLatestRunsTestSuite) makeRequest(method, path 
 // createInstall creates a full app config and then an install with app_config_id set.
 // This is required so the currentAppConfigActionFilter in the handler has a config ID to match against.
 func (s *GetInstallActionWorkflowsLatestRunsTestSuite) createInstall(appID string) (*app.Install, *app.AppConfig) {
-	appCfg := s.service.Seeder.CreateAppConfig(s.ctx, s.T(), appID)
-	install := s.service.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+	appCfg := s.service.Seeder.CreateBareAppConfig(s.ctx, s.T(), appID)
+	require.NoError(s.T(), s.service.DB.Model(appCfg).Update("cli_version", "1.0.0").Error)
+	install := &app.Install{ID: domains.NewInstallID(), Name: "latest-runs-" + domains.NewInstallID(), AppID: appID, AppConfigID: appCfg.ID}
+	ctx := cctx.SetAccountContext(s.ctx, s.testAcc)
+	ctx = cctx.SetOrgContext(ctx, s.testOrg)
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).
+		Omit("app_sandbox_config_id", "app_runner_config_id").Create(install).Error)
 	return install, appCfg
 }
 
@@ -268,7 +273,7 @@ func (s *GetInstallActionWorkflowsLatestRunsTestSuite) TestGetInstallActionsLate
 			},
 			queryParams:   "",
 			expectedCount: 0,
-			expectedCode:  http.StatusOK,
+			expectedCode:  http.StatusNotFound,
 		},
 	}
 

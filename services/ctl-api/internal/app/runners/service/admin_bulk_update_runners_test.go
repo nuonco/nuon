@@ -64,7 +64,7 @@ func (s *AdminBulkUpdateRunnersTestSuite) SetupSuite() {
 			CustomValidator: true,
 		}),
 
-		fx.Provide(New),
+		testDependencyOptions(), fx.Provide(New),
 		fx.Populate(&s.service),
 	)
 
