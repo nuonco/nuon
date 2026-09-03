@@ -12,8 +12,8 @@ const RAIL_CLASSES: Record<TDiffOperation, string> = {
   update: 'border-l-diff-change',
   replace: 'border-l-divider-accent',
   delete: 'border-l-diff-remove',
-  read: 'border-l-divider',
-  'no-op': 'border-l-divider',
+  read: 'border-l-diff-neutral',
+  'no-op': 'border-l-diff-neutral',
 }
 
 const TINT_CLASSES: Record<TDiffOperation, string> = {
@@ -21,8 +21,8 @@ const TINT_CLASSES: Record<TDiffOperation, string> = {
   update: 'bg-diff-change-section',
   replace: 'bg-surface-accent',
   delete: 'bg-diff-remove-section',
-  read: '',
-  'no-op': '',
+  read: 'bg-diff-neutral-section',
+  'no-op': 'bg-diff-neutral-section',
 }
 
 const HOVER_CLASSES: Record<TDiffOperation, string> = {
@@ -30,8 +30,8 @@ const HOVER_CLASSES: Record<TDiffOperation, string> = {
   update: 'hover:bg-diff-change-row!',
   replace: '',
   delete: 'hover:bg-diff-remove-row!',
-  read: '',
-  'no-op': '',
+  read: 'hover:bg-diff-neutral-row!',
+  'no-op': 'hover:bg-diff-neutral-row!',
 }
 
 export interface IDiffSection
@@ -39,6 +39,7 @@ export interface IDiffSection
     Omit<IDiff, 'className' | 'view'> {
   operation: TDiffOperation
   view?: TDiffView
+  note?: ReactNode
   error?: ReactNode
 }
 
@@ -53,6 +54,7 @@ export const DiffSection = ({
   lineNumbers,
   search,
   maxHeight,
+  note,
   error,
   className,
   headerClassName,
@@ -94,9 +96,9 @@ export const DiffSection = ({
       contentClassName={cn('bg-surface-01 p-2', contentClassName)}
       {...props}
     >
-      {error ? (
+      {note || error ? (
         <Text as="div" variant="caption" color="tertiary" className="px-1 py-2">
-          {error}
+          {note ?? error}
         </Text>
       ) : null}
       {before || after ? (

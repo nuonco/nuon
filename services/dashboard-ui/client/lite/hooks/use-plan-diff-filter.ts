@@ -4,7 +4,8 @@ import { useFilterSelection } from './use-filter-selection'
 
 export const usePlanDiffFilter = (
   sections: IPlanDiffSection[],
-  availableOperations?: readonly TDiffOperation[]
+  availableOperations?: readonly TDiffOperation[],
+  defaultOperations?: readonly TDiffOperation[]
 ) => {
   const operations = useMemo(
     () => [
@@ -14,7 +15,7 @@ export const usePlanDiffFilter = (
     ],
     [availableOperations, sections]
   )
-  const selection = useFilterSelection(operations)
+  const selection = useFilterSelection(operations, defaultOperations)
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {

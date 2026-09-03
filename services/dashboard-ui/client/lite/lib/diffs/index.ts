@@ -21,6 +21,7 @@ export interface IPlanDiffSection {
   language: string
   filename?: string
   searchable: string[]
+  note?: string
   error?: string
 }
 
@@ -45,6 +46,7 @@ export interface IPlanDiffGroup {
 }
 
 export const MISSING_DIFF_ERROR = 'Diff not available from planner'
+export const NO_OP_NOTE = 'No changes to this resource.'
 
 const OPERATION_ALIASES: Record<string, TDiffOperation> = {
   add: 'create',

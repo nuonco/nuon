@@ -55,7 +55,7 @@
   --text-brand-tint: light-dark(var(--brand-indigo), var(--brand-primary-light));
   --text-positive: var(--brand-positive);
 
-  --divider: light-dark(rgba(29, 29, 29, 0.04), rgba(254, 254, 254, 0.08));
+  --divider: light-dark(rgba(29, 29, 29, 0.12), rgba(254, 254, 254, 0.08));
   --divider-accent: var(--brand-primary);
 
   --action-primary: var(--brand-primary);
@@ -84,9 +84,12 @@
   --card-border: transparent;
   --card-shadow: 0 1px 2px var(--shadow-default);
 
-  --field-bg: light-dark(rgba(29, 29, 29, 0.035), rgba(254, 254, 254, 0.05));
-  --field-bg-hover: light-dark(rgba(29, 29, 29, 0.055), rgba(254, 254, 254, 0.075));
-  --field-border: transparent;
+  --field-bg: light-dark(var(--neutral-000), rgba(254, 254, 254, 0.05));
+  --field-bg-hover: light-dark(
+    rgba(29, 29, 29, 0.035),
+    rgba(254, 254, 254, 0.075)
+  );
+  --field-border: light-dark(rgba(29, 29, 29, 0.14), transparent);
   --field-text: var(--text-primary);
   --field-placeholder: var(--text-tertiary);
   --field-invalid: light-dark(var(--error-700), var(--error-300));
@@ -160,6 +163,14 @@
     rgba(143, 83, 0, 0.28),
     rgba(245, 183, 49, 0.3)
   );
+  --diff-neutral-row: light-dark(
+    rgba(29, 29, 29, 0.06),
+    rgba(254, 254, 254, 0.07)
+  );
+  --diff-neutral-gutter: light-dark(
+    rgba(29, 29, 29, 0.28),
+    rgba(254, 254, 254, 0.3)
+  );
 
   --diff-add-section: light-dark(
     rgba(37, 112, 82, 0.04),
@@ -172,6 +183,10 @@
   --diff-change-section: light-dark(
     rgba(143, 83, 0, 0.04),
     rgba(245, 183, 49, 0.035)
+  );
+  --diff-neutral-section: light-dark(
+    rgba(29, 29, 29, 0.03),
+    rgba(254, 254, 254, 0.03)
   );
 
   --shadow-default: light-dark(rgba(29, 29, 29, 0.04), rgba(29, 29, 29, 0.16));
@@ -324,6 +339,9 @@
   --diff-add-section: rgba(124, 255, 124, 0.16);
   --diff-remove-section: rgba(255, 128, 128, 0.16);
   --diff-change-section: rgba(255, 255, 0, 0.16);
+  --diff-neutral-row: rgba(255, 255, 255, 0.16);
+  --diff-neutral-gutter: var(--neutral-000);
+  --diff-neutral-section: rgba(255, 255, 255, 0.12);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -632,6 +650,9 @@ diffs-container {
   --color-diff-change-row: var(--diff-change-row);
   --color-diff-change-section: var(--diff-change-section);
   --color-diff-change-emphasis: var(--diff-change-emphasis);
+  --color-diff-neutral: var(--diff-neutral-gutter);
+  --color-diff-neutral-row: var(--diff-neutral-row);
+  --color-diff-neutral-section: var(--diff-neutral-section);
 }
 
 @layer base {
