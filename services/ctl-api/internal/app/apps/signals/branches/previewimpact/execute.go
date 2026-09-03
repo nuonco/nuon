@@ -188,6 +188,13 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 	commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
 		RunID: s.RunID,
 	})
+
+	// Derive phases from DB and override Install to Valid: the impact was computed
+	// successfully, but the previewimpact step status in the DB is still in-progress
+	// at this point (the framework marks it Success after Execute returns).
+	phases := commentContextPhases(commentContext)
+	phases.Install = activities.PRCommentPhaseValid
+
 	body := activities.BuildPRCommentBody(&activities.PRCommentParams{
 		OrgName:          branch.Org.Name,
 		AppName:          branch.App.Name,
@@ -199,6 +206,7 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 		Diff:             diff,
 		ComponentChanges: previewComponentChanges(commentContext),
 		InstallImpact:    groups,
+		Phases:           phases,
 	})
 
 	if _, err := activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
@@ -216,6 +224,14 @@ func previewRunURL(commentContext *activities.GetPreviewCommentContextOutput) st
 		return ""
 	}
 	return commentContext.RunURL
+}
+
+func commentContextPhases(commentContext *activities.GetPreviewCommentContextOutput) *activities.PRCommentPhases {
+	if commentContext == nil || commentContext.Phases == nil {
+		return &activities.PRCommentPhases{}
+	}
+	cp := *commentContext.Phases
+	return &cp
 }
 
 func previewComponentChanges(commentContext *activities.GetPreviewCommentContextOutput) []activities.ComponentBuildChange {
