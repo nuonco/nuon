@@ -44,6 +44,19 @@ describe('workflow-utils', () => {
       )
     })
 
+    test('uses the dashboard label for the build step', () => {
+      expect(
+        getWorkflowStepTitle({
+          name: 'building components and sandbox',
+        })
+      ).toBe('Build components and sandbox')
+      expect(
+        getWorkflowStepTitle({
+          name: 'building components and sandbox (skipped)',
+        })
+      ).toBe('Build components and sandbox (skipped)')
+    })
+
     test('handles undefined and empty names', () => {
       expect(getWorkflowStepTitle(eventWaitStep())).toBe('')
       expect(getWorkflowStepTitle(eventWaitStep(''))).toBe('')
@@ -508,7 +521,8 @@ describe('workflow-utils', () => {
           status: 'error',
           metadata: {
             check: 'stale-plan',
-            detail: 'Approval was submitted 4380m after plan creation (threshold: 4320m)',
+            detail:
+              'Approval was submitted 4380m after plan creation (threshold: 4320m)',
           },
         },
       } as TWorkflowStep
@@ -565,9 +579,9 @@ describe('workflow-utils', () => {
       ({ id, name: 'runner healthy', status: { status } }) as TWorkflowStep
 
     test('treats a failed step followed by a clone as attempts', () => {
-      expect(
-        isRetryChain([step('a', 'error'), step('b', 'in-progress')])
-      ).toBe(true)
+      expect(isRetryChain([step('a', 'error'), step('b', 'in-progress')])).toBe(
+        true
+      )
     })
 
     test('treats several exhausted attempts as attempts', () => {
@@ -599,7 +613,11 @@ describe('workflow-utils', () => {
 
     test('requires every prior sibling to have run', () => {
       expect(
-        isRetryChain([step('a', 'error'), step('b', 'pending'), step('c', 'pending')])
+        isRetryChain([
+          step('a', 'error'),
+          step('b', 'pending'),
+          step('c', 'pending'),
+        ])
       ).toBe(false)
     })
   })

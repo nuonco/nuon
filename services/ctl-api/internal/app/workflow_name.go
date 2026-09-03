@@ -45,7 +45,6 @@ func computeWorkflowName(w *Workflow) string {
 
 func appBranchRunName(w *Workflow) string {
 	eventType := metaValue(w, "event_type")
-	commitSha := metaValue(w, "commit_sha")
 
 	var base string
 	switch eventType {
@@ -61,14 +60,7 @@ func appBranchRunName(w *Workflow) string {
 	case "onboarding":
 		base = "Onboarding run"
 	default:
-		base = "Manual run"
-	}
-
-	if commitSha != "" {
-		if len(commitSha) > 7 {
-			commitSha = commitSha[:7]
-		}
-		base += " (" + commitSha + ")"
+		base = "Run"
 	}
 
 	return base

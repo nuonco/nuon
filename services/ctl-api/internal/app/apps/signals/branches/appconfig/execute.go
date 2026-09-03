@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
@@ -16,7 +17,10 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-const configValidationCompositeErrorVersion = "app-branch-config-validation-composite-error-v1"
+const (
+	configValidationCompositeErrorVersion = "app-branch-config-validation-composite-error-v1"
+	previewCommentConfigFailureVersion    = "app-branch-preview-comment-config-failure-v1"
+)
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
@@ -133,6 +137,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				}); setErr != nil {
 					l.Warn("unable to set app branch run composite error", "error", setErr)
 				}
+
+				if run.IsPreview() && run.PRNumber != nil && run.PreviewGitHubComment() && vcsConfigID != "" {
+					if workflow.GetVersion(ctx, previewCommentConfigFailureVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+						s.writePreviewComment(ctx, l, run, branch, vcsConfigID, &activities.PRCommentPhases{
+							Config: activities.PRCommentPhaseInvalid,
+						}, activities.PRCommentStatusFailed, detail)
+					}
+				}
+
 				return temporal.NewNonRetryableApplicationError(
 					detail,
 					branchrunerrors.ConfigValidationFailedTemporalType,
@@ -394,6 +407,10 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLo
 			commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
 				RunID: s.RunID,
 			})
+			phases := commentContextPhases(commentContext)
+			// Config just succeeded (even though the step status in DB hasn't been
+			// updated yet), so we override the derived phase explicitly.
+			phases.Config = activities.PRCommentPhaseValid
 			commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
 				OrgName:    branch.Org.Name,
 				AppName:    branch.App.Name,
@@ -403,6 +420,7 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLo
 				Status:     activities.PRCommentStatusPending,
 				Mode:       run.PreviewMode(),
 				Diff:       configDiff,
+				Phases:     phases,
 			})
 			_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 				VcsConfigID:       p.vcsConfigID,
@@ -422,4 +440,51 @@ func previewRunURL(commentContext *activities.GetPreviewCommentContextOutput) st
 		return ""
 	}
 	return commentContext.RunURL
+}
+
+// commentContextPhases returns a copy of the phases from commentContext, or an
+// empty PRCommentPhases if the context is nil or has no phases.
+func commentContextPhases(commentContext *activities.GetPreviewCommentContextOutput) *activities.PRCommentPhases {
+	if commentContext == nil || commentContext.Phases == nil {
+		return &activities.PRCommentPhases{}
+	}
+	cp := *commentContext.Phases
+	return &cp
+}
+
+// writePreviewComment writes a PR comment with the given phase overrides.  It is
+// called from error paths where the individual signal has definitive phase state
+// that the DB may not yet reflect.
+func (s *Signal) writePreviewComment(
+	ctx workflow.Context,
+	l log.Logger,
+	run *app.AppBranchRun,
+	branch *app.AppBranch,
+	vcsConfigID string,
+	phases *activities.PRCommentPhases,
+	status activities.PRCommentStatus,
+	errMsg string,
+) {
+	commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
+		RunID: s.RunID,
+	})
+	body := activities.BuildPRCommentBody(&activities.PRCommentParams{
+		OrgName:      branch.Org.Name,
+		AppName:      branch.App.Name,
+		BranchName:   branch.Name,
+		RunID:        s.RunID,
+		RunURL:       previewRunURL(commentContext),
+		Status:       status,
+		Mode:         run.PreviewMode(),
+		Phases:       phases,
+		ErrorMessage: errMsg,
+	})
+	if _, err := activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
+		VcsConfigID:       vcsConfigID,
+		PRNumber:          *run.PRNumber,
+		ExistingCommentID: run.GithubCommentID,
+		Body:              body,
+	}); err != nil {
+		l.Warn("unable to write preview PR comment on config failure", "error", err)
+	}
 }

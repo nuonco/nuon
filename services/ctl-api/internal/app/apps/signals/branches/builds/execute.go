@@ -504,19 +504,33 @@ func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.Ap
 	commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
 		RunID: s.RunID,
 	})
+
+	// Derive phases from DB context and override Builds with the known result.
+	// Config is accurately derived from the DB (the appconfig step completed
+	// before builds started).  Builds is still in-progress in the DB at this
+	// point, so we override it explicitly.
+	phases := commentContextPhases(commentContext)
+	if buildErr != nil {
+		phases.Builds = activities.PRCommentPhaseInvalid
+	} else {
+		phases.Builds = activities.PRCommentPhaseValid
+	}
+
 	commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
-		OrgName:            branch.Org.Name,
-		AppName:            branch.App.Name,
-		BranchName:         branch.Name,
-		RunID:              s.RunID,
-		RunURL:             previewRunURL(commentContext),
-		Status:             status,
-		Mode:               run.PreviewMode(),
-		Diff:               diff,
-		ComponentChanges:   componentBuildChanges(builds, commentContext),
-		PreviewInstallName: previewInstallName(commentContext),
-		PreviewInstallURL:  previewInstallURL(commentContext),
-		ErrorMessage:       errMsg,
+		OrgName:          branch.Org.Name,
+		AppName:          branch.App.Name,
+		BranchName:       branch.Name,
+		RunID:            s.RunID,
+		RunURL:           previewRunURL(commentContext),
+		Status:           status,
+		Mode:             run.PreviewMode(),
+		Diff:             diff,
+		ComponentChanges: componentBuildChanges(builds, commentContext),
+		// PreviewInstallName and InstallApplied are intentionally omitted:
+		// the install step has not run yet at this point.  The run finalizer
+		// writes the final comment once the install step completes.
+		ErrorMessage: errMsg,
+		Phases:       phases,
 	})
 
 	_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
@@ -557,6 +571,16 @@ func previewRunURL(commentContext *activities.GetPreviewCommentContextOutput) st
 		return ""
 	}
 	return commentContext.RunURL
+}
+
+// commentContextPhases returns a copy of the Phases from commentContext, or an
+// empty PRCommentPhases when the context is nil or carries no phase data.
+func commentContextPhases(commentContext *activities.GetPreviewCommentContextOutput) *activities.PRCommentPhases {
+	if commentContext == nil || commentContext.Phases == nil {
+		return &activities.PRCommentPhases{}
+	}
+	cp := *commentContext.Phases
+	return &cp
 }
 
 func previewInstallName(commentContext *activities.GetPreviewCommentContextOutput) string {
