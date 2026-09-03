@@ -48,7 +48,7 @@ When you create a new install, Nuon will generate a Terraform install stack your
 
 Navigate to the Installs tab in the Nuon dashboard, and click on the "Create Install" button, and select the app you want to install.
 
-This will kick off a provision workflow. The stack will be generated and pre-configured `inputs.auto.tfvars` and `secrets.auto.tfvars` files will be provided for it. The tfvars files already have the install ID, runner ID, API token, and IAM permissions interpolated, and can be shared with your customer.
+This will kick off a provision workflow. The stack will be generated and pre-configured `inputs.auto.tfvars` and `secrets.auto.tfvars` files will be provided for it. The tfvars files are templated with the install ID, runner ID, API token, and IAM permissions, and can be shared with your customer.
 
 ### Install the Stack
 
