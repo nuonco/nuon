@@ -18,7 +18,11 @@ interface IWorkflowRunPanelContainer extends IPanel {
   onClose: () => void
 }
 
-const INTERNAL_STEP_NAMES = new Set(['check ignored changes', 'setup preview'])
+const INTERNAL_STEP_NAMES = new Set([
+  'check ignored changes',
+  'setup preview',
+  'preview install impact',
+])
 
 export const filterWorkflowPanelSteps = (steps: TInstallWorkflowStep[]) =>
   steps.filter(
