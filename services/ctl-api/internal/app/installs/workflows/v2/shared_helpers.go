@@ -8,9 +8,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/imagesync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitcomponenthealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
@@ -22,6 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 // genCtx is the per-workflow-invocation context for step generation. It bundles
@@ -485,42 +488,20 @@ func getComponentTeardownSteps(ctx workflow.Context, dg *genCtx, comp app.Compon
 // getImageDepSyncSteps returns image-dep sync steps to prepend before the
 // non-image parent component identified by parentCompID at parentIdx in
 // componentIDs. It walks the parent's pinned dependencies (from the AppConfig
-// snapshot), filters to image-typed deps, and emits a componentsyncimage
-// signal for each image dep whose latest Active ComponentBuild — for the
-// install's pinned app config version — differs from the build currently
-// deployed on the install.
-//
-// Why the lookup is pinned to the install's app config version:
-//
-// Each ComponentConfigConnection (ccc) is the per-app-config-version snapshot
-// of a component's config and is what owns that component's builds. When an
-// app config is re-synced, fresh ccc rows are created for every component;
-// builds that happen later are tied to the new ccc, not the old. The dep-sync
-// decision must therefore use the ccc that belongs to the consumer's pinned
-// app config version. Asking for "latest active build for component X" across
-// every ccc (i.e. across every app config version) over-syncs into installs
-// pinned to an older app config and conceptually decouples the dep from the
-// consumer's snapshot.
+// snapshot) and emits a componentsyncimage signal for each image dep that
+// imagesync.Decide says the install is behind on. The rules for that decision
+// (and the reasons a dep is quietly skipped) live in imagesync, because an
+// image-backed action run applies the same ones to its own image deps.
 //
 // The returned steps are added to a single step group ordered before the
 // parent's group: the function calls sg.nextGroup() lazily on the first
 // emitted step so that no empty group is left behind when no dep needs
 // syncing.
 //
-// Dedup rules:
+// Dedup rules, which are specific to generating steps for one workflow:
 //   - skip image deps already handled earlier in this workflow (dg.addedImageDepSyncs)
 //   - skip image deps that already appear earlier in componentIDs (their
 //     normal per-component sync step will run earlier in the workflow)
-//
-// Quiet skip rules (no error returned, no step emitted):
-//   - dep is not present in the loaded app config
-//   - dep is not an image-typed component
-//   - dep has no ccc in the install's pinned app config snapshot (the app
-//     config doesn't include this dep at all)
-//   - install component for the dep does not exist (nothing to sync against)
-//   - dep has no Active ComponentBuild yet for the pinned ccc
-//   - dep's currently deployed ComponentBuildID matches the latest Active
-//     build for the pinned ccc (nothing to do)
 func getImageDepSyncSteps(
 	ctx workflow.Context,
 	dg *genCtx,
@@ -535,6 +516,10 @@ func getImageDepSyncSteps(
 
 	steps := make([]*app.WorkflowStep, 0)
 	groupStarted := false
+	loader := &genCtxDepLoader{
+		InstallDeploys: imagesync.InstallDeploys{InstallID: dg.installID},
+		dg:             dg,
+	}
 
 	for _, depID := range depIDs {
 		if _, already := dg.addedImageDepSyncs[depID]; already {
@@ -553,48 +538,28 @@ func getImageDepSyncSteps(
 			// Dep is not part of this app config snapshot — nothing to do.
 			continue
 		}
-		if !dep.Type.IsImage() {
-			continue
-		}
 
-		if depCCC, hasCCC := dg.cccByComp[depID]; !hasCCC || depCCC == nil {
-			continue
-		}
-
-		latestActive, err := resolvePinnedComponentBuild(ctx, dg, depID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "unable to resolve pinned build for image dep %s", depID)
-		}
-		if latestActive == nil {
-			continue
-		}
-
-		depInstallComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
-			InstallID:   dg.installID,
+		depCCC, hasCCC := dg.cccByComp[depID]
+		decision, err := imagesync.Decide(ctx, imagesync.Dep{
 			ComponentID: depID,
-		})
+			IsImage:     dep.Type.IsImage(),
+			InAppConfig: hasCCC && depCCC != nil,
+		}, loader)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to get install component for image dep %s", depID)
+			return nil, err
 		}
-		if depInstallComp == nil {
-			// No install component record yet for this dep — there is no
-			// runner-side state to sync against. The normal install
-			// bootstrapping flow is responsible for creating it; skip
-			// silently here.
-			continue
-		}
-
-		// AwaitGetInstallComponent preloads the most recent InstallDeploy
-		// (any type, ORDER BY created_at DESC LIMIT 1). For image
-		// components every install_deploy is a sync-image, so the most
-		// recent deploy is the currently-synced build. When the deployed
-		// build matches the app-config-version-pinned latest Active
-		// build, no sync is needed.
-		var deployedBuildID string
-		if len(depInstallComp.InstallDeploys) > 0 {
-			deployedBuildID = depInstallComp.InstallDeploys[0].ComponentBuildID
-		}
-		if deployedBuildID == latestActive.ID {
+		if !decision.NeedsSync {
+			// A skip that means something upstream has not happened is why a
+			// component would deploy against an older image, so it is
+			// reported rather than dropped.
+			if decision.WorthLogging() {
+				if l, lErr := log.WorkflowLogger(ctx); lErr == nil {
+					l.Info("image dependency cannot be synced",
+						zap.String("component_id", depID),
+						zap.String("component_name", dep.Name),
+						zap.String("reason", string(decision.Skip)))
+				}
+			}
 			continue
 		}
 
@@ -604,9 +569,9 @@ func getImageDepSyncSteps(
 		}
 
 		step, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+dep.Name+" (dep)", pgtype.Hstore{}, &componentsyncimage.Signal{
-			InstallComponentID: depInstallComp.ID,
+			InstallComponentID: decision.InstallComponentID,
 			ComponentID:        dep.ID,
-			BuildID:            latestActive.ID,
+			BuildID:            decision.BuildID,
 			Role:               dg.flw.Role,
 		}, dg.flw.PlanOnly)
 		if err != nil {
@@ -618,6 +583,26 @@ func getImageDepSyncSteps(
 	}
 
 	return steps, nil
+}
+
+// genCtxDepLoader answers imagesync.Decide's build lookup from the generation
+// context's pinned app config snapshot. The install-side half comes from
+// imagesync.InstallDeploys so it cannot drift from the action run's.
+type genCtxDepLoader struct {
+	imagesync.InstallDeploys
+
+	dg *genCtx
+}
+
+func (l *genCtxDepLoader) LatestActiveBuildID(ctx workflow.Context, componentID string) (string, error) {
+	build, err := resolvePinnedComponentBuild(ctx, l.dg, componentID)
+	if err != nil {
+		return "", errors.Wrapf(err, "unable to resolve pinned build for image dep %s", componentID)
+	}
+	if build == nil {
+		return "", nil
+	}
+	return build.ID, nil
 }
 
 // gateRunnerHealthy is false when the caller's preceding phase already waited on

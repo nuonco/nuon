@@ -1,26 +1,21 @@
 package componentsyncimage
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/imagesync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/stategen"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -216,109 +211,25 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
+// execSync copies the deploy's image into the install registry. The
+// choreography lives in imagesync.RunSyncJob so an image-backed action run,
+// which has no workflow step to hang a sync off, applies exactly the same
+// steps in the same order.
 func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) error {
-	l, err := log.WorkflowLogger(ctx)
-	if err != nil {
-		return err
-	}
-
-	l.Info("syncing image into install OCI repository")
-	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating sync plan")
-
-	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
-	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
-		return fmt.Errorf("unable to get build: %w", err)
-	}
-
-	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
-	if err != nil {
-		return err
-	}
-
-	runnerJob, err := activities.AwaitCreateSyncJob(ctx, &activities.CreateSyncJobRequest{
-		DeployID:    installDeploy.ID,
-		RunnerID:    install.RunnerID,
-		Op:          app.RunnerJobOperationTypeExec,
-		Type:        build.ComponentConfigConnection.Type.SyncJobType(),
-		LogStreamID: logStreamID,
-		Metadata: map[string]string{
-			"install_id":           install.ID,
-			"deploy_id":            installDeploy.ID,
-			"install_component_id": installDeploy.InstallComponentID,
-			"component_id":         build.ComponentConfigConnection.ComponentID,
-			"component_name":       build.ComponentConfigConnection.Component.Name,
+	return imagesync.RunSyncJob(ctx, imagesync.RunSyncJobRequest{
+		Install:       install,
+		InstallDeploy: installDeploy,
+		Status: func(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
+			s.updateDeployStatusWithoutStatusSync(ctx, deployID, status, message)
 		},
-	})
-	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
-		return fmt.Errorf("unable to create runner job: %w", err)
-	}
-	s.runnerJobID = runnerJob.ID
-
-	// create the plan request
-	runPlan, err := plan.AwaitCreateSyncPlan(ctx, &plan.CreateSyncPlanRequest{
-		InstallID:       install.ID,
-		InstallDeployID: installDeploy.ID,
-		WorkflowID:      fmt.Sprintf("%s-create-oci-sync-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
-	})
-	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
-		return errors.Wrap(err, "unable to create plan")
-	}
-
-	planJSON, err := json.Marshal(runPlan)
-	if err != nil {
-		return errors.Wrap(err, "unable to create json")
-	}
-
-	// Deprecated: for now we dual write both the plan json and the composite plan
-	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:    runnerJob.ID,
-		PlanJSON: string(planJSON),
-		CompositePlan: plantypes.CompositePlan{
-			SyncOCIPlan: runPlan,
+		OnJobCreated: func(jobID string) {
+			s.runnerJobID = jobID
 		},
-	}); err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
-		return fmt.Errorf("unable to get install: %w", err)
-	}
-
-	// queue job
-	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
-	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   install.RunnerID,
-		JobID:      runnerJob.ID,
-		WorkflowID: fmt.Sprintf("%s-execute-job", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		// Unchanged from when this was inline: these IDs are recorded in the
+		// histories of syncs that are still in flight.
+		PlanWorkflowID: fmt.Sprintf("%s-create-oci-sync-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		JobWorkflowID:  fmt.Sprintf("%s-execute-job", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
-	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, job.JobErrorMessage(err, "sync image job failed"))
-		l.Error("error polling sync image job", zap.Error(err))
-		return fmt.Errorf("unable to poll job: %w", err)
-	}
-	l.Info("sync image job was successfully completed")
-
-	// parse outputs
-	job, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get runner job")
-	}
-
-	var ociArtOutputs state.OCIArtifactOutputs
-	if err := mapstructure.Decode(job.ParsedOutputs["image"], &ociArtOutputs); err != nil {
-		l.Error("error parsing oci artifact outputs", zap.Error(err))
-		return errors.Wrap(err, "unable to parse oci artifact outputs")
-	}
-
-	if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
-		OwnerID:   installDeploy.ID,
-		OwnerType: "install_deploys",
-		Outputs:   ociArtOutputs,
-	}); err != nil {
-		return errors.Wrap(err, "unable to create oci artifact")
-	}
-
-	return nil
 }
 
 func (s *Signal) updateDeployStatus(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {

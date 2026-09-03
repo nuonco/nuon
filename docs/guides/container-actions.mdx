@@ -81,6 +81,16 @@ Registry access is configured once on the component, and every action referencin
 Referencing the component also registers it as a dependency of the action, so you do not need to list
 it under `dependencies`.
 
+Because it is a dependency, the run keeps it current. Before the action is planned, Nuon compares the
+component's latest build — for the app config version this install is pinned to — against the image
+the install has already synced, and syncs the new one first if they differ. A new build of the
+component is therefore in the install's own registry before the next run of the action, with no
+deploy in between; the sync shows up on the install timeline as a sync deploy for that component.
+
+The sync needs a build to pick up. A component whose latest build for that app config version never
+finished successfully is left alone, and the action runs against the image the install already has —
+the run log says which component was skipped and why.
+
 <Warning>
   Use the component's `image.ref` output, not `image.repository` and `image.tag`. A bare
   `repository:tag` is rejected with `not digest-pinned`.
