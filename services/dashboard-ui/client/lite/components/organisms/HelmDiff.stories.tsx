@@ -10,7 +10,7 @@ import {
   redisClusterRollbackPlan,
   singleImageTagChangePlan,
   vmagentSingleRemovalPlan,
-} from '../../lib/fixtures/plan-diffs/helm'
+} from '@/lib/fixtures/plan-diffs/helm'
 import { ComponentDocs } from '../__stories__/ComponentDocs'
 import { HelmDiff } from './HelmDiff'
 

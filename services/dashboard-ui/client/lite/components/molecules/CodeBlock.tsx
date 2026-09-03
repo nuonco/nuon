@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   CodeView,
   File,
@@ -7,7 +7,11 @@ import {
   type FileContents,
 } from '@pierre/diffs/react'
 import { cn } from '@/utils/classnames'
-import { MATCH_NAV_TOOLTIP, matchNavKeyDown } from '../../lib/code-search'
+import {
+  MATCH_NAV_TOOLTIP,
+  lineMatches,
+  matchNavKeyDown,
+} from '../../lib/code-search'
 import {
   LITE_SYNTAX_THEME,
   registerSyntax,
@@ -84,16 +88,20 @@ export const CodeBlock = ({
     [filename, lang, value]
   )
 
-  const matches = useMemo(() => {
-    if (!query) return []
-    const needle = query.toLowerCase()
-    return value
-      .split('\n')
-      .map((line, index) =>
-        line.toLowerCase().includes(needle) ? index + 1 : 0
-      )
-      .filter(Boolean)
-  }, [query, value])
+  const matches = useMemo(() => lineMatches(value, query), [query, value])
+
+  useEffect(() => {
+    setMatchIndex(0)
+    const first = matches[0]
+    if (!first) return
+    viewer.current?.scrollTo({
+      type: 'line',
+      id: generatedId,
+      lineNumber: first,
+      align: 'center',
+      behavior: 'smooth-auto',
+    })
+  }, [generatedId, matches])
 
   // Lines carry data-line-index in the renderer's shadow root, and unsafeCSS is
   // injected into it, so matches are painted rather than annotated. That index
@@ -150,10 +158,7 @@ export const CodeBlock = ({
         value={query}
         placeholder="Find in block"
         aria-label="Find in block"
-        onValueChange={(nextQuery) => {
-          setQuery(nextQuery)
-          setMatchIndex(0)
-        }}
+        onValueChange={setQuery}
         onKeyDown={matchNavKeyDown(matchIndex, goTo)}
         className="w-full max-w-xl flex-1"
       />

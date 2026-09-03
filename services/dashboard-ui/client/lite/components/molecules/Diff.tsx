@@ -4,11 +4,14 @@ import {
   type CodeViewHandle,
   type CodeViewItem,
   type FileContents,
-  type SelectionSide,
 } from '@pierre/diffs/react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
-import { MATCH_NAV_TOOLTIP, matchNavKeyDown } from '../../lib/code-search'
+import {
+  MATCH_NAV_TOOLTIP,
+  diffMatches,
+  matchNavKeyDown,
+} from '../../lib/code-search'
 import {
   LITE_SYNTAX_THEME,
   registerSyntax,
@@ -47,11 +50,6 @@ const DIFF_CSS = `
 }
 `
 
-type TDiffMatch = {
-  lineNumber: number
-  side: SelectionSide
-}
-
 export type TDiffView = 'unified' | 'split'
 
 export interface IDiff {
@@ -82,7 +80,7 @@ export const Diff = ({
   const id = useId()
   const viewer = useRef<CodeViewHandle<undefined>>(null)
   const [query, setQuery] = useState('')
-  const [matchIndex, setMatchIndex] = useState(-1)
+  const [matchIndex, setMatchIndex] = useState(0)
   const [wrap, setWrap] = useState(defaultWrap)
   const [scrolled, setScrolled] = useState(false)
 
@@ -107,25 +105,21 @@ export const Diff = ({
     [after, before]
   )
 
-  const matches = useMemo<TDiffMatch[]>(() => {
-    const needle = query.trim().toLowerCase()
-    if (!needle) return []
-
-    const find = (value: string, side: SelectionSide) =>
-      value
-        .split('\n')
-        .flatMap((line, index) =>
-          line.toLowerCase().includes(needle)
-            ? [{ lineNumber: index + 1, side }]
-            : []
-        )
-
-    return [...find(before, 'deletions'), ...find(after, 'additions')]
-  }, [after, before, query])
+  const matches = useMemo(() => diffMatches(fileDiff, query), [fileDiff, query])
 
   useEffect(() => {
-    setMatchIndex(-1)
-  }, [after, before, query])
+    setMatchIndex(0)
+    const first = matches[0]
+    if (!first) return
+    viewer.current?.scrollTo({
+      type: 'line',
+      id,
+      lineNumber: first.lineNumber,
+      side: first.side,
+      align: 'center',
+      behavior: 'smooth-auto',
+    })
+  }, [id, matches])
 
   const currentMatch = matches[matchIndex]
   const selectedLines = currentMatch

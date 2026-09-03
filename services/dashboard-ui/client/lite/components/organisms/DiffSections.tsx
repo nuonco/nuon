@@ -25,9 +25,10 @@ export interface IDiffSections
 interface IDiffControls {
   view: TDiffView
   setView: (view: TDiffView) => void
+  divider?: boolean
 }
 
-const DiffControls = ({ view, setView }: IDiffControls) => {
+const DiffControls = ({ view, setView, divider = false }: IDiffControls) => {
   const group = useDisclosureGroup()
   const split = view === 'split'
 
@@ -38,6 +39,9 @@ const DiffControls = ({ view, setView }: IDiffControls) => {
       aria-label="Diff controls"
       className="ml-auto flex items-center gap-0.5"
     >
+      {divider ? (
+        <span aria-hidden className="mx-1.5 h-4 w-px bg-divider" />
+      ) : null}
       <ExpandAllButton />
       <Button
         size="sm"
@@ -80,9 +84,9 @@ export const DiffSections = ({
       className={cn('gap-1', className)}
       {...props}
     >
-      <div className="flex flex-wrap items-center gap-4 pb-2">
+      <div className="flex flex-wrap items-center gap-2 pb-2">
         {toolbar}
-        <DiffControls view={view} setView={setView} />
+        <DiffControls view={view} setView={setView} divider={!!toolbar} />
       </div>
       {sections}
     </DisclosureGroup>
