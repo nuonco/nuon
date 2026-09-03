@@ -47,6 +47,10 @@
   --surface-03: light-dark(var(--neutral-100), rgba(254, 254, 254, 0.08));
   --surface-accent: light-dark(#e3f8ff, rgba(76, 201, 240, 0.16));
   --surface-inverted: light-dark(var(--neutral-inverted), var(--neutral-050));
+  --shell-grid-dot: light-dark(
+    rgba(29, 29, 29, 0.12),
+    rgba(76, 201, 240, 0.08)
+  );
 
   --text-primary: light-dark(var(--neutral-900), var(--neutral-050));
   --text-secondary: light-dark(var(--neutral-800), var(--neutral-100));
@@ -83,6 +87,9 @@
   --card-bg-hover: light-dark(rgba(29, 29, 29, 0.06), rgba(254, 254, 254, 0.08));
   --card-border: transparent;
   --card-shadow: 0 1px 2px var(--shadow-default);
+  --card-shadow-floating:
+    0 12px 32px light-dark(rgba(29, 29, 29, 0.1), rgba(0, 0, 0, 0.45)),
+    0 2px 8px light-dark(rgba(29, 29, 29, 0.06), rgba(0, 0, 0, 0.28));
 
   --field-bg: light-dark(var(--neutral-000), rgba(254, 254, 254, 0.05));
   --field-bg-hover: light-dark(
@@ -229,6 +236,7 @@
   --surface-03: rgba(255, 255, 255, 0.16);
   --surface-accent: rgba(255, 255, 0, 0.16);
   --surface-inverted: var(--neutral-000);
+  --shell-grid-dot: transparent;
 
   --text-primary: var(--neutral-000);
   --text-secondary: var(--neutral-000);
@@ -271,6 +279,7 @@
   --card-bg-hover: rgba(255, 255, 255, 0.16);
   --card-border: var(--neutral-000);
   --card-shadow: none;
+  --card-shadow-floating: none;
 
   --field-bg: var(--hc-blue-deep);
   --field-bg-hover: rgba(255, 255, 255, 0.16);
@@ -664,5 +673,32 @@ diffs-container {
     background-color: var(--surface-default);
     color: var(--text-primary);
     font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  .shell-background {
+    background-image: radial-gradient(
+      circle,
+      var(--shell-grid-dot) 0,
+      var(--shell-grid-dot) 0.75px,
+      transparent 0.9px
+    );
+    background-position: center;
+    background-size: 24px 24px;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
   }
 }

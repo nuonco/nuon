@@ -3,6 +3,7 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  type AnchorHTMLAttributes,
   type HTMLAttributes,
   type KeyboardEvent,
   type ReactNode,
@@ -26,13 +27,17 @@ export const Menu = ({ className, children, ...props }: IMenu) => {
   const typeahead = useRef({ query: '', at: 0 })
 
   const items = useCallback(
-    () => Array.from(ref.current?.querySelectorAll<HTMLElement>(ITEM_SELECTOR) ?? []),
+    () =>
+      Array.from(
+        ref.current?.querySelectorAll<HTMLElement>(ITEM_SELECTOR) ?? []
+      ),
     []
   )
 
   const syncTabStops = useCallback(() => {
     const list = items()
-    const active = list.find((item) => item === document.activeElement) ?? list[0]
+    const active =
+      list.find((item) => item === document.activeElement) ?? list[0]
     for (const item of list) item.tabIndex = item === active ? 0 : -1
   }, [items])
 
@@ -76,7 +81,12 @@ export const Menu = ({ className, children, ...props }: IMenu) => {
       event.stopPropagation()
       return items().at(-1)?.focus()
     }
-    if (event.key.length !== 1 || event.metaKey || event.ctrlKey || event.altKey) {
+    if (
+      event.key.length !== 1 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.altKey
+    ) {
       return
     }
 
@@ -122,6 +132,7 @@ export interface IMenuItem {
   selected?: boolean
   disabled?: boolean
   tone?: TMenuItemTone
+  target?: AnchorHTMLAttributes<HTMLAnchorElement>['target']
   closeOnSelect?: boolean
   onSelect?: () => void
   className?: string
@@ -149,6 +160,7 @@ export const MenuItem = ({
   selected,
   disabled = false,
   tone = 'default',
+  target,
   closeOnSelect = true,
   onSelect,
   className,
@@ -191,22 +203,28 @@ export const MenuItem = ({
     const isExternal = external ?? isExternalHref(href)
 
     if (isExternal) {
+      const linkTarget = target ?? '_blank'
+
       return (
         <a
           {...shared}
           href={href}
-          target="_blank"
-          rel="noopener noreferrer"
+          target={linkTarget}
+          rel={linkTarget === '_blank' ? 'noopener noreferrer' : undefined}
           onClick={select}
         >
           {body}
-          <Icon
-            variant="ArrowSquareOutIcon"
-            size={14}
-            className="shrink-0"
-            aria-hidden
-          />
-          <span className="sr-only">(opens in a new tab)</span>
+          {linkTarget === '_blank' ? (
+            <>
+              <Icon
+                variant="ArrowSquareOutIcon"
+                size={14}
+                className="shrink-0"
+                aria-hidden
+              />
+              <span className="sr-only">(opens in a new tab)</span>
+            </>
+          ) : null}
         </a>
       )
     }
@@ -257,9 +275,16 @@ export const MenuSubmenu = ({
           className
         )}
       >
-        {icon ? <span className="flex shrink-0 items-center">{icon}</span> : null}
+        {icon ? (
+          <span className="flex shrink-0 items-center">{icon}</span>
+        ) : null}
         <span className="min-w-0 flex-1 truncate">{label}</span>
-        <Icon variant="CaretRightIcon" size={16} className="shrink-0" aria-hidden />
+        <Icon
+          variant="CaretRightIcon"
+          size={16}
+          className="shrink-0"
+          aria-hidden
+        />
       </button>
     }
   >

@@ -3,7 +3,7 @@ import {
   deploymentAfter,
   deploymentBefore,
   terraformResourceDiff,
-} from '../../lib/fixtures/diffs'
+} from '../__fixtures__/diffs'
 import { DiffSection } from './DiffSection'
 
 export default {

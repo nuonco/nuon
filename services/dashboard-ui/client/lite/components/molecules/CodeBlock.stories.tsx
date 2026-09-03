@@ -1,6 +1,5 @@
 import { Text } from '../atoms/Text'
 import { ComponentDocs } from '../__stories__/ComponentDocs'
-import { installStateJSON } from '../../lib/fixtures/install-state'
 import { CodeBlock } from './CodeBlock'
 
 export default {
@@ -325,45 +324,5 @@ export const LongLines = () => (
 export const SingleLine = () => (
   <div className="max-w-2xl p-8">
     <CodeBlock language="bash" value="nuon apps sync" copy />
-  </div>
-)
-
-export const InstallState = () => {
-  const value = installStateJSON()
-
-  return (
-    <div className="flex max-w-4xl flex-col gap-3 p-8">
-      <Text variant="caption" color="tertiary">
-        Shaped from a real production install state — {value.split('\n').length}{' '}
-        lines, 30 components, 130 action workflows, and an embedded stack
-        template that lands as a single line of about{' '}
-        {Math.round(
-          Math.max(...value.split('\n').map((line) => line.length)) / 1000
-        )}
-        k characters.
-      </Text>
-      <CodeBlock
-        language="json"
-        filename="install-state.json"
-        value={value}
-        copy
-      />
-    </div>
-  )
-}
-
-export const InstallStateWrapped = () => (
-  <div className="flex max-w-4xl flex-col gap-3 p-8">
-    <Text variant="caption" color="tertiary">
-      The same document starting with wrapping on, which turns that one enormous
-      line into a very tall row. This is the case that breaks height estimation
-      if anything is going to. The toolbar toggle switches it back.
-    </Text>
-    <CodeBlock
-      defaultWrap
-      language="json"
-      filename="install-state.json"
-      value={installStateJSON()}
-    />
   </div>
 )

@@ -3,11 +3,13 @@ import { cn } from '@/utils/classnames'
 
 export type TCardPadding = 'none' | 'sm' | 'md' | 'lg'
 export type TCardBlur = 'none' | 'sm' | 'md' | 'lg'
+export type TCardShadow = 'none' | 'default' | 'floating'
 
 export interface ICard extends HTMLAttributes<HTMLDivElement> {
   as?: ElementType
   padding?: TCardPadding
   blur?: TCardBlur
+  shadow?: TCardShadow
   interactive?: boolean
 }
 
@@ -25,10 +27,17 @@ const BLUR_CLASSES: Record<TCardBlur, string> = {
   lg: 'backdrop-blur-xl',
 }
 
+const SHADOW_CLASSES: Record<TCardShadow, string> = {
+  none: 'shadow-none',
+  default: 'shadow-[var(--card-shadow)]',
+  floating: 'shadow-[var(--card-shadow-floating)]',
+}
+
 export const Card = ({
   as: Component = 'div',
   padding = 'md',
   blur = 'md',
+  shadow = 'default',
   interactive = false,
   className,
   children,
@@ -36,9 +45,10 @@ export const Card = ({
 }: ICard) => (
   <Component
     className={cn(
-      'rounded-xl border border-card-border bg-card-bg shadow-[var(--card-shadow)]',
+      'rounded-xl border border-card-border bg-card-bg',
       PADDING_CLASSES[padding],
       BLUR_CLASSES[blur],
+      SHADOW_CLASSES[shadow],
       interactive &&
         'cursor-pointer transition-colors hover:bg-card-bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
       className

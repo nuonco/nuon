@@ -51,6 +51,13 @@ export const Overview = () => (
         description:
           'Adds a hover tint, pointer cursor and focus ring for cards that navigate.',
       },
+      {
+        name: 'shadow',
+        type: "'none' | 'default' | 'floating'",
+        default: "'default'",
+        description:
+          'Surface elevation. Floating is reserved for persistent glass chrome.',
+      },
     ]}
   />
 )
@@ -150,6 +157,14 @@ export const Interactive = () => (
       <Metadata />
     </Card>
     <Card>
+      <Metadata />
+    </Card>
+  </div>
+)
+
+export const FloatingShadow = () => (
+  <div className="max-w-md bg-surface-02 p-12">
+    <Card shadow="floating">
       <Metadata />
     </Card>
   </div>

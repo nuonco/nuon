@@ -4,7 +4,7 @@ import {
   deploymentBefore,
   longManifestDiff,
   terraformResourceDiff,
-} from '../../lib/fixtures/diffs'
+} from '../__fixtures__/diffs'
 import { Diff } from './Diff'
 
 export default {

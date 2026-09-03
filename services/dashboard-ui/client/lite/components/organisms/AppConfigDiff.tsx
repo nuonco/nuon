@@ -119,8 +119,9 @@ export const AppConfigDiff = ({
             <Text
               key={`group-${sectionGroup}`}
               as="h3"
-              variant="label"
-              className="px-1 pb-1 pt-3 first:pt-0"
+              variant="body"
+              weight="semibold"
+              className="px-1 pt-4 pb-1.5 first:pt-0"
             >
               {sectionGroup}
             </Text>,

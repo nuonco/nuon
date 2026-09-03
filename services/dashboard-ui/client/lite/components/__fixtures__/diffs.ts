@@ -1,4 +1,4 @@
-import { terraformDiff } from '../diffs'
+import { terraformDiff } from '../../lib/diffs'
 
 export const deploymentBefore = `apiVersion: apps/v1
 kind: Deployment
