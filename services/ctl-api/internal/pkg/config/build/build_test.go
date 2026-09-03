@@ -556,3 +556,70 @@ func TestInputsFromConfigDedupesByName(t *testing.T) {
 	assert.Equal(t, "second", byName["dupe"].Description, "last input declaration wins")
 	assert.Equal(t, "only", byName["unique"].Description)
 }
+
+func TestSecretsConfigAcceptsTemplatedAndStaticNames(t *testing.T) {
+	tests := []struct {
+		name    string
+		secret  string
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "templated name",
+			secret: "{{.nuon.install.inputs.prefix}}_retool_encryption_key",
+			want:   "{{.nuon.install.inputs.prefix}}_retool_encryption_key",
+		},
+		{
+			name:   "hyphenated static name",
+			secret: "my-secret",
+			want:   "my-secret",
+		},
+		{
+			name:   "underscore static name",
+			secret: "retool_encryption_key",
+			want:   "retool_encryption_key",
+		},
+		{
+			name:    "uppercase rejected",
+			secret:  "MY-SECRET",
+			wantErr: true,
+		},
+		{
+			name:    "spaces rejected",
+			secret:  "my secret",
+			wantErr: true,
+		},
+		{
+			name:    "empty rejected",
+			secret:  "",
+			wantErr: true,
+		},
+		{
+			name:    "templated name with uppercase rejected",
+			secret:  "{{.nuon.install.inputs.Prefix}}_key",
+			wantErr: true,
+		},
+		{
+			name:    "templated name with hyphen outside braces rejected",
+			secret:  "{{.nuon.install.inputs.prefix}}-key",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			obj, err := SecretsConfig([]SecretInput{{
+				Name:        tt.secret,
+				DisplayName: "Display",
+				Description: "Description",
+			}}, "app1", "cfg1")
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Len(t, obj.Secrets, 1)
+			assert.Equal(t, tt.want, obj.Secrets[0].Name)
+		})
+	}
+}
