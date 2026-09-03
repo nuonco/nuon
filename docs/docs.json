@@ -55,16 +55,16 @@
                 "expanded": false,
                 "pages": [
                   "guides/byoc/requirements",
-                  "guides/byoc/aws",
-                  "guides/byoc/gcp",
-                  "guides/byoc/azure"
+                  "guides/byoc/installation",
+                  "guides/byoc/optional",
+                  "guides/byoc/updates"
                 ]
               },
               {
                 "group": "Self-Hosted",
                 "root": "guides/self-hosted",
                 "expanded": false,
-                "pages": ["guides/self-hosted/supported-platforms"]
+                "pages": ["guides/self-hosted/dependencies"]
               }
             ]
           }
@@ -233,10 +233,7 @@
       {
         "tab": "Agents",
         "icon": "robot",
-        "pages": [
-          "guides/agents/overview",
-          "guides/agents/mcp-walkthrough"
-        ]
+        "pages": ["guides/agents/overview", "guides/agents/mcp-walkthrough"]
       },
       {
         "tab": "Reference",
@@ -415,6 +412,10 @@
   },
   "redirects": [
     {
+      "source": "/guides/self-hosted/supported-platforms",
+      "destination": "/guides/self-hosted/dependencies"
+    },
+    {
       "source": "/",
       "destination": "/get-started/introduction"
     },
@@ -461,6 +462,22 @@
     {
       "source": "/guides/notifications",
       "destination": "/guides/slack"
+    },
+    {
+      "source": "/guides/byoc/aws",
+      "destination": "/guides/byoc"
+    },
+    {
+      "source": "/guides/byoc/gcp",
+      "destination": "/guides/byoc"
+    },
+    {
+      "source": "/guides/byoc/azure",
+      "destination": "/guides/byoc"
+    },
+    {
+      "source": "/guides/byoc/upgrading",
+      "destination": "/guides/byoc/updates"
     }
   ]
 }
