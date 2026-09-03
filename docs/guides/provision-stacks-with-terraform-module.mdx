@@ -63,7 +63,7 @@ You will need to share these with your customer.
   </Step>
   <Step title="Create the install stack">
     Create an install and wait for the **Await install stack** step.
-    The **TF Module** tab will display Terraform code tailored to this install, interpolating the install ID, region, and the customer-facing inputs and secrets.
+    The **TF Module** tab will display Terraform code templated for this install, including the install ID, region, and the customer-facing inputs and secrets.
 
     A [Service Account](/concepts/service-accounts#stack-service-accounts) has been created and assigned the "Stack" role.
     This is the identity the Stack SDK will use to perform stack operations for this install.

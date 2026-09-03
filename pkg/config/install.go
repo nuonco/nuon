@@ -213,7 +213,7 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("approve-all").
 		Example("prompt").
 		Field("labels").Short("key/value labels for the install").
-		Long("Tag installs with arbitrary metadata like environment, region, or version. Values can use the .nuon interpolation syntax to render from install state, and re-render as state changes.").
+		Long("Tag installs with arbitrary metadata like environment, region, or version. Values can use the .nuon templating syntax to render from install state, and re-render as state changes.").
 		Example(map[string]string{"env": "production", "region": "{{ .nuon.cloud_account.aws.region }}"}).
 		Field("aws_account").Short("AWS account configuration").
 		Long("AWS-specific settings for this install, including region and other account details").
