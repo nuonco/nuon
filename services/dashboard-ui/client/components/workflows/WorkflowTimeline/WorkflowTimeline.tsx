@@ -125,7 +125,7 @@ export const WorkflowTimeline = ({
                       const branchRun = getBranchRunFromWorkflow(workflow)
                       const mode =
                         previewModeLabel(branchRun?.preview) ??
-                        (branchRun?.plan_only ? 'plan-only' : undefined)
+                        (branchRun?.plan_only ? 'Plan only' : undefined)
                       const source = previewSourceLabel(branchRun)
                       const install = branchRun?.preview?.install_name
                       return (
@@ -169,6 +169,12 @@ export const WorkflowTimeline = ({
                       ) : null}
                     </>
                   )
+                ) : null}
+                {isBranchRun &&
+                getBranchRunFromWorkflow(workflow)?.event_type === 'manual' ? (
+                  <Badge variant="code" size="sm">
+                    manual
+                  </Badge>
                 ) : null}
                 {workflow?.type === 'drift_run_reprovision_sandbox' ||
                 workflow.type === 'drift_run' ? (

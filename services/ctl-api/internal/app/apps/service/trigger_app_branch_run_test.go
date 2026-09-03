@@ -67,6 +67,13 @@ type TriggerAppBranchRunTestSuite struct {
 	testBranch *app.AppBranch
 }
 
+func TestPreviewEventType(t *testing.T) {
+	require.Equal(t, "pull_request", previewEventType(app.AppBranchRunPreviewSourcePR))
+	require.Equal(t, "manual", previewEventType(app.AppBranchRunPreviewSourceBranch))
+	require.Equal(t, "manual", previewEventType(app.AppBranchRunPreviewSourceCommit))
+	require.Equal(t, "manual", previewEventType(app.AppBranchRunPreviewSourceLocal))
+}
+
 func TestTriggerAppBranchRunSuite(t *testing.T) {
 	if os.Getenv("INTEGRATION") != "true" {
 		t.Skip("INTEGRATION is not set, skipping")
@@ -205,4 +212,55 @@ func (s *TriggerAppBranchRunTestSuite) TestTriggerAppBranchRunRejectsInvalidSync
 			assert.EqualValues(s.T(), 0, count, "expected no run to be created for an invalid request")
 		})
 	}
+}
+
+func (s *TriggerAppBranchRunTestSuite) TestGetAppBranchRunAcceptsRunAndWorkflowIDs() {
+	config := &app.AppBranchConfig{AppBranchID: s.testBranch.ID}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(config).Error)
+
+	workflow := &app.Workflow{
+		OwnerID:        s.testBranch.ID,
+		OwnerType:      appBranchWorkflowOwnerType,
+		Type:           app.WorkflowTypeAppBranchesRun,
+		Status:         app.NewCompositeStatus(s.ctx, app.StatusPending),
+		ApprovalOption: app.InstallApprovalOptionPrompt,
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(workflow).Error)
+
+	run := &app.AppBranchRun{
+		AppBranchID:       s.testBranch.ID,
+		AppBranchConfigID: config.ID,
+		WorkflowID:        &workflow.ID,
+		Status:            "pending",
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(run).Error)
+
+	for _, id := range []string{run.ID, workflow.ID} {
+		rr := s.makeRequest(
+			http.MethodGet,
+			fmt.Sprintf("/v1/apps/%s/branches/%s/runs/%s", s.testApp.ID, s.testBranch.ID, id),
+			nil,
+		)
+		require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+		var response app.Workflow
+		require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
+		require.Equal(s.T(), workflow.ID, response.ID)
+		require.Len(s.T(), response.AppBranchRuns, 1)
+		require.Equal(s.T(), run.ID, response.AppBranchRuns[0].ID)
+	}
+}
+
+func (s *TriggerAppBranchRunTestSuite) TestGetAppBranchRunRejectsUnknownID() {
+	rr := s.makeRequest(
+		http.MethodGet,
+		fmt.Sprintf(
+			"/v1/apps/%s/branches/%s/runs/%s",
+			s.testApp.ID,
+			s.testBranch.ID,
+			domains.NewAppBranchRunID(),
+		),
+		nil,
+	)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code, rr.Body.String())
 }

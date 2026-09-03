@@ -152,13 +152,14 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 	if previewInput.Source == app.AppBranchRunPreviewSourceLocal {
 		runType = app.AppBranchRunTypeManual
 	}
+	eventType := previewEventType(previewInput.Source)
 
 	workflowMeta := map[string]string{
 		"app_id":        a.ID,
 		"config_id":     config.ID,
 		"config_number": strconv.Itoa(config.ConfigNumber),
 		"force":         strconv.FormatBool(in.Force),
-		"event_type":    "manual",
+		"event_type":    eventType,
 	}
 	if in.AppConfigID != "" {
 		workflowMeta["app_config_id"] = in.AppConfigID
@@ -188,7 +189,7 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 			Force:             in.Force,
 			PlanOnly:          false,
 			RunType:           runType,
-			EventType:         "manual",
+			EventType:         eventType,
 			PRNumber:          prNumber,
 			HeadSHA:           headSHA,
 			Preview:           previewInput,
