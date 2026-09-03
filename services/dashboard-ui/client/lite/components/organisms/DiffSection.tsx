@@ -91,11 +91,11 @@ export const DiffSection = ({
         HOVER_CLASSES[operation],
         headerClassName
       )}
-      contentClassName={cn('p-2', contentClassName)}
+      contentClassName={cn('bg-surface-01 p-2', contentClassName)}
       {...props}
     >
       {error ? (
-        <Text as="div" variant="caption" color="tertiary" className="p-3">
+        <Text as="div" variant="caption" color="tertiary" className="px-1 py-2">
           {error}
         </Text>
       ) : null}

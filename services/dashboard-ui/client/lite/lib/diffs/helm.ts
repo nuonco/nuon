@@ -2,6 +2,7 @@ import { stringify } from 'yaml'
 import type { THelmPlan } from '@/types'
 import { humanize } from '@/utils/string-utils'
 import {
+  MISSING_DIFF_ERROR,
   emptyDiffSummary,
   normalizeDiffOperation,
   summarizeDiffSections,
@@ -80,7 +81,7 @@ const diffContents = (diff?: THelmContentDiff): IHelmDiffContents => {
     return {
       before: '',
       after: '',
-      error: 'Diff not available from planner',
+      error: MISSING_DIFF_ERROR,
     }
   }
 
@@ -154,7 +155,9 @@ export const helmPlanDiff = (plan?: THelmPlan): IPlanDiffGroup => {
         language: 'yaml',
         filename: `${release}.yaml`,
         searchable: [workspace, release, resource, resourceType, rawOperation],
-        error: values.error,
+        error:
+          values.error ??
+          (values.before || values.after ? undefined : MISSING_DIFF_ERROR),
       },
     ]
   })

@@ -44,6 +44,8 @@ export interface IPlanDiffGroup {
   diagnostics?: IPlanDiffDiagnostic[]
 }
 
+export const MISSING_DIFF_ERROR = 'Diff not available from planner'
+
 const OPERATION_ALIASES: Record<string, TDiffOperation> = {
   add: 'create',
   added: 'create',
