@@ -514,7 +514,7 @@ resources exits 2 with a clear error.
 Preferred LLM surface is **`nuon agents`**:
 
 - `nuon agents context` — markdown orientation (auth, selection, MCP URL). Keep the tool table in
-  `agentsContextMarkdown()` in sync with `docs/guides/agents/overview.mdx`.
+  `agentsContextMarkdown()` in sync with `docs/guides/agents/tools.mdx`.
 - `nuon agents mcp` — stdio proxy to ctl-api MCP (`internal/services/mcpserver/`). Auth from `~/.nuon`
   (`Authorization` + `X-Nuon-Org-ID`). Read-only unless `--allow-writes`.
 - `nuon mcp setup --platform cursor|claude-code` — writes HTTP client config in the current directory
