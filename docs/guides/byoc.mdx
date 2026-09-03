@@ -8,8 +8,20 @@ keywords: ["self-hosted Nuon", "Nuon BYOC", "install Nuon", "AWS deployment", "G
 Nuon BYOC gives you a single-tenant Nuon control plane, running in your own cloud, managed as a Nuon install.
 You will get all the benefits of Nuon as a managed SaaS service, but in your own cloud.
 
-We use Nuon Cloud to deploy and manage Nuon BYOC as an install — the same process you use to manage apps for your own customers.
-We will operate and update Nuon BYOC, while you retain full ownership of your data, networking, and compliance posture.
+<div style={{ display: 'flex', justifyContent: 'center', margin: '24px 0' }}>
+  <video
+    src="/images/guides/byoc/nuon-byoc-reel.mp4"
+    autoPlay
+    loop
+    muted
+    playsInline
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '12px'
+    }}
+  />
+</div>
 
 Nuon BYOC requires a paid license. [Contact sales](https://nuon.co/contact-sales) to get started.
 
@@ -18,55 +30,14 @@ Nuon BYOC requires a paid license. [Contact sales](https://nuon.co/contact-sales
 We support running Nuon BYOC on AWS and GCP.
 The shape of the architecture is the same across platforms, but using the services native to each cloud.
 
+<Frame caption="Nuon Cloud manages your BYOC control plane as an install. Your control plane then manages your customers' installs the same way.">
+  <img src="/images/guides/byoc/byoc-overview.png" alt="Three stacked layers: Nuon Cloud at the top; your cloud account in the middle, containing a BYOC Runner and your Nuon instance; and your customers' clouds at the bottom, containing an Install Runner and Installs. The BYOC Runner polls Nuon Cloud for jobs and installs and updates your Nuon instance. The Install Runner polls your Nuon instance for jobs, pulls artifacts, and deploys installs." />
+</Frame>
+
 <Tabs>
 
 <Tab title="AWS">
 On AWS, Nuon BYOC runs on an EKS cluster in a dedicated VPC. It uses RDS for the Nuon control-plane and Temporal databases.
-
-```mermaid
-flowchart TD
-    subgraph NuonCloud["Nuon Cloud"]
-        NC_CTL["ctl-api"]
-    end
-
-    subgraph CustomerAWS["Your AWS Account"]
-        NR["Nuon Runner"]
-
-        subgraph CP["Control Plane — EKS"]
-            DASH["dashboard-ui"]
-            CTL["ctl-api"]
-            BR["Build Runner"]
-        end
-
-        subgraph Deps["Dependencies"]
-            TMP["Temporal"]
-            CH["ClickHouse"]
-            RDS[("RDS")]
-            ECR[("ECR")]
-            S3[("S3")]
-        end
-    end
-
-    subgraph EndCustomers["Customer Clouds — AWS · Azure · GCP"]
-        R["Nuon Runner"]
-        I["Installs"]
-    end
-
-    NR -->|"polls for jobs"| NC_CTL
-    NR -->|"deploys & manages\ncontrol plane"| CP
-
-    DASH -->|"API calls"| CTL
-    CTL --> TMP
-    CTL --> CH
-    CTL --> RDS
-    CTL --> S3
-    CTL -->|"trigger builds"| BR
-    BR -->|"push OCI artifacts"| ECR
-
-    R -->|"polls for jobs"| CTL
-    R -->|"pull artifacts"| ECR
-    R -->|"deploys"| I
-```
 
 Ensure you have admin permissions, and that the account has not reached its quota limits for VPCs, EIPs, and Internet Gateways.
 
@@ -76,51 +47,6 @@ Nuon's resource requirements are not compatible with AWS Free Tier. You will nee
 <Tab title="GCP">
 
 On GCP, Nuon BYOC runs in a GKE cluster in a dedicated VPC Network. Cloud SQL is used for the Nuon control-plane and Temporal databases.
-
-```mermaid
-flowchart TD
-    subgraph NuonCloud["Nuon Cloud"]
-        NC_CTL["ctl-api"]
-    end
-
-    subgraph CustomerGCP["Your GCP Project"]
-        NR["Nuon Runner"]
-
-        subgraph CP["Control Plane — GKE"]
-            DASH["dashboard-ui"]
-            CTL["ctl-api"]
-            BR["Build Runner"]
-        end
-
-        subgraph Deps["Dependencies"]
-            TMP["Temporal"]
-            CH["ClickHouse"]
-            DB[("Cloud SQL")]
-            GAR[("Artifact Registry")]
-            GCS[("Cloud Storage")]
-        end
-    end
-
-    subgraph EndCustomers["Customer Clouds: AWS · Azure · GCP"]
-        R["Nuon Runner"]
-        I["Installs"]
-    end
-
-    NR -->|"polls for jobs"| NC_CTL
-    NR -->|"deploys & manages\ncontrol plane"| CP
-
-    DASH -->|"API calls"| CTL
-    CTL --> TMP
-    CTL --> CH
-    CTL --> DB
-    CTL --> GCS
-    CTL -->|"trigger builds"| BR
-    BR -->|"push OCI artifacts"| GAR
-
-    R -->|"polls for jobs"| CTL
-    R -->|"pull artifacts"| GAR
-    R -->|"deploys"| I
-```
 
 The following APIs must be enabled in your GCP Project.
 
