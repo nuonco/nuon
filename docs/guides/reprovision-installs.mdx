@@ -5,7 +5,7 @@ icon: "arrow-rotate-right"
 keywords: ["reprovision", "reprovision install", "reprovision stack", "reprovision sandbox", "recreate runner", "stack-only", "skip components", "AWS install", "ASG recreate", "install workflow"]
 ---
 
-Reprovisioning re-runs provisioning for an install against its current app config. Used when customer stack facing app config changes needs to be
+Reprovisioning triggers a full install workflow against current app config. Used when customer stack app config changes needs to be
 rolled out, or, when we need to create/update the customer [stack](/concepts/stacks) resources like roles, secrets, policies, inputs etc. 
 
 Every reprovision runs as a [workflow](/concepts/workflows), so it is planned, approvable, and auditable.
@@ -49,11 +49,6 @@ leaves the sandbox and components alone. If the change you are rolling out is st
 
     The install's **Workflows** view shows the same run.
   </Step>
-  <Step title="Approve gated steps">
-    ```sh
-    nuon installs workflows steps approve -i $INSTALL_ID --workflow-id $WORKFLOW_ID --step-id $STEP_ID
-    ```
-  </Step>
 </Steps>
 
 ## Stack only
@@ -82,7 +77,7 @@ nuon installs reprovision -i $INSTALL_ID --stack-only --skip-components
 
 Nuon regenerates the stack version from the current app config before applying it, so a stack reprovision picks up
 changes such as a new runner instance type. The ASG and EC2 instance are replaced. Resources the runner previously
-deployed are untouched by the stack run.
+deployed are untouched by the stack run unless changed in app config like new permission additions, in that case we recreate that resource.
 
 ### Update a CloudFormation stack
 
