@@ -25,6 +25,8 @@ Parameters:
   VPC:
     Description: The VPC id.
     Type: String
+  CIDRBlock:
+    Type: String
   RunnerSubnet:
     Type: String
   PublicSubnets:
@@ -235,6 +237,7 @@ func TestGetAWSCustomStacksOnlyTemplate_ContractParamValues(t *testing.T) {
 	require.NotNil(t, stack)
 
 	assert.Equal(t, cloudformation.Ref("VPC"), stack.Parameters["VPC"])
+	assert.Equal(t, cloudformation.Ref("CIDRBlock"), stack.Parameters["CIDRBlock"])
 	assert.Equal(t, cloudformation.Ref("RunnerSubnet"), stack.Parameters["RunnerSubnet"])
 	assert.Equal(t, cloudformation.Ref("PublicSubnets"), stack.Parameters["PublicSubnets"])
 	assert.Equal(t, cloudformation.Ref("PrivateSubnets"), stack.Parameters["PrivateSubnets"])
@@ -242,6 +245,7 @@ func TestGetAWSCustomStacksOnlyTemplate_ContractParamValues(t *testing.T) {
 	// contract params should not additionally be exposed as top-level custom-stack
 	// parameters (they're already declared as the frozen contract params)
 	assert.NotContains(t, result.params, "VPC")
+	assert.NotContains(t, result.params, "CIDRBlock")
 	assert.NotContains(t, result.params, "RunnerSubnet")
 	assert.NotContains(t, result.params, "PublicSubnets")
 	assert.NotContains(t, result.params, "PrivateSubnets")
@@ -423,6 +427,7 @@ func TestGetAWSCustomStacksOnlyTemplate_UnbindableParameterIsHardError(t *testin
 	assert.Contains(t, err.Error(), "broken-stack")
 	assert.Contains(t, err.Error(), "Unresolvable")
 	assert.Contains(t, err.Error(), "VPC")
+	assert.Contains(t, err.Error(), "CIDRBlock")
 	assert.Contains(t, err.Error(), "RunnerSubnet")
 	assert.Contains(t, err.Error(), "PublicSubnets")
 	assert.Contains(t, err.Error(), "PrivateSubnets")
