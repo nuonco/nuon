@@ -2,7 +2,12 @@ import { ToggleButton } from '@/components/common/ToggleButton'
 import { Text } from '@/components/common/Text'
 import { Select } from '@/components/common/form/Select'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
-import type { TAppBranchPreviewConfig, TAppBranchRunPreviewMode, TInstall } from '@/types'
+import type {
+  TAppBranchPreviewConfig,
+  TAppBranchRunPreviewMode,
+  TInstall,
+} from '@/types'
+import { previewModeDisplayLabel } from './preview-mode'
 
 export type PreviewInstallTargetMode = 'install' | 'labels'
 
@@ -35,7 +40,10 @@ export const previewDefaultsFromConfig = (
   const setStatuses = config.set_statuses ?? true
   const comment = config.comment ?? true
 
-  if (config.label_selector?.match_labels && Object.keys(config.label_selector.match_labels).length > 0) {
+  if (
+    config.label_selector?.match_labels &&
+    Object.keys(config.label_selector.match_labels).length > 0
+  ) {
     return {
       mode,
       installTargetMode: 'labels',
@@ -72,7 +80,10 @@ export const previewDefaultsToConfig = (
     comment: defaults.comment,
   }
 
-  if (defaults.installTargetMode === 'labels' && Object.keys(defaults.labelSelector).length > 0) {
+  if (
+    defaults.installTargetMode === 'labels' &&
+    Object.keys(defaults.labelSelector).length > 0
+  ) {
     config.label_selector = { match_labels: defaults.labelSelector }
     return config
   }
@@ -129,9 +140,15 @@ export const PreviewDefaultsEditor = ({
           value={value.mode}
           onChange={(mode) => onChange({ ...value, mode })}
           options={[
-            { value: 'plan-only', label: 'Plan only' },
-            { value: 'apply', label: 'Apply' },
-            { value: 'build-only', label: 'Build only' },
+            {
+              value: 'build-only',
+              label: previewModeDisplayLabel('build-only'),
+            },
+            {
+              value: 'plan-only',
+              label: previewModeDisplayLabel('plan-only'),
+            },
+            { value: 'apply', label: previewModeDisplayLabel('apply') },
           ]}
         />
       </div>
@@ -144,7 +161,9 @@ export const PreviewDefaultsEditor = ({
           <Select
             options={installOptions}
             value={value.installId}
-            onChange={(installId) => onChange({ ...value, installId, installTargetMode: 'install' })}
+            onChange={(installId) =>
+              onChange({ ...value, installId, installTargetMode: 'install' })
+            }
             placeholder="Select an install"
             disabled={disabled || installOptions.length === 0}
             menuPlacement="bottom"
@@ -157,7 +176,9 @@ export const PreviewDefaultsEditor = ({
           <CheckboxInput
             id="preview-set-statuses"
             checked={value.setStatuses}
-            onChange={(e) => onChange({ ...value, setStatuses: e.target.checked })}
+            onChange={(e) =>
+              onChange({ ...value, setStatuses: e.target.checked })
+            }
             disabled={disabled}
             labelProps={{ labelText: 'Set commit statuses' }}
           />
