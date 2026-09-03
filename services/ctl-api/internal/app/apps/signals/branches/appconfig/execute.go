@@ -185,6 +185,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		closeLogStream()
 		return fmt.Errorf("unable to serialize intermediate config: %w", err)
 	}
+	var sourceConfigJSON []byte
+	if intermediateConfig.SourceArchive != nil {
+		sourceConfigJSON, err = json.Marshal(intermediateConfig.SourceArchive)
+		if err != nil {
+			closeLogStream()
+			return fmt.Errorf("unable to serialize authored config: %w", err)
+		}
+	}
 
 	isPreview := run.IsPreview()
 
@@ -280,6 +288,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			AppBranchID:            branch.ID,
 			CreatedByID:            branch.CreatedByID,
 			IntermediateConfigJSON: string(configJSON),
+			SourceConfigJSON:       string(sourceConfigJSON),
 			Labels:                 configLabels,
 		},
 	})
