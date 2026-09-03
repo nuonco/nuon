@@ -26,29 +26,34 @@ The shape of the architecture is the same across platforms, but using the servic
 <Tabs>
 
 <Tab title="AWS">
-On AWS, Nuon BYOC runs on an EKS cluster in a dedicated VPC. It uses RDS for the Nuon control-plane and Temporal databases.
 
-Ensure you have admin permissions, and that the account has not reached its quota limits for VPCs, EIPs, and Internet Gateways.
+- **Compute:** EKS cluster in a dedicated VPC
+- **Databases:** RDS for the Nuon control plane and Temporal
+- **Artifacts and storage:** ECR for OCI artifacts, S3 for object storage
 
-Nuon's resource requirements are not compatible with AWS Free Tier. You will need a paid account.
+**Before you start**
+
+- Admin permissions in the account
+- Quota headroom for VPCs, Elastic IPs, and Internet Gateways
+- A paid account. Nuon's resource requirements exceed AWS Free Tier.
+
 </Tab>
 
 <Tab title="GCP">
 
-On GCP, Nuon BYOC runs in a GKE cluster in a dedicated VPC Network. Cloud SQL is used for the Nuon control-plane and Temporal databases.
+- **Compute:** GKE cluster in a dedicated VPC network
+- **Databases:** Cloud SQL for the Nuon control plane and Temporal
+- **Artifacts and storage:** Artifact Registry for OCI artifacts, Cloud Storage for object storage
 
-The following APIs must be enabled in your GCP Project.
+**Before you start**
 
-- Secret Manager API
-- Compute Engine API
-- IAM Service Account Credentials API
-- Cloud Resource Manager API
-- Kubernetes Engine API
-- Cloud DNS API
-- Artifact Registry API
-- Certificate Manager API
-- Service Networking API
-- Cloud SQL Admin API
+Enable these APIs in your project:
+
+- **Compute and Kubernetes:** Compute Engine, Kubernetes Engine
+- **Data:** Cloud SQL Admin, Artifact Registry
+- **Networking:** Cloud DNS, Service Networking, Certificate Manager
+- **Project, identity, and secrets:** Cloud Resource Manager, IAM Service Account Credentials, Secret Manager
+
 </Tab>
 
 </Tabs>
