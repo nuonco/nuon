@@ -21,6 +21,7 @@ export interface IPlanDiffSection {
   language: string
   filename?: string
   searchable: string[]
+  group?: string
   note?: string
   error?: string
 }
