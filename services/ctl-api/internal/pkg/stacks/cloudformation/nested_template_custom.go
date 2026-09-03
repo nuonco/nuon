@@ -22,7 +22,7 @@ var logicalIDRegexp = regexp.MustCompile(`[^A-Za-z0-9]`)
 // AWSCustomStacksOnlyContractParams are the frozen top-level parameter names
 // the custom-stacks-only template always declares, standing in for the
 // VPC/runner nested stack outputs that don't exist in this mode.
-var AWSCustomStacksOnlyContractParams = []string{"VPC", "RunnerSubnet", "PublicSubnets", "PrivateSubnets"}
+var AWSCustomStacksOnlyContractParams = []string{"VPC", "CIDRBlock", "RunnerSubnet", "PublicSubnets", "PrivateSubnets"}
 
 type customNestedStackOutput struct {
 	Name       string
