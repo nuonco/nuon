@@ -18,11 +18,12 @@ Gather all the inputs and secrets from the [Requirements](/guides/byoc/requireme
 
 ### Authentication Inputs
 
-| Input              | Value                                  |
-| ------------------ | -------------------------------------- |
-| Auth Provider Type | `google` or `oidc`                     |
-| Auth Client ID     | Client ID from your identity provider  |
-| Auth Redirect URL  | `https://auth.<your-root-domain>/auth` |
+| Input              | Value                                       |
+| ------------------ | ------------------------------------------- |
+| Auth Provider Type | `google` or `oidc`                          |
+| Auth Issuer URL    | The issuer URL from your identity provider. |
+| Auth Client ID     | Client ID from your identity provider       |
+| Auth Redirect URL  | `https://auth.<your-root-domain>/auth`      |
 
 <Warning>
 If using the deprecated Auth0 integration, you will need to provide these inputs instead.
@@ -56,21 +57,16 @@ If using the deprecated Auth0 integration, you will need to provide these inputs
 | `github_app_key`         | Your base64-encoded GitHub App PEM key |
 | `nuon_auth_client_secret` | OIDC client secret from your identity provider |
 
-<Note>
-The GitHub App PEM key must be base64 encoded to preserve newlines.
-
-```bash
-base64 -i your-github-app-key.pem
-```
-</Note>
-
 ## Provision the Install Stack
 
 The Install Stack consists of the Nuon Runner and the foundational network resources it depends on. Once the Runner is provisioned it will take over the installation process and deploy the components of Nuon BYOC.
 
 We provide Terraform modules to provision and manage the Stack. The install process is the same on AWS and GCP: `install_id`, `inputs`, `secrets`, and `roles` are identical. Use `nuonco/stack/aws` or `nuonco/stack/gcp` for the platform you are installing into. See [Architecture](/guides/byoc#architecture) for platform-specific resources.
 
+### Set Up the Stack Module
+
 Select or create a Terraform project to manage it in your preferred CI platform.
+Then, add and initialize the Nuon stack provider and module.
 
 <Tabs>
 <Tab title="AWS">
@@ -109,8 +105,6 @@ module "nuon_byoc_stack" {
 <Tab title="GCP">
 Configure the project, region, and install ID.
 
-On the first apply, pass `project_id` and `region` into the module as well. After that apply, the control plane records them and you can drop those two arguments.
-
 ```hcl
 terraform {
   required_providers {
@@ -143,6 +137,14 @@ module "nuon_byoc_stack" {
 ```
 </Tab>
 </Tabs>
+
+Initialize the stack to ensure everything is configured correctly.
+
+```sh
+terraform init
+```
+
+### Provide the Inputs and Secrets
 
 Fill out the inputs and secrets on the module. The maps below are the same on AWS and GCP.
 
@@ -184,7 +186,14 @@ variable "github_app_key" {
 }
 ```
 
-Run `terraform init && terraform apply` to provision the stack.
+### Provision the Stack
+
+Apply to provision the Stack and install the Runner.
+Once the Runner is online, it will take over and complete the installation process.
+
+```sh
+terraform apply
+```
 
 ## Verify the Installation
 

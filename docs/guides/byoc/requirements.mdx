@@ -126,6 +126,14 @@ Click **Create GitHub App**.
 
 <Step>
 After creation, scroll to the bottom of the page and click **Generate a private key**. Save the PEM file to provide as a secret.
+
+<Note>
+The GitHub App PEM key must be base64 encoded to preserve newlines.
+
+```bash
+base64 -i your-github-app-key.pem
+```
+</Note>
 </Step>
 
 <Step>
@@ -172,6 +180,7 @@ Click **Create**.
 
 <Step>
 After creation, save the **Client ID** to provide as an input, and the **Client Secret** to provide as a secret.
+You will also need the **Issuer URL** for Google. It is always `https://accounts.google.com`.
 </Step>
 
 </Steps>
@@ -201,7 +210,7 @@ Click **Save**.
 </Step>
 
 <Step>
-After creation, save the **Client ID** to provide as an input, and the **secret** to provide as a secret.
+After creation, save the **Issuer URL** and **Client ID** to provide as an input, and the **Secret** to provide as a secret.
 </Step>
 
 </Steps>
