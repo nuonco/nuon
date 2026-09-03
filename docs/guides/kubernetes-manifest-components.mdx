@@ -221,7 +221,7 @@ resources:
   - deployment.yaml
 ```
 
-### State interpolation in Kustomize trees
+### Template variables in Kustomize trees
 
 Kustomize-backed components support the same `{{.nuon.*}}` template variables as inline manifests. Placeholders are rendered on the runner, against the live install state, **after** `kustomize build` produces the final manifest. This means you can reference install IDs, app metadata, install stack outputs, and other component outputs directly from any YAML file inside your Kustomize overlay.
 
@@ -243,7 +243,7 @@ data:
 After a deploy, the rendered ConfigMap on the cluster will have the placeholders replaced with the install's actual values — for example, `install_id: inl...`, `project_id: nuon-gcp-support`.
 
 <Note>
-Kustomize-backed manifests are interpolated on the runner, not in the planner. This keeps the Temporal workflow payload small even for large Kustomize trees. Inline manifests, by contrast, are still rendered in the planner.
+Kustomize-backed manifests are templated on the runner, not in the planner. This keeps the Temporal workflow payload small even for large Kustomize trees. Inline manifests, by contrast, are still rendered in the planner.
 </Note>
 
 ## Nuon Managed Sandbox Components
