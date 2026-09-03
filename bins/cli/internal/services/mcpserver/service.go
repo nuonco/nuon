@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -56,22 +57,46 @@ func (s *Service) Run(ctx context.Context) error {
 	return server.Run(ctx, &mcp.StdioTransport{})
 }
 
-func (s *Service) mcpEndpoint() string {
+func (s *Service) mcpEndpoint() (string, error) {
 	if s.endpoint != "" {
-		return s.endpoint
+		return s.endpoint, nil
 	}
 	return EndpointFromAPIURL(s.cfg.APIURL)
 }
 
-// EndpointFromAPIURL returns the control-plane MCP HTTP URL for a given API URL.
-func EndpointFromAPIURL(apiURL string) string {
-	switch strings.TrimRight(apiURL, "/") {
-	case "https://api.nuon.co":
-		return "https://mcp.nuon.co/mcp"
-	case "https://api.stage.nuon.co":
-		return "https://mcp.stage.nuon.co/mcp"
+func EndpointFromAPIURL(apiURL string) (string, error) {
+	parsed, err := url.Parse(strings.TrimRight(apiURL, "/"))
+	if err != nil || parsed.Hostname() == "" {
+		return "", fmt.Errorf("unable to derive MCP URL from API URL %q; pass --url", apiURL)
+	}
+
+	if IsLocalAPIURL(apiURL) {
+		return "http://localhost:8088/mcp", nil
+	}
+
+	if host := parsed.Hostname(); !strings.HasPrefix(host, "api.") {
+		return "", fmt.Errorf("unable to derive MCP URL from API URL %q: hostname must start with api.; pass --url", apiURL)
+	}
+
+	parsed.Host = strings.Replace(parsed.Host, "api.", "mcp.", 1)
+	parsed.Path = "/mcp"
+	parsed.RawPath = ""
+	parsed.RawQuery = ""
+	parsed.Fragment = ""
+	return parsed.String(), nil
+}
+
+func IsLocalAPIURL(apiURL string) bool {
+	parsed, err := url.Parse(strings.TrimRight(apiURL, "/"))
+	if err != nil {
+		return false
+	}
+
+	switch parsed.Hostname() {
+	case "localhost", "127.0.0.1", "::1":
+		return true
 	default:
-		return "http://localhost:8088/mcp"
+		return false
 	}
 }
 
@@ -94,8 +119,13 @@ func (s *Service) serverName() string {
 }
 
 func (s *Service) connectUpstream(ctx context.Context) (*mcp.ClientSession, error) {
+	endpoint, err := s.mcpEndpoint()
+	if err != nil {
+		return nil, err
+	}
+
 	transport := &mcp.StreamableClientTransport{
-		Endpoint: s.mcpEndpoint(),
+		Endpoint: endpoint,
 		HTTPClient: &http.Client{
 			Transport: &authRoundTripper{
 				token: s.cfg.APIToken,
