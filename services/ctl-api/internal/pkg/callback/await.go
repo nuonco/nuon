@@ -22,12 +22,17 @@ const (
 	// ShortTimeout is for operations expected to complete within minutes:
 	// state generation, lightweight queue signals.
 	ShortTimeout = 30 * time.Minute
+)
 
-	// MaxWaitCeiling bounds every long-lived wait (parked retries, approvals,
-	// fallback callback waits) so an abandoned workflow closes instead of
-	// holding its Temporal workflows open indefinitely.
-	MaxWaitCeiling = 3 * 24 * time.Hour
+// MaxWaitCeiling bounds every long-lived wait (parked retries, approvals,
+// fallback callback waits) so an abandoned workflow closes instead of holding
+// its Temporal workflows open indefinitely. A var, not a const, so the flow
+// testworker suite can shrink it to exercise expiry paths.
+var MaxWaitCeiling = 3 * 24 * time.Hour
 
+// Both snapshot MaxWaitCeiling at init, so overriding it later only affects
+// the sites that read MaxWaitCeiling directly.
+var (
 	// HumanGatedTimeout is for operations that require human interaction:
 	// approval workflows, user-initiated stack runs.
 	HumanGatedTimeout = MaxWaitCeiling
