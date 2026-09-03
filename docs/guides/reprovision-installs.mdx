@@ -2,11 +2,11 @@
 title: "Reprovision an install"
 description: "Re-run provisioning against the current app config to recreate an install's stack, sandbox, and components."
 icon: "arrow-rotate-right"
-keywords: ["reprovision", "reprovision install", "reprovision stack", "reprovision sandbox", "recreate runner", "stack-only", "skip components", "AWS install", "ASG recreate", "install workflow"]
+keywords: ["reprovision", "reprovision install", "reprovision stack", "reprovision sandbox", "recreate runner", "stack-only", "skip components", "AWS install", "GCP install", "Terraform stack update", "ASG recreate", "install workflow"]
 ---
 
 Reprovisioning triggers a full install workflow against current app config. Used when customer stack app config changes needs to be
-rolled out, or, when we need to create/update the customer [stack](/concepts/stacks) resources like roles, secrets, policies, inputs etc. 
+rolled out, or, when we need to create/update the customer [stack](/concepts/stacks) resources like roles, secrets, policies, inputs etc.
 
 Every reprovision runs as a [workflow](/concepts/workflows), so it is planned, approvable, and auditable.
 
@@ -19,7 +19,7 @@ leaves the sandbox and components alone. If the change you are rolling out is st
 | Flavor | Recreates | Runner downtime | Use when |
 |--------|-----------|-----------------|----------|
 | **Full** | Stack, then sandbox, then all components | Yes | The install is broken end to end, or the customer deleted resources |
-| **Stack only** | Stack and runner infrastructure; sandbox untouched | Yes | The runner ASG was deleted, or the stack template changed |
+| **Stack only** | Stack and runner infrastructure; sandbox untouched | Yes | The runner infrastructure was deleted, or the stack template changed |
 
 <Warning>
   A stack reprovision recreates the runner. Deployments and actions are unavailable until the new runner is healthy.
@@ -133,6 +133,42 @@ Open the step, copy what you need, and send it to the customer. Customer needs t
   </Tab>
 </Tabs>
 
+### On GCP
+
+GCP install stacks are managed with Terraform. A reprovision generates a new stack version and pauses at the **await
+install stack** step until the customer applies it to the existing stack.
+
+<Tabs>
+  <Tab title="Terraform module">
+    Keep the existing Terraform configuration and state backend. The published `nuonco/stack/gcp` module reads the
+    current stack configuration from Nuon during the next plan, including changes to roles and permissions.
+
+    If the reprovision introduces or removes customer inputs or secrets, update the module's `inputs` and `secrets`
+    maps first. Then have the customer review and apply the changes:
+
+    ```sh
+    terraform plan
+    terraform apply
+    ```
+
+    A new stack version does not require a module upgrade. See [Updating the stack](/guides/provision-stacks-with-terraform-module#updating-the-stack)
+    for detailed input, secret, role, and module upgrade instructions.
+  </Tab>
+  <Tab title="Generated tfvars">
+    Open the **Terraform** tab on the **await install stack** step and download the new `inputs.auto.tfvars` and
+    `secrets.auto.tfvars`. Replace those files in the existing `install-stacks/gcp` working directory, then have the
+    customer review and apply the changes:
+
+    ```sh
+    terraform plan
+    terraform apply
+    ```
+  </Tab>
+</Tabs>
+
+Both paths must use the existing state backend (typically GCS). Reusing the existing state updates the current runner
+infrastructure instead of creating a separate stack. When the runner reconnects, the workflow continues.
+
 ## Hooks that fire
 
 | Flavor | Action triggers |
@@ -146,7 +182,7 @@ notified for the same runs.
 
 ## When to reach for it
 
-- The customer deleted the runner ASG or other stack resources.
+- The customer deleted the runner infrastructure or other stack resources.
 - A [secret or input](/guides/configuring-inputs-and-secrets) changed and redeploying individual components is not
   enough.
 - The runner reports that the install stack version has expired.
