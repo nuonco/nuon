@@ -2,12 +2,10 @@ package enqueuer
 
 import (
 	"context"
-	stderrors "errors"
 	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -22,8 +20,6 @@ const (
 	EnqueueSourceAwait   = "await"
 	EnqueueSourceSweep   = "sweep"
 )
-
-var errOrphanedQueueSignal = errors.New("queue signal references a missing queue")
 
 // EnqueueInline synchronously enqueues a queue signal by performing the
 // SignalWithStart call inline with the caller. It records enqueue timing
@@ -41,9 +37,6 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 
 	var q app.Queue
 	if res := e.db.WithContext(ctx).First(&q, "id = ?", qs.QueueID); res.Error != nil {
-		if stderrors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return e.quarantineOrphanedSignal(ctx, &qs)
-		}
 		return errors.Wrap(res.Error, "unable to get queue for enqueue")
 	}
 
@@ -113,43 +106,6 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 	return nil
 }
 
-func (e *Enqueuer) quarantineOrphanedSignal(ctx context.Context, qs *app.QueueSignal) error {
-	status := app.NewCompositeStatus(ctx, app.StatusError)
-	status.StatusHumanDescription = "parent queue not found; signal quarantined before enqueue"
-	status.Metadata = map[string]any{
-		"queue_id": qs.QueueID,
-		"reason":   "missing_parent_queue",
-	}
-
-	res := e.db.WithContext(ctx).
-		Model(&app.QueueSignal{}).
-		Where(&app.QueueSignal{ID: qs.ID}).
-		Where(map[string]any{"deleted_at": 0, "enqueued": false}).
-		Updates(map[string]any{
-			"deleted_at": time.Now().Unix(),
-			"status":     &status,
-		})
-	if res.Error != nil {
-		return errors.Wrap(res.Error, "unable to quarantine queue signal with missing queue")
-	}
-
-	if res.RowsAffected > 0 {
-		tags := metrics.ToTags(map[string]string{
-			"signal_type": string(qs.Type),
-			"owner_type":  qs.OwnerType,
-		})
-		e.mw.Incr("queue_signals.enqueue.orphaned", tags)
-		e.l.Warn("quarantined queue signal with missing parent queue",
-			zap.String("queue-signal-id", qs.ID),
-			zap.String("queue-id", qs.QueueID),
-			zap.String("signal-type", string(qs.Type)),
-			zap.String("owner-id", qs.OwnerID),
-			zap.String("owner-type", qs.OwnerType))
-	}
-
-	return errOrphanedQueueSignal
-}
-
 // processOne looks up the queue signal and its parent queue, performs the
 // SignalWithStart call, and marks the signal as enqueued.
 func (e *Enqueuer) processOne(queueSignalID string) {
@@ -157,9 +113,6 @@ func (e *Enqueuer) processOne(queueSignalID string) {
 	defer cancel()
 
 	if err := e.EnqueueInline(ctx, queueSignalID, EnqueueSourceChannel); err != nil {
-		if stderrors.Is(err, errOrphanedQueueSignal) {
-			return
-		}
 		e.l.Warn("background enqueue failed",
 			zap.String("queue-signal-id", queueSignalID),
 			zap.Error(err))
