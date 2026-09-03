@@ -1,0 +1,191 @@
+---
+title: 'Optional Nuon BYOC Configuration'
+sidebarTitle: 'Optional Configuration'
+description: 'Additional configuration options for Nuon BYOC'
+icon: 'sliders'
+keywords: ['Nuon BYOC', 'BYOC', 'configuration', 'optional', 'stack', 'install stack', 'slack', 'telemetry', 's3', 'runner']
+---
+
+Once Nuon BYOC is installed, there is additional configuration you can optionally perform.
+
+Terraform snippets below use `nuonco/stack/aws`. On GCP, set `source = "nuonco/stack/gcp"`. `install_id`, `inputs`, `secrets`, `roles`, and `runner_enabled` are the same.
+
+## Disable the Provision Role
+
+The Provision role provides permissions to create resources, which are not required after installation is complete.
+You can disable the Provision role to reduce the permissions the Runner has access to.
+
+```hcl
+module "nuon_byoc_stack" {
+  // ...
+
+  roles = { // [!code ++:3]
+    provision = false
+  }
+}
+```
+
+## Disable the Runner
+
+Once Nuon BYOC is deployed, it does not require the Runner to operate.
+The Runner is only required to deploy updates, or perform triage during incidents.
+
+If you wish to completely cut off Nuon's access to your Nuon BYOC install, you can disable the Runner.
+This deprovisions the compute that hosts the Runner VM, so no instances are left running.
+
+```hcl
+module "nuon_byoc_stack" {
+  // ...
+
+  runner_enabled = false // [!code ++]
+}
+```
+
+You can disable and re-enable the runner at any time.
+To receive updates, or provide temporary access to triage issues, simply set `runner_enabled` back to `true`.
+
+```hcl
+module "nuon_byoc_stack" {
+  // ...
+
+  runner_enabled = false // [!code --]
+  runner_enabled = true // [!code ++]
+}
+```
+
+## Export Telemetry
+
+On AWS, the Stack creates the `nuon/<install-id>/telemetry-export-config` secret and grants the Runner read access.
+On GCP, the secret is named `<install-id>-telemetry-export-config`.
+Update the secret to configure telemetry export to your own OTLP-compatible backend, starting with Runner audit logs.
+
+See [Export Runner Audit Logs](/guides/export-runner-audit-logs) for the configuration reference, cloud-specific steps, and verification guidance.
+
+## Use your own S3 Bucket
+
+Nuon requires a public S3 bucket to host CloudFormation templates for customer AWS installs (Quick create links), including when the BYOC control plane runs on GCP.
+We provision a bucket for you during installation. To use a bucket you own, tell Nuon during onboarding — you will need an AWS account that can host that bucket.
+
+## Use your own Slack App
+
+By default, Nuon will create a Slack app to power the Slack integration.
+To use your own Slack app instead, create it with the manifest below, then add the inputs and secrets to your stack module and apply. You can do this at first install or later.
+
+<Steps>
+
+<Step>
+Create a Slack app using this manifest file, replacing `<your-root-domain>` with the domain you have chosen.
+
+```json
+{
+  "display_information": {
+    "name": "<your-root-domain>",
+    "description": "Nuon BYOC Slack integration for <your-root-domain>",
+    "background_color": "#0b0b0f",
+    "long_description": "Nuon BYOC posts deployment lifecycle events from your installs, sandboxes, runners, and actions into the Slack channels you choose. Subscribe per org, filter by interest (failures, components, sandboxes, runners, actions)."
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "Nuon BYOC",
+      "always_online": true
+    },
+    "slash_commands": [
+      {
+        "command": "/nuon-byoc",
+        "url": "https://slack.<your-root-domain>/slack/commands/nuon",
+        "description": "Manage Nuon BYOC notifications in Slack",
+        "usage_hint": "subscribe [install] | unsubscribe | status | help",
+        "should_escape": false
+      }
+    ]
+  },
+  "oauth_config": {
+    "redirect_urls": [
+      "https://slack.<your-root-domain>/slack/oauth/callback"
+    ],
+    "scopes": {
+      "bot": [
+        "chat:write",
+        "chat:write.public",
+        "channels:read",
+        "groups:read",
+        "team:read",
+        "commands"
+      ]
+    },
+    "pkce_enabled": false
+  },
+  "settings": {
+    "event_subscriptions": {
+      "request_url": "https://slack.<your-root-domain>/slack/events",
+      "bot_events": [
+        "app_uninstalled",
+        "channel_archive",
+        "channel_left",
+        "channel_rename",
+        "tokens_revoked"
+      ]
+    },
+    "interactivity": {
+      "is_enabled": true,
+      "request_url": "https://slack.<your-root-domain>/slack/interactions",
+      "message_menu_options_url": "https://slack.<your-root-domain>/slack/interactions"
+    },
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": false,
+    "token_rotation_enabled": false,
+    "is_mcp_enabled": false
+  }
+}
+```
+</Step>
+
+<Step>
+Click **Create**.
+</Step>
+
+<Step>
+
+Add the following inputs and secrets to your stack module, then apply.
+
+```hcl
+module "nuon_byoc_stack" {
+  // ...
+
+  inputs = {
+    // ...
+    slack_client_id          = "<your-slack-client-id>" // [!code ++:2]
+    slack_oauth_redirect_url = "https://slack.<your-root-domain>/slack/oauth/callback"
+  }
+
+  secrets = {
+    // ...
+    slack_client_secret     = { value = var.slack_client_secret } // [!code ++:3]
+    slack_signing_secret    = { value = var.slack_signing_secret }
+    slack_state_jwt_secret  = { value = var.slack_state_jwt_secret }
+  }
+}
+
+variable "slack_client_secret" { // [!code ++:17]
+  type        = string
+  sensitive   = true
+  description = "Client secret from your Slack app."
+}
+
+variable "slack_signing_secret" {
+  type        = string
+  sensitive   = true
+  description = "Signing secret from your Slack app."
+}
+
+variable "slack_state_jwt_secret" {
+  type        = string
+  sensitive   = true
+  description = "High-entropy string used to sign the Slack OAuth state JWT (for example, openssl rand -hex 32)."
+}
+```
+</Step>
+
+</Steps>
+
+For detailed instructions on configuring and using the Slack app, see the [Slack integration guide](/guides/slack).
