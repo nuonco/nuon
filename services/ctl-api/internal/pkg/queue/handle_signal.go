@@ -27,7 +27,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		return err
 	}
 
-	l.Debug("starting processing of queue signal")
+	l.Info("starting processing of queue signal")
 	queueSignal, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, queueRef.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get queue signal")
@@ -35,7 +35,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 
 	// skip signals that were already processed (e.g. via direct-execute)
 	if generics.SliceContains(queueSignal.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled}) {
-		l.Debug("queue signal already in terminal state, skipping",
+		l.Info("queue signal already in terminal state, skipping",
 			zap.String("queue-signal-id", queueSignal.ID),
 			zap.String("status", string(queueSignal.Status.Status)))
 		return ErrSignalNoop
@@ -43,7 +43,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 
 	// If the signal came from an emitter and emitter signals are globally disabled, noop it.
 	if queueSignal.EmitterID != nil && q.cfg.DisableEmitterSignals {
-		l.Debug("emitter signals disabled globally, skipping",
+		l.Info("emitter signals disabled globally, skipping",
 			zap.String("queue-signal-id", queueSignal.ID),
 			zap.String("queue-id", queueSignal.QueueID))
 		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
@@ -93,7 +93,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 // per-phase callback after validate and execute to guarantee ordering.
 func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSignal *app.QueueSignal, queueRef QueueRef) error {
 	// 1. Ready: start the handler workflow via update-with-start (waits for completed — fast).
-	l.Debug("starting handler workflow")
+	l.Info("starting handler workflow")
 	readyResp, err := handleractivities.AwaitUpdateWorkflowReady(ctx, handleractivities.UpdateWorkflowReadyRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
@@ -111,7 +111,7 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 
 	// 2. Validate: send update (accepted-only), wait for callback.
 	validateCB := callback.New(ctx, queueSignal.ID+"-validate")
-	l.Debug("sending validate update")
+	l.Info("sending validate update")
 	if err := handleractivities.AwaitUpdateWorkflowValidate(ctx, handleractivities.UpdateWorkflowValidateRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
@@ -130,7 +130,7 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 	// Derive the timeout from the signal so long-running signals get the full budget.
 	executeTimeout := signal.DeriveTimeout(queueSignal.Signal.Signal)
 	executeCB := callback.New(ctx, queueSignal.ID+"-execute")
-	l.Debug("sending execute update")
+	l.Info("sending execute update")
 	if err := handleractivities.AwaitUpdateWorkflowExecute(ctx, handleractivities.UpdateWorkflowExecuteRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
