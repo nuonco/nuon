@@ -89,8 +89,8 @@ Operate Nuon from an LLM client. See [Agents](/guides/agents/overview).
 | Command | What it does |
 |---------|--------------|
 | `nuon agents context` | Print auth, selected org/app/install, and the MCP HTTP URL. |
-| `nuon agents mcp` | Stdio MCP proxy (read-only). Add `--allow-writes` to expose mutating tools. `--url` / `--name` override the upstream URL and handshake name. |
-| `nuon agents mcp setup --platform <platform>` | Write stdio MCP client config (`claude-code`, `cursor`, or `amp`). List name follows `api_url` in `~/.nuon` or `-C`. `--url` / `--name` are passed through to `nuon agents mcp`. |
+| `nuon agents mcp` | Stdio MCP proxy to `https://mcp.nuon.co/mcp` (read-only). Add `--allow-writes` to expose mutating tools. `--url` / `--name` override the upstream server and the name in the client's MCP list. |
+| `nuon agents mcp setup --platform <platform>` | Write stdio MCP client config (`claude-code`, `cursor`, or `amp`). `--url` / `--name` / `--allow-writes` are passed through to `nuon agents mcp`. |
 
 ## Help
 

@@ -16,6 +16,25 @@ const (
 	PRCommentStatusSkipped PRCommentStatus = "skipped"
 )
 
+// PRCommentPhaseStatus represents the status of one phase check row in the PR comment.
+type PRCommentPhaseStatus string
+
+const (
+	PRCommentPhaseValidating  PRCommentPhaseStatus = "validating"
+	PRCommentPhaseBuilding    PRCommentPhaseStatus = "building"
+	PRCommentPhaseConfiguring PRCommentPhaseStatus = "configuring"
+	PRCommentPhaseValid       PRCommentPhaseStatus = "valid"
+	PRCommentPhaseInvalid     PRCommentPhaseStatus = "invalid"
+)
+
+// PRCommentPhases carries the per-phase check statuses rendered in the GitHub PR comment.
+// A zero-value Install means the install row is omitted (e.g. build-only mode).
+type PRCommentPhases struct {
+	Config  PRCommentPhaseStatus
+	Builds  PRCommentPhaseStatus
+	Install PRCommentPhaseStatus
+}
+
 // InstallImpact is what a preview run would change on a single install if the
 // config were applied. Nothing is applied to produce it.
 type InstallImpact struct {
@@ -56,6 +75,13 @@ type PRCommentParams struct {
 	PreviewInstallName string
 	PreviewInstallURL  string
 	ErrorMessage       string
+	// Phases holds per-phase check rows for the GitHub PR comment.  A nil pointer
+	// means the Checks section is omitted entirely (e.g. for legacy/skipped runs).
+	Phases *PRCommentPhases
+	// InstallApplied conditions the "Applied to" block: the section is only
+	// rendered when the install step actually succeeded, not just when builds
+	// finished with an apply-mode run.
+	InstallApplied bool
 }
 
 func BuildPRCommentBody(p *PRCommentParams) string {
@@ -89,6 +115,10 @@ func BuildPRCommentBody(p *PRCommentParams) string {
 		b.WriteString("**Status**: \u2298 No Changes\n\n")
 	}
 
+	if p.Phases != nil {
+		writePhaseChecksSection(&b, p.Phases, p.Mode != app.AppBranchRunPreviewModeBuildOnly)
+	}
+
 	if p.Status == PRCommentStatusSkipped {
 		b.WriteString("No changes to `nuon.toml` detected in this PR. Preview skipped.\n")
 	} else if p.Status == PRCommentStatusFailed && p.ErrorMessage != "" {
@@ -116,7 +146,7 @@ func BuildPRCommentBody(p *PRCommentParams) string {
 		b.WriteString("Builds and config validation succeeded. No install was planned or applied.\n")
 	}
 
-	if p.Status == PRCommentStatusSuccess && p.Mode == app.AppBranchRunPreviewModeApply && p.PreviewInstallName != "" {
+	if p.Status == PRCommentStatusSuccess && p.Mode == app.AppBranchRunPreviewModeApply && p.InstallApplied && p.PreviewInstallName != "" {
 		b.WriteString("### Preview install\n\n")
 		if p.PreviewInstallURL != "" {
 			b.WriteString(fmt.Sprintf("Applied to [`%s`](%s).\n", p.PreviewInstallName, p.PreviewInstallURL))
@@ -132,11 +162,85 @@ func BuildPRCommentBody(p *PRCommentParams) string {
 
 	if p.Status != PRCommentStatusSkipped {
 		b.WriteString("\n### Debug with MCP\n\n")
-		b.WriteString("Copy this prompt into an MCP-enabled assistant:\n\n")
+		b.WriteString("Copy this prompt into an [MCP-enabled assistant](https://docs.nuon.co/guides/agents/overview):\n\n")
 		b.WriteString(fmt.Sprintf("```text\nFetch the overview of app branch run %s and diagnose any failures.\n```\n", p.RunID))
 	}
 
 	return b.String()
+}
+
+// writePhaseChecksSection renders the Checks table into the comment body.
+// Config is always shown; Builds is always shown; Install is omitted when
+// PRCommentPhases.Install is empty.
+func writePhaseChecksSection(b *strings.Builder, phases *PRCommentPhases, includeInstall bool) {
+	if phases == nil {
+		return
+	}
+	hasInstall := includeInstall && phases.Install != ""
+	if phases.Config == "" && phases.Builds == "" && !hasInstall {
+		return
+	}
+
+	b.WriteString("| Check | Status |\n")
+	b.WriteString("|---|---|\n")
+	if phases.Config != "" {
+		b.WriteString(fmt.Sprintf("| Config | %s |\n", phaseLabel(phases.Config, "config")))
+	}
+	if phases.Builds != "" {
+		b.WriteString(fmt.Sprintf("| Builds | %s |\n", phaseLabel(phases.Builds, "builds")))
+	}
+	if hasInstall {
+		b.WriteString(fmt.Sprintf("| Install | %s |\n", phaseLabel(phases.Install, "install")))
+	}
+	b.WriteString("\n")
+}
+
+// FinalizeFailedPhases converts any still-pending phase rows to Invalid.
+// Call this when the run has terminated with failure/cancellation so that
+// the PR comment does not show "Validating/Building/Configuring" for phases
+// that never completed.
+func FinalizeFailedPhases(phases *PRCommentPhases) {
+	if phases == nil {
+		return
+	}
+	if isPendingPhase(phases.Config) {
+		phases.Config = PRCommentPhaseInvalid
+	}
+	if isPendingPhase(phases.Builds) {
+		phases.Builds = PRCommentPhaseInvalid
+	}
+	if isPendingPhase(phases.Install) {
+		phases.Install = PRCommentPhaseInvalid
+	}
+}
+
+func isPendingPhase(s PRCommentPhaseStatus) bool {
+	return s == PRCommentPhaseValidating || s == PRCommentPhaseBuilding || s == PRCommentPhaseConfiguring
+}
+
+func phaseLabel(s PRCommentPhaseStatus, kind string) string {
+	switch s {
+	case PRCommentPhaseValid:
+		return "\u2705 Valid"
+	case PRCommentPhaseInvalid:
+		return "\u274c Invalid"
+	case PRCommentPhaseValidating:
+		return "\u23f3 Validating"
+	case PRCommentPhaseBuilding:
+		return "\u23f3 Building"
+	case PRCommentPhaseConfiguring:
+		return "\u23f3 Configuring"
+	default:
+		switch kind {
+		case "config":
+			return "\u23f3 Validating"
+		case "builds":
+			return "\u23f3 Building"
+		case "install":
+			return "\u23f3 Configuring"
+		}
+		return "\u23f3 In Progress"
+	}
 }
 
 func previewTitleName(p *PRCommentParams) string {

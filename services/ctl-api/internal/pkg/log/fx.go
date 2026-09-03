@@ -4,16 +4,10 @@ import (
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-func NewFXLog(cfg *internal.Config) (fxevent.Logger, error) {
-	newLogger := zap.NewProduction
-	if cfg.LogLevel == "DEBUG" {
-		newLogger = zap.NewDevelopment
-	}
-	zl, err := newLogger()
+func NewFXLog() (fxevent.Logger, error) {
+	zl, err := zap.NewDevelopment()
 	if err != nil {
 		return nil, err
 	}
@@ -21,7 +15,7 @@ func NewFXLog(cfg *internal.Config) (fxevent.Logger, error) {
 	fxzl := &fxevent.ZapLogger{
 		Logger: zl,
 	}
-	fxzl.UseErrorLevel(zapcore.ErrorLevel)
+	fxzl.UseErrorLevel(zapcore.DebugLevel)
 	fxzl.UseLogLevel(zapcore.DebugLevel)
 
 	return fxzl, nil

@@ -25,8 +25,6 @@ Register with an MCP client:
   amp mcp add nuon -- nuon agents mcp
 
 Cursor / Cursor Agent: write ~/.cursor/mcp.json then agent mcp enable nuon.
-Stage: nuon -C /path/to/stage-config agents mcp
-Local: nuon agents mcp --url http://localhost:8088/mcp
 
   claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes
   amp mcp add nuon -- nuon agents mcp --allow-writes
@@ -84,15 +82,19 @@ Example — register:
   claude mcp add --transport stdio nuon -- nuon agents mcp
   amp mcp add nuon -- nuon agents mcp
   # Cursor: write ~/.cursor/mcp.json, then agent mcp enable nuon
-  claude mcp add --transport stdio nuon-stage -- nuon -C /path/to/stage-config agents mcp
-  claude mcp add --transport stdio nuon-local -- nuon agents mcp --url http://localhost:8088/mcp
   # writes:
   claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes
   amp mcp add nuon -- nuon agents mcp --allow-writes
 
 Or add to .mcp.json:
 
-  {"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp"]}}}`,
+  {"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp"]}}}
+
+Example — override the upstream server:
+
+  nuon agents mcp --url https://mcp.example.com/mcp --name nuon-example
+
+Run "nuon agents context" to see which MCP URL resolves from your config.`,
 		PersistentPreRunE: c.persistentPreRunE,
 		Annotations:       outputsAnnotation(OutputTable),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
@@ -110,8 +112,8 @@ Or add to .mcp.json:
 		}),
 	}
 	cmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "expose mutating tools whose descriptions start with WRITE OPERATION:")
-	cmd.Flags().StringVar(&mcpURL, "url", "", "MCP server URL (defaults based on the configured API URL)")
-	cmd.Flags().StringVar(&serverName, "name", "", "MCP server name exposed to the client (defaults based on the configured API URL)")
+	cmd.Flags().StringVar(&mcpURL, "url", "", "upstream MCP server URL (default https://mcp.nuon.co/mcp, derived from the configured API URL)")
+	cmd.Flags().StringVar(&serverName, "name", "", "MCP server name exposed to the client (default nuon, derived from the configured API URL)")
 	cmd.AddCommand(c.mcpSetupCmd())
 
 	return cmd
@@ -169,18 +171,16 @@ func (c *cli) agentsContextMarkdown() string {
 	b.WriteString("amp mcp add nuon -- nuon agents mcp\n")
 	b.WriteString("# Cursor: write ~/.cursor/mcp.json, then:\n")
 	b.WriteString("agent mcp enable nuon\n")
-	b.WriteString("# stage / local:\n")
-	b.WriteString("claude mcp add --transport stdio nuon-stage -- nuon -C /path/to/stage-config agents mcp\n")
-	b.WriteString("claude mcp add --transport stdio nuon-local -- nuon agents mcp --url http://localhost:8088/mcp\n")
-	b.WriteString("amp mcp add nuon-stage -- nuon -C /path/to/stage-config agents mcp\n")
-	b.WriteString("amp mcp add nuon-local -- nuon agents mcp --url http://localhost:8088/mcp\n")
 	b.WriteString("# writes:\n")
 	b.WriteString("claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes\n")
 	b.WriteString("amp mcp add nuon -- nuon agents mcp --allow-writes\n")
 	b.WriteString("```\n\n")
 	b.WriteString("Cursor JSON (`~/.cursor/mcp.json` or `.cursor/mcp.json`):\n\n")
 	b.WriteString("```json\n{\"mcpServers\": {\"nuon\": {\"command\": \"nuon\", \"args\": [\"agents\", \"mcp\"]}}}\n```\n\n")
-	b.WriteString("The proxy sets `X-Nuon-Org-ID`. Do not call `select_org` unless the header is missing (`select_org` is a write tool).\n\n")
+	b.WriteString(fmt.Sprintf("The upstream URL above (`%s`) comes from `api_url` in the CLI config. Override it with `--url`, and the name in the client's MCP list with `--name`:\n\n", mcpURL))
+	b.WriteString("```bash\nnuon agents mcp --url https://mcp.example.com/mcp --name nuon-example\n```\n\n")
+	b.WriteString("`--url`, `--name`, and `--allow-writes` pass through `nuon agents mcp setup`, which also copies a non-default `-C` config path into the command it writes.\n\n")
+	b.WriteString("The proxy sets `X-Nuon-Org-ID`. Do not call `select_org` unless the header is missing.\n\n")
 	b.WriteString("### Direct: control-plane HTTP MCP\n\n")
 	b.WriteString(fmt.Sprintf("Point an MCP HTTP client at `%s` with:\n\n", mcpURL))
 	b.WriteString("- `Authorization: Bearer <api_token>`\n")
@@ -200,7 +200,7 @@ func (c *cli) agentsContextMarkdown() string {
 	b.WriteString("## Tools (control plane)\n\n")
 	b.WriteString("Writes are hidden from the stdio proxy unless `--allow-writes` is set. Descriptions start with `WRITE OPERATION:`.\n\n")
 	b.WriteString("| Domain | Read | Write |\n| --- | --- | --- |\n")
-	b.WriteString("| Orgs | `whoami`, `list_orgs` | `select_org` |\n")
+	b.WriteString("| Orgs | `whoami`, `list_orgs`, `select_org` | |\n")
 	b.WriteString("| Apps | `list_apps`, `get_app`, `list_app_branches`, `get_app_branch`, `list_app_branch_preview_sources` | `preview_app_branch` |\n")
 	b.WriteString("| Components | `list_components`, `get_component`, `list_builds`, `get_build` | |\n")
 	b.WriteString("| Installs | `list_installs`, `get_install`, `list_install_components`, `get_install_inputs`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `reject_step`, `retry_step`, `cancel_workflow` |\n")

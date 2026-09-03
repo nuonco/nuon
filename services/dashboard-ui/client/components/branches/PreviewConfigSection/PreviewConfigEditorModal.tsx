@@ -15,10 +15,8 @@ import {
   previewDefaultsFromConfig,
   previewDefaultsToConfig,
 } from '@/components/branches/shared/PreviewDefaultsEditor'
-import {
-  previewConfigSchema,
-  type PreviewConfigFormValues,
-} from './schema'
+import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
+import { previewConfigSchema, type PreviewConfigFormValues } from './schema'
 
 export interface IPreviewConfigEditorModal extends Omit<IModal, 'onSubmit'> {
   currentConfig?: TAppBranchConfig
@@ -125,9 +123,15 @@ export const PreviewConfigEditorModal = ({
               label="Mode"
               disabled={isPending || isLoading}
               options={[
-                { value: 'plan-only', label: 'Plan only' },
-                { value: 'apply', label: 'Apply' },
-                { value: 'build-only', label: 'Build only' },
+                {
+                  value: 'build-only',
+                  label: previewModeDisplayLabel('build-only'),
+                },
+                {
+                  value: 'plan-only',
+                  label: previewModeDisplayLabel('plan-only'),
+                },
+                { value: 'apply', label: previewModeDisplayLabel('apply') },
               ]}
             />
           )}
@@ -140,12 +144,15 @@ export const PreviewConfigEditorModal = ({
                 field={field}
                 id="preview-default-install"
                 options={installOptions}
-                placeholder={isLoading ? 'Loading installs...' : 'Select an install'}
+                placeholder={
+                  isLoading ? 'Loading installs...' : 'Select an install'
+                }
                 disabled={isPending || isLoading || installOptions.length === 0}
                 menuPlacement="bottom"
                 labelProps={{ labelText: 'Default install' }}
                 helperText={
-                  initialDefaults.installTargetMode === 'labels' && !values.installId
+                  initialDefaults.installTargetMode === 'labels' &&
+                  !values.installId
                     ? 'Select an install to replace the current label selector.'
                     : 'Used for plan-only and apply preview runs.'
                 }
