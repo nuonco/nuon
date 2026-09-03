@@ -2,6 +2,7 @@ package parse
 
 import (
 	"bytes"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
@@ -20,6 +21,8 @@ type ParseConfig struct {
 	V             *validator.Validate
 	Template      bool
 	FileProcessor func(name string, obj map[string]any) map[string]any
+
+	FieldTimeout time.Duration
 }
 
 func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {

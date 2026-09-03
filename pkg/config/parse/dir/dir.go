@@ -9,9 +9,17 @@ import (
 )
 
 type ParseOptions struct {
-	Root     string                                 `validate:"required"`
-	Ext      string                                 `validate:"required"`
-	ParserFn func(io.ReadCloser, string, any) error `validate:"required"`
+	Root         string                                 `validate:"required"`
+	Ext          string                                 `validate:"required"`
+	ParserFn     func(io.ReadCloser, string, any) error `validate:"required"`
+	OnParsedFile func(ParsedFile) error
+}
+
+type ParsedFile struct {
+	Path     string
+	Group    string
+	Contents []byte
+	Value    any
 }
 
 type parser struct {
