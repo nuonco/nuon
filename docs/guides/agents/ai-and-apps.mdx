@@ -1,11 +1,13 @@
 ---
 title: "AI and App Building"
 description: "Use AI agents to generate and manage your Nuon app configuration."
-icon: "robot"
+icon: "code"
 keywords: ["AI assistant", "generate app config", "AI app builder", "automated configuration", "Claude Code", "nuon-plugin"]
 ---
 
 You can use any terminal-based AI agent to build Nuon app configurations — instead of writing TOML files by hand, describe your application and let the agent scaffold everything for you.
+
+To operate orgs, installs, and workflows after config is synced, connect MCP and use [sample queries](/guides/agents/sample-queries).
 
 ## Getting started
 
@@ -32,5 +34,3 @@ The plugin adds `/nuon:init`, `/nuon:convert`, and `/nuon:validate` slash comman
 ```bash
 npx skills add nuonco/skills
 ```
-
-To operate orgs, installs, and workflows via MCP after your config is synced, see [Agents](/guides/agents/overview).
