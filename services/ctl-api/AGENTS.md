@@ -1088,7 +1088,7 @@ Title and Annotations are set.
 selection is an in-process map keyed by token ID — prefer the org header for multi-replica.
 
 Adding a tool: `.agents/skills/mcp-api-tool/SKILL.md`. Keep the catalog in
-`docs/guides/agents/overview.mdx` and `agentsContextMarkdown()` in sync.
+`docs/guides/agents/tools.mdx` and `agentsContextMarkdown()` in sync.
 
 ## Logging Conventions
 
