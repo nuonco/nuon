@@ -27,6 +27,7 @@ import {
   isPreviewOverride,
   sortPreviewInstallCandidates,
 } from '@/components/branches/shared/preview-run-utils'
+import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
 
 export interface IPreviewBranchRunModal extends Omit<IModal, 'onSubmit'> {
   branchName: string
@@ -41,7 +42,6 @@ export interface IPreviewBranchRunModal extends Omit<IModal, 'onSubmit'> {
   selectedBranch?: { name: string; sha?: string }
   onSelectBranch: (branch: { name: string; sha?: string }) => void
   installOptions: { value: string; label: string; description?: string }[]
-  defaultInstallId: string
   selectedInstallId: string
   onSelectInstallId: (id: string) => void
   noInstallOptions: boolean
@@ -66,7 +66,6 @@ export const PreviewBranchRunModal = ({
   selectedBranch,
   onSelectBranch,
   installOptions,
-  defaultInstallId,
   selectedInstallId,
   onSelectInstallId,
   noInstallOptions,
@@ -96,9 +95,15 @@ export const PreviewBranchRunModal = ({
             value={mode}
             onChange={onModeChange}
             options={[
-              { value: 'plan-only', label: 'Plan only' },
-              { value: 'apply', label: 'Apply' },
-              { value: 'build-only', label: 'Build only' },
+              {
+                value: 'build-only',
+                label: previewModeDisplayLabel('build-only'),
+              },
+              {
+                value: 'plan-only',
+                label: previewModeDisplayLabel('plan-only'),
+              },
+              { value: 'apply', label: previewModeDisplayLabel('apply') },
             ]}
           />
         </div>
@@ -220,12 +225,7 @@ export const PreviewBranchRunModal = ({
               </Text>
             ) : (
               <Text variant="subtext" theme="neutral">
-                Installs on other branches are labeled in the list. Pre-filled
-                from branch preview settings
-                {defaultInstallId && selectedInstallId === defaultInstallId
-                  ? ' (default)'
-                  : ''}
-                .
+                Select an install to preview changes on.
               </Text>
             )}
           </div>
@@ -422,7 +422,6 @@ export const PreviewBranchRunModalContainer = ({
       selectedBranch={selectedBranch}
       onSelectBranch={setSelectedBranch}
       installOptions={installOptions}
-      defaultInstallId={branchDefaults.installId}
       selectedInstallId={selectedInstallId}
       onSelectInstallId={setSelectedInstallId}
       noInstallOptions={!loadingInstalls && installOptions.length === 0}
