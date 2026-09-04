@@ -14,8 +14,10 @@ type RenderARMStackTemplateRequest struct {
 }
 
 type RenderARMStackTemplateResponse struct {
-	RAWJson  []byte `temporaljson:"raw_json"`
-	Checksum string `temporaljson:"checksum"`
+	RAWJson                        []byte                       `temporaljson:"raw_json"`
+	Checksum                       string                       `temporaljson:"checksum"`
+	CustomStacksOutputMap          map[string]map[string]string `temporaljson:"custom_stacks_output_map"`
+	CustomStacksInputParametersMap map[string]map[string]string `temporaljson:"custom_stacks_input_parameters_map"`
 
 	// QuickLinkWrapperJSON is the template behind the Azure portal quick link, and
 	// is empty unless the stack version carries a QuickLinkBucketKey. It is a
@@ -38,6 +40,22 @@ func (a *Activities) RenderARMStackTemplate(ctx context.Context, req *RenderARMS
 	armTemplates := arm.NewTemplates(arm.Params{
 		Cfg: a.cfg,
 	})
+	if req.Input.CustomStacksOnly {
+		tmplByts, checksum, outputMap, inputParametersMap, err := armTemplates.CustomStacksTemplate(&req.Input)
+		if err != nil {
+			return res, temporal.NewNonRetryableApplicationError(
+				"unable to create custom stacks ARM template",
+				"arm_template_error",
+				err,
+			)
+		}
+		res.RAWJson = tmplByts
+		res.Checksum = checksum
+		res.CustomStacksOutputMap = outputMap
+		res.CustomStacksInputParametersMap = inputParametersMap
+		return res, nil
+	}
+
 	tmplByts, checksum, err := armTemplates.Template(&req.Input)
 	if err != nil {
 		return res, temporal.NewNonRetryableApplicationError(
