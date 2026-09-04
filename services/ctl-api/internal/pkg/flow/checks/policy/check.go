@@ -46,12 +46,30 @@ func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
 	if flw.PlanOnly || c.checkCtx.NoopPlan {
 		return false
 	}
+	if c.requiresEvaluation() {
+		return true
+	}
+	// Signals whose step has no policy target still route their auto-approval
+	// decision through this check.
+	_, autoApprove := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing)
+	return autoApprove
+}
+
+func (c *Check) requiresEvaluation() bool {
 	pe, ok := c.sig.(signal.SignalWithPolicyEvaluation)
 	return ok && pe.RequiresPolicyEvaluation()
 }
 
 func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, error) {
 	l, _ := log.WorkflowLogger(ctx)
+
+	if !c.requiresEvaluation() {
+		result, autoApproved := c.autoApprove(ctx, l, step)
+		if autoApproved {
+			return result, nil
+		}
+		return directive.Pass(), nil
+	}
 
 	l.Debug("starting policy check",
 		zap.String("step_id", step.ID),
@@ -128,24 +146,41 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	// If the signal opts into auto-approve on policies passing and there are
 	// no deny violations, short-circuit the pipeline with a continue directive.
-	if aa, ok := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing); reportErr == nil && ok && aa.AutoApproveOnPoliciesPassing(ctx) {
-		l.Debug("auto-approving after policies passed",
-			zap.String("step_id", step.ID))
-		return directive.CheckResult{
-			Directive: directive.StepContinue,
-			Status:    app.WorkflowStepApprovalStatusApproved,
-			Reason: directive.CheckReason{
-				Check:   "policy-auto-approve",
-				Summary: "Auto-approved: all policies passed",
-				Labels: map[string]string{
-					"auto_approved":   "true",
-					"approval_reason": "policies_passed",
-				},
-			},
-		}, nil
+	if reportErr == nil {
+		if result, autoApproved := c.autoApprove(ctx, l, step); autoApproved {
+			return result, nil
+		}
 	}
 
 	return directive.Pass(), nil
+}
+
+// autoApprove builds the approve-and-continue result for signals that opted into
+// auto-approval on passing policies. Callers only reach it once evaluation has
+// produced no deny violations, or when the signal has nothing to evaluate.
+func (c *Check) autoApprove(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep) (directive.CheckResult, bool) {
+	aa, ok := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing)
+	if !ok || !aa.AutoApproveOnPoliciesPassing(ctx) {
+		return directive.Pass(), false
+	}
+
+	if l != nil {
+		l.Debug("auto-approving after policies passed",
+			zap.String("step_id", step.ID))
+	}
+
+	return directive.CheckResult{
+		Directive: directive.StepContinue,
+		Status:    app.WorkflowStepApprovalStatusApproved,
+		Reason: directive.CheckReason{
+			Check:   "policy-auto-approve",
+			Summary: "Auto-approved: all policies passed",
+			Labels: map[string]string{
+				"auto_approved":   "true",
+				"approval_reason": "policies_passed",
+			},
+		},
+	}, true
 }
 
 type policyEvaluationOutcome string
