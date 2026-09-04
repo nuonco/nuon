@@ -175,6 +175,22 @@ export const GroupEditor = ({
         {group.selection_mode === 'labels' && contentError && (
           <Text variant="subtext" theme="error">{contentError}</Text>
         )}
+
+        <div className="border-t border-cool-grey-200 dark:border-dark-grey-700 pt-2">
+          <CheckboxInput
+            id={`group-auto-approve-${group.id}`}
+            checked={group.auto_approve_on_policies_passing}
+            disabled={disabled}
+            onChange={(e) =>
+              onUpdate({ auto_approve_on_policies_passing: e.target.checked })
+            }
+            labelProps={{
+              labelText: 'Auto-approve when policies pass',
+              className: '!p-1 !gap-1.5',
+              labelTextProps: { variant: 'subtext' },
+            }}
+          />
+        </div>
       </div>
     </Card>
   )
