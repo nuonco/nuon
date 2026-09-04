@@ -19,11 +19,11 @@ type ReconcileInstallBranchForLabelsOutput struct {
 // @temporal-gen-v2 activity
 func (a *Activities) ReconcileInstallBranchForLabels(ctx context.Context, input *ReconcileInstallBranchForLabelsInput) (*ReconcileInstallBranchForLabelsOutput, error) {
 	var install app.Install
-	if err := a.db.WithContext(ctx).First(&install, "id = ?", input.InstallID).Error; err != nil {
+	if err := a.db.WithContext(ctx).Where(app.Install{ID: input.InstallID}).First(&install).Error; err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	matches, err := a.helpers.FindBranchesMatchingLabels(ctx, install.AppID, install.Labels)
+	matches, err := a.appsHelpers.FindBranchesMatchingLabels(ctx, install.AppID, install.Labels)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (a *Activities) ReconcileInstallBranchForLabels(ctx context.Context, input 
 	}
 
 	match := matches[0]
-	a.helpers.SyncInstallBranchConnection(ctx, &install, match.Branch.ID)
+	a.appsHelpers.SyncInstallBranchConnection(ctx, &install, match.Branch.ID)
 	return &ReconcileInstallBranchForLabelsOutput{
 		AppBranchID:    match.Branch.ID,
 		InstallGroupID: match.Group.ID,
