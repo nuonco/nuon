@@ -221,6 +221,7 @@
               "guides/using-readmes",
               "guides/programmable-readmes",
               "guides/custom-nested-stacks",
+              "guides/nuon-stack-terraform-provider",
               "guides/customizing-terraform-stack-templates",
               "guides/cli-extensions",
               "guides/external-image-policies",
