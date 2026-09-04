@@ -116,7 +116,7 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 	// Accepted and dropped, like the legacy route, so a deprovisioned stack stays
 	// deletable.
 	if requestType == installshelpers.PhoneHomeRequestTypeDelete {
-		ctx.JSON(http.StatusOK, app.EmptyResponse{})
+		ctx.JSON(http.StatusCreated, app.EmptyResponse{})
 		return
 	}
 

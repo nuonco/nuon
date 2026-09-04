@@ -279,6 +279,111 @@ func TestStackConfigRejectsNestedStackWithoutContents(t *testing.T) {
 	assert.Contains(t, err.Error(), "contents is required")
 }
 
+func TestStackConfigRejectsInvalidCustomStackIdentity(t *testing.T) {
+	for name, stacks := range map[string][]config.CustomNestedStack{
+		"duplicate names": {
+			{Name: "shared", Index: 0, TemplateURL: "https://example.com/a.yaml", Contents: "{}"},
+			{Name: "shared", Index: 1, TemplateURL: "https://example.com/b.yaml", Contents: "{}"},
+		},
+		"duplicate indices": {
+			{Name: "first", Index: 0, TemplateURL: "https://example.com/a.yaml", Contents: "{}"},
+			{Name: "second", Index: 0, TemplateURL: "https://example.com/b.yaml", Contents: "{}"},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := StackConfig(&config.StackConfig{
+				Type:               string(app.StackTypeAWS),
+				Name:               "stack",
+				Description:        "stack",
+				CustomNestedStacks: stacks,
+			}, "app1", "cfg1")
+			require.Error(t, err)
+		})
+	}
+}
+
+func TestStackConfigRejectsAzureBicepCustomStackSource(t *testing.T) {
+	const armJSON = `{"$schema":"https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#","contentVersion":"1.0.0.0","resources":[]}`
+
+	for name, tc := range map[string]struct {
+		stacks  []config.CustomNestedStack
+		wantErr string
+	}{
+		"bicep template_url": {
+			stacks:  []config.CustomNestedStack{{Name: "storage", Index: 0, TemplateURL: "./arm/storage.bicep", Contents: armJSON}},
+			wantErr: "az bicep build --file ./arm/storage.bicep --outfile ./arm/storage.json",
+		},
+		"bicep contents": {
+			stacks:  []config.CustomNestedStack{{Name: "storage", Index: 0, TemplateURL: "./arm/storage.json", Contents: "param location string = resourceGroup().location"}},
+			wantErr: "are not valid ARM JSON",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := StackConfig(&config.StackConfig{
+				Type:               string(app.StackTypeAzure),
+				Name:               "stack",
+				Description:        "stack",
+				CustomNestedStacks: tc.stacks,
+			}, "app1", "cfg1")
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.wantErr)
+		})
+	}
+}
+
+func TestStackConfigAllowsAzureARMJSONCustomStack(t *testing.T) {
+	obj, err := StackConfig(&config.StackConfig{
+		Type:        string(app.StackTypeAzure),
+		Name:        "stack",
+		Description: "stack",
+		CustomNestedStacks: []config.CustomNestedStack{
+			{Name: "storage", Index: 0, TemplateURL: "./arm/storage.json", Contents: `{"$schema":"https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#","contentVersion":"1.0.0.0","resources":[]}`},
+		},
+	}, "app1", "cfg1")
+	require.NoError(t, err)
+	require.Len(t, obj.CustomNestedStacks, 1)
+	assert.Equal(t, config.CustomNestedStackStatusPending, obj.CustomNestedStacks[0].Status)
+}
+
+func TestStackConfigRejectsInvalidGCPCustomStackModule(t *testing.T) {
+	_, err := StackConfig(&config.StackConfig{
+		Type:        string(app.StackTypeGCP),
+		Name:        "stack",
+		Description: "stack",
+		CustomNestedStacks: []config.CustomNestedStack{
+			{Name: "bucket", Index: 0, TemplateURL: "https://example.com/template.tf", Contents: "{}"},
+		},
+	}, "app1", "cfg1")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must reference a gcp modules path")
+}
+
+func TestStackConfigAllowsGCPModuleWithoutTemplateContents(t *testing.T) {
+	obj, err := StackConfig(&config.StackConfig{
+		Type:        string(app.StackTypeGCP),
+		Name:        "stack",
+		Description: "stack",
+		CustomNestedStacks: []config.CustomNestedStack{
+			{Name: "storage", Index: 0, TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket"},
+		},
+	}, "app1", "cfg1")
+	require.NoError(t, err)
+	require.Len(t, obj.CustomNestedStacks, 1)
+	assert.Equal(t, config.CustomNestedStackStatusReady, obj.CustomNestedStacks[0].Status)
+}
+
+func TestStackConfigRejectsGCPDNSWithoutName(t *testing.T) {
+	_, err := StackConfig(&config.StackConfig{
+		Type:        string(app.StackTypeGCP),
+		Name:        "stack",
+		Description: "stack",
+		CustomNestedStacks: []config.CustomNestedStack{
+			{Name: "dns", Index: 0, TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/dns"},
+		},
+	}, "app1", "cfg1")
+	require.EqualError(t, err, "custom_nested_stacks[0] (dns): parameters.dns_name is required for the GCP dns module")
+}
+
 func TestPoliciesConfigKeepsName(t *testing.T) {
 	obj, err := PoliciesConfig(PolicyInputsFromConfig(&config.PoliciesConfig{
 		Policies: []config.AppPolicy{

@@ -295,10 +295,6 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 			}
 		}
 
-		if err := RenderAndUploadCustomStacksTemplate(ctx, install.ID, stackVersion, *inp, w.cfg.AWSCloudFormationStackTemplateBucket); err != nil {
-			return err
-		}
-
 	case app.AppRunnerTypeAzure:
 		if cfg.RunnerConfig.InitScriptURL != "" {
 			inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL
@@ -318,6 +314,10 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		}
 		tmplByts = renderedTemplate.RAWJson
 		checksum = renderedTemplate.Checksum
+	}
+
+	if err := RenderAndUploadCustomStacksTemplate(ctx, install.ID, stackVersion, *inp, w.cfg.AWSCloudFormationStackTemplateBucket); err != nil {
+		return err
 	}
 
 	if w.cfg.AWSCloudFormationStackTemplateBucket == "" {
