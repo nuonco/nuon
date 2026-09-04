@@ -541,6 +541,11 @@ type Config struct {
 	// runbook ids, so those are silently dropped from installs
 	ServerSideSyncMinCLIVersion string `config:"server_side_sync_min_cli_version"`
 
+	// MaxRunnerVersion is the newest runner binary version this control
+	// plane supports, served to init scripts resolving "latest". When empty, the
+	// service's own release version is served instead.
+	MaxRunnerVersion string `config:"max_runner_version"`
+
 	GeneralPurgeStaleDataCron        string        `config:"general_purge_stale_data_cron"`
 	GeneralPurgeStaleDataDurationAgo time.Duration `config:"general_purge_stale_data_duration_ago" validate:"required"`
 
