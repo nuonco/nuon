@@ -1,6 +1,14 @@
 {
   "rules": {
-    "no-console": ["error", { "allow": ["error", "warn"] }],
+    "no-console": [
+      "error",
+      {
+        "allow": [
+          "error",
+          "warn"
+        ]
+      }
+    ],
     "no-restricted-imports": [
       "error",
       {
@@ -19,27 +27,38 @@
           },
           {
             "name": "react-router",
-            "importNames": ["Link"],
+            "importNames": [
+              "Link"
+            ],
             "message": "Use Link from @/components/common/Link in the dashboard, or @/lite/components/atoms/Link in lite (href, not to). For nav buttons use Button with href and variant=\"ghost\"."
           },
           {
             "name": "@/components/surfaces/Modal",
-            "importNames": ["ModalBase"],
+            "importNames": [
+              "ModalBase"
+            ],
             "message": "Use Modal, not ModalBase. See the Modal/Panel pattern in AGENTS.md."
           },
           {
             "name": "@/components/surfaces/Panel",
-            "importNames": ["PanelBase"],
+            "importNames": [
+              "PanelBase"
+            ],
             "message": "Use Panel, not PanelBase. See the Modal/Panel pattern in AGENTS.md."
           }
         ],
         "patterns": [
           {
-            "group": ["@heroicons/*"],
+            "group": [
+              "@heroicons/*"
+            ],
             "message": "Use the Icon component (@/components/common/Icon) for all icons."
           },
           {
-            "group": ["react-icons", "react-icons/*"],
+            "group": [
+              "react-icons",
+              "react-icons/*"
+            ],
             "message": "Use the Icon component (@/components/common/Icon). Add brand icons to its customIcons map instead of importing directly."
           }
         ]
@@ -49,10 +68,49 @@
   "overrides": [
     {
       "files": [
+        "**/lite/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/components/**"
+                ],
+                "message": "Lite must not import dashboard components. They assume the dashboard stylesheet and use dark: variants. Build or reuse a component in client/lite/components/."
+              },
+              {
+                "group": [
+                  "@/providers/**",
+                  "!@/providers/config-provider",
+                  "@/hooks/**",
+                  "!@/hooks/use-config"
+                ],
+                "message": "Lite owns its providers and hooks, in client/lite/providers and client/lite/hooks. Only config-provider and use-config are shared."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "**/playground/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": [
         "**/components/common/Icon.tsx",
         "**/lite/components/atoms/Icon.tsx"
       ],
-      "rules": { "no-restricted-imports": "off" }
+      "rules": {
+        "no-restricted-imports": "off"
+      }
     },
     {
       "files": [
@@ -60,15 +118,25 @@
         "**/components/common/Button.tsx",
         "**/lite/components/atoms/Link.tsx"
       ],
-      "rules": { "no-restricted-imports": "off" }
+      "rules": {
+        "no-restricted-imports": "off"
+      }
     },
     {
-      "files": ["**/components/common/Markdown/Markdown.tsx"],
-      "rules": { "no-restricted-imports": "off" }
+      "files": [
+        "**/components/common/Markdown/Markdown.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
     },
     {
-      "files": ["**/types/ctl-api.types.ts"],
-      "rules": { "no-restricted-imports": "off" }
+      "files": [
+        "**/types/ctl-api.types.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
     }
   ]
 }
