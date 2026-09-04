@@ -252,6 +252,7 @@ type Client interface {
 	GetWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppWorkflow, bool, error)
 	GetInstallWorkflows(ctx context.Context, installID string, query *GetInstallWorkflowsQuery) ([]*models.AppWorkflow, bool, error)
 	GetWorkflow(ctx context.Context, workflowID string) (*models.AppWorkflow, error)
+	GetWorkflowPlanSummaries(ctx context.Context, workflowID string) ([]*models.AppStepChangeSummary, error)
 	GetWorkflowSteps(ctx context.Context, workflowID string) ([]*models.AppWorkflowStep, error)
 	GetWorkflowStep(ctx context.Context, workflowID, stepID string) (*models.AppWorkflowStep, error)
 	CancelWorkflow(ctx context.Context, workflowID string) (*operations.CancelWorkflowAccepted, error)

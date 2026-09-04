@@ -954,6 +954,11 @@ export type TWorkflowStepApproval =
 export type TWorkflowStepApprovalResponse = { type: string } & any
 export type TWorkflowStepApprovalType =
   components['schemas']['app.WorkflowStepApprovalType']
+export type TStepChangeCounts = components['schemas']['app.StepChangeCounts']
+export type TStepChangePlanType =
+  components['schemas']['app.StepChangePlanType']
+export type TStepChangeStatus = components['schemas']['app.StepChangeStatus']
+export type TStepChangeSummary = components['schemas']['app.StepChangeSummary']
 export type TWorkflowResponse = components['schemas']['app.WorkflowResponse']
 
 export type TAppSecretConfig = components['schemas']['app.AppSecretConfig']

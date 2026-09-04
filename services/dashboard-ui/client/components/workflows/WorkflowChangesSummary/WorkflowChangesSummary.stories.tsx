@@ -12,6 +12,7 @@ const noCounts = { create: 0, update: 0, delete: 0, replace: 0, noop: 0 }
 
 const mk = (over: Partial<TStepChangeSummary>): TStepChangeSummary => ({
   stepId: `step-${Math.random().toString(36).slice(2, 9)}`,
+  approvalId: `approval-${Math.random().toString(36).slice(2, 9)}`,
   stepName: 'Sync and plan',
   componentName: 'api',
   planType: 'terraform_plan',

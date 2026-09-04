@@ -81,6 +81,18 @@ func (c *client) GetWorkflow(ctx context.Context, workflowID string) (*models.Ap
 	return resp.Payload, nil
 }
 
+func (c *client) GetWorkflowPlanSummaries(ctx context.Context, workflowID string) ([]*models.AppStepChangeSummary, error) {
+	resp, err := c.genClient.Operations.GetWorkflowPlanSummaries(&operations.GetWorkflowPlanSummariesParams{
+		WorkflowID: workflowID,
+		Context:    ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) CancelWorkflow(ctx context.Context, workflowID string) (*operations.CancelWorkflowAccepted, error) {
 	resp, err := c.genClient.Operations.CancelWorkflow(&operations.CancelWorkflowParams{
 		WorkflowID: workflowID,

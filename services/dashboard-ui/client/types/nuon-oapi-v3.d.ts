@@ -349,6 +349,13 @@ export interface paths {
      */
     post: operations["TriggerAppBranchRun"];
   };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}": {
+    /**
+     * get an app branch workflow run
+     * @description Returns a branch workflow by either app branch run ID or workflow ID.
+     */
+    get: operations["GetAppBranchRun"];
+  };
   "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/builds": {
     /**
      * get builds for an app branch run
@@ -3259,6 +3266,10 @@ export interface paths {
      * @description Cancel a running workflow execution.
      */
     post: operations["CancelWorkflow"];
+  };
+  "/v1/workflows/{workflow_id}/plan-summaries": {
+    /** get consolidated plan summaries for a workflow */
+    get: operations["GetWorkflowPlanSummaries"];
   };
   "/v1/workflows/{workflow_id}/queue-position": {
     /**
@@ -6415,6 +6426,27 @@ export interface components {
     "app.StackVersionRunType": "workflow-run" | "out-of-band-update";
     /** @enum {string} */
     "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.StepChangeCounts": {
+      create: number;
+      delete: number;
+      noop: number;
+      replace: number;
+      update: number;
+    };
+    /** @enum {string} */
+    "app.StepChangePlanType": "terraform_plan" | "pulumi_plan" | "helm_approval" | "kubernetes_manifest_approval" | "app_branch_plan" | "install_creation";
+    /** @enum {string} */
+    "app.StepChangeStatus": "pending-approval" | "approved" | "denied" | "applied" | "generating" | "error";
+    "app.StepChangeSummary": {
+      approvalId: string;
+      componentName?: string;
+      counts: components["schemas"]["app.StepChangeCounts"];
+      hasDetail: boolean;
+      planType: components["schemas"]["app.StepChangePlanType"];
+      status: components["schemas"]["app.StepChangeStatus"];
+      stepId: string;
+      stepName: string;
+    };
     "app.TerraformLock": {
       created?: string;
       id?: string;
@@ -12180,6 +12212,60 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.AppBranchRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app branch workflow run
+   * @description Returns a branch workflow by either app branch run ID or workflow ID.
+   */
+  GetAppBranchRun: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+        /** @description app branch run ID or workflow ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"];
         };
       };
       /** @description Bad Request */
@@ -20124,6 +20210,8 @@ export interface operations {
         runner_id?: string;
         /** @description filter installs by branch name (comma-separated; use __none__ for installs with no branch) */
         branches?: string;
+        /** @description include install components */
+        include_components?: boolean;
         /** @description limit of results to return */
         limit?: number;
         /** @description page number of results to return */
@@ -32717,6 +32805,53 @@ export interface operations {
       202: {
         content: {
           "application/json": components["schemas"]["app.EmptyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get consolidated plan summaries for a workflow */
+  GetWorkflowPlanSummaries: {
+    parameters: {
+      path: {
+        /** @description workflow id */
+        workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.StepChangeSummary"][];
         };
       };
       /** @description Bad Request */
