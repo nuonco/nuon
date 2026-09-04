@@ -238,14 +238,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		workflowMeta["base_branch"] = baseBranch
 	}
 
-	approvalOption := app.InstallApprovalOptionApproveAll
-	if !req.AutoApprove {
-		approvalOption, err = s.helpers.ResolveAppBranchApprovalOption(ctx, appID, appBranchID, config.ID)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to resolve approval option: %w", err))
-			return
-		}
-	}
+	approvalOption := branchRunApprovalOption(req.AutoApprove)
 
 	triggerResp, err := s.helpers.TriggerAppBranchRun(ctx, &helpers.TriggerAppBranchRunRequest{
 		Run: helpers.CreateAppBranchRunRequest{
@@ -296,4 +289,11 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, run)
+}
+
+func branchRunApprovalOption(autoApprove bool) app.InstallApprovalOption {
+	if autoApprove {
+		return app.InstallApprovalOptionApproveAll
+	}
+	return app.InstallApprovalOptionPrompt
 }

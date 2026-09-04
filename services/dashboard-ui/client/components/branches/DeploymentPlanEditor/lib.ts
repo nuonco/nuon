@@ -8,4 +8,5 @@ export const newGroup = (existingCount: number): IInstallGroup => ({
   selection_mode: 'manual',
   order: existingCount,
   max_parallel: 1,
+  auto_approve_on_policies_passing: false,
 })
