@@ -30,6 +30,7 @@ const groups: IInstallGroup[] = [
     selection_mode: 'manual',
     order: 0,
     max_parallel: 1,
+    auto_approve_on_policies_passing: false,
   },
 ]
 

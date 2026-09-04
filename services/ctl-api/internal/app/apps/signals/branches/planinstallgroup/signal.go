@@ -28,6 +28,7 @@ type Signal struct {
 var _ signal.Signal = (*Signal)(nil)
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithEmptyGroupCheck = (*Signal)(nil)
+var _ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.StepID = stepID
@@ -42,6 +43,21 @@ func (s *Signal) IsEmptyInstallGroup(ctx workflow.Context) (bool, error) {
 		return false, err
 	}
 	return len(installIDs) == 0, nil
+}
+
+// AutoApproveOnPoliciesPassing reports whether the group opted into approving
+// its own plan. Synthetic preview groups have no install group row to configure,
+// so they always require a response.
+func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
+	if s.InstallGroupID == "" {
+		return false
+	}
+
+	group, err := activities.AwaitGetInstallGroupByID(ctx, s.InstallGroupID)
+	if err != nil || group == nil {
+		return false
+	}
+	return group.GetAutoApproveOnPoliciesPassing()
 }
 
 func (s *Signal) Type() signal.SignalType {
