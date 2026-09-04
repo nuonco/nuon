@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useSurfaces } from '../../../hooks/use-surfaces'
 import { ComponentDocs } from '../../__stories__/ComponentDocs'
 import { SurfacePlayground, SurfaceStory } from '../../__stories__/SurfaceStory'
@@ -7,44 +7,10 @@ import { Input } from '../../atoms/Input'
 import { Text } from '../../atoms/Text'
 import { Modal, type TModalSize } from './Modal'
 
-export default {
-  title: 'lite/organisms/Modal',
-}
+export default { title: 'lite/organisms/Modal' }
 
 const DESCRIPTION =
   'Modals hold focused decisions and short workflows above the current page.'
-
-const MODAL_SIZES: { label: string; size: TModalSize }[] = [
-  { label: 'small', size: 'sm' },
-  { label: 'default', size: 'default' },
-  { label: 'large', size: 'lg' },
-  { label: 'extra large', size: 'xl' },
-  { label: 'full width', size: 'full' },
-]
-
-const ModalSizeButtons = () => {
-  const { openModal } = useSurfaces()
-  return (
-    <div className="flex flex-wrap gap-2">
-      {MODAL_SIZES.map(({ label, size }) => (
-        <Button
-          key={size}
-          onClick={() =>
-            openModal(
-              <Modal heading={`${label} modal`} size={size}>
-                <Text color="secondary">
-                  This modal uses the {size} size variant.
-                </Text>
-              </Modal>
-            )
-          }
-        >
-          Open {label} modal
-        </Button>
-      ))}
-    </div>
-  )
-}
 
 export const Overview = () => (
   <ComponentDocs
@@ -68,7 +34,17 @@ export const Overview = () => (
       {
         name: 'heading',
         type: 'ReactNode',
-        description: 'Accessible title shown in the modal header.',
+        description: 'Required accessible title shown in the header.',
+      },
+      {
+        name: 'children',
+        type: 'ReactNode',
+        description: 'Scrollable modal body.',
+      },
+      {
+        name: 'description',
+        type: 'ReactNode',
+        description: 'Supporting copy grouped with the heading.',
       },
       {
         name: 'size',
@@ -77,51 +53,293 @@ export const Overview = () => (
         description: 'Maximum modal width.',
       },
       {
-        name: 'description',
-        type: 'ReactNode',
-        description: 'Optional supporting copy grouped with the heading.',
-      },
-      {
         name: 'dismissible',
         type: 'boolean',
         default: 'true',
         description: 'Enables Escape, backdrop, and close-button dismissal.',
       },
       {
+        name: 'headerActions',
+        type: 'ReactNode',
+        description: 'Controls displayed before the close button.',
+      },
+      {
+        name: 'footerContent',
+        type: 'ReactNode',
+        description: 'Supporting content at the left of the footer.',
+      },
+      {
         name: 'primaryAction',
         type: 'IButton',
         description: 'Primary footer button props.',
+      },
+      {
+        name: 'secondaryAction',
+        type: 'IButton',
+        description: 'Secondary footer button props.',
+      },
+      {
+        name: 'showFooter',
+        type: 'boolean',
+        default: 'true',
+        description: 'Controls whether the complete footer renders.',
+      },
+      {
+        name: 'initialFocusRef',
+        type: 'RefObject<HTMLElement>',
+        description: 'Element focused when the modal opens.',
+      },
+      {
+        name: 'bodyClassName',
+        type: 'string',
+        description: 'Additional classes for the scrollable body.',
+      },
+      {
+        name: 'onClose',
+        type: '() => void',
+        description: 'Runs before the surface closes.',
       },
     ]}
   />
 )
 
-export const Default = () => (
+export const PropHeading = () => (
   <SurfaceStory
     open={({ openModal }) =>
       openModal(
-        <Modal
-          heading="Create install"
-          description={DESCRIPTION}
-          primaryAction={{ children: 'Create install', variant: 'primary' }}
-        >
-          <Text>Configure the new install before creating it.</Text>
+        <Modal heading="Modal heading">
+          <Text color="secondary">The heading labels the dialog.</Text>
         </Modal>
       )
     }
   />
 )
 
-export const Sizes = () => (
+export const PropDescription = () => (
+  <SurfaceStory
+    open={({ openModal }) =>
+      openModal(
+        <Modal heading="Deploy component" description={DESCRIPTION}>
+          <Text>The description stays grouped with the heading.</Text>
+        </Modal>
+      )
+    }
+  />
+)
+
+const MODAL_SIZES: { label: string; size: TModalSize }[] = [
+  { label: 'small', size: 'sm' },
+  { label: 'default', size: 'default' },
+  { label: 'large', size: 'lg' },
+  { label: 'extra large', size: 'xl' },
+  { label: 'full width', size: 'full' },
+]
+
+const ModalSizeControls = () => {
+  const { openModal } = useSurfaces()
+  return (
+    <div className="flex flex-wrap gap-2">
+      {MODAL_SIZES.map(({ label, size }) => (
+        <Button
+          key={size}
+          onClick={() =>
+            openModal(
+              <Modal heading={`${label} modal`} size={size}>
+                <Text color="secondary">
+                  This modal uses size=&quot;{size}&quot;.
+                </Text>
+              </Modal>
+            )
+          }
+        >
+          Open {label}
+        </Button>
+      ))}
+    </div>
+  )
+}
+
+export const PropSize = () => (
   <SurfacePlayground>
     <div className="flex flex-col gap-4">
-      <Text color="secondary">Open each modal size from the same fixture.</Text>
-      <ModalSizeButtons />
+      <Text color="secondary">Open each supported size.</Text>
+      <ModalSizeControls />
     </div>
   </SurfacePlayground>
 )
 
-export const SmallConfirmation = () => (
+export const PropDismissible = () => (
+  <SurfaceStory
+    open={({ openModal }) =>
+      openModal(
+        <Modal
+          heading="Review policy"
+          description="Choose an action before leaving this workflow."
+          dismissible={false}
+          size="sm"
+          primaryAction={{ children: 'Accept policy', variant: 'primary' }}
+        >
+          <Text>Escape and backdrop clicks do not dismiss this modal.</Text>
+        </Modal>
+      )
+    }
+  />
+)
+
+export const PropHeaderActions = () => (
+  <SurfaceStory
+    open={({ openModal }) =>
+      openModal(
+        <Modal
+          heading="Component details"
+          headerActions={
+            <Button size="sm" variant="ghost">
+              View docs
+            </Button>
+          }
+        >
+          <Text color="secondary">
+            Header actions render before the close control.
+          </Text>
+        </Modal>
+      )
+    }
+  />
+)
+
+export const PropFooterContent = () => (
+  <SurfaceStory
+    open={({ openModal }) =>
+      openModal(
+        <Modal
+          heading="Edit component"
+          footerContent={
+            <Text variant="caption" color="secondary">
+              Last saved 2 minutes ago
+            </Text>
+          }
+        >
+          <Text color="secondary">
+            Footer content remains separate from action buttons.
+          </Text>
+        </Modal>
+      )
+    }
+  />
+)
+
+export const PropPrimaryAction = () => (
+  <SurfaceStory
+    open={({ openModal }) =>
+      openModal(
+        <Modal
+          heading="Approve plan?"
+          primaryAction={{ children: 'Approve plan', variant: 'primary' }}
+        >
+          <Text>The primary action appears after the cancel action.</Text>
+        </Modal>
+      )
+    }
+  />
+)
+
+export const PropSecondaryAction = () => (
+  <SurfaceStory
+    open={({ openModal }) =>
+      openModal(
+        <Modal
+          heading="Save configuration"
+          primaryAction={{ children: 'Save configuration', variant: 'primary' }}
+          secondaryAction={{ children: 'Discard changes' }}
+        >
+          <Text>
+            The supplied secondary action replaces the default cancel.
+          </Text>
+        </Modal>
+      )
+    }
+  />
+)
+
+export const PropShowFooter = () => (
+  <SurfaceStory
+    open={({ openModal }) =>
+      openModal(
+        <Modal heading="Live operation" showFooter={false}>
+          <Text color="secondary">
+            showFooter=false removes the footer while retaining header
+            dismissal.
+          </Text>
+        </Modal>
+      )
+    }
+  />
+)
+
+const InitialFocusModal = () => {
+  const inputRef = useRef<HTMLInputElement>(null)
+  return (
+    <Modal heading="Initial focus" initialFocusRef={inputRef}>
+      <label className="flex flex-col gap-2">
+        <Text variant="label">Focused when opened</Text>
+        <Input ref={inputRef} placeholder="Focused input" />
+      </label>
+      <label className="flex flex-col gap-2">
+        <Text variant="label">Second input</Text>
+        <Input placeholder="Not initially focused" />
+      </label>
+    </Modal>
+  )
+}
+
+export const PropInitialFocusRef = () => (
+  <SurfaceStory open={({ openModal }) => openModal(<InitialFocusModal />)} />
+)
+
+export const PropBodyClassName = () => (
+  <SurfaceStory
+    open={({ openModal }) =>
+      openModal(
+        <Modal heading="Custom body spacing" bodyClassName="gap-8">
+          <Text>First body item</Text>
+          <Text>Second body item with an eight-unit gap</Text>
+        </Modal>
+      )
+    }
+  />
+)
+
+const ModalOnCloseExample = () => {
+  const { openModal } = useSurfaces()
+  const [closeCount, setCloseCount] = useState(0)
+  return (
+    <div className="flex flex-col items-start gap-4">
+      <Text color="secondary">onClose called: {closeCount} times</Text>
+      <Button
+        onClick={() =>
+          openModal(
+            <Modal
+              heading="Close callback"
+              onClose={() => setCloseCount((count) => count + 1)}
+            >
+              <Text>Close this modal with any dismissal control.</Text>
+            </Modal>
+          )
+        }
+      >
+        Open modal
+      </Button>
+    </div>
+  )
+}
+
+export const PropOnClose = () => (
+  <SurfacePlayground>
+    <ModalOnCloseExample />
+  </SurfacePlayground>
+)
+
+export const UseCaseConfirmation = () => (
   <SurfaceStory
     open={({ openModal }) =>
       openModal(
@@ -147,60 +365,30 @@ const EnvironmentFormModal = () => {
       initialFocusRef={nameRef}
       primaryAction={{ children: 'Create environment', variant: 'primary' }}
     >
-      <label className="flex flex-col gap-2">
-        <Text variant="label">Name</Text>
-        <Input ref={nameRef} placeholder="Production" />
-      </label>
-      <label className="flex flex-col gap-2">
-        <Text variant="label">Region</Text>
-        <Input placeholder="us-west-2" />
-      </label>
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(event) => event.preventDefault()}
+        className="flex flex-col gap-4"
+      >
+        <label className="flex flex-col gap-2">
+          <Text variant="label">Name</Text>
+          <Input ref={nameRef} placeholder="Production" />
+        </label>
+        <label className="flex flex-col gap-2">
+          <Text variant="label">Region</Text>
+          <Input placeholder="us-west-2" />
+        </label>
+      </form>
     </Modal>
   )
 }
 
-export const FormContent = () => (
+export const UseCaseForm = () => (
   <SurfaceStory open={({ openModal }) => openModal(<EnvironmentFormModal />)} />
 )
 
-export const Large = () => (
-  <SurfaceStory
-    open={({ openModal }) =>
-      openModal(
-        <Modal
-          heading="Review deployment plan"
-          size="xl"
-          primaryAction={{ children: 'Approve plan', variant: 'primary' }}
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <Text color="secondary">
-              The wider layout leaves room for a side-by-side plan review.
-            </Text>
-            <Text color="secondary">
-              Content remains constrained inside the floating glass surface.
-            </Text>
-          </div>
-        </Modal>
-      )
-    }
-  />
-)
-
-export const Full = () => (
-  <SurfaceStory
-    open={({ openModal }) =>
-      openModal(
-        <Modal heading="Full-width review" size="full">
-          <Text color="secondary">
-            Full modals retain a safe gutter on every viewport edge.
-          </Text>
-        </Modal>
-      )
-    }
-  />
-)
-
-export const LongContent = () => (
+export const UseCaseLongContent = () => (
   <SurfaceStory
     open={({ openModal }) =>
       openModal(
@@ -209,8 +397,7 @@ export const LongContent = () => (
             <div key={index} className="rounded-lg border border-divider p-4">
               <Text variant="label">Activity {index + 1}</Text>
               <Text color="secondary">
-                Surface headers and footers stay visible while this body
-                scrolls.
+                Header and footer chrome remain visible while the body scrolls.
               </Text>
             </div>
           ))}
@@ -220,92 +407,13 @@ export const LongContent = () => (
   />
 )
 
-export const HeaderAndFooterActions = () => (
-  <SurfaceStory
-    open={({ openModal }) =>
-      openModal(
-        <Modal
-          heading="Edit component"
-          headerActions={
-            <Button size="sm" variant="ghost">
-              View docs
-            </Button>
-          }
-          footerContent={
-            <Text variant="caption" color="secondary">
-              Last saved 2 minutes ago
-            </Text>
-          }
-          primaryAction={{ children: 'Save changes', variant: 'primary' }}
-        >
-          <Text color="secondary">
-            Header and footer slots support secondary controls without changing
-            the surface layout.
-          </Text>
-        </Modal>
-      )
-    }
-  />
-)
-
-export const HeadingAndDescription = () => (
-  <SurfaceStory
-    open={({ openModal }) =>
-      openModal(
-        <Modal
-          heading="Processing changes"
-          description="The operation may take a few minutes."
-          showFooter={false}
-          size="sm"
-        >
-          <Text color="secondary">
-            Progress details remain visually grouped without divider lines.
-          </Text>
-        </Modal>
-      )
-    }
-  />
-)
-
-export const RequiredDecision = () => (
-  <SurfaceStory
-    open={({ openModal }) =>
-      openModal(
-        <Modal
-          heading="Review policy"
-          description="Choose an action before leaving this workflow."
-          dismissible={false}
-          size="sm"
-          primaryAction={{ children: 'Accept policy', variant: 'primary' }}
-        >
-          <Text>The backdrop and Escape key do not dismiss this modal.</Text>
-        </Modal>
-      )
-    }
-  />
-)
-
-export const WithoutFooter = () => (
-  <SurfaceStory
-    open={({ openModal }) =>
-      openModal(
-        <Modal heading="Live operation" showFooter={false}>
-          <Text color="secondary">
-            The close control remains available in the stable header.
-          </Text>
-        </Modal>
-      )
-    }
-  />
-)
-
-export const MobileWidth = () => (
+export const UseCaseResponsiveWidth = () => (
   <SurfaceStory
     open={({ openModal }) =>
       openModal(
         <Modal heading="Responsive modal" size="xl">
           <Text color="secondary">
-            Resize the story viewport to inspect the responsive gutters.
+            Resize the story viewport to inspect responsive gutters.
           </Text>
         </Modal>
       )

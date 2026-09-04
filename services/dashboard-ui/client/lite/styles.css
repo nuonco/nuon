@@ -115,6 +115,9 @@
   --card-shadow-floating:
     0 12px 32px light-dark(rgba(29, 29, 29, 0.1), rgba(0, 0, 0, 0.45)),
     0 2px 8px light-dark(rgba(29, 29, 29, 0.06), rgba(0, 0, 0, 0.28));
+  --toast-shadow:
+    0 6px 14px light-dark(rgba(29, 29, 29, 0.08), rgba(0, 0, 0, 0.28)),
+    0 1px 3px light-dark(rgba(29, 29, 29, 0.06), rgba(0, 0, 0, 0.2));
 
   --field-bg: light-dark(var(--neutral-000), rgba(254, 254, 254, 0.05));
   --field-bg-hover: light-dark(
@@ -354,6 +357,7 @@
   --card-border: var(--neutral-000);
   --card-shadow: none;
   --card-shadow-floating: none;
+  --toast-shadow: none;
 
   --field-bg: var(--hc-blue-deep);
   --field-bg-hover: rgba(255, 255, 255, 0.16);
