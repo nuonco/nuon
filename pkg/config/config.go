@@ -66,6 +66,8 @@ type AppConfig struct {
 	Runbooks []*RunbookConfig `mapstructure:"runbooks,omitempty" toml:"runbooks,omitempty"`
 
 	Triggers *TriggersConfig `mapstructure:"triggers,omitempty" toml:"triggers,omitempty"`
+
+	SourceArchive *SourceArchive `mapstructure:"-" toml:"-" json:"-" jsonschema:"-" temporaljson:"source_archive,omitempty"`
 }
 type ComponentList []*Component
 

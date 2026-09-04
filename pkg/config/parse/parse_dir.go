@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -44,6 +45,34 @@ func parseDirName(dirname string) (string, error) {
 }
 
 func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, error) {
+	result, err := parseDir(ctx, parseCfg, nil)
+	if err != nil {
+		return nil, err
+	}
+	return result.Config, nil
+}
+
+type ParseResult struct {
+	Config *config.AppConfig
+	Source *config.SourceArchive
+}
+
+func ParseDirWithSource(ctx context.Context, parseCfg ParseConfig) (*ParseResult, error) {
+	return parseDir(ctx, parseCfg, &sourceCapture{archive: config.NewSourceArchive()})
+}
+
+type sourceCapture struct {
+	archive *config.SourceArchive
+	err     error
+}
+
+func (s *sourceCapture) recordError(err error) {
+	if err != nil && s.err == nil {
+		s.err = err
+	}
+}
+
+func parseDir(ctx context.Context, parseCfg ParseConfig, source *sourceCapture) (*ParseResult, error) {
 	fp, err := parseDirName(parseCfg.Dirname)
 	if err != nil {
 		return nil, err
@@ -55,9 +84,10 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 	// parse the directory
 	var obj ConfigDir
 	if err := dir.Parse(ctx, cfgFS, &obj, &dir.ParseOptions{
-		Root:     fp,
-		Ext:      ".toml",
-		ParserFn: func(rc io.ReadCloser, s string, a any) error { return parseTomlFile(rc, s, a, parseCfg.FileProcessor) },
+		Root:         fp,
+		Ext:          ".toml",
+		ParserFn:     func(rc io.ReadCloser, s string, a any) error { return parseTomlFile(rc, s, a, parseCfg.FileProcessor) },
+		OnParsedFile: sourceFileRecorder(source),
 	}); err != nil {
 		return nil, errors.Wrap(err, "unable to parse directory")
 	}
@@ -82,6 +112,12 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to convert to app config")
 	}
+	if source != nil && source.err != nil {
+		return nil, ParseErr{
+			Description: "unable to archive authored config",
+			Err:         source.err,
+		}
+	}
 
 	// Derive policy names from Contents paths BEFORE get.Parse() replaces Contents with actual file content.
 	// This allows policies defined in policies.toml with Contents like "./block-mutable-tags.rego" to derive
@@ -99,10 +135,16 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 		}
 	}
 
+	fieldTimeout := defaultFieldGetTimeout
+	if parseCfg.FieldTimeout > 0 {
+		fieldTimeout = parseCfg.FieldTimeout
+	}
+
 	// parse all get functions
 	if err := get.Parse(ctx, appCfg, &get.Options{
-		FieldTimeout: defaultFieldGetTimeout,
+		FieldTimeout: fieldTimeout,
 		RootDir:      fp,
+		OnLocalFile:  localSourceFileRecorder(source),
 	}); err != nil {
 		return nil, ParseErr{
 			Description: "unable to get fields",
@@ -133,7 +175,96 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 		}
 	}
 
-	return appCfg, nil
+	if source == nil {
+		return &ParseResult{Config: appCfg}, nil
+	}
+	source.recordError(source.archive.ReindexMembers())
+	if source.err != nil {
+		return nil, ParseErr{
+			Description: "unable to archive authored config",
+			Err:         source.err,
+		}
+	}
+	return &ParseResult{Config: appCfg, Source: source.archive}, nil
+}
+
+func sourceFileRecorder(source *sourceCapture) func(dir.ParsedFile) error {
+	if source == nil {
+		return nil
+	}
+	return func(file dir.ParsedFile) error {
+		if err := source.archive.AddFile(file.Path, file.Contents); err != nil {
+			source.recordError(err)
+			return nil
+		}
+		if _, ok := source.archive.Files[filepath.ToSlash(file.Path)]; !ok {
+			return nil
+		}
+		kind, name := sourceMemberIdentity(file.Group, file.Path, file.Value)
+		if kind != "" && name == "" {
+			source.recordError(fmt.Errorf("source file %s has no name field", file.Path))
+			return nil
+		}
+		source.recordError(source.archive.AddMember(kind, name, file.Path))
+		return nil
+	}
+}
+
+func localSourceFileRecorder(source *sourceCapture) func(string, []byte) error {
+	if source == nil {
+		return nil
+	}
+	return func(path string, contents []byte) error {
+		source.recordError(source.archive.AddFile(path, contents))
+		return nil
+	}
+}
+
+func sourceMemberIdentity(group, path string, value any) (string, string) {
+	if path == group+".toml" {
+		switch group {
+		case "metadata":
+			return "metadata", "metadata"
+		case "inputs":
+			return "input", "inputs"
+		case "policies":
+			return "policy", "policies"
+		case "break_glass":
+			return "break_glass", "break-glass"
+		case "sandbox", "stack", "runner":
+			return group, group
+		}
+	}
+
+	kind := ""
+	switch group {
+	case "components":
+		kind = "component"
+	case "actions":
+		kind = "action"
+	case "runbooks":
+		kind = "runbook"
+	case "permissions":
+		kind = "permission"
+	default:
+		return "", ""
+	}
+
+	reflected := reflect.ValueOf(value)
+	for reflected.IsValid() && reflected.Kind() == reflect.Ptr {
+		if reflected.IsNil() {
+			return "", ""
+		}
+		reflected = reflected.Elem()
+	}
+	if !reflected.IsValid() || reflected.Kind() != reflect.Struct {
+		return "", ""
+	}
+	field := reflected.FieldByName("Name")
+	if !field.IsValid() || field.Kind() != reflect.String {
+		return "", ""
+	}
+	return kind, field.String()
 }
 
 func hasTomlFiles(fs afero.Fs) (bool, error) {
