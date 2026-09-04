@@ -457,7 +457,7 @@ func TestGetVPCNestedStack_OmitsClusterNameWhenNotInTemplate(t *testing.T) {
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	stack, _, err := tpl.getVPCNestedStack(inp, tb)
+	stack, _, _, err := tpl.getVPCNestedStack(inp, tb)
 	require.NoError(t, err)
 
 	assert.NotContains(t, stack.Parameters, "ClusterName", "ClusterName should not be in stack parameters when template does not define it")
@@ -469,7 +469,13 @@ func TestGetVPCNestedStack_OmitsClusterNameWhenNotInTemplate(t *testing.T) {
 func TestGetVPCNestedStack_IncludesClusterNameWhenInTemplate(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/yaml")
-		w.Write([]byte(mockVPCTemplateYAML))
+		w.Write([]byte(mockVPCTemplateYAML + `
+Outputs:
+  VPC:
+    Value: !Ref VPC
+  AdditionalResource:
+    Value: additional-resource
+`))
 	}))
 	defer server.Close()
 
@@ -488,12 +494,13 @@ func TestGetVPCNestedStack_IncludesClusterNameWhenInTemplate(t *testing.T) {
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	stack, _, err := tpl.getVPCNestedStack(inp, tb)
+	stack, _, outputs, err := tpl.getVPCNestedStack(inp, tb)
 	require.NoError(t, err)
 
 	assert.Contains(t, stack.Parameters, "ClusterName", "ClusterName should be in stack parameters when template defines it")
 	assert.Equal(t, inp.Install.ID, stack.Parameters["ClusterName"])
 	assert.Equal(t, inp.Install.ID, stack.Parameters["NuonInstallID"])
+	assert.Equal(t, map[string]struct{}{"VPC": {}, "AdditionalResource": {}}, outputs)
 }
 
 func TestExtractNestedStackParameters_InvalidURL(t *testing.T) {

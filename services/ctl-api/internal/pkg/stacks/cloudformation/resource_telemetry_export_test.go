@@ -50,7 +50,7 @@ func TestTelemetryExportIsNotAddedToPhoneHome(t *testing.T) {
 		Settings:                   &app.RunnerGroupSettings{},
 	}
 
-	phoneHomeJSON, err := json.Marshal(tpl.getRunnerPhoneHomeProps(inp, nil))
+	phoneHomeJSON, err := json.Marshal(tpl.getRunnerPhoneHomeProps(inp, nil, nil))
 	require.NoError(t, err)
 	assert.NotContains(t, string(phoneHomeJSON), telemetryExportSecret)
 }

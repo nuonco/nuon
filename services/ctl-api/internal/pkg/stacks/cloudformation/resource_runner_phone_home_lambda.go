@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customStacks *customNestedStackResult) *cloudformation.CustomResource {
+func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customStacks *customNestedStackResult, vpcOutputKeys map[string]struct{}) *cloudformation.CustomResource {
 	breakGlassRoleArns := make(map[string]interface{})
 	customRoleArns := make(map[string]interface{})
 
@@ -83,6 +83,12 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 	if !a.cfg.UseLocalRunners {
 		lambdaprops["runner_iam_role_arn"] = cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole")
 	}
+
+	vpcOutputs := make(map[string]any, len(vpcOutputKeys))
+	for outputKey := range vpcOutputKeys {
+		vpcOutputs[outputKey] = cloudformation.GetAtt("VPC", "Outputs."+outputKey)
+	}
+	lambdaprops["vpc_outputs"] = vpcOutputs
 
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
 		if secret.AutoGenerate || secret.Required {
