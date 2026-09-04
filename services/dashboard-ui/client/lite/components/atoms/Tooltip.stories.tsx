@@ -14,39 +14,36 @@ export const Overview = () => (
   <ComponentDocs
     name="Tooltip"
     tier="atom"
-    summary="A hover- and focus-triggered label for a control. Positioned by usePopover, which owns measuring, flipping and clamping for every floating surface."
+    summary="A hover- and focus-triggered label for a control."
     use={[
-      'Naming an icon-only control.',
-      'Explaining why a control is disabled.',
-      'Showing the full value of something truncated.',
-      'A nudge — pass open to drive it from app state instead of hover.',
+      'Name an icon-only control.',
+      'Explain why a control is disabled, though on a button you should use its own tooltip prop.',
+      'Show the full value of something truncated.',
+      'Drive a nudge from app state by passing open instead of relying on hover.',
     ]}
     avoid={[
-      'Content the user needs to act on. Tooltips vanish on blur and are unreachable on touch; use a Popover or inline text.',
-      'Anything essential that is not also available another way.',
+      'Do not put content the user needs to act on in a tooltip. Tooltips vanish on blur and are unreachable on touch.',
+      'Do not hide anything essential that is not also available another way.',
+      'Do not wrap a button by hand, because the button takes a tooltip prop.',
     ]}
     rules={[
-      'Opens on focus as well as hover, so it is reachable by keyboard.',
-      'The trigger gets aria-describedby pointing at the tooltip, so it is announced rather than being decoration.',
-      'A string content auto-wraps in Text at caption size — callers do not size it themselves.',
-      'Rendered in a portal on document.body, so overflow and stacking contexts cannot clip it.',
+      'String content is wrapped and sized for you. Pass a node only for genuinely rich content.',
+      'The side is a preference. It flips to the opposite side when there is not room.',
+      'Pair open with disableHover for a nudge, so hover cannot fight the app state.',
     ]}
     props={[
       { name: 'content', type: 'ReactNode', description: 'Tooltip body. A string is wrapped in Text.' },
-      { name: 'side', type: "'top' | 'bottom' | 'left' | 'right'", default: "'top'", description: 'Preferred side. Flips to the opposite side if it does not fit.' },
+      { name: 'side', type: "'top' | 'bottom' | 'left' | 'right'", default: "'top'", description: 'Preferred side. Flips if it does not fit.' },
       { name: 'open', type: 'boolean', description: 'Controlled mode, for nudges driven by app state.' },
       { name: 'defaultOpen', type: 'boolean', default: 'false', description: 'Uncontrolled initial state.' },
       { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Fires on hover and focus changes.' },
-      { name: 'disableHover', type: 'boolean', default: 'false', description: 'Ignores hover and focus. Pair with open for a pure nudge.' },
+      { name: 'disableHover', type: 'boolean', default: 'false', description: 'Ignores hover and focus. Pair with open.' },
+      { name: 'contentClassName', type: 'string', description: 'Classes for the floating surface.' },
     ]}
     sections={[
       {
-        heading: 'usePopover',
-        body: 'The hook returns triggerRef, contentRef, the resolved side and a style object. It measures both elements, flips to the opposite side only when the preferred one does not fit and the opposite one does, clamps into the viewport with an 8px margin, and computes an --arrow offset that tracks the trigger centre but stays 12px from the tip edges so the arrow never falls off a corner. Repositioning is driven by a ResizeObserver on both elements plus resize and capture-phase scroll listeners — the old dashboard chased a moving trigger with a 30-frame requestAnimationFrame loop instead.',
-      },
-      {
-        heading: 'Why a shared primitive',
-        body: 'Tooltip and Dropdown in the dashboard each hand-rolled measure, flip, clamp and portal, with different names for the same axes — top/bottom/left/right in one, above/below/beside/overlay in the other. Dropdown will consume this hook too and keeps only what is genuinely its own: click to open, outside-dismiss and focus management.',
+        heading: 'Positioning',
+        body: 'Rendered in a portal, so overflow and stacking contexts cannot clip it. It flips when the preferred side does not fit, stays inside the viewport, and keeps its arrow pointing at the trigger. Placement is shared with other floating surfaces via the usePopover hook.',
       },
     ]}
   />
