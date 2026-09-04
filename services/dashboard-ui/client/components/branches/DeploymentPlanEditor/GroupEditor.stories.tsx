@@ -21,6 +21,7 @@ const manualGroup: IInstallGroup = {
   selection_mode: 'manual',
   order: 0,
   max_parallel: 1,
+  auto_approve_on_policies_passing: false,
 }
 
 const labelGroup: IInstallGroup = {
@@ -31,6 +32,7 @@ const labelGroup: IInstallGroup = {
   selection_mode: 'labels',
   order: 1,
   max_parallel: 2,
+  auto_approve_on_policies_passing: true,
 }
 
 const Wrap = ({ children }: { children: React.ReactNode }) => (
