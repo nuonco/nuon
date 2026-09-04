@@ -12,15 +12,36 @@ const matchedIds = (path: string) =>
   matchRoutes(liteRoutes, path)?.map((match) => match.route.id)
 
 test('matches focused and organization-scoped top-level routes', () => {
-  expect(matchedIds('/onboarding')).toEqual(['focus-layout', 'onboarding'])
-  expect(matchedIds('/org-123')).toEqual(['org-layout', 'dashboard'])
-  expect(matchedIds('/org-123/apps')).toEqual(['org-layout', 'apps'])
-  expect(matchedIds('/org-123/installs')).toEqual(['org-layout', 'installs'])
-  expect(matchedIds('/org-123/teams')).toEqual(['org-layout', 'teams'])
+  expect(matchedIds('/onboarding')).toEqual([
+    'root-layout',
+    'focus-layout',
+    'onboarding',
+  ])
+  expect(matchedIds('/org-123')).toEqual([
+    'root-layout',
+    'org-layout',
+    'dashboard',
+  ])
+  expect(matchedIds('/org-123/apps')).toEqual([
+    'root-layout',
+    'org-layout',
+    'apps',
+  ])
+  expect(matchedIds('/org-123/installs')).toEqual([
+    'root-layout',
+    'org-layout',
+    'installs',
+  ])
+  expect(matchedIds('/org-123/teams')).toEqual([
+    'root-layout',
+    'org-layout',
+    'teams',
+  ])
 })
 
 test('matches every settings child from the playground route model', () => {
   expect(matchedIds('/org-123/settings')).toEqual([
+    'root-layout',
     'org-layout',
     'settings-layout',
     'settings-connections',

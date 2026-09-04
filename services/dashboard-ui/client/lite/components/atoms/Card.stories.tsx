@@ -45,6 +45,13 @@ export const Overview = () => (
           'Strength of the backdrop blur. Use none for cards over a flat surface.',
       },
       {
+        name: 'opacity',
+        type: "'default' | 'strong' | 'solid'",
+        default: "'default'",
+        description:
+          'Background opacity. Strong is intended for floating surfaces; solid removes transparency.',
+      },
+      {
         name: 'interactive',
         type: 'boolean',
         default: 'false',
@@ -112,6 +119,28 @@ export const OnBackdrop = () => (
         <Card blur="lg">
           <Metadata />
         </Card>
+      </div>
+    </Backdrop>
+  </div>
+)
+
+export const Opacity = () => (
+  <div className="flex flex-col gap-4 p-8">
+    <Text variant="caption" color="tertiary">
+      Three semantic opacity levels over the same backdrop.
+    </Text>
+    <Backdrop>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {(['default', 'strong', 'solid'] as const).map((opacity) => (
+          <Card key={opacity} opacity={opacity}>
+            <Text variant="body" weight="medium">
+              {opacity}
+            </Text>
+            <Text variant="caption" color="tertiary">
+              Card background opacity
+            </Text>
+          </Card>
+        ))}
       </div>
     </Backdrop>
   </div>

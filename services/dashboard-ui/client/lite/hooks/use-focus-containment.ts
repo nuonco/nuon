@@ -12,12 +12,16 @@ const focusableElements = (container: HTMLElement) =>
 export const useFocusContainment = ({
   active,
   containerRef,
+  initialFocus = 'first',
+  initialFocusRef,
   restoreFocusRef,
   onEscape,
 }: {
   active: boolean
   containerRef: RefObject<HTMLElement | null>
-  restoreFocusRef: RefObject<HTMLElement | null>
+  initialFocus?: 'first' | 'container'
+  initialFocusRef?: RefObject<HTMLElement | null>
+  restoreFocusRef?: RefObject<HTMLElement | null>
   onEscape?: () => void
 }) => {
   useLayoutEffect(() => {
@@ -26,7 +30,12 @@ export const useFocusContainment = ({
     const container = containerRef.current
     if (!container) return
 
-    const initial = focusableElements(container)[0] ?? container
+    const initial =
+      initialFocusRef?.current ??
+      container.querySelector<HTMLElement>('[autofocus]') ??
+      (initialFocus === 'container'
+        ? container
+        : (focusableElements(container)[0] ?? container))
     initial.focus()
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -46,7 +55,11 @@ export const useFocusContainment = ({
 
       const first = elements[0]
       const last = elements.at(-1)
-      if (event.shiftKey && document.activeElement === first) {
+      if (
+        event.shiftKey &&
+        (document.activeElement === first ||
+          document.activeElement === container)
+      ) {
         event.preventDefault()
         last?.focus()
       } else if (!event.shiftKey && document.activeElement === last) {
@@ -58,11 +71,18 @@ export const useFocusContainment = ({
     container.addEventListener('keydown', onKeyDown)
     return () => {
       container.removeEventListener('keydown', onKeyDown)
-      const restore = restoreFocusRef.current
+      const restore = restoreFocusRef?.current
       const target = restore?.matches(FOCUSABLE)
         ? restore
         : restore?.querySelector<HTMLElement>(FOCUSABLE)
       setTimeout(() => target?.focus(), 0)
     }
-  }, [active, containerRef, onEscape, restoreFocusRef])
+  }, [
+    active,
+    containerRef,
+    initialFocus,
+    initialFocusRef,
+    onEscape,
+    restoreFocusRef,
+  ])
 }

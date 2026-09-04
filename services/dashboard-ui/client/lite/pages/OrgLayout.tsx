@@ -4,6 +4,7 @@ import { Text } from '../components/atoms/Text'
 import type { INavItem } from '../components/molecules/NavLink'
 import { ThemeSwitcher } from '../components/molecules/ThemeSwitcher'
 import { UserDropdown } from '../components/organisms/UserDropdown'
+import { SurfaceHost } from '../components/organisms/surfaces'
 import { DashboardShell } from '../components/templates/DashboardShell'
 import { useCurrentUser } from '../hooks/use-current-user'
 import { OrgProvider, useOrg } from '../providers/org-provider'
@@ -97,6 +98,8 @@ const OrgShell = () => {
 
 export const OrgLayout = () => (
   <OrgProvider>
-    <OrgShell />
+    <SurfaceHost scope="org">
+      <OrgShell />
+    </SurfaceHost>
   </OrgProvider>
 )
