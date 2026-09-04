@@ -35,6 +35,7 @@ func (a *Activities) GetLatestActiveBranchAppConfig(ctx context.Context, input *
 			AppBranchID: generics.NewNullString(input.AppBranchID),
 			Status:      app.AppConfigStatusActive,
 		}).
+		Where("labels->>'source' IS NULL OR labels->>'source' != ?", string(app.AppBranchRunTypeGitPreview)).
 		Order("created_at DESC").
 		First(&appConfig).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {

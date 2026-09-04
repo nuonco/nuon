@@ -305,6 +305,11 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
+	if err := s.helpers.EnqueueAppBranchCreatedIfFirst(ctx, appBranchID, config.ID); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue app-branch-created: %w", err))
+		return
+	}
+
 	for _, group := range config.InstallGroups {
 		for _, installID := range group.InstallIDs {
 			var install app.Install
