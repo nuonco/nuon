@@ -262,8 +262,6 @@ func TestIsSummaryApprovalType(t *testing.T) {
 	require.True(t, isSummaryApprovalType(app.TerraformPlanApprovalType))
 }
 
-// The plan body is only read for the types whose counts come out of it. Reading
-// it for the other two is the regression this endpoint exists to prevent.
 func TestPlanTypeHasCounts(t *testing.T) {
 	require.True(t, planTypeHasCounts(app.TerraformPlanApprovalType))
 	require.True(t, planTypeHasCounts(app.PulumiApprovalType))

@@ -22,9 +22,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// planSummaryReadConcurrency bounds how many approval plans are read at once. A
-// deploy-components workflow carries ~20 approvals whose plans run to megabytes,
-// so they are read in parallel but never all at once.
 const planSummaryReadConcurrency = 8
 
 var helmPlanSummaryPattern = regexp.MustCompile(`Plan:\s*(\d+)\s+to add,\s*(\d+)\s+to change,\s*(\d+)\s+to destroy`)
@@ -44,8 +41,6 @@ type pulumiPlanSummary struct {
 	} `json:"resource_changes"`
 }
 
-// ContentDiff stays raw so the `Plan:` summary line can settle the counts
-// without ever materializing the manifests.
 type helmPlanSummary struct {
 	Plan        string          `json:"plan"`
 	ContentDiff json.RawMessage `json:"helm_content_diff"`
@@ -119,9 +114,6 @@ func (s *service) getWorkflowPlanSummaries(ctx *gin.Context, orgID, workflowID s
 	}
 
 	var steps []app.WorkflowStep
-	// Contents are omitted here and read per-approval below: only four of the six
-	// approval types derive counts from the plan body, and pulling every plan into
-	// the row set is what this endpoint exists to avoid.
 	if err := s.db.WithContext(ctx).
 		Where(app.WorkflowStep{InstallWorkflowID: workflowID, OrgID: orgID}).
 		Preload("Approval", func(db *gorm.DB) *gorm.DB {
@@ -192,19 +184,11 @@ func (s *service) getStepComponentNames(ctx *gin.Context, orgID string, steps []
 	return names, nil
 }
 
-// countableApproval pairs an approval whose plan still has to be read with the
-// summary index its counts belong to.
 type countableApproval struct {
 	approval *app.WorkflowStepApproval
 	idx      int
 }
 
-// applyPlanChangeCounts fills in counts for the approvals that carry a plan.
-// Blob-backed plans are streamed straight into the JSON decoder so a multi-MB
-// plan is never held in memory, and reads run concurrently up to
-// planSummaryReadConcurrency. Anything the blob path cannot serve falls back to
-// the legacy contents column, fetched in a single query. A plan that cannot be
-// read or parsed marks only its own row as errored.
 func (s *service) applyPlanChangeCounts(
 	ctx *gin.Context, orgID string, summaries []app.StepChangeSummary, countable []countableApproval,
 ) {
@@ -218,8 +202,6 @@ func (s *service) applyPlanChangeCounts(
 	g := new(errgroup.Group)
 	g.SetLimit(planSummaryReadConcurrency)
 	for i, item := range countable {
-		// ContentsBlob is nil for rows written before blob storage, and IsSet is
-		// not nil-safe the way Get is.
 		blob := item.approval.ContentsBlob
 		if !s.cfg.BlobReadEnabled || blob == nil || !blob.IsSet() {
 			continue
@@ -348,9 +330,6 @@ func isSummaryApprovalType(approvalType app.WorkflowStepApprovalType) bool {
 	}
 }
 
-// planTypeHasCounts reports whether counts are derived from the plan body.
-// app_branch_plan's unit is installs rather than resources and install_creation
-// is a bare gate, so neither reads its contents.
 func planTypeHasCounts(approvalType app.WorkflowStepApprovalType) bool {
 	switch approvalType {
 	case app.TerraformPlanApprovalType,

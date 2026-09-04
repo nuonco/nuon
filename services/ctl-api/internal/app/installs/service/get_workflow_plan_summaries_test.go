@@ -84,14 +84,11 @@ func (s *InstallsServiceTestSuite) TestGetWorkflowPlanSummaries() {
 	require.Empty(s.T(), summaries[1].Counts)
 	require.False(s.T(), summaries[1].HasDetail)
 
-	// The response is the client contract for the dashboard; keep it snake_case.
 	require.Contains(s.T(), rr.Body.String(), `"step_id"`)
 	require.Contains(s.T(), rr.Body.String(), `"has_detail"`)
 	require.NotContains(s.T(), rr.Body.String(), `"stepId"`)
 }
 
-// A step whose plan has not landed yet stays "generating" without its contents
-// being read at all.
 func (s *InstallsServiceTestSuite) TestGetWorkflowPlanSummariesGeneratingPlan() {
 	s.setOrgFeatures(app.OrgFeaturePlanSummaries)
 
