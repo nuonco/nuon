@@ -14,6 +14,8 @@ type AppBranchInstallGroupConfig struct {
 	InstallIDs    []string          `mapstructure:"install_ids,omitempty" toml:"install_ids,omitempty"`
 	InstallNames  []string          `mapstructure:"install_names,omitempty" toml:"install_names,omitempty"`
 	LabelSelector map[string]string `mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
+
+	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty"`
 }
 
 type AppBranchPreviewConfig struct {
@@ -40,6 +42,7 @@ func (c AppBranchInstallGroupConfig) JSONSchemaExtend(schema *jsonschema.Schema)
 	addDescription(schema, "install_ids", "static list of install IDs")
 	addDescription(schema, "install_names", "static list of install names, resolved to IDs at sync time")
 	addDescription(schema, "label_selector", "label key-value pairs to dynamically match installs")
+	addDescription(schema, "auto_approve_on_policies_passing", "Auto-approve this group's plan when all policy checks pass. Defaults to false")
 }
 
 type AppBranchConfig struct {
