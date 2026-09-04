@@ -23,7 +23,7 @@ const RowCounts = ({ summary }: { summary: TStepChangeSummary }) => {
       </Text>
     )
   }
-  if (!summary.hasDetail && !hasChanges(summary.counts)) {
+  if (!summary.has_detail && !hasChanges(summary.counts)) {
     return (
       <Text variant="subtext" theme="neutral">
         No detail available
@@ -46,9 +46,9 @@ export const WorkflowChangeRow = ({
   renderDetail,
 }: IWorkflowChangeRow) => {
   const [isExpanded, setIsExpanded] = useState(false)
-  const planMeta = PLAN_TYPE_META[summary.planType]
+  const planMeta = PLAN_TYPE_META[summary.plan_type]
   const statusMeta = STATUS_META[summary.status]
-  const canExpand = summary.hasDetail && summary.status !== 'generating'
+  const canExpand = summary.has_detail && summary.status !== 'generating'
 
   const header = (
     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -64,11 +64,11 @@ export const WorkflowChangeRow = ({
       <Icon variant={planMeta.icon} size={18} className="shrink-0" />
       <div className="flex flex-col min-w-0">
         <Text variant="base" weight="strong" nowrap className="truncate">
-          {summary.stepName}
+          {summary.step_name}
         </Text>
-        {summary.componentName ? (
+        {summary.component_name ? (
           <Text variant="subtext" theme="neutral" nowrap className="truncate">
-            {summary.componentName}
+            {summary.component_name}
           </Text>
         ) : null}
       </div>

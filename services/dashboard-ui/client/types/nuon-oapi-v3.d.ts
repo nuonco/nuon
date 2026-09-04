@@ -3267,6 +3267,10 @@ export interface paths {
      */
     post: operations["CancelWorkflow"];
   };
+  "/v1/workflows/{workflow_id}/plan-summaries": {
+    /** get consolidated plan summaries for a workflow */
+    get: operations["GetWorkflowPlanSummaries"];
+  };
   "/v1/workflows/{workflow_id}/queue-position": {
     /**
      * get queue position for a workflow
@@ -6423,6 +6427,27 @@ export interface components {
     "app.StackVersionRunType": "workflow-run" | "out-of-band-update";
     /** @enum {string} */
     "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.StepChangeCounts": {
+      create: number;
+      delete: number;
+      noop: number;
+      replace: number;
+      update: number;
+    };
+    /** @enum {string} */
+    "app.StepChangePlanType": "terraform_plan" | "pulumi_plan" | "helm_approval" | "kubernetes_manifest_approval" | "app_branch_plan" | "install_creation";
+    /** @enum {string} */
+    "app.StepChangeStatus": "pending-approval" | "approved" | "denied" | "applied" | "generating" | "error";
+    "app.StepChangeSummary": {
+      approval_id: string;
+      component_name?: string;
+      counts: components["schemas"]["app.StepChangeCounts"];
+      has_detail: boolean;
+      plan_type: components["schemas"]["app.StepChangePlanType"];
+      status: components["schemas"]["app.StepChangeStatus"];
+      step_id: string;
+      step_name: string;
+    };
     "app.TerraformLock": {
       created?: string;
       id?: string;
@@ -32786,6 +32811,53 @@ export interface operations {
       202: {
         content: {
           "application/json": components["schemas"]["app.EmptyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get consolidated plan summaries for a workflow */
+  GetWorkflowPlanSummaries: {
+    parameters: {
+      path: {
+        /** @description workflow id */
+        workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.StepChangeSummary"][];
         };
       };
       /** @description Bad Request */

@@ -1,0 +1,30 @@
+{
+  "stdout": "",
+  "stderr": "",
+  "change_summary": {
+    "create": 2,
+    "update": 1,
+    "delete": 1,
+    "replace": 1,
+    "create-replacement": 1,
+    "delete-replaced": 1,
+    "same": 3,
+    "read": 1
+  },
+  "resource_changes": [
+    {
+      "urn": "urn:pulumi:prod::payments::aws:s3/bucket:Bucket::assets",
+      "type": "aws:s3/bucket:Bucket",
+      "name": "assets",
+      "action": "create"
+    },
+    {
+      "urn": "urn:pulumi:prod::payments::aws:iam/role:Role::runtime",
+      "type": "aws:iam/role:Role",
+      "name": "runtime",
+      "action": "update",
+      "diffs": ["description"]
+    }
+  ],
+  "diagnostics": []
+}
