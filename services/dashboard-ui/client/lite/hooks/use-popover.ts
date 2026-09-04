@@ -117,11 +117,18 @@ export const usePopover = <
           content.height - arrowInset
         )
 
+    const available = isVertical
+      ? resolved === 'top'
+        ? trigger.top - gap - margin
+        : window.innerHeight - trigger.bottom - gap - margin
+      : window.innerHeight - margin * 2
+
     setPlacedSide(resolved)
     setStyle({
       top: `${top}px`,
       left: `${left}px`,
       '--arrow': `${arrow}px`,
+      '--available': `${Math.max(0, available)}px`,
     } as CSSProperties)
   }, [side, align, gap, margin, arrowInset])
 
