@@ -107,6 +107,59 @@ func TestGetCustomLinkedDeployments_ExplicitParameters(t *testing.T) {
 	})
 }
 
+func TestGetCustomLinkedDeployments_UsesUploadedTemplateSourceURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/uploaded.json", r.URL.Path)
+		_, _ = w.Write([]byte(mockARMCustomTemplateJSON))
+	}))
+	defer server.Close()
+
+	inp := armCustomStackInput(t, "relative", map[string]string{"rootDomain": "example.com"})
+	inp.AppCfg.StackConfig.CustomNestedStacks[0].TemplateURL = "./stack.json"
+	inp.AppCfg.StackConfig.CustomNestedStacks[0].TemplateSourceURL = server.URL + "/uploaded.json"
+
+	templates := &Templates{cfg: &internal.Config{}}
+	resources, _, _, _, err := templates.getCustomLinkedDeployments(inp)
+	require.NoError(t, err)
+	require.Len(t, resources, 1)
+
+	deployment := resources[0].(map[string]any)
+	properties := deployment["properties"].(map[string]any)
+	templateLink := properties["templateLink"].(map[string]any)
+	assert.Equal(t, server.URL+"/uploaded.json", templateLink["uri"])
+}
+
+func TestGetCustomLinkedDeployments_NonHoistableDefaultDoesNotConflict(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defaultValue := `"literal"`
+		if r.URL.Path == "/expression.json" {
+			defaultValue = `"[variables('computed')]"`
+		}
+		_, _ = w.Write([]byte(`{
+		  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+		  "contentVersion": "1.0.0.0",
+		  "parameters": {
+		    "setting": { "type": "string", "defaultValue": ` + defaultValue + ` }
+		  },
+		  "resources": [],
+		  "outputs": {}
+		}`))
+	}))
+	defer server.Close()
+
+	inp := minimalTemplateInput()
+	inp.AppCfg.StackConfig.CustomNestedStacks = []config.CustomNestedStack{
+		{Name: "literal", Index: 0, TemplateURL: server.URL + "/literal.json"},
+		{Name: "expression", Index: 1, TemplateURL: server.URL + "/expression.json"},
+	}
+
+	templates := &Templates{cfg: &internal.Config{}}
+	_, hoisted, _, _, err := templates.getCustomLinkedDeployments(inp)
+	require.NoError(t, err)
+	require.Contains(t, hoisted, "setting")
+	assert.Equal(t, "literal", hoisted["setting"].DefaultValue)
+}
+
 func armDeploymentParamValue(t *testing.T, resource any, name string) any {
 	t.Helper()
 
