@@ -27,6 +27,9 @@ type AppAppBranchInstallGroup struct {
 	// app branch config id
 	AppBranchConfigID string `json:"app_branch_config_id,omitempty"`
 
+	// auto approve on policies passing
+	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
