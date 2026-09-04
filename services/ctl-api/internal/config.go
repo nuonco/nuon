@@ -386,6 +386,12 @@ type Config struct {
 
 	// notifications configuration
 	LoopsAPIKey string `config:"loops_api_key" validate:"required"`
+
+	// Mailchimp marketing audience sync. Optional so BYOC vendor deployments and local dev
+	// boot without it — the client is disabled unless all three are set.
+	MailchimpAPIKey       string `config:"mailchimp_api_key"`
+	MailchimpServerPrefix string `config:"mailchimp_server_prefix"`
+	MailchimpAudienceID   string `config:"mailchimp_audience_id"`
 	// Deprecated: legacy Slack webhook send path is gone; field is read only to populate unused NotificationsConfig rows pending a follow-up cleanup.
 	InternalSlackWebhookURL string `config:"internal_slack_webhook_url"`
 	DisableNotifications    bool   `config:"disable_notifications"`

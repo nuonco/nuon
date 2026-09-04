@@ -36,6 +36,10 @@ type Account struct {
 	Subject     string      `json:"subject,omitzero" gorm:"index:idx_email_subject,unique,not null;" temporaljson:"subject,omitzero,omitempty"`
 	Name        string      `json:"name,omitzero" gorm:"default:null" temporaljson:"name,omitzero,omitempty"`
 	AccountType AccountType `json:"account_type,omitzero" temporaljson:"account_type,omitzero,omitempty"`
+	// Set-only from the sign-in page's consent checkbox: an unchecked box on a later login is not
+	// a revocation, so this never transitions back to false automatically. Hidden from the API
+	// until a product surface needs it.
+	MarketingConsent bool `json:"-" gorm:"default:false" temporaljson:"marketing_consent,omitzero,omitempty"`
 
 	Roles        []Role            `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"roles,omitzero" temporaljson:"roles,omitzero,omitempty"`
 	Tokens       []Token           `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"tokens,omitzero,omitempty"`
