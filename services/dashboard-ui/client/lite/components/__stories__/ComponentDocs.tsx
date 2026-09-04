@@ -39,7 +39,13 @@ const List = ({ items, marker }: { items: string[]; marker: string }) => (
   </ul>
 )
 
-const Section = ({ heading, children }: { heading: string; children: ReactNode }) => (
+const Section = ({
+  heading,
+  children,
+}: {
+  heading: string
+  children: ReactNode
+}) => (
   <section className="flex flex-col gap-3">
     <Text as="h2" variant="label" color="tertiary">
       {heading}
@@ -108,7 +114,10 @@ export const ComponentDocs = ({
             </thead>
             <tbody>
               {props.map((prop) => (
-                <tr key={prop.name} className="border-t border-divider align-top">
+                <tr
+                  key={prop.name}
+                  className="border-t border-divider align-top"
+                >
                   <td className="px-3 py-2">
                     <Text variant="caption" family="mono" color="primary">
                       {prop.name}
