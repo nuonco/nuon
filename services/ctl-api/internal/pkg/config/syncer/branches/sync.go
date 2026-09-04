@@ -292,9 +292,10 @@ func buildInstallGroups(branchCfg *config.AppBranchConfig, nameToID map[string]s
 		}
 
 		ig := app.AppBranchInstallGroup{
-			Name:       group.Name,
-			Order:      order,
-			InstallIDs: installIDs,
+			Name:                         group.Name,
+			Order:                        order,
+			InstallIDs:                   installIDs,
+			AutoApproveOnPoliciesPassing: group.AutoApproveOnPoliciesPassing,
 		}
 
 		if len(group.LabelSelector) > 0 {

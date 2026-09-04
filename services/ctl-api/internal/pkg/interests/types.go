@@ -79,7 +79,7 @@ const (
 // notifications through DriftDetected, which gates the dedicated drift-detected
 // event that only fires when the plan-only check observes actual changes.
 var SubOps = map[ResourceKind][]string{
-	ResourceInstalls:              {"provision", "deprovision", "reprovision"},
+	ResourceInstalls:              {"provision", "deprovision", "reprovision", "label_added"},
 	ResourceStacks:                {"version_active", "stack_run", "role_change", "inputs_updated"},
 	ResourceComponents:            {"deploy", "teardown"},
 	ResourceSandboxes:             {"provision", "reprovision", "deprovision"},

@@ -130,8 +130,12 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
+	// Order against the config being rolled out, not the one the install is
+	// still pinned to: a component this update adds has no vertex in the old
+	// graph, and would otherwise never get a deploy step.
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
-		InstallID: install.ID,
+		InstallID:   install.ID,
+		AppConfigID: newAppConfigID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install graph")
@@ -158,6 +162,10 @@ func sandboxNeedsRunnerHealthyGate(diff *app.InstallConfigDiff) bool {
 	return diff != nil && diff.StackChanged
 }
 
+// filterComponentsByDiff narrows a dependency-ordered component list to the ones
+// this config update touches. componentIDs must be ordered against newAppCfg —
+// the result can only ever be a subset of it, so anything the update adds is
+// silently dropped if the caller ordered against the install's current config.
 func filterComponentsByDiff(componentIDs []string, newAppCfg *app.AppConfig, diff *app.InstallConfigDiff) []string {
 	newComponentSet := make(map[string]bool, len(newAppCfg.ComponentIDs))
 	for _, id := range newAppCfg.ComponentIDs {
