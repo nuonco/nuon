@@ -17,7 +17,7 @@ const VARIANTS: Array<{ variant: TButtonVariant; label: string; usage: string }>
   {
     variant: 'secondary',
     label: 'Edit config',
-    usage: 'The default. Every ordinary action.',
+    usage: 'The default. Standalone actions that must remain findable.',
   },
   {
     variant: 'ghost',
@@ -38,17 +38,20 @@ export const Overview = () => (
     summary="Triggers an action. Four variants chosen by emphasis."
     use={[
       'Primary is the action the page exists for.',
-      'Secondary is the default, for every ordinary action.',
-      'Ghost is the lowest emphasis, for dismissals, toolbar actions and row actions.',
+      'Secondary is the default for standalone actions that must remain findable.',
+      'Ghost is the lowest emphasis for actions inside toolbars, grouped controls, table rows and surface footers.',
       'Danger marks the entry into a destructive flow.',
     ]}
     avoid={[
       'Do not use a button for navigation. Anything that changes the URL is a link, even when it looks like a button.',
       'Do not use danger for the confirm button inside a destructive flow. That modal has already said what will happen, so its confirm is a primary.',
       'Do not use the small size for a text button. It exists for icon-only affordances that sit inline with text.',
+      'Do not use ghost as the only action in a section or page.',
     ]}
     rules={[
       'At most one primary per page.',
+      'In a toggle group, the selected option is secondary and the remaining options are ghost.',
+      'A toolbar uses ghost actions so it does not become a row of competing secondary buttons.',
       'Icon-only is a shape rather than a variant. Any variant can be icon-only, and it always needs an aria-label.',
       'Give every disabled button a tooltip explaining why, unless the reason is obvious. Pass the tooltip prop rather than wrapping the button by hand.',
       'Loading disables the button and shows a spinner. Use it for the gap between the click and the response.',
