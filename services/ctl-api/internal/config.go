@@ -168,6 +168,7 @@ func init() {
 
 	config.RegisterDefault("general_purge_stale_data_cron", "0 6 * * *")
 	config.RegisterDefault("general_purge_stale_data_duration_ago", "168h")
+	config.RegisterDefault("queue_signal_cleanup_enabled", true)
 
 	// Slack auto-link: empty TeamID or empty OrgLabelKey disables the feature.
 	config.RegisterDefault("slack_auto_link_team_id", "")
@@ -548,7 +549,7 @@ type Config struct {
 	GeneralPurgeStaleDataCron        string        `config:"general_purge_stale_data_cron"`
 	GeneralPurgeStaleDataDurationAgo time.Duration `config:"general_purge_stale_data_duration_ago" validate:"required"`
 
-	// When enabled, the daily cron hard-deletes process_healthcheck queue signals older than 7 days.
+	// When enabled (default), the daily cron hard-deletes process_healthcheck and healthcheck queue signals older than 7 days.
 	QueueSignalCleanupEnabled bool `config:"queue_signal_cleanup_enabled"`
 
 	// BlobBackfillRatePerSecond caps how many S3 PUTs/sec the blob backfill activity issues. Defaults to 500 when unset.
