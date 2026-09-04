@@ -26,7 +26,7 @@ type ServiceCreateAppBranchConfigRequest struct {
 	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
 	// it matches this RE2 pattern. Omit to carry the current setting forward; send
 	// an empty string to clear it.
-	IgnoreChangesRegex string `json:"ignore_changes_regex,omitempty"`
+	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty"`
 
 	// install groups
 	InstallGroups []*ServiceInstallGroupRequest `json:"install_groups"`
@@ -36,16 +36,14 @@ type ServiceCreateAppBranchConfigRequest struct {
 	PostDeployRunbookIds []string `json:"post_deploy_runbook_ids"`
 
 	// PreviewConfig sets branch-level preview defaults. Omit to carry forward.
-	PreviewConfig struct {
-		AppAppBranchPreviewConfig
-	} `json:"preview_config,omitempty"`
+	PreviewConfig *AppAppBranchPreviewConfig `json:"preview_config,omitempty"`
 
 	// public git vcs config
 	PublicGitVcsConfig *HelpersPublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
 
 	// SendStatusesOnIgnore posts a successful commit status for runs ignored by
 	// IgnoreChangesRegex. Omit to carry the current setting forward.
-	SendStatusesOnIgnore bool `json:"send_statuses_on_ignore,omitempty"`
+	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty"`
 }
 
 // Validate validates this service create app branch config request
@@ -130,6 +128,21 @@ func (m *ServiceCreateAppBranchConfigRequest) validateInstallGroups(formats strf
 func (m *ServiceCreateAppBranchConfigRequest) validatePreviewConfig(formats strfmt.Registry) error {
 	if swag.IsZero(m.PreviewConfig) { // not required
 		return nil
+	}
+
+	if m.PreviewConfig != nil {
+		if err := m.PreviewConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview_config")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -239,6 +252,26 @@ func (m *ServiceCreateAppBranchConfigRequest) contextValidateInstallGroups(ctx c
 }
 
 func (m *ServiceCreateAppBranchConfigRequest) contextValidatePreviewConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PreviewConfig != nil {
+
+		if swag.IsZero(m.PreviewConfig) { // not required
+			return nil
+		}
+
+		if err := m.PreviewConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview_config")
+			}
+
+			return err
+		}
+	}
 
 	return nil
 }

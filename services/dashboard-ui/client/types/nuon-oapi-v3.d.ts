@@ -3660,6 +3660,7 @@ export interface components {
        */
       all_installs?: boolean;
       app_branch_config_id?: string;
+      auto_approve_on_policies_passing?: boolean | null;
       created_at?: string;
       created_by_id?: string;
       id?: string;
@@ -8800,6 +8801,11 @@ export interface components {
        * Mutually exclusive with InstallIDs and LabelSelector.
        */
       all_installs?: boolean;
+      /**
+       * @description AutoApproveOnPoliciesPassing approves this group's plan step without user
+       * input when its policy checks pass. Omit to leave it unset (off).
+       */
+      auto_approve_on_policies_passing?: boolean;
       install_ids?: string[];
       /**
        * @description LabelSelector dynamically resolves installs at deploy time.

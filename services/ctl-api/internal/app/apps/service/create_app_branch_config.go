@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/addinstall"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -28,6 +29,10 @@ type InstallGroupRequest struct {
 	// AllInstalls targets every install on the app that no other branch owns.
 	// Mutually exclusive with InstallIDs and LabelSelector.
 	AllInstalls bool `json:"all_installs,omitempty"`
+
+	// AutoApproveOnPoliciesPassing approves this group's plan step without user
+	// input when its policy checks pass. Omit to leave it unset (off).
+	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty"`
 }
 
 type CreateAppBranchConfigRequest struct {
@@ -117,6 +122,25 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 	}
 
 	return nil
+}
+
+func installGroupsFromRequest(reqGroups []InstallGroupRequest) []app.AppBranchInstallGroup {
+	installGroups := make([]app.AppBranchInstallGroup, len(reqGroups))
+	for i, g := range reqGroups {
+		selector := g.LabelSelector
+		if selector != nil && len(selector.MatchLabels) == 0 {
+			selector = nil
+		}
+		installGroups[i] = app.AppBranchInstallGroup{
+			Name:                         g.Name,
+			Order:                        g.Order,
+			InstallIDs:                   g.InstallIDs,
+			LabelSelector:                selector,
+			AllInstalls:                  g.AllInstalls,
+			AutoApproveOnPoliciesPassing: g.AutoApproveOnPoliciesPassing,
+		}
+	}
+	return installGroups
 }
 
 // @ID						CreateAppBranchConfig
@@ -249,21 +273,19 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		}
 	}
 
-	// Convert request install groups to model
-	installGroups := make([]app.AppBranchInstallGroup, len(req.InstallGroups))
-	for i, g := range req.InstallGroups {
-		selector := g.LabelSelector
-		if selector != nil && len(selector.MatchLabels) == 0 {
-			selector = nil
-		}
-		installGroups[i] = app.AppBranchInstallGroup{
-			Name:          g.Name,
-			Order:         g.Order,
-			InstallIDs:    g.InstallIDs,
-			LabelSelector: selector,
-			AllInstalls:   g.AllInstalls,
+	previousGroups, err := s.helpers.LatestConfigInstallGroups(ctx, appBranchID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	previousInstallIDs := make(map[string]struct{})
+	for _, group := range previousGroups {
+		for _, installID := range group.InstallIDs {
+			previousInstallIDs[installID] = struct{}{}
 		}
 	}
+
+	installGroups := installGroupsFromRequest(req.InstallGroups)
 
 	config, err := s.helpers.CreateAppBranchConfig(
 		ctx,
@@ -283,11 +305,23 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
-	if len(explicitInstallIDs) > 0 {
-		for _, installID := range explicitInstallIDs {
+	if err := s.helpers.EnqueueAppBranchCreatedIfFirst(ctx, appBranchID, config.ID); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue app-branch-created: %w", err))
+		return
+	}
+
+	for _, group := range config.InstallGroups {
+		for _, installID := range group.InstallIDs {
 			var install app.Install
 			if err := s.db.WithContext(ctx).First(&install, "id = ?", installID).Error; err == nil {
 				s.helpers.SyncInstallBranchConnection(ctx, &install, appBranchID)
+			}
+			if _, existed := previousInstallIDs[installID]; existed {
+				continue
+			}
+			if err := addinstall.Enqueue(ctx, s.queueClient, appBranchID, installID, group.ID); err != nil {
+				ctx.Error(fmt.Errorf("unable to enqueue branch config update for install %s: %w", installID, err))
+				return
 			}
 		}
 	}
