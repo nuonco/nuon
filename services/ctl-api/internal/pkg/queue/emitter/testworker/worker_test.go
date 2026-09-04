@@ -11,15 +11,19 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/filecache"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
@@ -34,12 +38,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/testworker/seed"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/blob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
@@ -54,8 +60,9 @@ type TestService struct {
 	L    *zap.Logger
 	Seed *seed.Seeder
 
-	QueueClient   *queueclient.Client
-	EmitterClient *emitterclient.Client
+	QueueClient    *queueclient.Client
+	EmitterClient  *emitterclient.Client
+	TemporalClient temporalclient.Client
 }
 
 type EmitterTestSuite struct {
@@ -87,11 +94,26 @@ func (e *EmitterTestSuite) SetupSuite() {
 		fx.Provide(github.New),
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
+		fx.Provide(func() *querycollector.Collector { return querycollector.NewCollector(5000) }),
 		fx.Provide(psql.AsPSQL(psql.New)),
 		fx.Provide(ch.AsCH(ch.New)),
 
+		fx.Provide(blobstore.NewService),
+		fx.Provide(func(cfg *internal.Config, l *zap.Logger) *filecache.FileCache {
+			cache, err := filecache.New(filecache.Options{
+				Dir:      cfg.TemporalBlobCacheDir,
+				MaxCount: cfg.TemporalBlobCacheMaxCount,
+				MaxBytes: int64(cfg.TemporalBlobCacheMaxSizeMB) * 1024 * 1024,
+			})
+			if err != nil {
+				l.Warn("failed to create blob cache, caching disabled", zap.Error(err))
+				return nil
+			}
+			return cache
+		}),
 		fx.Provide(gzip.AsGzip(gzip.New)),
 		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
+		fx.Provide(blob.AsBlob(blob.New)),
 		fx.Provide(dataconverter.New),
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),
@@ -109,6 +131,7 @@ func (e *EmitterTestSuite) SetupSuite() {
 		fx.Provide(signaldb.NewPayloadConverter),
 
 		// clients
+		fx.Provide(enqueuer.New),
 		fx.Provide(queueclient.New),
 		fx.Provide(emitterclient.New),
 
