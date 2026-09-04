@@ -1,5 +1,5 @@
 import { api } from '@/lib/api'
-import type { TAppBranchConfig, TAppBranchInstallGroup } from '@/types'
+import type { TAppBranchConfig } from '@/types'
 
 export type TCreateBranchConfigRequest = {
   connected_github_vcs_config?: {
@@ -24,6 +24,7 @@ export type TCreateBranchConfigRequest = {
     } | null
     order: number
     max_parallel?: number
+    auto_approve_on_policies_passing?: boolean
   }>
   // Omit to carry the current setting forward; send [] to clear it.
   post_deploy_runbook_ids?: string[]

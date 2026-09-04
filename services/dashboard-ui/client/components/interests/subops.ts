@@ -13,7 +13,7 @@ import { humanize } from '@/utils/string-utils'
 import type { ResourceKind } from './types'
 
 export const SUB_OPS: Record<ResourceKind, string[]> = {
-  installs: ['provision', 'deprovision', 'reprovision'],
+  installs: ['provision', 'deprovision', 'reprovision', 'label_added'],
   stacks: ['version_active'],
   components: ['deploy', 'teardown'],
   sandboxes: ['provision', 'reprovision', 'deprovision'],
