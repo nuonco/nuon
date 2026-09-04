@@ -86,6 +86,7 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 		command.WithArgs(args),
 		command.WithStdout(lOut),
 		command.WithStderr(lErr),
+		command.WithProcessGroup(),
 	)
 	if err != nil {
 		l.Error("error creating command", zap.Error(err))
