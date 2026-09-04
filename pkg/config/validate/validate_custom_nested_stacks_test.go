@@ -144,3 +144,21 @@ func TestValidateCustomNestedStackOutputs_UnfetchableTemplateSkipped(t *testing.
 	})
 	assert.NoError(t, err)
 }
+
+func TestValidateAzureCustomNestedStacksChecksInstallOverrides(t *testing.T) {
+	err := validateAzureCustomNestedStacks(&config.AppConfig{
+		Stack: &config.StackConfig{Type: "azure-bicep"},
+		Installs: []*config.Install{
+			{
+				Name: "example",
+				StackOverrides: &config.InstallStackOverrides{
+					CustomNestedStacks: []config.CustomNestedStack{
+						{Name: "storage", Index: 0, TemplateURL: "./arm/storage.bicep", Contents: "param location string"},
+					},
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "az bicep build --file ./arm/storage.bicep --outfile ./arm/storage.json")
+}

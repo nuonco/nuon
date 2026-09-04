@@ -1,0 +1,97 @@
+---
+title: 'Nuon Stack Terraform Provider'
+description: 'Read install configuration and report Terraform install-stack results.'
+icon: "layer-group"
+keywords: ["terraform", "provider", "stack_config", "stack_phone_home", "install stack"]
+---
+
+The [`nuonco/stack`](https://registry.terraform.io/providers/nuonco/stack/latest) provider gives an install-stack module
+two authenticated operations:
+
+- `stack_config` reads the rendered configuration for an install.
+- `stack_phone_home` reports create, update, and delete results to Nuon.
+
+Published Nuon AWS, Azure, and GCP modules already include this wiring. Use the provider directly when wrapping or
+forking one of those modules.
+
+## Configure Authentication
+
+```hcl
+terraform {
+  required_providers {
+    stack = {
+      source  = "nuonco/stack"
+      version = ">= 0.7.0"
+    }
+  }
+}
+
+provider "stack" {}
+```
+
+Set credentials outside Terraform so they are not written into the plan:
+
+```bash
+export NUON_API_TOKEN="<token>"
+export NUON_API_URL="https://runner.nuon.co"
+```
+
+`NUON_API_URL` is optional for the hosted control plane. The provider also supports ambient OIDC with
+`NUON_ORG_ID` and either `NUON_OIDC_TOKEN`, `NUON_OIDC_TOKEN_FILE`, or a GitHub Actions ID token.
+
+<Warning>
+The install ID identifies the configuration to read; it does not authorize access. Never replace provider
+authentication with the install ID.
+</Warning>
+
+## Read Install Configuration
+
+```hcl
+variable "install_id" {
+  type = string
+}
+
+data "stack_config" "this" {
+  install_id = var.install_id
+}
+```
+
+The data source returns common values such as:
+
+- `runner_id`, `runner_api_url`, and `phone_home_url`
+- `install_inputs`, `required_input_names`, and `secrets`
+- `aws`, `azure`, or `gcp` cloud-specific runner and permission configuration
+- `custom_stacks` and `custom_stacks_template_url`
+
+Secrets and cloud runner tokens are sensitive. Use encrypted remote state with tightly scoped access.
+
+## Report Results
+
+`stack_phone_home` maps Terraform resource lifecycle events to Nuon's `Create`, `Update`, and `Delete` request types.
+
+```hcl
+resource "stack_phone_home" "this" {
+  install_id      = data.stack_config.this.install_id
+  phone_home_url  = data.stack_config.this.phone_home_url
+  phone_home_type = "azure"
+
+  payload = jsonencode({
+    resource_group       = azurerm_resource_group.this.name
+    custom_nested_stacks = local.custom_stack_outputs
+  })
+}
+```
+
+Use `aws`, `azure`, or `gcp` for `phone_home_type`. Keep cloud-specific payload keys compatible with the published
+module because Nuon exposes them to app templates as `.nuon.install_stack.outputs`.
+
+The `inputs` argument may update only customer-source app inputs. Vendor and computed inputs are rendered by Nuon and
+must remain in the payload rather than being submitted as customer overrides.
+
+## Custom Stack Fields
+
+Each `custom_stacks` entry includes its stable `name`, rendered `parameters`, customer `input_parameters`, and output
+mapping. AWS and Azure additionally use `custom_stacks_template_url` for the generated custom-only template. GCP uses
+the curated module name derived from its module path.
+
+See [Custom Install Stacks](/guides/custom-nested-stacks) for app configuration and output consumption.
