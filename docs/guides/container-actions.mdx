@@ -73,8 +73,6 @@ Publish the image as a [container image component](/guides/container-image-compo
 image = "{{.nuon.components.migrate_tools.outputs.image.ref}}"
 ```
 
-Nuon pulls the image using that component's registry credentials.
-
 <Warning>
   Use the component's `image.ref` output, not `image.repository` and `image.tag`. A bare
   `repository:tag` is rejected with `not digest-pinned`.
