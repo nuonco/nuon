@@ -127,8 +127,7 @@ provided labels must match (AND semantics):
 		Short: "Create an install",
 		Long: `Create a new install of your app.
 
---region is required for AWS apps. For GCP and Azure apps the region is
-determined automatically from the stack output after provisioning.
+--region is required for every cloud. It is the AWS or GCP region, or the Azure location.
 
 Use --label (repeatable, format key=value) to attach labels at creation time:
 
@@ -157,7 +156,7 @@ sandbox and components unprovisioned:
 	if !c.cfg.Preview {
 		createCmd.MarkFlagRequired("name")
 	}
-	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in (required for AWS installs)")
+	createCmd.Flags().StringVarP(&region, "region", "r", "", "The AWS or GCP region, or Azure location (required)")
 	createCmd.Flags().StringVar(&awsAccountID, "aws-account-id", "", "The AWS account ID this install targets (required when phone home authentication is enabled for your org; immutable after creation)")
 	createCmd.Flags().StringVar(&azureSubscriptionID, "azure-subscription-id", "", "The Azure subscription ID this install targets (required when phone home authentication is enabled for your org; immutable after creation)")
 	createCmd.Flags().StringVar(&gcpProjectID, "gcp-project-id", "", "The GCP project ID this install targets (required when phone home authentication is enabled for your org; immutable after creation)")

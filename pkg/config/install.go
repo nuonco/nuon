@@ -149,7 +149,7 @@ func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Per-install override for the runner nested CloudFormation template URL. Overrides the app-level default from stack.toml.").
 		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-runner.yaml").
 		Field("custom_nested_stacks").Short("Custom nested stack overrides").
-		Long("Per-install overrides for custom nested CloudFormation stacks. Entries with the same name as app-level stacks replace them; new names are appended.").
+		Long("Per-install overrides for custom install stacks. Entries with the same name as app-level stacks replace them; new names are appended. Supports AWS CloudFormation, Azure ARM, and curated GCP modules.").
 		Nullable()
 }
 

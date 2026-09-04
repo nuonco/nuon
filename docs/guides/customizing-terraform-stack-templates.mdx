@@ -1,13 +1,18 @@
 ---
 title: 'Customizing Terraform Stack Templates'
-description: 'Fork the open-source install-stacks repo to customize the Terraform install stack for your customers.'
+description: 'Fork or wrap an open-source Terraform install-stack module.'
 icon: "code-fork"
 keywords: ["installs", "stacks", "terraform", "install-stacks", "customize", "fork"]
 ---
 
-The Terraform stack templates live in the open-source
-[`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) repo. The defaults work out of the box in most cases,
-but if you need to meet specific networking, compliance, or naming requirements you can fork the repo, or create your own customer terraform module from scratch.
+The Terraform install-stack modules are open source:
+
+- [AWS](https://github.com/nuonco/terraform-aws-stack)
+- [Azure](https://github.com/nuonco/terraform-azure-stack)
+- [GCP](https://github.com/nuonco/terraform-gcp-stack)
+
+The defaults work out of the box in most cases. Fork or wrap a module when you need different networking, compliance,
+or naming behavior.
 
 The runner and control plane have some requirements that the Stack must fulfill. Each cloud has its own contract — the
 shape is similar but the resource types and payload keys differ. As long as your fork preserves the contract for the
@@ -20,7 +25,7 @@ provider](/guides/nuon-stack-terraform-provider), then layers the customer-provi
 
 ```hcl
 data "stack_config" "this" {
-  phone_home_id = var.phone_home_id
+  install_id = var.install_id
 }
 
 locals {
@@ -32,13 +37,14 @@ locals {
 }
 ```
 
-If you fork a module, keep this pattern: the customer supplies only `phone_home_id`, an optional `api_url`, the target
-cloud region, and any secret values — everything else comes from the data source. The attribute reference for every
-value the data source exposes is in [The Nuon Stack Terraform Provider](/guides/nuon-stack-terraform-provider).
+If you fork a module, keep this pattern: the customer supplies the `install_id`, cloud provider configuration, and any
+input or secret overrides. The Stack provider authenticates the read; the install ID is not a credential. The attribute
+reference for every value the data source exposes is in
+[The Nuon Stack Terraform Provider](/guides/nuon-stack-terraform-provider).
 
 ## AWS
 
-The AWS stack lives in [`install-stacks/aws/`](https://github.com/nuonco/install-stacks/tree/main/aws).
+The AWS stack lives in [`terraform-aws-stack`](https://github.com/nuonco/terraform-aws-stack).
 
 ### Runner instance
 
@@ -107,13 +113,13 @@ The required keys (matching the CloudFormation phone-home Lambda payload exactly
 
 ## GCP
 
-The GCP stack lives in [`install-stacks/gcp/`](https://github.com/nuonco/install-stacks/tree/main/gcp).
+The GCP stack lives in [`terraform-gcp-stack`](https://github.com/nuonco/terraform-gcp-stack).
 
 ### Runner instance
 
 - A `google_compute_instance` (or MIG) in a subnet with outbound HTTPS to the Nuon API and to GitHub raw.
-- The runner authenticates using the **runner service account's GCP-issued identity token** — no shared secrets in
-  metadata.
+- The runner authenticates with the token returned by `data.stack_config.this.gcp.runner_api_token`. Protect Terraform
+  state as sensitive because the token is stored in instance metadata.
 - The same `init-mng-v2.sh` flow applies: instance metadata must carry `nuon_runner_id`, `nuon_runner_api_url`, and
   `nuon_install_id` so the init script can read them.
 
@@ -132,8 +138,8 @@ Attached to the runner instance. The IAM policy must allow:
 - Each must grant the runner service account `roles/iam.serviceAccountTokenCreator` so the runner can impersonate it.
 - Permissions on each service account come from your `stack.toml` (inline + managed policies are translated into IAM
   bindings on the project).
-- **Service account names must match `each.key` from `stack.toml` verbatim.** ctl-api looks them up by exact short
-  name (the part before `@<project>.iam.gserviceaccount.com`).
+- Report each role under its exact configured role name. Resource names may use deterministic hashes to satisfy GCP's
+  30-character service-account ID limit.
 
 ### Phone-home payload
 
@@ -154,6 +160,26 @@ resource or a POST to the `phone_home_url` from the data source). Required keys:
 | `install_inputs` | Echo of the install inputs (`data.stack_config.this.install_inputs`). |
 | `<secret_name>` | One key per secret declared in `stack.toml`, flattened into the top-level payload (Secret Manager secret names, not ARNs). |
 
+## Azure
+
+The Azure stack lives in [`terraform-azure-stack`](https://github.com/nuonco/terraform-azure-stack).
+
+### Runner virtual machine
+
+- A Linux virtual machine in a subnet with outbound HTTPS to the Nuon API and artifact hosts.
+- Metadata passed to cloud-init must include the runner ID and runner API URL from `stack_config`.
+- The runner identity needs the role assignments required to assume configured operation, break-glass, and custom roles.
+
+### Phone-home payload
+
+Report the subscription, resource group, VNet, runner subnet, runner identity, configured role IDs, install inputs, and
+custom-stack outputs through `stack_phone_home`. Keep the payload keys emitted by the published module even if a fork
+changes the underlying Azure resources; ctl-api and app templates treat those keys as the stable contract.
+
+Azure custom stacks use an Azure Deployment Stack backed by the uploaded linked ARM template. Preserve its
+`actionOnUnmanage` and delete query parameters unless intentionally changing whether removed resources are deleted or
+detached. See [Custom Install Stacks](/guides/custom-nested-stacks) for the cross-cloud custom-stack contract.
+
 ## What you can customize freely
 
 - VPC / VNet / VPC layout, CIDRs, subnet count and sizes — as long as the runner subnet has working egress to the
@@ -162,24 +188,23 @@ resource or a POST to the `phone_home_url` from the data source). Required keys:
 - Instance type / machine type and image — anything that supports cloud-init and can run the `runner` binary works
   (AL2023, Ubuntu LTS, Amazon Linux 2, Debian, COS).
 - Tags / labels, KMS keys, access logging, flow logs, private service endpoints, peering, transit gateways, DNS zones.
-- Wrapping the published module from a parent Terraform configuration instead of forking — `install-stacks/aws` and
-  `install-stacks/gcp` are normal Terraform modules and can be consumed directly:
+- Wrapping the published registry module from a parent Terraform configuration instead of forking:
 
   ```hcl
-  module "nuon" {
-    source = "github.com/nuonco/install-stacks//aws"
+  provider "stack" {}
 
-    phone_home_id = var.phone_home_id
-    aws = {
-      region = "us-west-2"
-    }
+  module "nuon" {
+    source  = "nuonco/stack/azure"
+    version = "~> 1.0"
+
+    install_id = var.install_id
   }
   ```
 
   The module reads the rest of its configuration from the control plane via the `stack_config` data source, so you
-  only pass `phone_home_id`, the target region, and any secret overrides.
+  pass only the install ID and supported overrides. Use each module's README for its current source, version, required
+  cloud provider configuration, and supported overrides.
 
 ## Contributing
 
-We welcome contributions to [`nuonco/install-stacks`](https://github.com/nuonco/install-stacks). If you make any
-changes that you think others might find useful, please open a PR.
+Contributions to the AWS, Azure, and GCP repositories above are welcome.
