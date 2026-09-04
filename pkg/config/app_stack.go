@@ -48,14 +48,16 @@ type CustomNestedStack struct {
 func (a CustomNestedStack) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("name").Short("nested stack name").Required().
-		Long("Unique name for this custom nested stack. Used as the CloudFormation logical ID and parameter group label.").
+		Long("Stable, unique name for the custom stack. Used for deployment naming and output lookup.").
 		Example("k8s_namespaces").
 		Example("eks_access_entries").
-		Field("template_url").Short("nested stack template URL").Required().
-		Long("URL to the CloudFormation nested template. Parameters are extracted and hoisted into the parent stack.").
+		Field("template_url").Short("custom stack template or module").Required().
+		Long("AWS CloudFormation template URL or relative path, Azure compiled ARM JSON URL or relative path, or GCP curated module path.").
 		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/k8s-namespaces.yaml").
+		Example("./arm/storage.json").
+		Example("github.com/nuonco/install-stacks//gcp/modules/bucket").
 		Field("index").Short("execution order index").Required().
-		Long("Determines the execution order of custom nested stacks (ascending). Each stack must have a unique index. Lower indices execute first.").
+		Long("Unique ordering key. AWS and Azure custom stacks execute in ascending order.").
 		Example("0").
 		Example("1").
 		Field("parameters").Short("parameter values").
@@ -88,6 +90,28 @@ func (c CustomNestedStack) GCPModuleName() string {
 	return name
 }
 
+// ValidateGCPCustomNestedStacks validates requirements that are known before
+// Terraform runs in the customer's project.
+func ValidateGCPCustomNestedStacks(stackType string, stacks []CustomNestedStack) error {
+	if stackType != "gcp-terraform" {
+		return nil
+	}
+
+	for i, stack := range stacks {
+		moduleName := stack.GCPModuleName()
+		if moduleName == "" {
+			msg := fmt.Sprintf("custom_nested_stacks[%d] (%s): gcp-terraform custom stacks must reference a gcp modules path (<repo>%s<name>), e.g. %s<name>", i, stack.Name, GCPCustomStackModuleMarker, GCPCustomStackModulePrefix)
+			return ErrConfig{Description: msg, Err: fmt.Errorf("%s", msg)}
+		}
+		if moduleName == "dns" && strings.TrimSpace(stack.Parameters["dns_name"]) == "" {
+			msg := fmt.Sprintf("custom_nested_stacks[%d] (%s): parameters.dns_name is required for the GCP dns module", i, stack.Name)
+			return ErrConfig{Description: msg, Err: fmt.Errorf("%s", msg)}
+		}
+	}
+
+	return nil
+}
+
 // Deployment scopes for the generated Azure install stack root template.
 //
 // The empty string is equivalent to StackDeploymentScopeResourceGroup and is
@@ -108,8 +132,8 @@ type StackConfig struct {
 	Name        string `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
 	Description string `mapstructure:"description" toml:"description" jsonschema:"required" features:"template"`
 
-	VPCNestedTemplateURL    string `mapstructure:"vpc_nested_template_url" toml:"vpc_nested_template_url" jsonschema:"required" features features:"template"`
-	RunnerNestedTemplateURL string `mapstructure:"runner_nested_template_url" toml:"runner_nested_template_url" jsonschema:"required" features features:"template"`
+	VPCNestedTemplateURL    string `mapstructure:"vpc_nested_template_url" toml:"vpc_nested_template_url" features features:"template"`
+	RunnerNestedTemplateURL string `mapstructure:"runner_nested_template_url" toml:"runner_nested_template_url" features features:"template"`
 
 	DeploymentScope string `mapstructure:"deployment_scope" toml:"deployment_scope,omitempty"`
 
@@ -124,11 +148,11 @@ func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("azure-bicep").
 		Example("gcp-terraform").
 		Field("name").Short("stack name").Required().
-		Long("Name of the CloudFormation stack when deployed in the customer account. Supports Go templating").
+		Long("Name of the install stack when deployed in the customer account or project. Supports Go templating").
 		Example("myapp-{{.nuon.install.id}}").
 		Example("production-stack").
 		Field("description").Short("stack description").Required().
-		Long("Description of the stack, displayed in the CloudFormation console. Supports templating").
+		Long("Description of the install stack. Supports Go templating").
 		Example("Infrastructure stack for MyApp application").
 		Field("vpc_nested_template_url").Short("VPC nested template URL").
 		Long("URL to the CloudFormation nested template for VPC resources").
@@ -140,7 +164,7 @@ func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Scope the generated install stack root template deploys at. Only supported for 'azure-bicep'. Supported values: 'resource_group' (the default) confines every resource to the install's own resource group; 'subscription' deploys at subscription scope, which lets nested stack templates create their own resource groups — needed when an app splits networking, application and security resources across several groups.").
 		Example("subscription").
 		Field("custom_nested_stacks").Short("custom nested stacks").
-		Long("Custom CloudFormation nested stack templates to include. Each entry has a name, template_url, index, and optional parameters. The index field determines execution order (ascending). The parameters field maps CloudFormation parameter names to Nuon install input references using {{.nuon.install.inputs.<name>}} syntax. Remaining parameters are hoisted into a top-level group named after the stack. Executed after first-class nested stacks.").
+		Long("Custom install-stack resources to include. Each entry has a name, template_url, index, and optional parameters. AWS uses CloudFormation templates, Azure uses compiled ARM JSON, and GCP uses curated install-stack modules.").
 		Nullable()
 }
 
@@ -335,19 +359,11 @@ func (a *StackConfig) parse() error {
 			}
 		}
 	}
-	// gcp-terraform custom stacks are curated: template_url must select a
-	// child module of the install-stacks gcp root.
-	if a.Type == "gcp-terraform" {
-		for i, stack := range a.CustomNestedStacks {
-			if stack.GCPModuleName() == "" {
-				return ErrConfig{
-					Description: fmt.Sprintf("custom_nested_stacks[%d] (%s): gcp-terraform custom stacks must reference a gcp modules path (<repo>%s<name>), e.g. %s<name>", i, stack.Name, GCPCustomStackModuleMarker, GCPCustomStackModulePrefix),
-					Err:         fmt.Errorf("custom_nested_stacks[%d] (%s): gcp-terraform custom stacks must reference a gcp modules path (<repo>%s<name>), e.g. %s<name>", i, stack.Name, GCPCustomStackModuleMarker, GCPCustomStackModulePrefix),
-				}
-			}
-		}
+	if err := ValidateGCPCustomNestedStacks(a.Type, a.CustomNestedStacks); err != nil {
+		return err
 	}
 	seenIndices := map[int]string{}
+	seenNames := map[string]int{}
 	for i, stack := range a.CustomNestedStacks {
 		if stack.Name == "" {
 			return ErrConfig{
@@ -355,6 +371,13 @@ func (a *StackConfig) parse() error {
 				Err:         fmt.Errorf("custom_nested_stacks[%d]: name is required", i),
 			}
 		}
+		if prev, exists := seenNames[stack.Name]; exists {
+			return ErrConfig{
+				Description: fmt.Sprintf("custom_nested_stacks[%d] (%s): name is already used by custom_nested_stacks[%d]; each stack must have a unique name", i, stack.Name, prev),
+				Err:         fmt.Errorf("custom_nested_stacks[%d] (%s): name is already used by custom_nested_stacks[%d]; each stack must have a unique name", i, stack.Name, prev),
+			}
+		}
+		seenNames[stack.Name] = i
 		if stack.TemplateURL == "" {
 			return ErrConfig{
 				Description: fmt.Sprintf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name),

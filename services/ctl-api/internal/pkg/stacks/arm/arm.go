@@ -41,6 +41,24 @@ func (t *Templates) Template(inp *stacks.TemplateInput) ([]byte, string, error) 
 		return nil, "", err
 	}
 
+	return marshalTemplate(tmpl)
+}
+
+func (t *Templates) CustomStacksTemplate(inp *stacks.TemplateInput) ([]byte, string, map[string]map[string]string, map[string]map[string]string, error) {
+	tmpl, outputMap, inputParametersMap, err := t.getAzureCustomStacksOnlyTemplate(inp)
+	if err != nil {
+		return nil, "", nil, nil, err
+	}
+
+	tmplBytes, checksum, err := marshalTemplate(tmpl)
+	if err != nil {
+		return nil, "", nil, nil, err
+	}
+
+	return tmplBytes, checksum, outputMap, inputParametersMap, nil
+}
+
+func marshalTemplate(tmpl *ARMTemplate) ([]byte, string, error) {
 	tmplBytes, err := json.MarshalIndent(tmpl, "", "  ")
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to marshal ARM template: %w", err)
