@@ -114,7 +114,7 @@ func (a *Activities) EnsureDefaultAppBranch(ctx context.Context, req EnsureDefau
 		return nil, fmt.Errorf("unable to ensure queues for branch %s: %w", defaultBranch.ID, err)
 	}
 
-	if _, err := a.appsHelpers.CreateAppBranchConfig(
+	config, err := a.appsHelpers.CreateAppBranchConfig(
 		ctx,
 		defaultBranch.ID,
 		nil,
@@ -127,8 +127,12 @@ func (a *Activities) EnsureDefaultAppBranch(ctx context.Context, req EnsureDefau
 		&[]string{},
 		nil,
 		nil,
-	); err != nil {
+	)
+	if err != nil {
 		return nil, fmt.Errorf("unable to configure default branch %s: %w", defaultBranch.ID, err)
+	}
+	if err := a.appsHelpers.EnqueueAppBranchCreatedIfFirst(ctx, defaultBranch.ID, config.ID); err != nil {
+		return nil, fmt.Errorf("unable to enqueue app-branch-created for %s: %w", defaultBranch.ID, err)
 	}
 
 	connected, err := a.connectInstallsToBranch(ctx, ap.ID, defaultBranch.ID)
