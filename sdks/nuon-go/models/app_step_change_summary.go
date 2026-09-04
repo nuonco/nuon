@@ -20,12 +20,12 @@ import (
 // swagger:model app.StepChangeSummary
 type AppStepChangeSummary struct {
 
-	// approval Id
+	// approval id
 	// Required: true
-	ApprovalID *string `json:"approvalId"`
+	ApprovalID *string `json:"approval_id"`
 
 	// component name
-	ComponentName string `json:"componentName,omitempty"`
+	ComponentName string `json:"component_name,omitempty"`
 
 	// counts
 	// Required: true
@@ -33,23 +33,23 @@ type AppStepChangeSummary struct {
 
 	// has detail
 	// Required: true
-	HasDetail *bool `json:"hasDetail"`
+	HasDetail *bool `json:"has_detail"`
 
 	// plan type
 	// Required: true
-	PlanType *AppStepChangePlanType `json:"planType"`
+	PlanType *AppStepChangePlanType `json:"plan_type"`
 
 	// status
 	// Required: true
 	Status *AppStepChangeStatus `json:"status"`
 
-	// step Id
+	// step id
 	// Required: true
-	StepID *string `json:"stepId"`
+	StepID *string `json:"step_id"`
 
 	// step name
 	// Required: true
-	StepName *string `json:"stepName"`
+	StepName *string `json:"step_name"`
 }
 
 // Validate validates this app step change summary
@@ -92,7 +92,7 @@ func (m *AppStepChangeSummary) Validate(formats strfmt.Registry) error {
 
 func (m *AppStepChangeSummary) validateApprovalID(formats strfmt.Registry) error {
 
-	if err := validate.Required("approvalId", "body", m.ApprovalID); err != nil {
+	if err := validate.Required("approval_id", "body", m.ApprovalID); err != nil {
 		return err
 	}
 
@@ -125,7 +125,7 @@ func (m *AppStepChangeSummary) validateCounts(formats strfmt.Registry) error {
 
 func (m *AppStepChangeSummary) validateHasDetail(formats strfmt.Registry) error {
 
-	if err := validate.Required("hasDetail", "body", m.HasDetail); err != nil {
+	if err := validate.Required("has_detail", "body", m.HasDetail); err != nil {
 		return err
 	}
 
@@ -134,11 +134,11 @@ func (m *AppStepChangeSummary) validateHasDetail(formats strfmt.Registry) error 
 
 func (m *AppStepChangeSummary) validatePlanType(formats strfmt.Registry) error {
 
-	if err := validate.Required("planType", "body", m.PlanType); err != nil {
+	if err := validate.Required("plan_type", "body", m.PlanType); err != nil {
 		return err
 	}
 
-	if err := validate.Required("planType", "body", m.PlanType); err != nil {
+	if err := validate.Required("plan_type", "body", m.PlanType); err != nil {
 		return err
 	}
 
@@ -146,11 +146,11 @@ func (m *AppStepChangeSummary) validatePlanType(formats strfmt.Registry) error {
 		if err := m.PlanType.Validate(formats); err != nil {
 			ve := new(errors.Validation)
 			if stderrors.As(err, &ve) {
-				return ve.ValidateName("planType")
+				return ve.ValidateName("plan_type")
 			}
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
-				return ce.ValidateName("planType")
+				return ce.ValidateName("plan_type")
 			}
 
 			return err
@@ -190,7 +190,7 @@ func (m *AppStepChangeSummary) validateStatus(formats strfmt.Registry) error {
 
 func (m *AppStepChangeSummary) validateStepID(formats strfmt.Registry) error {
 
-	if err := validate.Required("stepId", "body", m.StepID); err != nil {
+	if err := validate.Required("step_id", "body", m.StepID); err != nil {
 		return err
 	}
 
@@ -199,7 +199,7 @@ func (m *AppStepChangeSummary) validateStepID(formats strfmt.Registry) error {
 
 func (m *AppStepChangeSummary) validateStepName(formats strfmt.Registry) error {
 
-	if err := validate.Required("stepName", "body", m.StepName); err != nil {
+	if err := validate.Required("step_name", "body", m.StepName); err != nil {
 		return err
 	}
 
@@ -256,11 +256,11 @@ func (m *AppStepChangeSummary) contextValidatePlanType(ctx context.Context, form
 		if err := m.PlanType.ContextValidate(ctx, formats); err != nil {
 			ve := new(errors.Validation)
 			if stderrors.As(err, &ve) {
-				return ve.ValidateName("planType")
+				return ve.ValidateName("plan_type")
 			}
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
-				return ce.ValidateName("planType")
+				return ce.ValidateName("plan_type")
 			}
 
 			return err

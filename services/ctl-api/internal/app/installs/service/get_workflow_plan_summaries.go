@@ -2,17 +2,30 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
+
+// planSummaryReadConcurrency bounds how many approval plans are read at once. A
+// deploy-components workflow carries ~20 approvals whose plans run to megabytes,
+// so they are read in parallel but never all at once.
+const planSummaryReadConcurrency = 8
 
 var helmPlanSummaryPattern = regexp.MustCompile(`Plan:\s*(\d+)\s+to add,\s*(\d+)\s+to change,\s*(\d+)\s+to destroy`)
 
@@ -31,12 +44,16 @@ type pulumiPlanSummary struct {
 	} `json:"resource_changes"`
 }
 
+// ContentDiff stays raw so the `Plan:` summary line can settle the counts
+// without ever materializing the manifests.
 type helmPlanSummary struct {
-	Plan        string `json:"plan"`
-	ContentDiff []struct {
-		Before json.RawMessage `json:"before"`
-		After  json.RawMessage `json:"after"`
-	} `json:"helm_content_diff"`
+	Plan        string          `json:"plan"`
+	ContentDiff json.RawMessage `json:"helm_content_diff"`
+}
+
+type helmContentDiffEntry struct {
+	Before json.RawMessage `json:"before"`
+	After  json.RawMessage `json:"after"`
 }
 
 type kubernetesPlanSummary struct {
@@ -69,6 +86,19 @@ func (s *service) GetWorkflowPlanSummaries(ctx *gin.Context) {
 		return
 	}
 
+	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeaturePlanSummaries)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to check plan-summaries feature"))
+		return
+	}
+	if !enabled {
+		ctx.Error(stderr.ErrAuthorization{
+			Err:         fmt.Errorf("plan summaries are not enabled for org %s", org.ID),
+			Description: "The plan summaries feature is not enabled for this organization.",
+		})
+		return
+	}
+
 	workflowID := ctx.Param("workflow_id")
 	summaries, err := s.getWorkflowPlanSummaries(ctx, org.ID, workflowID)
 	if err != nil {
@@ -89,9 +119,14 @@ func (s *service) getWorkflowPlanSummaries(ctx *gin.Context, orgID, workflowID s
 	}
 
 	var steps []app.WorkflowStep
+	// Contents are omitted here and read per-approval below: only four of the six
+	// approval types derive counts from the plan body, and pulling every plan into
+	// the row set is what this endpoint exists to avoid.
 	if err := s.db.WithContext(ctx).
 		Where(app.WorkflowStep{InstallWorkflowID: workflowID, OrgID: orgID}).
-		Preload("Approval").
+		Preload("Approval", func(db *gorm.DB) *gorm.DB {
+			return db.Omit("contents")
+		}).
 		Order("group_idx, group_retry_idx, idx, created_at asc").
 		Find(&steps).Error; err != nil {
 		return nil, errors.Wrap(err, "unable to get workflow steps")
@@ -103,30 +138,39 @@ func (s *service) getWorkflowPlanSummaries(ctx *gin.Context, orgID, workflowID s
 	}
 
 	summaries := make([]app.StepChangeSummary, 0, len(steps))
+	countable := make([]countableApproval, 0, len(steps))
 	for _, step := range steps {
-		if step.Approval == nil || !isSummaryApprovalType(step.Approval.Type) {
+		approval := step.Approval
+		if approval == nil || !isSummaryApprovalType(approval.Type) {
 			continue
 		}
 
-		contents, _ := step.Approval.GetContents(ctx, s.cfg.BlobReadEnabled)
-		summary, summaryErr := buildStepChangeSummary(step, componentNames[step.StepTargetID], contents)
-		if summaryErr != nil {
-			summary.Status = app.StepChangeStatusError
+		summary := newStepChangeSummary(step, componentNames[step.StepTargetID])
+		if planTypeHasCounts(approval.Type) && summary.Status != app.StepChangeStatusGenerating {
+			countable = append(countable, countableApproval{approval: approval, idx: len(summaries)})
 		}
 		summaries = append(summaries, summary)
 	}
+
+	s.applyPlanChangeCounts(ctx, orgID, summaries, countable)
 
 	return summaries, nil
 }
 
 func (s *service) getStepComponentNames(ctx *gin.Context, orgID string, steps []app.WorkflowStep) (map[string]string, error) {
+	seen := make(map[string]struct{}, len(steps))
 	deployIDs := make([]string, 0, len(steps))
 	for _, step := range steps {
 		targetType := app.WorkflowStepTargetType(step.StepTargetType)
-		if targetType == app.WorkflowStepTargetTypeInstallDeploy ||
-			targetType == app.WorkflowStepTargetTypeInstallDeploys {
-			deployIDs = append(deployIDs, step.StepTargetID)
+		if targetType != app.WorkflowStepTargetTypeInstallDeploy &&
+			targetType != app.WorkflowStepTargetTypeInstallDeploys {
+			continue
 		}
+		if _, ok := seen[step.StepTargetID]; ok {
+			continue
+		}
+		seen[step.StepTargetID] = struct{}{}
+		deployIDs = append(deployIDs, step.StepTargetID)
 	}
 	if len(deployIDs) == 0 {
 		return map[string]string{}, nil
@@ -135,8 +179,9 @@ func (s *service) getStepComponentNames(ctx *gin.Context, orgID string, steps []
 	var deploys []app.InstallDeploy
 	if err := s.db.WithContext(ctx).
 		Where(app.InstallDeploy{OrgID: orgID}).
+		Where("id IN ?", deployIDs).
 		Preload("InstallComponent.Component").
-		Find(&deploys, deployIDs).Error; err != nil {
+		Find(&deploys).Error; err != nil {
 		return nil, errors.Wrap(err, "unable to get workflow deploy components")
 	}
 
@@ -147,9 +192,138 @@ func (s *service) getStepComponentNames(ctx *gin.Context, orgID string, steps []
 	return names, nil
 }
 
-func buildStepChangeSummary(step app.WorkflowStep, componentName, contents string) (app.StepChangeSummary, error) {
+// countableApproval pairs an approval whose plan still has to be read with the
+// summary index its counts belong to.
+type countableApproval struct {
+	approval *app.WorkflowStepApproval
+	idx      int
+}
+
+// applyPlanChangeCounts fills in counts for the approvals that carry a plan.
+// Blob-backed plans are streamed straight into the JSON decoder so a multi-MB
+// plan is never held in memory, and reads run concurrently up to
+// planSummaryReadConcurrency. Anything the blob path cannot serve falls back to
+// the legacy contents column, fetched in a single query. A plan that cannot be
+// read or parsed marks only its own row as errored.
+func (s *service) applyPlanChangeCounts(
+	ctx *gin.Context, orgID string, summaries []app.StepChangeSummary, countable []countableApproval,
+) {
+	if len(countable) == 0 {
+		return
+	}
+
+	blobCtx := ctx.Request.Context()
+	counted := make([]bool, len(countable))
+
+	g := new(errgroup.Group)
+	g.SetLimit(planSummaryReadConcurrency)
+	for i, item := range countable {
+		// ContentsBlob is nil for rows written before blob storage, and IsSet is
+		// not nil-safe the way Get is.
+		blob := item.approval.ContentsBlob
+		if !s.cfg.BlobReadEnabled || blob == nil || !blob.IsSet() {
+			continue
+		}
+		g.Go(func() error {
+			counts, err := s.blobPlanChangeCounts(blobCtx, item.approval)
+			if err != nil {
+				s.l.Warn("unable to read approval plan from blob, falling back to contents column",
+					zap.String("approval_id", item.approval.ID),
+					zap.Error(err))
+				return nil
+			}
+			summaries[item.idx].Counts = counts
+			counted[i] = true
+			return nil
+		})
+	}
+	_ = g.Wait()
+
+	pending := make([]countableApproval, 0, len(countable))
+	for i, item := range countable {
+		if !counted[i] {
+			pending = append(pending, item)
+		}
+	}
+	if len(pending) == 0 {
+		return
+	}
+
+	contents, err := s.getApprovalContentsByID(ctx, orgID, pending)
+	if err != nil {
+		s.l.Warn("unable to read approval plan contents", zap.Error(err))
+		for _, item := range pending {
+			summaries[item.idx].Status = app.StepChangeStatusError
+		}
+		return
+	}
+
+	for _, item := range pending {
+		body := contents[item.approval.ID]
+		if body == "" {
+			summaries[item.idx].Status = app.StepChangeStatusError
+			continue
+		}
+		counts, err := planChangeCounts(item.approval.Type, strings.NewReader(body))
+		if err != nil {
+			s.l.Warn("unable to parse approval plan",
+				zap.String("approval_id", item.approval.ID),
+				zap.Error(err))
+			summaries[item.idx].Status = app.StepChangeStatusError
+			continue
+		}
+		summaries[item.idx].Counts = counts
+	}
+}
+
+func (s *service) blobPlanChangeCounts(
+	ctx context.Context, approval *app.WorkflowStepApproval,
+) (app.StepChangeCounts, error) {
+	if approval.ContentsBlob == nil {
+		return app.StepChangeCounts{}, errors.New("approval has no contents blob")
+	}
+
+	s3Key := approval.ContentsBlob.Metadata().S3Key
+	if s3Key == "" {
+		return app.StepChangeCounts{}, errors.New("approval blob has no s3 key")
+	}
+
+	reader, err := s.blobSvc.DownloadStream(ctx, s3Key)
+	if err != nil {
+		return app.StepChangeCounts{}, errors.Wrap(err, "unable to download approval contents")
+	}
+	defer reader.Close()
+
+	return planChangeCounts(approval.Type, reader)
+}
+
+func (s *service) getApprovalContentsByID(
+	ctx *gin.Context, orgID string, pending []countableApproval,
+) (map[string]string, error) {
+	ids := make([]string, 0, len(pending))
+	for _, item := range pending {
+		ids = append(ids, item.approval.ID)
+	}
+
+	var rows []app.WorkflowStepApproval
+	if err := s.db.WithContext(ctx).
+		Select("id", "contents").
+		Where(app.WorkflowStepApproval{OrgID: orgID}).
+		Where("id IN ?", ids).
+		Find(&rows).Error; err != nil {
+		return nil, errors.Wrap(err, "unable to get approval contents")
+	}
+
+	contents := make(map[string]string, len(rows))
+	for _, row := range rows {
+		contents[row.ID] = row.Contents
+	}
+	return contents, nil
+}
+
+func newStepChangeSummary(step app.WorkflowStep, componentName string) app.StepChangeSummary {
 	approval := step.Approval
-	summary := app.StepChangeSummary{
+	return app.StepChangeSummary{
 		StepID:        step.ID,
 		StepName:      step.Name,
 		ApprovalID:    approval.ID,
@@ -158,24 +332,6 @@ func buildStepChangeSummary(step app.WorkflowStep, componentName, contents strin
 		Status:        stepChangeStatus(step.Status.Status),
 		HasDetail:     approval.Type != app.InstallCreationApprovalType,
 	}
-
-	if approval.Type == app.AppBranchPlanApprovalType ||
-		approval.Type == app.InstallCreationApprovalType {
-		return summary, nil
-	}
-	if contents == "" {
-		if summary.Status == app.StepChangeStatusGenerating {
-			return summary, nil
-		}
-		return summary, errors.New("approval contents are empty")
-	}
-
-	counts, err := planChangeCounts(approval.Type, []byte(contents))
-	if err != nil {
-		return summary, err
-	}
-	summary.Counts = counts
-	return summary, nil
 }
 
 func isSummaryApprovalType(approvalType app.WorkflowStepApprovalType) bool {
@@ -186,6 +342,21 @@ func isSummaryApprovalType(approvalType app.WorkflowStepApprovalType) bool {
 		app.KubernetesManifestApprovalType,
 		app.AppBranchPlanApprovalType,
 		app.InstallCreationApprovalType:
+		return true
+	default:
+		return false
+	}
+}
+
+// planTypeHasCounts reports whether counts are derived from the plan body.
+// app_branch_plan's unit is installs rather than resources and install_creation
+// is a bare gate, so neither reads its contents.
+func planTypeHasCounts(approvalType app.WorkflowStepApprovalType) bool {
+	switch approvalType {
+	case app.TerraformPlanApprovalType,
+		app.PulumiApprovalType,
+		app.HelmApprovalApprovalType,
+		app.KubernetesManifestApprovalType:
 		return true
 	default:
 		return false
@@ -209,24 +380,24 @@ func stepChangeStatus(status app.Status) app.StepChangeStatus {
 	}
 }
 
-func planChangeCounts(approvalType app.WorkflowStepApprovalType, contents []byte) (app.StepChangeCounts, error) {
+func planChangeCounts(approvalType app.WorkflowStepApprovalType, r io.Reader) (app.StepChangeCounts, error) {
 	switch approvalType {
 	case app.TerraformPlanApprovalType:
-		return terraformChangeCounts(contents)
+		return terraformChangeCounts(r)
 	case app.PulumiApprovalType:
-		return pulumiChangeCounts(contents)
+		return pulumiChangeCounts(r)
 	case app.HelmApprovalApprovalType:
-		return helmChangeCounts(contents)
+		return helmChangeCounts(r)
 	case app.KubernetesManifestApprovalType:
-		return kubernetesChangeCounts(contents)
+		return kubernetesChangeCounts(r)
 	default:
 		return app.StepChangeCounts{}, nil
 	}
 }
 
-func terraformChangeCounts(contents []byte) (app.StepChangeCounts, error) {
+func terraformChangeCounts(r io.Reader) (app.StepChangeCounts, error) {
 	var plan terraformPlanSummary
-	if err := json.Unmarshal(contents, &plan); err != nil {
+	if err := json.NewDecoder(r).Decode(&plan); err != nil {
 		return app.StepChangeCounts{}, errors.Wrap(err, "unable to parse terraform plan")
 	}
 
@@ -253,9 +424,9 @@ func terraformChangeCounts(contents []byte) (app.StepChangeCounts, error) {
 	return counts, nil
 }
 
-func pulumiChangeCounts(contents []byte) (app.StepChangeCounts, error) {
+func pulumiChangeCounts(r io.Reader) (app.StepChangeCounts, error) {
 	var plan pulumiPlanSummary
-	if err := json.Unmarshal(contents, &plan); err != nil {
+	if err := json.NewDecoder(r).Decode(&plan); err != nil {
 		return app.StepChangeCounts{}, errors.Wrap(err, "unable to parse pulumi plan")
 	}
 
@@ -287,9 +458,9 @@ func pulumiChangeCounts(contents []byte) (app.StepChangeCounts, error) {
 	return counts, nil
 }
 
-func helmChangeCounts(contents []byte) (app.StepChangeCounts, error) {
+func helmChangeCounts(r io.Reader) (app.StepChangeCounts, error) {
 	var plan helmPlanSummary
-	if err := json.Unmarshal(contents, &plan); err != nil {
+	if err := json.NewDecoder(r).Decode(&plan); err != nil {
 		return app.StepChangeCounts{}, errors.Wrap(err, "unable to parse helm plan")
 	}
 
@@ -300,10 +471,19 @@ func helmChangeCounts(contents []byte) (app.StepChangeCounts, error) {
 		return app.StepChangeCounts{Create: create, Update: update, Delete: deleteCount}, nil
 	}
 
+	if len(plan.ContentDiff) == 0 {
+		return app.StepChangeCounts{}, nil
+	}
+
+	var entries []helmContentDiffEntry
+	if err := json.Unmarshal(plan.ContentDiff, &entries); err != nil {
+		return app.StepChangeCounts{}, errors.Wrap(err, "unable to parse helm content diff")
+	}
+
 	var counts app.StepChangeCounts
-	for _, resource := range plan.ContentDiff {
-		hasBefore := hasJSONValue(resource.Before)
-		hasAfter := hasJSONValue(resource.After)
+	for _, entry := range entries {
+		hasBefore := hasJSONValue(entry.Before)
+		hasAfter := hasJSONValue(entry.After)
 		switch {
 		case !hasBefore && hasAfter:
 			counts.Create++
@@ -316,9 +496,9 @@ func helmChangeCounts(contents []byte) (app.StepChangeCounts, error) {
 	return counts, nil
 }
 
-func kubernetesChangeCounts(contents []byte) (app.StepChangeCounts, error) {
+func kubernetesChangeCounts(r io.Reader) (app.StepChangeCounts, error) {
 	var plan kubernetesPlanSummary
-	if err := json.Unmarshal(contents, &plan); err != nil {
+	if err := json.NewDecoder(r).Decode(&plan); err != nil {
 		return app.StepChangeCounts{}, errors.Wrap(err, "unable to parse kubernetes plan")
 	}
 

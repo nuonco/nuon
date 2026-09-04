@@ -6438,14 +6438,14 @@ export interface components {
     /** @enum {string} */
     "app.StepChangeStatus": "pending-approval" | "approved" | "denied" | "applied" | "generating" | "error";
     "app.StepChangeSummary": {
-      approvalId: string;
-      componentName?: string;
+      approval_id: string;
+      component_name?: string;
       counts: components["schemas"]["app.StepChangeCounts"];
-      hasDetail: boolean;
-      planType: components["schemas"]["app.StepChangePlanType"];
+      has_detail: boolean;
+      plan_type: components["schemas"]["app.StepChangePlanType"];
       status: components["schemas"]["app.StepChangeStatus"];
-      stepId: string;
-      stepName: string;
+      step_id: string;
+      step_name: string;
     };
     "app.TerraformLock": {
       created?: string;

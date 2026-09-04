@@ -31,12 +31,12 @@ type StepChangeCounts struct {
 }
 
 type StepChangeSummary struct {
-	StepID        string             `json:"stepId" binding:"required"`
-	StepName      string             `json:"stepName" binding:"required"`
-	ApprovalID    string             `json:"approvalId" binding:"required"`
-	ComponentName string             `json:"componentName,omitempty"`
-	PlanType      StepChangePlanType `json:"planType" binding:"required"`
+	StepID        string             `json:"step_id" binding:"required"`
+	StepName      string             `json:"step_name" binding:"required"`
+	ApprovalID    string             `json:"approval_id" binding:"required"`
+	ComponentName string             `json:"component_name,omitempty"`
+	PlanType      StepChangePlanType `json:"plan_type" binding:"required"`
 	Status        StepChangeStatus   `json:"status" binding:"required"`
 	Counts        StepChangeCounts   `json:"counts" binding:"required"`
-	HasDetail     bool               `json:"hasDetail" binding:"required"`
+	HasDetail     bool               `json:"has_detail" binding:"required"`
 }

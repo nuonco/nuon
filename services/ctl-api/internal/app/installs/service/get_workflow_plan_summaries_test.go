@@ -12,6 +12,8 @@ import (
 )
 
 func (s *InstallsServiceTestSuite) TestGetWorkflowPlanSummaries() {
+	s.setOrgFeatures(app.OrgFeaturePlanSummaries)
+
 	install := s.createTestInstall()
 	workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
 
@@ -81,9 +83,58 @@ func (s *InstallsServiceTestSuite) TestGetWorkflowPlanSummaries() {
 	require.Equal(s.T(), app.StepChangeStatusApproved, summaries[1].Status)
 	require.Empty(s.T(), summaries[1].Counts)
 	require.False(s.T(), summaries[1].HasDetail)
+
+	// The response is the client contract for the dashboard; keep it snake_case.
+	require.Contains(s.T(), rr.Body.String(), `"step_id"`)
+	require.Contains(s.T(), rr.Body.String(), `"has_detail"`)
+	require.NotContains(s.T(), rr.Body.String(), `"stepId"`)
+}
+
+// A step whose plan has not landed yet stays "generating" without its contents
+// being read at all.
+func (s *InstallsServiceTestSuite) TestGetWorkflowPlanSummariesGeneratingPlan() {
+	s.setOrgFeatures(app.OrgFeaturePlanSummaries)
+
+	install := s.createTestInstall()
+	workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
+
+	step := s.deps.Seeder.CreateWorkflowStep(
+		s.ctx,
+		s.T(),
+		workflow.ID,
+		testseed.WithStepStatus(app.NewCompositeStatus(s.ctx, app.StatusInProgress)),
+	)
+	s.deps.Seeder.CreateWorkflowStepApproval(
+		s.ctx,
+		s.T(),
+		step.ID,
+		app.TerraformPlanApprovalType,
+		"",
+	)
+
+	path := fmt.Sprintf("/v1/workflows/%s/plan-summaries", workflow.ID)
+	rr := s.makeRequest(http.MethodGet, path, nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, "body: %s", rr.Body.String())
+
+	var summaries []app.StepChangeSummary
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &summaries))
+	require.Len(s.T(), summaries, 1)
+	require.Equal(s.T(), app.StepChangeStatusGenerating, summaries[0].Status)
+	require.Empty(s.T(), summaries[0].Counts)
+}
+
+func (s *InstallsServiceTestSuite) TestGetWorkflowPlanSummariesRequiresFeature() {
+	install := s.createTestInstall()
+	workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
+
+	path := fmt.Sprintf("/v1/workflows/%s/plan-summaries", workflow.ID)
+	rr := s.makeRequest(http.MethodGet, path, nil)
+	require.Equal(s.T(), http.StatusForbidden, rr.Code, "body: %s", rr.Body.String())
 }
 
 func (s *InstallsServiceTestSuite) TestGetWorkflowPlanSummariesNotFound() {
+	s.setOrgFeatures(app.OrgFeaturePlanSummaries)
+
 	rr := s.makeRequest(http.MethodGet, "/v1/workflows/iwf_nonexistent_00000000/plan-summaries", nil)
 	require.Equal(s.T(), http.StatusNotFound, rr.Code)
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -40,8 +41,9 @@ func TestPlanChangeCountsFixtures(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			contents, err := os.ReadFile(filepath.Join("testdata", "plan-summaries", test.name+".json"))
+			contents, err := os.Open(filepath.Join("testdata", "plan-summaries", test.name+".json"))
 			require.NoError(t, err)
+			defer contents.Close()
 
 			counts, err := planChangeCounts(test.approvalType, contents)
 			require.NoError(t, err)
@@ -132,6 +134,12 @@ func TestPlanChangeCounts(t *testing.T) {
 			expected: app.StepChangeCounts{Create: 1, Update: 1, Delete: 1},
 		},
 		{
+			name:         "helm no diff",
+			approvalType: app.HelmApprovalApprovalType,
+			contents:     `{"plan":"","helm_content_diff":null}`,
+			expected:     app.StepChangeCounts{},
+		},
+		{
 			name:         "kubernetes",
 			approvalType: app.KubernetesManifestApprovalType,
 			contents: `{
@@ -150,7 +158,7 @@ func TestPlanChangeCounts(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			counts, err := planChangeCounts(test.approvalType, []byte(test.contents))
+			counts, err := planChangeCounts(test.approvalType, strings.NewReader(test.contents))
 			require.NoError(t, err)
 			require.Equal(t, test.expected, counts)
 		})
@@ -165,18 +173,17 @@ func TestPlanChangeCountsRejectsInvalidJSON(t *testing.T) {
 		app.KubernetesManifestApprovalType,
 	} {
 		t.Run(string(approvalType), func(t *testing.T) {
-			_, err := planChangeCounts(approvalType, []byte(`{`))
+			_, err := planChangeCounts(approvalType, strings.NewReader(`{`))
 			require.Error(t, err)
 		})
 	}
 }
 
-func TestBuildStepChangeSummary(t *testing.T) {
+func TestNewStepChangeSummary(t *testing.T) {
 	tests := []struct {
 		name           string
 		approvalType   app.WorkflowStepApprovalType
 		stepStatus     app.Status
-		contents       string
 		expectedStatus app.StepChangeStatus
 		hasDetail      bool
 	}{
@@ -184,7 +191,6 @@ func TestBuildStepChangeSummary(t *testing.T) {
 			name:           "terraform awaiting approval",
 			approvalType:   app.TerraformPlanApprovalType,
 			stepStatus:     app.AwaitingApproval,
-			contents:       `{"resource_changes":[]}`,
 			expectedStatus: app.StepChangeStatusPendingApproval,
 			hasDetail:      true,
 		},
@@ -192,7 +198,6 @@ func TestBuildStepChangeSummary(t *testing.T) {
 			name:           "app branch approved",
 			approvalType:   app.AppBranchPlanApprovalType,
 			stepStatus:     app.WorkflowStepApprovalStatusApproved,
-			contents:       `{"install_group":"default","installs":[]}`,
 			expectedStatus: app.StepChangeStatusApproved,
 			hasDetail:      true,
 		},
@@ -200,7 +205,6 @@ func TestBuildStepChangeSummary(t *testing.T) {
 			name:           "install creation denied",
 			approvalType:   app.InstallCreationApprovalType,
 			stepStatus:     app.WorkflowStepApprovalStatusApprovalDenied,
-			contents:       "",
 			expectedStatus: app.StepChangeStatusDenied,
 			hasDetail:      false,
 		},
@@ -208,7 +212,6 @@ func TestBuildStepChangeSummary(t *testing.T) {
 			name:           "terraform applied",
 			approvalType:   app.TerraformPlanApprovalType,
 			stepStatus:     app.StatusSuccess,
-			contents:       `{"resource_changes":[]}`,
 			expectedStatus: app.StepChangeStatusApplied,
 			hasDetail:      true,
 		},
@@ -216,7 +219,6 @@ func TestBuildStepChangeSummary(t *testing.T) {
 			name:           "terraform generating",
 			approvalType:   app.TerraformPlanApprovalType,
 			stepStatus:     app.StatusInProgress,
-			contents:       "",
 			expectedStatus: app.StepChangeStatusGenerating,
 			hasDetail:      true,
 		},
@@ -224,7 +226,6 @@ func TestBuildStepChangeSummary(t *testing.T) {
 			name:           "terraform failed",
 			approvalType:   app.TerraformPlanApprovalType,
 			stepStatus:     app.StatusError,
-			contents:       `{`,
 			expectedStatus: app.StepChangeStatusError,
 			hasDetail:      true,
 		},
@@ -242,12 +243,7 @@ func TestBuildStepChangeSummary(t *testing.T) {
 				},
 			}
 
-			summary, err := buildStepChangeSummary(step, "api", test.contents)
-			if test.stepStatus == app.StatusError {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
+			summary := newStepChangeSummary(step, "api")
 			require.Equal(t, step.ID, summary.StepID)
 			require.Equal(t, step.Name, summary.StepName)
 			require.Equal(t, step.Approval.ID, summary.ApprovalID)
@@ -255,6 +251,7 @@ func TestBuildStepChangeSummary(t *testing.T) {
 			require.Equal(t, app.StepChangePlanType(test.approvalType), summary.PlanType)
 			require.Equal(t, test.expectedStatus, summary.Status)
 			require.Equal(t, test.hasDetail, summary.HasDetail)
+			require.Equal(t, app.StepChangeCounts{}, summary.Counts)
 		})
 	}
 }
@@ -263,4 +260,15 @@ func TestIsSummaryApprovalType(t *testing.T) {
 	require.False(t, isSummaryApprovalType(app.NoopApprovalType))
 	require.False(t, isSummaryApprovalType(app.ApproveAllApprovalType))
 	require.True(t, isSummaryApprovalType(app.TerraformPlanApprovalType))
+}
+
+// The plan body is only read for the types whose counts come out of it. Reading
+// it for the other two is the regression this endpoint exists to prevent.
+func TestPlanTypeHasCounts(t *testing.T) {
+	require.True(t, planTypeHasCounts(app.TerraformPlanApprovalType))
+	require.True(t, planTypeHasCounts(app.PulumiApprovalType))
+	require.True(t, planTypeHasCounts(app.HelmApprovalApprovalType))
+	require.True(t, planTypeHasCounts(app.KubernetesManifestApprovalType))
+	require.False(t, planTypeHasCounts(app.AppBranchPlanApprovalType))
+	require.False(t, planTypeHasCounts(app.InstallCreationApprovalType))
 }

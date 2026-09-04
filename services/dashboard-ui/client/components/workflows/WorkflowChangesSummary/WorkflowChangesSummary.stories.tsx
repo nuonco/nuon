@@ -11,14 +11,14 @@ import { PLAN_TYPE_META } from './change-summary-utils'
 const noCounts = { create: 0, update: 0, delete: 0, replace: 0, noop: 0 }
 
 const mk = (over: Partial<TStepChangeSummary>): TStepChangeSummary => ({
-  stepId: `step-${Math.random().toString(36).slice(2, 9)}`,
-  approvalId: `approval-${Math.random().toString(36).slice(2, 9)}`,
-  stepName: 'Sync and plan',
-  componentName: 'api',
-  planType: 'terraform_plan',
+  step_id: `step-${Math.random().toString(36).slice(2, 9)}`,
+  approval_id: `approval-${Math.random().toString(36).slice(2, 9)}`,
+  step_name: 'Sync and plan',
+  component_name: 'api',
+  plan_type: 'terraform_plan',
   status: 'pending-approval',
   counts: noCounts,
-  hasDetail: true,
+  has_detail: true,
   ...over,
 })
 
@@ -62,12 +62,12 @@ const largeTerraformPlan = {
 }
 
 const renderMockDetail = (summary: TStepChangeSummary) => {
-  if (summary.planType === 'terraform_plan') {
+  if (summary.plan_type === 'terraform_plan') {
     return <TerraformDiff plan={smallTerraformPlan as any} />
   }
   return (
     <Banner theme="neutral">
-      {PLAN_TYPE_META[summary.planType].label} diff renders here on expand.
+      {PLAN_TYPE_META[summary.plan_type].label} diff renders here on expand.
     </Banner>
   )
 }
@@ -77,30 +77,30 @@ export const MixedTypes = () => (
     renderDetail={renderMockDetail}
     summaries={[
       mk({
-        stepName: 'Sync and plan api',
-        componentName: 'api',
-        planType: 'terraform_plan',
+        step_name: 'Sync and plan api',
+        component_name: 'api',
+        plan_type: 'terraform_plan',
         status: 'pending-approval',
         counts: { create: 3, update: 2, delete: 0, replace: 1, noop: 4 },
       }),
       mk({
-        stepName: 'Sync and plan ingress',
-        componentName: 'ingress',
-        planType: 'helm_approval',
+        step_name: 'Sync and plan ingress',
+        component_name: 'ingress',
+        plan_type: 'helm_approval',
         status: 'pending-approval',
         counts: { create: 0, update: 4, delete: 0, replace: 0, noop: 1 },
       }),
       mk({
-        stepName: 'Sync and plan configmaps',
-        componentName: 'configmaps',
-        planType: 'kubernetes_manifest_approval',
+        step_name: 'Sync and plan configmaps',
+        component_name: 'configmaps',
+        plan_type: 'kubernetes_manifest_approval',
         status: 'approved',
         counts: { create: 2, update: 0, delete: 1, replace: 0, noop: 0 },
       }),
       mk({
-        stepName: 'Sync and plan platform',
-        componentName: 'platform',
-        planType: 'pulumi_plan',
+        step_name: 'Sync and plan platform',
+        component_name: 'platform',
+        plan_type: 'pulumi_plan',
         status: 'pending-approval',
         counts: { create: 0, update: 6, delete: 2, replace: 0, noop: 3 },
       }),
@@ -113,9 +113,9 @@ export const DriftScanClean = () => (
     renderDetail={renderMockDetail}
     summaries={Array.from({ length: 8 }, (_, i) =>
       mk({
-        stepId: `clean-${i}`,
-        stepName: `Sync and plan component-${i}`,
-        componentName: `component-${i}`,
+        step_id: `clean-${i}`,
+        step_name: `Sync and plan component-${i}`,
+        component_name: `component-${i}`,
         status: 'applied',
         counts: noCounts,
       })
@@ -128,29 +128,29 @@ export const MostlyNoOp = () => (
     renderDetail={renderMockDetail}
     summaries={[
       mk({
-        stepId: 'changed-1',
-        stepName: 'Sync and plan api',
-        componentName: 'api',
+        step_id: 'changed-1',
+        step_name: 'Sync and plan api',
+        component_name: 'api',
         counts: { create: 1, update: 2, delete: 0, replace: 0, noop: 8 },
       }),
       mk({
-        stepId: 'changed-2',
-        stepName: 'Sync and plan worker',
-        componentName: 'worker',
-        planType: 'helm_approval',
+        step_id: 'changed-2',
+        step_name: 'Sync and plan worker',
+        component_name: 'worker',
+        plan_type: 'helm_approval',
         counts: { create: 0, update: 1, delete: 0, replace: 0, noop: 2 },
       }),
       mk({
-        stepId: 'changed-3',
-        stepName: 'Sync and plan db',
-        componentName: 'db',
+        step_id: 'changed-3',
+        step_name: 'Sync and plan db',
+        component_name: 'db',
         counts: { create: 0, update: 0, delete: 1, replace: 0, noop: 5 },
       }),
       ...Array.from({ length: 17 }, (_, i) =>
         mk({
-          stepId: `noop-${i}`,
-          stepName: `Sync and plan component-${i}`,
-          componentName: `component-${i}`,
+          step_id: `noop-${i}`,
+          step_name: `Sync and plan component-${i}`,
+          component_name: `component-${i}`,
           status: 'applied',
           counts: noCounts,
         })
@@ -164,9 +164,9 @@ export const LargePlan = () => (
     renderDetail={() => <TerraformDiff plan={largeTerraformPlan as any} />}
     summaries={[
       mk({
-        stepId: 'large-1',
-        stepName: 'Sync and plan monolith',
-        componentName: 'monolith',
+        step_id: 'large-1',
+        step_name: 'Sync and plan monolith',
+        component_name: 'monolith',
         status: 'pending-approval',
         counts: { create: 40, update: 40, delete: 40, replace: 0, noop: 0 },
       }),
@@ -179,22 +179,22 @@ export const InProgress = () => (
     renderDetail={renderMockDetail}
     summaries={[
       mk({
-        stepId: 'gen-1',
-        stepName: 'Sync and plan api',
-        componentName: 'api',
+        step_id: 'gen-1',
+        step_name: 'Sync and plan api',
+        component_name: 'api',
         status: 'generating',
       }),
       mk({
-        stepId: 'gen-2',
-        stepName: 'Sync and plan worker',
-        componentName: 'worker',
-        planType: 'helm_approval',
+        step_id: 'gen-2',
+        step_name: 'Sync and plan worker',
+        component_name: 'worker',
+        plan_type: 'helm_approval',
         status: 'generating',
       }),
       mk({
-        stepId: 'done-1',
-        stepName: 'Sync and plan ingress',
-        componentName: 'ingress',
+        step_id: 'done-1',
+        step_name: 'Sync and plan ingress',
+        component_name: 'ingress',
         status: 'applied',
         counts: { create: 2, update: 1, delete: 0, replace: 0, noop: 0 },
       }),
@@ -207,22 +207,22 @@ export const PartialFailure = () => (
     renderDetail={renderMockDetail}
     summaries={[
       mk({
-        stepId: 'ok-1',
-        stepName: 'Sync and plan api',
-        componentName: 'api',
+        step_id: 'ok-1',
+        step_name: 'Sync and plan api',
+        component_name: 'api',
         counts: { create: 1, update: 3, delete: 0, replace: 0, noop: 2 },
       }),
       mk({
-        stepId: 'err-1',
-        stepName: 'Sync and plan worker',
-        componentName: 'worker',
-        planType: 'pulumi_plan',
+        step_id: 'err-1',
+        step_name: 'Sync and plan worker',
+        component_name: 'worker',
+        plan_type: 'pulumi_plan',
         status: 'error',
       }),
       mk({
-        stepId: 'err-2',
-        stepName: 'Sync and plan db',
-        componentName: 'db',
+        step_id: 'err-2',
+        step_name: 'Sync and plan db',
+        component_name: 'db',
         status: 'error',
       }),
     ]}
@@ -234,24 +234,24 @@ export const ApprovalStateMix = () => (
     renderDetail={renderMockDetail}
     summaries={[
       mk({
-        stepId: 'pending-1',
-        stepName: 'Sync and plan api',
-        componentName: 'api',
+        step_id: 'pending-1',
+        step_name: 'Sync and plan api',
+        component_name: 'api',
         status: 'pending-approval',
         counts: { create: 2, update: 0, delete: 0, replace: 0, noop: 1 },
       }),
       mk({
-        stepId: 'denied-1',
-        stepName: 'Sync and plan worker',
-        componentName: 'worker',
-        planType: 'helm_approval',
+        step_id: 'denied-1',
+        step_name: 'Sync and plan worker',
+        component_name: 'worker',
+        plan_type: 'helm_approval',
         status: 'denied',
         counts: { create: 0, update: 0, delete: 3, replace: 0, noop: 0 },
       }),
       mk({
-        stepId: 'applied-1',
-        stepName: 'Sync and plan ingress',
-        componentName: 'ingress',
+        step_id: 'applied-1',
+        step_name: 'Sync and plan ingress',
+        component_name: 'ingress',
         status: 'applied',
         counts: { create: 1, update: 1, delete: 0, replace: 0, noop: 2 },
       }),
@@ -264,21 +264,21 @@ export const BranchRun = () => (
     renderDetail={renderMockDetail}
     summaries={[
       mk({
-        stepId: 'branch-1',
-        stepName: 'Plan app branch',
-        componentName: 'main',
-        planType: 'app_branch_plan',
+        step_id: 'branch-1',
+        step_name: 'Plan app branch',
+        component_name: 'main',
+        plan_type: 'app_branch_plan',
         status: 'pending-approval',
         counts: { create: 2, update: 1, delete: 0, replace: 0, noop: 0 },
       }),
       mk({
-        stepId: 'install-1',
-        stepName: 'Create install',
-        componentName: undefined,
-        planType: 'install_creation',
+        step_id: 'install-1',
+        step_name: 'Create install',
+        component_name: undefined,
+        plan_type: 'install_creation',
         status: 'pending-approval',
         counts: noCounts,
-        hasDetail: false,
+        has_detail: false,
       }),
     ]}
   />
@@ -289,9 +289,9 @@ export const SingleStepTrivial = () => (
     renderDetail={renderMockDetail}
     summaries={[
       mk({
-        stepId: 'only-1',
-        stepName: 'Sync and plan api',
-        componentName: 'api',
+        step_id: 'only-1',
+        step_name: 'Sync and plan api',
+        component_name: 'api',
         status: 'pending-approval',
         counts: { create: 1, update: 0, delete: 0, replace: 0, noop: 0 },
       }),

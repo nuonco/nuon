@@ -124,7 +124,7 @@ const NoopGroup = ({
         <div className="border-t">
           {summaries.map((summary) => (
             <WorkflowChangeRow
-              key={summary.stepId}
+              key={summary.step_id}
               summary={summary}
               renderDetail={renderDetail}
             />
@@ -175,7 +175,7 @@ export const WorkflowChangesSummary = ({
         <div className="border rounded-lg overflow-hidden">
           {actionable.map((summary) => (
             <WorkflowChangeRow
-              key={summary.stepId}
+              key={summary.step_id}
               summary={summary}
               renderDetail={renderDetail}
             />
