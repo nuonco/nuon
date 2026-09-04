@@ -30,7 +30,7 @@ func (s *Service) ListBranches(ctx context.Context, appID string, asJSON bool) e
 	}
 
 	if len(branches) == 0 {
-		view.Print(fmt.Sprintf("no branches found for app %s\n\ncreate one with: nuon apps branches create --app-id %s --name <name>", appID, appID))
+		view.Print(fmt.Sprintf("no branches found for app %s\n\ncreate one with: nuon branches create --app-id %s --name <name>", appID, appID))
 		return nil
 	}
 
@@ -233,7 +233,7 @@ func (s *Service) selectBranchID(ctx context.Context, appID, branchID string) (s
 		return "", fmt.Errorf("unable to list app branches: %w", err)
 	}
 	if len(branches) == 0 {
-		return "", fmt.Errorf("no branches found for this app; create one with: nuon apps branches create")
+		return "", fmt.Errorf("no branches found for this app; create one with: nuon branches create")
 	}
 
 	options := make([]bubbles.BranchOption, len(branches))
