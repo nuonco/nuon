@@ -28,17 +28,18 @@ export const Overview = () => (
     summary="Phosphor icons behind a static map, so only the icons lite uses are bundled."
     use={['Any icon in lite. Add missing ones to the ICONS map.']}
     avoid={[
-      'Importing from @phosphor-icons/react at a call site — it defeats the map and the shared defaults. A lint rule blocks it.',
-      "The dashboard's common/Icon, which pulls in react-icons for three logos and ~200 entries lite does not use.",
+      'Do not import from @phosphor-icons/react at a call site. A lint rule blocks it.',
+      'Do not pass a colour. Set the colour on the surrounding text instead.',
     ]}
     rules={[
-      'Icons are currentColor — they take their colour from the text around them, never a colour prop.',
-      'The map is static so the bundler can tree-shake. Adding an icon means an import plus a map entry.',
-      'Phosphor glyphs sit inside a 256 viewBox with transparent padding — about 12.5% a side. Cancel it with a negative margin when an icon sits at the edge of a control.',
+      'Icons use the current text colour and take their colour from the text around them.',
+      'Adding an icon takes an import plus a map entry. The map is static so the bundler can tree-shake it.',
+      'Set the size to one em to track the surrounding font size.',
+      'Phosphor glyphs carry transparent padding inside their box, so pull an icon toward the edge with a negative margin when it sits at the edge of a control.',
     ]}
     props={[
       { name: 'variant', type: 'TIconVariant', description: 'Key from the ICONS map.' },
-      { name: 'size', type: 'number | string', default: '16', description: 'Use "1em" to track surrounding font size.' },
+      { name: 'size', type: 'number | string', default: '16', description: 'Pixel size, or "1em" to follow the text.' },
       { name: 'weight', type: "'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone'", default: "'regular'", description: 'Phosphor stroke weight.' },
     ]}
   />
