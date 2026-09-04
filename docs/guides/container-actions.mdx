@@ -2,22 +2,33 @@
 title: "Container Actions"
 description: "Execute actions inside a user-managed container image."
 icon: "cube"
-keywords: ["container actions", "image-backed actions", "action image", "image-backed-actions", "action container", "run action in container", "actions image field", "containerized action", "action tools"]
+keywords:
+  [
+    "container actions",
+    "image-backed actions",
+    "action image",
+    "image-backed-actions",
+    "action container",
+    "run action in container",
+    "actions image field",
+    "containerized action",
+    "action tools",
+  ]
 ---
 
 By default, actions run on the install [runner](/concepts/runners). Setting `image` executes the
 action inside a container image you provide.
 
 <Note>
-  Container actions are behind the `image-backed-actions` org feature flag and are off by default.
-  [Reach out to Nuon](https://nuon.co/demo-request) to enable it for your org.
+  Container actions are behind the `image-backed-actions` org feature flag and
+  are off by default. [Reach out to Nuon](https://nuon.co/demo-request) to
+  enable it for your org.
 </Note>
 
 ## Requirements
 
-- The `image-backed-actions` org feature must be enabled.
 - AWS and Azure install runners are supported.
-- GCP install runners are not supported.
+- GCP support is coming soon.
 
 ## Configure it
 
@@ -52,11 +63,11 @@ nuon apps sync
 
 Everything else about the action is unchanged: triggers, `timeout` (30 minutes maximum), `role`,
 `enable_kube_config`, `env_vars`, and templating all behave exactly as they do when the action runs
-on the runner. See [Configure actions](/guides/actions) for those.
+on the runner. See [Configure actions](/guides/actions).
 
 ## Choosing an image
 
-`image` supports publically hosted image and nuon container_image component.
+You can use publically hosted images or component images from your Nuon app config.
 
 ### A public reference
 
@@ -74,8 +85,8 @@ image = "{{.nuon.components.migrate_tools.outputs.image.ref}}"
 ```
 
 <Warning>
-  Use the component's `image.ref` output, not `image.repository` and `image.tag`. A bare
-  `repository:tag` is rejected with `not digest-pinned`.
+  Use the component's `image.ref` output, not `image.repository` and
+  `image.tag`. A bare `repository:tag` is rejected with `not digest-pinned`.
 </Warning>
 
 ## Building the image
