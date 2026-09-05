@@ -25,7 +25,7 @@ branch    = "main"
 [[values_file]]
 contents = """
 image:
-  tag: "{{.nuon.components.app_image.image.tag}}"
+  tag: "{{.nuon.components.app_image.outputs.image.tag}}"
 """
 
 # alternatively, you can read from disk
@@ -97,8 +97,8 @@ branch    = "main"
 
 [values]
 # access a synced image
-image_repository = "{{.nuon.components.image.image.repository.uri}}"
-image_tag        = "{{.nuon.components.image.image.tag}}"
+image_repository = "{{.nuon.components.image.outputs.image.repository}}"
+image_tag        = "{{.nuon.components.image.outputs.image.tag}}"
 # access outputs from a terraform component
 output_value = "{{.nuon.components.terraform.outputs.output_value}}"
 # access outputs from the sandbox

@@ -42,7 +42,7 @@ See the [container image config reference](/config-ref/container-image) for ever
 
 ## Step 2: Wire the helm component to consume the resolved image
 
-In your helm component, reference the image outputs by digest. Using the digest-pinned `repository` form means each install is locked to the exact bytes that were resolved at build time:
+In your helm component, reference the image outputs by digest. Using the digest-pinned `ref` output means each install is locked to the exact bytes that were resolved at build time:
 
 ```toml components/whoami.toml
 # helm-chart
@@ -53,7 +53,7 @@ dependencies = ["img_whoami"]
 
 [values]
 # digest-pinned ref, e.g. "containous/whoami@sha256:abc..."
-image_repository  = "{{ .nuon.components.img_whoami.outputs.image.repository }}"
+image_repository  = "{{ .nuon.components.img_whoami.outputs.image.ref }}"
 
 # human-friendly tag for labels only; do NOT use in the image field
 image_display_tag = "{{ .nuon.components.img_whoami.outputs.image.display_tag }}"
