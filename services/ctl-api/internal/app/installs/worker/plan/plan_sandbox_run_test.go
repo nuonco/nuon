@@ -602,3 +602,35 @@ func TestGetRoleForSandbox(t *testing.T) {
 		})
 	}
 }
+
+func TestGetSandboxRunTerraformVarsInstallTags(t *testing.T) {
+	p := &Planner{}
+
+	t.Run("aws sandboxes get both install tag keys", func(t *testing.T) {
+		vars, err := p.getSandboxRunTerraformVars(&app.AppConfig{
+			RunnerConfig: app.AppRunnerConfig{Type: app.AppRunnerTypeAWS},
+		}, "nuon.co")
+		require.NoError(t, err)
+
+		tags, ok := vars["tags"].(map[string]string)
+		require.True(t, ok, "tags var should be a string map, got %T", vars["tags"])
+
+		// nuonctl's install locks filter the nuke on these tags, so both keys have to
+		// reach the sandbox module for a lock to protect its resources.
+		assert.Equal(t, "{{.nuon.install.id}}", tags["install.nuon.co/id"])
+		assert.Equal(t, "{{.nuon.install.id}}", tags["NUON_INSTALL_ID"])
+	})
+
+	t.Run("gcp sandboxes get the install label", func(t *testing.T) {
+		vars, err := p.getSandboxRunTerraformVars(&app.AppConfig{
+			RunnerConfig: app.AppRunnerConfig{Type: app.AppRunnerTypeGCP},
+		}, "nuon.co")
+		require.NoError(t, err)
+
+		// GCP label keys cannot contain dots or slashes, so the canonical
+		// install.nuon.co/id form is not available there.
+		labels, ok := vars["labels"].(map[string]string)
+		require.True(t, ok, "labels var should be a string map, got %T", vars["labels"])
+		assert.Equal(t, "{{.nuon.install.id}}", labels["nuon-install-id"])
+	})
+}
