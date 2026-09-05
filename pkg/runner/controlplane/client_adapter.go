@@ -146,6 +146,10 @@ func (c *clientAdapter) GetRunner(context.Context) (*models.AppRunner, error) {
 	return nil, unsupported("GetRunner")
 }
 
+func (c *clientAdapter) CreateTelemetryAccessToken(context.Context) (*models.ServiceCreateTelemetryAccessTokenResponse, error) {
+	return nil, unsupported("CreateTelemetryAccessToken")
+}
+
 func (c *clientAdapter) GetSandboxConfigs(context.Context) ([]*nuonrunner.SandboxConfig, error) {
 	return nil, unsupported("GetSandboxConfigs")
 }
