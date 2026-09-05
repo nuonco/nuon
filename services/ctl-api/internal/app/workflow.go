@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
@@ -282,9 +283,10 @@ type Workflow struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Type     WorkflowType    `json:"type,omitzero" gorm:"not null;default null" temporaljson:"type,omitzero,omitempty"`
-	Metadata pgtype.Hstore   `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
-	Status   CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
+	Type            WorkflowType                          `json:"type,omitzero" gorm:"not null;default null" temporaljson:"type,omitzero,omitempty"`
+	Metadata        pgtype.Hstore                         `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
+	Status          CompositeStatus                       `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
+	PreflightErrors []*compositeerrors.CompositeErrorData `json:"preflight_errors,omitempty" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"preflight_errors,omitzero,omitempty"`
 
 	Role string `json:"role,omitzero,omitempty" temporaljson:"role" gorm:"column:role"`
 

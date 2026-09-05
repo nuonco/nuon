@@ -17,14 +17,21 @@ const SignalType qsignal.SignalType = "generate-workflow-steps"
 // todo(sk): clean this after teminating old workflows
 const cancelFinishedAtVersion = "generate-steps-cancel-finished-at-v1"
 
+const preflightChecksVersion = "generate-steps-preflight-checks-v1"
+
 // generatorRegistry is populated at init time by packages that register
 // step generators for specific owner types. This avoids import cycles.
 var generatorRegistry = map[string]func() map[app.WorkflowType]flow.WorkflowStepGenerator{}
+var preflightRegistry = map[string]flow.WorkflowPreflight{}
 
 // RegisterGenerators registers a step generator factory for an owner type.
 // Called from init() functions to avoid import cycles.
 func RegisterGenerators(ownerType string, factory func() map[app.WorkflowType]flow.WorkflowStepGenerator) {
 	generatorRegistry[ownerType] = factory
+}
+
+func RegisterPreflight(ownerType string, preflight flow.WorkflowPreflight) {
+	preflightRegistry[ownerType] = preflight
 }
 
 type Signal struct {
@@ -126,6 +133,34 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.err = errors.Wrapf(err, "unable to generate steps for workflow %s", flw.ID)
 		s.done = true
 		return s.err
+	}
+
+	if workflow.GetVersion(ctx, preflightChecksVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if preflight, ok := preflightRegistry[ownerType]; ok {
+			preflightResult, err := preflight(ctx, flw, result)
+			if err != nil {
+				s.err = errors.Wrap(err, "unable to run workflow preflight checks")
+				s.done = true
+				s.eagerStepGroupsReady = true
+				return s.err
+			}
+			if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowPreflightErrors(ctx, workflowactivities.UpdateFlowPreflightErrorsRequest{
+				FlowID:          flw.ID,
+				PreflightErrors: preflightResult.Findings,
+			}); err != nil {
+				s.err = errors.Wrap(err, "unable to persist workflow preflight errors")
+				s.done = true
+				s.eagerStepGroupsReady = true
+				return s.err
+			}
+			flw.PreflightErrors = preflightResult.Findings
+			if preflightResult.Blocked() {
+				s.err = errors.New("workflow blocked by preflight checks")
+				s.done = true
+				s.eagerStepGroupsReady = true
+				return s.err
+			}
+		}
 	}
 
 	// Extract eager step groups for early consumption before marking done.

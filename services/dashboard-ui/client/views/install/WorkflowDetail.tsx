@@ -1,4 +1,5 @@
 import { useParams } from 'react-router'
+import { CompositeError } from '@/components/common/CompositeError'
 import { DetailPage } from '@/components/layout/DetailPage'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -51,7 +52,21 @@ const WorkflowDetailContent = () => {
         ]}
       />
 
-      <DetailPage header={<WorkflowDetails />}>
+      <DetailPage
+        header={<WorkflowDetails />}
+        banners={
+          workflow?.preflight_errors?.length ? (
+            <div className="flex flex-col gap-2">
+              {workflow.preflight_errors.map((error, index) => (
+                <CompositeError
+                  key={`${error?.type ?? 'preflight'}-${index}`}
+                  error={error}
+                />
+              ))}
+            </div>
+          ) : null
+        }
+      >
         <div className="flex flex-col gap-6">
           <SectionHeader title="Workflow steps" />
 

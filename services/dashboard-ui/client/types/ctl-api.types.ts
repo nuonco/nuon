@@ -926,7 +926,9 @@ export interface TUserJourney {
 
 export type TInstallWorkflow = components['schemas']['app.Workflow']
 export type TInstallWorkflowStep = components['schemas']['app.WorkflowStep']
-export type TWorkflow = components['schemas']['app.Workflow']
+export type TWorkflow = components['schemas']['app.Workflow'] & {
+  preflight_errors?: TCompositeError[]
+}
 export type TWorkflowStep = components['schemas']['app.WorkflowStep'] & {
   log_stream?: { id?: string; open?: boolean }
   links?: {

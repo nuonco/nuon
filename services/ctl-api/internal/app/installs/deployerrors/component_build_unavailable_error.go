@@ -23,8 +23,8 @@ const (
 	// component is in a terminal failure state (error / policy_failed).
 	ComponentBuildUnavailableReasonFailed ComponentBuildUnavailableReason = "failed"
 
-	// ComponentBuildUnavailableReasonMissing means no build exists for the
-	// component yet, so there is no artifact to deploy.
+	// ComponentBuildUnavailableReasonMissing means no active build exists for
+	// the component's current configuration, so there is no artifact to deploy.
 	ComponentBuildUnavailableReasonMissing ComponentBuildUnavailableReason = "missing"
 )
 
@@ -51,7 +51,7 @@ func (e *ComponentBuildUnavailableError) Error() string {
 		name = "component"
 	}
 	if e.Reason == ComponentBuildUnavailableReasonMissing {
-		return fmt.Sprintf("No build found for %s", name)
+		return fmt.Sprintf("No deployable build found for %s", name)
 	}
 	return fmt.Sprintf("Build for %s failed", name)
 }
@@ -72,7 +72,7 @@ func (e *ComponentBuildUnavailableError) Sections() []compositeerrors.Section {
 
 	var why string
 	if e.Reason == ComponentBuildUnavailableReasonMissing {
-		why = fmt.Sprintf("Deploying %s needs a build, but it hasn't been built yet.", name)
+		why = fmt.Sprintf("Deploying %s needs an active build for the current configuration, but no deployable build was found.", name)
 	} else {
 		why = fmt.Sprintf("Deploying %s needs a build that completed successfully. Its most recent build failed, so the deploy can't continue.", name)
 	}
@@ -102,7 +102,7 @@ func (e *ComponentBuildUnavailableError) Sections() []compositeerrors.Section {
 
 	var fix string
 	if e.Reason == ComponentBuildUnavailableReasonMissing {
-		fix = fmt.Sprintf("Build %s, wait for the build to become active, then retry the deploy.", name)
+		fix = fmt.Sprintf("Build %s with the current configuration, wait for the build to become active, then retry the deploy.", name)
 	} else {
 		fix = fmt.Sprintf("Fix what caused the build to fail, then rebuild %s with the latest config. Once the build is active, retry the deploy.", name)
 	}

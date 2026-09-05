@@ -10,12 +10,14 @@ package allgenerators
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appworkflows "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/workflows"
+	installpreflight "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/preflight"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	v2workflows "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/workflows/v2"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 )
 
 func init() {
+	generateworkflowsteps.RegisterPreflight("installs", installpreflight.Run)
 	generateworkflowsteps.RegisterGenerators("installs", installGenerators)
 	generateworkflowsteps.RegisterGenerators("apps", appGenerators)
 	generateworkflowsteps.RegisterGenerators("app_branches", appGenerators)
