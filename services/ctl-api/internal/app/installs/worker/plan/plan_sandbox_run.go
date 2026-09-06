@@ -356,12 +356,7 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 			"provision_iam_role_arn":   "{{.nuon.install_stack.outputs.provision_iam_role_arn}}",
 			"deprovision_iam_role_arn": "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}",
 			"maintenance_iam_role_arn": "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}",
-			// install.nuon.co/id is the canonical install tag: the install stack
-			// stamps it on every resource it creates and Nuon's own sandbox modules
-			// add it themselves, so passing it here extends the same key to sandbox
-			// modules that only wire var.tags into the provider's default_tags.
-			// nuonctl's install locks filter the nuke on it. NUON_INSTALL_ID is the
-			// original key, kept so modules already reading it keep working.
+			// install.nuon.co/id is what everything else tags with; NUON_INSTALL_ID is the old key
 			"tags": map[string]string{
 				"install.nuon.co/id": "{{.nuon.install.id}}",
 				"NUON_INSTALL_ID":    "{{.nuon.install.id}}",
