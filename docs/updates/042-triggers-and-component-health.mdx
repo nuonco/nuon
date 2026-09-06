@@ -1,0 +1,66 @@
+---
+title: 042 - Triggers and component health
+description: Start Nuon work from external events, and track whether every component on every install is running right now.
+boost: 0.3
+---
+
+_August 26, 2026_
+
+## Triggers
+
+<Note>Triggers are behind the `triggers` org feature. Reach out to our team if you would like it enabled for your
+organization. Not to be confused with [action triggers](/updates/009-action-triggers-secrets-configs), which fire
+at points in a Nuon workflow. These are inbound webhooks from systems outside Nuon.</Note>
+
+A trigger is an inbound webhook endpoint with its own ingress URL. Nuon authenticates and deduplicates each event,
+then routes it through rules you author in your app config. A matching rule starts an install runbook or an app
+branch run, mapping values out of the event payload.
+
+```sh
+nuon triggers create my-trigger --preset github
+```
+
+```toml triggers.toml
+[[rules]]
+name       = "runbook-on-main-push"
+trigger    = "my-trigger"
+event_types = ["push"]
+
+[[rules.filters]]
+from  = "payload"
+op    = "eq"
+path  = "$.ref"
+value = "refs/heads/main"
+
+[rules.target]
+type    = "runbook"
+runbook = "redeploy"
+install = "acme-prod"
+```
+
+Presets cover GitHub, Slack, Datadog, EventBridge, SNS, Pub/Sub, and Event Grid, including the transport envelopes
+those providers wrap payloads in. Without a preset you choose the authentication scheme yourself.
+
+Every event is stored with its headers, body, and routing outcome.
+
+See [Triggers](/concepts/triggers) and [Configure triggers](/guides/triggers).
+
+## Component health
+
+<Note>Component health is behind the `component-health` org feature. Reach out to our team if you would like it
+enabled for your organization.</Note>
+
+Component health tracks whether each component on each install is running right now, continuously and separately
+from deploy status. Nuon never overwrites one with the other.
+
+The two answers differ more often than they should. `helm upgrade` exits 0 while the release sits in
+`pending-install`; Terraform and Helm skip when state already matches, so a component reports Active while its pods
+crash-loop. Nothing runs in your customers' clusters, since health reads them with the access your deploys already
+use.
+
+- Every resource a component manages, with live status per install.
+- Debounced alerts to Slack and webhooks naming the failing resource.
+- Deploy gates that hold until a component stays healthy through a bake period.
+- 90 days of timeline and uptime per component and install.
+
+See the [Component health](/guides/component-health) guide.
