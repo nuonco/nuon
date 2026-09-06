@@ -1,5 +1,3 @@
-import type { TIconVariant } from '@/components/common/Icon'
-
 export type TStatusTheme =
   | 'success'
   | 'warn'
@@ -7,6 +5,17 @@ export type TStatusTheme =
   | 'error'
   | 'info'
   | 'brand'
+
+export type TStatusIconVariant =
+  | 'CheckCircleIcon'
+  | 'XCircleIcon'
+  | 'WarningIcon'
+  | 'ClockCountdownIcon'
+  | 'MinusCircleIcon'
+  | 'ProhibitIcon'
+  | 'RepeatIcon'
+  | 'Loading'
+  | 'none'
 
 const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   active: 'success',
@@ -80,7 +89,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   brand: 'brand',
 }
 
-const STATUS_ICON_MAP: Record<string, TIconVariant> = {
+const STATUS_ICON_MAP: Record<string, TStatusIconVariant> = {
   active: 'CheckCircleIcon',
   ok: 'CheckCircleIcon',
   finished: 'CheckCircleIcon',
@@ -147,7 +156,7 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   'not-attempted': 'ProhibitIcon',
   discarded: 'ProhibitIcon',
 
-  skeleton: 'none' as TIconVariant,
+  skeleton: 'none',
 }
 
 const normalizeStatusKey = (status: string): string =>
@@ -157,7 +166,7 @@ export function getStatusTheme(status: string): TStatusTheme {
   return STATUS_THEME_MAP[normalizeStatusKey(status)] ?? 'neutral'
 }
 
-export function getStatusIconVariant(status: string): TIconVariant {
+export function getStatusIconVariant(status: string): TStatusIconVariant {
   return STATUS_ICON_MAP[normalizeStatusKey(status)] ?? 'ClockCountdownIcon'
 }
 

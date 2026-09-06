@@ -78,8 +78,8 @@
   --status-success: light-dark(#257052, #4aa578);
   --status-error: light-dark(var(--error-700), var(--error-300));
   --status-warn: light-dark(#8f5300, #f5b731);
-  --status-info: light-dark(#1a6579, #4cc9f0);
-  --status-brand: light-dark(#3a00ff, #8f93ff);
+  --status-info: light-dark(#4338ca, #a5b4fc);
+  --status-brand: light-dark(#be185d, #f9a8d4);
   --status-neutral: light-dark(#5a5a5a, #bababa);
 
   --popover-bg: light-dark(var(--neutral-000), var(--surface-secondary));
@@ -192,6 +192,7 @@
   );
 
   --code-bg: light-dark(var(--neutral-050), #17151b);
+  --code-inline-bg: light-dark(rgba(29, 29, 29, 0.08), rgba(254, 254, 254, 0.12));
   --syntax-plain: light-dark(var(--neutral-900), var(--neutral-100));
   --syntax-comment: light-dark(#4b5563, #8a94a6);
   --syntax-string: light-dark(#075e45, #6fd3ac);
@@ -332,11 +333,11 @@
 
   --focus-ring: var(--hc-yellow);
 
-  --status-success: var(--neutral-000);
-  --status-error: var(--neutral-000);
-  --status-warn: var(--hc-yellow);
-  --status-info: var(--hc-yellow);
-  --status-brand: var(--hc-yellow);
+  --status-success: #a0ffa0;
+  --status-error: #ffb3b3;
+  --status-warn: #ffb86c;
+  --status-info: #00ffff;
+  --status-brand: #ffa0ff;
   --status-neutral: var(--neutral-000);
 
   --popover-bg: var(--hc-blue-deep);
@@ -399,6 +400,7 @@
   --menu-item-bg-danger-hover: rgba(255, 255, 255, 0.16);
 
   --code-bg: var(--hc-blue-deep);
+  --code-inline-bg: rgba(255, 255, 255, 0.16);
   /* Four hues, not two: JSON only uses plain, keyword, punctuation,
      string-expression and constant, so collapsing them all to yellow made a
      document unreadable. Every value below clears AAA on --hc-blue-deep. */
@@ -576,8 +578,32 @@ diffs-container {
   color: var(--status-color);
 }
 
+@keyframes status-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--status-color) 50%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 4px transparent;
+  }
+}
+
+@utility status-pulse {
+  animation: status-pulse 2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-pulse {
+    animation: none;
+  }
+}
+
+/* A light wash caps every hue at AA, because the chip fill is what limits
+   contrast. A dark fill plus a currentColor outline keeps all six statuses
+   saturated and distinct at AAA. */
 :root[data-theme='high-contrast'] .status-tint {
-  background-color: rgba(255, 255, 255, 0.16);
+  background-color: var(--hc-blue-deep);
+  border: 1px solid currentColor;
 }
 
 @utility badge-custom {
@@ -742,6 +768,7 @@ diffs-container {
   --color-menu-item-danger-hover: var(--menu-item-bg-danger-hover);
 
   --color-code-bg: var(--code-bg);
+  --color-code-inline-bg: var(--code-inline-bg);
   --color-syntax-plain: var(--syntax-plain);
 
   --color-diff-add: var(--diff-add-gutter);
