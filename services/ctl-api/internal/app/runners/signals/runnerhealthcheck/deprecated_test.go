@@ -203,6 +203,8 @@ func runnerHealthCases() []runnerHealthCase {
 		app.RunnerStatusReprovisioning,
 		app.RunnerStatusDeprovisioned,
 		app.RunnerStatusPending,
+		app.RunnerStatusDisabled,
+		app.RunnerStatusAwaitingInstallStackRun,
 	} {
 		cases = append(cases, runnerHealthCase{
 			name:      "skippable status " + string(status),

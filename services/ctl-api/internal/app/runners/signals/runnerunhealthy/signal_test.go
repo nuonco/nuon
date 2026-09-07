@@ -52,3 +52,25 @@ func TestSignalRejectsNonUnhealthyTransition(t *testing.T) {
 
 	require.Error(t, sig.Validate(nil))
 }
+
+func TestSignalAcceptsNonActiveToOfflineTransitions(t *testing.T) {
+	for _, fromStatus := range []app.RunnerStatus{
+		app.RunnerStatusActive,
+		app.RunnerStatusError,
+		app.RunnerStatusUnknown,
+	} {
+		sig := &Signal{
+			RunnerID:             "run_1",
+			OrgID:                "org_1",
+			FromStatus:           fromStatus,
+			ToStatus:             app.RunnerStatusOffline,
+			Reason:               "no active install process",
+			RunnerGroupID:        "rug_1",
+			RunnerGroupType:      app.RunnerGroupTypeInstall,
+			RunnerGroupOwnerID:   "ins_1",
+			RunnerGroupOwnerType: "installs",
+		}
+
+		require.NoError(t, sig.Validate(nil), "from status %s", fromStatus)
+	}
+}

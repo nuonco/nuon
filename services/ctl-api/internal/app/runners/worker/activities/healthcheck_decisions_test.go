@@ -43,12 +43,13 @@ func corpusProcess(tc processHealthCase) (*app.RunnerProcess, *time.Time) {
 
 func decisionToWant(d runnerHealthDecision) runnerHealthWant {
 	want := runnerHealthWant{
-		result:         d.Result,
-		reason:         d.Reason,
-		setMissingMng:  d.SetMissingMng,
-		armOfflineTS:   d.SetOfflineTS,
-		clearOfflineTS: d.ClearOfflineTS,
-		alert:          d.Alert,
+		result:            d.Result,
+		reason:            d.Reason,
+		setMissingMng:     d.SetMissingMng,
+		armOfflineTS:      d.SetOfflineTS,
+		clearOfflineTS:    d.ClearOfflineTS,
+		offlineFromStatus: d.OfflineFromStatus,
+		alert:             d.Alert,
 	}
 	if d.UpdateLegacy {
 		want.legacyStatus = runnerStatusPtr(d.TargetStatus)

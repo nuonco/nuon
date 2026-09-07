@@ -35,6 +35,18 @@ const (
 
 const RunnerOfflineTSMetadataKey = "offline_ts"
 
+const RunnerOfflineFromStatusMetadataKey = "offline_from_status"
+
+// RunnerOfflineFromStatus is the status persisted alongside offline_ts when a
+// health check first marks a runner offline. Once offline, the pre-offline
+// status is unrecoverable, so it maps to unknown.
+func RunnerOfflineFromStatus(status RunnerStatus) string {
+	if status == RunnerStatusOffline {
+		return string(RunnerStatusUnknown)
+	}
+	return string(status)
+}
+
 func (r RunnerStatus) String() string {
 	return string(r)
 }
