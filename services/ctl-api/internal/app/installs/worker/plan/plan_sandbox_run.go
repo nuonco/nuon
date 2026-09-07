@@ -356,8 +356,10 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 			"provision_iam_role_arn":   "{{.nuon.install_stack.outputs.provision_iam_role_arn}}",
 			"deprovision_iam_role_arn": "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}",
 			"maintenance_iam_role_arn": "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}",
+			// install.nuon.co/id is what everything else tags with; NUON_INSTALL_ID is the old key
 			"tags": map[string]string{
-				"NUON_INSTALL_ID": "{{.nuon.install.id}}",
+				"install.nuon.co/id": "{{.nuon.install.id}}",
+				"NUON_INSTALL_ID":    "{{.nuon.install.id}}",
 			},
 		}
 	case app.AppRunnerTypeGCP:
