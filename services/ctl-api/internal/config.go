@@ -106,6 +106,8 @@ func init() {
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
+	config.RegisterDefault("telemetry_jwks", "")
+	config.RegisterDefault("telemetry_jwt_issuer", "")
 
 	// max request sizes to prevent too large of requests
 	config.RegisterDefault("max_request_size", 1024*50)
@@ -399,6 +401,9 @@ type Config struct {
 	// empty to disable, which is the default until the gateway collector exists.
 	AuditOTLPEndpoint string `config:"audit_otlp_endpoint"`
 	AuditOTLPToken    string `config:"audit_otlp_token"`
+
+	TelemetryJWKS      string `config:"telemetry_jwks,secure"`
+	TelemetryJWTIssuer string `config:"telemetry_jwt_issuer"`
 
 	// configuration for runners
 	RunnerContainerImageURL      string `config:"runner_container_image_url" validate:"required"`
