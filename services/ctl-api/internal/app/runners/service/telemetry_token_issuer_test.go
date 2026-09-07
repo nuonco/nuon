@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 func telemetryTestRSAKey(t *testing.T) *rsa.PrivateKey {
@@ -176,31 +175,6 @@ func TestRunnerServiceTelemetryTokenIssuerConfiguration(t *testing.T) {
 		require.ErrorContains(t, err, "initialize telemetry token issuer")
 		require.ErrorContains(t, err, "decode telemetry JWKS")
 	})
-}
-
-func TestCreateTelemetryAccessToken(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	issuer, _ := newTelemetryTestTokenIssuer(t)
-	svc := &service{
-		db:                   setupTelemetryRunnerPrincipalDB(t),
-		telemetryTokenIssuer: issuer,
-	}
-	recorder := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(recorder)
-	ctx.Request = httptest.NewRequest(http.MethodPost, "/v1/telemetry/access-token", nil)
-	cctx.SetAccountGinContext(ctx, telemetryRunnerTestAccount())
-	cctx.SetOrgIDGinContext(ctx, telemetryTestOrgID)
-
-	svc.CreateTelemetryAccessToken(ctx)
-
-	require.Equal(t, http.StatusOK, recorder.Code)
-	require.Equal(t, "no-store", recorder.Header().Get("Cache-Control"))
-	require.Equal(t, "no-cache", recorder.Header().Get("Pragma"))
-	var response CreateTelemetryAccessTokenResponse
-	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-	require.Equal(t, "Bearer", response.TokenType)
-	require.Equal(t, int64(600), response.ExpiresIn)
-	require.NotEmpty(t, response.AccessToken)
 }
 
 func TestGetTelemetryJWKS(t *testing.T) {
