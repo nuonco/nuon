@@ -447,7 +447,7 @@ func (s *Signal) checkImageActionSupported(ctx workflow.Context, run *app.Instal
 
 	platform := run.Install.RunnerGroup.Platform
 	if !supportedImageActionPlatform(platform) {
-		return fmt.Errorf("image-backed actions are only supported on AWS runners; runner platform %q is not supported", platform)
+		return fmt.Errorf("image-backed actions are only supported on AWS, Azure, and GCP VM runners; runner platform %q is not supported", platform)
 	}
 
 	return nil
@@ -572,16 +572,12 @@ func resolveMirroredDigestRef(ctx workflow.Context, syncJobID string) (string, e
 	return out.Ref, nil
 }
 
-// supportedImageActionPlatform gates image-backed actions to the platforms that
-// can put the selected role inside the container. AWS mints the role's
-// credentials on the runner and injects them, so the container never needs the
-// VM's metadata identity. Azure names the selected user-assigned managed
-// identity via ARM_CLIENT_ID/AZURE_CLIENT_ID and the container reaches IMDS over
-// the docker bridge, which is the same boundary a script action gets. GCP only
-// injects an impersonation hint and still needs credential work.
+// supportedImageActionPlatform gates image-backed actions to VM runners with a
+// host Docker launcher. GCP containers receive the same metadata identity and
+// service-account impersonation hints as host-based GCP actions.
 func supportedImageActionPlatform(p app.AppRunnerType) bool {
 	switch p {
-	case app.AppRunnerTypeAWS, app.AppRunnerTypeAzure, app.AppRunnerTypeLocal:
+	case app.AppRunnerTypeAWS, app.AppRunnerTypeAzure, app.AppRunnerTypeGCP, app.AppRunnerTypeLocal:
 		return true
 	default:
 		return false

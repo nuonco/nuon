@@ -74,6 +74,11 @@ func TestPreviewEventType(t *testing.T) {
 	require.Equal(t, "manual", previewEventType(app.AppBranchRunPreviewSourceLocal))
 }
 
+func TestBranchRunApprovalOption(t *testing.T) {
+	require.Equal(t, app.InstallApprovalOptionPrompt, branchRunApprovalOption(false))
+	require.Equal(t, app.InstallApprovalOptionApproveAll, branchRunApprovalOption(true))
+}
+
 func TestTriggerAppBranchRunSuite(t *testing.T) {
 	if os.Getenv("INTEGRATION") != "true" {
 		t.Skip("INTEGRATION is not set, skipping")

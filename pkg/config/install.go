@@ -149,7 +149,7 @@ func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Per-install override for the runner nested CloudFormation template URL. Overrides the app-level default from stack.toml.").
 		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-runner.yaml").
 		Field("custom_nested_stacks").Short("Custom nested stack overrides").
-		Long("Per-install overrides for custom nested CloudFormation stacks. Entries with the same name as app-level stacks replace them; new names are appended.").
+		Long("Per-install overrides for custom install stacks. Entries with the same name as app-level stacks replace them; new names are appended. Supports AWS CloudFormation, Azure ARM, and curated GCP modules.").
 		Nullable()
 }
 
@@ -213,7 +213,7 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("approve-all").
 		Example("prompt").
 		Field("labels").Short("key/value labels for the install").
-		Long("Tag installs with arbitrary metadata like environment, region, or version. Values can use the .nuon interpolation syntax to render from install state, and re-render as state changes.").
+		Long("Tag installs with arbitrary metadata like environment, region, or version. Values can use the .nuon templating syntax to render from install state, and re-render as state changes.").
 		Example(map[string]string{"env": "production", "region": "{{ .nuon.cloud_account.aws.region }}"}).
 		Field("aws_account").Short("AWS account configuration").
 		Long("AWS-specific settings for this install, including region and other account details").

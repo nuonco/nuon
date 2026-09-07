@@ -64,7 +64,11 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 	// Wait for the retry clone itself; the workflow already has StatusError when
 	// the update is submitted.
 	require.Eventually(e.T(), func() bool {
-		for _, step := range e.getStepsByWorkflow(ctx, flw.ID) {
+		steps, err := e.tryStepsByWorkflow(ctx, flw.ID)
+		if err != nil {
+			return false
+		}
+		for _, step := range steps {
 			if step.GroupIdx == 2 && step.RetryIndex == 1 && step.Status.Status == app.StatusError {
 				return true
 			}

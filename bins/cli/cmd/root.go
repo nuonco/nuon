@@ -73,6 +73,7 @@ nuon sync
 		c.authCmd(),
 		c.configCmd(),
 		c.appsCmd(),
+		c.branchesCmd(),
 		c.syncCmd(),
 
 		// Install commands

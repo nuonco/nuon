@@ -29,6 +29,7 @@ const (
 	KindStackRun             = "stack_run"
 	KindAppConfigSynced      = "app_config_synced"
 	KindRunnerUnhealthy      = "runner_unhealthy"
+	KindLabelAdded           = "label_added"
 )
 
 // Transition values for Event.Transition. British "cancelled" is the

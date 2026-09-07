@@ -57,7 +57,11 @@ func (e *FlowTestSuite) TestManualRetryOnErroredStep() {
 	// retry fires before the clone has executed.
 	var original, clone *app.WorkflowStep
 	require.Eventually(e.T(), func() bool {
-		steps = e.getStepsByWorkflow(ctx, flw.ID)
+		fetched, err := e.tryStepsByWorkflow(ctx, flw.ID)
+		if err != nil {
+			return false
+		}
+		steps = fetched
 		original = nil
 		clone = nil
 		for i := range steps {

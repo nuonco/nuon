@@ -277,6 +277,7 @@ func hasStackChanges(p *PRCommentParams) bool {
 
 func writeBuildsSection(b *strings.Builder, changes []ComponentBuildChange) {
 	var rows strings.Builder
+	count := 0
 	for _, change := range changes {
 		label := ""
 		switch change.ChangeReason {
@@ -292,16 +293,18 @@ func writeBuildsSection(b *strings.Builder, changes []ComponentBuildChange) {
 			component = fmt.Sprintf("[`%s`](%s)", change.ComponentName, change.BuildURL)
 		}
 		rows.WriteString(fmt.Sprintf("| %s | `%s` |\n", component, label))
+		count++
 	}
 	if rows.Len() == 0 {
 		return
 	}
 
-	b.WriteString("### Builds\n\n")
+	b.WriteString("<details>\n")
+	b.WriteString(fmt.Sprintf("<summary><strong>Builds</strong> <code>%d</code></summary>\n\n", count))
 	b.WriteString("| Component | Change |\n")
 	b.WriteString("|-----------|--------|\n")
 	b.WriteString(rows.String())
-	b.WriteString("\n")
+	b.WriteString("\n</details>\n\n")
 }
 
 // writeDiffSection mirrors the dashboard overview's config diff card: a single

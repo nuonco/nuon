@@ -173,13 +173,7 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 		workflowMeta["head_sha"] = headSHA
 	}
 
-	approvalOption := app.InstallApprovalOptionApproveAll
-	if !in.AutoApprove {
-		approvalOption, err = s.helpers.ResolveAppBranchApprovalOption(ctx, a.ID, branch.ID, config.ID)
-		if err != nil {
-			return nil, nil, fmt.Errorf("unable to resolve approval option: %w", err)
-		}
-	}
+	approvalOption := branchRunApprovalOption(in.AutoApprove)
 
 	triggerResp, err := s.helpers.TriggerAppBranchRun(ctx, &helpers.TriggerAppBranchRunRequest{
 		Run: helpers.CreateAppBranchRunRequest{

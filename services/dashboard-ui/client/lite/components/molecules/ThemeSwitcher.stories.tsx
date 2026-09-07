@@ -14,15 +14,9 @@ export const Overview = () => (
     use={['Anywhere the user should be able to change the theme — settings, the account menu.']}
     avoid={['Reading the current theme for display. Use useTheme() for that.']}
     rules={[
-      'It sets the preference, not the theme. system is a preference that resolves to light or dark and tracks the OS live.',
-      'The preference is persisted in localStorage under nuon-lite-theme.',
+      'It sets the preference rather than the theme. The system option resolves to light or dark and follows the operating system live.',
+      'The preference persists across reloads.',
       'Renders as a radiogroup, so arrow keys and screen readers work.',
-    ]}
-    sections={[
-      {
-        heading: 'In Ladle',
-        body: "Ladle's own light/dark/auto control is wired to the same preference, so the toolbar toggle themes lite components for real. High contrast is only reachable through this component.",
-      },
     ]}
   />
 )

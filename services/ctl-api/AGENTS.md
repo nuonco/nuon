@@ -283,6 +283,9 @@ Configuration is handled through:
 
 ## Testing
 
+Do not add tests that use SQLite. For database-backed behavior, use the PostgreSQL test harness so tests exercise the
+same SQL dialect and database semantics as production. Unit tests should mock the persistence boundary instead.
+
 Integration tests in `/internal/integration/` cover:
 
 - API endpoint functionality
@@ -1085,7 +1088,7 @@ Title and Annotations are set.
 selection is an in-process map keyed by token ID — prefer the org header for multi-replica.
 
 Adding a tool: `.agents/skills/mcp-api-tool/SKILL.md`. Keep the catalog in
-`docs/guides/agents/overview.mdx` and `agentsContextMarkdown()` in sync.
+`docs/guides/agents/tools.mdx` and `agentsContextMarkdown()` in sync.
 
 ## Logging Conventions
 

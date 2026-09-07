@@ -30,7 +30,7 @@ func (s *Service) ListBranches(ctx context.Context, appID string, asJSON bool) e
 	}
 
 	if len(branches) == 0 {
-		view.Print(fmt.Sprintf("no branches found for app %s\n\ncreate one with: nuon apps branches create --app-id %s --name <name>", appID, appID))
+		view.Print(fmt.Sprintf("no branches found for app %s\n\ncreate one with: nuon branches create --app-id %s --name <name>", appID, appID))
 		return nil
 	}
 
@@ -99,15 +99,11 @@ func (s *Service) CreateBranch(ctx context.Context, appID, name string, asJSON b
 	return nil
 }
 
-// TriggerBranchRunOptions carries the optional inputs for a branch run. PR
-// fields are set by CI so a preview can report back onto the pull request.
+// TriggerBranchRunOptions carries the optional inputs for a branch run. Preview
+// and pull request inputs live on `branches preview` instead.
 type TriggerBranchRunOptions struct {
-	PlanOnly   bool
-	Force      bool
-	NoWait     bool
-	PRNumber   *int
-	HeadSHA    string
-	BaseBranch string
+	Force  bool
+	NoWait bool
 }
 
 func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, opts TriggerBranchRunOptions, asJSON bool) error {
@@ -124,13 +120,7 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 	}
 
 	req := &models.ServiceTriggerAppBranchRunRequest{
-		Force:      opts.Force,
-		PlanOnly:   opts.PlanOnly,
-		HeadSha:    opts.HeadSHA,
-		BaseBranch: opts.BaseBranch,
-	}
-	if opts.PRNumber != nil {
-		req.PrNumber = int64(*opts.PRNumber)
+		Force: opts.Force,
 	}
 
 	run, err := s.api.TriggerAppBranchRun(ctx, appID, branchID, req)
@@ -243,7 +233,7 @@ func (s *Service) selectBranchID(ctx context.Context, appID, branchID string) (s
 		return "", fmt.Errorf("unable to list app branches: %w", err)
 	}
 	if len(branches) == 0 {
-		return "", fmt.Errorf("no branches found for this app; create one with: nuon apps branches create")
+		return "", fmt.Errorf("no branches found for this app; create one with: nuon branches create")
 	}
 
 	options := make([]bubbles.BranchOption, len(branches))

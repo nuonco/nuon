@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/labeladded"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -127,6 +128,13 @@ func (s *service) AddInstallLabels(ctx *gin.Context) {
 		return
 	}
 
+	changedLabelNames := make([]string, 0, len(req.Labels))
+	for key := range req.Labels {
+		if oldValue, ok := install.Labels[key]; !ok || oldValue != merged[key] {
+			changedLabelNames = append(changedLabelNames, key)
+		}
+	}
+
 	install.Labels = merged
 	install.LabelTemplates = newTemplates
 
@@ -135,9 +143,21 @@ func (s *service) AddInstallLabels(ctx *gin.Context) {
 		return
 	}
 
-	matches, _ := s.appsHelpers.FindBranchesMatchingLabels(ctx, install.AppID, install.Labels)
-	if len(matches) == 1 {
-		s.appsHelpers.SyncInstallBranchConnection(ctx, &install, matches[0].Branch.ID)
+	if len(changedLabelNames) > 0 {
+		queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		for _, labelName := range changedLabelNames {
+			if err := s.enqueueInstallSignal(ctx, queueID, &labeladded.Signal{
+				InstallID: install.ID,
+				LabelName: labelName,
+			}, "", ""); err != nil {
+				ctx.Error(fmt.Errorf("unable to enqueue label-added signal: %w", err))
+				return
+			}
+		}
 	}
 
 	ctx.JSON(http.StatusOK, install)

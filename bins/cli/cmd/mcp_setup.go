@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/mitchellh/go-homedir"
@@ -32,8 +33,10 @@ Writes in the current directory:
   cursor                 .cursor/mcp.json
   amp                    .amp/settings.json
 
-The server is registered as "nuon" and connects to https://mcp.nuon.co/mcp.
-Override either with --url and --name; both are written into the generated
+The server is registered as "nuon". Its URL is derived from the configured
+API URL by replacing the api. hostname prefix with mcp. and using /mcp.
+A localhost API URL writes the nuon-dev binary as the command when one is on
+PATH. Override either with --url and --name; both are written into the generated
 command. Pass --allow-writes to include it on the generated command so the
 client exposes mutating tools. A non-default -C config path is copied in as well.
 
@@ -51,12 +54,12 @@ client exposes mutating tools. A non-default -C config path is copied in as well
 				return err
 			}
 
-			return setupProjectMCP(mcpSetupCommand(), args, platform, name)
+			return setupProjectMCP(mcpSetupCommand(c.cfg.APIURL), args, platform, name)
 		}),
 	}
 
 	cmd.Flags().StringVar(&platform, "platform", "", "MCP client platform (claude-code, cursor, amp)")
-	cmd.Flags().StringVar(&mcpURL, "url", "", "upstream MCP server URL passed through to nuon agents mcp (default https://mcp.nuon.co/mcp)")
+	cmd.Flags().StringVar(&mcpURL, "url", "", "upstream MCP server URL passed through to nuon agents mcp (derived from api.<hostname>, or localhost; otherwise required)")
 	cmd.Flags().StringVar(&name, "name", "", "name in the client's MCP list (default nuon, derived from the configured API URL)")
 	cmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "pass --allow-writes through to nuon agents mcp")
 	_ = cmd.MarkFlagRequired("platform")
@@ -75,15 +78,29 @@ func stdioMCPEntry(command string, args []string) mcpServerEntry {
 	return mcpServerEntry{Command: command, Args: args}
 }
 
-func mcpSetupCommand() string {
+// devCLIName is the binary local development builds are installed as.
+const devCLIName = "nuon-dev"
+
+func mcpSetupCommand(apiURL string) string {
 	exe, err := os.Executable()
 	if err != nil {
-		return "nuon"
-	}
-	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		exe = "nuon"
+	} else if resolved, err := filepath.EvalSymlinks(exe); err == nil {
 		exe = resolved
 	}
-	return exe
+
+	if !mcpserver.IsLocalAPIURL(apiURL) || filepath.Base(exe) == devCLIName {
+		return exe
+	}
+
+	dev, err := exec.LookPath(devCLIName)
+	if err != nil {
+		return exe
+	}
+	if resolved, err := filepath.EvalSymlinks(dev); err == nil {
+		return resolved
+	}
+	return dev
 }
 
 func stdioMCPArgs(urlSet bool, url string, nameSet bool, name string, allowWrites bool) ([]string, error) {

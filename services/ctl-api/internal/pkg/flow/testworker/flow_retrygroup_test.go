@@ -23,6 +23,7 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 	planSignal := &SuccessSignal{}
 	applySignal := &PlanApplyFailSignal{}
 	finalizeSignal := &SuccessSignal{}
+	e.phase("seed")
 
 	flw, queueID := e.setupFlowTest(ctx, ownerID, ownerType, []app.WorkflowStep{
 		{Name: "g1-plan", Idx: 100, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
@@ -33,12 +34,15 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 		{Name: "g2-finalize", Idx: 300, GroupIdx: 2, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: finalizeSignal}},
 	})
+	e.phase("fixtures")
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
+	e.phase("enqueue")
 
 	// PlanApplyFailSignal has MaxRetries=2 and always fails.
 	// The group will be cloned, then max retries exhausted → workflow errors.
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+	e.phase("db-success")
 
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 
@@ -74,7 +78,10 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 				"group 2 step should not have succeeded since group 1 never passed")
 		}
 	}
+	e.phase("assertions")
+
 	e.assertTemporalDrained(ctx, flw.ID)
+	e.phase("drain")
 }
 
 // TestRetryGroupRetryOfRetryDiscardsAllPreviousGroups verifies that when a

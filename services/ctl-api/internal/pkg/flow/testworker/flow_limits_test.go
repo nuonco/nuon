@@ -105,7 +105,11 @@ func (e *FlowTestSuite) TestApprovalExpiresStopsWorkflow() {
 		"an expired approval must not spawn retry clones")
 
 	require.Eventually(e.T(), func() bool {
-		return !e.getWorkflow(ctx, flw.ID).FinishedAt.IsZero()
+		var wf app.Workflow
+		if err := e.service.DB.WithContext(ctx).First(&wf, "id = ?", flw.ID).Error; err != nil {
+			return false
+		}
+		return !wf.FinishedAt.IsZero()
 	}, ceilingWait, pollInterval, "workflow with expired approval must finish")
 	e.assertTemporalDrained(ctx, flw.ID)
 }
@@ -128,7 +132,11 @@ func (e *FlowTestSuite) TestApprovalDeniedStopsWorkflow() {
 
 	e.waitForStepStatus(ctx, steps[0].ID, app.WorkflowStepApprovalStatusApprovalDenied)
 	require.Eventually(e.T(), func() bool {
-		return !e.getWorkflow(ctx, flw.ID).FinishedAt.IsZero()
+		var wf app.Workflow
+		if err := e.service.DB.WithContext(ctx).First(&wf, "id = ?", flw.ID).Error; err != nil {
+			return false
+		}
+		return !wf.FinishedAt.IsZero()
 	}, ceilingWait, pollInterval, "denied workflow must finish")
 	e.assertTemporalDrained(ctx, flw.ID)
 }
@@ -158,7 +166,11 @@ func (e *FlowTestSuite) TestParkedRetryExpiresStopsWorkflow() {
 	require.Equal(e.T(), directive.StepStop, directive.Step(step.ResultDirective))
 
 	require.Eventually(e.T(), func() bool {
-		return !e.getWorkflow(ctx, flw.ID).FinishedAt.IsZero()
+		var wf app.Workflow
+		if err := e.service.DB.WithContext(ctx).First(&wf, "id = ?", flw.ID).Error; err != nil {
+			return false
+		}
+		return !wf.FinishedAt.IsZero()
 	}, ceilingWait, pollInterval, "workflow with abandoned step must finish")
 	e.assertTemporalDrained(ctx, flw.ID)
 }

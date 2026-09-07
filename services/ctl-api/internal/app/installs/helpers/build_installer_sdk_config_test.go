@@ -250,6 +250,16 @@ func (s *InstallerSDKConfigTestSuite) TestCustomStacksInstallOverrideMerge() {
 
 func (s *InstallerSDKConfigTestSuite) TestCustomStacksInputParametersFromLatestStackVersion() {
 	t := s.T()
+	s.customerInput("namespaces", "", false)
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(&app.AppInput{
+		AppInputConfigID: s.inputCfg.ID,
+		AppInputGroupID:  s.group.ID,
+		Name:             "vendor_setting",
+		Description:      "vendor_setting",
+		Type:             app.AppInputTypeString,
+		Source:           app.AppInputSourceVendor,
+		Default:          "default",
+	}).Error)
 
 	s.setCustomNestedStacks([]config.CustomNestedStack{
 		{Name: "k8s-namespaces", Index: 0, TemplateURL: "https://nuon-artifacts.s3.us-west-2.amazonaws.com/does-not-exist.yaml"},
@@ -263,7 +273,10 @@ func (s *InstallerSDKConfigTestSuite) TestCustomStacksInputParametersFromLatestS
 		InstallStackID: installStack.ID,
 		AppConfigID:    s.appCfg.ID,
 		CustomStacksInputParametersMap: map[string]map[string]string{
-			"k8s-namespaces": {"K8SNamespacesNamespaces": "namespaces"},
+			"k8s-namespaces": {
+				"K8SNamespacesNamespaces": "namespaces",
+				"VendorSetting":           "vendor_setting",
+			},
 		},
 	}).Error)
 
@@ -274,12 +287,26 @@ func (s *InstallerSDKConfigTestSuite) TestCustomStacksInputParametersFromLatestS
 
 func (s *InstallerSDKConfigTestSuite) TestCustomStacksGCPModuleName() {
 	t := s.T()
+	s.customerInput("bucket_location", "", false)
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(&app.AppInput{
+		AppInputConfigID: s.inputCfg.ID,
+		AppInputGroupID:  s.group.ID,
+		Name:             "bucket_versioning",
+		Description:      "bucket_versioning",
+		Type:             app.AppInputTypeBool,
+		Source:           app.AppInputSourceVendor,
+		Default:          "false",
+	}).Error)
 
 	s.setCustomNestedStacks([]config.CustomNestedStack{
 		{
 			Name:        "bucket",
 			Index:       0,
 			TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket",
+			Parameters: map[string]string{
+				"location":   "{{.nuon.install.inputs.bucket_location}}",
+				"versioning": "{{.nuon.install.inputs.bucket_versioning}}",
+			},
 		},
 		{
 			Name:        "cf-nested",
@@ -289,9 +316,15 @@ func (s *InstallerSDKConfigTestSuite) TestCustomStacksGCPModuleName() {
 	})
 
 	install := s.seedInstallWithRunner()
+	s.deps.Seed.CreateInstallInputs(s.ctx, t, install.ID, s.inputCfg.ID, map[string]*string{
+		"bucket_location":   generics.ToPtr("US"),
+		"bucket_versioning": generics.ToPtr("true"),
+	})
 
 	cfg := s.build(install.ID)
 	require.Len(t, cfg.CustomStacks, 2)
 	assert.Equal(t, "bucket", cfg.CustomStacks[0].Module)
+	assert.Equal(t, map[string]string{"location": "US", "versioning": "true"}, cfg.CustomStacks[0].Parameters)
+	assert.Equal(t, map[string]string{"location": "bucket_location"}, cfg.CustomStacks[0].InputParameters)
 	assert.Equal(t, "", cfg.CustomStacks[1].Module)
 }

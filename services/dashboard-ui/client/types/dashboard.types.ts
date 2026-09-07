@@ -189,6 +189,71 @@ export type TPulumiChangeAction =
   | 'read'
   | 'refresh'
 
+export interface TPulumiPropertyDiff {
+  kind: string
+  inputDiff: boolean
+}
+
+export interface TPulumiResourceChange {
+  urn: string
+  type: string
+  name: string
+  action: TPulumiChangeAction
+  diffs?: string[]
+  detailed_diff?: Record<string, TPulumiPropertyDiff>
+  old_inputs?: Record<string, unknown>
+  new_inputs?: Record<string, unknown>
+  provider?: string
+}
+
+export interface TPulumiPlan {
+  stdout: string
+  stderr: string
+  change_summary: Record<string, number>
+  resource_changes?: TPulumiResourceChange[]
+  diagnostics?: string[]
+}
+
+export type TAppConfigDiffOperation = 'add' | 'remove' | 'change'
+
+export interface TAppConfigDiffField {
+  key: string
+  op: string
+  diff: string
+}
+
+export interface TAppConfigDiffFile {
+  name: string
+  op: TAppConfigDiffOperation
+  before?: string
+  after?: string
+}
+
+export interface TAppConfigDiffEntity {
+  name: string
+  op: TAppConfigDiffOperation
+  componentType?: string
+  fields: TAppConfigDiffField[]
+  files?: TAppConfigDiffFile[]
+}
+
+export interface TAppConfigDiffSection {
+  name: string
+  sectionKey: string
+  additions: number
+  removals: number
+  changed: number
+  grouped: boolean
+  entities: TAppConfigDiffEntity[]
+  fields: TAppConfigDiffField[]
+  files?: TAppConfigDiffFile[]
+  content?: {
+    op: TAppConfigDiffOperation
+    before?: string
+    after?: string
+  }
+}
+
 export type THelmK8sChangeAction =
   | 'add'
   | 'added'

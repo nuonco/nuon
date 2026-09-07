@@ -273,7 +273,7 @@ anthropic_api_key  = "{{.nuon.install.inputs.anthropic_api_key}}"
 ```
 
 Notice how the component vars pull from two sources: sandbox outputs (VPC IDs, subnet IDs,
-DNS zone) and install inputs (OS, instance type, SSH key). This interpolation pattern is how
+DNS zone) and install inputs (OS, instance type, SSH key). This templating pattern is how
 Nuon passes context from the sandbox and the customer's choices into your Terraform modules.
 
 ![Terraform Component](/images/get-started/cde/tf-component.png)
@@ -457,7 +457,7 @@ enter the password you set in the `vscode_password` input.
 
 ## Observability
 
-The install page displays a live README rendered from `README.md` in the app root. It uses Go templating to read action outputs and display the current state of the VM and its services. The five healthcheck actions — `healthcheck_ec2`, `healthcheck_ssh`, `healthcheck_code_server`, `healthcheck_alb`, and `connections_status` — run on a 5-minute cron via the runner and write their results to action outputs. The README template reads those outputs via `{{.nuon.actions.workflows.*}}` interpolations to show a per-service status summary, active SSH session count, and connected client IPs. No additional monitoring infrastructure is needed — the runner handles execution via SSM and the results surface directly on the install page.
+The install page displays a live README rendered from `README.md` in the app root. It uses Go templating to read action outputs and display the current state of the VM and its services. The five healthcheck actions — `healthcheck_ec2`, `healthcheck_ssh`, `healthcheck_code_server`, `healthcheck_alb`, and `connections_status` — run on a 5-minute cron via the runner and write their results to action outputs. The README reads those outputs through `{{.nuon.actions.workflows.*}}` template variables to show a per-service status summary, active SSH session count, and connected client IPs. No additional monitoring infrastructure is needed — the runner handles execution via SSM and the results surface directly on the install page.
 
 ## Cost Controls
 

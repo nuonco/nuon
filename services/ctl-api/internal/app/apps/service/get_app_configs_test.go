@@ -44,6 +44,15 @@ func TestAppConfigsSuite(t *testing.T) {
 	suite.Run(t, new(AppConfigsTestSuite))
 }
 
+// skipBlobTestsInCI: these tests upload intermediate configs as blobs to the
+// KMS-encrypted nuon-dev bucket, and the CI runner role lacks
+// kms:GenerateDataKey until the self-hosted-runners KMS policy change is applied.
+func (s *AppConfigsTestSuite) skipBlobTestsInCI() {
+	if os.Getenv("CI") == "true" {
+		s.T().Skip("uploads config blobs to the KMS-encrypted nuon-dev bucket; the CI runner role lacks kms:GenerateDataKey until the self-hosted-runners KMS policy change is applied")
+	}
+}
+
 func (s *AppConfigsTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)

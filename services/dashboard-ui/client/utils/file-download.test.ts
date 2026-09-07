@@ -1,20 +1,59 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from 'bun:test'
 import { createFileDownload, downloadFileOnClick } from './file-download'
 
 type MockFn = ReturnType<typeof mock>
 
-const origCreateObjectURL = globalThis.URL?.createObjectURL
-const origRevokeObjectURL = globalThis.URL?.revokeObjectURL
+const origCreateObjectURL = Object.getOwnPropertyDescriptor(
+  globalThis.URL,
+  'createObjectURL'
+)
+const origRevokeObjectURL = Object.getOwnPropertyDescriptor(
+  globalThis.URL,
+  'revokeObjectURL'
+)
 const origCreateElement = document.createElement.bind(document)
 const origAppendChild = document.body.appendChild.bind(document.body)
 const origRemoveChild = document.body.removeChild.bind(document.body)
 
-Object.defineProperty(global, 'URL', {
-  value: {
-    createObjectURL: mock(),
-    revokeObjectURL: mock(),
-  },
+Object.defineProperty(globalThis.URL, 'createObjectURL', {
+  value: mock(),
   writable: true,
+  configurable: true,
+})
+Object.defineProperty(globalThis.URL, 'revokeObjectURL', {
+  value: mock(),
+  writable: true,
+  configurable: true,
+})
+
+afterAll(() => {
+  if (origCreateObjectURL) {
+    Object.defineProperty(
+      globalThis.URL,
+      'createObjectURL',
+      origCreateObjectURL
+    )
+  } else {
+    delete globalThis.URL.createObjectURL
+  }
+
+  if (origRevokeObjectURL) {
+    Object.defineProperty(
+      globalThis.URL,
+      'revokeObjectURL',
+      origRevokeObjectURL
+    )
+  } else {
+    delete globalThis.URL.revokeObjectURL
+  }
 })
 
 describe('file-download', () => {

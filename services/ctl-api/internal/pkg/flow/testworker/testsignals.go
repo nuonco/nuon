@@ -30,7 +30,7 @@ type SuccessSignal struct{}
 func (s *SuccessSignal) Type() signal.SignalType         { return SuccessSignalType }
 func (s *SuccessSignal) Validate(workflow.Context) error { return nil }
 func (s *SuccessSignal) Execute(workflow.Context) error  { return nil }
-func (s *SuccessSignal) SleepAfter() time.Duration       { return time.Second }
+func (s *SuccessSignal) SleepAfter() time.Duration       { return 250 * time.Millisecond }
 
 // --- FailSignal: always fails ---
 
@@ -43,7 +43,7 @@ type FailSignal struct {
 func (s *FailSignal) Type() signal.SignalType         { return FailSignalType }
 func (s *FailSignal) Validate(workflow.Context) error { return nil }
 func (s *FailSignal) Execute(workflow.Context) error  { return fmt.Errorf("test failure: %s", s.Reason) }
-func (s *FailSignal) SleepAfter() time.Duration       { return time.Second }
+func (s *FailSignal) SleepAfter() time.Duration       { return 250 * time.Millisecond }
 
 // --- SlowSignal: blocks until cancelled ---
 
@@ -60,7 +60,7 @@ func (s *SlowSignal) Execute(ctx workflow.Context) error {
 var _ signal.SignalWithCancel = (*SlowSignal)(nil)
 
 func (s *SlowSignal) Cancel(workflow.Context) error { return nil }
-func (s *SlowSignal) SleepAfter() time.Duration     { return time.Second }
+func (s *SlowSignal) SleepAfter() time.Duration     { return 250 * time.Millisecond }
 
 // --- AutoRetrySignal: fails with auto-retry enabled, always fails ---
 
@@ -77,7 +77,7 @@ func (s *AutoRetrySignal) Execute(workflow.Context) error {
 }
 func (s *AutoRetrySignal) AutoRetry() bool           { return true }
 func (s *AutoRetrySignal) MaxRetries() int           { return 3 }
-func (s *AutoRetrySignal) SleepAfter() time.Duration { return time.Second }
+func (s *AutoRetrySignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
 
 var _ signal.SignalWithAutoRetry = (*AutoRetrySignal)(nil)
 var _ signal.SignalWithMaxRetries = (*AutoRetrySignal)(nil)
@@ -96,7 +96,7 @@ func (s *RetryGroupSignal) Execute(workflow.Context) error {
 func (s *RetryGroupSignal) AutoRetry() bool           { return true }
 func (s *RetryGroupSignal) RetryGroup() bool          { return true }
 func (s *RetryGroupSignal) MaxRetries() int           { return 2 }
-func (s *RetryGroupSignal) SleepAfter() time.Duration { return time.Second }
+func (s *RetryGroupSignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
 
 var _ signal.SignalWithAutoRetry = (*RetryGroupSignal)(nil)
 var _ signal.SignalWithRetryGroup = (*RetryGroupSignal)(nil)
@@ -140,7 +140,7 @@ func (s *CountdownSignal) Execute(ctx workflow.Context) error {
 	return fmt.Errorf("countdown signal: retry %d < target %d", step.RetryIndex, s.SucceedAtRetry)
 }
 
-func (s *CountdownSignal) SleepAfter() time.Duration { return time.Second }
+func (s *CountdownSignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
 
 var _ signal.SignalWithAutoRetry = (*CountdownSignal)(nil)
 var _ signal.SignalWithMaxRetries = (*CountdownSignal)(nil)
@@ -182,7 +182,7 @@ func (s *CountdownGroupSignal) Execute(ctx workflow.Context) error {
 	return fmt.Errorf("countdown-group signal: retry %d < target %d", step.RetryIndex, s.SucceedAtRetry)
 }
 
-func (s *CountdownGroupSignal) SleepAfter() time.Duration { return time.Second }
+func (s *CountdownGroupSignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
 
 var _ signal.SignalWithAutoRetry = (*CountdownGroupSignal)(nil)
 var _ signal.SignalWithRetryGroup = (*CountdownGroupSignal)(nil)
@@ -209,7 +209,7 @@ func (s *PlanApplyFailSignal) Execute(workflow.Context) error {
 func (s *PlanApplyFailSignal) AutoRetry() bool           { return true }
 func (s *PlanApplyFailSignal) RetryGroup() bool          { return true }
 func (s *PlanApplyFailSignal) MaxRetries() int           { return 2 }
-func (s *PlanApplyFailSignal) SleepAfter() time.Duration { return time.Second }
+func (s *PlanApplyFailSignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
 
 func (s *PlanApplyFailSignal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
 	return []signal.CloneStepDef{
@@ -253,7 +253,7 @@ func (s *ManualRetryGroupCountdownSignal) MaxRetries() int                 { ret
 func (s *ManualRetryGroupCountdownSignal) MaxAutoRetries(workflow.Context) int {
 	return 0
 }
-func (s *ManualRetryGroupCountdownSignal) SleepAfter() time.Duration { return time.Second }
+func (s *ManualRetryGroupCountdownSignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
 func (s *ManualRetryGroupCountdownSignal) SetStepContext(stepID, flowID string) {
 	s.StepID = stepID
 	s.FlowID = flowID
@@ -324,7 +324,7 @@ func (s *CancellableTestSignal) Cancel(ctx workflow.Context) error {
 	})
 }
 
-func (s *CancellableTestSignal) SleepAfter() time.Duration { return time.Second }
+func (s *CancellableTestSignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
 
 var _ signal.Signal = (*CancellableTestSignal)(nil)
 var _ signal.SignalWithCancel = (*CancellableTestSignal)(nil)
@@ -343,7 +343,7 @@ func init() {
 func (s *ApprovalInnerSignal) Type() signal.SignalType         { return ApprovalInnerSignalType }
 func (s *ApprovalInnerSignal) Validate(workflow.Context) error { return nil }
 func (s *ApprovalInnerSignal) Execute(workflow.Context) error  { return nil }
-func (s *ApprovalInnerSignal) SleepAfter() time.Duration       { return time.Second }
+func (s *ApprovalInnerSignal) SleepAfter() time.Duration       { return 250 * time.Millisecond }
 
 // SkipGroupApprovalSignal makes deny-skip-current skip the whole group instead of just the step.
 
@@ -359,7 +359,7 @@ func (s *SkipGroupApprovalSignal) Type() signal.SignalType         { return Skip
 func (s *SkipGroupApprovalSignal) Validate(workflow.Context) error { return nil }
 func (s *SkipGroupApprovalSignal) Execute(workflow.Context) error  { return nil }
 func (s *SkipGroupApprovalSignal) SkipGroup() bool                 { return true }
-func (s *SkipGroupApprovalSignal) SleepAfter() time.Duration       { return time.Second }
+func (s *SkipGroupApprovalSignal) SleepAfter() time.Duration       { return 250 * time.Millisecond }
 
 var _ signal.SignalWithSkipGroup = (*SkipGroupApprovalSignal)(nil)
 
@@ -377,7 +377,7 @@ func (s *PolicyEvalApprovalSignal) Type() signal.SignalType         { return Pol
 func (s *PolicyEvalApprovalSignal) Validate(workflow.Context) error { return nil }
 func (s *PolicyEvalApprovalSignal) Execute(workflow.Context) error  { return nil }
 func (s *PolicyEvalApprovalSignal) RequiresPolicyEvaluation() bool  { return true }
-func (s *PolicyEvalApprovalSignal) SleepAfter() time.Duration       { return time.Second }
+func (s *PolicyEvalApprovalSignal) SleepAfter() time.Duration       { return 250 * time.Millisecond }
 
 var _ signal.SignalWithPolicyEvaluation = (*PolicyEvalApprovalSignal)(nil)
 
@@ -398,7 +398,7 @@ func (s *SkippableFailSignal) Execute(workflow.Context) error {
 }
 func (s *SkippableFailSignal) AutoRetry() bool           { return true }
 func (s *SkippableFailSignal) MaxRetries() int           { return 0 }
-func (s *SkippableFailSignal) SleepAfter() time.Duration { return time.Second }
+func (s *SkippableFailSignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
 
 var _ signal.SignalWithAutoRetry = (*SkippableFailSignal)(nil)
 var _ signal.SignalWithMaxRetries = (*SkippableFailSignal)(nil)
@@ -437,7 +437,7 @@ func (s *ManualRetrySignal) Execute(ctx workflow.Context) error {
 	}
 	return fmt.Errorf("manual retry signal: waiting for manual retry")
 }
-func (s *ManualRetrySignal) SleepAfter() time.Duration { return time.Second }
+func (s *ManualRetrySignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
 
 var _ signal.SignalWithAutoRetry = (*ManualRetrySignal)(nil)
 var _ signal.SignalWithMaxRetries = (*ManualRetrySignal)(nil)
@@ -479,7 +479,7 @@ func (s *ManualRetryThenBlockSignal) Execute(ctx workflow.Context) error {
 	return fmt.Errorf("manual-retry-then-block: waiting for manual retry")
 }
 func (s *ManualRetryThenBlockSignal) Cancel(workflow.Context) error { return nil }
-func (s *ManualRetryThenBlockSignal) SleepAfter() time.Duration     { return time.Second }
+func (s *ManualRetryThenBlockSignal) SleepAfter() time.Duration     { return 250 * time.Millisecond }
 
 var _ signal.SignalWithAutoRetry = (*ManualRetryThenBlockSignal)(nil)
 var _ signal.SignalWithMaxRetries = (*ManualRetryThenBlockSignal)(nil)

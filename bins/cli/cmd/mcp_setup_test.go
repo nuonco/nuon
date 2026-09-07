@@ -32,6 +32,44 @@ func TestSetupProjectMCPWritesStdioConfig(t *testing.T) {
 	assertStdioServer(t, filepath.Join(dir, ".amp", "settings.json"), "amp.mcpServers", "nuon", args)
 }
 
+func TestMCPSetupCommandPrefersDevCLIForLocalhost(t *testing.T) {
+	dir := t.TempDir()
+	devPath := filepath.Join(dir, devCLIName)
+	require.NoError(t, os.WriteFile(devPath, []byte("#!/bin/sh\n"), 0o755))
+	t.Setenv("PATH", dir)
+
+	resolvedDevPath, err := filepath.EvalSymlinks(devPath)
+	require.NoError(t, err)
+
+	require.Equal(t, resolvedDevPath, mcpSetupCommand("http://localhost:8081"))
+}
+
+func TestMCPSetupCommandUsesExecutableForRemoteAPI(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, devCLIName), []byte("#!/bin/sh\n"), 0o755))
+	t.Setenv("PATH", dir)
+
+	exe, err := os.Executable()
+	require.NoError(t, err)
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		exe = resolved
+	}
+
+	require.Equal(t, exe, mcpSetupCommand("https://api.nuon.co"))
+}
+
+func TestMCPSetupCommandFallsBackWhenDevCLIMissing(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+
+	exe, err := os.Executable()
+	require.NoError(t, err)
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		exe = resolved
+	}
+
+	require.Equal(t, exe, mcpSetupCommand("http://localhost:8081"))
+}
+
 func TestStdioMCPArgsIncludesOverrides(t *testing.T) {
 	t.Setenv("NUON_CONFIG_FILE", "")
 	prev := ConfigFile

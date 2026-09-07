@@ -8,7 +8,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"gorm.io/gorm/clause"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -65,9 +64,9 @@ func (e *FlowTestSuite) seedDeployTarget(ctx context.Context, status app.Install
 
 	deploy := app.InstallDeploy{
 		OrgID:              orgID,
-		CreatedByID:        generics.GetFakeObj[string](),
-		ComponentBuildID:   generics.GetFakeObj[string](),
-		InstallComponentID: generics.GetFakeObj[string](),
+		CreatedByID:        fakeString(),
+		ComponentBuildID:   fakeString(),
+		InstallComponentID: fakeString(),
 		Status:             status,
 		StatusDescription:  string(status),
 	}

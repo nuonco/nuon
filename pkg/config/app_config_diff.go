@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/nuonco/nuon/pkg/config/diff"
 )
@@ -89,6 +91,17 @@ func diffBranch(old, new *AppBranchConfig) *diff.Diff {
 	if old == nil && new == nil {
 		return nil
 	}
+	return branchDiff("branch", old, new)
+}
+
+// Diff compares the receiver (desired config) against old (the config currently
+// applied to the branch) and returns a hierarchical diff tree covering every
+// field an app branch config can express.
+func (c *AppBranchConfig) Diff(old *AppBranchConfig) *diff.Diff {
+	return branchDiff("branch", old, c)
+}
+
+func branchDiff(key string, old, new *AppBranchConfig) *diff.Diff {
 	if old == nil {
 		old = &AppBranchConfig{}
 	}
@@ -100,8 +113,98 @@ func diffBranch(old, new *AppBranchConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(old.Name, new.Name)),
 	}
 	children = append(children, diffConnectedRepo("connected_repo", old.ConnectedRepo, new.ConnectedRepo)...)
+	children = append(children, diffPublicRepo("public_repo", old.PublicRepo, new.PublicRepo)...)
+	if d := diffBranchInstallGroups(old.InstallGroups, new.InstallGroups); d != nil {
+		children = append(children, d)
+	}
+	if d := diffBranchPreview(old.Preview, new.Preview); d != nil {
+		children = append(children, d)
+	}
+	children = append(children,
+		// post_deploy_runbooks runs in the order listed, so compare the sequence
+		// rather than the set.
+		diff.NewDiff(diff.WithKey("post_deploy_runbooks"), diff.WithStringDiff(
+			strings.Join(old.PostDeployRunbooks, ", "),
+			strings.Join(new.PostDeployRunbooks, ", "),
+		)),
+		diff.NewDiff(diff.WithKey("ignore_changes_regex"), diff.WithStringDiff(old.IgnoreChangesRegex, new.IgnoreChangesRegex)),
+		diff.NewDiff(diff.WithKey("send_statuses_on_ignore"), diff.WithBoolDiff(old.SendStatusesOnIgnore, new.SendStatusesOnIgnore)),
+	)
 
-	return diff.NewDiff(diff.WithKey("branch"), diff.WithChildren(children...))
+	return diff.NewDiff(diff.WithKey(key), diff.WithChildren(children...))
+}
+
+func diffBranchInstallGroups(old, new []AppBranchInstallGroupConfig) *diff.Diff {
+	if len(old) == 0 && len(new) == 0 {
+		return nil
+	}
+
+	oldByName := make(map[string]AppBranchInstallGroupConfig, len(old))
+	for _, g := range old {
+		oldByName[g.Name] = g
+	}
+
+	var children []*diff.Diff
+	seen := make(map[string]bool, len(new))
+
+	for _, g := range new {
+		seen[g.Name] = true
+		children = append(children, diffBranchInstallGroup(oldByName[g.Name], g))
+	}
+
+	for _, g := range old {
+		if !seen[g.Name] {
+			children = append(children, diffBranchInstallGroup(g, AppBranchInstallGroupConfig{Name: g.Name}))
+		}
+	}
+
+	return diff.NewDiff(diff.WithKey("install_groups"), diff.WithChildren(children...))
+}
+
+func diffBranchInstallGroup(old, new AppBranchInstallGroupConfig) *diff.Diff {
+	name := new.Name
+	if name == "" {
+		name = old.Name
+	}
+
+	children := []*diff.Diff{
+		diff.NewDiff(diff.WithKey("order"), diff.WithStringDiff(strconv.Itoa(old.Order), strconv.Itoa(new.Order))),
+		diff.NewDiff(diff.WithKey("install_ids"), diff.WithStringSliceDiff(old.InstallIDs, new.InstallIDs)),
+		diff.NewDiff(diff.WithKey("install_names"), diff.WithStringSliceDiff(old.InstallNames, new.InstallNames)),
+		diff.NewDiff(diff.WithKey("auto_approve_on_policies_passing"), diff.WithOptionalBoolDiff(
+			old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing,
+		)),
+	}
+	if d := diff.MapDiff("label_selector", old.LabelSelector, new.LabelSelector); d != nil {
+		children = append(children, d)
+	}
+
+	return diff.NewDiff(diff.WithKey("install_group."+name), diff.WithChildren(children...))
+}
+
+func diffBranchPreview(old, new *AppBranchPreviewConfig) *diff.Diff {
+	if old == nil && new == nil {
+		return nil
+	}
+	if old == nil {
+		old = &AppBranchPreviewConfig{}
+	}
+	if new == nil {
+		new = &AppBranchPreviewConfig{}
+	}
+
+	children := []*diff.Diff{
+		diff.NewDiff(diff.WithKey("mode"), diff.WithStringDiff(old.Mode, new.Mode)),
+		diff.NewDiff(diff.WithKey("install_id"), diff.WithStringDiff(old.InstallID, new.InstallID)),
+		diff.NewDiff(diff.WithKey("install_name"), diff.WithStringDiff(old.InstallName, new.InstallName)),
+		diff.NewDiff(diff.WithKey("set_statuses"), diff.WithOptionalBoolDiff(old.SetStatuses, new.SetStatuses)),
+		diff.NewDiff(diff.WithKey("comment"), diff.WithOptionalBoolDiff(old.Comment, new.Comment)),
+	}
+	if d := diff.MapDiff("label_selector", old.LabelSelector, new.LabelSelector); d != nil {
+		children = append(children, d)
+	}
+
+	return diff.NewDiff(diff.WithKey("preview"), diff.WithChildren(children...))
 }
 
 // --- Sandbox ---

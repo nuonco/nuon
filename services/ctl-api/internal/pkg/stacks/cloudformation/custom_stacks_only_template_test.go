@@ -25,6 +25,8 @@ Parameters:
   VPC:
     Description: The VPC id.
     Type: String
+  CIDRBlock:
+    Type: String
   RunnerSubnet:
     Type: String
   PublicSubnets:
@@ -153,6 +155,12 @@ func newCustomStacksOnlyInput(customStacks []config.CustomNestedStack) *stacks.T
 			StackConfig: app.AppStackConfig{
 				CustomNestedStacks: customStacks,
 			},
+			InputConfig: app.AppInputConfig{
+				AppInputs: []app.AppInput{
+					{Name: "namespaces", Source: app.AppInputSourceCustomer},
+					{Name: "some_arn", Source: app.AppInputSourceCustomer},
+				},
+			},
 		},
 		Settings:         &app.RunnerGroupSettings{},
 		CustomStacksOnly: true,
@@ -235,6 +243,7 @@ func TestGetAWSCustomStacksOnlyTemplate_ContractParamValues(t *testing.T) {
 	require.NotNil(t, stack)
 
 	assert.Equal(t, cloudformation.Ref("VPC"), stack.Parameters["VPC"])
+	assert.Equal(t, cloudformation.Ref("CIDRBlock"), stack.Parameters["CIDRBlock"])
 	assert.Equal(t, cloudformation.Ref("RunnerSubnet"), stack.Parameters["RunnerSubnet"])
 	assert.Equal(t, cloudformation.Ref("PublicSubnets"), stack.Parameters["PublicSubnets"])
 	assert.Equal(t, cloudformation.Ref("PrivateSubnets"), stack.Parameters["PrivateSubnets"])
@@ -242,6 +251,7 @@ func TestGetAWSCustomStacksOnlyTemplate_ContractParamValues(t *testing.T) {
 	// contract params should not additionally be exposed as top-level custom-stack
 	// parameters (they're already declared as the frozen contract params)
 	assert.NotContains(t, result.params, "VPC")
+	assert.NotContains(t, result.params, "CIDRBlock")
 	assert.NotContains(t, result.params, "RunnerSubnet")
 	assert.NotContains(t, result.params, "PublicSubnets")
 	assert.NotContains(t, result.params, "PrivateSubnets")
@@ -423,6 +433,7 @@ func TestGetAWSCustomStacksOnlyTemplate_UnbindableParameterIsHardError(t *testin
 	assert.Contains(t, err.Error(), "broken-stack")
 	assert.Contains(t, err.Error(), "Unresolvable")
 	assert.Contains(t, err.Error(), "VPC")
+	assert.Contains(t, err.Error(), "CIDRBlock")
 	assert.Contains(t, err.Error(), "RunnerSubnet")
 	assert.Contains(t, err.Error(), "PublicSubnets")
 	assert.Contains(t, err.Error(), "PrivateSubnets")
@@ -470,6 +481,40 @@ func TestGetAWSCustomStacksOnlyTemplate_SimpleInstallInputParameterIsHoisted(t *
 	require.Contains(t, tmpl.Parameters, "K8SNamespacesNamespaces")
 	assert.Equal(t, "String", tmpl.Parameters["K8SNamespacesNamespaces"].Type)
 	assert.NotContains(t, tmpl.Parameters, "K8SNamespacesRootDomain")
+}
+
+func TestGetAWSCustomStacksOnlyTemplate_VendorInputParameterIsBaked(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(mockHoistableParamTemplateYAML))
+	}))
+	defer server.Close()
+
+	tpl := &Templates{cfg: &internal.Config{}}
+	inp := newCustomStacksOnlyInput([]config.CustomNestedStack{
+		{
+			Name:        "k8s-namespaces",
+			TemplateURL: server.URL + "/stack.yaml",
+			Index:       0,
+			Parameters: map[string]string{
+				"Namespaces": "vendor-namespace",
+				"RootDomain": "example.com",
+			},
+		},
+	})
+	inp.AppCfg.InputConfig.AppInputs = []app.AppInput{
+		{Name: "namespaces", Source: app.AppInputSourceVendor},
+	}
+	inp.UnrenderedCustomStackParameters = map[string]map[string]string{
+		"k8s-namespaces": {"Namespaces": "{{.nuon.install.inputs.namespaces}}"},
+	}
+
+	tmpl, err := tpl.getAWSTemplate(inp)
+	require.NoError(t, err)
+	assert.NotContains(t, tmpl.Parameters, "K8SNamespacesNamespaces")
+
+	stack := tmpl.Resources["K8SNamespaces"].(*nestedcloudformation.Stack)
+	assert.Equal(t, "vendor-namespace", stack.Parameters["Namespaces"])
+	require.Empty(t, ExtractAndStripCustomStacksInputParameters(tmpl))
 }
 
 func TestGetAWSCustomStacksOnlyTemplate_ComplexExpressionParameterIsBaked(t *testing.T) {

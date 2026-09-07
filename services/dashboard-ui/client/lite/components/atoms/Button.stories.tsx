@@ -35,46 +35,38 @@ export const Overview = () => (
   <ComponentDocs
     name="Button"
     tier="atom"
-    summary="Triggers an action. Four variants chosen by emphasis, not by colour."
+    summary="Triggers an action. Four variants chosen by emphasis."
     use={[
-      'Anything that runs an action: submit, deploy, delete, open a modal.',
-      'primary — the action the page exists for.',
-      'secondary — the default, for every ordinary action.',
-      'ghost — lowest emphasis: dismissals, toolbar actions, row actions.',
-      'danger — entering a destructive flow.',
+      'Primary is the action the page exists for.',
+      'Secondary is the default, for every ordinary action.',
+      'Ghost is the lowest emphasis, for dismissals, toolbar actions and row actions.',
+      'Danger marks the entry into a destructive flow.',
     ]}
     avoid={[
-      'Navigation. A thing that changes the URL is a Link, even if it looks like a button.',
-      'danger as the confirm button inside a destructive flow — that modal has already said what will happen, so its confirm is a primary.',
+      'Do not use a button for navigation. Anything that changes the URL is a link, even when it looks like a button.',
+      'Do not use danger for the confirm button inside a destructive flow. That modal has already said what will happen, so its confirm is a primary.',
+      'Do not use the small size for a text button. It exists for icon-only affordances that sit inline with text.',
     ]}
     rules={[
-      'At most one primary per page. Two primaries means neither is primary.',
-      'iconOnly is a shape, not a variant — any variant can be icon-only, and it requires an aria-label.',
-      'Every disabled button whose reason is not obvious from context gets a tooltip saying why. Pass tooltip; never hand-wrap Tooltip around a Button and never use title.',
-      'Disabled uses aria-disabled, not the native attribute — native disabled swallows pointer events, so the tooltip explaining the disabled state would never show.',
-      'A leading icon gets -ml-0.5 to cancel the transparent padding inside the SVG, so optical left and right insets both land at 14px.',
+      'At most one primary per page.',
+      'Icon-only is a shape rather than a variant. Any variant can be icon-only, and it always needs an aria-label.',
+      'Give every disabled button a tooltip explaining why, unless the reason is obvious. Pass the tooltip prop rather than wrapping the button by hand.',
+      'Loading disables the button and shows a spinner. Use it for the gap between the click and the response.',
     ]}
     props={[
       { name: 'variant', type: "'primary' | 'secondary' | 'ghost' | 'danger'", default: "'secondary'", description: 'Emphasis level.' },
+      { name: 'size', type: "'md' | 'sm'", default: "'md'", description: 'The small size is for icon-only affordances inline with text.' },
       { name: 'loading', type: 'boolean', default: 'false', description: 'Shows a spinner before the label, disables the button and sets aria-busy.' },
-      { name: 'icon', type: 'ReactNode', description: 'Leading icon. Swapped out by the spinner while loading.' },
+      { name: 'icon', type: 'ReactNode', description: 'Leading icon. Replaced by the spinner while loading.' },
       { name: 'iconOnly', type: 'boolean', default: 'false', description: 'Square button. Icon goes in children; aria-label is required.' },
       { name: 'tooltip', type: 'ReactNode', description: 'Wraps the button in a Tooltip. The way to explain a disabled state.' },
       { name: 'tooltipSide', type: "'top' | 'bottom' | 'left' | 'right'", default: "'top'", description: 'Preferred tooltip side.' },
-      { name: 'disabled', type: 'boolean', description: 'Renders aria-disabled, suppresses hover/active and blocks onClick, while staying focusable so its tooltip is reachable.' },
+      { name: 'disabled', type: 'boolean', description: 'Blocks activation and suppresses hover, while staying focusable so its tooltip is reachable.' },
     ]}
     sections={[
       {
         heading: 'States',
-        body: 'Hover, active, disabled and focus-visible are defined for every variant. Hover and active are suppressed while disabled, so a disabled button never lights up under the cursor. The focus ring is a 2px offset outline in --focus-ring and is never removed. Buttons set cursor-pointer explicitly, because Tailwind v4 Preflight no longer does.',
-      },
-      {
-        heading: 'Loading',
-        body: 'The spinner sits in a grid column that animates 0fr to 1fr, so the button grows into it over 200ms instead of snapping and shoving its neighbours. Height never changes. The transition is dropped under prefers-reduced-motion.',
-      },
-      {
-        heading: 'Colour',
-        body: 'Buttons have their own token family (--button-{variant}-bg/-hover/-active/-text) rather than reusing surface tokens, because the label sits on the button own background and has to clear contrast against that. Measured AA in light and dark, AAA in high contrast. The danger red is provisional — it is the one colour with no nuon.co equivalent and should fold into the status palette later.',
+        body: 'Hover, active, disabled and focus-visible are defined for every variant, and hover is suppressed while disabled. All variants are the same height, so they line up in a row.',
       },
     ]}
   />

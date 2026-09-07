@@ -27,23 +27,28 @@ export const Overview = () => (
   <ComponentDocs
     name="Text"
     tier="atom"
-    summary="Every piece of type in lite. Variants name a role in the page, not a tag or a size."
-    use={['All rendered text — headings, prose, table cells, labels, IDs, timestamps.']}
+    summary="Every piece of type in lite. Variants name a role in the page, not a size."
+    use={[
+      'All rendered text — headings, prose, table cells, labels, IDs, timestamps.',
+      'Set as to choose the element, so headings are real headings.',
+      'Use the mono family for IDs, timestamps, code and anything the user might copy.',
+    ]}
     avoid={[
       'Choosing a variant for its size. Pick the role; if none fits, the scale is missing a step.',
-      'Wrapping a Link to size it — links inherit surrounding type on their own.',
+      'Do not wrap a link to size it, because links inherit the surrounding type on their own.',
+      'Do not reach for text-size or colour classes. Use variant and color instead.',
     ]}
     rules={[
-      'The element is always explicit via as. Text never infers a tag from the variant, so document structure is whatever you say it is.',
-      'Colour defaults to inherit, so plain Text picks up the surface it sits on.',
-      'The scale lives in styles.css as Tailwind text tokens, carrying size, line-height and tracking together. It is not duplicated in TS.',
+      'The element is always explicit. Nothing is inferred from the variant, so the document structure is whatever you say it is.',
+      'Colour defaults to inherit, so plain text picks up the surface it sits on.',
+      'When text is the only child of a padded box, set as to a block element. An inline span takes its line box from the container, which makes the padding lopsided.',
     ]}
     props={[
-      { name: 'as', type: 'ElementType', default: "'span'", description: 'The rendered element. Pass a real h1/h2/p/label.' },
+      { name: 'as', type: 'ElementType', default: "'span'", description: 'The rendered element.' },
       { name: 'variant', type: "'display' | 'title' | 'heading' | 'body' | 'caption' | 'label'", default: "'body'", description: 'Role in the page. Sets size, line-height, tracking and a default weight.' },
       { name: 'color', type: "'inherit' | 'primary' | 'secondary' | 'tertiary' | 'accent' | 'positive'", default: "'inherit'", description: 'Semantic colour token.' },
       { name: 'weight', type: "'normal' | 'medium' | 'semibold'", description: "Overrides the variant's default weight." },
-      { name: 'family', type: "'sans' | 'mono'", default: "'sans'", description: 'Mono for IDs, timestamps and code.' },
+      { name: 'family', type: "'sans' | 'mono'", default: "'sans'", description: 'Typeface.' },
       { name: 'lines', type: 'number', description: 'Clamps to n lines. Also sets the number of skeleton rows while loading.' },
       { name: 'loading', type: 'boolean', default: 'false', description: 'Renders a shimmer in place of the text.' },
       { name: 'loadingWidth', type: 'number', description: 'Skeleton width in ch. Defaults per variant.' },
@@ -51,7 +56,7 @@ export const Overview = () => (
     sections={[
       {
         heading: 'Loading',
-        body: 'The skeleton is a real text run — a zero-width space in the same variant, with the shimmer painted as a background — so its line box comes from the same layout the loaded string will use. Measured 0.00px of drift across all six variants. Giving it an explicit height instead drifts up to 1px, because an inline-block on the baseline can grow the line box. The shimmer paints a 0.85em band centred in the line box, so stacked rows are separated by the same leading real text has.',
+        body: 'The skeleton occupies exactly the box the loaded text will, so nothing moves when data arrives. Set loadingWidth to roughly the expected character count; lines gives a multi-row paragraph skeleton.',
       },
     ]}
   />
@@ -154,9 +159,8 @@ export const LoadingParagraph = () => (
 export const LoadingDoesNotShiftLayout = () => (
   <div className="flex flex-col gap-8 p-8">
     <Text variant="caption" color="tertiary">
-      Each row is the same component loading and loaded. The boxes line up to
-      the pixel because the skeleton is a real text run — a zero-width space in
-      the same variant — rather than a box with a measured height.
+      The same component loading and loaded. The boxes line up to the pixel, so
+      nothing moves when the data arrives.
     </Text>
     {VARIANTS.map(({ variant }) => (
       <div key={variant} className="flex items-baseline gap-6">

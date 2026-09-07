@@ -18,7 +18,7 @@ This skill enforces the ctl-api MCP tool registration pattern for the stateless 
 7. For read tools scoped to an org: use `api.MCPReadTool(...)` and call `require.Read(ctx)` at the start of the handler.
 8. Prefer trimmed response shapes over full GORM models when the payload would be large for LLM context.
 9. No new MCP-specific FX wiring — `RegisterMCPTools` is discovered via type assert on `api.MCPService`.
-10. Update the tool tables in `docs/guides/agents/overview.mdx` and `bins/cli/cmd/agents.go` (`agentsContextMarkdown`). Add a common-query accordion if the tool is part of a user-facing flow.
+10. Update the tool tables in `docs/guides/agents/tools.mdx` and `bins/cli/cmd/agents.go` (`agentsContextMarkdown`). Add a prompt to `docs/guides/agents/sample-queries.mdx` if the tool is part of a user-facing flow.
 
 Reference examples: `apps/service/mcp_list_apps.go`, `apps/service/mcp_register.go`, `installs/service/mcp_approve_step.go`.
 

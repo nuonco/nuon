@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/filecache"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -59,8 +60,9 @@ type TestService struct {
 	L    *zap.Logger
 	Seed *seed.Seeder
 
-	QueueClient   *queueclient.Client
-	EmitterClient *emitterclient.Client
+	QueueClient    *queueclient.Client
+	EmitterClient  *emitterclient.Client
+	TemporalClient temporalclient.Client
 }
 
 type EmitterTestSuite struct {
@@ -99,7 +101,8 @@ func (e *EmitterTestSuite) SetupSuite() {
 		fx.Provide(blobstore.NewService),
 		fx.Provide(func(cfg *internal.Config, l *zap.Logger) *filecache.FileCache {
 			cache, err := filecache.New(filecache.Options{
-				Dir: cfg.TemporalBlobCacheDir, MaxCount: cfg.TemporalBlobCacheMaxCount,
+				Dir:      cfg.TemporalBlobCacheDir,
+				MaxCount: cfg.TemporalBlobCacheMaxCount,
 				MaxBytes: int64(cfg.TemporalBlobCacheMaxSizeMB) * 1024 * 1024,
 			})
 			if err != nil {

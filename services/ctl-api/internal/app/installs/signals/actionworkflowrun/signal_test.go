@@ -30,8 +30,8 @@ func (s *SignalTestSuite) TestSupportedImageActionPlatform() {
 	}{
 		{name: "aws is supported", platform: app.AppRunnerTypeAWS, want: true},
 		{name: "azure is supported", platform: app.AppRunnerTypeAzure, want: true},
+		{name: "gcp is supported", platform: app.AppRunnerTypeGCP, want: true},
 		{name: "local is supported for development", platform: app.AppRunnerTypeLocal, want: true},
-		{name: "gcp is rejected", platform: app.AppRunnerTypeGCP, want: false},
 		{name: "aws ecs is rejected", platform: app.AppRunnerTypeAWSECS, want: false},
 		{name: "aws eks is rejected", platform: app.AppRunnerTypeAWSEKS, want: false},
 		{name: "azure aks is rejected", platform: app.AppRunnerTypeAzureAKS, want: false},

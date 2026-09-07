@@ -1,6 +1,6 @@
 ---
 title: "MCP walkthrough"
-description: "Connect an LLM client to Nuon and run your first MCP tool calls."
+description: "Connect an LLM client to Nuon and run your first queries."
 icon: "route"
 ---
 
@@ -34,7 +34,7 @@ amp mcp add nuon -- nuon agents mcp
 ```
 </CodeGroup>
 
-The proxy connects to `https://mcp.nuon.co/mcp`; override it with `--url` (and `--name` for the client's MCP list). Cursor Agent: `agent mcp enable <name>` after setup. Full examples: [Connect](/guides/agents/overview#connect) and [Override the server](/guides/agents/overview#override-the-server).
+The proxy derives its URL from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`). Override it with `--url` (and `--name` for the client's MCP list). Cursor Agent: `agent mcp enable <name>` after setup. Full examples: [Connect](/guides/agents/overview#connect) and [Override the server](/guides/agents/overview#override-the-server).
 
 </Step>
 
@@ -48,14 +48,17 @@ Confirm you are authenticated and an org is selected. If not, run `nuon auth log
 
 </Step>
 
-<Step title="First tool calls">
+<Step title="Ask a first question">
 
-In the LLM client, call:
+In the LLM client, paste:
 
-1. `whoami` — confirm account and org
-2. `list_installs` — list installs in that org
+```
+Who am I, and what installs are in this org?
+```
 
-You do not need `select_org` when using the stdio proxy (org is already in `X-Nuon-Org-ID`).
+The client should call `whoami` and `list_installs`. You do not need `select_org` when using the stdio proxy (org is already in `X-Nuon-Org-ID`).
+
+More prompts: [Sample queries](/guides/agents/sample-queries).
 
 </Step>
 
@@ -73,4 +76,4 @@ Your token must also have create permission.
 </Step>
 </Steps>
 
-Tool catalog and prompt → tool examples: [Agents](/guides/agents/overview).
+Tool catalog: [Tools](/guides/agents/tools). Prompts to paste: [Sample queries](/guides/agents/sample-queries).

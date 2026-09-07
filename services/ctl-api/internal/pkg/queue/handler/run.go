@@ -27,7 +27,23 @@ const (
 	handlerCANTerminateOverhead = 5000
 
 	handlerTerminateThreshold = handlerCANHistoryMax + handlerCANTerminateOverhead
+
+	// terminalDrainGrace holds a terminal re-entered run open long enough for
+	// its triggering update-with-start to be admitted and served before the
+	// run closes.
+	terminalDrainGrace = 3 * time.Second
 )
+
+// isTerminalQueueStatus reports whether the queue signal's DB status means the
+// signal has finished processing and no handler run should execute it again.
+func isTerminalQueueStatus(s app.Status) bool {
+	switch s {
+	case app.StatusSuccess, app.StatusError, app.StatusCancelled:
+		return true
+	default:
+		return false
+	}
+}
 
 func (h *handler) run(ctx workflow.Context) (bool, error) {
 	l, err := log.WorkflowLogger(ctx)
@@ -38,6 +54,13 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	// Check that the signal still exists before doing any work.
 	// If it was deleted, terminate the workflow without continue-as-new.
 	// We pass the fetched signal into initializeState to avoid a redundant DB fetch.
+	//
+	// registerHandlers must stay AFTER this fetch: registering update handlers
+	// before the yielding local activity leaves the first workflow task stuck
+	// (ready update accepted, then no further task runs), and the queue
+	// dispatcher's validate update fails with "workflow execution already
+	// completed" — TestEnqueueAndProcessNSignals hangs on it. The early
+	// registration saves a ~1s update retry per signal but wedges the queue.
 	qs, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, h.queueSignalID)
 	if err != nil {
 		if dbgenerics.IsGormErrRecordNotFound(err) {
@@ -61,6 +84,30 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 
 	l.Debug("handler is ready")
 	h.ready = true
+
+	// Terminal update-only run: update-with-start against an already-finished
+	// signal starts this run only to serve its triggering update (retry/approve
+	// forwarded to a handler that already completed). Execute must not re-run,
+	// the original run already sent the completion callbacks, and the run must
+	// close once in-flight update handlers drain — otherwise it parks in the
+	// Await below forever, leaking the workflow (visible as failed
+	// assert-temporal-drained checks).
+	if !h.finished {
+		_, canRewarm := h.sig.(signal.AutoExecuteOnTerminalStart)
+		rewarmEligible := canRewarm && qs.Status.Status == app.StatusSuccess
+		if isTerminalQueueStatus(qs.Status.Status) && !rewarmEligible {
+			l.Debug("terminal signal re-entered via update; draining update handlers")
+			h.setFinished(qs.Status.Status, "")
+			// The triggering update is not always admitted into this first
+			// task — closing immediately races it and the update fails with
+			// "unknown update" against a fresh run. Hold the run open briefly
+			// so the update can land and be served, then drain. Bounded,
+			// unlike the pre-drain zombie runs that parked forever.
+			_, _ = workflow.AwaitWithTimeout(ctx, terminalDrainGrace, func() bool { return false })
+			_ = workflow.Await(ctx, func() bool { return workflow.AllHandlersFinished(ctx) })
+			return true, nil
+		}
+	}
 
 	// Start the lifecycle manager to periodically check that the queue signal
 	// still exists and hasn't expired. Sets mgr.Stopped when the entity is
@@ -193,6 +240,11 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		l.Debug("handler finished, caching workflow")
 		_ = workflow.Sleep(ctx, cacheDur)
 	}
+
+	// Drain update handlers still running (e.g. a cancel that landed during
+	// the cache window) so the workflow doesn't close mid-propagation and drop
+	// the status writes the cancel semantics depend on.
+	_ = workflow.Await(ctx, func() bool { return workflow.AllHandlersFinished(ctx) })
 
 	return true, nil
 }

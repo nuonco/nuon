@@ -55,7 +55,11 @@ func (e *FlowTestSuite) TestManualRetryGroup() {
 	// The workflow resumes. Wait for the cloned apply to fail rather than
 	// observing the workflow's pre-retry error status.
 	require.Eventually(e.T(), func() bool {
-		for _, step := range e.getStepsByWorkflow(ctx, flw.ID) {
+		steps, err := e.tryStepsByWorkflow(ctx, flw.ID)
+		if err != nil {
+			return false
+		}
+		for _, step := range steps {
 			if step.Name == "g1-apply" && step.GroupRetryIdx == 1 && step.Status.Status == app.StatusError {
 				return true
 			}

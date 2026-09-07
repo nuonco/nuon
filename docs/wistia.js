@@ -13,4 +13,5 @@
 
   loadScript('https://fast.wistia.com/player.js')
   loadScript('https://fast.wistia.com/embed/91y66l4t5r.js', 'module')
+  loadScript('https://fast.wistia.com/embed/tsb1nu547c.js', 'module')
 })()

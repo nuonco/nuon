@@ -52,6 +52,10 @@ func TestUpdateTerraformStateSuite(t *testing.T) {
 		t.Skip("INTEGRATION is not set, skipping")
 		return
 	}
+	if os.Getenv("CI") == "true" {
+		t.Skip("uploads terraform state blobs to the KMS-encrypted nuon-dev bucket; the CI runner role lacks kms:GenerateDataKey until the self-hosted-runners KMS policy change is applied")
+		return
+	}
 	suite.Run(t, new(UpdateTerraformStateTestSuite))
 }
 
