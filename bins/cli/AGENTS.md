@@ -133,6 +133,7 @@ Cobra command definitions organized by functionality:
 
 ```bash
 nuon apps          # Application management
+nuon branches      # App branch management
 nuon components    # Component operations
 nuon installs      # Installation management
 nuon builds        # Build operations

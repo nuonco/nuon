@@ -27,5 +27,9 @@ func (a *Activities) createOnboardingAppBranchConfig(ctx context.Context, appBra
 		return nil, fmt.Errorf("unable to create app branch config: %w", err)
 	}
 
+	if err := a.appsHelpers.EnqueueAppBranchCreatedIfFirst(ctx, appBranchID, config.ID); err != nil {
+		return nil, fmt.Errorf("unable to enqueue app-branch-created: %w", err)
+	}
+
 	return config, nil
 }

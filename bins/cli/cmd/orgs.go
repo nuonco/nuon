@@ -468,7 +468,7 @@ INTERESTS
     resources:  map<kind, cfg>   per-resource opt-in (omit kinds you don't want)
 
   Resource kinds and the ops they support:
-    installs                provision, deprovision, reprovision
+    installs                provision, deprovision, reprovision, label_added
     components              deploy, teardown
     sandboxes               provision, reprovision, deprovision
     install_configurations  inputs, secrets

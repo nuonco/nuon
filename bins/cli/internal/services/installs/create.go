@@ -81,10 +81,9 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 	}
 
 	// we collect these and pass them down so we can pre-fill specific fields
-	inputsMap := make(map[string]string)
-	for _, kv := range inputs {
-		kvT := strings.Split(kv, "=")
-		inputsMap[kvT[0]] = kvT[1]
+	inputsMap, err := parseInstallInputs(inputs)
+	if err != nil {
+		return ui.PrintError(err)
 	}
 
 	req, err := s.buildCreateInstallRequest(ctx, appID, name, region, target, inputsMap, labelsMap)
@@ -135,23 +134,48 @@ func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, re
 
 	switch runnerCfg.CloudPlatform {
 	case models.AppCloudPlatformGcp:
+		if err := requireInstallRegion(region, "GCP"); err != nil {
+			return nil, err
+		}
 		req.GcpAccount = &models.HelpersCreateInstallGCPAccountParams{
 			ProjectID: target.GCPProjectID,
 			Region:    region,
 		}
 	case models.AppCloudPlatformAzure:
+		if err := requireInstallRegion(region, "Azure"); err != nil {
+			return nil, err
+		}
 		req.AzureAccount = &models.HelpersCreateInstallAzureAccountParams{
 			SubscriptionID: target.AzureSubscriptionID,
 			Location:       region,
 		}
 	default:
-		if region == "" {
-			return nil, fmt.Errorf("--region is required for AWS installs")
+		if err := requireInstallRegion(region, "AWS"); err != nil {
+			return nil, err
 		}
 		req.AwsAccount = &models.HelpersCreateInstallAWSAccountParams{Region: region, AccountID: target.AWSAccountID}
 	}
 
 	return req, nil
+}
+
+func requireInstallRegion(region, cloud string) error {
+	if region == "" {
+		return fmt.Errorf("--region is required for %s installs", cloud)
+	}
+	return nil
+}
+
+func parseInstallInputs(inputs []string) (map[string]string, error) {
+	inputsMap := make(map[string]string, len(inputs))
+	for _, input := range inputs {
+		name, value, ok := strings.Cut(input, "=")
+		if !ok || name == "" {
+			return nil, fmt.Errorf("invalid input %q: expected name=value", input)
+		}
+		inputsMap[name] = value
+	}
+	return inputsMap, nil
 }
 
 // inputsWithDefaults merges app input defaults with any explicitly provided values.

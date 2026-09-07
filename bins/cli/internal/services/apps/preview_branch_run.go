@@ -120,7 +120,7 @@ func (s *Service) previewBranchRunInteractive(ctx context.Context, appID, branch
 			return fmt.Errorf("unable to list app branches: %w", err)
 		}
 		if len(appBranches) == 0 {
-			return fmt.Errorf("no branches found for this app; create one with: nuon apps branches create")
+			return fmt.Errorf("no branches found for this app; create one with: nuon branches create")
 		}
 		for _, branch := range appBranches {
 			branches = append(branches, previewui.Branch{ID: branch.ID, Name: branch.Name})

@@ -42,6 +42,8 @@ func headerTitle(e Event) string {
 		return "Workflow step"
 	case KindWorkflowStepApproval:
 		return "Workflow step approval"
+	case KindLabelAdded:
+		return "Install label added"
 	}
 	return "Event"
 }

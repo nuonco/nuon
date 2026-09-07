@@ -349,6 +349,13 @@ export interface paths {
      */
     post: operations["TriggerAppBranchRun"];
   };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}": {
+    /**
+     * get an app branch workflow run
+     * @description Returns a branch workflow by either app branch run ID or workflow ID.
+     */
+    get: operations["GetAppBranchRun"];
+  };
   "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/builds": {
     /**
      * get builds for an app branch run
@@ -3649,6 +3656,7 @@ export interface components {
        */
       all_installs?: boolean;
       app_branch_config_id?: string;
+      auto_approve_on_policies_passing?: boolean | null;
       created_at?: string;
       created_by_id?: string;
       id?: string;
@@ -8768,6 +8776,11 @@ export interface components {
        * Mutually exclusive with InstallIDs and LabelSelector.
        */
       all_installs?: boolean;
+      /**
+       * @description AutoApproveOnPoliciesPassing approves this group's plan step without user
+       * input when its policy checks pass. Omit to leave it unset (off).
+       */
+      auto_approve_on_policies_passing?: boolean;
       install_ids?: string[];
       /**
        * @description LabelSelector dynamically resolves installs at deploy time.
@@ -12180,6 +12193,60 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.AppBranchRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app branch workflow run
+   * @description Returns a branch workflow by either app branch run ID or workflow ID.
+   */
+  GetAppBranchRun: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+        /** @description app branch run ID or workflow ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"];
         };
       };
       /** @description Bad Request */
@@ -20124,6 +20191,8 @@ export interface operations {
         runner_id?: string;
         /** @description filter installs by branch name (comma-separated; use __none__ for installs with no branch) */
         branches?: string;
+        /** @description include install components */
+        include_components?: boolean;
         /** @description limit of results to return */
         limit?: number;
         /** @description page number of results to return */

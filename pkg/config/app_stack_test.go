@@ -395,3 +395,34 @@ func TestStackConfig_Parse_GCPCustomStacks(t *testing.T) {
 		require.Error(t, cfg.parse(), badURL)
 	}
 }
+
+func TestStackConfigParseRequiresGCPDNSName(t *testing.T) {
+	cfg := &StackConfig{
+		Type:        "gcp-terraform",
+		Name:        "my-stack",
+		Description: "test stack",
+		CustomNestedStacks: []CustomNestedStack{
+			{Name: "dns", TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/dns", Index: 0},
+		},
+	}
+
+	require.EqualError(t, cfg.parse(), "custom_nested_stacks[0] (dns): parameters.dns_name is required for the GCP dns module")
+	cfg.CustomNestedStacks[0].Parameters = map[string]string{"dns_name": "app.example.com."}
+	require.NoError(t, cfg.parse())
+}
+
+func TestStackConfig_ParseRejectsDuplicateCustomStackNames(t *testing.T) {
+	cfg := &StackConfig{
+		Type:        "gcp-terraform",
+		Name:        "my-stack",
+		Description: "test stack",
+		CustomNestedStacks: []CustomNestedStack{
+			{Name: "bucket", TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket", Index: 0},
+			{Name: "bucket", TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket", Index: 1},
+		},
+	}
+
+	err := cfg.parse()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "each stack must have a unique name")
+}

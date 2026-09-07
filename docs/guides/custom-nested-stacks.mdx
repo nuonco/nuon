@@ -1,113 +1,220 @@
 ---
-title: 'Custom Nested CloudFormation Stacks'
-description: 'Extend the install stack with custom CloudFormation nested templates.'
+title: 'Custom Install Stacks'
+description: 'Provision additional AWS, Azure, or GCP resources with the install stack.'
 icon: "layer-group"
-keywords: ["installs", "runners", "nested stack", "CloudFormation template", "extend install stack", "custom stack", "stack.toml"]
+keywords: ["installs", "runners", "nested stack", "CloudFormation", "ARM template", "GCP module", "custom stack", "stack.toml"]
 ---
 
-The install stack supports custom nested CloudFormation templates beyond the built-in VPC and runner stacks. This
-enables vendors to provision custom AWS or Kubernetes resources as part of the install stack itself — before the sandbox
-or any components run. This feature is useful for setting up resources that must exist before the sandbox provisions but
-that require permissions the vendor does not need to retain throughout the remainder of an app's lifetime.
+Custom install stacks provision additional infrastructure with the customer's install stack, before the sandbox or any
+components run. The same `[[custom_nested_stacks]]` configuration works across AWS, Azure, and GCP:
 
-<Warning>
-Custom nested stacks are supported on **CloudFormation** and **`azure-bicep`** install stacks. The Terraform Stack
-templates do not include them or reference them. If you rely on this feature and your customers want to deploy via
-Terraform, see [Customizing Terraform Stack Templates](/guides/customizing-terraform-stack-templates), to learn how make
-equivalent changes to the Terraform templates.
-</Warning>
+- AWS deploys CloudFormation nested stacks.
+- Azure deploys linked ARM templates through an Azure Deployment Stack.
+- GCP instantiates reviewed Terraform modules from the install-stack repository.
 
 <Note>
-On `azure-bicep`, templates must be compiled ARM JSON — a `.bicep` source file will not parse. Parameter resolution,
-output wiring, and hoisting behave identically to CloudFormation, with the Azure-specific reserved parameters and
-first-class outputs listed below.
+GCP deliberately does not execute an arbitrary Terraform module named by app configuration. It only allows modules
+implemented and reviewed in the selected install-stack repository's `gcp/modules` collection.
 </Note>
+
+## Backward compatibility
+
+Existing valid AWS `stack.toml` files require no changes. The `name`, `template_url`, `index`, and `parameters` fields
+retain their original behavior. Azure and GCP support is additive, and apps without `custom_nested_stacks` continue to
+produce the same install stack. Configurations with duplicate names or indices now fail during sync instead of
+producing ambiguous resources.
+
+Per-install overrides also keep the existing merge behavior: an override with the same `name` replaces the app-level
+entry, while a new name is appended.
+
+### Capabilities
+
+| Capability | AWS | Azure | GCP |
+| ---------- | --- | ----- | --- |
+| App-level and per-install configuration | Yes | Yes | Yes |
+| Install-input parameters | Yes | Yes | Yes |
+| Outputs available to app templates | Yes | Yes | Yes |
+| Relative source uploaded during sync | Yes | Yes | Not applicable |
+| Sequential stacks and output wiring | Yes | Yes | Unique `index` only; modules do not chain |
+| User-supplied implementation | CloudFormation | Compiled ARM JSON | Reviewed module only |
+| Managed deletion with the install stack | Yes | Yes | Yes, except retained KMS keys |
+
+The GCP differences are intentional safety boundaries, not configuration differences. Add a reviewed module to the
+install-stack repository when you need a new GCP resource type.
 
 ## Use Cases
 
-For BYO-EKS
-
-- Create Kubernetes namespaces in an existing EKS cluster.
-- Create EKS access entries for the runner IAM roles.
-- Grant the Runner Subnet Security Group access to an existing EKS Cluster.
-
-More generally, these custom nested stacks can be used to create core resources that do not change and need not be
-re-deployed via a Nuon component. This is particularly useful for networking components.
-
-- Create a dedicated RDS Subnet in the freshly created VPC.
-- Configure an AWS Transit VPC in addition to a dedicated VPC for a BYOC app.
+- Create Kubernetes namespaces or access entries for an existing cluster.
+- Add network, database, DNS, storage, or identity resources that must exist before the sandbox.
+- Pass those resources' outputs to the sandbox or application components.
+- Provision stable infrastructure that should share the install stack's lifecycle rather than redeploy with a component.
 
 ## Configuration
 
-Custom nested stacks are configured in `[[custom_nested_stacks]]` blocks in `stack.toml`:
+Custom stacks are configured in `[[custom_nested_stacks]]` blocks in `stack.toml`. The block shape is the same for
+every cloud; only `template_url` identifies a cloud-specific implementation.
+
+### AWS
 
 ```toml
-# stack
 type        = "aws-cloudformation"
-name        = "byo-eks-{{.nuon.install.id}}"
-description = "Application deplyed into an existing AWS EKS k8s Cluster."
+name        = "payments-{{.nuon.install.id}}"
+description = "Application install stack."
 
 vpc_nested_template_url    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/.../byo-vpc.yaml"
 runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/.../runner-asg.yaml"
 
 [[custom_nested_stacks]]
-name         = "k8s_namespaces"
-template_url = "https://vender.s3.amazonaws.com/templates/k8s-namespaces.yaml"
+name         = "storage"
+template_url = "./cloudformation/storage.yaml"
 index        = 0
 
 [custom_nested_stacks.parameters]
-Namespaces = "{{.nuon.install.inputs.namespaces}}"
-
-[[custom_nested_stacks]]
-name         = "eks_access_entries"
-template_url = "https://my-bucket.s3.amazonaws.com/templates/eks-access-entries.yaml"
-index        = 1
-
-[custom_nested_stacks.parameters]
-Namespaces = "{{.nuon.install.inputs.namespaces}}"
-
-[[custom_nested_stacks]]
-name         = "runner_sg_eks_access"
-template_url = "https://inlzqy4v3qyo0wagcmilgnxpry-byoc-nuon-install-templates.s3.eu-west-1.amazonaws.com/templates/runner-sg-eks-access.yaml"
-index        = 2
-
-[custom_nested_stacks.parameters]
-ClusterName = "{{.nuon.install.inputs.cluster_name}}"
+BucketName = "{{.nuon.install.id}}-storage"
 ```
+
+Relative templates are uploaded by Nuon during app sync. Existing public S3 URLs continue to work.
+
+### Azure
+
+```toml
+type        = "azure-bicep"
+name        = "payments-{{.nuon.install.id}}"
+description = "Application install stack."
+
+vpc_nested_template_url    = "https://raw.githubusercontent.com/nuonco/install-stacks/main/azure/vnet.json"
+runner_nested_template_url = "https://raw.githubusercontent.com/nuonco/install-stacks/main/azure/runner.json"
+
+[[custom_nested_stacks]]
+name         = "storage"
+template_url = "./arm/storage.json"
+index        = 0
+
+[custom_nested_stacks.parameters]
+accountName = "{{.nuon.install.id | substr 0 18}}store"
+```
+
+Azure templates must be compiled ARM JSON. A `.bicep` `template_url` or a non-JSON body fails at sync with the compile
+command to run:
+
+```bash
+az bicep build --file arm/storage.bicep --outfile arm/storage.json
+nuon apps sync
+```
+
+Relative ARM templates are uploaded during sync. A public HTTPS URL also works.
+
+### GCP
+
+```toml
+type        = "gcp-terraform"
+name        = "payments-{{.nuon.install.id}}"
+description = "Application install stack."
+
+[[custom_nested_stacks]]
+name         = "storage"
+template_url = "github.com/nuonco/install-stacks//gcp/modules/bucket"
+index        = 0
+
+[custom_nested_stacks.parameters]
+location   = "US"
+versioning = "{{.nuon.install.inputs.bucket_versioning}}"
+```
+
+For a fork, replace the repository prefix but preserve `//gcp/modules/<name>`. The module must exist in that fork's GCP
+install stack. The built-in collection supports `bucket`, `kms`, `service_account`, and `dns`.
 
 ### Properties
 
-| Property       | Type                | Required | Description                                                                                                                                   |
-| -------------- | ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`         | `string`            | Yes      | Name of the nested stack. Used as the CloudFormation logical ID (converted to CamelCase) and parameter group label.                           |
-| `template_url` | `string`            | Yes      | S3 URL to the CloudFormation template YAML. Must be publicly accessible or accessible via the stack's execution role. Supports Go templating. |
-| `index`        | `int`               | Yes      | Execution order (ascending). Must be unique across all custom nested stacks.                                                                  |
-| `parameters`   | `map[string]string` | No       | Explicit parameter values. Supports Go templating. See [Parameter Mapping](#parameter-mapping).                                               |
+| Property       | Type                | Required | Description |
+| -------------- | ------------------- | -------- | ----------- |
+| `name`         | `string`            | Yes      | Stable, unique key used for deployment naming and output lookup. |
+| `template_url` | `string`            | Yes      | AWS template URL/path, Azure ARM JSON URL/path, or GCP curated module path. |
+| `index`        | `int`               | Yes      | Unique ordering key. AWS and Azure execute stacks in ascending order. |
+| `parameters`   | `map[string]string` | No       | Explicit parameter values. Supports Go templating. See [Parameter Mapping](#parameter-mapping). |
 
 {/* prettier-ignore-start */}
-<Tip>
-The `template_url` field supports Go templating, so you can dynamically construct URLs if needed.
-</Tip>
+<Tip>Use a relative AWS or Azure template path when the template lives beside the app config. Nuon uploads it during sync.</Tip>
 {/* prettier-ignore-end */}
+
+## Apply the Install Stack
+
+After syncing the app and creating an install:
+
+- AWS customers open the install's CloudFormation quick link and create or update the stack as usual.
+- Azure and GCP customers apply the corresponding `nuonco/stack` Terraform module. Custom stacks are read from the
+  authenticated `stack_config` data source; no custom-stack variables are required.
+
+```hcl
+provider "stack" {}
+
+module "install_stack" {
+  source  = "nuonco/stack/azure" # use nuonco/stack/gcp for GCP
+  version = "~> 1.0"
+
+  install_id = var.install_id
+}
+```
+
+The Stack provider reads `NUON_API_TOKEN` and `NUON_API_URL` from the environment. See
+[The Nuon Stack Terraform Provider](/guides/nuon-stack-terraform-provider) for authentication and complete examples.
+
+## Use Custom Stack Outputs
+
+All clouds report outputs under the same path:
+
+```text
+.nuon.install_stack.outputs.custom_nested_stacks.<stack-name>.outputs.<output-name>
+```
+
+For example, a sandbox or component can consume the `name` output from the `storage` stack:
+
+```toml
+[vars]
+bucket_name = "{{.nuon.install_stack.outputs.custom_nested_stacks.storage.outputs.name}}"
+```
+
+Output names retain the template or curated module's spelling. Azure matching is case-insensitive internally, so ARM's
+output-name normalization does not drop values.
+
+### GCP Curated Modules
+
+| Module | Parameters | Outputs |
+| ------ | ---------- | ------- |
+| `bucket` | `location`, `versioning`, `force_destroy` | `name`, `url`, `self_link` |
+| `kms` | `location`, `rotation_period` | `id`, `key_ring`, `name` |
+| `service_account` | `display_name`, `description` | `email`, `unique_id`, `name` |
+| `dns` | `dns_name`, `visibility`, `description`, `force_destroy` | `name`, `name_servers`, `managed_zone_id` |
+
+Booleans are the strings `"true"` or `"false"`. Destructive options default to `"false"`. Each module names resources from
+the install ID and stack `name`.
+
+<Warning>
+GCP does not support deleting Cloud KMS key rings or keys. Destroy removes the `kms` module from Terraform state, but
+the key material remains in the project. A later apply creates a new suffixed key instead of adopting or replacing the
+retained key.
+</Warning>
 
 ## Execution Order
 
-Custom nested stacks execute **after** the VPC and runner nested stacks. The `index` field determines the order among
-custom stacks:
+AWS and Azure custom stacks execute **after** the built-in network and runner stacks. The `index` field determines the
+order among custom stacks:
 
-1. VPC nested stack
-2. Runner ASG nested stack
+1. Built-in VPC or VNet stack
+2. Built-in runner stack
 3. Custom nested stacks ordered by `index`, ascending.
 
-The first custom nested stack (lowest index) depends on the `VPC` and `RunnerAutoScalingGroup` resources. Each
-subsequent stack depends on the previous one. This means stacks are provisioned sequentially, and a failure in one will
-prevent later stacks from executing.
+Each AWS or Azure stack depends on the previous one. A failure prevents later stacks from executing.
+
+GCP validates unique indices, but curated modules do not depend on each other. Terraform cannot order mixed module
+types from runtime `index` values without cycles or state-address changes. Set any value another stack needs in
+`parameters` or install inputs; do not rely on `index` for GCP data flow.
 
 ## Reserved Parameters
 
-Nuon automatically injects the following reserved parameters into your nested template if they are defined in the
-template's `Parameters` section. These are always set by Nuon and are never hoisted to the parent stack or exposed to
-the customer.
+For AWS and Azure, Nuon injects reserved parameters when the template declares them. They are never hoisted or exposed
+for manual input. GCP curated modules receive the install ID, project, region, and configured parameter map directly
+from the Terraform install-stack module.
 
 ### Nuon Identity Parameters
 
@@ -203,9 +310,8 @@ already account-scoped, so nothing needs hoisting to the parent.
 
 ## First-Class Output Wiring
 
-If a parameter in your custom template matches the name of an **output** from the VPC or runner nested stacks, Nuon
-automatically wires it using `!GetAtt`. This lets your template consume outputs from the built-in stacks without any
-explicit configuration.
+On AWS and Azure, if a custom template parameter matches an output from the built-in network or runner stack, Nuon
+wires it automatically. This lets the custom template consume built-in infrastructure without explicit configuration.
 
 For example, if the VPC template outputs `VPC` and `RunnerSubnet`, and your custom template declares parameters with
 those same names, they will be automatically populated:
@@ -228,17 +334,20 @@ wired to `[reference('vnetDeployment').outputs.<name>.value]`.
 
 ## Inter-Stack Output Wiring
 
-Outputs from earlier custom nested stacks are automatically wired to matching parameters in later custom stacks, using
-the same mechanism as first-class output wiring. If stack A (index 0) declares an output called `SharedSubnetID`, and
-stack B (index 1) declares a parameter called `SharedSubnetID`, Nuon will automatically set the parameter value using
-`!GetAtt StackA.Outputs.SharedSubnetID`.
+On AWS and Azure, outputs from earlier custom stacks are automatically wired to matching parameters in later custom
+stacks. If stack A (index 0) declares an output called `SharedSubnetID`, and stack B (index 1) declares a parameter
+called `SharedSubnetID`, Nuon supplies stack A's value.
 
 This works across any number of stacks in the chain — stack C can consume outputs from both stack A and stack B.
 
-Auto-wired parameters from inter-stack outputs are not hoisted to the parent stack.
+Auto-wired parameters are not hoisted to the parent stack.
 
 **Precedence:** First-class outputs (from the VPC and runner stacks) always take priority over custom stack outputs. If
-both the VPC stack and a custom stack produce an output with the same name, the VPC stack output is used.
+both the built-in network stack and a custom stack produce an output with the same name, the built-in output is used.
+
+<Note>
+GCP curated modules currently expose outputs to Nuon, but do not wire one custom module's output into another module.
+</Note>
 
 ```yaml
 # Stack A (index 0) - produces outputs
@@ -255,13 +364,13 @@ Parameters:
 
 ## Parameter Hoisting
 
-Any non-reserved parameters defined in your nested template that are not auto-wired from first-class outputs and not
-explicitly mapped via `parameters` are **hoisted** into the parent CloudFormation stack. This means:
+On AWS and Azure, non-reserved template parameters that are not auto-wired or explicitly mapped are **hoisted** into
+the generated parent template. This means:
 
-- Parameters appear in the CloudFormation console UI when the customer creates or updates the stack.
-- Parameters are grouped under a label matching the stack `name`.
+- AWS parameters appear in the CloudFormation console when the customer creates or updates the stack.
+- AWS parameters are grouped under a label matching the stack `name`.
 - Default values from your template are preserved.
-- Parameter types (e.g., `AWS::EC2::VPC::Id`, `String`, `Number`) are preserved.
+- Parameter types are preserved.
 
 **Important:** *Hoisted* parameter names must be unique across all nested stacks (including the VPC and runner stacks).
 If two stacks hoist a parameter with the same name, install stack generation fails with a conflict error. Names that are
@@ -315,11 +424,11 @@ they only exist after the stack has been applied. Reference those from component
 </Warning>
 {/* prettier-ignore-end */}
 
-## Authoring Templates
+## Authoring AWS and Azure Templates
 
 ### Template Structure
 
-Templates must be valid CloudFormation YAML. At minimum:
+AWS templates must be valid CloudFormation YAML or JSON. At minimum:
 
 ```yaml
 AWSTemplateFormatVersion: '2010-09-09'
@@ -336,6 +445,12 @@ Resources:
 Outputs:
   # Optional outputs
 ```
+
+Azure templates must be valid compiled ARM JSON with a resource-group or subscription deployment schema. Nuon reads
+their `parameters`, `resources`, and `outputs`; it does not compile Bicep source.
+
+GCP custom stacks are Terraform child modules maintained under `gcp/modules` in the install-stack repository. Each
+curated module defines its own accepted parameters and returns a single `outputs` object.
 
 ### Naming Conventions
 
@@ -354,11 +469,14 @@ The logical ID must not conflict with existing resources in the parent stack (e.
 The following conditions will cause a sync error:
 
 - Missing `name` or `template_url`
+- Duplicate `name` values
 - Duplicate `index` values across custom stacks
-- `name` that produces an empty or invalid CloudFormation logical ID
-- Logical ID that conflicts with an existing resource in the parent stack
-- Duplicate logical IDs across custom stacks
-- Parameter name conflicts across stacks
+- An invalid GCP curated module path
+- An `azure-bicep` template whose `template_url` ends in `.bicep`, or whose contents are not ARM JSON
+- A parameter template that references state unavailable before the install stack is applied
+
+AWS and Azure generation additionally rejects invalid template documents, deployment names, output collisions, and
+hoisted parameter conflicts before the customer applies the stack.
 
 ### Using Lambda Custom Resources
 
@@ -424,16 +542,19 @@ if event["RequestType"] == "Delete":
     return
 ```
 
-## Hosting Templates
+## Hosting AWS Templates
 
-Templates must be hosted on S3. CloudFormation requires that nested stack template URLs point to an S3 bucket — other
-URL types (e.g., GitHub raw URLs, arbitrary HTTPS endpoints) are not supported by CloudFormation.
+Public AWS nested template URLs must point to S3. Alternatively, use a relative path and Nuon will upload the template
+to its managed template bucket during app sync.
 
 Upload your templates to an S3 bucket and reference them using the full S3 URL:
 
 ```
 https://my-bucket.s3.amazonaws.com/templates/my-stack.yaml
 ```
+
+Azure accepts a public HTTPS URL or an uploaded relative ARM JSON path. GCP uses a curated module path rather than a
+hosted template.
 
 ## Example: Kubernetes Namespaces
 

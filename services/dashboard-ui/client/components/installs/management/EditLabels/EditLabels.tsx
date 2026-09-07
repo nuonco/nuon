@@ -1,14 +1,23 @@
 import { useForm, useStore } from '@tanstack/react-form'
-import { Banner } from '@/components/common/Banner'
+import { useId, useState } from 'react'
 import { Button } from '@/components/common/Button'
+import { Divider } from '@/components/common/Divider'
 import { Icon } from '@/components/common/Icon'
+import { LabelBadge } from '@/components/common/LabelBadge'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
-import { Input } from '@/components/common/form/Input'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 import { editLabelsSchema, type EditLabelsValues } from './schema'
+
+const INSTALL_LABELS_DOCS =
+  'https://docs.nuon.co/guides/install-configs#labeling-installs'
+const DEFAULT_LABELS_DOCS =
+  'https://docs.nuon.co/guides/managing-apps#default-labels'
+
+const COLLAPSED_ROW_COUNT = 5
 
 interface IEditLabelsModal extends Omit<IModal, 'onSubmit'> {
   labels: Record<string, string>
@@ -26,6 +35,9 @@ export const EditLabelsModal = ({
   onSubmit,
   ...props
 }: IEditLabelsModal) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const labelsListId = useId()
+
   const form = useForm({
     defaultValues: {
       labels: Object.entries(initialLabels)
@@ -42,11 +54,26 @@ export const EditLabelsModal = ({
   })
 
   const canSubmit = useStore(form.store, (s) => s.canSubmit)
+  const hasInvalidHiddenRows = useStore(form.store, (s) =>
+    Object.entries(s.fieldMeta).some(([name, meta]) => {
+      const match = /^labels\[(\d+)\]\.key$/.exec(name)
+      return (
+        match !== null &&
+        Number(match[1]) >= COLLAPSED_ROW_COUNT &&
+        meta?.isValid === false
+      )
+    })
+  )
+  const defaultEntries = Object.entries(defaultLabels).sort(([a], [b]) =>
+    a.localeCompare(b)
+  )
 
   return (
     <Modal
+      size="lg"
+      childrenClassName="!pt-10 !gap-8"
       heading={
-        <Text flex className="gap-4" variant="h3" weight="strong">
+        <Text flex className="gap-3" variant="h3" weight="strong">
           <Icon variant="TagIcon" size="24" />
           Edit labels
         </Text>
@@ -69,125 +96,186 @@ export const EditLabelsModal = ({
         autoComplete="off"
         noValidate
         onSubmit={(e) => e.preventDefault()}
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-8"
       >
         <FormErrorBanner error={error} fallback="Unable to update labels" />
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <Text variant="label" weight="strong">
-              Install labels
-            </Text>
-            <form.Field name="labels" mode="array">
-              {(labelsField) => (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  disabled={isPending}
-                  onClick={() => labelsField.pushValue({ key: '', value: '' })}
-                >
-                  <Icon variant="PlusIcon" size="16" />
-                  Add label
-                </Button>
-              )}
-            </form.Field>
-          </div>
+        <Text theme="neutral">
+          Labels identify this install and target it from webhooks, Slack
+          subscriptions, and deployment groups.{' '}
+          <Link href={INSTALL_LABELS_DOCS} isExternal variant="inline">
+            View label docs
+          </Link>
+        </Text>
 
-          <Text variant="subtext">
-            Values can use the interpolation syntax, e.g.{' '}
-            <code>{'{{ .nuon.cloud_account.aws.region }}'}</code>. Dynamic
-            values update as install state changes.
-          </Text>
+        <form.Field name="labels" mode="array">
+          {(labelsField) => {
+            const rows = labelsField.state.value
+            const hiddenCount = Math.max(rows.length - COLLAPSED_ROW_COUNT, 0)
+            const isCollapsible = hiddenCount > 0
+            const showAllRows = isExpanded || hasInvalidHiddenRows
 
-          <form.Field name="labels" mode="array">
-            {(labelsField) =>
-              labelsField.state.value.length === 0 ? (
-                <Text variant="subtext">No labels added</Text>
-              ) : (
-                <>
-                  {labelsField.state.value.map((_, idx) => (
-                    <fieldset
-                      key={idx}
-                      className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end border-t pt-2"
-                    >
-                      <form.Field name={`labels[${idx}].key`}>
-                        {(field) => (
-                          <FormInput
-                            field={field}
-                            type="text"
-                            placeholder="e.g. env"
+            return (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between gap-4">
+                  <Text variant="base" weight="strong">
+                    Install labels{rows.length > 0 ? ` (${rows.length})` : ''}
+                  </Text>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => {
+                      setIsExpanded(true)
+                      labelsField.pushValue({ key: '', value: '' })
+                    }}
+                  >
+                    <Icon variant="PlusIcon" size="16" />
+                    Add label
+                  </Button>
+                </div>
+
+                {rows.length === 0 ? (
+                  <Text variant="subtext" theme="neutral">
+                    No labels yet. Add a label to identify this install.
+                  </Text>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <div className="grid grid-cols-[1fr_1fr_auto] gap-3 items-center">
+                      <Text variant="subtext" theme="neutral">
+                        Key
+                      </Text>
+                      <Text variant="subtext" theme="neutral">
+                        Value
+                      </Text>
+                      <span className="w-8" />
+                    </div>
+
+                    <div id={labelsListId} className="flex flex-col gap-3">
+                      {rows.map((_, idx) => (
+                        <fieldset
+                          key={idx}
+                          className={
+                            !showAllRows && idx >= COLLAPSED_ROW_COUNT
+                              ? 'hidden'
+                              : 'grid grid-cols-[1fr_1fr_auto] gap-3 items-start'
+                          }
+                        >
+                          <form.Field name={`labels[${idx}].key`}>
+                            {(field) => (
+                              <FormInput
+                                field={field}
+                                type="text"
+                                placeholder="env"
+                                aria-label={`Label ${idx + 1} key`}
+                                disabled={isPending}
+                              />
+                            )}
+                          </form.Field>
+                          <form.Field name={`labels[${idx}].value`}>
+                            {(field) => (
+                              <FormInput
+                                field={field}
+                                type="text"
+                                placeholder="production"
+                                aria-label={`Label ${idx + 1} value`}
+                                disabled={isPending}
+                              />
+                            )}
+                          </form.Field>
+                          <Button
+                            type="button"
+                            variant="icon"
+                            size="lg"
                             disabled={isPending}
-                            labelProps={{ labelText: 'Key' }}
-                          />
-                        )}
-                      </form.Field>
-                      <form.Field name={`labels[${idx}].value`}>
-                        {(field) => (
-                          <FormInput
-                            field={field}
-                            type="text"
-                            placeholder="e.g. production"
-                            disabled={isPending}
-                            labelProps={{ labelText: 'Value' }}
-                          />
-                        )}
-                      </form.Field>
+                            aria-label={`Remove label ${idx + 1}`}
+                            onClick={() => labelsField.removeValue(idx)}
+                          >
+                            <Icon variant="XIcon" size="16" />
+                          </Button>
+                        </fieldset>
+                      ))}
+                    </div>
+
+                    {isCollapsible ? (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        disabled={isPending}
-                        onClick={() => labelsField.removeValue(idx)}
-                        className="mb-1"
+                        className="w-full justify-center"
+                        disabled={isPending || hasInvalidHiddenRows}
+                        tooltipProps={
+                          hasInvalidHiddenRows
+                            ? {
+                                tipContent:
+                                  'Fix label errors before collapsing the list',
+                              }
+                            : undefined
+                        }
+                        aria-expanded={showAllRows}
+                        aria-controls={labelsListId}
+                        onClick={() => setIsExpanded((prev) => !prev)}
                       >
-                        <Icon variant="XIcon" size="16" />
+                        <Icon
+                          variant={
+                            showAllRows ? 'CaretUpIcon' : 'CaretDownIcon'
+                          }
+                          size="16"
+                        />
+                        {showAllRows
+                          ? 'Show fewer labels'
+                          : `Show ${hiddenCount} more labels`}
                       </Button>
-                    </fieldset>
-                  ))}
-                </>
-              )
-            }
-          </form.Field>
-        </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            )
+          }}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <Text variant="label" weight="strong">
+        <Divider />
+
+        <div className="flex flex-col gap-3">
+          <Text variant="base" weight="strong">
             Default labels
-          </Text>
-          <Text variant="subtext">
-            Applied to every install of this app. Edit them via{' '}
-            <code>default_labels</code> in the app config.
+            {defaultEntries.length > 0 ? ` (${defaultEntries.length})` : ''}
           </Text>
 
-          {Object.keys(defaultLabels).length === 0 ? (
-            <Banner theme="neutral">
-              <Text>
-                No default labels yet. Add a <code>default_labels</code> block
-                to the app config to label every install of this app.
-              </Text>
-            </Banner>
+          {defaultEntries.length === 0 ? (
+            <Text variant="subtext" theme="neutral">
+              No default labels. Every install of this app inherits its default
+              labels from the app config.{' '}
+              <Link href={DEFAULT_LABELS_DOCS} isExternal variant="inline">
+                View default label docs
+              </Link>
+            </Text>
           ) : (
-            Object.entries(defaultLabels)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([key, value]) => (
-                <fieldset
-                  key={`default:${key}`}
-                  className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end border-t pt-2 opacity-60"
-                >
-                  <label className="flex flex-col gap-1">
-                    <Text variant="label">Key</Text>
-                    <Input name="" type="text" disabled defaultValue={key} />
-                  </label>
-                  <label className="flex flex-col gap-1">
-                    <Text variant="label">Value</Text>
-                    <Input name="" type="text" disabled defaultValue={value} />
-                  </label>
-                  <span className="mb-3 flex">
-                    <Icon variant="LockIcon" size="16" />
-                  </span>
-                </fieldset>
-              ))
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                {defaultEntries.map(([key, value]) => (
+                  <LabelBadge
+                    key={`default:${key}`}
+                    labelKey={key}
+                    labelValue={value}
+                  />
+                ))}
+              </div>
+              <div className="flex items-start gap-1.5">
+                <Icon
+                  variant="LockIcon"
+                  size="14"
+                  className="mt-[2px] shrink-0 text-cool-grey-600 dark:text-white/70"
+                />
+                <Text variant="subtext" theme="neutral">
+                  Owned by the app config and applied to every install.{' '}
+                  <Link href={DEFAULT_LABELS_DOCS} isExternal variant="inline">
+                    View default label docs
+                  </Link>
+                </Text>
+              </div>
+            </>
           )}
         </div>
       </form>

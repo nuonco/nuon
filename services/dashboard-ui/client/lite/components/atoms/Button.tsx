@@ -5,9 +5,11 @@ import { Spinner } from './Spinner'
 import { Tooltip } from './Tooltip'
 
 export type TButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
+export type TButtonSize = 'md' | 'sm'
 
 export interface IButton extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: TButtonVariant
+  size?: TButtonSize
   loading?: boolean
   icon?: ReactNode
   iconOnly?: boolean
@@ -20,6 +22,11 @@ const BASE_CLASSES =
   'outline-none transition-colors duration-150 ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ' +
   'aria-disabled:cursor-not-allowed aria-disabled:opacity-50'
+
+const SIZE_CLASSES: Record<TButtonSize, { icon: string; text: string }> = {
+  md: { icon: 'size-9', text: 'h-9 px-3.5' },
+  sm: { icon: 'size-6 rounded-md', text: 'h-7 px-2 text-caption' },
+}
 
 const VARIANT_CLASSES: Record<TButtonVariant, string> = {
   primary:
@@ -39,6 +46,7 @@ const VARIANT_CLASSES: Record<TButtonVariant, string> = {
 
 export const Button = ({
   variant = 'secondary',
+  size = 'md',
   loading = false,
   icon,
   iconOnly = false,
@@ -68,7 +76,7 @@ export const Button = ({
     className={cn(
       BASE_CLASSES,
       VARIANT_CLASSES[variant],
-      iconOnly ? 'size-9' : 'h-9 px-3.5',
+      iconOnly ? SIZE_CLASSES[size].icon : SIZE_CLASSES[size].text,
       className
     )}
     {...props}

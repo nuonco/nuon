@@ -26,6 +26,7 @@ const toEditorGroups = (config?: TAppBranchConfig): IInstallGroup[] =>
       selection_mode: hasLabelSelector ? 'labels' as const : 'manual' as const,
       order: g.order ?? idx,
       max_parallel: g.max_parallel || 1,
+      auto_approve_on_policies_passing: !!g.auto_approve_on_policies_passing,
     }
   }) || []
 
@@ -99,6 +100,8 @@ export const DeploymentPlanEditorContainer = ({
           label_selector: useLabels ? group.label_selector : undefined,
           order: index,
           max_parallel: group.max_parallel || 1,
+          auto_approve_on_policies_passing:
+            group.auto_approve_on_policies_passing,
         }
       })
 

@@ -9,6 +9,7 @@ import (
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
+	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -42,6 +43,78 @@ func (s *PlanInstallGroupTestSuite) SetupTest() {
 
 func (s *PlanInstallGroupTestSuite) AfterTest(suiteName, testName string) {
 	s.env.AssertExpectations(s.T())
+}
+
+func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingFromGroup() {
+	sig := &Signal{
+		InstallGroupID: "group-1",
+		AppBranchID:    "branch-1",
+		RunID:          "run-1",
+		StepID:         "step-1",
+	}
+
+	autoApprove := true
+	s.env.OnActivity("GetInstallGroupByID", mock.Anything, mock.Anything).Return(
+		&app.AppBranchInstallGroup{
+			ID:                           "group-1",
+			Name:                         "prod",
+			AutoApproveOnPoliciesPassing: &autoApprove,
+		}, nil)
+
+	s.env.ExecuteWorkflow(func(ctx workflow.Context) (bool, error) {
+		return sig.AutoApproveOnPoliciesPassing(ctx), nil
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+	var result bool
+	s.NoError(s.env.GetWorkflowResult(&result))
+	s.True(result)
+}
+
+func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingDefaultsOff() {
+	sig := &Signal{
+		InstallGroupID: "group-1",
+		AppBranchID:    "branch-1",
+		RunID:          "run-1",
+		StepID:         "step-1",
+	}
+
+	s.env.OnActivity("GetInstallGroupByID", mock.Anything, mock.Anything).Return(
+		&app.AppBranchInstallGroup{
+			ID:   "group-1",
+			Name: "prod",
+		}, nil)
+
+	s.env.ExecuteWorkflow(func(ctx workflow.Context) (bool, error) {
+		return sig.AutoApproveOnPoliciesPassing(ctx), nil
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+	var result bool
+	s.NoError(s.env.GetWorkflowResult(&result))
+	s.False(result)
+}
+
+// Synthetic preview groups have no install group row to read the setting from.
+func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingFalseForSyntheticPreview() {
+	sig := &Signal{
+		PreviewInstallID:   "install-1",
+		SyntheticGroupName: "preview",
+		AppBranchID:        "branch-1",
+		RunID:              "run-1",
+	}
+
+	s.env.ExecuteWorkflow(func(ctx workflow.Context) (bool, error) {
+		return sig.AutoApproveOnPoliciesPassing(ctx), nil
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+	var result bool
+	s.NoError(s.env.GetWorkflowResult(&result))
+	s.False(result)
 }
 
 func (s *PlanInstallGroupTestSuite) TestEmptyInstallGroup() {
