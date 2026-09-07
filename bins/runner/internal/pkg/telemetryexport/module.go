@@ -15,6 +15,6 @@ type auditRouteLifecycle struct{}
 
 func (auditRouteLifecycle) AuditRouteLifecycle() {}
 
-func asAuditRouteLifecycle(*Supervisor) audit.LocalRouteLifecycle {
+func asAuditRouteLifecycle(*Supervisor, *VendorSupervisor) audit.LocalRouteLifecycle {
 	return auditRouteLifecycle{}
 }

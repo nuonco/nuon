@@ -35,7 +35,7 @@ func TestVendorSupervisorStartsTokenBeforeCollector(t *testing.T) {
 	events := make([]string, 0, 2)
 	tokens := &fakeTokenLifecycle{events: &events}
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(endpoint string) error {
+	s.replaceChildFn = func(_ context.Context, endpoint string) error {
 		if endpoint != "https://relay.example.com" {
 			t.Fatalf("unexpected endpoint: %q", endpoint)
 		}
@@ -53,7 +53,7 @@ func TestVendorSupervisorEnablesAfterBeingDisabled(t *testing.T) {
 	tokens := &fakeTokenLifecycle{}
 	replacements := 0
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(string) error {
+	s.replaceChildFn = func(context.Context, string) error {
 		replacements++
 		return nil
 	}
@@ -73,7 +73,7 @@ func TestVendorSupervisorReplacesCollectorWhenEndpointChanges(t *testing.T) {
 	tokens := &fakeTokenLifecycle{}
 	var endpoints []string
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(endpoint string) error {
+	s.replaceChildFn = func(_ context.Context, endpoint string) error {
 		endpoints = append(endpoints, endpoint)
 		return nil
 	}
@@ -89,7 +89,7 @@ func TestVendorSupervisorDisableStopsCollectorAndToken(t *testing.T) {
 	tokens := &fakeTokenLifecycle{}
 	stops := 0
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(string) error { return nil }
+	s.replaceChildFn = func(context.Context, string) error { return nil }
 	s.stopChildFn = func() { stops++ }
 	s.reconcile(context.Background(), vendorSettings{enabled: true, endpoint: "https://relay.example.com"})
 
@@ -108,7 +108,7 @@ func TestVendorSupervisorRollsBackFailedEndpointChange(t *testing.T) {
 	tokens := &fakeTokenLifecycle{}
 	var endpoints []string
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(endpoint string) error {
+	s.replaceChildFn = func(_ context.Context, endpoint string) error {
 		endpoints = append(endpoints, endpoint)
 		if endpoint == "https://relay-two.example.com" {
 			return errors.New("collector failed")
@@ -133,7 +133,7 @@ func TestVendorSupervisorRejectsInvalidEndpointWithoutStoppingActiveCollector(t 
 	tokens := &fakeTokenLifecycle{}
 	replacements := 0
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(string) error {
+	s.replaceChildFn = func(context.Context, string) error {
 		replacements++
 		return nil
 	}
@@ -151,7 +151,7 @@ func TestVendorSupervisorRetainsActiveCollectorWhenSettingsUnavailable(t *testin
 	tokens := &fakeTokenLifecycle{}
 	replacements := 0
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(string) error {
+	s.replaceChildFn = func(context.Context, string) error {
 		replacements++
 		return nil
 	}
@@ -192,7 +192,7 @@ func TestVendorSupervisorRetriesTokenFailureWithoutStartingCollector(t *testing.
 	replacements := 0
 	s := newVendorTestSupervisor(tokens)
 	s.desiredEndpoint = "https://relay.example.com"
-	s.replaceChildFn = func(string) error {
+	s.replaceChildFn = func(context.Context, string) error {
 		replacements++
 		return nil
 	}
@@ -205,7 +205,7 @@ func TestVendorSupervisorRetriesTokenFailureWithoutStartingCollector(t *testing.
 
 func TestVendorSupervisorBackoffSurvivesShortLivedRestarts(t *testing.T) {
 	s := newVendorTestSupervisor(&fakeTokenLifecycle{})
-	s.replaceChildFn = func(string) error {
+	s.replaceChildFn = func(context.Context, string) error {
 		s.child = &childProcess{done: make(chan struct{}), startedAt: time.Now()}
 		return nil
 	}
@@ -237,7 +237,7 @@ func TestVendorSupervisorStopsTokenWhenInitialCollectorStartFails(t *testing.T) 
 	tokens := &fakeTokenLifecycle{}
 	s := newVendorTestSupervisor(tokens)
 	s.desiredEndpoint = "https://relay.example.com"
-	s.replaceChildFn = func(string) error {
+	s.replaceChildFn = func(context.Context, string) error {
 		return errors.New("collector failed")
 	}
 
@@ -270,6 +270,62 @@ func TestVendorSupervisorRunRequiresInstallAndNonLocalRunner(t *testing.T) {
 	}
 }
 
+func TestVendorSupervisorShutdownCancelsReplacementWithoutRollback(t *testing.T) {
+	tokens := &fakeTokenLifecycle{}
+	s := newVendorTestSupervisor(tokens)
+	s.enabled = true
+	s.activeEndpoint = "https://previous.example.com"
+	s.desiredEndpoint = s.activeEndpoint
+	s.initialSettings = vendorSettings{enabled: true, endpoint: "https://replacement.example.com"}
+	started := make(chan struct{})
+	replacements, stops := 0, 0
+	s.replaceChildFn = func(ctx context.Context, _ string) error {
+		replacements++
+		if replacements == 1 {
+			close(started)
+		}
+		<-ctx.Done()
+		return ctx.Err()
+	}
+	s.stopChildFn = func() { stops++ }
+	if err := s.start(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	defer s.cancel()
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("replacement did not start")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := s.stop(ctx); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-s.done:
+	default:
+		t.Fatal("shutdown returned while replacement was still running")
+	}
+	if ctx.Err() != nil || replacements != 1 || stops != 1 || tokens.disables == 0 {
+		t.Fatalf("shutdown retried replacement or exhausted its deadline: err=%v replacements=%d stops=%d disables=%d", ctx.Err(), replacements, stops, tokens.disables)
+	}
+}
+
+func TestVendorSupervisorDoesNotStartAfterCancellation(t *testing.T) {
+	tokens := &fakeTokenLifecycle{}
+	s := newVendorTestSupervisor(tokens)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	s.startCollector(ctx)
+	if tokens.enables != 0 {
+		t.Fatal("canceled supervisor requested a token")
+	}
+	if err := s.replaceChild(ctx, "https://relay.example.com"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("canceled replacement accessed collector resources: %v", err)
+	}
+}
+
 func newVendorTestSupervisor(tokens tokenLifecycle) *VendorSupervisor {
 	s := &VendorSupervisor{
 		logger:    zap.NewNop(),
@@ -281,7 +337,7 @@ func newVendorTestSupervisor(tokens tokenLifecycle) *VendorSupervisor {
 	s.fetchSettingsFn = func(context.Context) (vendorSettings, error) {
 		return vendorSettings{}, nil
 	}
-	s.replaceChildFn = func(string) error { return nil }
+	s.replaceChildFn = func(context.Context, string) error { return nil }
 	s.stopChildFn = func() {}
 	return s
 }

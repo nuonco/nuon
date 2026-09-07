@@ -61,7 +61,7 @@ type VendorSupervisor struct {
 	settingsUnavailable bool
 
 	fetchSettingsFn func(context.Context) (vendorSettings, error)
-	replaceChildFn  func(string) error
+	replaceChildFn  func(context.Context, string) error
 	stopChildFn     func()
 }
 
@@ -209,6 +209,9 @@ func (s *VendorSupervisor) disable() {
 }
 
 func (s *VendorSupervisor) startCollector(ctx context.Context) {
+	if ctx.Err() != nil {
+		return
+	}
 	if err := s.tokens.Enable(ctx); err != nil {
 		s.logger.Warn("vendor telemetry access token unavailable", zap.Error(err))
 		s.scheduleRestart()
@@ -217,10 +220,13 @@ func (s *VendorSupervisor) startCollector(ctx context.Context) {
 
 	previousEndpoint := s.activeEndpoint
 	previousEnabled := s.enabled
-	if err := s.replaceChildFn(s.desiredEndpoint); err != nil {
+	if err := s.replaceChildFn(ctx, s.desiredEndpoint); err != nil {
+		if ctx.Err() != nil {
+			return
+		}
 		s.logger.Warn("vendor telemetry export collector failed to start", zap.Error(err))
 		if previousEnabled && previousEndpoint != "" && previousEndpoint != s.desiredEndpoint {
-			if rollbackErr := s.replaceChildFn(previousEndpoint); rollbackErr == nil {
+			if rollbackErr := s.replaceChildFn(ctx, previousEndpoint); rollbackErr == nil {
 				s.activeEndpoint = previousEndpoint
 				s.enabled = true
 				s.scheduleRestart()
@@ -248,7 +254,10 @@ func (s *VendorSupervisor) startCollector(ctx context.Context) {
 	)
 }
 
-func (s *VendorSupervisor) replaceChild(endpoint string) error {
+func (s *VendorSupervisor) replaceChild(ctx context.Context, endpoint string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if _, err := os.Stat(collectorBinary); err != nil {
 		return err
 	}
@@ -265,7 +274,9 @@ func (s *VendorSupervisor) replaceChild(endpoint string) error {
 		os.RemoveAll(tempDir)
 		return err
 	}
-	cmd := exec.Command(collectorBinary, "--config", path)
+	cmd := exec.CommandContext(ctx, collectorBinary, "--config", path)
+	cmd.Cancel = func() error { return cmd.Process.Signal(syscall.SIGTERM) }
+	cmd.WaitDelay = 5 * time.Second
 	cmd.Env = childEnvironment(nil)
 	stdout := &zapio.Writer{Log: s.logger.Named("vendor-telemetry-export-collector").With(zap.String("stream", "stdout")), Level: zapcore.WarnLevel}
 	stderr := &zapio.Writer{Log: s.logger.Named("vendor-telemetry-export-collector").With(zap.String("stream", "stderr")), Level: zapcore.WarnLevel}
@@ -289,7 +300,7 @@ func (s *VendorSupervisor) replaceChild(endpoint string) error {
 		}
 		close(child.done)
 	}()
-	if err := waitForCollector(child, vendorCollectorHealthURL); err != nil {
+	if err := waitForCollector(ctx, child, vendorCollectorHealthURL); err != nil {
 		s.stopChild()
 		return err
 	}
