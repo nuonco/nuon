@@ -1,0 +1,26 @@
+---
+dist:
+  name: nuon-telemetry-relay
+  description: Nuon BYOC Telemetry Relay
+  otelcol_version: 0.150.0
+  output_path: ./otelcol-build
+  version: 0.1.0
+  module: github.com/nuonco/nuon/bins/telemetry-relay/otelcol
+
+receivers:
+  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.150.0
+
+processors:
+  - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.150.0
+  - gomod: github.com/nuonco/nuon/bins/telemetry-relay/processor/nuonidentityprocessor v0.0.0
+    path: ./processor/nuonidentityprocessor
+
+exporters:
+  - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v0.150.0
+
+extensions:
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.150.0
+  - gomod: github.com/nuonco/nuon/bins/telemetry-relay/extension/nuonjwtauthextension v0.0.0
+    path: ./extension/nuonjwtauthextension
+  - gomod: github.com/nuonco/nuon/bins/telemetry-relay/extension/nuonpartialsuccessextension v0.0.0
+    path: ./extension/nuonpartialsuccessextension
