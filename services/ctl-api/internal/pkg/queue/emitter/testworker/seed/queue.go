@@ -15,7 +15,7 @@ func (s *Seeder) EnsureQueue(ctx context.Context, t *testing.T) *app.Queue {
 	q, err := s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:   generics.GetFakeObj[string](),
 		OwnerType: "test",
-		Namespace: "default",
+		Namespace: "emitters",
 		MaxDepth:  100,
 	})
 	require.Nil(t, err)
