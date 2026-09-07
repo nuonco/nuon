@@ -18,7 +18,7 @@ func (h *Helpers) FindBaseAppBranchRun(ctx context.Context, appBranchID string) 
 			AppBranchID: appBranchID,
 			Status:      "success",
 		}).
-		Where(buildsCompletedLabelClause(h.db), "true").
+		Where("labels->>'builds_completed' = ?", "true").
 		Where("run_type IN ?", []app.AppBranchRunType{
 			app.AppBranchRunTypeGit,
 			app.AppBranchRunTypeManual,
@@ -30,16 +30,6 @@ func (h *Helpers) FindBaseAppBranchRun(ctx context.Context, appBranchID string) 
 		return nil, err
 	}
 	return &baseRun, nil
-}
-
-// buildsCompletedLabelClause returns a dialect-aware SQL fragment for filtering
-// AppBranchRun.labels.builds_completed. Postgres uses ->>; sqlite uses json_extract
-// so unit tests can exercise the same helper without Postgres.
-func buildsCompletedLabelClause(db *gorm.DB) string {
-	if db.Dialector.Name() == "sqlite" {
-		return "json_extract(labels, '$.builds_completed') = ?"
-	}
-	return "labels->>'builds_completed' = ?"
 }
 
 // shouldCreateComparison reports whether a run of this type gets an AppBranchRunComparison row.
