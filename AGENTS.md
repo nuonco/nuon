@@ -142,6 +142,9 @@ cd infra/[module] && terraform plan
 
 ### Testing
 
+Do not use SQLite for tests. Database-backed tests must exercise PostgreSQL so they use the same SQL dialect,
+constraints, and data types as production.
+
 ```bash
 # Go tests
 go test ./...
