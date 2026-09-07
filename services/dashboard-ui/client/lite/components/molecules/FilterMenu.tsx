@@ -97,10 +97,14 @@ export const FilterOption = forwardRef<HTMLDivElement, IFilterOption>(
         {leading ? (
           <span className="flex shrink-0 items-center">{leading}</span>
         ) : null}
-        <span className="flex min-w-0 flex-1 flex-col">
-          <Text variant="caption" color="secondary" className="truncate">
-            {label}
-          </Text>
+        <span className="flex min-w-0 flex-1 flex-col items-start">
+          {typeof label === 'string' ? (
+            <Text variant="caption" color="secondary" className="truncate">
+              {label}
+            </Text>
+          ) : (
+            label
+          )}
           {description ? (
             <Text variant="caption" color="tertiary" className="truncate">
               {description}

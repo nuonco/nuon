@@ -142,7 +142,7 @@ const DashboardShellLayout = ({
               scrolled={contentScrolled}
               className="mt-3"
             />
-            {children}
+            <div className="flex w-full flex-col px-4">{children}</div>
           </main>
         </div>
       </div>

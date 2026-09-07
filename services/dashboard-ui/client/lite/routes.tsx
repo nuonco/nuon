@@ -1,14 +1,14 @@
 import type { RouteObject } from 'react-router'
 import { FocusLayout } from './pages/FocusLayout'
+import { Apps } from './pages/Apps'
+import { Installs } from './pages/Installs'
 import { OrgLayout } from './pages/OrgLayout'
 import { RootLayout } from './pages/RootLayout'
 import { SettingsLayout } from './pages/SettingsLayout'
 import {
   ApiTokens,
-  Apps,
   Connections,
   Dashboard,
-  Installs,
   NotFound,
   OidcFederation,
   Onboarding,

@@ -73,7 +73,7 @@ const StatusBar = () => (
 )
 
 const Content = ({ rows = 6 }: { rows?: number }) => (
-  <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+  <div className="flex w-full flex-col gap-4">
     <div>
       <Text as="h1" variant="title">
         Dashboard

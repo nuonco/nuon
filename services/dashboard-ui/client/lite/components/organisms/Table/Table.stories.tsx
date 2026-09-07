@@ -17,6 +17,7 @@ import {
   FilterDropdown,
   type IFilterMenuOption,
 } from '../../molecules/FilterMenu'
+import { ID } from '../../molecules/ID'
 import { ListSearch } from '../../molecules/ListSearch'
 import { Pagination } from '../../molecules/Pagination'
 import { Table } from './Table'
@@ -100,9 +101,7 @@ const columns: ColumnDef<TInstallRow>[] = [
         >
           {row.original.name}
         </Link>
-        <Text variant="caption" color="tertiary" family="mono" lines={1}>
-          {row.original.id}
-        </Text>
+        <ID value={row.original.id} label="Copy install ID" truncate />
       </span>
     ),
   },
@@ -145,9 +144,7 @@ const InstallCard = ({ install }: { install: TInstallRow }) => (
         >
           {install.name}
         </Link>
-        <Text variant="caption" color="tertiary" family="mono" lines={1}>
-          {install.id}
-        </Text>
+        <ID value={install.id} label="Copy install ID" />
       </span>
       <InstallActions name={install.name} />
     </div>

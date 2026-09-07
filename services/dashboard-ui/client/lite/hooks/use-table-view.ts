@@ -40,9 +40,7 @@ const writeView = (view: TTableView) => {
   memoryView = view
   try {
     window.sessionStorage.setItem(TABLE_VIEW_STORAGE_KEY, view)
-  } catch {
-    // The in-memory preference keeps the control usable when storage is blocked.
-  }
+  } catch {}
   listeners.forEach((listener) => listener())
 }
 

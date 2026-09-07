@@ -7,20 +7,6 @@ export const Dashboard = () => (
   />
 )
 
-export const Apps = () => (
-  <RouteScaffold
-    title="Apps"
-    description="Manage applications for this organization."
-  />
-)
-
-export const Installs = () => (
-  <RouteScaffold
-    title="Installs"
-    description="Manage installations for this organization."
-  />
-)
-
 export const Teams = () => (
   <RouteScaffold
     title="Team"

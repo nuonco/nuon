@@ -118,8 +118,6 @@ export const Status = ({
   const titledTooltip = (
     <span className="flex max-w-sm flex-col gap-1 whitespace-normal text-left">
       <span className="flex items-center gap-1.5">
-        {/* The tooltip is portaled to the body, so --status-color set on the
-            trigger does not reach it. */}
         <span
           aria-hidden
           className="flex"
