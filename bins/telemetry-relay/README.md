@@ -23,6 +23,35 @@ or treating the partial rejection as full success.
 Production issuer, JWKS, and vendor endpoints must use HTTPS. Loopback HTTP is supported for local validation of the
 issuer and JWKS endpoint.
 
+## Runner integration (pilot)
+
+Configure `TELEMETRY_RELAY_ENDPOINT` in ctl-api with the relay's HTTPS OTLP base URL and configure its telemetry signing
+key. Eligible install runners receive the endpoint through their authenticated settings. Existing runners need a build
+that includes vendor telemetry support. No per-install secret is needed; the existing
+`nuon/<install-id>/telemetry-export-config` secret controls only audit export.
+
+Telemetry defaults to disabled for existing installs when the setting is first introduced and for new installs.
+Configuring the relay endpoint alone does not activate collection. Enable each pilot install with an authenticated
+`PATCH /v1/installs/{install_id}/telemetry` request containing `{"enabled": true}`. Use `{"enabled": false}` to disable
+it, and `GET` on the same endpoint to read its setting.
+
+Changing the schema default does not reset stored flags in an environment that already ran the default-enabled pilot.
+Disable those installs explicitly before configuring the relay endpoint there.
+
+The runner polls settings every 15 seconds and starts, stops, or replaces its separate vendor Collector without
+restarting the runner or audit Collector. It obtains and renews short-lived relay JWTs independently, stores them in a
+protected file, and removes credentials on disable/shutdown. Existing tokens can remain valid at the relay until expiry.
+The vendor Collector accepts OTLP/gRPC on port 4317 and OTLP/HTTP on port 4318. These listeners require deliberately
+scoped cloud firewall/network access; they do not authenticate local senders.
+
+Logs, metrics, and traces each have a persistent byte-sized queue (1 GiB logical capacity per signal) under
+`/var/lib/nuon/telemetry-export/vendor`. Disabling stops collection/export but preserves queued data for re-enablement.
+The queue directories are separate from audit, not separate physical disks or quotas.
+
+This remains a pilot: expired or temporarily unverifiable tokens can cause permanent export failures and data loss.
+Production rollout requires the token-expiry/JWKS failure matrix, physical storage and process resource limits, and KMS
+key management. `nuonctl`/Grafana local-development integration is a separate Mono change.
+
 ## Build and validate
 
 ```bash

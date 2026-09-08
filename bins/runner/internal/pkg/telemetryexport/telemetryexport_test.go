@@ -18,7 +18,7 @@ func TestWaitForCollector(t *testing.T) {
 	}))
 	defer server.Close()
 
-	if err := waitForCollector(&childProcess{done: make(chan struct{})}, server.URL); err != nil {
+	if err := waitForCollector(context.Background(), &childProcess{done: make(chan struct{})}, server.URL); err != nil {
 		t.Fatalf("waitForCollector() error = %v", err)
 	}
 }
@@ -26,8 +26,21 @@ func TestWaitForCollector(t *testing.T) {
 func TestWaitForCollectorDetectsExitedProcess(t *testing.T) {
 	done := make(chan struct{})
 	close(done)
-	if err := waitForCollector(&childProcess{done: done}, "http://127.0.0.1:0"); err == nil {
+	if err := waitForCollector(context.Background(), &childProcess{done: done}, "http://127.0.0.1:0"); err == nil {
 		t.Fatal("waitForCollector() returned nil for exited process")
+	}
+}
+
+func TestWaitForCollectorHonorsCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		cancel()
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+	defer cancel()
+	if err := waitForCollector(ctx, &childProcess{done: make(chan struct{})}, server.URL); !errors.Is(err, context.Canceled) {
+		t.Fatalf("health wait did not honor cancellation: %v", err)
 	}
 }
 
