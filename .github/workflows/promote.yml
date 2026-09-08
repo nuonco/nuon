@@ -109,6 +109,7 @@ jobs:
       matrix:
         service:
           - ctl-api
+          - telemetry-relay
           - dashboard-ui
           - runner
           - cli
