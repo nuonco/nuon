@@ -54,25 +54,26 @@ type Params struct {
 
 type service struct {
 	apiPkg.RouteRegister
-	v                    *validator.Validate
-	l                    *zap.Logger
-	db                   *gorm.DB
-	chDB                 *gorm.DB
-	mw                   metrics.Writer
-	cfg                  *internal.Config
-	acctClient           *account.Client
-	helpers              *helpers.Helpers
-	installsHelpers      *installshelpers.Helpers
-	runnerHeartbeatCache *RunnerHeartbeatCache
-	heartbeater          *heartbeater.Heartbeater
-	kafka                *kafka.Producer
-	featuresClient       *features.Features
-	temporalClient       temporalclient.Client
-	runnerJobWake        *RunnerJobWakeRegistry
-	blobSvc              blobstore.Service
-	emitterClient        *emitterclient.Client
-	queueClient          *queueclient.Client
-	telemetryTokenIssuer *telemetryTokenIssuer
+	v                      *validator.Validate
+	l                      *zap.Logger
+	db                     *gorm.DB
+	chDB                   *gorm.DB
+	mw                     metrics.Writer
+	cfg                    *internal.Config
+	acctClient             *account.Client
+	helpers                *helpers.Helpers
+	installsHelpers        *installshelpers.Helpers
+	runnerHeartbeatCache   *RunnerHeartbeatCache
+	heartbeater            *heartbeater.Heartbeater
+	kafka                  *kafka.Producer
+	featuresClient         *features.Features
+	temporalClient         temporalclient.Client
+	runnerJobWake          *RunnerJobWakeRegistry
+	blobSvc                blobstore.Service
+	emitterClient          *emitterclient.Client
+	queueClient            *queueclient.Client
+	telemetryTokenIssuer   *telemetryTokenIssuer
+	telemetryRelayEndpoint string
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
 	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
 	// are effectively immutable for the life of the stream, so a 5min TTL
@@ -393,31 +394,36 @@ func New(params Params) (*service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("initialize telemetry token issuer: %w", err)
 	}
+	telemetryRelayEndpoint, err := newTelemetryRelayEndpoint(params.Cfg, telemetryTokenIssuer)
+	if err != nil {
+		return nil, fmt.Errorf("invalid telemetry relay configuration: %w", err)
+	}
 
 	return &service{
 		RouteRegister: apiPkg.RouteRegister{
 			EndpointAudit: params.EndpointAudit,
 		},
-		cfg:                  params.Cfg,
-		l:                    params.L,
-		v:                    params.V,
-		db:                   params.DB,
-		chDB:                 params.CHDB,
-		mw:                   params.MW,
-		acctClient:           params.AccountClient,
-		helpers:              params.Helpers,
-		installsHelpers:      params.InstallsHelpers,
-		runnerHeartbeatCache: params.RunnerHeartbeatCache,
-		heartbeater:          params.Heartbeater,
-		kafka:                params.Kafka,
-		featuresClient:       params.FeaturesClient,
-		temporalClient:       params.TemporalClient,
-		runnerJobWake:        params.RunnerJobWake,
-		blobSvc:              params.BlobSvc,
-		emitterClient:        params.EmitterClient,
-		queueClient:          params.QueueClient,
-		telemetryTokenIssuer: telemetryTokenIssuer,
-		logStreamCache:       expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
+		cfg:                    params.Cfg,
+		l:                      params.L,
+		v:                      params.V,
+		db:                     params.DB,
+		chDB:                   params.CHDB,
+		mw:                     params.MW,
+		acctClient:             params.AccountClient,
+		helpers:                params.Helpers,
+		installsHelpers:        params.InstallsHelpers,
+		runnerHeartbeatCache:   params.RunnerHeartbeatCache,
+		heartbeater:            params.Heartbeater,
+		kafka:                  params.Kafka,
+		featuresClient:         params.FeaturesClient,
+		temporalClient:         params.TemporalClient,
+		runnerJobWake:          params.RunnerJobWake,
+		blobSvc:                params.BlobSvc,
+		emitterClient:          params.EmitterClient,
+		queueClient:            params.QueueClient,
+		telemetryTokenIssuer:   telemetryTokenIssuer,
+		telemetryRelayEndpoint: telemetryRelayEndpoint,
+		logStreamCache:         expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
 	}, nil
 }
 
