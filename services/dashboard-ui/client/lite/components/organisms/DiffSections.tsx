@@ -2,6 +2,7 @@ import {
   Children,
   cloneElement,
   isValidElement,
+  useEffect,
   useState,
   type HTMLAttributes,
   type ReactNode,
@@ -72,21 +73,18 @@ export const DiffSections = ({
   className,
   ...props
 }: IDiffSections) => {
-  const { preferences, setPreference } = useUserPreferences()
+  const { preferences } = useUserPreferences()
   const [localView, setLocalView] = useState<TDiffView>(
-    defaultView ?? 'unified'
+    defaultView ?? preferences.diffView
   )
-  const view = defaultView === undefined ? preferences.diffView : localView
-  const setView = (next: TDiffView) => {
-    if (defaultView === undefined) {
-      setPreference('diffView', next)
-    } else {
-      setLocalView(next)
-    }
-  }
+
+  useEffect(() => {
+    if (defaultView === undefined) setLocalView(preferences.diffView)
+  }, [defaultView, preferences.diffView])
+
   const sections = Children.map(children, (child) =>
     isValidElement<IDiffSection>(child) && child.type === DiffSection
-      ? cloneElement(child, { view })
+      ? cloneElement(child, { view: localView })
       : child
   )
 
@@ -98,7 +96,11 @@ export const DiffSections = ({
     >
       <div className="flex flex-wrap items-center gap-2 pb-2">
         {toolbar}
-        <DiffControls view={view} setView={setView} divider={!!toolbar} />
+        <DiffControls
+          view={localView}
+          setView={setLocalView}
+          divider={!!toolbar}
+        />
       </div>
       {sections}
     </DisclosureGroup>

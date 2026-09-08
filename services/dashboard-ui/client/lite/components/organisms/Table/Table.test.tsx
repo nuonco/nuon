@@ -2,6 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import {
+  DEFAULT_USER_PREFERENCES,
   USER_PREFERENCES_STORAGE_KEY,
   UserPreferencesProvider,
 } from '../../../providers/user-preferences-provider'
@@ -179,15 +180,30 @@ describe('Table', () => {
     ).toBe('true')
   })
 
-  test('shares the preferred view through local storage', () => {
+  test('keeps page view changes local and reapplies the saved default', () => {
+    window.localStorage.setItem(
+      USER_PREFERENCES_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        preferences: {
+          ...DEFAULT_USER_PREFERENCES,
+          collectionView: 'cards',
+        },
+      })
+    )
+
     const first = render(<Example />)
     setWidth(800)
-    fireEvent.click(screen.getByRole('button', { name: 'Card view' }))
+    expect(screen.queryByRole('table')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Table view' }))
+    expect(screen.getByRole('table')).toBeTruthy()
     expect(
       JSON.parse(
         window.localStorage.getItem(USER_PREFERENCES_STORAGE_KEY) ?? ''
       ).preferences.collectionView
     ).toBe('cards')
+
     first.unmount()
 
     render(<Example />)

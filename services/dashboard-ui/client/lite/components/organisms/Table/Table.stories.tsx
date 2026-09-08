@@ -2,7 +2,8 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { useLayoutEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 import { useListQueryState } from '../../../hooks/use-list-query-state'
-import { useTableView, type TTableView } from '../../../hooks/use-table-view'
+import type { TTableView } from '../../../hooks/use-table-view'
+import { useUserPreferences } from '../../../providers/user-preferences-provider'
 import { commaSetQueryParameter } from '../../../utils/list-query'
 import { ComponentDocs } from '../../__stories__/ComponentDocs'
 import { Brand } from '../../atoms/Brand'
@@ -202,9 +203,12 @@ const PreferredView = ({
   view: TTableView
   children: React.ReactNode
 }) => {
-  const { setView } = useTableView()
+  const { setPreference } = useUserPreferences()
 
-  useLayoutEffect(() => setView(view), [setView, view])
+  useLayoutEffect(
+    () => setPreference('collectionView', view),
+    [setPreference, view]
+  )
   return children
 }
 
@@ -266,7 +270,8 @@ export const Overview = () => (
       {
         name: 'toolbar',
         type: 'ReactNode',
-        description: 'Search and filter controls aligned left of the view toggle.',
+        description:
+          'Search and filter controls aligned left of the view toggle.',
       },
     ]}
   />

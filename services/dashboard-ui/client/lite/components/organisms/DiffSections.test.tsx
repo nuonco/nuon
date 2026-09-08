@@ -22,7 +22,7 @@ afterEach(() => {
   sessionStorage.clear()
 })
 
-test('uses saved diff view and initial expansion preferences', () => {
+test('uses saved defaults without persisting page controls', () => {
   localStorage.setItem(
     USER_PREFERENCES_STORAGE_KEY,
     JSON.stringify({
@@ -45,10 +45,18 @@ test('uses saved diff view and initial expansion preferences', () => {
     screen.getByRole('button', { name: /^Example resource/ })
   ).toHaveAttribute('aria-expanded', 'true')
   fireEvent.click(screen.getByRole('button', { name: 'Unified view' }))
-  expect(storedPreferences().diffView).toBe('unified')
+  expect(storedPreferences().diffView).toBe('split')
 
   fireEvent.click(screen.getByRole('button', { name: /^Example resource/ }))
   expect(storedPreferences().planSectionsOpen).toBe(true)
+
+  cleanup()
+  render(
+    <UserPreferencesProvider>
+      <DiffSections>{section}</DiffSections>
+    </UserPreferencesProvider>
+  )
+  expect(screen.getByRole('button', { name: 'Unified view' })).toBeTruthy()
 })
 
 test('keeps explicit defaults local to the mounted diff', () => {

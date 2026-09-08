@@ -78,14 +78,17 @@ export const Diff = ({
   maxHeight = 640,
   className,
 }: IDiff) => {
-  const { preferences, setPreference } = useUserPreferences()
+  const { preferences } = useUserPreferences()
   const id = useId()
   const viewer = useRef<CodeViewHandle<undefined>>(null)
   const [query, setQuery] = useState('')
   const [matchIndex, setMatchIndex] = useState(0)
-  const [localWrap, setLocalWrap] = useState(defaultWrap ?? false)
-  const wrap = defaultWrap === undefined ? preferences.diffWrap : localWrap
+  const [wrap, setWrap] = useState(defaultWrap ?? preferences.diffWrap)
   const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    if (defaultWrap === undefined) setWrap(preferences.diffWrap)
+  }, [defaultWrap, preferences.diffWrap])
 
   const lang = resolveLanguage(language)
   const name = filename ?? `change.${lang === 'terraform' ? 'tf' : 'txt'}`
@@ -174,15 +177,6 @@ export const Diff = ({
     })
   }
 
-  const toggleWrap = () => {
-    const next = !wrap
-    if (defaultWrap === undefined) {
-      setPreference('diffWrap', next)
-    } else {
-      setLocalWrap(next)
-    }
-  }
-
   return (
     <div
       data-diff-view={view}
@@ -269,7 +263,7 @@ export const Diff = ({
             aria-pressed={wrap}
             aria-label={wrap ? 'Stop wrapping lines' : 'Wrap lines'}
             tooltip={wrap ? 'Stop wrapping lines' : 'Wrap lines'}
-            onClick={toggleWrap}
+            onClick={() => setWrap((current) => !current)}
           >
             <Icon
               variant={wrap ? 'ArrowElbowDownLeftIcon' : 'ArrowsHorizontalIcon'}

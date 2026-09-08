@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   useUserPreferences,
   type TCollectionView,
@@ -6,10 +7,12 @@ import {
 export type TTableView = TCollectionView
 
 export const useTableView = () => {
-  const { preferences, setPreference } = useUserPreferences()
+  const { preferences } = useUserPreferences()
+  const [view, setView] = useState<TTableView>(preferences.collectionView)
 
-  return {
-    view: preferences.collectionView,
-    setView: (view: TTableView) => setPreference('collectionView', view),
-  }
+  useEffect(() => {
+    setView(preferences.collectionView)
+  }, [preferences.collectionView])
+
+  return { view, setView }
 }
