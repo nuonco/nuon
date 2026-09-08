@@ -514,8 +514,13 @@ resources exits 2 with a clear error.
 
 Preferred LLM surface is **`nuon agents`**:
 
-- `nuon agents context` — markdown orientation (auth, selection, MCP URL, timestamps). Keep the tool table and timestamp rules in
-  `agentsContextMarkdown()` in sync with `docs/guides/agents/tools.mdx`. MCP timestamps are UTC RFC3339 (`…Z`); agents localize before naming a day or clock time.
+- `nuon agents context` — markdown orientation (auth, selection, MCP URL, timestamps). The document lives in
+  `cmd/agents_context.md`, embedded with `go:embed` and rendered as a `text/template` against the fields of
+  `agentsContext` (`Authed`, `APIURL`, `MCPURL`, `OrgID`, `AppID`, `InstallID`) — edit the markdown, not Go string
+  literals. Keep its tool table and timestamp rules in sync with `docs/guides/agents/tools.mdx`. Do not duplicate
+  client setup recipes, sample queries, or the deprecated `nuon mcp` alias here — those live in
+  `docs/guides/agents/` and `cmd/mcp.go`. MCP timestamps are UTC RFC3339 (`…Z`); agents localize before naming a
+  day or clock time.
 - `nuon agents mcp` — stdio proxy to ctl-api MCP (`internal/services/mcpserver/`). Auth from `~/.nuon`
   (`Authorization` + `X-Nuon-Org-ID`). Read-only unless `--allow-writes`. Register with the client:
   `claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes`, `amp mcp add nuon -- nuon agents mcp --allow-writes`,
