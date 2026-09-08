@@ -129,13 +129,12 @@ func (c *client) ReprovisionInstall(ctx context.Context, installID string) (*mod
 	return resp.Payload, nil
 }
 
-func (c *client) ReprovisionInstallStack(ctx context.Context, installID string, skipComponents bool) (*models.AppWorkflowResponse, error) {
+func (c *client) ReprovisionInstallStack(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.ReprovisionInstallStack(&operations.ReprovisionInstallStackParams{
 		InstallID: installID,
 		Context:   ctx,
 		Req: &models.ServiceReprovisionInstallStackRequest{
-			PlanOnly:       false,
-			SkipComponents: skipComponents,
+			PlanOnly: false,
 		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {

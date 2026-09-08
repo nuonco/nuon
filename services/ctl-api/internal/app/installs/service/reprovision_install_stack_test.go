@@ -35,33 +35,6 @@ func (s *InstallsServiceTestSuite) TestReprovisionStackSuccess() {
 	assert.True(s.T(), found, "expected execute-workflow signal")
 }
 
-// The skip_components flag only reaches the step generator through the workflow's
-// metadata, so assert it persists — a dropped flag would silently redeploy every
-// component on a stack-only reprovision.
-func (s *InstallsServiceTestSuite) TestReprovisionStackSkipComponents() {
-	install := s.createTestInstall()
-
-	path := fmt.Sprintf("/v1/installs/%s/reprovision-stack", install.ID)
-	rr := s.makeRequest(http.MethodPost, path, ReprovisionInstallStackRequest{SkipComponents: true})
-	require.Equal(s.T(), http.StatusCreated, rr.Code)
-
-	workflow := s.latestWorkflowOfType(install.ID, app.WorkflowTypeReprovisionStack)
-	require.Contains(s.T(), workflow.Metadata, "skip_components")
-	require.NotNil(s.T(), workflow.Metadata["skip_components"])
-	assert.Equal(s.T(), "true", *workflow.Metadata["skip_components"])
-}
-
-func (s *InstallsServiceTestSuite) TestReprovisionStackDeploysComponentsByDefault() {
-	install := s.createTestInstall()
-
-	path := fmt.Sprintf("/v1/installs/%s/reprovision-stack", install.ID)
-	rr := s.makeRequest(http.MethodPost, path, ReprovisionInstallStackRequest{SkipComponents: false})
-	require.Equal(s.T(), http.StatusCreated, rr.Code)
-
-	workflow := s.latestWorkflowOfType(install.ID, app.WorkflowTypeReprovisionStack)
-	assert.NotContains(s.T(), workflow.Metadata, "skip_components")
-}
-
 func (s *InstallsServiceTestSuite) TestReprovisionStackNotFound() {
 	rr := s.makeRequest(http.MethodPost, "/v1/installs/ins_nonexistent_00000000/reprovision-stack", nil)
 	require.Equal(s.T(), http.StatusNotFound, rr.Code)
