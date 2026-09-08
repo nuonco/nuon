@@ -18,7 +18,7 @@ const (
 	// itself to every org on their next stack regeneration — including orgs with
 	// phone-home auth off, who have no reason to take the change. Bumping this is a
 	// deliberate act; use PhoneHomeScriptURL to try a script out first.
-	DefaultAWSPhoneHomeScript = "https://raw.githubusercontent.com/nuonco/runner/refs/tags/aws-v0.1.4/scripts/aws/phonehome.py"
+	DefaultAWSPhoneHomeScript = "https://raw.githubusercontent.com/nuonco/runner/refs/tags/aws-v0.1.10/scripts/aws/phonehome.py"
 )
 
 type GetPhoneHomeScriptRequest struct {
