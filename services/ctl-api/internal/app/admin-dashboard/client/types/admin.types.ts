@@ -179,6 +179,8 @@ export type TQueueEmitter = {
   cron_schedule: string
   scheduled_at: string
   fired: boolean
+  enabled: boolean
+  disabled_reason?: string
   signal_type: string
   signal_template: any
   status: any

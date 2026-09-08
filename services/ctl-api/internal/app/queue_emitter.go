@@ -75,6 +75,13 @@ type QueueEmitter struct {
 	// is computed as time.Now().Add(SignalExpiresIn) at emission time.
 	SignalExpiresIn time.Duration `json:"signal_expires_in,omitzero" gorm:"default:null" swaggertype:"primitive,integer" temporaljson:"signal_expires_in,omitzero,omitempty"`
 
+	// Enabled gates the emitter's Temporal executions. A disabled emitter is
+	// torn down like a deleted one — the parent workflow self-terminates and
+	// the cron child dies with it — and is restarted when re-enabled. Distinct
+	// from a paused (StatusCancelled) emitter, which keeps its workflow alive.
+	Enabled        bool   `json:"enabled" gorm:"not null;default:true" temporaljson:"enabled,omitzero,omitempty"`
+	DisabledReason string `json:"disabled_reason,omitzero" gorm:"type:text" temporaljson:"disabled_reason,omitzero,omitempty"`
+
 	// Runtime state using shared CompositeStatus
 	Status        CompositeStatus `json:"status" temporaljson:"status,omitzero,omitempty"`
 	LastEmittedAt *time.Time      `json:"last_emitted_at,omitzero" temporaljson:"last_emitted_at,omitzero,omitempty"`

@@ -329,6 +329,9 @@ export const QueueDetail = () => {
                   Status
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Enabled
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Emit count
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -374,6 +377,15 @@ export const QueueDetail = () => {
                       <span className="text-gray-400 dark:text-gray-500">-</span>
                     )}
                   </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    {emitter.enabled === false ? (
+                      <span title={emitter.disabled_reason || undefined}>
+                        <Badge variant="status" status="disabled">disabled</Badge>
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 dark:text-gray-500">-</span>
+                    )}
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-mono">{emitter.emit_count ?? 0}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                     {emitter.last_emitted_at ? formatRelativeDate(emitter.last_emitted_at) : '-'}
@@ -390,7 +402,7 @@ export const QueueDetail = () => {
               {(!(queue.emitters || emittersData?.emitters) ||
                 (queue.emitters || emittersData?.emitters || []).length === 0) && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td colSpan={11} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                     No emitters
                   </td>
                 </tr>
