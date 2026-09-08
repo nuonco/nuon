@@ -25,7 +25,7 @@ type ServiceInstallGroupRequest struct {
 
 	// AutoApproveOnPoliciesPassing approves this group's plan step without user
 	// input when its policy checks pass. Omit to leave it unset (off).
-	AutoApproveOnPoliciesPassing bool `json:"auto_approve_on_policies_passing,omitempty"`
+	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty"`
 
 	// install ids
 	InstallIds []string `json:"install_ids"`
