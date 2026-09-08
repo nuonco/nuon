@@ -102,6 +102,7 @@ export const Button = ({
   const control = href ? (
     <RouterLink
       to={href}
+      viewTransition
       aria-disabled={inactive || undefined}
       aria-busy={loading || undefined}
       className={classes}

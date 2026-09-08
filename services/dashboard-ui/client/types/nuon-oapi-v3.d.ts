@@ -11492,6 +11492,8 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
+        /** @description filter branches by name */
+        q?: string;
       };
       path: {
         /** @description app ID */

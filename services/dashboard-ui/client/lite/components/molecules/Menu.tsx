@@ -250,7 +250,7 @@ export const MenuItem = ({
     }
 
     return (
-      <RouterLink {...shared} to={href} onClick={select}>
+      <RouterLink {...shared} to={href} viewTransition onClick={select}>
         {body}
       </RouterLink>
     )

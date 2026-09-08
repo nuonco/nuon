@@ -1,4 +1,5 @@
-import type { RouteObject } from 'react-router'
+import type { NonIndexRouteObject, RouteObject } from 'react-router'
+import { PageTransition } from './components/templates/PageTransition'
 import { FocusLayout } from './pages/FocusLayout'
 import { AppBranchActivity } from './pages/AppBranchActivity'
 import { AppBranchConfig } from './pages/AppBranchConfig'
@@ -29,7 +30,24 @@ import {
   Webhooks,
 } from './pages/scaffolds'
 
-export const liteRoutes: RouteObject[] = [
+const isLayoutRoute = (
+  route: RouteObject
+): route is NonIndexRouteObject & { children: RouteObject[] } => !!route.children
+
+export const withPageTransitions = (routes: RouteObject[]): RouteObject[] =>
+  routes.map((route): RouteObject => {
+    if (isLayoutRoute(route)) {
+      return { ...route, children: withPageTransitions(route.children) }
+    }
+    if (!route.element) return route
+
+    return {
+      ...route,
+      element: <PageTransition>{route.element}</PageTransition>,
+    }
+  })
+
+export const liteRoutes: RouteObject[] = withPageTransitions([
   {
     id: 'root-layout',
     element: <RootLayout />,
@@ -157,4 +175,4 @@ export const liteRoutes: RouteObject[] = [
       },
     ],
   },
-]
+])

@@ -1,7 +1,9 @@
 import { afterEach, expect, test } from 'bun:test'
 import { cleanup, render, screen } from '@testing-library/react'
-import { matchRoutes, MemoryRouter } from 'react-router'
+import { isValidElement } from 'react'
+import { matchRoutes, MemoryRouter, type RouteObject } from 'react-router'
 import { SubNav } from './components/molecules/SubNav'
+import { PageTransition } from './components/templates/PageTransition'
 import { appBranchNavigation } from './pages/AppBranchLayout'
 import { installNavigation } from './pages/InstallLayout'
 import { orgNavigation } from './pages/OrgLayout'
@@ -110,6 +112,35 @@ test('matches every settings child from the playground route model', () => {
     'settings-service-accounts'
   )
   expect(matchedIds('/org-123/settings/oidc')?.at(-1)).toBe('settings-oidc')
+})
+
+const isTransitionBoundary = (element: RouteObject['element']) =>
+  isValidElement(element) && element.type === PageTransition
+
+const partitionRoutes = (routes: RouteObject[]) =>
+  routes.reduce<{ leaves: RouteObject[]; layouts: RouteObject[] }>(
+    (acc, route) => {
+      if (!route.children) {
+        acc.leaves.push(route)
+        return acc
+      }
+
+      const nested = partitionRoutes(route.children)
+      acc.layouts.push(route, ...nested.layouts)
+      acc.leaves.push(...nested.leaves)
+      return acc
+    },
+    { leaves: [], layouts: [] }
+  )
+
+test('wraps every routed page in the transition boundary', () => {
+  const { leaves, layouts } = partitionRoutes(liteRoutes)
+
+  expect(leaves.length).toBeGreaterThan(10)
+  expect(leaves.every((route) => isTransitionBoundary(route.element))).toBe(true)
+  expect(layouts.some((route) => isTransitionBoundary(route.element))).toBe(
+    false
+  )
 })
 
 test('leaves the bare root to the BFF and catches unknown org pages', () => {
