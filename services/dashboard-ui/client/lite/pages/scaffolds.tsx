@@ -1,37 +1,41 @@
 import { RouteScaffold } from '../components/organisms/RouteScaffold'
 import { useBreadcrumbs } from '../hooks/use-breadcrumbs'
+import { usePageTitle } from '../hooks/use-page-title'
+import type { IBreadcrumbItem } from '../providers/breadcrumb-provider'
 import { useOrg } from '../providers/org-provider'
 
-const useOrgPageBreadcrumbs = ({
+const useOrgPageChrome = ({
   label,
+  isOrgRoot = false,
   settings = false,
 }: {
   label: string
+  isOrgRoot?: boolean
   settings?: boolean
 }) => {
   const { org, orgId } = useOrg()
-  const orgHref = orgId ? `/${orgId}` : undefined
-  const settingsHref = orgId ? `/${orgId}/settings` : undefined
 
-  useBreadcrumbs([
+  const trail: IBreadcrumbItem[] = [
     {
       label: org?.name,
-      href: label === 'Dashboard' ? undefined : orgHref,
+      href: isOrgRoot || !orgId ? undefined : `/${orgId}`,
       loadingWidth: 16,
     },
-    ...(label === 'Dashboard'
-      ? []
-      : settings
-        ? [
-            { label: 'Settings', href: settingsHref },
-            { label },
-          ]
-        : [{ label }]),
-  ])
+  ]
+  if (settings) {
+    trail.push({
+      label: 'Settings',
+      href: orgId ? `/${orgId}/settings` : undefined,
+    })
+  }
+  if (!isOrgRoot) trail.push({ label })
+
+  usePageTitle(label)
+  useBreadcrumbs(trail)
 }
 
 export const Dashboard = () => {
-  useOrgPageBreadcrumbs({ label: 'Dashboard' })
+  useOrgPageChrome({ label: 'Dashboard', isOrgRoot: true })
   return (
     <RouteScaffold
       title="Dashboard"
@@ -41,7 +45,7 @@ export const Dashboard = () => {
 }
 
 export const Teams = () => {
-  useOrgPageBreadcrumbs({ label: 'Team' })
+  useOrgPageChrome({ label: 'Team' })
   return (
     <RouteScaffold
       title="Team"
@@ -51,7 +55,7 @@ export const Teams = () => {
 }
 
 export const Connections = () => {
-  useOrgPageBreadcrumbs({ label: 'Connections', settings: true })
+  useOrgPageChrome({ label: 'Connections', settings: true })
   return (
     <RouteScaffold
       title="Connections"
@@ -61,7 +65,7 @@ export const Connections = () => {
 }
 
 export const Webhooks = () => {
-  useOrgPageBreadcrumbs({ label: 'Webhooks', settings: true })
+  useOrgPageChrome({ label: 'Webhooks', settings: true })
   return (
     <RouteScaffold
       title="Webhooks"
@@ -71,7 +75,7 @@ export const Webhooks = () => {
 }
 
 export const Triggers = () => {
-  useOrgPageBreadcrumbs({ label: 'Triggers', settings: true })
+  useOrgPageChrome({ label: 'Triggers', settings: true })
   return (
     <RouteScaffold
       title="Triggers"
@@ -81,7 +85,7 @@ export const Triggers = () => {
 }
 
 export const ApiTokens = () => {
-  useOrgPageBreadcrumbs({ label: 'API tokens', settings: true })
+  useOrgPageChrome({ label: 'API tokens', settings: true })
   return (
     <RouteScaffold
       title="API tokens"
@@ -91,7 +95,7 @@ export const ApiTokens = () => {
 }
 
 export const ServiceAccounts = () => {
-  useOrgPageBreadcrumbs({ label: 'Service accounts', settings: true })
+  useOrgPageChrome({ label: 'Service accounts', settings: true })
   return (
     <RouteScaffold
       title="Service accounts"
@@ -101,7 +105,7 @@ export const ServiceAccounts = () => {
 }
 
 export const OidcFederation = () => {
-  useOrgPageBreadcrumbs({ label: 'OIDC federation', settings: true })
+  useOrgPageChrome({ label: 'OIDC federation', settings: true })
   return (
     <RouteScaffold
       title="OIDC federation"
@@ -110,15 +114,18 @@ export const OidcFederation = () => {
   )
 }
 
-export const Onboarding = () => (
-  <RouteScaffold
-    title="Welcome to Nuon"
-    description="Configure your account and first organization."
-  />
-)
+export const Onboarding = () => {
+  usePageTitle('Onboarding')
+  return (
+    <RouteScaffold
+      title="Welcome to Nuon"
+      description="Configure your account and first organization."
+    />
+  )
+}
 
 export const NotFound = () => {
-  useOrgPageBreadcrumbs({ label: 'Page not found' })
+  useOrgPageChrome({ label: 'Page not found' })
   return (
     <RouteScaffold
       title="Page not found"
