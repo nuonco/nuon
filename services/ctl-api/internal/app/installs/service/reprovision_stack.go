@@ -15,9 +15,8 @@ import (
 )
 
 type ReprovisionInstallStackRequest struct {
-	Role           string `json:"role,omitempty"`
-	PlanOnly       bool   `json:"plan_only"`
-	SkipComponents bool   `json:"skip_components"`
+	Role     string `json:"role,omitempty"`
+	PlanOnly bool   `json:"plan_only"`
 }
 
 // @ID						ReprovisionInstallStack
@@ -27,7 +26,7 @@ type ReprovisionInstallStackRequest struct {
 // @Param					req			body	ReprovisionInstallStackRequest	true	"Input"
 // @Tags					installs
 // @Accept					json
-// @Produce				json
+// @Produce					json
 // @Security				APIKey
 // @Security				OrgID
 // @Failure				400	{object}	stderr.ErrResponse
@@ -52,15 +51,10 @@ func (s *service) ReprovisionInstallStack(ctx *gin.Context) {
 		return
 	}
 
-	metadata := map[string]string{}
-	if req.SkipComponents {
-		metadata["skip_components"] = "true"
-	}
-
 	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		install.ID,
 		app.WorkflowTypeReprovisionStack,
-		metadata,
+		map[string]string{},
 		req.PlanOnly,
 		req.Role,
 	)
@@ -84,7 +78,6 @@ func (s *service) ReprovisionInstallStack(ctx *gin.Context) {
 		zap.String("workflow_id", workflow.ID),
 		zap.String("install_id", install.ID),
 		zap.Bool("plan_only", req.PlanOnly),
-		zap.Bool("skip_components", req.SkipComponents),
 	)
 
 	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
