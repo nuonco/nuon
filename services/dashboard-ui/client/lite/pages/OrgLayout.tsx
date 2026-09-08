@@ -3,10 +3,13 @@ import { useConfig } from '@/hooks/use-config'
 import { Text } from '../components/atoms/Text'
 import type { INavItem } from '../components/molecules/NavLink'
 import { ThemeSwitcher } from '../components/molecules/ThemeSwitcher'
+import { Breadcrumb } from '../components/molecules/Breadcrumb'
 import { UserDropdown } from '../components/organisms/UserDropdown'
 import { SurfaceHost } from '../components/organisms/surfaces'
 import { DashboardShell } from '../components/templates/DashboardShell'
+import { useBreadcrumbItems } from '../hooks/use-breadcrumbs'
 import { useCurrentUser } from '../hooks/use-current-user'
+import { BreadcrumbProvider } from '../providers/breadcrumb-provider'
 import { OrgProvider, useOrg } from '../providers/org-provider'
 
 export const orgNavigation = (orgId: string) => {
@@ -59,6 +62,7 @@ const OrgShell = () => {
   const config = useConfig()
   const { org, orgId, isLoading, error } = useOrg()
   const { user, isLoading: isLoadingUser } = useCurrentUser()
+  const breadcrumbs = useBreadcrumbItems()
   const navigation = orgNavigation(orgId ?? '')
 
   return (
@@ -66,6 +70,7 @@ const OrgShell = () => {
       primaryNav={navigation.primary}
       secondaryNav={navigation.secondary}
       homeHref={`/${orgId ?? ''}`}
+      headerLeading={<Breadcrumb items={breadcrumbs} />}
       headerActions={<ThemeSwitcher />}
       userMenu={
         <UserDropdown
@@ -98,8 +103,10 @@ const OrgShell = () => {
 
 export const OrgLayout = () => (
   <OrgProvider>
-    <SurfaceHost scope="org">
-      <OrgShell />
-    </SurfaceHost>
+    <BreadcrumbProvider>
+      <SurfaceHost scope="org">
+        <OrgShell />
+      </SurfaceHost>
+    </BreadcrumbProvider>
   </OrgProvider>
 )
