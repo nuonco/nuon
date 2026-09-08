@@ -1,39 +1,28 @@
 import {
+  createContext,
+  useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
   type ReactNode,
 } from 'react'
 import type { TAppConfigDiffOperation, TAppConfigDiffSection } from '@/types'
+import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
+import { CodeBlock } from '@/components/common/CodeBlock'
+import { Card } from '@/components/common/Card'
+import { Expand } from '@/components/common/Expand'
+import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
+import { diffLines } from '@/utils/code-utils'
 import { cn } from '@/utils/classnames'
-import { useDisclosure } from '@/lite/hooks/use-disclosure'
-import { changeCounts, emptyDiffSummary } from '@/lite/lib/diffs'
-import { ComponentDocs } from '@/lite/components/__stories__/ComponentDocs'
-import { Badge } from '@/lite/components/atoms/Badge'
-import { Button } from '@/lite/components/atoms/Button'
-import { Card } from '@/lite/components/atoms/Card'
-import { Icon } from '@/lite/components/atoms/Icon'
-import { Text } from '@/lite/components/atoms/Text'
-import { Tooltip } from '@/lite/components/atoms/Tooltip'
-import { Diff, type TDiffView } from '@/lite/components/molecules/Diff'
-import { DiffSummary } from '@/lite/components/molecules/DiffSummary'
-import { Disclosure } from '@/lite/components/molecules/Disclosure'
-import {
-  DisclosureGroup,
-  ExpandAllButton,
-} from '@/lite/components/molecules/DisclosureGroup'
-import '@/lite/styles.css'
+import { DiffCodeBlock, WrapLinesProvider } from '../wrap-lines-context'
 
 export default {
   title: 'Approvals/PlanDiffs/AppConfigSourceDiff (exploration)',
 }
-
-// ---------------------------------------------------------------------------
-// Mock data — design exploration only. Shapes mirror pkg/config/source_archive.go
-// (SourceArchive.Files / SourceArchive.Members) and ComputeAppConfigDiffOutput.
-// ---------------------------------------------------------------------------
 
 type TSourceFile = {
   path: string
@@ -444,23 +433,37 @@ const memberForPath = (members: Record<string, string>, path: string) => {
 const splitPath = (path: string) => {
   const index = path.lastIndexOf('/')
   return index < 0
-    ? { dir: '', base: path }
+    ? { dir: '', base: path.slice(index + 1) }
     : { dir: path.slice(0, index + 1), base: path.slice(index + 1) }
 }
 
-const fileCounts = (file: TSourceFile) =>
-  changeCounts(file.before ?? '', file.after ?? '')
+const MUTED_TEXT = 'text-cool-grey-500 dark:text-dark-grey-400'
+const SURFACE_02 = 'bg-cool-grey-100 dark:bg-dark-grey-800'
+const BORDER = 'border-cool-grey-300 dark:border-dark-grey-500'
+
+const fileCounts = (file: TSourceFile) => {
+  const text = diffLines(file.before ?? '', file.after ?? '')
+  const counts = { added: 0, removed: 0 }
+  for (const line of text.split('\n')) {
+    if (line.startsWith('+')) counts.added++
+    else if (line.startsWith('-')) counts.removed++
+  }
+  return counts
+}
+
+const fileDiffText = (file: TSourceFile) =>
+  diffLines(file.before ?? '', file.after ?? '')
 
 const OP_TEXT: Record<TAppConfigDiffOperation, string> = {
-  add: 'text-diff-add',
-  change: 'text-diff-change',
-  remove: 'text-diff-remove',
+  add: 'text-green-800 dark:text-green-500',
+  change: 'text-orange-800 dark:text-orange-400',
+  remove: 'text-red-800 dark:text-red-500',
 }
 
 const OP_RAIL: Record<TAppConfigDiffOperation, string> = {
-  add: 'border-l-diff-add',
-  change: 'border-l-diff-change',
-  remove: 'border-l-diff-remove',
+  add: 'bg-green-400 dark:bg-green-500/40',
+  change: 'bg-orange-300 dark:bg-orange-500/40',
+  remove: 'bg-red-300 dark:bg-red-500/40',
 }
 
 const OP_LETTER: Record<TAppConfigDiffOperation, string> = {
@@ -477,6 +480,34 @@ const OP_LABEL: Record<TAppConfigDiffOperation, string> = {
 
 type TFocus = { path: string; nonce: number }
 
+const ExpandAllContext = createContext<{
+  value: boolean | null
+  toggle: () => void
+} | null>(null)
+
+const useExpandAll = () => useContext(ExpandAllContext)
+
+const ExpandAllToggle = () => {
+  const ctx = useExpandAll()
+  if (!ctx) return null
+  const isAllExpanded = ctx.value === true
+  return (
+    <Button
+      className="!p-1 flex items-center gap-1.5"
+      variant="ghost"
+      size="sm"
+      aria-pressed={isAllExpanded}
+      onClick={ctx.toggle}
+    >
+      {isAllExpanded ? 'Collapse all' : 'Expand all'}
+      <Icon
+        variant={isAllExpanded ? 'CaretUpIcon' : 'CaretDownIcon'}
+        size={14}
+      />
+    </Button>
+  )
+}
+
 const StatusLetter = ({
   op,
   muted = false,
@@ -484,19 +515,15 @@ const StatusLetter = ({
   op: TAppConfigDiffOperation
   muted?: boolean
 }) => (
-  <Text
-    as="span"
-    variant="caption"
-    family="mono"
-    weight="semibold"
+  <span
     aria-label={OP_LABEL[op]}
     className={cn(
-      'w-3 shrink-0 text-center',
-      muted ? 'text-tertiary' : OP_TEXT[op]
+      'w-3 shrink-0 text-center font-mono text-[11px] leading-[14px] font-semibold',
+      muted ? MUTED_TEXT : OP_TEXT[op]
     )}
   >
     {OP_LETTER[op]}
-  </Text>
+  </span>
 )
 
 const Counts = ({
@@ -513,22 +540,24 @@ const Counts = ({
     aria-label={`${added} added, ${removed} removed`}
   >
     {added ? (
-      <Text
-        variant="caption"
-        family="mono"
-        className={muted ? 'text-tertiary' : 'text-diff-add'}
+      <span
+        className={cn(
+          'font-mono text-[11px] leading-[14px]',
+          muted ? MUTED_TEXT : 'text-green-800 dark:text-green-500'
+        )}
       >
         +{added}
-      </Text>
+      </span>
     ) : null}
     {removed ? (
-      <Text
-        variant="caption"
-        family="mono"
-        className={muted ? 'text-tertiary' : 'text-diff-remove'}
+      <span
+        className={cn(
+          'font-mono text-[11px] leading-[14px]',
+          muted ? MUTED_TEXT : 'text-red-800 dark:text-red-500'
+        )}
       >
         -{removed}
-      </Text>
+      </span>
     ) : null}
   </span>
 )
@@ -542,15 +571,12 @@ const MonoPath = ({
 }) => {
   const { dir, base } = splitPath(path)
   return (
-    <Text
-      as="span"
-      variant="caption"
-      family="mono"
-      className={cn('truncate', className)}
+    <span
+      className={cn('truncate font-mono text-[11px] leading-[14px]', className)}
     >
-      {dir ? <span className="text-tertiary">{dir}</span> : null}
-      <span className="text-primary">{base}</span>
-    </Text>
+      {dir ? <span className={MUTED_TEXT}>{dir}</span> : null}
+      <span>{base}</span>
+    </span>
   )
 }
 
@@ -603,21 +629,23 @@ const SummaryChip = ({
         aria-hidden
         className={cn('size-1.5 rounded-full bg-current', OP_TEXT[chip.op])}
       />
-      <Text variant="caption" weight="medium" color="primary">
+      <span className="text-[11px] leading-[14px] font-medium">
         {chip.name}
-      </Text>
+      </span>
       {chip.detail ? (
-        <Text variant="caption" color="tertiary">
+        <span className={cn('text-[11px] leading-[14px]', MUTED_TEXT)}>
           {chip.detail}
-        </Text>
+        </span>
       ) : null}
     </>
   )
 
   if (!chip.path) {
     return (
-      <Tooltip content={`No source file for ${chip.name} in the head config`}>
-        <span className="inline-flex h-7 items-center gap-1.5 rounded-md border border-dashed border-divider px-2">
+      <Tooltip
+        tipContent={`No source file for ${chip.name} in the head config`}
+      >
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-md border border-dashed px-2">
           {content}
         </span>
       </Tooltip>
@@ -625,21 +653,17 @@ const SummaryChip = ({
   }
 
   return (
-    <Tooltip content={`Open ${chip.path}`}>
+    <Tooltip tipContent={`Open ${chip.path}`}>
       <button
         type="button"
         onClick={() => onFocusFile(chip.path as string)}
         className={cn(
-          'inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-divider bg-surface-01 px-2 transition-colors',
-          'hover:border-divider-accent/60 hover:bg-menu-item-hover focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring'
+          'inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border bg-cool-grey-50 px-2 transition-colors dark:bg-dark-grey-700',
+          'hover:bg-cool-grey-200 dark:hover:bg-dark-grey-600 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-500'
         )}
       >
         {content}
-        <Icon
-          variant="ArrowLineRightIcon"
-          size={12}
-          className="text-tertiary"
-        />
+        <Icon variant="ArrowLineRightIcon" size={12} className={MUTED_TEXT} />
       </button>
     </Tooltip>
   )
@@ -658,33 +682,39 @@ const ParsedSummary = ({
   changedPaths: Set<string>
   onFocusFile: (path: string) => void
 }) => (
-  <Disclosure
-    defaultOpen
-    title="Summary"
-    description="What the parsed config says changed"
-    className="rounded-lg bg-surface-02"
-    contentClassName="px-3 pb-3"
-    status={
-      <DiffSummary
-        summary={{
-          ...emptyDiffSummary(),
-          create: summary.added,
-          update: summary.changed,
-          delete: summary.removed,
-        }}
-        operations={['create', 'update', 'delete']}
-        className="gap-x-3"
-      />
+  <Expand
+    id="parsed-summary"
+    heading="Summary"
+    toggleContent={
+      <span className="flex items-center gap-2">
+        <Text variant="subtext" className="font-medium">
+          What the parsed config says changed
+        </Text>
+        <span className="flex items-center gap-x-3 text-[11px] leading-[14px]">
+          <span className="text-green-800 dark:text-green-500">
+            {summary.added} to create
+          </span>
+          <span className="text-orange-800 dark:text-orange-400">
+            {summary.changed} to update
+          </span>
+          <span className="text-red-800 dark:text-red-500">
+            {summary.removed} to delete
+          </span>
+        </span>
+      </span>
     }
+    headerClassName="px-3 py-2"
+    isOpen
+    className={cn('rounded-lg', SURFACE_02)}
   >
-    <dl className="flex flex-col gap-2">
+    <dl className="flex flex-col gap-2 px-3 pb-3">
       {sections.map((section) => (
         <div
           key={section.sectionKey}
           className="grid grid-cols-[8rem_1fr] items-start gap-x-3 gap-y-1 sm:grid-cols-[9rem_1fr]"
         >
           <dt className="flex items-center gap-1.5 pt-1.5">
-            <Text variant="caption" color="secondary" weight="medium">
+            <Text variant="subtext" className="font-medium">
               {section.name}
             </Text>
           </dt>
@@ -700,12 +730,12 @@ const ParsedSummary = ({
         </div>
       ))}
     </dl>
-  </Disclosure>
+  </Expand>
 )
 
 // ---------------------------------------------------------------------------
-// Changed-files tree — @pierre/trees look (status letter lane, folder dots)
-// plus +/− counts as row decoration.
+// Changed-files tree — status letter lane, folder dots, muted unchanged rows
+// behind a toggle.
 // ---------------------------------------------------------------------------
 
 type TTreeFolder = { dir: string; files: TSourceFile[]; unchanged: string[] }
@@ -746,12 +776,13 @@ const TreeRow = ({
     type="button"
     disabled={!onClick}
     onClick={onClick}
-    style={{ paddingLeft: `${8 + depth * 14}px` } as CSSProperties}
+    style={{ paddingLeft: `${8 + depth * 14}px` }}
     className={cn(
       'flex h-7 w-full min-w-0 items-center gap-1.5 rounded-md pr-2 text-left transition-colors',
-      onClick && 'cursor-pointer hover:bg-menu-item-hover',
-      selected && 'bg-menu-item-selected',
-      'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring'
+      onClick &&
+        'cursor-pointer hover:bg-cool-grey-200 dark:hover:bg-dark-grey-600',
+      selected && 'bg-cool-grey-200 dark:bg-dark-grey-500',
+      'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-500'
     )}
   >
     {children}
@@ -790,10 +821,10 @@ const FileTree = ({
   return (
     <nav
       aria-label="Changed files"
-      className="flex flex-col gap-1 rounded-lg bg-surface-02 p-2"
+      className={cn('flex flex-col gap-1 rounded-lg p-2', SURFACE_02)}
     >
       <div className="flex items-center justify-between gap-2 px-2 py-1">
-        <Text variant="caption" color="tertiary" weight="medium">
+        <Text variant="subtext" className={cn('font-medium', MUTED_TEXT)}>
           {diff.files.length} changed{' '}
           {diff.files.length === 1 ? 'file' : 'files'}
         </Text>
@@ -808,15 +839,15 @@ const FileTree = ({
                 <Icon
                   variant="CaretDownIcon"
                   size={12}
-                  className="text-tertiary"
+                  className={MUTED_TEXT}
                 />
-                <Text variant="caption" color="secondary" className="truncate">
+                <Text variant="subtext" className="truncate">
                   {folder.dir.replace(/\/$/, '')}
                 </Text>
                 {folder.files.length ? (
                   <span
                     aria-hidden
-                    className="ml-auto size-1.5 rounded-full bg-status-neutral/50"
+                    className="ml-auto size-1.5 rounded-full bg-cool-grey-400 dark:bg-dark-grey-400"
                   />
                 ) : null}
               </TreeRow>
@@ -831,23 +862,17 @@ const FileTree = ({
                   onClick={() => onFocusFile(file.path)}
                 >
                   <Icon
-                    variant="FileIcon"
+                    variant="FileCodeIcon"
                     size={14}
                     className={cn(
                       'shrink-0',
-                      file.formatOnly ? 'text-tertiary' : OP_TEXT[file.op]
+                      file.formatOnly ? MUTED_TEXT : OP_TEXT[file.op]
                     )}
                   />
-                  <Text
-                    variant="caption"
-                    family="mono"
-                    className={cn(
-                      'truncate',
-                      file.formatOnly ? 'text-secondary' : 'text-primary'
-                    )}
-                  >
-                    {splitPath(file.path).base}
-                  </Text>
+                  <MonoPath
+                    path={file.path}
+                    className={file.formatOnly ? MUTED_TEXT : undefined}
+                  />
                   <span className="ml-auto flex shrink-0 items-center gap-2">
                     <Counts
                       added={counts.added}
@@ -862,18 +887,11 @@ const FileTree = ({
             {folder.unchanged.map((path) => (
               <TreeRow key={path} depth={folder.dir ? 1 : 0}>
                 <Icon
-                  variant="FileIcon"
+                  variant="FileCodeIcon"
                   size={14}
-                  className="shrink-0 text-tertiary/60"
+                  className="shrink-0 opacity-60"
                 />
-                <Text
-                  variant="caption"
-                  family="mono"
-                  color="tertiary"
-                  className="truncate"
-                >
-                  {splitPath(path).base}
-                </Text>
+                <MonoPath path={path} className={MUTED_TEXT} />
               </TreeRow>
             ))}
           </div>
@@ -885,14 +903,17 @@ const FileTree = ({
           type="button"
           onClick={() => setShowUnchanged((current) => !current)}
           aria-pressed={showUnchanged}
-          className="mt-1 flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2 text-left transition-colors hover:bg-menu-item-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
+          className={cn(
+            'mt-1 flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2 text-left transition-colors',
+            'hover:bg-cool-grey-200 dark:hover:bg-dark-grey-600 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-500'
+          )}
         >
           <Icon
             variant={showUnchanged ? 'MinusCircleIcon' : 'PlusIcon'}
             size={12}
-            className="text-tertiary"
+            className={MUTED_TEXT}
           />
-          <Text variant="caption" color="tertiary">
+          <Text variant="subtext" className={MUTED_TEXT}>
             {showUnchanged
               ? 'Hide unchanged files'
               : `${diff.unchangedPaths.length} unchanged ${diff.unchangedPaths.length === 1 ? 'file' : 'files'} not shown`}
@@ -904,33 +925,35 @@ const FileTree = ({
 }
 
 // ---------------------------------------------------------------------------
-// Stacked per-file diff with a sticky header. Body is the house Diff molecule
-// (@pierre/diffs: Shiki TOML highlighting, word-level intra-line diff, collapsed
-// unchanged runs with line-info separators).
+// Stacked per-file diff with a sticky header. Body is the house CodeBlock
+// diff rendering (diffLines + CodeBlock isDiff), the same one AppConfigDiff
+// uses for embedded files.
 // ---------------------------------------------------------------------------
 
 const FileDiffPanel = ({
   file,
   members,
-  view,
+  splitView,
   focus,
   defaultOpen,
 }: {
   file: TSourceFile
   members: Record<string, string>
-  view: TDiffView
+  splitView: boolean
   focus?: TFocus
   defaultOpen?: boolean
 }) => {
   const ref = useRef<HTMLElement>(null)
   const [flash, setFlash] = useState(false)
-  const { open, setOpen, triggerProps, contentProps } = useDisclosure({
-    id: `file-${file.path}`,
-    defaultOpen,
-  })
+  const [open, setOpen] = useState(defaultOpen ?? true)
+  const expandAll = useExpandAll()
   const counts = useMemo(() => fileCounts(file), [file])
   const member = memberForPath(members, file.path)
   const focused = focus?.path === file.path
+
+  useEffect(() => {
+    if (expandAll?.value != null) setOpen(expandAll.value)
+  }, [expandAll?.value, expandAll?.toggle])
 
   const nonce = focus?.nonce
   useEffect(() => {
@@ -940,34 +963,46 @@ const FileDiffPanel = ({
     setFlash(true)
     const timer = window.setTimeout(() => setFlash(false), 1600)
     return () => window.clearTimeout(timer)
-  }, [focused, nonce, setOpen])
+  }, [focused, nonce])
 
   return (
     <section
       ref={ref}
       aria-label={file.path}
       className={cn(
-        'scroll-mt-4 rounded-lg border border-l-4 border-divider bg-surface-01 transition-shadow duration-300',
-        file.formatOnly ? 'border-l-diff-neutral' : OP_RAIL[file.op],
-        flash && 'shadow-[0_0_0_2px_var(--divider-accent)]'
+        'relative scroll-mt-4 rounded-lg border bg-cool-grey-50 transition-shadow duration-300 dark:bg-dark-grey-700',
+        BORDER,
+        flash && 'ring-2 ring-primary-400'
       )}
     >
+      <span
+        aria-hidden
+        className={cn(
+          'absolute inset-y-0 left-0 z-20 w-1 rounded-l-lg',
+          file.formatOnly
+            ? 'bg-cool-grey-300 dark:bg-dark-grey-500'
+            : OP_RAIL[file.op]
+        )}
+      />
       <header
         className={cn(
-          'sticky top-0 z-10 flex min-h-10 items-center gap-2 rounded-tr-lg border-b border-divider bg-surface-01/95 px-2 backdrop-blur-sm',
+          'sticky top-0 z-10 flex min-h-10 items-center gap-2 rounded-tr-lg border-b pl-3 pr-2 backdrop-blur-sm bg-cool-grey-50/95 dark:bg-dark-grey-700/95',
+          BORDER,
           !open && 'rounded-br-lg border-b-0'
         )}
       >
         <button
           type="button"
-          {...triggerProps}
-          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md py-1.5 pr-1 text-left outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring"
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md py-1.5 pr-1 text-left outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-500"
         >
           <Icon
             variant="CaretRightIcon"
             size={14}
             className={cn(
-              'shrink-0 text-tertiary transition-transform duration-200',
+              'shrink-0 transition-transform duration-200',
+              MUTED_TEXT,
               open && 'rotate-90'
             )}
           />
@@ -976,15 +1011,15 @@ const FileDiffPanel = ({
         </button>
 
         {member ? (
-          <Badge
-            variant="code"
-            labelKey={member.kind}
-            labelValue={member.name}
-          />
+          <Badge variant="code" theme="neutral" size="sm">
+            {member.kind}: {member.name}
+          </Badge>
         ) : null}
         {file.formatOnly ? (
-          <Tooltip content="Whitespace, ordering or comments changed. The parsed config is identical.">
-            <Badge>Format only</Badge>
+          <Tooltip tipContent="Whitespace, ordering or comments changed. The parsed config is identical.">
+            <Badge size="sm" theme="neutral">
+              Format only
+            </Badge>
           </Tooltip>
         ) : null}
         <Counts
@@ -995,25 +1030,50 @@ const FileDiffPanel = ({
       </header>
 
       {open ? (
-        <div {...contentProps} className="p-2">
+        <div className="p-2">
           {file.op === 'remove' ? (
             <Text
               as="p"
-              variant="caption"
-              color="tertiary"
-              className="px-1 pb-2"
+              variant="subtext"
+              className={cn('px-1 pb-2', MUTED_TEXT)}
             >
               File removed in the head config.
             </Text>
           ) : null}
-          <Diff
-            before={file.before ?? ''}
-            after={file.after ?? ''}
-            language="toml"
-            view={view}
-            search={false}
-            maxHeight={720}
-          />
+          {splitView ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="overflow-hidden rounded-md border">
+                <div
+                  className={cn(
+                    'border-b px-3 py-1 text-[11px] leading-[14px]',
+                    SURFACE_02
+                  )}
+                >
+                  Before
+                </div>
+                <CodeBlock language="toml" isDiff={false}>
+                  {file.before ?? ''}
+                </CodeBlock>
+              </div>
+              <div className="overflow-hidden rounded-md border">
+                <div
+                  className={cn(
+                    'border-b px-3 py-1 text-[11px] leading-[14px]',
+                    SURFACE_02
+                  )}
+                >
+                  After
+                </div>
+                <CodeBlock language="toml" isDiff={false}>
+                  {file.after ?? ''}
+                </CodeBlock>
+              </div>
+            </div>
+          ) : (
+            <DiffCodeBlock language="toml" isDiff>
+              {fileDiffText(file)}
+            </DiffCodeBlock>
+          )}
         </div>
       ) : null}
     </section>
@@ -1026,53 +1086,62 @@ const FileDiffPanel = ({
 
 const VersionRange = ({ from, to }: { from: string; to: string }) => (
   <span className="flex items-center gap-1">
-    <Badge variant="code">{from}</Badge>
-    <Icon variant="ArrowLineRightIcon" size={12} className="text-tertiary" />
-    <Badge variant="code">{to}</Badge>
+    <Badge variant="code" size="sm">
+      {from}
+    </Badge>
+    <Icon variant="ArrowLineRightIcon" size={12} className={MUTED_TEXT} />
+    <Badge variant="code" size="sm">
+      {to}
+    </Badge>
   </span>
 )
 
 const SourceUnavailable = ({ diff }: { diff: TSourceArchiveDiff }) => {
   const headPaths = [...new Set(Object.values(diff.members))].sort()
   return (
-    <div className="flex flex-col gap-3 rounded-lg bg-surface-02 px-4 py-8">
+    <div className={cn('flex flex-col gap-3 rounded-lg px-4 py-8', SURFACE_02)}>
       <div className="flex flex-col items-center gap-2 text-center">
-        <Icon variant="InfoIcon" size={20} className="text-tertiary" />
-        <Text as="p" variant="body" weight="medium">
+        <Icon variant="InfoIcon" size={20} className={MUTED_TEXT} />
+        <Text as="p" variant="body" className="font-medium">
           Source diff unavailable for {diff.baselineVersion} →{' '}
           {diff.headVersion}
         </Text>
-        <Text as="p" variant="caption" color="tertiary" className="max-w-md">
+        <Text as="p" variant="subtext" className={cn('max-w-md', MUTED_TEXT)}>
           {diff.baselineVersion} was published before source capture, so there
           is no baseline to compare against. The summary above still reflects
           the parsed config. File-level diffs start with the next config
           version.
         </Text>
       </div>
-      <Disclosure
-        title={`${headPaths.length} files captured in ${diff.headVersion}`}
+      <Expand
+        id="head-captured-files"
+        heading={`${headPaths.length} files captured in ${diff.headVersion}`}
+        headerClassName="px-2 py-1 mx-auto w-full max-w-md"
         className="mx-auto w-full max-w-md"
-        contentClassName="px-2 pb-1"
       >
-        <ul className="flex flex-col gap-px">
+        <ul className="flex flex-col gap-px px-2 pb-1">
           {headPaths.map((path) => (
             <li key={path} className="flex h-6 items-center gap-1.5 px-2">
-              <Icon variant="FileIcon" size={12} className="text-tertiary/60" />
-              <MonoPath path={path} className="text-secondary" />
+              <Icon
+                variant="FileCodeIcon"
+                size={12}
+                className="shrink-0 opacity-60"
+              />
+              <MonoPath path={path} className={MUTED_TEXT} />
             </li>
           ))}
         </ul>
-      </Disclosure>
+      </Expand>
     </div>
   )
 }
 
 const NoChanges = ({ diff }: { diff: TSourceArchiveDiff }) => (
-  <div className="rounded-lg bg-surface-02 px-4 py-8 text-center">
-    <Text as="p" variant="body" weight="medium">
+  <div className={cn('rounded-lg px-4 py-8 text-center', SURFACE_02)}>
+    <Text as="p" variant="body" className="font-medium">
       No config changes
     </Text>
-    <Text as="p" variant="caption" color="tertiary">
+    <Text as="p" variant="subtext" className={MUTED_TEXT}>
       {diff.headVersion} matches {diff.baselineVersion}.{' '}
       {diff.unchangedPaths.length} files, all identical.
     </Text>
@@ -1097,7 +1166,8 @@ const AppConfigSourceDiffCard = ({
   const [focus, setFocus] = useState<TFocus | undefined>(
     initialFocusPath ? { path: initialFocusPath, nonce: 0 } : undefined
   )
-  const [view, setView] = useState<TDiffView>('unified')
+  const [splitView, setSplitView] = useState(false)
+  const [expandAll, setExpandAll] = useState<boolean | null>(null)
   const changedPaths = useMemo(
     () => new Set(sourceDiff.files.map((file) => file.path)),
     [sourceDiff.files]
@@ -1107,51 +1177,52 @@ const AppConfigSourceDiffCard = ({
 
   const hasSummary = sections.length > 0
   const hasFiles = sourceDiff.files.length > 0
-  const split = view === 'split'
 
   return (
-    <Card
-      as="section"
-      padding="sm"
-      className={cn('flex flex-col gap-3', className)}
+    <ExpandAllContext.Provider
+      value={{
+        value: expandAll,
+        toggle: () =>
+          setExpandAll((current) => (current === true ? false : true)),
+      }}
     >
-      <header className="flex flex-wrap items-center justify-between gap-3 px-1">
-        <div className="flex items-center gap-3">
-          <Text as="h2" variant="heading">
-            Config changes
-          </Text>
-          <VersionRange
-            from={sourceDiff.baselineVersion}
-            to={sourceDiff.headVersion}
-          />
-        </div>
-        {hasFiles ? (
-          <div className="flex items-center gap-0.5">
-            <ExpandAllButton />
-            <Button
-              size="sm"
-              variant="ghost"
-              iconOnly
-              aria-pressed={split}
-              aria-label={split ? 'Unified view' : 'Split view'}
-              tooltip={split ? 'Unified view' : 'Split view'}
-              onClick={() => setView(split ? 'unified' : 'split')}
-            >
-              <Icon
-                variant={
-                  split
-                    ? 'SquareSplitVerticalIcon'
-                    : 'SquareSplitHorizontalIcon'
-                }
-                size={14}
-              />
-            </Button>
+      <Card
+        className={cn(
+          '!gap-3 !p-4 flex flex-col bg-cool-grey-50 dark:bg-dark-grey-800',
+          className
+        )}
+      >
+        <header className="flex flex-wrap items-center justify-between gap-3 px-1">
+          <div className="flex items-center gap-3">
+            <Text as="h2" variant="h3">
+              Config changes
+            </Text>
+            <VersionRange
+              from={sourceDiff.baselineVersion}
+              to={sourceDiff.headVersion}
+            />
           </div>
-        ) : null}
-      </header>
+          {hasFiles ? (
+            <div className="flex items-center gap-0.5">
+              <ExpandAllToggle />
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-pressed={splitView}
+                aria-label={splitView ? 'Unified view' : 'Split view'}
+                onClick={() => setSplitView((current) => !current)}
+              >
+                <Icon
+                  variant={splitView ? 'ListIcon' : 'SplitHorizontalIcon'}
+                  size={14}
+                />
+                {splitView ? 'Unified' : 'Split'}
+              </Button>
+            </div>
+          ) : null}
+        </header>
 
-      {hasSummary ? (
-        <DisclosureGroup defaultOpen>
+        {hasSummary ? (
           <ParsedSummary
             sections={sections}
             summary={summary}
@@ -1159,107 +1230,83 @@ const AppConfigSourceDiffCard = ({
             changedPaths={changedPaths}
             onFocusFile={onFocusFile}
           />
-        </DisclosureGroup>
-      ) : null}
+        ) : null}
 
-      {!sourceDiff.baselineCaptured ? (
-        <SourceUnavailable diff={sourceDiff} />
-      ) : !hasFiles ? (
-        <NoChanges diff={sourceDiff} />
-      ) : (
-        <div className="grid gap-3 lg:grid-cols-[15rem_minmax(0,1fr)]">
-          <aside className="lg:sticky lg:top-4 lg:self-start">
-            <FileTree
-              diff={sourceDiff}
-              focusPath={focus?.path}
-              onFocusFile={onFocusFile}
-            />
-          </aside>
-          <div className="flex min-w-0 flex-col gap-2">
-            {sourceDiff.files.map((file) => (
-              <FileDiffPanel
-                key={file.path}
-                file={file}
-                members={sourceDiff.members}
-                view={view}
-                focus={focus}
-                defaultOpen={defaultFilesOpen && !file.formatOnly}
+        {!sourceDiff.baselineCaptured ? (
+          <SourceUnavailable diff={sourceDiff} />
+        ) : !hasFiles ? (
+          <NoChanges diff={sourceDiff} />
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-[15rem_minmax(0,1fr)]">
+            <aside className="lg:sticky lg:top-4 lg:self-start">
+              <FileTree
+                diff={sourceDiff}
+                focusPath={focus?.path}
+                onFocusFile={onFocusFile}
               />
-            ))}
+            </aside>
+            <div className="flex min-w-0 flex-col gap-2">
+              {sourceDiff.files.map((file) => (
+                <FileDiffPanel
+                  key={file.path}
+                  file={file}
+                  members={sourceDiff.members}
+                  splitView={splitView}
+                  focus={focus}
+                  defaultOpen={defaultFilesOpen && !file.formatOnly}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-    </Card>
+        )}
+      </Card>
+    </ExpandAllContext.Provider>
   )
 }
 
 const AppConfigSourceDiff = (
   props: Parameters<typeof AppConfigSourceDiffCard>[0]
 ) => (
-  <DisclosureGroup defaultOpen={props.defaultFilesOpen ?? true}>
+  <WrapLinesProvider>
     <AppConfigSourceDiffCard {...props} />
-  </DisclosureGroup>
+  </WrapLinesProvider>
 )
 
-const Frame = ({
-  children,
-  wide = true,
-}: {
-  children: ReactNode
-  wide?: boolean
-}) => {
-  useEffect(() => {
-    const root = document.documentElement
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const apply = () =>
-      root.setAttribute('data-theme', mq.matches ? 'dark' : 'light')
-    apply()
-    mq.addEventListener('change', apply)
-    return () => mq.removeEventListener('change', apply)
-  }, [])
-
-  return (
-    <div className={cn('p-8', wide ? 'max-w-6xl' : 'max-w-3xl')}>
-      {children}
-    </div>
-  )
-}
+const Frame = ({ children }: { children: ReactNode }) => (
+  <div className="mx-auto max-w-6xl p-8">{children}</div>
+)
 
 // ---------------------------------------------------------------------------
 // Stories
 // ---------------------------------------------------------------------------
 
 export const Overview = () => (
-  <ComponentDocs
-    name="AppConfigSourceDiff"
-    tier="organism"
-    summary="Design exploration: the app-branch config diff with authored source files as the primary view and the parsed diff as a summary."
-    use={[
-      'Review a config version change the way it was authored: file by file, with real TOML.',
-      'Orient with the parsed summary, then jump to the file that defines an entity.',
-    ]}
-    avoid={[
-      'Do not render head files as all added when the baseline has no source archive.',
-      'Do not treat a format-only file as a semantic change. It needs a backend signal.',
-      'Do not ship this file. Every helper here is mock-quality and lives in the story.',
-    ]}
-    rules={[
-      'Source is primary. The parsed summary is one collapsible strip above it.',
-      'Summary chips resolve to files through the head archive Members index. Entities without a head file render as unlinked chips.',
-      'File diffs reuse the lite Diff molecule (@pierre/diffs), so highlighting, word-level diffs and collapsed hunks match every other lite diff.',
-      'The file tree follows @pierre/trees conventions: status letter lane (A, M, D), folder dots, muted unchanged rows behind a toggle.',
-    ]}
-    sections={[
-      {
-        heading: 'Adopt, not emulate',
-        body: 'dashboard-ui already depends on @pierre/diffs (lite/molecules/Diff registers a CSS-variable Shiki theme). @pierre/trees is not a dependency; the tree here is a small Tailwind list that borrows its status-lane look because a static changed-files list does not need virtualization, drag and drop or search.',
-      },
-      {
-        heading: 'Data',
-        body: 'Files come from diffing SourceArchive.Files between the baseline and head AppConfig. Members comes from the head archive. formatOnly is a backend signal that the parsed AppConfig.Diff() is empty for that file while the text differs.',
-      },
-    ]}
-  />
+  <Frame>
+    <Card className="!gap-3">
+      <Text as="h2" variant="h3">
+        AppConfigSourceDiff — design exploration
+      </Text>
+      <Text as="p" variant="body">
+        The app-branch config diff with authored source files as the primary
+        view and the parsed diff as a collapsible summary strip.
+      </Text>
+      <ul className="flex list-disc flex-col gap-1 pl-5">
+        <Text as="li" variant="body">
+          Review a config version change the way it was authored: file by file,
+          with real TOML.
+        </Text>
+        <Text as="li" variant="body">
+          Orient with the parsed summary, then jump to the file that defines an
+          entity.
+        </Text>
+      </ul>
+      <Text as="p" variant="subtext" className={MUTED_TEXT}>
+        File diffs use the house CodeBlock diff rendering (diffLines + isDiff),
+        the same one the parsed AppConfigDiff card uses for embedded files.
+        Every helper in this story is mock-quality and local to the file.
+      </Text>
+    </Card>
+  </Frame>
 )
 
 export const Default = () => (
@@ -1284,91 +1331,67 @@ export const CollapsedFiles = () => (
 )
 
 export const FileDrillDown = () => (
-  <Frame wide={false}>
-    <DisclosureGroup defaultOpen>
+  <Frame>
+    <WrapLinesProvider>
       <div className="flex flex-col gap-2">
-        <Text as="p" variant="caption" color="tertiary">
-          One changed file. Word-level highlights on version, replicaCount and
-          paths; the member badge links the file back to the parsed entity.
+        <Text as="p" variant="subtext" className={MUTED_TEXT}>
+          One changed file. The member badge links the file back to the parsed
+          entity; +/- counts come from the house diff renderer.
         </Text>
         <FileDiffPanel
           file={mockSourceDiff.files[1]}
           members={mockMembers}
-          view="unified"
+          splitView={false}
           defaultOpen
         />
       </div>
-    </DisclosureGroup>
-  </Frame>
-)
-
-export const FileDrillDownCollapsedHunks = () => (
-  <Frame wide={false}>
-    <DisclosureGroup defaultOpen>
-      <div className="flex flex-col gap-2">
-        <Text as="p" variant="caption" color="tertiary">
-          A long file with a change at the top and bottom. The unchanged
-          statements in the middle collapse behind a line-info separator.
-        </Text>
-        <FileDiffPanel
-          file={mockSourceDiff.files[4]}
-          members={mockMembers}
-          view="unified"
-          defaultOpen
-        />
-      </div>
-    </DisclosureGroup>
+    </WrapLinesProvider>
   </Frame>
 )
 
 export const FileDrillDownSplit = () => (
   <Frame>
-    <DisclosureGroup defaultOpen>
+    <WrapLinesProvider>
       <FileDiffPanel
         file={mockSourceDiff.files[1]}
         members={mockMembers}
-        view="split"
+        splitView
         defaultOpen
       />
-    </DisclosureGroup>
+    </WrapLinesProvider>
   </Frame>
 )
 
 export const FileDrillDownVariants = () => (
-  <Frame wide={false}>
-    <DisclosureGroup defaultOpen>
+  <Frame>
+    <WrapLinesProvider>
       <div className="flex flex-col gap-2">
         <FileDiffPanel
           file={mockSourceDiff.files[2]}
           members={mockMembers}
-          view="unified"
+          splitView={false}
           defaultOpen
         />
         <FileDiffPanel
           file={mockSourceDiff.files[3]}
           members={mockMembers}
-          view="unified"
+          splitView={false}
           defaultOpen
         />
         <FileDiffPanel
           file={mockSourceDiff.files[5]}
           members={mockMembers}
-          view="unified"
+          splitView={false}
           defaultOpen
         />
       </div>
-    </DisclosureGroup>
+    </WrapLinesProvider>
   </Frame>
 )
 
 export const CrossLink = () => (
   <Frame>
-    <div className="flex flex-col gap-3">
-      <Text as="p" variant="caption" color="tertiary">
-        Opened with the whoami component focused, as if the user clicked its
-        summary chip: the tree row is selected, the file is expanded and briefly
-        ringed. legacy-worker has no head file, so its chip is unlinked.
-      </Text>
+    <WrapLinesProvider>
       <AppConfigSourceDiff
         sections={mockComputedSections}
         summary={mockComputedSummary}
@@ -1376,7 +1399,7 @@ export const CrossLink = () => (
         initialFocusPath="components/whoami.toml"
         defaultFilesOpen={false}
       />
-    </div>
+    </WrapLinesProvider>
   </Frame>
 )
 
@@ -1393,7 +1416,7 @@ export const DegradedNoBaselineArchive = () => (
 export const NoFileChanges = () => (
   <Frame>
     <AppConfigSourceDiff
-      sections={[]}
+      sections={mockComputedSections}
       summary={{ added: 0, removed: 0, changed: 0 }}
       sourceDiff={identicalSourceDiff}
     />
