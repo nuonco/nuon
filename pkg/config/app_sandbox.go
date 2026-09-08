@@ -94,7 +94,7 @@ func (a AppSandboxConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("true")
 }
 
-func (a *AppSandboxConfig) parse() error {
+func (a *AppSandboxConfig) parse(rootDir string) error {
 	if a == nil {
 		return ErrConfig{
 			Description: "an app sandbox config is required",
@@ -111,7 +111,7 @@ func (a *AppSandboxConfig) parse() error {
 		return nil
 	}
 
-	obj, err := source.LoadSource(a.Source)
+	obj, err := source.LoadSourceFrom(a.Source, rootDir)
 	if err != nil {
 		return ErrConfig{
 			Description: fmt.Sprintf("unable to load source %s", a.Source),
