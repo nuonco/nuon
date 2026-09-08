@@ -1,4 +1,5 @@
-import { RouteScaffold } from '../components/organisms/RouteScaffold'
+import { Card } from '../components/atoms/Card'
+import { Text } from '../components/atoms/Text'
 import { useBreadcrumbs } from '../hooks/use-breadcrumbs'
 import { usePageTitle } from '../hooks/use-page-title'
 import type { IBreadcrumbItem } from '../providers/breadcrumb-provider'
@@ -34,102 +35,69 @@ const useOrgPageChrome = ({
   useBreadcrumbs(trail)
 }
 
+const Placeholder = () => (
+  <Card className="min-h-40">
+    <Text variant="caption" color="tertiary">
+      Page content will be added in a follow-up.
+    </Text>
+  </Card>
+)
+
 export const Dashboard = () => {
   useOrgPageChrome({ label: 'Dashboard', isOrgRoot: true })
-  return (
-    <RouteScaffold
-      title="Dashboard"
-      description="Review activity across this organization."
-    />
-  )
+  return <Placeholder />
 }
 
 export const Teams = () => {
   useOrgPageChrome({ label: 'Team' })
-  return (
-    <RouteScaffold
-      title="Team"
-      description="Manage organization members and access."
-    />
-  )
+  return <Placeholder />
 }
 
 export const Connections = () => {
   useOrgPageChrome({ label: 'Connections', settings: true })
-  return (
-    <RouteScaffold
-      title="Connections"
-      description="Manage GitHub and Slack connections."
-    />
-  )
+  return <Placeholder />
 }
 
 export const Webhooks = () => {
   useOrgPageChrome({ label: 'Webhooks', settings: true })
-  return (
-    <RouteScaffold
-      title="Webhooks"
-      description="Manage webhook destinations and subscriptions."
-    />
-  )
+  return <Placeholder />
 }
 
 export const Triggers = () => {
   useOrgPageChrome({ label: 'Triggers', settings: true })
-  return (
-    <RouteScaffold
-      title="Triggers"
-      description="Manage event-driven automation."
-    />
-  )
+  return <Placeholder />
 }
 
 export const ApiTokens = () => {
   useOrgPageChrome({ label: 'API tokens', settings: true })
-  return (
-    <RouteScaffold
-      title="API tokens"
-      description="Manage organization API tokens."
-    />
-  )
+  return <Placeholder />
 }
 
 export const ServiceAccounts = () => {
   useOrgPageChrome({ label: 'Service accounts', settings: true })
-  return (
-    <RouteScaffold
-      title="Service accounts"
-      description="Manage non-human organization access."
-    />
-  )
+  return <Placeholder />
 }
 
 export const OidcFederation = () => {
   useOrgPageChrome({ label: 'OIDC federation', settings: true })
-  return (
-    <RouteScaffold
-      title="OIDC federation"
-      description="Manage federated workload identities."
-    />
-  )
+  return <Placeholder />
 }
 
 export const Onboarding = () => {
   usePageTitle('Onboarding')
   return (
-    <RouteScaffold
-      title="Welcome to Nuon"
-      description="Configure your account and first organization."
-    />
+    <div className="flex flex-col gap-1">
+      <Text as="h1" variant="title">
+        Welcome to Nuon
+      </Text>
+      <Text as="p" variant="caption" color="secondary">
+        Configure your account and first organization.
+      </Text>
+    </div>
   )
 }
 
 export const NotFound = () => {
   useOrgPageChrome({ label: 'Page not found' })
-  return (
-    <RouteScaffold
-      title="Page not found"
-      description="The requested Lite dashboard page does not exist."
-    />
-  )
+  return <Placeholder />
 }

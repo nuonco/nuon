@@ -1,5 +1,4 @@
 import { InstallsTable } from '../components/organisms/InstallsTable'
-import { RouteScaffold } from '../components/organisms/RouteScaffold'
 import { useBreadcrumbs } from '../hooks/use-breadcrumbs'
 import { usePageTitle } from '../hooks/use-page-title'
 import { useOrg } from '../providers/org-provider'
@@ -17,12 +16,5 @@ export const Installs = () => {
     { label: 'Installs' },
   ])
 
-  return (
-    <RouteScaffold
-      title="Installs"
-      description="Manage installations for this organization."
-    >
-      <InstallsTable />
-    </RouteScaffold>
-  )
+  return <InstallsTable />
 }

@@ -1,5 +1,4 @@
 import { AppsTable } from '../components/organisms/AppsTable'
-import { RouteScaffold } from '../components/organisms/RouteScaffold'
 import { useBreadcrumbs } from '../hooks/use-breadcrumbs'
 import { usePageTitle } from '../hooks/use-page-title'
 import { useOrg } from '../providers/org-provider'
@@ -17,12 +16,5 @@ export const Apps = () => {
     { label: 'Apps' },
   ])
 
-  return (
-    <RouteScaffold
-      title="Apps"
-      description="Manage applications for this organization."
-    >
-      <AppsTable />
-    </RouteScaffold>
-  )
+  return <AppsTable />
 }

@@ -74,14 +74,6 @@ const StatusBar = () => (
 
 const Content = ({ rows = 6 }: { rows?: number }) => (
   <div className="flex w-full flex-col gap-4">
-    <div>
-      <Text as="h1" variant="title">
-        Dashboard
-      </Text>
-      <Text as="p" variant="caption" color="secondary">
-        Review applications and installations across your organization.
-      </Text>
-    </div>
     {Array.from({ length: rows }, (_, index) => (
       <Card key={index} className="min-h-28">
         <Text weight="semibold">Workspace section {index + 1}</Text>
