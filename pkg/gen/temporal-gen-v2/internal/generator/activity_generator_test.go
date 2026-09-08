@@ -61,6 +61,53 @@ func TestGenerateLocalActivity(t *testing.T) {
 	assert.NotContains(t, code, "workflow.ExecuteActivity(")
 }
 
+func TestGenerateLocalActivityHonorsAnnotatedTimeouts(t *testing.T) {
+	tests := []struct {
+		name        string
+		opts        *parser.ActivityOptions
+		contains    string
+		notContains string
+	}{
+		{
+			name: "start-to-close applies when schedule-to-close is unset",
+			opts: &parser.ActivityOptions{
+				IsLocal:             true,
+				StartToCloseTimeout: 5 * time.Minute,
+			},
+			contains:    "ScheduleToCloseTimeout: time.Duration(300000000000)",
+			notContains: "10 * time.Second",
+		},
+		{
+			name: "schedule-to-close wins over start-to-close",
+			opts: &parser.ActivityOptions{
+				IsLocal:                true,
+				ScheduleToCloseTimeout: time.Hour,
+				StartToCloseTimeout:    5 * time.Minute,
+			},
+			contains:    "ScheduleToCloseTimeout: time.Duration(3600000000000)",
+			notContains: "time.Duration(300000000000)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			output, err := GenerateLocalActivity(ActivityData{
+				Name:         "CloneRepo",
+				OriginalName: "CloneRepo",
+				InputType:    "CloneRepoRequest",
+				OutputType:   "*CloneRepoResult",
+				Receiver:     "*Activities",
+				Options:      tt.opts,
+			})
+			require.NoError(t, err)
+
+			code := string(output)
+			assert.Contains(t, code, tt.contains)
+			assert.NotContains(t, code, tt.notContains)
+		})
+	}
+}
+
 func TestGenerateLocalActivityWithByField(t *testing.T) {
 	data := ActivityData{
 		Name:         "GetRunner",
