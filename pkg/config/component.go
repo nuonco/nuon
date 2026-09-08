@@ -90,13 +90,13 @@ type Component struct {
 	Checksum   string     `mapstructure:"-" jsonschema:"-" toml:"checksum" nuonhash:"-"`
 }
 
-func (c *Component) parse() error {
+func (c *Component) parse(rootDir string) error {
 	if c == nil {
 		return nil
 	}
 
 	if c.HelmChart != nil {
-		if err := c.HelmChart.Parse(); err != nil {
+		if err := c.HelmChart.parse(rootDir); err != nil {
 			return err
 		}
 	}
