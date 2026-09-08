@@ -1,6 +1,9 @@
 import type { RouteObject } from 'react-router'
 import { FocusLayout } from './pages/FocusLayout'
 import { Apps } from './pages/Apps'
+import { InstallActivity } from './pages/InstallActivity'
+import { InstallLayout } from './pages/InstallLayout'
+import { InstallOverview } from './pages/InstallOverview'
 import { Installs } from './pages/Installs'
 import { OrgLayout } from './pages/OrgLayout'
 import { RootLayout } from './pages/RootLayout'
@@ -42,6 +45,23 @@ export const liteRoutes: RouteObject[] = [
           { id: 'dashboard', index: true, element: <Dashboard /> },
           { id: 'apps', path: 'apps', element: <Apps /> },
           { id: 'installs', path: 'installs', element: <Installs /> },
+          {
+            id: 'install-layout',
+            path: 'installs/:installId',
+            element: <InstallLayout />,
+            children: [
+              {
+                id: 'install-overview',
+                index: true,
+                element: <InstallOverview />,
+              },
+              {
+                id: 'install-activity',
+                path: 'activity',
+                element: <InstallActivity />,
+              },
+            ],
+          },
           { id: 'teams', path: 'teams', element: <Teams /> },
           {
             id: 'settings-layout',

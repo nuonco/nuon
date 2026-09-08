@@ -2,6 +2,7 @@ import { afterEach, expect, test } from 'bun:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import { matchRoutes, MemoryRouter } from 'react-router'
 import { SubNav } from './components/molecules/SubNav'
+import { installNavigation } from './pages/InstallLayout'
 import { orgNavigation } from './pages/OrgLayout'
 import { settingsNavigation } from './pages/SettingsLayout'
 import { liteRoutes } from './routes'
@@ -36,6 +37,18 @@ test('matches focused and organization-scoped top-level routes', () => {
     'root-layout',
     'org-layout',
     'teams',
+  ])
+  expect(matchedIds('/org-123/installs/inst-1')).toEqual([
+    'root-layout',
+    'org-layout',
+    'install-layout',
+    'install-overview',
+  ])
+  expect(matchedIds('/org-123/installs/inst-1/activity')).toEqual([
+    'root-layout',
+    'org-layout',
+    'install-layout',
+    'install-activity',
   ])
 })
 
@@ -79,6 +92,24 @@ test('builds every shell destination from the active organization', () => {
   expect(destinations.find((item) => item.label === 'Settings')?.href).toBe(
     '/org-123/settings'
   )
+})
+
+test('marks the active install section', () => {
+  render(
+    <MemoryRouter initialEntries={['/org-123/installs/inst-1/activity']}>
+      <SubNav
+        items={installNavigation('org-123', 'inst-1')}
+        label="Install sections"
+      />
+    </MemoryRouter>
+  )
+
+  expect(
+    screen.getByRole('link', { name: 'Activity' }).getAttribute('aria-current')
+  ).toBe('page')
+  expect(
+    screen.getByRole('link', { name: 'Overview' }).hasAttribute('aria-current')
+  ).toBe(false)
 })
 
 test('marks the active settings section', () => {
