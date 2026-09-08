@@ -2,6 +2,7 @@ package parse
 
 import (
 	"bytes"
+	"path/filepath"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
@@ -63,7 +64,11 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 
 	// go from map[string]interface{} => config.AppConfig
 	var cfg config.AppConfig
-	mapDecCfg := config.DecoderConfig()
+	rootDir := ""
+	if parseCfg.Filename != "" {
+		rootDir = filepath.Dir(parseCfg.Filename)
+	}
+	mapDecCfg := config.DecoderConfig(config.WithRootDir(rootDir))
 	mapDecCfg.Result = &cfg
 	mapDec, err := mapstructure.NewDecoder(mapDecCfg)
 	if err != nil {
@@ -79,7 +84,7 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 		}
 	}
 
-	err = cfg.Parse()
+	err = cfg.Parse(config.WithRootDir(rootDir))
 	if err != nil {
 		return nil, ParseErr{
 			Filename:    parseCfg.Filename,

@@ -139,15 +139,16 @@ type parseFn struct {
 	fn   func() error
 }
 
-func (a *AppConfig) Parse() error {
+func (a *AppConfig) Parse(opts ...ParseOption) error {
+	cfg := parseOptions(opts...)
 	parseFns := []parseFn{
 		{
 			"sandbox",
-			a.Sandbox.parse,
+			func() error { return a.Sandbox.parse(cfg.RootDir) },
 		},
 		{
 			"runner",
-			a.Runner.parse,
+			func() error { return a.Runner.parse(cfg.RootDir) },
 		},
 	}
 
@@ -160,7 +161,7 @@ func (a *AppConfig) Parse() error {
 	if a.Inputs != nil {
 		parseFns = append(parseFns, parseFn{
 			"inputs",
-			a.Inputs.parse,
+			func() error { return a.Inputs.parse(cfg.RootDir) },
 		})
 	}
 	if a.Permissions != nil {
@@ -204,7 +205,7 @@ func (a *AppConfig) Parse() error {
 	for idx, comp := range a.Components {
 		parseFns = append(parseFns, parseFn{
 			fmt.Sprintf("components.%d", idx),
-			comp.parse,
+			func() error { return comp.parse(cfg.RootDir) },
 		})
 	}
 
