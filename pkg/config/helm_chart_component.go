@@ -18,9 +18,9 @@ func (h HelmValue) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type HelmValuesFile struct {
-	Source   string `toml:"source" mapstructure:"source,omitempty" features:"get,template"`
+	Source   string `toml:"source" mapstructure:"source,omitempty" features:"template"`
 	Contents string `toml:"contents" mapstructure:"contents,omitempty" features:"get,template"`
-	Path     string `toml:"path" mapstructure:"path,omitempty" features:"get"`
+	Path     string `toml:"path" mapstructure:"path,omitempty"`
 }
 
 func (h HelmValuesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -141,6 +141,10 @@ func (h HelmRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 func (h *HelmChartComponentConfig) Parse() error {
+	return h.parse("")
+}
+
+func (h *HelmChartComponentConfig) parse(rootDir string) error {
 	if len(h.Values) > 0 {
 		return ErrConfig{
 			Description: "the value array is deprecated, please use values instead.",
@@ -158,7 +162,7 @@ func (h *HelmChartComponentConfig) Parse() error {
 			continue
 		}
 
-		byts, err := source.ReadSource(sourceToUse)
+		byts, err := source.ReadSourceFrom(sourceToUse, rootDir)
 		if err != nil {
 			return ErrConfig{
 				Description: "error loading values file " + sourceToUse,
