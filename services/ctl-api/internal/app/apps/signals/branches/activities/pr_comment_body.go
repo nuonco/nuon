@@ -163,7 +163,7 @@ func BuildPRCommentBody(p *PRCommentParams) string {
 	if p.Status != PRCommentStatusSkipped {
 		b.WriteString("\n### Debug with MCP\n\n")
 		b.WriteString("Copy this prompt into an [MCP-enabled assistant](https://docs.nuon.co/guides/agents/overview):\n\n")
-		b.WriteString(fmt.Sprintf("```text\nFetch the overview of app branch run %s and diagnose any failures.\n```\n", p.RunID))
+		b.WriteString(fmt.Sprintf("```text\n%s\n```\n", mcpDebugPrompt(p)))
 	}
 
 	return b.String()
@@ -241,6 +241,22 @@ func phaseLabel(s PRCommentPhaseStatus, kind string) string {
 		}
 		return "\u23f3 In Progress"
 	}
+}
+
+func mcpDebugPrompt(p *PRCommentParams) string {
+	var b strings.Builder
+	b.WriteString("Fetch the overview of app branch run ")
+	b.WriteString(p.RunID)
+	if p.AppName != "" {
+		b.WriteString(" for app ")
+		b.WriteString(p.AppName)
+	}
+	if p.BranchName != "" {
+		b.WriteString(" branch ")
+		b.WriteString(p.BranchName)
+	}
+	b.WriteString(" and diagnose any failures.")
+	return b.String()
 }
 
 func previewTitleName(p *PRCommentParams) string {

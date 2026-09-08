@@ -134,7 +134,7 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 		Version: "1.0.0",
 	}, &mcp.ServerOptions{
 		SchemaCache:  s.schemaCache,
-		Instructions: fmt.Sprintf("Nuon control plane MCP server. Authenticated as account %s in org %q. If no org is selected, call list_orgs then select_org.", accountID, orgID),
+		Instructions: fmt.Sprintf("Nuon control plane MCP server. Authenticated as account %s in org %q. If no org is selected, call list_orgs then select_org. %s", accountID, orgID, api.MCPTimeInstructions),
 	})
 
 	for _, svc := range s.services {
