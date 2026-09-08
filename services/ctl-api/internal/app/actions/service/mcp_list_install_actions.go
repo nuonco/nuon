@@ -45,7 +45,7 @@ func (s *service) mcpListInstallActions(ctx context.Context, _ *mcp.CallToolRequ
 			ID:               a.ID,
 			ActionWorkflowID: a.ActionWorkflowID,
 			Name:             a.ActionWorkflow.Name,
-			CreatedAt:        a.CreatedAt.String(),
+			CreatedAt:        apiPkg.MCPTime(a.CreatedAt),
 		})
 	}
 

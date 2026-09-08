@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -42,8 +43,6 @@ type CreateRunbookRunStepSelection struct {
 // @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/installs/{install_id}/runbooks/{runbook_id}/runs [post]
 func (s *service) CreateRunbookRun(ctx *gin.Context) {
-	installID := ctx.Param("install_id")
-	runbookIDOrName := ctx.Param("runbook_id")
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
@@ -62,23 +61,42 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		return
 	}
 
-	install, err := s.findInstall(ctx, org.ID, installID)
+	triggered, err := s.createRunbookRun(ctx, org.ID, account.ID, ctx.Param("install_id"), ctx.Param("runbook_id"), req)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
+	triggered.Run.InstallWorkflow = triggered.Workflow
+	ctx.JSON(http.StatusCreated, triggered.Run)
+}
 
-	// Find the install runbook
+func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, installRef, runbookRef string, req CreateRunbookRunRequest) (*runbookshelpers.TriggerRunbookRunResponse, error) {
+	var install app.Install
+	err := s.db.WithContext(ctx).
+		Select("id", "name", "app_id", "app_config_id").
+		Where(app.Install{OrgID: orgID}).
+		Where(s.db.Where(app.Install{ID: installRef}).Or(app.Install{Name: installRef})).
+		First(&install).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install: %w", err)
+	}
+
+	var runbook app.Runbook
+	err = s.db.WithContext(ctx).
+		Where(app.Runbook{OrgID: orgID, AppID: install.AppID}).
+		Where(s.db.Where(app.Runbook{ID: runbookRef}).Or(app.Runbook{Name: runbookRef})).
+		First(&runbook).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to get runbook: %w", err)
+	}
+
 	var installRunbook app.InstallRunbook
-	res := s.db.WithContext(ctx).
+	err = s.db.WithContext(ctx).
 		Preload("Runbook").
-		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
-		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
-		Where("install_runbooks.runbook_id = ? OR runbooks.name = ?", runbookIDOrName, runbookIDOrName).
-		First(&installRunbook)
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to get install runbook: %w", res.Error))
-		return
+		Where(app.InstallRunbook{OrgID: orgID, InstallID: install.ID, RunbookID: runbook.ID}).
+		First(&installRunbook).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install runbook: %w", err)
 	}
 
 	var runbookConfig app.RunbookConfig
@@ -89,35 +107,31 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		Preload("Inputs", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
-		Where(app.RunbookConfig{RunbookID: installRunbook.RunbookID, OrgID: org.ID})
+		Where(app.RunbookConfig{RunbookID: installRunbook.RunbookID, OrgID: orgID})
 
 	if install.AppConfigID != "" {
-		// No fallback to the newest config: it would run steps the caller never saw,
-		// and without the Inputs preload it silently skipped required inputs.
+		// Never fall back to the newest config: it could run steps the install
+		// was not configured with.
 		if err := configQuery.Where(app.RunbookConfig{AppConfigID: install.AppConfigID}).First(&runbookConfig).Error; err != nil {
-			ctx.Error(stderr.ErrUser{
+			return nil, stderr.ErrUser{
 				Err:         fmt.Errorf("runbook is not in the install's app config version: %w", err),
 				Description: "this runbook is not in the install's app config version",
-			})
-			return
+			}
 		}
 	} else {
 		if err := configQuery.Order("created_at DESC").First(&runbookConfig).Error; err != nil {
-			ctx.Error(fmt.Errorf("runbook has no configurations"))
-			return
+			return nil, fmt.Errorf("runbook has no configurations")
 		}
 	}
 
 	inputsWithDefaults := runbookshelpers.MergeRunbookInputDefaults(&runbookConfig, req.Inputs)
 	if err := s.helpers.ValidateRunbookInputs(&runbookConfig, inputsWithDefaults); err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
 
 	stepSelections, err := buildStepSelections(&runbookConfig, req.Steps)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
 
 	inputs := make(map[string]string, len(inputsWithDefaults))
@@ -126,13 +140,11 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 			inputs[name] = *value
 		}
 	}
-	triggered, err := s.helpers.TriggerRunbookRun(ctx, runbookshelpers.TriggerRunbookRunRequest{InstallRunbookID: installRunbook.ID, RunbookConfigID: runbookConfig.ID, TriggeredByID: account.ID, Inputs: inputs, StepSelections: stepSelections, Role: req.Role})
+	triggered, err := s.helpers.TriggerRunbookRun(ctx, runbookshelpers.TriggerRunbookRunRequest{InstallRunbookID: installRunbook.ID, RunbookConfigID: runbookConfig.ID, TriggeredByID: accountID, Inputs: inputs, StepSelections: stepSelections, Role: req.Role})
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
-	triggered.Run.InstallWorkflow = triggered.Workflow
-	ctx.JSON(http.StatusCreated, triggered.Run)
+	return triggered, nil
 }
 
 // buildStepSelections validates the supplied step selections against the config's steps

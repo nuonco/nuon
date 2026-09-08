@@ -219,7 +219,7 @@ func (s *service) appBranchRunOverview(ctx context.Context, run *app.AppBranchRu
 		BaseBranch:       run.BaseBranch,
 		ErrorMessage:     run.ErrorMessage,
 		NoConfigChanges:  run.NoConfigChanges,
-		CreatedAt:        run.CreatedAt.String(),
+		CreatedAt:        apiPkg.MCPTime(run.CreatedAt),
 	}
 	if run.Preview != nil {
 		out.PreviewInstallID = run.Preview.InstallID
