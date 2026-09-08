@@ -212,5 +212,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "134-backfill-app-sandbox-build-app-branch-run",
 			Fn:   m.Migration133BackfillAppSandboxBuildAppBranchRun,
 		},
+		{
+			Name: "135-queue-emitter-enabled",
+			Fn:   m.Migration131QueueEmitterEnabled,
+		},
 	}
 }

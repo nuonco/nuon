@@ -37,6 +37,7 @@ func TestCronTickerEmitsWhenSerializedEmitterOmitsSignalTemplate(t *testing.T) {
 	emitter := &app.QueueEmitter{
 		ID:         "emitter-id",
 		QueueID:    "queue-id",
+		Enabled:    true,
 		SignalType: example.ExampleSignalType,
 		SignalTemplate: signaldb.SignalData{
 			Signal: &example.ExampleSignal{},
@@ -85,6 +86,7 @@ func TestCronTickerRepairsEmptyContextFromEmitter(t *testing.T) {
 		QueueID:     "queue-id",
 		OrgID:       "orgacme",
 		CreatedByID: "accacme",
+		Enabled:     true,
 		SignalType:  example.ExampleSignalType,
 		SignalTemplate: signaldb.SignalData{
 			Signal: &example.ExampleSignal{},
@@ -122,4 +124,47 @@ func TestCronTickerRepairsEmptyContextFromEmitter(t *testing.T) {
 	require.NoError(t, env.GetWorkflowError())
 	require.Equal(t, "accacme", gotAccount)
 	require.Equal(t, "orgacme", gotOrg)
+}
+
+// The parent only notices a disable on its next alive check, up to ten minutes
+// later. Without this the ticker keeps emitting for an install whose runner is
+// gone, which is the whole thing the disable exists to stop.
+func TestCronTickerTerminatesWhenEmitterIsDisabled(t *testing.T) {
+	var suite testsuite.WorkflowTestSuite
+	env := suite.NewTestWorkflowEnvironment()
+	env.SetDataConverter(converter.NewCompositeDataConverter(
+		converter.NewNilPayloadConverter(),
+		converter.NewByteSlicePayloadConverter(),
+		pkgdataconverter.NewJSONConverter(),
+	))
+
+	emitter := &app.QueueEmitter{
+		ID:             "emitter-id",
+		QueueID:        "queue-id",
+		Enabled:        false,
+		DisabledReason: "no healthy runner",
+		SignalType:     example.ExampleSignalType,
+		SignalTemplate: signaldb.SignalData{
+			Signal: &example.ExampleSignal{},
+		},
+	}
+	env.OnActivity((*activities.Activities).GetEmitter, mock.Anything, mock.Anything, mock.Anything).
+		Return(emitter, nil).Once()
+	env.OnActivity((*activities.Activities).TerminateWorkflow, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).Once()
+
+	v := validator.New()
+	mw, err := basemetrics.New(v, basemetrics.WithDisable(true))
+	require.NoError(t, err)
+	tmw, err := tmetrics.New(v, tmetrics.WithMetricsWriter(mw))
+	require.NoError(t, err)
+
+	env.ExecuteWorkflow((&Workflows{cfg: &internal.Config{}, mw: tmw}).CronTicker, CronTickerWorkflowRequest{
+		QueueID:   emitter.QueueID,
+		EmitterID: emitter.ID,
+	})
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
 }

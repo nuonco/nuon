@@ -13,6 +13,7 @@ import (
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	basemetrics "github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
@@ -44,7 +45,7 @@ func TestFirstFailedHealthCheckMarksRunnerOfflineWithoutAlerting(t *testing.T) {
 		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
+		return sig.handleRunnerOffline(ctx, testLogger(), nil, runner, "no active install process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
@@ -65,7 +66,7 @@ func TestOfflineRunnerDoesNotAlertBeforeDelay(t *testing.T) {
 	sig := &Signal{RunnerID: runner.ID}
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
+		return sig.handleRunnerOffline(ctx, testLogger(), nil, runner, "no active install process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
@@ -99,7 +100,7 @@ func TestOfflineRunnerEnqueuesIdempotentAlertAfterDelay(t *testing.T) {
 		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.handleRunnerOffline(ctx, tmw, runner, "no active build process")
+		return sig.handleRunnerOffline(ctx, testLogger(), tmw, runner, "no active build process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
@@ -129,7 +130,7 @@ func TestOfflineRunnerReusesAlertIdempotencyKey(t *testing.T) {
 	})).Return(&sharedactivities.EnqueueSignalToOwnerResponse{Deduplicated: true}, nil).Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
+		return sig.handleRunnerOffline(ctx, testLogger(), nil, runner, "no active install process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
@@ -153,7 +154,7 @@ func TestOfflineRunnerWithoutTimestampArmsAlert(t *testing.T) {
 	})).Return(nil).Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
+		return sig.handleRunnerOffline(ctx, testLogger(), nil, runner, "no active install process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
@@ -177,7 +178,7 @@ func TestActiveRunnerWithOfflineTimestampDoesNotResetDelay(t *testing.T) {
 		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
+		return sig.handleRunnerOffline(ctx, testLogger(), nil, runner, "no active install process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
@@ -202,7 +203,7 @@ func TestOfflineCheckRepairsStaleStatusV2(t *testing.T) {
 		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
+		return sig.handleRunnerOffline(ctx, testLogger(), nil, runner, "no active install process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
@@ -223,13 +224,65 @@ func TestHealthyCheckClearsOfflineMetadataAndRestoresActive(t *testing.T) {
 	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2Metadata, mock.MatchedBy(func(req statusactivities.UpdateRunnerStatusV2MetadataRequest) bool {
 		return len(req.Metadata) == 1 && req.Metadata[app.RunnerOfflineTSMetadataKey] == nil
 	})).Run(func(mock.Arguments) { calls = append(calls, "clear") }).Return(nil).Once()
+	env.OnActivity(new(runneractivities.Activities).GateInstallCronEmitters, mock.Anything, mock.MatchedBy(func(req runneractivities.GateInstallCronEmittersRequest) bool {
+		return req.InstallID == runner.RunnerGroup.OwnerID && !req.Disable
+	})).Run(func(mock.Arguments) { calls = append(calls, "gate-crons") }).
+		Return(&runneractivities.GateInstallCronEmittersResponse{}, nil).
+		Once()
 	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
 		Run(func(mock.Arguments) { calls = append(calls, "status") }).
 		Return(nil).
 		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.handleRunnerActive(ctx, runner)
+		return sig.handleRunnerActive(ctx, testLogger(), runner)
+	})
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	require.Equal(t, []string{"clear", "gate-crons", "status", "status-v2"}, calls)
+	env.AssertExpectations(t)
+}
+
+func TestOfflineInstallRunnerDisablesCronsAfterDelay(t *testing.T) {
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env.SetDataConverter(signalDataConverter())
+	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
+	env.SetStartTime(now)
+
+	runner := runnerWithOfflineMetadata(app.RunnerStatusOffline, now.Add(-runnerUnhealthyAlertDelay))
+	sig := &Signal{RunnerID: runner.ID}
+
+	env.OnActivity(new(runneractivities.Activities).GateInstallCronEmitters, mock.Anything, mock.MatchedBy(func(req runneractivities.GateInstallCronEmittersRequest) bool {
+		return req.InstallID == runner.RunnerGroup.OwnerID && req.Disable
+	})).Return(&runneractivities.GateInstallCronEmittersResponse{Disabled: 2}, nil).Once()
+	env.OnActivity(new(sharedactivities.Activities).EnqueueSignalToOwner, mock.Anything, mock.Anything).
+		Return(&sharedactivities.EnqueueSignalToOwnerResponse{Deduplicated: true}, nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.handleRunnerOffline(ctx, testLogger(), nil, runner, "no active install process")
+	})
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
+}
+
+func TestHealthyRunnerWithoutRecoveryLeavesCronsAlone(t *testing.T) {
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+
+	runner := testRunner(app.RunnerStatusActive)
+	sig := &Signal{RunnerID: runner.ID}
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.handleRunnerActive(ctx, testLogger(), runner)
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
@@ -355,6 +408,10 @@ func runnerWithOfflineMetadata(status app.RunnerStatus, offlineAt time.Time) *ap
 		app.RunnerOfflineTSMetadataKey: float64(offlineAt.Unix()),
 	}
 	return runner
+}
+
+func testLogger() *zap.Logger {
+	return zap.NewNop()
 }
 
 func testTemporalMetricsWriter(t *testing.T) tmetrics.Writer {

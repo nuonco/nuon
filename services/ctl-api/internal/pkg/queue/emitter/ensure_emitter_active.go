@@ -23,6 +23,17 @@ func (e *emitterWorkflow) ensureEmitterActive(ctx workflow.Context) (*app.QueueE
 		return nil, err
 	}
 
+	// A disabled emitter is torn down like a deleted one, so the cron stops
+	// costing workflow executions until something re-enables it.
+	if !emitter.Enabled {
+		l.Info("emitter disabled, stopping workflow",
+			zap.String("emitter-id", e.emitterID),
+			zap.String("disabled-reason", emitter.DisabledReason),
+		)
+		e.stopped = true
+		return nil, nil
+	}
+
 	// Set the queue ID from the database record. This is the source of truth
 	// and fixes a race where the workflow request's QueueID might be empty.
 	e.queueID = emitter.QueueID
