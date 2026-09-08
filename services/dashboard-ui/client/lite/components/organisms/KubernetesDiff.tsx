@@ -21,7 +21,7 @@ export interface IKubernetesDiff
 
 export const KubernetesDiff = ({
   plan,
-  defaultOpen = true,
+  defaultOpen,
   className,
   ...props
 }: IKubernetesDiff) => {

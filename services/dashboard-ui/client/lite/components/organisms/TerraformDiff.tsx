@@ -26,7 +26,7 @@ const TerraformDiffGroup = ({
   defaultOpen,
 }: {
   group: IPlanDiffGroup
-  defaultOpen: boolean
+  defaultOpen?: boolean
 }) => {
   const filter = usePlanDiffFilter(
     group.sections,
@@ -104,7 +104,7 @@ const TerraformDiffGroup = ({
 
 export const TerraformDiff = ({
   plan,
-  defaultOpen = true,
+  defaultOpen,
   className,
   ...props
 }: ITerraformDiff) => {

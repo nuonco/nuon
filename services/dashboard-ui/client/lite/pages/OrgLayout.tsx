@@ -2,11 +2,10 @@ import { Outlet } from 'react-router'
 import { useConfig } from '@/hooks/use-config'
 import { Text } from '../components/atoms/Text'
 import type { INavItem } from '../components/molecules/NavLink'
-import { ThemeSwitcher } from '../components/molecules/ThemeSwitcher'
 import { Breadcrumb } from '../components/molecules/Breadcrumb'
 import { OrgProfile } from '../components/molecules/OrgProfile'
 import { OrgSwitcherMenu } from '../components/organisms/OrgSwitcherMenu'
-import { UserDropdown } from '../components/organisms/UserDropdown'
+import { UserDropdownContainer as UserDropdown } from '../components/organisms/UserDropdownContainer'
 import { SurfaceHost } from '../components/organisms/surfaces'
 import { DashboardShell } from '../components/templates/DashboardShell'
 import { useBreadcrumbItems } from '../hooks/use-breadcrumbs'
@@ -76,7 +75,6 @@ const OrgShell = () => {
       secondaryNav={navigation.secondary}
       homeHref={`/${orgId ?? ''}`}
       headerLeading={<Breadcrumb items={breadcrumbs} />}
-      headerActions={<ThemeSwitcher />}
       userMenu={
         <UserDropdown
           user={user}

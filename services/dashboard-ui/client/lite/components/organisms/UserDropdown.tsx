@@ -4,12 +4,7 @@ import { cn } from '@/utils/classnames'
 import { Button } from '../atoms/Button'
 import { Dropdown, type IDropdown } from '../atoms/Dropdown'
 import { Icon } from '../atoms/Icon'
-import {
-  Menu,
-  MenuItem,
-  MenuSeparator,
-  MenuSubmenu,
-} from '../molecules/Menu'
+import { Menu, MenuItem, MenuSeparator, MenuSubmenu } from '../molecules/Menu'
 import { OrgProfile } from '../molecules/OrgProfile'
 import { UserProfile, type IUserProfileData } from '../molecules/UserProfile'
 
@@ -22,6 +17,7 @@ export interface IUserDropdown extends Omit<IDropdown, 'children' | 'trigger'> {
   orgSwitcher?: ReactNode
   org?: TOrg | null
   orgLoading?: boolean
+  onOpenPreferences?: () => void
 }
 
 export const UserDropdown = ({
@@ -33,6 +29,7 @@ export const UserDropdown = ({
   orgSwitcher,
   org,
   orgLoading = false,
+  onOpenPreferences,
   align = 'end',
   matchTriggerWidth,
   stretch = false,
@@ -69,6 +66,17 @@ export const UserDropdown = ({
           >
             {orgSwitcher}
           </MenuSubmenu>
+          <MenuSeparator />
+        </>
+      ) : null}
+      {onOpenPreferences ? (
+        <>
+          <MenuItem
+            icon={<Icon variant="SlidersHorizontalIcon" />}
+            onSelect={onOpenPreferences}
+          >
+            Preferences
+          </MenuItem>
           <MenuSeparator />
         </>
       ) : null}

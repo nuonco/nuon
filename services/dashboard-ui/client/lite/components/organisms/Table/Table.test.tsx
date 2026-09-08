@@ -1,7 +1,10 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { TABLE_VIEW_STORAGE_KEY } from '../../../hooks/use-table-view'
+import {
+  USER_PREFERENCES_STORAGE_KEY,
+  UserPreferencesProvider,
+} from '../../../providers/user-preferences-provider'
 import { Table } from './Table'
 
 type TRow = {
@@ -64,18 +67,21 @@ const Example = ({
   toolbar?: React.ReactNode
   renderCard?: ({ row }: { row: { original: TRow } }) => React.ReactNode
 }) => (
-  <Table
-    data={data}
-    columns={COLUMNS}
-    getRowId={(row) => row.id}
-    loading={loading}
-    toolbar={toolbar}
-    emptyState="No installs yet"
-    renderCard={renderCard}
-  />
+  <UserPreferencesProvider>
+    <Table
+      data={data}
+      columns={COLUMNS}
+      getRowId={(row) => row.id}
+      loading={loading}
+      toolbar={toolbar}
+      emptyState="No installs yet"
+      renderCard={renderCard}
+    />
+  </UserPreferencesProvider>
 )
 
 beforeEach(() => {
+  window.localStorage.clear()
   window.sessionStorage.clear()
   resizeCallback = undefined
   Object.defineProperty(globalThis, 'ResizeObserver', {
@@ -87,6 +93,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  window.localStorage.clear()
+  window.sessionStorage.clear()
   Object.defineProperty(globalThis, 'ResizeObserver', {
     value: originalResizeObserver,
     writable: true,
@@ -132,9 +140,11 @@ describe('Table', () => {
     expect(toolbarRow?.contains(screen.getByLabelText('Search installs'))).toBe(
       true
     )
-    expect(toolbarRow?.contains(screen.getByRole('group', { name: 'Collection view' }))).toBe(
-      true
-    )
+    expect(
+      toolbarRow?.contains(
+        screen.getByRole('group', { name: 'Collection view' })
+      )
+    ).toBe(true)
 
     setWidth(500)
     expect(screen.getByLabelText('Search installs')).toBeTruthy()
@@ -169,11 +179,15 @@ describe('Table', () => {
     ).toBe('true')
   })
 
-  test('shares the preferred view through session storage', () => {
+  test('shares the preferred view through local storage', () => {
     const first = render(<Example />)
     setWidth(800)
     fireEvent.click(screen.getByRole('button', { name: 'Card view' }))
-    expect(window.sessionStorage.getItem(TABLE_VIEW_STORAGE_KEY)).toBe('cards')
+    expect(
+      JSON.parse(
+        window.localStorage.getItem(USER_PREFERENCES_STORAGE_KEY) ?? ''
+      ).preferences.collectionView
+    ).toBe('cards')
     first.unmount()
 
     render(<Example />)
@@ -183,10 +197,9 @@ describe('Table', () => {
     expect(screen.getByText('Production card')).toBeTruthy()
   })
 
-  test('keeps view switching usable when session storage is blocked', () => {
-    window.sessionStorage.setItem(TABLE_VIEW_STORAGE_KEY, 'table')
-    const descriptor = Object.getOwnPropertyDescriptor(window, 'sessionStorage')
-    Object.defineProperty(window, 'sessionStorage', {
+  test('keeps view switching usable when local storage is blocked', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(window, 'localStorage')
+    Object.defineProperty(window, 'localStorage', {
       configurable: true,
       get: () => {
         throw new Error('blocked')
@@ -200,7 +213,7 @@ describe('Table', () => {
       expect(screen.getByText('Production card')).toBeTruthy()
     } finally {
       if (descriptor) {
-        Object.defineProperty(window, 'sessionStorage', descriptor)
+        Object.defineProperty(window, 'localStorage', descriptor)
       }
     }
   })

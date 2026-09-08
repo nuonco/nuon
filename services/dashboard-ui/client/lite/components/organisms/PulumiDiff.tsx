@@ -41,7 +41,7 @@ const Diagnostic = ({ diagnostic }: { diagnostic: IPlanDiffDiagnostic }) => (
 
 export const PulumiDiff = ({
   plan,
-  defaultOpen = true,
+  defaultOpen,
   className,
   ...props
 }: IPulumiDiff) => {

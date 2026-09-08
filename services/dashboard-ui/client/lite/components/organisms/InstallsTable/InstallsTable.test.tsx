@@ -2,11 +2,8 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import type { TInstall } from '@/types/ctl-api.types'
-import {
-  columnsFor,
-  InstallsTable,
-  type IInstallFilter,
-} from './InstallsTable'
+import { UserPreferencesProvider } from '../../../providers/user-preferences-provider'
+import { columnsFor, InstallsTable, type IInstallFilter } from './InstallsTable'
 
 const INSTALL: TInstall = {
   id: 'inst_production',
@@ -37,27 +34,28 @@ const filter = (overrides: Partial<IInstallFilter> = {}): IInstallFilter => ({
 const renderTable = (
   overrides: Partial<React.ComponentProps<typeof InstallsTable>> = {}
 ) => {
-  window.sessionStorage.setItem('nuon-lite-table-view', 'table')
   render(
     <MemoryRouter>
-      <InstallsTable
-        installs={[INSTALL]}
-        orgId="org_example"
-        search=""
-        onSearchChange={() => {}}
-        offset={0}
-        pageSize={20}
-        hasNext={false}
-        onOffsetChange={() => {}}
-        {...overrides}
-      />
+      <UserPreferencesProvider>
+        <InstallsTable
+          installs={[INSTALL]}
+          orgId="org_example"
+          search=""
+          onSearchChange={() => {}}
+          offset={0}
+          pageSize={20}
+          hasNext={false}
+          onOffsetChange={() => {}}
+          {...overrides}
+        />
+      </UserPreferencesProvider>
     </MemoryRouter>
   )
 }
 
 afterEach(() => {
   cleanup()
-  window.sessionStorage.clear()
+  window.localStorage.clear()
 })
 
 const facetTooltip = (label: string) => {

@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { cn } from '@/utils/classnames'
 import { useDisclosureGroup } from '../../hooks/use-disclosure'
+import { useUserPreferences } from '../../providers/user-preferences-provider'
 import { Button } from '../atoms/Button'
 import { Icon } from '../atoms/Icon'
 import { DisclosureGroup, ExpandAllButton } from '../molecules/DisclosureGroup'
@@ -66,12 +67,23 @@ const DiffControls = ({ view, setView, divider = false }: IDiffControls) => {
 export const DiffSections = ({
   children,
   toolbar,
-  defaultOpen = false,
-  defaultView = 'unified',
+  defaultOpen,
+  defaultView,
   className,
   ...props
 }: IDiffSections) => {
-  const [view, setView] = useState<TDiffView>(defaultView)
+  const { preferences, setPreference } = useUserPreferences()
+  const [localView, setLocalView] = useState<TDiffView>(
+    defaultView ?? 'unified'
+  )
+  const view = defaultView === undefined ? preferences.diffView : localView
+  const setView = (next: TDiffView) => {
+    if (defaultView === undefined) {
+      setPreference('diffView', next)
+    } else {
+      setLocalView(next)
+    }
+  }
   const sections = Children.map(children, (child) =>
     isValidElement<IDiffSection>(child) && child.type === DiffSection
       ? cloneElement(child, { view })
@@ -80,7 +92,7 @@ export const DiffSections = ({
 
   return (
     <DisclosureGroup
-      defaultOpen={defaultOpen}
+      defaultOpen={defaultOpen ?? preferences.planSectionsOpen}
       className={cn('gap-1', className)}
       {...props}
     >

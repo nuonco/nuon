@@ -7,6 +7,7 @@ import {
 } from '@pierre/diffs/react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
+import { useUserPreferences } from '../../providers/user-preferences-provider'
 import {
   MATCH_NAV_TOOLTIP,
   diffMatches,
@@ -71,17 +72,19 @@ export const Diff = ({
   language,
   filename,
   view = 'unified',
-  defaultWrap = false,
+  defaultWrap,
   lineNumbers = true,
   search = true,
   maxHeight = 640,
   className,
 }: IDiff) => {
+  const { preferences, setPreference } = useUserPreferences()
   const id = useId()
   const viewer = useRef<CodeViewHandle<undefined>>(null)
   const [query, setQuery] = useState('')
   const [matchIndex, setMatchIndex] = useState(0)
-  const [wrap, setWrap] = useState(defaultWrap)
+  const [localWrap, setLocalWrap] = useState(defaultWrap ?? false)
+  const wrap = defaultWrap === undefined ? preferences.diffWrap : localWrap
   const [scrolled, setScrolled] = useState(false)
 
   const lang = resolveLanguage(language)
@@ -171,6 +174,15 @@ export const Diff = ({
     })
   }
 
+  const toggleWrap = () => {
+    const next = !wrap
+    if (defaultWrap === undefined) {
+      setPreference('diffWrap', next)
+    } else {
+      setLocalWrap(next)
+    }
+  }
+
   return (
     <div
       data-diff-view={view}
@@ -257,7 +269,7 @@ export const Diff = ({
             aria-pressed={wrap}
             aria-label={wrap ? 'Stop wrapping lines' : 'Wrap lines'}
             tooltip={wrap ? 'Stop wrapping lines' : 'Wrap lines'}
-            onClick={() => setWrap((current) => !current)}
+            onClick={toggleWrap}
           >
             <Icon
               variant={wrap ? 'ArrowElbowDownLeftIcon' : 'ArrowsHorizontalIcon'}

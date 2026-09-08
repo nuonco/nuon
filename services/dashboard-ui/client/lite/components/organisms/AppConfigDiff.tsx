@@ -26,7 +26,7 @@ export const AppConfigDiff = ({
   sections,
   summary,
   isLoading = false,
-  defaultSectionsOpen = true,
+  defaultSectionsOpen,
   className,
   ...props
 }: IAppConfigDiff) => {

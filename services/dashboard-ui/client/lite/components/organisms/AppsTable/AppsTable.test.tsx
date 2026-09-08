@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import type { TApp } from '@/types/ctl-api.types'
+import { UserPreferencesProvider } from '../../../providers/user-preferences-provider'
 import { AppsTable } from './AppsTable'
 
 const APP: TApp = {
@@ -16,28 +17,29 @@ const APP: TApp = {
 const renderTable = (
   overrides: Partial<React.ComponentProps<typeof AppsTable>> = {}
 ) => {
-  window.sessionStorage.setItem('nuon-lite-table-view', 'table')
   const onOffsetChange = () => {}
   render(
     <MemoryRouter>
-      <AppsTable
-        apps={[APP]}
-        orgId="org_example"
-        search=""
-        onSearchChange={() => {}}
-        offset={0}
-        pageSize={20}
-        hasNext={false}
-        onOffsetChange={onOffsetChange}
-        {...overrides}
-      />
+      <UserPreferencesProvider>
+        <AppsTable
+          apps={[APP]}
+          orgId="org_example"
+          search=""
+          onSearchChange={() => {}}
+          offset={0}
+          pageSize={20}
+          hasNext={false}
+          onOffsetChange={onOffsetChange}
+          {...overrides}
+        />
+      </UserPreferencesProvider>
     </MemoryRouter>
   )
 }
 
 afterEach(() => {
   cleanup()
-  window.sessionStorage.clear()
+  window.localStorage.clear()
 })
 
 describe('AppsTable', () => {

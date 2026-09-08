@@ -18,7 +18,7 @@ export interface IHelmDiff
 
 export const HelmDiff = ({
   plan,
-  defaultOpen = true,
+  defaultOpen,
   className,
   ...props
 }: IHelmDiff) => {

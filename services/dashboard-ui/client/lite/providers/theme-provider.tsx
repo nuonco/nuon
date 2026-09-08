@@ -1,9 +1,11 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  useUserPreferences,
+  type TThemePreference,
+} from './user-preferences-provider'
 
-export type TThemePreference = 'light' | 'dark' | 'high-contrast' | 'system'
+export type { TThemePreference } from './user-preferences-provider'
 export type TTheme = 'light' | 'dark' | 'high-contrast'
-
-export const THEME_STORAGE_KEY = 'nuon-lite-theme'
 
 interface IThemeContext {
   preference: TThemePreference
@@ -13,25 +15,11 @@ interface IThemeContext {
 
 export const ThemeContext = createContext<IThemeContext | undefined>(undefined)
 
-const PREFERENCES: TThemePreference[] = ['light', 'dark', 'high-contrast', 'system']
-
-const isPreference = (value: unknown): value is TThemePreference =>
-  PREFERENCES.includes(value as TThemePreference)
-
 const darkQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
 
-const readPreference = (): TThemePreference => {
-  try {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY)
-    return isPreference(stored) ? stored : 'system'
-  } catch {
-    return 'system'
-  }
-}
-
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [preference, setStoredPreference] =
-    useState<TThemePreference>(readPreference)
+  const { preferences, setPreference: setUserPreference } = useUserPreferences()
+  const preference = preferences.theme
   const [systemTheme, setSystemTheme] = useState<TTheme>(() =>
     darkQuery().matches ? 'dark' : 'light'
   )
@@ -53,12 +41,12 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [preference])
 
-  const setPreference = useCallback((next: TThemePreference) => {
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, next)
-    } catch {}
-    setStoredPreference(next)
-  }, [])
+  const setPreference = useCallback(
+    (next: TThemePreference) => {
+      setUserPreference('theme', next)
+    },
+    [setUserPreference]
+  )
 
   const theme = preference === 'system' ? systemTheme : preference
 

@@ -24,6 +24,7 @@ export const Overview = () => (
       'Use in application chrome where the signed-in user needs account actions.',
       'Use compact mode for an icon-sized header control.',
       'Nest the organization switcher here so account and workspace context stay together.',
+      'Open browser preferences from the account action group.',
     ]}
     avoid={[
       'Do not add unrelated resource navigation or setup actions to this menu.',
@@ -32,6 +33,7 @@ export const Overview = () => (
     rules={[
       'The visible trigger is always UserProfile.',
       'Organization switching is a nested menu before the sign-out action.',
+      'Preferences appear before the separated sign-out action.',
       'The sign-out destination performs a same-window navigation.',
     ]}
     props={[
@@ -67,6 +69,7 @@ export const Default = () => (
       user={USER}
       signOutHref={SIGN_OUT_HREF}
       org={{ id: 'org_alpha', name: 'alpha', status: 'active' }}
+      onOpenPreferences={() => {}}
       orgSwitcher={
         <OrgSwitcherMenuComponent
           orgs={[
