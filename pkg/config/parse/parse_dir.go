@@ -55,9 +55,11 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 	// parse the directory
 	var obj ConfigDir
 	if err := dir.Parse(ctx, cfgFS, &obj, &dir.ParseOptions{
-		Root:     fp,
-		Ext:      ".toml",
-		ParserFn: func(rc io.ReadCloser, s string, a any) error { return parseTomlFile(rc, s, a, parseCfg.FileProcessor) },
+		Root: fp,
+		Ext:  ".toml",
+		ParserFn: func(rc io.ReadCloser, s string, a any) error {
+			return parseTomlFile(rc, s, a, parseCfg.FileProcessor, fp)
+		},
 	}); err != nil {
 		return nil, errors.Wrap(err, "unable to parse directory")
 	}
@@ -110,7 +112,7 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 		}
 	}
 
-	err = appCfg.Parse()
+	err = appCfg.Parse(config.WithRootDir(fp))
 	if err != nil {
 		return nil, ParseErr{
 			Description: "error parsing config",
