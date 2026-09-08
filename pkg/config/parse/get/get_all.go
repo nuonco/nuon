@@ -274,11 +274,11 @@ func (g *get) recordLocalFile(inputVal, pwd string) error {
 
 	root, err := filepath.Abs(g.opts.RootDir)
 	if err != nil {
-		return errors.Wrap(err, "resolve config root")
+		return errors.Wrap(err, "unable to resolve config root")
 	}
 	resolved, err := filepath.Abs(filepath.Join(pwd, inputVal))
 	if err != nil {
-		return errors.Wrap(err, "resolve local source file")
+		return errors.Wrap(err, "unable to resolve local source file")
 	}
 	relative, err := filepath.Rel(root, resolved)
 	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
@@ -290,7 +290,7 @@ func (g *get) recordLocalFile(inputVal, pwd string) error {
 	}
 	contents, err := os.ReadFile(resolved)
 	if err != nil {
-		return errors.Wrap(err, "read local source file")
+		return errors.Wrap(err, "unable to read local source file")
 	}
 	return g.opts.OnLocalFile(filepath.ToSlash(relative), contents)
 }

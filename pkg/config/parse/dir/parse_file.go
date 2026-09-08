@@ -86,7 +86,7 @@ func (p *parser) parseFile(path, group string, obj any) (bool, error) {
 			Contents: contents,
 			Value:    obj,
 		}); err != nil {
-			return false, errors.Wrap(err, "unable to record parsed file")
+			return false, errors.Wrap(err, "onParse hook failed")
 		}
 	}
 

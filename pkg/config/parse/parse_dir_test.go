@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/parse/dir"
 	"github.com/stretchr/testify/require"
 )
 
@@ -301,3 +302,117 @@ init_script_url = "https://example.com/init.sh"
 }
 
 const maxSourceArchiveTestFileBytes = 5<<20 + 1
+
+func TestSourceFileRecorderBuildsMembersIndex(t *testing.T) {
+	newSource := func() *sourceCapture {
+		return &sourceCapture{archive: config.NewSourceArchive()}
+	}
+
+	t.Run("maps definition files to their members", func(t *testing.T) {
+		source := newSource()
+		rec := sourceFileRecorder(source)
+
+		require.NoError(t, rec(dir.ParsedFile{
+			Path:     "components/whoami.toml",
+			Group:    "components",
+			Contents: []byte("name = \"whoami\""),
+			Value:    &struct{ Name string }{Name: "whoami"},
+		}))
+		require.NoError(t, rec(dir.ParsedFile{
+			Path:     "actions/healthcheck.toml",
+			Group:    "actions",
+			Contents: []byte("name = \"healthcheck\""),
+			Value:    &struct{ Name string }{Name: "healthcheck"},
+		}))
+
+		require.Equal(t, "components/whoami.toml", source.archive.Members["component:whoami"])
+		require.Equal(t, "actions/healthcheck.toml", source.archive.Members["action:healthcheck"])
+		require.Equal(t, "name = \"whoami\"", source.archive.Files["components/whoami.toml"])
+		require.NoError(t, source.err)
+	})
+
+	t.Run("maps singleton group files to fixed members", func(t *testing.T) {
+		source := newSource()
+		rec := sourceFileRecorder(source)
+
+		require.NoError(t, rec(dir.ParsedFile{Path: "metadata.toml", Group: "metadata", Value: &struct{ Name string }{}}))
+		require.NoError(t, rec(dir.ParsedFile{Path: "inputs.toml", Group: "inputs", Value: &struct{ Name string }{}}))
+
+		require.Equal(t, "metadata.toml", source.archive.Members["metadata:metadata"])
+		require.Equal(t, "inputs.toml", source.archive.Members["input:inputs"])
+	})
+
+	t.Run("records an error when a definition has no name", func(t *testing.T) {
+		source := newSource()
+		rec := sourceFileRecorder(source)
+
+		require.NoError(t, rec(dir.ParsedFile{
+			Path:  "components/whoami.toml",
+			Group: "components",
+			Value: &struct{ Name string }{},
+		}))
+
+		require.ErrorContains(t, source.err, "has no name field")
+	})
+
+	t.Run("ignores files outside known groups", func(t *testing.T) {
+		source := newSource()
+		rec := sourceFileRecorder(source)
+
+		require.NoError(t, rec(dir.ParsedFile{
+			Path:  "nuon.toml",
+			Group: "nuon",
+			Value: &struct{ Name string }{Name: "nuon"},
+		}))
+
+		require.Empty(t, source.archive.Members)
+		require.NoError(t, source.err)
+	})
+}
+
+func TestLocalSourceFileRecorder(t *testing.T) {
+	t.Run("is nil without a capture", func(t *testing.T) {
+		require.Nil(t, localSourceFileRecorder(nil))
+	})
+
+	t.Run("records the root-relative path", func(t *testing.T) {
+		source := &sourceCapture{archive: config.NewSourceArchive()}
+		rec := localSourceFileRecorder(source)
+		require.NotNil(t, rec)
+
+		require.NoError(t, rec("values/base.yaml", []byte("replicas: 1")))
+
+		require.Equal(t, "replicas: 1", source.archive.Files["values/base.yaml"])
+		require.NoError(t, source.err)
+	})
+}
+
+func TestSourceMemberIdentity(t *testing.T) {
+	tests := []struct {
+		group    string
+		expected string
+	}{
+		{group: "components", expected: "component"},
+		{group: "actions", expected: "action"},
+		{group: "runbooks", expected: "runbook"},
+		{group: "permissions", expected: "permission"},
+		{group: "unknown", expected: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.group, func(t *testing.T) {
+			kind, name := sourceMemberIdentity(tt.group, "components/x.toml", &struct{ Name string }{Name: "x"})
+			require.Equal(t, tt.expected, kind)
+			if tt.expected != "" {
+				require.Equal(t, "x", name)
+			} else {
+				require.Empty(t, name)
+			}
+		})
+	}
+
+	t.Run("returns empty identity for a nil definition pointer", func(t *testing.T) {
+		kind, name := sourceMemberIdentity("components", "components/x.toml", (*struct{ Name string })(nil))
+		require.Empty(t, kind)
+		require.Empty(t, name)
+	})
+}
