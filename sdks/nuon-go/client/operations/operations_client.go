@@ -676,6 +676,8 @@ type ClientService interface {
 
 	GetInstallStateHistory(params *GetInstallStateHistoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStateHistoryOK, error)
 
+	GetInstallTelemetrySettings(params *GetInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTelemetrySettingsOK, error)
+
 	GetInstallWorkflow(params *GetInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallWorkflowOK, error)
 
 	GetInstallWorkflowStep(params *GetInstallWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallWorkflowStepOK, error)
@@ -789,6 +791,8 @@ type ClientService interface {
 	GetSlackInstallURL(params *GetSlackInstallURLParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSlackInstallURLOK, error)
 
 	GetStackServiceAccount(params *GetStackServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackServiceAccountOK, error)
+
+	GetTelemetryJWKS(params *GetTelemetryJWKSParams, opts ...ClientOption) (*GetTelemetryJWKSOK, error)
 
 	GetTerraformCurrentStateData(params *GetTerraformCurrentStateDataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformCurrentStateDataOK, error)
 
@@ -995,6 +999,8 @@ type ClientService interface {
 	UpdateInstallInputs(params *UpdateInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallInputsOK, error)
 
 	UpdateInstallRole(params *UpdateInstallRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallRoleOK, error)
+
+	UpdateInstallTelemetrySettings(params *UpdateInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallTelemetrySettingsOK, error)
 
 	UpdateInstallWorkflow(params *UpdateInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallWorkflowOK, error)
 
@@ -14086,6 +14092,50 @@ func (a *Client) GetInstallStateHistory(params *GetInstallStateHistoryParams, au
 }
 
 /*
+GetInstallTelemetrySettings gets an install s telemetry settings
+*/
+func (a *Client) GetInstallTelemetrySettings(params *GetInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTelemetrySettingsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTelemetrySettingsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTelemetrySettings",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/telemetry",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTelemetrySettingsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTelemetrySettingsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTelemetrySettings: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallWorkflow gets an install workflow
 
 Return a workflow.
@@ -16686,6 +16736,51 @@ func (a *Client) GetStackServiceAccount(params *GetStackServiceAccountParams, au
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetStackServiceAccount: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetTelemetryJWKS gets telemetry j w t public keys
+
+Returns the public RSA keys used to verify BYOC telemetry access tokens.
+*/
+func (a *Client) GetTelemetryJWKS(params *GetTelemetryJWKSParams, opts ...ClientOption) (*GetTelemetryJWKSOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetTelemetryJWKSParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetTelemetryJWKS",
+		Method:             "GET",
+		PathPattern:        "/.well-known/jwks.json",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetTelemetryJWKSReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetTelemetryJWKSOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetTelemetryJWKS: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -21444,6 +21539,50 @@ func (a *Client) UpdateInstallRole(params *UpdateInstallRoleParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateInstallRole: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateInstallTelemetrySettings updates an install s telemetry settings
+*/
+func (a *Client) UpdateInstallTelemetrySettings(params *UpdateInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallTelemetrySettingsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateInstallTelemetrySettingsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateInstallTelemetrySettings",
+		Method:             "PATCH",
+		PathPattern:        "/v1/installs/{install_id}/telemetry",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateInstallTelemetrySettingsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateInstallTelemetrySettingsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateInstallTelemetrySettings: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

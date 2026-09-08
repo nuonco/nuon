@@ -72,7 +72,7 @@ func (s *service) mcpListAppBranches(ctx context.Context, _ *mcp.CallToolRequest
 				Status:           run.Status,
 				Succeeded:        run.Status == "success",
 				AwaitingApproval: run.AwaitingApproval,
-				CreatedAt:        run.CreatedAt.String(),
+				CreatedAt:        apiPkg.MCPTime(run.CreatedAt),
 			}
 		}
 		out = append(out, item)

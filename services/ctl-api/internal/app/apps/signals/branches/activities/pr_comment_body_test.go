@@ -106,7 +106,7 @@ func TestBuildPRCommentBodyIncludesModeRunLinkBuildLabelsAndStackWarning(t *test
 		"</details>",
 		"No install was planned or applied.",
 		"### Debug with MCP",
-		"Fetch the overview of app branch run abrun-example and diagnose any failures.",
+		"Fetch the overview of app branch run abrun-example for app payments branch production and diagnose any failures.",
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("comment body missing %q\n%s", want, body)
@@ -384,9 +384,10 @@ func TestBuildPRCommentBodyBuildOnlyOmitsInstallPhase(t *testing.T) {
 
 func TestBuildPRCommentBodyMCPDocsLink(t *testing.T) {
 	body := BuildPRCommentBody(&PRCommentParams{
-		AppName: "acme",
-		RunID:   "abrun-example",
-		Status:  PRCommentStatusSuccess,
+		AppName:    "payments",
+		BranchName: "production",
+		RunID:      "abrun-example",
+		Status:     PRCommentStatusSuccess,
 	})
 
 	if !strings.Contains(body, "https://docs.nuon.co/guides/agents/overview") {
@@ -394,6 +395,9 @@ func TestBuildPRCommentBodyMCPDocsLink(t *testing.T) {
 	}
 	if !strings.Contains(body, "[MCP-enabled assistant](https://docs.nuon.co/guides/agents/overview)") {
 		t.Errorf("comment body MCP link has wrong format\n%s", body)
+	}
+	if !strings.Contains(body, "Fetch the overview of app branch run abrun-example for app payments branch production and diagnose any failures.") {
+		t.Errorf("MCP prompt missing app and branch\n%s", body)
 	}
 }
 

@@ -19,15 +19,26 @@ import (
 var headerNamePattern = regexp.MustCompile(`^[!#$%&'*+.^_` + "`" + `|~0-9A-Za-z-]+$`)
 
 const (
-	configVersionV1        = "v1"
-	fileStorageExtensionID = "file_storage/audit"
-	collectorStorageDir    = "/var/lib/nuon/telemetry-export"
-	auditQueueSize         = 10_000
-	auditQueueConsumers    = 2
-	maxSecretSize          = 64 * 1024
-	maxEndpointLen         = 4096
-	maxHeaders             = 32
-	maxHeaderLen           = 4096
+	configVersionV1              = "v1"
+	auditFileStorageExtensionID  = "file_storage/audit"
+	vendorFileStorageExtensionID = "file_storage/vendor"
+	vendorBearerAuthExtensionID  = "bearertokenauth/vendor"
+	collectorStorageDir          = "/var/lib/nuon/telemetry-export"
+	vendorStorageDir             = collectorStorageDir + "/vendor"
+	vendorTokenDir               = collectorStorageDir + "/vendor-auth"
+	vendorTokenPath              = vendorTokenDir + "/access-token"
+	vendorOTLPGRPCAddress        = "0.0.0.0:4317"
+	vendorOTLPHTTPAddress        = "0.0.0.0:4318"
+	vendorCollectorHealthAddress = "127.0.0.1:13134"
+	auditQueueSize               = 10_000
+	auditQueueConsumers          = 2
+	vendorQueueSizeBytes         = 1 << 30
+	vendorQueueConsumers         = 2
+	maxOTLPRequestBodySize       = 4 << 20
+	maxSecretSize                = 64 * 1024
+	maxEndpointLen               = 4096
+	maxHeaders                   = 32
+	maxHeaderLen                 = 4096
 )
 
 type configEnvelope struct {
@@ -95,11 +106,10 @@ func parseConfigV1(value string) (config, error) {
 		AuditLogsEnabled: wire.Telemetry.Logs.Audit.Enabled,
 		OTLPHTTP:         wire.Exporters.OTLPHTTP,
 	}
-	if !cfg.AuditLogsEnabled {
-		return cfg, nil
-	}
-	if err := validateOTLPHTTPExporter(cfg.OTLPHTTP); err != nil {
-		return config{}, err
+	if cfg.AuditLogsEnabled {
+		if err := validateOTLPHTTPExporter(cfg.OTLPHTTP); err != nil {
+			return config{}, err
+		}
 	}
 	return cfg, nil
 }
@@ -145,6 +155,8 @@ func validateOTLPHTTPExporter(exporter otlpHTTPExporter) error {
 func collectorConfig(cfg config) ([]byte, []string, error) {
 	pipelines := make(map[string]any)
 	extensions := map[string]any{"health_check": map[string]any{"endpoint": "127.0.0.1:13133"}}
+	receivers := make(map[string]any)
+	exporters := make(map[string]any)
 	serviceExtensions := []string{"health_check"}
 	service := map[string]any{
 		"extensions": serviceExtensions,
@@ -156,59 +168,106 @@ func collectorConfig(cfg config) ([]byte, []string, error) {
 		"extensions": extensions,
 		"service":    service,
 	}
-	if !cfg.AuditLogsEnabled {
-		contents, err := yaml.Marshal(document)
-		return contents, nil, err
+	environment := make([]string, 0, len(cfg.OTLPHTTP.Headers))
+
+	if cfg.AuditLogsEnabled {
+		headers, values := headerEnvironment(cfg.OTLPHTTP.Headers, "NUON_TELEMETRY_EXPORT_HEADER")
+		environment = append(environment, values...)
+		extensions[auditFileStorageExtensionID] = fileStorageConfig(collectorStorageDir)
+		serviceExtensions = append(serviceExtensions, auditFileStorageExtensionID)
+		receivers["otlp/async"] = map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": audit.AsyncRouteAddress}}}
+		receivers["otlp/sync"] = map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": audit.SyncRouteAddress}}}
+		exporters["otlp_http/async"] = map[string]any{
+			"endpoint": cfg.OTLPHTTP.Endpoint, "headers": headers, "compression": "gzip",
+			"sending_queue":    map[string]any{"enabled": true, "queue_size": auditQueueSize, "num_consumers": auditQueueConsumers, "storage": auditFileStorageExtensionID, "block_on_overflow": false},
+			"retry_on_failure": map[string]any{"enabled": true, "initial_interval": "1s", "max_interval": "30s", "max_elapsed_time": "0s"},
+		}
+		exporters["otlp_http/sync"] = map[string]any{
+			"endpoint": cfg.OTLPHTTP.Endpoint, "headers": headers, "compression": "gzip", "timeout": audit.SyncExportTimeout.String(),
+			"sending_queue":    map[string]any{"enabled": false},
+			"retry_on_failure": map[string]any{"enabled": false},
+		}
+		pipelines["logs/audit_async"] = map[string]any{"receivers": []string{"otlp/async"}, "processors": []string{"memory_limiter"}, "exporters": []string{"otlp_http/async"}}
+		pipelines["logs/audit_sync"] = map[string]any{"receivers": []string{"otlp/sync"}, "processors": []string{"memory_limiter"}, "exporters": []string{"otlp_http/sync"}}
 	}
 
-	headers := make(map[string]string, len(cfg.OTLPHTTP.Headers))
-	headerNames := make([]string, 0, len(cfg.OTLPHTTP.Headers))
-	for name := range cfg.OTLPHTTP.Headers {
-		headerNames = append(headerNames, name)
+	service["extensions"] = serviceExtensions
+	if len(pipelines) != 0 {
+		document["receivers"] = receivers
+		document["processors"] = map[string]any{"memory_limiter": map[string]any{"check_interval": "1s", "limit_mib": 128, "spike_limit_mib": 32}}
+		document["exporters"] = exporters
 	}
-	sort.Strings(headerNames)
 
-	environment := make([]string, 0, len(headerNames))
-	for i, name := range headerNames {
-		value := cfg.OTLPHTTP.Headers[name]
-		envName := fmt.Sprintf("NUON_TELEMETRY_EXPORT_HEADER_%d", i)
+	contents, err := yaml.Marshal(document)
+	return contents, environment, err
+}
+
+func vendorCollectorConfig(endpoint string) ([]byte, error) {
+	if err := validateOTLPHTTPExporter(otlpHTTPExporter{Endpoint: endpoint}); err != nil {
+		return nil, fmt.Errorf("invalid vendor OTLP/HTTP exporter: %w", err)
+	}
+
+	receiver := map[string]any{"protocols": map[string]any{
+		"grpc": map[string]any{"endpoint": vendorOTLPGRPCAddress, "max_recv_msg_size_mib": maxOTLPRequestBodySize >> 20},
+		"http": map[string]any{"endpoint": vendorOTLPHTTPAddress, "max_request_body_size": maxOTLPRequestBodySize},
+	}}
+	exporter := map[string]any{
+		"endpoint": endpoint, "compression": "gzip", "timeout": "30s",
+		"auth":             map[string]any{"authenticator": vendorBearerAuthExtensionID},
+		"sending_queue":    map[string]any{"enabled": true, "sizer": "bytes", "queue_size": vendorQueueSizeBytes, "num_consumers": vendorQueueConsumers, "storage": vendorFileStorageExtensionID, "block_on_overflow": false},
+		"retry_on_failure": map[string]any{"enabled": true, "initial_interval": "1s", "max_interval": "30s", "max_elapsed_time": "0s"},
+	}
+	pipeline := map[string]any{"receivers": []string{"otlp"}, "processors": []string{"memory_limiter"}, "exporters": []string{"otlp_http/vendor"}}
+	document := map[string]any{
+		"extensions": map[string]any{
+			"health_check":               map[string]any{"endpoint": vendorCollectorHealthAddress},
+			vendorFileStorageExtensionID: fileStorageConfig(vendorStorageDir),
+			vendorBearerAuthExtensionID:  map[string]any{"filename": vendorTokenPath},
+		},
+		"receivers":  map[string]any{"otlp": receiver},
+		"processors": map[string]any{"memory_limiter": map[string]any{"check_interval": "1s", "limit_mib": 128, "spike_limit_mib": 32}},
+		"exporters":  map[string]any{"otlp_http/vendor": exporter},
+		"service": map[string]any{
+			"extensions": []string{"health_check", vendorFileStorageExtensionID, vendorBearerAuthExtensionID},
+			"pipelines": map[string]any{
+				"logs":    pipeline,
+				"metrics": pipeline,
+				"traces":  pipeline,
+			},
+			"telemetry": map[string]any{"logs": map[string]any{"level": "warn"}},
+		},
+	}
+
+	return yaml.Marshal(document)
+}
+
+func headerEnvironment(values map[string]string, prefix string) (map[string]string, []string) {
+	names := make([]string, 0, len(values))
+	for name := range values {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	headers := make(map[string]string, len(names))
+	environment := make([]string, 0, len(names))
+	for i, name := range names {
+		envName := fmt.Sprintf("%s_%d", prefix, i)
 		headers[name] = "${env:" + envName + "}"
-		environment = append(environment, envName+"="+value)
+		environment = append(environment, envName+"="+values[name])
 	}
-	extensions[fileStorageExtensionID] = map[string]any{
-		"directory":             collectorStorageDir,
+	return headers, environment
+}
+
+func fileStorageConfig(directory string) map[string]any {
+	return map[string]any{
+		"directory":             directory,
 		"create_directory":      true,
 		"directory_permissions": "0700",
 		"fsync":                 true,
 		"compaction": map[string]any{
 			"on_rebound":       true,
-			"directory":        collectorStorageDir,
+			"directory":        directory,
 			"cleanup_on_start": true,
 		},
 	}
-	service["extensions"] = append(serviceExtensions, fileStorageExtensionID)
-	document["receivers"] = map[string]any{
-		"otlp/async": map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": audit.AsyncRouteAddress}}},
-		"otlp/sync":  map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": audit.SyncRouteAddress}}},
-	}
-	document["processors"] = map[string]any{
-		"memory_limiter": map[string]any{"check_interval": "1s", "limit_mib": 128, "spike_limit_mib": 32},
-	}
-	document["exporters"] = map[string]any{
-		"otlp_http/async": map[string]any{
-			"endpoint": cfg.OTLPHTTP.Endpoint, "headers": headers, "compression": "gzip",
-			"sending_queue":    map[string]any{"enabled": true, "queue_size": auditQueueSize, "num_consumers": auditQueueConsumers, "storage": fileStorageExtensionID, "block_on_overflow": false},
-			"retry_on_failure": map[string]any{"enabled": true, "initial_interval": "1s", "max_interval": "30s", "max_elapsed_time": "0s"},
-		},
-		"otlp_http/sync": map[string]any{
-			"endpoint": cfg.OTLPHTTP.Endpoint, "headers": headers, "compression": "gzip", "timeout": audit.SyncExportTimeout.String(),
-			"sending_queue":    map[string]any{"enabled": false},
-			"retry_on_failure": map[string]any{"enabled": false},
-		},
-	}
-	pipelines["logs/audit_async"] = map[string]any{"receivers": []string{"otlp/async"}, "processors": []string{"memory_limiter"}, "exporters": []string{"otlp_http/async"}}
-	pipelines["logs/audit_sync"] = map[string]any{"receivers": []string{"otlp/sync"}, "processors": []string{"memory_limiter"}, "exporters": []string{"otlp_http/sync"}}
-
-	contents, err := yaml.Marshal(document)
-	return contents, environment, err
 }

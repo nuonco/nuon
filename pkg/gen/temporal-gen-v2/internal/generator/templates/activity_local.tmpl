@@ -9,7 +9,13 @@
 func LocalAwait{{.Name | ToPascal}}(ctx workflow.Context, input {{if .Options.ByFieldOnly}}{{.ByFieldType}}{{else}}{{$reqType}}{{end}}) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
 	{{if .OutputType}}var result {{.OutputType}}{{end}}
 	localCtx := workflow.WithLocalActivityOptions(ctx, workflow.LocalActivityOptions{
+		{{- if .Options.ScheduleToCloseTimeout}}
+		ScheduleToCloseTimeout: time.Duration({{.Options.ScheduleToCloseTimeout | durationToNs}}),
+		{{- else if .Options.StartToCloseTimeout}}
+		ScheduleToCloseTimeout: time.Duration({{.Options.StartToCloseTimeout | durationToNs}}),
+		{{- else}}
 		ScheduleToCloseTimeout: 10 * time.Second,
+		{{- end}}
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 1,
 		},

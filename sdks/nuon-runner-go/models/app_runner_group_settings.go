@@ -125,8 +125,14 @@ type AppRunnerGroupSettings struct {
 	// configuration for managing the runner server side
 	SandboxMode bool `json:"sandbox_mode,omitempty"`
 
+	// telemetry relay endpoint
+	TelemetryRelayEndpoint string `json:"telemetry_relay_endpoint,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// vendor telemetry enabled
+	VendorTelemetryEnabled bool `json:"vendor_telemetry_enabled,omitempty"`
 
 	// vm max uptime
 	VMMaxUptime int64 `json:"vm_max_uptime,omitempty"`
