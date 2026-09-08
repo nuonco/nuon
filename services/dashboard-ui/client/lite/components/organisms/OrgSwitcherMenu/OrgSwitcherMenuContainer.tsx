@@ -14,7 +14,7 @@ export const OrgSwitcherMenuContainer = () => {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    if (!isOpen) setSearch('')
+    if (isOpen) setSearch('')
   }, [isOpen])
 
   const query = useInfiniteQuery({

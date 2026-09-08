@@ -1,8 +1,48 @@
+import { ComponentDocs } from '../../__stories__/ComponentDocs'
 import { InstallOverviewCards } from './InstallOverviewCards'
 
 export default {
   title: 'lite/organisms/InstallOverviewCards',
 }
+
+export const Overview = () => (
+  <ComponentDocs
+    name="InstallOverviewCards"
+    tier="organism"
+    summary="The four-card summary at the top of an install overview: health, drift, branch, and last update."
+    use={[
+      'Place at the top of the install overview, above the rest of the page.',
+      'Use the loading state while the install and its latest config sync resolve.',
+    ]}
+    avoid={[
+      'Do not collapse health and drift into one status; they are independent axes.',
+      'Do not report an unscanned install as having no drift.',
+    ]}
+    rules={[
+      'Health and drift each distinguish a missing evaluation from a healthy result.',
+      'Drift counts the install drifted objects and pluralizes the resource count.',
+      'Last update reads the commit from the latest config sync, not the branch latest run.',
+    ]}
+    props={[
+      {
+        name: 'install',
+        type: 'TInstall',
+        description: 'Install whose health, drift, and branch are summarized.',
+      },
+      {
+        name: 'latestSync',
+        type: 'TInstallConfigSync',
+        description: 'Most recent config sync, used for the last update card.',
+      },
+      {
+        name: 'isLoading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Shows card loading shapes while keeping every title.',
+      },
+    ]}
+  />
+)
 
 export const Default = () => (
   <div className="p-8">

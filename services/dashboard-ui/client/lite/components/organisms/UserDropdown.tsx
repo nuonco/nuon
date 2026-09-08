@@ -59,7 +59,7 @@ export const UserDropdown = ({
     }
     {...props}
   >
-    <Menu>
+    <Menu className="w-72">
       {orgSwitcher ? (
         <>
           <MenuSubmenu

@@ -11,8 +11,10 @@ import { SurfaceHost } from '../components/organisms/surfaces'
 import { DashboardShell } from '../components/templates/DashboardShell'
 import { useBreadcrumbItems } from '../hooks/use-breadcrumbs'
 import { useCurrentUser } from '../hooks/use-current-user'
+import { useStatusBarContent } from '../hooks/use-status-bar'
 import { BreadcrumbProvider } from '../providers/breadcrumb-provider'
 import { OrgProvider, useOrg } from '../providers/org-provider'
+import { StatusBarProvider } from '../providers/status-bar-provider'
 
 export const orgNavigation = (orgId: string) => {
   const primary: INavItem[] = [
@@ -65,6 +67,7 @@ const OrgShell = () => {
   const { org, orgId, isLoading, error } = useOrg()
   const { user, isLoading: isLoadingUser } = useCurrentUser()
   const breadcrumbs = useBreadcrumbItems()
+  const statusBarContent = useStatusBarContent()
   const navigation = orgNavigation(orgId ?? '')
 
   return (
@@ -86,11 +89,22 @@ const OrgShell = () => {
         />
       }
       statusBar={
-        <div className="flex h-8 items-center justify-between gap-4 px-4">
-          <OrgProfile org={org} loading={isLoading} variant="inline" />
-          <Text variant="label" color="tertiary">
-            {error ? 'Connection issue' : `Version ${config.version ?? 'dev'}`}
-          </Text>
+        <div className="flex h-7 items-stretch justify-between">
+          <div className="flex min-w-0 items-stretch">
+            <span className="modeline-point-right flex items-center bg-surface-modeline pr-5 pl-3">
+              <OrgProfile org={org} loading={isLoading} variant="modeline" />
+            </span>
+            {statusBarContent ? (
+              <span className="flex min-w-0 items-center px-2">
+                {statusBarContent}
+              </span>
+            ) : null}
+          </div>
+          <span className="modeline-point-left flex shrink-0 items-center bg-surface-modeline pr-3 pl-5">
+            <Text variant="label" family="mono" color="tertiary">
+              {error ? 'disconnected' : `v${config.version ?? 'dev'}`}
+            </Text>
+          </span>
         </div>
       }
     >
@@ -102,9 +116,11 @@ const OrgShell = () => {
 export const OrgLayout = () => (
   <OrgProvider>
     <BreadcrumbProvider>
-      <SurfaceHost scope="org">
-        <OrgShell />
-      </SurfaceHost>
+      <StatusBarProvider>
+        <SurfaceHost scope="org">
+          <OrgShell />
+        </SurfaceHost>
+      </StatusBarProvider>
     </BreadcrumbProvider>
   </OrgProvider>
 )

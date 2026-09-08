@@ -3,6 +3,7 @@ import { Button } from '../../atoms/Button'
 import { Dropdown } from '../../atoms/Dropdown'
 import { Icon } from '../../atoms/Icon'
 import { Text } from '../../atoms/Text'
+import { BranchProfile } from '../../molecules/BranchProfile'
 import { SwitcherMenu } from '../../molecules/SwitcherMenu'
 
 export interface IBranchSwitcher {
@@ -12,6 +13,7 @@ export interface IBranchSwitcher {
   onSearchChange: (value: string) => void
   onLoadMore: () => void
   getBranchHref: (branchId: string) => string
+  onOpenChange?: (open: boolean) => void
   isLoading?: boolean
   isLoadingMore?: boolean
   hasMore?: boolean
@@ -22,10 +24,12 @@ export const BranchSwitcher = ({
   branches,
   currentBranch,
   getBranchHref,
+  onOpenChange,
   ...props
 }: IBranchSwitcher) => (
   <Dropdown
     align="end"
+    onOpenChange={onOpenChange}
     trigger={
       <Button
         variant="secondary"
@@ -47,11 +51,13 @@ export const BranchSwitcher = ({
                 id: branch.id,
                 label: branch.name,
                 href: getBranchHref(branch.id),
+                content: <BranchProfile branch={branch} />,
               },
             ]
           : []
       )}
       selectedId={currentBranch?.id}
+      loadingContent={<BranchProfile loading />}
       searchLabel="Search branches"
       searchPlaceholder="Search branches..."
       emptyTitle="No branches found"

@@ -31,6 +31,7 @@ export const Overview = () => (
       'The logo falls back to initials derived from the organization name.',
       'The status dot sits to the left of the name, with the organization ID below it.',
       'Loading preserves the final profile geometry.',
+      'The modeline variant renders the name in mono so it sits with the code-editor status bar.',
     ]}
     props={[
       {
@@ -52,10 +53,10 @@ export const Overview = () => (
       },
       {
         name: 'variant',
-        type: "'full' | 'inline'",
+        type: "'full' | 'modeline'",
         default: "'full'",
         description:
-          'Full shows the logo, status, name and ID. Inline shows only the status dot and name.',
+          'full shows the logo, status, name and ID. modeline is the status bar row: dot and mono name.',
       },
     ]}
   />
@@ -73,15 +74,15 @@ export const InitialsFallback = () => (
   </div>
 )
 
-export const Inline = () => (
-  <div className="p-8">
-    <OrgProfile org={ORG} variant="inline" />
+export const Modeline = () => (
+  <div className="flex h-7 w-fit items-center bg-surface-02 px-3">
+    <OrgProfile org={ORG} variant="modeline" />
   </div>
 )
 
-export const InlineLoading = () => (
-  <div className="p-8">
-    <OrgProfile loading variant="inline" />
+export const ModelineLoading = () => (
+  <div className="flex h-7 w-fit items-center bg-surface-02 px-3">
+    <OrgProfile loading variant="modeline" />
   </div>
 )
 

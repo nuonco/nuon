@@ -1,8 +1,11 @@
 import { Outlet } from 'react-router'
+import { Text } from '../components/atoms/Text'
+import { BranchProfile } from '../components/molecules/BranchProfile'
 import { SubNav, type ISubNavItem } from '../components/molecules/SubNav'
 import { BranchSwitcher } from '../components/organisms/BranchSwitcher'
 import { useBreadcrumbs } from '../hooks/use-breadcrumbs'
 import { usePageTitle } from '../hooks/use-page-title'
+import { useStatusBar } from '../hooks/use-status-bar'
 import type { IBreadcrumbItem } from '../providers/breadcrumb-provider'
 import {
   AppBranchProvider,
@@ -58,8 +61,28 @@ export const useAppBranchPageChrome = (section?: string) => {
 
 const AppBranchChrome = () => {
   const { orgId } = useOrg()
-  const { appId } = useApp()
-  const { branchId } = useAppBranch()
+  const { app, appId, isLoading: isLoadingApp } = useApp()
+  const { branch, branchId, isLoading } = useAppBranch()
+
+  useStatusBar(
+    <span className="flex min-w-0 items-center gap-2">
+      <Text
+        variant="caption"
+        family="mono"
+        weight="medium"
+        loading={isLoadingApp}
+        loadingWidth={12}
+        className="truncate leading-tight"
+      >
+        {app?.name ?? 'App unavailable'}
+      </Text>
+      <Text variant="caption" color="tertiary" aria-hidden>
+        /
+      </Text>
+      <BranchProfile branch={branch} loading={isLoading} variant="modeline" />
+    </span>,
+    [app?.name, branch?.name, isLoading, isLoadingApp]
+  )
 
   return (
     <div className="flex w-full flex-col gap-6">

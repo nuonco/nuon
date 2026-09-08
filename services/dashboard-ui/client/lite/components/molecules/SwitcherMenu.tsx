@@ -11,6 +11,11 @@ export interface ISwitcherMenuItem {
   content?: ReactNode
 }
 
+const LOADING_ROWS = 5
+
+const LOADING_ROW_CLASSES =
+  'flex min-h-8 items-center gap-2 rounded-md border border-transparent px-2'
+
 export interface ISwitcherMenu {
   items: ISwitcherMenuItem[]
   selectedId?: string
@@ -48,21 +53,22 @@ export const SwitcherMenu = ({
 
   return (
     <Menu initialFocusRef={searchRef} className="w-72">
-      <div className="p-1">
+      <div className="pb-1">
         <ListSearch
           ref={searchRef}
           value={search}
           onValueChange={onSearchChange}
           aria-label={searchLabel}
           placeholder={searchPlaceholder}
+          inputClassName="rounded-md"
         />
       </div>
 
       {isLoading ? (
         <div className="flex flex-col gap-0.5" aria-hidden>
-          {Array.from({ length: 5 }, (_, index) => (
-            <div key={index} className="flex min-h-8 items-center px-2">
-              {loadingContent ?? <Text loading loadingWidth={12 + index} />}
+          {Array.from({ length: LOADING_ROWS }, (_, index) => (
+            <div key={index} className={LOADING_ROW_CLASSES}>
+              {loadingContent ?? <Text loading loadingWidth={14} />}
             </div>
           ))}
         </div>

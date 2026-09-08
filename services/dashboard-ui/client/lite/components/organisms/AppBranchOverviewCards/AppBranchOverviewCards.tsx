@@ -29,7 +29,7 @@ export const AppBranchOverviewCards = ({
 
   return (
     <OverviewCardGrid columns={3}>
-      <OverviewCard title="Branch info">
+      <OverviewCard title="Branch">
         <span className="flex items-center gap-2">
           <Icon variant="GitBranchIcon" size={18} />
           <Text

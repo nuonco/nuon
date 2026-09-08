@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useLocation } from 'react-router'
 import { getAppBranches } from '@/lib'
@@ -6,7 +6,6 @@ import { useApp } from '../../../providers/app-provider'
 import { useAppBranch } from '../../../providers/app-branch-provider'
 import { useOrg } from '../../../providers/org-provider'
 import { appBranchHref } from '../../../utils/hrefs'
-import { useDropdown } from '../../atoms/Dropdown'
 import { BranchSwitcher } from './BranchSwitcher'
 
 const PAGE_SIZE = 5
@@ -16,13 +15,8 @@ export const BranchSwitcherContainer = () => {
   const { orgId } = useOrg()
   const { appId } = useApp()
   const { branch, branchId } = useAppBranch()
-  const dropdown = useDropdown()
-  const isOpen = dropdown?.isOpen ?? true
+  const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
-
-  useEffect(() => {
-    if (!isOpen) setSearch('')
-  }, [isOpen])
 
   const query = useInfiniteQuery({
     queryKey: ['app-branches', orgId, appId, 'switcher', search],
@@ -58,6 +52,10 @@ export const BranchSwitcherContainer = () => {
       currentBranch={branch}
       search={search}
       onSearchChange={setSearch}
+      onOpenChange={(open) => {
+        setIsOpen(open)
+        if (open) setSearch('')
+      }}
       onLoadMore={() => void query.fetchNextPage()}
       getBranchHref={(nextBranchId) =>
         orgId && appId

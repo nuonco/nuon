@@ -28,7 +28,7 @@ describe('AppBranchOverviewCards', () => {
       />
     )
 
-    expect(screen.getByText('Branch info')).toBeTruthy()
+    expect(screen.getByText('Branch')).toBeTruthy()
     expect(screen.getByText('main')).toBeTruthy()
     expect(screen.getByText('Config v14')).toBeTruthy()
     expect(screen.getByText('a1b2c3d')).toBeTruthy()

@@ -6,7 +6,7 @@ import { Status } from '../atoms/Status'
 import { Text } from '../atoms/Text'
 import { ID } from './ID'
 
-export type TOrgProfileVariant = 'full' | 'inline'
+export type TOrgProfileVariant = 'full' | 'modeline'
 
 export interface IOrgProfile
   extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
@@ -27,12 +27,15 @@ export const OrgProfile = ({
   const name = org?.name?.trim() || 'Organization unavailable'
   const status = org?.status_v2?.status ?? org?.status
 
+  const isModeline = variant === 'modeline'
+
   const identity = (
     <span className="flex min-w-0 items-center gap-1.5">
       <Status status={status} variant="dot" loading={loading} tabIndex={-1} />
       <Text
         variant="caption"
-        weight="semibold"
+        family={isModeline ? 'mono' : 'sans'}
+        weight={isModeline ? 'medium' : 'semibold'}
         loading={loading}
         loadingWidth={12}
         className="max-w-48 truncate leading-tight"
@@ -42,7 +45,7 @@ export const OrgProfile = ({
     </span>
   )
 
-  if (variant === 'inline') {
+  if (isModeline) {
     return (
       <div
         className={cn('inline-flex min-w-0 items-center', className)}

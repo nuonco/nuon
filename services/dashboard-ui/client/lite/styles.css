@@ -48,6 +48,10 @@
   --surface-03: light-dark(var(--neutral-100), rgba(254, 254, 254, 0.08));
   --surface-accent: light-dark(#e3f8ff, rgba(76, 201, 240, 0.16));
   --surface-inverted: light-dark(var(--neutral-inverted), var(--neutral-050));
+  --surface-modeline: light-dark(
+    rgba(29, 29, 29, 0.1),
+    rgba(254, 254, 254, 0.08)
+  );
   --surface-overlay: rgba(0, 0, 0, 0.3);
   --shell-grid-dot: light-dark(
     rgba(29, 29, 29, 0.12),
@@ -309,6 +313,7 @@
   --surface-03: rgba(255, 255, 255, 0.16);
   --surface-accent: rgba(255, 255, 0, 0.16);
   --surface-inverted: var(--neutral-000);
+  --surface-modeline: rgba(255, 255, 255, 0.16);
   --surface-overlay: rgba(0, 0, 0, 0.45);
   --shell-grid-dot: transparent;
 
@@ -651,6 +656,28 @@ diffs-container {
   }
 }
 
+@utility modeline-point-right {
+  --modeline-point: 0.5rem;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--modeline-point)) 0,
+    100% 50%,
+    calc(100% - var(--modeline-point)) 100%,
+    0 100%
+  );
+}
+
+@utility modeline-point-left {
+  --modeline-point: 0.5rem;
+  clip-path: polygon(
+    var(--modeline-point) 0,
+    100% 0,
+    100% 100%,
+    var(--modeline-point) 100%,
+    0 50%
+  );
+}
+
 @theme {
   --text-display: 2rem;
   --text-display--line-height: 1.15;
@@ -690,6 +717,7 @@ diffs-container {
   --color-surface-03: var(--surface-03);
   --color-surface-accent: var(--surface-accent);
   --color-surface-inverted: var(--surface-inverted);
+  --color-surface-modeline: var(--surface-modeline);
 
   --color-primary: var(--text-primary);
   --color-secondary: var(--text-secondary);

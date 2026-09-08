@@ -1,8 +1,56 @@
+import { ComponentDocs } from '../../__stories__/ComponentDocs'
 import { AppBranchOverviewCards } from './AppBranchOverviewCards'
 
 export default {
   title: 'lite/organisms/AppBranchOverviewCards',
 }
+
+export const Overview = () => (
+  <ComponentDocs
+    name="AppBranchOverviewCards"
+    tier="organism"
+    summary="The three-card summary at the top of an app branch overview: branch info, last update, and installs."
+    use={[
+      'Place at the top of the app branch overview, above the rest of the page.',
+      'Use the loading state while the branch and its install count resolve.',
+    ]}
+    avoid={[
+      'Do not add a fourth card; the app branch summary is three cards.',
+      'Do not use it for install-scoped facts such as health or drift.',
+    ]}
+    rules={[
+      'Branch info reads from the latest branch config, falling back to the VCS directory when no repository is set.',
+      'Last update reads the latest run commit and renders nothing but an empty state when the branch has never run.',
+      'An install count that is capped by pagination renders with a trailing plus.',
+    ]}
+    props={[
+      {
+        name: 'branch',
+        type: 'TAppBranch',
+        description: 'Branch whose config and latest run are summarized.',
+      },
+      {
+        name: 'installCount',
+        type: 'number',
+        description:
+          'Installs assigned to the branch. Loads until it is defined.',
+      },
+      {
+        name: 'hasMoreInstalls',
+        type: 'boolean',
+        default: 'false',
+        description:
+          'Marks the count as a lower bound when more installs remain unfetched.',
+      },
+      {
+        name: 'isLoading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Shows card loading shapes while keeping every title.',
+      },
+    ]}
+  />
+)
 
 export const Default = () => (
   <div className="p-8">

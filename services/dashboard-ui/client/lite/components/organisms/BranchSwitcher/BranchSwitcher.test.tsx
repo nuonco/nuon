@@ -25,11 +25,10 @@ test('opens a searchable branch menu with the current branch selected', () => {
   fireEvent.click(screen.getByRole('button', { name: 'main' }))
 
   expect(screen.getByRole('searchbox', { name: 'Search branches' })).toBeTruthy()
-  expect(screen.getByRole('menuitemcheckbox', { name: 'main' })).toHaveAttribute(
-    'aria-checked',
-    'true'
-  )
   expect(
-    screen.getByRole('menuitemcheckbox', { name: 'release' })
+    screen.getByRole('menuitemcheckbox', { name: /^main/ })
+  ).toHaveAttribute('aria-checked', 'true')
+  expect(
+    screen.getByRole('menuitemcheckbox', { name: /^release/ })
   ).toHaveAttribute('href', '/branches/br_release/activity')
 })
