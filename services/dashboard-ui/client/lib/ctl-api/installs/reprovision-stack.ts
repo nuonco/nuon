@@ -3,7 +3,6 @@ import type { TWorkflowResponse } from '@/types'
 
 export type TReprovisionStackBody = {
   plan_only: boolean
-  skip_components?: boolean
   role?: string
 }
 
