@@ -4,6 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 // @ID						GetRunnerSettings
@@ -33,5 +36,10 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 
 	settings := runner.RunnerGroup.Settings
 	settings.LongPollJobs = true
+	if s.telemetryRelayEndpoint != "" && settings.VendorTelemetryEnabled && runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerType == plugins.TableName(s.db, app.Install{}) {
+		settings.TelemetryRelayEndpoint = s.telemetryRelayEndpoint
+	} else {
+		settings.VendorTelemetryEnabled = false
+	}
 	ctx.JSON(http.StatusOK, settings)
 }

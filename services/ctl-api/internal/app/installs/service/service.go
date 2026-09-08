@@ -213,6 +213,8 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 		// install runner group
 		installs.GET("/runner-group", s.GetInstallRunnerGroup)
+		installs.GET("/telemetry", s.GetInstallTelemetrySettings)
+		installs.PATCH("/telemetry", s.UpdateInstallTelemetrySettings)
 
 		// phone home
 		installs.POST("/phone-home/:phone_home_id", s.InstallPhoneHome)
