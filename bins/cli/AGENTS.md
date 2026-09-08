@@ -514,14 +514,12 @@ resources exits 2 with a clear error.
 
 Preferred LLM surface is **`nuon agents`**:
 
-- `nuon agents context` — markdown orientation (auth, selection, MCP URL). Keep the tool table in
-  `agentsContextMarkdown()` in sync with `docs/guides/agents/tools.mdx`.
+- `nuon agents context` — markdown orientation (auth, selection, MCP URL, timestamps). Keep the tool table and timestamp rules in
+  `agentsContextMarkdown()` in sync with `docs/guides/agents/tools.mdx`. MCP timestamps are UTC RFC3339 (`…Z`); agents localize before naming a day or clock time.
 - `nuon agents mcp` — stdio proxy to ctl-api MCP (`internal/services/mcpserver/`). Auth from `~/.nuon`
-  (`Authorization` + `X-Nuon-Org-ID`). Read-only unless `--allow-writes`.
-- `nuon mcp setup --platform cursor|claude-code` — writes HTTP client config in the current directory
-  (`.cursor/mcp.json` or `.mcp.json`) with token + org headers. Undocumented and reachable only under
-  the deprecated `nuon mcp`; do not re-attach it to `agents` without deciding whether we want to keep
-  writing tokens to disk.
+  (`Authorization` + `X-Nuon-Org-ID`). Read-only unless `--allow-writes`. Register with the client:
+  `claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes`, `amp mcp add nuon -- nuon agents mcp --allow-writes`,
+  or write Cursor `~/.cursor/mcp.json` / `.cursor/mcp.json` with `"args": ["agents", "mcp", "--allow-writes"]` then `agent mcp enable nuon`.
 
 `nuon mcp` is a deprecated alias of `nuon agents mcp`: it proxies only when stdio is piped (a real MCP
 client); on a TTY it prints a notice and exits 0.
