@@ -1,5 +1,7 @@
 package parse
 
+import "fmt"
+
 type ParseErr struct {
 	Filename    string
 	Description string
@@ -7,8 +9,16 @@ type ParseErr struct {
 }
 
 func (p ParseErr) Error() string {
-	if p.Filename != "" {
-		return p.Filename + ": " + p.Description
+	description := p.Description
+	if p.Err != nil {
+		description = fmt.Sprintf("%s: %v", description, p.Err)
 	}
-	return p.Description
+	if p.Filename != "" {
+		return p.Filename + ": " + description
+	}
+	return description
+}
+
+func (p ParseErr) Unwrap() error {
+	return p.Err
 }
