@@ -84,7 +84,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: ['ctl-api', 'dashboard-ui', 'runner', 'cli', 'wiki']
+        service: ['ctl-api', 'telemetry-relay', 'dashboard-ui', 'runner', 'cli', 'wiki']
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
