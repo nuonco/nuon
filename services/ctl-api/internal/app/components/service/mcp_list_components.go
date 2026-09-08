@@ -15,6 +15,15 @@ type mcpListComponentsInput struct {
 	AppID string `json:"app_id,omitempty" jsonschema:"filter components by app ID"`
 }
 
+type mcpComponentListItem struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	AppID     string `json:"app_id,omitempty"`
+	Status    string `json:"status,omitempty"`
+	CreatedAt string `json:"created_at"`
+}
+
 func (s *service) mcpListComponents(ctx context.Context, _ *mcp.CallToolRequest, in mcpListComponentsInput) (*mcp.CallToolResult, any, error) {
 	orgID, err := require.Read(ctx)
 	if err != nil {
@@ -34,5 +43,17 @@ func (s *service) mcpListComponents(ctx context.Context, _ *mcp.CallToolRequest,
 		return nil, nil, fmt.Errorf("unable to list components: %w", res.Error)
 	}
 
-	return apiPkg.MCPJSONResult(components)
+	out := make([]mcpComponentListItem, 0, len(components))
+	for _, c := range components {
+		out = append(out, mcpComponentListItem{
+			ID:        c.ID,
+			Name:      c.Name,
+			Type:      string(c.Type),
+			AppID:     c.AppID,
+			Status:    string(c.Status),
+			CreatedAt: apiPkg.MCPTime(c.CreatedAt),
+		})
+	}
+
+	return apiPkg.MCPJSONResult(out)
 }

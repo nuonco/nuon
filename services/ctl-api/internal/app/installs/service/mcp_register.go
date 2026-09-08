@@ -16,14 +16,26 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_install",
 		"Get install",
-		"Get a single install by name or ID. Returns full install details including app info, cloud account, sandbox config, and component status. Accepts either the install name or ID.",
+		"Get a compact overview of an install by name or ID, including app and branch identity, deployment and health rollups, input names, and the workflow or app-branch run that most recently updated it.",
 	), s.mcpGetInstall)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_install_components",
 		"List install components",
-		"List all components deployed on an install with their current deploy status and latest deploy info. Use this to see what's deployed and whether deploys are healthy.",
+		"List all components deployed on an install with current deploy and health status plus the latest deploy. Use this to see what's deployed and whether components are healthy.",
 	), s.mcpListInstallComponents)
+
+	mcp.AddTool(server, apiPkg.MCPReadTool(
+		"get_install_readme",
+		"Get install README",
+		"Get the app README rendered with the current state of an install. Returns Markdown and any interpolation warnings.",
+	), s.mcpGetInstallReadme)
+
+	mcp.AddTool(server, apiPkg.MCPReadTool(
+		"get_install_health",
+		"Get install health",
+		"Get the current health rollup for an install and each component, including health descriptions, last report time, and cluster access errors. Requires the component-health feature.",
+	), s.mcpGetInstallHealth)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_workflows",
