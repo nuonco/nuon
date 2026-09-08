@@ -1,15 +1,8 @@
-import { Card } from '../components/atoms/Card'
-import { Text } from '../components/atoms/Text'
+import { InstallOverviewCards } from '../components/organisms/InstallOverviewCards'
 import { useInstallPageChrome } from './InstallLayout'
 
 export const InstallOverview = () => {
   useInstallPageChrome()
 
-  return (
-    <Card className="min-h-40">
-      <Text variant="caption" color="tertiary">
-        Page content will be added in a follow-up.
-      </Text>
-    </Card>
-  )
+  return <InstallOverviewCards />
 }

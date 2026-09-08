@@ -1,15 +1,8 @@
-import { Card } from '../components/atoms/Card'
-import { Text } from '../components/atoms/Text'
+import { AppBranchOverviewCards } from '../components/organisms/AppBranchOverviewCards'
 import { useAppBranchPageChrome } from './AppBranchLayout'
 
 export const AppBranchOverview = () => {
   useAppBranchPageChrome()
 
-  return (
-    <Card className="min-h-40">
-      <Text variant="caption" color="tertiary">
-        Page content will be added in a follow-up.
-      </Text>
-    </Card>
-  )
+  return <AppBranchOverviewCards />
 }
