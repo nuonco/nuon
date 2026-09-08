@@ -25,7 +25,7 @@ Read-only by default. Pass --allow-writes to also expose mutating tools.
 
 Example Claude Code config (.mcp.json):
 
-  {"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp"]}}}`,
+  {"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp", "--allow-writes"]}}}`,
 		PersistentPreRunE: c.persistentPreRunE,
 		GroupID:           AdditionalGroup.ID,
 		Annotations:       outputsAnnotation(OutputTable),
@@ -37,7 +37,7 @@ Example Claude Code config (.mcp.json):
 			// existing .mcp.json configs. A human on a TTY would just see the
 			// server block on stdin, so point them at the new command instead.
 			if c.cfg.Interactive {
-				fmt.Fprintln(os.Stderr, `Run "nuon agents mcp" to start the stdio MCP proxy.`)
+				fmt.Fprintln(os.Stderr, `Run "nuon agents mcp --allow-writes" to start the stdio MCP proxy.`)
 				return nil
 			}
 
@@ -48,8 +48,6 @@ Example Claude Code config (.mcp.json):
 		}),
 	}
 	mcpCmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "expose mutating tools whose descriptions start with WRITE OPERATION:")
-
-	mcpCmd.AddCommand(c.mcpSetupCmd())
 
 	return mcpCmd
 }

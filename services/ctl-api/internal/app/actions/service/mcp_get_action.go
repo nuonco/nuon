@@ -46,7 +46,7 @@ func (s *service) mcpGetAction(ctx context.Context, _ *mcp.CallToolRequest, in m
 		InstallID:        iaw.InstallID,
 		ActionWorkflowID: iaw.ActionWorkflowID,
 		Name:             iaw.ActionWorkflow.Name,
-		CreatedAt:        iaw.CreatedAt.String(),
+		CreatedAt:        apiPkg.MCPTime(iaw.CreatedAt),
 	}
 
 	if install.AppConfigID != "" {

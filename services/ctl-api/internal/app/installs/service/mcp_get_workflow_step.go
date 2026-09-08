@@ -68,7 +68,7 @@ func (s *service) mcpGetWorkflowStep(ctx context.Context, _ *mcp.CallToolRequest
 		HasLogs:           stepHasLogs(step.StepTargetType),
 		Retryable:         step.Retryable,
 		Skippable:         step.Skippable,
-		CreatedAt:         step.CreatedAt.String(),
+		CreatedAt:         apiPkg.MCPTime(step.CreatedAt),
 	}
 
 	if step.ExecutionTime > 0 {
