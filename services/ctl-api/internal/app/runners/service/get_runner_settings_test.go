@@ -72,6 +72,7 @@ func (s *GetRunnerSettingsTestSuite) SetupSuite() {
 func (s *GetRunnerSettingsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
+	s.service.RunnersService.telemetryRelayEndpoint = "https://telemetry.example.com"
 
 	// Create router with runner service routes
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -144,6 +145,7 @@ func (s *GetRunnerSettingsTestSuite) setupTestData() {
 		EnableMetrics:            true,
 		EnableLogging:            true,
 		LoggingLevel:             "info",
+		VendorTelemetryEnabled:   true,
 		OrgK8sServiceAccountName: "test-sa",
 		OrgAWSIAMRoleARN:         "arn:aws:iam::123456789:role/test-role",
 		AWSMaxInstanceLifetime:   604800, // Deprecated: no longer used by ASG
@@ -201,6 +203,8 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettings() {
 				assert.Equal(s.T(), s.testSettings.EnableLogging, settings.EnableLogging)
 				assert.Equal(s.T(), s.testSettings.LoggingLevel, settings.LoggingLevel)
 				assert.Equal(s.T(), s.testSettings.AWSMaxInstanceLifetime, settings.AWSMaxInstanceLifetime) // Deprecated: no longer used by ASG
+				assert.False(s.T(), settings.VendorTelemetryEnabled)
+				assert.Empty(s.T(), settings.TelemetryRelayEndpoint)
 			},
 		},
 		{
@@ -291,6 +295,42 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettings() {
 			}
 		})
 	}
+}
+
+func (s *GetRunnerSettingsTestSuite) TestVendorTelemetryRequiresEligibleInstallRunner() {
+	require.NoError(s.T(), s.service.DB.Model(&app.RunnerGroup{}).
+		Where(app.RunnerGroup{ID: s.testRunnerGrp.ID}).
+		Updates(app.RunnerGroup{Type: app.RunnerGroupTypeInstall, OwnerType: "installs"}).Error)
+
+	rr := s.makeRequest(http.MethodGet, "/v1/runners/"+s.testRunner.ID+"/settings")
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+	var settings app.RunnerGroupSettings
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &settings))
+	assert.True(s.T(), settings.VendorTelemetryEnabled)
+	assert.Equal(s.T(), "https://telemetry.example.com", settings.TelemetryRelayEndpoint)
+
+	require.NoError(s.T(), s.service.DB.Model(&app.RunnerGroupSettings{}).
+		Where(app.RunnerGroupSettings{ID: s.testSettings.ID}).
+		Update("vendor_telemetry_enabled", false).Error)
+
+	rr = s.makeRequest(http.MethodGet, "/v1/runners/"+s.testRunner.ID+"/settings")
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+	settings = app.RunnerGroupSettings{}
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &settings))
+	assert.False(s.T(), settings.VendorTelemetryEnabled)
+	assert.Empty(s.T(), settings.TelemetryRelayEndpoint)
+
+	require.NoError(s.T(), s.service.DB.Model(&app.RunnerGroupSettings{}).
+		Where(app.RunnerGroupSettings{ID: s.testSettings.ID}).
+		Update("vendor_telemetry_enabled", true).Error)
+	s.service.RunnersService.telemetryRelayEndpoint = ""
+
+	rr = s.makeRequest(http.MethodGet, "/v1/runners/"+s.testRunner.ID+"/settings")
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+	settings = app.RunnerGroupSettings{}
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &settings))
+	assert.False(s.T(), settings.VendorTelemetryEnabled)
+	assert.Empty(s.T(), settings.TelemetryRelayEndpoint)
 }
 
 func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettingsMultipleRunners() {

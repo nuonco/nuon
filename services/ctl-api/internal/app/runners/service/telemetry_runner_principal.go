@@ -37,6 +37,7 @@ func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app
 	var runner app.Runner
 	err = s.db.WithContext(ctx).
 		Preload("RunnerGroup").
+		Preload("RunnerGroup.Settings").
 		Where(app.Runner{ID: acct.Subject, OrgID: orgID}).
 		First(&runner).Error
 	if err != nil {
@@ -51,7 +52,7 @@ func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app
 	}
 
 	group := runner.RunnerGroup
-	if group.OrgID != orgID || group.Type != app.RunnerGroupTypeInstall || group.OwnerType != plugins.TableName(s.db, app.Install{}) {
+	if group.OrgID != orgID || group.Type != app.RunnerGroupTypeInstall || group.OwnerType != plugins.TableName(s.db, app.Install{}) || !group.Settings.VendorTelemetryEnabled {
 		return principal, telemetryRunnerAuthorizationError()
 	}
 

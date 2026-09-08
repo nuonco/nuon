@@ -17,5 +17,6 @@ exporters:
   - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v0.150.0
 
 extensions:
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.150.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.150.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/storage/filestorage v0.150.0
