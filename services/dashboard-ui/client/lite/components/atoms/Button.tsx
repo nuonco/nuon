@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from 'react'
+import { Link as RouterLink } from 'react-router'
 import { cn } from '@/utils/classnames'
 import type { TPopoverSide } from '../../hooks/use-popover'
 import { Spinner } from './Spinner'
@@ -15,10 +16,11 @@ export interface IButton extends ButtonHTMLAttributes<HTMLButtonElement> {
   iconOnly?: boolean
   tooltip?: ReactNode
   tooltipSide?: TPopoverSide
+  href?: string
 }
 
 const BASE_CLASSES =
-  'relative inline-grid grid-flow-col cursor-pointer items-center justify-center rounded-lg border text-body font-medium ' +
+  'relative inline-grid grid-flow-col cursor-pointer items-center justify-center rounded-lg border text-body font-medium no-underline ' +
   'outline-none transition-colors duration-150 ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ' +
   'aria-disabled:cursor-not-allowed aria-disabled:opacity-50'
@@ -57,54 +59,74 @@ export const Button = ({
   className,
   children,
   type = 'button',
+  href,
   ...props
 }: IButton) => {
   const inactive = disabled || loading
-
-  const button = (
-  <button
-    type={type}
-    aria-disabled={inactive || undefined}
-    onClick={(event: MouseEvent<HTMLButtonElement>) => {
-      if (inactive) {
-        event.preventDefault()
-        return
-      }
-      onClick?.(event)
-    }}
-    aria-busy={loading || undefined}
-    className={cn(
-      BASE_CLASSES,
-      VARIANT_CLASSES[variant],
-      iconOnly ? SIZE_CLASSES[size].icon : SIZE_CLASSES[size].text,
-      className
-    )}
-    {...props}
-  >
-    <span
-      aria-hidden={!loading}
-      className={cn(
-        'grid overflow-hidden transition-[grid-template-columns,margin-right] duration-200 ease-out motion-reduce:transition-none',
-        loading ? 'grid-cols-[1fr]' : 'grid-cols-[0fr]',
-        loading && !iconOnly && 'mr-1.5'
-      )}
-    >
-      <span className="flex min-w-0 items-center justify-center">
-        <Spinner />
-      </span>
-    </span>
-    {!loading && icon && (
-      <span className="-ml-0.5 mr-1.5 flex items-center">{icon}</span>
-    )}
-    {!(iconOnly && loading) && children}
-  </button>
+  const classes = cn(
+    BASE_CLASSES,
+    VARIANT_CLASSES[variant],
+    iconOnly ? SIZE_CLASSES[size].icon : SIZE_CLASSES[size].text,
+    className
   )
 
-  if (!tooltip) return button
+  const content = (
+    <>
+      <span
+        aria-hidden={!loading}
+        className={cn(
+          'grid overflow-hidden transition-[grid-template-columns,margin-right] duration-200 ease-out motion-reduce:transition-none',
+          loading ? 'grid-cols-[1fr]' : 'grid-cols-[0fr]',
+          loading && !iconOnly && 'mr-1.5'
+        )}
+      >
+        <span className="flex min-w-0 items-center justify-center">
+          <Spinner />
+        </span>
+      </span>
+      {!loading && icon ? (
+        <span className="-ml-0.5 mr-1.5 flex items-center">{icon}</span>
+      ) : null}
+      {!(iconOnly && loading) ? children : null}
+    </>
+  )
+
+  const handleActivate = (event: MouseEvent<HTMLElement>) => {
+    if (inactive) {
+      event.preventDefault()
+      return
+    }
+    onClick?.(event as MouseEvent<HTMLButtonElement>)
+  }
+
+  const control = href ? (
+    <RouterLink
+      to={href}
+      aria-disabled={inactive || undefined}
+      aria-busy={loading || undefined}
+      className={classes}
+      onClick={handleActivate}
+    >
+      {content}
+    </RouterLink>
+  ) : (
+    <button
+      type={type}
+      aria-disabled={inactive || undefined}
+      aria-busy={loading || undefined}
+      className={classes}
+      onClick={handleActivate}
+      {...props}
+    >
+      {content}
+    </button>
+  )
+
+  if (!tooltip) return control
 
   return (
     <Tooltip content={tooltip} side={tooltipSide}>
-      {button}
+      {control}
     </Tooltip>
   )
 }

@@ -8,7 +8,7 @@ import {
   type IListQueryParameter,
   type TListQueryParameters,
   type TListQueryValues,
-} from '../lib/list-query'
+} from '../utils/list-query'
 
 const DEFAULT_SEARCH = stringQueryParameter('q')
 const DEFAULT_OFFSET = offsetQueryParameter()

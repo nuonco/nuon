@@ -12,6 +12,7 @@ import { InstallActivity } from './pages/InstallActivity'
 import { InstallLayout } from './pages/InstallLayout'
 import { InstallOverview } from './pages/InstallOverview'
 import { Installs } from './pages/Installs'
+import { InstallSetup } from './pages/InstallSetup'
 import { OrgLayout } from './pages/OrgLayout'
 import { RootLayout } from './pages/RootLayout'
 import { SettingsLayout } from './pages/SettingsLayout'
@@ -91,6 +92,11 @@ export const liteRoutes: RouteObject[] = [
             ],
           },
           { id: 'installs', path: 'installs', element: <Installs /> },
+          {
+            id: 'install-setup',
+            path: 'installs/setup',
+            element: <InstallSetup />,
+          },
           {
             id: 'install-layout',
             path: 'installs/:installId',

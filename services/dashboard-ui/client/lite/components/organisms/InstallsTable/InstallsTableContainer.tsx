@@ -8,7 +8,7 @@ import {
   toLabelColorMap,
 } from '@/lib'
 import { useListQueryState } from '../../../hooks/use-list-query-state'
-import { commaSetQueryParameter } from '../../../lib/list-query'
+import { commaSetQueryParameter } from '../../../utils/list-query'
 import { useOrg } from '../../../providers/org-provider'
 import { Badge } from '../../atoms/Badge'
 import {

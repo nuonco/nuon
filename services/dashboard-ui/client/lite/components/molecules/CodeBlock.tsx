@@ -11,13 +11,13 @@ import {
   MATCH_NAV_TOOLTIP,
   lineMatches,
   matchNavKeyDown,
-} from '../../lib/code-search'
+} from '../../utils/code-search'
 import {
   LITE_SYNTAX_THEME,
   registerSyntax,
   resolveLanguage,
   type TSyntaxLanguage,
-} from '../../lib/syntax'
+} from '../../utils/syntax'
 import { Button } from '../atoms/Button'
 import { CopyButton } from '../atoms/CopyButton'
 import { Icon } from '../atoms/Icon'

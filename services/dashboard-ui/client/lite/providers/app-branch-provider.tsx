@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { getAppBranch } from '@/lib'
 import type { TAppBranch } from '@/types'
-import { setLastAppBranch } from '../lib/app-branch-session'
+import { setLastAppBranch } from '../utils/app-branch-session'
 import { useApp } from './app-provider'
 import { useOrg } from './org-provider'
 

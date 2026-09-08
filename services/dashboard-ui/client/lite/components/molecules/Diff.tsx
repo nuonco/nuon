@@ -11,13 +11,13 @@ import {
   MATCH_NAV_TOOLTIP,
   diffMatches,
   matchNavKeyDown,
-} from '../../lib/code-search'
+} from '../../utils/code-search'
 import {
   LITE_SYNTAX_THEME,
   registerSyntax,
   resolveLanguage,
-} from '../../lib/syntax'
-import { endWithNewline } from '../../lib/diffs'
+} from '../../utils/syntax'
+import { endWithNewline } from '../../utils/diffs'
 import { Button } from '../atoms/Button'
 import { Icon } from '../atoms/Icon'
 import { Text } from '../atoms/Text'

@@ -1,4 +1,4 @@
-import { emptyDiffSummary } from '../../lib/diffs'
+import { emptyDiffSummary } from '../../utils/diffs'
 import { ComponentDocs } from '../__stories__/ComponentDocs'
 import { DiffSummary } from './DiffSummary'
 

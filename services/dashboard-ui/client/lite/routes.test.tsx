@@ -66,6 +66,11 @@ test('matches focused and organization-scoped top-level routes', () => {
     'org-layout',
     'installs',
   ])
+  expect(matchedIds('/org-123/installs/setup')).toEqual([
+    'root-layout',
+    'org-layout',
+    'install-setup',
+  ])
   expect(matchedIds('/org-123/teams')).toEqual([
     'root-layout',
     'org-layout',

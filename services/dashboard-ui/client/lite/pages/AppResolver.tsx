@@ -3,10 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { getAppBranches } from '@/lib'
 import { Spinner } from '../components/atoms/Spinner'
 import { Text } from '../components/atoms/Text'
-import {
-  getLastAppBranch,
-  resolveAppHref,
-} from '../lib/app-branch-session'
+import { getLastAppBranch } from '../utils/app-branch-session'
+import { resolveAppHref } from '../utils/hrefs'
 import { useApp } from '../providers/app-provider'
 import { useOrg } from '../providers/org-provider'
 
