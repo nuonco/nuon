@@ -23,7 +23,6 @@ func (s *InstallsServiceTestSuite) TestInstallTelemetrySettings() {
 			ContainerImageURL:      "registry.example.com/runner",
 			ContainerImageTag:      "latest",
 			RunnerAPIURL:           "https://runner.example.com",
-			VendorTelemetryEnabled: true,
 			Metadata:               pgtype.Hstore{},
 			AWSMaxInstanceLifetime: 604800,
 		},
@@ -35,6 +34,16 @@ func (s *InstallsServiceTestSuite) TestInstallTelemetrySettings() {
 	require.Equal(s.T(), http.StatusOK, rr.Code, "body: %s", rr.Body.String())
 
 	var settings InstallTelemetrySettings
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &settings))
+	require.False(s.T(), settings.Enabled)
+
+	rr = s.makeRequest(http.MethodPatch, path, UpdateInstallTelemetryRequest{Enabled: boolPtr(true)})
+	require.Equal(s.T(), http.StatusOK, rr.Code, "body: %s", rr.Body.String())
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &settings))
+	require.True(s.T(), settings.Enabled)
+
+	rr = s.makeRequest(http.MethodGet, path, nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, "body: %s", rr.Body.String())
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &settings))
 	require.True(s.T(), settings.Enabled)
 

@@ -30,9 +30,13 @@ key. Eligible install runners receive the endpoint through their authenticated s
 that includes vendor telemetry support. No per-install secret is needed; the existing
 `nuon/<install-id>/telemetry-export-config` secret controls only audit export.
 
-Telemetry defaults to enabled for existing and new installs, but no vendor Collector starts until a relay endpoint is
-configured. Vendors can read or change the per-install flag using authenticated `GET` and `PATCH` requests to
-`/v1/installs/{install_id}/telemetry`; the PATCH body is `{"enabled": false}` or `{"enabled": true}`.
+Telemetry defaults to disabled for existing installs when the setting is first introduced and for new installs.
+Configuring the relay endpoint alone does not activate collection. Enable each pilot install with an authenticated
+`PATCH /v1/installs/{install_id}/telemetry` request containing `{"enabled": true}`. Use `{"enabled": false}` to disable
+it, and `GET` on the same endpoint to read its setting.
+
+Changing the schema default does not reset stored flags in an environment that already ran the default-enabled pilot.
+Disable those installs explicitly before configuring the relay endpoint there.
 
 The runner polls settings every 15 seconds and starts, stops, or replaces its separate vendor Collector without
 restarting the runner or audit Collector. It obtains and renews short-lived relay JWTs independently, stores them in a

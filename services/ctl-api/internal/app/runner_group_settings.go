@@ -90,7 +90,7 @@ type RunnerGroupSettings struct {
 	LoggingLevel  string         `json:"logging_level,omitzero" temporaljson:"logging_level,omitzero,omitempty"`
 	Groups        pq.StringArray `json:"groups,omitzero" gorm:"type:text[];default:'{}'" swaggertype:"array,string" temporaljson:"groups,omitzero,omitempty"` // the job loop groups the runner should poll for
 
-	VendorTelemetryEnabled bool `json:"vendor_telemetry_enabled" gorm:"not null;default:true" temporaljson:"vendor_telemetry_enabled,omitempty"`
+	VendorTelemetryEnabled bool `json:"vendor_telemetry_enabled" gorm:"not null;default:false" temporaljson:"vendor_telemetry_enabled,omitempty"`
 
 	// Metadata is used as both log and metric tags/attributes in the runner when emitting data
 	Metadata pgtype.Hstore `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`

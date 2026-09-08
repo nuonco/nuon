@@ -80,14 +80,13 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			},
 		},
 		Settings: app.RunnerGroupSettings{
-			SandboxMode:            sandboxMode,
-			ContainerImageURL:      h.runnerImageURLForPlatform(install.AppRunnerConfig.CloudPlatform),
-			ContainerImageTag:      h.cfg.RunnerContainerImageTag,
-			RunnerAPIURL:           firstNonEmpty(install.AppRunnerConfig.RunnerAPIURL, h.cfg.RunnerAPIURL),
-			HeartBeatTimeout:       defaultRunnerGroupHeartBeatTimeout,
-			EnableLogging:          true,
-			LoggingLevel:           slog.LevelInfo.String(),
-			VendorTelemetryEnabled: true,
+			SandboxMode:       sandboxMode,
+			ContainerImageURL: h.runnerImageURLForPlatform(install.AppRunnerConfig.CloudPlatform),
+			ContainerImageTag: h.cfg.RunnerContainerImageTag,
+			RunnerAPIURL:      firstNonEmpty(install.AppRunnerConfig.RunnerAPIURL, h.cfg.RunnerAPIURL),
+			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
+			EnableLogging:     true,
+			LoggingLevel:      slog.LevelInfo.String(),
 			// NOTE(jm): until we add support for writing metrics via our API, this must be disabled as we
 			// do not guarantee datadog is running in install accounts.
 			EnableMetrics:   false,
