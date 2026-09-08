@@ -3,6 +3,9 @@ package telemetryexport
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -166,14 +169,14 @@ func TestCollectorConfigKeepsHeaderValuesOutOfFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	async := generated.Exporters["otlp_http/async"]
-	if !async.SendingQueue.Enabled || async.SendingQueue.QueueSize != auditQueueSize || async.SendingQueue.NumConsumers != auditQueueConsumers || async.SendingQueue.Storage != fileStorageExtensionID || async.SendingQueue.BlockOnOverflow || !async.Retry.Enabled || async.Retry.InitialInterval != "1s" || async.Retry.MaxInterval != "30s" || async.Retry.MaxElapsedTime != "0s" {
+	if !async.SendingQueue.Enabled || async.SendingQueue.QueueSize != auditQueueSize || async.SendingQueue.NumConsumers != auditQueueConsumers || async.SendingQueue.Storage != auditFileStorageExtensionID || async.SendingQueue.BlockOnOverflow || !async.Retry.Enabled || async.Retry.InitialInterval != "1s" || async.Retry.MaxInterval != "30s" || async.Retry.MaxElapsedTime != "0s" {
 		t.Fatalf("asynchronous exporter does not queue and retry: %#v", async)
 	}
-	storage := generated.Extensions[fileStorageExtensionID]
+	storage := generated.Extensions[auditFileStorageExtensionID]
 	if storage.Directory != collectorStorageDir || !storage.CreateDirectory || storage.DirectoryPermissions != "0700" || !storage.Fsync || !storage.Compaction.OnRebound || storage.Compaction.Directory != collectorStorageDir || !storage.Compaction.CleanupOnStart {
 		t.Fatalf("asynchronous exporter storage is not durable: %#v", storage)
 	}
-	if !slices.Contains(generated.Service.Extensions, fileStorageExtensionID) {
+	if !slices.Contains(generated.Service.Extensions, auditFileStorageExtensionID) {
 		t.Fatalf("file storage extension is not enabled by the collector service: %q", generated.Service.Extensions)
 	}
 	sync := generated.Exporters["otlp_http/sync"]
@@ -201,9 +204,128 @@ func TestCollectorConfigOmitsAuditPipelineWhenDisabled(t *testing.T) {
 	if !strings.Contains(config, "health_check:") || !strings.Contains(config, "pipelines: {}") {
 		t.Fatalf("generated collector configuration does not contain an empty service: %s", config)
 	}
-	for _, unexpected := range []string{audit.AsyncRouteAddress, audit.SyncRouteAddress, "logs/audit_async:", "logs/audit_sync:", "otlp_http/async:", "otlp_http/sync:", fileStorageExtensionID, collectorStorageDir} {
+	for _, unexpected := range []string{audit.AsyncRouteAddress, audit.SyncRouteAddress, "logs/audit_async:", "logs/audit_sync:", "otlp_http/async:", "otlp_http/sync:", auditFileStorageExtensionID, collectorStorageDir} {
 		if strings.Contains(config, unexpected) {
 			t.Fatalf("generated collector configuration contains disabled audit component %q", unexpected)
 		}
+	}
+}
+
+func TestVendorCollectorConfigBuildsPersistentPipelines(t *testing.T) {
+	contents, err := vendorCollectorConfig("https://relay.example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(contents), "access_token") {
+		t.Fatal("generated collector configuration contains credential material")
+	}
+
+	var generated struct {
+		Extensions map[string]struct {
+			Endpoint  string `yaml:"endpoint"`
+			Directory string `yaml:"directory"`
+			Filename  string `yaml:"filename"`
+		} `yaml:"extensions"`
+		Receivers map[string]struct {
+			Protocols struct {
+				GRPC struct {
+					Endpoint          string `yaml:"endpoint"`
+					MaxReceiveSizeMiB int    `yaml:"max_recv_msg_size_mib"`
+				} `yaml:"grpc"`
+				HTTP struct {
+					Endpoint           string `yaml:"endpoint"`
+					MaxRequestBodySize int    `yaml:"max_request_body_size"`
+				} `yaml:"http"`
+			} `yaml:"protocols"`
+		} `yaml:"receivers"`
+		Exporters map[string]struct {
+			Endpoint string `yaml:"endpoint"`
+			Auth     struct {
+				Authenticator string `yaml:"authenticator"`
+			} `yaml:"auth"`
+			SendingQueue struct {
+				Enabled         bool   `yaml:"enabled"`
+				Sizer           string `yaml:"sizer"`
+				QueueSize       int    `yaml:"queue_size"`
+				NumConsumers    int    `yaml:"num_consumers"`
+				Storage         string `yaml:"storage"`
+				BlockOnOverflow bool   `yaml:"block_on_overflow"`
+			} `yaml:"sending_queue"`
+			Retry struct {
+				Enabled        bool   `yaml:"enabled"`
+				MaxElapsedTime string `yaml:"max_elapsed_time"`
+			} `yaml:"retry_on_failure"`
+		} `yaml:"exporters"`
+		Service struct {
+			Extensions []string       `yaml:"extensions"`
+			Pipelines  map[string]any `yaml:"pipelines"`
+		} `yaml:"service"`
+	}
+	if err := yaml.Unmarshal(contents, &generated); err != nil {
+		t.Fatal(err)
+	}
+
+	vendorStorage := generated.Extensions[vendorFileStorageExtensionID]
+	if vendorStorage.Directory != vendorStorageDir || vendorStorage.Directory == collectorStorageDir {
+		t.Fatalf("vendor storage is not isolated and bounded: %#v", vendorStorage)
+	}
+	if generated.Extensions["health_check"].Endpoint != vendorCollectorHealthAddress {
+		t.Fatalf("vendor health check uses the audit collector address: %#v", generated.Extensions["health_check"])
+	}
+	if generated.Extensions[vendorBearerAuthExtensionID].Filename != vendorTokenPath {
+		t.Fatalf("vendor bearer authenticator does not use the protected token file: %#v", generated.Extensions[vendorBearerAuthExtensionID])
+	}
+	if !slices.Contains(generated.Service.Extensions, vendorFileStorageExtensionID) || !slices.Contains(generated.Service.Extensions, vendorBearerAuthExtensionID) {
+		t.Fatalf("vendor extensions are not enabled: %q", generated.Service.Extensions)
+	}
+	vendorReceiver := generated.Receivers["otlp"]
+	if vendorReceiver.Protocols.GRPC.Endpoint != vendorOTLPGRPCAddress || vendorReceiver.Protocols.GRPC.MaxReceiveSizeMiB != 4 || vendorReceiver.Protocols.HTTP.Endpoint != vendorOTLPHTTPAddress || vendorReceiver.Protocols.HTTP.MaxRequestBodySize != maxOTLPRequestBodySize {
+		t.Fatalf("unexpected vendor receiver: %#v", vendorReceiver)
+	}
+	vendorExporter := generated.Exporters["otlp_http/vendor"]
+	if vendorExporter.Endpoint != "https://relay.example.com" || vendorExporter.Auth.Authenticator != vendorBearerAuthExtensionID || !vendorExporter.SendingQueue.Enabled || vendorExporter.SendingQueue.Sizer != "bytes" || vendorExporter.SendingQueue.QueueSize != vendorQueueSizeBytes || vendorExporter.SendingQueue.NumConsumers != vendorQueueConsumers || vendorExporter.SendingQueue.Storage != vendorFileStorageExtensionID || vendorExporter.SendingQueue.BlockOnOverflow || !vendorExporter.Retry.Enabled || vendorExporter.Retry.MaxElapsedTime != "0s" {
+		t.Fatalf("vendor exporter is not durable and asynchronous: %#v", vendorExporter)
+	}
+	for _, pipeline := range []string{"logs", "metrics", "traces"} {
+		if _, ok := generated.Service.Pipelines[pipeline]; !ok {
+			t.Fatalf("generated configuration lacks pipeline %q", pipeline)
+		}
+	}
+	for _, unexpected := range []string{audit.AsyncRouteAddress, audit.SyncRouteAddress, "logs/audit", "otlp_http/async", "NUON_VENDOR_TELEMETRY_EXPORT_HEADER"} {
+		if strings.Contains(string(contents), unexpected) {
+			t.Fatalf("vendor collector configuration contains audit or static-header component %q", unexpected)
+		}
+	}
+}
+
+func TestVendorCollectorConfigRejectsInvalidEndpoint(t *testing.T) {
+	if _, err := vendorCollectorConfig("http://relay.example.com"); err == nil {
+		t.Fatal("insecure vendor relay endpoint was accepted")
+	}
+}
+
+func TestCollectorConfigsValidate(t *testing.T) {
+	binary := os.Getenv("NUON_TEST_OTELCOL")
+	if binary == "" {
+		t.Skip("set NUON_TEST_OTELCOL to the built runner Collector binary")
+	}
+	vendor, err := vendorCollectorConfig("https://relay.example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	auditConfig, _, err := collectorConfig(config{AuditLogsEnabled: true, OTLPHTTP: otlpHTTPExporter{Endpoint: "https://audit.example.com"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, contents := range map[string][]byte{"vendor": vendor, "audit": auditConfig} {
+		t.Run(name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "collector.yaml")
+			if err := os.WriteFile(path, contents, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if output, err := exec.Command(binary, "validate", "--config", path).CombinedOutput(); err != nil {
+				t.Fatalf("collector configuration is invalid: %v\n%s", err, output)
+			}
+		})
 	}
 }

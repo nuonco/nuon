@@ -108,6 +108,7 @@ func init() {
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
 	config.RegisterDefault("telemetry_jwks", "")
 	config.RegisterDefault("telemetry_jwt_issuer", "")
+	config.RegisterDefault("telemetry_relay_endpoint", "")
 
 	// max request sizes to prevent too large of requests
 	config.RegisterDefault("max_request_size", 1024*50)
@@ -402,8 +403,9 @@ type Config struct {
 	AuditOTLPEndpoint string `config:"audit_otlp_endpoint"`
 	AuditOTLPToken    string `config:"audit_otlp_token"`
 
-	TelemetryJWKS      string `config:"telemetry_jwks,secure"`
-	TelemetryJWTIssuer string `config:"telemetry_jwt_issuer"`
+	TelemetryJWKS          string `config:"telemetry_jwks,secure"`
+	TelemetryJWTIssuer     string `config:"telemetry_jwt_issuer"`
+	TelemetryRelayEndpoint string `config:"telemetry_relay_endpoint"`
 
 	// configuration for runners
 	RunnerContainerImageURL      string `config:"runner_container_image_url" validate:"required"`

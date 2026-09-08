@@ -25,7 +25,9 @@ type Settings struct {
 	// surfaced through the runner-settings response. When true the
 	// jobloop calls the `/jobs/tail` long-poll endpoint instead of the
 	// legacy 5s idle-poll loop.
-	LongPollJobs bool
+	LongPollJobs           bool
+	TelemetryRelayEndpoint string
+	VendorTelemetryEnabled bool
 
 	// visibility settings
 	EnableLogging bool
