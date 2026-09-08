@@ -57,6 +57,8 @@ func PrintEnv(ctx context.Context, env map[string]string) {
 		"secret",
 		"aws_access",
 		"github_app_key",
+		"jwks",
+		"authorization",
 	}
 	maxKLen := 0
 	for k := range env {
