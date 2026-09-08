@@ -28,7 +28,13 @@ import (
 //return obj, nil
 //}
 
-func DecodeComponent(fromType reflect.Type, toType reflect.Type, from interface{}) (interface{}, error) {
+func DecodeComponent(rootDir string) mapstructure.DecodeHookFunc {
+	return func(fromType reflect.Type, toType reflect.Type, from interface{}) (interface{}, error) {
+		return decodeComponent(fromType, toType, from, rootDir)
+	}
+}
+
+func decodeComponent(fromType reflect.Type, toType reflect.Type, from interface{}, rootDir string) (interface{}, error) {
 	if fromType != reflect.TypeOf(map[string]interface{}{}) {
 		return from, nil
 	}
@@ -39,7 +45,7 @@ func DecodeComponent(fromType reflect.Type, toType reflect.Type, from interface{
 	obj := from.(map[string]interface{})
 	src, ok := obj["source"]
 	if ok {
-		srcObj, err := source.LoadSource(src.(string))
+		srcObj, err := source.LoadSourceFrom(src.(string), rootDir)
 		if err != nil {
 			return from, ErrConfig{
 				Description: "unable to load source",
