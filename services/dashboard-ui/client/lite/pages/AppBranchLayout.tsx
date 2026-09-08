@@ -1,0 +1,78 @@
+import { Outlet } from 'react-router'
+import { SubNav, type ISubNavItem } from '../components/molecules/SubNav'
+import { useBreadcrumbs } from '../hooks/use-breadcrumbs'
+import { usePageTitle } from '../hooks/use-page-title'
+import type { IBreadcrumbItem } from '../providers/breadcrumb-provider'
+import {
+  AppBranchProvider,
+  useAppBranch,
+} from '../providers/app-branch-provider'
+import { useApp } from '../providers/app-provider'
+import { useOrg } from '../providers/org-provider'
+
+export const appBranchNavigation = (
+  orgId: string,
+  appId: string,
+  branchId: string
+): ISubNavItem[] => {
+  const base = `/${orgId}/apps/${appId}/branches/${branchId}`
+
+  return [
+    { href: base, label: 'Overview', end: true },
+    { href: `${base}/activity`, label: 'Activity' },
+    { href: `${base}/config`, label: 'Config' },
+  ]
+}
+
+export const useAppBranchPageChrome = (section?: string) => {
+  const { org, orgId } = useOrg()
+  const { app, appId } = useApp()
+  const { branchId } = useAppBranch()
+  const overviewHref =
+    orgId && appId && branchId
+      ? `/${orgId}/apps/${appId}/branches/${branchId}`
+      : undefined
+
+  const trail: IBreadcrumbItem[] = [
+    {
+      label: org?.name,
+      href: orgId ? `/${orgId}` : undefined,
+      loadingWidth: 16,
+    },
+    {
+      label: 'Apps',
+      href: orgId ? `/${orgId}/apps` : undefined,
+    },
+    {
+      label: app?.name,
+      href: section ? overviewHref : undefined,
+      loadingWidth: 14,
+    },
+  ]
+  if (section) trail.push({ label: section })
+
+  usePageTitle(section ?? app?.name, section ? app?.name : undefined)
+  useBreadcrumbs(trail)
+}
+
+const AppBranchChrome = () => {
+  const { orgId } = useOrg()
+  const { appId } = useApp()
+  const { branchId } = useAppBranch()
+
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <SubNav
+        items={appBranchNavigation(orgId ?? '', appId ?? '', branchId ?? '')}
+        label="App sections"
+      />
+      <Outlet />
+    </div>
+  )
+}
+
+export const AppBranchLayout = () => (
+  <AppBranchProvider>
+    <AppBranchChrome />
+  </AppBranchProvider>
+)

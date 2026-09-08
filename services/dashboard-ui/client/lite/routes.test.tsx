@@ -2,6 +2,7 @@ import { afterEach, expect, test } from 'bun:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import { matchRoutes, MemoryRouter } from 'react-router'
 import { SubNav } from './components/molecules/SubNav'
+import { appBranchNavigation } from './pages/AppBranchLayout'
 import { installNavigation } from './pages/InstallLayout'
 import { orgNavigation } from './pages/OrgLayout'
 import { settingsNavigation } from './pages/SettingsLayout'
@@ -27,6 +28,38 @@ test('matches focused and organization-scoped top-level routes', () => {
     'root-layout',
     'org-layout',
     'apps',
+  ])
+  expect(matchedIds('/org-123/apps/setup')).toEqual([
+    'root-layout',
+    'org-layout',
+    'app-setup',
+  ])
+  expect(matchedIds('/org-123/apps/app-1')).toEqual([
+    'root-layout',
+    'org-layout',
+    'app-layout',
+    'app-resolver',
+  ])
+  expect(matchedIds('/org-123/apps/app-1/branches/br-1')).toEqual([
+    'root-layout',
+    'org-layout',
+    'app-layout',
+    'app-branch-layout',
+    'app-branch-overview',
+  ])
+  expect(matchedIds('/org-123/apps/app-1/branches/br-1/activity')).toEqual([
+    'root-layout',
+    'org-layout',
+    'app-layout',
+    'app-branch-layout',
+    'app-branch-activity',
+  ])
+  expect(matchedIds('/org-123/apps/app-1/branches/br-1/config')).toEqual([
+    'root-layout',
+    'org-layout',
+    'app-layout',
+    'app-branch-layout',
+    'app-branch-config',
   ])
   expect(matchedIds('/org-123/installs')).toEqual([
     'root-layout',
@@ -92,6 +125,29 @@ test('builds every shell destination from the active organization', () => {
   expect(destinations.find((item) => item.label === 'Settings')?.href).toBe(
     '/org-123/settings'
   )
+})
+
+test('marks the active app section', () => {
+  render(
+    <MemoryRouter
+      initialEntries={['/org-123/apps/app-1/branches/br-1/activity']}
+    >
+      <SubNav
+        items={appBranchNavigation('org-123', 'app-1', 'br-1')}
+        label="App sections"
+      />
+    </MemoryRouter>
+  )
+
+  expect(
+    screen.getByRole('link', { name: 'Activity' }).getAttribute('aria-current')
+  ).toBe('page')
+  expect(
+    screen.getByRole('link', { name: 'Overview' }).hasAttribute('aria-current')
+  ).toBe(false)
+  expect(
+    screen.getByRole('link', { name: 'Config' }).hasAttribute('aria-current')
+  ).toBe(false)
 })
 
 test('marks the active install section', () => {

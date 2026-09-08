@@ -1,5 +1,12 @@
 import type { RouteObject } from 'react-router'
 import { FocusLayout } from './pages/FocusLayout'
+import { AppBranchActivity } from './pages/AppBranchActivity'
+import { AppBranchConfig } from './pages/AppBranchConfig'
+import { AppBranchLayout } from './pages/AppBranchLayout'
+import { AppBranchOverview } from './pages/AppBranchOverview'
+import { AppLayout } from './pages/AppLayout'
+import { AppResolver } from './pages/AppResolver'
+import { AppSetup } from './pages/AppSetup'
 import { Apps } from './pages/Apps'
 import { InstallActivity } from './pages/InstallActivity'
 import { InstallLayout } from './pages/InstallLayout'
@@ -44,6 +51,45 @@ export const liteRoutes: RouteObject[] = [
         children: [
           { id: 'dashboard', index: true, element: <Dashboard /> },
           { id: 'apps', path: 'apps', element: <Apps /> },
+          {
+            id: 'app-setup',
+            path: 'apps/setup',
+            element: <AppSetup />,
+          },
+          {
+            id: 'app-layout',
+            path: 'apps/:appId',
+            element: <AppLayout />,
+            children: [
+              {
+                id: 'app-resolver',
+                index: true,
+                element: <AppResolver />,
+              },
+              {
+                id: 'app-branch-layout',
+                path: 'branches/:branchId',
+                element: <AppBranchLayout />,
+                children: [
+                  {
+                    id: 'app-branch-overview',
+                    index: true,
+                    element: <AppBranchOverview />,
+                  },
+                  {
+                    id: 'app-branch-activity',
+                    path: 'activity',
+                    element: <AppBranchActivity />,
+                  },
+                  {
+                    id: 'app-branch-config',
+                    path: 'config',
+                    element: <AppBranchConfig />,
+                  },
+                ],
+              },
+            ],
+          },
           { id: 'installs', path: 'installs', element: <Installs /> },
           {
             id: 'install-layout',
