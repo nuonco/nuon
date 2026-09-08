@@ -68,6 +68,13 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
     Show the runbooks for app <app>. Summarize the steps in each one.
     ```
   </Accordion>
+  <Accordion title="Run a runbook">
+    ```
+    Run the <runbook> runbook on install acme-prod. Summarize its inputs and steps first, ask me before triggering it, then follow its workflow.
+    ```
+
+    Write.
+  </Accordion>
   <Accordion title="App branch overview">
     ```
     What's the latest on the default branch for app <app>? Did the last run succeed, what changed, and how far have install-group deploys gotten?
@@ -75,14 +82,26 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
 
     Requires the app-branches org feature.
   </Accordion>
+  <Accordion title="Changes in a branch run or PR preview">
+    ```
+    What changed in the most recent run of the default branch for app <app>?
+    ```
+
+    Variants: `In the preview run for PR <number>, what changed?` and `Show progress for branch run <run_id>, including updated installs and what is left.`
+  </Accordion>
   <Accordion title="Preview a PR or git ref">
     ```
-    Preview PR <number> for app <app> against install acme-prod. Use plan-only unless I ask you to apply. Watch the workflow and summarize the result.
+    Preview PR <number> for app <app> against install acme-prod. Use plan-only unless I ask you to apply. Follow the returned run_id and workflow_id, then summarize the result.
     ```
 
     Write. Same as `nuon apps branches preview`. Ask before `apply`.
 
-    HTTP MCP cannot read the local workspace. For local toml, run `nuon apps sync` first, then pass the resulting `app_config_id`.
+    HTTP MCP cannot read the local workspace. For local toml, run `nuon apps sync --branch <branch> --output agent` first, then pass the resulting `app_config_id`.
+  </Accordion>
+  <Accordion title="Describe an install">
+    ```
+    Describe install acme-prod. Include what most recently updated it, its components, current health, and its rendered README.
+    ```
   </Accordion>
   <Accordion title="Deprovision or reprovision">
     ```
