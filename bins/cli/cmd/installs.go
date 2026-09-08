@@ -966,22 +966,19 @@ reprovisioning the sandbox.`,
 	}
 	installsCmds.AddCommand(unsetCurrentInstallCmd)
 
-	var reprovisionStackOnly, reprovisionSkipComponents bool
+	var reprovisionStackOnly bool
 	reprovisionInstallCmd := &cobra.Command{
 		Use:   "reprovision",
 		Short: "Reprovision install",
 		Long: `Reprovision an install: the stack, then the sandbox, then all components.
 
 With --stack-only, only the stack is reprovisioned — the runner and its
-infrastructure are recreated and the sandbox is left alone. This is the same as
-` + "`nuon installs stacks reprovision`" + `.`,
+infrastructure are recreated and the sandbox is left alone. Components are not
+redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			if reprovisionSkipComponents && !reprovisionStackOnly {
-				return ui.PrintError(&ui.CLIUserError{Msg: "--skip-components is only supported with --stack-only"})
-			}
 			if reprovisionStackOnly {
-				return svc.ReprovisionStack(cmd.Context(), id, reprovisionSkipComponents, PrintJSON)
+				return svc.ReprovisionStack(cmd.Context(), id, PrintJSON)
 			}
 			return svc.Reprovision(cmd.Context(), id, PrintJSON)
 		}),
@@ -989,7 +986,6 @@ infrastructure are recreated and the sandbox is left alone. This is the same as
 	reprovisionInstallCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	reprovisionInstallCmd.MarkFlagRequired("install-id")
 	reprovisionInstallCmd.Flags().BoolVar(&reprovisionStackOnly, "stack-only", false, "Only reprovision the install stack, leaving the sandbox untouched")
-	reprovisionInstallCmd.Flags().BoolVar(&reprovisionSkipComponents, "skip-components", false, "Skip deploying components after reprovisioning the stack (--stack-only only)")
 	installsCmds.AddCommand(reprovisionInstallCmd)
 
 	deprovisionInstallCmd := &cobra.Command{
@@ -1572,19 +1568,17 @@ Available service names: api, runner (or any service name present in the logs)`,
 	stacksLatestCmd.MarkFlagRequired("install-id")
 	stacksCmd.AddCommand(stacksLatestCmd)
 
-	var stackSkipComponents bool
 	stacksReprovisionCmd := &cobra.Command{
 		Use:   "reprovision",
 		Short: "Reprovision an install stack",
-		Long:  "Reprovision an install stack, recreating the runner and its infrastructure",
+		Long:  "Reprovision an install stack, recreating the runner and its infrastructure. Components are not redeployed.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.ReprovisionStack(cmd.Context(), id, stackSkipComponents, PrintJSON)
+			return svc.ReprovisionStack(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	stacksReprovisionCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	stacksReprovisionCmd.MarkFlagRequired("install-id")
-	stacksReprovisionCmd.Flags().BoolVar(&stackSkipComponents, "skip-components", false, "Skip deploying components after reprovisioning the stack")
 	stacksCmd.AddCommand(stacksReprovisionCmd)
 
 	// NOTE(fd): this may not be the place where this ends up living
