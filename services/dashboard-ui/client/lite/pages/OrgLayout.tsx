@@ -4,6 +4,8 @@ import { Text } from '../components/atoms/Text'
 import type { INavItem } from '../components/molecules/NavLink'
 import { ThemeSwitcher } from '../components/molecules/ThemeSwitcher'
 import { Breadcrumb } from '../components/molecules/Breadcrumb'
+import { OrgProfile } from '../components/molecules/OrgProfile'
+import { OrgSwitcherMenu } from '../components/organisms/OrgSwitcherMenu'
 import { UserDropdown } from '../components/organisms/UserDropdown'
 import { SurfaceHost } from '../components/organisms/surfaces'
 import { DashboardShell } from '../components/templates/DashboardShell'
@@ -78,18 +80,14 @@ const OrgShell = () => {
           loading={isLoadingUser}
           signOutHref={`${config.authServiceUrl ?? ''}/logout`}
           stretch
+          org={org}
+          orgLoading={isLoading}
+          orgSwitcher={<OrgSwitcherMenu />}
         />
       }
       statusBar={
         <div className="flex h-8 items-center justify-between gap-4 px-4">
-          <Text
-            variant="label"
-            color="secondary"
-            loading={isLoading}
-            loadingWidth={16}
-          >
-            {org?.name ?? 'Organization unavailable'}
-          </Text>
+          <OrgProfile org={org} loading={isLoading} variant="inline" />
           <Text variant="label" color="tertiary">
             {error ? 'Connection issue' : `Version ${config.version ?? 'dev'}`}
           </Text>

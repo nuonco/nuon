@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router'
 import { SubNav, type ISubNavItem } from '../components/molecules/SubNav'
+import { BranchSwitcher } from '../components/organisms/BranchSwitcher'
 import { useBreadcrumbs } from '../hooks/use-breadcrumbs'
 import { usePageTitle } from '../hooks/use-page-title'
 import type { IBreadcrumbItem } from '../providers/breadcrumb-provider'
@@ -62,10 +63,13 @@ const AppBranchChrome = () => {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <SubNav
-        items={appBranchNavigation(orgId ?? '', appId ?? '', branchId ?? '')}
-        label="App sections"
-      />
+      <div className="flex items-center justify-between gap-4">
+        <SubNav
+          items={appBranchNavigation(orgId ?? '', appId ?? '', branchId ?? '')}
+          label="App sections"
+        />
+        <BranchSwitcher />
+      </div>
       <Outlet />
     </div>
   )

@@ -1,5 +1,7 @@
 import { afterEach, expect, test } from 'bun:test'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
+import { OrgSwitcherMenu } from './OrgSwitcherMenu/OrgSwitcherMenu'
 import { UserDropdown } from './UserDropdown'
 
 afterEach(cleanup)
@@ -30,4 +32,38 @@ test('labels the compact trigger as a user menu', () => {
   )
 
   expect(screen.getByRole('button', { name: 'Open user menu' })).toBeTruthy()
+})
+
+test('opens the organization switcher as a nested menu', () => {
+  render(
+    <MemoryRouter>
+      <UserDropdown
+        user={{ name: 'Alex Morgan', email: 'alex@example.com' }}
+        signOutHref="https://auth.example.com/logout"
+        org={{ id: 'org_alpha', name: 'alpha', status: 'active' }}
+        orgSwitcher={
+          <OrgSwitcherMenu
+            orgs={[
+              { id: 'org_alpha', name: 'alpha' },
+              { id: 'org_beta', name: 'beta' },
+            ]}
+            currentOrgId="org_alpha"
+            search=""
+            onSearchChange={() => {}}
+            onLoadMore={() => {}}
+          />
+        }
+      />
+    </MemoryRouter>
+  )
+
+  fireEvent.click(screen.getByRole('button', { name: /Alex Morgan/ }))
+  fireEvent.click(screen.getByRole('menuitem', { name: /alpha/ }))
+
+  expect(
+    screen.getByRole('searchbox', { name: 'Search organizations' })
+  ).toBeTruthy()
+  expect(
+    screen.getByRole('menuitemcheckbox', { name: /beta/ })
+  ).toHaveAttribute('href', '/org_beta')
 })

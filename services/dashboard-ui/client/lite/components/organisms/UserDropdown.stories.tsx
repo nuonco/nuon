@@ -1,6 +1,7 @@
 import { ComponentDocs } from '../__stories__/ComponentDocs'
 import { Card } from '../atoms/Card'
 import { Text } from '../atoms/Text'
+import { OrgSwitcherMenuComponent } from './OrgSwitcherMenu'
 import { UserDropdown } from './UserDropdown'
 
 export default {
@@ -22,14 +23,15 @@ export const Overview = () => (
     use={[
       'Use in application chrome where the signed-in user needs account actions.',
       'Use compact mode for an icon-sized header control.',
+      'Nest the organization switcher here so account and workspace context stay together.',
     ]}
     avoid={[
-      'Do not add organization navigation or setup actions to this menu.',
+      'Do not add unrelated resource navigation or setup actions to this menu.',
       'Do not open sign-out in a new browser tab.',
     ]}
     rules={[
       'The visible trigger is always UserProfile.',
-      'Sign out is the only menu item until the account menu is designed.',
+      'Organization switching is a nested menu before the sign-out action.',
       'The sign-out destination performs a same-window navigation.',
     ]}
     props={[
@@ -61,7 +63,24 @@ export const Overview = () => (
 
 export const Default = () => (
   <div className="flex justify-end p-20">
-    <UserDropdown user={USER} signOutHref={SIGN_OUT_HREF} defaultOpen />
+    <UserDropdown
+      user={USER}
+      signOutHref={SIGN_OUT_HREF}
+      org={{ id: 'org_alpha', name: 'alpha', status: 'active' }}
+      orgSwitcher={
+        <OrgSwitcherMenuComponent
+          orgs={[
+            { id: 'org_alpha', name: 'alpha' },
+            { id: 'org_beta', name: 'beta' },
+          ]}
+          currentOrgId="org_alpha"
+          search=""
+          onSearchChange={() => {}}
+          onLoadMore={() => {}}
+        />
+      }
+      defaultOpen
+    />
   </div>
 )
 

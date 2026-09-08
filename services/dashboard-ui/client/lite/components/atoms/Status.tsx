@@ -68,11 +68,15 @@ export const Status = ({
   const style = { '--status-color': THEME_VAR[resolved] } as CSSProperties
 
   if (loading) {
-    if (variant === 'icon') {
+    if (variant === 'icon' || variant === 'dot') {
       return (
         <span
           aria-hidden
-          className={cn('skeleton size-6 rounded-full', className)}
+          className={cn(
+            'skeleton shrink-0 rounded-full',
+            variant === 'icon' ? 'size-6' : 'size-2',
+            className
+          )}
         />
       )
     }

@@ -21,6 +21,7 @@ import (
 // @Param					offset						query	int		false	"offset of branches to return"	Default(0)
 // @Param					limit						query	int		false	"limit of branches to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
+// @Param					q							query	string	false	"filter branches by name"
 // @Tags					apps
 // @Accept					json
 // @Produce				json
@@ -51,7 +52,8 @@ func (s *service) GetAppBranches(ctx *gin.Context) {
 	}
 
 	appID := ctx.Param("app_id")
-	cfgs, err := s.getAppBranches(ctx, org.ID, appID)
+	q := ctx.Query("q")
+	cfgs, err := s.getAppBranches(ctx, org.ID, appID, q)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -60,10 +62,10 @@ func (s *service) GetAppBranches(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, cfgs)
 }
 
-func (s *service) getAppBranches(ctx *gin.Context, orgID, appID string) ([]app.AppBranch, error) {
+func (s *service) getAppBranches(ctx *gin.Context, orgID, appID, q string) ([]app.AppBranch, error) {
 	branches := make([]app.AppBranch, 0)
 
-	res := s.db.WithContext(ctx).
+	tx := s.db.WithContext(ctx).
 		Model(&app.AppBranch{}).
 		Select(fmt.Sprintf("app_branches.*, "+
 			"(SELECT COUNT(*) FROM %s w "+
@@ -74,7 +76,13 @@ func (s *service) getAppBranches(ctx *gin.Context, orgID, appID string) ([]app.A
 			OrgID: orgID,
 			AppID: appID,
 		}).
-		Order("created_at desc").
+		Order("created_at desc")
+
+	if q != "" {
+		tx = tx.Where("app_branches.name ILIKE ?", "%"+q+"%")
+	}
+
+	res := tx.
 		Find(&branches)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app branches: %w", res.Error)
