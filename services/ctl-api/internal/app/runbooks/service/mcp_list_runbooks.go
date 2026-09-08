@@ -15,6 +15,14 @@ type mcpListRunbooksInput struct {
 	AppID string `json:"app_id" jsonschema:"app ID to list runbooks for"`
 }
 
+type mcpRunbookListItem struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Status      string `json:"status,omitempty"`
+	CreatedAt   string `json:"created_at"`
+}
+
 func (s *service) mcpListRunbooks(ctx context.Context, _ *mcp.CallToolRequest, in mcpListRunbooksInput) (*mcp.CallToolResult, any, error) {
 	orgID, err := require.Read(ctx)
 	if err != nil {
@@ -30,5 +38,16 @@ func (s *service) mcpListRunbooks(ctx context.Context, _ *mcp.CallToolRequest, i
 		return nil, nil, fmt.Errorf("unable to list runbooks: %w", err)
 	}
 
-	return apiPkg.MCPJSONResult(runbooks)
+	out := make([]mcpRunbookListItem, 0, len(runbooks))
+	for _, r := range runbooks {
+		out = append(out, mcpRunbookListItem{
+			ID:          r.ID,
+			Name:        r.Name,
+			Description: r.Description,
+			Status:      string(r.Status),
+			CreatedAt:   apiPkg.MCPTime(r.CreatedAt),
+		})
+	}
+
+	return apiPkg.MCPJSONResult(out)
 }

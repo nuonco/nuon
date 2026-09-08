@@ -16,25 +16,32 @@ icon: "route"
 
 Add the stdio proxy. Token and org stay in `~/.nuon`.
 
-```bash
-nuon agents mcp setup --platform claude-code
-nuon agents mcp setup --platform cursor
-nuon agents mcp setup --platform amp
-```
-
-Or register with the client CLI:
-
 <CodeGroup>
 ```bash Claude Code
-claude mcp add --transport stdio nuon -- nuon agents mcp
+claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes
 ```
 
 ```bash Amp
-amp mcp add nuon -- nuon agents mcp
+amp mcp add nuon -- nuon agents mcp --allow-writes
+```
+
+```json Cursor
+{
+  "mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes"]
+    }
+  }
+}
 ```
 </CodeGroup>
 
-The proxy derives its URL from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`). Override it with `--url` (and `--name` for the client's MCP list). Cursor Agent: `agent mcp enable <name>` after setup. Full examples: [Connect](/guides/agents/overview#connect) and [Override the server](/guides/agents/overview#override-the-server).
+Cursor has no `mcp add`. Save the JSON as `~/.cursor/mcp.json` or project `.cursor/mcp.json`, then `agent mcp enable nuon`.
+
+Examples include `--allow-writes` so mutating tools are available. Your token must have create permission.
+
+The proxy derives its URL from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`). Override it with `--url` (and `--name` for the client's MCP list) on the registered command. Full examples: [Connect](/guides/agents/overview#connect) and [Override the server](/guides/agents/overview#override-the-server).
 
 </Step>
 
@@ -59,19 +66,6 @@ Who am I, and what installs are in this org?
 The client should call `whoami` and `list_installs`. You do not need `select_org` when using the stdio proxy (org is already in `X-Nuon-Org-ID`).
 
 More prompts: [Sample queries](/guides/agents/sample-queries).
-
-</Step>
-
-<Step title="Writes (optional)">
-
-Pass `--allow-writes` only when you need to mutate (approve steps, run actions, preview branches, and so on). Re-run setup so the client config includes it, or start the proxy directly:
-
-```bash
-nuon agents mcp setup --platform cursor --allow-writes
-nuon agents mcp --allow-writes
-```
-
-Your token must also have create permission.
 
 </Step>
 </Steps>
