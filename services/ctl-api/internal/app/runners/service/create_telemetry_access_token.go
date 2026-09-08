@@ -30,7 +30,7 @@ type CreateTelemetryAccessTokenResponse struct {
 // @Failure 503 {object} stderr.ErrResponse
 // @Router /v1/telemetry/access-token [POST]
 func (s *service) CreateTelemetryAccessToken(ctx *gin.Context) {
-	if s.telemetryTokenIssuer == nil {
+	if s.telemetryTokenIssuer == nil || s.telemetryRelayEndpoint == "" {
 		ctx.JSON(http.StatusServiceUnavailable, stderr.ErrResponse{
 			Error:       "telemetry token issuance is unavailable",
 			Description: "telemetry token issuance is unavailable",
