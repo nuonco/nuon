@@ -8,22 +8,26 @@ import {
 } from 'react'
 import type { TAppConfigDiffOperation, TAppConfigDiffSection } from '@/types'
 import { cn } from '@/utils/classnames'
-import { useDisclosure } from '../../hooks/use-disclosure'
-import { changeCounts, emptyDiffSummary } from '../../lib/diffs'
-import { ComponentDocs } from '../__stories__/ComponentDocs'
-import { Badge } from '../atoms/Badge'
-import { Button } from '../atoms/Button'
-import { Card } from '../atoms/Card'
-import { Icon } from '../atoms/Icon'
-import { Text } from '../atoms/Text'
-import { Tooltip } from '../atoms/Tooltip'
-import { Diff, type TDiffView } from '../molecules/Diff'
-import { DiffSummary } from '../molecules/DiffSummary'
-import { Disclosure } from '../molecules/Disclosure'
-import { DisclosureGroup, ExpandAllButton } from '../molecules/DisclosureGroup'
+import { useDisclosure } from '@/lite/hooks/use-disclosure'
+import { changeCounts, emptyDiffSummary } from '@/lite/lib/diffs'
+import { ComponentDocs } from '@/lite/components/__stories__/ComponentDocs'
+import { Badge } from '@/lite/components/atoms/Badge'
+import { Button } from '@/lite/components/atoms/Button'
+import { Card } from '@/lite/components/atoms/Card'
+import { Icon } from '@/lite/components/atoms/Icon'
+import { Text } from '@/lite/components/atoms/Text'
+import { Tooltip } from '@/lite/components/atoms/Tooltip'
+import { Diff, type TDiffView } from '@/lite/components/molecules/Diff'
+import { DiffSummary } from '@/lite/components/molecules/DiffSummary'
+import { Disclosure } from '@/lite/components/molecules/Disclosure'
+import {
+  DisclosureGroup,
+  ExpandAllButton,
+} from '@/lite/components/molecules/DisclosureGroup'
+import '@/lite/styles.css'
 
 export default {
-  title: 'lite/organisms/AppConfigSourceDiff (exploration)',
+  title: 'Approvals/PlanDiffs/AppConfigSourceDiff (exploration)',
 }
 
 // ---------------------------------------------------------------------------
@@ -1203,9 +1207,23 @@ const Frame = ({
 }: {
   children: ReactNode
   wide?: boolean
-}) => (
-  <div className={cn('p-8', wide ? 'max-w-6xl' : 'max-w-3xl')}>{children}</div>
-)
+}) => {
+  useEffect(() => {
+    const root = document.documentElement
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const apply = () =>
+      root.setAttribute('data-theme', mq.matches ? 'dark' : 'light')
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [])
+
+  return (
+    <div className={cn('p-8', wide ? 'max-w-6xl' : 'max-w-3xl')}>
+      {children}
+    </div>
+  )
+}
 
 // ---------------------------------------------------------------------------
 // Stories
