@@ -42,6 +42,7 @@ export const Overview = () => (
       'Controlled or uncontrolled, never both. Pass open to own it, defaultOpen to let it own itself.',
       'Anything interactive in the header goes in actions, never in title. The header itself is a button and cannot contain another one.',
       'Content unmounts when closed, so it must not be the only home for state you need to keep.',
+      'The content wrapper carries no padding of its own. Pass contentClassName, or space the body itself.',
       'Inside a DisclosureGroup the group sets the starting state; it does not keep members in step afterwards.',
     ]}
     props={[
@@ -53,6 +54,9 @@ export const Overview = () => (
       { name: 'open', type: 'boolean', description: 'Controlled mode.' },
       { name: 'defaultOpen', type: 'boolean', default: 'false', description: 'Uncontrolled initial state, or the group default.' },
       { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Fires on every open and close, including from a group.' },
+      { name: 'headerClassName', type: 'string', description: 'Extra classes for the header button.' },
+      { name: 'contentClassName', type: 'string', description: 'Extra classes for the element wrapping the content, which is where body padding goes.' },
+      { name: 'children', type: 'ReactNode', description: 'The section body, and in a DisclosureGroup the members and controls it wraps.' },
     ]}
     sections={[
       {

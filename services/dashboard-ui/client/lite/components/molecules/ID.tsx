@@ -31,13 +31,18 @@ export const ID = ({
 }: IID) => {
   if (loading) {
     return (
-      <Text
-        variant="caption"
-        family="mono"
-        loading
-        loadingWidth={loadingWidth ?? 22}
-        className={className}
-      />
+      <span
+        aria-hidden
+        className={cn('inline-flex w-fit items-center gap-1', className)}
+      >
+        <Text
+          variant="caption"
+          family="mono"
+          loading
+          loadingWidth={loadingWidth ?? 22}
+        />
+        {copyable ? <span className="size-6" /> : null}
+      </span>
     )
   }
 

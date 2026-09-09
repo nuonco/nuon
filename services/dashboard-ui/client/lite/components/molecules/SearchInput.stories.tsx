@@ -24,6 +24,7 @@ export const Overview = () => (
       'Escape clears a non-empty query, and only reaches the surrounding surface once the query is empty. Inside a dropdown that means the first Escape clears and the second closes.',
       'The clear button has an accessible label and appears only when it can act.',
       'The parent controls width and owns what the query searches.',
+      'className styles the wrapper that positions the icons; inputClassName styles the input itself.',
     ]}
     props={[
       {
@@ -41,6 +42,16 @@ export const Overview = () => (
         type: 'string',
         default: "'Clear search'",
         description: 'Accessible label for the clear button.',
+      },
+      {
+        name: 'leading',
+        type: 'ReactNode',
+        description: 'Replaces the magnifying glass at the start of the field.',
+      },
+      {
+        name: 'inputClassName',
+        type: 'string',
+        description: 'Extra classes for the input element.',
       },
     ]}
   />

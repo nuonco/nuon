@@ -230,6 +230,24 @@ func (s *GetAppBranchesTestSuite) TestBranchWithNoRuns() {
 	require.Nil(s.T(), found.LatestRun, "expected latest_run to be nil when no runs exist")
 }
 
+func (s *GetAppBranchesTestSuite) TestSearchByName() {
+	target := s.createBranch("release-search-target")
+	other := s.createBranch("unrelated-branch")
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.AppBranch{ID: target.ID})
+		s.service.DB.Unscoped().Delete(&app.AppBranch{ID: other.ID})
+	})
+
+	path := fmt.Sprintf("/v1/apps/%s/branches?q=release-search", s.testApp.ID)
+	rr := s.makeRequest(http.MethodGet, path)
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+
+	var branches []rawBranchResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &branches))
+	require.Len(s.T(), branches, 1)
+	require.Equal(s.T(), target.ID, branches[0].ID)
+}
+
 func (s *GetAppBranchesTestSuite) TestBranchLatestRunIsNewest() {
 	branch := s.createBranch("multi-run-branch")
 	s.T().Cleanup(func() {
