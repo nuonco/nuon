@@ -73,9 +73,16 @@ export const Overview = () => (
       'Space toggles the focused option; Enter isolates it.',
       'Only and Reset appear on hover and keyboard focus.',
       'Reset restores the declared defaults, not every option.',
+      'Reset also closes the surrounding dropdown, unless closeOnReset is false.',
       'The trigger count stays hidden while the selection matches the defaults.',
     ]}
     props={[
+      {
+        name: 'label',
+        type: 'string',
+        description:
+          'Names the filter group, and is the trigger text on FilterDropdown.',
+      },
       {
         name: 'options',
         type: 'IFilterMenuOption[]',
@@ -103,7 +110,13 @@ export const Overview = () => (
         description: 'Restores the default selection.',
       },
       {
-        name: 'isConstrained',
+        name: 'closeOnReset',
+        type: 'boolean',
+        default: 'true',
+        description: 'Whether Reset closes the surrounding dropdown.',
+      },
+      {
+        name: 'constrained',
         type: 'boolean',
         description:
           'Overrides the trigger count when defaults are not every option.',
@@ -142,7 +155,7 @@ const MixedDemo = () => {
       onToggle={filter.toggle}
       onIsolate={filter.isolate}
       onReset={filter.reset}
-      isConstrained={filter.isConstrained}
+      constrained={filter.constrained}
     />
   )
 }

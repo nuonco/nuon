@@ -4,7 +4,7 @@ import {
   SURFACE_ENTER_EASING,
   SURFACE_EXIT_EASING,
   SURFACE_TRANSITION_MS,
-} from '../../../lib/surface-motion'
+} from '../../../utils/surface-motion'
 
 export interface ISurfaceOverlay {
   visible: boolean

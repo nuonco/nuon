@@ -1,11 +1,11 @@
 import { useMemo, type ReactNode } from 'react'
 import { cn } from '@/utils/classnames'
-import { changeCounts, type TDiffOperation } from '../../lib/diffs'
+import { changeCounts, type TDiffOperation } from '../../utils/diffs'
 import { Text } from '../atoms/Text'
 import { Diff, type IDiff, type TDiffView } from '../molecules/Diff'
 import { Disclosure, type IDisclosure } from '../molecules/Disclosure'
 
-export type { TDiffOperation } from '../../lib/diffs'
+export type { TDiffOperation } from '../../utils/diffs'
 
 const RAIL_CLASSES: Record<TDiffOperation, string> = {
   create: 'border-l-diff-add',

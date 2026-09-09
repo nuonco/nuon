@@ -5,7 +5,7 @@ import {
   SURFACE_ENTER_MS,
   SURFACE_EXIT_EASING,
   SURFACE_TRANSITION_MS,
-} from '../../../lib/surface-motion'
+} from '../../../utils/surface-motion'
 
 export interface ISurfaceTransition extends HTMLAttributes<HTMLDivElement> {
   coveredBy?: number

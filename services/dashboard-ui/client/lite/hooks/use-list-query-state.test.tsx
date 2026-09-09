@@ -4,7 +4,7 @@ import { createMemoryRouter, RouterProvider, useLocation } from 'react-router'
 import {
   booleanQueryParameter,
   commaSetQueryParameter,
-} from '../lib/list-query'
+} from '../utils/list-query'
 import { useListQueryState } from './use-list-query-state'
 
 afterEach(cleanup)

@@ -34,6 +34,7 @@ export const Overview = () => (
       'Color is the default.',
       'Unknown values render a question mark and safe label.',
       'Icon-only display includes a keyboard-accessible tooltip.',
+      'The mark is sized in em, so it follows the surrounding text unless iconSize says otherwise.',
     ]}
     props={[
       {
@@ -52,6 +53,12 @@ export const Overview = () => (
         type: "'color' | 'mono'",
         default: "'color'",
         description: 'Brand colors or currentColor.',
+      },
+      {
+        name: 'iconSize',
+        type: 'number | string',
+        default: "'1em'",
+        description: 'Size of the component mark, in pixels or any CSS length.',
       },
     ]}
   />

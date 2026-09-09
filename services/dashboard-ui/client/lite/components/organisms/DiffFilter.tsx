@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from 'react'
 import { cn } from '@/utils/classnames'
-import type { TDiffOperation } from '../../lib/diffs'
+import type { TDiffOperation } from '../../utils/diffs'
 import { Text } from '../atoms/Text'
 import { FilterDropdown } from '../molecules/FilterMenu'
 import { SearchInput } from '../molecules/SearchInput'

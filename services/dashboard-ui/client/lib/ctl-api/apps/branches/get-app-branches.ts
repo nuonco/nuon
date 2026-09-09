@@ -7,12 +7,14 @@ export const getAppBranches = ({
   orgId,
   limit,
   offset,
+  q,
 }: {
   appId: string
   orgId: string
+  q?: string
 } & TPaginationParams) =>
   api<TAppBranch[]>({
-    path: `apps/${appId}/branches${buildQueryParams({ limit, offset })}`,
+    path: `apps/${appId}/branches${buildQueryParams({ limit, offset, q })}`,
     orgId,
     paginated: true,
   })
