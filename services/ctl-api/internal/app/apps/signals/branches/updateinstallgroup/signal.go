@@ -61,13 +61,8 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		}
 	}
 
-	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
-	if err != nil {
+	if _, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID); err != nil {
 		return errors.Wrap(err, "app branch run not found")
-	}
-
-	if run.AppConfigID == "" {
-		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
 
 	return nil

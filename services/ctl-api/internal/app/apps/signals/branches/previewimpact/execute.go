@@ -22,6 +22,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}
 
+	if run.NoConfigChanges && !run.Force {
+		l.Info("no config changes, skipping preview impact")
+		return nil
+	}
+
+	if run.AppConfigID == "" {
+		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
+	}
+
 	groups, err := s.computeImpact(ctx, l, run.AppConfigID)
 	if err != nil {
 		return err
