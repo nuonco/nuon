@@ -160,6 +160,10 @@ func (i *RunnerGroupSettings) Views(db *gorm.DB) []migrations.View {
 func (r *RunnerGroupSettings) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == "" {
 		r.ID = domains.NewRunnerGroupSettingsID()
+		// Assigning into a nil map panics, and a settings row built literally has one.
+		if r.Metadata == nil {
+			r.Metadata = map[string]*string{}
+		}
 		r.Metadata["runner_group.id"] = generics.ToPtr(r.ID)
 	}
 	if r.CreatedByID == "" {
