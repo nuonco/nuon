@@ -61,7 +61,7 @@ func (s *AdminWorkflowStepApproveTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		fx.Provide(New),
+		fx.Options(testServiceFXOptions()...),
 		fx.Populate(&s.service),
 	)
 
@@ -115,6 +115,17 @@ func (s *AdminWorkflowStepApproveTestSuite) makeRequest(method, path string, bod
 	return rr
 }
 
+func (s *AdminWorkflowStepApproveTestSuite) createWorkflowStepGroup(workflowID string) string {
+	group := &app.WorkflowStepGroup{
+		OrgID:      s.testOrg.ID,
+		WorkflowID: workflowID,
+		Name:       "test-group",
+		Status:     app.NewCompositeStatus(s.ctx, app.StatusPending),
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(group).Error)
+	return group.ID
+}
+
 func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove() {
 	testCases := []struct {
 		name             string
@@ -143,11 +154,12 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 
 				// Create workflow step
 				step := &app.WorkflowStep{
-					ID:                domains.NewWorkflowStepID(),
-					OrgID:             s.testOrg.ID,
-					InstallWorkflowID: workflow.ID,
-					Name:              "test-step",
-					Status:            app.NewCompositeStatus(ctx, app.StatusPending),
+					ID:                  domains.NewWorkflowStepID(),
+					OrgID:               s.testOrg.ID,
+					InstallWorkflowID:   workflow.ID,
+					WorkflowStepGroupID: s.createWorkflowStepGroup(workflow.ID),
+					Name:                "test-step",
+					Status:              app.NewCompositeStatus(ctx, app.StatusPending),
 				}
 				err = s.service.DB.WithContext(ctx).Create(step).Error
 				require.NoError(s.T(), err)
@@ -199,11 +211,12 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 
 				// Create workflow step
 				step := &app.WorkflowStep{
-					ID:                domains.NewWorkflowStepID(),
-					OrgID:             s.testOrg.ID,
-					InstallWorkflowID: workflow.ID,
-					Name:              "test-step",
-					Status:            app.NewCompositeStatus(ctx, app.StatusPending),
+					ID:                  domains.NewWorkflowStepID(),
+					OrgID:               s.testOrg.ID,
+					InstallWorkflowID:   workflow.ID,
+					WorkflowStepGroupID: s.createWorkflowStepGroup(workflow.ID),
+					Name:                "test-step",
+					Status:              app.NewCompositeStatus(ctx, app.StatusPending),
 				}
 				err = s.service.DB.WithContext(ctx).Create(step).Error
 				require.NoError(s.T(), err)
@@ -262,11 +275,12 @@ func (s *AdminWorkflowStepApproveTestSuite) TestAdminInstallWorkflowStepApprove(
 
 				// Create workflow step without approval
 				step := &app.WorkflowStep{
-					ID:                domains.NewWorkflowStepID(),
-					OrgID:             s.testOrg.ID,
-					InstallWorkflowID: workflow.ID,
-					Name:              "test-step",
-					Status:            app.NewCompositeStatus(ctx, app.StatusPending),
+					ID:                  domains.NewWorkflowStepID(),
+					OrgID:               s.testOrg.ID,
+					InstallWorkflowID:   workflow.ID,
+					WorkflowStepGroupID: s.createWorkflowStepGroup(workflow.ID),
+					Name:                "test-step",
+					Status:              app.NewCompositeStatus(ctx, app.StatusPending),
 				}
 				err = s.service.DB.WithContext(ctx).Create(step).Error
 				require.NoError(s.T(), err)

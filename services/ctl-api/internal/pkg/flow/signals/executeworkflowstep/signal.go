@@ -174,7 +174,12 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) SleepAfter() time.Duration { return 5 * time.Second }
+// CacheWindow holds a finished step handler open so a follow-up signal can
+// reuse it via update-with-start. Tests shrink it to shorten drain waits
+// (assertTemporalDrained waits for the handler to close).
+var CacheWindow = 5 * time.Second
+
+func (s *Signal) SleepAfter() time.Duration { return CacheWindow }
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType

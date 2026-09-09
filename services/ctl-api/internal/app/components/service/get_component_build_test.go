@@ -43,6 +43,7 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildIncludesLatestCompo
 	ccc := s.getSeededConfigConnection(cmp.ID)
 	seededBuild := s.deps.Seeder.CreateComponentBuild(s.ctx, s.T(), ccc.ID)
 	job := s.deps.Seeder.CreateRunnerJob(s.ctx, s.T(), seededBuild.ID, "component_builds")
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(job).Update("status", app.RunnerJobStatusFailed).Error)
 	execution := &app.RunnerJobExecution{
 		RunnerJobID: job.ID,
 		Status:      app.RunnerJobExecutionStatusFailed,
@@ -54,6 +55,7 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentBuildIncludesLatestCompo
 		Type:     "terraform.aws_permission",
 		Severity: compositeerrors.SeverityError,
 		Message:  "missing permission",
+		Data:     json.RawMessage("null"),
 	}
 	result := &app.RunnerJobExecutionResult{
 		RunnerJobExecutionID: execution.ID,

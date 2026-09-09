@@ -21,6 +21,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	generalhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/general/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -65,6 +66,7 @@ func (s *GeneralRunnerTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
+		fx.Provide(generalhelpers.New),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)

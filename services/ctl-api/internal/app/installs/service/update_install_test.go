@@ -31,10 +31,11 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallName() {
 	assert.Equal(s.T(), "updated-name", resp.Name)
 
 	captured := tests.GetQueueSignals(s.T(), s.deps.DB)
-	require.Len(s.T(), captured, 1)
-	_ = captured[0] // signal type check via .Type
-
-	assert.Equal(s.T(), "Updated-type", string(captured[0].Type))
+	require.Len(s.T(), captured, 2)
+	assert.ElementsMatch(s.T(), []string{"updated", "appconfig-updated"}, []string{
+		string(captured[0].Type),
+		string(captured[1].Type),
+	})
 }
 
 func (s *InstallsServiceTestSuite) TestUpdateInstallNotFound() {

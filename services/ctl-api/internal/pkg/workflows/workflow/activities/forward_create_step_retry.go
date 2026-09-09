@@ -3,6 +3,8 @@ package activities
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	tclient "go.temporal.io/sdk/client"
 
@@ -39,23 +41,28 @@ func (a *Activities) ForwardCreateStepRetry(ctx context.Context, req ForwardCrea
 		return nil, fmt.Errorf("unable to find step queue signal for step %s: %w", req.StepID, res.Error)
 	}
 
-	rawResp, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
-		UpdateName:   "create-step-retry",
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to send create-step-retry update to step %s: %w", req.StepID, err)
-	}
-
-	type stepRetryResult struct {
-		Directive string `json:"directive"`
-		NewStepID string `json:"new_step_id"`
-	}
 	var result stepRetryResult
-	if err := rawResp.Get(ctx, &result); err != nil {
-		// Keep a non-retryable update failure concrete; wrapping it makes the
-		// activity's top-level Temporal failure retryable again.
-		return nil, err
+
+	// Update-with-start against a completed signal starts a fresh handler run,
+	// and that run accepts updates before run() registers its handlers — under
+	// load the first workflow task can complete inside that window and the
+	// update is rejected with "unknown update". The run registers handlers
+	// moments later, so retry the send until it lands. Stay inside the 30s
+	// start-to-close budget.
+	deadline := time.Now().Add(20 * time.Second)
+	for {
+		retryable, err := a.sendCreateStepRetryUpdate(ctx, &qs, req.StepID, &result)
+		if err == nil {
+			break
+		}
+		if !retryable || time.Now().After(deadline) || ctx.Err() != nil {
+			return nil, err
+		}
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("unable to send create-step-retry update to step %s: %w", req.StepID, ctx.Err())
+		case <-time.After(500 * time.Millisecond):
+		}
 	}
 
 	return &ForwardCreateStepRetryResponse{
@@ -63,4 +70,34 @@ func (a *Activities) ForwardCreateStepRetry(ctx context.Context, req ForwardCrea
 		NewStepID: result.NewStepID,
 		Directive: result.Directive,
 	}, nil
+}
+
+type stepRetryResult struct {
+	Directive string `json:"directive"`
+	NewStepID string `json:"new_step_id"`
+}
+
+// sendCreateStepRetryUpdate sends the create-step-retry update once.
+// retryable reports whether the failure is the fresh-run registration window
+// and is worth retrying. Update failures (e.g. max retries exhausted) stay
+// concrete — wrapping them makes the activity's top-level Temporal failure
+// retryable again.
+func (a *Activities) sendCreateStepRetryUpdate(ctx context.Context, qs *app.QueueSignal, stepID string, result *stepRetryResult) (bool, error) {
+	rawResp, err := handler.UpdateWithStart(ctx, a.tClient, qs, handler.UpdateWithStartOptions{
+		UpdateName:   "create-step-retry",
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+	})
+	if err != nil {
+		return isUnknownUpdateError(err), fmt.Errorf("unable to send create-step-retry update to step %s: %w", stepID, err)
+	}
+	if err := rawResp.Get(ctx, result); err != nil {
+		return isUnknownUpdateError(err), err
+	}
+	return false, nil
+}
+
+// isUnknownUpdateError reports whether err is the worker-side rejection of an
+// update delivered before the target run registered its handlers.
+func isUnknownUpdateError(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "unknown update")
 }

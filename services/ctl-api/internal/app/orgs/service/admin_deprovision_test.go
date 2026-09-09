@@ -87,11 +87,14 @@ func (s *AdminDeprovisionOrgTestSuite) SetupSuite() {
 
 	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
+	s.T().Cleanup(func() { closeOrgServiceDB(s.T(), s.service.DB) })
 }
 
 func (s *AdminDeprovisionOrgTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
+	resetOrgServiceSignals(s.T(), s.service.DB)
+	seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, s.testOrg)
 
 	// Reset mock before each test
 
@@ -206,7 +209,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 			},
 			expectedCode:   http.StatusOK,
 			validateSignal: true,
-			expectedType:   "org-force-deprovision",
+			expectedType:   string(orgdeprovision.SignalType),
 		},
 		{
 			name: "defaults to force=false when field missing",
@@ -313,8 +316,12 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Setup test data
 			org := tc.setupFunc()
+			if tc.validateSignal {
+				seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, org)
+			}
 
 			// Reset mock before test
 
@@ -372,12 +379,13 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 		{
 			name:         "force=true sends OperationForceDeprovision",
 			force:        true,
-			expectedType: "org-force-deprovision",
+			expectedType: string(orgdeprovision.SignalType),
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Create org for this test
 			ctx := context.Background()
 			ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -393,6 +401,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 			}
 			err := s.service.DB.WithContext(ctx).Create(org).Error
 			require.NoError(s.T(), err)
+			seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, org)
 			s.T().Cleanup(func() {
 				s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 			})
@@ -430,6 +439,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgDoesNotModifyDatab
 	}
 	err := s.service.DB.WithContext(ctx).Create(org).Error
 	require.NoError(s.T(), err)
+	seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, org)
 	s.T().Cleanup(func() {
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org.ID)
 	})

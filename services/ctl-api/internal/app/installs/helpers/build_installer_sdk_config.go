@@ -28,6 +28,7 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 	var install app.Install
 	if res := h.db.WithContext(ctx).
 		Preload("AWSAccount").
+		Preload("InstallConfig").
 		// Install.AfterQuery does not load cloud accounts, so without this the gcp
 		// branch below always sees a nil GCPAccount and serves an empty target.
 		Preload("GCPAccount").

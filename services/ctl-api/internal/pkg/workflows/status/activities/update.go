@@ -211,6 +211,19 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 	return nil
 }
 
+type UpdateFlowStatusMetadataRequest struct {
+	WorkflowID string `validate:"required"`
+	Metadata   map[string]any
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateFlowStatusMetadata(ctx context.Context, req UpdateFlowStatusMetadataRequest) error {
+	if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), &app.Workflow{}, req.WorkflowID, "status", req.Metadata); err != nil {
+		return errors.Wrap(err, "unable to update flow status metadata")
+	}
+	return nil
+}
+
 // syncInstallAppConfigVersionFromFlowStatus copies the install workflow status
 // onto the InstallAppConfigVersion linked by workflow_id. Best-effort: never
 // fails the flow status write. This keeps IACV in sync when executeflow parks

@@ -45,6 +45,7 @@ func (s *AppsTestSuite) TestGetAppSandboxBuildIncludesLatestCompositeError() {
 		Type:     "terraform.aws_permission",
 		Severity: compositeerrors.SeverityError,
 		Message:  "missing permission",
+		Data:     json.RawMessage("null"),
 	}
 	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(&app.RunnerJobExecutionResult{
 		RunnerJobExecutionID: execution.ID,

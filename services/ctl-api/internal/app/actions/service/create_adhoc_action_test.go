@@ -135,6 +135,7 @@ func (s *CreateAdHocActionTestSuite) createInstall(appID string) *app.Install {
 		Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
 		Create(install)
 	require.NoError(s.T(), res.Error)
+	seedInstallActionWorkflowsQueue(s.T(), s.service.DB, ctx, install.ID)
 	return install
 }
 
@@ -171,7 +172,9 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocAction() {
 				require.NoError(s.T(), res.Error)
 				require.Len(s.T(), run.Steps, 1)
 
-				evSignals := tests.GetQueueSignals(s.T(), s.service.DB)
+				// Verify signal was sent: the run enqueues exactly one signal
+				// owned by the new workflow run.
+				evSignals := tests.GetQueueSignalsByOwner(s.T(), s.service.DB, resp.WorkflowID)
 				require.Len(s.T(), evSignals, 1)
 				assert.Equal(s.T(), executeflow.SignalType, evSignals[0].Type)
 			},
@@ -439,6 +442,7 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocActionCrossOrgIsolation() {
 		Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
 		Create(install2)
 	require.NoError(s.T(), res.Error)
+	seedInstallActionWorkflowsQueue(s.T(), s.service.DB, ctx2, install2.ID)
 
 	req := CreateAdHocActionRequest{
 		Command: "echo test",

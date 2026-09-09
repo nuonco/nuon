@@ -65,7 +65,7 @@ func (s *AdminUpdateInstallRunnerTestSuite) SetupSuite() {
 			T:               s.T(),
 			CustomValidator: true,
 		}),
-		fx.Provide(New),
+		fx.Options(testServiceFXOptions()...),
 		fx.Populate(&s.service),
 	)
 
@@ -78,10 +78,10 @@ func (s *AdminUpdateInstallRunnerTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.InstallsService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -99,6 +99,7 @@ func (s *AdminUpdateInstallRunnerTestSuite) setupTestData() {
 	s.testApp = s.service.Seeder.CreateApp(ctx, s.T())
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), s.testApp.ID)
 	s.testInstall = s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+	seedInstallQueues(s.T(), ctx, s.service.DB, s.testInstall.ID)
 
 	// Create runner group linked to install via polymorphic association
 	s.testRunnerGrp = &app.RunnerGroup{
@@ -213,6 +214,7 @@ func (s *AdminUpdateInstallRunnerTestSuite) TestAdminUpdateInstallRunner() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			clearQueueSignals(s.T(), s.service.DB)
 			installID := tc.setupFunc()
 			rr := s.makeRequest("PATCH", "/v1/installs/"+installID+"/admin-update-runner", tc.requestBody)
 

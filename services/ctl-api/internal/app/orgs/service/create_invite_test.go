@@ -86,11 +86,14 @@ func (s *CreateOrgInviteTestSuite) SetupSuite() {
 
 	// Store DB reference for automatic truncation
 	s.SetDB(s.service.DB)
+	s.T().Cleanup(func() { closeOrgServiceDB(s.T(), s.service.DB) })
 }
 
 func (s *CreateOrgInviteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
+	resetOrgServiceSignals(s.T(), s.service.DB)
+	seedOrgServiceFixtures(s.T(), s.service.DB, s.testAcc, s.testOrg)
 
 	// Reset mock before each test
 
@@ -330,6 +333,7 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			resetOrgServiceSignals(s.T(), s.service.DB)
 			// Reset mock before test
 
 			// Setup test data
@@ -473,6 +477,7 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_DifferentOrgsCanInviteSam
 	}
 	err = s.service.DB.WithContext(ctx).Create(org2).Error
 	require.NoError(s.T(), err)
+	seedOrgServiceFixtures(s.T(), s.service.DB, acc2, org2)
 	s.T().Cleanup(func() {
 		s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
 	})

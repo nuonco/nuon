@@ -20,6 +20,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
@@ -212,6 +213,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 
 				// Assign accounts to org admin role
 				accountRole1 := &app.AccountRole{
+					OrgID:     generics.NewNullString(s.testOrg.ID),
 					AccountID: acc1.ID,
 					RoleID:    adminRole.ID,
 				}
@@ -219,6 +221,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 
 				accountRole2 := &app.AccountRole{
+					OrgID:     generics.NewNullString(s.testOrg.ID),
 					AccountID: acc2.ID,
 					RoleID:    adminRole.ID,
 				}
@@ -265,6 +268,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 
 					// Assign to org admin role
 					accountRole := &app.AccountRole{
+						OrgID:     generics.NewNullString(s.testOrg.ID),
 						AccountID: acc.ID,
 						RoleID:    adminRole.ID,
 					}
@@ -315,6 +319,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 
 					// Assign to org admin role
 					accountRole := &app.AccountRole{
+						OrgID:     generics.NewNullString(s.testOrg.ID),
 						AccountID: acc.ID,
 						RoleID:    adminRole.ID,
 					}
@@ -398,6 +403,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 
 				// Assign both to org admin role
 				accountRole1 := &app.AccountRole{
+					OrgID:     generics.NewNullString(s.testOrg.ID),
 					AccountID: acc1.ID,
 					RoleID:    adminRole.ID,
 				}
@@ -405,6 +411,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 
 				accountRole2 := &app.AccountRole{
+					OrgID:     generics.NewNullString(s.testOrg.ID),
 					AccountID: acc2.ID,
 					RoleID:    adminRole.ID,
 				}
@@ -483,6 +490,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 
 				// Assign both to org admin role
 				accountRole1 := &app.AccountRole{
+					OrgID:     generics.NewNullString(s.testOrg.ID),
 					AccountID: acc1.ID,
 					RoleID:    adminRole.ID,
 				}
@@ -490,6 +498,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 
 				accountRole2 := &app.AccountRole{
+					OrgID:     generics.NewNullString(s.testOrg.ID),
 					AccountID: acc2.ID,
 					RoleID:    adminRole.ID,
 				}
@@ -595,6 +604,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 
 				// Assign to respective org admin roles
 				accountRole1 := &app.AccountRole{
+					OrgID:     generics.NewNullString(s.testOrg.ID),
 					AccountID: acc1.ID,
 					RoleID:    adminRole1.ID,
 				}
@@ -602,6 +612,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 
 				accountRole2 := &app.AccountRole{
+					OrgID:     generics.NewNullString(org2.ID),
 					AccountID: acc2.ID,
 					RoleID:    adminRole2.ID,
 				}

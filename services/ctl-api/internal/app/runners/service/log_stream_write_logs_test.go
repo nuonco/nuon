@@ -66,7 +66,7 @@ func (s *LogStreamWriteLogsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
-		fx.Provide(New),
+		testDependencyOptions(), fx.Provide(New),
 		fx.Populate(&s.service),
 	)
 
@@ -441,11 +441,11 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 			},
 		},
 		{
-			name: "empty request body returns error",
+			name: "empty request body writes no logs",
 			setupFunc: func() (string, []byte) {
 				return s.testLogStream.ID, []byte{}
 			},
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusCreated,
 			validateFunc: func(logStreamID string) {
 				// No logs should be written
 				count := s.countLogsInCH(logStreamID)
@@ -466,11 +466,10 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			if tc.expectedCode == http.StatusCreated {
-				// Verify response
-				var response string
+				// Documented contract: 201 with an empty JSON object body.
+				var response app.EmptyResponse
 				err := json.Unmarshal(rr.Body.Bytes(), &response)
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "ok", response)
 
 				// Verify logs were written to ClickHouse
 				if tc.expectedLogCount > 0 {
