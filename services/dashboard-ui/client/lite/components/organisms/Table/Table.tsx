@@ -17,6 +17,7 @@ import { cn } from '@/utils/classnames'
 import { useTableView } from '../../../hooks/use-table-view'
 import { Card } from '../../atoms/Card'
 import { Text } from '../../atoms/Text'
+import { ID } from '../../molecules/ID'
 import { TableViewToggle } from '../../molecules/TableViewToggle'
 
 export interface ITable<TData extends object>
@@ -185,14 +186,28 @@ export const Table = <TData extends object>({
                         key={column.id}
                         className="min-w-0 px-4 py-3 align-middle"
                       >
-                        <Text
-                          loading
-                          loadingWidth={cellLoadingWidth(
-                            column.getSize(),
-                            rowIndex,
-                            columnIndex
-                          )}
-                        />
+                        {columnIndex === 0 ? (
+                          <span className="flex min-w-0 flex-col gap-0.5">
+                            <Text
+                              loading
+                              loadingWidth={cellLoadingWidth(
+                                column.getSize(),
+                                rowIndex,
+                                columnIndex
+                              )}
+                            />
+                            <ID value="" loading />
+                          </span>
+                        ) : (
+                          <Text
+                            loading
+                            loadingWidth={cellLoadingWidth(
+                              column.getSize(),
+                              rowIndex,
+                              columnIndex
+                            )}
+                          />
+                        )}
                       </td>
                     ))}
                   </tr>
@@ -235,7 +250,7 @@ export const Table = <TData extends object>({
             >
               <div className="flex flex-col gap-1">
                 <Text variant="heading" loading loadingWidth={14} />
-                <Text variant="caption" loading loadingWidth={20} />
+                <ID value="" loading />
               </div>
               {fieldLabels.length ? (
                 <div className="grid grid-cols-2 gap-3">

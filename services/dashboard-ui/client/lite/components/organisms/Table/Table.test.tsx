@@ -259,11 +259,25 @@ describe('Table', () => {
     const { container } = render(<Example loading />)
     setWidth(800)
 
+    const loadingRows = container.querySelectorAll('[data-table-loading-row]')
+
     expect(screen.getByRole('columnheader', { name: 'Install' })).toBeTruthy()
-    expect(container.querySelectorAll('[data-table-loading-row]').length).toBe(
-      5
-    )
-    expect(container.querySelectorAll('.skeleton-text').length).toBe(10)
+    expect(loadingRows.length).toBe(5)
+    expect(container.querySelectorAll('.skeleton-text').length).toBe(15)
+  })
+
+  test('reserves the identity cell name and ID lines while loading', () => {
+    const { container } = render(<Example loading />)
+    setWidth(800)
+
+    const [identityCell, statusCell] = [
+      ...(container
+        .querySelector('[data-table-loading-row]')
+        ?.querySelectorAll('td') ?? []),
+    ]
+
+    expect(identityCell?.querySelectorAll('.skeleton-text').length).toBe(2)
+    expect(statusCell?.querySelectorAll('.skeleton-text').length).toBe(1)
   })
 
   test('loads as skeleton cards in card view', () => {

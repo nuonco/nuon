@@ -47,7 +47,11 @@ These are the ones that get broken most often. Full reasoning in the linked docs
    presentational sibling.** The presentational half must render from props
    alone.
 6. **Every component under `components/` has a `.stories.tsx` whose first export
-   is `Overview`**, built with `ComponentDocs`.
+   is `Overview`**, built with `ComponentDocs`, filling `summary`, `use`,
+   `avoid`, `rules` and a `props` entry for **every** prop in the interface.
+   The `Overview` is the component's only documentation, and changing a
+   component's props means updating it in the same change. A component without
+   a complete `Overview` is not finished.
 7. **No comments** unless they explain a non-obvious *why*. Never narrate what
    the code does.
 

@@ -4,11 +4,14 @@ import {
   getAppLabels,
   getBranches,
   getInstallLabelKeys,
-  getInstalls,
   toLabelColorMap,
 } from '@/lib'
 import { useListQueryState } from '../../../hooks/use-list-query-state'
-import { commaSetQueryParameter } from '../../../utils/list-query'
+import {
+  INSTALL_FILTERS,
+  INSTALLS_PAGE_SIZE,
+  installsListQuery,
+} from '../../../queries/installs'
 import { useOrg } from '../../../providers/org-provider'
 import { Badge } from '../../atoms/Badge'
 import {
@@ -16,12 +19,6 @@ import {
   type IInstallFilter,
   type TLabelColors,
 } from './InstallsTable'
-
-const PAGE_SIZE = 20
-const INSTALL_FILTERS = {
-  labels: commaSetQueryParameter('labels'),
-  branches: commaSetQueryParameter('branches'),
-}
 
 const filterControl = ({
   label,
@@ -67,7 +64,7 @@ const filterControl = ({
 export const InstallsTableContainer = () => {
   const { orgId } = useOrg()
   const list = useListQueryState({
-    pageSize: PAGE_SIZE,
+    pageSize: INSTALLS_PAGE_SIZE,
     filters: INSTALL_FILTERS,
   })
 
@@ -77,16 +74,13 @@ export const InstallsTableContainer = () => {
     isPlaceholderData,
     error,
   } = useQuery({
-    queryKey: ['installs', orgId, ...list.queryKey],
-    queryFn: () =>
-      getInstalls({
-        orgId: orgId!,
-        q: list.search || undefined,
-        offset: list.offset,
-        limit: list.pageSize,
-        labels: [...list.filters.labels].join(',') || undefined,
-        branches: [...list.filters.branches].join(',') || undefined,
-      }),
+    ...installsListQuery({
+      orgId: orgId!,
+      search: list.search,
+      offset: list.offset,
+      pageSize: list.pageSize,
+      filters: list.filters,
+    }),
     enabled: !!orgId,
     placeholderData: keepPreviousData,
     refetchInterval: 20_000,
