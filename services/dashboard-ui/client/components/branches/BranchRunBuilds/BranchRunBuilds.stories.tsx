@@ -58,6 +58,24 @@ export const Empty = () => (
   </div>
 )
 
+const manyBuilds = Array.from({ length: 26 }, (_, i) =>
+  build({
+    id: `bld${String(i).padStart(2, '0')}vv2juioe2cgvr7a4m494n0`,
+    component_id: `cmp${i}`,
+    component_name: `component-${i}`,
+    component_config_connection: {
+      type: i % 3 === 0 ? 'terraform_module' : i % 3 === 1 ? 'docker_build' : 'helm_chart',
+    },
+    status_v2: { status: i % 5 === 0 ? 'building' : 'active' },
+  })
+)
+
+export const ManyBuilds = () => (
+  <div className="max-w-3xl">
+    <BranchRunBuilds builds={manyBuilds} orgId="org1" appId="app1" />
+  </div>
+)
+
 export const WithSandboxAndTypes = () => (
   <div className="max-w-3xl">
     <BranchRunBuilds

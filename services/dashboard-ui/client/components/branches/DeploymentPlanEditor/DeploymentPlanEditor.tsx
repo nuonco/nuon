@@ -49,14 +49,13 @@ export const DeploymentPlanEditor = ({
     initialPostDeployRunbookIds
   )
   const [showValidation, setShowValidation] = useState(false)
-  const [scrollToId, setScrollToId] = useState<string | null>(null)
+  const [newGroupId, setNewGroupId] = useState<string | null>(null)
   const newGroupRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!scrollToId) return
+    if (!newGroupId) return
     newGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    setScrollToId(null)
-  }, [scrollToId])
+  }, [newGroupId])
 
   const installsById = useMemo(() => {
     const map: Record<string, TInstall> = {}
@@ -132,7 +131,7 @@ export const DeploymentPlanEditor = ({
   const addGroup = () => {
     const group = newGroup(groups.length)
     setGroups((curr) => [...curr, group])
-    setScrollToId(group.id)
+    setNewGroupId(group.id)
   }
 
   const deleteGroup = (id: string) => {
@@ -258,12 +257,13 @@ export const DeploymentPlanEditor = ({
                 return (
                   <div
                     key={group.id}
-                    ref={group.id === scrollToId ? newGroupRef : null}
+                    ref={group.id === newGroupId ? newGroupRef : null}
                   >
                     <GroupEditor
                       group={group}
                       index={index}
                       totalGroups={groups.length}
+                      autoFocusName={group.id === newGroupId}
                       availableInstalls={availableInstalls}
                       unassignedInstalls={unassignedInstalls}
                       labelColors={labelColors}
