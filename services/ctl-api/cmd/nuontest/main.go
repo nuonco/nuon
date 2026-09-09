@@ -6,7 +6,11 @@
 //
 // Use -shards=N to split the packages across N parallel lanes, each against its own
 // Postgres and ClickHouse database (DB_NAME_i / CLICKHOUSE_DB_NAME_i) and its own
-// blob-cache directory. Lane placement is not a blind even split:
+// blob-cache directory. All lanes start from an identical schema, built before any
+// lane begins: setupDatabases creates and fully migrates each shard database in
+// turn, or — when NUONTEST_PG_SCHEMA_DIR names a snapshot directory — restores
+// every shard from a single pg_dump snapshot, so lanes diverge only in data,
+// never in schema. Lane placement is not a blind even split:
 //
 //   - Lane 0 runs the flow testworker package, alone. It is the slowest suite and
 //     the most environment-sensitive one (in-process Temporal worker, poll
