@@ -177,6 +177,27 @@ export const offsetQueryParameter = (
   },
 })
 
+export const listQueryKey = <TFilters extends TListQueryParameters>({
+  search,
+  offset,
+  pageSize,
+  filters,
+  config,
+}: {
+  search: string
+  offset: number
+  pageSize: number
+  filters: TListQueryValues<TFilters>
+  config: TFilters
+}): readonly unknown[] => [
+  search,
+  offset,
+  pageSize,
+  ...Object.keys(config)
+    .sort()
+    .flatMap((key) => [key, config[key].codec.toQueryKey(filters[key])]),
+]
+
 export const readQueryParameter = <T>(
   searchParams: URLSearchParams,
   parameter: IListQueryParameter<T>

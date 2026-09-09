@@ -72,6 +72,8 @@ export const Overview = () => (
       'The logo and navigation labels remain mounted while width and opacity animate.',
       'Mobile uses a modal drawer with its user menu in the footer.',
       'The glass surface is composed from Card.',
+      'The logo links to homeHref.',
+      'containerRef is the mobile drawer surface the shell uses for focus containment.',
     ]}
     props={[
       {
@@ -85,9 +87,21 @@ export const Overview = () => (
         description: 'Secondary destinations anchored near the footer.',
       },
       {
+        name: 'homeHref',
+        type: 'string',
+        default: "'/'",
+        description: 'Destination for the Nuon logo.',
+      },
+      {
         name: 'userMenu',
         type: 'ReactNode',
         description: 'Mobile user control.',
+      },
+      {
+        name: 'containerRef',
+        type: 'RefObject<HTMLDivElement | null>',
+        description:
+          'Ref on the drawer root, so the shell can contain focus while it is open.',
       },
     ]}
   />

@@ -52,6 +52,8 @@ export const Overview = () => (
     rules={[
       'Arrow keys, Home, End and typeahead move through options.',
       'Descriptions clarify options without becoming their values.',
+      'onBlur fires when the dropdown closes, which is the touch the form wrappers wait for.',
+      'Pass name only for a native form submission; it renders a hidden input alongside the trigger.',
     ]}
     props={[
       {
@@ -75,10 +77,28 @@ export const Overview = () => (
         description: 'Runs after selection.',
       },
       {
+        name: 'placeholder',
+        type: 'string',
+        default: "'Select an option'",
+        description: 'Trigger text while nothing is selected.',
+      },
+      {
         name: 'searchable',
         type: 'boolean',
         default: 'false',
         description: 'Adds local option filtering.',
+      },
+      {
+        name: 'searchPlaceholder',
+        type: 'string',
+        default: "'Search options'",
+        description: 'Placeholder and accessible name for the search field.',
+      },
+      {
+        name: 'emptyMessage',
+        type: 'string',
+        default: "'No options found'",
+        description: 'Shown in place of the list when nothing matches.',
       },
       {
         name: 'size',
@@ -87,10 +107,36 @@ export const Overview = () => (
         description: 'Trigger size.',
       },
       {
+        name: 'disabled',
+        type: 'boolean',
+        default: 'false',
+        description: 'Makes the trigger unavailable.',
+      },
+      {
         name: 'loading',
         type: 'boolean',
         default: 'false',
         description: 'Renders the trigger loading state.',
+      },
+      {
+        name: 'onBlur',
+        type: '() => void',
+        description: 'Runs when the dropdown closes.',
+      },
+      {
+        name: 'name',
+        type: 'string',
+        description: 'Submits the value through a hidden input of this name.',
+      },
+      {
+        name: 'id',
+        type: 'string',
+        description: 'Id of the trigger, so a Field label can point at it.',
+      },
+      {
+        name: 'className',
+        type: 'string',
+        description: 'Extra classes for the trigger.',
       },
     ]}
   />

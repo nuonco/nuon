@@ -7,17 +7,18 @@ import {
 } from '@pierre/diffs/react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
+import { useUserPreferences } from '../../providers/user-preferences-provider'
 import {
   MATCH_NAV_TOOLTIP,
   diffMatches,
   matchNavKeyDown,
-} from '../../lib/code-search'
+} from '../../utils/code-search'
 import {
   LITE_SYNTAX_THEME,
   registerSyntax,
   resolveLanguage,
-} from '../../lib/syntax'
-import { endWithNewline } from '../../lib/diffs'
+} from '../../utils/syntax'
+import { endWithNewline } from '../../utils/diffs'
 import { Button } from '../atoms/Button'
 import { Icon } from '../atoms/Icon'
 import { Text } from '../atoms/Text'
@@ -71,18 +72,23 @@ export const Diff = ({
   language,
   filename,
   view = 'unified',
-  defaultWrap = false,
+  defaultWrap,
   lineNumbers = true,
   search = true,
   maxHeight = 640,
   className,
 }: IDiff) => {
+  const { preferences } = useUserPreferences()
   const id = useId()
   const viewer = useRef<CodeViewHandle<undefined>>(null)
   const [query, setQuery] = useState('')
   const [matchIndex, setMatchIndex] = useState(0)
-  const [wrap, setWrap] = useState(defaultWrap)
+  const [wrap, setWrap] = useState(defaultWrap ?? preferences.diffWrap)
   const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    if (defaultWrap === undefined) setWrap(preferences.diffWrap)
+  }, [defaultWrap, preferences.diffWrap])
 
   const lang = resolveLanguage(language)
   const name = filename ?? `change.${lang === 'terraform' ? 'tf' : 'txt'}`

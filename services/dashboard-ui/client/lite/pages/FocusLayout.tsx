@@ -1,7 +1,8 @@
 import { Outlet } from 'react-router'
 import { useConfig } from '@/hooks/use-config'
 import { Link } from '../components/atoms/Link'
-import { UserDropdown } from '../components/organisms/UserDropdown'
+import { OrgSwitcherMenu } from '../components/organisms/OrgSwitcherMenu'
+import { UserDropdownContainer as UserDropdown } from '../components/organisms/UserDropdownContainer'
 import { SurfaceHost } from '../components/organisms/surfaces'
 import { FocusShell } from '../components/templates/FocusShell'
 import { useCurrentUser } from '../hooks/use-current-user'
@@ -22,6 +23,7 @@ export const FocusLayout = () => {
               user={user}
               loading={isLoading}
               signOutHref={`${config.authServiceUrl ?? ''}/logout`}
+              orgSwitcher={<OrgSwitcherMenu />}
             />
           </>
         }

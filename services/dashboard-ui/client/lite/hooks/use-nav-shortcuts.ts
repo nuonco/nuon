@@ -58,7 +58,7 @@ export const useNavShortcuts = (items: INavItem[]) => {
 
       if (exact) {
         event.preventDefault()
-        navigate(exact.item.href)
+        navigate(exact.item.href, { viewTransition: true })
         reset()
         return
       }

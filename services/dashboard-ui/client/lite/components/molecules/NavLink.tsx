@@ -93,6 +93,7 @@ export const NavLink = ({
     <RouterNavLink
       to={href}
       end={end}
+      viewTransition
       onClick={onClick}
       aria-label={collapsed ? label : undefined}
       className={LINK_CLASSES}
