@@ -283,7 +283,7 @@ func TestGetRunnerASGNestedStack_WithoutRunnerApiToken(t *testing.T) {
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	stack, err := tpl.getRunnerASGNestedStack(inp, tb)
+	stack, _, err := tpl.getRunnerASGNestedStack(inp, tb)
 	require.NoError(t, err)
 
 	assert.NotContains(t, stack.Parameters, "RunnerApiToken",
@@ -321,7 +321,7 @@ func TestGetRunnerASGNestedStack_WithRunnerApiToken(t *testing.T) {
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	stack, err := tpl.getRunnerASGNestedStack(inp, tb)
+	stack, _, err := tpl.getRunnerASGNestedStack(inp, tb)
 	require.NoError(t, err)
 
 	assert.Contains(t, stack.Parameters, "RunnerApiToken",
@@ -457,7 +457,7 @@ func TestGetVPCNestedStack_OmitsClusterNameWhenNotInTemplate(t *testing.T) {
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	stack, _, err := tpl.getVPCNestedStack(inp, tb)
+	stack, _, _, err := tpl.getVPCNestedStack(inp, tb)
 	require.NoError(t, err)
 
 	assert.NotContains(t, stack.Parameters, "ClusterName", "ClusterName should not be in stack parameters when template does not define it")
@@ -488,7 +488,7 @@ func TestGetVPCNestedStack_IncludesClusterNameWhenInTemplate(t *testing.T) {
 	}
 	tb := tagBuilder{installID: inp.Install.ID}
 
-	stack, _, err := tpl.getVPCNestedStack(inp, tb)
+	stack, _, _, err := tpl.getVPCNestedStack(inp, tb)
 	require.NoError(t, err)
 
 	assert.Contains(t, stack.Parameters, "ClusterName", "ClusterName should be in stack parameters when template defines it")
