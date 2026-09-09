@@ -84,6 +84,11 @@ export const Overview = () => (
         default: '640',
         description: 'Maximum height of the virtualized scroll region.',
       },
+      {
+        name: 'className',
+        type: 'string',
+        description: 'Extra classes for the diff container.',
+      },
     ]}
     sections={[
       {

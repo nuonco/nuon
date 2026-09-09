@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import {
+  listQueryKey,
   offsetQueryParameter,
   readQueryParameter,
   stringQueryParameter,
@@ -8,7 +9,7 @@ import {
   type IListQueryParameter,
   type TListQueryParameters,
   type TListQueryValues,
-} from '../lib/list-query'
+} from '../utils/list-query'
 
 const DEFAULT_SEARCH = stringQueryParameter('q')
 const DEFAULT_OFFSET = offsetQueryParameter()
@@ -72,17 +73,14 @@ export const useListQueryState = <
   )
 
   const queryKey = useMemo(
-    () => [
-      search,
-      offset,
-      pageSize,
-      ...Object.keys(filterConfig)
-        .sort()
-        .flatMap((key) => [
-          key,
-          filterConfig[key].codec.toQueryKey(filters[key]),
-        ]),
-    ],
+    () =>
+      listQueryKey({
+        search,
+        offset,
+        pageSize,
+        filters,
+        config: filterConfig,
+      }),
     [filterConfig, filters, offset, pageSize, search]
   )
 

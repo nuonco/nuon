@@ -59,6 +59,7 @@ export const Overview = () => (
       'The header sticks inside the main scrollbar and gains glass elevation after scrolling.',
       'Default content is guttered and capped at 72rem.',
       'Use fullBleed only for content that genuinely owns edge-to-edge layout.',
+      'The Nuon logo links to homeHref.',
     ]}
     props={[
       {
@@ -67,15 +68,26 @@ export const Overview = () => (
         description: 'Global controls passed to FocusHeader.',
       },
       {
+        name: 'children',
+        type: 'ReactNode',
+        description: 'Focused-flow content inside the main scroll region.',
+      },
+      {
+        name: 'contentClassName',
+        type: 'string',
+        description: 'Additional constraints for the content frame.',
+      },
+      {
         name: 'fullBleed',
         type: 'boolean',
         default: 'false',
         description: 'Removes the default maximum width and content gutters.',
       },
       {
-        name: 'contentClassName',
+        name: 'homeHref',
         type: 'string',
-        description: 'Additional constraints for the content frame.',
+        default: "'/'",
+        description: 'Safe destination for the Nuon logo.',
       },
     ]}
   />
