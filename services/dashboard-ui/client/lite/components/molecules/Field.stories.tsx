@@ -19,6 +19,8 @@ export const Overview = () => (
     rules={[
       'Field owns ids and accessible descriptions.',
       'Optional is descriptive; validation still belongs to Zod.',
+      'Give it exactly one control element. Field clones it to attach the id, aria-invalid and aria-describedby.',
+      'Loading covers the label only. The control renders its own loading state.',
     ]}
     props={[
       {
@@ -41,6 +43,22 @@ export const Overview = () => (
         type: 'boolean',
         default: 'false',
         description: 'Shows the optional hint.',
+      },
+      {
+        name: 'loading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Renders the label in its loading state.',
+      },
+      {
+        name: 'loadingWidth',
+        type: 'number',
+        description: 'Label loading width in ch.',
+      },
+      {
+        name: 'children',
+        type: 'ReactElement',
+        description: 'The single control this field labels and describes.',
       },
     ]}
   />

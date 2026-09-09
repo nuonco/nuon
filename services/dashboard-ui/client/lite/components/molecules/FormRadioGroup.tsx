@@ -19,6 +19,7 @@ export interface IFormRadioGroup
   label?: ReactNode
   description?: ReactNode
   disabled?: boolean
+  onValueChange?: (value: string) => void
 }
 
 export const FormRadioGroup = ({
@@ -27,6 +28,7 @@ export const FormRadioGroup = ({
   label,
   description,
   disabled = false,
+  onValueChange,
   className,
   ...props
 }: IFormRadioGroup) => {
@@ -42,7 +44,13 @@ export const FormRadioGroup = ({
       {...props}
     >
       {label ? (
-        <Text as="legend" variant="label" color="secondary" className="mb-1">
+        <Text
+          as="legend"
+          variant="body"
+          weight="medium"
+          color="primary"
+          className="mb-1"
+        >
           {label}
         </Text>
       ) : null}
@@ -61,7 +69,10 @@ export const FormRadioGroup = ({
             disabled={disabled || option.disabled}
             label={option.label}
             description={option.description}
-            onChange={() => field.handleChange(option.value)}
+            onChange={() => {
+              field.handleChange(option.value)
+              onValueChange?.(option.value)
+            }}
             onBlur={field.handleBlur}
           />
         ))}

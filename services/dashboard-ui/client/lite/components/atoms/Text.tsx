@@ -88,6 +88,10 @@ const LINE_CLAMP_CLASSES: Record<number, string> = {
   4: 'line-clamp-4',
   5: 'line-clamp-5',
   6: 'line-clamp-6',
+  7: 'line-clamp-7',
+  8: 'line-clamp-8',
+  9: 'line-clamp-9',
+  10: 'line-clamp-10',
 }
 
 export const Text = ({

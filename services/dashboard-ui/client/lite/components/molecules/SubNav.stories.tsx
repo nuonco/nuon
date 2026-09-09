@@ -29,7 +29,21 @@ export const Overview = () => (
     ]}
     rules={[
       'The current route exposes aria-current page.',
+      'An item stays current for routes nested beneath its href. Set end on an item that must match its href exactly.',
       'Overflow remains horizontally scrollable at narrow widths.',
+    ]}
+    props={[
+      {
+        name: 'items',
+        type: 'ISubNavItem[]',
+        description:
+          'Sibling destinations, each with an href, label and optional end flag.',
+      },
+      {
+        name: 'label',
+        type: 'string',
+        description: 'Accessible name for the navigation landmark.',
+      },
     ]}
   />
 )
