@@ -16,10 +16,10 @@ import (
 type UpdateAppBranchConfigRequest struct {
 	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
 	// it matches this RE2 pattern. Send an empty string to clear it.
-	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty"`
+	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty" swaggertype:"string" extensions:"x-nullable"`
 
 	// SendStatusesOnIgnore posts a successful commit status for ignored runs.
-	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty"`
+	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 }
 
 func (c *UpdateAppBranchConfigRequest) Validate(v *validator.Validate) error {
