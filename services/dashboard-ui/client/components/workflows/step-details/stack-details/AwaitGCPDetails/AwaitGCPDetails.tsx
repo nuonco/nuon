@@ -766,6 +766,8 @@ interface IGCPTFModuleTab {
 // install's target from the control plane, so repeating them as module arguments
 // would be a second copy of the same value to drift. They fall back to
 // placeholders before the first provision has recorded them.
+//
+// GCP records that target on the first apply, so pass them until it does.
 const GCPTFModuleTab = ({
   orgId,
   installId,
@@ -774,6 +776,10 @@ const GCPTFModuleTab = ({
 }: IGCPTFModuleTab) => {
   const project = gcpProjectId || '<gcp-project-id>'
   const region = gcpRegion || '<gcp-region>'
+  const targetBlock =
+    gcpProjectId && gcpRegion
+      ? ''
+      : `\n  project_id = "${project}"\n  region     = "${region}"`
 
   const buildMainTf = ({
     installId: id,
@@ -799,7 +805,7 @@ module "gcp_stack" {
   source  = "nuonco/stack/gcp"
   version = "~> 1.0"
 
-  install_id = "${id}"${inputsBlock}${secretsBlock}
+  install_id = "${id}"${targetBlock}${inputsBlock}${secretsBlock}
 }${secretVariablesBlock}`
 
   return (
