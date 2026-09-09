@@ -15,21 +15,10 @@ func (c *cli) agentsCmd() *cobra.Command {
 	agentsCmd := &cobra.Command{
 		Use:   "agents",
 		Short: "Agent-facing helpers for driving Nuon with LLMs",
-		Long: `Commands for LLM agents working with Nuon.
-
-Start here:
-  nuon agents context   Print markdown orientation (auth, selection, how to use MCP)
-  nuon agents mcp       Run a local stdio MCP proxy that injects your API token and org ID
-
-Register with an MCP client:
-
-  claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes
-  amp mcp add nuon -- nuon agents mcp --allow-writes
-
-Cursor / Cursor Agent: write ~/.cursor/mcp.json then agent mcp enable nuon.
-
-Direct HTTP: point an MCP client at the URL from "nuon agents context"
-with Bearer token and X-Nuon-Org-ID headers.`,
+		// Same guide as "nuon agents help", which adds the live sign-in, org,
+		// and resolved MCP URL. Whichever a user reaches for, they get all of
+		// the setup, not a pointer to the other one.
+		Long:        agentsSetupGuide(nil),
 		GroupID:     AdditionalGroup.ID,
 		Annotations: annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
@@ -37,6 +26,7 @@ with Bearer token and X-Nuon-Org-ID headers.`,
 		}),
 	}
 
+	agentsCmd.AddCommand(c.agentsHelpCmd())
 	agentsCmd.AddCommand(c.agentsContextCmd())
 	agentsCmd.AddCommand(c.agentsMCPCmd())
 
@@ -80,17 +70,20 @@ Example — register:
 
   claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes
   amp mcp add nuon -- nuon agents mcp --allow-writes
-  # Cursor: write ~/.cursor/mcp.json, then agent mcp enable nuon
+  # Cursor: save the JSON below to ~/.cursor/mcp.json, then agent mcp enable nuon
 
-Or add to .mcp.json:
+Or by config file — .mcp.json for Claude Code, ~/.cursor/mcp.json or
+.cursor/mcp.json for Cursor, the same block under the literal
+"amp.mcpServers" key in ~/.config/amp/settings.json for Amp:
 
-  {"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp", "--allow-writes"]}}}
+` + mcpClientJSON("mcpServers", "  ") + `
 
-Example — override the upstream server:
+Example — override the derived MCP URL when it does not match the API URL:
 
-  nuon agents mcp --allow-writes --url https://mcp.example.com/mcp --name nuon-example
+  nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
 
-Run "nuon agents context" to see which MCP URL resolves from your config.`,
+Run "nuon agents help" for per-client setup and "nuon agents context" to see
+which MCP URL resolves from your config.`,
 		PersistentPreRunE: c.persistentPreRunE,
 		Annotations:       outputsAnnotation(OutputTable),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
@@ -108,7 +101,7 @@ Run "nuon agents context" to see which MCP URL resolves from your config.`,
 		}),
 	}
 	cmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "expose mutating tools whose descriptions start with WRITE OPERATION:")
-	cmd.Flags().StringVar(&mcpURL, "url", "", "upstream MCP server URL (derived from api.<hostname>, or localhost; otherwise required)")
+	cmd.Flags().StringVar(&mcpURL, "url", "", "upstream MCP server URL, for example https://mcp.example.nuon.co/mcp. Derived from api.<hostname> by default; pass this when the MCP URL does not follow from the API URL")
 	cmd.Flags().StringVar(&serverName, "name", "", "MCP server name exposed to the client (default nuon, derived from the configured API URL)")
 
 	return cmd
