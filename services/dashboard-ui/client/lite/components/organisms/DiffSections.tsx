@@ -2,12 +2,14 @@ import {
   Children,
   cloneElement,
   isValidElement,
+  useEffect,
   useState,
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
 import { cn } from '@/utils/classnames'
 import { useDisclosureGroup } from '../../hooks/use-disclosure'
+import { useUserPreferences } from '../../providers/user-preferences-provider'
 import { Button } from '../atoms/Button'
 import { Icon } from '../atoms/Icon'
 import { DisclosureGroup, ExpandAllButton } from '../molecules/DisclosureGroup'
@@ -66,27 +68,39 @@ const DiffControls = ({ view, setView, divider = false }: IDiffControls) => {
 export const DiffSections = ({
   children,
   toolbar,
-  defaultOpen = false,
-  defaultView = 'unified',
+  defaultOpen,
+  defaultView,
   className,
   ...props
 }: IDiffSections) => {
-  const [view, setView] = useState<TDiffView>(defaultView)
+  const { preferences } = useUserPreferences()
+  const [localView, setLocalView] = useState<TDiffView>(
+    defaultView ?? preferences.diffView
+  )
+
+  useEffect(() => {
+    if (defaultView === undefined) setLocalView(preferences.diffView)
+  }, [defaultView, preferences.diffView])
+
   const sections = Children.map(children, (child) =>
     isValidElement<IDiffSection>(child) && child.type === DiffSection
-      ? cloneElement(child, { view })
+      ? cloneElement(child, { view: localView })
       : child
   )
 
   return (
     <DisclosureGroup
-      defaultOpen={defaultOpen}
+      defaultOpen={defaultOpen ?? preferences.planSectionsOpen}
       className={cn('gap-1', className)}
       {...props}
     >
       <div className="flex flex-wrap items-center gap-2 pb-2">
         {toolbar}
-        <DiffControls view={view} setView={setView} divider={!!toolbar} />
+        <DiffControls
+          view={localView}
+          setView={setLocalView}
+          divider={!!toolbar}
+        />
       </div>
       {sections}
     </DisclosureGroup>

@@ -32,6 +32,7 @@ export const Overview = () => (
       'Section content takes precedence over derived field rows.',
       'Embedded files retain their own language and filename.',
       'Every legacy app-config story uses the exact same shared fixture.',
+      'Pass defaultSectionsOpen to start every section expanded; omit it to use the reader\'s plan preference.',
     ]}
     props={[
       {
@@ -45,10 +46,16 @@ export const Overview = () => (
         description: 'Legacy add, change, and remove counts.',
       },
       {
-        name: 'isLoading',
+        name: 'loading',
         type: 'boolean',
         default: 'false',
         description: 'Displays the loading state.',
+      },
+      {
+        name: 'defaultSectionsOpen',
+        type: 'boolean',
+        description:
+          'Initial expand state for every section. Omitted, the plan preference decides.',
       },
     ]}
   />
@@ -63,7 +70,7 @@ export const Default = () => (
 
 export const NoChanges = () => <Frame sections={[]} summary={null} />
 
-export const Loading = () => <Frame sections={[]} summary={null} isLoading />
+export const Loading = () => <Frame sections={[]} summary={null} loading />
 
 export const ComponentsOnly = () => (
   <Frame

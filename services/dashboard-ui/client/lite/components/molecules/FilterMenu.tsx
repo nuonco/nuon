@@ -97,10 +97,14 @@ export const FilterOption = forwardRef<HTMLDivElement, IFilterOption>(
         {leading ? (
           <span className="flex shrink-0 items-center">{leading}</span>
         ) : null}
-        <span className="flex min-w-0 flex-1 flex-col">
-          <Text variant="caption" color="secondary" className="truncate">
-            {label}
-          </Text>
+        <span className="flex min-w-0 flex-1 flex-col items-start">
+          {typeof label === 'string' ? (
+            <Text variant="caption" color="secondary" className="truncate">
+              {label}
+            </Text>
+          ) : (
+            label
+          )}
           {description ? (
             <Text variant="caption" color="tertiary" className="truncate">
               {description}
@@ -275,7 +279,7 @@ export interface IFilterDropdown<T extends string> {
   onToggle: (value: T) => void
   onIsolate: (value: T) => void
   onReset: () => void
-  isConstrained?: boolean
+  constrained?: boolean
   align?: 'start' | 'center' | 'end'
   className?: string
 }
@@ -287,7 +291,7 @@ export const FilterDropdown = <T extends string>({
   onToggle,
   onIsolate,
   onReset,
-  isConstrained = selected.size !== options.length,
+  constrained = selected.size !== options.length,
   align = 'end',
   className,
 }: IFilterDropdown<T>) => {
@@ -304,7 +308,7 @@ export const FilterDropdown = <T extends string>({
           className={className}
         >
           {label}
-          {isConstrained ? ` (${selected.size})` : ''}
+          {constrained ? ` (${selected.size})` : ''}
         </Button>
       }
     >

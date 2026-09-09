@@ -54,7 +54,7 @@ export const useFilterSelection = <T extends string>(
 
   return {
     defaults,
-    isConstrained: !setsMatch(selected, defaults),
+    constrained: !setsMatch(selected, defaults),
     isolate,
     reset,
     selected,

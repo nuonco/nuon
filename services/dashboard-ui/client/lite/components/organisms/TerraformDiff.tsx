@@ -6,8 +6,8 @@ import {
   TERRAFORM_DEFAULT_DIFF_OPERATIONS,
   TERRAFORM_DIFF_OPERATIONS,
   terraformPlanDiff,
-} from '../../lib/diffs/terraform'
-import type { IPlanDiffGroup } from '../../lib/diffs'
+} from '../../utils/diffs/terraform'
+import type { IPlanDiffGroup } from '../../utils/diffs'
 import { Card } from '../atoms/Card'
 import { Text } from '../atoms/Text'
 import { DiffSummary } from '../molecules/DiffSummary'
@@ -26,7 +26,7 @@ const TerraformDiffGroup = ({
   defaultOpen,
 }: {
   group: IPlanDiffGroup
-  defaultOpen: boolean
+  defaultOpen?: boolean
 }) => {
   const filter = usePlanDiffFilter(
     group.sections,
@@ -104,7 +104,7 @@ const TerraformDiffGroup = ({
 
 export const TerraformDiff = ({
   plan,
-  defaultOpen = true,
+  defaultOpen,
   className,
   ...props
 }: ITerraformDiff) => {

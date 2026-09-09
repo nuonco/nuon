@@ -2,12 +2,18 @@ import { Outlet } from 'react-router'
 import { useConfig } from '@/hooks/use-config'
 import { Text } from '../components/atoms/Text'
 import type { INavItem } from '../components/molecules/NavLink'
-import { ThemeSwitcher } from '../components/molecules/ThemeSwitcher'
-import { UserDropdown } from '../components/organisms/UserDropdown'
+import { Breadcrumb } from '../components/molecules/Breadcrumb'
+import { OrgProfile } from '../components/molecules/OrgProfile'
+import { OrgSwitcherMenu } from '../components/organisms/OrgSwitcherMenu'
+import { UserDropdownContainer as UserDropdown } from '../components/organisms/UserDropdownContainer'
 import { SurfaceHost } from '../components/organisms/surfaces'
 import { DashboardShell } from '../components/templates/DashboardShell'
+import { useBreadcrumbItems } from '../hooks/use-breadcrumbs'
 import { useCurrentUser } from '../hooks/use-current-user'
+import { useStatusBarContent } from '../hooks/use-status-bar'
+import { BreadcrumbProvider } from '../providers/breadcrumb-provider'
 import { OrgProvider, useOrg } from '../providers/org-provider'
+import { StatusBarProvider } from '../providers/status-bar-provider'
 
 export const orgNavigation = (orgId: string) => {
   const primary: INavItem[] = [
@@ -57,8 +63,10 @@ export const orgNavigation = (orgId: string) => {
 
 const OrgShell = () => {
   const config = useConfig()
-  const { org, orgId, isLoading, error } = useOrg()
+  const { org, orgId, loading, error } = useOrg()
   const { user, isLoading: isLoadingUser } = useCurrentUser()
+  const breadcrumbs = useBreadcrumbItems()
+  const statusBarContent = useStatusBarContent()
   const navigation = orgNavigation(orgId ?? '')
 
   return (
@@ -66,28 +74,35 @@ const OrgShell = () => {
       primaryNav={navigation.primary}
       secondaryNav={navigation.secondary}
       homeHref={`/${orgId ?? ''}`}
-      headerActions={<ThemeSwitcher />}
+      headerLeading={<Breadcrumb items={breadcrumbs} />}
       userMenu={
         <UserDropdown
           user={user}
           loading={isLoadingUser}
           signOutHref={`${config.authServiceUrl ?? ''}/logout`}
           stretch
+          org={org}
+          orgLoading={loading}
+          orgSwitcher={<OrgSwitcherMenu />}
         />
       }
       statusBar={
-        <div className="flex h-8 items-center justify-between gap-4 px-4">
-          <Text
-            variant="label"
-            color="secondary"
-            loading={isLoading}
-            loadingWidth={16}
-          >
-            {org?.name ?? 'Organization unavailable'}
-          </Text>
-          <Text variant="label" color="tertiary">
-            {error ? 'Connection issue' : `Version ${config.version ?? 'dev'}`}
-          </Text>
+        <div className="flex h-7 items-stretch justify-between">
+          <div className="flex min-w-0 items-stretch">
+            <span className="modeline-point-right flex items-center bg-surface-modeline pr-5 pl-3">
+              <OrgProfile org={org} loading={loading} variant="modeline" />
+            </span>
+            {statusBarContent ? (
+              <span className="flex min-w-0 items-center px-2">
+                {statusBarContent}
+              </span>
+            ) : null}
+          </div>
+          <span className="modeline-point-left flex shrink-0 items-center bg-surface-modeline pr-3 pl-5">
+            <Text variant="label" family="mono" color="tertiary">
+              {error ? 'disconnected' : `v${config.version ?? 'dev'}`}
+            </Text>
+          </span>
         </div>
       }
     >
@@ -98,8 +113,12 @@ const OrgShell = () => {
 
 export const OrgLayout = () => (
   <OrgProvider>
-    <SurfaceHost scope="org">
-      <OrgShell />
-    </SurfaceHost>
+    <BreadcrumbProvider>
+      <StatusBarProvider>
+        <SurfaceHost scope="org">
+          <OrgShell />
+        </SurfaceHost>
+      </StatusBarProvider>
+    </BreadcrumbProvider>
   </OrgProvider>
 )

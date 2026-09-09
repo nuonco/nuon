@@ -1,8 +1,11 @@
+import type { ReactNode } from 'react'
+import type { TOrg } from '@/types'
 import { cn } from '@/utils/classnames'
 import { Button } from '../atoms/Button'
 import { Dropdown, type IDropdown } from '../atoms/Dropdown'
 import { Icon } from '../atoms/Icon'
-import { Menu, MenuItem } from '../molecules/Menu'
+import { Menu, MenuItem, MenuSeparator, MenuSubmenu } from '../molecules/Menu'
+import { OrgProfile } from '../molecules/OrgProfile'
 import { UserProfile, type IUserProfileData } from '../molecules/UserProfile'
 
 export interface IUserDropdown extends Omit<IDropdown, 'children' | 'trigger'> {
@@ -11,6 +14,10 @@ export interface IUserDropdown extends Omit<IDropdown, 'children' | 'trigger'> {
   compact?: boolean
   signOutHref: string
   triggerClassName?: string
+  orgSwitcher?: ReactNode
+  org?: TOrg | null
+  orgLoading?: boolean
+  onOpenPreferences?: () => void
 }
 
 export const UserDropdown = ({
@@ -19,6 +26,10 @@ export const UserDropdown = ({
   compact = false,
   signOutHref,
   triggerClassName,
+  orgSwitcher,
+  org,
+  orgLoading = false,
+  onOpenPreferences,
   align = 'end',
   matchTriggerWidth,
   stretch = false,
@@ -45,7 +56,30 @@ export const UserDropdown = ({
     }
     {...props}
   >
-    <Menu>
+    <Menu className="w-72">
+      {orgSwitcher ? (
+        <>
+          <MenuSubmenu
+            label={
+              <OrgProfile org={org} loading={orgLoading} avatarSize="sm" />
+            }
+          >
+            {orgSwitcher}
+          </MenuSubmenu>
+          <MenuSeparator />
+        </>
+      ) : null}
+      {onOpenPreferences ? (
+        <>
+          <MenuItem
+            icon={<Icon variant="SlidersHorizontalIcon" />}
+            onSelect={onOpenPreferences}
+          >
+            Preferences
+          </MenuItem>
+          <MenuSeparator />
+        </>
+      ) : null}
       <MenuItem
         href={signOutHref}
         external

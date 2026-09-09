@@ -22,6 +22,7 @@ export const Overview = () => (
       'Internal routes expose aria-current when active.',
       'Collapsed links expose their label and shortcut in a tooltip.',
       'External navigation opens in a new tab and never receives a route shortcut.',
+      'onNavigate fires for internal routes only, so an external link never closes the mobile sidebar.',
     ]}
     props={[
       {
@@ -49,6 +50,12 @@ export const Overview = () => (
         type: 'boolean',
         default: 'false',
         description: 'Renders an icon-only link with a tooltip.',
+      },
+      {
+        name: 'onNavigate',
+        type: '() => void',
+        description:
+          'Runs once an internal route has been followed, for dismissing the surrounding navigation.',
       },
     ]}
   />
