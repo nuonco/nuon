@@ -55,7 +55,7 @@ type Role struct {
 	Accounts []Account `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"-" temporaljson:"accounts,omitzero,omitempty"`
 
 	// NOTE: not all roles have to belong to an org, this is mainly for historical reasons.
-	OrgID generics.NullString `json:"org_id,omitzero" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID generics.NullString `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org                `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	RoleType RoleType `json:"role_type,omitzero" gorm:"defaultnull;notnull" temporaljson:"role_type,omitzero,omitempty"`
