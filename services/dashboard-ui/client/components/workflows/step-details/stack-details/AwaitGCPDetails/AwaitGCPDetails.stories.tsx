@@ -181,6 +181,19 @@ export const Loading = () => (
   </div>
 )
 
+// No project or region recorded yet, so the module block carries them.
+export const TFModuleFirstApply = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitGCPDetails
+      orgId="org-1"
+      stack={mockStack}
+      step={mockStep}
+      installId="install-1"
+      tfProvider
+    />
+  </div>
+)
+
 export const TFModule = () => (
   <div className="max-w-2xl p-4">
     <AwaitGCPDetails

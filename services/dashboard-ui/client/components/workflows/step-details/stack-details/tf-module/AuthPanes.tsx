@@ -6,7 +6,6 @@ import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Text } from '@/components/common/Text'
 import { CreateOIDCTrustPolicyButton } from '@/components/oidc-trust-policies'
-import { useConfig } from '@/hooks/use-config'
 
 // OIDC auth is hidden until the experience is polished and fully tested; flip
 // this to restore the Static token / OIDC toggle.
@@ -68,17 +67,16 @@ export const StaticTokenAuthPane = ({
 export const OIDCAuthPane = ({
   installId,
   policyNames,
+  // The runner API, not the public one: the SDK requests its ID token with the URL it
+  // talks to, and the audience is compared literally.
+  audience,
 }: {
   installId?: string
   policyNames: string[]
+  audience: string
 }) => {
-  const config = useConfig()
   const policyName = `stack-${installId ?? 'install'}`
   const existing = policyNames.includes(policyName)
-
-  // The runner API, not the public one: the SDK requests its ID token with the URL it
-  // talks to, and the audience is compared literally.
-  const audience = config.runnerApiUrl ?? ''
 
   const workflowSnippet = `permissions:
   id-token: write
