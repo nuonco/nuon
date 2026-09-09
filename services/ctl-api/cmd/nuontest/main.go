@@ -330,11 +330,24 @@ func removePackage(packages []string, pkg string) []string {
 }
 
 func (p *plan) setupDatabases() error {
+	schemaDir := tests.SchemaSnapshotDir()
 	for i := range p.shards {
 		s := &p.shards[i]
-		log.Printf("shard %d: creating postgresql database %s...", s.index, s.dbCfg.DBName)
-		if err := tests.CreateAndMigrateDatabase(s.dbCfg); err != nil {
-			return fmt.Errorf("shard %d postgres: %w", s.index, err)
+		if snapshotPath, ok := tests.SchemaSnapshotPath(s.dbCfg); ok {
+			log.Printf("shard %d: restoring postgres schema from %s", s.index, snapshotPath)
+			if err := tests.RestoreDatabase(s.dbCfg, snapshotPath); err != nil {
+				return fmt.Errorf("shard %d postgres restore: %w", s.index, err)
+			}
+		} else {
+			log.Printf("shard %d: creating postgresql database %s...", s.index, s.dbCfg.DBName)
+			if err := tests.CreateAndMigrateDatabase(s.dbCfg); err != nil {
+				return fmt.Errorf("shard %d postgres: %w", s.index, err)
+			}
+			if schemaDir != "" {
+				if err := tests.DumpSchema(s.dbCfg, schemaDir); err != nil {
+					return fmt.Errorf("shard %d postgres schema dump: %w", s.index, err)
+				}
+			}
 		}
 		log.Printf("shard %d: creating clickhouse database %s...", s.index, s.chCfg.Name)
 		if err := tests.CreateAndMigrateCHDatabase(s.chCfg, s.dbCfg); err != nil {
