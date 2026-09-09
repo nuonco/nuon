@@ -248,7 +248,8 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			ClusterName:       clusterName,
 			RunnerMachineType: instanceType,
 
-			VPCNestedTemplateURL: appCfg.StackConfig.VPCNestedTemplateURL,
+			VPCNestedTemplateURL:    appCfg.StackConfig.VPCNestedTemplateURL,
+			RunnerNestedTemplateURL: appCfg.StackConfig.RunnerNestedTemplateURL,
 
 			NuonSupportIAMRoleARNs: supportARNs,
 
