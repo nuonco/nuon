@@ -81,6 +81,23 @@ test('expands the list when adding a label', async ({ page }) => {
   await expect(dialog.getByRole('textbox')).toHaveCount(42)
 })
 
+test('focuses the key field of a newly added label', async ({ page }) => {
+  await page.goto(STORY, { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: 'Open modal' }).click()
+
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeFocused()
+
+  await dialog.getByRole('button', { name: 'Add label' }).click()
+
+  const newKey = dialog.getByLabel('Label 4 key')
+  await expect(newKey).toBeFocused()
+
+  await page.keyboard.type('tier')
+  await expect(newKey).toHaveValue('tier')
+  await expect(dialog.getByLabel('Label 3 key')).toHaveValue('team')
+})
+
 test('keeps invalid rows visible until their errors are fixed', async ({
   page,
 }) => {
