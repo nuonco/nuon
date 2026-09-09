@@ -7,13 +7,13 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { TStatusTheme } from '@/utils/status-utils'
 import { ToastStack } from '../components/organisms/toasts/ToastStack'
 import { TOAST_EXIT_MS } from '../components/organisms/toasts/toast-motion'
+import type { TSurfaceTheme } from '../utils/status-theme'
 
 export const DEFAULT_TOAST_TIMEOUT = 5000
 
-export type TToastTheme = TStatusTheme | 'default'
+export type TToastTheme = TSurfaceTheme
 
 export interface IToastAction {
   label: string

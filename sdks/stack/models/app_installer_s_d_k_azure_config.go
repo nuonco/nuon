@@ -53,6 +53,9 @@ type AppInstallerSDKAzureConfig struct {
 	// provision built in roles
 	ProvisionBuiltInRoles []string `json:"provision_built_in_roles"`
 
+	// runner nested template url
+	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
+
 	// runner vm size
 	RunnerVMSize string `json:"runner_vm_size,omitempty"`
 
@@ -61,6 +64,9 @@ type AppInstallerSDKAzureConfig struct {
 
 	// subscription tenant id
 	SubscriptionTenantID string `json:"subscription_tenant_id,omitempty"`
+
+	// Deployed instead of the module's own network, which lacks its extra resources.
+	VpcNestedTemplateURL string `json:"vpc_nested_template_url,omitempty"`
 }
 
 // Validate validates this app installer s d k azure config
