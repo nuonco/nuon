@@ -23,7 +23,10 @@ func (s *InstallsServiceTestSuite) TestGetAvailableRolesEmptyOutputs() {
 	require.Empty(s.T(), resp.Roles)
 }
 
-func (s *InstallsServiceTestSuite) TestGetAvailableRolesMissingPrincipalType() {
+// The handler treats principal_type/operation_type as optional filters: it only
+// validates them when present, and omits the default-role hint when either is
+// absent, so a missing query param is a 200, not a 400.
+func (s *InstallsServiceTestSuite) TestGetAvailableRolesOmittedPrincipalTypeReturnsOK() {
 	install := s.createTestInstall()
 
 	path := fmt.Sprintf("/v1/installs/%s/available-roles?operation_type=deploy", install.ID)
@@ -31,7 +34,7 @@ func (s *InstallsServiceTestSuite) TestGetAvailableRolesMissingPrincipalType() {
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 }
 
-func (s *InstallsServiceTestSuite) TestGetAvailableRolesMissingOperationType() {
+func (s *InstallsServiceTestSuite) TestGetAvailableRolesOmittedOperationTypeReturnsOK() {
 	install := s.createTestInstall()
 
 	path := fmt.Sprintf("/v1/installs/%s/available-roles?principal_type=component", install.ID)

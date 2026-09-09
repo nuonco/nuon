@@ -233,18 +233,22 @@ func (s *CreateAppTestSuite) TestCreateAppDuplicateName() {
 	})
 
 	s.Run("across orgs", func() {
+		// app name uniqueness is scoped to (name, org_id, deleted_at), so the same
+		// name in a different org must still create. Use a name the "within org"
+		// subtest did not insert into this org — no truncation runs between
+		// subtests, so reusing "existing-app" here would 409 on that leftover row.
 		ctx2 := context.Background()
 		ctx2, account2 := s.service.Seeder.EnsureAccount(ctx2, s.T())
 		ctx2, org2 := s.service.Seeder.EnsureOrg(ctx2, s.T())
-		existingApp := &app.App{ID: domains.NewAppID(), Name: "existing-app", OrgID: org2.ID, CreatedByID: account2.ID}
+		existingApp := &app.App{ID: domains.NewAppID(), Name: "existing-app-other-org", OrgID: org2.ID, CreatedByID: account2.ID}
 		require.NoError(s.T(), s.service.DB.WithContext(ctx2).Create(existingApp).Error)
 
 		req := CreateAppRequest{Name: existingApp.Name}
 		rr := s.makeRequest(http.MethodPost, "/v1/apps", req)
 
-		if rr.Code != http.StatusConflict {
+		if rr.Code != http.StatusCreated {
 			s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 		}
-		require.Equal(s.T(), http.StatusConflict, rr.Code)
+		require.Equal(s.T(), http.StatusCreated, rr.Code)
 	})
 }
