@@ -30,11 +30,14 @@ type StackServiceAccountResponse struct {
 	// ExpiresAt is the expiry of the longest-lived usable token; zero when
 	// HasLiveToken is false.
 	ExpiresAt time.Time `json:"expires_at,omitzero"`
+
+	// Without it a dashboard points the module's provider at production.
+	RunnerAPIURL string `json:"runner_api_url,omitzero"`
 }
 
 // @ID						GetStackServiceAccount
 // @Summary				get an install stack's service account
-// @Description			Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
+// @Description			Return the service account an install stack's Terraform module authenticates as, whether it holds a usable API token, and the runner API URL its provider authenticates against. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
 // @Param					install_id	path	string	true	"install ID"
 // @Tags					stacks
 // @Accept					json
@@ -90,11 +93,18 @@ func (s *service) GetStackServiceAccount(ctx *gin.Context) {
 		return
 	}
 
+	runnerAPIURL, err := s.stackRunnerAPIURL(ctx, installID, orgID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	ctx.JSON(http.StatusOK, StackServiceAccountResponse{
 		AccountID:    acct.ID,
 		Email:        acct.Email,
 		HasLiveToken: !expiresAt.IsZero(),
 		ExpiresAt:    expiresAt,
+		RunnerAPIURL: runnerAPIURL,
 	})
 }
 
@@ -116,4 +126,24 @@ func liveStackTokenExpiry(ctx context.Context, db *gorm.DB, accountID string) (t
 	}
 
 	return time.Time{}, fmt.Errorf("load stack token: %w", res.Error)
+}
+
+// Same precedence as BuildInstallerSDKConfig: the per-runner-group setting wins,
+// global config is the safety net for installs that pre-date it.
+func (s *service) stackRunnerAPIURL(ctx context.Context, installID, orgID string) (string, error) {
+	var install app.Install
+	if res := s.db.WithContext(ctx).
+		Preload("RunnerGroup.Settings").
+		Where(app.Install{ID: installID, OrgID: orgID}).
+		First(&install); res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return s.cfg.RunnerAPIURL, nil
+		}
+		return "", fmt.Errorf("load install: %w", res.Error)
+	}
+
+	if url := install.RunnerGroup.Settings.RunnerAPIURL; url != "" {
+		return url, nil
+	}
+	return s.cfg.RunnerAPIURL, nil
 }
