@@ -27,8 +27,11 @@ export const AddInstallPicker = ({
 
   const filtered = useMemo(() => {
     if (!query) return unassignedInstalls
-    const q = query.toLowerCase()
-    return unassignedInstalls.filter((i) => i.name.toLowerCase().includes(q))
+    const q = query.trim().toLowerCase()
+    return unassignedInstalls.filter(
+      (i) =>
+        i.name?.toLowerCase().includes(q) || i.id?.toLowerCase().includes(q)
+    )
   }, [unassignedInstalls, query])
 
   const toggle = (id: string) => {
@@ -69,13 +72,15 @@ export const AddInstallPicker = ({
         {unassignedInstalls.length > SEARCH_THRESHOLD && (
           <div className="p-3 border-b border-cool-grey-200 dark:border-dark-grey-700">
             <Input
+              autoFocus
+              autoComplete="off"
               id={`pick-search-${groupId}`}
               type="text"
               size="sm"
-              placeholder="Search installs..."
+              placeholder="Search by name or ID"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              aria-label="Search installs"
+              aria-label="Search installs by name or ID"
             />
           </div>
         )}
@@ -97,7 +102,27 @@ export const AddInstallPicker = ({
                 checked={picked.has(install.id)}
                 onChange={() => toggle(install.id)}
                 labelProps={{
-                  labelText: install.name,
+                  labelText: (
+                    <span className="flex flex-col min-w-0">
+                      <span className="truncate">
+                        {install.name || install.id}
+                      </span>
+                      {install.name ? (
+                        <Text
+                          variant="subtext"
+                          family="mono"
+                          theme="neutral"
+                          className="truncate"
+                        >
+                          {install.id}
+                        </Text>
+                      ) : null}
+                    </span>
+                  ),
+                  labelTextProps: {
+                    variant: 'body',
+                    className: 'min-w-0 flex-1',
+                  },
                 }}
               />
             ))

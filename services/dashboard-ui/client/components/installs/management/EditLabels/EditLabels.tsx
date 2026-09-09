@@ -36,6 +36,7 @@ export const EditLabelsModal = ({
   ...props
 }: IEditLabelsModal) => {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [addedRowIndex, setAddedRowIndex] = useState<number | null>(null)
   const labelsListId = useId()
 
   const form = useForm({
@@ -128,6 +129,7 @@ export const EditLabelsModal = ({
                     disabled={isPending}
                     onClick={() => {
                       setIsExpanded(true)
+                      setAddedRowIndex(rows.length)
                       labelsField.pushValue({ key: '', value: '' })
                     }}
                   >
@@ -169,6 +171,7 @@ export const EditLabelsModal = ({
                                 type="text"
                                 placeholder="env"
                                 aria-label={`Label ${idx + 1} key`}
+                                autoFocus={idx === addedRowIndex}
                                 disabled={isPending}
                               />
                             )}
