@@ -35,7 +35,7 @@ export const Overview = () => (
         description: 'Most recent config sync, used for the last update card.',
       },
       {
-        name: 'isLoading',
+        name: 'loading',
         type: 'boolean',
         default: 'false',
         description: 'Shows card loading shapes while keeping every title.',
@@ -94,6 +94,6 @@ export const NeedsAttention = () => (
 
 export const Loading = () => (
   <div className="p-8">
-    <InstallOverviewCards isLoading />
+    <InstallOverviewCards loading />
   </div>
 )

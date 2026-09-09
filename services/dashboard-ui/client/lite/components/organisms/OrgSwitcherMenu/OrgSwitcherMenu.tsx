@@ -8,8 +8,8 @@ export interface IOrgSwitcherMenu {
   search: string
   onSearchChange: (value: string) => void
   onLoadMore: () => void
-  isLoading?: boolean
-  isLoadingMore?: boolean
+  loading?: boolean
+  loadingMore?: boolean
   hasMore?: boolean
   hasError?: boolean
 }

@@ -63,7 +63,7 @@ export const orgNavigation = (orgId: string) => {
 
 const OrgShell = () => {
   const config = useConfig()
-  const { org, orgId, isLoading, error } = useOrg()
+  const { org, orgId, loading, error } = useOrg()
   const { user, isLoading: isLoadingUser } = useCurrentUser()
   const breadcrumbs = useBreadcrumbItems()
   const statusBarContent = useStatusBarContent()
@@ -82,7 +82,7 @@ const OrgShell = () => {
           signOutHref={`${config.authServiceUrl ?? ''}/logout`}
           stretch
           org={org}
-          orgLoading={isLoading}
+          orgLoading={loading}
           orgSwitcher={<OrgSwitcherMenu />}
         />
       }
@@ -90,7 +90,7 @@ const OrgShell = () => {
         <div className="flex h-7 items-stretch justify-between">
           <div className="flex min-w-0 items-stretch">
             <span className="modeline-point-right flex items-center bg-surface-modeline pr-5 pl-3">
-              <OrgProfile org={org} loading={isLoading} variant="modeline" />
+              <OrgProfile org={org} loading={loading} variant="modeline" />
             </span>
             {statusBarContent ? (
               <span className="flex min-w-0 items-center px-2">

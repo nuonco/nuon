@@ -420,7 +420,7 @@ const filterControl = (filter: IInstallFilter) => (
     onToggle={filter.onToggle}
     onIsolate={filter.onIsolate}
     onReset={filter.onReset}
-    isConstrained={filter.constrained}
+    constrained={filter.constrained}
   />
 )
 

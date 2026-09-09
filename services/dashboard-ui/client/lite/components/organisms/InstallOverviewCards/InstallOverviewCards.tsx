@@ -10,13 +10,13 @@ import { OverviewCard, OverviewCardGrid } from '../../molecules/OverviewCard'
 export interface IInstallOverviewCards {
   install?: TInstall
   latestSync?: TInstallConfigSync
-  isLoading?: boolean
+  loading?: boolean
 }
 
 export const InstallOverviewCards = ({
   install,
   latestSync,
-  isLoading = false,
+  loading = false,
 }: IInstallOverviewCards) => {
   const driftCount = install?.drifted_objects?.length
   const branch = install?.app_branch
@@ -25,7 +25,7 @@ export const InstallOverviewCards = ({
   return (
     <OverviewCardGrid>
       <OverviewCard title="Health">
-        {isLoading ? (
+        {loading ? (
           <Status loading loadingWidth={10} />
         ) : install?.composite_health_status ? (
           <>
@@ -50,7 +50,7 @@ export const InstallOverviewCards = ({
       </OverviewCard>
 
       <OverviewCard title="Drift">
-        {isLoading ? (
+        {loading ? (
           <>
             <Status loading loadingWidth={9} />
             <Text loading loadingWidth={18} variant="caption" />
@@ -83,13 +83,13 @@ export const InstallOverviewCards = ({
           <Text
             family="mono"
             weight="medium"
-            loading={isLoading}
+            loading={loading}
             loadingWidth={12}
           >
             {branch?.name ?? '—'}
           </Text>
         </span>
-        {isLoading ? (
+        {loading ? (
           <Badge loading loadingWidth={8} />
         ) : branchConfig?.config_number ? (
           <Badge>Config v{branchConfig.config_number}</Badge>
@@ -100,7 +100,7 @@ export const InstallOverviewCards = ({
         <CommitSummary
           commit={latestSync?.vcs_connection_commit}
           updatedAt={latestSync?.created_at}
-          isLoading={isLoading}
+          loading={loading}
         />
       </OverviewCard>
     </OverviewCardGrid>

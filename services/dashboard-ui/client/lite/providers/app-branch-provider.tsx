@@ -16,7 +16,7 @@ import { useOrg } from './org-provider'
 interface IAppBranchContext {
   branch?: TAppBranch
   branchId?: string
-  isLoading: boolean
+  loading: boolean
   error: unknown
   refresh: () => void
 }
@@ -52,7 +52,7 @@ export const AppBranchProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       branch,
       branchId,
-      isLoading,
+      loading: isLoading,
       error,
       refresh: () => void refetch(),
     }),

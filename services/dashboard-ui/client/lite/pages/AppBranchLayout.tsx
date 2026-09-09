@@ -61,8 +61,8 @@ export const useAppBranchPageChrome = (section?: string) => {
 
 const AppBranchChrome = () => {
   const { orgId } = useOrg()
-  const { app, appId, isLoading: isLoadingApp } = useApp()
-  const { branch, branchId, isLoading } = useAppBranch()
+  const { app, appId, loading: appLoading } = useApp()
+  const { branch, branchId, loading } = useAppBranch()
 
   useStatusBar(
     <span className="flex min-w-0 items-center gap-2">
@@ -70,7 +70,7 @@ const AppBranchChrome = () => {
         variant="caption"
         family="mono"
         weight="medium"
-        loading={isLoadingApp}
+        loading={appLoading}
         loadingWidth={12}
         className="truncate leading-tight"
       >
@@ -79,9 +79,9 @@ const AppBranchChrome = () => {
       <Text variant="caption" color="tertiary" aria-hidden>
         /
       </Text>
-      <BranchProfile branch={branch} loading={isLoading} variant="modeline" />
+      <BranchProfile branch={branch} loading={loading} variant="modeline" />
     </span>,
-    [app?.name, branch?.name, isLoading, isLoadingApp]
+    [app?.name, appLoading, branch?.name, loading]
   )
 
   return (

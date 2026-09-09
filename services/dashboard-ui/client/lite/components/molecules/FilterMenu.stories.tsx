@@ -116,7 +116,7 @@ export const Overview = () => (
         description: 'Whether Reset closes the surrounding dropdown.',
       },
       {
-        name: 'isConstrained',
+        name: 'constrained',
         type: 'boolean',
         description:
           'Overrides the trigger count when defaults are not every option.',
@@ -155,7 +155,7 @@ const MixedDemo = () => {
       onToggle={filter.toggle}
       onIsolate={filter.isolate}
       onReset={filter.reset}
-      isConstrained={filter.isConstrained}
+      constrained={filter.constrained}
     />
   )
 }

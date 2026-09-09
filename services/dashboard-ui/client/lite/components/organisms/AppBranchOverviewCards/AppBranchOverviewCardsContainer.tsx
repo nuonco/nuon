@@ -10,7 +10,7 @@ const INSTALL_LIMIT = 100
 export const AppBranchOverviewCardsContainer = () => {
   const { orgId } = useOrg()
   const { appId } = useApp()
-  const { branch, branchId, isLoading: isLoadingBranch } = useAppBranch()
+  const { branch, branchId, loading: branchLoading } = useAppBranch()
   const { data: result, isLoading: isLoadingInstalls } = useQuery({
     queryKey: ['app-installs', orgId, appId, branchId, 'overview'],
     queryFn: () =>
@@ -31,7 +31,7 @@ export const AppBranchOverviewCardsContainer = () => {
       branch={branch}
       installCount={result?.data?.length}
       hasMoreInstalls={result?.pagination?.hasNext}
-      isLoading={isLoadingBranch || isLoadingInstalls}
+      loading={branchLoading || isLoadingInstalls}
     />
   )
 }

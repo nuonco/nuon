@@ -6,7 +6,7 @@ import { InstallOverviewCards } from './InstallOverviewCards'
 
 export const InstallOverviewCardsContainer = () => {
   const { orgId } = useOrg()
-  const { install, installId, isLoading: isLoadingInstall } = useInstall()
+  const { install, installId, loading: installLoading } = useInstall()
   const { data: syncs, isLoading: isLoadingSyncs } = useQuery({
     queryKey: ['install-config-syncs', orgId, installId],
     queryFn: () =>
@@ -23,7 +23,7 @@ export const InstallOverviewCardsContainer = () => {
     <InstallOverviewCards
       install={install}
       latestSync={syncs?.at(0)}
-      isLoading={isLoadingInstall || isLoadingSyncs}
+      loading={installLoading || isLoadingSyncs}
     />
   )
 }

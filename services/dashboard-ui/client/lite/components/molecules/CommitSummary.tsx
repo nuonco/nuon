@@ -6,15 +6,15 @@ import { Time } from './Time'
 export interface ICommitSummary {
   commit?: TVCSCommit
   updatedAt?: string
-  isLoading?: boolean
+  loading?: boolean
 }
 
 export const CommitSummary = ({
   commit,
   updatedAt,
-  isLoading = false,
+  loading = false,
 }: ICommitSummary) => {
-  if (isLoading) {
+  if (loading) {
     return (
       <>
         <Text loading loadingWidth={7} family="mono" />

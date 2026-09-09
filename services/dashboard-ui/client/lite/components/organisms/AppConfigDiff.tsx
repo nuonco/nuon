@@ -18,14 +18,14 @@ export interface IAppConfigDiff
   extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   sections: TAppConfigDiffSection[]
   summary: IAppConfigDiffSummary | null
-  isLoading?: boolean
+  loading?: boolean
   defaultSectionsOpen?: boolean
 }
 
 export const AppConfigDiff = ({
   sections,
   summary,
-  isLoading = false,
+  loading = false,
   defaultSectionsOpen,
   className,
   ...props
@@ -36,7 +36,7 @@ export const AppConfigDiff = ({
   )
   const filter = usePlanDiffFilter(group.sections, APP_CONFIG_DIFF_OPERATIONS)
 
-  if (isLoading) {
+  if (loading) {
     return (
       <Card
         as="section"

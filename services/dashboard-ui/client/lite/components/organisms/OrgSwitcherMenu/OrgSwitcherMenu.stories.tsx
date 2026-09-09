@@ -53,13 +53,13 @@ export const Overview = () => (
         description: 'Fetches the next page of organizations without closing the menu.',
       },
       {
-        name: 'isLoading',
+        name: 'loading',
         type: 'boolean',
         default: 'false',
         description: 'Shows OrgProfile loading rows.',
       },
       {
-        name: 'isLoadingMore',
+        name: 'loadingMore',
         type: 'boolean',
         description: 'Puts the load more row into its pending state.',
       },
@@ -110,7 +110,7 @@ export const Loading = () => (
   <div className="p-20">
     <Dropdown defaultOpen trigger={<Button>Switch organization</Button>}>
       <OrgSwitcherMenu
-        isLoading
+        loading
         orgs={[]}
         search=""
         onSearchChange={() => {}}

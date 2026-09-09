@@ -10,7 +10,7 @@ const PAGE_SIZE = 5
 export const OrgSwitcherMenuContainer = () => {
   const { orgId } = useParams<{ orgId: string }>()
   const dropdown = useDropdown()
-  const isOpen = dropdown?.isOpen ?? true
+  const isOpen = dropdown?.open ?? true
   const [search, setSearch] = useState('')
 
   useEffect(() => {
@@ -44,8 +44,8 @@ export const OrgSwitcherMenuContainer = () => {
       search={search}
       onSearchChange={setSearch}
       onLoadMore={() => void query.fetchNextPage()}
-      isLoading={query.isLoading}
-      isLoadingMore={query.isFetchingNextPage}
+      loading={query.isLoading}
+      loadingMore={query.isFetchingNextPage}
       hasMore={query.hasNextPage}
       hasError={query.isError}
     />

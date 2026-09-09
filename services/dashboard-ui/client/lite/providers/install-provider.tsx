@@ -13,7 +13,7 @@ import { useOrg } from './org-provider'
 interface IInstallContext {
   install?: TInstall
   installId?: string
-  isLoading: boolean
+  loading: boolean
   error: unknown
   refresh: () => void
 }
@@ -39,7 +39,7 @@ export const InstallProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       install,
       installId,
-      isLoading,
+      loading: isLoading,
       error,
       refresh: () => void refetch(),
     }),

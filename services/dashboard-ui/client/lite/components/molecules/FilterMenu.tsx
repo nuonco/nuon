@@ -279,7 +279,7 @@ export interface IFilterDropdown<T extends string> {
   onToggle: (value: T) => void
   onIsolate: (value: T) => void
   onReset: () => void
-  isConstrained?: boolean
+  constrained?: boolean
   align?: 'start' | 'center' | 'end'
   className?: string
 }
@@ -291,7 +291,7 @@ export const FilterDropdown = <T extends string>({
   onToggle,
   onIsolate,
   onReset,
-  isConstrained = selected.size !== options.length,
+  constrained = selected.size !== options.length,
   align = 'end',
   className,
 }: IFilterDropdown<T>) => {
@@ -308,7 +308,7 @@ export const FilterDropdown = <T extends string>({
           className={className}
         >
           {label}
-          {isConstrained ? ` (${selected.size})` : ''}
+          {constrained ? ` (${selected.size})` : ''}
         </Button>
       }
     >

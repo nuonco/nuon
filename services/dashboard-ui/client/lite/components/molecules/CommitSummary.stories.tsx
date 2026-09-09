@@ -38,7 +38,7 @@ export const Overview = () => (
           'Fallback timestamp used when the commit carries no created date.',
       },
       {
-        name: 'isLoading',
+        name: 'loading',
         type: 'boolean',
         default: 'false',
         description: 'Shows SHA, message, and time loading shapes.',
@@ -73,7 +73,7 @@ export const Empty = () => (
 export const Loading = () => (
   <div className="max-w-sm p-8">
     <OverviewCard title="Last update">
-      <CommitSummary isLoading />
+      <CommitSummary loading />
     </OverviewCard>
   </div>
 )

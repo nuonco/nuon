@@ -13,7 +13,7 @@ import { useOrg } from './org-provider'
 interface IAppContext {
   app?: TApp
   appId?: string
-  isLoading: boolean
+  loading: boolean
   error: unknown
   refresh: () => void
 }
@@ -39,7 +39,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       app,
       appId,
-      isLoading,
+      loading: isLoading,
       error,
       refresh: () => void refetch(),
     }),

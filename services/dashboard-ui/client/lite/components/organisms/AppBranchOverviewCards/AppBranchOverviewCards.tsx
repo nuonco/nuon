@@ -10,14 +10,14 @@ export interface IAppBranchOverviewCards {
   branch?: TAppBranch
   installCount?: number
   hasMoreInstalls?: boolean
-  isLoading?: boolean
+  loading?: boolean
 }
 
 export const AppBranchOverviewCards = ({
   branch,
   installCount,
   hasMoreInstalls = false,
-  isLoading = false,
+  loading = false,
 }: IAppBranchOverviewCards) => {
   const config = branch ? latestBranchConfig(branch) : undefined
   const vcs =
@@ -35,14 +35,14 @@ export const AppBranchOverviewCards = ({
           <Text
             family="mono"
             weight="medium"
-            loading={isLoading}
+            loading={loading}
             loadingWidth={12}
           >
             {branch?.name ?? '—'}
           </Text>
         </span>
         <span className="flex flex-wrap items-center gap-2">
-          {isLoading ? (
+          {loading ? (
             <Badge loading loadingWidth={8} />
           ) : config?.config_number ? (
             <Badge>Config v{config.config_number}</Badge>
@@ -51,7 +51,7 @@ export const AppBranchOverviewCards = ({
             variant="caption"
             family="mono"
             color="tertiary"
-            loading={isLoading}
+            loading={loading}
             loadingWidth={18}
             lines={1}
           >
@@ -64,14 +64,14 @@ export const AppBranchOverviewCards = ({
         <CommitSummary
           commit={commit}
           updatedAt={branch?.latest_run?.updated_at}
-          isLoading={isLoading}
+          loading={loading}
         />
       </OverviewCard>
 
       <OverviewCard title="Installs">
         <Text
           variant="title"
-          loading={isLoading || installCount === undefined}
+          loading={loading || installCount === undefined}
           loadingWidth={3}
         >
           {hasMoreInstalls ? `${installCount}+` : installCount}

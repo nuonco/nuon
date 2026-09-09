@@ -418,7 +418,7 @@ Rules:
 - Story infrastructure in `__stories__/` and fixtures in `__fixtures__/` are
   outside the glob.
 
-Lite has its own Ladle instance (`bun run dev:ladle:lite`, port 61001, config in
+Lite has its own Ladle instance (`bun run dev:ladle:lite`, port 62002, config in
 `.ladle-lite/`) because it must load `client/lite/styles.css` and *not* the
 production stylesheet — a story rendered inside the old global CSS would not
 match what ships. Ladle's light/dark/auto control is wired to the Lite theme
@@ -515,7 +515,7 @@ cannot.
 ## Commands
 
 ```bash
-bun run dev:ladle:lite                             # stories, port 61001
+bun run dev:ladle:lite                             # stories, port 62002
 bun test client/lite                               # unit tests
 bunx oxlint -c client/.oxlintrc.json client/lite   # lint
 bunx tsc --noEmit --project client/tsconfig.json   # type check

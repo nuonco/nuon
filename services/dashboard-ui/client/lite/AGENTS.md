@@ -37,8 +37,10 @@ These are the ones that get broken most often. Full reasoning in the linked docs
 1. **No `dark:` variants, no raw colour values, no stock Tailwind colour
    utilities.** Semantic tokens only (`bg-surface-default`, `text-secondary`,
    `border-divider`). Needing a `dark:` variant means a token is missing.
-2. **Boolean props are unprefixed** — `loading`, `open`, `selected`, `external`.
-   Never `isLoading` / `isOpen` / `hasError`.
+2. **Boolean props carry no `is` or `should` prefix** — `loading`, `open`,
+   `selected`, `external`. Never `isLoading` / `isOpen` / `shouldPoll`. `has*`
+   is correct when the boolean asserts something else exists (`hasNext`,
+   `hasMore`, `hasError`).
 3. **Destructure every prop the component owns before spreading the rest onto a
    DOM element.** Our prop names share a namespace with real HTML attributes.
 4. **Loading is a `loading` prop on the component, never a separate `*Skeleton`
@@ -103,13 +105,16 @@ Read the relevant one before starting — they are not loaded automatically.
   before writing a label, heading, empty state, error or toast.
 - **[FLOWS.md](./FLOWS.md)** — the user-facing flows the app implements. Read
   before building or changing a multi-step flow such as a setup wizard.
+- **[GOTCHAS.md](./GOTCHAS.md)** — non-obvious traps in the stylesheet, the diff
+  renderer, oxlint and Ladle. Read when something behaves impossibly, and add to
+  it when you lose time to something new.
 - Per-component rules live in that component's `Overview` story, not in these
   documents.
 
 ## Commands
 
 ```bash
-bun run dev:ladle:lite   # Lite component stories, port 61001
+bun run dev:ladle:lite   # Lite component stories, port 62002
 bun test client/lite     # unit tests
 bunx oxlint -c client/.oxlintrc.json client/lite
 ```

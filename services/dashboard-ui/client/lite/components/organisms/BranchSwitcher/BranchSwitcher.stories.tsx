@@ -64,13 +64,13 @@ export const Overview = () => (
           'Reports the dropdown open state so the container can gate fetching.',
       },
       {
-        name: 'isLoading',
+        name: 'loading',
         type: 'boolean',
         default: 'false',
         description: 'Loads the trigger and shows menu loading rows.',
       },
       {
-        name: 'isLoadingMore',
+        name: 'loadingMore',
         type: 'boolean',
         description: 'Puts the load more row into its pending state.',
       },
@@ -126,7 +126,7 @@ export const Default = () => {
 export const Loading = () => (
   <div className="flex justify-end p-20">
     <BranchSwitcher
-      isLoading
+      loading
       branches={[]}
       currentBranch={BRANCHES[0]}
       search=""

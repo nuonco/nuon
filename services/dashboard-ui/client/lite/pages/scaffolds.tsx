@@ -7,11 +7,11 @@ import { useOrg } from '../providers/org-provider'
 
 const useOrgPageChrome = ({
   label,
-  isOrgRoot = false,
+  orgRoot = false,
   settings = false,
 }: {
   label: string
-  isOrgRoot?: boolean
+  orgRoot?: boolean
   settings?: boolean
 }) => {
   const { org, orgId } = useOrg()
@@ -19,7 +19,7 @@ const useOrgPageChrome = ({
   const trail: IBreadcrumbItem[] = [
     {
       label: org?.name,
-      href: isOrgRoot || !orgId ? undefined : `/${orgId}`,
+      href: orgRoot || !orgId ? undefined : `/${orgId}`,
       loadingWidth: 16,
     },
   ]
@@ -29,7 +29,7 @@ const useOrgPageChrome = ({
       href: orgId ? `/${orgId}/settings` : undefined,
     })
   }
-  if (!isOrgRoot) trail.push({ label })
+  if (!orgRoot) trail.push({ label })
 
   usePageTitle(label)
   useBreadcrumbs(trail)
@@ -44,7 +44,7 @@ const Placeholder = () => (
 )
 
 export const Dashboard = () => {
-  useOrgPageChrome({ label: 'Dashboard', isOrgRoot: true })
+  useOrgPageChrome({ label: 'Dashboard', orgRoot: true })
   return <Placeholder />
 }
 

@@ -46,7 +46,7 @@ export const Overview = () => (
         description: 'Legacy add, change, and remove counts.',
       },
       {
-        name: 'isLoading',
+        name: 'loading',
         type: 'boolean',
         default: 'false',
         description: 'Displays the loading state.',
@@ -70,7 +70,7 @@ export const Default = () => (
 
 export const NoChanges = () => <Frame sections={[]} summary={null} />
 
-export const Loading = () => <Frame sections={[]} summary={null} isLoading />
+export const Loading = () => <Frame sections={[]} summary={null} loading />
 
 export const ComponentsOnly = () => (
   <Frame

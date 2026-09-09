@@ -62,8 +62,8 @@ export const BranchSwitcherContainer = () => {
           ? `${appBranchHref(orgId, appId, nextBranchId)}${sectionPath}`
           : ''
       }
-      isLoading={query.isLoading}
-      isLoadingMore={query.isFetchingNextPage}
+      loading={query.isLoading}
+      loadingMore={query.isFetchingNextPage}
       hasMore={query.hasNextPage}
       hasError={query.isError}
     />

@@ -43,7 +43,7 @@ export const Overview = () => (
           'Marks the count as a lower bound when more installs remain unfetched.',
       },
       {
-        name: 'isLoading',
+        name: 'loading',
         type: 'boolean',
         default: 'false',
         description: 'Shows card loading shapes while keeping every title.',
@@ -90,6 +90,6 @@ export const Empty = () => (
 
 export const Loading = () => (
   <div className="p-8">
-    <AppBranchOverviewCards isLoading />
+    <AppBranchOverviewCards loading />
   </div>
 )

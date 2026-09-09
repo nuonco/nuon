@@ -27,8 +27,8 @@ export interface ISwitcherMenu {
   emptyTitle: string
   errorTitle: string
   loadingContent?: ReactNode
-  isLoading?: boolean
-  isLoadingMore?: boolean
+  loading?: boolean
+  loadingMore?: boolean
   hasMore?: boolean
   hasError?: boolean
 }
@@ -44,8 +44,8 @@ export const SwitcherMenu = ({
   emptyTitle,
   errorTitle,
   loadingContent,
-  isLoading = false,
-  isLoadingMore = false,
+  loading = false,
+  loadingMore = false,
   hasMore = false,
   hasError = false,
 }: ISwitcherMenu) => {
@@ -64,7 +64,7 @@ export const SwitcherMenu = ({
         />
       </div>
 
-      {isLoading ? (
+      {loading ? (
         <div className="flex flex-col gap-0.5" aria-hidden>
           {Array.from({ length: LOADING_ROWS }, (_, index) => (
             <div key={index} className={LOADING_ROW_CLASSES}>
@@ -111,11 +111,11 @@ export const SwitcherMenu = ({
           <MenuSeparator />
           <MenuItem
             closeOnSelect={false}
-            disabled={isLoadingMore}
+            disabled={loadingMore}
             onSelect={onLoadMore}
-            icon={isLoadingMore ? <Spinner size={14} /> : undefined}
+            icon={loadingMore ? <Spinner size={14} /> : undefined}
           >
-            {isLoadingMore ? 'Loading more' : 'Load more'}
+            {loadingMore ? 'Loading more' : 'Load more'}
           </MenuItem>
         </>
       ) : null}

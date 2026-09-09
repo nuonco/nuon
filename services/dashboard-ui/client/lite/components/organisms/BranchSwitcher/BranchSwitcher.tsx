@@ -14,8 +14,8 @@ export interface IBranchSwitcher {
   onLoadMore: () => void
   getBranchHref: (branchId: string) => string
   onOpenChange?: (open: boolean) => void
-  isLoading?: boolean
-  isLoadingMore?: boolean
+  loading?: boolean
+  loadingMore?: boolean
   hasMore?: boolean
   hasError?: boolean
 }
@@ -34,7 +34,7 @@ export const BranchSwitcher = ({
       <Button
         variant="secondary"
         icon={<Icon variant="GitBranchIcon" size={16} />}
-        loading={!currentBranch && props.isLoading}
+        loading={!currentBranch && props.loading}
       >
         <Text family="mono" color="inherit">
           {currentBranch?.name ?? 'Select branch'}

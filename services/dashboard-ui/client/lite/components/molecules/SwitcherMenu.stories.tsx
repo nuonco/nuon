@@ -85,13 +85,13 @@ export const Overview = () => (
           'Row body used for each loading row. Defaults to a single text bar.',
       },
       {
-        name: 'isLoading',
+        name: 'loading',
         type: 'boolean',
         default: 'false',
         description: 'Replaces the rows with five loading rows.',
       },
       {
-        name: 'isLoadingMore',
+        name: 'loadingMore',
         type: 'boolean',
         default: 'false',
         description: 'Puts the load more row into its pending state.',
@@ -156,7 +156,7 @@ export const Loading = () => (
         emptyTitle="No branches found"
         errorTitle="Branches failed to load"
         loadingContent={<Text loading family="mono" loadingWidth={10} />}
-        isLoading
+        loading
       />
     </Dropdown>
   </div>
@@ -174,7 +174,7 @@ export const LoadingWithoutRowContent = () => (
         searchPlaceholder="Search branches..."
         emptyTitle="No branches found"
         errorTitle="Branches failed to load"
-        isLoading
+        loading
       />
     </Dropdown>
   </div>
