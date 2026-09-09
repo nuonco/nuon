@@ -6,6 +6,7 @@ extensions:
     issuer: ${env:NUON_TELEMETRY_ISSUER}
     audience: urn:nuon:telemetry
     jwks_url: ${env:NUON_TELEMETRY_JWKS_URL}
+    jwks_allow_insecure: ${env:NUON_TELEMETRY_JWKS_ALLOW_INSECURE:-false}
   nuonpartialsuccess:
 
 receivers:
