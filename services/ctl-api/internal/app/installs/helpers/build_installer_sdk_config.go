@@ -332,7 +332,8 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			SubscriptionID:       install.AzureAccount.SubscriptionID,
 			SubscriptionTenantID: install.AzureAccount.SubscriptionTenantID,
 
-			VPCNestedTemplateURL: appCfg.StackConfig.VPCNestedTemplateURL,
+			VPCNestedTemplateURL:    appCfg.StackConfig.VPCNestedTemplateURL,
+			RunnerNestedTemplateURL: appCfg.StackConfig.RunnerNestedTemplateURL,
 
 			RunnerVMSize:      instanceType,
 			ContainerImageURL: install.RunnerGroup.Settings.ContainerImageURL,

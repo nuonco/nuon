@@ -53,6 +53,9 @@ type AppInstallerSDKAzureConfig struct {
 	// provision built in roles
 	ProvisionBuiltInRoles []string `json:"provision_built_in_roles"`
 
+	// runner nested template url
+	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
+
 	// runner vm size
 	RunnerVMSize string `json:"runner_vm_size,omitempty"`
 

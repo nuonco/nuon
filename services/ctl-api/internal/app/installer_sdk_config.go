@@ -127,7 +127,8 @@ type InstallerSDKAzureConfig struct {
 	ContainerImageTag string `json:"container_image_tag,omitempty"`
 
 	// Deployed instead of the module's own network, which lacks its extra resources.
-	VPCNestedTemplateURL string `json:"vpc_nested_template_url,omitempty"`
+	VPCNestedTemplateURL    string `json:"vpc_nested_template_url,omitempty"`
+	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
 
 	ProvisionActions        []string `json:"provision_actions,omitempty"`
 	ProvisionBuiltInRoles   []string `json:"provision_built_in_roles,omitempty"`
