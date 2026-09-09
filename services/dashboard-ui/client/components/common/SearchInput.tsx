@@ -37,7 +37,7 @@ export const SearchInput = forwardRef<HTMLInputElement, ISearchInput>(
           placeholder={placeholder}
           autoComplete="off"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onChange(e.target.value.replace(/^\s+/, ''))}
           {...props}
         />
         {value ? (
