@@ -7,7 +7,7 @@ keywords: ["MCP", "agents", "sample queries", "prompts"]
 
 Copy a prompt into Claude Code, Cursor, or Amp after [MCP is connected](/guides/agents/overview). The client should pick tools from the [catalog](/guides/agents/tools); you do not need to name them.
 
-Write prompts need `--allow-writes` on the stdio proxy.
+Write prompts need `--allow-writes` on the stdio proxy and [Admin](/concepts/access-control) (`org_admin`) on the identity.
 
 Replace names like `acme-prod` with your own install, app, or workflow IDs.
 
