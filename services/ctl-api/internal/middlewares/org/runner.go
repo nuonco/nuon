@@ -59,6 +59,17 @@ func (m *runnerMiddleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		// Orgs is filled alongside OrgIDs, so a short one means the account was
+		// loaded without its roles' orgs; indexing it would panic.
+		if len(acct.Orgs) < 1 {
+			ctx.Error(stderr.ErrAuthorization{
+				Err:         fmt.Errorf("runner account has no org loaded"),
+				Description: "please retry request correct runner account",
+			})
+			ctx.Abort()
+			return
+		}
+
 		cctx.SetOrgIDGinContext(ctx, acct.OrgIDs[0])
 		cctx.SetOrgGinContext(ctx, acct.Orgs[0])
 	}
