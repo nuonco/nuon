@@ -17,8 +17,8 @@ import {
   truncateSurfaceValues,
   type ISurfaceValue,
   type TSurfaceParam,
-} from '../lib/surface-url'
-import { SURFACE_TRANSITION_MS } from '../lib/surface-motion'
+} from '../utils/surface-url'
+import { SURFACE_TRANSITION_MS } from '../utils/surface-motion'
 
 export type TSurfaceType = 'panel' | 'modal'
 

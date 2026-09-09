@@ -50,6 +50,12 @@ export const Overview = () => (
         default: '/',
         description: 'Safe destination for the Nuon logo.',
       },
+      {
+        name: 'scrolled',
+        type: 'boolean',
+        default: 'false',
+        description: 'Applies the glass surface once the content region has scrolled.',
+      },
     ]}
   />
 )

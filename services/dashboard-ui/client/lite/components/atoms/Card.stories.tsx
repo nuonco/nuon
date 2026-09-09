@@ -32,6 +32,12 @@ export const Overview = () => (
     ]}
     props={[
       {
+        name: 'as',
+        type: 'ElementType',
+        default: "'div'",
+        description: 'Element or component used for the card root.',
+      },
+      {
         name: 'padding',
         type: "'none' | 'sm' | 'md' | 'lg'",
         default: "'md'",

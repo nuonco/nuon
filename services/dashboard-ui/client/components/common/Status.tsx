@@ -110,7 +110,11 @@ export const Status = ({
         {...props}
       >
         <span
-          className={cn(INDICATOR_BASE, INDICATOR_SIZE[variant], SKELETON_CLASSES)}
+          className={cn(
+            INDICATOR_BASE,
+            INDICATOR_SIZE[variant],
+            SKELETON_CLASSES
+          )}
         />
         {isWithoutText ? null : (
           <Text variant="subtext" loading loadingWidth={loadingWidth} />
@@ -127,7 +131,7 @@ export const Status = ({
   const indicatorClass = cn(
     INDICATOR_BASE,
     INDICATOR_SIZE[variant],
-    INDICATOR_THEME_CLASSES[variant][theme],
+    INDICATOR_THEME_CLASSES[variant][theme]
   )
   const indicatorStyle =
     variant === 'timeline'
@@ -138,7 +142,7 @@ export const Status = ({
   return (
     <span className={rootClass} {...props}>
       <span className={indicatorClass} style={indicatorStyle}>
-        {iconVariant ? (
+        {iconVariant && iconVariant !== 'none' ? (
           <Icon
             className="status-icon"
             variant={iconVariant}

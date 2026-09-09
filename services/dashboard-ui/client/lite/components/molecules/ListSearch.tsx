@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentProps } from 'react'
+import { forwardRef, useEffect, useState, type ComponentProps } from 'react'
 import { SearchInput } from './SearchInput'
 
 export interface IListSearch
@@ -8,24 +8,30 @@ export interface IListSearch
   debounceMs?: number
 }
 
-export const ListSearch = ({
-  value,
-  onValueChange,
-  debounceMs = 300,
-  ...props
-}: IListSearch) => {
-  const [draft, setDraft] = useState(value)
+export const ListSearch = forwardRef<HTMLInputElement, IListSearch>(
+  ({ value, onValueChange, debounceMs = 300, ...props }, ref) => {
+    const [draft, setDraft] = useState(value)
 
-  useEffect(() => {
-    setDraft(value)
-  }, [value])
+    useEffect(() => {
+      setDraft(value)
+    }, [value])
 
-  useEffect(() => {
-    if (draft === value) return
+    useEffect(() => {
+      if (draft === value) return
 
-    const timeout = window.setTimeout(() => onValueChange(draft), debounceMs)
-    return () => window.clearTimeout(timeout)
-  }, [debounceMs, draft, onValueChange, value])
+      const timeout = window.setTimeout(() => onValueChange(draft), debounceMs)
+      return () => window.clearTimeout(timeout)
+    }, [debounceMs, draft, onValueChange, value])
 
-  return <SearchInput value={draft} onValueChange={setDraft} {...props} />
-}
+    return (
+      <SearchInput
+        ref={ref}
+        value={draft}
+        onValueChange={setDraft}
+        {...props}
+      />
+    )
+  }
+)
+
+ListSearch.displayName = 'ListSearch'

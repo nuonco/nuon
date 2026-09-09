@@ -61,6 +61,17 @@ export const Overview = () => (
         default: 'false',
         description: 'Uses icon-only navigation.',
       },
+      {
+        name: 'onNavigate',
+        type: '() => void',
+        description:
+          'Runs after an internal destination is followed, so the mobile drawer can close.',
+      },
+      {
+        name: 'className',
+        type: 'string',
+        description: 'Extra classes for the navigation landmark.',
+      },
     ]}
   />
 )
