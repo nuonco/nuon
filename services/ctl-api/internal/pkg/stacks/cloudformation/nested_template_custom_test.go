@@ -1197,7 +1197,7 @@ func TestGetRunnerPhoneHomeProps_DependsOnCustomStacks(t *testing.T) {
 			},
 		}
 
-		resource := tpl.getRunnerPhoneHomeProps(inp, customResult)
+		resource := tpl.getRunnerPhoneHomeProps(inp, customResult, nil)
 
 		// DependsOn should reference the last custom stack
 		assert.Equal(t, []string{"EksAccess"}, resource.AWSCloudFormationDependsOn)
@@ -1224,7 +1224,7 @@ func TestGetRunnerPhoneHomeProps_DependsOnCustomStacks(t *testing.T) {
 			stackOutputs: map[string]customNestedStackOutput{},
 		}
 
-		resource := tpl.getRunnerPhoneHomeProps(inp, customResult)
+		resource := tpl.getRunnerPhoneHomeProps(inp, customResult, nil)
 
 		// No DependsOn when no custom stacks
 		assert.Empty(t, resource.AWSCloudFormationDependsOn)
@@ -1236,7 +1236,7 @@ func TestGetRunnerPhoneHomeProps_DependsOnCustomStacks(t *testing.T) {
 	})
 
 	t.Run("nil custom stacks", func(t *testing.T) {
-		resource := tpl.getRunnerPhoneHomeProps(inp, nil)
+		resource := tpl.getRunnerPhoneHomeProps(inp, nil, nil)
 
 		assert.Empty(t, resource.AWSCloudFormationDependsOn)
 
