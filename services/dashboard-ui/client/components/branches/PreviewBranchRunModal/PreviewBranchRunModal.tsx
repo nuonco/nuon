@@ -193,6 +193,7 @@ export const PreviewBranchRunModal = ({
                 disabled={
                   isPending || loadingSources || branchOptions.length === 0
                 }
+                searchable
               />
               <Text variant="subtext" theme="neutral">
                 Git branches available for preview.
