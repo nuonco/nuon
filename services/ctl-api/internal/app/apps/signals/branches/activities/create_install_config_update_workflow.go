@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/releases"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
@@ -38,6 +39,15 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 	var install app.Install
 	if err := a.db.WithContext(ctx).First(&install, "id = ?", input.InstallID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
+	}
+	appReleasesEnabled, err := a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureAppReleases)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check app releases feature: %w", err)
+	}
+	if appReleasesEnabled {
+		if _, err := releases.CreateAppReleaseForConfig(ctx, a.db, a.helpers, a.blobSvc, install.OrgID, install.AppID, input.NewAppConfigID); err != nil {
+			return nil, fmt.Errorf("unable to create app release for branch run: %w", err)
+		}
 	}
 
 	diff, err := a.computeInstallConfigDiff(ctx, install.AppConfigID, input.NewAppConfigID)

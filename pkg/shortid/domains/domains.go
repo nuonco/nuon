@@ -113,6 +113,14 @@ func NewArtifactID() string {
 	return shortid.NewNanoID("art")
 }
 
+func NewAppReleaseID() string {
+	return shortid.NewNanoID("apr")
+}
+
+func NewAppReleaseMemberID() string {
+	return shortid.NewNanoID("arm")
+}
+
 func NewAWSAccountID() string {
 	return shortid.NewNanoID("aws")
 }

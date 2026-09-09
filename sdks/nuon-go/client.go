@@ -101,6 +101,9 @@ type Client interface {
 
 	// app installs config methods
 	CreateAppInstallsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppInstallsConfigRequest) (*models.AppAppInstallsConfig, error)
+	ListAppReleases(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppRelease, bool, error)
+	GetAppRelease(ctx context.Context, appID, releaseID string) (*models.AppAppRelease, error)
+	GetAppReleaseFileContent(ctx context.Context, appID, releaseID, path string) (*models.ServiceReleaseFileContentResponse, error)
 
 	ListTriggerEvents(ctx context.Context, limit int, trigger string) ([]*models.TriggerEventSummary, error)
 	ListTriggerEventsPage(ctx context.Context, limit int, trigger, cursor string) (*models.TriggerEventPage, error)
