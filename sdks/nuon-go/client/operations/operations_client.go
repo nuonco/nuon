@@ -16696,7 +16696,7 @@ func (a *Client) GetSlackInstallURL(params *GetSlackInstallURLParams, authInfo r
 /*
 GetStackServiceAccount gets an install stack s service account
 
-Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
+Return the service account an install stack's Terraform module authenticates as, whether it holds a usable API token, and the runner API URL its provider authenticates against. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
 */
 func (a *Client) GetStackServiceAccount(params *GetStackServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackServiceAccountOK, error) {
 	// NOTE: parameters are not validated before sending
