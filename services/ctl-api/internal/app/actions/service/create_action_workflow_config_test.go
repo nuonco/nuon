@@ -383,6 +383,12 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 			err := json.Unmarshal(rr.Body.Bytes(), &config)
 			require.NoError(s.T(), err)
 
+			// Creating a config never enqueues a queue signal owned by the
+			// action; this fails loudly if an enqueue is ever added so the
+			// contract gets a deliberate test instead of a silent one.
+			queueSignals := tests.GetQueueSignalsByOwner(s.T(), s.service.DB, actionID)
+			require.Empty(s.T(), queueSignals)
+
 			// Verify database state
 			var dbConfig app.ActionWorkflowConfig
 			res := s.service.DB.WithContext(s.ctx).

@@ -195,6 +195,11 @@ func (s *CreateAppActionDeprecatedTestSuite) TestCreateAppActionSuccess() {
 			assert.Equal(s.T(), s.testOrg.ID, dbAction.OrgID)
 			assert.Equal(s.T(), s.testApp.ID, dbAction.AppID)
 
+			// Action CRUD never enqueues a queue signal owned by the action;
+			// this fails loudly if an enqueue is ever added so the contract
+			// gets a deliberate test instead of a silent one.
+			queueSignals := tests.GetQueueSignalsByOwner(s.T(), s.service.DB, response.ID)
+			require.Empty(s.T(), queueSignals)
 		})
 	}
 }

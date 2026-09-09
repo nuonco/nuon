@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -465,6 +466,11 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			if tc.expectedCode == http.StatusCreated {
+				// Documented contract: 201 with an empty JSON object body.
+				var response app.EmptyResponse
+				err := json.Unmarshal(rr.Body.Bytes(), &response)
+				require.NoError(s.T(), err)
+
 				// Verify logs were written to ClickHouse
 				if tc.expectedLogCount > 0 {
 					// Give ClickHouse a moment to process the write

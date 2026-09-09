@@ -52,11 +52,10 @@ func (e *EnqueueTestSuite) TestCancelSignalDuringExecute() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), cancelResp)
 
-	require.Eventually(e.T(), func() bool {
-		var qs app.QueueSignal
-		res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", resp.ID)
-		return res.Error == nil && statusHistoryContains(qs.Status, app.StatusCancelled, "")
-	}, pollTimeout, 200*time.Millisecond)
+	// cancel is the terminal status: executeHandler finalises a
+	// mid-execute-cancel as cancelled and handleQueueSignal skips its error
+	// fallback for already-terminal signals.
+	e.waitForSignalStatus(ctx, resp.ID, app.StatusCancelled)
 }
 
 func (e *EnqueueTestSuite) TestCancelCallbackInvoked() {
@@ -100,10 +99,15 @@ func (e *EnqueueTestSuite) TestCancelCallbackInvoked() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), cancelResp)
 
+	// cancel is the terminal status. Assert on the current composite, not
+	// status.History: the cancel-callback write replaces the status without
+	// appending a cancelled history entry, so a history scan never sees one.
 	require.Eventually(e.T(), func() bool {
 		var qs app.QueueSignal
 		res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", resp.ID)
-		return res.Error == nil && statusHistoryContains(qs.Status, app.StatusCancelled, example.CancelCallbackMarker)
+		return res.Error == nil &&
+			qs.Status.Status == app.StatusCancelled &&
+			qs.Status.StatusHumanDescription == example.CancelCallbackMarker
 	}, pollTimeout, 200*time.Millisecond)
 }
 

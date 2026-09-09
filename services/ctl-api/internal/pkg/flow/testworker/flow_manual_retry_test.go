@@ -95,3 +95,74 @@ func (e *FlowTestSuite) TestManualRetryOnErroredStep() {
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
 	e.assertTemporalDrained(ctx, flw.ID)
 }
+
+// TestManualRetryOnAlwaysFailingStep verifies that a manual retry of a step
+// whose signal always fails re-executes the clone, fails again, and leaves the
+// workflow errored — the retry path must not swallow the second failure or
+// resurrect the flow into a retry loop.
+func (e *FlowTestSuite) TestManualRetryOnAlwaysFailingStep() {
+	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
+	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
+	ownerID, ownerType := newTestOwner()
+
+	failSignal := &FailSignal{Reason: "always-failing retry test"}
+	afterSignal := &SuccessSignal{}
+
+	flw, queueID := e.setupFlowTest(ctx, ownerID, ownerType, []app.WorkflowStep{
+		{Name: "will-fail", Idx: 100, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
+			Retryable:   true,
+			QueueSignal: &signaldb.SignalData{Signal: failSignal}},
+		{Name: "after-fail", Idx: 200, GroupIdx: 2, ExecutionType: app.WorkflowStepExecutionTypeSystem,
+			QueueSignal: &signaldb.SignalData{Signal: afterSignal}},
+	})
+
+	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+
+	steps := e.getStepsByWorkflow(ctx, flw.ID)
+	var failedStep *app.WorkflowStep
+	for i := range steps {
+		if steps[i].Name == "will-fail" && steps[i].Status.Status == app.StatusError {
+			failedStep = &steps[i]
+			break
+		}
+	}
+	require.NotNil(e.T(), failedStep, "should find a failed step named 'will-fail'")
+
+	resp, err := e.service.FlowClient.RetryStep(ctx, &flowclient.RetryStepRequest{
+		InstallWorkflowID: flw.ID,
+		StepID:            failedStep.ID,
+	})
+	require.Nil(e.T(), err)
+	require.True(e.T(), resp.Retryable)
+
+	// The clone re-executes and fails again.
+	var clone *app.WorkflowStep
+	require.Eventually(e.T(), func() bool {
+		fetched, err := e.tryStepsByWorkflow(ctx, flw.ID)
+		if err != nil {
+			return false
+		}
+		clone = nil
+		for i := range fetched {
+			s := &fetched[i]
+			if s.GroupIdx == 1 && s.RetryIndex == 1 && s.Name == "will-fail" {
+				clone = s
+			}
+		}
+		return clone != nil && isTerminal(clone.Status.Status)
+	}, pollTimeout, pollInterval, "clone step should exist and reach a terminal status")
+
+	require.Equal(e.T(), app.StatusError, clone.Status.Status,
+		"clone of an always-failing step should fail again")
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+
+	// The downstream group must never have run.
+	steps = e.getStepsByWorkflow(ctx, flw.ID)
+	for _, step := range steps {
+		require.NotEqual(e.T(), app.StatusSuccess, step.Status.Status,
+			"step %s (group %d) should not have succeeded", step.Name, step.GroupIdx)
+	}
+	e.cancelWorkflow(ctx, flw.ID)
+	e.assertTemporalDrained(ctx, flw.ID)
+}

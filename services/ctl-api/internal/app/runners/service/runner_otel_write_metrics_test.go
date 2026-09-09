@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -562,6 +563,11 @@ func (s *RunnerOtelWriteMetricsTestSuite) TestRunnerOtelWriteMetrics() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			if tc.expectedCode == http.StatusCreated {
+				// Documented contract: 201 with an empty JSON object body.
+				var response app.EmptyResponse
+				err := json.Unmarshal(rr.Body.Bytes(), &response)
+				require.NoError(s.T(), err)
+
 				if tc.validateFunc != nil {
 					tc.validateFunc(runnerID)
 				}

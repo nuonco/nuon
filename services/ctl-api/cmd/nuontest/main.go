@@ -459,7 +459,7 @@ func (s *shard) runTests(ctx context.Context, phase string, packages []string) s
 
 func summarize(p *plan, results []shardResult) int {
 	failed := false
-	fmt.Println("\nnuontest summary:")
+	fmt.Fprintln(os.Stdout, "\nnuontest summary:")
 	for i, r := range results {
 		status := "ok"
 		if r.status != 0 {
@@ -478,7 +478,7 @@ func summarize(p *plan, results []shardResult) int {
 			}
 			line += fmt.Sprintf("\n  shard %d migrations: %s in %s (log: %s)", i, mStatus, r.migrations.elapsed.Round(time.Second), r.migrations.logPath)
 		}
-		fmt.Println(line)
+		fmt.Fprintln(os.Stdout, line)
 	}
 	if failed {
 		return 1

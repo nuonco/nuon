@@ -219,6 +219,12 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 			err := json.Unmarshal(rr.Body.Bytes(), &response)
 			require.NoError(s.T(), err)
 
+			// Deleting an action never enqueues a queue signal owned by it;
+			// this fails loudly if an enqueue is ever added so the contract
+			// gets a deliberate test instead of a silent one.
+			queueSignals := tests.GetQueueSignalsByOwner(s.T(), s.service.DB, actionIdentifier)
+			require.Empty(s.T(), queueSignals)
+
 			if tc.validateFunc != nil {
 				tc.validateFunc(actionIdentifier)
 			}
