@@ -26,7 +26,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	}
 
 	// build nested resources
-	stack, vpcParams, err := t.getVPCNestedStack(inp, tb)
+	stack, vpcParams, vpcOutputs, err := t.getVPCNestedStack(inp, tb)
 	if err != nil {
 		return nil, err
 	}
@@ -49,13 +49,31 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	// resources to save ~5-6 minutes during stack creation.
 	// PhoneHome resources are always created as the provision workflow depends on
 	// the phone home callback to proceed.
+	telemetryEndpoint := ""
 	if !t.cfg.UseLocalRunners {
 		// NOTE(fd): this uses the configurable nested runner asg cf stack
-		runnerASG, err := t.getRunnerASGNestedStack(inp, tb)
+		runnerASG, supportsTelemetryIngress, err := t.getRunnerASGNestedStack(inp, tb)
 		if err != nil {
 			return nil, err
 		}
 		tmpl.Resources["RunnerAutoScalingGroup"] = runnerASG
+
+		if _, hasPrefixList := vpcOutputs["VpcIpv4PrefixListId"]; hasPrefixList && supportsTelemetryIngress {
+			parameter := cloudformation.Parameter{
+				Type:          "String",
+				Description:   ptr("Provision an internal OTLP HTTP endpoint for this install (additional AWS charges apply)"),
+				Default:       "false",
+				AllowedValues: []any{"true", "false"},
+			}
+			runnerParams["EnableTelemetryIngress"] = parameter
+			tmpl.Parameters["EnableTelemetryIngress"] = parameter
+			tmpl.Conditions["TelemetryIngressEnabled"] = cloudformation.Equals(cloudformation.Ref("EnableTelemetryIngress"), "true")
+			runnerASG.Parameters["EnableTelemetryIngress"] = cloudformation.Ref("EnableTelemetryIngress")
+			runnerASG.Parameters["VpcId"] = cloudformation.GetAtt("VPC", "Outputs.VPC")
+			runnerASG.Parameters["TelemetrySourcePrefixListId"] = cloudformation.GetAtt("VPC", "Outputs.VpcIpv4PrefixListId")
+			telemetryEndpoint = cloudformation.If("TelemetryIngressEnabled",
+				cloudformation.GetAtt("RunnerAutoScalingGroup", "Outputs.TelemetryEndpoint"), "")
+		}
 
 		// CloudWatch: logs
 		tmpl.Resources["RunnerCloudWatchLogGroup"] = t.getRunnerCloudWatchLogGroup(inp, tb)
@@ -92,7 +110,13 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	if err := validatePhoneHomeScript(inp.PhonehomeScript); err != nil {
 		return nil, err
 	}
-	tmpl.Resources["PhoneHomeProps"] = t.getRunnerPhoneHomeProps(inp, customResult)
+	phoneHomeProps := t.getRunnerPhoneHomeProps(inp, customResult)
+	phoneHomeProps.Properties["telemetry_endpoint"] = telemetryEndpoint
+	tmpl.Resources["PhoneHomeProps"] = phoneHomeProps
+	tmpl.Outputs["TelemetryEndpoint"] = cloudformation.Output{
+		Description: ptr("Private OTLP HTTP endpoint, empty when not provisioned"),
+		Value:       telemetryEndpoint,
+	}
 	tmpl.Resources["RunnerPhoneHome"] = t.getRunnerPhoneHomeLambda(inp, tb)
 	tmpl.Resources["RunnerPhoneHomeRole"] = t.getRunnerPhoneHomeLambdaRole(inp, tb)
 
