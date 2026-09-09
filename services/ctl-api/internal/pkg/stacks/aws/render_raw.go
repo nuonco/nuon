@@ -100,6 +100,7 @@ func ExtractAWSRolesFromListRaw(roles []app.AppAWSIAMRoleConfig) ([]AWSRoleRaw, 
 // single IAM policy document, excluding managed-policy references.
 func mergedInlinePolicyDocumentRaw(role app.AppAWSIAMRoleConfig) (string, error) {
 	var statements []json.RawMessage
+	var sources []string
 	for _, policy := range role.Policies {
 		if len(policy.Contents) == 0 {
 			continue
@@ -114,9 +115,16 @@ func mergedInlinePolicyDocumentRaw(role app.AppAWSIAMRoleConfig) (string, error)
 			return "", fmt.Errorf("policy %q: parse inline policy JSON: %w", policy.Name, err)
 		}
 		statements = append(statements, doc.Statement...)
+		for range doc.Statement {
+			sources = append(sources, policy.Name)
+		}
 	}
 	if len(statements) == 0 {
 		return "", nil
+	}
+	statements, err := dedupeStatementIDs(sources, statements)
+	if err != nil {
+		return "", fmt.Errorf("role %q: %w", role.Name, err)
 	}
 	merged := struct {
 		Version   string            `json:"Version"`
