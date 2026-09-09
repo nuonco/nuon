@@ -214,6 +214,12 @@ export const Overview = () => (
         description: 'Skeleton event count while loading.',
       },
       {
+        name: 'loadingLabel',
+        type: 'string',
+        default: "'Loading history'",
+        description: 'Accessible name announced while the timeline is loading.',
+      },
+      {
         name: 'emptyState',
         type: 'ReactNode',
         default: "'No events yet'",

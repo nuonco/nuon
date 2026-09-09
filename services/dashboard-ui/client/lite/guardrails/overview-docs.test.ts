@@ -12,46 +12,6 @@ const INTERNAL_COMPONENTS = new Set([
 ])
 
 const KNOWN_GAPS: Record<string, string[]> = {
-  'organisms/AppConfigDiff': ['defaultSectionsOpen'],
-  'organisms/BranchSwitcher/BranchSwitcher': [
-    'search',
-    'onSearchChange',
-    'onLoadMore',
-    'isLoadingMore',
-    'hasMore',
-    'hasError',
-  ],
-  'organisms/DashboardHeader': ['mobileTriggerRef', 'scrolled', 'className'],
-  'organisms/DashboardNav': ['onNavigate', 'className'],
-  'organisms/DashboardSidebar': ['homeHref', 'containerRef'],
-  'organisms/DiffFilter': [
-    'title',
-    'selectedCount',
-    'totalCount',
-    'searchPlaceholder',
-    'onSearchChange',
-    'onOperationToggle',
-    'onOperationOnly',
-    'onReset',
-  ],
-  'organisms/DiffSection': ['view', 'note', 'error'],
-  'organisms/FocusHeader': ['scrolled'],
-  'organisms/OrgSwitcherMenu/OrgSwitcherMenu': [
-    'search',
-    'onSearchChange',
-    'onLoadMore',
-    'isLoadingMore',
-  ],
-  'organisms/Table/Table': ['getRowId', 'loadingLabel'],
-  'organisms/Timeline/Timeline': ['loadingLabel'],
-  'organisms/UserDropdown': [
-    'triggerClassName',
-    'orgSwitcher',
-    'org',
-    'orgLoading',
-    'onOpenPreferences',
-  ],
-  'organisms/surfaces/SurfaceHost': ['scope', 'registrations', 'children'],
   'templates/DashboardShell/DashboardShell': [
     'homeHref',
     'headerLeading',

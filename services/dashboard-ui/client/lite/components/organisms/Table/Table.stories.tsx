@@ -232,6 +232,7 @@ export const Overview = () => (
       'The view preference lasts for the browser session and returns when space allows.',
       'Forced card mode hides the view toggle without changing the preference.',
       'Toolbar controls stay left of the view toggle and wrap when space is constrained.',
+      'getRowId must be stable so row identity survives pagination and view switches.',
     ]}
     props={[
       {
@@ -250,10 +251,21 @@ export const Overview = () => (
         description: 'Required resource-owned card presentation.',
       },
       {
+        name: 'getRowId',
+        type: "TableOptions<TData>['getRowId']",
+        description: 'Stable identity for each row in the TanStack model.',
+      },
+      {
         name: 'loading',
         type: 'boolean',
         default: 'false',
         description: 'Preserves the active presentation while data is loading.',
+      },
+      {
+        name: 'loadingLabel',
+        type: 'string',
+        default: "'Loading results'",
+        description: 'Accessible name announced while the table is loading.',
       },
       {
         name: 'loadingRows',

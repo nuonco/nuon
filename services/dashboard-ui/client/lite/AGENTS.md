@@ -56,6 +56,14 @@ These are the ones that get broken most often. Full reasoning in the linked docs
    "why" comment. The only exception is a tool directive (`eslint-*`,
    `oxlint-*`, `@ts-*`, `/// <reference>`, `prettier-ignore`). This is enforced
    by `comments.test.ts` — a comment fails the test suite.
+8. **Never break a documented rule without explicit approval first.** If you
+   conclude a rule in these documents has to be broken — a new UX pattern, a new
+   tier, a bespoke component, a new token — **stop and do not build it.** Say
+   plainly that you want to break a rule, name it, show which existing options
+   you evaluated and why each fails, and offer the compliant alternative.
+   "Sounds good" or silence is not approval. See DESIGN.md "Breaking these
+   rules". These should be rare; reaching for one repeatedly means you are
+   misreading the docs.
 
 ## Where things live
 

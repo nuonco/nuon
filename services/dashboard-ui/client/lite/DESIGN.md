@@ -63,12 +63,38 @@ Before building anything, answer two questions:
 2. **Which atomic tier is this?** Atom, molecule, organism, template, or page.
    That tells you what it may depend on and where it lives.
 
-If a thing does not fit one of the five patterns, that is worth a conversation
-rather than a sixth pattern. If it does not fit a tier, it is usually two things.
-
 The point of both frameworks is that **new work should mostly be assembly, not
-invention.** A new feature that needs a new pattern and a new organism is a
-signal to look again.
+invention.** A feature needing a new pattern *and* a new organism is a signal to
+look again, not a licence to build both.
+
+## Breaking these rules
+
+**The default answer is no.** Almost everything that feels like it needs a new
+pattern, a new tier, a new treatment or a bespoke component is an existing one
+you have not found yet, or two existing ones composed. Assume that first.
+
+If you are an agent and you conclude a rule here has to be broken:
+
+1. **Stop. Do not build it.** Not as a draft, not "to show the option".
+2. **Say plainly that you want to break a documented rule**, and name the rule.
+   Do not present it as a neutral design choice or bury it in a summary — the
+   person reading has to know a rule is on the table before they can weigh it.
+3. **Show the work that got you there.** Which existing patterns, treatments and
+   components you evaluated, and the specific reason each one fails. "It didn't
+   feel right" is not a reason. If you cannot name what you ruled out, you have
+   not looked hard enough to be asking.
+4. **Offer the closest compliant alternative**, including what it costs. There is
+   almost always one, and it is often fine.
+5. **Wait for an explicit decision.** Silence, "sounds good", or a reply about
+   something else is not approval.
+
+This exists so a teammate is never handed a rule change disguised as an
+implementation detail. **Escape hatches should be rare.** An agent reaching for
+one repeatedly in a session is misreading these documents, not finding genuine
+gaps — reread them before asking again.
+
+If a rule here turns out to be genuinely wrong, the outcome is a change to
+*this document*, agreed first, not a one-off exception in one component.
 
 ---
 
@@ -157,15 +183,30 @@ what it covers, what Lite has chosen, and how to pick between the options.
 
 *How users move between areas, understand hierarchy, and backtrack.*
 
-**Two levels of navigation, and no more:**
+**Two levels of navigation today:**
 
 1. **Main sidebar** — the org's top-level areas. Dashboard, Apps, Installs,
    Team, Settings.
 2. **Resource context nav** — within one resource: install pages, app branch
    pages, org settings.
 
-Anything asking for a third level is telling you the information architecture is
-wrong, not that the app needs more nav.
+For moving between *areas*, two levels is the rule. Something asking for a third
+level of area navigation is telling you the information architecture is wrong.
+
+### Open: navigation inside a run detail page
+
+A run — a workflow, a deployment, a build, an action run — has several
+independent concerns (summary, logs, plan, trace) and will likely need its own
+level of navigation within the page. **This is not yet decided.**
+
+It is probably not a third level of the hierarchy above but a different
+mechanism: navigation *within one resource* rather than *between areas*. The
+production dashboard solves it with a routed tab nav, which is the obvious
+starting point but not a decision Lite has made.
+
+**Do not invent this.** If you are building a run detail page and need it, that
+is a "Breaking these rules" conversation — stop and raise it, so the answer gets
+made once and written here rather than five times in five pages.
 
 **Treatments:**
 
@@ -216,15 +257,40 @@ identically in both layouts.**
 
 ### Decision 2 — panel or page?
 
-- **Detail panel** for a *resource* — an install, a component, a webhook, a node
-  in a graph. It keeps the user in the view they were scanning, which is what
-  they are actually doing.
-- **Detail page** for a *run* — a deploy, a build, an action run. A run has logs,
-  a plan, a trace; it is a place you go, not a thing you peek at.
+**Provisional.** Most of these pages are not built yet, so the split below is
+the current intent rather than a settled rule. Follow it as the default, but if
+a case genuinely does not fit, **raise it instead of quietly diverging** — the
+lists are meant to converge on a rule as the pages get built, and a silent
+one-off is what stops that happening.
 
-Panels for things that exist, pages for things that happened. A graph node
-opening a panel is the canonical case: the graph stays on screen and stays the
-user's mental model.
+The axis is **whether the thing is a top-level resource in its own right, or a
+part of one.**
+
+**Panels — configuration and detail of a part.** You inspect these *in the
+context of their parent*, so the parent stays on screen:
+
+- stack config and details
+- sandbox config and details
+- component config and details
+- runner config and details
+- policies, and role config and details
+- input details
+
+**Pages — top-level resources, and runs.** These are places you go:
+
+- *Top-level resources in the data model* — app branch, install
+- *Run details* — workflows, builds, deployments, action runs, runbook runs
+
+The reason runs get a page rather than a panel is that a run has several
+independent concerns — summary, logs, plan, trace — and a panel cannot hold
+them without becoming a page in a drawer.
+
+**Placing something not listed:** ask whether a user would ever navigate to it
+as a destination, or only ever open it while looking at something else. A
+destination is a page. Everything else is a panel.
+
+A graph node opening a panel is the canonical case: the graph stays on screen
+and stays the user's mental model while they inspect a part of it.
 
 **Rules:**
 
@@ -241,7 +307,7 @@ user's mental model.
 
 ## 3. Resource management
 
-*How users create, edit, delete, duplicate, archive, export, and act in bulk.*
+*How users create, edit, delete, and act on resources.*
 
 **Treatments by weight:**
 
@@ -256,6 +322,10 @@ user's mental model.
 - **Destructive actions confirm**, and the confirmation names the thing being
   destroyed. `danger` is for the button *inside* the confirmation, not the one
   that opens it.
+- **There is no multi-select.** Actions that apply to a whole set — "deploy all
+  components" — are a single action on the parent with an ordinary confirmation
+  naming what it covers. Do not build checkbox columns, selection state, or a
+  bulk-action toolbar; select-then-act is not a pattern this app has.
 - Edit reuses create when they hit the same endpoint; separate forms when they
   do not. (See DEV.md and the `form` recipe.)
 - Every mutation invalidates the queries that display what it changed.

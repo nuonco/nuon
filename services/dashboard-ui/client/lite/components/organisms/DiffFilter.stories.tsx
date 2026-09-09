@@ -71,8 +71,14 @@ export const Overview = () => (
       'The checkbox toggles an operation; the rest of the row isolates it.',
       'An isolated row resets every operation when clicked again.',
       'Reset restores every provider operation and clears search.',
+      'The count reads selectedCount of totalCount title.',
     ]}
     props={[
+      {
+        name: 'title',
+        type: 'string',
+        description: 'Noun used in the visible count and the filter trigger.',
+      },
       {
         name: 'operations',
         type: 'TDiffOperation[]',
@@ -84,9 +90,45 @@ export const Overview = () => (
         description: 'Currently visible operations.',
       },
       {
+        name: 'selectedCount',
+        type: 'number',
+        description: 'How many sections remain after search and operation filters.',
+      },
+      {
+        name: 'totalCount',
+        type: 'number',
+        description: 'How many sections the provider produced before filtering.',
+      },
+      {
         name: 'searchValue',
         type: 'string',
         description: 'Controlled metadata query.',
+      },
+      {
+        name: 'searchPlaceholder',
+        type: 'string',
+        description: 'Placeholder and accessible name for the search field.',
+      },
+      {
+        name: 'onSearchChange',
+        type: '(value: string) => void',
+        description: 'Updates the metadata query.',
+      },
+      {
+        name: 'onOperationToggle',
+        type: '(operation: TDiffOperation) => void',
+        description: 'Adds or removes one operation from the visible set.',
+      },
+      {
+        name: 'onOperationOnly',
+        type: '(operation: TDiffOperation) => void',
+        description:
+          'Isolates one operation, or restores every operation if it is already isolated.',
+      },
+      {
+        name: 'onReset',
+        type: '() => void',
+        description: 'Clears search and restores every provider operation.',
       },
     ]}
   />

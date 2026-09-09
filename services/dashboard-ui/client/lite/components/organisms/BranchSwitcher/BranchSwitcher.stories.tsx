@@ -23,6 +23,7 @@ export const Overview = () => (
       'The trigger shows the current branch name in mono, or Select branch when none resolves.',
       'Switching branches preserves the current subsection through getBranchHref.',
       'The container fetches on open and clears the search on each open.',
+      'Search, paging and error state are passed through to SwitcherMenu.',
     ]}
     props={[
       {
@@ -34,6 +35,21 @@ export const Overview = () => (
         name: 'currentBranch',
         type: 'TAppBranch',
         description: 'Branch named in the trigger and checked in the menu.',
+      },
+      {
+        name: 'search',
+        type: 'string',
+        description: 'Controlled query for the menu search field.',
+      },
+      {
+        name: 'onSearchChange',
+        type: '(value: string) => void',
+        description: 'Updates the search query without closing the menu.',
+      },
+      {
+        name: 'onLoadMore',
+        type: '() => void',
+        description: 'Fetches the next page of branches without closing the menu.',
       },
       {
         name: 'getBranchHref',
@@ -52,6 +68,21 @@ export const Overview = () => (
         type: 'boolean',
         default: 'false',
         description: 'Loads the trigger and shows menu loading rows.',
+      },
+      {
+        name: 'isLoadingMore',
+        type: 'boolean',
+        description: 'Puts the load more row into its pending state.',
+      },
+      {
+        name: 'hasMore',
+        type: 'boolean',
+        description: 'Shows the load more row.',
+      },
+      {
+        name: 'hasError',
+        type: 'boolean',
+        description: 'Replaces the rows with a load failure message.',
       },
     ]}
   />

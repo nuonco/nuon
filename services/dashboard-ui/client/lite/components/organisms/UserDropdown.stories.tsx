@@ -43,9 +43,10 @@ export const Overview = () => (
         description: 'Identity rendered in the trigger.',
       },
       {
-        name: 'signOutHref',
-        type: 'string',
-        description: 'Authentication-service logout URL.',
+        name: 'loading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Shows profile loading shapes in the trigger.',
       },
       {
         name: 'compact',
@@ -54,10 +55,35 @@ export const Overview = () => (
         description: 'Uses an avatar-only trigger.',
       },
       {
-        name: 'loading',
+        name: 'signOutHref',
+        type: 'string',
+        description: 'Authentication-service logout URL.',
+      },
+      {
+        name: 'triggerClassName',
+        type: 'string',
+        description: 'Extra classes for the trigger button.',
+      },
+      {
+        name: 'orgSwitcher',
+        type: 'ReactNode',
+        description: 'Nested organization menu rendered above the account actions.',
+      },
+      {
+        name: 'org',
+        type: 'TOrg | null',
+        description: 'Organization named in the nested switcher trigger.',
+      },
+      {
+        name: 'orgLoading',
         type: 'boolean',
         default: 'false',
-        description: 'Shows profile loading shapes in the trigger.',
+        description: 'Shows organization loading shapes in the nested trigger.',
+      },
+      {
+        name: 'onOpenPreferences',
+        type: '() => void',
+        description: 'Opens the preferences panel from the account action group.',
       },
     ]}
   />

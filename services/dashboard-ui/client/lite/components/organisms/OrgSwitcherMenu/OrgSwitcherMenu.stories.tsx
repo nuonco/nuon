@@ -38,10 +38,30 @@ export const Overview = () => (
         description: 'Marks the active organization as checked.',
       },
       {
+        name: 'search',
+        type: 'string',
+        description: 'Controlled query for the menu search field.',
+      },
+      {
+        name: 'onSearchChange',
+        type: '(value: string) => void',
+        description: 'Updates the search query without closing the menu.',
+      },
+      {
+        name: 'onLoadMore',
+        type: '() => void',
+        description: 'Fetches the next page of organizations without closing the menu.',
+      },
+      {
         name: 'isLoading',
         type: 'boolean',
         default: 'false',
         description: 'Shows OrgProfile loading rows.',
+      },
+      {
+        name: 'isLoadingMore',
+        type: 'boolean',
+        description: 'Puts the load more row into its pending state.',
       },
       {
         name: 'hasMore',
