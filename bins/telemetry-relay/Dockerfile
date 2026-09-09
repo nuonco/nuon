@@ -2,7 +2,9 @@ FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-
 
 WORKDIR /src/bins/telemetry-relay
 
-COPY bins/telemetry-relay ./
+COPY build-config.yaml ./
+COPY extension ./extension/
+COPY processor ./processor/
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-telemetry-relay \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild-telemetry-relay \
@@ -18,7 +20,7 @@ RUN apk add --no-cache ca-certificates && \
     adduser -S -D -H -u 10001 -G relay relay
 
 COPY --from=build /bin/nuon-telemetry-relay /bin/nuon-telemetry-relay
-COPY bins/telemetry-relay/config.yaml /etc/nuon-telemetry-relay/config.yaml
+COPY config.yaml /etc/nuon-telemetry-relay/config.yaml
 
 USER relay
 EXPOSE 4318 13133
