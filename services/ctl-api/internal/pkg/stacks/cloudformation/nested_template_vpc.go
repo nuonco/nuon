@@ -41,10 +41,10 @@ func (tpl *Templates) getClusterName(inp *stacks.TemplateInput) string {
 }
 
 // VPCNestedStack returns a nested stack template for VPC resources
-func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter, error) {
-	parameters, defaultParameters, reservedInTemplate, _, err := tpl.extractNestedStackParameters(inp.AppCfg.StackConfig.VPCNestedTemplateURL)
+func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter, map[string]struct{}, error) {
+	parameters, defaultParameters, reservedInTemplate, outputs, err := tpl.extractNestedStackParameters(inp.AppCfg.StackConfig.VPCNestedTemplateURL)
 	if err != nil {
-		return nil, nil, fmt.Errorf("VPC nested stack: %w", err)
+		return nil, nil, nil, fmt.Errorf("VPC nested stack: %w", err)
 	}
 
 	// these common params should always be set by nuon so they are explicitly
@@ -72,7 +72,7 @@ func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder)
 		Tags: t.apply(nil, "vpc"),
 	}
 
-	return stack, defaultParameters, nil
+	return stack, defaultParameters, outputs, nil
 }
 
 type cfnParameterShape struct {
