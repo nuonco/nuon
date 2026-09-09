@@ -35,7 +35,7 @@ type ServiceCreateAppBranchConfigRequest struct {
 	// Omit to carry the current setting forward; send an empty array to clear it.
 	PostDeployRunbookIds []string `json:"post_deploy_runbook_ids"`
 
-	// PreviewConfig sets branch-level preview defaults. Omit to carry forward.
+	// preview config
 	PreviewConfig *AppAppBranchPreviewConfig `json:"preview_config,omitempty"`
 
 	// public git vcs config
