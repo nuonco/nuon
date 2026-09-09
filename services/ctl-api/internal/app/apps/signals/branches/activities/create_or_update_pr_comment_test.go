@@ -68,6 +68,7 @@ func TestUpsertPRCommentRecoversStaleCommentIDByMarker(t *testing.T) {
 			ExistingCommentID: &staleID,
 		},
 		&github.IssueComment{Body: &body},
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)

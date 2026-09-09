@@ -7,6 +7,12 @@ import (
 	"time"
 
 	"github.com/google/go-github/v50/github"
+	"go.uber.org/zap"
+)
+
+const (
+	previewCommentsPerPage = 100
+	previewCommentsMaxPage = 10
 )
 
 const prCommentMarkerPrefix = "<!-- nuon-app-branch-preview:"
@@ -68,7 +74,7 @@ func normalizePRCommentBody(body, appBranchID string, updatedAt time.Time) strin
 }
 
 // @temporal-gen-v2 activity
-// @start-to-close-timeout 30s
+// @start-to-close-timeout 2m
 func (a *Activities) CreateOrUpdatePRComment(ctx context.Context, input *CreateOrUpdatePRCommentInput) (*CreateOrUpdatePRCommentOutput, error) {
 	owner, repo, client, err := a.resolveAuthenticatedGithubClient(ctx, input.VcsConfigID)
 	if err != nil {
@@ -77,11 +83,25 @@ func (a *Activities) CreateOrUpdatePRComment(ctx context.Context, input *CreateO
 	}
 
 	body := normalizePRCommentBody(input.Body, input.AppBranchID, time.Now())
-	comment := &github.IssueComment{
-		Body: &body,
+
+	var priorComments []*github.IssueComment
+	if marker, ok := ParsePreviewCommentMarker(body); ok {
+		priorComments, err = a.listPreviewComments(ctx, client, owner, repo, input.PRNumber, marker.Name)
+		if err != nil {
+			a.l.Warn("unable to list previous preview comments",
+				zap.Int("pr_number", input.PRNumber),
+				zap.Error(err))
+		}
 	}
 
-	return a.upsertPRComment(ctx, client, owner, repo, input, comment)
+	comment := &github.IssueComment{Body: &body}
+	out, err := a.upsertPRComment(ctx, client, owner, repo, input, comment, priorComments)
+	if err != nil {
+		return nil, err
+	}
+
+	a.collapseSupersededPreviewComments(ctx, client, owner, repo, priorComments, out.CommentID)
+	return out, nil
 }
 
 func (a *Activities) upsertPRComment(
@@ -91,6 +111,7 @@ func (a *Activities) upsertPRComment(
 	repo string,
 	input *CreateOrUpdatePRCommentInput,
 	comment *github.IssueComment,
+	priorComments []*github.IssueComment,
 ) (*CreateOrUpdatePRCommentOutput, error) {
 	existingID := int64(0)
 	if input.ExistingCommentID != nil {
@@ -102,6 +123,12 @@ func (a *Activities) upsertPRComment(
 		} else {
 			existingID = found
 		}
+	}
+	if existingID == 0 {
+		// A signal that never learned the run's comment ID — or a retry after the
+		// activity timed out mid-write — would otherwise stack another report onto
+		// the PR, so reuse the newest live one for this preview instead.
+		existingID = newestLivePreviewCommentID(priorComments)
 	}
 
 	if existingID != 0 {
@@ -146,6 +173,88 @@ func (a *Activities) upsertPRComment(
 	return &CreateOrUpdatePRCommentOutput{CommentID: created.GetID()}, nil
 }
 
+// listPreviewComments returns the PR's comments that are reports on the named
+// preview, oldest first.
+func (a *Activities) listPreviewComments(
+	ctx context.Context,
+	client *github.Client,
+	owner, repo string,
+	prNumber int,
+	previewName string,
+) ([]*github.IssueComment, error) {
+	if previewName == "" {
+		return nil, nil
+	}
+
+	opts := &github.IssueListCommentsOptions{
+		ListOptions: github.ListOptions{PerPage: previewCommentsPerPage},
+	}
+
+	var matches []*github.IssueComment
+	for page := 0; page < previewCommentsMaxPage; page++ {
+		comments, resp, err := client.Issues.ListComments(ctx, owner, repo, prNumber, opts)
+		if err != nil {
+			if nrErr := nonRetryableGitHubError(err); nrErr != nil {
+				return matches, nrErr
+			}
+			return matches, fmt.Errorf("unable to list PR comments: %w", err)
+		}
+
+		for _, comment := range comments {
+			marker, ok := ParsePreviewCommentMarker(comment.GetBody())
+			if ok && marker.Name == previewName {
+				matches = append(matches, comment)
+			}
+		}
+
+		if resp == nil || resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	return matches, nil
+}
+
+func newestLivePreviewCommentID(comments []*github.IssueComment) int64 {
+	for i := len(comments) - 1; i >= 0; i-- {
+		if !IsCollapsedPreviewComment(comments[i].GetBody()) {
+			return comments[i].GetID()
+		}
+	}
+	return 0
+}
+
+// collapseSupersededPreviewComments folds every earlier report on the same
+// preview into a collapsed <details> block, so a PR that has been through many
+// iterations shows only the current report expanded. Failures are logged and
+// swallowed: the report itself is already posted and collapsing is cosmetic.
+func (a *Activities) collapseSupersededPreviewComments(
+	ctx context.Context,
+	client *github.Client,
+	owner, repo string,
+	comments []*github.IssueComment,
+	currentCommentID int64,
+) {
+	for _, comment := range comments {
+		if comment.GetID() == currentCommentID {
+			continue
+		}
+
+		collapsed, ok := CollapsePreviewCommentBody(comment.GetBody())
+		if !ok {
+			continue
+		}
+
+		if _, _, err := client.Issues.EditComment(ctx, owner, repo, comment.GetID(),
+			&github.IssueComment{Body: &collapsed}); err != nil {
+			a.l.Warn("unable to collapse superseded preview comment",
+				zap.Int64("comment_id", comment.GetID()),
+				zap.Error(err))
+		}
+	}
+}
+
 func (a *Activities) findPRCommentByMarker(ctx context.Context, client *github.Client, owner, repo string, prNumber int, appBranchID string) (int64, error) {
 	opts := &github.IssueListCommentsOptions{
 		ListOptions: github.ListOptions{PerPage: 100},
@@ -159,9 +268,15 @@ func (a *Activities) findPRCommentByMarker(ctx context.Context, client *github.C
 			return 0, err
 		}
 		for _, c := range comments {
-			if c != nil && commentHasMarker(c.GetBody(), appBranchID) {
-				return c.GetID(), nil
+			if c == nil || !commentHasMarker(c.GetBody(), appBranchID) {
+				continue
 			}
+			// Prefer the live report so a collapsed historical comment does not
+			// become the upsert target on the next run.
+			if IsCollapsedPreviewComment(c.GetBody()) {
+				continue
+			}
+			return c.GetID(), nil
 		}
 		if resp == nil || resp.NextPage == 0 {
 			return 0, nil
