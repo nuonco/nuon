@@ -475,6 +475,73 @@ What is worth a test: parsing and formatting, query-state round-trips,
 keyboard interaction, conditional rendering with real consequences. Not: that a
 component renders its children.
 
+## Code and diffs
+
+The code and diff subsystem has more settled architecture than the rest of Lite,
+because it is the part that failed loudly when it was built naively. These are
+decisions, not preferences — changing one means re-reading why it exists.
+Operational traps live in [GOTCHAS.md](./GOTCHAS.md).
+
+**Shiki via `@pierre/diffs` is the renderer.** One library covers highlighting,
+split and unified diffs, word-level intra-line highlighting, hunk collapsing,
+per-line virtualization, `scrollTo` by line, line annotations and a worker pool
+that moves tokenization off the main thread. `rego` is **not** in the grammars
+Shiki redistributes, so it is vendored from the OPA VS Code extension and
+registered in `utils/syntax/`.
+
+**Virtualization is a hard requirement, not an optimisation.** Install state JSON
+and large Terraform plans are what crashed the previous Prism-based renderer.
+
+**One renderer for every diff.** Both Terraform (`resource_changes[].change.
+before/after`) and Helm (before/after content strings) give us before/after
+pairs, so every diff is a text diff. Terraform's objects are serialized to
+**HCL-ish text, not JSON** — people read plans closely and expect `replicas = 4`.
+**Deterministic key ordering on both sides is the property that must be right**,
+or the diff invents changes that are not there.
+
+**The op marker lives in a gutter column, not in the text.** Background tint plus
+a gutter marker, keeping syntax colours. Putting `+`/`-` in the text means
+copying a diff copies the markers — a real bug in the old dashboard. The tradeoff
+is that a `~ key: old -> new` line becomes a `-`/`+` pair with the changed span
+highlighted; back this out if people complain.
+
+**Sections stay, and each is its own scroll region.** Helm groups by release,
+Terraform by resource. A collapsed section renders nothing, so the rule is
+lazy-per-section first, virtualize-within-section second. There is deliberately
+no single scroller for a whole plan — only large sections ever scroll, and a
+three-line change renders three lines.
+
+**Search is per section, and it is not optional.** Virtualization removes the
+browser's Ctrl+F, which the old dashboard silently relied on. Match against the
+before/after strings we already hold, then `scrollTo` and mark the hit with a
+line annotation. Do not reach for the library's own find-in-file — it lives in
+edit mode, which drags in cursors, undo and editing.
+
+**The syntax theme is CSS variables, not theme files.** `@pierre/diffs` sets
+themes as a `{ light, dark }` pair, which has no room for a third theme. Shiki
+emits `var(--syntax-*)` instead and the colours live in `styles.css` with every
+other token, so high contrast falls out as another override block. When adding
+`--diff-*` tokens, **verify them against the `--syntax-*` colours** — diff rows
+tint the background under highlighted text, and that pairing is the check most
+likely to fail.
+
+**No code folding, and no separate JSON viewer.** `CodeBlock` with
+virtualization, highlighting and search is enough for install state. The library
+has no arbitrary folding — its `File` only offers `collapsed` for a whole body,
+and every other "collapsed" API is diff-hunk machinery. If folding is ever
+wanted, it is ours to build.
+
+**`CodeBlock` switches renderer by size** — a plain `File` under 300 lines, a
+`CodeView` above it — and its toolbar (search, prev/next, wrap, back to top,
+copy) only appears in the virtualized mode.
+
+**Wrap and unified/split are view-level, not per section.** They sit with
+expand-all on `DiffSections`. Flipping one diff on a thirty-resource plan would
+be maddening. Unified is the default.
+
+**Pull from the dashboard, never push back.** The Terraform serializer is Lite's.
+The old `generateDiffLines` stays where it is until the dashboard is retired.
+
 ## Comments
 
 **Lite source files contain no comments. Zero.** Not in components, hooks,
