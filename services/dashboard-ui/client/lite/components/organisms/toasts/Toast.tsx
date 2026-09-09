@@ -1,8 +1,12 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { TToastTheme } from '../../../providers/toast-provider'
+import {
+  STATUS_THEME_COLOR,
+  STATUS_THEME_ICON,
+} from '../../../utils/status-theme'
 import { Button } from '../../atoms/Button'
 import { Card } from '../../atoms/Card'
-import { Icon, type TIconVariant } from '../../atoms/Icon'
+import { Icon } from '../../atoms/Icon'
 import { Text } from '../../atoms/Text'
 
 export interface IToast {
@@ -12,26 +16,6 @@ export interface IToast {
   actionLabel?: string
   onAction?: () => void
   onDismiss: () => void
-}
-
-const THEME_COLOR: Record<TToastTheme, string> = {
-  default: 'var(--text-tertiary)',
-  success: 'var(--status-success)',
-  error: 'var(--status-error)',
-  warn: 'var(--status-warn)',
-  info: 'var(--status-info)',
-  brand: 'var(--status-brand)',
-  neutral: 'var(--status-neutral)',
-}
-
-const THEME_ICON: Record<TToastTheme, TIconVariant> = {
-  default: 'InfoIcon',
-  success: 'CheckCircleIcon',
-  error: 'XCircleIcon',
-  warn: 'WarningIcon',
-  info: 'ClockCountdownIcon',
-  brand: 'SparkleIcon',
-  neutral: 'MinusCircleIcon',
 }
 
 export const Toast = ({
@@ -44,7 +28,7 @@ export const Toast = ({
 }: IToast) => {
   const urgent = theme === 'error' || theme === 'warn'
   const style = {
-    '--toast-status': THEME_COLOR[theme],
+    '--toast-status': STATUS_THEME_COLOR[theme],
     '--card-shadow-floating': 'var(--toast-shadow)',
   } as CSSProperties
 
@@ -69,7 +53,7 @@ export const Toast = ({
         aria-hidden
         className="flex shrink-0 pl-4 pt-4 text-[var(--toast-status)]"
       >
-        <Icon variant={THEME_ICON[theme]} size={20} />
+        <Icon variant={STATUS_THEME_ICON[theme]} size={20} />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1 px-3 py-4">
         <Text as="p" weight="medium">
