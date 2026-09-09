@@ -125,14 +125,23 @@ wrong one.
 
 ## Props
 
-**Boolean props are unprefixed** — `loading`, `open`, `external`, `selected`,
-`fetching`. Never `isLoading` / `isOpen` / `hasError`.
+**A boolean prop is named for what it describes, with no `is` or `should`
+prefix** — `loading`, `open`, `external`, `selected`, `fetching`, `expanded`,
+`disabled`. Never `isLoading` / `isOpen` / `shouldPoll`.
 
-The `is`/`has`/`should` convention loses to the path of least resistance,
-because the obvious name for a boolean is the adjective. The production
-dashboard has both `loading` and `isLoading` and is the evidence. No linter can
-enforce a prefix, so the rule that matches the default instinct is the one that
-survives.
+When the boolean asserts that **something else exists**, `has` is that name:
+`hasNext`, `hasMore`, `hasError`. This is not an exception to the rule — "a next
+page exists" has no adjective form, so `hasNext` *is* what it is called. The
+test is whether the boolean describes this component's own state (`loading`,
+`open`) or the existence of something beyond it (`hasNext`).
+
+Why unprefixed: **43 of Lite's 44 component interfaces extend a native HTML
+attributes type**, so they already inherit `disabled`, `open`, `checked` and
+`hidden` unprefixed — you cannot rename an inherited prop. Prefixing everything
+would mean permanently exempting every native boolean across nearly every
+component. Unprefixed is also the path of least resistance, because the obvious
+name for a boolean is the adjective; the production dashboard has both `loading`
+and `isLoading`, which is the evidence.
 
 The exception is **destructured query results**, which are TanStack Query's
 names and not ours:

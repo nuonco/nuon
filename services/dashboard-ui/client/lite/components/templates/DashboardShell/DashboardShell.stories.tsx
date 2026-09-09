@@ -129,6 +129,8 @@ export const Overview = () => (
       'The user menu moves between desktop header and mobile sidebar footer.',
       'The header sticks within the page scroll region and gains its glass surface after scrolling.',
       'The sidebar and full-width status bar remain outside the page scroll region.',
+      'headerLeading and headerActions belong in the sticky header, not in the page.',
+      'initialDesktopExpanded seeds the desktop sidebar before a stored preference exists.',
     ]}
     props={[
       {
@@ -142,14 +144,46 @@ export const Overview = () => (
         description: 'Secondary sidebar destinations.',
       },
       {
+        name: 'homeHref',
+        type: 'string',
+        default: "'/'",
+        description: 'Destination for the Nuon logo.',
+      },
+      {
         name: 'userMenu',
         type: 'ReactNode',
         description: 'User control moved to the correct responsive location.',
       },
       {
+        name: 'headerLeading',
+        type: 'ReactNode',
+        description: 'Global context shown after the sidebar control in the header.',
+      },
+      {
+        name: 'headerActions',
+        type: 'ReactNode',
+        description: 'Global actions shown before the user menu in the header.',
+      },
+      {
         name: 'statusBar',
         type: 'ReactNode',
         description: 'Pinned status content below the main scroll region.',
+      },
+      {
+        name: 'children',
+        type: 'ReactNode',
+        description: 'Page content that scrolls inside the main column.',
+      },
+      {
+        name: 'contentClassName',
+        type: 'string',
+        description: 'Extra classes for the scrolling main region.',
+      },
+      {
+        name: 'initialDesktopExpanded',
+        type: 'boolean',
+        description:
+          'Initial desktop sidebar expansion before a stored preference exists.',
       },
     ]}
   />

@@ -11,17 +11,7 @@ const INTERNAL_COMPONENTS = new Set([
   'organisms/toasts/ToastStack',
 ])
 
-const KNOWN_GAPS: Record<string, string[]> = {
-  'templates/DashboardShell/DashboardShell': [
-    'homeHref',
-    'headerLeading',
-    'headerActions',
-    'children',
-    'contentClassName',
-    'initialDesktopExpanded',
-  ],
-  'templates/FocusShell/FocusShell': ['children', 'homeHref'],
-}
+const KNOWN_GAPS: Record<string, string[]> = {}
 
 const walk = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

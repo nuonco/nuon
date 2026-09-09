@@ -105,15 +105,17 @@ contract**. Knowing the tier of a thing tells you what it is allowed to know.
 
 | Tier | Knows about | Never knows about |
 |---|---|---|
-| **Atom** | Its own props. Tokens. | Data shapes, routes, other components |
-| **Molecule** | Atoms. One small domain concept. | Fetching, routes, layout |
-| **Organism** | Molecules, atoms. A real API resource. | Where on the page it sits |
+| **Atom** | Its own props. Tokens. Other atoms. | Data shapes, routes, anything above it |
+| **Molecule** | Atoms, other molecules. One small domain concept. | Fetching, routes, layout |
+| **Organism** | Molecules, atoms, other organisms. A real API resource. | Where on the page it sits |
 | **Template** | Layout and slots. | Which resource is being shown |
 | **Page** | Routes, providers, which organisms to compose. | How anything renders |
 
-**A component imports from its own tier or below, never above.** An atom
-importing a molecule means the atom is really a molecule, or the shared part
-needs extracting downward.
+**A component imports from its own tier or below, never above.** Same-tier
+composition is normal and expected — `Button` composes `Spinner` and `Tooltip`,
+`Status` composes `Icon` and `Text`, all atoms. What is forbidden is reaching
+*up*: an atom importing a molecule means the atom is really a molecule, or the
+shared part needs extracting downward.
 
 ## What each tier is for
 
@@ -193,21 +195,6 @@ what it covers, what Lite has chosen, and how to pick between the options.
 For moving between *areas*, two levels is the rule. Something asking for a third
 level of area navigation is telling you the information architecture is wrong.
 
-### Open: navigation inside a run detail page
-
-A run — a workflow, a deployment, a build, an action run — has several
-independent concerns (summary, logs, plan, trace) and will likely need its own
-level of navigation within the page. **This is not yet decided.**
-
-It is probably not a third level of the hierarchy above but a different
-mechanism: navigation *within one resource* rather than *between areas*. The
-production dashboard solves it with a routed tab nav, which is the obvious
-starting point but not a decision Lite has made.
-
-**Do not invent this.** If you are building a run detail page and need it, that
-is a "Breaking these rules" conversation — stop and raise it, so the answer gets
-made once and written here rather than five times in five pages.
-
 **Treatments:**
 
 - **Sidebar `NavLink`** for the top level, each with a `g`-prefixed keyboard
@@ -227,6 +214,21 @@ made once and written here rather than five times in five pages.
 - **Do not add a list page for every noun in the data model.** A nav item is a
   claim that users organise their work around that concept.
 
+### Open: navigation inside a run detail page
+
+A run — a workflow, a deployment, a build, an action run — has several
+independent concerns (summary, logs, plan, trace) and will likely need its own
+level of navigation within the page. **This is not yet decided.**
+
+It is probably not a third level of the hierarchy above but a different
+mechanism: navigation *within one resource* rather than *between areas*. The
+production dashboard solves it with a routed tab nav, which is the obvious
+starting point but not a decision Lite has made.
+
+**Do not invent this.** If you are building a run detail page and need it, that
+is a "Breaking these rules" conversation — stop and raise it, so the answer gets
+made once and written here rather than five times in five pages.
+
 ## 2. Discovery
 
 *How users browse, search, filter, sort, scan, and drill into detail.*
@@ -241,7 +243,7 @@ asking, not what the endpoint returns:
 | The user is asking | Shape |
 |---|---|
 | "What is my system, and how is it wired?" | **Graph** — topology, nodes and dependencies |
-| "Is it healthy right now?" | **Status tiles / overview cards** — a few facts, no scrolling |
+| "Is it healthy right now?" | **Overview cards** (`OverviewCard`) — a few facts, no scrolling |
 | "What changed, and when?" | **Timeline** — events in time order, grouped by day |
 | "Which of these N records differs?" | **Table** — and only then |
 
@@ -313,7 +315,8 @@ and stays the user's mental model while they inspect a part of it.
 
 - **Inline** — a toggle or an editable field, for reversible single-value changes.
 - **Modal** — a confirmation, or a create/edit form that fits one screen.
-- **Full-screen wizard** — creation that spans real decisions. See Task flows.
+- **Wizard** — creation that spans real decisions. Note that only onboarding is
+  full-screen; see Task flows.
 - **Dropdown menu** — the home for a resource's secondary and destructive
   actions, so rows and headers do not sprout buttons.
 
@@ -351,23 +354,68 @@ action less important. That is what variants are for.
 
 ## 4. Task flows
 
-*How users complete multi-step interactions — setup, approvals, handoffs.*
+*How users complete multi-step interactions — setup and approvals.*
 
-**The decision: wizard or modal?** A flow earns a **full-screen wizard** when it
-spans more than one real decision, or when its result needs watching. Everything
-else is a **modal**.
+**The decision: wizard or modal?** A flow earns a **wizard** when it spans more
+than one real decision, or when its result needs watching. Everything else is a
+**modal**.
 
-**Full-screen wizard** (`FocusShell`) — the shell strips navigation so the task
-is the only thing on screen:
+### The three wizard flows
 
-- *Create app and connect a branch* — name the app, connect the repo if needed,
-  connect the branch, create the deployment plan.
-- *Create install from app* — select app config, enter install info, assign to an
-  app branch, then provision. **The first provision gets its own page**, because
-  a user's first install is the moment they most need to see progress.
+There are three, and they do **not** all use the same shell. The shell depends
+on whether the user has a context to come back to:
 
-**Modal creation** — one form, one endpoint: API token, service account,
-webhook, Slack channel, trust policy.
+| Flow | Shell | Why |
+|---|---|---|
+| **Onboarding** | `FocusShell` | No org context yet. There is nothing to navigate back to, so nav would only offer dead ends. |
+| **App setup** | `DashboardShell` | Happens inside an org. The user keeps their nav, breadcrumbs and status bar. |
+| **Install setup** | `DashboardShell` | Same — an install is created from within an org. |
+
+- *App setup* — name the app, connect the repo if needed, connect the branch,
+  create the deployment plan.
+- *Install setup* — select app config, enter install info, assign to an app
+  branch, then provision. **The first provision gets its own page**, because a
+  user's first install is the moment they most need to see progress.
+
+`FocusShell` is therefore not "the wizard shell" — it is the shell for a task
+with no surrounding context. Reaching for it because something *feels* like a
+big flow is the mistake.
+
+### Modal creation
+
+One form, one endpoint: API token, service account, webhook, Slack channel,
+trust policy.
+
+### Approvals
+
+Approvals are core to the product, not an edge case: a plan waits on a human
+before infrastructure changes. Lite mirrors the current dashboard's UX, which is
+a five-part chain — keep all five, because dropping any one of them is what makes
+an approval feel like it came out of nowhere.
+
+1. **An org-wide pending signal.** Pending approvals are polled for the whole
+   org, not discovered by happening to open the right page. A user must be able
+   to find out something is waiting on them without knowing where to look.
+2. **An in-context banner on the run.** A `warn` banner at the top of the thing
+   being approved, with copy specific to the approval type — Terraform plan, Helm
+   chart, Kubernetes manifest, Pulumi plan, install group plan, install creation.
+   Generic "approval required" copy is not good enough; the user needs to know
+   what kind of change they are being asked to bless.
+3. **The diff is the evidence.** The plan diff is the whole point of the screen —
+   the approve button is secondary to being able to read what will change.
+   Filtering, change counts and line expansion are part of the approval, not
+   extras.
+4. **The decision is a modal.** Approve, deny, or approve-all, each confirming
+   what it covers. Deny does not require a reason today.
+5. **Immediate feedback.** The banner flips to its responded state optimistically
+   rather than waiting for a refetch, and a toast confirms — "Plan approved" on
+   success, "Approval failed" on error.
+
+**What Lite has and does not have:** the diff machinery is built — `Diff`,
+`DiffSection`, `DiffSections`, `DiffFilter`, and the per-engine
+`TerraformDiff`, `HelmDiff`, `KubernetesDiff`, `PulumiDiff`, `AppConfigDiff`.
+The approval chain around it — pending signal, banner, decision modals — is not.
+Build it as the five parts above rather than inventing a new shape.
 
 **Rules:**
 
@@ -380,7 +428,11 @@ webhook, Slack channel, trust policy.
 ## 5. System guidance
 
 *How the interface communicates status, validation, errors, confirmations,
-undo, empty states and help.*
+drafts, empty states and help.*
+
+There is **no undo pattern.** Do not invent one. Reversibility comes from
+confirming destructive actions before they happen, and from drafts for work in
+progress.
 
 This is the pattern most often skipped and most responsible for an app feeling
 unfinished. Every surface that can be empty, loading, stale, failed or
@@ -395,6 +447,8 @@ in-progress needs a decided answer.
 | Async work started | `Toast`, `info` theme, present-progressive heading |
 | Async work finished | `Toast` on the status transition, via `useStatusToast` |
 | Form submission failed | `FormErrorBanner` inside the form. Never a toast |
+| A run or resource failed, and the API said why | `CompositeError` banner at the top of the resource. See below |
+| Unsaved work in a long form | A draft. See below |
 | A collection is empty | The collection's `emptyState` — "No X yet" plus what will make them appear |
 | A collection failed to load | Also `emptyState`, with failure wording: "Installs failed to load" |
 | Why an action is unavailable | The button's own `tooltip` |
@@ -411,3 +465,69 @@ in-progress needs a decided answer.
   is a missing error state.
 - Guidance is copy, so it follows [COPY.md](./COPY.md): sentence case, no
   "successfully", no exclamation marks.
+
+### CompositeError — the API's rich failure channel
+
+**This is the main way the API gives the UI a real explanation of a failure, and
+it is the most important treatment in this section.** A failed run that shows
+only a red status has thrown away everything the platform knows about why.
+
+The API returns a structured error, not a string:
+
+- `message` — the headline
+- `type` — a machine-ish classifier, rendered as a code badge beside the headline
+- `severity` — `fatal` / `error` / `warning` / `info`, which selects the banner
+  theme (fatal and error both read as error)
+- `sections[]` — ordered blocks, each with a `heading` and a `body`, plus a
+  `kind` that decides how the body renders:
+  - `code` → a code block with copy, wrapping and breaking on long lines
+  - `text` → preformatted plain text
+  - anything else → **markdown**
+
+**Rules:**
+
+- **Render it wherever a resource carries `composite_error`** — at the top of the
+  run or resource, above its content. In the current dashboard that is deploys,
+  builds, action runs, sandbox runs, branch runs and individual workflow steps.
+- **Never flatten it.** Do not collapse it to `error.message`, do not put it in a
+  toast, do not truncate the sections. The sections are the actionable part —
+  that is where the Terraform output or the failing manifest lives.
+- **Respect the section `kind`.** Markdown is the default for a reason; rendering
+  it as plain text loses formatting the API deliberately sent.
+- **Render nothing when it is empty.** No headline, no type, no section content →
+  no banner. An empty error banner is worse than none.
+- It composes with, and does not replace, `Status`. The status says it failed;
+  the composite error says why.
+
+**Lite has no generic `Banner` yet** — only `FormErrorBanner`, which is
+form-specific. `CompositeError` and the approval banner both need one, themed by
+severity. Build the shared banner first rather than giving each of them its own
+card-with-an-icon; two hand-rolled banners is exactly how a treatment stops
+looking like one treatment.
+
+### Drafts
+
+Long forms — install setup, app setup, config editors — persist unsaved work and
+offer it back on return. The pattern is a modal on re-entry: **"Resume draft"**
+as the primary action, **"Start fresh"** as the secondary, and a line saying how
+old the draft is.
+
+This exists in the current dashboard only for install forms. **Lite should carry
+it forward and widen it** to every form long enough that losing the work would
+hurt. A short modal form does not need one.
+
+Note the current implementation hand-rolls its relative-time formatting. Do not
+copy that part — draft age uses `Time` with `format="relative"`, like every other
+timestamp.
+
+### Help
+
+**Partly undecided.** Inline help today is the tooltip: `Button`'s own
+`tooltipProps` for why an action is unavailable, and hand-wrapped `Tooltip` on
+non-button elements. That is settled and sufficient for controls.
+
+What is **not** settled is larger-form help — the explanatory copy a setup wizard
+needs to tell someone what a deployment plan is or which app config to pick.
+Tooltips are the wrong shape for that, and Lite has no treatment for it yet. If
+you are building a wizard step that needs real explanation, raise it rather than
+inventing a help pattern per step.
