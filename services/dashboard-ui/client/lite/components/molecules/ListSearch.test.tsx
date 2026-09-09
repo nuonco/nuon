@@ -7,7 +7,7 @@ import {
   RouterProvider,
   useLocation,
 } from 'react-router'
-import { commaSetQueryParameter } from '../../lib/list-query'
+import { commaSetQueryParameter } from '../../utils/list-query'
 import { useListQueryState } from '../../hooks/use-list-query-state'
 import { ListSearch } from './ListSearch'
 

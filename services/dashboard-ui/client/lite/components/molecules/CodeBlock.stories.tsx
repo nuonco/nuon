@@ -225,6 +225,11 @@ export const Overview = () => (
         default: '480',
         description: 'Height of the scroll region, virtualized mode only.',
       },
+      {
+        name: 'className',
+        type: 'string',
+        description: 'Extra classes for the block container.',
+      },
     ]}
     sections={[
       {

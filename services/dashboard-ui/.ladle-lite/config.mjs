@@ -1,8 +1,8 @@
 export default {
   stories:
     'client/lite/components/{atoms,molecules,organisms,templates}/**/*.stories.{tsx,jsx,ts,js}',
-  port: 61001,
-  previewPort: 61002,
+  port: 62002,
+  previewPort: 62003,
   outDir: 'build-ladle-lite',
   storyOrder: (stories) => {
     const groupOf = (id) => id.slice(0, id.lastIndexOf('--'))

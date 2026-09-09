@@ -33,6 +33,7 @@ export const Overview = () => (
     ]}
     rules={[
       'Headings are plain strings that state what happened.',
+      'Dismissal timing is not a Toast prop. Pass timeout to addToast, where null keeps the toast until it is dismissed.',
       'Omit theme for an ordinary informational notification.',
       'The blue info theme is reserved for in-progress work.',
       'The neutral card, left status rail, and icon are consistent across themes.',
@@ -58,16 +59,21 @@ export const Overview = () => (
           'Controls the status rail, icon, and announcement priority.',
       },
       {
-        name: 'action',
-        type: 'IToastAction',
-        description: 'One optional follow-up action.',
+        name: 'actionLabel',
+        type: 'string',
+        description:
+          'Label for the optional follow-up action. Renders the action button when paired with onAction.',
       },
       {
-        name: 'timeout',
-        type: 'number | null',
-        default: '5000',
+        name: 'onAction',
+        type: '() => void',
+        description: 'Invoked when the follow-up action is activated.',
+      },
+      {
+        name: 'onDismiss',
+        type: '() => void',
         description:
-          'Dismissal delay in milliseconds; null remains persistent.',
+          'Required. Invoked by the close control and by the automatic timeout.',
       },
     ]}
   />
