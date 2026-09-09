@@ -5,9 +5,9 @@ icon: "wrench"
 keywords: ["MCP", "tools", "agents", "whoami", "list_installs"]
 ---
 
-Writes are hidden from the stdio proxy unless `--allow-writes` is set. Setup examples always include that flag; HTTP MCP lists writes whenever the token can create.
+Writes are hidden from the stdio proxy unless `--allow-writes` is set. Setup examples always include that flag. HTTP MCP lists writes when the identity has [Admin](/concepts/access-control) (`org_admin`).
 
-Timestamps in tool JSON are UTC (Zulu) RFC3339 and end in `Z` (for example `2026-09-04T04:23:00Z`). If you name a calendar day, clock time, or age, convert that UTC instant to the local machine’s timezone first. Do not say “today” or “yesterday” from the UTC date digits — that calendar day can be a day ahead of local time.
+Timestamps in tool JSON are UTC (Zulu) RFC3339 and end in `Z` (for example `2026-09-04T04:23:00Z`). If you name a calendar day, clock time, or age, convert that UTC instant to the local machine’s timezone first. Do not say “today” or “yesterday” from the UTC date digits. That calendar day can be a day ahead of local time.
 
 For prompts to paste into a client, see [Sample queries](/guides/agents/sample-queries). To connect, see [Agents](/guides/agents/overview).
 
@@ -25,6 +25,6 @@ For prompts to paste into a client, see [Sample queries](/guides/agents/sample-q
 
 ## Writes
 
-Mutating tools are prefixed with `WRITE OPERATION:` in their descriptions. The stdio proxy hides them unless you pass `--allow-writes`. Your token must also have create permission.
+Mutating tools are prefixed with `WRITE OPERATION:` in their descriptions. The stdio proxy hides them unless you pass `--allow-writes`. The identity still needs [Admin](/concepts/access-control) (`org_admin`), not Read-only.
 
 Destructive tools (deprovision, approve/reject, preview apply, and similar) should be confirmed with the user before the client sets flags such as `confirm=true` or `mode=apply`.

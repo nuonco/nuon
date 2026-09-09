@@ -514,10 +514,20 @@ resources exits 2 with a clear error.
 
 Preferred LLM surface is **`nuon agents`**:
 
+- `nuon agents help`: the **human** setup guide (`cmd/agents_help.go`). `agentsSetupGuide` is the single source: it
+  backs both this command and the `agents` group's `Long`, so `nuon agents`, `nuon agents --help`, and
+  `nuon agents help` all print the same instructions (the subcommand additionally renders the live sign-in, org, and
+  resolved MCP URL). Extend the guide, not one of its callers. Document each client on its own (Claude Code, Cursor,
+  Amp, and a catch-all that tells people to check that client's MCP docs). Do not present `mcpServers` as a
+  universal schema. Every runnable example carries `--allow-writes`. `--url` is a general override when the MCP URL
+  does not follow from the API URL (self-hosted and Nuon BYOC are examples).
+  `mcpClientJSON` renders a block for a given key; reuse it rather than retyping JSON.
 - `nuon agents context` — markdown orientation (auth, selection, MCP URL, timestamps). The document lives in
   `cmd/agents_context.md`, embedded with `go:embed` and rendered as a `text/template` against the fields of
   `agentsContext` (`Authed`, `APIURL`, `MCPURL`, `OrgID`, `AppID`, `InstallID`) — edit the markdown, not Go string
-  literals. Keep its tool table and timestamp rules in sync with `docs/guides/agents/tools.mdx`. Do not duplicate
+  literals. Keep its tool table and timestamp rules in sync with `docs/guides/agents/tools.mdx`, and its per-client
+  registration in sync with `nuon agents help`. Both documents state their purpose up top
+  (human vs. agent) because that split is what users get confused about. Do not duplicate
   client setup recipes, sample queries, or the deprecated `nuon mcp` alias here — those live in
   `docs/guides/agents/` and `cmd/mcp.go`. MCP timestamps are UTC RFC3339 (`…Z`); agents localize before naming a
   day or clock time.
