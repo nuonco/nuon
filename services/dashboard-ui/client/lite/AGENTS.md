@@ -84,10 +84,13 @@ code in the directory that already owns the concern, or raise it in review.
 
 Read the relevant one before starting — they are not loaded automatically.
 
+- **[DESIGN.md](./DESIGN.md)** — the five UX patterns and the atomic design
+  method. Read before deciding **what** to build: which pattern a problem is,
+  which tier a component belongs at, and which treatments already exist.
+- **[STYLES.md](./STYLES.md)** — themes, tokens, type, spacing, elevation,
+  motion, accessibility floor. Read before deciding **what it looks like**.
 - **[DEV.md](./DEV.md)** — engineering conventions. Read before writing any
   component, hook, provider, page or test.
-- **[DESIGN.md](./DESIGN.md)** — themes, tokens, spacing, UX patterns, component
-  emphasis. Read before any visual work.
 - **[COPY.md](./COPY.md)** — voice and copy rules for all user-facing text. Read
   before writing a label, heading, empty state, error or toast.
 - **[FLOWS.md](./FLOWS.md)** — the user-facing flows the app implements. Read

@@ -59,10 +59,42 @@ export const Overview = () => (
         description: 'Fetches the next page without closing the menu.',
       },
       {
+        name: 'searchLabel',
+        type: 'string',
+        description: 'Accessible name for the search field.',
+      },
+      {
+        name: 'searchPlaceholder',
+        type: 'string',
+        description: 'Placeholder text in the search field.',
+      },
+      {
+        name: 'emptyTitle',
+        type: 'string',
+        description: 'Shown in place of the rows when nothing matches.',
+      },
+      {
+        name: 'errorTitle',
+        type: 'string',
+        description: 'Shown in place of the rows when the fetch failed.',
+      },
+      {
         name: 'loadingContent',
         type: 'ReactNode',
         description:
           'Row body used for each loading row. Defaults to a single text bar.',
+      },
+      {
+        name: 'isLoading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Replaces the rows with five loading rows.',
+      },
+      {
+        name: 'isLoadingMore',
+        type: 'boolean',
+        default: 'false',
+        description: 'Puts the load more row into its pending state.',
       },
       {
         name: 'hasMore',

@@ -1,7 +1,8 @@
 # Development guidelines
 
 Engineering conventions for `client/lite/`. Visual and UX guidance lives in
-[DESIGN.md](./DESIGN.md), copy rules in [COPY.md](./COPY.md), and per-component
+[DESIGN.md](./DESIGN.md) and [STYLES.md](./STYLES.md), copy rules in
+[COPY.md](./COPY.md), and per-component
 rules in each component's `Overview` story.
 
 ## Directory layout
@@ -23,6 +24,10 @@ the router mounts, not something other code composes.
 a molecule is a signal that the atom is really a molecule, or that the shared
 part needs extracting downward. This is what keeps the dependency graph a DAG
 and keeps atoms cheap to story and test.
+
+This table is only where the files go. **[DESIGN.md](./DESIGN.md) owns what the
+tiers mean** — what each may know about, and how to decide the tier of something
+new. Read it before adding a component.
 
 Alongside the tiers:
 
@@ -489,7 +494,7 @@ the urge to write one:
   constraints, its gotchas — that is exactly what `use`, `avoid` and `rules` are
   for, and it renders where people will actually read it.
 - **Put it in these documents.** A convention that spans components belongs in
-  DEV.md or DESIGN.md, not in a comment in one file.
+  DEV.md, DESIGN.md or STYLES.md, not in a comment in one file.
 
 The reason the rule is absolute rather than "no *bad* comments" is that the
 carve-out is what kills it. Every comment its author writes feels like the

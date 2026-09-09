@@ -35,6 +35,17 @@ export const Overview = () => (
         type: "(value: 'table' | 'cards') => void",
         description: 'Receives the next preferred presentation.',
       },
+      {
+        name: 'label',
+        type: 'string',
+        default: "'Collection view'",
+        description: 'Accessible name for the toggle group.',
+      },
+      {
+        name: 'className',
+        type: 'string',
+        description: 'Extra classes for the toggle group.',
+      },
     ]}
   />
 )

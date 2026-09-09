@@ -35,6 +35,11 @@ export const Overview = () => (
         default: 'all operations',
         description: 'Operations displayed by this provider.',
       },
+      {
+        name: 'className',
+        type: 'string',
+        description: 'Extra classes for the counts row.',
+      },
     ]}
   />
 )

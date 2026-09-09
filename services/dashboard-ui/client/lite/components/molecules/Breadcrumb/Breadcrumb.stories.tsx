@@ -61,6 +61,11 @@ export const Overview = () => (
         type: 'number',
         description: 'Loading width in ch for an unresolved label.',
       },
+      {
+        name: 'className',
+        type: 'string',
+        description: 'Extra classes for the breadcrumb nav element.',
+      },
     ]}
   />
 )
