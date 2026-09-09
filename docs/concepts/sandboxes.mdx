@@ -182,9 +182,13 @@ Example outputs include:
 - `cluster.endpoint` - The EKS Cluster endpoint
 - `ecr.repository_url` - The ECR repository URL
 - `ecr.registry_url` - The ECR registry URL
-- `nuon_dns.public_domain` - The public root domain for the install
-- `nuon_dns.internal_domain` - The internal root domain for the install
+- `nuon_dns.public_domain.name` - The public root domain for the install
+- `nuon_dns.internal_domain.name` - The internal root domain for the install
 - `namespaces` - A list of namespaces created in the cluster
+
+Each `nuon_dns` domain is an object rather than a string: `name` holds the
+hostname, alongside `zone_id` and `nameservers`. Reference `.name` when you want
+the domain itself.
 
 ## Configure sandboxes
 

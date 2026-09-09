@@ -40,7 +40,7 @@ If you include the Helm chart source in the app repo, you must push the entire r
 </Note>
 
 <Warning>
-**The Helm release is named after `chart_name`, not after the component.** Two components that share a `chart_name` and a `namespace` therefore resolve to the same Helm release, and whichever deploys last overwrites the other's resources. Give each component its own `chart_name` (or its own `namespace`) when you deploy the same chart more than once.
+**The Helm release is named after `chart_name`, not after the component.** Two components that share a `chart_name` and a `namespace` therefore resolve to the same Helm release, and whichever deploys last overwrites the other's resources. Give each component its own `chart_name` (or its own `namespace`) when you deploy the same chart more than once. A `chart_name` must still be a valid DNS label of 5-62 characters, so short names like `api` are rejected at sync time.
 </Warning>
 
 ## Multiple ways to use Helm with components
@@ -106,7 +106,7 @@ image_tag        = "{{.nuon.components.image.image.tag}}"
 # access outputs from a terraform component
 output_value = "{{.nuon.components.terraform.outputs.output_value}}"
 # access outputs from the sandbox
-aws_region = "{{.nuon.install.sandbox.outputs.account.aws_region}}"
+aws_region = "{{.nuon.install.sandbox.outputs.account.region}}"
 vpc_id     = "{{.nuon.install.sandbox.outputs.vpc.id}}"
 # access information about the install domain
 public_root_domain   = "{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"

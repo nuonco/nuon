@@ -141,7 +141,7 @@ perfectly ready while the thing inside it returns 500.
 ```toml Kubernetes component
 [[components.api.health.probes]]
 type = "http"
-url  = "https://{{.nuon.install.sandbox.outputs.public_domain}}/healthz"
+url  = "https://{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.name}}/healthz"
 
 [[components.api.health.probes]]
 type = "tcp"
