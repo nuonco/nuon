@@ -1,4 +1,4 @@
-import { emptyDiffSummary } from '../../lib/diffs'
+import { emptyDiffSummary } from '../../utils/diffs'
 import { ComponentDocs } from '../__stories__/ComponentDocs'
 import { DiffSummary } from './DiffSummary'
 
@@ -34,6 +34,11 @@ export const Overview = () => (
         type: 'TDiffOperation[]',
         default: 'all operations',
         description: 'Operations displayed by this provider.',
+      },
+      {
+        name: 'className',
+        type: 'string',
+        description: 'Extra classes for the counts row.',
       },
     ]}
   />

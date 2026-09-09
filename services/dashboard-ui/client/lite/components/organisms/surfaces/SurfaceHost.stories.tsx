@@ -35,6 +35,25 @@ export const Overview = () => (
       'Panels preserve their opening order and expose covered layers.',
       'Modals always appear above the complete panel stack.',
       'URL registrations resolve in the host where they were declared.',
+      'scope namespaces this host against others on the same page.',
+      'registrations are the URL-addressable surfaces this host can open.',
+    ]}
+    props={[
+      {
+        name: 'scope',
+        type: 'string',
+        description: 'Stable namespace for this host among others on the page.',
+      },
+      {
+        name: 'registrations',
+        type: 'ISurfaceRegistration[]',
+        description: 'URL-addressable surfaces this host can open.',
+      },
+      {
+        name: 'children',
+        type: 'ReactNode',
+        description: 'Page content that stays mounted while surfaces portal above it.',
+      },
     ]}
   />
 )

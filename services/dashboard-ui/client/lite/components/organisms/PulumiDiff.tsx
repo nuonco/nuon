@@ -6,8 +6,8 @@ import {
   PULUMI_DEFAULT_DIFF_OPERATIONS,
   PULUMI_DIFF_OPERATIONS,
   pulumiPlanDiff,
-} from '../../lib/diffs/pulumi'
-import type { IPlanDiffDiagnostic } from '../../lib/diffs'
+} from '../../utils/diffs/pulumi'
+import type { IPlanDiffDiagnostic } from '../../utils/diffs'
 import { Card } from '../atoms/Card'
 import { Text } from '../atoms/Text'
 import { CodeBlock } from '../molecules/CodeBlock'
@@ -41,7 +41,7 @@ const Diagnostic = ({ diagnostic }: { diagnostic: IPlanDiffDiagnostic }) => (
 
 export const PulumiDiff = ({
   plan,
-  defaultOpen = true,
+  defaultOpen,
   className,
   ...props
 }: IPulumiDiff) => {

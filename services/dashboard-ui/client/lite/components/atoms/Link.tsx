@@ -85,6 +85,7 @@ export const Link = ({
     <RouterLink
       to={href}
       reloadDocument={reloadDocument}
+      viewTransition
       className={cn(sizing, LINK_CLASSES, className)}
       {...props}
     >

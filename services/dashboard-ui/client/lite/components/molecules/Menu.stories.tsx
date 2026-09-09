@@ -29,8 +29,10 @@ export const Overview = () => (
       'A MenuItem closes the menu when it is chosen. Pass closeOnSelect={false} for the multi-select case, which is the only reason to keep it open.',
       'Pass selected to make an item checkable. It renders a check and announces itself as one.',
       'Keep item labels to a verb and its object, so typeahead lands where the user expects.',
+      'Pass initialFocusRef when the menu opens onto a search field, so opening lands there instead of on the first item.',
     ]}
     props={[
+      { name: 'initialFocusRef', type: 'RefObject<HTMLElement | null>', description: 'Menu: focused when the Dropdown opens, and returned to by ArrowUp from the first item.' },
       { name: 'icon', type: 'ReactNode', description: 'MenuItem: leading icon.' },
       { name: 'href', type: 'string', description: 'MenuItem: renders a link. Internal or external is inferred.' },
       { name: 'selected', type: 'boolean', description: 'MenuItem: checkable item. Renders a check.' },

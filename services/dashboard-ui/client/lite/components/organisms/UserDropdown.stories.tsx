@@ -1,6 +1,7 @@
 import { ComponentDocs } from '../__stories__/ComponentDocs'
 import { Card } from '../atoms/Card'
 import { Text } from '../atoms/Text'
+import { OrgSwitcherMenuComponent } from './OrgSwitcherMenu'
 import { UserDropdown } from './UserDropdown'
 
 export default {
@@ -22,14 +23,17 @@ export const Overview = () => (
     use={[
       'Use in application chrome where the signed-in user needs account actions.',
       'Use compact mode for an icon-sized header control.',
+      'Nest the organization switcher here so account and workspace context stay together.',
+      'Open browser preferences from the account action group.',
     ]}
     avoid={[
-      'Do not add organization navigation or setup actions to this menu.',
+      'Do not add unrelated resource navigation or setup actions to this menu.',
       'Do not open sign-out in a new browser tab.',
     ]}
     rules={[
       'The visible trigger is always UserProfile.',
-      'Sign out is the only menu item until the account menu is designed.',
+      'Organization switching is a nested menu before the sign-out action.',
+      'Preferences appear before the separated sign-out action.',
       'The sign-out destination performs a same-window navigation.',
     ]}
     props={[
@@ -39,9 +43,10 @@ export const Overview = () => (
         description: 'Identity rendered in the trigger.',
       },
       {
-        name: 'signOutHref',
-        type: 'string',
-        description: 'Authentication-service logout URL.',
+        name: 'loading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Shows profile loading shapes in the trigger.',
       },
       {
         name: 'compact',
@@ -50,10 +55,35 @@ export const Overview = () => (
         description: 'Uses an avatar-only trigger.',
       },
       {
-        name: 'loading',
+        name: 'signOutHref',
+        type: 'string',
+        description: 'Authentication-service logout URL.',
+      },
+      {
+        name: 'triggerClassName',
+        type: 'string',
+        description: 'Extra classes for the trigger button.',
+      },
+      {
+        name: 'orgSwitcher',
+        type: 'ReactNode',
+        description: 'Nested organization menu rendered above the account actions.',
+      },
+      {
+        name: 'org',
+        type: 'TOrg | null',
+        description: 'Organization named in the nested switcher trigger.',
+      },
+      {
+        name: 'orgLoading',
         type: 'boolean',
         default: 'false',
-        description: 'Shows profile loading shapes in the trigger.',
+        description: 'Shows organization loading shapes in the nested trigger.',
+      },
+      {
+        name: 'onOpenPreferences',
+        type: '() => void',
+        description: 'Opens the preferences panel from the account action group.',
       },
     ]}
   />
@@ -61,7 +91,25 @@ export const Overview = () => (
 
 export const Default = () => (
   <div className="flex justify-end p-20">
-    <UserDropdown user={USER} signOutHref={SIGN_OUT_HREF} defaultOpen />
+    <UserDropdown
+      user={USER}
+      signOutHref={SIGN_OUT_HREF}
+      org={{ id: 'org_alpha', name: 'alpha', status: 'active' }}
+      onOpenPreferences={() => {}}
+      orgSwitcher={
+        <OrgSwitcherMenuComponent
+          orgs={[
+            { id: 'org_alpha', name: 'alpha' },
+            { id: 'org_beta', name: 'beta' },
+          ]}
+          currentOrgId="org_alpha"
+          search=""
+          onSearchChange={() => {}}
+          onLoadMore={() => {}}
+        />
+      }
+      defaultOpen
+    />
   </div>
 )
 

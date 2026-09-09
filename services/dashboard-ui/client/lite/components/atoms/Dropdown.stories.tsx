@@ -52,6 +52,8 @@ export const Overview = () => (
       { name: 'matchTriggerWidth', type: 'boolean', default: 'false', description: 'Surface is at least as wide as the trigger.' },
       { name: 'stretch', type: 'boolean', default: 'false', description: 'Trigger fills its container rather than hugging its content.' },
       { name: 'contentClassName', type: 'string', description: 'Classes for the floating surface.' },
+      { name: 'className', type: 'string', description: 'Classes for the trigger wrapper.' },
+      { name: 'children', type: 'ReactNode', description: 'Content rendered inside the floating surface.' },
     ]}
     sections={[
       {

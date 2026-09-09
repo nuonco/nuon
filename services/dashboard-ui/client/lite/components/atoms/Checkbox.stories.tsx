@@ -43,6 +43,12 @@ export const Overview = () => (
         default: 'false',
         description: 'Shows partial selection.',
       },
+      {
+        name: 'loading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Shows a loading shape and disables the control.',
+      },
     ]}
   />
 )
