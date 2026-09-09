@@ -45,7 +45,7 @@ func (p *parser) parseDir(path string, typ reflect.Type) (any, error) {
 		elemType := typ.Elem()
 		obj := reflect.New(elemType).Interface()
 
-		parsed, err := p.parseFile(f, obj)
+		parsed, err := p.parseFile(f, path, obj)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to parse file "+f)
 		}
