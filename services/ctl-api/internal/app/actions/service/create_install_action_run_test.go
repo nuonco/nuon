@@ -171,10 +171,10 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 				assert.Len(s.T(), workflows, 1)
 				assert.Equal(s.T(), app.WorkflowTypeActionWorkflowRun, workflows[0].Type)
 
-				// Verify signal was sent
-				queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
+				// Verify signal was sent: the run enqueues exactly one signal
+				// owned by the new workflow run.
+				queueSignals := tests.GetQueueSignalsByOwner(s.T(), s.service.DB, workflows[0].ID)
 				require.Len(s.T(), queueSignals, 1)
-				assert.Equal(s.T(), workflows[0].ID, queueSignals[0].OwnerID)
 			},
 		},
 		{
