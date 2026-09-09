@@ -15,6 +15,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
@@ -30,6 +31,7 @@ type Params struct {
 	DB         *gorm.DB `name:"psql"`
 	L          *zap.Logger
 	Cfg        *internal.Config
+	MW         metrics.Writer
 	Services   []api.Service `group:"services"`
 }
 
@@ -46,6 +48,7 @@ type Server struct {
 	db          *gorm.DB
 	l           *zap.Logger
 	cfg         *internal.Config
+	mw          metrics.Writer
 	services    []api.Service
 	httpServer  *http.Server
 	schemaCache *mcp.SchemaCache
@@ -60,6 +63,7 @@ func New(params Params) *Server {
 		db:            params.DB,
 		l:             params.L.Named("mcp"),
 		cfg:           params.Cfg,
+		mw:            params.MW,
 		services:      params.Services,
 		schemaCache:   mcp.NewSchemaCache(),
 		orgSelections: make(map[string]*orgSelection),
@@ -76,7 +80,7 @@ func New(params Params) *Server {
 
 	s.httpServer = &http.Server{
 		Addr:    net.JoinHostPort("0.0.0.0", params.Cfg.MCPHTTPPort),
-		Handler: mux,
+		Handler: s.metricsMiddleware(mux),
 	}
 
 	params.LC.Append(fx.Hook{
@@ -136,6 +140,7 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 		SchemaCache:  s.schemaCache,
 		Instructions: fmt.Sprintf("Nuon control plane MCP server. Authenticated as account %s in org %q. If no org is selected, call list_orgs then select_org. %s", accountID, orgID, api.MCPTimeInstructions),
 	})
+	server.AddReceivingMiddleware(s.receivingMetricsMiddleware)
 
 	for _, svc := range s.services {
 		if mcpSvc, ok := svc.(api.MCPService); ok {
