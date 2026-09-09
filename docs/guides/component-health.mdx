@@ -172,6 +172,18 @@ timeout and runs once per cycle.
 
 Probe results are ordinary observations: same verdict, same debounce, same alerts, same history.
 
+<Warning>
+**Probes run from the runner, not from inside your cluster.** A probe target has to be resolvable
+and reachable from wherever the runner is deployed, so in-cluster addresses never work: Kubernetes
+service DNS (`http://api.myapp.svc:3001/healthz`), pod IPs, and `localhost` all fail to resolve or
+connect, and the probe records that failure as a real `unhealthy` observation. That is why the
+Kubernetes example above probes the install's public hostname instead of the in-cluster service.
+
+If a component has no target the runner can reach, give it no probe at all — set
+[`block_deploy`](#verified-deploys) and let Nuon's automatic Kubernetes health checks decide the
+verdict.
+</Warning>
+
 <Note>
 Templated targets are resolved from the install's state, so a probe pointing at a component's own
 output can't resolve until that component has applied at least once. Until then the probe reports
