@@ -138,9 +138,11 @@ export const TFModuleTab = ({
 
   const config = useConfig()
   // The provider defaults to the production runner API, so a local, stage, or BYOC
-  // control plane has to name itself here.
-  const providerBlock = config.runnerApiUrl
-    ? `provider "stack" {\n  api_url = "${config.runnerApiUrl}"\n}`
+  // control plane has to name itself here, and the service account carries it.
+  const runnerApiUrl =
+    config.runnerApiUrl || serviceAccount?.runner_api_url || ''
+  const providerBlock = runnerApiUrl
+    ? `provider "stack" {\n  api_url = "${runnerApiUrl}"\n}`
     : 'provider "stack" {}'
 
   const mainTf = buildMainTf({
@@ -169,7 +171,7 @@ export const TFModuleTab = ({
             <ClickToCopyButton textToCopy={mainTf} />
           </span>
           <Code variant="preformated">{mainTf}</Code>
-          {config.runnerApiUrl ? null : (
+          {runnerApiUrl ? null : (
             <Text variant="subtext" theme="neutral">
               This control plane has not published its runner API URL, so the
               provider will default to production. Set{' '}
@@ -209,6 +211,7 @@ export const TFModuleTab = ({
         {OIDC_AUTH_ENABLED && authMethod === 'oidc' ? (
           <OIDCAuthPane
             installId={installId}
+            audience={runnerApiUrl}
             policyNames={(trustPolicies ?? [])
               .map((policy) => policy.name ?? '')
               .filter(Boolean)}
