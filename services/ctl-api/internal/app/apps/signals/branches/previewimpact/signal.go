@@ -1,8 +1,6 @@
 package previewimpact
 
 import (
-	"fmt"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -44,13 +42,8 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.Wrap(err, "validation failed")
 	}
 
-	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
-	if err != nil {
+	if _, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID); err != nil {
 		return errors.Wrap(err, "app branch run not found")
-	}
-
-	if run.AppConfigID == "" {
-		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
 
 	return nil
