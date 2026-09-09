@@ -80,7 +80,7 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeWithMultipleIdentities() {
 	identities := []app.AccountIdentity{
 		{
 			AccountID:          s.testAcc.ID,
-			IdentityProviderID: "idp-google",
+			IdentityProviderID: app.IdentityProviderIDGoogle,
 			ProviderType:       app.ProviderTypeGoogle,
 			Sub:                fmt.Sprintf("google-oauth2|multi-%s", s.testAcc.ID),
 			Name:               "Google User",
@@ -88,7 +88,7 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeWithMultipleIdentities() {
 		},
 		{
 			AccountID:          s.testAcc.ID,
-			IdentityProviderID: "idp-github",
+			IdentityProviderID: app.IdentityProviderIDGitHub,
 			ProviderType:       app.ProviderTypeGitHub,
 			Sub:                fmt.Sprintf("github|multi-%s", s.testAcc.ID),
 			Name:               "GitHub User",
