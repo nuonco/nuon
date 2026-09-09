@@ -6,9 +6,27 @@
 //
 // Use -shards=N to split the packages across N parallel lanes, each against its own
 // Postgres and ClickHouse database (DB_NAME_i / CLICKHOUSE_DB_NAME_i) and its own
-// blob-cache directory. Lane 0 runs the flow testworker package; the migrations
-// package runs last, alone, on the final lane's database. Each lane runs its packages
-// serially, so pass -p=1 in the forwarded go test flags.
+// blob-cache directory. Lane placement is not a blind even split:
+//
+//   - Lane 0 runs the flow testworker package, alone. It is the slowest suite and
+//     the most environment-sensitive one (in-process Temporal worker, poll
+//     timeouts), so pinning it to a dedicated lane keeps it off the critical path,
+//     starts it at t=0, and stops any other package from sharing its database or
+//     slowing its start.
+//
+//   - The migrations package runs last and alone on the final lane's database,
+//     sequenced by the launcher after that lane finishes its other packages. Its
+//     tests mutate the schema (apply and roll back migrations), so sharing the
+//     database with another suite — before or after — would either pull the schema
+//     out from under that suite or have the suite's data present during migration
+//     assertions.
+//
+// Each lane runs its packages serially: pass -p=1 in the forwarded go test flags.
+// The parallelism lives across lanes, each with a private database; go-level
+// package parallelism within a lane would instead run unrelated suites
+// concurrently against the lane's single shared database — exactly the contention
+// the per-lane databases exist to prevent. -p bounds packages, not tests, so
+// -parallel still lets tests within one package run concurrently.
 //
 //	nuontest -shards=2 -v -timeout=40m -count=1 -p=1 -skip 'TestSuite/TestPin' <packages...>
 package main
