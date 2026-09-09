@@ -54,7 +54,8 @@ type InstallerSDKAWSConfig struct {
 	RunnerMachineType string `json:"runner_machine_type,omitempty"`
 
 	// Deployed instead of the module's own VPC, which lacks its extra resources.
-	VPCNestedTemplateURL string `json:"vpc_nested_template_url,omitempty"`
+	VPCNestedTemplateURL    string `json:"vpc_nested_template_url,omitempty"`
+	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
 
 	NuonSupportIAMRoleARNs []string `json:"nuon_support_iam_role_arns,omitempty"`
 
@@ -124,6 +125,10 @@ type InstallerSDKAzureConfig struct {
 	RunnerVMSize      string `json:"runner_vm_size,omitempty"`
 	ContainerImageURL string `json:"container_image_url,omitempty"`
 	ContainerImageTag string `json:"container_image_tag,omitempty"`
+
+	// Deployed instead of the module's own network, which lacks its extra resources.
+	VPCNestedTemplateURL    string `json:"vpc_nested_template_url,omitempty"`
+	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
 
 	ProvisionActions        []string `json:"provision_actions,omitempty"`
 	ProvisionBuiltInRoles   []string `json:"provision_built_in_roles,omitempty"`

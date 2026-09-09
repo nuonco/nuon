@@ -248,7 +248,8 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			ClusterName:       clusterName,
 			RunnerMachineType: instanceType,
 
-			VPCNestedTemplateURL: appCfg.StackConfig.VPCNestedTemplateURL,
+			VPCNestedTemplateURL:    appCfg.StackConfig.VPCNestedTemplateURL,
+			RunnerNestedTemplateURL: appCfg.StackConfig.RunnerNestedTemplateURL,
 
 			NuonSupportIAMRoleARNs: supportARNs,
 
@@ -330,6 +331,9 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			Location:             install.AzureAccount.Location,
 			SubscriptionID:       install.AzureAccount.SubscriptionID,
 			SubscriptionTenantID: install.AzureAccount.SubscriptionTenantID,
+
+			VPCNestedTemplateURL:    appCfg.StackConfig.VPCNestedTemplateURL,
+			RunnerNestedTemplateURL: appCfg.StackConfig.RunnerNestedTemplateURL,
 
 			RunnerVMSize:      instanceType,
 			ContainerImageURL: install.RunnerGroup.Settings.ContainerImageURL,

@@ -7,24 +7,27 @@ export const Overview = () => (
   <ComponentDocs
     name="FormErrorBanner"
     tier="molecule"
-    summary="A form-level API error surface built from Card and Text."
+    summary="An error Banner that reads a submission failure straight off an API error."
     use={[
       'Place inside the form above its actions.',
       'Show server errors that are not owned by one field.',
     ]}
     avoid={[
-      'Do not use a toast for form submission errors.',
-      'Do not use for field validation.',
+      'Do not use a toast for form submission errors. The toast leaves while the broken form stays.',
+      'Do not use for field validation. A field owns its own error.',
+      'Do not reach for a plain Banner in a form. This one already knows the API error shape.',
     ]}
     rules={[
-      'The API error heading wins over fallback.',
+      'The API error heading wins over the thrown message, which wins over fallback.',
       'Description adds server context when present.',
+      'It renders an error Banner, so it announces assertively and needs no role of its own.',
+      'A null or undefined error renders nothing, so a caller can pass a query error straight through.',
     ]}
     props={[
       {
         name: 'error',
-        type: 'TAPIError | Error | null',
-        description: 'Error to display; null renders nothing.',
+        type: 'TAPIError | Error | null | undefined',
+        description: 'Error to display; null or undefined renders nothing.',
       },
       {
         name: 'fallback',
