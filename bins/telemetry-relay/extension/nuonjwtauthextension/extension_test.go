@@ -107,10 +107,12 @@ func newTestExtension(t *testing.T, contents *atomic.Value) (*telemetryJWTAuthEx
 		_, _ = response.Write(value.([]byte))
 	}))
 	extension := newExtension(Config{
-		Issuer:   "https://ctl.example.com",
-		Audience: defaultAudience,
-		JWKSURL:  server.URL,
+		Issuer:            "https://ctl.example.com",
+		Audience:          defaultAudience,
+		JWKSURL:           server.URL,
+		JWKSAllowInsecure: true,
 	}, zap.NewNop())
+	require.NoError(t, extension.config.Validate())
 	require.NoError(t, extension.Start(context.Background(), nil))
 	t.Cleanup(func() {
 		require.NoError(t, extension.Shutdown(context.Background()))
@@ -153,6 +155,9 @@ func TestAuthenticateRejectsInvalidTokens(t *testing.T) {
 	}{
 		"wrong audience": {
 			mutateClaims: func(claims *telemetryClaims) { claims.Audience = jwt.ClaimStrings{"other"} },
+		},
+		"wrong issuer": {
+			mutateClaims: func(claims *telemetryClaims) { claims.Issuer = "http://other.example.com" },
 		},
 		"extra audience": {
 			mutateClaims: func(claims *telemetryClaims) { claims.Audience = append(claims.Audience, "other") },
@@ -238,11 +243,13 @@ func TestStartRejectsJWKSRedirect(t *testing.T) {
 	t.Cleanup(redirect.Close)
 
 	extension := newExtension(Config{
-		Issuer:   "https://ctl.example.com",
-		Audience: defaultAudience,
-		JWKSURL:  redirect.URL,
+		Issuer:            "https://ctl.example.com",
+		Audience:          defaultAudience,
+		JWKSURL:           redirect.URL,
+		JWKSAllowInsecure: true,
 	}, zap.NewNop())
 
+	require.NoError(t, extension.config.Validate())
 	require.ErrorIs(t, extension.Start(context.Background(), nil), errJWKSUnavailable)
 }
 
@@ -281,24 +288,64 @@ func TestKeyCacheBoundsKnownKeyStaleness(t *testing.T) {
 	require.ErrorIs(t, err, errJWKSUnavailable)
 }
 
-func TestConfigRequiresHTTPSExceptForLoopback(t *testing.T) {
+func TestConfigHTTPRequiresExplicitOptIn(t *testing.T) {
 	for _, test := range []struct {
-		name    string
-		url     string
-		wantErr bool
+		name   string
+		url    string
+		secure bool
 	}{
-		{name: "HTTPS", url: "https://ctl.example.com"},
+		{name: "HTTPS", url: "https://ctl.example.com", secure: true},
 		{name: "localhost", url: "http://localhost:8081"},
 		{name: "loopback", url: "http://127.0.0.1:8081"},
-		{name: "remote HTTP", url: "http://ctl.example.com", wantErr: true},
+		{name: "IPv6 loopback", url: "http://[::1]:8081"},
+		{name: "nuon host", url: "http://host.nuon.dev:8081"},
+		{name: "docker host", url: "http://host.docker.internal:8081"},
+		{name: "remote HTTP", url: "http://ctl.example.com"},
+		{name: "private IP", url: "http://192.168.1.2"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			err := validateHTTPSOrLoopbackURL("issuer", test.url)
-			if test.wantErr {
-				require.Error(t, err)
-				return
+			for _, field := range []string{"issuer", "JWKS URL"} {
+				t.Run(field, func(t *testing.T) {
+					cfg := createDefaultConfig().(*Config)
+					cfg.Issuer = "https://issuer.example.com"
+					cfg.JWKSURL = "https://keys.example.com/jwks"
+					if field == "issuer" {
+						cfg.Issuer = test.url
+					} else {
+						cfg.JWKSURL = test.url + "/jwks"
+					}
+					if test.secure {
+						require.NoError(t, cfg.Validate())
+					} else {
+						require.ErrorContains(t, cfg.Validate(), field+" must use HTTPS")
+					}
+					cfg.JWKSAllowInsecure = true
+					require.NoError(t, cfg.Validate())
+				})
 			}
-			require.NoError(t, err)
+		})
+	}
+}
+
+func TestInsecureOptInStillValidatesURLs(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		url  string
+	}{
+		{name: "empty", url: ""},
+		{name: "relative", url: "/jwks"},
+		{name: "malformed", url: "http://[::1/jwks"},
+		{name: "userinfo", url: "http://user@keys.example.com/jwks"},
+		{name: "query", url: "http://keys.example.com/jwks?key=value"},
+		{name: "fragment", url: "http://keys.example.com/jwks#key"},
+		{name: "other scheme", url: "ftp://keys.example.com/jwks"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			cfg := Config{Issuer: "https://issuer.example.com", Audience: defaultAudience, JWKSURL: test.url, JWKSAllowInsecure: true}
+			require.Error(t, cfg.Validate())
+			cfg.Issuer = test.url
+			cfg.JWKSURL = "https://keys.example.com/jwks"
+			require.Error(t, cfg.Validate())
 		})
 	}
 }
