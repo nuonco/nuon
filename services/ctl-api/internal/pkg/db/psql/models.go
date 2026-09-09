@@ -98,12 +98,17 @@ func AllModels() []any {
 		&app.AppKubernetesContextConfig{},
 		&app.AppRelease{},
 		&app.AppReleaseMember{},
+		&app.ReleasePackage{},
+		&app.ReleasePackageMember{},
+		&app.ReleasePackageReplica{},
 
 		// installs
 		&app.AWSAccount{},
 		&app.AzureAccount{},
 		&app.GCPAccount{},
 		&app.Install{},
+		&app.InstallOperatingModel{},
+		&app.InstallReleaseDeployment{},
 		&app.InstallState{},
 		&app.InstallEvent{},
 		&app.InstallInputs{},

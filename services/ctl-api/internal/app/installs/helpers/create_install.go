@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 
@@ -76,6 +77,37 @@ type CreateInstallParams struct {
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
+	return s.createInstall(ctx, appID, nil, req)
+}
+
+func (s *Helpers) CreateInstallFromRelease(ctx context.Context, release *app.AppRelease, req *CreateInstallParams) (*app.Install, error) {
+	if release == nil {
+		return nil, fmt.Errorf("release is required")
+	}
+	return s.createInstall(ctx, release.AppID, release, req)
+}
+
+// installConfigSource is everything createInstall needs to know about which
+// config generation the new install is pinned to. The two resolvers own the
+// difference: the app path takes the app's newest rows, the release path takes
+// only what the release's app config pins.
+type installConfigSource struct {
+	parentApp         *app.App
+	selectedConfig    *app.AppConfig
+	sandboxConfigID   string
+	runnerConfigID    string
+	runnerType        app.AppRunnerType
+	permissionsConfig app.AppPermissionsConfig
+}
+
+func (s *Helpers) resolveInstallConfigSource(ctx context.Context, appID string, release *app.AppRelease) (*installConfigSource, error) {
+	if release != nil {
+		return s.resolveReleaseInstallSource(ctx, release)
+	}
+	return s.resolveAppInstallSource(ctx, appID)
+}
+
+func (s *Helpers) resolveAppInstallSource(ctx context.Context, appID string) (*installConfigSource, error) {
 	parentApp := app.App{}
 	res := s.db.WithContext(ctx).
 		Preload("Components").
@@ -94,6 +126,8 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 				Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).
 				Limit(1)
 		}).
+		Preload("AppConfigs.SandboxConfig").
+		Preload("AppConfigs.RunnerConfig").
 		Preload("AppPermissionsConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_permissions_configs.created_at DESC").Limit(1)
 		}).
@@ -102,19 +136,76 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
-
 	if len(parentApp.AppConfigs) == 0 {
 		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("no active app config found for app %s", appID),
 			Description: "No active app config found. Please sync your app configuration before creating an install.",
 		}
 	}
+	if len(parentApp.AppSandboxConfigs) == 0 || len(parentApp.AppRunnerConfigs) == 0 {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("app %s has no sandbox or runner config", appID),
+			Description: "App has no sandbox or runner config. Please sync your app configuration before creating an install.",
+		}
+	}
+	selectedConfig := parentApp.AppConfigs[0]
+	return &installConfigSource{
+		parentApp:         &parentApp,
+		selectedConfig:    &selectedConfig,
+		sandboxConfigID:   parentApp.AppSandboxConfigs[0].ID,
+		runnerConfigID:    parentApp.AppRunnerConfigs[0].ID,
+		runnerType:        parentApp.AppRunnerConfigs[0].Type,
+		permissionsConfig: parentApp.AppPermissionsConfig,
+	}, nil
+}
+
+func (s *Helpers) resolveReleaseInstallSource(ctx context.Context, release *app.AppRelease) (*installConfigSource, error) {
+	parentApp := app.App{}
+	if err := s.db.WithContext(ctx).First(&parentApp, "id = ?", release.AppID).Error; err != nil {
+		return nil, fmt.Errorf("unable to get app: %w", err)
+	}
+	selectedConfig := app.AppConfig{}
+	res := s.db.WithContext(ctx).
+		Where(app.AppConfig{ID: release.AppConfigID, AppID: release.AppID}).
+		Preload("SandboxConfig").
+		Preload("RunnerConfig").
+		Preload("PermissionsConfig.Roles").
+		First(&selectedConfig)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("app config %s pinned by release %s was not found", release.AppConfigID, release.ID),
+				Description: "The app config this release was built from no longer exists.",
+			}
+		}
+		return nil, fmt.Errorf("unable to get app config pinned by release: %w", res.Error)
+	}
+	return &installConfigSource{
+		parentApp:         &parentApp,
+		selectedConfig:    &selectedConfig,
+		sandboxConfigID:   selectedConfig.SandboxConfig.ID,
+		runnerConfigID:    selectedConfig.RunnerConfig.ID,
+		runnerType:        selectedConfig.RunnerConfig.Type,
+		permissionsConfig: selectedConfig.PermissionsConfig,
+	}, nil
+}
+
+func (s *Helpers) createInstall(ctx context.Context, appID string, release *app.AppRelease, req *CreateInstallParams) (*app.Install, error) {
+	source, err := s.resolveInstallConfigSource(ctx, appID, release)
+	if err != nil {
+		return nil, err
+	}
+	parentApp := source.parentApp
+	selectedConfig := source.selectedConfig
+	sandboxConfigID := source.sandboxConfigID
+	runnerConfigID := source.runnerConfigID
+	permissionsConfig := source.permissionsConfig
 
 	// Validate and pin against the input config belonging to the app config this
 	// install is pinned to. Using the app's newest input config instead lets the
 	// two diverge whenever a newer app config exists, and the config-migration
 	// lookup then misses the install's inputs.
-	pinnedAppInputConfig, err := s.GetPinnedAppInputConfig(ctx, appID, parentApp.AppConfigs[0].ID)
+	pinnedAppInputConfig, err := s.GetPinnedAppInputConfig(ctx, appID, selectedConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get pinned app input config: %w", err)
 	}
@@ -126,9 +217,9 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		AppID:              appID,
 		Name:               req.Name,
 		SandboxMode:        pkggenerics.NewNullBool(req.SandboxMode),
-		AppSandboxConfigID: parentApp.AppSandboxConfigs[0].ID,
-		AppRunnerConfigID:  parentApp.AppRunnerConfigs[0].ID,
-		AppConfigID:        parentApp.AppConfigs[0].ID,
+		AppSandboxConfigID: sandboxConfigID,
+		AppRunnerConfigID:  runnerConfigID,
+		AppConfigID:        selectedConfig.ID,
 		InstallSandbox: app.InstallSandbox{
 			Status: app.InstallSandboxStatusQueued,
 			TerraformWorkspace: app.TerraformWorkspace{
@@ -185,7 +276,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 
 	targetSource := ""
 
-	runnerType := parentApp.AppRunnerConfigs[0].Type
+	runnerType := source.runnerType
 	switch runnerType {
 	case app.AppRunnerTypeGCP, app.AppRunnerTypeGCPGKE:
 		if req.GCPAccount == nil {
@@ -308,10 +399,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 		install.CloudPlatformMetadata.TargetSource = targetSource
 	}
-	if parentApp.AppPermissionsConfig.ID != "" && len(parentApp.AppPermissionsConfig.Roles) > 0 {
+	if permissionsConfig.ID != "" && len(permissionsConfig.Roles) > 0 {
 		installRoles := make([]app.InstallRoles, 0)
 
-		for _, role := range parentApp.AppPermissionsConfig.Roles {
+		for _, role := range permissionsConfig.Roles {
 			installRoles = append(installRoles, app.InstallRoles{
 				AppRoleConfigID: role.ID,
 			})
@@ -329,7 +420,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
-	switch parentApp.AppRunnerConfigs[0].Type {
+	switch runnerType {
 	case "aws":
 		install.InstallStack = &app.InstallStack{
 			InstallStackOutputs: app.InstallStackOutputs{
@@ -350,7 +441,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
-	res = s.db.WithContext(ctx).Create(&install)
+	res := s.db.WithContext(ctx).Create(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install: %w", res.Error)
 	}
@@ -388,7 +479,13 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to load all install resources: %w", err)
 	}
 
-	if _, err := s.runnersHelpers.CreateInstallRunnerGroup(ctx, loadedInstall); err != nil {
+	containerImageURL := ""
+	containerImageTag := ""
+	if release != nil {
+		containerImageURL = release.Runtime.RunnerImageURL
+		containerImageTag = release.Runtime.RunnerImageTag
+	}
+	if _, err := s.runnersHelpers.CreateInstallRunnerGroup(ctx, loadedInstall, containerImageURL, containerImageTag); err != nil {
 		return nil, fmt.Errorf("unable to create install runner: %w", err)
 	}
 

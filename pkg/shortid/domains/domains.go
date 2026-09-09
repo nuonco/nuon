@@ -121,6 +121,12 @@ func NewAppReleaseMemberID() string {
 	return shortid.NewNanoID("arm")
 }
 
+func NewReleasePackageID() string           { return shortid.NewNanoID("rpk") }
+func NewReleasePackageMemberID() string     { return shortid.NewNanoID("rpm") }
+func NewReleasePackageReplicaID() string    { return shortid.NewNanoID("rpr") }
+func NewInstallOperatingModelID() string    { return shortid.NewNanoID("iom") }
+func NewInstallReleaseDeploymentID() string { return shortid.NewNanoID("ird") }
+
 func NewAWSAccountID() string {
 	return shortid.NewNanoID("aws")
 }

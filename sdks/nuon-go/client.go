@@ -101,6 +101,7 @@ type Client interface {
 
 	// app installs config methods
 	CreateAppInstallsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppInstallsConfigRequest) (*models.AppAppInstallsConfig, error)
+	CreateAppRelease(ctx context.Context, appID, appConfigID string) (*models.AppAppRelease, error)
 	ListAppReleases(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppRelease, bool, error)
 	GetAppRelease(ctx context.Context, appID, releaseID string) (*models.AppAppRelease, error)
 	GetAppReleaseFileContent(ctx context.Context, appID, releaseID, path string) (*models.ServiceReleaseFileContentResponse, error)
