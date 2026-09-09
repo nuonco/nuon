@@ -53,7 +53,7 @@ type CreateAppBranchConfigRequest struct {
 	// IgnoreChangesRegex. Omit to carry the current setting forward.
 	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 
-	PreviewConfig *app.AppBranchPreviewConfig `json:"preview_config,omitempty" extensions:"x-nullable"`
+	PreviewConfig *app.AppBranchPreviewConfig `json:"preview_config,omitempty"`
 }
 
 func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {

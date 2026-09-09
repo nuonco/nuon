@@ -36,9 +36,7 @@ type ServiceCreateAppBranchConfigRequest struct {
 	PostDeployRunbookIds []string `json:"post_deploy_runbook_ids"`
 
 	// preview config
-	PreviewConfig struct {
-		AppAppBranchPreviewConfig
-	} `json:"preview_config,omitempty"`
+	PreviewConfig *AppAppBranchPreviewConfig `json:"preview_config,omitempty"`
 
 	// public git vcs config
 	PublicGitVcsConfig *HelpersPublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
@@ -130,6 +128,21 @@ func (m *ServiceCreateAppBranchConfigRequest) validateInstallGroups(formats strf
 func (m *ServiceCreateAppBranchConfigRequest) validatePreviewConfig(formats strfmt.Registry) error {
 	if swag.IsZero(m.PreviewConfig) { // not required
 		return nil
+	}
+
+	if m.PreviewConfig != nil {
+		if err := m.PreviewConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview_config")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -239,6 +252,26 @@ func (m *ServiceCreateAppBranchConfigRequest) contextValidateInstallGroups(ctx c
 }
 
 func (m *ServiceCreateAppBranchConfigRequest) contextValidatePreviewConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PreviewConfig != nil {
+
+		if swag.IsZero(m.PreviewConfig) { // not required
+			return nil
+		}
+
+		if err := m.PreviewConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview_config")
+			}
+
+			return err
+		}
+	}
 
 	return nil
 }
