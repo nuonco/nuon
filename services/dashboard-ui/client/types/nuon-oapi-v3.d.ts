@@ -2116,7 +2116,7 @@ export interface paths {
   "/v1/installs/{install_id}/reprovision-stack": {
     /**
      * reprovision an install stack
-     * @description Reprovision an install stack, recreating the runner and its infrastructure. Components are not redeployed.
+     * @description Reprovision an install stack, recreating the runner and its infrastructure. Set `skip_components` to avoid redeploying components on top of the new stack.
      */
     post: operations["ReprovisionInstallStack"];
   };
@@ -9027,6 +9027,7 @@ export interface components {
     "service.ReprovisionInstallStackRequest": {
       plan_only?: boolean;
       role?: string;
+      skip_components?: boolean;
     };
     "service.ResetInstallHealthBaselineResponse": {
       baseline_at?: string;
@@ -25142,7 +25143,7 @@ export interface operations {
   };
   /**
    * reprovision an install stack
-     * @description Reprovision an install stack, recreating the runner and its infrastructure. Components are not redeployed.
+   * @description Reprovision an install stack, recreating the runner and its infrastructure. Set `skip_components` to avoid redeploying components on top of the new stack.
    */
   ReprovisionInstallStack: {
     parameters: {

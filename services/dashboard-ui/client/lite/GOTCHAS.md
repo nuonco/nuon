@@ -111,6 +111,18 @@ returns only `{ version, versionMajorMinor }` — there is no `createScanner`, n
 `ScriptTarget`. Anything that needs to parse TS (such as
 `guardrails/comments.test.ts`) has to hand-roll it.
 
+## Tests
+
+**`createBrowserRouter` needs `window.location.origin`, and the full suite
+destroys it.** `client/lib/api.test.ts` replaces `window.location` with a
+spread object plus a mocked `reload`. Location's `origin` and `href` are
+getters, so the spread copies neither, and every later `createBrowserRouter`
+throws `No window.location.(origin|href) available to create URL`. `happyDOM`
+`setURL` cannot put them back — the property is already a plain object.
+`bun test client/lite` does not load that file, so the failure only appears
+under `bun run test`. Lite router tests use `createMemoryRouter` and
+`initialEntries` instead; it does not read `window.location`.
+
 ## Ladle
 
 **There are two Ladle setups, and they must not collide:**

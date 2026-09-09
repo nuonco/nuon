@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from 'bun:test'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { ReactElement } from 'react'
 import {
-  createBrowserRouter,
+  createMemoryRouter,
   Link as RouterLink,
   RouterProvider,
 } from 'react-router'
@@ -24,15 +24,10 @@ const transitionHost = document as unknown as {
   startViewTransition?: (update: () => unknown) => IStubbedTransition
 }
 
-const testWindow = window as unknown as {
-  happyDOM?: { setURL: (url: string) => void }
-}
-
 let transitions = 0
 
 beforeEach(() => {
   transitions = 0
-  testWindow.happyDOM?.setURL('http://localhost/')
   transitionHost.startViewTransition = (update) => {
     transitions += 1
     const done = Promise.resolve(update()).then(() => undefined)
@@ -51,10 +46,13 @@ afterEach(() => {
 })
 
 const renderTrigger = (trigger: ReactElement) => {
-  const router = createBrowserRouter([
-    { path: '/', element: trigger },
-    { path: '/next', element: <PageTransition>Next page</PageTransition> },
-  ])
+  const router = createMemoryRouter(
+    [
+      { path: '/', element: trigger },
+      { path: '/next', element: <PageTransition>Next page</PageTransition> },
+    ],
+    { initialEntries: ['/'] }
+  )
 
   render(<RouterProvider router={router} />)
 }
