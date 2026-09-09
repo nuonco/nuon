@@ -28,32 +28,39 @@ Use an LLM client to read and operate orgs, apps, installs, and workflows, or to
 
 ## Prerequisites
 
+Both are required. They write the credentials every setup below reads:
+
 ```bash
-nuon auth login
-nuon orgs select
+nuon auth login    # writes api_token to ~/.nuon
+nuon orgs select   # writes org_id to ~/.nuon
 ```
 
-`nuon agents context` prints your auth, selected org/app/install, MCP HTTP URL, and how to read timestamps (UTC/`Z`, convert to local before naming a day or clock time).
+Two commands print this page from the CLI:
+
+- `nuon agents help`: for you, the same setup, checked against your own config.
+- `nuon agents context`: for your agent: auth, selected org/app/install, MCP HTTP URL, tool catalog, and how to read timestamps (UTC/`Z`, convert to local before naming a day or clock time).
 
 ## Connect
 
-**Recommended:** register the stdio proxy so the client runs `nuon agents mcp --allow-writes`. Token and org stay in `~/.nuon`. The proxy derives its URL from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`) and registers as `nuon`.
+**Recommended:** register the stdio proxy so the client runs `nuon agents mcp --allow-writes`. Token and org stay in `~/.nuon`, so nothing secret goes into the client config. The proxy derives its URL from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`) and registers as `nuon`.
 
 ### Setup (stdio)
 
-<CodeGroup>
-```bash Claude Code
+Each client has its own config file, JSON key, and (sometimes) an add command. Check that client's MCP docs rather than assuming a shared schema. The process every client should spawn is `nuon` with arguments `agents`, `mcp`, and `--allow-writes`.
+
+Examples include `--allow-writes` so mutating tools are available. That flag only lists write tools; the identity still needs [Admin](/concepts/access-control) (`org_admin`), not Read-only. Omit the flag only if you want a read-only proxy.
+
+You do not need `select_org` when the org is already in the CLI config (the stdio proxy sends `X-Nuon-Org-ID`).
+
+#### Claude Code
+
+```bash
 claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes
 ```
 
-```bash Amp
-amp mcp add nuon -- nuon agents mcp --allow-writes
+Or `.mcp.json` in a project:
 
-# this workspace only
-amp mcp add nuon --workspace -- nuon agents mcp --allow-writes
-```
-
-```json Cursor
+```json
 {
   "mcpServers": {
     "nuon": {
@@ -63,35 +70,75 @@ amp mcp add nuon --workspace -- nuon agents mcp --allow-writes
   }
 }
 ```
-</CodeGroup>
 
-Cursor has no `mcp add`. Save the JSON as `~/.cursor/mcp.json` or project `.cursor/mcp.json`, then `agent mcp enable nuon`.
+#### Cursor
 
-Examples include `--allow-writes` so mutating tools are available. Your token must have create permission. Omit the flag only if you want a read-only proxy.
+Cursor has no `mcp add`. Save this as `~/.cursor/mcp.json` (all projects) or `.cursor/mcp.json` (one project), then enable it:
 
-You do not need `select_org` when the org is already in the CLI config (the stdio proxy sends `X-Nuon-Org-ID`).
-
-### Override the server
-
-The proxy derives its upstream URL from `api_url` in your CLI config when the hostname starts with `api.` (`https://api.nuon.co` → `https://mcp.nuon.co/mcp`). To point somewhere else, pass `--url`; to change the name in the client's MCP list, pass `--name`. Put those flags on the command the client runs:
-
-```bash
-nuon agents mcp --allow-writes --url https://mcp.example.com/mcp --name nuon-example
-claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes --url https://mcp.example.com/mcp --name nuon-example
-amp mcp add nuon -- nuon agents mcp --allow-writes --url https://mcp.example.com/mcp --name nuon-example
+```json
+{
+  "mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes"]
+    }
+  }
+}
 ```
 
-A non-default CLI config (`nuon -C /path/to/config agents mcp --allow-writes`) carries its own token, org, and `api_url`. Put `-C` and `--allow-writes` on the registered command (Cursor: in `args`).
+```bash
+agent mcp enable nuon
+```
 
-Run `nuon agents context` to confirm which MCP URL resolves before registering.
+#### Amp
 
-## Related CLI flags
+```bash
+amp mcp add nuon -- nuon agents mcp --allow-writes
 
-These apply to `nuon` commands, not MCP tools:
+# this workspace only
+amp mcp add nuon --workspace -- nuon agents mcp --allow-writes
+```
 
-| Flag | Purpose |
-| --- | --- |
-| `--output agent` | Single JSON envelope on stdout (`{"ok":true,"data":...}`) |
-| `--read-only` | Block mutating CLI commands (exit 2) |
+Or `~/.config/amp/settings.json` (user) / `.amp/settings.json` (workspace). Amp's key is `amp.mcpServers`:
 
-See [CLI commands](/cli-commands) for the full reference.
+```json
+{
+  "amp.mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes"]
+    }
+  }
+}
+```
+
+#### Other clients
+
+Use that client's MCP docs for the file path and JSON key. Point it at the `nuon` binary with arguments `agents`, `mcp`, and `--allow-writes`.
+
+### Overriding the MCP URL
+
+The proxy derives its upstream URL from `api_url` in your CLI config when the hostname starts with `api.` (`https://api.nuon.co` → `https://mcp.nuon.co/mcp`). Pass `--url` when the MCP URL does not follow from the API URL, for example a self-hosted or Nuon BYOC control plane, or any deployment where the two hostnames differ. To change the name in the client's MCP list, pass `--name`. Put those flags on the command the client runs, next to `--allow-writes`:
+
+```bash
+nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
+claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
+amp mcp add nuon -- nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
+```
+
+For a client configured by file, extra flags go inside `args`. Use that client's JSON key (examples above):
+
+```json
+{
+  "mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes", "--url", "https://mcp.example.nuon.co/mcp"]
+    }
+  }
+}
+```
+
+A non-default CLI config (`nuon -C /path/to/config agents mcp --allow-writes`) carries its own token, org, and `api_url`. Put `-C` and `--allow-writes` on the registered command (in `args` when the client is configured by file).
+
+Run `nuon agents help` or `nuon agents context` to confirm which MCP URL resolves before registering.
