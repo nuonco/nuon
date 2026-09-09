@@ -1,20 +1,10 @@
 .expand-wrapper {
   height: fit-content;
-  max-height: auto;
-  transition: max-height var(--duration-fastest) var(--ease-cubic)
-    var(--duration-fastest);
-}
-
-.expand-wrapper.is-expanded {
-  max-height: calc(var(--container-7xl) + calc(var(--spacing) * 16));
-  transition: max-height var(--duration-fastest) var(--ease-cubic);
 }
 
 .expand.enter {
-  max-height: 0px;
-  opacity: 0;
   animation: enter-content var(--duration-fastest) var(--ease-cubic)
-    var(--duration-fastest) forwards;
+    var(--duration-fastest) backwards;
 }
 
 .expand.exit {
