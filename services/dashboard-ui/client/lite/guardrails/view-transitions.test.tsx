@@ -6,12 +6,12 @@ import {
   Link as RouterLink,
   RouterProvider,
 } from 'react-router'
-import { Button } from './components/atoms/Button'
-import { Link } from './components/atoms/Link'
-import { MenuItem } from './components/molecules/Menu'
-import { NavLink } from './components/molecules/NavLink'
-import { PageTransition } from './components/templates/PageTransition'
-import { useNavShortcuts } from './hooks/use-nav-shortcuts'
+import { Button } from '../components/atoms/Button'
+import { Link } from '../components/atoms/Link'
+import { MenuItem } from '../components/molecules/Menu'
+import { NavLink } from '../components/molecules/NavLink'
+import { PageTransition } from '../components/templates/PageTransition'
+import { useNavShortcuts } from '../hooks/use-nav-shortcuts'
 
 interface IStubbedTransition {
   ready: Promise<void>

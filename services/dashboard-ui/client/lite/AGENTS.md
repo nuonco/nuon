@@ -52,8 +52,10 @@ These are the ones that get broken most often. Full reasoning in the linked docs
    The `Overview` is the component's only documentation, and changing a
    component's props means updating it in the same change. A component without
    a complete `Overview` is not finished.
-7. **No comments** unless they explain a non-obvious *why*. Never narrate what
-   the code does.
+7. **No comments. Zero.** Not narrative, not explanatory, not JSDoc, not a
+   "why" comment. The only exception is a tool directive (`eslint-*`,
+   `oxlint-*`, `@ts-*`, `/// <reference>`, `prettier-ignore`). This is enforced
+   by `comments.test.ts` — a comment fails the test suite.
 
 ## Where things live
 
@@ -67,11 +69,16 @@ These are the ones that get broken most often. Full reasoning in the linked docs
 | Hooks | `hooks/` |
 | Providers | `providers/` |
 | Pure helpers | `utils/` |
+| Tree-wide invariant tests | `guardrails/` |
 | Design tokens + global CSS | `styles.css` |
 | Routes | `routes.tsx` |
 | App entry | `LiteApp.tsx` |
 
-A component imports from its own tier or below, never above.
+A component imports from its own tier or below, never above. Unit tests are
+colocated with their subject; only tree-wide guardrails live in `guardrails/`.
+
+**Do not add a new top-level directory.** This layout is deliberate — put shared
+code in the directory that already owns the concern, or raise it in review.
 
 ## The other documents
 

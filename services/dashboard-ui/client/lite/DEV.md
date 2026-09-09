@@ -29,6 +29,13 @@ Alongside the tiers:
 - `hooks/` — reusable behaviour. One hook per file, named `use-*.ts`.
 - `providers/` — React context. One provider per file, named `*-provider.tsx`.
 - `utils/` — pure helpers with no React import. One concern per file.
+- `guardrails/` — tree-wide invariant tests. See "Tests" below.
+
+**Do not add a new top-level directory.** The layout above is deliberate. If
+something needs a shared home, put it in the directory that already owns that
+concern — a query key belongs with the other query-key code in
+`utils/list-query.ts`, not in a new `queries/`. If you are convinced a new home
+is genuinely needed, raise it rather than creating it.
 
 ## Imports
 
@@ -406,8 +413,37 @@ story.
 
 ## Tests
 
-`bun test` with `@testing-library/react`, colocated as `Foo.test.tsx` next to
-the component or `foo.test.ts` next to the util.
+`bun test` with `@testing-library/react`. Lite has two kinds of test, and which
+kind it is decides where it goes.
+
+### Unit tests — colocated
+
+The default. `Foo.test.tsx` sits next to `Foo.tsx`, `foo.test.ts` next to
+`foo.ts`. They test one subject through its own public surface.
+
+`routes.test.tsx` is colocated too — its subject is `routes.tsx`, which lives at
+the root.
+
+### Guardrails — `guardrails/`
+
+A guardrail asserts a **rule holding across the whole tree** rather than a unit
+behaving. It has no single subject, so there is nothing to sit beside:
+
+| File | What it holds |
+|---|---|
+| `comments.test.ts` | No source file carries a comment. |
+| `overview-docs.test.ts` | Every component has a complete `Overview` story. |
+| `view-transitions.test.tsx` | Every navigation path opts into `viewTransition`. |
+
+Two of these are really lint rules that run in `bun test` because there is no
+lint rule that can express them, which is the other reason to keep them out of
+the unit tests — a failure means "you broke a convention", not "you broke the
+code", and the message should read that way.
+
+Add a guardrail when a convention in these documents is one an agent keeps
+breaking and a script can check it. A convention nothing checks is a suggestion.
+
+### Conventions
 
 ```tsx
 import { afterEach, describe, expect, test } from 'bun:test'
@@ -427,12 +463,40 @@ component renders its children.
 
 ## Comments
 
-**Do not add comments.** Not to components, hooks, utils, tests, stories or
-types. Never a comment that narrates what the next line does.
+**Lite source files contain no comments. Zero.** Not in components, hooks,
+providers, utils, tests, stories or type files. Not narrative comments, not
+explanatory ones, not JSDoc, not section banners, and not "why" comments.
 
-The only acceptable comment explains a non-obvious *why* — a constraint,
-workaround or gotcha the code cannot express. If you are about to write one,
-first try renaming the thing.
+The only exception is a tool directive: `eslint-*`, `oxlint-*`, `@ts-*`,
+`/// <reference>`, `prettier-ignore`.
+
+This is not a style preference to weigh against other concerns. It is absolute,
+and `comments.test.ts` fails the suite on any comment it finds — reporting the
+file, line and text.
+
+### What to do instead
+
+A comment is almost always a naming failure wearing a disguise. When you feel
+the urge to write one:
+
+- **Rename.** `const d = ...` needing `// duration in ms` wants to be
+  `durationMs`. `if (x > 3)` needing `// max retries` wants `MAX_RETRIES`.
+- **Extract a named function.** A block that needs a comment to say what it does
+  wants to be a function whose name says it. `skipTemplate`, `filterControl`,
+  `resolveTimeout` — each replaces a paragraph.
+- **Extract a named constant.** A magic value that needs explaining wants a name.
+- **Put it in the `Overview` story.** Guidance about how a component is used, its
+  constraints, its gotchas — that is exactly what `use`, `avoid` and `rules` are
+  for, and it renders where people will actually read it.
+- **Put it in these documents.** A convention that spans components belongs in
+  DEV.md or DESIGN.md, not in a comment in one file.
+
+The reason the rule is absolute rather than "no *bad* comments" is that the
+carve-out is what kills it. Every comment its author writes feels like the
+justified exception, "why" is trivially claimable for anything, and nothing can
+check the difference — so a soft rule decays into the narrated code it was meant
+to prevent. A rule a test can enforce is worth more than a better rule it
+cannot.
 
 ## Commands
 

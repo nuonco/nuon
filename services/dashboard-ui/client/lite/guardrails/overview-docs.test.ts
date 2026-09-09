@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, join, relative } from 'node:path'
 
-const COMPONENTS_DIR = join(import.meta.dir, '..')
+const COMPONENTS_DIR = join(import.meta.dir, '..', 'components')
 const SKIP_DIRS = new Set(['__stories__', '__fixtures__'])
 
 const INTERNAL_COMPONENTS = new Set([
