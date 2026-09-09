@@ -32,7 +32,7 @@ type InstallGroupRequest struct {
 
 	// AutoApproveOnPoliciesPassing approves this group's plan step without user
 	// input when its policy checks pass. Omit to leave it unset (off).
-	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty"`
+	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 }
 
 type CreateAppBranchConfigRequest struct {
@@ -47,13 +47,12 @@ type CreateAppBranchConfigRequest struct {
 	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
 	// it matches this RE2 pattern. Omit to carry the current setting forward; send
 	// an empty string to clear it.
-	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty"`
+	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty" swaggertype:"string" extensions:"x-nullable"`
 
 	// SendStatusesOnIgnore posts a successful commit status for runs ignored by
 	// IgnoreChangesRegex. Omit to carry the current setting forward.
-	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty"`
+	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 
-	// PreviewConfig sets branch-level preview defaults. Omit to carry forward.
 	PreviewConfig *app.AppBranchPreviewConfig `json:"preview_config,omitempty"`
 }
 
