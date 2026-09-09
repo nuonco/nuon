@@ -198,7 +198,7 @@ The rest of the process is completed by your customer, using the information you
     </CodeGroup>
 
     On GCP, the module reads the install's project and region from the control plane, so they appear only in the `google` provider block.
-    Before the install's first apply the control plane has nothing recorded, and the plan will fail asking for them — pass `project_id` and `region` to the module for that first apply, then drop them.
+    Before the install's first apply the control plane has nothing recorded, so the snippet also passes `project_id` and `region` to the module. Your customer can drop them once the install is provisioned.
 
     On Azure, the module reads the install's location from the control plane and takes the subscription from the `azurerm` provider, warning at plan time if the two disagree. `purge_soft_delete_on_destroy` is required: the module leaves purge protection off so a destroyed install's Key Vault name can be reused immediately, and without it Azure holds that name for 90 days.
   </Step>
