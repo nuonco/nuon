@@ -12,14 +12,6 @@ const INTERNAL_COMPONENTS = new Set([
 ])
 
 const KNOWN_GAPS: Record<string, string[]> = {
-  'atoms/Avatar': ['alt'],
-  'atoms/Button': ['href'],
-  'atoms/Card': ['as'],
-  'atoms/Checkbox': ['loading'],
-  'atoms/Dropdown': ['className', 'children'],
-  'atoms/Label': ['htmlFor'],
-  'atoms/Radio': ['loading'],
-  'atoms/Switch': ['loading'],
   'molecules/Breadcrumb/Breadcrumb': ['className'],
   'molecules/CloudPlatform': ['iconSize'],
   'molecules/CodeBlock': ['className'],

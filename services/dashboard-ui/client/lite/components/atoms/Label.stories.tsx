@@ -20,6 +20,11 @@ export const Overview = () => (
     ]}
     props={[
       {
+        name: 'htmlFor',
+        type: 'string',
+        description: 'ID of the form control this label identifies.',
+      },
+      {
         name: 'loading',
         type: 'boolean',
         default: 'false',

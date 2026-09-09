@@ -41,9 +41,10 @@ export const Overview = () => (
       'Secondary is the default for standalone actions that must remain findable.',
       'Ghost is the lowest emphasis for actions inside toolbars, grouped controls, table rows and surface footers.',
       'Danger marks the entry into a destructive flow.',
+      'Pass href when navigation needs button emphasis; it renders a link with the same visual treatment.',
     ]}
     avoid={[
-      'Do not use a button for navigation. Anything that changes the URL is a link, even when it looks like a button.',
+      'Do not navigate from onClick. Pass href so navigation renders a real link.',
       'Do not use danger for the confirm button inside a destructive flow. That modal has already said what will happen, so its confirm is a primary.',
       'Do not use the small size for a text button. It exists for icon-only affordances that sit inline with text.',
       'Do not use ghost as the only action in a section or page.',
@@ -64,6 +65,7 @@ export const Overview = () => (
       { name: 'iconOnly', type: 'boolean', default: 'false', description: 'Square button. Icon goes in children; aria-label is required.' },
       { name: 'tooltip', type: 'ReactNode', description: 'Wraps the button in a Tooltip. The way to explain a disabled state.' },
       { name: 'tooltipSide', type: "'top' | 'bottom' | 'left' | 'right'", default: "'top'", description: 'Preferred tooltip side.' },
+      { name: 'href', type: 'string', description: 'Internal destination that renders the control as a link.' },
       { name: 'disabled', type: 'boolean', description: 'Blocks activation and suppresses hover, while staying focusable so its tooltip is reachable.' },
     ]}
     sections={[
