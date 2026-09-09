@@ -54,7 +54,8 @@ type InstallerSDKAWSConfig struct {
 	RunnerMachineType string `json:"runner_machine_type,omitempty"`
 
 	// Deployed instead of the module's own VPC, which lacks its extra resources.
-	VPCNestedTemplateURL string `json:"vpc_nested_template_url,omitempty"`
+	VPCNestedTemplateURL    string `json:"vpc_nested_template_url,omitempty"`
+	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
 
 	NuonSupportIAMRoleARNs []string `json:"nuon_support_iam_role_arns,omitempty"`
 
