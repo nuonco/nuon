@@ -7,6 +7,7 @@ import {
   type HTMLAttributes,
   type KeyboardEvent,
   type ReactNode,
+  type RefObject,
 } from 'react'
 import { Link as RouterLink } from 'react-router'
 import { cn } from '@/utils/classnames'
@@ -19,9 +20,16 @@ const ITEM_SELECTOR = '[role^="menuitem"]:not([aria-disabled="true"])'
 
 const TYPEAHEAD_RESET = 500
 
-export interface IMenu extends Omit<HTMLAttributes<HTMLDivElement>, 'role'> {}
+export interface IMenu extends Omit<HTMLAttributes<HTMLDivElement>, 'role'> {
+  initialFocusRef?: RefObject<HTMLElement | null>
+}
 
-export const Menu = ({ className, children, ...props }: IMenu) => {
+export const Menu = ({
+  initialFocusRef,
+  className,
+  children,
+  ...props
+}: IMenu) => {
   const dropdown = useDropdown()
   const ref = useRef<HTMLDivElement>(null)
   const typeahead = useRef({ query: '', at: 0 })
@@ -45,13 +53,19 @@ export const Menu = ({ className, children, ...props }: IMenu) => {
 
   useEffect(() => {
     if (!dropdown) return
-    dropdown.registerFocusFirst(() => items().at(0)?.focus())
+    dropdown.registerFocusFirst(() => {
+      if (initialFocusRef?.current) {
+        initialFocusRef.current.focus()
+        return
+      }
+      items().at(0)?.focus()
+    })
     dropdown.registerFocusLast(() => items().at(-1)?.focus())
     return () => {
       dropdown.registerFocusFirst(null)
       dropdown.registerFocusLast(null)
     }
-  }, [dropdown, items])
+  }, [dropdown, initialFocusRef, items])
 
   const move = (offset: number, event: KeyboardEvent) => {
     event.preventDefault()
@@ -59,6 +73,10 @@ export const Menu = ({ className, children, ...props }: IMenu) => {
     const list = items()
     if (!list.length) return
     const current = list.indexOf(document.activeElement as HTMLElement)
+    if (offset < 0 && current === 0 && initialFocusRef?.current) {
+      initialFocusRef.current.focus()
+      return
+    }
     const next =
       current === -1
         ? offset > 0
@@ -85,7 +103,9 @@ export const Menu = ({ className, children, ...props }: IMenu) => {
       event.key.length !== 1 ||
       event.metaKey ||
       event.ctrlKey ||
-      event.altKey
+      event.altKey ||
+      event.target instanceof HTMLInputElement ||
+      event.target instanceof HTMLTextAreaElement
     ) {
       return
     }
@@ -140,7 +160,7 @@ export interface IMenuItem {
 }
 
 const ITEM_CLASSES =
-  'flex h-8 w-full shrink-0 cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 ' +
+  'flex min-h-8 w-full shrink-0 cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 ' +
   'text-left text-body no-underline outline-none transition-colors ' +
   'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring'
 
@@ -230,7 +250,7 @@ export const MenuItem = ({
     }
 
     return (
-      <RouterLink {...shared} to={href} onClick={select}>
+      <RouterLink {...shared} to={href} viewTransition onClick={select}>
         {body}
       </RouterLink>
     )
@@ -260,7 +280,7 @@ export const MenuSubmenu = ({
 }: IMenuSubmenu) => (
   <Dropdown
     stretch
-    side="right"
+    side="left"
     align="start"
     trigger={
       <button
@@ -275,16 +295,16 @@ export const MenuSubmenu = ({
           className
         )}
       >
-        {icon ? (
-          <span className="flex shrink-0 items-center">{icon}</span>
-        ) : null}
-        <span className="min-w-0 flex-1 truncate">{label}</span>
         <Icon
-          variant="CaretRightIcon"
+          variant="CaretLeftIcon"
           size={16}
           className="shrink-0"
           aria-hidden
         />
+        {icon ? (
+          <span className="flex shrink-0 items-center">{icon}</span>
+        ) : null}
+        <span className="min-w-0 flex-1 truncate">{label}</span>
       </button>
     }
   >

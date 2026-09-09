@@ -8,7 +8,7 @@ export interface ICode extends HTMLAttributes<HTMLElement> {
 }
 
 const CODE_CLASSES =
-  'rounded bg-code-bg px-1 py-0.5 font-mono text-[0.9em] text-primary'
+  'rounded-[0.3em] bg-code-inline-bg px-[0.35em] py-[0.1em] font-mono text-[0.9em] leading-[1.45] text-primary'
 
 export const Code = ({
   loading,

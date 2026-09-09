@@ -4,7 +4,7 @@ import {
   SurfaceScopeContext,
   useSurfaceCoordinator,
 } from '../providers/surfaces-provider'
-import { appendSurfaceValue, type TSurfaceParam } from '../lib/surface-url'
+import { appendSurfaceValue, type TSurfaceParam } from '../utils/surface-url'
 
 export const useSurfaces = () => {
   const coordinator = useSurfaceCoordinator()

@@ -29,6 +29,8 @@ export const Overview = () => (
       'operation colours the left rail and the header tint. The header itself shows the added and removed line counts.',
       'Closing the section unmounts the renderer after the transition.',
       'Inside DiffSections, unified or split view comes from the group.',
+      'Pass view to force unified or split when the section stands alone.',
+      'note and error render caption text above the diff; error wins only when note is absent.',
     ]}
     props={[
       {
@@ -56,6 +58,21 @@ export const Overview = () => (
         name: 'after',
         type: 'string',
         description: 'Proposed source. Required.',
+      },
+      {
+        name: 'view',
+        type: "'unified' | 'split'",
+        description: 'Forced diff layout when the section is used outside DiffSections.',
+      },
+      {
+        name: 'note',
+        type: 'ReactNode',
+        description: 'Caption shown above the diff, such as a provider remark.',
+      },
+      {
+        name: 'error',
+        type: 'ReactNode',
+        description: 'Caption shown above the diff when the change could not be rendered.',
       },
       {
         name: 'defaultOpen',
