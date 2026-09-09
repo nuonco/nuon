@@ -33,6 +33,7 @@ type Client interface {
 	CreateOrgInvite(ctx context.Context, req *models.ServiceCreateOrgInviteRequest) (*models.AppOrgInvite, error)
 	UpdateOrgAccountRole(ctx context.Context, accountID string, req *models.ServiceUpdateOrgAccountRoleRequest) (*models.AppAccount, error)
 	GetOrgInvites(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppOrgInvite, bool, error)
+	GetOrgMembers(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppOrgMember, bool, error)
 
 	// org webhooks
 	GetCurrentOrgWebhooks(ctx context.Context) ([]*models.ServiceCurrentOrgWebhookResponse, error)
