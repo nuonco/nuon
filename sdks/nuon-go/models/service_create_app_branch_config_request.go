@@ -26,7 +26,7 @@ type ServiceCreateAppBranchConfigRequest struct {
 	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
 	// it matches this RE2 pattern. Omit to carry the current setting forward; send
 	// an empty string to clear it.
-	IgnoreChangesRegex string `json:"ignore_changes_regex,omitempty"`
+	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty"`
 
 	// install groups
 	InstallGroups []*ServiceInstallGroupRequest `json:"install_groups"`
@@ -35,7 +35,7 @@ type ServiceCreateAppBranchConfigRequest struct {
 	// Omit to carry the current setting forward; send an empty array to clear it.
 	PostDeployRunbookIds []string `json:"post_deploy_runbook_ids"`
 
-	// PreviewConfig sets branch-level preview defaults. Omit to carry forward.
+	// preview config
 	PreviewConfig struct {
 		AppAppBranchPreviewConfig
 	} `json:"preview_config,omitempty"`
@@ -45,7 +45,7 @@ type ServiceCreateAppBranchConfigRequest struct {
 
 	// SendStatusesOnIgnore posts a successful commit status for runs ignored by
 	// IgnoreChangesRegex. Omit to carry the current setting forward.
-	SendStatusesOnIgnore bool `json:"send_statuses_on_ignore,omitempty"`
+	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty"`
 }
 
 // Validate validates this service create app branch config request
