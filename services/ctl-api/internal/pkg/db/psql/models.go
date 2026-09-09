@@ -96,12 +96,15 @@ func AllModels() []any {
 		&app.AppOperationRoleRule{},
 		&app.AppKubernetesContextsConfig{},
 		&app.AppKubernetesContextConfig{},
+		&app.AppRelease{},
+		&app.AppReleaseMember{},
 
 		// installs
 		&app.AWSAccount{},
 		&app.AzureAccount{},
 		&app.GCPAccount{},
 		&app.Install{},
+		&app.InstallOperatingModel{},
 		&app.InstallState{},
 		&app.InstallEvent{},
 		&app.InstallInputs{},

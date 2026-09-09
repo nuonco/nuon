@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -22,6 +23,7 @@ type Params struct {
 	L           *zap.Logger
 	VcsHelpers  *vcshelpers.Helpers
 	QueueClient *queueclient.Client
+	BlobService blobstore.Service
 }
 
 type Helpers struct {
@@ -32,6 +34,7 @@ type Helpers struct {
 	l           *zap.Logger
 	vcsHelpers  *vcshelpers.Helpers
 	queueClient *queueclient.Client
+	blobSvc     blobstore.Service
 }
 
 func New(params Params) *Helpers {
@@ -43,6 +46,7 @@ func New(params Params) *Helpers {
 		l:           params.L,
 		vcsHelpers:  params.VcsHelpers,
 		queueClient: params.QueueClient,
+		blobSvc:     params.BlobService,
 	}
 }
 
