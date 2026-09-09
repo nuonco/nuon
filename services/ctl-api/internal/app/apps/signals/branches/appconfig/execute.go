@@ -64,26 +64,26 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// Ensure log stream is closed when we're done
+	logStreamClosed := false
 	closeLogStream := func() {
-		if logStream == nil {
+		if logStream == nil || logStreamClosed {
 			return
 		}
+		logStreamClosed = true
 		if err := activities.AwaitCloseLogStream(ctx, activities.CloseLogStreamRequest{
 			LogStreamID: logStream.ID,
 		}); err != nil {
 			l.Warn("unable to close log stream", "error", err)
 		}
 	}
+	defer closeLogStream()
 
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
-		closeLogStream()
 		return fmt.Errorf("unable to get app branch: %w", err)
 	}
 
 	if len(branch.Configs) == 0 {
-		closeLogStream()
 		return fmt.Errorf("app branch has no config")
 	}
 
@@ -93,7 +93,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	} else if cfg := branch.Configs[0].PublicGitVCSConfig; cfg != nil {
 		vcsConfigID = cfg.ID
 	} else if !preCompiled {
-		closeLogStream()
 		return fmt.Errorf("app branch has no VCS config")
 	}
 
@@ -104,7 +103,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			appConfigID: s.AppConfigID,
 			vcsConfigID: vcsConfigID,
 			isPreview:   run.IsPreview(),
-		}, closeLogStream)
+		})
 	}
 
 	cloneResult, err := activities.LocalAwaitCloneRepo(ctx, activities.CloneRepoRequest{
@@ -113,7 +112,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		CommitSHA:   commitSHA,
 	})
 	if err != nil {
-		closeLogStream()
 		return fmt.Errorf("unable to clone repo: %w", err)
 	}
 
@@ -128,7 +126,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		SourceDir: sourceDir,
 	})
 	if err != nil {
-		closeLogStream()
 		if detail, ok := branchrunerrors.ValidationDetail(err); ok {
 			if workflow.GetVersion(ctx, configValidationCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
 				if setErr := activities.AwaitSetAppBranchRunCompositeError(ctx, activities.SetAppBranchRunCompositeErrorRequest{
@@ -182,8 +179,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	configJSON, err := json.Marshal(intermediateConfig)
 	if err != nil {
-		closeLogStream()
 		return fmt.Errorf("unable to serialize intermediate config: %w", err)
+	}
+	var sourceConfigJSON []byte
+	if intermediateConfig.SourceArchive != nil {
+		sourceConfigJSON, err = json.Marshal(intermediateConfig.SourceArchive)
+		if err != nil {
+			return fmt.Errorf("unable to serialize authored config: %w", err)
+		}
 	}
 
 	isPreview := run.IsPreview()
@@ -245,7 +248,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				})
 			}
 
-			closeLogStream()
 			return nil
 		}
 
@@ -280,11 +282,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			AppBranchID:            branch.ID,
 			CreatedByID:            branch.CreatedByID,
 			IntermediateConfigJSON: string(configJSON),
+			SourceConfigJSON:       string(sourceConfigJSON),
 			Labels:                 configLabels,
 		},
 	})
 	if err != nil {
-		closeLogStream()
 		return fmt.Errorf("unable to create app config: %w", err)
 	}
 
@@ -300,7 +302,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		isPreview:               isPreview,
 		previewDiff:             previewDiff,
 		previewBaselineConfigID: previewBaselineConfigID,
-	}, closeLogStream)
+	})
 }
 
 type finalizeParams struct {
@@ -316,7 +318,7 @@ type finalizeParams struct {
 // syncAndFinalize turns an app config into database records and reports the
 // result onto the step. Shared by the VCS path, which has just created the
 // config from a cloned repo, and the pre-compiled path, which was handed one.
-func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLogStream func()) error {
+func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams) error {
 	l := workflow.GetLogger(ctx)
 	run, branch := p.run, p.branch
 
@@ -328,7 +330,6 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLo
 		},
 	})
 	if err != nil {
-		closeLogStream()
 		return fmt.Errorf("unable to sync app config: %w", err)
 	}
 
@@ -355,7 +356,6 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLo
 			AppConfigID: syncResp.AppConfigID,
 		},
 	}); err != nil {
-		closeLogStream()
 		return fmt.Errorf("unable to update run with app config ID: %w", err)
 	}
 
@@ -431,7 +431,6 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLo
 		}
 	}
 
-	closeLogStream()
 	return nil
 }
 
