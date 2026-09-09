@@ -30,6 +30,9 @@ type ServiceStackServiceAccountResponse struct {
 	// HasLiveToken is false whether no token was ever created or every one has
 	// expired or been revoked; the caller fixes both the same way.
 	HasLiveToken bool `json:"has_live_token,omitempty"`
+
+	// Without it a dashboard points the module's provider at production.
+	RunnerAPIURL string `json:"runner_api_url,omitempty"`
 }
 
 // Validate validates this service stack service account response
