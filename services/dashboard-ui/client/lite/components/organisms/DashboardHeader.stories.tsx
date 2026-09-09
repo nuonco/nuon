@@ -31,6 +31,7 @@ export const Overview = () => (
       'The sidebar control changes behavior at the desktop breakpoint.',
       'The desktop user menu occupies the trailing edge.',
       'The header gains its glass surface after content begins scrolling.',
+      'mobileTriggerRef points at the mobile sidebar control so the shell can restore focus when the drawer closes.',
     ]}
     props={[
       {
@@ -47,6 +48,23 @@ export const Overview = () => (
         name: 'userMenu',
         type: 'ReactNode',
         description: 'Desktop account control supplied by DashboardShell.',
+      },
+      {
+        name: 'mobileTriggerRef',
+        type: 'RefObject<HTMLSpanElement | null>',
+        description:
+          'Ref on the mobile sidebar button wrapper, for restoring focus after the drawer closes.',
+      },
+      {
+        name: 'scrolled',
+        type: 'boolean',
+        default: 'false',
+        description: 'Applies the glass surface once the content region has scrolled.',
+      },
+      {
+        name: 'className',
+        type: 'string',
+        description: 'Extra classes for the header.',
       },
     ]}
   />

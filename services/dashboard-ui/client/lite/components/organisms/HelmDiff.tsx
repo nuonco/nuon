@@ -2,7 +2,7 @@ import { useMemo, type HTMLAttributes } from 'react'
 import type { THelmPlan } from '@/types'
 import { cn } from '@/utils/classnames'
 import { usePlanDiffFilter } from '../../hooks/use-plan-diff-filter'
-import { HELM_DIFF_OPERATIONS, helmPlanDiff } from '../../lib/diffs/helm'
+import { HELM_DIFF_OPERATIONS, helmPlanDiff } from '../../utils/diffs/helm'
 import { Card } from '../atoms/Card'
 import { Text } from '../atoms/Text'
 import { DiffSummary } from '../molecules/DiffSummary'
@@ -18,7 +18,7 @@ export interface IHelmDiff
 
 export const HelmDiff = ({
   plan,
-  defaultOpen = true,
+  defaultOpen,
   className,
   ...props
 }: IHelmDiff) => {

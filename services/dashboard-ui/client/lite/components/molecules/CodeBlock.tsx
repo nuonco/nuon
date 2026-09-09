@@ -11,13 +11,13 @@ import {
   MATCH_NAV_TOOLTIP,
   lineMatches,
   matchNavKeyDown,
-} from '../../lib/code-search'
+} from '../../utils/code-search'
 import {
   LITE_SYNTAX_THEME,
   registerSyntax,
   resolveLanguage,
   type TSyntaxLanguage,
-} from '../../lib/syntax'
+} from '../../utils/syntax'
 import { Button } from '../atoms/Button'
 import { CopyButton } from '../atoms/CopyButton'
 import { Icon } from '../atoms/Icon'
@@ -26,8 +26,6 @@ import { SearchInput } from './SearchInput'
 
 registerSyntax()
 
-// Below this, a plain File is cheaper than a scroll container plus a
-// virtualizer. Above it, the DOM cost of every line is what kills the page.
 const VIRTUALIZE_ABOVE_LINES = 300
 
 const EXTENSIONS: Partial<Record<TSyntaxLanguage, string>> = {
@@ -48,7 +46,6 @@ export interface ICodeBlock {
   value: string
   language?: string
   filename?: string
-  /** Starting state of the wrap toggle. The block owns it after that. */
   defaultWrap?: boolean
   copy?: boolean
   lineNumbers?: boolean
@@ -82,7 +79,6 @@ export const CodeBlock = ({
     () => ({
       name: filename ?? `block.${EXTENSIONS[lang] ?? 'txt'}`,
       contents: value,
-      // rego is registered by us, so it is outside the library's bundled union.
       lang: lang as FileContents['lang'],
     }),
     [filename, lang, value]
@@ -103,9 +99,6 @@ export const CodeBlock = ({
     })
   }, [generatedId, matches])
 
-  // Lines carry data-line-index in the renderer's shadow root, and unsafeCSS is
-  // injected into it, so matches are painted rather than annotated. That index
-  // is zero-based, while scrollTo takes a one-based line number.
   const highlightCSS = useMemo(() => {
     if (!matches.length) return undefined
     const all = matches
@@ -242,14 +235,10 @@ export const CodeBlock = ({
       )}
     >
       {search}
-      {/* With a search row the copy button lives in it; floating it would sit
-          on top of the next/previous controls. */}
       {copyButton && !virtualized ? (
         <div className="absolute top-1.5 right-1.5 z-10">{copyButton}</div>
       ) : null}
       {virtualized ? (
-        // CodeView owns its own scroll root and per-line virtualization, so it
-        // must not be wrapped in a Virtualizer — that is the mixed-content path.
         <CodeView
           ref={viewer}
           items={items}

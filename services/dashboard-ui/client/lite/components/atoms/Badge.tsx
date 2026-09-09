@@ -30,7 +30,7 @@ const SHAPE_CLASSES: Record<TBadgeVariant, string> = {
 }
 
 const CELL_CLASSES =
-  'inline-flex items-center gap-1 border px-2 py-0.5 text-caption'
+  'inline-flex h-5.5 items-center gap-1 border px-2 text-label'
 
 export const Badge = ({
   tone = 'neutral',
@@ -52,7 +52,7 @@ export const Badge = ({
       <span
         aria-hidden
         className={cn(
-          'skeleton inline-block w-fit px-2 py-0.5 text-caption',
+          'skeleton inline-block h-5.5 w-fit px-2 text-label',
           SHAPE_CLASSES[variant],
           className
         )}
@@ -111,7 +111,7 @@ export const Badge = ({
         )}
       >
         <Text
-          variant="caption"
+          variant="label"
           family={variant === 'code' ? 'mono' : 'sans'}
           className="block min-w-0 truncate"
         >
@@ -128,7 +128,7 @@ export const Badge = ({
         )}
       >
         <Text
-          variant="caption"
+          variant="label"
           family={variant === 'code' ? 'mono' : 'sans'}
           className="block min-w-0 truncate"
         >

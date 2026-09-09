@@ -9,7 +9,7 @@ describe('useFilterSelection', () => {
     const { result } = renderHook(() => useFilterSelection(OPTIONS))
 
     expect([...result.current.selected]).toEqual([...OPTIONS])
-    expect(result.current.isConstrained).toBe(false)
+    expect(result.current.constrained).toBe(false)
   })
 
   test('toggles one option without changing the others', () => {
@@ -18,7 +18,7 @@ describe('useFilterSelection', () => {
     act(() => result.current.toggle('update'))
 
     expect([...result.current.selected]).toEqual(['create', 'delete'])
-    expect(result.current.isConstrained).toBe(true)
+    expect(result.current.constrained).toBe(true)
   })
 
   test('isolates an option and resets when isolated again', () => {
@@ -46,7 +46,7 @@ describe('useFilterSelection', () => {
     )
 
     expect([...result.current.selected]).toEqual(['update', 'delete'])
-    expect(result.current.isConstrained).toBe(false)
+    expect(result.current.constrained).toBe(false)
   })
 
   test('reset and re-isolate return to the defaults', () => {
@@ -55,7 +55,7 @@ describe('useFilterSelection', () => {
     )
 
     act(() => result.current.toggle('create'))
-    expect(result.current.isConstrained).toBe(true)
+    expect(result.current.constrained).toBe(true)
 
     act(() => result.current.reset())
     expect([...result.current.selected]).toEqual(['update', 'delete'])

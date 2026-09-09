@@ -5,7 +5,7 @@ import { usePlanDiffFilter } from '../../hooks/use-plan-diff-filter'
 import {
   KUBERNETES_DIFF_OPERATIONS,
   kubernetesPlanDiff,
-} from '../../lib/diffs/kubernetes'
+} from '../../utils/diffs/kubernetes'
 import { Card } from '../atoms/Card'
 import { Text } from '../atoms/Text'
 import { DiffSummary } from '../molecules/DiffSummary'
@@ -21,7 +21,7 @@ export interface IKubernetesDiff
 
 export const KubernetesDiff = ({
   plan,
-  defaultOpen = true,
+  defaultOpen,
   className,
   ...props
 }: IKubernetesDiff) => {

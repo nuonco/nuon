@@ -31,6 +31,12 @@ export const Overview = () => (
     ]}
     props={[
       {
+        name: 'alt',
+        type: 'string',
+        description:
+          'Accessible name when visible user text does not accompany the avatar.',
+      },
+      {
         name: 'name',
         type: 'string',
         description: 'User name used to produce fallback initials.',
