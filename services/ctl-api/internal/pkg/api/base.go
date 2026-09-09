@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -52,6 +53,8 @@ func (a *API) middlewareDebugWrapper(name string, fn gin.HandlerFunc) gin.Handle
 	}
 }
 
+const panickerMiddlewareName = "panicker"
+
 func (a *API) registerMiddlewares() error {
 	// register middlewares
 	middlewaresLookup := make(map[string]gin.HandlerFunc, 0)
@@ -59,7 +62,20 @@ func (a *API) registerMiddlewares() error {
 		middlewaresLookup[middleware.Name()] = middleware.Handler()
 	}
 
+	// gin.CustomRecovery only recovers what runs after it, and gin.New() installs no
+	// recovery of its own, so a panic in an earlier middleware kills the connection
+	// and the caller sees a proxy 503 with no body instead of an error response.
+	ordered := make([]string, 0, len(a.configuredMiddlewares))
+	if slices.Contains(a.configuredMiddlewares, panickerMiddlewareName) {
+		ordered = append(ordered, panickerMiddlewareName)
+	}
 	for _, middleware := range a.configuredMiddlewares {
+		if middleware != panickerMiddlewareName {
+			ordered = append(ordered, middleware)
+		}
+	}
+
+	for _, middleware := range ordered {
 		a.l.Info(fmt.Sprintf("registering middleware: %s", middleware), zap.String("name", middleware))
 		fn, ok := middlewaresLookup[middleware]
 		if !ok {
