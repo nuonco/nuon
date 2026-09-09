@@ -396,3 +396,74 @@ func TestRenderChecksumDiffersWithInlinePolicy(t *testing.T) {
 
 	assert.NotEqual(t, base, withInline, "inline policy should affect the checksum")
 }
+
+// Valid config on CloudFormation, where each file is its own AWS::IAM::Policy;
+// only the merged Terraform document has to disambiguate.
+func TestRenderInlinePolicyDedupesRepeatedSids(t *testing.T) {
+	inp := testInput()
+	inp.AppCfg.PermissionsConfig.Roles = []app.AppAWSIAMRoleConfig{
+		{
+			CloudPlatform: "aws",
+			Type:          app.AWSIAMRoleTypeRunnerProvision,
+			Name:          "provision",
+			Policies: []app.AppAWSIAMPolicyConfig{
+				{Name: "maintenance-base", Contents: []byte(`{"Statement":[{"Sid":"Reads","Effect":"Allow","Action":"ec2:Describe*","Resource":"*"}]}`)},
+				{Name: "rds-db-metrics", Contents: []byte(`{"Statement":[{"Sid":"Reads","Effect":"Allow","Action":"rds:DescribeDBClusters","Resource":"*"}]}`)},
+			},
+		},
+	}
+
+	out, _, err := Render(inp, "")
+	require.NoError(t, err)
+
+	doc := unquoteHCLJSONString(t, findVarValue(t, extractTfvars(t, out), "provision_inline_policy_document"))
+	var parsed struct {
+		Statement []map[string]any
+	}
+	require.NoError(t, json.Unmarshal([]byte(doc), &parsed))
+	require.Len(t, parsed.Statement, 2)
+
+	assert.Equal(t, "Reads", parsed.Statement[0]["Sid"], "first use of a Sid is left alone")
+	assert.Equal(t, "ReadsRdsDbMetrics", parsed.Statement[1]["Sid"], "the collision is suffixed with its source policy")
+	assert.Equal(t, "rds:DescribeDBClusters", parsed.Statement[1]["Action"], "renaming a Sid must not touch the permissions")
+
+	sids := map[string]bool{}
+	for _, stmt := range parsed.Statement {
+		sid, _ := stmt["Sid"].(string)
+		require.False(t, sids[sid], "merged document must not repeat Sid %q", sid)
+		sids[sid] = true
+	}
+}
+
+func TestRenderInlinePolicyDedupesThreeWayAndSkipsSidless(t *testing.T) {
+	inp := testInput()
+	inp.AppCfg.PermissionsConfig.Roles = []app.AppAWSIAMRoleConfig{
+		{
+			CloudPlatform: "aws",
+			Type:          app.AWSIAMRoleTypeRunnerProvision,
+			Name:          "provision",
+			Policies: []app.AppAWSIAMPolicyConfig{
+				{Name: "one", Contents: []byte(`{"Statement":[{"Sid":"Reads","Effect":"Allow","Action":"a:One","Resource":"*"}]}`)},
+				{Name: "two", Contents: []byte(`{"Statement":[{"Sid":"Reads","Effect":"Allow","Action":"a:Two","Resource":"*"}]}`)},
+				{Name: "two", Contents: []byte(`{"Statement":[{"Sid":"Reads","Effect":"Allow","Action":"a:Three","Resource":"*"},{"Effect":"Allow","Action":"a:Four","Resource":"*"}]}`)},
+			},
+		},
+	}
+
+	out, _, err := Render(inp, "")
+	require.NoError(t, err)
+
+	doc := unquoteHCLJSONString(t, findVarValue(t, extractTfvars(t, out), "provision_inline_policy_document"))
+	var parsed struct {
+		Statement []map[string]any
+	}
+	require.NoError(t, json.Unmarshal([]byte(doc), &parsed))
+	require.Len(t, parsed.Statement, 4)
+
+	assert.Equal(t, "Reads", parsed.Statement[0]["Sid"])
+	assert.Equal(t, "ReadsTwo", parsed.Statement[1]["Sid"])
+	assert.Equal(t, "ReadsTwo2", parsed.Statement[2]["Sid"], "same source policy name twice falls back to an ordinal")
+	_, hasSid := parsed.Statement[3]["Sid"]
+	assert.False(t, hasSid, "a statement without a Sid stays without one")
+	assert.Equal(t, "a:Four", parsed.Statement[3]["Action"])
+}
