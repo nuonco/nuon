@@ -45,6 +45,26 @@ Lite does not fully reflect this yet — the foundational work came first — so
 expect to find tables where a graph or timeline belongs. That is a known gap,
 not the target.
 
+### App branches are the blessed path
+
+Changes reach installs **through an app branch**, not through per-install
+buttons. A platform engineer edits the app config, pushes to the connected
+branch, approves the resulting plan if it needs approval, and the installs in
+that branch's deployment plan update.
+
+Manual per-component deploy, teardown and drift scan on a single install are the
+**escape hatch**, not the path. They are deliberately not built yet.
+
+The design consequence: **do not scatter per-component action buttons across
+install surfaces.** Doing so makes the manual route look like the normal one and
+undercuts the branch flow. An install surface's job is to show state and history
+and to lead to the run that produced it — not to offer a menu of ways to mutate
+it one piece at a time.
+
+GitOps here does not mean hands-off: the push is the trigger, but the approval
+is a real decision taken in the dashboard that blocks rollout. See
+[FLOWS.md](./FLOWS.md) "Ship a change through an app branch".
+
 ### What this rules out
 
 The organising question is **"what exists, and what happened?"** — not "what is

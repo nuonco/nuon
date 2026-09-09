@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Dropdown } from '@/components/common/Dropdown'
@@ -27,6 +27,7 @@ interface IGroupEditor {
   availableInstalls: TInstall[]
   labelColors?: Record<string, string>
   disabled?: boolean
+  autoFocusName?: boolean
   nameError?: string
   contentError?: string
   onUpdate: (updates: Partial<IInstallGroup>) => void
@@ -45,6 +46,7 @@ export const GroupEditor = ({
   availableInstalls,
   labelColors,
   disabled,
+  autoFocusName,
   nameError,
   contentError,
   onUpdate,
@@ -54,18 +56,28 @@ export const GroupEditor = ({
   onMoveDown,
   onDelete,
 }: IGroupEditor) => {
+  const nameRef = useRef<HTMLInputElement>(null)
+
   const installs = useMemo(() => {
     const byId = new Map(availableInstalls.map((i) => [i.id, i]))
     return group.install_ids.map((id) => byId.get(id)).filter((i): i is TInstall => !!i)
   }, [group.install_ids, availableInstalls])
+
+  useEffect(() => {
+    if (!autoFocusName || disabled) return
+    nameRef.current?.focus({ preventScroll: true })
+    nameRef.current?.select()
+  }, [autoFocusName, disabled])
 
   return (
     <Card className="!p-0 !gap-0 overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-2.5 bg-cool-grey-50 dark:bg-dark-grey-800">
         <div className="flex-1 min-w-0">
           <Input
+            ref={nameRef}
             id={`group-name-${group.id}`}
             type="text"
+            aria-label={`Group ${index + 1} name`}
             value={group.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
             placeholder={`Group ${index + 1}`}
