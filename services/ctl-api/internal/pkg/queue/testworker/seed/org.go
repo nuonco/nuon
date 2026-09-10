@@ -16,7 +16,7 @@ func (s *Seeder) EnsureOrg(ctx context.Context, t *testing.T) context.Context {
 		Name:        generics.GetFakeObj[string](),
 		OrgType:     app.OrgTypeSandbox,
 		Status:      app.OrgStatusActive,
-		SandboxMode: true,
+		SandboxMode: false,
 	}
 	res := s.db.WithContext(ctx).Create(&org)
 	require.Nil(t, res.Error)
