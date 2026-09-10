@@ -222,3 +222,83 @@ func TestReadyzDependencyMetrics(t *testing.T) {
 		})
 	}
 }
+
+func TestReadyzDependencyRecovery(t *testing.T) {
+	reader := sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	t.Cleanup(func() { require.NoError(t, provider.Shutdown(context.Background())) })
+	pg, ch := &healthDB{t: t}, &healthDB{t: t}
+	database := func(d *healthDB) *gorm.DB {
+		db := sql.OpenDB(d)
+		t.Cleanup(func() { require.NoError(t, db.Close()) })
+		return &gorm.DB{Config: &gorm.Config{ConnPool: db}}
+	}
+	ctrl := gomock.NewController(t)
+	tc := temporalclient.NewMockClient(ctrl)
+	tc.EXPECT().CheckHealth(gomock.Any(), gomock.Any()).Return(&client.CheckHealthResponse{}, nil).Times(3)
+	mw := metrics.NewMockWriter(ctrl)
+	mw.EXPECT().Incr("healthcheck.check", gomock.Any()).AnyTimes()
+	s, err := New(Params{DB: database(pg), CHDB: database(ch), TClient: tc, MW: mw, MeterProvider: provider})
+	require.NoError(t, err)
+	router := tests.NewTestRouter(tests.RouterOptions{L: zap.NewNop(), DB: s.db})
+	require.NoError(t, s.RegisterPublicRoutes(router))
+	previous := map[string]map[string]float64{}
+	failure := errors.New("dependency unavailable")
+	for _, step := range []struct {
+		name            string
+		pgErr, chErr    error
+		code            int
+		states          map[string]int64
+		retainedChecks  []string
+		retainedSuccess []string
+	}{
+		{"healthy", nil, nil, 200, map[string]int64{"postgresql": 1, "clickhouse": 1, "temporal": 1}, nil, nil},
+		{"degraded", nil, failure, 207, map[string]int64{"postgresql": 1, "clickhouse": 0, "temporal": 1}, nil, []string{"clickhouse"}},
+		{"skipped", failure, nil, 500, map[string]int64{"postgresql": 0, "clickhouse": 0, "temporal": 1}, []string{"clickhouse", "temporal"}, []string{"postgresql", "clickhouse", "temporal"}},
+		{"recovered", nil, nil, 200, map[string]int64{"postgresql": 1, "clickhouse": 1, "temporal": 1}, nil, nil},
+	} {
+		t.Run(step.name, func(t *testing.T) {
+			pg.pingErr, ch.queryErr = step.pgErr, step.chErr
+			started := float64(time.Now().UnixNano()) / 1e9
+			response := httptest.NewRecorder()
+			router.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+			require.Equal(t, step.code, response.Code)
+			data := collectHealthMetrics(t, reader)
+			states := map[string]int64{}
+			for _, point := range data["nuon.dependency.check.status"].Data.(metricdata.Gauge[int64]).DataPoints {
+				dep, _ := point.Attributes.Value("dependency.name")
+				states[dep.AsString()] = point.Value
+			}
+			require.Equal(t, step.states, states)
+			for name, retained := range map[string][]string{
+				"nuon.dependency.check.last_completed": step.retainedChecks,
+				"nuon.dependency.check.last_success":   step.retainedSuccess,
+			} {
+				values := map[string]float64{}
+				for _, point := range data[name].Data.(metricdata.Gauge[float64]).DataPoints {
+					dep, _ := point.Attributes.Value("dependency.name")
+					values[dep.AsString()] = point.Value
+					if slices.Contains(retained, dep.AsString()) {
+						require.Equal(t, previous[name][dep.AsString()], point.Value)
+					} else {
+						require.GreaterOrEqual(t, point.Value, started)
+					}
+				}
+				require.Len(t, values, 3)
+				previous[name] = values
+			}
+		})
+	}
+	counts := map[string]int64{}
+	for _, point := range collectHealthMetrics(t, reader)["nuon.dependency.checks"].Data.(metricdata.Sum[int64]).DataPoints {
+		dep, _ := point.Attributes.Value("dependency.name")
+		outcome, _ := point.Attributes.Value("outcome")
+		counts[dep.AsString()+"/"+outcome.AsString()] += point.Value
+	}
+	require.Equal(t, map[string]int64{
+		"postgresql/success": 3, "postgresql/failure": 1,
+		"clickhouse/success": 2, "clickhouse/failure": 1, "clickhouse/skipped": 1,
+		"temporal/success": 3, "temporal/skipped": 1,
+	}, counts)
+	require.Equal(t, 3, ch.queries, "collecting metrics must not run another readiness check")
+}
