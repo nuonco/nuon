@@ -41,7 +41,7 @@ func (c *Client) GetQueueByOwner(ctx context.Context, ownerID, ownerType string)
 			OwnerID:   ownerID,
 			OwnerType: ownerType,
 		}).
-		Where("name = ?", "").
+		Scopes(app.DefaultQueueScope).
 		First(&q); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to get queue by owner")
 	}

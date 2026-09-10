@@ -42,7 +42,7 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 	appBranchConfigID := req.AppBranchConfigID
 
 	var branch app.AppBranch
-	if err := a.db.WithContext(ctx).Preload("Queue", "name = ?", "").First(&branch, "id = ?", appBranchID).Error; err != nil {
+	if err := a.db.WithContext(ctx).Preload("Queue", app.DefaultQueueScope).First(&branch, "id = ?", appBranchID).Error; err != nil {
 		return nil, fmt.Errorf("unable to find app branch: %w", err)
 	}
 

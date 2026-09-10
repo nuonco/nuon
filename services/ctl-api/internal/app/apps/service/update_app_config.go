@@ -245,7 +245,7 @@ func (s *service) triggerAppBranchRunForConfig(ctx context.Context, cfg *app.App
 	// Load the branch with its queue and latest config
 	var branch app.AppBranch
 	if err := s.db.WithContext(ctx).
-		Preload("Queue", "name = ?", "").
+		Preload("Queue", app.DefaultQueueScope).
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("config_number DESC").Limit(1)
 		}).

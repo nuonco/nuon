@@ -23,6 +23,6 @@ func TestGetQueueByOwnerFiltersToDefaultQueue(t *testing.T) {
 
 	_, _ = (&Client{db: db}).GetQueueByOwner(context.Background(), "abr1", "app_branches")
 
-	require.Contains(t, sql, `AND name = $3`, "owners have multiple named queues, so the lookup must pin the default one")
+	require.Contains(t, sql, `"name" = $3`, "owners have multiple named queues, so the lookup must pin the default one")
 	require.Contains(t, sql, `"queues"."owner_id" = $1`)
 }

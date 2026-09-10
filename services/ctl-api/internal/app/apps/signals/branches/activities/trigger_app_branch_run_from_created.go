@@ -25,7 +25,7 @@ type TriggerAppBranchRunFromCreatedResponse struct {
 // @start-to-close-timeout 5m
 func (a *Activities) TriggerAppBranchRunFromCreated(ctx context.Context, req TriggerAppBranchRunFromCreatedRequest) (*TriggerAppBranchRunFromCreatedResponse, error) {
 	var branch app.AppBranch
-	if err := a.db.WithContext(ctx).Preload("Queue", "name = ?", "").First(&branch, "id = ?", req.AppBranchID).Error; err != nil {
+	if err := a.db.WithContext(ctx).Preload("Queue", app.DefaultQueueScope).First(&branch, "id = ?", req.AppBranchID).Error; err != nil {
 		return nil, fmt.Errorf("unable to find app branch: %w", err)
 	}
 
