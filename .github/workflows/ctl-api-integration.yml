@@ -53,11 +53,13 @@ jobs:
       # The job itself always runs so the check reports success when skipped; only the
       # trigger step is gated. Keep this true when promoting the check to required,
       # otherwise docs-only PRs would soft-lock on a never-arriving status.
-      - name: Skip when draft or ctl-api is unchanged
-        if: github.event_name != 'workflow_dispatch' && (github.event.pull_request.draft == true || steps.filter.outputs['ctl-api'] != 'true')
+      - name: Skip when draft, bot-merge, or ctl-api is unchanged
+        if: github.event_name != 'workflow_dispatch' && (github.event.pull_request.draft == true || github.triggering_actor.login == 'nuonbot' || steps.filter.outputs['ctl-api'] != 'true')
         run: |
           if [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
             echo "draft PR; skipping integration run until marked ready for review"
+          elif [[ "${{ github.triggering_actor.login }}" == "nuonbot" ]]; then
+            echo "auto-merge-of-main update from ${{ github.triggering_actor.login }}; the merged result is tested by the main-push run"
           else
             echo "no ctl-api changes in this diff; skipping integration run"
           fi
