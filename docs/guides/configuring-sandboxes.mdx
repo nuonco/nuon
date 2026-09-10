@@ -92,12 +92,14 @@ Common outputs include:
 - `account.id` - The AWS Account ID
 - `account.region` - The AWS Region
 - `vpc.id` - The VPC ID
-- `cluster.cluster_name` - The EKS Cluster name
-- `cluster.cluster_endpoint` - The EKS Cluster endpoint
+- `cluster.name` - The EKS Cluster name
+- `cluster.endpoint` - The EKS Cluster endpoint
 - `ecr.repository_url` - The ECR repository URL
-- `nuon_dns.public_domain` - The public root domain
-- `nuon_dns.internal_domain` - The internal root domain
+- `nuon_dns.public_domain.name` - The public root domain
+- `nuon_dns.internal_domain.name` - The internal root domain
 - `namespaces` - Namespaces created in the cluster
+
+Each `nuon_dns` domain is an object rather than a string: `name` holds the hostname, alongside `zone_id` and `nameservers`. Reference `.name` when you want the domain itself.
 
 See the [outputs.tf](https://github.com/nuonco/aws-eks-sandbox/blob/main/outputs.tf) for the full list.
 
