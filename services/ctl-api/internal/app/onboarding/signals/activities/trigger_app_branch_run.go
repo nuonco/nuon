@@ -21,7 +21,7 @@ type TriggerOnboardingAppBranchRunResponse struct {
 // @as-wrapper
 func (a *Activities) triggerOnboardingAppBranchRun(ctx context.Context, appBranchID, appBranchConfigID string, cb callback.Ref) (*TriggerOnboardingAppBranchRunResponse, error) {
 	var branch app.AppBranch
-	if err := a.db.WithContext(ctx).Preload("Queue").First(&branch, "id = ?", appBranchID).Error; err != nil {
+	if err := a.db.WithContext(ctx).Preload("Queue", app.DefaultQueueScope).First(&branch, "id = ?", appBranchID).Error; err != nil {
 		return nil, fmt.Errorf("unable to find app branch: %w", err)
 	}
 	if branch.Queue.ID == "" {
