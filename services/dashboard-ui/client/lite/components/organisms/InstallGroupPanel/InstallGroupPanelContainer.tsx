@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import {
   getAppInstalls,
@@ -7,59 +8,29 @@ import {
 } from '@/lib'
 import type { TInstall } from '@/types'
 import { latestBranchConfig } from '@/utils/branch-utils'
-import { usePanelHref, useSurfaces } from '../../../hooks/use-surfaces'
+import { useSurfaces } from '../../../hooks/use-surfaces'
 import { useApp } from '../../../providers/app-provider'
 import { useAppBranch } from '../../../providers/app-branch-provider'
 import { useOrg } from '../../../providers/org-provider'
-import {
-  resolveDeploymentPlanStages,
-  type IDeploymentPlanStage,
-} from '../../../utils/deployment-plan'
-import { InstallGroupCard } from '../InstallGroupCard'
-import { DeploymentPlanStages } from './DeploymentPlanStages'
+import { resolveDeploymentPlanStages } from '../../../utils/deployment-plan'
+import { InstallGroupPanel } from './InstallGroupPanel'
 
 const INSTALL_PAGE_SIZE = 100
-const RUN_POLL_INTERVAL = 20_000
-const TERMINAL_RUN_STATUSES = new Set([
-  'success',
-  'error',
-  'cancelled',
-  'not-attempted',
-])
+const PANEL_PAGE_SIZE = 20
 
-const LinkableInstallGroupCard = ({
-  stage,
-  labelColors,
+export const InstallGroupPanelContainer = ({
+  groupId,
 }: {
-  stage: IDeploymentPlanStage
-  labelColors: Record<string, string>
+  groupId?: string
 }) => {
-  const groupHref = usePanelHref(`group:${stage.id}`)
-  const { openPanelKey } = useSurfaces()
-
-  return (
-    <InstallGroupCard
-      stage={stage}
-      labelColors={labelColors}
-      groupHref={groupHref}
-      onInstallSelect={(install) => openPanelKey(`install:${install.id}`)}
-    />
-  )
-}
-
-export const DeploymentPlanStagesContainer = () => {
   const { orgId } = useOrg()
   const { appId } = useApp()
-  const {
-    branch,
-    branchId,
-    loading: branchLoading,
-    error: branchError,
-  } = useAppBranch()
+  const { branch, branchId, loading: branchLoading } = useAppBranch()
+  const { openPanelKey } = useSurfaces()
+  const [offset, setOffset] = useState(0)
   const config = branch ? latestBranchConfig(branch) : undefined
   const groups = config?.install_groups ?? []
   const runId = branch?.latest_run?.id
-  const runStatus = branch?.latest_run?.status
 
   const installsQuery = useQuery({
     queryKey: [
@@ -71,7 +42,7 @@ export const DeploymentPlanStagesContainer = () => {
     ],
     queryFn: async () => {
       const installs: TInstall[] = []
-      let offset = 0
+      let pageOffset = 0
 
       for (;;) {
         const page = await getAppInstalls({
@@ -79,23 +50,22 @@ export const DeploymentPlanStagesContainer = () => {
           appId: appId!,
           app_branch_id: branchId!,
           limit: INSTALL_PAGE_SIZE,
-          offset,
+          offset: pageOffset,
         })
         const rows = page?.data ?? []
         installs.push(...rows)
         if (!page?.pagination?.hasNext || rows.length === 0) break
 
         const nextOffset =
-          Number(page.pagination.offset ?? offset) +
+          Number(page.pagination.offset ?? pageOffset) +
           Number(page.pagination.limit ?? INSTALL_PAGE_SIZE)
-        if (nextOffset <= offset) break
-        offset = nextOffset
+        if (nextOffset <= pageOffset) break
+        pageOffset = nextOffset
       }
 
       return installs
     },
-    enabled:
-      !!orgId && !!appId && !!branchId && groups.length > 0,
+    enabled: !!orgId && !!appId && !!branchId && groups.length > 0,
     placeholderData: keepPreviousData,
   })
 
@@ -116,10 +86,6 @@ export const DeploymentPlanStagesContainer = () => {
       }),
     enabled: !!orgId && !!appId && !!branchId && !!runId,
     placeholderData: keepPreviousData,
-    refetchInterval:
-      runId && !TERMINAL_RUN_STATUSES.has(runStatus ?? '')
-        ? RUN_POLL_INTERVAL
-        : false,
   })
 
   const labelsQuery = useQuery({
@@ -134,26 +100,28 @@ export const DeploymentPlanStagesContainer = () => {
     installs: installsQuery.data,
     groupRuns: groupRunsQuery.data,
   })
+  const stage = stages.find((item) => item.id === groupId)
+  const run = groupRunsQuery.data?.find(
+    (item) => item.install_group_id === groupId
+  )
   const loading =
     branchLoading ||
-    (groups.length > 0 &&
-      (installsQuery.isLoading || (!!runId && groupRunsQuery.isLoading)))
+    installsQuery.isLoading ||
+    (!!runId && groupRunsQuery.isLoading)
   const error =
-    branchError ?? installsQuery.error ?? groupRunsQuery.error
-  const labelColors = toLabelColorMap(labelsQuery.data)
+    installsQuery.error ??
+    groupRunsQuery.error ??
+    (!loading && !stage ? new Error('Install group unavailable') : undefined)
 
   return (
-    <DeploymentPlanStages
-      branch={branch}
-      stages={stages}
-      labelColors={labelColors}
-      renderStageCard={(stage) => (
-        <LinkableInstallGroupCard
-          key={stage.id}
-          stage={stage}
-          labelColors={labelColors}
-        />
-      )}
+    <InstallGroupPanel
+      stage={stage}
+      run={run}
+      labelColors={toLabelColorMap(labelsQuery.data)}
+      offset={offset}
+      pageSize={PANEL_PAGE_SIZE}
+      onOffsetChange={setOffset}
+      onInstallSelect={(install) => openPanelKey(`install:${install.id}`)}
       loading={loading}
       error={error}
     />

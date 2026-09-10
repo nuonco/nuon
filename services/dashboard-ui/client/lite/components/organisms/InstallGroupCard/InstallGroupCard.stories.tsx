@@ -7,9 +7,35 @@ export default {
 }
 
 const INSTALLS = [
-  { id: 'inst_alpha', name: 'alpha' },
-  { id: 'inst_bravo', name: 'bravo' },
-  { id: 'inst_charlie', name: 'charlie' },
+  {
+    id: 'inst_alpha',
+    name: 'alpha',
+    cloud_platform: 'aws',
+    aws_account: { region: 'us-west-2' },
+    runner_status: 'active',
+    sandbox_status: 'active',
+    sandbox_health_status: 'healthy',
+    composite_component_status: 'healthy',
+  },
+  {
+    id: 'inst_bravo',
+    name: 'bravo',
+    cloud_platform: 'aws',
+    aws_account: { region: 'us-east-1' },
+    runner_status: 'active',
+    sandbox_status: 'active',
+    sandbox_health_status: 'healthy',
+    composite_component_status: 'deploying',
+  },
+  {
+    id: 'inst_charlie',
+    name: 'charlie',
+    cloud_platform: 'gcp',
+    gcp_account: { region: 'us-central1' },
+    runner_status: 'pending',
+    sandbox_status: 'provisioning',
+    composite_component_status: 'pending',
+  },
 ]
 
 const STAGE: IDeploymentPlanStage = {

@@ -3,8 +3,13 @@ import { Badge } from '../../atoms/Badge'
 import { Link } from '../../atoms/Link'
 import { Status } from '../../atoms/Status'
 import { Text } from '../../atoms/Text'
+import { CloudRegion } from '../../molecules/CloudRegion'
 import { ConfigItem } from '../../molecules/ConfigItem'
 import { LabelSelectorSummary } from '../../molecules/LabelSelectorSummary'
+import {
+  installCloudLocation,
+  installStatusFacets,
+} from '../../../utils/install-details'
 import type {
   IDeploymentPlanInstall,
   IDeploymentPlanStage,
@@ -34,6 +39,36 @@ const membershipText = (stage: IDeploymentPlanStage) => {
 
 const installCountText = (count: number) =>
   `${count} ${count === 1 ? 'install' : 'installs'}`
+
+const InstallStatuses = ({
+  install,
+}: {
+  install: IDeploymentPlanInstall
+}) => (
+  <>
+    {installStatusFacets(install).map((facet) => (
+      <Status
+        key={facet.id}
+        status={facet.status}
+        icon={facet.icon}
+        label={facet.title}
+        description={facet.description}
+        variant="icon"
+      />
+    ))}
+  </>
+)
+
+const InstallLocation = ({
+  install,
+}: {
+  install: IDeploymentPlanInstall
+}) => {
+  const location = installCloudLocation(install)
+  if (!location.region && !location.location) return null
+
+  return <CloudRegion {...location} lines={1} />
+}
 
 export const InstallGroupCard = ({
   stage,
@@ -120,13 +155,14 @@ export const InstallGroupCard = ({
           <ConfigItem loading />
         </div>
       ) : visibleInstalls.length > 0 ? (
-        <div className="flex flex-col gap-1 border-t pt-2">
+        <div className="flex flex-col gap-1">
           {visibleInstalls.map((install) => (
             <ConfigItem
               key={install.id}
-              icon="ShippingContainerIcon"
               name={install.name ?? install.id}
               id={install.id}
+              status={<InstallStatuses install={install} />}
+              metadata={<InstallLocation install={install} />}
               onClick={() => onInstallSelect?.(install)}
               disabled={!onInstallSelect}
             />
@@ -138,7 +174,7 @@ export const InstallGroupCard = ({
         </Text>
       )}
 
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+      <footer className="flex flex-wrap items-center justify-between gap-3">
         <span className="flex flex-wrap items-center gap-2">
           {stage?.maxParallel !== undefined ? (
             <Badge>Max parallel {stage.maxParallel}</Badge>

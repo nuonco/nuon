@@ -9,6 +9,7 @@ export interface IConfigItem
   icon?: TIconVariant
   name?: string
   id?: string
+  status?: ReactNode
   metadata?: ReactNode
   loading?: boolean
 }
@@ -17,6 +18,7 @@ export const ConfigItem = ({
   icon = 'CubeIcon',
   name,
   id,
+  status,
   metadata,
   loading = false,
   className,
@@ -33,23 +35,30 @@ export const ConfigItem = ({
     <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-accent text-secondary">
       <Icon variant={icon} size={16} />
     </span>
-    <span className="flex min-w-0 flex-1 items-center gap-3">
-      <Text
-        weight="medium"
-        className="min-w-0 flex-1 truncate"
-        loading={loading}
-        loadingWidth={14}
-      >
-        {name ?? '—'}
-      </Text>
-      {loading ? (
-        <Text variant="caption" loading loadingWidth={8} />
-      ) : metadata ? (
-        <Text variant="caption" color="tertiary" className="shrink-0">
-          {metadata}
+    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <span className="flex min-w-0 items-center gap-2">
+        <Text
+          weight="medium"
+          className="min-w-0 truncate"
+          loading={loading}
+          loadingWidth={14}
+        >
+          {name ?? '\u2014'}
         </Text>
-      ) : null}
-      {id ? <ID value={id} truncate copyable={false} /> : null}
+        {status ? (
+          <span className="flex shrink-0 items-center gap-1">{status}</span>
+        ) : null}
+      </span>
+      <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-tertiary">
+        {loading ? (
+          <Text variant="caption" loading loadingWidth={10} />
+        ) : (
+          <>
+            {id ? <ID value={id} truncate copyable={false} /> : null}
+            {metadata}
+          </>
+        )}
+      </span>
     </span>
     <Icon variant="CaretRightIcon" size={14} className="shrink-0 text-tertiary" />
   </button>

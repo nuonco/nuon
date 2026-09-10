@@ -11,11 +11,7 @@ export type TInstallGroupMembership =
   | 'install_ids'
   | 'label_selector'
 
-export interface IDeploymentPlanInstall {
-  id: string
-  name?: string
-  labels?: Record<string, string>
-}
+export type IDeploymentPlanInstall = Partial<TInstall> & { id: string }
 
 export interface IDeploymentPlanStage {
   id: string
@@ -42,11 +38,10 @@ const membershipOf = (
 }
 
 const toPlanInstall = (
-  install: Pick<TInstall, 'id' | 'name' | 'labels'> & { id: string }
+  install: Partial<TInstall> & { id: string }
 ): IDeploymentPlanInstall => ({
+  ...install,
   id: install.id,
-  name: install.name,
-  labels: install.labels,
 })
 
 const membersForGroup = ({
@@ -57,7 +52,7 @@ const membersForGroup = ({
 }: {
   group: TAppBranchInstallGroup
   membership: TInstallGroupMembership
-  installs: Array<Pick<TInstall, 'id' | 'name' | 'labels'> & { id: string }>
+  installs: Array<Partial<TInstall> & { id: string }>
   claimed: Set<string>
 }): IDeploymentPlanInstall[] => {
   if (membership === 'all_installs') {
@@ -89,7 +84,7 @@ export const resolveDeploymentPlanStages = ({
   groupRuns,
 }: {
   groups?: TAppBranchInstallGroup[] | null
-  installs?: Array<Pick<TInstall, 'id' | 'name' | 'labels'>> | null
+  installs?: Array<Partial<TInstall>> | null
   groupRuns?: TInstallGroupRun[] | null
 }): IDeploymentPlanStage[] => {
   const orderedGroups = [...(groups ?? [])]
@@ -103,7 +98,7 @@ export const resolveDeploymentPlanStages = ({
   const knownInstalls = (installs ?? []).filter(
     (
       install
-    ): install is Pick<TInstall, 'id' | 'name' | 'labels'> & {
+    ): install is Partial<TInstall> & {
       id: string
     } => Boolean(install.id)
   )

@@ -129,6 +129,30 @@ describe('InstallGroupCard', () => {
     expect(screen.getByText('2 failed')).toBeTruthy()
   })
 
+  test('shows each install region and current status facets', () => {
+    renderCard(
+      stage({
+        installs: [
+          {
+            id: 'inst_alpha',
+            name: 'alpha',
+            cloud_platform: 'aws',
+            aws_account: { region: 'us-west-2' },
+            runner_status: 'active',
+            sandbox_status: 'active',
+            sandbox_health_status: 'healthy',
+            composite_component_status: 'deploying',
+          },
+        ],
+      })
+    )
+
+    expect(screen.getByText('US West (Oregon)')).toBeTruthy()
+    expect(screen.getByLabelText('Runner active')).toBeTruthy()
+    expect(screen.getByLabelText('Sandbox healthy')).toBeTruthy()
+    expect(screen.getByLabelText('Components deploying')).toBeTruthy()
+  })
+
   test('renders approval waiting as a warning and no actions', () => {
     renderCard(stage({ status: 'approval-awaiting' }))
 

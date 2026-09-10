@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { TAppBranch } from '@/types'
 import { Card } from '../../atoms/Card'
 import { Icon } from '../../atoms/Icon'
@@ -15,6 +16,7 @@ export interface IDeploymentPlanStages {
   labelColors?: Record<string, string>
   groupHref?: (stage: IDeploymentPlanStage) => string | undefined
   onInstallSelect?: (install: IDeploymentPlanInstall) => void
+  renderStageCard?: (stage: IDeploymentPlanStage) => ReactNode
   loading?: boolean
   error?: unknown
 }
@@ -88,6 +90,7 @@ export const DeploymentPlanStages = ({
   labelColors,
   groupHref,
   onInstallSelect,
+  renderStageCard,
   loading = false,
   error,
 }: IDeploymentPlanStages) => {
@@ -97,7 +100,12 @@ export const DeploymentPlanStages = ({
 
   return (
     <section className="flex flex-col gap-4" aria-label="Deployment plan">
-      <BranchSummary branch={branch} loading={loading} />
+      <header className="flex flex-col gap-2">
+        <Text as="h2" variant="heading">
+          Deployment plan
+        </Text>
+        <BranchSummary branch={branch} loading={loading} />
+      </header>
       {error || (!loading && visibleStages.length === 0) ? (
         <EmptyPlan error={error} />
       ) : (
@@ -110,13 +118,17 @@ export const DeploymentPlanStages = ({
                   className="ml-6 h-4 border-l"
                 />
               ) : null}
-              <InstallGroupCard
-                stage={stage}
-                labelColors={labelColors}
-                groupHref={stage ? groupHref?.(stage) : undefined}
-                onInstallSelect={onInstallSelect}
-                loading={loading}
-              />
+              {stage && renderStageCard ? (
+                renderStageCard(stage)
+              ) : (
+                <InstallGroupCard
+                  stage={stage}
+                  labelColors={labelColors}
+                  groupHref={stage ? groupHref?.(stage) : undefined}
+                  onInstallSelect={onInstallSelect}
+                  loading={loading}
+                />
+              )}
             </div>
           ))}
         </div>

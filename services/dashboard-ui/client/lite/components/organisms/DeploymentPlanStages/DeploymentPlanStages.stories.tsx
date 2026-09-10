@@ -145,6 +145,12 @@ export const Overview = () => (
         description: 'Opens an install summary panel.',
       },
       {
+        name: 'renderStageCard',
+        type: '(stage: IDeploymentPlanStage) => ReactNode',
+        description:
+          'Container-owned stage renderer used to bind linkable panel controls.',
+      },
+      {
         name: 'loading',
         type: 'boolean',
         default: 'false',
