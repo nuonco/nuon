@@ -160,6 +160,41 @@ func TestGetCustomLinkedDeployments_NonHoistableDefaultDoesNotConflict(t *testin
 	assert.Equal(t, "literal", hoisted["setting"].DefaultValue)
 }
 
+func TestGetCustomLinkedDeployments_PreservesAllowedValuesThroughRootAndWrapper(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{
+		  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+		  "contentVersion": "1.0.0.0",
+		  "parameters": {
+		    "environment": {
+		      "type": "string",
+		      "defaultValue": "production",
+		      "allowedValues": ["production", "staging"],
+		      "metadata": {"description": "Deployment environment."}
+		    }
+		  },
+		  "resources": [],
+		  "outputs": {}
+		}`))
+	}))
+	defer server.Close()
+
+	inp := armCustomStackInput(t, server.URL, nil)
+	templates := &Templates{cfg: &internal.Config{}}
+
+	_, hoisted, _, _, err := templates.getCustomLinkedDeployments(inp)
+	require.NoError(t, err)
+	require.Equal(t, []any{"production", "staging"}, hoisted["environment"].AllowedValues)
+
+	root, err := templates.getAzureTemplate(inp)
+	require.NoError(t, err)
+	assert.Equal(t, []any{"production", "staging"}, root.Parameters["environment"].AllowedValues)
+
+	wrapper := renderWrapper(t, inp)
+	wrapperParam := wrapper["parameters"].(map[string]any)["environment"].(map[string]any)
+	assert.Equal(t, []any{"production", "staging"}, wrapperParam["allowedValues"])
+}
+
 func armDeploymentParamValue(t *testing.T, resource any, name string) any {
 	t.Helper()
 

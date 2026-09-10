@@ -200,6 +200,25 @@ func basicsElement(name string, p ARMParameter, label string) (map[string]any, s
 		element["toolTip"] = p.Metadata.Description
 	}
 
+	if p.Type != "securestring" && len(p.AllowedValues) > 0 && (p.Type == "string" || p.Type == "int" || p.Type == "bool") {
+		allowedValues := make([]any, 0, len(p.AllowedValues))
+		for _, value := range p.AllowedValues {
+			allowedValues = append(allowedValues, map[string]any{
+				"label": humanizeParamName(fmt.Sprintf("%v", value)),
+				"value": value,
+			})
+		}
+		element["type"] = "Microsoft.Common.DropDown"
+		element["constraints"] = map[string]any{
+			"allowedValues": allowedValues,
+			"required":      true,
+		}
+		if p.DefaultValue != nil {
+			element["defaultValue"] = humanizeParamName(fmt.Sprintf("%v", p.DefaultValue))
+		}
+		return element, fmt.Sprintf("[basics('%s')]", name), true
+	}
+
 	switch p.Type {
 	case "securestring":
 		element["type"] = "Microsoft.Common.PasswordBox"
