@@ -453,6 +453,25 @@
   }
 }
 
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: var(--focus-ring-offset, 2px);
+  }
+}
+
+@utility focus-ring-tight {
+  --focus-ring-offset: 1px;
+}
+
+@utility focus-ring-flush {
+  --focus-ring-offset: 0px;
+}
+
+@utility focus-ring-inset {
+  --focus-ring-offset: -2px;
+}
+
 @utility popover {
   position: fixed;
   z-index: 9999;

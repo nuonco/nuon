@@ -64,7 +64,7 @@ export const Checkbox = forwardRef<HTMLInputElement, ICheckbox>(
           className={cn(
             'peer absolute inset-0 size-5 cursor-pointer appearance-none rounded-md border border-field-border bg-field-bg outline-none transition-colors',
             'checked:border-action-primary checked:bg-action-primary indeterminate:border-action-primary indeterminate:bg-action-primary',
-            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+            'focus-ring',
             'aria-invalid:border-field-invalid disabled:cursor-not-allowed disabled:opacity-50',
             loading && 'skeleton',
             className

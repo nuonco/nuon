@@ -209,7 +209,7 @@ const OptionList = ({
               onKeyDown={(event) => onOptionKeyDown(event, option, index)}
               className={cn(
                 'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 outline-none',
-                'hover:bg-field-bg-hover focus-visible:bg-field-bg-hover focus-visible:outline-2 focus-visible:outline-focus-ring',
+                'hover:bg-field-bg-hover focus-visible:bg-field-bg-hover focus-ring focus-ring-flush',
                 option.value === value && 'bg-field-option-selected',
                 option.disabled && 'cursor-not-allowed opacity-50'
               )}

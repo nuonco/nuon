@@ -70,7 +70,7 @@ export const Badge = ({
       onClick={onRemove}
       disabled={disabled}
       aria-label={`${removeLabel} ${labelKey ?? ''}`.trim()}
-      className="-mr-0.5 inline-flex cursor-pointer items-center rounded-xs opacity-70 transition-opacity not-disabled:hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring"
+      className="-mr-0.5 inline-flex cursor-pointer items-center rounded-xs opacity-70 transition-opacity not-disabled:hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40 focus-ring focus-ring-tight"
     >
       <Icon variant="XIcon" size={12} />
     </button>

@@ -78,7 +78,7 @@ export const FilterOption = forwardRef<HTMLDivElement, IFilterOption>(
       }}
       className={cn(
         'group/filter relative flex min-h-8 cursor-pointer items-stretch rounded-md outline-none transition-colors',
-        'hover:bg-field-bg-hover focus-visible:bg-field-bg-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring',
+        'hover:bg-field-bg-hover focus-visible:bg-field-bg-hover focus-ring focus-ring-inset',
         disabled && 'cursor-not-allowed opacity-50'
       )}
     >
