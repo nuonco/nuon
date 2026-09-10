@@ -69,6 +69,7 @@ export const DeploymentPlanEditor = ({
       name: g.name || `Group ${g.order + 1}`,
       install_ids: g.selection_mode === 'manual' ? g.install_ids : [],
       label_selector: g.selection_mode === 'labels' ? g.label_selector : undefined,
+      all_installs: g.selection_mode === 'all',
       max_parallel: g.max_parallel,
     })),
   } as TAppBranchConfig), [groups])
@@ -76,7 +77,9 @@ export const DeploymentPlanEditor = ({
   const assignedInstallIds = useMemo(() => {
     const assigned = new Set<string>()
     groups.forEach((g) => {
-      if (g.selection_mode === 'labels') {
+      if (g.selection_mode === 'all') {
+        availableInstalls.forEach((i) => assigned.add(i.id))
+      } else if (g.selection_mode === 'labels') {
         const matchLabels = g.label_selector?.match_labels
         if (matchLabels && Object.keys(matchLabels).length > 0) {
           availableInstalls.forEach((i) => {
@@ -96,6 +99,7 @@ export const DeploymentPlanEditor = ({
   )
 
   const groupContentError = (g: IInstallGroup): string | undefined => {
+    if (g.selection_mode === 'all') return undefined
     if (g.selection_mode === 'labels') {
       if (!g.label_selector?.match_labels || Object.keys(g.label_selector.match_labels).length === 0) {
         return 'Add at least one label to match installs.'
@@ -116,8 +120,8 @@ export const DeploymentPlanEditor = ({
     const needsName = groups.some((g) => !g.name.trim())
     const needsInstalls = groups.some((g) => !!groupContentError(g))
     if (needsName && needsInstalls)
-      return 'Every group needs a name and at least one install.'
-    if (needsInstalls) return 'Every group needs at least one install.'
+      return 'Every group needs a name and installs to target.'
+    if (needsInstalls) return 'Every group needs installs or matching labels.'
     if (needsName) return 'Every group needs a name.'
     return undefined
   })()
@@ -129,7 +133,10 @@ export const DeploymentPlanEditor = ({
   }
 
   const addGroup = () => {
-    const group = newGroup(groups.length)
+    const group = newGroup(
+      groups.length,
+      availableInstalls.length === 0 ? 'all' : 'manual'
+    )
     setGroups((curr) => [...curr, group])
     setNewGroupId(group.id)
   }
@@ -185,7 +192,7 @@ export const DeploymentPlanEditor = ({
     onSave(groups, postDeployRunbookIds)
   }
 
-  const canAddGroup = !loadingInstalls && availableInstalls.length > 0
+  const canAddGroup = !loadingInstalls
 
   return (
     <Modal
@@ -223,17 +230,20 @@ export const DeploymentPlanEditor = ({
           <Skeleton height="120px" />
           <Skeleton height="120px" />
         </div>
-      ) : availableInstalls.length === 0 ? (
-        <Banner theme="info">
-          No installs found for this app. Create installs first to configure a
-          deployment plan.
-        </Banner>
       ) : (
         <div className="flex flex-col gap-6">
           <Text variant="subtext" theme="neutral">
             Groups deploy top to bottom. Installs in a group deploy together, up
             to its max parallel. Any install left unassigned is skipped.
           </Text>
+
+          {availableInstalls.length === 0 && (
+            <Banner theme="info">
+              This app has no installs yet. Groups that match on labels or take
+              all installs pick them up as they are created — a group with a
+              hand-picked list needs installs to exist first.
+            </Banner>
+          )}
 
           {groups.length >= 2 && (
             <DeploymentPlanGraph config={previewConfig} installsById={installsById} orgId={orgId} />

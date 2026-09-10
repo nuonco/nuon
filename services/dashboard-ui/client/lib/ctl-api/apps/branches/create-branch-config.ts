@@ -22,6 +22,7 @@ export type TCreateBranchConfigRequest = {
       match_labels?: Record<string, string>
       not_match_labels?: Record<string, string>
     } | null
+    all_installs?: boolean
     order: number
     max_parallel?: number
     auto_approve_on_policies_passing?: boolean
