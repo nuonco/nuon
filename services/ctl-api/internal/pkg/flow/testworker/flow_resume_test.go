@@ -61,9 +61,20 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 	require.Nil(e.T(), err)
 	require.True(e.T(), resp.Retryable)
 
-	// The workflow will resume. The clone of g2-step will also fail (same FailSignal).
-	// The workflow should error again.
-	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+	// Wait for the retry clone itself; the workflow already has StatusError when
+	// the update is submitted.
+	require.Eventually(e.T(), func() bool {
+		steps, err := e.tryStepsByWorkflow(ctx, flw.ID)
+		if err != nil {
+			return false
+		}
+		for _, step := range steps {
+			if step.GroupIdx == 2 && step.RetryIndex == 1 && step.Status.Status == app.StatusError {
+				return true
+			}
+		}
+		return false
+	}, pollTimeout, pollInterval)
 
 	// Key assertion: group 1 step should NOT have been re-executed.
 	// It should still have the same single step with StatusSuccess.
@@ -86,6 +97,7 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 		}
 	}
 	require.GreaterOrEqual(e.T(), g2StepCount, 2, "group 2 should have original + retry clone")
+	e.cancelWorkflow(ctx, flw.ID)
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
@@ -113,7 +125,8 @@ func (e *FlowTestSuite) TestSkipErroredStep() {
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
 
 	// FailSignal has no retry budget, so the run settles into a terminal
-	// StatusError and the conductor parks awaiting a resume.
+	// StatusError and the group handler exits, leaving the conductor parked
+	// awaiting a resume.
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
 
 	// Find failed step
@@ -180,7 +193,7 @@ func (e *FlowTestSuite) TestSkipParkedStep() {
 	})
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
-	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusFailedPendingRetry)
 
 	// Find failed step
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
@@ -215,5 +228,6 @@ func (e *FlowTestSuite) TestSkipParkedStep() {
 				"step after skip should have succeeded")
 		}
 	}
+
 	e.assertTemporalDrained(ctx, flw.ID)
 }
