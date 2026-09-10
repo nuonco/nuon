@@ -34,6 +34,7 @@ export const BuildSelectContainer = ({
   const {
     data: buildsResult,
     isLoading,
+    isFetching,
     error,
   } = useQuery({
     queryKey: ['component-builds-select', org?.id, componentId, currentPage],
@@ -69,17 +70,37 @@ export const BuildSelectContainer = ({
     }
   }, [buildsResult, currentPage, isLoadingMore])
 
+  useEffect(() => {
+    const hasDeployableBuild = allBuilds.some((build) => !build?.is_preview)
+    if (
+      allBuilds.length > 0 &&
+      !hasDeployableBuild &&
+      hasMorePages &&
+      !isFetching &&
+      !isLoadingMore
+    ) {
+      setIsLoadingMore(true)
+      setCurrentPage((prev) => prev + 1)
+    }
+  }, [allBuilds, hasMorePages, isFetching, isLoadingMore])
+
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
       const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100
 
-      if (isNearBottom && !isLoading && !isLoadingMore && hasMorePages) {
+      if (
+        isNearBottom &&
+        !isLoading &&
+        !isFetching &&
+        !isLoadingMore &&
+        hasMorePages
+      ) {
         setIsLoadingMore(true)
         setCurrentPage((prev) => prev + 1)
       }
     },
-    [isLoading, isLoadingMore, hasMorePages]
+    [isLoading, isFetching, isLoadingMore, hasMorePages]
   )
 
   return (
