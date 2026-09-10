@@ -98,6 +98,54 @@ export const NoInstalls = () => (
   </ModalStory>
 )
 
+export const NoInstallsWithAllInstallsGroup = () => (
+  <ModalStory label="Open deployment plan">
+    <DeploymentPlanEditor
+      initialGroups={[
+        {
+          id: 'group-all',
+          name: 'Everything',
+          install_ids: [],
+          label_selector: null,
+          selection_mode: 'all',
+          order: 0,
+          max_parallel: 1,
+          auto_approve_on_policies_passing: false,
+        },
+      ]}
+      availableInstalls={[]}
+      loadingInstalls={false}
+      isSaving={false}
+      onSave={noop}
+      onCancel={noop}
+      orgId="org123"
+      runbooks={runbooks}
+      loadingRunbooks={false}
+      initialPostDeployRunbookIds={[]}
+    />
+  </ModalStory>
+)
+
+export const AllInstallsGroup = () => (
+  <ModalStory label="Open deployment plan">
+    <DeploymentPlanEditor
+      initialGroups={[
+        {
+          id: 'group-all',
+          name: 'Everything',
+          install_ids: [],
+          label_selector: null,
+          selection_mode: 'all',
+          order: 0,
+          max_parallel: 2,
+          auto_approve_on_policies_passing: false,
+        },
+      ]}
+      {...baseProps}
+    />
+  </ModalStory>
+)
+
 export const WithPostDeployRunbooks = () => (
   <ModalStory label="Open deployment plan">
     <DeploymentPlanEditor

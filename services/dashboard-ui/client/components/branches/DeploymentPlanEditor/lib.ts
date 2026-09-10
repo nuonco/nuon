@@ -1,11 +1,14 @@
-import type { IInstallGroup } from './types'
+import type { IInstallGroup, InstallSelectionMode } from './types'
 
-export const newGroup = (existingCount: number): IInstallGroup => ({
+export const newGroup = (
+  existingCount: number,
+  selectionMode: InstallSelectionMode = 'manual'
+): IInstallGroup => ({
   id: `group-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   name: '',
   install_ids: [],
   label_selector: null,
-  selection_mode: 'manual',
+  selection_mode: selectionMode,
   order: existingCount,
   max_parallel: 1,
   auto_approve_on_policies_passing: false,
