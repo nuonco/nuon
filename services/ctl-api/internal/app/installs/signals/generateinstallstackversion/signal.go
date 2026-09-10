@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -40,13 +41,20 @@ type Signal struct {
 	InstallStackID string
 	WorkflowStepID string
 
-	cfg *internal.Config
+	// PrepareStateAndRunner folds provision's preceding state-generation and
+	// runner service-account steps into this signal. Set only by the provision
+	// generator; every other caller leaves it unset.
+	PrepareStateAndRunner bool
+
+	cfg     *internal.Config
+	metrics metrics.Writer
 }
 
 var _ signal.Signal = (*Signal)(nil)
 
 func (s *Signal) WithParams(params *signal.Params) {
 	s.cfg = params.Cfg
+	s.metrics = params.MW
 }
 
 var _ signal.SignalWithParams = (*Signal)(nil)
@@ -78,13 +86,20 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	install, err := activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
+	res, err := activities.AwaitGetInstallAndStackForStackByStackID(ctx, s.InstallStackID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
+	install, stack := res.Install, res.Stack
+
+	if s.PrepareStateAndRunner {
+		if err := s.prepare(ctx, install); err != nil {
+			return err
+		}
+	}
 
 	// need to fetch app config
-	cfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	cfg, err := activities.AwaitGetAppConfigForStackByID(ctx, install.AppConfigID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get app config")
 	}
@@ -97,11 +112,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		app.AppRunnerTypeGCP,
 	}) {
 		return nil
-	}
-
-	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, install.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get stack")
 	}
 
 	installState, err := activities.AwaitGetInstallStateByInstallID(ctx, install.ID)

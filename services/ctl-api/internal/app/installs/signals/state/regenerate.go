@@ -270,7 +270,7 @@ func fetchInputsPartial(ctx workflow.Context, installID string, is *pkgstate.Sta
 		}
 		return errors.Wrap(err, "unable to get inputs state")
 	}
-	cfg, err := installactivities.AwaitGetAppConfigByID(ctx, inst.AppConfigID)
+	cfg, err := installactivities.AwaitGetAppConfigInputSectionByID(ctx, inst.AppConfigID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get app config")
 	}

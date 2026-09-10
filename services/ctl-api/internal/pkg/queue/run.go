@@ -50,7 +50,7 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	}
 
 	// Clear any stale restart hint so this run doesn't immediately restart.
-	if err := activities.AwaitClearRestartHint(ctx, activities.ClearRestartHintRequest{
+	if err := clearRestartHint(ctx, activities.ClearRestartHintRequest{
 		QueueID: q.queueID,
 	}); err != nil {
 		l.Warn("unable to clear restart hint", zap.Error(err))
@@ -95,7 +95,7 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		workflowmanager.WithCheckInterval(hintPeriod),
 		workflowmanager.WithMetricsWriter(q.mw),
 		workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
-			_, err := activities.AwaitGetQueueByQueueID(gCtx, q.queueID)
+			_, err := getQueueByID(gCtx, q.queueID)
 			if err != nil {
 				if generics.IsGormErrRecordNotFound(err) {
 					return false, nil
@@ -122,12 +122,12 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		}),
 		workflowmanager.WithCANHintChecker(workflowmanager.CANHintCheckerFunc{
 			CheckFn: func(gCtx workflow.Context) (bool, error) {
-				return activities.AwaitCheckRestartHint(gCtx, activities.CheckRestartHintRequest{
+				return checkRestartHint(gCtx, activities.CheckRestartHintRequest{
 					QueueID: q.queueID,
 				})
 			},
 			ClearFn: func(gCtx workflow.Context) error {
-				return activities.AwaitClearRestartHint(gCtx, activities.ClearRestartHintRequest{
+				return clearRestartHint(gCtx, activities.ClearRestartHintRequest{
 					QueueID: q.queueID,
 				})
 			},

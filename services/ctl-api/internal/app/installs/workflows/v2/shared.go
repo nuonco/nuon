@@ -42,6 +42,12 @@ func WithSkippable(skippable bool) WorkflowStepOptions {
 	}
 }
 
+func WithRetryable(retryable bool) WorkflowStepOptions {
+	return func(s *app.WorkflowStep) {
+		s.Retryable = retryable
+	}
+}
+
 func WithSkipOnFailure(skipOnFailure bool) WorkflowStepOptions {
 	return func(s *app.WorkflowStep) {
 		s.SkipOnFailure = skipOnFailure

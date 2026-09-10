@@ -54,7 +54,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	}
 
 	// Fetch step and workflow from the database
-	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, s.StepID)
+	step, err := getStep(ctx, s.StepID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get step")
 	}
@@ -76,21 +76,24 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	}
 
 	defer func() {
-		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(ctx, step.ID); err != nil {
+		if err := updateStepFinishedAt(ctx, step.ID); err != nil {
 			l.Error("unable to update finished at", zap.Error(err))
 		}
 	}()
 
-	// Update flow status to in-progress
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: flw.ID,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusInProgress,
-			StatusHumanDescription: "executing step " + step.Name,
-			Metadata:               map[string]any{},
-		},
-	}); err != nil {
-		return errors.Wrap(err, "unable to update step")
+	// The batched path folds this into PkgStatusStartFlowStep, which
+	// executeInnerSignal calls next.
+	if !useBatchedStatus(ctx) {
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: flw.ID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusInProgress,
+				StatusHumanDescription: "executing step " + step.Name,
+				Metadata:               map[string]any{},
+			},
+		}); err != nil {
+			return errors.Wrap(err, "unable to update step")
+		}
 	}
 
 	// Execute the inner signal
@@ -128,10 +131,14 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return nil
 	}
 
-	// Refetch the step after signal execution to gather new state (e.g. step target ID)
-	step, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get step")
+	// ExecutionType is immutable, so the batched path branches on the value read
+	// before the signal ran and leaves the re-fetch to whichever branch needs
+	// the state the signal wrote (the step target ID).
+	if !useBatchedStatus(ctx) {
+		step, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get step")
+		}
 	}
 
 	// Non-approval steps: mark success and return
@@ -139,6 +146,20 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		l.Debug("step type non approval, step successful",
 			zap.String("step_id", step.ID),
 			zap.String("workflow_id", flw.ID))
+
+		if useBatchedStatus(ctx) {
+			if err := statusactivities.LocalAwaitPkgStatusFinishFlowStep(ctx, statusactivities.FinishFlowStepRequest{
+				StepID:   step.ID,
+				FlowID:   flw.ID,
+				StepName: step.Name,
+				StepIdx:  step.Idx,
+			}); err != nil {
+				return errors.Wrap(err, "unable to finish step")
+			}
+
+			return nil
+		}
+
 		// A signal that skipped its own work marks the step skipped before
 		// returning. Overwriting that with success would report work as done
 		// that never ran, so leave an already-skipped status alone.
@@ -174,6 +195,13 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return nil
 	}
 
+	if useBatchedStatus(ctx) {
+		step, err = getStep(ctx, step.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get step")
+		}
+	}
+
 	// Approval steps: delegate to plan processing
 	return s.processPlan(ctx, step, flw)
 }
@@ -182,21 +210,31 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 // It updates step status, then enqueues the inner signal to the install-signals
 // queue and awaits completion.
 func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep) error {
-	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepStartedAtByID(ctx, step.ID); err != nil {
-		return err
-	}
+	if useBatchedStatus(ctx) {
+		if err := statusactivities.LocalAwaitPkgStatusStartFlowStep(ctx, statusactivities.StartFlowStepRequest{
+			StepID:   step.ID,
+			FlowID:   s.WorkflowID,
+			StepName: step.Name,
+		}); err != nil {
+			return err
+		}
+	} else {
+		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepStartedAtByID(ctx, step.ID); err != nil {
+			return err
+		}
 
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: step.ID,
-		Status: app.CompositeStatus{
-			Status: app.StatusInProgress,
-		},
-	}); err != nil {
-		return err
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusInProgress,
+			},
+		}); err != nil {
+			return err
+		}
 	}
 
 	if step.ExecutionType == app.WorkflowStepExecutionTypeSkipped {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		if err := updateStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
 				Status: app.StatusSuccess,

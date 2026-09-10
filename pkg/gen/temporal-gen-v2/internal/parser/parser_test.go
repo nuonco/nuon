@@ -392,6 +392,45 @@ func TestParse(t *testing.T) {
 				WorkflowOpts: &WorkflowOptions{},
 			},
 		},
+		"Activity with local retry policy": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @local",
+				"// @local-retry-policy-max-attempts 3",
+			},
+			expected: &Annotation{
+				Type: "activity",
+				ActivityOpts: &ActivityOptions{
+					IsLocal:         true,
+					LocalMaxRetries: 3,
+				},
+			},
+		},
+		"Local retry policy does not set remote max retries": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @local",
+				"// @local-retry-policy-max-attempts 5",
+				"// @retry-policy-max-attempts 2",
+			},
+			expected: &Annotation{
+				Type: "activity",
+				ActivityOpts: &ActivityOptions{
+					IsLocal:         true,
+					LocalMaxRetries: 5,
+					MaxRetries:      2,
+					RetryPolicy:     true,
+				},
+			},
+		},
+		"Local retry policy with bad value": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @local",
+				"// @local-retry-policy-max-attempts notanumber",
+			},
+			wantErr: true,
+		},
 		"Unknown argument": {
 			comments: []string{
 				"// @" + config.AnnotationPrefix + " activity",
@@ -412,4 +451,18 @@ func TestParse(t *testing.T) {
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
+}
+
+func TestAnnotationValidateLocalRetryRequiresLocal(t *testing.T) {
+	err := (&Annotation{
+		Type:         "activity",
+		ActivityOpts: &ActivityOptions{LocalMaxRetries: 3},
+	}).Validate()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "@local-retry-policy-max-attempts requires @local")
+
+	require.NoError(t, (&Annotation{
+		Type:         "activity",
+		ActivityOpts: &ActivityOptions{IsLocal: true, LocalMaxRetries: 3},
+	}).Validate())
 }

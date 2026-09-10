@@ -12,6 +12,7 @@ import (
 // @wrapper-prefix QueueInternal
 // @by-field queueID
 // @start-to-close-timeout 1m
+// @local
 func (a *Activities) queueExists(ctx context.Context, queueID string) (bool, error) {
 	var count int64
 	if res := a.db.WithContext(ctx).

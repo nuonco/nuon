@@ -222,9 +222,7 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 // When StepGroupID is set, steps are filtered by WorkflowStepGroupID;
 // otherwise falls back to GroupIdx filtering for backward compatibility.
 func (s *Signal) getGroupSteps(ctx workflow.Context) ([]app.WorkflowStep, error) {
-	allSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, activities.GetFlowStepsRequest{
-		FlowID: s.WorkflowID,
-	})
+	allSteps, err := getFlowSteps(ctx, s.WorkflowID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get flow steps")
 	}

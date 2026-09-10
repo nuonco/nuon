@@ -16,6 +16,7 @@ type UpdateFlowStepResultDirectiveRequest struct {
 }
 
 // @temporal-gen-v2 activity
+// @local
 func (a *Activities) PkgWorkflowsFlowUpdateFlowStepResultDirective(ctx context.Context, req UpdateFlowStepResultDirectiveRequest) error {
 	step := app.WorkflowStep{ID: req.StepID}
 	res := a.db.WithContext(ctx).

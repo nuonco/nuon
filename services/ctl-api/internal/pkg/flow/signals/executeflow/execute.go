@@ -413,7 +413,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	// Load step groups for the workflow.
 	// If groups exist (new path), iterate over them. Otherwise fall back to
 	// collecting group indices from steps (backward compat for in-flight workflows).
-	stepGroups, _ := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
+	stepGroups, _ := getFlowStepGroups(ctx, s.WorkflowID)
 
 	var groups []app.WorkflowStepGroup
 	if len(stepGroups) > 0 {
@@ -562,7 +562,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				return stoppedErr
 			}
 			// Re-fetch groups
-			stepGroups, _ = workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
+			stepGroups, _ = getFlowStepGroups(ctx, s.WorkflowID)
 			if len(stepGroups) > 0 {
 				groups = stepGroups
 			} else {
@@ -624,7 +624,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			})
 
 			// Reload groups from DB now that all are persisted.
-			stepGroups, _ = workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
+			stepGroups, _ = getFlowStepGroups(ctx, s.WorkflowID)
 			if len(stepGroups) > 0 {
 				groups = stepGroups
 			} else {
@@ -737,11 +737,11 @@ func (s *Signal) findGroupPositionForStep(ctx workflow.Context, stepID string) i
 // appended step that errored) are skipped, so one failed step never wedges the
 // host.
 func (s *Signal) firstPendingGroupPosition(ctx workflow.Context) (int, bool) {
-	groups, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
+	groups, err := getFlowStepGroups(ctx, s.WorkflowID)
 	if err != nil || len(groups) == 0 {
 		return 0, false
 	}
-	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+	steps, err := getFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
 	})
 	if err != nil {
@@ -825,7 +825,7 @@ func (s *Signal) markRemainingGroupStepsDiscarded(ctx workflow.Context, l *zap.L
 		return
 	}
 
-	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+	steps, err := getFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
 	})
 	if err != nil {
@@ -881,7 +881,7 @@ func (s *Signal) markRemainingGroupStepsDiscarded(ctx workflow.Context, l *zap.L
 // as not-attempted. Called when the workflow is stopped (e.g. retries exhausted)
 // so the dashboard clearly shows which steps were never reached.
 func (s *Signal) markRemainingStepsNotAttempted(ctx workflow.Context, l *zap.Logger) {
-	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+	steps, err := getFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
 	})
 	if err != nil {
@@ -946,7 +946,7 @@ func (s *Signal) createRun(ctx workflow.Context, runType app.WorkflowRunType, tr
 
 // updateRunStatus updates the status of a workflow run.
 func (s *Signal) updateRunStatus(ctx workflow.Context, runID string, status app.Status) {
-	workflowactivities.AwaitPkgWorkflowsFlowUpdateWorkflowRunStatus(ctx, workflowactivities.UpdateWorkflowRunStatusRequest{
+	updateWorkflowRunStatus(ctx, workflowactivities.UpdateWorkflowRunStatusRequest{
 		RunID: runID,
 		Status: app.CompositeStatus{
 			Status: status,
@@ -956,7 +956,7 @@ func (s *Signal) updateRunStatus(ctx workflow.Context, runID string, status app.
 
 // isWorkflowComplete checks if all steps in the workflow have terminal statuses.
 func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
-	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, s.WorkflowID)
+	steps, err := getFlowStepsByFlowID(ctx, s.WorkflowID)
 	if err != nil {
 		return false
 	}
@@ -1010,7 +1010,7 @@ func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 // the group to stop. The step that writes the StepStop directive owns the
 // user-facing phrasing; this is only a lookup.
 func (s *Signal) groupStopReason(ctx workflow.Context, group *app.WorkflowStepGroup) (string, string) {
-	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+	steps, err := getFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
 	})
 	if err != nil {
@@ -1029,7 +1029,7 @@ func (s *Signal) groupStopReason(ctx workflow.Context, group *app.WorkflowStepGr
 // checkGroupRetriesExhausted checks if any step in the group has retries_exhausted
 // metadata, indicating the stop was caused by retry exhaustion.
 func (s *Signal) checkGroupRetriesExhausted(ctx workflow.Context, group *app.WorkflowStepGroup) bool {
-	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+	steps, err := getFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
 	})
 	if err != nil {
