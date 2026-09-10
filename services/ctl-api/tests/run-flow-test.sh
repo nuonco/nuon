@@ -82,9 +82,7 @@ if [[ $# -ge 1 && -n $1 ]]; then
   run="TestSuite/$1"
 fi
 
-args=(-run "$run" -timeout "${TIMEOUT:-45m}" -v -parallel "${NUON_FLOW_PARALLELISM:-1}")
-# NUON_FLOW_PARALLELISM=N runs up to N flow cases concurrently (each test
-# calls t.Parallel); the default 1 keeps the original serial behavior.
+args=(-run "$run" -timeout "${TIMEOUT:-45m}" -v)
 if [[ -n ${SKIP:-} ]]; then
   args+=(-skip "$SKIP")
 fi

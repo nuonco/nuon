@@ -51,9 +51,7 @@ func LoadCHConfig() (CHConfig, error) {
 
 // CreateAndMigrateCHDatabase drops and recreates the ClickHouse test database, then runs migrations.
 // Called by the testsetup binary before tests run.
-// CH migration state is tracked in PostgreSQL, so psqlCfg must be the config of the
-// Postgres database paired with this ClickHouse database — it is the migration ledger.
-func CreateAndMigrateCHDatabase(chCfg CHConfig, psqlCfg DBConfig) error {
+func CreateAndMigrateCHDatabase(chCfg CHConfig) error {
 	// Connect to the default database to create our test database
 	defaultOpts := &clickhousecore.Options{
 		Addr: []string{fmt.Sprintf("%s:%s", chCfg.Host, chCfg.Port)},
@@ -94,7 +92,7 @@ func CreateAndMigrateCHDatabase(chCfg CHConfig, psqlCfg DBConfig) error {
 	}
 
 	// Run migrations
-	if err := MigrateTestCHDatabase(chCfg, psqlCfg); err != nil {
+	if err := MigrateTestCHDatabase(chCfg); err != nil {
 		return fmt.Errorf("failed to migrate clickhouse test database: %w", err)
 	}
 
@@ -103,8 +101,7 @@ func CreateAndMigrateCHDatabase(chCfg CHConfig, psqlCfg DBConfig) error {
 
 // MigrateTestCHDatabase connects to the ClickHouse test database and runs migrations.
 // CH migration state is tracked in PostgreSQL, so we need both connections.
-// psqlCfg must be the Postgres database paired with this ClickHouse database.
-func MigrateTestCHDatabase(chCfg CHConfig, psqlCfg DBConfig) error {
+func MigrateTestCHDatabase(chCfg CHConfig) error {
 	// Connect to ClickHouse target database
 	chOpts := &clickhousecore.Options{
 		Addr: []string{fmt.Sprintf("%s:%s", chCfg.Host, chCfg.Port)},
@@ -143,6 +140,11 @@ func MigrateTestCHDatabase(chCfg CHConfig, psqlCfg DBConfig) error {
 	defer chSqlDB.Close()
 
 	// Connect to PostgreSQL for migration tracking
+	var psqlCfg DBConfig
+	if err := config.LoadInto(nil, &psqlCfg); err != nil {
+		return fmt.Errorf("failed to load psql config for CH migration tracking: %w", err)
+	}
+
 	psqlDSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		psqlCfg.DBHost, psqlCfg.DBPort, psqlCfg.DBUser, psqlCfg.DBPassword, psqlCfg.DBName, psqlCfg.DBSSLMode)
 
