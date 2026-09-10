@@ -162,7 +162,7 @@ export interface IMenuItem {
 const ITEM_CLASSES =
   'flex min-h-8 w-full shrink-0 cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 ' +
   'text-left text-body no-underline outline-none transition-colors ' +
-  'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring'
+  'focus-ring focus-ring-inset'
 
 const TONE_CLASSES: Record<TMenuItemTone, string> = {
   default:
