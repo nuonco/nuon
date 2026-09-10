@@ -15,16 +15,12 @@ import (
 func (a *Activities) getQueueSignals(ctx context.Context, queueID string) ([]*app.QueueSignal, error) {
 	var queueSignals []*app.QueueSignal
 
-	jdb := generics.NewJSONBQuery(a.db.WithContext(ctx))
-	if res := jdb.WhereJSON(generics.JSONBQuery{
-		Operator: "IN",
-		Field:    "status",
-		Path:     "status",
-		Value:    []string{string(app.StatusQueued), string(app.StatusInProgress)},
-	}).Where(app.QueueSignal{
-		QueueID:  queueID,
-		Enqueued: true,
-	}).
+	if res := a.db.WithContext(ctx).
+		Scopes(generics.WhereJSONBStatusIn("status", string(app.StatusQueued), string(app.StatusInProgress))).
+		Where(app.QueueSignal{
+			QueueID:  queueID,
+			Enqueued: true,
+		}).
 		Order("created_at asc").
 		Find(&queueSignals); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to get queue signals")

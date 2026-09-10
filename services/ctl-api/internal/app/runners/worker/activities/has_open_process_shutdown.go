@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type HasOpenProcessShutdownRequest struct {
@@ -21,11 +22,11 @@ func (a *Activities) HasOpenProcessShutdown(ctx context.Context, req HasOpenProc
 	res := a.db.WithContext(ctx).
 		Model(&app.RunnerProcess{}).
 		Where(app.RunnerProcess{RunnerID: req.RunnerID}).
-		Where("composite_status->>'status' IN ?", []string{
+		Scopes(generics.WhereJSONBStatusIn("composite_status",
 			string(app.RunnerProcessStatusActive),
 			string(app.RunnerProcessStatusPendingShutdown),
 			string(app.RunnerProcessStatusShuttingDown),
-		}).
+		)).
 		Pluck("id", &processIDs)
 	if res.Error != nil {
 		return nil, res.Error
@@ -39,10 +40,10 @@ func (a *Activities) HasOpenProcessShutdown(ctx context.Context, req HasOpenProc
 	res = a.db.WithContext(ctx).
 		Model(&app.RunnerProcessShutdown{}).
 		Where("runner_process_id IN ?", processIDs).
-		Where("composite_status->>'status' IN ?", []string{
+		Scopes(generics.WhereJSONBStatusIn("composite_status",
 			string(app.RunnerProcessShutdownStatusRequested),
 			string(app.RunnerProcessShutdownStatusInProgress),
-		}).
+		)).
 		Count(&count)
 	if res.Error != nil {
 		return nil, res.Error

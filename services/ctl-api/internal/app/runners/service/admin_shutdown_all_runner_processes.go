@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type AdminShutdownAllRunnerProcessesRequest struct {
@@ -55,10 +56,15 @@ func (s *service) AdminShutdownAllRunnerProcesses(ctx *gin.Context) {
 func (s *service) shutdownAllRunnerProcesses(ctx context.Context, shutdownType app.RunnerProcessShutdownType, processType *app.RunnerProcessType) (*AdminShutdownAllRunnerProcessesResponse, error) {
 	var allProcesses []app.RunnerProcess
 	query := s.db.WithContext(ctx).
-		Where("runner_processes.composite_status::jsonb ->> 'status' IN ('active', 'offline')").
-		Order("runner_processes.runner_id, runner_processes.type, runner_processes.created_at DESC")
+		Scopes(generics.WhereJSONBStatusIn("composite_status",
+			string(app.RunnerProcessStatusActive),
+			string(app.RunnerProcessStatusOffline),
+		)).
+		Order("runner_id, type, created_at DESC")
 
 	if processType != nil {
+		// Not a struct condition: an empty process_type must match nothing, but gorm
+		// drops zero-value struct fields and would shut down every process instead.
 		query = query.Where("runner_processes.type = ?", *processType)
 	}
 

@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GetPendingInstallGroupDeployStepInput struct {
@@ -28,11 +29,11 @@ func (a *Activities) GetPendingInstallGroupDeployStep(ctx context.Context, input
 			ExecutionType:     app.WorkflowStepExecutionTypeSystem,
 		}).
 		Where("queue_signal->'data'->>'install_group_id' = ?", input.InstallGroupID).
-		Where("status->>'status' IN ?", []string{
+		Scopes(generics.WhereJSONBStatusIn("status",
 			string(app.StatusPending),
 			string(app.StatusNotAttempted),
 			string(app.StatusQueued),
-		}).
+		)).
 		Order("group_idx desc, created_at desc").
 		First(&step).Error
 	if err != nil {

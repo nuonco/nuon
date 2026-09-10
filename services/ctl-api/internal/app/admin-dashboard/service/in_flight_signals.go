@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 func (s *service) InFlightSignals(c *gin.Context) {
@@ -54,7 +55,7 @@ func (s *service) getInFlightSignals(ctx context.Context, namespace string) ([]a
 
 	query := s.readDB().WithContext(ctx).
 		Model(&app.QueueSignal{}).
-		Where("status->>'status' IN ('executing', 'in-progress', 'active')").
+		Scopes(generics.WhereJSONBStatusIn("status", "executing", "in-progress", "active")).
 		Order("updated_at DESC").
 		Limit(200)
 

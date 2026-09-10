@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -56,7 +57,7 @@ func (s *service) listAppsDetails(ctx *gin.Context, statuses []string) ([]*Admin
 		Joins("JOIN orgs ON orgs.id = apps.org_id AND orgs.deleted_at = 0").
 		Order("apps.created_at desc")
 	if len(statuses) > 0 {
-		tx = tx.Where("apps.status_v2->>'status' IN ?", statuses)
+		tx = tx.Scopes(generics.WhereJSONBStatusIn("apps.status_v2", statuses...))
 	}
 	if err := tx.Find(&apps).Error; err != nil {
 		return nil, fmt.Errorf("unable to list app details: %w", err)

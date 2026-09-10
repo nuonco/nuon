@@ -324,6 +324,16 @@ db.Where("owner_id = ? AND owner_type = ?", stepID, "install_workflow_steps").Fi
 **Note:** Use `(&app.Model{}).TableName()` (pointer receiver) when the model's `TableName()` method has a pointer
 receiver.
 
+JSONB status predicates cannot use struct-based clauses. Use the scopes in
+`services/ctl-api/internal/pkg/db/generics/json.go` instead of writing `->>'status'` expressions by hand:
+
+```go
+db.Scopes(generics.WhereJSONBStatus("status_v2", string(app.StatusActive)))
+db.Scopes(generics.WhereJSONBStatusIn("composite_status", "active", "offline"))
+```
+
+Keep raw SQL for migrations, index definitions, and JSON expressions in `SELECT`, `GROUP BY`, or `ORDER BY` clauses.
+
 ### Logging
 
 **Never use `fmt.Println` for logging.** See [conventions/logging.md](/conventions/logging.md) for full guidelines.

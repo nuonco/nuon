@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 const queueSignalsPerPage = 100
@@ -147,16 +148,16 @@ func (s *service) getQueueSignals(ctx context.Context, search, ownerID, orgID, s
 		}
 	}
 	if ownerID != "" {
-		query = query.Where("owner_id = ?", ownerID)
+		query = query.Where(app.QueueSignal{OwnerID: ownerID})
 	}
 	if orgID != "" {
-		query = query.Where("org_id = ?", orgID)
+		query = query.Where(app.QueueSignal{OrgID: &orgID})
 	}
 	if signalType != "" {
 		query = query.Where("type = ?", signalType)
 	}
 	if status != "" {
-		query = query.Where("status->>'status' = ?", status)
+		query = query.Scopes(generics.WhereJSONBStatus("status", status))
 	}
 	if namespace != "" {
 		query = query.Where("workflow->>'namespace' = ?", namespace)

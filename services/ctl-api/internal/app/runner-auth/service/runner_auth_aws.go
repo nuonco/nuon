@@ -22,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 const (
@@ -569,8 +570,8 @@ func extractRoleNameFromIAMRoleARN(arn string) (string, error) {
 func (s *service) getInstallStackWithOutputs(ctx context.Context, installID string) (*app.InstallStack, error) {
 	var version app.InstallStackVersion
 	res := s.db.WithContext(ctx).
-		Where("install_id = ?", installID).
-		Where("status->>'status' = ?", app.InstallStackVersionStatusActive).
+		Where(app.InstallStackVersion{InstallID: installID}).
+		Scopes(generics.WhereJSONBStatus("status", string(app.InstallStackVersionStatusActive))).
 		Order("created_at DESC").
 		First(&version)
 	if res.Error != nil {

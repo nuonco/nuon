@@ -31,7 +31,7 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 	// Get the emitter to access its signal template
 	var emitter app.QueueEmitter
 	if res := a.db.WithContext(ctx).
-		Where("id = ?", req.EmitterID).
+		Where(app.QueueEmitter{ID: req.EmitterID}).
 		First(&emitter); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to get emitter")
 	}
@@ -46,16 +46,12 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 
 	// Check for existing in-flight signals from this emitter to prevent backup
 	var existingSignals []*app.QueueSignal
-	jdb := generics.NewJSONBQuery(a.db.WithContext(ctx))
-	if res := jdb.WhereJSON(generics.JSONBQuery{
-		Operator: "IN",
-		Field:    "status",
-		Path:     "status",
-		Value:    []string{string(app.StatusQueued), string(app.StatusInProgress)},
-	}).Where(app.QueueSignal{
-		EmitterID: &req.EmitterID,
-		QueueID:   req.QueueID,
-	}).Find(&existingSignals); res.Error != nil {
+	if res := a.db.WithContext(ctx).
+		Scopes(generics.WhereJSONBStatusIn("status", string(app.StatusQueued), string(app.StatusInProgress))).
+		Where(app.QueueSignal{
+			EmitterID: &req.EmitterID,
+			QueueID:   req.QueueID,
+		}).Find(&existingSignals); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to check for existing in-flight signals")
 	}
 
@@ -92,7 +88,7 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 
 	// Look up the queue so we can propagate its owner to the signal.
 	var queue app.Queue
-	if res := a.db.WithContext(ctx).First(&queue, "id = ?", req.QueueID); res.Error != nil {
+	if res := a.db.WithContext(ctx).Where(app.Queue{ID: req.QueueID}).First(&queue); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to get queue")
 	}
 

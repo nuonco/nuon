@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // @ID					GetQueueSignals
@@ -40,8 +41,7 @@ func (s *service) GetQueueSignals(ctx *gin.Context) {
 	// Verify queue exists and user has access
 	var queue app.Queue
 	res := s.db.WithContext(ctx).
-		Where("id = ?", queueID).
-		Where("org_id = ?", org.ID).
+		Where(app.Queue{ID: queueID, OrgID: &org.ID}).
 		First(&queue)
 
 	if res.Error != nil {
@@ -75,17 +75,16 @@ func (s *service) GetQueueSignals(ctx *gin.Context) {
 		Preload("Org").
 		Preload("Queue").
 		Preload("Emitter").
-		Where("queue_id = ?", queueID).
-		Where("org_id = ?", org.ID)
+		Where(app.QueueSignal{QueueID: queueID, OrgID: &org.ID})
 
 	if ownerID != "" {
-		query = query.Where("owner_id = ?", ownerID)
+		query = query.Where(app.QueueSignal{OwnerID: ownerID})
 	}
 	if ownerType != "" {
-		query = query.Where("owner_type = ?", ownerType)
+		query = query.Where(app.QueueSignal{OwnerType: ownerType})
 	}
 	if status != "" {
-		query = query.Where("status->>'status' = ?", status)
+		query = query.Scopes(generics.WhereJSONBStatus("status", status))
 	}
 	if signalType != "" {
 		query = query.Where("type = ?", signalType)

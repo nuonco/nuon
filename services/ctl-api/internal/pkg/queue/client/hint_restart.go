@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // @temporal-gen-v2 activity
@@ -55,19 +57,14 @@ func (c *Client) HintRestartByOrg(ctx context.Context, orgID string) error {
 // @start-to-close-timeout 1m
 func (c *Client) HintRestartSingle(ctx context.Context, queueID string) error {
 	now := time.Now().UTC().Format(time.RFC3339)
-	res := c.db.WithContext(ctx).Exec(`
-		UPDATE queues
-		SET status_v2 = jsonb_set(
-			jsonb_set(
-				COALESCE(status_v2::jsonb, '{}'::jsonb),
-				'{metadata}',
-				COALESCE(status_v2::jsonb -> 'metadata', '{}'::jsonb)
-			),
-			'{metadata,restart_hint}',
-			to_jsonb(?::text)
-		)
-		WHERE id = ? AND deleted_at = 0
-	`, now, queueID)
+	res := generics.SetJSONBMetadataKey(
+		c.db.WithContext(ctx).
+			Model(&app.Queue{}).
+			Where(app.Queue{ID: queueID}),
+		"status_v2",
+		"restart_hint",
+		now,
+	)
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to set restart hint on queue")
 	}
@@ -86,19 +83,16 @@ type RequestCANAllResponse struct {
 // @start-to-close-timeout 1m
 func (c *Client) RequestCANAll(ctx context.Context, _ *RequestCANAllRequest) (*RequestCANAllResponse, error) {
 	now := time.Now().UTC().Format(time.RFC3339)
-	res := c.db.WithContext(ctx).Exec(`
-		UPDATE queues
-		SET status_v2 = jsonb_set(
-			jsonb_set(
-				COALESCE(status_v2::jsonb, '{}'::jsonb),
-				'{metadata}',
-				COALESCE(status_v2::jsonb -> 'metadata', '{}'::jsonb)
-			),
-			'{metadata,restart_hint}',
-			to_jsonb(?::text)
-		)
-		WHERE deleted_at = 0
-	`, now)
+	// Every live queue is the intended target, so opt out of gorm's guard against
+	// updates whose only condition is the soft-delete clause.
+	res := generics.SetJSONBMetadataKey(
+		c.db.WithContext(ctx).
+			Session(&gorm.Session{AllowGlobalUpdate: true}).
+			Model(&app.Queue{}),
+		"status_v2",
+		"restart_hint",
+		now,
+	)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to set restart hint on all queues")
 	}

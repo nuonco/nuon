@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GracefulShutdownOrgRunnerProcessesRequest struct{}
@@ -65,7 +66,10 @@ func (s *service) shutdownOrgRunnerProcesses(ctx *gin.Context, shutdownType app.
 	var processes []app.RunnerProcess
 	if res := s.db.WithContext(ctx).
 		Where(app.RunnerProcess{OrgID: org.ID}).
-		Where("composite_status::jsonb ->> 'status' IN ('active', 'offline')").
+		Scopes(generics.WhereJSONBStatusIn("composite_status",
+			string(app.RunnerProcessStatusActive),
+			string(app.RunnerProcessStatusOffline),
+		)).
 		Find(&processes); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get org runner processes: %w", res.Error))
 		return
