@@ -3,7 +3,7 @@ export interface ILabelSelector {
   not_match_labels?: Record<string, string>
 }
 
-export type InstallSelectionMode = 'manual' | 'labels'
+export type InstallSelectionMode = 'manual' | 'labels' | 'all'
 
 export interface IInstallGroup {
   id: string
