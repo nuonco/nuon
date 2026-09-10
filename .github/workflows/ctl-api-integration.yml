@@ -8,6 +8,11 @@ name: ctl-api integration
         type: boolean
         default: false
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   push:
     branches:
       - main
@@ -48,12 +53,17 @@ jobs:
       # The job itself always runs so the check reports success when skipped; only the
       # trigger step is gated. Keep this true when promoting the check to required,
       # otherwise docs-only PRs would soft-lock on a never-arriving status.
-      - name: Skip when ctl-api is unchanged
-        if: github.event_name != 'workflow_dispatch' && steps.filter.outputs['ctl-api'] != 'true'
-        run: echo "no ctl-api changes in this diff; skipping integration run"
+      - name: Skip when draft or ctl-api is unchanged
+        if: github.event_name != 'workflow_dispatch' && (github.event.pull_request.draft == true || steps.filter.outputs['ctl-api'] != 'true')
+        run: |
+          if [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
+            echo "draft PR; skipping integration run until marked ready for review"
+          else
+            echo "no ctl-api changes in this diff; skipping integration run"
+          fi
 
       - name: Trigger and watch the mono integration workflow
-        if: github.event_name == 'workflow_dispatch' || steps.filter.outputs['ctl-api'] == 'true'
+        if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft != true && steps.filter.outputs['ctl-api'] == 'true')
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
         run: |
