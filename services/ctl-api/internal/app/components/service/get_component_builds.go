@@ -137,6 +137,7 @@ func (s *service) getAppBuilds(ctx *gin.Context, appID string, limit int) ([]app
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
 		Preload("VCSConnectionCommit").
 		Preload("AppBranchRun.VCSConnectionCommit").
+		Preload("AppBranchRun.Preview").
 		Preload("ComponentConfigConnection.Component").
 		Joins("JOIN component_config_connections ON component_config_connections.id=component_builds.component_config_connection_id").
 		Joins("JOIN components ON components.id=component_config_connections.component_id").
@@ -177,6 +178,7 @@ func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.Comp
 		}).
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
 		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.VCSConnectionCommit").
+		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.Preview").
 		Preload("ComponentConfigs.ExternalImageComponentConfig").
 		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection").
 		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection.Component").
