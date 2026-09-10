@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -54,9 +56,9 @@ func LoadDBConfig() (DBConfig, error) {
 	return cfg, nil
 }
 
-// CreateAndMigrateDatabase drops and recreates the test database, then runs migrations.
-// Called by the testsetup binary before tests run.
-func CreateAndMigrateDatabase(cfg DBConfig) error {
+// ResetDatabase terminates connections, drops, and recreates the test database
+// without running migrations.
+func ResetDatabase(cfg DBConfig) error {
 	// Connect to the default 'postgres' database to create test database
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=postgres sslmode=%s",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBSSLMode)
@@ -83,12 +85,112 @@ func CreateAndMigrateDatabase(cfg DBConfig) error {
 		return fmt.Errorf("failed to create test database: %w", err)
 	}
 
+	return nil
+}
+
+// CreateAndMigrateDatabase drops and recreates the test database, then runs migrations.
+// Called by the testsetup binary before tests run.
+func CreateAndMigrateDatabase(cfg DBConfig) error {
+	if err := ResetDatabase(cfg); err != nil {
+		return err
+	}
+
 	// Run migrations
 	if err := MigrateTestDatabase(cfg); err != nil {
 		return fmt.Errorf("failed to migrate test database: %w", err)
 	}
 
 	return nil
+}
+
+// SchemaSnapshotDir names the directory NUONTEST_PG_SCHEMA_DIR uses to pass
+// pre-migrated pg_dump snapshots between CI runs.
+func SchemaSnapshotDir() string {
+	return os.Getenv("NUONTEST_PG_SCHEMA_DIR")
+}
+
+// SchemaSnapshotPath returns the snapshot file for the database and whether it
+// exists.
+func SchemaSnapshotPath(cfg DBConfig) (string, bool) {
+	dir := SchemaSnapshotDir()
+	if dir == "" {
+		return "", false
+	}
+	path := filepath.Join(dir, cfg.DBName+".sql")
+	if _, err := os.Stat(path); err != nil {
+		return "", false
+	}
+	return path, true
+}
+
+// RestoreDatabase recreates the test database from a pg_dump snapshot, skipping
+// migrations.
+func RestoreDatabase(cfg DBConfig, snapshotPath string) error {
+	if err := ResetDatabase(cfg); err != nil {
+		return err
+	}
+
+	dump, err := os.Open(snapshotPath)
+	if err != nil {
+		return fmt.Errorf("failed to open schema snapshot: %w", err)
+	}
+	defer dump.Close()
+
+	restore := exec.Command("docker", "exec", "-i", pgDumpContainer(), "psql",
+		"-U", cfg.DBUser, "-v", "ON_ERROR_STOP=1", "-d", cfg.DBName)
+	restore.Stdin = dump
+	restore.Stderr = os.Stderr
+	if err := restore.Run(); err != nil {
+		return fmt.Errorf("failed to restore schema snapshot: %w", err)
+	}
+
+	return nil
+}
+
+// DumpSchema writes a pg_dump of the migrated database into dir. The CI lane
+// snapshots the freshly migrated schema so later runs restore it instead of
+// replaying migrations; written atomically so a concurrent cache save never
+// sees a partial file.
+func DumpSchema(cfg DBConfig, dir string) error {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("failed to create schema snapshot dir: %w", err)
+	}
+
+	dump, err := os.CreateTemp(dir, cfg.DBName+".sql.*")
+	if err != nil {
+		return fmt.Errorf("failed to create temp schema snapshot: %w", err)
+	}
+	tmpPath := dump.Name()
+
+	dumpCmd := exec.Command("docker", "exec", pgDumpContainer(), "pg_dump",
+		"-U", cfg.DBUser, "--no-owner", "--no-privileges", cfg.DBName)
+	dumpCmd.Stdout = dump
+	dumpCmd.Stderr = os.Stderr
+	if err := dumpCmd.Run(); err != nil {
+		dump.Close()
+		os.Remove(tmpPath)
+		return fmt.Errorf("failed to dump schema snapshot: %w", err)
+	}
+	if err := dump.Close(); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("failed to close schema snapshot: %w", err)
+	}
+
+	if err := os.Rename(tmpPath, filepath.Join(dir, cfg.DBName+".sql")); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("failed to finalize schema snapshot: %w", err)
+	}
+
+	return nil
+}
+
+// pgDumpContainer names the compose service holding the postgres server; the
+// pg_dump/psql binaries live in the container, not necessarily on the host.
+func pgDumpContainer() string {
+	if c := os.Getenv("NUONTEST_PG_CONTAINER"); c != "" {
+		return c
+	}
+	return "postgres"
 }
 
 // MigrateTestDatabase connects to the test database and runs all migrations.
