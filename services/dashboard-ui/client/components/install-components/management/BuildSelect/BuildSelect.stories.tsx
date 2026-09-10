@@ -104,6 +104,20 @@ export const Empty = () => (
   />
 )
 
+export const PreviewBuildsHidden = () => (
+  <BuildSelect
+    builds={[
+      { ...mockBuilds[0], id: 'bld-preview', is_preview: true },
+      { ...mockBuilds[1], id: 'bld-main', is_preview: false },
+    ]}
+    isLoading={false}
+    isLoadingMore={false}
+    hasMorePages={false}
+    onSelectBuild={noop}
+    onScroll={noop}
+  />
+)
+
 export const WithError = () => (
   <BuildSelect
     builds={[]}
