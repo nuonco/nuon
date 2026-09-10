@@ -2519,6 +2519,13 @@ export interface paths {
      */
     post: operations["RevokeOrgInvite"];
   };
+  "/v1/orgs/current/members": {
+    /**
+     * Get current org members and pending invites
+     * @description Returns a paginated, searchable list of the current org's active members and pending invites.
+     */
+    get: operations["GetOrgMembers"];
+  };
   "/v1/orgs/current/remove-user": {
     /**
      * Remove a user from the current org
@@ -5700,6 +5707,19 @@ export interface components {
     };
     /** @enum {string} */
     "app.OrgInviteStatus": "pending" | "accepted" | "revoked";
+    "app.OrgMember": {
+      account_id?: string;
+      created_at?: string;
+      email?: string;
+      id?: string;
+      invite_id?: string;
+      joined_at?: string;
+      name?: string;
+      role_type?: components["schemas"]["app.RoleType"];
+      status?: components["schemas"]["app.OrgMemberStatus"];
+    };
+    /** @enum {string} */
+    "app.OrgMemberStatus": "active" | "invited";
     "app.OtelLogRecord": {
       body?: string;
       created_at?: string;
@@ -5959,6 +5979,8 @@ export interface components {
       description?: string;
       id?: string;
       managed?: boolean;
+      /** @description NOTE: not all roles have to belong to an org, this is mainly for historical reasons. */
+      org_id?: string;
       policies?: components["schemas"]["app.Policy"][];
       role_type?: components["schemas"]["app.RoleType"];
       /**
@@ -27924,6 +27946,66 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.OrgInvite"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get current org members and pending invites
+   * @description Returns a paginated, searchable list of the current org's active members and pending invites.
+   */
+  GetOrgMembers: {
+    parameters: {
+      query?: {
+        /** @description search query to filter members by email or name */
+        q?: string;
+        /** @description comma-separated statuses: active and/or invited */
+        status?: string;
+        /** @description comma-separated role types */
+        role_type?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OrgMember"][];
         };
       };
       /** @description Bad Request */
