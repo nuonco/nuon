@@ -98,13 +98,19 @@ separate.
 | --- | --- | --- | --- |
 | `http.server.request.duration` | Explicit-bucket histogram | seconds | `nuon.api`, `http.request.method`, `url.scheme`, `http.response.status_code`, matched `http.route`, `error.type` for 5xx |
 | `http.server.active_requests` | Up/down counter | requests | `nuon.api`, `http.request.method`, `url.scheme` |
+| `nuon.http.server.request.declared_body.size` | Explicit-bucket histogram | bytes | Same as request duration |
 
 `nuon.api` is one of `public`, `runner`, `auth`, `internal`, `admin-dashboard`,
 `slack`, or `mcp`. Metrics measure HTTP handling, not Temporal signals, individual
 MCP tool outcomes, database operations, or downstream runner execution.
 
-Histogram count supplies request volume; 5xx counts divided by total counts
-supply an HTTP error ratio. The explicit boundaries in seconds are:
+Declared body size records the incoming `ContentLength` at request completion,
+including rejected requests and partial reads. Unknown lengths (`-1`) are omitted;
+known zero lengths are recorded. Instrumentation does not read or buffer bodies.
+Byte boundaries are `0, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216`.
+
+Request-duration histogram count supplies request volume; 5xx counts divided by
+total counts supply an HTTP error ratio. The explicit boundaries in seconds are:
 `0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10`.
 Aggregation and temporality are fixed to explicit histograms and cumulative
 values. Apply rates per instance before aggregating across replicas.
@@ -149,6 +155,6 @@ go test -race ./services/ctl-api/internal/pkg/telemetry ./services/ctl-api/inter
 go test -run '^$' -bench '^BenchmarkHTTPMetrics$' -benchmem ./services/ctl-api/internal/pkg/telemetry
 ```
 
-The benchmark measures `Start`/finish recording with no endpoint, a healthy
-receiver and a blocked receiver. It does not measure the full HTTP stack or
-production process memory usage.
+The benchmark measures the HTTP metrics wrapper with all three instruments and
+no endpoint, a healthy receiver, or a blocked receiver. It does not measure the
+full API middleware stack or production process memory usage.

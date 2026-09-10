@@ -93,9 +93,18 @@ func TestMeterProviderExportsAndFlushesOnShutdown(t *testing.T) {
 	ctx := trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(trace.SpanContextConfig{
 		TraceID: trace.TraceID{1}, SpanID: trace.SpanID{2}, TraceFlags: trace.FlagsSampled,
 	}))
-	m.Start(ctx, "public", "GET", "https")("/v1/apps/:id", 200)
+	sendRequest := func(size int64) {
+		handler := m.Handler("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			metrics.SetHTTPRoute(r.Context(), "/v1/apps/:id")
+			w.WriteHeader(http.StatusOK)
+		}))
+		req := httptest.NewRequest("POST", "https://example.com/v1/apps/app-test", nil).WithContext(ctx)
+		req.ContentLength = size
+		handler.ServeHTTP(httptest.NewRecorder(), req)
+	}
+	sendRequest(17)
 	require.NoError(t, provider.(*sdkmetric.MeterProvider).ForceFlush(ctx))
-	check := func(wantCount uint64) {
+	check := func(wantCount uint64, wantSize float64) {
 		t.Helper()
 		select {
 		case req := <-requests:
@@ -111,7 +120,9 @@ func TestMeterProviderExportsAndFlushesOnShutdown(t *testing.T) {
 			require.Equal(t, "control-plane-api", attrs["service.name"])
 			require.Equal(t, "test-version", attrs["service.version"])
 			metrics := rms.At(0).ScopeMetrics().At(0).Metrics()
+			require.Equal(t, 3, metrics.Len())
 			found := false
+			foundSize := false
 			for i := 0; i < metrics.Len(); i++ {
 				metric := metrics.At(i)
 				if metric.Name() == "http.server.request.duration" {
@@ -123,17 +134,27 @@ func TestMeterProviderExportsAndFlushesOnShutdown(t *testing.T) {
 					require.Equal(t, wantCount, points.At(0).Count())
 					require.Zero(t, points.At(0).Exemplars().Len())
 				}
+				if metric.Name() == "nuon.http.server.request.declared_body.size" {
+					foundSize = true
+					require.Equal(t, pmetric.AggregationTemporalityCumulative, metric.Histogram().AggregationTemporality())
+					points := metric.Histogram().DataPoints()
+					require.Equal(t, 1, points.Len())
+					require.Equal(t, wantCount, points.At(0).Count())
+					require.Zero(t, points.At(0).Exemplars().Len())
+					require.Equal(t, wantSize, points.At(0).Sum())
+				}
 			}
 			require.True(t, found)
+			require.True(t, foundSize)
 		case <-time.After(time.Second):
 			t.Fatal("no OTLP metric export received")
 		}
 	}
-	check(1)
-	m.Start(ctx, "public", "GET", "https")("/v1/apps/:id", 200)
+	check(1, 17)
+	sendRequest(5)
 	lc.RequireStop()
 	stopped = true
-	check(2)
+	check(2, 22)
 }
 
 func TestSlowMetricExporterDoesNotBlockHTTPRequests(t *testing.T) {
