@@ -140,6 +140,11 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
+// InlineValidate marks Validate as activity-free: it only checks required
+// fields, so the handler folds the phase into execute rather than paying a
+// separate update round trip per step group.
+func (s *Signal) InlineValidate() bool { return true }
+
 // RegisterUpdateHandlers registers group-level update handlers.
 func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "cancel-group",

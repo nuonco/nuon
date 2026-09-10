@@ -109,21 +109,25 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		RunID:         readyResp.RunID,
 	})
 
-	// 2. Validate: send update (accepted-only), wait for callback.
-	validateCB := callback.New(ctx, queueSignal.ID+"-validate")
-	l.Info("sending validate update")
-	if err := handleractivities.AwaitUpdateWorkflowValidate(ctx, handleractivities.UpdateWorkflowValidateRequest{
-		UpdateID:   queueSignal.ID,
-		WorkflowID: queueRef.WorkflowID,
-		QueueID:    queueSignal.QueueID,
-		RunID:      readyResp.RunID,
-		Cb:         validateCB,
-	}); err != nil {
-		return errors.Wrap(err, "unable to send validate update")
-	}
+	// 2. Validate: send update (accepted-only), wait for callback. Signals with
+	// an inline, activity-free Validate skip the phase; the handler runs it at
+	// the head of execute instead, saving this update and its callback.
+	if !q.foldInlineValidate(ctx, queueSignal) {
+		validateCB := callback.New(ctx, queueSignal.ID+"-validate")
+		l.Info("sending validate update")
+		if err := handleractivities.AwaitUpdateWorkflowValidate(ctx, handleractivities.UpdateWorkflowValidateRequest{
+			UpdateID:   queueSignal.ID,
+			WorkflowID: queueRef.WorkflowID,
+			QueueID:    queueSignal.QueueID,
+			RunID:      readyResp.RunID,
+			Cb:         validateCB,
+		}); err != nil {
+			return errors.Wrap(err, "unable to send validate update")
+		}
 
-	if _, err := callback.AwaitWithTimeout(ctx, validateCB, callback.QuickTimeout); err != nil {
-		return errors.Wrap(err, "validate failed")
+		if _, err := callback.AwaitWithTimeout(ctx, validateCB, callback.QuickTimeout); err != nil {
+			return errors.Wrap(err, "validate failed")
+		}
 	}
 
 	// 3. Execute: send update (accepted-only), wait for callback.

@@ -60,6 +60,18 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 		return nil, errors.New("signal was canceled")
 	}
 
+	// Inline-validate signals get no validate update of their own, so run the
+	// phase here. Validate still runs in full and still emits its lifecycle
+	// events; folding it just removes a queue-to-handler update round trip and
+	// its completion callback from the dispatch hot path.
+	if !h.validated && signal.IsInlineValidate(h.sig) {
+		vStatus, vDesc, vErr := h.runValidatePhase(ctx)
+		if vErr != nil {
+			finStatus, finDesc = vStatus, vDesc
+			return nil, vErr
+		}
+	}
+
 	event := h.buildSignalPhaseEvent(signal.SignalPhaseExecute)
 
 	// run before-phase hooks (fail-open)

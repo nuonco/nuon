@@ -76,14 +76,14 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return fmt.Errorf("install stack id is required")
 	}
 
-	// Validate install stack exists
-	_, err := activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
-	if err != nil {
-		return fmt.Errorf("unable to get install for stack: %w", err)
-	}
-
 	return nil
 }
+
+// InlineValidate marks Validate as activity-free so the handler folds it into
+// the execute phase. Execute's GetInstallAndStackForStackByStackID already
+// fails the signal when the stack is missing, so a separate existence fetch
+// here only added a round trip to the dispatch hot path.
+func (s *Signal) InlineValidate() bool { return true }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	res, err := activities.AwaitGetInstallAndStackForStackByStackID(ctx, s.InstallStackID)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 // localHintChecksVersion gates running the queue loop's own queue lookups and
@@ -50,4 +51,24 @@ func clearRestartHint(ctx workflow.Context, req activities.ClearRestartHintReque
 		return activities.LocalAwaitClearRestartHint(ctx, req)
 	}
 	return activities.AwaitClearRestartHint(ctx, req)
+}
+
+// foldInlineValidateVersion gates skipping the validate update for signals with
+// an inline, activity-free Validate. Histories written before this recorded a
+// validate update plus its completion callback for every signal, so replaying
+// them against the folded path is nondeterministic.
+//
+// todo(sk): clean up after terminating old workflows
+const foldInlineValidateVersion = "queue-fold-inline-validate-v1"
+
+// foldInlineValidate reports whether this signal's validate phase should be
+// folded into its execute phase, skipping the separate update round trip.
+func (q *queue) foldInlineValidate(ctx workflow.Context, queueSignal *app.QueueSignal) bool {
+	if workflow.GetVersion(ctx, foldInlineValidateVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return false
+	}
+	if queueSignal == nil {
+		return false
+	}
+	return signal.IsInlineValidate(queueSignal.Signal.Signal)
 }

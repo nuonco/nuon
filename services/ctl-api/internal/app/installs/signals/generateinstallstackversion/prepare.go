@@ -7,10 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/stategen"
 	statesignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/provisionserviceaccount"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -24,52 +21,65 @@ import (
 // Only provision sets PrepareStateAndRunner. Every other caller leaves it unset
 // and this is a no-op.
 func (s *Signal) prepare(ctx workflow.Context, install *app.Install) error {
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-
-	// The service account is independent of state generation and of the stack
-	// render below, so it overlaps them rather than serialising as its own step.
+	// Only the enqueue overlaps. The runner provisions its service account on its
+	// own queue, so starting it here instead of in a dedicated step gets that
+	// work moving while install state generates.
 	saDone := workflow.NewChannel(ctx)
 	var saErr error
 	workflow.Go(ctx, func(gCtx workflow.Context) {
-		saErr = provisionRunnerServiceAccount(gCtx, install, stateGenV2)
+		saErr = enqueueRunnerServiceAccount(gCtx, install.RunnerID)
 		saDone.Send(gCtx, true)
 	})
 
-	if err := generateInstallCreatedState(ctx, install.ID, stateGenV2, s.metrics); err != nil {
-		saDone.Receive(ctx, nil)
-		return err
-	}
+	stateErr := regenerateState(ctx, regenerateStateRequest{
+		InstallID:       install.ID,
+		Targets:         statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
+		TriggeredByID:   install.ID,
+		TriggeredByType: "installs",
+		MetricsWriter:   s.metrics,
+	})
 
 	saDone.Receive(ctx, nil)
+
+	if stateErr != nil {
+		return stateErr
+	}
 	if saErr != nil {
 		return saErr
 	}
 
-	return nil
+	// Must follow the install-created regeneration rather than run alongside it:
+	// a regeneration reads the latest state, fetches only its own partials and
+	// saves a new row, so two in flight at once means the last writer drops the
+	// other's partials from the current state.
+	return regenerateState(ctx, regenerateStateRequest{
+		InstallID:       install.ID,
+		Targets:         statemanager.TargetsForHint(statemanager.HintRunnerUpdated, ""),
+		TriggeredByID:   install.RunnerID,
+		TriggeredByType: "runners",
+		MetricsWriter:   s.metrics,
+	})
 }
 
-func generateInstallCreatedState(ctx workflow.Context, installID string, stateGenV2 bool, mw metrics.Writer) error {
-	if !stateGenV2 {
-		if _, err := workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
-			InstallID:       installID,
-			TriggeredByID:   installID,
-			TriggeredByType: "installs",
-		}); err != nil {
-			return errors.Wrap(err, "unable to generate state")
-		}
-		return nil
-	}
+type regenerateStateRequest struct {
+	InstallID       string
+	Targets         []statemanager.PartialTarget
+	TriggeredByID   string
+	TriggeredByType string
+	MetricsWriter   metrics.Writer
+}
 
+// regenerateState generates state in-band, always on the state-gen-v2 path. It
+// replaces a state-partial-generate signal enqueued to the install's
+// state-manager queue, which cost a queue hop each way to run the same code this
+// workflow can run directly.
+func regenerateState(ctx workflow.Context, req regenerateStateRequest) error {
 	if err := statesignals.RegenerateWithMetrics(ctx, statesignals.RegenerateWithMetricsRequest{
-		InstallID:       installID,
-		Targets:         statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
-		TriggeredByID:   installID,
-		TriggeredByType: "installs",
-		MetricsWriter:   mw,
+		InstallID:       req.InstallID,
+		Targets:         req.Targets,
+		TriggeredByID:   req.TriggeredByID,
+		TriggeredByType: req.TriggeredByType,
+		MetricsWriter:   req.MetricsWriter,
 	}); err != nil {
 		return errors.Wrap(err, "unable to regenerate install state")
 	}
@@ -77,26 +87,15 @@ func generateInstallCreatedState(ctx workflow.Context, installID string, stateGe
 	return nil
 }
 
-func provisionRunnerServiceAccount(ctx workflow.Context, install *app.Install, stateGenV2 bool) error {
+func enqueueRunnerServiceAccount(ctx workflow.Context, runnerID string) error {
 	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-		OwnerID:   install.RunnerID,
+		OwnerID:   runnerID,
 		OwnerType: "runners",
 		Signal: &runnersignals.Signal{
-			RunnerID: install.RunnerID,
+			RunnerID: runnerID,
 		},
 	}); err != nil {
 		return errors.Wrap(err, "unable to enqueue provision service account signal to runner")
-	}
-
-	if err := stategen.HintOrGenerate(ctx, stategen.Request{
-		StateGenV2:      stateGenV2,
-		InstallID:       install.ID,
-		Targets:         statemanager.TargetsForHint(statemanager.HintRunnerUpdated, ""),
-		ForceAll:        true,
-		TriggeredByID:   install.RunnerID,
-		TriggeredByType: "runners",
-	}); err != nil {
-		return err
 	}
 
 	return nil
