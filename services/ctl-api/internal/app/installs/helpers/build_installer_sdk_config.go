@@ -170,7 +170,7 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 	// only points the other way — so created_at ordering resolves "latest".
 	res := h.db.WithContext(ctx).
 		Where(app.InstallStackVersion{InstallID: install.ID}).
-		Where("composite_status->>'status' IN ?", app.InstallStackVersionTemplateReadyStatuses).
+		Where("status->>'status' IN ?", app.InstallStackVersionTemplateReadyStatuses).
 		Order("created_at DESC").
 		Limit(1).
 		First(&latestVersion)
