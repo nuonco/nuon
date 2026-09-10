@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -91,9 +92,12 @@ func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.
 			return db.Scopes(scopes.WithOverrideTable("component_config_connections_latest_configs_view"))
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
-			return db.Order("component_builds.created_at DESC").Limit(1)
+			return withoutPreviewBuilds(db).
+				Order("component_builds.created_at DESC").
+				Limit(1)
 		}).
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
+		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.Preview").
 		First(&cmp, "id = ? AND org_id = ?", cmpID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
@@ -107,4 +111,30 @@ func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.
 	}
 
 	return nil, fmt.Errorf("no build found for component: %w", gorm.ErrRecordNotFound)
+}
+
+func withoutPreviewBuilds(db *gorm.DB) *gorm.DB {
+	return db.
+		Joins("LEFT JOIN app_branch_runs latest_build_runs ON latest_build_runs.id = component_builds.app_branch_run_id").
+		Joins("LEFT JOIN app_branch_run_previews latest_build_previews ON latest_build_previews.app_branch_run_id = latest_build_runs.id AND latest_build_previews.deleted_at = 0").
+		Where(clause.Or(
+			clause.Eq{
+				Column: clause.Column{Table: "component_builds", Name: "app_branch_run_id"},
+				Value:  nil,
+			},
+			clause.And(
+				clause.Eq{
+					Column: clause.Column{Table: "latest_build_previews", Name: "id"},
+					Value:  nil,
+				},
+				clause.Neq{
+					Column: clause.Column{Table: "latest_build_runs", Name: "run_type"},
+					Value:  app.AppBranchRunTypeGitPreview,
+				},
+				clause.Eq{
+					Column: clause.Column{Table: "latest_build_runs", Name: "plan_only"},
+					Value:  false,
+				},
+			),
+		))
 }
