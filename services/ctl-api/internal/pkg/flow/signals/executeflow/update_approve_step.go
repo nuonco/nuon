@@ -22,9 +22,25 @@ type ApproveStepResponse struct {
 }
 
 func (s *Signal) approveStepHandler(ctx workflow.Context, req ApproveStepRequest) (*ApproveStepResponse, error) {
+	if s.cancelRequested {
+		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
+	}
+
 	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
+	}
+
+	// Persisted cancel check: on a run re-entered via update-with-start the
+	// in-memory flag is lost, and approving against a cancelled workflow must
+	// be rejected before it forwards anywhere.
+	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get workflow %s: %w", s.WorkflowID, err)
+	}
+	if flw.Status.Status == app.StatusCancelled {
+		s.cancelRequested = true
+		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
 	}
 
 	if _, err := workflowactivities.AwaitForwardApproveStepToGroup(ctx, workflowactivities.ForwardApproveStepToGroupRequest{
