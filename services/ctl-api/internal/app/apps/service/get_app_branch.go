@@ -69,7 +69,7 @@ func (s *service) getAppBranch(ctx context.Context, orgID, appID, appBranchID st
 			OrgID: orgID,
 			AppID: appID,
 		}).
-		Preload("Queue")
+		Preload("Queue", app.DefaultQueueScope)
 
 	if latestConfig {
 		// Only preload the latest config with its relationships
