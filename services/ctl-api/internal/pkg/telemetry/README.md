@@ -66,10 +66,12 @@ Generic OTLP transport settings can also apply to existing log exporters in the
 same process. Audit export is a no-op unless `AUDIT_OTLP_ENDPOINT` (service config:
 `audit_otlp_endpoint`) is explicitly configured; the generic endpoint alone does
 not enable it. If enabled without `AUDIT_OTLP_TOKEN`, it can inherit generic OTLP
-headers, including credentials. Existing workflow log exporters set their own
-headers but can still inherit generic TLS, timeout and compression settings.
-Review signal-specific `OTEL_EXPORTER_OTLP_LOGS_*` settings and explicit exporter
-options before using different receivers or credentials for logs and metrics.
+headers, including credentials. Review signal-specific `OTEL_EXPORTER_OTLP_LOGS_*`
+settings and explicit exporter options before enabling audit delivery alongside
+operational metrics.
+
+Workflow log delivery is configured separately in `internal/pkg/log` and does not
+inherit OTEL environment settings for transport, resources, or record processing.
 
 The default resource includes `service.name`, `service.version`, a random
 process-lifetime `service.instance.id`, `nuon.service.type`, and
