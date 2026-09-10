@@ -116,7 +116,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	// Verify branch exists and belongs to this org/app
 	var branch app.AppBranch
 	res := s.db.WithContext(ctx).
-		Preload("Queue").
+		Preload("Queue", app.DefaultQueueScope).
 		Where(app.AppBranch{
 			OrgID: org.ID,
 			AppID: appID,
