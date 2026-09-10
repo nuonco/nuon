@@ -4292,6 +4292,8 @@ export interface components {
       git_ref?: string;
       id?: string;
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
+      /** @description IsPreview is true when this build came from a preview branch run. */
+      is_preview?: boolean;
       log_stream?: components["schemas"]["app.LogStream"];
       /**
        * @description NoOp is true when the runner detected SourceDigest matches the previous
