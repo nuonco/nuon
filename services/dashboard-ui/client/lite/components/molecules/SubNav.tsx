@@ -17,7 +17,7 @@ export interface ISubNav extends Omit<HTMLAttributes<HTMLElement>, 'children'> {
 const LINK_CLASSES =
   'flex h-8 shrink-0 items-center rounded-lg px-3 text-caption text-secondary no-underline outline-none transition-colors ' +
   'hover:bg-surface-02 hover:text-primary active:bg-surface-03 ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ' +
+  'focus-ring ' +
   'aria-[current=page]:bg-surface-02 aria-[current=page]:font-medium aria-[current=page]:text-primary'
 
 export const SubNav = ({ items, label, className, ...props }: ISubNav) => {
