@@ -166,10 +166,12 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		l.Info("using OCI source from caller")
 		ociSource = req.OCISource
 	default:
+		// Only a missing build falls back to git, which resolves branch HEAD rather
+		// than the commit the artifact was built from.
 		l.Info("checking for active sandbox build OCI artifact")
 		sandboxBuild, sbErr := activities.AwaitGetLatestActiveSandboxBuildByAppConfigID(ctx, appCfg.ID)
 		if sbErr != nil {
-			l.Warn("unable to check for sandbox build, falling back to git source", zap.Error(sbErr))
+			return nil, nil, errors.Wrap(sbErr, "unable to check for sandbox build")
 		}
 
 		if sandboxBuild != nil {
@@ -178,12 +180,11 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 				AppID: install.AppID,
 			})
 			if regErr != nil {
-				l.Warn("unable to get OCI registry, falling back to git source", zap.Error(regErr))
-			} else {
-				ociSource = &plantypes.OCISource{
-					Registry: registry,
-					Tag:      sandboxBuild.ID,
-				}
+				return nil, nil, errors.Wrap(regErr, "unable to get oci registry for sandbox build")
+			}
+			ociSource = &plantypes.OCISource{
+				Registry: registry,
+				Tag:      sandboxBuild.ID,
 			}
 		}
 	}
@@ -205,6 +206,9 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		}
 		if err := sharedactivities.EnsureACRAuth(ctx, ociSource.Registry); err != nil {
 			return nil, nil, errors.Wrap(err, "unable to get ACR access token for sandbox artifact")
+		}
+		if err := sharedactivities.EnsureECRAuth(ctx, ociSource.Registry); err != nil {
+			return nil, nil, errors.Wrap(err, "unable to get ECR access token for sandbox artifact")
 		}
 	}
 
