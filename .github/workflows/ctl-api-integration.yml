@@ -74,6 +74,10 @@ jobs:
             --field "source_run_id=${{ github.run_id }}" \
             --field "source_actor=${{ github.actor }}" \
             --field "local_nctl=${{ inputs.local_nctl || false }}")"
+          run_id="${run_url##*/}"
+          [[ "$run_id" =~ ^[0-9]+$ ]]
+          echo "mono integration run: https://github.com/nuonco/mono/actions/runs/${run_id}"
+          echo "[mono integration run](https://github.com/nuonco/mono/actions/runs/${run_id})" >> "$GITHUB_STEP_SUMMARY"
           # The mono workflow runs async; this check completes once it is dispatched.
           # No polling here: watch was rate-limiting the shared PAT (gh run watch
-          # defaults to ~3s API polls). Check the mono run for the actual result.
+          # defaults to ~3s API polls). The linked mono run holds the actual result.
