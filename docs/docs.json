@@ -144,7 +144,6 @@
             "group": "Connect Your App",
             "boost": 3,
             "pages": [
-              "guides/app-init",
               "guides/managing-apps",
               "guides/managing-components",
               "guides/component-dependencies",
@@ -417,6 +416,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/guides/app-init",
+      "destination": "/configuration-files"
+    },
     {
       "source": "/guides/self-hosted/supported-platforms",
       "destination": "/guides/self-hosted/dependencies"
