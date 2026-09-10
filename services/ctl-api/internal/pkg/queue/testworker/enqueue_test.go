@@ -27,7 +27,7 @@ func (e *EnqueueTestSuite) TestEnqueueAndProcessNSignals() {
 	require.NotNil(e.T(), queue)
 
 	// wait for queue to be ready
-	err = e.queueReady(ctx, queue.ID)
+	err = e.service.Client.QueueReady(ctx, queue.ID)
 	require.Nil(e.T(), err)
 
 	// enqueue N signals
@@ -49,8 +49,15 @@ func (e *EnqueueTestSuite) TestEnqueueAndProcessNSignals() {
 		signalIDs = append(signalIDs, resp.ID)
 	}
 
+	// poll each signal until finished
+	timeout := 5 * time.Second
 	for _, id := range signalIDs {
-		e.waitForSignalStatus(ctx, id, app.StatusSuccess)
+		status, err := e.service.Client.PollSignal(ctx, id, &client.PollSignalOptions{
+			Timeout:      &timeout,
+			PollInterval: 500 * time.Millisecond,
+		})
+		require.Nil(e.T(), err)
+		require.True(e.T(), status.Finished)
 	}
 
 	// verify DB status is success for all signals
@@ -74,7 +81,7 @@ func (e *EnqueueTestSuite) TestEnqueueSignalIdempotency() {
 		MaxDepth:    100,
 	})
 	require.NoError(e.T(), err)
-	require.NoError(e.T(), e.queueReady(ctx, queue.ID))
+	require.NoError(e.T(), e.service.Client.QueueReady(ctx, queue.ID))
 
 	key := "same-logical-event"
 	first, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
@@ -87,7 +94,13 @@ func (e *EnqueueTestSuite) TestEnqueueSignalIdempotency() {
 	})
 	require.NoError(e.T(), err)
 	require.False(e.T(), first.Deduplicated)
-	e.waitForSignalStatus(ctx, first.ID, app.StatusSuccess)
+	timeout := 5 * time.Second
+	status, err := e.service.Client.PollSignal(ctx, first.ID, &client.PollSignalOptions{
+		Timeout:      &timeout,
+		PollInterval: 500 * time.Millisecond,
+	})
+	require.NoError(e.T(), err)
+	require.True(e.T(), status.Finished)
 
 	second, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID: queue.ID,
@@ -102,11 +115,7 @@ func (e *EnqueueTestSuite) TestEnqueueSignalIdempotency() {
 	require.Equal(e.T(), first.ID, second.ID)
 	require.Equal(e.T(), first.WorkflowID, second.WorkflowID)
 	var queueSignal app.QueueSignal
-	require.Eventually(e.T(), func() bool {
-		queueSignal = app.QueueSignal{}
-		err := e.service.DB.WithContext(ctx).Where(app.QueueSignal{ID: first.ID}).First(&queueSignal).Error
-		return err == nil && queueSignal.Status.Status == app.StatusSuccess && queueSignal.ExecutionCount == 1
-	}, 5*time.Second, 100*time.Millisecond)
+	require.NoError(e.T(), e.service.DB.WithContext(ctx).Where(app.QueueSignal{ID: first.ID}).First(&queueSignal).Error)
 	require.Equal(e.T(), 1, queueSignal.ExecutionCount)
 
 	third, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
@@ -137,7 +146,7 @@ func (e *EnqueueTestSuite) TestPanickingSignalUpdatesDBStatus() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), q)
 
-	err = e.queueReady(ctx, q.ID)
+	err = e.service.Client.QueueReady(ctx, q.ID)
 	require.Nil(e.T(), err)
 
 	// enqueue a panicking signal
@@ -150,7 +159,14 @@ func (e *EnqueueTestSuite) TestPanickingSignalUpdatesDBStatus() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), resp)
 
-	e.waitForSignalStatus(ctx, resp.ID, app.StatusError)
+	// poll until the signal finishes
+	timeout := 5 * time.Second
+	status, err := e.service.Client.PollSignal(ctx, resp.ID, &client.PollSignalOptions{
+		Timeout:      &timeout,
+		PollInterval: 500 * time.Millisecond,
+	})
+	require.Nil(e.T(), err)
+	require.True(e.T(), status.Finished)
 
 	// verify the DB has the error status persisted (not stuck in-progress)
 	var qs app.QueueSignal
@@ -174,7 +190,7 @@ func (e *EnqueueTestSuite) TestFailingSignalUpdatesDBStatus() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), q)
 
-	err = e.queueReady(ctx, q.ID)
+	err = e.service.Client.QueueReady(ctx, q.ID)
 	require.Nil(e.T(), err)
 
 	// enqueue a failing signal
@@ -187,7 +203,15 @@ func (e *EnqueueTestSuite) TestFailingSignalUpdatesDBStatus() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), resp)
 
-	e.waitForSignalStatus(ctx, resp.ID, app.StatusError)
+	// poll until the signal finishes (the queue worker logs execute errors but
+	// still marks the status in the DB)
+	timeout := 5 * time.Second
+	status, err := e.service.Client.PollSignal(ctx, resp.ID, &client.PollSignalOptions{
+		Timeout:      &timeout,
+		PollInterval: 500 * time.Millisecond,
+	})
+	require.Nil(e.T(), err)
+	require.True(e.T(), status.Finished)
 
 	// verify the DB has the error status persisted
 	var qs app.QueueSignal
