@@ -266,6 +266,17 @@ func TestQuickLinkUIDefinition_PrefillsHoistedParametersWithTheirDefaults(t *tes
 	if got := addressSpace["defaultValue"]; got != "10.100.0.0/22" {
 		t.Errorf("addressSpace.defaultValue = %v, want the template's default", got)
 	}
+	if got := addressSpace["type"]; got != "Microsoft.Common.DropDown" {
+		t.Errorf("addressSpace.type = %v, want a DropDown", got)
+	}
+	allowedValues := addressSpace["constraints"].(map[string]any)["allowedValues"].([]any)
+	first := allowedValues[0].(map[string]any)
+	if first["label"] != "10.100.0.0/22" || first["value"] != "10.100.0.0/22" {
+		t.Errorf("first addressSpace option = %#v", first)
+	}
+	if got := params["outputs"].(map[string]any)["addressSpace"]; got != "[basics('addressSpace')]" {
+		t.Errorf("addressSpace output = %v", got)
+	}
 	// The portal spaces and title-cases parameter names itself when no UI
 	// definition is supplied; supplying one takes that over.
 	if got := addressSpace["label"]; got != "Address Space" {
@@ -278,6 +289,151 @@ func TestQuickLinkUIDefinition_PrefillsHoistedParametersWithTheirDefaults(t *tes
 
 	if got := byName["peeringEnabled"]["type"]; got != "Microsoft.Common.CheckBox" {
 		t.Errorf("bool parameter rendered as %v, want a CheckBox", got)
+	}
+}
+
+func TestBasicsElement_AllowedValuesRenderTypedDropDown(t *testing.T) {
+	tests := []struct {
+		name           string
+		parameter      ARMParameter
+		wantLabels     []any
+		wantValues     []any
+		wantDefault    any
+		hasDefault     bool
+		wantExpression string
+	}{
+		{
+			name:           "environment",
+			parameter:      ARMParameter{Type: "string", DefaultValue: "production", AllowedValues: []any{"production", "staging"}},
+			wantLabels:     []any{"Production", "Staging"},
+			wantValues:     []any{"production", "staging"},
+			wantDefault:    "Production",
+			hasDefault:     true,
+			wantExpression: "[basics('environment')]",
+		},
+		{
+			name:           "replicas",
+			parameter:      ARMParameter{Type: "int", DefaultValue: 3, AllowedValues: []any{1, 3, 5}},
+			wantLabels:     []any{"1", "3", "5"},
+			wantValues:     []any{1, 3, 5},
+			wantDefault:    "3",
+			hasDefault:     true,
+			wantExpression: "[basics('replicas')]",
+		},
+		{
+			name:           "enabled",
+			parameter:      ARMParameter{Type: "bool", AllowedValues: []any{true, false}},
+			wantLabels:     []any{"True", "False"},
+			wantValues:     []any{true, false},
+			hasDefault:     false,
+			wantExpression: "[basics('enabled')]",
+		},
+		{
+			name:           "featureEnabled",
+			parameter:      ARMParameter{Type: "bool", DefaultValue: false, AllowedValues: []any{true, false}},
+			wantLabels:     []any{"True", "False"},
+			wantValues:     []any{true, false},
+			wantDefault:    "False",
+			hasDefault:     true,
+			wantExpression: "[basics('featureEnabled')]",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			element, output, ok := basicsElement(test.name, test.parameter, "")
+			if !ok {
+				t.Fatal("parameter was not rendered")
+			}
+			if got := element["type"]; got != "Microsoft.Common.DropDown" {
+				t.Fatalf("type = %v, want Microsoft.Common.DropDown", got)
+			}
+			entries := element["constraints"].(map[string]any)["allowedValues"].([]any)
+			for i, entryValue := range entries {
+				entry := entryValue.(map[string]any)
+				if entry["label"] != test.wantLabels[i] {
+					t.Errorf("entry %d label = %#v, want %#v", i, entry["label"], test.wantLabels[i])
+				}
+				if entry["value"] != test.wantValues[i] {
+					t.Errorf("entry %d value = %#v, want %#v", i, entry["value"], test.wantValues[i])
+				}
+			}
+			gotDefault, hasDefault := element["defaultValue"]
+			if hasDefault != test.hasDefault || gotDefault != test.wantDefault {
+				t.Errorf("defaultValue = %#v, present %v; want %#v, present %v", gotDefault, hasDefault, test.wantDefault, test.hasDefault)
+			}
+			if output != test.wantExpression {
+				t.Errorf("output = %q, want %q", output, test.wantExpression)
+			}
+
+			byts, err := json.Marshal(element)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var rendered map[string]any
+			if err := json.Unmarshal(byts, &rendered); err != nil {
+				t.Fatal(err)
+			}
+			renderedEntries := rendered["constraints"].(map[string]any)["allowedValues"].([]any)
+			for i, renderedEntry := range renderedEntries {
+				value := renderedEntry.(map[string]any)["value"]
+				switch test.parameter.Type {
+				case "string":
+					if _, ok := value.(string); !ok {
+						t.Errorf("rendered entry %d value has type %T, want string", i, value)
+					}
+				case "int":
+					if _, ok := value.(float64); !ok {
+						t.Errorf("rendered entry %d value has type %T, want JSON number", i, value)
+					}
+				case "bool":
+					if _, ok := value.(bool); !ok {
+						t.Errorf("rendered entry %d value has type %T, want boolean", i, value)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestBasicsElement_SecureStringDoesNotExposeAllowedValues(t *testing.T) {
+	element, _, ok := basicsElement("secret", ARMParameter{
+		Type:          "securestring",
+		AllowedValues: []any{"first", "second"},
+	}, "")
+	if !ok {
+		t.Fatal("securestring was not rendered")
+	}
+	if got := element["type"]; got != "Microsoft.Common.PasswordBox" {
+		t.Errorf("type = %v, want Microsoft.Common.PasswordBox", got)
+	}
+	if _, exposed := element["constraints"].(map[string]any)["allowedValues"]; exposed {
+		t.Error("securestring allowed values were exposed")
+	}
+}
+
+func TestBasicsElement_WithoutAllowedValuesKeepsExistingControls(t *testing.T) {
+	tests := []struct {
+		parameter      ARMParameter
+		wantType       string
+		wantExpression string
+	}{
+		{ARMParameter{Type: "string"}, "Microsoft.Common.TextBox", "[basics('value')]"},
+		{ARMParameter{Type: "int"}, "Microsoft.Common.TextBox", "[int(basics('value'))]"},
+		{ARMParameter{Type: "bool"}, "Microsoft.Common.CheckBox", "[basics('value')]"},
+	}
+
+	for _, test := range tests {
+		element, output, ok := basicsElement("value", test.parameter, "")
+		if !ok {
+			t.Fatalf("%s parameter was not rendered", test.parameter.Type)
+		}
+		if element["type"] != test.wantType {
+			t.Errorf("%s type = %v, want %s", test.parameter.Type, element["type"], test.wantType)
+		}
+		if output != test.wantExpression {
+			t.Errorf("%s output = %q, want %q", test.parameter.Type, output, test.wantExpression)
+		}
 	}
 }
 

@@ -2,6 +2,7 @@ package arm
 
 import (
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
 	"sort"
@@ -54,12 +55,13 @@ func resolvePrincipalIDOutput(outputKeys []string) (string, bool) {
 	return "", false
 }
 
-// customDeploymentOutputs records a custom stack's deployment name and its
-// template's output keys so the phone-home script can report them.
+// customDeploymentOutputs records custom stack metadata consumed after the
+// linked deployment is built.
 type customDeploymentOutputs struct {
-	StackName      string
-	DeploymentName string
-	OutputKeys     []string
+	StackName            string
+	DeploymentName       string
+	OutputKeys           []string
+	ParameterDefinitions map[string]ARMParameter
 }
 
 func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any, map[string]ARMParameter, []customDeploymentIdentity, []customDeploymentOutputs, error) {
@@ -160,9 +162,10 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		}
 		sort.Strings(outputKeys)
 		outputsMeta = append(outputsMeta, customDeploymentOutputs{
-			StackName:      stack.Name,
-			DeploymentName: deploymentName,
-			OutputKeys:     outputKeys,
+			StackName:            stack.Name,
+			DeploymentName:       deploymentName,
+			OutputKeys:           outputKeys,
+			ParameterDefinitions: maps.Clone(defaultParams),
 		})
 
 		// Track custom nested stacks that declare managed identities so the
