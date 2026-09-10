@@ -66,5 +66,11 @@ func (a *Activities) CreateComponentBuildRecord(ctx context.Context, req CreateC
 		build.AppBranchRunID = &req.AppBranchRunID
 	}
 
+	if build.GitRef == nil {
+		if err := a.pinBuildToBranchRunCommit(ctx, build.ID, req.AppConfigID); err != nil {
+			return nil, err
+		}
+	}
+
 	return build, nil
 }
