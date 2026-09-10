@@ -9,9 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componenthelmrecover"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 // RecoverHelmRelease unsticks a Helm release helm left mid-operation. It runs no
@@ -24,10 +22,6 @@ import (
 func RecoverHelmRelease(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 
-	install, err := activities.AwaitGetByInstallID(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
 
 	componentID, ok := flw.Metadata["component_id"]
 	if !ok {
@@ -41,21 +35,7 @@ func RecoverHelmRelease(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 	sg := newStepGroup(flw)
 	steps := make([]*app.WorkflowStep, 0)
 
-	// One eager group for both: a second would be left empty when state-gen-v2
-	// skips the state step, and an empty group stops later groups being fetched.
 	sg.nextGroupEager()
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	if !statemanager.UseStateGenV2(orgEnabled, install.Metadata) {
-		step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{},
-			&generatestate.Signal{InstallID: installID}, flw.PlanOnly, WithSkippable(false))
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, step)
-	}
 
 	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
