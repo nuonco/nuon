@@ -72,10 +72,13 @@ export const InstallGroupsSection = ({
     <div className="flex flex-col gap-4">
       {groups.map((group, idx) => {
         const labelEntries = Object.entries(group.label_selector?.match_labels ?? {})
-        const isLabels = labelEntries.length > 0
-        const matched = isLabels
-          ? Object.values(installsById).filter((i) => matchesSelector(i.labels, group.label_selector))
-          : []
+        const isAll = !!group.all_installs
+        const isLabels = !isAll && labelEntries.length > 0
+        const matched = isAll
+          ? Object.values(installsById)
+          : isLabels
+            ? Object.values(installsById).filter((i) => matchesSelector(i.labels, group.label_selector))
+            : []
         const installIds = group.install_ids ?? []
 
         return (
@@ -86,6 +89,11 @@ export const InstallGroupsSection = ({
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
                 <Text variant="base" weight="strong">{group.name}</Text>
+                {isAll && (
+                  <Text variant="subtext" theme="neutral">
+                    All installs
+                  </Text>
+                )}
                 {labelEntries.map(([k, v]) => (
                   <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" customColor={labelColors?.[k]} />
                 ))}
@@ -97,7 +105,7 @@ export const InstallGroupsSection = ({
               )}
             </div>
 
-            {isLabels ? (
+            {isAll || isLabels ? (
               matched.length > 0 ? (
                 <div className="flex flex-col gap-1.5">
                   {matched.map((install) => (
@@ -105,7 +113,11 @@ export const InstallGroupsSection = ({
                   ))}
                 </div>
               ) : (
-                <EmptyGroupHint>No installs currently match this group&apos;s labels</EmptyGroupHint>
+                <EmptyGroupHint>
+                  {isAll
+                    ? 'No installs yet — every install on this app joins this group'
+                    : "No installs currently match this group's labels"}
+                </EmptyGroupHint>
               )
             ) : installIds.length > 0 ? (
               <div className="flex flex-col gap-1.5">
