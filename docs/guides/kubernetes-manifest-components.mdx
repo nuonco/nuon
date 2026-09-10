@@ -88,7 +88,7 @@ data:
   database_url: "{{.nuon.components.terraform.outputs.database_url}}"
   
   # access outputs from the sandbox
-  aws_region: "{{.nuon.install.sandbox.outputs.account.aws_region}}"
+  aws_region: "{{.nuon.install.sandbox.outputs.account.region}}"
   vpc_id: "{{.nuon.install.sandbox.outputs.vpc.id}}"
   
   # access information about the install domain
@@ -124,7 +124,7 @@ spec:
         - name: DATABASE_URL
           value: "{{.nuon.components.infra.outputs.database_url}}"
         - name: AWS_REGION
-          value: "{{.nuon.install.sandbox.outputs.account.aws_region}}"
+          value: "{{.nuon.install.sandbox.outputs.account.region}}"
         ports:
         - containerPort: 8080
 ```
