@@ -13,11 +13,9 @@ export interface IGraphNodeCard
 }
 
 const LINK_RESET =
-  'block h-full w-full rounded-xl text-inherit no-underline decoration-transparent outline-none ' +
-  'hover:text-inherit hover:decoration-transparent active:text-inherit ' +
-  'focus-visible:rounded-xl focus-ring'
+  'graph-node-link block h-full w-full rounded-xl focus-visible:rounded-xl focus-ring'
 
-const SELECTED_CLASSES = 'outline outline-2 outline-offset-2 outline-accent'
+const SELECTED_CLASSES = 'graph-node-selected'
 
 export const GraphNodeCard = ({
   href,
@@ -38,7 +36,13 @@ export const GraphNodeCard = ({
       )}
       {...(!href ? props : {})}
     >
-      {status ? <Status status={status} variant="icon" /> : null}
+      {status ? (
+        <Status
+          status={status}
+          variant="icon"
+          tabIndex={href ? -1 : undefined}
+        />
+      ) : null}
       <div className="flex min-w-0 flex-1 flex-col gap-1">{children}</div>
     </Card>
   )

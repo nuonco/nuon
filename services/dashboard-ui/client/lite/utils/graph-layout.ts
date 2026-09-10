@@ -23,22 +23,55 @@ export interface IGraphLayoutInput<
   direction?: TGraphDirection
 }
 
-export type TPositionedGraphNode<TNode extends IGraphLayoutNode> = TNode & {
-  position: {
-    x: number
-    y: number
-  }
+export interface IGraphPoint {
+  x: number
+  y: number
 }
 
-const LAYOUT_OPTIONS = {
-  algorithm: 'layered',
-  hierarchyHandling: 'INCLUDE_CHILDREN',
-} as const
+export type TPositionedGraphNode<TNode extends IGraphLayoutNode> = TNode & {
+  position: IGraphPoint
+}
+
+export type TRoutedGraphEdge<
+  TEdge extends IGraphLayoutEdge = IGraphLayoutEdge,
+> = TEdge & {
+  points: IGraphPoint[]
+}
+
+export interface IGraphLayoutResult<
+  TNode extends IGraphLayoutNode,
+  TEdge extends IGraphLayoutEdge,
+> {
+  nodes: TPositionedGraphNode<TNode>[]
+  edges: TRoutedGraphEdge<TEdge>[]
+}
+
+const CONTAINER_PADDING = 24
+const CONTAINER_HEADER = 44
+const NODE_SPACING = 40
+const LAYER_SPACING = 80
+const EDGE_NODE_SPACING = 24
+const EDGE_SPACING = 16
+const CORNER_RADIUS = 8
 
 const DIRECTION_OPTIONS: Record<TGraphDirection, string> = {
   right: 'RIGHT',
   down: 'DOWN',
 }
+
+const layoutOptions = (direction: TGraphDirection) => ({
+  'elk.algorithm': 'layered',
+  'elk.direction': DIRECTION_OPTIONS[direction],
+  'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+  'elk.edgeRouting': 'ORTHOGONAL',
+  'elk.padding': `[top=${CONTAINER_HEADER},left=${CONTAINER_PADDING},bottom=${CONTAINER_PADDING},right=${CONTAINER_PADDING}]`,
+  'elk.spacing.nodeNode': `${NODE_SPACING}`,
+  'elk.spacing.edgeNode': `${EDGE_NODE_SPACING}`,
+  'elk.spacing.edgeEdge': `${EDGE_SPACING}`,
+  'elk.layered.spacing.nodeNodeBetweenLayers': `${LAYER_SPACING}`,
+  'elk.layered.spacing.edgeNodeBetweenLayers': `${EDGE_NODE_SPACING}`,
+  'elk.layered.spacing.edgeEdgeBetweenLayers': `${EDGE_SPACING}`,
+})
 
 const validParentId = (
   node: IGraphLayoutNode,
@@ -60,14 +93,20 @@ const validParentId = (
 
 const toElkChildren = (
   parentId: string | undefined,
-  childrenByParent: Map<string | undefined, IGraphLayoutNode[]>
+  childrenByParent: Map<string | undefined, IGraphLayoutNode[]>,
+  options: Record<string, string>
 ): ElkNode[] =>
-  (childrenByParent.get(parentId) ?? []).map((node) => ({
-    id: node.id,
-    width: node.width,
-    height: node.height,
-    children: toElkChildren(node.id, childrenByParent),
-  }))
+  (childrenByParent.get(parentId) ?? []).map((node) => {
+    const children = toElkChildren(node.id, childrenByParent, options)
+
+    return {
+      id: node.id,
+      width: node.width,
+      height: node.height,
+      children,
+      ...(children.length > 0 ? { layoutOptions: options } : {}),
+    }
+  })
 
 export const graphLayoutSignature = ({
   nodes,
@@ -86,19 +125,58 @@ export const graphLayoutSignature = ({
       ),
   })
 
-export const layoutGraph = async <TNode extends IGraphLayoutNode>({
+export const orthogonalEdgePath = (
+  points: IGraphPoint[],
+  radius = CORNER_RADIUS
+) => {
+  if (points.length === 0) return ''
+  const [first, ...rest] = points
+  if (rest.length === 0) return `M ${first!.x} ${first!.y}`
+
+  const distance = (from: IGraphPoint, to: IGraphPoint) =>
+    Math.hypot(to.x - from.x, to.y - from.y)
+
+  const towards = (from: IGraphPoint, to: IGraphPoint, by: number) => {
+    const length = distance(from, to)
+    if (length === 0) return from
+    const ratio = Math.min(by, length / 2) / length
+    return {
+      x: from.x + (to.x - from.x) * ratio,
+      y: from.y + (to.y - from.y) * ratio,
+    }
+  }
+
+  let path = `M ${first!.x} ${first!.y}`
+
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const previous = points[index - 1]!
+    const corner = points[index]!
+    const next = points[index + 1]!
+    const entry = towards(corner, previous, radius)
+    const exit = towards(corner, next, radius)
+
+    path += ` L ${entry.x} ${entry.y} Q ${corner.x} ${corner.y} ${exit.x} ${exit.y}`
+  }
+
+  const last = points.at(-1)!
+  return `${path} L ${last.x} ${last.y}`
+}
+
+export const layoutGraph = async <
+  TNode extends IGraphLayoutNode,
+  TEdge extends IGraphLayoutEdge,
+>({
   nodes,
   edges,
   direction = 'right',
-}: IGraphLayoutInput<TNode>): Promise<TPositionedGraphNode<TNode>[]> => {
+}: IGraphLayoutInput<TNode> & { edges: TEdge[] }): Promise<
+  IGraphLayoutResult<TNode, TEdge>
+> => {
   const nodesById = new Map(nodes.map((node) => [node.id, node]))
   const parentIds = new Map(
     nodes.map((node) => [node.id, validParentId(node, nodesById)])
   )
-  const childrenByParent = new Map<
-    string | undefined,
-    IGraphLayoutNode[]
-  >()
+  const childrenByParent = new Map<string | undefined, IGraphLayoutNode[]>()
 
   for (const node of nodes) {
     const parentId = parentIds.get(node.id)
@@ -108,43 +186,76 @@ export const layoutGraph = async <TNode extends IGraphLayoutNode>({
     ])
   }
 
+  const options = layoutOptions(direction)
   const elk = new ELK()
   const result = await elk.layout({
     id: 'root',
-    layoutOptions: {
-      'elk.algorithm': LAYOUT_OPTIONS.algorithm,
-      'elk.direction': DIRECTION_OPTIONS[direction],
-      'elk.hierarchyHandling': LAYOUT_OPTIONS.hierarchyHandling,
-    },
-    children: toElkChildren(undefined, childrenByParent),
+    layoutOptions: options,
+    children: toElkChildren(undefined, childrenByParent, options),
     edges: edges.map(({ id, source, target }) => ({
       id,
       sources: [source],
       targets: [target],
     })),
   })
-  const positioned: TPositionedGraphNode<TNode>[] = []
 
-  const appendNodes = (elkNodes: ElkNode[] | undefined) => {
+  type TElkEdge = NonNullable<ElkNode['edges']>[number]
+
+  const positioned: TPositionedGraphNode<TNode>[] = []
+  const origins = new Map<string, IGraphPoint>([['root', { x: 0, y: 0 }]])
+  const elkEdges = new Map<string, { edge: TElkEdge; owner: string }>()
+
+  const collect = (elkNodes: ElkNode[] | undefined, origin: IGraphPoint) => {
     for (const elkNode of elkNodes ?? []) {
       const node = nodesById.get(elkNode.id)
-      if (!node) continue
+      const position = { x: elkNode.x ?? 0, y: elkNode.y ?? 0 }
+      const absolute = {
+        x: origin.x + position.x,
+        y: origin.y + position.y,
+      }
+      origins.set(elkNode.id, absolute)
 
-      const parentId = parentIds.get(node.id)
-      positioned.push({
-        ...node,
-        parentId,
-        width: elkNode.width ?? node.width,
-        height: elkNode.height ?? node.height,
-        position: {
-          x: elkNode.x ?? 0,
-          y: elkNode.y ?? 0,
-        },
-      })
-      appendNodes(elkNode.children)
+      if (node) {
+        positioned.push({
+          ...node,
+          parentId: parentIds.get(node.id),
+          width: elkNode.width ?? node.width,
+          height: elkNode.height ?? node.height,
+          position,
+        })
+      }
+
+      for (const elkEdge of elkNode.edges ?? []) {
+        elkEdges.set(elkEdge.id, { edge: elkEdge, owner: elkNode.id })
+      }
+
+      collect(elkNode.children, absolute)
     }
   }
 
-  appendNodes(result.children)
-  return positioned
+  for (const elkEdge of result.edges ?? []) {
+    elkEdges.set(elkEdge.id, { edge: elkEdge, owner: 'root' })
+  }
+  collect(result.children, { x: 0, y: 0 })
+
+  const routed = edges.map((edge): TRoutedGraphEdge<TEdge> => {
+    const found = elkEdges.get(edge.id)
+    const section = found?.edge.sections?.at(0)
+    const containerId = found?.edge.container ?? found?.owner ?? 'root'
+    const origin = origins.get(containerId) ?? { x: 0, y: 0 }
+    const points = section
+      ? [
+          section.startPoint,
+          ...(section.bendPoints ?? []),
+          section.endPoint,
+        ].map((point) => ({
+          x: origin.x + point.x,
+          y: origin.y + point.y,
+        }))
+      : []
+
+    return { ...edge, points } as TRoutedGraphEdge<TEdge>
+  })
+
+  return { nodes: positioned, edges: routed }
 }
