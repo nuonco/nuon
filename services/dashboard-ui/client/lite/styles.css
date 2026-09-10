@@ -887,6 +887,106 @@ diffs-container {
   }
 }
 
+@utility graph-node-link {
+  &.graph-node-link,
+  &.graph-node-link:hover,
+  &.graph-node-link:active {
+    color: inherit;
+    text-decoration-line: none;
+  }
+}
+
+@utility graph-node-selected {
+  &.graph-node-selected {
+    outline: 2px solid var(--text-accent);
+    outline-offset: 2px;
+  }
+}
+
+:root[data-theme='high-contrast'] .graph-node-selected.graph-node-selected {
+  outline-color: var(--hc-yellow);
+}
+
+.lite-graph.react-flow {
+  --xy-edge-stroke: var(--text-tertiary);
+  --xy-edge-stroke-selected: var(--text-accent);
+  --xy-connectionline-stroke: var(--text-tertiary);
+  --xy-background-color: transparent;
+  --xy-node-color: inherit;
+  --xy-node-border: none;
+  --xy-node-background-color: transparent;
+  --xy-node-group-background-color: transparent;
+  --xy-node-boxshadow-hover: none;
+  --xy-node-boxshadow-selected: none;
+  --xy-handle-background-color: transparent;
+  --xy-handle-border-color: transparent;
+  --xy-selection-background-color: color-mix(
+    in srgb,
+    var(--surface-accent) 70%,
+    transparent
+  );
+  --xy-selection-border: 1px dotted var(--text-accent);
+}
+
+.lite-graph .react-flow__node {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+}
+
+.lite-graph .react-flow__node.selectable:hover,
+.lite-graph .react-flow__node.selected,
+.lite-graph .react-flow__node:focus,
+.lite-graph .react-flow__node:focus-visible {
+  box-shadow: none;
+}
+
+.lite-graph .react-flow__pane,
+.lite-graph .react-flow__node {
+  cursor: default;
+}
+
+.lite-graph .react-flow__handle {
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  opacity: 0;
+  border: none;
+  pointer-events: none;
+}
+
+.lite-graph .react-flow__edge-path {
+  stroke: var(--xy-edge-stroke, var(--text-tertiary));
+}
+
+.lite-graph .react-flow__edge.selected .react-flow__edge-path,
+.lite-graph .react-flow__edge:focus .react-flow__edge-path,
+.lite-graph .react-flow__edge:focus-visible .react-flow__edge-path {
+  stroke: var(--xy-edge-stroke-selected, var(--text-accent));
+}
+
+.lite-graph .lite-graph-edge-dimmed {
+  opacity: 0.28;
+}
+
+.lite-graph .react-flow__attribution {
+  display: none;
+}
+
+:root[data-theme='high-contrast'] .lite-graph.react-flow {
+  --xy-edge-stroke: var(--text-primary);
+  --xy-edge-stroke-selected: var(--hc-yellow);
+  --xy-selection-background-color: rgba(255, 255, 0, 0.16);
+  --xy-selection-border: 1px dotted var(--hc-yellow);
+}
+
+:root[data-theme='high-contrast'] .lite-graph .react-flow__edge-path {
+  stroke: var(--text-primary);
+}
+
 @layer components {
   .shell-background {
     background-image: radial-gradient(
