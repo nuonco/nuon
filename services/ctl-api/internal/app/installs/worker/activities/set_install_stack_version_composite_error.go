@@ -51,7 +51,7 @@ func (a *Activities) SetInstallStackVersionCompositeError(ctx context.Context, r
 	if req.Detail != "" {
 		update.Status = app.NewCompositeStatus(ctx, app.StatusError)
 		update.Status.StatusHumanDescription = req.Detail
-		columns = append(columns, "composite_status")
+		columns = append(columns, "status")
 	}
 
 	res := a.db.WithContext(ctx).
