@@ -15,6 +15,16 @@ silently beat `border-button-secondary-border` in a variant, and secondary
 buttons rendered with no border. If two utilities set the same property, only
 one can survive the merge — keep the conflicting one out of the base.
 
+**`outline-none` in a base class silently kills a `focus-visible:outline-*`
+ring.** Tailwind v4 carries outline *style* in `--tw-outline-style`:
+`outline-none` sets it to `none`, and `focus-visible:outline-2` resolves
+`outline-style` from that same variable. The width and the colour land, the ring
+is invisible, and the classes read as correct — thirteen components shipped with
+no keyboard focus ring this way. Same class of trap as `border-transparent`
+above. The `focus-ring` utility in `styles.css` sets `outline-style` literally
+inside a `&:focus-visible` block, so it outranks the base `outline-none` on
+specificity rather than on stylesheet order.
+
 **`border-box` does not save you when the height is `auto`.** A bordered variant
 came out 38px while the others were 36px. Every `Button` variant now carries a
 border, transparent where it is not visible, so geometry is identical across

@@ -182,9 +182,10 @@ line-height for free. See `Text`'s `Overview` story.
 
 Non-negotiable, and cheaper to do first than to retrofit:
 
-- **Focus is always visible.** `focus-visible:outline-2
-  focus-visible:outline-offset-2 focus-visible:outline-focus-ring`. Never
-  `outline-none` without a replacement.
+- **Focus is always visible.** The `focus-ring` utility, plus
+  `focus-ring-tight` (1px), `focus-ring-flush` (0) or `focus-ring-inset` (-2px)
+  where the offset differs. Never hand-write the `focus-visible:outline-*`
+  triple, and never `outline-none` without `focus-ring` alongside it.
 - **Disabled controls use `aria-disabled`, not the native attribute**, when they
   carry a tooltip explaining why — native `disabled` swallows pointer events, so
   the explanation never shows. `Button` already does this.
