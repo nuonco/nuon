@@ -413,6 +413,8 @@ export type TBuild = TComponentBuild & {
 
 export type TOrg = components['schemas']['app.Org']
 export type TOrgInvite = components['schemas']['app.OrgInvite']
+export type TOrgMember = components['schemas']['app.OrgMember']
+export type TOrgMemberStatus = components['schemas']['app.OrgMemberStatus']
 export type TOrgStats = {
   install_names: string[]
   app_count: number

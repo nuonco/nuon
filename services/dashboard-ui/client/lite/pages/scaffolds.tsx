@@ -48,11 +48,6 @@ export const Dashboard = () => {
   return <Placeholder />
 }
 
-export const Teams = () => {
-  useOrgPageChrome({ label: 'Team' })
-  return <Placeholder />
-}
-
 export const Connections = () => {
   useOrgPageChrome({ label: 'Connections', settings: true })
   return <Placeholder />
