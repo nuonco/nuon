@@ -22,7 +22,7 @@ export interface IButton extends ButtonHTMLAttributes<HTMLButtonElement> {
 const BASE_CLASSES =
   'relative inline-grid grid-flow-col cursor-pointer items-center justify-center rounded-lg border text-body font-medium no-underline ' +
   'outline-none transition-colors duration-150 ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ' +
+  'focus-ring ' +
   'aria-disabled:cursor-not-allowed aria-disabled:opacity-50'
 
 const SIZE_CLASSES: Record<TButtonSize, { icon: string; text: string }> = {
