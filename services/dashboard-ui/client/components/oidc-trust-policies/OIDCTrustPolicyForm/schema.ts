@@ -17,6 +17,9 @@ export const hasSubCondition = (claimConditions: ClaimCondition[]) =>
 export const githubSubClaim = (repoFullName: string, branch: string) =>
   `repo:${repoFullName}:ref:refs/heads/${branch}`
 
+export const githubSubClaimAllBranches = (repoFullName: string) =>
+  `repo:${repoFullName}:ref:refs/heads/*`
+
 export const defaultRepoPolicyName = (
   repoFullName: string,
   reservedNames: string[] = []
