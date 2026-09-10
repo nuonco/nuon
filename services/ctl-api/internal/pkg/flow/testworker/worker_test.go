@@ -2,11 +2,13 @@ package testworker
 
 import (
 	"os"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/stretchr/testify/suite"
+	"github.com/google/go-github/v50/github"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
@@ -18,6 +20,7 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -33,8 +36,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/testworker/seed"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
@@ -79,12 +82,24 @@ type TestService struct {
 	TClient     temporalclient.Client
 }
 
+// FlowTestSuite is one test case's handle on the shared app. Each case gets
+// its own value with its own *testing.T, so per-case state (queue cache,
+// phase ledger) needs no locking. The old testify suite.Suite embed could not
+// host t.Parallel() tests — testify replaces its shared T between methods and
+// runs suite teardown before parked parallel children resume.
 type FlowTestSuite struct {
-	suite.Suite
+	t *testing.T
 
-	app     *fxtest.App
 	service TestService
+
+	queueCache map[string]*app.Queue
+
+	ledgerStart time.Time
+	ledgerMark  time.Time
+	ledgerOn    bool
 }
+
+func (e *FlowTestSuite) T() *testing.T { return e.t }
 
 func TestSuite(t *testing.T) {
 	if os.Getenv("INTEGRATION") != "true" {
@@ -92,24 +107,53 @@ func TestSuite(t *testing.T) {
 		return
 	}
 
-	suite.Run(t, new(FlowTestSuite))
+	service := startFlowApp(t)
+
+	// Discover Test* methods by reflection like testify did: signature
+	// func(*FlowTestSuite), alphabetical order, names preserved as
+	// TestSuite/<Method> so -run/-skip filters keep working.
+	typ := reflect.TypeOf(&FlowTestSuite{})
+	for i := 0; i < typ.NumMethod(); i++ {
+		m := typ.Method(i)
+		if !strings.HasPrefix(m.Name, "Test") {
+			continue
+		}
+		if m.Type.NumIn() != 1 || m.Type.In(0) != typ || m.Type.NumOut() != 0 {
+			continue
+		}
+		run := m.Func.Interface().(func(*FlowTestSuite))
+		t.Run(m.Name, func(t *testing.T) {
+			t.Parallel()
+			e := &FlowTestSuite{t: t, service: service, queueCache: map[string]*app.Queue{}}
+			run(e)
+		})
+	}
 }
 
-func (e *FlowTestSuite) SetupSuite() {
+// startFlowApp boots the fx app and Temporal worker once for the whole suite.
+// The app stops via parent t.Cleanup: a parent's deferred call runs before its
+// parked parallel children resume, but cleanup runs after they all finish.
+func startFlowApp(t *testing.T) TestService {
 	// Shrink the abandoned-wait ceiling so approval/park expiry paths fire in
 	// test time instead of 3 days. Read at workflow runtime, so setting it
 	// before the worker boots covers every flow the suite starts.
-	callback.MaxWaitCeiling = 15 * time.Second
+	callback.MaxWaitCeiling = 5 * time.Second
 
-	e.app = fxtest.New(
-		e.T(),
+	// Shrink the step-handler cache window: assertTemporalDrained waits for
+	// handlers to close, so the production 5s window is a flat 5s tax on every
+	// drain-asserting test. No flow test depends on the reuse window.
+	executeworkflowstep.CacheWindow = 500 * time.Millisecond
+
+	var service TestService
+	app := fxtest.New(
+		t,
 		fx.Provide(internal.NewConfig),
 
 		// infrastructure
 		fx.Provide(log.New),
 		fx.Provide(dblog.New),
 		fx.Provide(loops.New),
-		fx.Provide(github.New),
+		fx.Provide(func() *github.Client { return github.NewClient(nil) }),
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
 		fx.Provide(func(cfg *internal.Config) *querycollector.Collector {
@@ -189,12 +233,9 @@ func (e *FlowTestSuite) SetupSuite() {
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {})),
 
-		fx.Populate(&e.service),
+		fx.Populate(&service),
 	)
 
-	e.app.RequireStart()
-}
-
-func (e *FlowTestSuite) TearDownSuite() {
-	e.app.RequireStop()
+	app.RequireStart()
+	return service
 }
