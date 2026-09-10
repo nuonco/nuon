@@ -125,7 +125,7 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		return nil, fmt.Errorf("unable to forward retry to step: %w", err)
 	}
 
-	if directive.Step(resp.Directive) == directive.StepRetryGroup {
+	if directive.Step(resp.Directive) == directive.StepAutoRetryGroup {
 		if err := s.cloneGroupForRetry(ctx, step.GroupIdx); err != nil {
 			return nil, fmt.Errorf("unable to clone group for retry: %w", err)
 		}

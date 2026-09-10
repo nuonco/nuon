@@ -55,9 +55,9 @@ func (s *Signal) createStepRetryHandler(ctx workflow.Context) (*CreateStepRetryR
 	}
 
 	// Determine the directive based on signal capabilities.
-	directive := DirectiveRetry
+	directive := DirectiveAutoRetry
 	if rg, ok := sig.(signal.SignalWithRetryGroup); ok && rg.RetryGroup() {
-		directive = DirectiveRetryGroup
+		directive = DirectiveAutoRetryGroup
 	}
 
 	// Call OnRetry so the signal can update its target object's status

@@ -95,7 +95,7 @@ func (e *FlowTestSuite) TestSkipAutoRetryParksStepForManualRetry() {
 
 	step := steps[0]
 	require.Equal(e.T(), app.StatusError, step.Status.Status)
-	require.Equal(e.T(), string(directive.StepAwaitRetry), step.ResultDirective,
+	require.Equal(e.T(), string(directive.StepAwaitManualRetry), step.ResultDirective,
 		"step should be parked with the await-retry directive")
 	require.Equal(e.T(), true, step.Status.Metadata["skip_auto_retry"],
 		"step metadata should record skip_auto_retry")

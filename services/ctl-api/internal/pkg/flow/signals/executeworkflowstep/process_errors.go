@@ -86,10 +86,10 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	// Determine the directive based on signal capabilities. For retry-group
 	// signals the retry counter is GroupRetryIdx (reset per group clone);
 	// for plain retry it is the step-level RetryIndex.
-	directive := DirectiveRetry
+	directive := DirectiveAutoRetry
 	retryIndex := step.RetryIndex
 	if rg, ok := sig.(signal.SignalWithRetryGroup); ok && rg.RetryGroup() {
-		directive = DirectiveRetryGroup
+		directive = DirectiveAutoRetryGroup
 		retryIndex = step.GroupRetryIdx
 	}
 
@@ -165,7 +165,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			"max_retries":            maxRetries,
 			"retry_index":            retryIndex,
 		})
-		if err := setResultDirective(ctx, step.ID, DirectiveAwaitRetry); err != nil {
+		if err := setResultDirective(ctx, step.ID, DirectiveAwaitManualRetry); err != nil {
 			return errors.Wrap(err, "unable to set await-retry directive")
 		}
 

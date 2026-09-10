@@ -262,7 +262,7 @@ func (e *FlowTestSuite) TestFailParkTargetUntouched() {
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusFailedPendingRetry)
 	step := e.getStep(ctx, steps[0].ID)
 	require.Equal(e.T(), app.StatusError, step.Status.Status)
-	require.Equal(e.T(), directive.StepAwaitRetry, directive.Step(step.ResultDirective))
+	require.Equal(e.T(), directive.StepAwaitManualRetry, directive.Step(step.ResultDirective))
 	e.assertStatusMatrix(ctx, steps[0].ID, statusMatrix{
 		Workflow: app.StatusFailedPendingRetry,
 		Target:   app.Status(app.InstallDeployStatusActive),
