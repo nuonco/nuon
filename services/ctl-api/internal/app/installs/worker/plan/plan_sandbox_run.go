@@ -166,10 +166,8 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		l.Info("using OCI source from caller")
 		ociSource = req.OCISource
 	default:
-		// Only the absence of a build falls back to git. The git source resolves the
-		// branch's latest commit, so treating a lookup failure as "no artifact" would
-		// silently run different terraform than the build pinned, and let a retry of
-		// the same run pick up a newer commit than the one that was planned.
+		// Only a missing build falls back to git, which resolves branch HEAD rather
+		// than the commit the artifact was built from.
 		l.Info("checking for active sandbox build OCI artifact")
 		sandboxBuild, sbErr := activities.AwaitGetLatestActiveSandboxBuildByAppConfigID(ctx, appCfg.ID)
 		if sbErr != nil {

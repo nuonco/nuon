@@ -31,9 +31,8 @@ var diagnosticSecretRedactors = []diagnosticSecretRedactor{
 		replacement: "${1}" + redactedValue + "@",
 	},
 	{
-		// HTTP authorization and cookie header values. Anchored to the start of a
-		// line because a wrapped error reads "unable to get authorization: ..." and
-		// matching that mid-sentence blanks the rest of the cause chain.
+		// HTTP authorization and cookie header values. Line-anchored so a wrapped
+		// "unable to get authorization: ..." keeps its cause chain.
 		pattern:     regexp.MustCompile(`(?im)^([ \t]*(?:authorization|proxy-authorization|cookie|set-cookie)[ \t]*:[ \t]*)[^\r\n]*`),
 		replacement: "${1}" + redactedValue,
 	},

@@ -20,9 +20,8 @@ type ECRAccessToken struct {
 	ServerAddress string
 }
 
-// GetECRAccessToken lives in the shared activity set for the same reason as its
-// GAR and ACR counterparts: the installs namespace schedules it when resolving
-// the sandbox artifact, and activities are registered per worker.
+// GetECRAccessToken is in the shared set because activities register per worker
+// and the installs namespace schedules it.
 //
 // @temporal-gen-v2 activity
 // @max-retries 1
