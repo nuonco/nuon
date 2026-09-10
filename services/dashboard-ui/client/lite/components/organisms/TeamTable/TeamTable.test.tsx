@@ -119,6 +119,20 @@ describe('TeamTable', () => {
     ).toBeNull()
   })
 
+  test('calls the selected row action with its member', () => {
+    let selected = ''
+    renderTable({
+      members: [ACTIVE],
+      onChangeRole: (member) => {
+        selected = member.id ?? ''
+      },
+    })
+    openActions('active@example.com')
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Change role' }))
+
+    expect(selected).toBe('acct_active')
+  })
+
   test('hides change role on the current account row', () => {
     renderTable({ members: [ACTIVE], currentAccountId: 'acct_active' })
     openActions('active@example.com')

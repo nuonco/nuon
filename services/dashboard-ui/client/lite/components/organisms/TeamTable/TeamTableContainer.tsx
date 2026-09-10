@@ -1,10 +1,30 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { getAccount, getOrgMembers, listRoles } from '@/lib'
-import type { TOrgMember } from '@/types/ctl-api.types'
+import { useState } from 'react'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import {
+  getAccount,
+  getOrgMembers,
+  listRoles,
+  removeUser,
+  resendOrgInvite,
+  revokeOrgInvite,
+  updateAccountRole,
+} from '@/lib'
+import type { TOrgMember, TRoleInfo } from '@/types/ctl-api.types'
 import { useListQueryState } from '../../../hooks/use-list-query-state'
 import { useOrgAdmin } from '../../../hooks/use-org-admin'
+import { useSurfaces } from '../../../hooks/use-surfaces'
+import { useToast } from '../../../hooks/use-toast'
 import { useOrg } from '../../../providers/org-provider'
 import { commaSetQueryParameter } from '../../../utils/list-query'
+import { ChangeRoleModal } from '../ChangeRoleModal'
+import { RemoveMemberModal } from '../RemoveMemberModal'
+import { ResendInviteModal } from '../ResendInviteModal'
+import { RevokeInviteModal } from '../RevokeInviteModal'
 import { TeamTable, type ITeamFilter } from './TeamTable'
 
 const PAGE_SIZE = 20
@@ -43,11 +63,168 @@ const filterControl = ({
   onReset: () => onChange(new Set()),
 })
 
-const ignoreMember = (_member: TOrgMember) => {}
+const ChangeRoleModalContainer = ({
+  member,
+  orgId,
+  roles,
+}: {
+  member: TOrgMember
+  orgId: string
+  roles: TRoleInfo[]
+}) => {
+  const queryClient = useQueryClient()
+  const { closeTopSurface } = useSurfaces()
+  const { addToast } = useToast()
+  const mutation = useMutation({
+    mutationFn: (roleType: string) =>
+      updateAccountRole({
+        orgId,
+        accountId: member?.account_id ?? '',
+        body: { role_type: roleType },
+      }),
+    onSuccess: (_account, roleType) => {
+      void queryClient.invalidateQueries({ queryKey: ['org-members', orgId] })
+      closeTopSurface()
+      const title =
+        roles.find((role) => role.role_type === roleType)?.title ?? roleType
+      addToast({
+        heading: 'Role updated',
+        description: `${member?.email ?? 'Team member'} now has the ${title} role.`,
+        theme: 'success',
+      })
+    },
+  })
+
+  return (
+    <ChangeRoleModal
+      email={member?.email ?? ''}
+      roles={roles}
+      currentRole={member?.role_type}
+      onSubmit={(roleType) => mutation.mutate(roleType)}
+      pending={mutation.isPending}
+      error={mutation.error}
+    />
+  )
+}
+
+const RemoveMemberModalContainer = ({
+  member,
+  orgId,
+}: {
+  member: TOrgMember
+  orgId: string
+}) => {
+  const [confirmation, setConfirmation] = useState('')
+  const queryClient = useQueryClient()
+  const { closeTopSurface } = useSurfaces()
+  const { addToast } = useToast()
+  const mutation = useMutation({
+    mutationFn: () =>
+      removeUser({
+        orgId,
+        body: { user_id: member?.account_id ?? '' },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['org-members', orgId] })
+      closeTopSurface()
+      addToast({
+        heading: 'Team member removed',
+        description: `${member?.email ?? 'The team member'} no longer has access to this org.`,
+        theme: 'success',
+      })
+    },
+  })
+
+  return (
+    <RemoveMemberModal
+      email={member?.email ?? ''}
+      confirmation={confirmation}
+      onConfirmationChange={setConfirmation}
+      onSubmit={() => mutation.mutate()}
+      pending={mutation.isPending}
+      error={mutation.error}
+    />
+  )
+}
+
+const ResendInviteModalContainer = ({
+  member,
+  orgId,
+}: {
+  member: TOrgMember
+  orgId: string
+}) => {
+  const queryClient = useQueryClient()
+  const { closeTopSurface } = useSurfaces()
+  const { addToast } = useToast()
+  const mutation = useMutation({
+    mutationFn: () =>
+      resendOrgInvite({
+        orgId,
+        inviteId: member?.invite_id ?? '',
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['org-members', orgId] })
+      closeTopSurface()
+      addToast({
+        heading: 'Invite sent',
+        description: `Sent another invitation to ${member?.email ?? 'the team member'}.`,
+        theme: 'success',
+      })
+    },
+  })
+
+  return (
+    <ResendInviteModal
+      email={member?.email ?? ''}
+      onSubmit={() => mutation.mutate()}
+      pending={mutation.isPending}
+      error={mutation.error}
+    />
+  )
+}
+
+const RevokeInviteModalContainer = ({
+  member,
+  orgId,
+}: {
+  member: TOrgMember
+  orgId: string
+}) => {
+  const queryClient = useQueryClient()
+  const { closeTopSurface } = useSurfaces()
+  const { addToast } = useToast()
+  const mutation = useMutation({
+    mutationFn: () =>
+      revokeOrgInvite({
+        orgId,
+        inviteId: member?.invite_id ?? '',
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['org-members', orgId] })
+      closeTopSurface()
+      addToast({
+        heading: 'Invite revoked',
+        description: `${member?.email ?? 'The team member'} can no longer accept this invitation.`,
+        theme: 'success',
+      })
+    },
+  })
+
+  return (
+    <RevokeInviteModal
+      email={member?.email ?? ''}
+      onSubmit={() => mutation.mutate()}
+      pending={mutation.isPending}
+      error={mutation.error}
+    />
+  )
+}
 
 export const TeamTableContainer = () => {
   const { orgId } = useOrg()
   const admin = useOrgAdmin()
+  const { openModal } = useSurfaces()
   const list = useListQueryState({
     pageSize: PAGE_SIZE,
     filters: TEAM_FILTERS,
@@ -124,10 +301,30 @@ export const TeamTableContainer = () => {
       onOffsetChange={list.setOffset}
       statusFilter={statusFilter}
       roleFilter={roleFilter}
-      onChangeRole={ignoreMember}
-      onRemove={ignoreMember}
-      onResend={ignoreMember}
-      onRevoke={ignoreMember}
+      onChangeRole={(member) =>
+        openModal(
+          <ChangeRoleModalContainer
+            member={member}
+            orgId={orgId ?? ''}
+            roles={roles}
+          />
+        )
+      }
+      onRemove={(member) =>
+        openModal(
+          <RemoveMemberModalContainer member={member} orgId={orgId ?? ''} />
+        )
+      }
+      onResend={(member) =>
+        openModal(
+          <ResendInviteModalContainer member={member} orgId={orgId ?? ''} />
+        )
+      }
+      onRevoke={(member) =>
+        openModal(
+          <RevokeInviteModalContainer member={member} orgId={orgId ?? ''} />
+        )
+      }
       loading={isLoading}
       fetching={isPlaceholderData}
       error={error}
