@@ -103,6 +103,18 @@ Tool JSON timestamps are UTC (Zulu) RFC3339 and always end in `Z`, for example `
 - If you name a calendar day, clock time, or age, convert the UTC instant to this machine's local timezone first. Example: `2026-09-04T04:23:00Z` is still the evening of September 3 in US Pacific.
 - Never say "today" or "yesterday" from the UTC date digits. The UTC calendar day can be a day ahead of local time.
 
+## IAM permission checks (local CLI extension)
+
+These checks are not MCP tools. They run on the app directory via the `policies` CLI extension.
+
+Before `nuon apps sync` after authoring or changing `permissions/` or `break_glass/`:
+
+1. If `nuon policies --help` fails: `nuon ext install nuonco/nuon-ext-policies`
+2. From the app directory (or pass `--app-dir`):
+   - `nuon policies --output json check-overlap <role>.toml` for each role file (for example `maintenance.toml`)
+   - `nuon policies --output json check-boundaries`
+3. Fix overlapping IAM actions and high-severity boundary drift (maintenance-only actions missing from provision/deprovision) before syncing.
+
 ## Tools (control plane)
 
 Writes are hidden from the stdio proxy unless `--allow-writes` is set. Descriptions start with `WRITE OPERATION:`.
