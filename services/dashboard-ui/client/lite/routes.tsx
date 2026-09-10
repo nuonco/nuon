@@ -14,6 +14,7 @@ import { InstallLayout } from './pages/InstallLayout'
 import { InstallOverview } from './pages/InstallOverview'
 import { Installs } from './pages/Installs'
 import { InstallSetup } from './pages/InstallSetup'
+import { Team } from './pages/Team'
 import { OrgLayout } from './pages/OrgLayout'
 import { RootLayout } from './pages/RootLayout'
 import { SettingsLayout } from './pages/SettingsLayout'
@@ -25,14 +26,14 @@ import {
   OidcFederation,
   Onboarding,
   ServiceAccounts,
-  Teams,
   Triggers,
   Webhooks,
 } from './pages/scaffolds'
 
 const isLayoutRoute = (
   route: RouteObject
-): route is NonIndexRouteObject & { children: RouteObject[] } => !!route.children
+): route is NonIndexRouteObject & { children: RouteObject[] } =>
+  !!route.children
 
 export const withPageTransitions = (routes: RouteObject[]): RouteObject[] =>
   routes.map((route): RouteObject => {
@@ -132,7 +133,7 @@ export const liteRoutes: RouteObject[] = withPageTransitions([
               },
             ],
           },
-          { id: 'teams', path: 'teams', element: <Teams /> },
+          { id: 'teams', path: 'teams', element: <Team /> },
           {
             id: 'settings-layout',
             path: 'settings',
