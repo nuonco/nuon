@@ -128,13 +128,13 @@ func (s *Signal) checkOrgRunner(ctx workflow.Context, l *zap.Logger, tmw tmetric
 			)
 			tags["missing_build_process"] = "true"
 			tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "unhealthy"))...)
-			return s.handleRunnerOffline(ctx, tmw, runner, "no active build process")
+			return s.handleRunnerOffline(ctx, l, tmw, runner, "no active build process")
 		}
 		return errors.Wrap(err, "unable to get current build process")
 	}
 
 	tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "healthy"))...)
-	return s.handleRunnerActive(ctx, runner)
+	return s.handleRunnerActive(ctx, l, runner)
 }
 
 func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tmetrics.Writer, runner *app.Runner, tags map[string]string) error {
@@ -203,15 +203,16 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 
 	if status == app.RunnerStatusActive {
 		tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "healthy"))...)
-		return s.handleRunnerActive(ctx, runner)
+		return s.handleRunnerActive(ctx, l, runner)
 	}
 
 	tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "unhealthy"))...)
-	return s.handleRunnerOffline(ctx, tmw, runner, description)
+	return s.handleRunnerOffline(ctx, l, tmw, runner, description)
 }
 
-func (s *Signal) handleRunnerActive(ctx workflow.Context, runner *app.Runner) error {
-	if _, ok := runner.StatusV2.Metadata[app.RunnerOfflineTSMetadataKey]; ok {
+func (s *Signal) handleRunnerActive(ctx workflow.Context, l *zap.Logger, runner *app.Runner) error {
+	_, hasOfflineTS := runner.StatusV2.Metadata[app.RunnerOfflineTSMetadataKey]
+	if hasOfflineTS {
 		if err := statusactivities.LocalAwaitUpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
 			RunnerID: s.RunnerID,
 			Metadata: map[string]any{
@@ -222,10 +223,37 @@ func (s *Signal) handleRunnerActive(ctx workflow.Context, runner *app.Runner) er
 		}
 	}
 
+	// Only on the recovery tick. The batched sweep can afford to check every
+	// tick; here it would cost an extra activity per healthy runner.
+	if hasOfflineTS || runner.Status != app.RunnerStatusActive {
+		s.gateInstallCrons(ctx, l, runner, false)
+	}
+
 	return s.updateRunnerStatus(ctx, runner, app.RunnerStatusActive, "runner healthy")
 }
 
-func (s *Signal) handleRunnerOffline(ctx workflow.Context, tmw tmetrics.Writer, runner *app.Runner, reason string) error {
+// gateInstallCrons is best-effort: a runner's health status must still be
+// recorded even if the install's cron emitters cannot be reconciled.
+func (s *Signal) gateInstallCrons(ctx workflow.Context, l *zap.Logger, runner *app.Runner, disable bool) {
+	if runner.RunnerGroup.Type != app.RunnerGroupTypeInstall {
+		return
+	}
+
+	if _, err := activities.AwaitGateInstallCronEmitters(ctx, activities.GateInstallCronEmittersRequest{
+		InstallID: runner.RunnerGroup.OwnerID,
+		OrgID:     runner.OrgID,
+		AccountID: runner.CreatedByID,
+		Disable:   disable,
+	}); err != nil {
+		l.Warn("unable to gate install cron emitters",
+			zap.String("runner_id", s.RunnerID),
+			zap.String("install_id", runner.RunnerGroup.OwnerID),
+			zap.Bool("disable", disable),
+			zap.Error(err))
+	}
+}
+
+func (s *Signal) handleRunnerOffline(ctx workflow.Context, l *zap.Logger, tmw tmetrics.Writer, runner *app.Runner, reason string) error {
 	now := workflow.Now(ctx)
 	offlineAt, hasOfflineTS := runner.StatusV2.MetadataUnixTime(app.RunnerOfflineTSMetadataKey)
 
@@ -248,6 +276,8 @@ func (s *Signal) handleRunnerOffline(ctx workflow.Context, tmw tmetrics.Writer, 
 	if now.Sub(offlineAt) < runnerUnhealthyAlertDelay {
 		return nil
 	}
+
+	s.gateInstallCrons(ctx, l, runner, true)
 
 	if err := s.notifyRunnerUnhealthy(ctx, tmw, runner, reason, offlineAt); err != nil {
 		return err

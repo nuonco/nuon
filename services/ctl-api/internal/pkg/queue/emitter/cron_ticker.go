@@ -73,6 +73,22 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		return err
 	}
 
+	// The parent only notices a disable on its next alive check, so terminate
+	// here too rather than emitting from a tick that beat it.
+	if !emitter.Enabled {
+		l.Info("emitter disabled, terminating cron ticker",
+			zap.String("emitter-id", req.EmitterID),
+			zap.String("disabled-reason", emitter.DisabledReason),
+		)
+		info := workflow.GetInfo(ctx)
+		_ = activities.AwaitTerminateWorkflow(ctx, &activities.TerminateWorkflowRequest{
+			WorkflowID: info.WorkflowExecution.ID,
+			Namespace:  info.Namespace,
+			Reason:     "emitter disabled",
+		})
+		return nil
+	}
+
 	// Check if emitter is paused (status is cancelled)
 	if emitter.Status.Status == app.StatusCancelled {
 		l.Info("emitter is paused, skipping emit")

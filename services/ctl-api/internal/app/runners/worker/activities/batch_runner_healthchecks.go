@@ -39,6 +39,8 @@ type BatchRunnerHealthchecksResponse struct {
 	Skipped        int    `json:"skipped"`
 	AlertsEnqueued int    `json:"alerts_enqueued"`
 	AlertsDeduped  int    `json:"alerts_deduped"`
+	CronsDisabled  int    `json:"crons_disabled"`
+	CronsEnabled   int    `json:"crons_enabled"`
 	Errors         int    `json:"errors"`
 }
 
@@ -93,6 +95,7 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 
 	now := time.Now()
 	var alerts []runnerAlert
+	cronCandidates := map[string]*installCronCandidate{}
 
 	for i := range runners {
 		if i%batchHeartbeatEvery == 0 {
@@ -131,11 +134,25 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 			alerts = append(alerts, runnerAlert{runner: r, offlineAt: d.AlertOfflineAt, reason: d.Reason, tags: tags})
 		}
 
+		if r.RunnerGroup.OwnerType == installOwnerType {
+			installID := r.RunnerGroup.OwnerID
+			c, ok := cronCandidates[installID]
+			if !ok {
+				c = &installCronCandidate{orgID: r.OrgID, accountID: r.CreatedByID}
+				cronCandidates[installID] = c
+			}
+			c.disable = c.disable || d.DisableInstallCrons
+		}
+
 		a.mw.Incr(runnerHealthCheckCounter, metrics.ToTags(tags, metrics.ToTag("result", d.Result)))
 	}
 
 	if len(alerts) > 0 {
 		a.emitRunnerAlerts(ctx, req.OrgID, alerts, resp)
+	}
+
+	if len(cronCandidates) > 0 {
+		a.applyInstallCronGating(ctx, cronCandidates, resp)
 	}
 
 	return resp, nil
@@ -248,7 +265,7 @@ func (a *Activities) applyRunnerHealthDecision(ectx context.Context, r *app.Runn
 func (a *Activities) emitRunnerAlerts(ctx context.Context, orgID string, alerts []runnerAlert, resp *BatchRunnerHealthchecksResponse) {
 	installIDs := make([]string, 0)
 	for _, al := range alerts {
-		if al.runner.RunnerGroup.OwnerType == "installs" {
+		if al.runner.RunnerGroup.OwnerType == installOwnerType {
 			installIDs = append(installIDs, al.runner.RunnerGroup.OwnerID)
 		}
 	}
@@ -329,7 +346,7 @@ func runnerHealthTags(r *app.Runner, presence runnerProcessPresence, d runnerHea
 		"org_id":        r.OrgID,
 		"org_name":      r.Org.Name,
 	}
-	if r.RunnerGroup.OwnerType == "installs" {
+	if r.RunnerGroup.OwnerType == installOwnerType {
 		tags["install_id"] = r.RunnerGroup.OwnerID
 	}
 	if d.Result == "skipped" {

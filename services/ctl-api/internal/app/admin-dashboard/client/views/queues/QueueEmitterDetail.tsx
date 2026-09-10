@@ -49,6 +49,7 @@ export const QueueEmitterDetail = () => {
           <h1 className="text-lg font-semibold">{emitter.name || 'Emitter'}</h1>
           <Badge>{emitter.mode}</Badge>
           <Badge variant="status" status={status}>{status || 'unknown'}</Badge>
+          {emitter.enabled === false && <Badge variant="status" status="disabled">disabled</Badge>}
         </div>
         <div className="space-y-1 text-xs">
           <div><span className="text-gray-500 dark:text-gray-400 uppercase">Emitter ID:</span> <span className="font-mono select-all">{emitter.id}</span></div>
@@ -95,6 +96,15 @@ export const QueueEmitterDetail = () => {
               <span className="text-gray-500 dark:text-gray-400 uppercase w-28 shrink-0">Status</span>
               <Badge variant="status" status={status}>{status || 'unknown'}</Badge>
             </div>
+            <div className="flex items-start gap-3">
+              <span className="text-gray-500 dark:text-gray-400 uppercase w-28 shrink-0">Enabled</span>
+              <Badge variant="status" status={emitter.enabled === false ? 'disabled' : 'active'}>
+                {emitter.enabled === false ? 'No' : 'Yes'}
+              </Badge>
+            </div>
+            {emitter.disabled_reason && (
+              <InfoRow label="Disabled reason" value={emitter.disabled_reason} />
+            )}
             {emitter.status?.status_human_description && (
               <InfoRow label="Description" value={emitter.status.status_human_description} />
             )}
