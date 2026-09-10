@@ -138,7 +138,7 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 		Version: "1.0.0",
 	}, &mcp.ServerOptions{
 		SchemaCache:  s.schemaCache,
-		Instructions: fmt.Sprintf("Nuon control plane MCP server. Authenticated as account %s in org %q. If no org is selected, call list_orgs then select_org. %s", accountID, orgID, api.MCPTimeInstructions),
+		Instructions: fmt.Sprintf("Nuon control plane MCP server. Authenticated as account %s in org %q. If no org is selected, call list_orgs then select_org. %s %s", accountID, orgID, api.MCPTimeInstructions, api.MCPPoliciesInstructions),
 	})
 	server.AddReceivingMiddleware(s.receivingMetricsMiddleware)
 
