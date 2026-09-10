@@ -25,7 +25,35 @@ jobs:
     name: ctl-api integration
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: ci-triggers.yml
+          sparse-checkout-cone-mode: false
+
+      - name: read ci triggers file
+        if: github.event_name != 'workflow_dispatch'
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: ci_triggers
+        with:
+          config: ci-triggers.yml
+
+      - uses: dorny/paths-filter@v3
+        if: github.event_name != 'workflow_dispatch'
+        id: filter
+        with:
+          filters: ${{ steps.ci_triggers.outputs['services'] }}
+
+      # The job itself always runs so the check reports success when skipped; only the
+      # trigger step is gated. Keep this true when promoting the check to required,
+      # otherwise docs-only PRs would soft-lock on a never-arriving status.
+      - name: Skip when ctl-api is unchanged
+        if: github.event_name != 'workflow_dispatch' && steps.filter.outputs['ctl-api'] != 'true'
+        run: echo "no ctl-api changes in this diff; skipping integration run"
+
       - name: Trigger and watch the mono integration workflow
+        if: github.event_name == 'workflow_dispatch' || steps.filter.outputs['ctl-api'] == 'true'
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
         run: |
