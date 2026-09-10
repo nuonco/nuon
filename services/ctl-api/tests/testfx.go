@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
+	"github.com/google/go-github/v50/github"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
@@ -35,7 +36,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
-	ghpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
@@ -127,7 +127,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		// External services
 		fx.Provide(loops.New),
 		fx.Provide(salesforce.New),
-		fx.Provide(ghpkg.New),
+		fx.Provide(func() *github.Client { return github.NewClient(nil) }),
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
 		fx.Provide(features.New),
