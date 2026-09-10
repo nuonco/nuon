@@ -51,7 +51,7 @@ export const Radio = forwardRef<HTMLInputElement, IRadio>(
           }
           className={cn(
             'peer absolute inset-0 size-5 cursor-pointer appearance-none rounded-full border border-field-border bg-field-bg outline-none transition-colors',
-            'checked:border-action-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+            'checked:border-action-primary focus-ring',
             'aria-invalid:border-field-invalid disabled:cursor-not-allowed disabled:opacity-50',
             loading && 'skeleton',
             className
