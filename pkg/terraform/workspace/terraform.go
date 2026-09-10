@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
+	goversion "github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
 
@@ -254,6 +255,18 @@ func (w *workspace) ApplyPlan(ctx context.Context, log hclog.Logger) ([]byte, er
 	return byts, nil
 }
 
+// below this, -var-file with a saved plan is a hard error; at or above it, ephemeral vars need it
+var savedPlanVarFileMinVersion = goversion.Must(goversion.NewVersion("1.10.0"))
+
+func (w *workspace) acceptsVarFilesWithSavedPlan(ctx context.Context, client Terraform) (bool, error) {
+	tfVersion, _, err := client.Version(ctx, false)
+	if err != nil {
+		return false, fmt.Errorf("unable to determine terraform version: %w", err)
+	}
+
+	return tfVersion.Core().GreaterThanOrEqual(savedPlanVarFileMinVersion), nil
+}
+
 func (w *workspace) applyPlan(ctx context.Context, client Terraform, log hclog.Logger) ([]byte, error) {
 	out, err := output.New(w.v, output.WithLogger(log))
 	if err != nil {
@@ -269,8 +282,15 @@ func (w *workspace) applyPlan(ctx context.Context, client Terraform, log hclog.L
 		tfexec.Refresh(true),
 		tfexec.DirOrPlan(filepath.Join(w.Root(), "tfplan")),
 	}
-	for _, fp := range w.varsPaths {
-		opts = append(opts, tfexec.VarFile(fp))
+
+	varFilesOK, err := w.acceptsVarFilesWithSavedPlan(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+	if varFilesOK {
+		for _, fp := range w.varsPaths {
+			opts = append(opts, tfexec.VarFile(fp))
+		}
 	}
 
 	if err := client.ApplyJSON(ctx,
