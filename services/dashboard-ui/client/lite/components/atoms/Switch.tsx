@@ -52,7 +52,7 @@ export const Switch = forwardRef<HTMLButtonElement, ISwitch>(
           onClick={() => onChange(!checked)}
           className={cn(
             'group flex min-h-7 max-w-full items-start gap-2.5 rounded-lg text-left outline-none',
-            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+            'focus-ring',
             disabled || loading
               ? 'cursor-not-allowed opacity-50'
               : 'cursor-pointer',
