@@ -21,18 +21,20 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	controlplanemetrics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 )
 
 type Params struct {
 	fx.In
 
-	LC         fx.Lifecycle
-	Shutdowner fx.Shutdowner
-	DB         *gorm.DB `name:"psql"`
-	L          *zap.Logger
-	Cfg        *internal.Config
-	MW         metrics.Writer
-	Services   []api.Service `group:"services"`
+	LC          fx.Lifecycle
+	Shutdowner  fx.Shutdowner
+	DB          *gorm.DB `name:"psql"`
+	L           *zap.Logger
+	Cfg         *internal.Config
+	MW          metrics.Writer
+	HTTPMetrics *controlplanemetrics.HTTPMetrics
+	Services    []api.Service `group:"services"`
 }
 
 // orgSelectionTTL bounds how long an idle org selection is retained.
@@ -49,6 +51,7 @@ type Server struct {
 	l           *zap.Logger
 	cfg         *internal.Config
 	mw          metrics.Writer
+	httpMetrics *controlplanemetrics.HTTPMetrics
 	services    []api.Service
 	httpServer  *http.Server
 	schemaCache *mcp.SchemaCache
@@ -64,6 +67,7 @@ func New(params Params) *Server {
 		l:             params.L.Named("mcp"),
 		cfg:           params.Cfg,
 		mw:            params.MW,
+		httpMetrics:   params.HTTPMetrics,
 		services:      params.Services,
 		schemaCache:   mcp.NewSchemaCache(),
 		orgSelections: make(map[string]*orgSelection),
@@ -80,7 +84,7 @@ func New(params Params) *Server {
 
 	s.httpServer = &http.Server{
 		Addr:    net.JoinHostPort("0.0.0.0", params.Cfg.MCPHTTPPort),
-		Handler: s.metricsMiddleware(mux),
+		Handler: s.otelMetricsMiddleware(s.metricsMiddleware(mux)),
 	}
 
 	params.LC.Append(fx.Hook{
