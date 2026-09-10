@@ -43,7 +43,7 @@ func (e *FlowTestSuite) TestCancelledWorkflowHasCancelledStatusAndFinishedAt() {
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusCancelled)
 	got := e.getWorkflow(ctx, flw.ID)
 	require.Equal(e.T(), "workflow cancelled", got.Status.StatusHumanDescription)
-	require.False(e.T(), got.FinishedAt.IsZero(), "a cancelled workflow must be finished")
+	e.waitForWorkflowFinished(ctx, flw.ID)
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 
@@ -92,18 +92,24 @@ func (e *FlowTestSuite) TestApprovalExpiresStopsWorkflow() {
 	e.enqueueLifecycleFlow(ctx, queueID, flw, ownerID, ownerType)
 	e.awaitApprovalParked(ctx, flw, steps[0].ID)
 
+	// The expire path writes the status before the stop directive lands, so
+	// wait for the full terminal step state instead of asserting immediately.
 	require.Eventually(e.T(), func() bool {
-		return e.getStep(ctx, steps[0].ID).Status.Status == app.WorkflowStepApprovalStatusApprovalExpired
+		step := e.getStep(ctx, steps[0].ID)
+		return step.Status.Status == app.WorkflowStepApprovalStatusApprovalExpired &&
+			step.Status.StatusHumanDescription == "no approval received" &&
+			directive.Step(step.ResultDirective) == directive.StepStop
 	}, ceilingWait, pollInterval, "step did not expire its approval wait")
 
-	step := e.getStep(ctx, steps[0].ID)
-	require.Equal(e.T(), "no approval received", step.Status.StatusHumanDescription)
-	require.Equal(e.T(), directive.StepStop, directive.Step(step.ResultDirective))
 	require.Len(e.T(), e.getStepsByWorkflow(ctx, flw.ID), 1,
 		"an expired approval must not spawn retry clones")
 
 	require.Eventually(e.T(), func() bool {
-		return !e.getWorkflow(ctx, flw.ID).FinishedAt.IsZero()
+		var wf app.Workflow
+		if err := e.service.DB.WithContext(ctx).First(&wf, "id = ?", flw.ID).Error; err != nil {
+			return false
+		}
+		return !wf.FinishedAt.IsZero()
 	}, ceilingWait, pollInterval, "workflow with expired approval must finish")
 	e.assertTemporalDrained(ctx, flw.ID)
 }
@@ -126,7 +132,11 @@ func (e *FlowTestSuite) TestApprovalDeniedStopsWorkflow() {
 
 	e.waitForStepStatus(ctx, steps[0].ID, app.WorkflowStepApprovalStatusApprovalDenied)
 	require.Eventually(e.T(), func() bool {
-		return !e.getWorkflow(ctx, flw.ID).FinishedAt.IsZero()
+		var wf app.Workflow
+		if err := e.service.DB.WithContext(ctx).First(&wf, "id = ?", flw.ID).Error; err != nil {
+			return false
+		}
+		return !wf.FinishedAt.IsZero()
 	}, ceilingWait, pollInterval, "denied workflow must finish")
 	e.assertTemporalDrained(ctx, flw.ID)
 }
@@ -147,7 +157,8 @@ func (e *FlowTestSuite) TestParkedRetryExpiresStopsWorkflow() {
 	require.Eventually(e.T(), func() bool {
 		step := e.getStep(ctx, steps[0].ID)
 		return step.Status.Status == app.StatusError &&
-			step.Status.StatusHumanDescription == "step abandoned: no retry or skip received"
+			step.Status.StatusHumanDescription == "step abandoned: no retry or skip received" &&
+			directive.Step(step.ResultDirective) == directive.StepStop
 	}, ceilingWait, pollInterval, "parked step was not abandoned at the wait ceiling")
 
 	step := e.getStep(ctx, steps[0].ID)
@@ -155,7 +166,11 @@ func (e *FlowTestSuite) TestParkedRetryExpiresStopsWorkflow() {
 	require.Equal(e.T(), directive.StepStop, directive.Step(step.ResultDirective))
 
 	require.Eventually(e.T(), func() bool {
-		return !e.getWorkflow(ctx, flw.ID).FinishedAt.IsZero()
+		var wf app.Workflow
+		if err := e.service.DB.WithContext(ctx).First(&wf, "id = ?", flw.ID).Error; err != nil {
+			return false
+		}
+		return !wf.FinishedAt.IsZero()
 	}, ceilingWait, pollInterval, "workflow with abandoned step must finish")
 	e.assertTemporalDrained(ctx, flw.ID)
 }

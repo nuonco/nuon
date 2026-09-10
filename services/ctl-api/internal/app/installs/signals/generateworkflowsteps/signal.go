@@ -1,6 +1,8 @@
 package generateworkflowsteps
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -69,6 +71,8 @@ func (s *Signal) LifecycleContext() qsignal.SignalLifecycleContext {
 func (s *Signal) Type() qsignal.SignalType {
 	return SignalType
 }
+
+func (s *Signal) SleepAfter() time.Duration { return time.Second }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.WorkflowID == "" {

@@ -44,6 +44,15 @@ func TestAppConfigsSuite(t *testing.T) {
 	suite.Run(t, new(AppConfigsTestSuite))
 }
 
+// skipBlobTestsInCI: these tests upload intermediate configs as blobs to the
+// KMS-encrypted nuon-dev bucket, and the CI runner role lacks
+// kms:GenerateDataKey until the self-hosted-runners KMS policy change is applied.
+func (s *AppConfigsTestSuite) skipBlobTestsInCI() {
+	if os.Getenv("CI") == "true" {
+		s.T().Skip("uploads config blobs to the KMS-encrypted nuon-dev bucket; the CI runner role lacks kms:GenerateDataKey until the self-hosted-runners KMS policy change is applied")
+	}
+}
+
 func (s *AppConfigsTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
@@ -97,6 +106,9 @@ func (s *AppConfigsTestSuite) setupTestData() {
 		ID:          orgID,
 		Name:        fmt.Sprintf("test-org-%s", orgID),
 		SandboxMode: true,
+		Features: map[string]bool{
+			string(app.OrgFeatureTriggers): true,
+		},
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
@@ -115,6 +127,10 @@ func (s *AppConfigsTestSuite) setupTestData() {
 	err = s.service.DB.Create(testApp).Error
 	require.NoError(s.T(), err)
 	s.testApp = testApp
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(&app.Queue{
+		OwnerID:   testApp.ID,
+		OwnerType: "apps",
+	}).Error)
 }
 
 func (s *AppConfigsTestSuite) makeGetRequest(method, path string) *httptest.ResponseRecorder {

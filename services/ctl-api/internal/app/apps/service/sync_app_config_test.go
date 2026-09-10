@@ -45,6 +45,7 @@ func (s *AppConfigsTestSuite) createConfigWithIntermediate() *app.AppConfig {
 }
 
 func (s *AppConfigsTestSuite) TestSyncAppConfigEnqueuesSyncSignal() {
+	s.skipBlobTestsInCI()
 	s.ensureAppQueue()
 	appConfig := s.createConfigWithIntermediate()
 	tests.ClearQueueSignals(s.T(), s.service.DB)
@@ -87,6 +88,7 @@ func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigWithoutIntermediateC
 
 // Two concurrent syncs of the same config would race on the same records.
 func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigAlreadySyncing() {
+	s.skipBlobTestsInCI()
 	s.ensureAppQueue()
 	appConfig := s.createConfigWithIntermediate()
 	require.NoError(s.T(), s.service.DB.
@@ -104,6 +106,7 @@ func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigAlreadySyncing() {
 
 // A config belonging to another app must not be syncable through this app.
 func (s *AppConfigsTestSuite) TestSyncAppConfigRejectsConfigFromAnotherApp() {
+	s.skipBlobTestsInCI()
 	s.ensureAppQueue()
 	appConfig := s.createConfigWithIntermediate()
 

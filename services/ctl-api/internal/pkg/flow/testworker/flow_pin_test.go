@@ -18,13 +18,18 @@ const pinTimeout = 15 * time.Second
 
 func (e *FlowTestSuite) pinWaitWorkflowStatus(ctx context.Context, workflowID string, expected app.Status) {
 	require.Eventually(e.T(), func() bool {
-		return e.getWorkflow(ctx, workflowID).Status.Status == expected
+		status, ok := e.workflowStatus(ctx, workflowID)
+		return ok && status == expected
 	}, pinTimeout, pollInterval, "workflow %s did not reach status %s", workflowID, expected)
 }
 
 func (e *FlowTestSuite) pinWaitStepStatus(ctx context.Context, stepID string, expected app.Status) {
 	require.Eventually(e.T(), func() bool {
-		return e.getStep(ctx, stepID).Status.Status == expected
+		step := &app.WorkflowStep{}
+		if err := e.service.DB.WithContext(ctx).First(step, "id = ?", stepID).Error; err != nil {
+			return false
+		}
+		return step.Status.Status == expected
 	}, pinTimeout, pollInterval, "step %s did not reach status %s", stepID, expected)
 }
 
