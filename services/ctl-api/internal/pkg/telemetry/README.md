@@ -66,10 +66,21 @@ Generic OTLP transport settings can also apply to existing log exporters in the
 same process. Audit export is a no-op unless `AUDIT_OTLP_ENDPOINT` (service config:
 `audit_otlp_endpoint`) is explicitly configured; the generic endpoint alone does
 not enable it. If enabled without `AUDIT_OTLP_TOKEN`, it can inherit generic OTLP
-headers, including credentials. Existing workflow log exporters set their own
-headers but can still inherit generic TLS, timeout and compression settings.
-Review signal-specific `OTEL_EXPORTER_OTLP_LOGS_*` settings and explicit exporter
-options before using different receivers or credentials for logs and metrics.
+headers, including credentials. Review signal-specific `OTEL_EXPORTER_OTLP_LOGS_*`
+settings and explicit exporter options before enabling audit delivery alongside
+operational metrics.
+
+Workflow product logs are isolated separately in `internal/pkg/log`. Their stream
+URL, token and resource attributes come from the log stream, not OTEL settings.
+Transport uses system TLS trust, no client certificate, no compression and a
+10-second timeout. Batching uses a 2,048-record queue, 512-record batches, a
+one-second interval and a 30-second export timeout; records allow 128 attributes
+with unlimited string length. These settings override generic and logs-specific
+OTEL configuration. The transport replaces SDK-added resource attributes with the
+stream resource before sending, preserving records and scopes. Standard Go HTTP
+proxy settings still apply. The SDK's experimental `OTEL_GO_X_OBSERVABILITY` and
+`OTEL_GO_X_SELF_OBSERVABILITY` flags can still enable internal SDK metrics; they
+have no per-provider disable option and do not change product-log payloads.
 
 The default resource includes `service.name`, `service.version`, a random
 process-lifetime `service.instance.id`, `nuon.service.type`, and
