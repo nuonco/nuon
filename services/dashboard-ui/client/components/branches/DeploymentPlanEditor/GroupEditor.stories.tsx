@@ -35,6 +35,17 @@ const labelGroup: IInstallGroup = {
   auto_approve_on_policies_passing: true,
 }
 
+const allInstallsGroup: IInstallGroup = {
+  id: 'group-3',
+  name: 'Everything',
+  install_ids: [],
+  label_selector: null,
+  selection_mode: 'all',
+  order: 2,
+  max_parallel: 1,
+  auto_approve_on_policies_passing: false,
+}
+
 const Wrap = ({ children }: { children: React.ReactNode }) => (
   <div className="max-w-2xl">{children}</div>
 )
@@ -83,6 +94,42 @@ export const EmptyManual = () => (
       totalGroups={1}
       availableInstalls={installs}
       unassignedInstalls={installs}
+      onUpdate={noop}
+      onAddInstalls={noop}
+      onRemoveInstall={noop}
+      onMoveUp={noop}
+      onMoveDown={noop}
+      onDelete={noop}
+    />
+  </Wrap>
+)
+
+export const AllInstalls = () => (
+  <Wrap>
+    <GroupEditor
+      group={allInstallsGroup}
+      index={0}
+      totalGroups={1}
+      availableInstalls={installs}
+      unassignedInstalls={[]}
+      onUpdate={noop}
+      onAddInstalls={noop}
+      onRemoveInstall={noop}
+      onMoveUp={noop}
+      onMoveDown={noop}
+      onDelete={noop}
+    />
+  </Wrap>
+)
+
+export const AllInstallsWithNoInstalls = () => (
+  <Wrap>
+    <GroupEditor
+      group={allInstallsGroup}
+      index={0}
+      totalGroups={1}
+      availableInstalls={[]}
+      unassignedInstalls={[]}
       onUpdate={noop}
       onAddInstalls={noop}
       onRemoveInstall={noop}
