@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -26,7 +27,7 @@ func (a *Activities) GetLatestActiveSandboxBuild(ctx context.Context, req GetLat
 		Order("created_at DESC").
 		First(&build)
 	if res.Error != nil {
-		if res.Error == gorm.ErrRecordNotFound {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("unable to get latest active sandbox build: %w", res.Error)
