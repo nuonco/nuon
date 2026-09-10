@@ -27,7 +27,7 @@ const HEADER_CLASSES =
   'flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left ' +
   'text-button-ghost-text outline-none transition-colors ' +
   'hover:bg-menu-item-hover hover:text-primary active:bg-menu-item-active ' +
-  'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus-ring'
+  'focus-ring focus-ring-inset'
 
 export const Disclosure = ({
   title,
