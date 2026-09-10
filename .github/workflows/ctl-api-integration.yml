@@ -1,5 +1,5 @@
 ---
-name: ctl-api integration (manual)
+name: ctl-api integration
 "on":
   workflow_dispatch:
     inputs:
@@ -7,6 +7,14 @@ name: ctl-api integration (manual)
         description: "Build nuonctl from this branch instead of pulling :latest"
         type: boolean
         default: false
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ctl-api-dispatch-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
 
 defaults:
   run:
@@ -14,16 +22,20 @@ defaults:
 
 jobs:
   dispatch:
+    name: ctl-api integration
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger mono integration workflow
+      - name: Trigger and watch the mono integration workflow
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
         run: |
-          gh workflow run ctl-api-integration.yml \
+          run_url="$(gh workflow run ctl-api-integration.yml \
             --repo nuonco/mono \
-            --field nuon_ref=${{ github.sha }} \
-            --field nuon_branch=${{ github.ref_name }} \
-            --field source_run_id=${{ github.run_id }} \
-            --field source_actor=${{ github.actor }} \
-            --field local_nctl=${{ inputs.local_nctl }}
+            --field "nuon_ref=${{ github.event.pull_request.head.sha || github.sha }}" \
+            --field "nuon_branch=${{ github.head_ref || github.ref_name }}" \
+            --field "source_run_id=${{ github.run_id }}" \
+            --field "source_actor=${{ github.actor }}" \
+            --field "local_nctl=${{ inputs.local_nctl || false }}")"
+          run_id="${run_url##*/}"
+          [[ "$run_id" =~ ^[0-9]+$ ]]
+          gh run watch "$run_id" --repo nuonco/mono --exit-status
