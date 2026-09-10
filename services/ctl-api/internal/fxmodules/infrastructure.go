@@ -38,6 +38,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/secretsmanager"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/arm"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/blob"
@@ -145,6 +146,9 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(salesforce.New),
 	fx.Provide(github.New),
 	fx.Provide(metrics.New),
+	fx.Provide(telemetry.NewConfig),
+	fx.Provide(telemetry.NewMeterProvider),
+	fx.Provide(metrics.NewHTTPMetrics),
 	fx.Provide(propagator.New),
 	fx.Provide(validator.New),
 	fx.Provide(notifications.New),
