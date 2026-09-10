@@ -79,6 +79,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   inactive: 'neutral',
   disabled: 'neutral',
   pending: 'neutral',
+  invited: 'neutral',
   'not-deployed': 'neutral',
   'no-build': 'neutral',
   'not-attempted': 'neutral',
