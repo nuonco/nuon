@@ -70,17 +70,8 @@ headers, including credentials. Review signal-specific `OTEL_EXPORTER_OTLP_LOGS_
 settings and explicit exporter options before enabling audit delivery alongside
 operational metrics.
 
-Workflow product logs are isolated separately in `internal/pkg/log`. Their stream
-URL, token and resource attributes come from the log stream, not OTEL settings.
-Transport uses system TLS trust, no client certificate, no compression and a
-10-second timeout. Batching uses a 2,048-record queue, 512-record batches, a
-one-second interval and a 30-second export timeout; records allow 128 attributes
-with unlimited string length. These settings override generic and logs-specific
-OTEL configuration. The transport replaces SDK-added resource attributes with the
-stream resource before sending, preserving records and scopes. Standard Go HTTP
-proxy settings still apply. The SDK's experimental `OTEL_GO_X_OBSERVABILITY` and
-`OTEL_GO_X_SELF_OBSERVABILITY` flags can still enable internal SDK metrics; they
-have no per-provider disable option and do not change product-log payloads.
+Workflow log delivery is configured separately in `internal/pkg/log` and does not
+inherit OTEL environment settings for transport, resources, or record processing.
 
 The default resource includes `service.name`, `service.version`, a random
 process-lifetime `service.instance.id`, `nuon.service.type`, and
