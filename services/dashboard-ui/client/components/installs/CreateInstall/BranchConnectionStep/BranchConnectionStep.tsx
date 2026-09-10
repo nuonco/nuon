@@ -29,17 +29,21 @@ const buildConfigRequest = (
 ): TCreateBranchConfigRequest => {
   const install_groups = (config.install_groups ?? []).map((g, index) => {
     const matchLabels = g.label_selector?.match_labels
-    const isLabelGroup = !!matchLabels && Object.keys(matchLabels).length > 0
-    const install_ids = isLabelGroup
-      ? []
-      : index === targetGroupIndex
-        ? Array.from(new Set([...(g.install_ids ?? []), installId]))
-        : g.install_ids ?? []
+    const isAllGroup = !!g.all_installs
+    const isLabelGroup =
+      !isAllGroup && !!matchLabels && Object.keys(matchLabels).length > 0
+    const install_ids =
+      isAllGroup || isLabelGroup
+        ? []
+        : index === targetGroupIndex
+          ? Array.from(new Set([...(g.install_ids ?? []), installId]))
+          : g.install_ids ?? []
 
     return {
       name: g.name ?? '',
       install_ids,
       label_selector: isLabelGroup ? g.label_selector : undefined,
+      all_installs: isAllGroup || undefined,
       order: index,
       max_parallel: g.max_parallel || 1,
     }
@@ -88,8 +92,9 @@ const BranchGroupRow = ({
 }) => {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
+  const isAll = !!group.all_installs
   const labelEntries = Object.entries(group.label_selector?.match_labels ?? {})
-  const isLabels = labelEntries.length > 0
+  const isLabels = !isAll && labelEntries.length > 0
   const installIds = group.install_ids ?? []
   const alreadyAddedById = installIds.includes(installId)
   const alreadyAddedByLabels =
@@ -100,7 +105,7 @@ const BranchGroupRow = ({
     labelEntries.some(
       ([k, v]) => installLabels?.[k] !== undefined && installLabels[k] !== v
     )
-  const alreadyAdded = isLabels ? alreadyAddedByLabels : alreadyAddedById
+  const alreadyAdded = isAll || (isLabels ? alreadyAddedByLabels : alreadyAddedById)
 
   const invalidateBranch = () => {
     queryClient.invalidateQueries({ queryKey: ['app-branch-with-config', orgId, appId, branchId] })
@@ -163,7 +168,12 @@ const BranchGroupRow = ({
         {labelEntries.map(([k, v]) => (
           <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" />
         ))}
-        {!isLabels && installIds.length > 0 && (
+        {isAll && (
+          <Text variant="subtext" theme="neutral">
+            All installs
+          </Text>
+        )}
+        {!isAll && !isLabels && installIds.length > 0 && (
           <Text variant="subtext" theme="neutral">
             {installIds.length} install{installIds.length !== 1 ? 's' : ''} by ID
           </Text>
