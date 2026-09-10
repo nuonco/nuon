@@ -81,7 +81,7 @@ func (s *Signal) OnRetry(ctx workflow.Context) error {
 }
 
 // AutoRetry enables the retry path in handleStepError so that failed action
-// steps land at StepAwaitRetry instead of StepStop.
+// steps land at StepAwaitManualRetry instead of StepStop.
 func (s *Signal) AutoRetry() bool { return true }
 
 // MaxRetries is the total retry budget (auto + manual).

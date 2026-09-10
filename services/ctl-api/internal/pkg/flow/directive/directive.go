@@ -14,6 +14,18 @@ import "github.com/nuonco/nuon/services/ctl-api/internal/app"
 
 // Step is the typed directive written by step Execute() into the step's ResultDirective.
 // The group reads this after the step's queue signal completes.
+//
+// Retry semantics: a failing step first consumes its auto-retry budget —
+// StepAutoRetry / StepAutoRetryGroup clone and re-run with no human involved.
+// Once auto-retries are exhausted (or the error hints auto-retry won't help),
+// the step parks on StepAwaitManualRetry: Execute() blocks and the workflow
+// sits at StatusFailedPendingRetry until a user retries or skips. The manual
+// retry handler converges back onto the same StepAutoRetry / StepAutoRetryGroup
+// directives the auto path uses — the only difference is who triggered it.
+//
+// StepAutoRetry, StepAutoRetryGroup, StepStop, StepSkipGroup are terminal:
+// the group acts on them. StepAwaitManualRetry and StepAwaitApproval are
+// non-terminal: Execute() is still blocking and the group never sees them.
 type Step string
 
 const (
@@ -23,13 +35,15 @@ const (
 	// StepStop means the step failed terminally. The group stops and the workflow errors.
 	StepStop Step = "stop"
 
-	// StepRetry means the step should be cloned and retried individually.
-	// The group creates a clone and picks it up on the next loop iteration.
-	StepRetry Step = "retry"
+	// StepAutoRetry means the step should be cloned and retried now, without
+	// human involvement. Written when auto-retries remain in the budget; the
+	// manual-retry handler writes the same directive after a user retries.
+	StepAutoRetry Step = "retry"
 
-	// StepRetryGroup means the entire group should be cloned and retried.
-	// The group propagates this to the flow, which handles group-level cloning.
-	StepRetryGroup Step = "retry-group"
+	// StepAutoRetryGroup means the entire group should be cloned and retried
+	// now, without human involvement. The group propagates this to the flow,
+	// which handles group-level cloning.
+	StepAutoRetryGroup Step = "retry-group"
 
 	// StepSkipGroup means the remaining steps in the group should be skipped.
 	// Used when a plan detects no changes (noop).
@@ -39,9 +53,11 @@ const (
 	// blocks internally until the approval is resolved.
 	StepAwaitApproval Step = "await-approval"
 
-	// StepAwaitRetry means auto-retries are exhausted but manual retries remain.
-	// Execute() blocks internally until the user retries or skips.
-	StepAwaitRetry Step = "await-retry"
+	// StepAwaitManualRetry means auto-retries are exhausted but the total retry
+	// budget (auto + manual) is not. Execute() parks — blocking in the Temporal
+	// workflow with the flow at StatusFailedPendingRetry — until the user
+	// retries or skips, or the park ceiling abandons the step.
+	StepAwaitManualRetry Step = "await-retry"
 )
 
 // IsTerminal returns true if the directive represents a completed step that the
@@ -49,7 +65,7 @@ const (
 // mean Execute() is still blocking — the group should not see these.
 func (d Step) IsTerminal() bool {
 	switch d {
-	case StepContinue, StepStop, StepRetry, StepRetryGroup, StepSkipGroup:
+	case StepContinue, StepStop, StepAutoRetry, StepAutoRetryGroup, StepSkipGroup:
 		return true
 	default:
 		return false

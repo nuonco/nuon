@@ -62,12 +62,12 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	thresholdMinutes := int(math.Round(c.Threshold.Minutes()))
 	ageMinutes := int(math.Round(age.Minutes()))
 
-	if err := c.SetResultDirective(ctx, step.ID, directive.StepRetryGroup); err != nil {
+	if err := c.SetResultDirective(ctx, step.ID, directive.StepAutoRetryGroup); err != nil {
 		return directive.Pass(), fmt.Errorf("unable to set retry-group directive for stale plan: %w", err)
 	}
 
 	return directive.CheckResult{
-		Directive: directive.StepRetry,
+		Directive: directive.StepAutoRetry,
 		Reason: directive.CheckReason{
 			Check:   "stale-plan",
 			Summary: "Plan is stale, auto-retrying",

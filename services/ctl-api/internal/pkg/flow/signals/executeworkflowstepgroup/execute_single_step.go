@@ -77,7 +77,7 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 
 		// await-retry is non-terminal: the wait may have just timed out; keep
 		// waiting so the step stays retryable instead of stopping.
-		if d == directive.StepAwaitRetry {
+		if d == directive.StepAwaitManualRetry {
 			continue
 		}
 		break

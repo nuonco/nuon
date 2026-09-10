@@ -21,12 +21,12 @@ const SignalType signal.SignalType = "execute-workflow-step-group"
 
 // Directive aliases for backward compatibility.
 const (
-	DirectiveContinue      = directive.StepContinue
-	DirectiveStop          = directive.StepStop
-	DirectiveRetry         = directive.StepRetry
-	DirectiveRetryGroup    = directive.StepRetryGroup
-	DirectiveSkipGroup     = directive.StepSkipGroup
-	DirectiveAwaitApproval = directive.StepAwaitApproval
+	DirectiveContinue       = directive.StepContinue
+	DirectiveStop           = directive.StepStop
+	DirectiveAutoRetry      = directive.StepAutoRetry
+	DirectiveAutoRetryGroup = directive.StepAutoRetryGroup
+	DirectiveSkipGroup      = directive.StepSkipGroup
+	DirectiveAwaitApproval  = directive.StepAwaitApproval
 )
 
 // Signal encapsulates the lifecycle of executing all steps within a single

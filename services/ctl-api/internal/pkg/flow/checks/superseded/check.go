@@ -53,12 +53,12 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	}
 
 	// Plan is superseded — auto-retry the group so a fresh plan is generated.
-	if dirErr := c.SetResultDirective(ctx, step.ID, directive.StepRetryGroup); dirErr != nil {
+	if dirErr := c.SetResultDirective(ctx, step.ID, directive.StepAutoRetryGroup); dirErr != nil {
 		return directive.Pass(), dirErr
 	}
 
 	return directive.CheckResult{
-		Directive: directive.StepRetry,
+		Directive: directive.StepAutoRetry,
 		Reason: directive.CheckReason{
 			Check:   "superseded",
 			Summary: "Plan superseded, auto-retrying",
