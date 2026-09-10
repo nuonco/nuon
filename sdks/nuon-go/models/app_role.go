@@ -42,9 +42,7 @@ type AppRole struct {
 	Managed bool `json:"managed,omitempty"`
 
 	// NOTE: not all roles have to belong to an org, this is mainly for historical reasons.
-	OrgID struct {
-		GenericsNullString
-	} `json:"org_id,omitempty"`
+	OrgID string `json:"org_id,omitempty"`
 
 	// policies
 	Policies []*AppPolicy `json:"policies"`
@@ -66,10 +64,6 @@ func (m *AppRole) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCreatedBy(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateOrgID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -105,14 +99,6 @@ func (m *AppRole) validateCreatedBy(formats strfmt.Registry) error {
 
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *AppRole) validateOrgID(formats strfmt.Registry) error {
-	if swag.IsZero(m.OrgID) { // not required
-		return nil
 	}
 
 	return nil
@@ -177,10 +163,6 @@ func (m *AppRole) ContextValidate(ctx context.Context, formats strfmt.Registry) 
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateOrgID(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidatePolicies(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -216,11 +198,6 @@ func (m *AppRole) contextValidateCreatedBy(ctx context.Context, formats strfmt.R
 			return err
 		}
 	}
-
-	return nil
-}
-
-func (m *AppRole) contextValidateOrgID(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }
