@@ -214,10 +214,12 @@ type Config struct {
 	worker.Config `config:",squash"`
 
 	// configs for starting and introspecting service
-	GitRef         string   `config:"git_ref" validate:"required"`
-	Version        string   `config:"version" validate:"required"`
-	MetricsTags    []string `config:"metrics_tags"`
-	DisableMetrics bool     `config:"disable_metrics"`
+	GitRef                   string   `config:"git_ref" validate:"required"`
+	Version                  string   `config:"version" validate:"required"`
+	MetricsTags              []string `config:"metrics_tags"`
+	DisableMetrics           bool     `config:"disable_metrics"`
+	OTELExporterOTLPEndpoint string   `config:"otel_exporter_otlp_endpoint"`
+	OTELExporterOTLPProtocol string   `config:"otel_exporter_otlp_protocol"`
 
 	ServiceName       string `config:"service_name" validate:"required"`
 	ServiceType       string `config:"service_type" validate:"required"`
@@ -397,9 +399,8 @@ type Config struct {
 	WebhookURLs    []string      `config:"webhook_urls"`
 	WebhookTimeout time.Duration `config:"webhook_timeout"`
 
-	// Audit log export. Audit records are the only telemetry ctl-api ships over
-	// OTLP; everything else keeps going to stderr untouched. Leave the endpoint
-	// empty to disable, which is the default until the gateway collector exists.
+	// Audit export requires its own endpoint; the generic OTLP endpoint does not
+	// enable it. An empty endpoint leaves the audit emitter disabled.
 	AuditOTLPEndpoint string `config:"audit_otlp_endpoint"`
 	AuditOTLPToken    string `config:"audit_otlp_token"`
 
