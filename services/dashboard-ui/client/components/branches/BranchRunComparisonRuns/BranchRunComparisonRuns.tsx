@@ -1,6 +1,7 @@
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { BranchRunComparisonCard } from '@/components/branches/BranchRunComparisonCard'
+import { cn } from '@/utils/classnames'
 import type { TBranchRunComparisonRunSummary } from '@/lib/ctl-api/apps/branches/get-branch-run-comparison'
 
 export interface IBranchRunComparisonRuns {
@@ -44,27 +45,31 @@ export const BranchRunComparisonRuns = ({
         </Text>
       ) : null}
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
-        <BranchRunComparisonCard
-          label="Current run"
-          run={headRun}
-          repoSlug={repoSlug}
-          githubHeaderHref={currentGithubHref}
-        />
-
+      <div
+        className={cn('grid grid-cols-1 gap-3 items-stretch', {
+          'md:grid-cols-[1fr_auto_1fr]': hasBaseline,
+        })}
+      >
         {hasBaseline ? (
           <>
-            <div className="hidden md:flex items-center justify-center px-1">
-              <Icon variant="ArrowLeftIcon" size={20} className="text-cool-grey-400" />
-            </div>
             <BranchRunComparisonCard
               label="Previous run"
               run={baseRun}
               runHref={runDetailHref(orgId, appId, branchId, baseRun?.workflow_id)}
               repoSlug={repoSlug}
             />
+            <div className="hidden md:flex items-center justify-center px-1">
+              <Icon variant="ArrowRightIcon" size={20} className="text-cool-grey-400" />
+            </div>
           </>
         ) : null}
+
+        <BranchRunComparisonCard
+          label="Current run"
+          run={headRun}
+          repoSlug={repoSlug}
+          githubHeaderHref={currentGithubHref}
+        />
       </div>
     </div>
   )
