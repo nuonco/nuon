@@ -118,6 +118,3 @@ sdks/nuon-runner-go/models/cctx_signal_context.go
 
 # worktrees
 .worktrees
-
-# nuontest binary built locally (go build ./cmd/nuontest)
-/services/ctl-api/nuontest
