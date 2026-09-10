@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 )
 
 type API struct {
@@ -35,11 +36,19 @@ type API struct {
 	db *gorm.DB
 }
 
-func (a *API) init() error {
+func (a *API) init(httpMetrics *metrics.HTTPMetrics) error {
 	a.handler = gin.New()
+	if httpMetrics != nil {
+		a.handler.Use(func(c *gin.Context) {
+			metrics.SetHTTPRoute(c.Request.Context(), c.FullPath())
+		})
+	}
 	a.srv = &http.Server{
 		Addr:    fmt.Sprintf("0.0.0.0:%v", a.port),
 		Handler: a.handler.Handler(),
+	}
+	if httpMetrics != nil {
+		a.srv.Handler = httpMetrics.Handler(a.name, a.srv.Handler)
 	}
 
 	return nil
