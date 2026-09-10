@@ -150,6 +150,44 @@ Collection issues no queries. pgx snapshots are cached for one second and its
 callbacks live until provider shutdown; register once per process-lifetime pool.
 SQL callbacks unregister on shutdown. Final pool observations are best-effort.
 
+### Dependency health
+
+API `/readyz` checks emit process-level metrics with `dependency.name` equal to
+`postgresql`, `clickhouse`, or `temporal`. Export reads memory; it does not run probes.
+
+| Metric | Type | Meaning |
+| --- | --- | --- |
+| `nuon.dependency.checks` | Counter | Outcomes: `success`, `failure`, `skipped`; bounded `error.type` on failure/skip |
+| `nuon.dependency.check.duration` | Histogram, seconds | Attempted checks by outcome; boundaries: `0.01, 0.05, 0.1, 0.5, 1, 5` |
+| `nuon.dependency.check.status` | Gauge | Last completed result: 1 = success, 0 = failure |
+| `nuon.dependency.check.last_completed` | Gauge, Unix seconds | Last completed check timestamp |
+| `nuon.dependency.check.last_success` | Gauge, Unix seconds | Last successful check timestamp |
+
+ClickHouse success requires both ping and replica checks to pass. Failures use the
+last failing stage: `connection`, `ping`, `query`, `scan`, `iteration`,
+`readonly_replicas`, or `incomplete` for an interrupted check. Skipped checks use
+`previous_dependency_failed`; they do not record duration or refresh state.
+Gauges are absent until the first corresponding result and retain timestamps
+between probes. Pair status with timestamp age and missing-data alerts; no traffic
+to `/readyz` means no fresh checks. Histograms omit failure-stage dimensions.
+
+### Runtime/process
+
+API processes register [`instrumentation/runtime v0.68.0`](https://github.com/open-telemetry/opentelemetry-go-contrib/tree/v1.43.0/instrumentation/runtime)
+once with the injected provider. It emits `go.memory.used`, `go.memory.limit`,
+`go.memory.allocated`, `go.memory.allocations`, `go.memory.gc.goal`,
+`go.goroutine.count`, `go.processor.limit` and `go.config.gogc`.
+`go.memory.used` splits `go.memory.type=stack|other`; it is not RSS.
+`go.memory.limit` is Go's soft runtime limit, not a container limit; unlimited is omitted.
+
+`process.uptime` is a gauge in seconds since OS process creation. The start time
+is read once using `gopsutil`; subsequent collections use elapsed monotonic time.
+If the lookup fails, uptime is omitted and the OTel error handler reports the error.
+Runtime snapshots use the library's 15-second cache; callbacks live until provider
+shutdown. The default set has 9–10 scalar series and no histograms. GC pauses/cycles,
+process CPU and RSS are not included. `OTEL_GO_X_DEPRECATED_RUNTIME_METRICS=true`
+additionally enables the library's deprecated metrics; leave it unset for this set.
+
 ## Failure behavior
 
 Requests update in-memory aggregations; network export runs periodically outside
@@ -177,7 +215,7 @@ probes; an API cannot report its own total outage through this export path.
 Run the tests and request-recording benchmark from the repository root:
 
 ```sh
-go test -race ./services/ctl-api/internal/pkg/telemetry ./services/ctl-api/internal/pkg/metrics ./services/ctl-api/internal/pkg/api ./services/ctl-api/internal/pkg/db/poolmetrics ./services/ctl-api/internal/app/mcp/server
+go test -race ./services/ctl-api/internal/pkg/telemetry ./services/ctl-api/internal/pkg/metrics ./services/ctl-api/internal/pkg/api ./services/ctl-api/internal/pkg/db/poolmetrics ./services/ctl-api/internal/health ./services/ctl-api/internal/app/mcp/server
 go test -run '^$' -bench '^BenchmarkHTTPMetrics$' -benchmem ./services/ctl-api/internal/pkg/telemetry
 ```
 

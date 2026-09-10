@@ -6,6 +6,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/poolmetrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
 )
@@ -22,7 +23,7 @@ func TestAPIProviderGraphs(t *testing.T) {
 		{"internal", fx.Options(fxmodules.InternalServicesModule, fxmodules.InternalAPIModule)},
 		{"admin", fx.Options(fxmodules.AdminDashboardServicesModule, fxmodules.AdminDashboardAPIModule)},
 		{"slack", fx.Options(fxmodules.SlackServicesModule, fxmodules.SlackAPIModule)},
-		{"mcp", fx.Options(fxmodules.MCPServicesModule, fx.Provide(api.NewEndpointAudit, poolmetrics.New), fxmodules.MCPAPIModule)},
+		{"mcp", fx.Options(fxmodules.MCPServicesModule, fx.Provide(api.NewEndpointAudit, poolmetrics.New), fx.Invoke(telemetry.StartRuntimeMetrics), fxmodules.MCPAPIModule)},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			providers := (&cli{}).providers()
