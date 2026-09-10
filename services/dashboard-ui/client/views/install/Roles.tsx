@@ -26,7 +26,7 @@ export const Roles = () => {
       />
       <SectionHeader
         title="Install roles"
-        description="View the IAM roles that your install uses to access customer AWS resources."
+        description="View the roles and identities your install uses to access the customer's cloud account."
       />
 
       <InstallRolesTable />
