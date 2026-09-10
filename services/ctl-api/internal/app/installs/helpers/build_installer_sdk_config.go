@@ -165,31 +165,34 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		CustomStacks:        customStacks,
 	}
 
-	if (appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS || appCfg.RunnerConfig.Type == app.AppRunnerTypeAzure) && len(customStacks) > 0 {
-		var latestVersion app.InstallStackVersion
-		// No "latest version" FK exists — InstallStackVersion.InstallStackID
-		// only points the other way — so created_at ordering resolves "latest".
-		res := h.db.WithContext(ctx).
-			Where(app.InstallStackVersion{InstallID: install.ID}).
-			Order("created_at DESC").
-			Limit(1).
-			First(&latestVersion)
-		switch {
-		case res.Error == nil:
-			cfg.CustomStacksTemplateURL = latestVersion.CustomStacksTemplateURL
-			// Never re-derive this: it runs on every terraform plan and must not
-			// fetch or parse templates.
-			for i := range cfg.CustomStacks {
-				cfg.CustomStacks[i].Outputs = latestVersion.CustomStacksOutputMap[cfg.CustomStacks[i].Name]
-				cfg.CustomStacks[i].InputParameters = customerInputParameters(
-					latestVersion.CustomStacksInputParametersMap[cfg.CustomStacks[i].Name],
-					customerInputNames,
-				)
-			}
-		case errors.Is(res.Error, gorm.ErrRecordNotFound):
-			// no stack version yet — leave empty
-		default:
-			return nil, fmt.Errorf("load latest install stack version: %w", res.Error)
+	var latestVersion app.InstallStackVersion
+	// No "latest version" FK exists — InstallStackVersion.InstallStackID
+	// only points the other way — so created_at ordering resolves "latest".
+	res := h.db.WithContext(ctx).
+		Where(app.InstallStackVersion{InstallID: install.ID}).
+		Where("status->>'status' IN ?", app.InstallStackVersionTemplateReadyStatuses).
+		Order("created_at DESC").
+		Limit(1).
+		First(&latestVersion)
+	switch {
+	case res.Error == nil:
+		cfg.StackVersionID = latestVersion.ID
+	case errors.Is(res.Error, gorm.ErrRecordNotFound):
+		// no stack version yet — leave empty
+	default:
+		return nil, fmt.Errorf("load latest install stack version: %w", res.Error)
+	}
+
+	if (appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS || appCfg.RunnerConfig.Type == app.AppRunnerTypeAzure) && len(customStacks) > 0 && latestVersion.ID != "" {
+		cfg.CustomStacksTemplateURL = latestVersion.CustomStacksTemplateURL
+		// Never re-derive this: it runs on every terraform plan and must not
+		// fetch or parse templates.
+		for i := range cfg.CustomStacks {
+			cfg.CustomStacks[i].Outputs = latestVersion.CustomStacksOutputMap[cfg.CustomStacks[i].Name]
+			cfg.CustomStacks[i].InputParameters = customerInputParameters(
+				latestVersion.CustomStacksInputParametersMap[cfg.CustomStacks[i].Name],
+				customerInputNames,
+			)
 		}
 	}
 
@@ -244,6 +247,9 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			Region:            install.AWSAccount.Region,
 			ClusterName:       clusterName,
 			RunnerMachineType: instanceType,
+
+			VPCNestedTemplateURL:    appCfg.StackConfig.VPCNestedTemplateURL,
+			RunnerNestedTemplateURL: appCfg.StackConfig.RunnerNestedTemplateURL,
 
 			NuonSupportIAMRoleARNs: supportARNs,
 
@@ -325,6 +331,9 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			Location:             install.AzureAccount.Location,
 			SubscriptionID:       install.AzureAccount.SubscriptionID,
 			SubscriptionTenantID: install.AzureAccount.SubscriptionTenantID,
+
+			VPCNestedTemplateURL:    appCfg.StackConfig.VPCNestedTemplateURL,
+			RunnerNestedTemplateURL: appCfg.StackConfig.RunnerNestedTemplateURL,
 
 			RunnerVMSize:      instanceType,
 			ContainerImageURL: install.RunnerGroup.Settings.ContainerImageURL,

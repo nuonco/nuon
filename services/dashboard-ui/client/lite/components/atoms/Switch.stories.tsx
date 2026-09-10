@@ -39,6 +39,12 @@ export const Overview = () => (
         description: 'Consequence or supporting text.',
       },
       { name: 'error', type: 'ReactNode', description: 'Validation error.' },
+      {
+        name: 'loading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Shows a loading shape and disables the setting.',
+      },
     ]}
   />
 )

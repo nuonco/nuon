@@ -5,6 +5,13 @@
 
 
 export interface paths {
+  "/.well-known/jwks.json": {
+    /**
+     * Get telemetry JWT public keys
+     * @description Returns the public RSA keys used to verify BYOC telemetry access tokens.
+     */
+    get: operations["GetTelemetryJWKS"];
+  };
   "/slack/commands/nuon": {
     /**
      * Slack /nuon slash command webhook
@@ -2250,6 +2257,12 @@ export interface paths {
      */
     post: operations["SyncSecrets"];
   };
+  "/v1/installs/{install_id}/telemetry": {
+    /** Get an install's telemetry settings */
+    get: operations["GetInstallTelemetrySettings"];
+    /** Update an install's telemetry settings */
+    patch: operations["UpdateInstallTelemetrySettings"];
+  };
   "/v1/installs/{install_id}/workflows": {
     /**
      * get workflows
@@ -2505,6 +2518,13 @@ export interface paths {
      * Only org admins can revoke invites. Only pending invites can be revoked.
      */
     post: operations["RevokeOrgInvite"];
+  };
+  "/v1/orgs/current/members": {
+    /**
+     * Get current org members and pending invites
+     * @description Returns a paginated, searchable list of the current org's active members and pending invites.
+     */
+    get: operations["GetOrgMembers"];
   };
   "/v1/orgs/current/remove-user": {
     /**
@@ -2980,7 +3000,7 @@ export interface paths {
   "/v1/stacks/{install_id}/service-account": {
     /**
      * get an install stack's service account
-     * @description Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
+     * @description Return the service account an install stack's Terraform module authenticates as, whether it holds a usable API token, and the runner API URL its provider authenticates against. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
      */
     get: operations["GetStackServiceAccount"];
   };
@@ -3791,6 +3811,7 @@ export interface components {
       runner?: components["schemas"]["app.AppRunnerConfig"];
       sandbox?: components["schemas"]["app.AppSandboxConfig"];
       secrets?: components["schemas"]["app.AppSecretsConfig"];
+      source_config?: components["schemas"]["blobstore.Blob"];
       stack?: components["schemas"]["app.AppStackConfig"];
       state?: string;
       status?: components["schemas"]["app.AppConfigStatus"];
@@ -4271,6 +4292,8 @@ export interface components {
       git_ref?: string;
       id?: string;
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
+      /** @description IsPreview is true when this build came from a preview branch run. */
+      is_preview?: boolean;
       log_stream?: components["schemas"]["app.LogStream"];
       /**
        * @description NoOp is true when the runner detected SourceDigest matches the previous
@@ -5686,6 +5709,19 @@ export interface components {
     };
     /** @enum {string} */
     "app.OrgInviteStatus": "pending" | "accepted" | "revoked";
+    "app.OrgMember": {
+      account_id?: string;
+      created_at?: string;
+      email?: string;
+      id?: string;
+      invite_id?: string;
+      joined_at?: string;
+      name?: string;
+      role_type?: components["schemas"]["app.RoleType"];
+      status?: components["schemas"]["app.OrgMemberStatus"];
+    };
+    /** @enum {string} */
+    "app.OrgMemberStatus": "active" | "invited";
     "app.OtelLogRecord": {
       body?: string;
       created_at?: string;
@@ -5945,6 +5981,8 @@ export interface components {
       description?: string;
       id?: string;
       managed?: boolean;
+      /** @description NOTE: not all roles have to belong to an org, this is mainly for historical reasons. */
+      org_id?: string;
       policies?: components["schemas"]["app.Policy"][];
       role_type?: components["schemas"]["app.RoleType"];
       /**
@@ -6135,7 +6173,9 @@ export interface components {
       runner_group_id?: string;
       /** @description configuration for managing the runner server side */
       sandbox_mode?: boolean;
+      telemetry_relay_endpoint?: string;
       updated_at?: string;
+      vendor_telemetry_enabled?: boolean;
       vm_max_uptime?: number;
     };
     /** @enum {string} */
@@ -8019,21 +8059,20 @@ export interface components {
        * it matches this RE2 pattern. Omit to carry the current setting forward; send
        * an empty string to clear it.
        */
-      ignore_changes_regex?: string;
+      ignore_changes_regex?: string | null;
       install_groups?: components["schemas"]["service.InstallGroupRequest"][];
       /**
        * @description PostDeployRunbookIDs run on each install, in order, after its deploy succeeds.
        * Omit to carry the current setting forward; send an empty array to clear it.
        */
       post_deploy_runbook_ids?: string[];
-      /** @description PreviewConfig sets branch-level preview defaults. Omit to carry forward. */
       preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
       /**
        * @description SendStatusesOnIgnore posts a successful commit status for runs ignored by
        * IgnoreChangesRegex. Omit to carry the current setting forward.
        */
-      send_statuses_on_ignore?: boolean;
+      send_statuses_on_ignore?: boolean | null;
     };
     "service.CreateAppBranchRequest": {
       managed_by?: string;
@@ -8780,7 +8819,7 @@ export interface components {
        * @description AutoApproveOnPoliciesPassing approves this group's plan step without user
        * input when its policy checks pass. Omit to leave it unset (off).
        */
-      auto_approve_on_policies_passing?: boolean;
+      auto_approve_on_policies_passing?: boolean | null;
       install_ids?: string[];
       /**
        * @description LabelSelector dynamically resolves installs at deploy time.
@@ -8837,6 +8876,9 @@ export interface components {
     };
     "service.InstallPhoneHomeRequest": {
       [key: string]: unknown;
+    };
+    "service.InstallTelemetrySettings": {
+      enabled?: boolean;
     };
     "service.InstallsHealthResponse": {
       all_healthy?: boolean;
@@ -9093,6 +9135,8 @@ export interface components {
        * expired or been revoked; the caller fixes both the same way.
        */
       has_live_token?: boolean;
+      /** @description Without it a dashboard points the module's provider at production. */
+      runner_api_url?: string;
     };
     "service.SyncSecretsRequest": {
       plan_only?: boolean;
@@ -9104,6 +9148,17 @@ export interface components {
     "service.TeardownInstallComponentsRequest": {
       plan_only?: boolean;
       role?: string;
+    };
+    "service.TelemetryJSONWebKey": {
+      alg?: string;
+      e?: string;
+      kid?: string;
+      kty?: string;
+      n?: string;
+      use?: string;
+    };
+    "service.TelemetryJSONWebKeySet": {
+      keys?: components["schemas"]["service.TelemetryJSONWebKey"][];
     };
     "service.TimeseriesBucket": {
       denies?: number;
@@ -9144,9 +9199,9 @@ export interface components {
        * @description IgnoreChangesRegex marks a run not-attempted when every changed file path in
        * it matches this RE2 pattern. Send an empty string to clear it.
        */
-      ignore_changes_regex?: string;
+      ignore_changes_regex?: string | null;
       /** @description SendStatusesOnIgnore posts a successful commit status for ignored runs. */
-      send_statuses_on_ignore?: boolean;
+      send_statuses_on_ignore?: boolean | null;
     };
     "service.UpdateAppBranchRequest": {
       name: string;
@@ -9229,6 +9284,9 @@ export interface components {
       name?: string;
     };
     "service.UpdateInstallRoleRequest": {
+      enabled: boolean;
+    };
+    "service.UpdateInstallTelemetryRequest": {
       enabled: boolean;
     };
     "service.UpdateNotebookRequest": {
@@ -9543,6 +9601,26 @@ export type external = Record<string, never>;
 
 export interface operations {
 
+  /**
+   * Get telemetry JWT public keys
+   * @description Returns the public RSA keys used to verify BYOC telemetry access tokens.
+   */
+  GetTelemetryJWKS: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.TelemetryJSONWebKeySet"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * Slack /nuon slash command webhook
    * @description Slack invokes this endpoint when a user runs `/nuon <subcommand>` in any channel of an installed workspace. Authenticated via the Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Subcommands: subscribe, unsubscribe, status, help. Responses are ephemeral.
@@ -11492,6 +11570,8 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
+        /** @description filter branches by name */
+        q?: string;
       };
       path: {
         /** @description app ID */
@@ -25140,7 +25220,7 @@ export interface operations {
   };
   /**
    * reprovision an install stack
-     * @description Reprovision an install stack, recreating the runner and its infrastructure. Components are not redeployed.
+   * @description Reprovision an install stack, recreating the runner and its infrastructure. Components are not redeployed.
    */
   ReprovisionInstallStack: {
     parameters: {
@@ -26311,6 +26391,100 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.WorkflowResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** Get an install's telemetry settings */
+  GetInstallTelemetrySettings: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallTelemetrySettings"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** Update an install's telemetry settings */
+  UpdateInstallTelemetrySettings: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateInstallTelemetryRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallTelemetrySettings"];
         };
       };
       /** @description Bad Request */
@@ -27774,6 +27948,66 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.OrgInvite"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get current org members and pending invites
+   * @description Returns a paginated, searchable list of the current org's active members and pending invites.
+   */
+  GetOrgMembers: {
+    parameters: {
+      query?: {
+        /** @description search query to filter members by email or name */
+        q?: string;
+        /** @description comma-separated statuses: active and/or invited */
+        status?: string;
+        /** @description comma-separated role types */
+        role_type?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OrgMember"][];
         };
       };
       /** @description Bad Request */
@@ -31061,7 +31295,7 @@ export interface operations {
   };
   /**
    * get an install stack's service account
-   * @description Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
+   * @description Return the service account an install stack's Terraform module authenticates as, whether it holds a usable API token, and the runner API URL its provider authenticates against. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
    */
   GetStackServiceAccount: {
     parameters: {

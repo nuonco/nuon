@@ -41,12 +41,42 @@ export const Overview = () => (
     rules={[
       'Errors appear after a field is touched.',
       'API errors use FormErrorBanner inside the form.',
+      'onValueChange runs after the field has taken the new value. It reacts to a change, it does not own it.',
     ]}
     props={[
       {
         name: 'field',
         type: 'AnyFieldApi',
         description: 'TanStack field instance.',
+      },
+      {
+        name: 'options',
+        type: 'IFormRadioOption[]',
+        description:
+          'FormRadioGroup: the choices, each with a value, label, description and disabled state.',
+      },
+      {
+        name: 'label',
+        type: 'ReactNode',
+        description:
+          'Visible field label. FormRadioGroup renders it as the fieldset legend.',
+      },
+      {
+        name: 'description',
+        type: 'ReactNode',
+        description: 'Guidance shown before the control.',
+      },
+      {
+        name: 'disabled',
+        type: 'boolean',
+        default: 'false',
+        description: 'FormRadioGroup: disables every radio in the fieldset.',
+      },
+      {
+        name: 'onValueChange',
+        type: '(value: string) => void',
+        description:
+          'FormRadioGroup: receives the chosen value after the field updates.',
       },
     ]}
   />

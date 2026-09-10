@@ -22,8 +22,8 @@ type SetInstallStackVersionCompositeErrorRequest struct {
 }
 
 // SetInstallStackVersionCompositeError freezes a StackTemplateRenderError onto
-// the given stack version row. Passing an empty Detail clears the field (nil),
-// which is used at the start of a retry to remove a stale error.
+// the given stack version row and marks it errored. Passing an empty Detail
+// clears the field (nil) and leaves status alone, used at the start of a retry.
 //
 // @temporal-gen-v2 activity
 // @max-retries 3
@@ -45,10 +45,19 @@ func (a *Activities) SetInstallStackVersionCompositeError(ctx context.Context, r
 		}
 	}
 
+	update := app.InstallStackVersion{CompositeError: data}
+	columns := []string{"composite_error"}
+	// A row left "generating" still wins "latest version" lookups.
+	if req.Detail != "" {
+		update.Status = app.NewCompositeStatus(ctx, app.StatusError)
+		update.Status.StatusHumanDescription = req.Detail
+		columns = append(columns, "status")
+	}
+
 	res := a.db.WithContext(ctx).
 		Model(&app.InstallStackVersion{ID: req.StackVersionID}).
-		Select("composite_error").
-		Updates(app.InstallStackVersion{CompositeError: data})
+		Select(columns).
+		Updates(update)
 	if res.Error != nil {
 		return fmt.Errorf("unable to set install stack version composite error: %w", res.Error)
 	}

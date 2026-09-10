@@ -728,6 +728,8 @@ type ClientService interface {
 
 	GetOrgInvites(params *GetOrgInvitesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgInvitesOK, error)
 
+	GetOrgMembers(params *GetOrgMembersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgMembersOK, error)
+
 	GetOrgPendingApprovals(params *GetOrgPendingApprovalsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgPendingApprovalsOK, error)
 
 	GetOrgRunnerGroup(params *GetOrgRunnerGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgRunnerGroupOK, error)
@@ -15280,6 +15282,52 @@ func (a *Client) GetOrgInvites(params *GetOrgInvitesParams, authInfo runtime.Cli
 }
 
 /*
+GetOrgMembers gets current org members and pending invites
+
+Returns a paginated, searchable list of the current org's active members and pending invites.
+*/
+func (a *Client) GetOrgMembers(params *GetOrgMembersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgMembersOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetOrgMembersParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetOrgMembers",
+		Method:             "GET",
+		PathPattern:        "/v1/orgs/current/members",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetOrgMembersReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetOrgMembersOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetOrgMembers: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetOrgPendingApprovals gets all pending workflow step approvals for the org
 */
 func (a *Client) GetOrgPendingApprovals(params *GetOrgPendingApprovalsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgPendingApprovalsOK, error) {
@@ -16696,7 +16744,7 @@ func (a *Client) GetSlackInstallURL(params *GetSlackInstallURLParams, authInfo r
 /*
 GetStackServiceAccount gets an install stack s service account
 
-Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
+Return the service account an install stack's Terraform module authenticates as, whether it holds a usable API token, and the runner API URL its provider authenticates against. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
 */
 func (a *Client) GetStackServiceAccount(params *GetStackServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackServiceAccountOK, error) {
 	// NOTE: parameters are not validated before sending

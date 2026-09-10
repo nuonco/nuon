@@ -1,5 +1,5 @@
 ---
-name: ctl-api integration (manual)
+name: ctl-api integration
 "on":
   workflow_dispatch:
     inputs:
@@ -7,6 +7,19 @@ name: ctl-api integration (manual)
         description: "Build nuonctl from this branch instead of pulling :latest"
         type: boolean
         default: false
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ctl-api-dispatch-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
 
 defaults:
   run:
@@ -14,16 +27,59 @@ defaults:
 
 jobs:
   dispatch:
+    name: ctl-api integration
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger mono integration workflow
+      - name: Checkout repo
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: ci-triggers.yml
+          sparse-checkout-cone-mode: false
+
+      - name: read ci triggers file
+        if: github.event_name != 'workflow_dispatch'
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: ci_triggers
+        with:
+          config: ci-triggers.yml
+
+      - uses: dorny/paths-filter@v3
+        if: github.event_name != 'workflow_dispatch'
+        id: filter
+        with:
+          filters: ${{ steps.ci_triggers.outputs['services'] }}
+
+      # The job itself always runs so the check reports success when skipped; only the
+      # trigger step is gated. Keep this true when promoting the check to required,
+      # otherwise docs-only PRs would soft-lock on a never-arriving status.
+      - name: Skip when draft, bot-merge, or ctl-api is unchanged
+        if: github.event_name != 'workflow_dispatch' && (github.event.pull_request.draft == true || github.triggering_actor.login == 'nuonbot' || steps.filter.outputs['ctl-api'] != 'true')
+        run: |
+          if [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
+            echo "draft PR; skipping integration run until marked ready for review"
+          elif [[ "${{ github.triggering_actor.login }}" == "nuonbot" ]]; then
+            echo "auto-merge-of-main update from ${{ github.triggering_actor.login }}; the merged result is tested by the main-push run"
+          else
+            echo "no ctl-api changes in this diff; skipping integration run"
+          fi
+
+      - name: Trigger the mono integration workflow
+        if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft != true && steps.filter.outputs['ctl-api'] == 'true')
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
         run: |
-          gh workflow run ctl-api-integration.yml \
+          run_url="$(gh workflow run ctl-api-integration.yml \
             --repo nuonco/mono \
-            --field nuon_ref=${{ github.sha }} \
-            --field nuon_branch=${{ github.ref_name }} \
-            --field source_run_id=${{ github.run_id }} \
-            --field source_actor=${{ github.actor }} \
-            --field local_nctl=${{ inputs.local_nctl }}
+            --field "nuon_ref=${{ github.event.pull_request.head.sha || github.sha }}" \
+            --field "nuon_branch=${{ github.head_ref || github.ref_name }}" \
+            --field "source_run_id=${{ github.run_id }}" \
+            --field "source_actor=${{ github.actor }}" \
+            --field "local_nctl=${{ inputs.local_nctl || false }}")"
+          run_id="${run_url##*/}"
+          [[ "$run_id" =~ ^[0-9]+$ ]]
+          echo "mono integration run: https://github.com/nuonco/mono/actions/runs/${run_id}"
+          echo "[mono integration run](https://github.com/nuonco/mono/actions/runs/${run_id})" >> "$GITHUB_STEP_SUMMARY"
+          # The mono workflow runs async; this check completes once it is dispatched.
+          # No polling here: watch was rate-limiting the shared PAT (gh run watch
+          # defaults to ~3s API polls). The linked mono run holds the actual result.

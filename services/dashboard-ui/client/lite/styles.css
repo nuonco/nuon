@@ -48,6 +48,10 @@
   --surface-03: light-dark(var(--neutral-100), rgba(254, 254, 254, 0.08));
   --surface-accent: light-dark(#e3f8ff, rgba(76, 201, 240, 0.16));
   --surface-inverted: light-dark(var(--neutral-inverted), var(--neutral-050));
+  --surface-modeline: light-dark(
+    rgba(29, 29, 29, 0.1),
+    rgba(254, 254, 254, 0.08)
+  );
   --surface-overlay: rgba(0, 0, 0, 0.3);
   --shell-grid-dot: light-dark(
     rgba(29, 29, 29, 0.12),
@@ -78,8 +82,8 @@
   --status-success: light-dark(#257052, #4aa578);
   --status-error: light-dark(var(--error-700), var(--error-300));
   --status-warn: light-dark(#8f5300, #f5b731);
-  --status-info: light-dark(#1a6579, #4cc9f0);
-  --status-brand: light-dark(#3a00ff, #8f93ff);
+  --status-info: light-dark(#4338ca, #a5b4fc);
+  --status-brand: light-dark(#be185d, #f9a8d4);
   --status-neutral: light-dark(#5a5a5a, #bababa);
 
   --popover-bg: light-dark(var(--neutral-000), var(--surface-secondary));
@@ -192,6 +196,7 @@
   );
 
   --code-bg: light-dark(var(--neutral-050), #17151b);
+  --code-inline-bg: light-dark(rgba(29, 29, 29, 0.08), rgba(254, 254, 254, 0.12));
   --syntax-plain: light-dark(var(--neutral-900), var(--neutral-100));
   --syntax-comment: light-dark(#4b5563, #8a94a6);
   --syntax-string: light-dark(#075e45, #6fd3ac);
@@ -308,6 +313,7 @@
   --surface-03: rgba(255, 255, 255, 0.16);
   --surface-accent: rgba(255, 255, 0, 0.16);
   --surface-inverted: var(--neutral-000);
+  --surface-modeline: rgba(255, 255, 255, 0.16);
   --surface-overlay: rgba(0, 0, 0, 0.45);
   --shell-grid-dot: transparent;
 
@@ -332,11 +338,11 @@
 
   --focus-ring: var(--hc-yellow);
 
-  --status-success: var(--neutral-000);
-  --status-error: var(--neutral-000);
-  --status-warn: var(--hc-yellow);
-  --status-info: var(--hc-yellow);
-  --status-brand: var(--hc-yellow);
+  --status-success: #a0ffa0;
+  --status-error: #ffb3b3;
+  --status-warn: #ffb86c;
+  --status-info: #00ffff;
+  --status-brand: #ffa0ff;
   --status-neutral: var(--neutral-000);
 
   --popover-bg: var(--hc-blue-deep);
@@ -399,6 +405,7 @@
   --menu-item-bg-danger-hover: rgba(255, 255, 255, 0.16);
 
   --code-bg: var(--hc-blue-deep);
+  --code-inline-bg: rgba(255, 255, 255, 0.16);
   /* Four hues, not two: JSON only uses plain, keyword, punctuation,
      string-expression and constant, so collapsing them all to yellow made a
      document unreadable. Every value below clears AAA on --hc-blue-deep. */
@@ -444,6 +451,25 @@
   to {
     background-position: -200% 0;
   }
+}
+
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: var(--focus-ring-offset, 2px);
+  }
+}
+
+@utility focus-ring-tight {
+  --focus-ring-offset: 1px;
+}
+
+@utility focus-ring-flush {
+  --focus-ring-offset: 0px;
+}
+
+@utility focus-ring-inset {
+  --focus-ring-offset: -2px;
 }
 
 @utility popover {
@@ -576,8 +602,32 @@ diffs-container {
   color: var(--status-color);
 }
 
+@keyframes status-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--status-color) 50%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 4px transparent;
+  }
+}
+
+@utility status-pulse {
+  animation: status-pulse 2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-pulse {
+    animation: none;
+  }
+}
+
+/* A light wash caps every hue at AA, because the chip fill is what limits
+   contrast. A dark fill plus a currentColor outline keeps all six statuses
+   saturated and distinct at AAA. */
 :root[data-theme='high-contrast'] .status-tint {
-  background-color: rgba(255, 255, 255, 0.16);
+  background-color: var(--hc-blue-deep);
+  border: 1px solid currentColor;
 }
 
 @utility badge-custom {
@@ -625,6 +675,28 @@ diffs-container {
   }
 }
 
+@utility modeline-point-right {
+  --modeline-point: 0.5rem;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--modeline-point)) 0,
+    100% 50%,
+    calc(100% - var(--modeline-point)) 100%,
+    0 100%
+  );
+}
+
+@utility modeline-point-left {
+  --modeline-point: 0.5rem;
+  clip-path: polygon(
+    var(--modeline-point) 0,
+    100% 0,
+    100% 100%,
+    var(--modeline-point) 100%,
+    0 50%
+  );
+}
+
 @theme {
   --text-display: 2rem;
   --text-display--line-height: 1.15;
@@ -664,6 +736,7 @@ diffs-container {
   --color-surface-03: var(--surface-03);
   --color-surface-accent: var(--surface-accent);
   --color-surface-inverted: var(--surface-inverted);
+  --color-surface-modeline: var(--surface-modeline);
 
   --color-primary: var(--text-primary);
   --color-secondary: var(--text-secondary);
@@ -742,6 +815,7 @@ diffs-container {
   --color-menu-item-danger-hover: var(--menu-item-bg-danger-hover);
 
   --color-code-bg: var(--code-bg);
+  --color-code-inline-bg: var(--code-inline-bg);
   --color-syntax-plain: var(--syntax-plain);
 
   --color-diff-add: var(--diff-add-gutter);
@@ -771,6 +845,146 @@ diffs-container {
     color: var(--text-primary);
     font-family: var(--font-sans);
   }
+}
+
+[data-page-transition] {
+  view-transition-name: lite-page;
+}
+
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(root),
+::view-transition-group(lite-page) {
+  animation-duration: 0s;
+}
+
+@keyframes lite-page-exit {
+  to {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+
+@keyframes lite-page-enter {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+::view-transition-old(lite-page) {
+  animation: lite-page-exit 180ms ease-out both;
+}
+
+::view-transition-new(lite-page) {
+  animation: lite-page-enter 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(lite-page),
+  ::view-transition-new(lite-page) {
+    animation-duration: 0s;
+  }
+}
+
+@utility graph-node-link {
+  &.graph-node-link,
+  &.graph-node-link:hover,
+  &.graph-node-link:active {
+    color: inherit;
+    text-decoration-line: none;
+  }
+}
+
+@utility graph-node-selected {
+  &.graph-node-selected {
+    outline: 2px solid var(--text-accent);
+    outline-offset: 2px;
+  }
+}
+
+:root[data-theme='high-contrast'] .graph-node-selected.graph-node-selected {
+  outline-color: var(--hc-yellow);
+}
+
+.lite-graph.react-flow {
+  --xy-edge-stroke: var(--text-tertiary);
+  --xy-edge-stroke-selected: var(--text-accent);
+  --xy-connectionline-stroke: var(--text-tertiary);
+  --xy-background-color: transparent;
+  --xy-node-color: inherit;
+  --xy-node-border: none;
+  --xy-node-background-color: transparent;
+  --xy-node-group-background-color: transparent;
+  --xy-node-boxshadow-hover: none;
+  --xy-node-boxshadow-selected: none;
+  --xy-handle-background-color: transparent;
+  --xy-handle-border-color: transparent;
+  --xy-selection-background-color: color-mix(
+    in srgb,
+    var(--surface-accent) 70%,
+    transparent
+  );
+  --xy-selection-border: 1px dotted var(--text-accent);
+}
+
+.lite-graph .react-flow__node {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+}
+
+.lite-graph .react-flow__node.selectable:hover,
+.lite-graph .react-flow__node.selected,
+.lite-graph .react-flow__node:focus,
+.lite-graph .react-flow__node:focus-visible {
+  box-shadow: none;
+}
+
+.lite-graph .react-flow__pane,
+.lite-graph .react-flow__node {
+  cursor: default;
+}
+
+.lite-graph .react-flow__handle {
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  opacity: 0;
+  border: none;
+  pointer-events: none;
+}
+
+.lite-graph .react-flow__edge-path {
+  stroke: var(--xy-edge-stroke, var(--text-tertiary));
+}
+
+.lite-graph .react-flow__edge.selected .react-flow__edge-path,
+.lite-graph .react-flow__edge:focus .react-flow__edge-path,
+.lite-graph .react-flow__edge:focus-visible .react-flow__edge-path {
+  stroke: var(--xy-edge-stroke-selected, var(--text-accent));
+}
+
+.lite-graph .lite-graph-edge-dimmed {
+  opacity: 0.28;
+}
+
+.lite-graph .react-flow__attribution {
+  display: none;
+}
+
+:root[data-theme='high-contrast'] .lite-graph.react-flow {
+  --xy-edge-stroke: var(--text-primary);
+  --xy-edge-stroke-selected: var(--hc-yellow);
+  --xy-selection-background-color: rgba(255, 255, 0, 0.16);
+  --xy-selection-border: 1px dotted var(--hc-yellow);
+}
+
+:root[data-theme='high-contrast'] .lite-graph .react-flow__edge-path {
+  stroke: var(--text-primary);
 }
 
 @layer components {

@@ -73,15 +73,7 @@ const StatusBar = () => (
 )
 
 const Content = ({ rows = 6 }: { rows?: number }) => (
-  <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-    <div>
-      <Text as="h1" variant="title">
-        Dashboard
-      </Text>
-      <Text as="p" variant="caption" color="secondary">
-        Review applications and installations across your organization.
-      </Text>
-    </div>
+  <div className="flex w-full flex-col gap-4">
     {Array.from({ length: rows }, (_, index) => (
       <Card key={index} className="min-h-28">
         <Text weight="semibold">Workspace section {index + 1}</Text>
@@ -137,6 +129,8 @@ export const Overview = () => (
       'The user menu moves between desktop header and mobile sidebar footer.',
       'The header sticks within the page scroll region and gains its glass surface after scrolling.',
       'The sidebar and full-width status bar remain outside the page scroll region.',
+      'headerLeading and headerActions belong in the sticky header, not in the page.',
+      'initialDesktopExpanded seeds the desktop sidebar before a stored preference exists.',
     ]}
     props={[
       {
@@ -150,14 +144,46 @@ export const Overview = () => (
         description: 'Secondary sidebar destinations.',
       },
       {
+        name: 'homeHref',
+        type: 'string',
+        default: "'/'",
+        description: 'Destination for the Nuon logo.',
+      },
+      {
         name: 'userMenu',
         type: 'ReactNode',
         description: 'User control moved to the correct responsive location.',
       },
       {
+        name: 'headerLeading',
+        type: 'ReactNode',
+        description: 'Global context shown after the sidebar control in the header.',
+      },
+      {
+        name: 'headerActions',
+        type: 'ReactNode',
+        description: 'Global actions shown before the user menu in the header.',
+      },
+      {
         name: 'statusBar',
         type: 'ReactNode',
         description: 'Pinned status content below the main scroll region.',
+      },
+      {
+        name: 'children',
+        type: 'ReactNode',
+        description: 'Page content that scrolls inside the main column.',
+      },
+      {
+        name: 'contentClassName',
+        type: 'string',
+        description: 'Extra classes for the scrolling main region.',
+      },
+      {
+        name: 'initialDesktopExpanded',
+        type: 'boolean',
+        description:
+          'Initial desktop sidebar expansion before a stored preference exists.',
       },
     ]}
   />

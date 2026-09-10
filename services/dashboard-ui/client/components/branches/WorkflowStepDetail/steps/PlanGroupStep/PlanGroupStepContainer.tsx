@@ -89,6 +89,7 @@ export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContain
       installs={installs}
       groupName={groupName}
       labelColors={labelColors}
+      orgId={orgId}
       hasResponse={hasResponse}
       responseType={step.approval?.response?.response_type}
       showApproveBar={showApproveBar}

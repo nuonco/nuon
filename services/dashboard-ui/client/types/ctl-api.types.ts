@@ -413,6 +413,8 @@ export type TBuild = TComponentBuild & {
 
 export type TOrg = components['schemas']['app.Org']
 export type TOrgInvite = components['schemas']['app.OrgInvite']
+export type TOrgMember = components['schemas']['app.OrgMember']
+export type TOrgMemberStatus = components['schemas']['app.OrgMemberStatus']
 export type TOrgStats = {
   install_names: string[]
   app_count: number
@@ -497,7 +499,10 @@ export type TPhoneHomeAuthStatus = {
   last_rejected_at?: string
 }
 
-export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
+export type TInstall = Omit<
+  components['schemas']['app.Install'],
+  'lifecycle_phase' | 'sandbox'
+> & {
   app?: components['schemas']['app.App']
   created_by?: components['schemas']['app.Account']
   gcp_account?: { project_id?: string; region?: string }

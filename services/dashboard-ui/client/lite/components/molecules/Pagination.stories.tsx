@@ -24,6 +24,7 @@ export const Overview = () => (
       'Previous is unavailable on the first page.',
       'Next is unavailable when hasNext is false.',
       'Both actions are unavailable while the next page is loading.',
+      'Give label a distinct value when a page carries more than one paginated collection.',
     ]}
     props={[
       {
@@ -51,6 +52,12 @@ export const Overview = () => (
         type: 'boolean',
         default: 'false',
         description: 'Disables navigation while a page is loading.',
+      },
+      {
+        name: 'label',
+        type: 'string',
+        default: "'Pagination'",
+        description: 'Accessible name for the navigation landmark.',
       },
     ]}
   />

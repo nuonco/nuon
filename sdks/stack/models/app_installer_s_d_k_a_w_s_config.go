@@ -64,6 +64,12 @@ type AppInstallerSDKAWSConfig struct {
 
 	// runner machine type
 	RunnerMachineType string `json:"runner_machine_type,omitempty"`
+
+	// runner nested template url
+	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
+
+	// Deployed instead of the module's own VPC, which lacks its extra resources.
+	VpcNestedTemplateURL string `json:"vpc_nested_template_url,omitempty"`
 }
 
 // Validate validates this app installer s d k a w s config

@@ -40,6 +40,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}
 
+	if run.NoConfigChanges && !run.Force {
+		logger.Info("no config changes, skipping install group update")
+		return nil
+	}
+
+	if run.AppConfigID == "" {
+		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
+	}
+
 	installIDs, groupName, err := s.resolveInstallIDs(ctx)
 	if err != nil {
 		return err

@@ -14,7 +14,7 @@ import type { TAPIError, TOrg } from '@/types'
 interface IOrgContext {
   org?: TOrg
   orgId?: string
-  isLoading: boolean
+  loading: boolean
   error: unknown
   refresh: () => void
 }
@@ -51,7 +51,7 @@ export const OrgProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       org,
       orgId,
-      isLoading,
+      loading: isLoading,
       error,
       refresh: () => void refetch(),
     }),

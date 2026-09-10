@@ -1,15 +1,23 @@
 import type { CSSProperties, HTMLAttributes } from 'react'
 import { cn } from '@/utils/classnames'
-import { getStatusTheme, type TStatusTheme } from '@/utils/status-utils'
+import type { TCompositeStatus } from '@/types/ctl-api.types'
+import {
+  getStatusIconVariant,
+  getStatusTheme,
+  type TStatusTheme,
+} from '@/utils/status-utils'
 import { Icon, type TIconVariant } from './Icon'
 import { Spinner } from './Spinner'
 import { Text } from './Text'
+import { Tooltip } from './Tooltip'
 
-export type TStatusVariant = 'chip' | 'inline' | 'dot'
+export type TStatusVariant = 'chip' | 'inline' | 'dot' | 'icon'
 
 export interface IStatus extends HTMLAttributes<HTMLSpanElement> {
-  status: string
+  status?: string | TCompositeStatus
   label?: string
+  description?: string
+  icon?: TIconVariant
   variant?: TStatusVariant
   theme?: TStatusTheme
   loading?: boolean
@@ -40,6 +48,8 @@ const humanize = (status: string) =>
 export const Status = ({
   status,
   label,
+  description,
+  icon,
   variant = 'chip',
   theme,
   loading = false,
@@ -47,11 +57,30 @@ export const Status = ({
   className,
   ...props
 }: IStatus) => {
-  const resolved = theme ?? getStatusTheme(status)
-  const text = label ?? humanize(status)
+  const statusValue =
+    typeof status === 'string' ? status : (status?.status ?? 'unknown')
+  const statusDescription =
+    description ??
+    (typeof status === 'object' ? status?.status_human_description : undefined)
+  const resolved = theme ?? getStatusTheme(statusValue)
+  const resolvedIcon = icon ?? getStatusIconVariant(statusValue)
+  const text = label ?? humanize(statusValue)
   const style = { '--status-color': THEME_VAR[resolved] } as CSSProperties
 
   if (loading) {
+    if (variant === 'icon' || variant === 'dot') {
+      return (
+        <span
+          aria-hidden
+          className={cn(
+            'skeleton shrink-0 rounded-full',
+            variant === 'icon' ? 'size-6' : 'size-2',
+            className
+          )}
+        />
+      )
+    }
+
     return (
       <Text
         variant="caption"
@@ -62,46 +91,112 @@ export const Status = ({
     )
   }
 
-  const glyph =
-    resolved === 'info' ? (
-      <Spinner size={19} />
-    ) : (
-      <Icon variant={THEME_ICON[resolved]} size={19} />
+  const glyphAt = (size: number) =>
+    resolvedIcon === 'Loading' ? (
+      <Spinner size={size} />
+    ) : resolvedIcon === 'none' ? null : (
+      <Icon variant={resolvedIcon} size={size} />
     )
 
-  if (variant === 'dot') {
-    return (
-      <span
-        style={style}
-        className={cn('inline-flex w-fit items-center', className)}
-        {...props}
-      >
+  const tooltipGlyph =
+    resolvedIcon === 'Loading' || resolvedIcon === 'none' ? (
+      <Icon variant={THEME_ICON[resolved]} size={16} />
+    ) : (
+      <Icon variant={resolvedIcon} size={16} />
+    )
+
+  const glyph = glyphAt(19)
+
+  const descriptionText = statusDescription ? (
+    <Text
+      as="p"
+      variant="caption"
+      color="secondary"
+      lines={10}
+      className="break-words [overflow-wrap:anywhere]"
+    >
+      {statusDescription}
+    </Text>
+  ) : null
+
+  const titledTooltip = (
+    <span className="flex max-w-sm flex-col gap-1 whitespace-normal text-left">
+      <span className="flex items-center gap-1.5">
         <span
           aria-hidden
-          className="size-2 rounded-full"
-          style={{ backgroundColor: 'var(--status-color)' }}
-        />
-        <span className="sr-only">{text}</span>
+          className="flex"
+          style={{ color: THEME_VAR[resolved] }}
+        >
+          {tooltipGlyph}
+        </span>
+        <Text variant="caption" weight="semibold">
+          {text}
+        </Text>
       </span>
+      {descriptionText}
+    </span>
+  )
+
+  if (variant === 'dot' || variant === 'icon') {
+    return (
+      <Tooltip
+        content={titledTooltip}
+        contentClassName="max-w-sm"
+        tabIndex={0}
+        aria-label={text}
+        style={style}
+        className={cn('items-center', className)}
+        {...props}
+      >
+        {variant === 'icon' ? (
+          <span
+            aria-hidden
+            className="status-tint flex size-6 shrink-0 items-center justify-center rounded-full"
+          >
+            {glyphAt(16)}
+          </span>
+        ) : (
+          <span
+            aria-hidden
+            className={cn(
+              'size-2 rounded-full',
+              resolved === 'info' && 'status-pulse'
+            )}
+            style={{ backgroundColor: 'var(--status-color)' }}
+          />
+        )}
+      </Tooltip>
     )
   }
 
   if (variant === 'inline') {
-    return (
+    const content = (
       <span
         style={style}
         className={cn('inline-flex w-fit items-center gap-1.5', className)}
         {...props}
       >
-        <span aria-hidden style={{ color: 'var(--status-color)' }} className="flex">
+        <span
+          aria-hidden
+          style={{ color: 'var(--status-color)' }}
+          className="flex"
+        >
           {glyph}
         </span>
         <Text variant="caption">{text}</Text>
       </span>
     )
+
+    if (!statusDescription) return content
+
+    return (
+      <Tooltip content={titledTooltip} contentClassName="max-w-sm" tabIndex={0}>
+        {content}
+      </Tooltip>
+    )
   }
 
-  return (
+  const content = (
     <span
       style={style}
       className={cn(
@@ -117,5 +212,13 @@ export const Status = ({
         {text}
       </Text>
     </span>
+  )
+
+  if (!statusDescription) return content
+
+  return (
+    <Tooltip content={titledTooltip} contentClassName="max-w-sm" tabIndex={0}>
+      {content}
+    </Tooltip>
   )
 }

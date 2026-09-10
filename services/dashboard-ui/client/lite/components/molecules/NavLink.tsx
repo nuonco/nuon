@@ -23,7 +23,7 @@ export interface INavLink extends INavItem {
 const LINK_CLASSES =
   'group grid h-9 w-full grid-cols-[1.5rem_minmax(0,1fr)] items-center overflow-hidden rounded-lg px-2 text-body text-secondary no-underline outline-none transition-colors ' +
   'hover:bg-surface-02 hover:text-primary active:bg-surface-03 ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ' +
+  'focus-ring ' +
   'aria-[current=page]:bg-surface-accent aria-[current=page]:text-accent'
 
 const Shortcut = ({ shortcut }: { shortcut: string }) => (
@@ -93,6 +93,7 @@ export const NavLink = ({
     <RouterNavLink
       to={href}
       end={end}
+      viewTransition
       onClick={onClick}
       aria-label={collapsed ? label : undefined}
       className={LINK_CLASSES}

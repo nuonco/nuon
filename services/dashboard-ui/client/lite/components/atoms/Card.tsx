@@ -71,7 +71,7 @@ export const Card = forwardRef<HTMLDivElement, ICard>(
         OPACITY_CLASSES[opacity],
         SHADOW_CLASSES[shadow],
         interactive &&
-          'cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+          'cursor-pointer transition-colors focus-ring',
         interactive && INTERACTIVE_OPACITY_CLASSES[opacity],
         className
       )}

@@ -49,6 +49,7 @@ const isVerticalSide = (side: TPopoverSide) => side === 'top' || side === 'botto
 type TFocusEntry = (() => void) | null
 
 interface IDropdownContext {
+  open: boolean
   close: () => void
   registerFocusFirst: (focus: TFocusEntry) => void
   registerFocusLast: (focus: TFocusEntry) => void
@@ -164,6 +165,7 @@ export const Dropdown = ({
 
   const context = useMemo<IDropdownContext>(
     () => ({
+      open: isOpen,
       close: () => {
         close()
         parent?.close()
@@ -183,7 +185,7 @@ export const Dropdown = ({
         parent?.unregisterSurface(surface)
       },
     }),
-    [close, parent]
+    [close, isOpen, parent]
   )
 
   useEffect(() => {

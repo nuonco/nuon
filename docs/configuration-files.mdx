@@ -42,7 +42,7 @@ The Language Server is a beta feature and included in [Nuon Labs](https://labs.n
 
 The Language Server requires the [Nuon CLI](./cli) so please download it first. Future versions of the Language Server will include the CLI.
 
-The component type is required after a `#` at the top of each Nuon configuration TOML file.
+The Language Server reads the component type from a `#` comment at the top of each Nuon configuration TOML file. The CLI ignores this comment — it reads the `type` field — so the comment is only needed for editor autocompletion and inline validation.
 
 ```toml components/certificate.toml
 # terraform
@@ -186,10 +186,10 @@ repo = "org/repo"
 branch = "main"
 
 [env_vars]
-AWS_REGION = "{{.nuon.install.sandbox.account.region}}"
+AWS_REGION = "{{.nuon.install.sandbox.outputs.account.region}}"
 
 [vars]
-account_id = "{{.nuon.install.sandbox.account.id}}"
+account_id = "{{.nuon.install.sandbox.outputs.account.id}}"
 
 ```
 
