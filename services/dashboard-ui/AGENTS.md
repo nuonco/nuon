@@ -170,6 +170,76 @@ bun run lint
 bunx tsc --noEmit --project client/tsconfig.json
 bun run dev:ladle
 bun run test
+bun run test:e2e         # Playwright smokes (needs stack + E2E_EMAIL)
+bun run test:e2e:ui
+bun run test:e2e:headed
 ```
 
 Do not run production builds (`build`, `build:js`, `build:css`) unless explicitly asked.
+
+## Playwright (E2E and agent verification)
+
+Committed smoke tests live under `e2e/` (`playwright.config.ts`, `global-setup.ts`, `flows/` → `specs/`). See
+`e2e/flows/README.md` and `e2e/global-setup.ts` for setup details. Typical run:
+
+```bash
+E2E_EMAIL=you@example.com bun run test:e2e
+# optional: E2E_ORG_ID=orgXXX  E2E_BASE_URL  E2E_ADMIN_API_URL  E2E_PUBLIC_API_URL
+```
+
+Defaults assume dashboard `:4000`, public API `:8081`, admin API `:8082` when a local control plane + dashboard are
+available. Install browsers once: `bunx playwright install chromium`.
+
+### Scratch checks and screenshots (agent workflow)
+
+**Throwaway verification belongs in gitignored `tmp/` as a standalone `.mjs`, run with `bun run tmp/<name>.mjs` from
+`services/dashboard-ui`.** Do not write scratch checks as `e2e/specs/*.spec.ts` (or anywhere else committed). `tmp/` is
+gitignored so they cannot be committed by accident. Only graduate a check to `e2e/specs/` + `e2e/flows/` when it should
+be a permanent smoke — and say so explicitly.
+
+Do not use the Playwright test runner for scratch work (`playwright test` / `.spec.ts` outside `testDir`): a plain `.mjs`
+needs no custom config.
+
+Auth (same idea as `e2e/global-setup.ts`):
+
+1. `POST http://127.0.0.1:8082/v1/general/seed-user` with `X-Nuon-Admin-Email` (`seed@nuon.co`, or `NUON_DEV_EMAIL` for
+   your own orgs) → `{ api_token }`
+2. Inject as cookie `X-Nuon-Auth` on `127.0.0.1`
+3. Optional: call public API `:8081` with `Authorization: Bearer <token>` + `X-Nuon-Org-ID` to discover org/app IDs
+
+Gotchas:
+
+- Never `waitUntil: 'networkidle'` — the SPA polls (SSE + `refetchInterval`); use `domcontentloaded` then `waitFor` a
+  page-specific selector
+- Dark mode is `prefers-color-scheme` — set `colorScheme: 'dark'` on the Playwright context (no `.dark` class)
+- From `tmp/`, `import { chromium } from 'playwright'` (Bun walks up to `node_modules`)
+- Screenshots: `deviceScaleFactor: 2`+, write under `tmp/`
+
+Minimal screenshot sketch:
+
+```js
+import { chromium } from 'playwright'
+
+const ADMIN = 'http://127.0.0.1:8082'
+const APP = 'http://127.0.0.1:4000'
+const EMAIL = process.env.NUON_DEV_EMAIL ?? 'seed@nuon.co'
+
+const seed = await fetch(`${ADMIN}/v1/general/seed-user`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'X-Nuon-Admin-Email': EMAIL },
+  body: '{}',
+})
+const seedBody = await seed.text()
+const { api_token } = JSON.parse(seedBody.match(/^\{[^}]*\}/)[0])
+
+const browser = await chromium.launch()
+const ctx = await browser.newContext({ colorScheme: 'dark', deviceScaleFactor: 2 })
+await ctx.addCookies([
+  { name: 'X-Nuon-Auth', value: api_token, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Lax' },
+])
+const page = await ctx.newPage()
+await page.goto(`${APP}/<orgId>/...`, { waitUntil: 'domcontentloaded' })
+await page.getByRole('heading').first().waitFor({ timeout: 15000 })
+await page.screenshot({ path: 'tmp/shot.png', fullPage: true })
+await browser.close()
+```
