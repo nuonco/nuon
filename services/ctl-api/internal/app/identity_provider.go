@@ -23,6 +23,12 @@ const (
 	ProviderTypeGitHub ProviderType = "github"
 )
 
+// Well-known identity provider row IDs used by tests and seeders.
+const (
+	IdentityProviderIDGoogle = "idp-google"
+	IdentityProviderIDGitHub = "idp-github"
+)
+
 // envIdentityProviderIDPrefix namespaces the synthetic ID of the provider configured through
 // environment variables, which has no identity_providers row. The type is part of the ID so that
 // identities created under a previous env provider stay distinguishable from the current one.
