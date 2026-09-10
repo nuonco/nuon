@@ -42,7 +42,7 @@ These work on every command.
 |---------|--------------|
 | `nuon apps create --name <name>` | Create an app in the control plane. |
 | `nuon apps sync` | Sync the config in the current directory to Nuon. The app name comes from the directory name. |
-| `nuon apps validate` | Validate the config in the current directory. |
+| `nuon apps validate` | Validate the config in the current directory. Requires login, and the app must already exist with a name matching the directory — run `nuon apps create` first. |
 | `nuon apps list` | List your apps. |
 | `nuon apps select` | Set your active app. |
 
@@ -53,7 +53,7 @@ flags and picking from the list stores the ID, which lets you omit `--app-id` fr
 
 | Command | What it does |
 |---------|--------------|
-| `nuon sync --branch <name>` | Sync the current directory, then trigger a run on that [app branch](/guides/app-branches). Add `--preview` for a plan-only run, or use `--app-branch` to pick the branch interactively. These flags are on `nuon sync`, not `nuon apps sync`. |
+| `nuon sync --branch <name>` | Sync the current directory, then trigger a run on that [app branch](/guides/app-branches). Add `--preview` for a plan-only run, or use `--app-branch` to pick the branch interactively. `nuon apps sync` takes the same three flags. |
 | `nuon apps branches list --app-id <app-id>` | List an app's branches. Alias: `nuon apps br`. |
 | `nuon apps branches get --app-id <app-id> --branch-id <branch-id>` | Show a branch and its deployment groups. |
 | `nuon apps branches create --app-id <app-id> --name <name>` | Create a branch without syncing a config file. |
