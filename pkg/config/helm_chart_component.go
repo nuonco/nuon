@@ -64,8 +64,8 @@ type HelmChartComponentConfig struct {
 
 func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("chart_name").Short("Helm chart name").Required().
-		Long("Name of the Helm chart to deploy. Must match the chart name in the repository or Helm repo").
+		Field("chart_name").Short("Helm release name").Required().
+		Long("Sets the Helm release name, which need not match the chart's own name. The chart itself comes from helm_repo.chart or the repo path. Must be a valid DNS label, 5-62 characters").
 		Example("karpenter-nodepools").
 		Example("prometheus").
 		Example("cert-manager").
