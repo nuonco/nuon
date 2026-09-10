@@ -91,7 +91,7 @@ Apply labels to every install of an app with a `default_labels` table in `metada
 
 ```toml metadata.toml
 [default_labels]
-service_tier   = "{{ .nuon.inputs.service_tier }}"
+service_tier   = "{{ .nuon.install.inputs.service_tier }}"
 ```
 
 Values can use [Nuon templating](/guides/using-variables) to render per install from install state,
