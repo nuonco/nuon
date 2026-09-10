@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/poolmetrics"
 )
 
 type Params struct {
@@ -55,7 +56,7 @@ func (d *database) Validate(v *validator.Validate) error {
 	return nil
 }
 
-func New(params Params, lc fx.Lifecycle) (*gorm.DB, error) {
+func New(params Params, lc fx.Lifecycle, pm poolmetrics.Params) (*gorm.DB, error) {
 	database := &database{
 		Logger:         params.L,
 		Host:           params.Cfg.ClickhouseDBHost,
@@ -116,6 +117,12 @@ func New(params Params, lc fx.Lifecycle) (*gorm.DB, error) {
 			return nil
 		},
 	})
+
+	if pm.Metrics != nil {
+		if err := pm.Metrics.RegisterClickHouse(lc, sqlDB); err != nil {
+			return nil, fmt.Errorf("unable to register ClickHouse pool metrics: %w", err)
+		}
+	}
 
 	return db, err
 }

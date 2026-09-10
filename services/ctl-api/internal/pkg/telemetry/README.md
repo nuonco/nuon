@@ -101,7 +101,7 @@ separate.
 | `nuon.http.server.request.declared_body.size` | Explicit-bucket histogram | bytes | Same as request duration |
 
 `nuon.api` is one of `public`, `runner`, `auth`, `internal`, `admin-dashboard`,
-`slack`, or `mcp`. Metrics measure HTTP handling, not Temporal signals, individual
+`slack`, or `mcp`. These metrics measure HTTP handling, not Temporal signals, individual
 MCP tool outcomes, database operations, or downstream runner execution.
 
 Declared body size records the incoming `ContentLength` at request completion,
@@ -123,6 +123,32 @@ not metric dimensions. Unknown methods become `_OTHER`; the standard
 list. Scheme reflects the connection to the API, not untrusted forwarded headers.
 Health requests are included and can be excluded by route in alert queries.
 Streaming request duration measures the full handler lifetime.
+
+### Database pools
+
+API processes observe local pool snapshots through `internal/pkg/db/poolmetrics`,
+using the injected meter provider without wrapping drivers or enabling tracing.
+
+| Pool | Library | Metrics |
+| --- | --- | --- |
+| Native PostgreSQL `pgxpool` | [`otelpgx`](https://github.com/exaring/otelpgx/tree/v0.11.1) | `pgxpool.*`: connections, capacity, acquisitions, cancellations, waits and connection creation/expiry |
+| ClickHouse `database/sql` | [`otelsql`](https://github.com/XSAM/otelsql/tree/v0.41.0) | `db.sql.connection.*`: connections, capacity, waits and connection closure by limit |
+
+Dimensions are `db.system.name` (`postgresql`, `clickhouse`) and
+`db.client.connection.pool.name` (`primary`, `replica`, `admin_replica`).
+ClickHouse uses `primary`; `db.sql.connection.open` adds `status=inuse|idle`.
+Pool names do not contain database hosts or names.
+
+Connection state is a current value (pgx up/down counters, SQL gauges), not a rate.
+Acquisition/wait/closure counters are cumulative; apply rates per instance before
+aggregating. PostgreSQL durations use **nanoseconds**; SQL wait duration uses
+**milliseconds**. PostgreSQL acquisition time covers successful acquisitions,
+while `empty_acquire_wait_time` isolates successful empty-pool waiting. SQL waits
+include canceled waits. A zero SQL connection limit means unlimited.
+
+Collection issues no queries. pgx snapshots are cached for one second and its
+callbacks live until provider shutdown; register once per process-lifetime pool.
+SQL callbacks unregister on shutdown. Final pool observations are best-effort.
 
 ## Failure behavior
 
@@ -151,7 +177,7 @@ probes; an API cannot report its own total outage through this export path.
 Run the tests and request-recording benchmark from the repository root:
 
 ```sh
-go test -race ./services/ctl-api/internal/pkg/telemetry ./services/ctl-api/internal/pkg/metrics ./services/ctl-api/internal/pkg/api ./services/ctl-api/internal/app/mcp/server
+go test -race ./services/ctl-api/internal/pkg/telemetry ./services/ctl-api/internal/pkg/metrics ./services/ctl-api/internal/pkg/api ./services/ctl-api/internal/pkg/db/poolmetrics ./services/ctl-api/internal/app/mcp/server
 go test -run '^$' -bench '^BenchmarkHTTPMetrics$' -benchmem ./services/ctl-api/internal/pkg/telemetry
 ```
 

@@ -6,11 +6,13 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/poolmetrics"
 )
 
 // PublicAPIModule provides the public-facing API server.
 var PublicAPIModule = fx.Module("public-api",
 	fx.Provide(api.NewEndpointAudit),
+	fx.Provide(poolmetrics.New),
 	fx.Provide(api.AsAPI(api.NewPublicAPI)),
 	fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
@@ -19,6 +21,7 @@ var PublicAPIModule = fx.Module("public-api",
 // InternalAPIModule provides the internal API server.
 var InternalAPIModule = fx.Module("internal-api",
 	fx.Provide(api.NewEndpointAudit),
+	fx.Provide(poolmetrics.New),
 	fx.Provide(api.AsAPI(api.NewInternalAPI)),
 	fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
@@ -27,6 +30,7 @@ var InternalAPIModule = fx.Module("internal-api",
 // RunnerAPIModule provides the runner API server.
 var RunnerAPIModule = fx.Module("runner-api",
 	fx.Provide(api.NewEndpointAudit),
+	fx.Provide(poolmetrics.New),
 	fx.Provide(api.AsAPI(api.NewRunnerAPI)),
 	fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
@@ -35,6 +39,7 @@ var RunnerAPIModule = fx.Module("runner-api",
 // AuthAPIModule provides the auth API server.
 var AuthAPIModule = fx.Module("auth-api",
 	fx.Provide(api.NewEndpointAudit),
+	fx.Provide(poolmetrics.New),
 	fx.Provide(api.AsAPI(api.NewAuthAPI)),
 	fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
@@ -43,6 +48,7 @@ var AuthAPIModule = fx.Module("auth-api",
 // AdminDashboardAPIModule provides the admin dashboard API server.
 var AdminDashboardAPIModule = fx.Module("admin-dashboard-api",
 	fx.Provide(api.NewEndpointAudit),
+	fx.Provide(poolmetrics.New),
 	fx.Provide(api.AsAPI(api.NewAdminDashboardAPI)),
 	fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
@@ -52,6 +58,7 @@ var AdminDashboardAPIModule = fx.Module("admin-dashboard-api",
 // callback, slash commands, Events API webhooks).
 var SlackAPIModule = fx.Module("slack-api",
 	fx.Provide(api.NewEndpointAudit),
+	fx.Provide(poolmetrics.New),
 	fx.Provide(api.AsAPI(api.NewSlackAPI)),
 	fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
@@ -60,6 +67,7 @@ var SlackAPIModule = fx.Module("slack-api",
 // AllAPIsModule provides all API servers (for running all in one process).
 var AllAPIsModule = fx.Module("all-apis",
 	fx.Provide(api.NewEndpointAudit),
+	fx.Provide(poolmetrics.New),
 	fx.Provide(api.AsAPI(api.NewPublicAPI)),
 	fx.Provide(api.AsAPI(api.NewRunnerAPI)),
 	fx.Provide(api.AsAPI(api.NewInternalAPI)),
