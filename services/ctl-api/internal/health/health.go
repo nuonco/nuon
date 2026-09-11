@@ -2,6 +2,7 @@ package health
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
@@ -17,6 +18,7 @@ type Service struct {
 	chDB    *gorm.DB
 	tclient temporalclient.Client
 	mw      metrics.Writer
+	metrics *healthMetrics
 }
 
 var _ api.Service = (*Service)(nil)
@@ -62,20 +64,26 @@ func (s *Service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 type Params struct {
 	fx.In
 
-	Cfg     *internal.Config
-	DB      *gorm.DB `name:"psql"`
-	CHDB    *gorm.DB `name:"ch"`
-	TClient temporalclient.Client
-	MW      metrics.Writer
+	Cfg           *internal.Config
+	DB            *gorm.DB `name:"psql"`
+	CHDB          *gorm.DB `name:"ch"`
+	TClient       temporalclient.Client
+	MW            metrics.Writer
+	MeterProvider metric.MeterProvider
 }
 
 func New(params Params) (*Service, error) {
+	m, err := newHealthMetrics(params.MeterProvider)
+	if err != nil {
+		return nil, err
+	}
 	return &Service{
 		cfg:     params.Cfg,
 		db:      params.DB,
 		chDB:    params.CHDB,
 		tclient: params.TClient,
 		mw:      params.MW,
+		metrics: m,
 	}, nil
 }
 
