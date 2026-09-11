@@ -33,6 +33,11 @@ type reporter struct {
 	leader       bool
 	registration metric.Registration
 	l            *zap.Logger
+
+	deployments          deploymentSnapshot
+	deploymentsCollected time.Time
+	deploymentsActive    bool
+	deploymentAttempt    time.Time
 }
 
 func Start(lc fx.Lifecycle, cfg *internal.Config, tc *telemetry.Config, provider metric.MeterProvider, l *zap.Logger) error {
@@ -88,9 +93,44 @@ func newReporter(provider metric.MeterProvider, l *zap.Logger) (*reporter, error
 	if err != nil {
 		return nil, err
 	}
+	attempts, err := meter.Int64ObservableGauge("nuon.deployment.attempts.recent", metric.WithUnit("{deployment}"),
+		metric.WithDescription("Apply deployment records created in the preceding 24 hours, by current recorded state; includes retry attempts."))
+	if err != nil {
+		return nil, err
+	}
+	applies, err := meter.Int64ObservableGauge("nuon.deployment.applies.recent", metric.WithUnit("{deployment}"),
+		metric.WithDescription("Apply deployment records with applied_at in the preceding 24 hours; best-effort timestamps, not health-verified successes."))
+	if err != nil {
+		return nil, err
+	}
+	latest, err := meter.Int64ObservableGauge("nuon.deployment.latest", metric.WithUnit("{install_component}"),
+		metric.WithDescription("Install targets grouped by the recorded state of their latest eligible apply deployment, not live workload health."))
+	if err != nil {
+		return nil, err
+	}
+	deploymentCollected, err := meter.Float64ObservableGauge("nuon.deployment.snapshot.collected_at", metric.WithUnit("s"),
+		metric.WithDescription("Unix time of the last successful deployment snapshot completion; unchanged on failure."))
+	if err != nil {
+		return nil, err
+	}
 	r.registration, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
+		if !r.deploymentsCollected.IsZero() {
+			o.ObserveFloat64(deploymentCollected, float64(r.deploymentsCollected.UnixNano())/1e9)
+			if r.deploymentsActive && time.Since(r.deploymentsCollected) <= deploymentSnapshotTTL {
+				for key, count := range r.deployments.attempts {
+					o.ObserveInt64(attempts, count, key.attributes())
+				}
+				for key, count := range r.deployments.latest {
+					o.ObserveInt64(latest, count, key.attributes())
+				}
+				for key, count := range r.deployments.applies {
+					o.ObserveInt64(applies, count, metric.WithAttributes(
+						attribute.String("org.id", key.org), attribute.String("app.id", key.app), attribute.String("component.id", key.component)))
+				}
+			}
+		}
 		if r.collectedAt.IsZero() {
 			return nil
 		}
@@ -109,7 +149,7 @@ func newReporter(provider metric.MeterProvider, l *zap.Logger) (*reporter, error
 			}
 		}
 		return nil
-	}, current, oldest, collected)
+	}, current, oldest, collected, attempts, applies, latest, deploymentCollected)
 	return r, err
 }
 
@@ -156,6 +196,15 @@ func (r *reporter) run(ctx context.Context, connect func(context.Context) (*pgx.
 			r.release(conn)
 			conn = nil
 		}
+		if conn != nil {
+			if err := r.refreshDeploymentsIfDue(ctx, conn); err != nil && ctx.Err() == nil {
+				r.l.Warn("unable to collect deployment metrics", zap.Error(err))
+			}
+			if conn.IsClosed() {
+				r.release(conn)
+				conn = nil
+			}
+		}
 		select {
 		case <-ctx.Done():
 			return
@@ -186,6 +235,7 @@ func (r *reporter) refresh(ctx context.Context, conn *pgx.Conn) error {
 func (r *reporter) release(conn *pgx.Conn) {
 	r.mu.Lock()
 	r.active = false
+	r.deploymentsActive = false
 	wasLeader := r.leader
 	r.leader = false
 	r.mu.Unlock()

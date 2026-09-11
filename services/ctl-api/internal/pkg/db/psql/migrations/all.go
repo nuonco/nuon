@@ -204,5 +204,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "132-workflow-metrics-index",
 			Fn:   m.Migration132WorkflowMetricsIndex,
 		},
+		{
+			Name: "133-deployment-metrics-indexes",
+			Fn:   m.Migration133DeploymentMetricsIndexes,
+		},
 	}
 }

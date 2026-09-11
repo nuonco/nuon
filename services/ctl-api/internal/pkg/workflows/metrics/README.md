@@ -28,3 +28,26 @@ the workflow's persisted status, not a live Temporal check.
 
 Migration 132 adds the partial index used by snapshot queries. PostgreSQL tests
 use the migrated `INTEGRATION` harness; see `conventions/testing.md`.
+
+## Deployment snapshots
+
+The same leader collects deployment snapshots every five minutes, independently
+of workflow snapshot freshness. Migration 133 adds three partial indexes. Reads
+use a five-second statement timeout, 100 ms lock timeout, and no parallel workers.
+
+| Metric | Meaning |
+| --- | --- |
+| `nuon.deployment.attempts.recent` | Apply records created in the preceding 24 hours, by current recorded state; retries are separate attempts. |
+| `nuon.deployment.applies.recent` | Apply records with `applied_at` in that window; best-effort, not health-verified successes. |
+| `nuon.deployment.latest` | Install targets by latest eligible apply state, not live workload health. |
+| `nuon.deployment.snapshot.collected_at` | Last successful collection completion, in Unix seconds. |
+
+Counts carry org/app/component IDs, plus `deployment.state` where applicable.
+Deleted entities, plan-only workflows, unlinked deploys, teardown and recovery
+operations are excluded. Windows end at query start. Use these as gauges, not
+with `rate()` or `increase()`. Select the newest fresh reporter and reject samples
+older than its collection completion; preserve original OTLP sample timestamps.
+Counts expire after 15 minutes or leadership loss. Failures retain the previous
+snapshot; exceeding 1,999 series per metric rejects the whole refresh rather
+than exporting partial totals. Observed states emit zero when emptied; components
+without eligible deployment history are absent.
