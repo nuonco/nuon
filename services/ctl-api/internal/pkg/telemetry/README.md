@@ -197,6 +197,8 @@ additionally enables the library's deprecated metrics; leave it unset for this s
 | `nuon.queue.enqueuer.dispatch.{attempts,duration}` | Temporal dispatch RPCs by bounded source and outcome. |
 | `nuon.install.state.{operations,operation.duration}` | Install-state get/save calls by operation and outcome. |
 | `nuon.blobstore.{operations,operation.duration}` | Blob service calls by operation and outcome, for both S3 and GCS. |
+| `nuon.config.sync.{attempts,duration}` | Stored-config sync invocations through deferred queue setup, by outcome; attempts also carry terminal stage. |
+| `nuon.event.hook.invocations` | Returned lifecycle-hook calls by bounded hook name, phase, before/after invocation and outcome. |
 
 Durations are explicit-bucket histograms in seconds. Retries count as attempts,
 not unique logical operations. Idle counters are absent until observed. No entity
@@ -208,6 +210,11 @@ The local gauges cover the in-process channel/workers, not all Temporal workers.
 Blob stream open and body completion are separate operations; body outcomes are
 `success` at EOF, `error`, or `closed_early`. Body duration includes consumer time.
 See [snapshot metrics](../workflows/metrics/README.md) for inventory and queue state.
+
+Sync failure logs include `config_committed` to distinguish deferred-queue errors
+from transaction failures. Hook success does not establish notification delivery.
+Selected lifecycle diagnostics use `flow_event` in process logs, independently of
+notification subscriptions; they add no database enrichment.
 
 ## Failure behavior
 
@@ -230,6 +237,15 @@ failure while the process lives, but intermediate timing resolution is lost;
 process loss can lose unexported data. Collector buffering and destination routing
 are configured separately. Use missing-data alerts and independent availability
 probes; an API cannot report its own total outage through this export path.
+
+## Runner-api polling
+
+Runner-api polling exports `nuon.runner.job_tail.sessions` and `.probes` by bounded
+`outcome`, `.notification.wakes`, and `.listener.connected`, `.listener.failures`,
+and `.listener.notifications`. Sessions begin after validation; empty timeouts
+are healthy idle results. Probe retries count separately. Listener state is
+observed continuously, including idle periods; routine rotation and shutdown do
+not count as failures. These metrics describe attempts, not unique jobs or claims.
 
 ## Testing
 

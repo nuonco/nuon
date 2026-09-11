@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/lib/pq"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
@@ -20,6 +22,7 @@ import (
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/triggers"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -36,6 +39,8 @@ type RunDeps struct {
 	InstallHelpers   *installhelpers.Helpers
 	VCSHelpers       *vcshelpers.Helpers
 	TFClient         terraform.Client
+	Metrics          *Metrics
+	Logger           *zap.Logger
 }
 
 type RunRequest struct {
@@ -64,7 +69,24 @@ type RunResult struct {
 // status through syncing to active or error. The single path from intermediate
 // config to database records — the branch run and POST /configs/:id/sync both
 // go through it.
-func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) {
+func Run(ctx context.Context, deps RunDeps, req RunRequest) (res *RunResult, retErr error) {
+	started := time.Now()
+	stage := "load"
+	committed := false
+	defer func() {
+		// A panic is not a successfully returned sync attempt.
+		if res == nil && retErr == nil {
+			return
+		}
+		outcome := deps.Metrics.record(ctx, started, stage, retErr)
+		if retErr != nil && deps.Logger != nil {
+			cctx.GetLogger(ctx, deps.Logger).Warn("config sync failed",
+				zap.String("app_id", req.AppID), zap.String("app_config_id", req.AppConfigID),
+				zap.String("outcome", outcome), zap.String("stage", stage),
+				zap.Bool("config_committed", committed), zap.Error(retErr))
+		}
+	}()
+
 	var appConfig app.AppConfig
 	if res := deps.DB.WithContext(ctx).First(&appConfig, "id = ?", req.AppConfigID); res.Error != nil {
 		return nil, fmt.Errorf("unable to load app config: %w", res.Error)
@@ -72,11 +94,13 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 
 	setStatus(ctx, deps.DB, &appConfig, app.AppConfigStatusSyncing, "syncing config")
 
+	stage = "intermediate"
 	intermediateJSON, err := appConfig.IntermediateConfig.Get(ctx)
 	if err != nil {
 		return nil, markSyncFailed(ctx, deps.DB, &appConfig, fmt.Errorf("unable to get intermediate config: %w", err))
 	}
 
+	stage = "decode"
 	var cfg config.AppConfig
 	decoder := json.NewDecoder(strings.NewReader(intermediateJSON))
 	decoder.UseNumber()
@@ -90,6 +114,7 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 	}
 
 	var result RunResult
+	stage = "sync_transaction"
 	err = deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		s := NewDBSyncer(
 			tx,
@@ -143,6 +168,8 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 		return nil, markSyncFailed(ctx, deps.DB, &appConfig, err)
 	}
 
+	committed = true
+	stage = "deferred_queues"
 	if err := provisionDeferredQueues(ctx, deps, &result); err != nil {
 		return nil, markSyncFailed(ctx, deps.DB, &appConfig, err)
 	}

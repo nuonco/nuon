@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"go.opentelemetry.io/otel/metric"
 	"go.temporal.io/sdk/temporal"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -42,6 +43,7 @@ type ActivitiesParams struct {
 	TFClient         terraform.Client
 	AccountsHelpers  *accountshelpers.Helpers
 	L                *zap.Logger
+	MeterProvider    metric.MeterProvider `optional:"true"`
 }
 
 type Activities struct {
@@ -62,6 +64,8 @@ func NewActivities(params ActivitiesParams) *Activities {
 			InstallHelpers:   params.InstallHelpers,
 			VCSHelpers:       params.VCSHelpers,
 			TFClient:         params.TFClient,
+			Metrics:          syncer.NewMetrics(params.MeterProvider),
+			Logger:           params.L,
 		},
 		queueClient:     params.QueueClient,
 		accountsHelpers: params.AccountsHelpers,
