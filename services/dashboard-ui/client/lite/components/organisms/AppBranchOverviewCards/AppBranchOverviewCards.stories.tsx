@@ -19,7 +19,8 @@ export const Overview = () => (
       'Do not use it for install-scoped facts such as health or drift.',
     ]}
     rules={[
-      'Branch info reads from the latest branch config, falling back to the VCS directory when no repository is set.',
+      'The branch card reads the latest branch config: branch name, then the repository as an external link, then the config version.',
+      'The repository falls back to the VCS directory, unlinked, when no repository is set.',
       'Last update reads the latest run commit and renders nothing but an empty state when the branch has never run.',
       'An install count that is capped by pagination renders with a trailing plus.',
     ]}

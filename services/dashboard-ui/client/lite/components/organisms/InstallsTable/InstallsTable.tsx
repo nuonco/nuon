@@ -1,10 +1,8 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import type { TInstall } from '@/types/ctl-api.types'
-import { humanize } from '@/utils/string-utils'
 import { Badge } from '../../atoms/Badge'
 import { Brand, type TBrandVariant } from '../../atoms/Brand'
 import { Card } from '../../atoms/Card'
-import type { TIconVariant } from '../../atoms/Icon'
 import { Link } from '../../atoms/Link'
 import { Status } from '../../atoms/Status'
 import { Text } from '../../atoms/Text'
@@ -18,6 +16,10 @@ import { ListSearch } from '../../molecules/ListSearch'
 import { Pagination } from '../../molecules/Pagination'
 import { Time } from '../../molecules/Time'
 import { Table } from '../Table/Table'
+import {
+  installCloudLocation,
+  installStatusFacets,
+} from '../../../utils/install-details'
 
 export type TLabelColors = Record<string, Record<string, string>>
 
@@ -62,107 +64,9 @@ const installPlatform = (install: TInstall): TBrandVariant | undefined => {
   return undefined
 }
 
-const installRegion = (install: TInstall) =>
-  install?.aws_account?.region ??
-  install?.gcp_account?.region ??
-  install?.azure_account?.location
-
-type TInstallFacet = {
-  id: string
-  title: string
-  icon: TIconVariant
-  status: string
-  description?: string
-}
-
-const STALE_PHASE_STATUSES = new Set([
-  'active',
-  'pending',
-  'executing',
-  'queued',
-  'planning',
-  'syncing',
-])
-
-const phaseAdjusted = (status?: string, phase?: string) => {
-  if (!status || !STALE_PHASE_STATUSES.has(status)) return status
-  if (phase === 'deprovisioned' || phase === 'deprovisioning') return phase
-  return status
-}
-
-const facetTitle = (label: string, status: string) =>
-  `${label} ${humanize(status).toLowerCase()}`
-
-const installFacets = (install: TInstall): TInstallFacet[] => {
-  const phase = install?.lifecycle_phase?.phase
-  const adjust = (status?: string) => phaseAdjusted(status, phase)
-
-  const runnerStatus = adjust(install?.runner_status) ?? 'unknown'
-  const sandboxBase = adjust(install?.sandbox_status)
-  const sandboxStatus =
-    install?.sandbox_health_status && sandboxBase === 'active'
-      ? install.sandbox_health_status
-      : (sandboxBase ?? 'unknown')
-  const componentStatus =
-    adjust(install?.composite_component_status) ?? 'unknown'
-
-  const facets: TInstallFacet[] = [
-    {
-      id: 'runner',
-      title: facetTitle('Runner', runnerStatus),
-      icon: 'SneakerMoveIcon',
-      status: runnerStatus,
-      description: install?.runner_status_description,
-    },
-    {
-      id: 'sandbox',
-      title: facetTitle('Sandbox', sandboxStatus),
-      icon: 'ShippingContainerIcon',
-      status: sandboxStatus,
-      description:
-        sandboxStatus === sandboxBase
-          ? install?.sandbox_status_description
-          : (install?.sandbox_health_message ??
-            install?.sandbox_status_description),
-    },
-    {
-      id: 'components',
-      title: facetTitle('Components', componentStatus),
-      icon: 'CardsIcon',
-      status: componentStatus,
-      description: install?.composite_component_status_description,
-    },
-  ]
-
-  if (install?.composite_health_status) {
-    facets.push({
-      id: 'health',
-      title: facetTitle('Health', install.composite_health_status),
-      icon: 'HeartbeatIcon',
-      status: install.composite_health_status,
-      description: install?.composite_health_status_description,
-    })
-  }
-
-  if (install?.drifted_objects) {
-    const drifted = install.drifted_objects.length
-    facets.push({
-      id: 'drift',
-      title: drifted ? 'Drift detected' : 'No drift',
-      icon: 'FileDashedIcon',
-      status: drifted ? 'warn' : 'active',
-      description: drifted
-        ? `${drifted} resource${drifted === 1 ? '' : 's'} have drifted from the last applied state.`
-        : undefined,
-    })
-  }
-
-  return facets
-}
-
 const InstallStatuses = ({ install }: { install: TInstall }) => (
   <span className="flex flex-wrap items-center gap-1.5">
-    {installFacets(install).map((facet) => (
+    {installStatusFacets(install).map((facet) => (
       <Status
         key={facet.id}
         status={facet.status}
@@ -177,17 +81,10 @@ const InstallStatuses = ({ install }: { install: TInstall }) => (
 
 const Platform = ({ install }: { install: TInstall }) => {
   const platform = installPlatform(install)
-  const region = installRegion(install)
-  const cloudPlatform =
-    platform === 'AWS'
-      ? 'aws'
-      : platform === 'Azure'
-        ? 'azure'
-        : platform === 'GCP'
-          ? 'gcp'
-          : 'unknown'
+  const { platform: cloudPlatform, region, location } =
+    installCloudLocation(install)
 
-  if (!platform && !region) {
+  if (!platform && !region && !location) {
     return (
       <Text variant="caption" color="tertiary">
         —
@@ -201,8 +98,8 @@ const Platform = ({ install }: { install: TInstall }) => {
       {region ? (
         <CloudRegion
           platform={cloudPlatform}
-          region={cloudPlatform === 'azure' ? undefined : region}
-          location={cloudPlatform === 'azure' ? region : undefined}
+          region={region}
+          location={location}
           lines={1}
         />
       ) : (
