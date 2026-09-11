@@ -114,6 +114,12 @@ type GetAppBranchRunsParams struct {
 	*/
 	Planonly *bool
 
+	/* Preview.
+
+	   return only preview runs when true, only rollout runs when false
+	*/
+	Preview *bool
+
 	/* Q.
 
 	   case-insensitive substring match against run title and id
@@ -293,6 +299,17 @@ func (o *GetAppBranchRunsParams) SetPlanonly(planonly *bool) {
 	o.Planonly = planonly
 }
 
+// WithPreview adds the preview to the get app branch runs params
+func (o *GetAppBranchRunsParams) WithPreview(preview *bool) *GetAppBranchRunsParams {
+	o.SetPreview(preview)
+	return o
+}
+
+// SetPreview adds the preview to the get app branch runs params
+func (o *GetAppBranchRunsParams) SetPreview(preview *bool) {
+	o.Preview = preview
+}
+
 // WithQ adds the q to the get app branch runs params
 func (o *GetAppBranchRunsParams) WithQ(q *string) *GetAppBranchRunsParams {
 	o.SetQ(q)
@@ -441,6 +458,23 @@ func (o *GetAppBranchRunsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if qPlanonly != "" {
 
 			if err := r.SetQueryParam("planonly", qPlanonly); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Preview != nil {
+
+		// query param preview
+		var qrPreview bool
+
+		if o.Preview != nil {
+			qrPreview = *o.Preview
+		}
+		qPreview := swag.FormatBool(qrPreview)
+		if qPreview != "" {
+
+			if err := r.SetQueryParam("preview", qPreview); err != nil {
 				return err
 			}
 		}

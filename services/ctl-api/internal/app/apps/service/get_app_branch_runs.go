@@ -28,6 +28,7 @@ import (
 // @Param					limit			query	int		false	"limit of results to return"	Default(10)
 // @Param					page			query	int		false	"page number of results to return"	Default(0)
 // @Param					planonly		query	bool	false	"exclude preview (plan only) runs when set to false"	Default(true)
+// @Param					preview			query	bool	false	"return only preview runs when true, only rollout runs when false"
 // @Param					q				query	string	false	"case-insensitive substring match against run title and id"
 // @Param					type			query	string	false	"filter by workflow type (comma-separated for several types)"
 // @Param					status			query	string	false	"filter by workflow status (comma-separated for several statuses)"
@@ -104,6 +105,7 @@ type appBranchRunFilters struct {
 	q            string
 	types        []string
 	statuses     []string
+	preview      *bool
 	createdAtGte *time.Time
 	createdAtLte *time.Time
 }
@@ -113,6 +115,17 @@ func parseAppBranchRunFilters(ctx *gin.Context) (appBranchRunFilters, error) {
 		q:        ctx.Query("q"),
 		types:    parseCommaSeparated(ctx.Query("type")),
 		statuses: parseCommaSeparated(ctx.Query("status")),
+	}
+
+	if param := ctx.Query("preview"); param != "" {
+		parsed, err := strconv.ParseBool(param)
+		if err != nil {
+			return filters, stderr.ErrUser{
+				Err:         fmt.Errorf("invalid preview parameter: %w", err),
+				Description: "preview must be true or false",
+			}
+		}
+		filters.preview = &parsed
 	}
 
 	if param := ctx.Query("created_at_gte"); param != "" {
@@ -189,6 +202,10 @@ func (s *service) getAppBranchRuns(ctx *gin.Context, appBranchID string, include
 
 	if len(filters.statuses) > 0 {
 		query = query.Where("status->>'status' IN ?", filters.statuses)
+	}
+
+	if filters.preview != nil {
+		query = query.Where("plan_only = ?", *filters.preview)
 	}
 
 	for _, token := range strings.Fields(filters.q) {

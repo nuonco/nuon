@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useSSETimelineQuery } from '@/hooks/use-sse-timeline-query'
+import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getInstallSandboxRuns } from '@/lib'
 import { SandboxRunsTimeline } from './SandboxRunsTimeline'
 
@@ -21,6 +22,8 @@ export const SandboxRunsTimelineContainer = ({
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
 
+  const onRefreshError = useRefreshErrorToast()
+
   const { data: result } = useSSETimelineQuery({
     sseUrl:
       org?.id && install?.id
@@ -38,6 +41,7 @@ export const SandboxRunsTimelineContainer = ({
     shouldPoll,
     pollInterval,
     eventName: 'sandbox-runs',
+    onError: onRefreshError,
   })
 
   const runs = result?.data ?? []

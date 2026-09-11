@@ -1,7 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useToast } from '@/hooks/use-toast'
-import { Text } from '@/components/common/Text'
-import { Toast } from '@/components/surfaces/Toast'
 import {
   ensureActivityTracking,
   isRecentlyActive,
@@ -17,10 +14,16 @@ interface UseResourceSSEOptions {
   enabled: boolean
   onMessage?: SSEEventHandler
   listeners?: Record<string, SSEEventHandler>
+  onError?: (message: string) => void
 }
 
-export function useResourceSSE({ url, enabled, onMessage, listeners }: UseResourceSSEOptions) {
-  const { addToast } = useToast()
+export function useResourceSSE({
+  url,
+  enabled,
+  onMessage,
+  listeners,
+  onError,
+}: UseResourceSSEOptions) {
   const [connected, setConnected] = useState(false)
   const [suspended, setSuspended] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -33,6 +36,8 @@ export function useResourceSSE({ url, enabled, onMessage, listeners }: UseResour
   onMessageRef.current = onMessage
   const listenersRef = useRef(listeners)
   listenersRef.current = listeners
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {
@@ -87,11 +92,7 @@ export function useResourceSSE({ url, enabled, onMessage, listeners }: UseResour
     eventSource.addEventListener('fetch-error', (event: MessageEvent) => {
       try {
         const errorData = JSON.parse(event.data)
-        addToast(
-          <Toast heading="Refresh failed" theme="warn">
-            <Text>{errorData?.error ?? 'Connection issue'}</Text>
-          </Toast>
-        )
+        onErrorRef.current?.(errorData?.error ?? 'Connection issue')
       } catch {
         // non-JSON error event
       }
