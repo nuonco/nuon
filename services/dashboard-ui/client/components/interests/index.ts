@@ -9,3 +9,5 @@ export {
   type ResourceCfg,
   type ResourceKind,
 } from './types'
+export { PRESETS, matchPreset, recommendedPreset, type Preset, type PresetId } from './presets'
+export type { PresetModalOutput } from './InterestsModal'

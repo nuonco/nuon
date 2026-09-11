@@ -64,6 +64,18 @@ func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, 
 		return false
 	}
 
+	// Component health and install degraded notifications are retired.
+	// Suppress them unconditionally — including under AllEvents and for
+	// existing subscriptions that still carry ComponentHealth=true or
+	// InstallDegraded=true — so no subscriber receives them regardless of
+	// config. The fields remain on ResourceCfg for JSONB deserialization
+	// compatibility.
+	if f.EventClass == eventClassComponentUnhealthy ||
+		f.EventClass == eventClassComponentRecovered ||
+		f.EventClass == eventClassInstallDegraded {
+		return false
+	}
+
 	if in.AllEvents {
 		return true
 	}

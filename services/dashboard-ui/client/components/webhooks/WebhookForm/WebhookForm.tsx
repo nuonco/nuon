@@ -6,9 +6,8 @@ import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
 import { FormRadioGroup } from '@/components/common/form/FormRadioGroup'
 import { Label } from '@/components/common/form/Label'
-import { allEvents } from '@/components/interests'
+import { recommendedPreset } from '@/components/interests'
 import { FormInterestsPicker } from '@/components/interests/FormInterestsPicker'
-import { FormMatchPicker } from '@/components/match/FormMatchPicker'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError, TWebhook } from '@/types'
 import {
@@ -51,7 +50,7 @@ export const WebhookFormModal = ({
       secretMode: 'keep',
       webhookSecret: '',
       match: webhook?.match,
-      interests: webhook?.interests ?? allEvents(),
+      interests: webhook?.interests ?? recommendedPreset().build(),
     } as WebhookFormValues,
     validators: {
       onMount: schema,
@@ -219,23 +218,22 @@ export const WebhookFormModal = ({
         )}
 
         <div className="flex flex-col gap-2">
-          <Label>Scope</Label>
+          <Label>Subscription</Label>
           <Text variant="subtext" theme="neutral">
-            Filter which resources fire deliveries to this webhook.
-          </Text>
-          <form.Field name="match">
-            {(field) => <FormMatchPicker field={field} disabled={isPending} />}
-          </form.Field>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label>Events</Label>
-          <Text variant="subtext" theme="neutral">
-            Pick which events fire deliveries to this webhook.
+            Choose a preset to filter which events and which resources fire
+            deliveries to this webhook.
           </Text>
           <form.Field name="interests">
             {(field) => (
-              <FormInterestsPicker field={field} disabled={isPending} />
+              <form.Field name="match">
+                {(matchField) => (
+                  <FormInterestsPicker
+                    field={field}
+                    matchField={matchField}
+                    disabled={isPending}
+                  />
+                )}
+              </form.Field>
             )}
           </form.Field>
         </div>

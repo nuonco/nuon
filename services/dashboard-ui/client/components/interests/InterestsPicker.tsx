@@ -3,14 +3,27 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { cn } from '@/utils/classnames'
+import { describeMatch } from '@/components/match/types'
+import type { SubscriptionMatch } from '@/components/match/types'
 import { RESOURCE_CATEGORIES, isCategoryOn } from './categories'
-import { InterestsModal } from './InterestsModal'
+import { InterestsModal, type PresetModalOutput } from './InterestsModal'
+import { PRESETS, matchPreset } from './presets'
 import { ALL_RESOURCES, type Interests } from './types'
 
 type Summary = { text: string; tone: 'neutral' | 'warn' }
 
-const buildSummary = (value: Interests): Summary => {
-  if (value.all_events) return { text: 'All events', tone: 'neutral' }
+const buildSummary = (
+  value: Interests,
+  match: SubscriptionMatch | undefined
+): Summary => {
+  const presetId = matchPreset(value)
+  if (presetId !== 'custom') {
+    const preset = PRESETS.find((p) => p.id === presetId)
+    if (preset) {
+      const scopeText = match ? ` \u2014 ${describeMatch(match)}` : ''
+      return { text: `${preset.label}${scopeText}`, tone: 'neutral' }
+    }
+  }
 
   const resources = value.resources ?? {}
   let count = 0
@@ -23,29 +36,35 @@ const buildSummary = (value: Interests): Summary => {
   }
 
   if (count === 0) return { text: 'No events selected', tone: 'warn' }
+  const scopeText = match ? ` \u2014 ${describeMatch(match)}` : ''
   return {
-    text: `${count} event${count === 1 ? '' : 's'} selected`,
+    text: `${count} event${count === 1 ? '' : 's'} selected${scopeText}`,
     tone: 'neutral',
   }
 }
 
-// Compact summary + button. Opens InterestsModal in a stacked modal layer so
-// the parent form (e.g. CreateWebhookModal) stays mounted underneath. The
-// modal owns the draft and only commits back through onChange on Save.
 export const InterestsPicker = ({
   value,
+  matchValue,
   onChange,
   disabled,
 }: {
   value: Interests
-  onChange: (next: Interests) => void
+  matchValue?: SubscriptionMatch
+  onChange: (output: PresetModalOutput) => void
   disabled?: boolean
 }) => {
   const { addModal } = useSurfaces()
-  const summary = buildSummary(value)
+  const summary = buildSummary(value, matchValue)
 
   const openModal = () => {
-    addModal(<InterestsModal value={value} onSave={onChange} />)
+    addModal(
+      <InterestsModal
+        value={value}
+        matchValue={matchValue}
+        onSave={onChange}
+      />
+    )
   }
 
   return (

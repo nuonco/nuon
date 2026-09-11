@@ -12,7 +12,6 @@ export const defaultInterests = (): Interests => ({
       outcome: 'completion',
       approval_requests: true,
       approval_responses: true,
-      install_degraded: true,
     },
     stacks: { outcome: 'completion' },
     components: {
@@ -20,7 +19,6 @@ export const defaultInterests = (): Interests => ({
       approval_requests: true,
       approval_responses: true,
       drift_detected: true,
-      component_health: true,
     },
     sandboxes: { outcome: 'completion', approval_requests: true, approval_responses: true, drift_detected: true },
     install_configurations: { outcome: 'completion', approval_requests: true, approval_responses: true },

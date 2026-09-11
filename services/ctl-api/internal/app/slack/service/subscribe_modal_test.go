@@ -266,28 +266,28 @@ func TestBuildSubscribeModalView(t *testing.T) {
 		}
 	})
 
-	t.Run("health categories are gated per resource and seeded from Default()", func(t *testing.T) {
+	t.Run("health categories are not shown for any resource", func(t *testing.T) {
 		view, err := buildSubscribeModalView(state, links, subscribeModalRenderState{Notif: notifOptionSpecific}, nil)
 		if err != nil {
 			t.Fatalf("build: %v", err)
 		}
 
 		components := findBlockByID(t, view, subscribeResourceCategoriesBlockID(interests.ResourceComponents))
-		mustContainValue(t, checkboxOptionValues(t, components), categoryOptionComponentHealth)
-		mustContainValue(t, checkboxInitialValues(t, components), categoryOptionComponentHealth)
+		mustNotContainValue(t, checkboxOptionValues(t, components), categoryOptionComponentHealth)
 		mustNotContainValue(t, checkboxOptionValues(t, components), categoryOptionInstallDegraded)
+		mustNotContainValue(t, checkboxInitialValues(t, components), categoryOptionComponentHealth)
 
 		installs := findBlockByID(t, view, subscribeResourceCategoriesBlockID(interests.ResourceInstalls))
-		mustContainValue(t, checkboxOptionValues(t, installs), categoryOptionInstallDegraded)
-		mustContainValue(t, checkboxInitialValues(t, installs), categoryOptionInstallDegraded)
+		mustNotContainValue(t, checkboxOptionValues(t, installs), categoryOptionInstallDegraded)
 		mustNotContainValue(t, checkboxOptionValues(t, installs), categoryOptionComponentHealth)
+		mustNotContainValue(t, checkboxInitialValues(t, installs), categoryOptionInstallDegraded)
 
 		sandboxes := findBlockByID(t, view, subscribeResourceCategoriesBlockID(interests.ResourceSandboxes))
 		mustNotContainValue(t, checkboxOptionValues(t, sandboxes), categoryOptionComponentHealth)
 		mustNotContainValue(t, checkboxOptionValues(t, sandboxes), categoryOptionInstallDegraded)
 	})
 
-	t.Run("health categories stay ticked when reopening a stored subscription", func(t *testing.T) {
+	t.Run("health flags on stored subscriptions are not surfaced when reopening", func(t *testing.T) {
 		render := subscribeModalRenderState{
 			Notif: notifOptionSpecific,
 			Resources: renderResourcesFromInterests(interests.Interests{
@@ -302,11 +302,11 @@ func TestBuildSubscribeModalView(t *testing.T) {
 			t.Fatalf("build: %v", err)
 		}
 		components := findBlockByID(t, view, subscribeResourceCategoriesBlockID(interests.ResourceComponents))
-		mustContainValue(t, checkboxInitialValues(t, components), categoryOptionComponentHealth)
+		mustNotContainValue(t, checkboxInitialValues(t, components), categoryOptionComponentHealth)
 		mustNotContainValue(t, checkboxInitialValues(t, components), categoryOptionLifecycle)
 
 		installs := findBlockByID(t, view, subscribeResourceCategoriesBlockID(interests.ResourceInstalls))
-		mustContainValue(t, checkboxInitialValues(t, installs), categoryOptionInstallDegraded)
+		mustNotContainValue(t, checkboxInitialValues(t, installs), categoryOptionInstallDegraded)
 	})
 
 	t.Run("empty links rejected", func(t *testing.T) {
@@ -342,25 +342,21 @@ func TestReadResourceRenderStateFromValues_HealthCategories(t *testing.T) {
 	got := readSubscribeRenderStateFromPayload(p)
 
 	comp := got.Resources[interests.ResourceComponents]
-	if !comp.Enabled || !comp.ComponentHealth {
-		t.Fatalf("components: expected enabled + component health, got %+v", comp)
-	}
-	if comp.Outcome != outcomeOptionNone {
-		t.Fatalf("components: health-only tick must mute lifecycle, got %q", comp.Outcome)
+	if !comp.Enabled {
+		t.Fatalf("components: expected enabled, got %+v", comp)
 	}
 
 	inst := got.Resources[interests.ResourceInstalls]
-	if !inst.Enabled || !inst.InstallDegraded {
-		t.Fatalf("installs: expected enabled + install degraded, got %+v", inst)
+	if !inst.Enabled {
+		t.Fatalf("installs: expected enabled, got %+v", inst)
 	}
 
-	// The persisted config must carry the ticks through submission.
 	in := buildSpecificEventsInterests(got.Resources)
-	if !in.Resources[interests.ResourceComponents].ComponentHealth {
-		t.Fatal("components: component_health must persist")
+	if in.Resources[interests.ResourceComponents].ComponentHealth {
+		t.Fatal("components: component_health must not persist (retired)")
 	}
-	if !in.Resources[interests.ResourceInstalls].InstallDegraded {
-		t.Fatal("installs: install_degraded must persist")
+	if in.Resources[interests.ResourceInstalls].InstallDegraded {
+		t.Fatal("installs: install_degraded must not persist (retired)")
 	}
 }
 
@@ -709,38 +705,38 @@ func TestRoundTripBuildSpecificEventsInterests(t *testing.T) {
 		}
 	})
 
-	t.Run("health flags only persist for resources that support them", func(t *testing.T) {
+	t.Run("health flags never persist for any resource", func(t *testing.T) {
 		i := buildSpecificEventsInterests(map[interests.ResourceKind]subscribeResourceCfg{
 			interests.ResourceComponents: {Enabled: true, ComponentHealth: true, InstallDegraded: true, Outcome: outcomeOptionAll},
 			interests.ResourceInstalls:   {Enabled: true, ComponentHealth: true, InstallDegraded: true, Outcome: outcomeOptionAll},
 			interests.ResourceSandboxes:  {Enabled: true, ComponentHealth: true, InstallDegraded: true, Outcome: outcomeOptionAll},
 		})
-		if !i.Resources[interests.ResourceComponents].ComponentHealth {
-			t.Fatal("components should keep component_health=true")
+		if i.Resources[interests.ResourceComponents].ComponentHealth {
+			t.Fatal("components: component_health must not persist (retired)")
 		}
 		if i.Resources[interests.ResourceComponents].InstallDegraded {
-			t.Fatal("components do not support install_degraded; flag must be dropped")
+			t.Fatal("components: install_degraded must not persist (retired)")
 		}
-		if !i.Resources[interests.ResourceInstalls].InstallDegraded {
-			t.Fatal("installs should keep install_degraded=true")
+		if i.Resources[interests.ResourceInstalls].InstallDegraded {
+			t.Fatal("installs: install_degraded must not persist (retired)")
 		}
 		if i.Resources[interests.ResourceInstalls].ComponentHealth {
-			t.Fatal("installs do not support component_health; flag must be dropped")
+			t.Fatal("installs: component_health must not persist (retired)")
 		}
 		cfg := i.Resources[interests.ResourceSandboxes]
 		if cfg.ComponentHealth || cfg.InstallDegraded {
-			t.Fatalf("sandboxes support neither health flag, got %+v", cfg)
+			t.Fatalf("sandboxes: neither health flag may persist, got %+v", cfg)
 		}
 	})
 
-	t.Run("health flags survive the interests round trip", func(t *testing.T) {
+	t.Run("health flags do not survive the interests round trip", func(t *testing.T) {
 		in := interests.Default()
 		round := buildSpecificEventsInterests(renderResourcesFromInterests(in))
-		if !round.Resources[interests.ResourceComponents].ComponentHealth {
-			t.Fatal("components: component_health lost in round trip")
+		if round.Resources[interests.ResourceComponents].ComponentHealth {
+			t.Fatal("components: component_health must not survive round trip (retired)")
 		}
-		if !round.Resources[interests.ResourceInstalls].InstallDegraded {
-			t.Fatal("installs: install_degraded lost in round trip")
+		if round.Resources[interests.ResourceInstalls].InstallDegraded {
+			t.Fatal("installs: install_degraded must not survive round trip (retired)")
 		}
 	})
 }
