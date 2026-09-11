@@ -12201,6 +12201,8 @@ export interface operations {
         page?: number;
         /** @description exclude preview (plan only) runs when set to false */
         planonly?: boolean;
+        /** @description return only preview runs when true, only rollout runs when false */
+        preview?: boolean;
         /** @description case-insensitive substring match against run title and id */
         q?: string;
         /** @description filter by workflow type (comma-separated for several types) */
