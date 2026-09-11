@@ -78,7 +78,11 @@ func (a *Activities) GetBuildGitSource(ctx context.Context, req GetBuildGitSourc
 
 		return a.vcsHelpers.GetGitSourceAtCommit(ctx, build.ComponentConfigConnection.ConnectedGithubVCSConfig, *gitRef)
 	case app.VCSConnectionTypePublicRepo:
-		return a.vcsHelpers.GetPubliGitSource(ctx, build.ComponentConfigConnection.PublicGitVCSConfig)
+		cfg := build.ComponentConfigConnection.PublicGitVCSConfig
+		if build.GitRef == nil {
+			return a.vcsHelpers.GetPubliGitSource(ctx, cfg)
+		}
+		return a.vcsHelpers.GetPublicGitSourceAtCommit(ctx, cfg, *build.GitRef)
 	default:
 	}
 
