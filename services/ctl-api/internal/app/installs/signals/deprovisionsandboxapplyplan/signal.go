@@ -186,7 +186,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}()
 
-	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installRun.LogStream)
+	logStream, err := activities.AwaitGetLogStreamByLogStreamID(ctx, installRun.LogStream.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to hydrate log stream")
+	}
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l := workflow.GetLogger(ctx)
 
 	defer func() {
