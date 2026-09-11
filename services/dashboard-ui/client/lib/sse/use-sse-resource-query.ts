@@ -1,8 +1,8 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
-import { useResourceSSE } from '@/hooks/use-resource-sse'
-import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
+import { useResourceSSE } from '@/lib/sse/use-resource-sse'
 import { createSSEQueryListener, type TSSEListenerMap } from '@/lib/sse-listeners'
+import type { TAPIError } from '@/types'
 
 const FALLBACK_POLL_MS = 4000
 const FINISHED_POLL_MS = 30_000
@@ -27,6 +27,7 @@ interface IUseSSEResourceQuery<TData> {
   isFinished?: (data: TData | undefined) => boolean
   fallbackPollMs?: number
   finishedPollMs?: number
+  onError?: (message: string) => void
 }
 
 export function useSSEResourceQuery<TData>({
@@ -42,6 +43,7 @@ export function useSSEResourceQuery<TData>({
   isFinished,
   fallbackPollMs = FALLBACK_POLL_MS,
   finishedPollMs = FINISHED_POLL_MS,
+  onError,
 }: IUseSSEResourceQuery<TData>) {
   const queryClient = useQueryClient()
 
@@ -59,6 +61,7 @@ export function useSSEResourceQuery<TData>({
     url: sseUrl,
     enabled: sseEnabled ?? shouldPoll,
     listeners,
+    onError,
   })
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -73,7 +76,14 @@ export function useSSEResourceQuery<TData>({
     enabled,
   })
 
-  useRefreshErrorToast(error, data)
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
+
+  useEffect(() => {
+    if (error && data) {
+      onErrorRef.current?.((error as TAPIError)?.error ?? 'Connection issue')
+    }
+  }, [error])
 
   return { data, isLoading, error, refetch, sseConnected, disconnect }
 }
