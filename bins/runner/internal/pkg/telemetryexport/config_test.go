@@ -341,6 +341,9 @@ func TestVendorCollectorConfigRejectsInvalidEndpoint(t *testing.T) {
 }
 
 func TestCollectorConfigsValidate(t *testing.T) {
+	if os.Getenv("INTEGRATION") != "true" {
+		t.Skip("INTEGRATION is not set, skipping")
+	}
 	binary := os.Getenv("NUON_TEST_OTELCOL")
 	if binary == "" {
 		t.Skip("set NUON_TEST_OTELCOL to the built runner Collector binary")
