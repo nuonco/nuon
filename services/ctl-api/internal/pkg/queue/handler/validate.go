@@ -56,6 +56,14 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 		return nil, errors.New("signal was empty can not proceed")
 	}
 
+	var err error
+	ctx, err = h.signalContext(ctx, true)
+	if err != nil {
+		finStatus, finDesc = app.StatusError, err.Error()
+		return nil, errors.Wrap(err, "unable to restore signal context")
+	}
+	l, _ = log.WorkflowLogger(ctx)
+
 	// mark the signal as in-progress in the DB
 	if !h.skipValidateStamps() {
 		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
@@ -86,7 +94,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	}
 
 	start := workflow.Now(ctx)
-	err := h.runSignalValidate(ctx)
+	err = h.runSignalValidate(ctx)
 	dur := workflow.Now(ctx).Sub(start)
 
 	// run after-phase hooks (best-effort)
