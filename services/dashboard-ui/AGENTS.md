@@ -108,9 +108,11 @@ mutation success. Lists: `placeholderData: keepPreviousData` when revisiting.
 
 ## SSE / real-time (client)
 
-SSE writes into the TanStack Query cache via `setQueryData`. Use shared hooks — never hand-wire `EventSource` in a
-provider: `useSSEResourceQuery`, `useSSETimelineQuery`, `createSSEQueryListener`. Use `isTerminalStatusV2` for
-terminals. New SSE views need **both** a Go `runSSEStream` handler and a client hook with matching event names.
+SSE writes into the TanStack Query cache via `setQueryData`. Shared hooks live under `client/lib/sse/`
+(`useSSEResourceQuery`, `useSSETimelineQuery`) plus `createSSEQueryListener` — never hand-wire `EventSource` in a
+provider. Use `isTerminalStatusV2` for terminals. Hooks do not toast themselves; pass `onError` (dashboard uses
+`useRefreshErrorToast()`). New SSE views need **both** a Go `runSSEStream` handler and a client hook with matching
+event names.
 
 ## Auth and config
 

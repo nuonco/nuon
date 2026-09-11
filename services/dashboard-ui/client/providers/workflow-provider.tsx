@@ -1,7 +1,8 @@
 import { createContext, useState, type ReactNode } from 'react'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { useOrg } from '@/hooks/use-org'
-import { useSSEResourceQuery } from '@/hooks/use-sse-resource-query'
+import { useSSEResourceQuery } from '@/lib/sse/use-sse-resource-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getWorkflow } from '@/lib'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
@@ -39,6 +40,8 @@ export const WorkflowProvider = ({
   const { org } = useOrg()
   const [sseEnabled, setSseEnabled] = useState(shouldPoll)
 
+  const onRefreshError = useRefreshErrorToast()
+
   const { data: workflow, isLoading, error, disconnect } = useSSEResourceQuery<TWorkflow>({
     sseUrl: org?.id && workflowId
       ? `/api/orgs/${org.id}/workflows/${workflowId}/sse`
@@ -49,6 +52,7 @@ export const WorkflowProvider = ({
     shouldPoll,
     sseEnabled,
     eventName: 'workflow',
+    onError: onRefreshError,
     isFinished: (data) => !!data?.finished,
   })
 
