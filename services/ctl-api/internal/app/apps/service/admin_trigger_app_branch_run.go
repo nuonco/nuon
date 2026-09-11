@@ -45,7 +45,7 @@ func (s *service) AdminTriggerAppBranchRun(ctx *gin.Context) {
 	// Load branch with queue
 	var branch app.AppBranch
 	res := s.db.WithContext(ctx).
-		Preload("Queue", app.DefaultQueueScope).
+		Preload("Queue").
 		First(&branch, "id = ?", appBranchID)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to find app branch: %w", res.Error))
