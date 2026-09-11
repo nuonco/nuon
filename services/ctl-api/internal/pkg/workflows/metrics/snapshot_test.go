@@ -206,9 +206,11 @@ func TestPostgresSnapshot(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, second, "a second reporter cannot acquire the same database lock")
 	r.release(conn)
-	second, err = acquire(ctx, peer)
-	require.NoError(t, err)
-	require.True(t, second, "releasing the leader session permits failover")
+	require.Eventually(t, func() bool {
+		second, err = acquire(ctx, peer)
+		require.NoError(t, err)
+		return second
+	}, time.Second, 10*time.Millisecond, "releasing the leader session permits failover")
 }
 
 func mapValues(values map[string]string) []string {

@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // FlowStatusNotifier is an optional hook invoked after a flow status update
@@ -20,6 +21,11 @@ type FlowStatusNotifier interface {
 	FlowStatusUpdated(ctx context.Context, req UpdateStatusRequest)
 }
 
+type WorkflowMetrics interface {
+	SignalStatusUpdated(context.Context, app.QueueSignal, app.Status)
+	StepStatusUpdated(context.Context, app.WorkflowStep, app.CompositeStatus)
+}
+
 type Params struct {
 	fx.In
 
@@ -27,6 +33,7 @@ type Params struct {
 	MW       metrics.Writer
 	Notifier FlowStatusNotifier `optional:"true"`
 	L        *zap.Logger        `optional:"true"`
+	Counters WorkflowMetrics    `optional:"true"`
 }
 
 type Activities struct {
@@ -34,6 +41,7 @@ type Activities struct {
 	mw       metrics.Writer
 	notifier FlowStatusNotifier
 	l        *zap.Logger
+	counters WorkflowMetrics
 }
 
 func New(params Params) *Activities {
@@ -46,5 +54,6 @@ func New(params Params) *Activities {
 		mw:       params.MW,
 		l:        l,
 		notifier: params.Notifier,
+		counters: params.Counters,
 	}
 }

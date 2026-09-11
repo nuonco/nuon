@@ -1,15 +1,22 @@
 package activities
 
 import (
+	"context"
+
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 )
+
+type WorkflowMetrics interface {
+	FlowStarted(context.Context, app.Workflow)
+}
 
 type Params struct {
 	fx.In
@@ -19,8 +26,9 @@ type Params struct {
 	AppsHelpers *appshelpers.Helpers
 	TClient     temporalclient.Client
 	Cfg         *internal.Config
-	Audit       *audit.Emitter `optional:"true"`
-	L           *zap.Logger    `optional:"true"`
+	Audit       *audit.Emitter  `optional:"true"`
+	L           *zap.Logger     `optional:"true"`
+	Metrics     WorkflowMetrics `optional:"true"`
 }
 
 type Activities struct {
@@ -31,6 +39,7 @@ type Activities struct {
 	cfg         *internal.Config
 	audit       *audit.Emitter
 	l           *zap.Logger
+	metrics     WorkflowMetrics
 }
 
 func New(params Params) *Activities {
@@ -46,5 +55,6 @@ func New(params Params) *Activities {
 		cfg:         params.Cfg,
 		audit:       params.Audit,
 		l:           l,
+		metrics:     params.Metrics,
 	}
 }
