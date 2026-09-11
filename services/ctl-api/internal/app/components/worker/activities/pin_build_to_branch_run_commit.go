@@ -46,14 +46,13 @@ func (a *Activities) pinBuildToBranchRunCommit(ctx context.Context, buildID, app
 		return fmt.Errorf("unable to get component build: %w", res.Error)
 	}
 
-	if build.GitRef != nil || !buildTracksBranchSource(&run, &build) {
+	if !buildTracksBranchSource(&run, &build) || !buildRefCanBePinned(&build) {
 		return nil
 	}
 
 	if res := a.db.WithContext(ctx).
 		Model(&app.ComponentBuild{}).
 		Where(app.ComponentBuild{ID: buildID}).
-		Where("git_ref IS NULL").
 		Updates(map[string]any{
 			"git_ref":                  run.VCSConnectionCommit.SHA,
 			"vcs_connection_commit_id": run.VCSConnectionCommit.ID,
@@ -69,15 +68,46 @@ func (a *Activities) pinBuildToBranchRunCommit(ctx context.Context, buildID, app
 // commit the right source for it. A component pointed at another repo or branch
 // keeps resolving its own tip.
 func buildTracksBranchSource(run *app.AppBranchRun, build *app.ComponentBuild) bool {
-	ccc := build.ComponentConfigConnection
+	connectedCfg, publicCfg := buildVCSConfigs(build)
 
-	if branchCfg, cmpCfg := run.AppBranchConfig.ConnectedGithubVCSConfig, ccc.ConnectedGithubVCSConfig; branchCfg != nil && cmpCfg != nil {
+	if branchCfg, cmpCfg := run.AppBranchConfig.ConnectedGithubVCSConfig, connectedCfg; branchCfg != nil && cmpCfg != nil {
 		return strings.EqualFold(branchCfg.Repo, cmpCfg.Repo) && branchCfg.Branch == cmpCfg.Branch
 	}
 
-	if branchCfg, cmpCfg := run.AppBranchConfig.PublicGitVCSConfig, ccc.PublicGitVCSConfig; branchCfg != nil && cmpCfg != nil {
+	if branchCfg, cmpCfg := run.AppBranchConfig.PublicGitVCSConfig, publicCfg; branchCfg != nil && cmpCfg != nil {
 		return strings.EqualFold(branchCfg.Repo, cmpCfg.Repo) && branchCfg.Branch == cmpCfg.Branch
 	}
 
 	return false
+}
+
+func buildRefCanBePinned(build *app.ComponentBuild) bool {
+	if build.GitRef == nil {
+		return true
+	}
+
+	_, cfg := buildVCSConfigs(build)
+	return cfg != nil && *build.GitRef == cfg.Branch
+}
+
+func buildVCSConfigs(build *app.ComponentBuild) (*app.ConnectedGithubVCSConfig, *app.PublicGitVCSConfig) {
+	ccc := build.ComponentConfigConnection
+	if ccc.ConnectedGithubVCSConfig != nil || ccc.PublicGitVCSConfig != nil {
+		return ccc.ConnectedGithubVCSConfig, ccc.PublicGitVCSConfig
+	}
+
+	switch {
+	case ccc.TerraformModuleComponentConfig != nil:
+		return ccc.TerraformModuleComponentConfig.ConnectedGithubVCSConfig, ccc.TerraformModuleComponentConfig.PublicGitVCSConfig
+	case ccc.HelmComponentConfig != nil:
+		return ccc.HelmComponentConfig.ConnectedGithubVCSConfig, ccc.HelmComponentConfig.PublicGitVCSConfig
+	case ccc.DockerBuildComponentConfig != nil:
+		return ccc.DockerBuildComponentConfig.ConnectedGithubVCSConfig, ccc.DockerBuildComponentConfig.PublicGitVCSConfig
+	case ccc.KubernetesManifestComponentConfig != nil:
+		return ccc.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig, ccc.KubernetesManifestComponentConfig.PublicGitVCSConfig
+	case ccc.PulumiComponentConfig != nil:
+		return ccc.PulumiComponentConfig.ConnectedGithubVCSConfig, ccc.PulumiComponentConfig.PublicGitVCSConfig
+	default:
+		return nil, nil
+	}
 }
