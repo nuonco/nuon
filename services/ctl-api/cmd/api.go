@@ -12,7 +12,7 @@ import (
 func (c *cli) registerAPI() error {
 	runApiCmd := &cobra.Command{
 		Use:   "api",
-		Short: "run all APIs (public, internal, runner, auth, admin-dashboard, slack, mcp)",
+		Short: "run all APIs (public, internal, runner, auth, admin-dashboard, slack, mcp, nuonctl-mcp)",
 		Run:   c.runAPI,
 	}
 	rootCmd.AddCommand(runApiCmd)
@@ -26,12 +26,14 @@ func (c *cli) runAPI(cmd *cobra.Command, _ []string) {
 	profilerOptions := profiles.LoadOptionsFromEnv()
 	providers = append(providers, profiles.Module(profilerOptions))
 
-	// Add API-specific modules - all APIs (includes auth service) + MCP
+	// Add API-specific modules - all APIs (includes auth service) + both MCP listeners
 	providers = append(providers,
 		fxmodules.MiddlewaresModule,
 		fxmodules.AllServicesModule,
 		fxmodules.AllAPIsModule,
 		fxmodules.MCPAPIModule,
+		fxmodules.NuonctlMCPServicesModule,
+		fxmodules.NuonctlMCPAPIModule,
 	)
 
 	fx.New(providers...).Run()

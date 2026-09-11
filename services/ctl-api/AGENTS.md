@@ -17,6 +17,7 @@ Each surface is a separate HTTP listener (defaults in `internal/config.go`). Run
 | Admin Dashboard | 8087 | `RegisterAdminDashboardRoutes` | Admin proxy + session cookie | React SPA + JSON BFF |
 | MCP | 8088 | `RegisterMCPTools` on domain services | Bearer + org RBAC | Agent MCP (Streamable HTTP) |
 | Slack API | 8089 | `RegisterSlackRoutes` | Slack signing / OAuth JWT | Slash commands, Events API |
+| nuonctl MCP | 8091 | `RegisterMCPTools` on `nuonctl_mcp_services` | Bearer + employee | Employee-only nuonctl MCP |
 
 Health: `/livez`, `/readyz` on each Gin server. Despite the method name, most authenticated customer routes live on the
 public server via `RegisterPublicRoutes` at `/v1/*`. `RegisterAuthRoutes` is for the auth listener, not org-scoped API
@@ -158,7 +159,7 @@ Never use `fmt.Println`. See [conventions/logging.md](/conventions/logging.md).
 
 ## MCP Server
 
-Stateless Streamable HTTP MCP at port 8088 (`internal/app/mcp/server/`).
+Stateless Streamable HTTP MCP at port 8088 (`internal/app/mcp/server/`). Employee-only nuonctl MCP is a second listener in the same `api` process on port 8091 (`NewNuonctl`). Standalone: `go run . api-mcp` and `go run . nuonctl-mcp-api`.
 
 - Auth: Bearer, `require.Read` / `require.Write`, org via `X-Nuon-Org-ID` / `select_org`
 - Register with `api.MCPReadTool` / `api.MCPWriteTool`
