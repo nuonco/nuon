@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/nuonco/nuon/pkg/metrics"
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -25,6 +24,26 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
+
+type healthMetricsWriter struct {
+	metrics.Writer
+	t *testing.T
+}
+
+func (w healthMetricsWriter) Incr(name string, _ []string) {
+	require.Equal(w.t, "healthcheck.check", name)
+}
+
+type healthTemporalClient struct {
+	temporalclient.Client
+	checkHealth func(context.Context, *client.CheckHealthRequest) (*client.CheckHealthResponse, error)
+	calls       int
+}
+
+func (c *healthTemporalClient) CheckHealth(ctx context.Context, req *client.CheckHealthRequest) (*client.CheckHealthResponse, error) {
+	c.calls++
+	return c.checkHealth(ctx, req)
+}
 
 type healthDB struct {
 	t                          *testing.T
@@ -110,18 +129,15 @@ func TestReadyzDependencyMetrics(t *testing.T) {
 				t.Cleanup(func() { require.NoError(t, db.Close()) })
 				return &gorm.DB{Config: &gorm.Config{ConnPool: db}}
 			}
-			ctrl := gomock.NewController(t)
-			tc := temporalclient.NewMockClient(ctrl)
-			if tt.reasons[temporalDependency] != "skipped" {
-				tc.EXPECT().CheckHealth(gomock.Any(), gomock.Any()).DoAndReturn(func(context.Context, *client.CheckHealthRequest) (*client.CheckHealthResponse, error) {
+			tc := &healthTemporalClient{
+				checkHealth: func(context.Context, *client.CheckHealthRequest) (*client.CheckHealthResponse, error) {
 					if tt.panic {
 						panic("test health panic")
 					}
 					return &client.CheckHealthResponse{}, tt.temporal
-				})
+				},
 			}
-			mw := metrics.NewMockWriter(ctrl)
-			mw.EXPECT().Incr("healthcheck.check", gomock.Any()).AnyTimes()
+			mw := healthMetricsWriter{t: t}
 			s, err := New(Params{DB: database(pg, tt.pgConnection), CHDB: database(ch, tt.chConnection), TClient: tc, MW: mw, MeterProvider: provider})
 			require.NoError(t, err)
 			router := tests.NewTestRouter(tests.RouterOptions{L: zap.NewNop(), DB: s.db})
@@ -141,6 +157,11 @@ func TestReadyzDependencyMetrics(t *testing.T) {
 				require.Equal(t, tt.status, response.Code)
 			}
 			finished := time.Now()
+			if tt.reasons[temporalDependency] == "skipped" {
+				require.Zero(t, tc.calls)
+			} else {
+				require.Equal(t, 1, tc.calls)
+			}
 			if tt.status != 500 {
 				var body struct {
 					Status   string   `json:"status"`
@@ -233,11 +254,12 @@ func TestReadyzDependencyRecovery(t *testing.T) {
 		t.Cleanup(func() { require.NoError(t, db.Close()) })
 		return &gorm.DB{Config: &gorm.Config{ConnPool: db}}
 	}
-	ctrl := gomock.NewController(t)
-	tc := temporalclient.NewMockClient(ctrl)
-	tc.EXPECT().CheckHealth(gomock.Any(), gomock.Any()).Return(&client.CheckHealthResponse{}, nil).Times(3)
-	mw := metrics.NewMockWriter(ctrl)
-	mw.EXPECT().Incr("healthcheck.check", gomock.Any()).AnyTimes()
+	tc := &healthTemporalClient{
+		checkHealth: func(context.Context, *client.CheckHealthRequest) (*client.CheckHealthResponse, error) {
+			return &client.CheckHealthResponse{}, nil
+		},
+	}
+	mw := healthMetricsWriter{t: t}
 	s, err := New(Params{DB: database(pg), CHDB: database(ch), TClient: tc, MW: mw, MeterProvider: provider})
 	require.NoError(t, err)
 	router := tests.NewTestRouter(tests.RouterOptions{L: zap.NewNop(), DB: s.db})
@@ -300,5 +322,6 @@ func TestReadyzDependencyRecovery(t *testing.T) {
 		"clickhouse/success": 2, "clickhouse/failure": 1, "clickhouse/skipped": 1,
 		"temporal/success": 3, "temporal/skipped": 1,
 	}, counts)
+	require.Equal(t, 3, tc.calls, "collecting metrics must not run another Temporal check")
 	require.Equal(t, 3, ch.queries, "collecting metrics must not run another readiness check")
 }
