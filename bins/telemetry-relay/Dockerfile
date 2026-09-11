@@ -23,7 +23,7 @@ COPY --from=build /bin/nuon-telemetry-relay /bin/nuon-telemetry-relay
 COPY config.yaml /etc/nuon-telemetry-relay/config.yaml
 
 USER relay
-EXPOSE 4318 13133
+EXPOSE 4318 5318 13133
 
 ENTRYPOINT ["/bin/nuon-telemetry-relay"]
 CMD ["--config", "/etc/nuon-telemetry-relay/config.yaml"]
