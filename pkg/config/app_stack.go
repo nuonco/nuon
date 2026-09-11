@@ -128,16 +128,16 @@ const (
 )
 
 type StackConfig struct {
-	Type        string `mapstructure:"type" toml:"type"`
-	Name        string `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
-	Description string `mapstructure:"description" toml:"description" jsonschema:"required" features:"template"`
+	Type        string `json:"Type" mapstructure:"type" toml:"type"`
+	Name        string `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
+	Description string `json:"Description" mapstructure:"description" toml:"description" jsonschema:"required" features:"template"`
 
-	VPCNestedTemplateURL    string `mapstructure:"vpc_nested_template_url" toml:"vpc_nested_template_url" features features:"template"`
-	RunnerNestedTemplateURL string `mapstructure:"runner_nested_template_url" toml:"runner_nested_template_url" features features:"template"`
+	VPCNestedTemplateURL    string `json:"VPCNestedTemplateURL" mapstructure:"vpc_nested_template_url" toml:"vpc_nested_template_url" features features:"template"`
+	RunnerNestedTemplateURL string `json:"RunnerNestedTemplateURL" mapstructure:"runner_nested_template_url" toml:"runner_nested_template_url" features features:"template"`
 
-	DeploymentScope string `mapstructure:"deployment_scope" toml:"deployment_scope,omitempty"`
+	DeploymentScope string `json:"DeploymentScope" mapstructure:"deployment_scope" toml:"deployment_scope,omitempty"`
 
-	CustomNestedStacks []CustomNestedStack `mapstructure:"custom_nested_stacks" toml:"custom_nested_stacks"`
+	CustomNestedStacks []CustomNestedStack `json:"CustomNestedStacks" mapstructure:"custom_nested_stacks" toml:"custom_nested_stacks"`
 }
 
 func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

@@ -5,13 +5,13 @@ import (
 )
 
 type RunbookInput struct {
-	Name        string `mapstructure:"name" toml:"name"`
-	DisplayName string `mapstructure:"display_name" toml:"display_name" jsonschema:"required"`
-	Description string `mapstructure:"description" toml:"description" jsonschema:"required"`
-	Default     any    `mapstructure:"default,omitempty" toml:"default,omitempty"`
-	Required    bool   `mapstructure:"required,omitempty" toml:"required,omitempty"`
-	Sensitive   bool   `mapstructure:"sensitive" toml:"sensitive"`
-	Type        string `mapstructure:"type" toml:"type"`
+	Name        string `json:"Name" mapstructure:"name" toml:"name"`
+	DisplayName string `json:"DisplayName" mapstructure:"display_name" toml:"display_name" jsonschema:"required"`
+	Description string `json:"Description" mapstructure:"description" toml:"description" jsonschema:"required"`
+	Default     any    `json:"Default" mapstructure:"default,omitempty" toml:"default,omitempty"`
+	Required    bool   `json:"Required" mapstructure:"required,omitempty" toml:"required,omitempty"`
+	Sensitive   bool   `json:"Sensitive" mapstructure:"sensitive" toml:"sensitive"`
+	Type        string `json:"Type" mapstructure:"type" toml:"type"`
 }
 
 func (r RunbookInput) JSONSchemaExtend(schema *jsonschema.Schema) {

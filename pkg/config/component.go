@@ -56,38 +56,38 @@ func (c ComponentType) APIType() models.AppComponentType {
 
 // Component is a flattened configuration type that allows us to define components using a `type: type` field.
 type Component struct {
-	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
+	Source string `json:"Source" mapstructure:"source,omitempty" toml:"source,omitempty"`
 
-	Type ComponentType `mapstructure:"type,omitempty" toml:"type,omitempty" jsonschema:"required"`
-	Name string        `mapstructure:"name" toml:"name" jsonschema:"required"`
+	Type ComponentType `json:"Type" mapstructure:"type,omitempty" toml:"type,omitempty" jsonschema:"required"`
+	Name string        `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
 
 	// SourceFile is the file path this component was parsed from (set during parsing, not serialized)
 	SourceFile     string                `mapstructure:"-" toml:"-" json:"-" jsonschema:"-" nuonhash:"-"`
-	VarName        string                `mapstructure:"var_name,omitempty" toml:"var_name,omitempty"`
-	Labels         map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
-	Dependencies   []string              `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
-	OperationRoles []EntityOperationRole `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
-	Toggleable     *bool                 `mapstructure:"toggleable,omitempty" toml:"toggleable,omitempty"`
-	DefaultEnabled *bool                 `mapstructure:"default_enabled,omitempty" toml:"default_enabled,omitempty"`
+	VarName        string                `json:"VarName" mapstructure:"var_name,omitempty" toml:"var_name,omitempty"`
+	Labels         map[string]string     `json:"Labels" mapstructure:"labels,omitempty" toml:"labels,omitempty"`
+	Dependencies   []string              `json:"Dependencies" mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
+	OperationRoles []EntityOperationRole `json:"OperationRoles" mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
+	Toggleable     *bool                 `json:"Toggleable" mapstructure:"toggleable,omitempty" toml:"toggleable,omitempty"`
+	DefaultEnabled *bool                 `json:"DefaultEnabled" mapstructure:"default_enabled,omitempty" toml:"default_enabled,omitempty"`
 
 	// KubernetesContext is the name of a kubernetes_context this component
 	// targets. Empty means fall back to the implicit sandbox default (when
 	// the sandbox emits cluster outputs). See pkg/config/kubernetes_context.go.
-	KubernetesContext string `mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty" nuonhash:"omitempty"`
+	KubernetesContext string `json:"KubernetesContext" mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty" nuonhash:"omitempty"`
 
 	// WARNING: properties below should be ignored by nuonhash when empty
-	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" toml:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
-	TerraformModule    *TerraformModuleComponentConfig    `mapstructure:"terraform_module,omitempty" toml:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module" nuonhash:"omitempty"`
-	DockerBuild        *DockerBuildComponentConfig        `mapstructure:"docker_build,omitempty" toml:"docker_build,omitempty" jsonschema:"oneof_required=docker_build" nuonhash:"omitempty"`
-	Job                *JobComponentConfig                `mapstructure:"job,omitempty" toml:"job,omitempty" jsonschema:"oneof_required=job" nuonhash:"omitempty"`
-	ExternalImage      *ExternalImageComponentConfig      `mapstructure:"external_image,omitempty" toml:"external_image,omitempty" jsonschema:"oneof_required=external_image" nuonhash:"omitempty"`
-	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" toml:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest" nuonhash:"omitempty"`
-	Pulumi             *PulumiComponentConfig             `mapstructure:"pulumi,omitempty" toml:"pulumi,omitempty" jsonschema:"oneof_required=pulumi" nuonhash:"omitempty"`
+	HelmChart          *HelmChartComponentConfig          `json:"HelmChart" mapstructure:"helm_chart,omitempty" toml:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
+	TerraformModule    *TerraformModuleComponentConfig    `json:"TerraformModule" mapstructure:"terraform_module,omitempty" toml:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module" nuonhash:"omitempty"`
+	DockerBuild        *DockerBuildComponentConfig        `json:"DockerBuild" mapstructure:"docker_build,omitempty" toml:"docker_build,omitempty" jsonschema:"oneof_required=docker_build" nuonhash:"omitempty"`
+	Job                *JobComponentConfig                `json:"Job" mapstructure:"job,omitempty" toml:"job,omitempty" jsonschema:"oneof_required=job" nuonhash:"omitempty"`
+	ExternalImage      *ExternalImageComponentConfig      `json:"ExternalImage" mapstructure:"external_image,omitempty" toml:"external_image,omitempty" jsonschema:"oneof_required=external_image" nuonhash:"omitempty"`
+	KubernetesManifest *KubernetesManifestComponentConfig `json:"KubernetesManifest" mapstructure:"kubernetes_manifest,omitempty" toml:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest" nuonhash:"omitempty"`
+	Pulumi             *PulumiComponentConfig             `json:"Pulumi" mapstructure:"pulumi,omitempty" toml:"pulumi,omitempty" jsonschema:"oneof_required=pulumi" nuonhash:"omitempty"`
 
 	// created during parsing
 	// WARNING: properties below should not be hashed with nuonhash
-	References []refs.Ref `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
-	Checksum   string     `mapstructure:"-" jsonschema:"-" toml:"checksum" nuonhash:"-"`
+	References []refs.Ref `json:"References" mapstructure:"-" jsonschema:"-" nuonhash:"-"`
+	Checksum   string     `json:"Checksum" mapstructure:"-" jsonschema:"-" toml:"checksum" nuonhash:"-"`
 }
 
 func (c *Component) parse(rootDir string) error {

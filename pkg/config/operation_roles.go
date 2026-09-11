@@ -59,8 +59,8 @@ var validOperations ValidOperations = []OperationType{
 
 // OperationRolesConfig defines role assignments for operations at the app level
 type OperationRolesConfig struct {
-	Type       OperationRuleConfigType `mapstructure:"type" toml:"type" jsonschema:"required"` // Should be "matrix"
-	RuleMatrix []*OperationRoleRule    `mapstructure:"rules,omitempty" toml:"rules,omitempty"`
+	Type       OperationRuleConfigType `json:"Type" mapstructure:"type" toml:"type" jsonschema:"required"` // Should be "matrix"
+	RuleMatrix []*OperationRoleRule    `json:"RuleMatrix" mapstructure:"rules,omitempty" toml:"rules,omitempty"`
 }
 
 func (c OperationRolesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -213,10 +213,10 @@ func (c *OperationRolesConfig) ValidateWithConfig(
 // OperationRoleRule maps a principal (component/sandbox/action) + operation to a role name
 type OperationRoleRule struct {
 	// Format: "nuon::component:name", "nuon::sandbox", "nuon::action:name"
-	Principal string `mapstructure:"principal" toml:"principal" jsonschema:"required"`
+	Principal string `json:"Principal" mapstructure:"principal" toml:"principal" jsonschema:"required"`
 	// "provision", "deprovision", "update", "reprovision", "trigger"
-	Operation OperationType `mapstructure:"operation" toml:"operation" jsonschema:"required"`
-	RoleName  string        `mapstructure:"role" toml:"role" jsonschema:"required"`
+	Operation OperationType `json:"Operation" mapstructure:"operation" toml:"operation" jsonschema:"required"`
+	RoleName  string        `json:"RoleName" mapstructure:"role" toml:"role" jsonschema:"required"`
 }
 
 func (r OperationRoleRule) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -303,8 +303,8 @@ func (r *OperationRoleRule) ParsePrincipal() (string, string, error) {
 // todo(sk): see if this needs to be used for actions  as well or we can use just role, using this makes easier for
 // future modifications, otoh using just role makes it a bit brittle
 type EntityOperationRole struct {
-	Operation OperationType `mapstructure:"operation" toml:"operation" jsonschema:"required"`
-	RoleName  string        `mapstructure:"role" toml:"role" jsonschema:"required"`
+	Operation OperationType `json:"Operation" mapstructure:"operation" toml:"operation" jsonschema:"required"`
+	RoleName  string        `json:"RoleName" mapstructure:"role" toml:"role" jsonschema:"required"`
 }
 
 func (e EntityOperationRole) JSONSchemaExtend(schema *jsonschema.Schema) {

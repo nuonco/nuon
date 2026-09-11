@@ -8,42 +8,42 @@ import (
 
 type KubernetesManifestComponentConfig struct {
 	// Inline manifest (mutually exclusive with Kustomize)
-	Manifest string `mapstructure:"manifest,omitempty" toml:"manifest,omitempty"  features:"get,template"`
+	Manifest string `json:"Manifest" mapstructure:"manifest,omitempty" toml:"manifest,omitempty"  features:"get,template"`
 
 	// Kustomize configuration (mutually exclusive with Manifest)
-	Kustomize *KustomizeConfig `mapstructure:"kustomize,omitempty" toml:"kustomize"`
+	Kustomize *KustomizeConfig `json:"Kustomize" mapstructure:"kustomize,omitempty" toml:"kustomize"`
 
 	// VCS configuration for kustomize sources (similar to Helm chart)
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
+	PublicRepo    *PublicRepoConfig    `json:"PublicRepo" mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
+	ConnectedRepo *ConnectedRepoConfig `json:"ConnectedRepo" mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
 
 	// Namespace supports template variables (e.g., {{.nuon.install.id}})
-	Namespace     string  `mapstructure:"namespace,omitempty" toml:"namespace,omitempty" jsonschema:"required"`
-	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
+	Namespace     string  `json:"Namespace" mapstructure:"namespace,omitempty" toml:"namespace,omitempty" jsonschema:"required"`
+	DriftSchedule *string `json:"DriftSchedule" mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
-	Health *ComponentHealthConfig `mapstructure:"health,omitempty" toml:"health,omitempty" nuonhash:"omitempty"`
+	Health *ComponentHealthConfig `json:"Health" mapstructure:"health,omitempty" toml:"health,omitempty" nuonhash:"omitempty"`
 
-	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
-	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	BuildTimeout  string `json:"BuildTimeout" mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `json:"DeployTimeout" mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 
-	MaxAutoRetries               *int  `mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
-	SkipNoops                    *bool `mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
-	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
+	MaxAutoRetries               *int  `json:"MaxAutoRetries" mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
+	SkipNoops                    *bool `json:"SkipNoops" mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
+	AutoApproveOnPoliciesPassing *bool `json:"AutoApproveOnPoliciesPassing" mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
 }
 
 // KustomizeConfig configures kustomize build options
 type KustomizeConfig struct {
 	// Path to kustomization directory (relative to source root)
-	Path string `mapstructure:"path" jsonschema:"required" toml:"path"`
+	Path string `json:"Path" mapstructure:"path" jsonschema:"required" toml:"path"`
 
 	// Additional patch files to apply after kustomize build
-	Patches []string `mapstructure:"patches,omitempty" toml:"patches,omitempty"`
+	Patches []string `json:"Patches" mapstructure:"patches,omitempty" toml:"patches,omitempty"`
 
 	// Enable Helm chart inflation during kustomize build
-	EnableHelm bool `mapstructure:"enable_helm,omitempty" toml:"enable_helm,omitempty"`
+	EnableHelm bool `json:"EnableHelm" mapstructure:"enable_helm,omitempty" toml:"enable_helm,omitempty"`
 
 	// Load restrictor: none, rootOnly (default: rootOnly)
-	LoadRestrictor string `mapstructure:"load_restrictor,omitempty" toml:"load_restrictor,omitempty"`
+	LoadRestrictor string `json:"LoadRestrictor" mapstructure:"load_restrictor,omitempty" toml:"load_restrictor,omitempty"`
 }
 
 func (k KustomizeConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

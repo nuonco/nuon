@@ -8,19 +8,19 @@ import (
 )
 
 type AppAWSIAMPolicy struct {
-	ManagedPolicyName string `mapstructure:"managed_policy_name,omitempty" toml:"managed_policy_name,omitempty"`
+	ManagedPolicyName string `json:"ManagedPolicyName" mapstructure:"managed_policy_name,omitempty" toml:"managed_policy_name,omitempty"`
 	// Name is optional: a managed_policy_name attachment identifies itself, so a
 	// bare AWS managed policy needs no separate name. The runtime does not
 	// require it (see parse below).
-	Name string `mapstructure:"name,omitempty" toml:"name,omitempty"`
+	Name string `json:"Name" mapstructure:"name,omitempty" toml:"name,omitempty"`
 
-	Contents string `mapstructure:"contents" toml:"contents" features:"template,get"`
+	Contents string `json:"Contents" mapstructure:"contents" toml:"contents" features:"template,get"`
 
-	GCPPermissions    []string `mapstructure:"gcp_permissions,omitempty" toml:"gcp_permissions,omitempty"`
-	GCPPredefinedRole string   `mapstructure:"gcp_predefined_role,omitempty" toml:"gcp_predefined_role,omitempty"`
+	GCPPermissions    []string `json:"GCPPermissions" mapstructure:"gcp_permissions,omitempty" toml:"gcp_permissions,omitempty"`
+	GCPPredefinedRole string   `json:"GCPPredefinedRole" mapstructure:"gcp_predefined_role,omitempty" toml:"gcp_predefined_role,omitempty"`
 
-	AzureActions      []string `mapstructure:"azure_actions,omitempty" toml:"azure_actions,omitempty"`
-	AzureBuiltInRoles []string `mapstructure:"azure_built_in_roles,omitempty" toml:"azure_built_in_roles,omitempty"`
+	AzureActions      []string `json:"AzureActions" mapstructure:"azure_actions,omitempty" toml:"azure_actions,omitempty"`
+	AzureBuiltInRoles []string `json:"AzureBuiltInRoles" mapstructure:"azure_built_in_roles,omitempty" toml:"azure_built_in_roles,omitempty"`
 }
 
 func (a AppAWSIAMPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {

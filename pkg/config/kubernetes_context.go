@@ -10,7 +10,7 @@ import (
 // uses today). Components can opt into a context by name; otherwise they fall
 // back to the implicit sandbox default when the sandbox emits cluster outputs.
 type KubernetesContextsConfig struct {
-	Contexts []*KubernetesContext `mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty"`
+	Contexts []*KubernetesContext `json:"Contexts" mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty"`
 }
 
 func (a KubernetesContextsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -48,8 +48,8 @@ func (a *KubernetesContextsConfig) Validate() error {
 // Static / external clusters are intentionally not modeled here — wrap them in
 // a thin terraform_module component that emits the same cluster outputs.
 type KubernetesContext struct {
-	Name      string `mapstructure:"name" toml:"name" jsonschema:"required"`
-	Component string `mapstructure:"component" toml:"component" jsonschema:"required"`
+	Name      string `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
+	Component string `json:"Component" mapstructure:"component" toml:"component" jsonschema:"required"`
 }
 
 func (a KubernetesContext) JSONSchemaExtend(schema *jsonschema.Schema) {

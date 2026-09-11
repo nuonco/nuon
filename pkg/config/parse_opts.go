@@ -1,7 +1,7 @@
 package config
 
 type ParseOptions struct {
-	RootDir string
+	RootDir string `json:"RootDir"`
 }
 
 type ParseOption func(*ParseOptions)
