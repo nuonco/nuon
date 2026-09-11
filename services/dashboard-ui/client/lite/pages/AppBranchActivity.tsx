@@ -1,15 +1,20 @@
-import { Card } from '../components/atoms/Card'
-import { Text } from '../components/atoms/Text'
+import { WorkflowTimeline } from '../components/organisms/WorkflowTimeline'
+import { useApp } from '../providers/app-provider'
+import { useAppBranch } from '../providers/app-branch-provider'
+import { useOrg } from '../providers/org-provider'
 import { useAppBranchPageChrome } from './AppBranchLayout'
 
 export const AppBranchActivity = () => {
   useAppBranchPageChrome('Activity')
 
+  const { orgId } = useOrg()
+  const { appId } = useApp()
+  const { branchId } = useAppBranch()
+
   return (
-    <Card className="min-h-40">
-      <Text variant="caption" color="tertiary">
-        Page content will be added in a follow-up.
-      </Text>
-    </Card>
+    <WorkflowTimeline
+      orgId={orgId}
+      owner={{ kind: 'app', appId: appId ?? '', branchId: branchId ?? '' }}
+    />
   )
 }
