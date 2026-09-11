@@ -65,7 +65,7 @@ jobs:
           fi
 
       - name: Trigger the mono integration workflow
-        if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft != true && steps.filter.outputs['ctl-api'] == 'true')
+        if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft != true && github.triggering_actor.login != 'nuonbot' && steps.filter.outputs['ctl-api'] == 'true')
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
         run: |
