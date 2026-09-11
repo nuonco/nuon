@@ -98,13 +98,19 @@ separate.
 | --- | --- | --- | --- |
 | `http.server.request.duration` | Explicit-bucket histogram | seconds | `nuon.api`, `http.request.method`, `url.scheme`, `http.response.status_code`, matched `http.route`, `error.type` for 5xx |
 | `http.server.active_requests` | Up/down counter | requests | `nuon.api`, `http.request.method`, `url.scheme` |
+| `nuon.http.server.request.declared_body.size` | Explicit-bucket histogram | bytes | Same as request duration |
 
 `nuon.api` is one of `public`, `runner`, `auth`, `internal`, `admin-dashboard`,
-`slack`, or `mcp`. Metrics measure HTTP handling, not Temporal signals, individual
+`slack`, or `mcp`. These metrics measure HTTP handling, not Temporal signals, individual
 MCP tool outcomes, database operations, or downstream runner execution.
 
-Histogram count supplies request volume; 5xx counts divided by total counts
-supply an HTTP error ratio. The explicit boundaries in seconds are:
+Declared body size records the incoming `ContentLength` at request completion,
+including rejected requests and partial reads. Unknown lengths (`-1`) are omitted;
+known zero lengths are recorded. Instrumentation does not read or buffer bodies.
+Byte boundaries are `0, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216`.
+
+Request-duration histogram count supplies request volume; 5xx counts divided by
+total counts supply an HTTP error ratio. The explicit boundaries in seconds are:
 `0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10`.
 Aggregation and temporality are fixed to explicit histograms and cumulative
 values. Apply rates per instance before aggregating across replicas.
@@ -117,6 +123,70 @@ not metric dimensions. Unknown methods become `_OTHER`; the standard
 list. Scheme reflects the connection to the API, not untrusted forwarded headers.
 Health requests are included and can be excluded by route in alert queries.
 Streaming request duration measures the full handler lifetime.
+
+### Database pools
+
+API processes observe local pool snapshots through `internal/pkg/db/poolmetrics`,
+using the injected meter provider without wrapping drivers or enabling tracing.
+
+| Pool | Library | Metrics |
+| --- | --- | --- |
+| Native PostgreSQL `pgxpool` | [`otelpgx`](https://github.com/exaring/otelpgx/tree/v0.11.1) | `pgxpool.*`: connections, capacity, acquisitions, cancellations, waits and connection creation/expiry |
+| ClickHouse `database/sql` | [`otelsql`](https://github.com/XSAM/otelsql/tree/v0.41.0) | `db.sql.connection.*`: connections, capacity, waits and connection closure by limit |
+
+Dimensions are `db.system.name` (`postgresql`, `clickhouse`) and
+`db.client.connection.pool.name` (`primary`, `replica`, `admin_replica`).
+ClickHouse uses `primary`; `db.sql.connection.open` adds `status=inuse|idle`.
+Pool names do not contain database hosts or names.
+
+Connection state is a current value (pgx up/down counters, SQL gauges), not a rate.
+Acquisition/wait/closure counters are cumulative; apply rates per instance before
+aggregating. PostgreSQL durations use **nanoseconds**; SQL wait duration uses
+**milliseconds**. PostgreSQL acquisition time covers successful acquisitions,
+while `empty_acquire_wait_time` isolates successful empty-pool waiting. SQL waits
+include canceled waits. A zero SQL connection limit means unlimited.
+
+Collection issues no queries. pgx snapshots are cached for one second and its
+callbacks live until provider shutdown; register once per process-lifetime pool.
+SQL callbacks unregister on shutdown. Final pool observations are best-effort.
+
+### Dependency health
+
+API `/readyz` checks emit process-level metrics with `dependency.name` equal to
+`postgresql`, `clickhouse`, or `temporal`. Export reads memory; it does not run probes.
+
+| Metric | Type | Meaning |
+| --- | --- | --- |
+| `nuon.dependency.checks` | Counter | Outcomes: `success`, `failure`, `skipped`; bounded `error.type` on failure/skip |
+| `nuon.dependency.check.duration` | Histogram, seconds | Attempted checks by outcome; boundaries: `0.01, 0.05, 0.1, 0.5, 1, 5` |
+| `nuon.dependency.check.status` | Gauge | Last completed result: 1 = success, 0 = failure |
+| `nuon.dependency.check.last_completed` | Gauge, Unix seconds | Last completed check timestamp |
+| `nuon.dependency.check.last_success` | Gauge, Unix seconds | Last successful check timestamp |
+
+ClickHouse success requires both ping and replica checks to pass. Failures use the
+last failing stage: `connection`, `ping`, `query`, `scan`, `iteration`,
+`readonly_replicas`, or `incomplete` for an interrupted check. Skipped checks use
+`previous_dependency_failed`; they do not record duration or refresh state.
+Gauges are absent until the first corresponding result and retain timestamps
+between probes. Pair status with timestamp age and missing-data alerts; no traffic
+to `/readyz` means no fresh checks. Histograms omit failure-stage dimensions.
+
+### Runtime/process
+
+API processes register [`instrumentation/runtime v0.68.0`](https://github.com/open-telemetry/opentelemetry-go-contrib/tree/v1.43.0/instrumentation/runtime)
+once with the injected provider. It emits `go.memory.used`, `go.memory.limit`,
+`go.memory.allocated`, `go.memory.allocations`, `go.memory.gc.goal`,
+`go.goroutine.count`, `go.processor.limit` and `go.config.gogc`.
+`go.memory.used` splits `go.memory.type=stack|other`; it is not RSS.
+`go.memory.limit` is Go's soft runtime limit, not a container limit; unlimited is omitted.
+
+`process.uptime` is a gauge in seconds since OS process creation. The start time
+is read once using `gopsutil`; subsequent collections use elapsed monotonic time.
+If the lookup fails, uptime is omitted and the OTel error handler reports the error.
+Runtime snapshots use the library's 15-second cache; callbacks live until provider
+shutdown. The default set has 9–10 scalar series and no histograms. GC pauses/cycles,
+process CPU and RSS are not included. `OTEL_GO_X_DEPRECATED_RUNTIME_METRICS=true`
+additionally enables the library's deprecated metrics; leave it unset for this set.
 
 ## Failure behavior
 
@@ -145,10 +215,10 @@ probes; an API cannot report its own total outage through this export path.
 Run the tests and request-recording benchmark from the repository root:
 
 ```sh
-go test -race ./services/ctl-api/internal/pkg/telemetry ./services/ctl-api/internal/pkg/metrics ./services/ctl-api/internal/pkg/api ./services/ctl-api/internal/app/mcp/server
+go test -race ./services/ctl-api/internal/pkg/telemetry ./services/ctl-api/internal/pkg/metrics ./services/ctl-api/internal/pkg/api ./services/ctl-api/internal/pkg/db/poolmetrics ./services/ctl-api/internal/health ./services/ctl-api/internal/app/mcp/server
 go test -run '^$' -bench '^BenchmarkHTTPMetrics$' -benchmem ./services/ctl-api/internal/pkg/telemetry
 ```
 
-The benchmark measures `Start`/finish recording with no endpoint, a healthy
-receiver and a blocked receiver. It does not measure the full HTTP stack or
-production process memory usage.
+The benchmark measures the HTTP metrics wrapper with all three instruments and
+no endpoint, a healthy receiver, or a blocked receiver. It does not measure the
+full API middleware stack or production process memory usage.
