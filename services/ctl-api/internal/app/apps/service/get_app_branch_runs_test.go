@@ -281,6 +281,39 @@ func (s *GetAppBranchRunsTestSuite) TestPlanOnlyUnchanged() {
 		runs, _ := s.fetchRuns(branch.ID, "?planonly=false&status=success")
 		require.Equal(s.T(), []string{rollout.ID}, runIDs(runs))
 	})
+
+	s.Run("preview=true returns only preview runs", func() {
+		runs, _ := s.fetchRuns(branch.ID, "?preview=true")
+		require.Equal(s.T(), []string{preview.ID}, runIDs(runs))
+	})
+
+	s.Run("preview=false returns only rollout runs", func() {
+		runs, _ := s.fetchRuns(branch.ID, "?preview=false")
+		require.Equal(s.T(), []string{rollout.ID}, runIDs(runs))
+	})
+
+	s.Run("preview unset returns both", func() {
+		runs, _ := s.fetchRuns(branch.ID, "")
+		require.ElementsMatch(s.T(), []string{preview.ID, rollout.ID}, runIDs(runs))
+	})
+
+	s.Run("preview combines with the other filters", func() {
+		runs, _ := s.fetchRuns(branch.ID, "?preview=true&status=success")
+		require.Equal(s.T(), []string{preview.ID}, runIDs(runs))
+
+		runs, _ = s.fetchRuns(branch.ID, "?preview=true&status=error")
+		require.Empty(s.T(), runs)
+	})
+
+	s.Run("an unparseable preview is a user error", func() {
+		path := fmt.Sprintf("/v1/apps/%s/branches/%s/runs?preview=maybe", s.testApp.ID, branch.ID)
+		req, err := http.NewRequest(http.MethodGet, path, nil)
+		require.NoError(s.T(), err)
+
+		rr := httptest.NewRecorder()
+		s.router.ServeHTTP(rr, req)
+		require.Equal(s.T(), http.StatusBadRequest, rr.Code)
+	})
 }
 
 func (s *GetAppBranchRunsTestSuite) TestFiltersIntersect() {
