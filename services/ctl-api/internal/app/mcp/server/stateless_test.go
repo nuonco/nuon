@@ -46,7 +46,11 @@ func withMCPAuth(ctx context.Context, orgID, accountID string) context.Context {
 func newStatelessTestServer(t *testing.T, orgID string) *httptest.Server {
 	t.Helper()
 
-	s := &Server{services: []api.Service{stubMCPService{}}, schemaCache: mcp.NewSchemaCache()}
+	s := &Server{
+		mcpServices:        []api.MCPService{stubMCPService{}},
+		schemaCache:        mcp.NewSchemaCache(),
+		implementationName: "nuon-ctl",
+	}
 
 	handler := s.newMCPHandler()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
