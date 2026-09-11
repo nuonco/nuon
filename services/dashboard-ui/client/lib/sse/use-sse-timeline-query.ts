@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
-import { useResourceSSE } from '@/hooks/use-resource-sse'
+import { useResourceSSE } from '@/lib/sse/use-resource-sse'
 import { createSSEQueryListener, type TSSEListenerMap } from '@/lib/sse-listeners'
 
 const SUSPENDED_POLL_MS = 30_000
@@ -15,6 +15,7 @@ interface IUseSSETimelineQuery<TData> {
   eventName: string
   transform?: (eventData: any) => unknown
   extraListeners?: TSSEListenerMap
+  onError?: (message: string) => void
 }
 
 export function useSSETimelineQuery<TData>({
@@ -27,6 +28,7 @@ export function useSSETimelineQuery<TData>({
   eventName,
   transform,
   extraListeners,
+  onError,
 }: IUseSSETimelineQuery<TData>) {
   const queryClient = useQueryClient()
 
@@ -42,6 +44,7 @@ export function useSSETimelineQuery<TData>({
     url: sseUrl,
     enabled: shouldPoll,
     listeners,
+    onError,
   })
 
   const { data, isLoading, error } = useQuery({
