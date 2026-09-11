@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
+	"github.com/stretchr/testify/require"
 )
 
 func auditEnabledConfig(endpoint string) string {
@@ -212,7 +213,7 @@ func TestCollectorConfigOmitsAuditPipelineWhenDisabled(t *testing.T) {
 }
 
 func TestVendorCollectorConfigBuildsPersistentPipelines(t *testing.T) {
-	contents, err := vendorCollectorConfig("https://relay.example.com")
+	contents, err := vendorCollectorConfig("https://relay.example.com", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,8 +299,43 @@ func TestVendorCollectorConfigBuildsPersistentPipelines(t *testing.T) {
 	}
 }
 
+func TestVendorCollectorConfigResourceActions(t *testing.T) {
+	for _, attributes := range []map[string]string{nil, {}, {
+		"nuon.install.name":                        "production-eu",
+		"nuon.install.labels.literal-${env:LABEL}": "${env:VALUE}\n$ $$",
+	}} {
+		contents, err := vendorCollectorConfig("https://relay.example.com", attributes)
+		require.NoError(t, err)
+		var generated struct {
+			Processors map[string]struct {
+				Attributes []map[string]any `yaml:"attributes"`
+			} `yaml:"processors"`
+			Service struct {
+				Pipelines map[string]struct {
+					Processors []string `yaml:"processors"`
+				} `yaml:"pipelines"`
+			} `yaml:"service"`
+		}
+		require.NoError(t, yaml.Unmarshal(contents, &generated))
+		wantProcessors := []string{"memory_limiter"}
+		if len(attributes) == 0 {
+			require.NotContains(t, generated.Processors, "resource/install")
+		} else {
+			wantProcessors = append(wantProcessors, "resource/install")
+			require.Equal(t, []map[string]any{
+				{"action": "delete", "pattern": `^nuon\.install\.labels\.`},
+				{"action": "upsert", "key": "nuon.install.labels.literal-$${env:LABEL}", "value": "$${env:VALUE}\n$$ $$$$"},
+				{"action": "upsert", "key": "nuon.install.name", "value": "production-eu"},
+			}, generated.Processors["resource/install"].Attributes)
+		}
+		for _, signal := range []string{"logs", "metrics", "traces"} {
+			require.Equal(t, wantProcessors, generated.Service.Pipelines[signal].Processors, signal)
+		}
+	}
+}
+
 func TestVendorCollectorConfigRejectsInvalidEndpoint(t *testing.T) {
-	if _, err := vendorCollectorConfig("http://relay.example.com"); err == nil {
+	if _, err := vendorCollectorConfig("http://relay.example.com", nil); err == nil {
 		t.Fatal("insecure vendor relay endpoint was accepted")
 	}
 }
@@ -309,7 +345,10 @@ func TestCollectorConfigsValidate(t *testing.T) {
 	if binary == "" {
 		t.Skip("set NUON_TEST_OTELCOL to the built runner Collector binary")
 	}
-	vendor, err := vendorCollectorConfig("https://relay.example.com")
+	vendor, err := vendorCollectorConfig("https://relay.example.com", map[string]string{
+		"nuon.org.name": "acme", "nuon.app.name": "payments", "nuon.install.name": "production-eu",
+		"nuon.install.labels.tier": "enterprise",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
