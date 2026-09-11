@@ -518,7 +518,7 @@ Live resource updates come from the BFF's `/api/orgs/:orgId/.../sse` endpoints (
 
 **Use the shared hooks — never wire up `EventSource` or `useResourceSSE` + `useQuery` by hand in a provider/container.**
 
-**`useSSEResourceQuery`** (`client/hooks/use-sse-resource-query.ts`) — for single-resource providers (build, deploy, workflow, sandbox run, etc.). Bundles the EventSource, the cache-writing listener, sse-gated fallback polling (4s active / 30s finished), and the "Refresh failed" toast:
+**`useSSEResourceQuery`** (`client/lib/sse/use-sse-resource-query.ts`) — for single-resource providers (build, deploy, workflow, sandbox run, etc.). Bundles the EventSource, the cache-writing listener, and sse-gated fallback polling (4s active / 30s finished). The hooks live under `client/lib/sse/` so Lite shares them, so they raise no toast themselves — pass `onError` (the dashboard passes `useRefreshErrorToast()`, which is the "Refresh failed" toast):
 
 ```typescript
 const { data: deploy, isLoading, error } = useSSEResourceQuery<TDeploy>({

@@ -64,6 +64,7 @@ things Lite may import from the production tree:
 | `@/configs/*` | Static data tables such as cloud regions. |
 | `@/providers/config-provider`, `@/hooks/use-config` | Runtime config injected by the Go BFF. Framework-level, not dashboard-level. |
 | `@/lib/cookies` | Auth cookie access. |
+| `@/lib/sse/*` | The SSE hooks (`useResourceSSE`, `useSSEResourceQuery`, `useSSETimelineQuery`). Framework-level; they take an `onError` callback so each app raises its own toast. |
 | `@/lib/fixtures/*` | Story and test fixtures only. Never in shipped code. |
 
 Everything else is off limits, and `no-restricted-imports` in
