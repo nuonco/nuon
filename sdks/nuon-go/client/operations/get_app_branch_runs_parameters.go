@@ -74,6 +74,18 @@ type GetAppBranchRunsParams struct {
 	*/
 	AppID string
 
+	/* CreatedAtGte.
+
+	   filter runs created after timestamp (RFC3339 format)
+	*/
+	CreatedAtGte *string
+
+	/* CreatedAtLte.
+
+	   filter runs created before timestamp (RFC3339 format)
+	*/
+	CreatedAtLte *string
+
 	/* Limit.
 
 	   limit of results to return
@@ -101,6 +113,30 @@ type GetAppBranchRunsParams struct {
 	   Default: true
 	*/
 	Planonly *bool
+
+	/* Preview.
+
+	   return only preview runs when true, only rollout runs when false
+	*/
+	Preview *bool
+
+	/* Q.
+
+	   case-insensitive substring match against run title and id
+	*/
+	Q *string
+
+	/* Status.
+
+	   filter by workflow status (comma-separated for several statuses)
+	*/
+	Status *string
+
+	/* Type.
+
+	   filter by workflow type (comma-separated for several types)
+	*/
+	Type *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -197,6 +233,28 @@ func (o *GetAppBranchRunsParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
+// WithCreatedAtGte adds the createdAtGte to the get app branch runs params
+func (o *GetAppBranchRunsParams) WithCreatedAtGte(createdAtGte *string) *GetAppBranchRunsParams {
+	o.SetCreatedAtGte(createdAtGte)
+	return o
+}
+
+// SetCreatedAtGte adds the createdAtGte to the get app branch runs params
+func (o *GetAppBranchRunsParams) SetCreatedAtGte(createdAtGte *string) {
+	o.CreatedAtGte = createdAtGte
+}
+
+// WithCreatedAtLte adds the createdAtLte to the get app branch runs params
+func (o *GetAppBranchRunsParams) WithCreatedAtLte(createdAtLte *string) *GetAppBranchRunsParams {
+	o.SetCreatedAtLte(createdAtLte)
+	return o
+}
+
+// SetCreatedAtLte adds the createdAtLte to the get app branch runs params
+func (o *GetAppBranchRunsParams) SetCreatedAtLte(createdAtLte *string) {
+	o.CreatedAtLte = createdAtLte
+}
+
 // WithLimit adds the limit to the get app branch runs params
 func (o *GetAppBranchRunsParams) WithLimit(limit *int64) *GetAppBranchRunsParams {
 	o.SetLimit(limit)
@@ -241,6 +299,50 @@ func (o *GetAppBranchRunsParams) SetPlanonly(planonly *bool) {
 	o.Planonly = planonly
 }
 
+// WithPreview adds the preview to the get app branch runs params
+func (o *GetAppBranchRunsParams) WithPreview(preview *bool) *GetAppBranchRunsParams {
+	o.SetPreview(preview)
+	return o
+}
+
+// SetPreview adds the preview to the get app branch runs params
+func (o *GetAppBranchRunsParams) SetPreview(preview *bool) {
+	o.Preview = preview
+}
+
+// WithQ adds the q to the get app branch runs params
+func (o *GetAppBranchRunsParams) WithQ(q *string) *GetAppBranchRunsParams {
+	o.SetQ(q)
+	return o
+}
+
+// SetQ adds the q to the get app branch runs params
+func (o *GetAppBranchRunsParams) SetQ(q *string) {
+	o.Q = q
+}
+
+// WithStatus adds the status to the get app branch runs params
+func (o *GetAppBranchRunsParams) WithStatus(status *string) *GetAppBranchRunsParams {
+	o.SetStatus(status)
+	return o
+}
+
+// SetStatus adds the status to the get app branch runs params
+func (o *GetAppBranchRunsParams) SetStatus(status *string) {
+	o.Status = status
+}
+
+// WithType adds the typeVar to the get app branch runs params
+func (o *GetAppBranchRunsParams) WithType(typeVar *string) *GetAppBranchRunsParams {
+	o.SetType(typeVar)
+	return o
+}
+
+// SetType adds the type to the get app branch runs params
+func (o *GetAppBranchRunsParams) SetType(typeVar *string) {
+	o.Type = typeVar
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetAppBranchRunsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -257,6 +359,40 @@ func (o *GetAppBranchRunsParams) WriteToRequest(r runtime.ClientRequest, reg str
 	// path param app_id
 	if err := r.SetPathParam("app_id", o.AppID); err != nil {
 		return err
+	}
+
+	if o.CreatedAtGte != nil {
+
+		// query param created_at_gte
+		var qrCreatedAtGte string
+
+		if o.CreatedAtGte != nil {
+			qrCreatedAtGte = *o.CreatedAtGte
+		}
+		qCreatedAtGte := qrCreatedAtGte
+		if qCreatedAtGte != "" {
+
+			if err := r.SetQueryParam("created_at_gte", qCreatedAtGte); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.CreatedAtLte != nil {
+
+		// query param created_at_lte
+		var qrCreatedAtLte string
+
+		if o.CreatedAtLte != nil {
+			qrCreatedAtLte = *o.CreatedAtLte
+		}
+		qCreatedAtLte := qrCreatedAtLte
+		if qCreatedAtLte != "" {
+
+			if err := r.SetQueryParam("created_at_lte", qCreatedAtLte); err != nil {
+				return err
+			}
+		}
 	}
 
 	if o.Limit != nil {
@@ -322,6 +458,74 @@ func (o *GetAppBranchRunsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if qPlanonly != "" {
 
 			if err := r.SetQueryParam("planonly", qPlanonly); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Preview != nil {
+
+		// query param preview
+		var qrPreview bool
+
+		if o.Preview != nil {
+			qrPreview = *o.Preview
+		}
+		qPreview := swag.FormatBool(qrPreview)
+		if qPreview != "" {
+
+			if err := r.SetQueryParam("preview", qPreview); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Q != nil {
+
+		// query param q
+		var qrQ string
+
+		if o.Q != nil {
+			qrQ = *o.Q
+		}
+		qQ := qrQ
+		if qQ != "" {
+
+			if err := r.SetQueryParam("q", qQ); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Status != nil {
+
+		// query param status
+		var qrStatus string
+
+		if o.Status != nil {
+			qrStatus = *o.Status
+		}
+		qStatus := qrStatus
+		if qStatus != "" {
+
+			if err := r.SetQueryParam("status", qStatus); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Type != nil {
+
+		// query param type
+		var qrType string
+
+		if o.Type != nil {
+			qrType = *o.Type
+		}
+		qType := qrType
+		if qType != "" {
+
+			if err := r.SetQueryParam("type", qType); err != nil {
 				return err
 			}
 		}

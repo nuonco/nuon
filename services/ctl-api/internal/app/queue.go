@@ -15,13 +15,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-// DefaultQueueScope filters to an owner's unnamed default queue. Owners have
-// several named queues alongside it, and a struct condition cannot express this:
-// gorm drops zero values, so Queue{Name: ""} would match any of them.
-func DefaultQueueScope(db *gorm.DB) *gorm.DB {
-	return db.Where(map[string]any{"name": ""})
-}
-
 type Queue struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string  `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`

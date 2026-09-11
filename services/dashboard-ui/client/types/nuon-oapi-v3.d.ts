@@ -12201,6 +12201,18 @@ export interface operations {
         page?: number;
         /** @description exclude preview (plan only) runs when set to false */
         planonly?: boolean;
+        /** @description return only preview runs when true, only rollout runs when false */
+        preview?: boolean;
+        /** @description case-insensitive substring match against run title and id */
+        q?: string;
+        /** @description filter by workflow type (comma-separated for several types) */
+        type?: string;
+        /** @description filter by workflow status (comma-separated for several statuses) */
+        status?: string;
+        /** @description filter runs created after timestamp (RFC3339 format) */
+        created_at_gte?: string;
+        /** @description filter runs created before timestamp (RFC3339 format) */
+        created_at_lte?: string;
       };
       path: {
         /** @description app ID */
@@ -26534,8 +26546,10 @@ export interface operations {
         page?: number;
         /** @description exclude plan only workflows when set to false */
         planonly?: boolean;
-        /** @description filter by workflow type */
+        /** @description filter by workflow type (comma-separated for several types) */
         type?: string;
+        /** @description filter by workflow status (comma-separated for several statuses) */
+        status?: string;
         /** @description filter by finished state */
         finished?: boolean;
         /** @description filter workflows created after timestamp (RFC3339 format) */

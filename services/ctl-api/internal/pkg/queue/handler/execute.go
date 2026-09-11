@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
@@ -79,14 +80,14 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	}
 
 	execCtx, cancel := workflow.WithCancel(ctx)
+	defer cancel()
 
-	// Restore the enqueuer's identity onto the execution context.
-	if h.queueSignal != nil {
-		execCtx = queuecctx.ApplyWorkflow(execCtx, h.queueSignal.SignalContext)
+	execCtx, err := h.signalContext(execCtx, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to restore signal context")
 	}
 	h.executingCtx = execCtx
 	h.executingCancel = cancel
-	defer cancel()
 
 	start := workflow.Now(ctx)
 	_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
@@ -97,7 +98,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 		},
 	})
 
-	err := h.runSignalExecute(execCtx)
+	err = h.runSignalExecute(execCtx)
 	dur := workflow.Now(ctx).Sub(start)
 
 	// run after-phase hooks (best-effort)
@@ -155,6 +156,33 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 
 	finStatus, finDesc = app.StatusSuccess, ""
 	return nil, nil
+}
+
+func (h *handler) signalContext(ctx workflow.Context, refreshLogStream bool) (workflow.Context, error) {
+	if h.queueSignal == nil {
+		return ctx, nil
+	}
+
+	signalCtx := h.queueSignal.SignalContext
+	ctx = queuecctx.ApplyWorkflow(ctx, signalCtx)
+	if signalCtx.LogStreamID == "" {
+		return ctx, nil
+	}
+
+	if refreshLogStream {
+		h.signalLogStream = nil
+	}
+	if h.signalLogStream == nil {
+		stream, err := activities.AwaitHydrateLogStream(ctx, &activities.HydrateLogStreamRequest{
+			LogStreamID: signalCtx.LogStreamID,
+			OrgID:       signalCtx.OrgID,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to hydrate signal log stream")
+		}
+		h.signalLogStream = stream
+	}
+	return cctx.SetLogStreamWorkflowContext(ctx, h.signalLogStream), nil
 }
 
 // emitExecuteMetrics records the latency and execution count for the signal's
