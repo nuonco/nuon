@@ -3,6 +3,9 @@ import { Text } from '../components/atoms/Text'
 import { BranchProfile } from '../components/molecules/BranchProfile'
 import { SubNav, type ISubNavItem } from '../components/molecules/SubNav'
 import { BranchSwitcher } from '../components/organisms/BranchSwitcher'
+import { InstallGroupPanel } from '../components/organisms/InstallGroupPanel'
+import { InstallSummaryPanel } from '../components/organisms/InstallSummaryPanel'
+import { SurfaceHost } from '../components/organisms/surfaces'
 import { useBreadcrumbs } from '../hooks/use-breadcrumbs'
 import { usePageTitle } from '../hooks/use-page-title'
 import { useStatusBar } from '../hooks/use-status-bar'
@@ -13,6 +16,16 @@ import {
 } from '../providers/app-branch-provider'
 import { useApp } from '../providers/app-provider'
 import { useOrg } from '../providers/org-provider'
+import { panelRegistration } from '../providers/surfaces-provider'
+
+const APP_BRANCH_SURFACES = [
+  panelRegistration('group', ({ resourceId }) => (
+    <InstallGroupPanel groupId={resourceId} />
+  )),
+  panelRegistration('install', ({ resourceId }) => (
+    <InstallSummaryPanel installId={resourceId} />
+  )),
+]
 
 export const appBranchNavigation = (
   orgId: string,
@@ -100,6 +113,8 @@ const AppBranchChrome = () => {
 
 export const AppBranchLayout = () => (
   <AppBranchProvider>
-    <AppBranchChrome />
+    <SurfaceHost scope="app-branch" registrations={APP_BRANCH_SURFACES}>
+      <AppBranchChrome />
+    </SurfaceHost>
   </AppBranchProvider>
 )

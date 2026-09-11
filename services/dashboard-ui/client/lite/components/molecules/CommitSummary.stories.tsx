@@ -21,6 +21,7 @@ export const Overview = () => (
     ]}
     rules={[
       'The SHA is abbreviated to seven characters.',
+      "The author line leads with their avatar, falling back to initials when there is no avatar URL.",
       'Only the first line of the commit message is shown.',
       'The empty state explains that the latest synced commit will appear later.',
       'It renders fragments, so the parent owns layout and spacing.',
@@ -54,6 +55,22 @@ export const Default = () => (
         commit={{
           sha: 'a1b2c3d4e5f6',
           message: 'Update component versions',
+          author_name: 'Alex Smith',
+          author_avatar_url: 'https://github.com/example.png',
+          created_at: '2026-09-08T13:42:00Z',
+        }}
+      />
+    </OverviewCard>
+  </div>
+)
+
+export const NoAvatar = () => (
+  <div className="max-w-sm p-8">
+    <OverviewCard title="Last update">
+      <CommitSummary
+        commit={{
+          sha: 'b2c3d4e5f6a1',
+          message: 'Bump chart version',
           author_name: 'Alex Smith',
           created_at: '2026-09-08T13:42:00Z',
         }}
