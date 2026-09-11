@@ -7,7 +7,6 @@ import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { InstallDetailsButton } from '@/components/installs/ArchitectureDiagram'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallReadme } from '@/lib'
@@ -36,8 +35,7 @@ export const Overview = () => {
 
       <SectionHeader
         title="Install overview"
-        description="View the install README and architecture."
-        actions={<InstallDetailsButton variant="secondary" />}
+        description="View the install README."
       />
 
       {readme?.readme ? (
