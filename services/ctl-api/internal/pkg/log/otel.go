@@ -14,16 +14,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
-const (
-	defaultOTLPLogsEndpointTmpl string = "%s/v1/log-streams/%s/logs"
-)
-
 func NewOTELProvider(logStream *app.LogStream) (*log.LoggerProvider, error) {
 	ctx := context.Background()
 	ctx, cancelFn := context.WithCancel(ctx)
 
-	endpoint := fmt.Sprintf(defaultOTLPLogsEndpointTmpl, logStream.RunnerAPIURL, logStream.ID)
-	u, err := url.Parse(endpoint)
+	u, err := url.Parse(logStream.RunnerAPIURL)
 	if err != nil {
 		cancelFn()
 		return nil, fmt.Errorf("invalid log stream endpoint: %w", err)
@@ -32,6 +27,7 @@ func NewOTELProvider(logStream *app.LogStream) (*log.LoggerProvider, error) {
 		cancelFn()
 		return nil, fmt.Errorf("log stream endpoint must be an absolute HTTP(S) URL")
 	}
+	endpoint := u.JoinPath("v1", "log-streams", logStream.ID, "logs").String()
 
 	rsrc := getResource(logStream.ID, generics.ToStringMap(logStream.Attrs))
 	// Explicit timeouts and limits mirror the OTel Logs SDK/exporter v0.18.0
