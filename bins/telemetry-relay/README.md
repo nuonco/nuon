@@ -6,7 +6,7 @@ the environment hosting the relay to an OTLP/HTTP backend. Both ingestion paths 
 | Path | Default listener | Processing |
 |---|---|---|
 | Install | `0.0.0.0:4318` | Verify runner JWT, check optional org allowlist, replace the four identity IDs with verified values, apply install resource attributes |
-| Environment | `0.0.0.0:5318` | No authentication or identity validation; preserve incoming attributes except configured resource changes and source-marker cleanup |
+| Environment | `0.0.0.0:5318` | No authentication or identity validation; preserve incoming attributes except configured resource changes |
 
 Both paths accept `/v1/logs`, `/v1/metrics`, and `/v1/traces`. The environment path supports application,
 infrastructure, and control-plane telemetry without requiring a Nuon control-plane or downstream install ID.
@@ -85,15 +85,9 @@ Each path uses the standard Collector resource processor. By default it upserts 
 `install` or `environment`. This attribute identifies the ingestion path, not an application's identity.
 Install resource actions run after `nuonidentity`; environment resource actions do not require a verified principal.
 
-Both paths then run `transform/provenance`, which keeps `nuon.telemetry.source` canonical on the resource by deleting
-that exact key from instrumentation scopes, log records, metric metadata/datapoints, exemplar filtered attributes,
-spans, and span events. It does not copy resource attributes onto records or remove any other keys. In particular,
-names and event-specific attributes remain untouched. Transform errors propagate instead of forwarding data with
-incomplete cleanup.
-
-Collector v0.150.0 has no iterable span-link transform context, so source-marker attributes on span links remain
-unchanged. Aliases and differently cased spellings also remain unchanged. The canonical field for queries is the
-exact `nuon.telemetry.source` resource attribute, not a value extracted from a span link or log body.
+The relay overwrites incoming resource-level `nuon.telemetry.source` values with the pipeline's configured value.
+It does not copy that value onto records or remove same-named attributes at other levels. The canonical field for
+queries is the exact `nuon.telemetry.source` resource attribute, not a record, datapoint, span, or scope attribute.
 
 Customize `processors.resource/install.attributes` and `processors.resource/environment.attributes` in a mounted
 Collector configuration or an override file. Use `insert` for a default that preserves a producer's value and
@@ -150,7 +144,9 @@ meaning. Configuration is trusted; there is no additional attribute-policy layer
 
 OTLP keeps resource, scope, and record/datapoint attributes separate. Use resource-aware filters in backends that
 support them. For a backend that flattens attributes into labels, configure selective resource promotion rather
-than duplicating all resource fields on every record or datapoint.
+than duplicating all resource fields on every record or datapoint. OTel does not define a universal precedence
+between same-named attributes at different levels: check the backend's collision handling so a sender-supplied
+record or datapoint value does not take precedence over the relay's resource marker.
 
 For example, in a Prometheus server accepting OTLP, merge these keys into its existing resource-promotion list:
 
@@ -167,9 +163,6 @@ This is backend configuration, not relay configuration. Preserve any existing pr
 identity. Choose additional IDs and names against the backend's cardinality budget, and use the backend's actual
 label spelling when querying (for example, `nuon_telemetry_source` with underscore normalization).
 See [Prometheus OTLP resource promotion](https://prometheus.io/docs/guides/opentelemetry/#promoting-resource-attributes).
-
-The cleanup transform does not aggregate metrics. Producers must not use the relay-owned source marker as a
-datapoint dimension to distinguish otherwise identical series; removing it would collapse their stream identities.
 
 ## Relay self-observability
 
@@ -214,10 +207,9 @@ Before rollout, exercise the built relay against disposable JWKS and OTLP backen
 - A configured org allowlist accepts each listed JWT org and rejects unlisted orgs without forwarding, even when
   the payload claims an allowed ID. Environment telemetry and relay self-metrics remain unaffected.
 - Unauthenticated environment requests export all three signals with `source=environment`, preserving source
-  resource and signal attributes except source-marker cleanup, without requiring any Nuon identity.
-- Conflicting `nuon.telemetry.source` values on scopes, log records, metric metadata/datapoints, exemplars, spans,
-  and span events are removed on both paths while the resource marker, names, and unrelated attributes survive.
-  Missing lower-level markers are a no-op; span-link markers remain unchanged at this Collector version.
+  resource and signal attributes without requiring any Nuon identity.
+- Incoming resource-level `nuon.telemetry.source` values are overwritten on both paths. Same-named attributes at
+  other levels, names, and unrelated attributes survive; backend filters select the resource marker.
 - Override configuration proves `insert` preserves source values and `upsert` replaces them on both paths.
 - With no external producers, relay metrics arrive over multiple intervals, remain bounded, and have distinct
   process instance IDs across restarts. The local Prometheus endpoint remains available.

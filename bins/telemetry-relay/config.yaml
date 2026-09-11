@@ -48,38 +48,6 @@ processors:
       - key: nuon.telemetry.source
         value: environment
         action: upsert
-  transform/provenance:
-    error_mode: propagate
-    log_statements:
-      - context: scope
-        statements:
-          - delete_key(attributes, "nuon.telemetry.source")
-      - context: log
-        statements:
-          - delete_key(attributes, "nuon.telemetry.source")
-    metric_statements:
-      - context: scope
-        statements:
-          - delete_key(attributes, "nuon.telemetry.source")
-      - context: metric
-        statements:
-          - delete_key(metadata, "nuon.telemetry.source")
-      - context: datapoint
-        statements:
-          - delete_key(attributes, "nuon.telemetry.source")
-      - context: exemplar
-        statements:
-          - delete_key(filtered_attributes, "nuon.telemetry.source")
-    trace_statements:
-      - context: scope
-        statements:
-          - delete_key(attributes, "nuon.telemetry.source")
-      - context: span
-        statements:
-          - delete_key(attributes, "nuon.telemetry.source")
-      - context: spanevent
-        statements:
-          - delete_key(attributes, "nuon.telemetry.source")
 
 exporters:
   otlp_http/install:
@@ -132,25 +100,25 @@ service:
   pipelines:
     logs/install:
       receivers: [otlp/install]
-      processors: [memory_limiter, nuonidentity, resource/install, transform/provenance]
+      processors: [memory_limiter, nuonidentity, resource/install]
       exporters: [otlp_http/install]
     metrics/install:
       receivers: [otlp/install]
-      processors: [memory_limiter, nuonidentity, resource/install, transform/provenance]
+      processors: [memory_limiter, nuonidentity, resource/install]
       exporters: [otlp_http/install]
     traces/install:
       receivers: [otlp/install]
-      processors: [memory_limiter, nuonidentity, resource/install, transform/provenance]
+      processors: [memory_limiter, nuonidentity, resource/install]
       exporters: [otlp_http/install]
     logs/environment:
       receivers: [otlp/environment]
-      processors: [memory_limiter, resource/environment, transform/provenance]
+      processors: [memory_limiter, resource/environment]
       exporters: [otlp_http/environment]
     metrics/environment:
       receivers: [otlp/environment]
-      processors: [memory_limiter, resource/environment, transform/provenance]
+      processors: [memory_limiter, resource/environment]
       exporters: [otlp_http/environment]
     traces/environment:
       receivers: [otlp/environment]
-      processors: [memory_limiter, resource/environment, transform/provenance]
+      processors: [memory_limiter, resource/environment]
       exporters: [otlp_http/environment]

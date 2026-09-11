@@ -13,7 +13,6 @@ receivers:
 processors:
   - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.150.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.150.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.150.0
   - gomod: github.com/nuonco/nuon/bins/telemetry-relay/processor/nuonidentityprocessor v0.0.0
     path: ./processor/nuonidentityprocessor
 
