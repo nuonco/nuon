@@ -62,7 +62,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 			parameter := cloudformation.Parameter{
 				Type:          "String",
 				Description:   ptr("Provision an internal OTLP HTTP endpoint for this install (additional AWS charges apply)"),
-				Default:       "false",
+				Default:       "true",
 				AllowedValues: []any{"true", "false"},
 			}
 			runnerParams["EnableTelemetryIngress"] = parameter
