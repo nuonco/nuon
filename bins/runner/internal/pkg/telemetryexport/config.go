@@ -202,7 +202,7 @@ func collectorConfig(cfg config) ([]byte, []string, error) {
 	return contents, environment, err
 }
 
-func vendorCollectorConfig(endpoint string) ([]byte, error) {
+func vendorCollectorConfig(endpoint string, attributes map[string]string) ([]byte, error) {
 	if err := validateOTLPHTTPExporter(otlpHTTPExporter{Endpoint: endpoint}); err != nil {
 		return nil, fmt.Errorf("invalid vendor OTLP/HTTP exporter: %w", err)
 	}
@@ -218,6 +218,26 @@ func vendorCollectorConfig(endpoint string) ([]byte, error) {
 		"retry_on_failure": map[string]any{"enabled": true, "initial_interval": "1s", "max_interval": "30s", "max_elapsed_time": "0s"},
 	}
 	pipeline := map[string]any{"receivers": []string{"otlp"}, "processors": []string{"memory_limiter"}, "exporters": []string{"otlp_http/vendor"}}
+	processors := map[string]any{"memory_limiter": map[string]any{"check_interval": "1s", "limit_mib": 128, "spike_limit_mib": 32}}
+	// Older APIs omit the snapshot; preserve their existing passthrough behavior.
+	if len(attributes) > 0 {
+		keys := make([]string, 0, len(attributes))
+		for key := range attributes {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		actions := []map[string]any{{"action": "delete", "pattern": `^nuon\.install\.labels\.`}}
+		for _, key := range keys {
+			// Confmap expands environment references even in quoted YAML strings.
+			actions = append(actions, map[string]any{
+				"action": "upsert",
+				"key":    strings.ReplaceAll(key, "$", "$$"),
+				"value":  strings.ReplaceAll(attributes[key], "$", "$$"),
+			})
+		}
+		processors["resource/install"] = map[string]any{"attributes": actions}
+		pipeline["processors"] = []string{"memory_limiter", "resource/install"}
+	}
 	document := map[string]any{
 		"extensions": map[string]any{
 			"health_check":               map[string]any{"endpoint": vendorCollectorHealthAddress},
@@ -225,7 +245,7 @@ func vendorCollectorConfig(endpoint string) ([]byte, error) {
 			vendorBearerAuthExtensionID:  map[string]any{"filename": vendorTokenPath},
 		},
 		"receivers":  map[string]any{"otlp": receiver},
-		"processors": map[string]any{"memory_limiter": map[string]any{"check_interval": "1s", "limit_mib": 128, "spike_limit_mib": 32}},
+		"processors": processors,
 		"exporters":  map[string]any{"otlp_http/vendor": exporter},
 		"service": map[string]any{
 			"extensions": []string{"health_check", vendorFileStorageExtensionID, vendorBearerAuthExtensionID},

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"net/url"
 	"os"
 	"os/exec"
@@ -29,8 +30,9 @@ const (
 )
 
 type vendorSettings struct {
-	enabled  bool
-	endpoint string
+	enabled    bool
+	endpoint   string
+	attributes map[string]string
 }
 
 type VendorParams struct {
@@ -46,6 +48,8 @@ type VendorSupervisor struct {
 	initialSettings     vendorSettings
 	activeEndpoint      string
 	desiredEndpoint     string
+	activeAttributes    map[string]string
+	desiredAttributes   map[string]string
 	rejectedEndpoint    string
 	local               bool
 	logger              *zap.Logger
@@ -61,7 +65,7 @@ type VendorSupervisor struct {
 	settingsUnavailable bool
 
 	fetchSettingsFn func(context.Context) (vendorSettings, error)
-	replaceChildFn  func(context.Context, string) error
+	replaceChildFn  func(context.Context, string, map[string]string) error
 	stopChildFn     func()
 }
 
@@ -69,8 +73,9 @@ func NewVendor(params VendorParams) *VendorSupervisor {
 	s := &VendorSupervisor{
 		installID: params.Settings.Metadata["install.id"],
 		initialSettings: vendorSettings{
-			enabled:  params.Settings.VendorTelemetryEnabled,
-			endpoint: params.Settings.TelemetryRelayEndpoint,
+			enabled:    params.Settings.VendorTelemetryEnabled,
+			endpoint:   params.Settings.TelemetryRelayEndpoint,
+			attributes: maps.Clone(params.Settings.VendorTelemetryResourceAttributes),
 		},
 		local:   params.Settings.Cfg.IsNuonctl,
 		logger:  params.Logger,
@@ -86,7 +91,7 @@ func NewVendor(params VendorParams) *VendorSupervisor {
 		if response == nil {
 			return vendorSettings{}, fmt.Errorf("runner settings response is empty")
 		}
-		return vendorSettings{enabled: response.VendorTelemetryEnabled, endpoint: response.TelemetryRelayEndpoint}, nil
+		return vendorSettings{enabled: response.VendorTelemetryEnabled, endpoint: response.TelemetryRelayEndpoint, attributes: response.VendorTelemetryResourceAttributes}, nil
 	}
 	s.replaceChildFn = s.replaceChild
 	s.stopChildFn = s.stopChild
@@ -169,6 +174,7 @@ func (s *VendorSupervisor) reconcile(ctx context.Context, settings vendorSetting
 		}
 		if s.enabled {
 			s.desiredEndpoint = s.activeEndpoint
+			s.desiredAttributes = maps.Clone(s.activeAttributes)
 			s.nextStart = time.Time{}
 			s.backoff = time.Second
 		} else {
@@ -178,15 +184,16 @@ func (s *VendorSupervisor) reconcile(ctx context.Context, settings vendorSetting
 		return
 	}
 	s.rejectedEndpoint = ""
-	if settings.endpoint == s.desiredEndpoint {
+	if settings.endpoint == s.desiredEndpoint && maps.Equal(settings.attributes, s.desiredAttributes) {
 		return
 	}
 
 	s.desiredEndpoint = settings.endpoint
+	s.desiredAttributes = maps.Clone(settings.attributes)
 	s.disabled = false
 	s.backoff = time.Second
 	s.nextStart = time.Time{}
-	if s.enabled && s.activeEndpoint == s.desiredEndpoint {
+	if s.enabled && s.activeEndpoint == s.desiredEndpoint && maps.Equal(s.activeAttributes, s.desiredAttributes) {
 		return
 	}
 	s.startCollector(ctx)
@@ -200,6 +207,8 @@ func (s *VendorSupervisor) disable() {
 	s.tokens.Disable()
 	s.activeEndpoint = ""
 	s.desiredEndpoint = ""
+	s.activeAttributes = nil
+	s.desiredAttributes = nil
 	s.rejectedEndpoint = ""
 	s.nextStart = time.Time{}
 	s.backoff = time.Second
@@ -219,15 +228,17 @@ func (s *VendorSupervisor) startCollector(ctx context.Context) {
 	}
 
 	previousEndpoint := s.activeEndpoint
+	previousAttributes := s.activeAttributes
 	previousEnabled := s.enabled
-	if err := s.replaceChildFn(ctx, s.desiredEndpoint); err != nil {
+	if err := s.replaceChildFn(ctx, s.desiredEndpoint, s.desiredAttributes); err != nil {
 		if ctx.Err() != nil {
 			return
 		}
 		s.logger.Warn("vendor telemetry export collector failed to start", zap.Error(err))
-		if previousEnabled && previousEndpoint != "" && previousEndpoint != s.desiredEndpoint {
-			if rollbackErr := s.replaceChildFn(ctx, previousEndpoint); rollbackErr == nil {
+		if previousEnabled && previousEndpoint != "" && (previousEndpoint != s.desiredEndpoint || !maps.Equal(previousAttributes, s.desiredAttributes)) {
+			if rollbackErr := s.replaceChildFn(ctx, previousEndpoint, previousAttributes); rollbackErr == nil {
 				s.activeEndpoint = previousEndpoint
+				s.activeAttributes = previousAttributes
 				s.enabled = true
 				s.scheduleRestart()
 				return
@@ -237,6 +248,7 @@ func (s *VendorSupervisor) startCollector(ctx context.Context) {
 		}
 		s.tokens.Disable()
 		s.activeEndpoint = ""
+		s.activeAttributes = nil
 		s.enabled = false
 		s.scheduleRestart()
 		return
@@ -244,6 +256,7 @@ func (s *VendorSupervisor) startCollector(ctx context.Context) {
 
 	s.enabled = true
 	s.activeEndpoint = s.desiredEndpoint
+	s.activeAttributes = maps.Clone(s.desiredAttributes)
 	s.nextStart = time.Time{}
 	endpoint, _ := url.Parse(s.activeEndpoint)
 	s.logger.Info("vendor telemetry export collector enabled",
@@ -254,14 +267,14 @@ func (s *VendorSupervisor) startCollector(ctx context.Context) {
 	)
 }
 
-func (s *VendorSupervisor) replaceChild(ctx context.Context, endpoint string) error {
+func (s *VendorSupervisor) replaceChild(ctx context.Context, endpoint string, attributes map[string]string) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 	if _, err := os.Stat(collectorBinary); err != nil {
 		return err
 	}
-	contents, err := vendorCollectorConfig(endpoint)
+	contents, err := vendorCollectorConfig(endpoint, attributes)
 	if err != nil {
 		return err
 	}
@@ -337,6 +350,7 @@ func (s *VendorSupervisor) restartIfNeeded(ctx context.Context) {
 			s.stopChildFn()
 			s.enabled = false
 			s.activeEndpoint = ""
+			s.activeAttributes = nil
 			s.logger.Warn("vendor telemetry export collector exited; scheduling restart")
 			if time.Since(child.startedAt) >= 30*time.Second {
 				s.backoff = time.Second
