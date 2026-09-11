@@ -30,6 +30,7 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	vcsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/worker"
 	vcsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/worker/activities"
+	workflowmetrics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/metrics"
 )
 
 // GeneralWorkerModule provides the general namespace worker.
@@ -37,6 +38,7 @@ var GeneralWorkerModule = fx.Module("worker-general",
 	fx.Provide(generalactivities.New),
 	fx.Provide(generalworker.NewWorkflows),
 	fx.Provide(worker.AsWorker(generalworker.New)),
+	fx.Invoke(workflowmetrics.Start),
 )
 
 // OrgsWorkerModule provides the orgs namespace worker.
