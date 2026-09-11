@@ -3,9 +3,11 @@ package nuonidentityprocessor
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 
 	"go.opentelemetry.io/collector/client"
+	"go.opentelemetry.io/collector/consumer/consumererror"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -14,15 +16,13 @@ import (
 	"github.com/nuonco/nuon/bins/telemetry-relay/extension/nuonjwtauthextension"
 )
 
-const (
-	reservedAttributePrefix           = "nuon."
-	normalizedReservedAttributePrefix = "nuon_"
+var (
+	errMissingPrincipal = errors.New("verified Nuon telemetry principal is required")
+	errOrgNotAllowed    = consumererror.NewPermanent(errors.New("verified Nuon telemetry org is not allowed"))
 )
 
-var errMissingPrincipal = errors.New("verified Nuon telemetry principal is required")
-
-func processLogs(ctx context.Context, logs plog.Logs) error {
-	principal, err := principalFromContext(ctx)
+func processLogs(ctx context.Context, logs plog.Logs, allowedOrgIDs []string) error {
+	principal, err := principalFromContext(ctx, allowedOrgIDs)
 	if err != nil {
 		return err
 	}
@@ -44,8 +44,8 @@ func processLogs(ctx context.Context, logs plog.Logs) error {
 	return nil
 }
 
-func processMetrics(ctx context.Context, metrics pmetric.Metrics) error {
-	principal, err := principalFromContext(ctx)
+func processMetrics(ctx context.Context, metrics pmetric.Metrics, allowedOrgIDs []string) error {
+	principal, err := principalFromContext(ctx, allowedOrgIDs)
 	if err != nil {
 		return err
 	}
@@ -67,8 +67,8 @@ func processMetrics(ctx context.Context, metrics pmetric.Metrics) error {
 	return nil
 }
 
-func processTraces(ctx context.Context, traces ptrace.Traces) error {
-	principal, err := principalFromContext(ctx)
+func processTraces(ctx context.Context, traces ptrace.Traces, allowedOrgIDs []string) error {
+	principal, err := principalFromContext(ctx, allowedOrgIDs)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func processTraces(ctx context.Context, traces ptrace.Traces) error {
 	return nil
 }
 
-func principalFromContext(ctx context.Context) (nuonjwtauthextension.Principal, error) {
+func principalFromContext(ctx context.Context, allowedOrgIDs []string) (nuonjwtauthextension.Principal, error) {
 	authData, ok := client.FromContext(ctx).Auth.(*nuonjwtauthextension.AuthData)
 	if !ok {
 		return nuonjwtauthextension.Principal{}, errMissingPrincipal
@@ -107,6 +107,9 @@ func principalFromContext(ctx context.Context) (nuonjwtauthextension.Principal, 
 	principal := authData.Principal()
 	if principal.OrgID == "" || principal.AppID == "" || principal.InstallID == "" || principal.RunnerID == "" {
 		return nuonjwtauthextension.Principal{}, errMissingPrincipal
+	}
+	if len(allowedOrgIDs) > 0 && !slices.Contains(allowedOrgIDs, principal.OrgID) {
+		return nuonjwtauthextension.Principal{}, errOrgNotAllowed
 	}
 	return principal, nil
 }
@@ -121,8 +124,13 @@ func stampResource(attributes pcommon.Map, principal nuonjwtauthextension.Princi
 
 func stripReserved(attributes pcommon.Map) {
 	attributes.RemoveIf(func(key string, _ pcommon.Value) bool {
-		key = strings.ToLower(key)
-		return strings.HasPrefix(key, reservedAttributePrefix) || strings.HasPrefix(key, normalizedReservedAttributePrefix)
+		switch strings.ToLower(key) {
+		case "nuon.org.id", "nuon.app.id", "nuon.install.id", "nuon.runner.id",
+			"nuon_org_id", "nuon_app_id", "nuon_install_id", "nuon_runner_id":
+			return true
+		default:
+			return false
+		}
 	})
 }
 
