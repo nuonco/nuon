@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -38,6 +39,9 @@ func TestPostgresSnapshot(t *testing.T) {
 	t.Cleanup(fxApp.RequireStop)
 
 	ctx := context.Background()
+	migration := &migrations.Migrations{}
+	require.NoError(t, migration.Migration132WorkflowMetricsIndex(ctx, deps.DB))
+	require.NoError(t, migration.Migration132WorkflowMetricsIndex(ctx, deps.DB))
 	connect := func() *pgx.Conn {
 		conn, err := psql.NewPrimaryListenerConn(ctx, deps.Config)
 		require.NoError(t, err)
@@ -166,7 +170,9 @@ func TestPostgresSnapshot(t *testing.T) {
 		defer tx.Rollback(ctx)
 		_, err = tx.Exec(ctx, "SET LOCAL enable_seqscan=off; SET LOCAL plan_cache_mode=force_generic_plan")
 		require.NoError(t, err)
-		rows, err := tx.Query(ctx, "EXPLAIN "+snapshotQuery, workflowTypes)
+		_, err = tx.Prepare(ctx, "workflow_metrics_plan", snapshotQuery)
+		require.NoError(t, err)
+		rows, err := tx.Query(ctx, "EXPLAIN EXECUTE workflow_metrics_plan('{provision,manual_deploy,deploy_components}')")
 		require.NoError(t, err)
 		defer rows.Close()
 		var plan string

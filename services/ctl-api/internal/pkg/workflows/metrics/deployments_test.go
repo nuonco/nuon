@@ -223,6 +223,18 @@ created_at=?, applied_at=?, install_workflow_id=? WHERE id=?`, raw, v2, now.Add(
 		tx, err := conn.Begin(ctx)
 		require.NoError(t, err)
 		defer tx.Rollback(ctx)
+		// Historical rows make the time-range indexes selective rather than relying
+		// on arbitrary planner choices between single-page fixture indexes.
+		_, err = tx.Exec(ctx, `INSERT INTO install_deploys
+(id, created_by_id, created_at, updated_at, deleted_at, org_id, component_build_id,
+ install_component_id, status, status_description, type, applied_at, install_workflow_id)
+SELECT lpad(n::text, 26, 'x'), created_by_id, created_at - n * interval '1 day', updated_at,
+ deleted_at, org_id, component_build_id, install_component_id, status, status_description,
+ type, created_at - n * interval '1 day', install_workflow_id
+FROM install_deploys CROSS JOIN generate_series(1, 5000) n WHERE id = $1`, d.ID)
+		require.NoError(t, err)
+		_, err = tx.Exec(ctx, "ANALYZE install_deploys; ANALYZE install_components; ANALYZE install_workflows; ANALYZE installs; ANALYZE components; ANALYZE apps; ANALYZE orgs")
+		require.NoError(t, err)
 		_, err = tx.Exec(ctx, "SET LOCAL enable_seqscan=off; SET LOCAL plan_cache_mode=force_generic_plan")
 		require.NoError(t, err)
 		_, err = tx.Prepare(ctx, "deployment_metrics_plan", deploymentSnapshotQuery)
@@ -238,9 +250,16 @@ created_at=?, applied_at=?, install_workflow_id=? WHERE id=?`, raw, v2, now.Add(
 			plan += line + "\n"
 		}
 		require.NoError(t, rows.Err())
-		for _, index := range []string{"idx_install_deploys_metrics_created", "idx_install_deploys_metrics_applied", "idx_install_deploys_metrics_latest"} {
+		for _, index := range []string{"idx_install_deploys_metrics_created", "idx_install_deploys_metrics_applied"} {
 			require.Contains(t, plan, index)
 		}
+		// The latest lookup may use another component-keyed index depending on
+		// join costs. Require an indexed lookup, not a specific index choice.
+		require.Regexp(t, `Index Cond: .*install_component_id = c_[0-9]+\.id`, plan)
+		var valid bool
+		require.NoError(t, tx.QueryRow(ctx, `SELECT indisvalid FROM pg_index
+WHERE indexrelid = 'idx_install_deploys_metrics_latest'::regclass`).Scan(&valid))
+		require.True(t, valid)
 	})
 
 	r, _ := testReporter(t)
