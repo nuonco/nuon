@@ -9,3 +9,7 @@ import (
 var MCPAPIModule = fx.Module("mcp-api",
 	fx.Invoke(mcpserver.New),
 )
+
+var NuonctlMCPAPIModule = fx.Module("nuonctl-mcp-api",
+	fx.Invoke(mcpserver.NewNuonctl),
+)

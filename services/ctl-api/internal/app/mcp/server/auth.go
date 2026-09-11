@@ -67,6 +67,10 @@ func accountHasOrgAccess(acct *app.Account, orgID string) bool {
 	return false
 }
 
+func (s *Server) accountAllowed(acct *app.Account) bool {
+	return !s.requireEmployee || acct.IsEmployee
+}
+
 func extractBearerToken(r *http.Request) string {
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
