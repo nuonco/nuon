@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/poolmetrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
 )
 
@@ -91,6 +92,7 @@ func New(v *validator.Validate,
 	lc fx.Lifecycle,
 	cfg *internal.Config,
 	qc *querycollector.Collector,
+	pm poolmetrics.Params,
 ) (*gorm.DB, error) {
 	primary, err := newDatabase(cfg, l, metricsWriter, qc, cfg.DBHost)
 	if err != nil {
@@ -179,6 +181,17 @@ func New(v *validator.Validate,
 		},
 	})
 
+	if pm.Metrics != nil {
+		if err := pm.Metrics.RegisterPostgres("primary", primary.pool); err != nil {
+			return nil, fmt.Errorf("unable to register primary pool metrics: %w", err)
+		}
+		if replica != nil {
+			if err := pm.Metrics.RegisterPostgres("replica", replica.pool); err != nil {
+				return nil, fmt.Errorf("unable to register replica pool metrics: %w", err)
+			}
+		}
+	}
+
 	return db, nil
 }
 
@@ -190,11 +203,12 @@ func NewReplica(v *validator.Validate,
 	lc fx.Lifecycle,
 	cfg *internal.Config,
 	qc *querycollector.Collector,
+	pm poolmetrics.Params,
 ) (*gorm.DB, error) {
 	if cfg.DBReplicaHost == "" {
 		return nil, fmt.Errorf("db_replica_host must be set to use the read replica")
 	}
-	return open(v, l, metricsWriter, lc, cfg, qc, cfg.DBReplicaHost)
+	return open(v, l, metricsWriter, lc, cfg, qc, cfg.DBReplicaHost, pm)
 }
 
 func newDatabase(cfg *internal.Config, l zapgorm2.Logger, metricsWriter metrics.Writer, qc *querycollector.Collector, host string) (*database, error) {
@@ -234,6 +248,7 @@ func open(v *validator.Validate,
 	cfg *internal.Config,
 	qc *querycollector.Collector,
 	host string,
+	pm poolmetrics.Params,
 ) (*gorm.DB, error) {
 	d, err := newDatabase(cfg, l, metricsWriter, qc, host)
 	if err != nil {
@@ -271,6 +286,12 @@ func open(v *validator.Validate,
 			return nil
 		},
 	})
+
+	if pm.Metrics != nil {
+		if err := pm.Metrics.RegisterPostgres("admin_replica", d.pool); err != nil {
+			return nil, fmt.Errorf("unable to register admin replica pool metrics: %w", err)
+		}
+	}
 
 	return db, err
 }
