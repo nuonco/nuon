@@ -35,13 +35,11 @@ func (c *Client) getQueue(ctx context.Context, id string) (*app.Queue, error) {
 // @start-to-close-timeout 1m
 func (c *Client) GetQueueByOwner(ctx context.Context, ownerID, ownerType string) (*app.Queue, error) {
 	var q app.Queue
-	// owners have several named queues, so without this the lowest-id one wins at random
 	if res := c.db.WithContext(ctx).
 		Where(&app.Queue{
 			OwnerID:   ownerID,
 			OwnerType: ownerType,
 		}).
-		Scopes(app.DefaultQueueScope).
 		First(&q); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to get queue by owner")
 	}
