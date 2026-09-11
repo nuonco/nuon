@@ -10,7 +10,6 @@ import { WorkflowTimeline } from '@/components/workflows/WorkflowTimeline'
 import { ShowDriftScanContainer as ShowDriftScan } from '@/components/workflows/filters/ShowDriftScans'
 import { WorkflowTypeFilter } from '@/components/workflows/filters/WorkflowTypeFilter'
 import { WorkflowSearch } from '@/components/workflows/filters/WorkflowSearch'
-import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallWorkflows } from '@/lib'
@@ -72,7 +71,6 @@ export const Workflows = () => {
       <SectionHeader
         title="Workflow history"
         description="View past and active workflows for this install."
-        actions={<RunAdhocActionButton />}
       />
 
       <div className="flex items-center justify-between gap-4">
