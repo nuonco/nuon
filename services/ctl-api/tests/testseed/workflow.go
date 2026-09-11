@@ -3,20 +3,43 @@ package testseed
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
+// WorkflowOption allows overriding defaults when creating a Workflow.
+type WorkflowOption func(*app.Workflow)
+
+func WithWorkflowStatus(status app.CompositeStatus) WorkflowOption {
+	return func(w *app.Workflow) { w.Status = status }
+}
+
+func WithWorkflowOwnerType(ownerType string) WorkflowOption {
+	return func(w *app.Workflow) { w.OwnerType = ownerType }
+}
+
+func WithWorkflowPlanOnly(planOnly bool) WorkflowOption {
+	return func(w *app.Workflow) { w.PlanOnly = planOnly }
+}
+
+func WithWorkflowCreatedAt(createdAt time.Time) WorkflowOption {
+	return func(w *app.Workflow) { w.CreatedAt = createdAt }
+}
+
 // CreateWorkflow persists a Workflow owned by the given install.
-func (s *Seeder) CreateWorkflow(ctx context.Context, t *testing.T, installID string, workflowType app.WorkflowType) *app.Workflow {
+func (s *Seeder) CreateWorkflow(ctx context.Context, t *testing.T, installID string, workflowType app.WorkflowType, opts ...WorkflowOption) *app.Workflow {
 	wf := &app.Workflow{
 		OwnerID:        installID,
 		OwnerType:      "installs",
 		Type:           workflowType,
 		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
 		ApprovalOption: app.InstallApprovalOptionPrompt,
+	}
+	for _, opt := range opts {
+		opt(wf)
 	}
 	res := s.db.WithContext(ctx).Create(wf)
 	require.NoError(t, res.Error)
