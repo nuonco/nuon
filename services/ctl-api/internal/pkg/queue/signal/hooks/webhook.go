@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/metric"
 	"go.temporal.io/sdk/activity"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -166,10 +167,11 @@ const orgNameCacheTTL = 10 * time.Minute
 type Params struct {
 	fx.In
 
-	Cfg *internal.Config `optional:"true"`
-	L   *zap.Logger      `optional:"true"`
-	DB  *gorm.DB         `name:"psql" optional:"true"`
-	MW  metrics.Writer   `optional:"true"`
+	Cfg           *internal.Config     `optional:"true"`
+	L             *zap.Logger          `optional:"true"`
+	DB            *gorm.DB             `name:"psql" optional:"true"`
+	MW            metrics.Writer       `optional:"true"`
+	MeterProvider metric.MeterProvider `optional:"true"`
 }
 
 type WebhookSignalLifecycleHook struct {
@@ -180,6 +182,7 @@ type WebhookSignalLifecycleHook struct {
 	appURL          string
 	publicAPIURL    string
 	mw              metrics.Writer
+	deliveryMetrics *deliveryMetrics
 	blobReadEnabled bool
 
 	// workflowCreatorCache holds workflowCreatorRow values keyed by workflow
@@ -233,6 +236,7 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 		appURL:          appURL,
 		publicAPIURL:    publicAPIURL,
 		mw:              params.MW,
+		deliveryMetrics: newDeliveryMetrics(params.MeterProvider),
 		blobReadEnabled: blobReadEnabled,
 	}
 }
@@ -1603,7 +1607,7 @@ func buildSubject(event signal.SignalPhaseEvent, data lifecycleEventData) string
 	return strings.Join(parts, "/")
 }
 
-func (h *WebhookSignalLifecycleHook) sendWebhook(ctx context.Context, target webhookTarget, payloadJSON []byte) error {
+func (h *WebhookSignalLifecycleHook) sendWebhook(ctx context.Context, target webhookTarget, payloadJSON []byte) (retErr error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, target.URL, bytes.NewReader(payloadJSON))
 	if err != nil {
 		return fmt.Errorf("unable to create webhook request: %w", err)
@@ -1615,6 +1619,11 @@ func (h *WebhookSignalLifecycleHook) sendWebhook(ctx context.Context, target web
 		mac.Write(payloadJSON)
 		req.Header.Set("X-Nuon-Signature", hex.EncodeToString(mac.Sum(nil)))
 	}
+
+	started := time.Now()
+	defer func() {
+		h.deliveryMetrics.record(ctx, deliveryChannelWebhook, deliveryOperationPost, started, retErr)
+	}()
 
 	resp, err := h.httpClient.Do(req)
 	if err != nil {

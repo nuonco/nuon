@@ -51,3 +51,20 @@ Counts expire after 15 minutes or leadership loss. Failures retain the previous
 snapshot; exceeding 1,999 series per metric rejects the whole refresh rather
 than exporting partial totals. Observed states emit zero when emptied; components
 without eligible deployment history are absent.
+
+## Inventory and queue snapshots
+
+The same leader collects these every five minutes with independent freshness and
+the deployment query limits. Failures are also throttled to five minutes.
+
+| Metric | Meaning |
+| --- | --- |
+| `nuon.inventory.current` | Non-deleted orgs, apps and installs by bounded `resource.kind` and `resource.state`; deleted parents are excluded. |
+| `nuon.queue.current` | Non-deleted signals on live queues/orgs in `awaiting_dispatch`, `queued`, or `executing`, by `queue.state`. |
+| `nuon.queue.oldest_created_at` | Oldest creation timestamp in each nonempty queue state, in Unix seconds; not phase entry time. |
+| `nuon.inventory.snapshot.collected_at` | Last successful inventory/queue snapshot completion, in Unix seconds. |
+
+These are recorded states, not live health or Temporal liveness. Terminal signals
+are excluded. Unknown resource states use `unknown`. Empty categories emit zero;
+counts expire after 15 minutes or leadership loss. Select the newest fresh reporter
+before aggregation, using the same timestamp rules as deployment snapshots.

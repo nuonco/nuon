@@ -188,6 +188,27 @@ shutdown. The default set has 9–10 scalar series and no histograms. GC pauses/
 process CPU and RSS are not included. `OTEL_GO_X_DEPRECATED_RUNTIME_METRICS=true`
 additionally enables the library's deprecated metrics; leave it unset for this set.
 
+### Operational attempts
+
+| Family | Boundary |
+| --- | --- |
+| `nuon.policy.evaluation.{count,duration}` | One policy/input activity invocation; `decision=pass|warn|deny` on success, bounded `error.type` on evaluator failure. |
+| `nuon.notification.delivery.{attempts,duration}` | Outbound webhook/Slack calls by channel, post/update operation and outcome. |
+| `nuon.queue.enqueuer.dispatch.{attempts,duration}` | Temporal dispatch RPCs by bounded source and outcome. |
+| `nuon.install.state.{operations,operation.duration}` | Install-state get/save calls by operation and outcome. |
+| `nuon.blobstore.{operations,operation.duration}` | Blob service calls by operation and outcome, for both S3 and GCS. |
+
+Durations are explicit-bucket histograms in seconds. Retries count as attempts,
+not unique logical operations. Idle counters are absent until observed. No entity
+IDs, destinations, policy contents or error messages are dimensions.
+
+Enqueuers also expose `.operations` for persistence outcomes, `.channel.dropped`,
+`.local.backlog`, and `.local.workers.active` under `nuon.queue.enqueuer`.
+The local gauges cover the in-process channel/workers, not all Temporal workers.
+Blob stream open and body completion are separate operations; body outcomes are
+`success` at EOF, `error`, or `closed_early`. Body duration includes consumer time.
+See [snapshot metrics](../workflows/metrics/README.md) for inventory and queue state.
+
 ## Failure behavior
 
 Requests update in-memory aggregations; network export runs periodically outside

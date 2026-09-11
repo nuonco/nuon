@@ -38,6 +38,10 @@ type reporter struct {
 	deploymentsCollected time.Time
 	deploymentsActive    bool
 	deploymentAttempt    time.Time
+	inventory            map[inventoryBucket]value
+	inventoryCollected   time.Time
+	inventoryActive      bool
+	inventoryAttempt     time.Time
 }
 
 func Start(lc fx.Lifecycle, cfg *internal.Config, tc *telemetry.Config, provider metric.MeterProvider, l *zap.Logger) error {
@@ -113,9 +117,30 @@ func newReporter(provider metric.MeterProvider, l *zap.Logger) (*reporter, error
 	if err != nil {
 		return nil, err
 	}
+	inventory, err := meter.Int64ObservableGauge("nuon.inventory.current", metric.WithUnit("{resource}"),
+		metric.WithDescription("Non-deleted organizations, apps and installs by recorded lifecycle state; not live health."))
+	if err != nil {
+		return nil, err
+	}
+	queued, err := meter.Int64ObservableGauge("nuon.queue.current", metric.WithUnit("{signal}"),
+		metric.WithDescription("Non-deleted queued and in-progress signals by persisted dispatch state, not Temporal liveness."))
+	if err != nil {
+		return nil, err
+	}
+	queueOldest, err := meter.Float64ObservableGauge("nuon.queue.oldest_created_at", metric.WithUnit("s"),
+		metric.WithDescription("Unix creation time of the oldest signal in each current queue state, not phase entry time."))
+	if err != nil {
+		return nil, err
+	}
+	inventoryCollected, err := meter.Float64ObservableGauge("nuon.inventory.snapshot.collected_at", metric.WithUnit("s"),
+		metric.WithDescription("Unix time of the last successful inventory and queue snapshot completion; unchanged on failure."))
+	if err != nil {
+		return nil, err
+	}
 	r.registration, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
+		r.observeInventory(o, inventory, queued, queueOldest, inventoryCollected)
 		if !r.deploymentsCollected.IsZero() {
 			o.ObserveFloat64(deploymentCollected, float64(r.deploymentsCollected.UnixNano())/1e9)
 			if r.deploymentsActive && time.Since(r.deploymentsCollected) <= deploymentSnapshotTTL {
@@ -149,7 +174,7 @@ func newReporter(provider metric.MeterProvider, l *zap.Logger) (*reporter, error
 			}
 		}
 		return nil
-	}, current, oldest, collected, attempts, applies, latest, deploymentCollected)
+	}, current, oldest, collected, attempts, applies, latest, deploymentCollected, inventory, queued, queueOldest, inventoryCollected)
 	return r, err
 }
 
@@ -200,6 +225,11 @@ func (r *reporter) run(ctx context.Context, connect func(context.Context) (*pgx.
 			if err := r.refreshDeploymentsIfDue(ctx, conn); err != nil && ctx.Err() == nil {
 				r.l.Warn("unable to collect deployment metrics", zap.Error(err))
 			}
+			if !conn.IsClosed() {
+				if err := r.refreshInventoryIfDue(ctx, conn); err != nil && ctx.Err() == nil {
+					r.l.Warn("unable to collect inventory metrics", zap.Error(err))
+				}
+			}
 			if conn.IsClosed() {
 				r.release(conn)
 				conn = nil
@@ -236,6 +266,7 @@ func (r *reporter) release(conn *pgx.Conn) {
 	r.mu.Lock()
 	r.active = false
 	r.deploymentsActive = false
+	r.inventoryActive = false
 	wasLeader := r.leader
 	r.leader = false
 	r.mu.Unlock()
