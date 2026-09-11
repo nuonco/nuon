@@ -1,15 +1,25 @@
-import { Card } from '../components/atoms/Card'
-import { Text } from '../components/atoms/Text'
+import { WorkflowTimeline } from '../components/organisms/WorkflowTimeline'
+import { useInstall } from '../providers/install-provider'
+import { useOrg } from '../providers/org-provider'
 import { useInstallPageChrome } from './InstallLayout'
 
 export const InstallActivity = () => {
   useInstallPageChrome('Activity')
 
+  const { orgId } = useOrg()
+  const { install, installId } = useInstall()
+
+  const driftedWorkflowIds = new Set(
+    (install?.drifted_objects ?? [])
+      .map((object) => object?.install_workflow_id)
+      .filter((id): id is string => !!id)
+  )
+
   return (
-    <Card className="min-h-40">
-      <Text variant="caption" color="tertiary">
-        Page content will be added in a follow-up.
-      </Text>
-    </Card>
+    <WorkflowTimeline
+      orgId={orgId}
+      owner={{ kind: 'install', installId: installId ?? '' }}
+      driftedWorkflowIds={driftedWorkflowIds}
+    />
   )
 }
