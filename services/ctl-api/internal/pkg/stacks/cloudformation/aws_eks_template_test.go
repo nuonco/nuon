@@ -157,7 +157,7 @@ Outputs:
 			assert.NotContains(t, tmpl.Parameters, "VpcId")
 			assert.NotContains(t, tmpl.Parameters, "TelemetrySourcePrefixListId")
 			parameter := tmpl.Parameters["EnableTelemetryIngress"]
-			assert.Equal(t, "false", parameter.Default)
+			assert.Equal(t, "true", parameter.Default)
 			assert.Equal(t, []any{"true", "false"}, parameter.AllowedValues)
 			condition := rendered["Conditions"].(map[string]any)["TelemetryIngressEnabled"]
 			assert.Equal(t, map[string]any{"Fn::Equals": []any{map[string]any{"Ref": "EnableTelemetryIngress"}, "true"}}, condition)
