@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -51,7 +50,13 @@ func BenchmarkHTTPMetrics(b *testing.B) {
 			defer func() { blocked.Store(false); close(release); lc.RequireStop() }()
 			m, err := metrics.NewHTTPMetrics(provider)
 			require.NoError(b, err)
-			m.Start(context.Background(), "public", "GET", "http")("/v1/apps/:id", 200)
+			handler := m.Handler("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				metrics.SetHTTPRoute(r.Context(), "/v1/apps/:id")
+				w.WriteHeader(http.StatusOK)
+			}))
+			req := httptest.NewRequest("POST", "/v1/apps/app-test", nil)
+			req.ContentLength = 1024
+			handler.ServeHTTP(httptest.NewRecorder(), req)
 			if mode != "absent" {
 				select {
 				case <-started:
@@ -62,7 +67,7 @@ func BenchmarkHTTPMetrics(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
-				m.Start(context.Background(), "public", "GET", "http")("/v1/apps/:id", 200)
+				handler.ServeHTTP(httptest.NewRecorder(), req)
 			}
 			b.StopTimer()
 		})
