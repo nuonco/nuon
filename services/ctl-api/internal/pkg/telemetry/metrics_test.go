@@ -93,9 +93,18 @@ func TestMeterProviderExportsAndFlushesOnShutdown(t *testing.T) {
 	ctx := trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(trace.SpanContextConfig{
 		TraceID: trace.TraceID{1}, SpanID: trace.SpanID{2}, TraceFlags: trace.FlagsSampled,
 	}))
-	m.Start(ctx, "public", "GET", "https")("/v1/apps/:id", 200)
+	sendRequest := func(size int64) {
+		handler := m.Handler("public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			metrics.SetHTTPRoute(r.Context(), "/v1/apps/:id")
+			w.WriteHeader(http.StatusOK)
+		}))
+		req := httptest.NewRequest("POST", "https://example.com/v1/apps/app-test", nil).WithContext(ctx)
+		req.ContentLength = size
+		handler.ServeHTTP(httptest.NewRecorder(), req)
+	}
+	sendRequest(17)
 	require.NoError(t, provider.(*sdkmetric.MeterProvider).ForceFlush(ctx))
-	check := func(wantCount uint64) {
+	check := func(wantCount uint64, wantSize float64) {
 		t.Helper()
 		select {
 		case req := <-requests:
@@ -111,7 +120,9 @@ func TestMeterProviderExportsAndFlushesOnShutdown(t *testing.T) {
 			require.Equal(t, "control-plane-api", attrs["service.name"])
 			require.Equal(t, "test-version", attrs["service.version"])
 			metrics := rms.At(0).ScopeMetrics().At(0).Metrics()
+			require.Equal(t, 3, metrics.Len())
 			found := false
+			foundSize := false
 			for i := 0; i < metrics.Len(); i++ {
 				metric := metrics.At(i)
 				if metric.Name() == "http.server.request.duration" {
@@ -123,31 +134,48 @@ func TestMeterProviderExportsAndFlushesOnShutdown(t *testing.T) {
 					require.Equal(t, wantCount, points.At(0).Count())
 					require.Zero(t, points.At(0).Exemplars().Len())
 				}
+				if metric.Name() == "nuon.http.server.request.declared_body.size" {
+					foundSize = true
+					require.Equal(t, pmetric.AggregationTemporalityCumulative, metric.Histogram().AggregationTemporality())
+					points := metric.Histogram().DataPoints()
+					require.Equal(t, 1, points.Len())
+					require.Equal(t, wantCount, points.At(0).Count())
+					require.Zero(t, points.At(0).Exemplars().Len())
+					require.Equal(t, wantSize, points.At(0).Sum())
+				}
 			}
 			require.True(t, found)
+			require.True(t, foundSize)
 		case <-time.After(time.Second):
 			t.Fatal("no OTLP metric export received")
 		}
 	}
-	check(1)
-	m.Start(ctx, "public", "GET", "https")("/v1/apps/:id", 200)
+	check(1, 17)
+	sendRequest(5)
 	lc.RequireStop()
 	stopped = true
-	check(2)
+	check(2, 22)
 }
 
 func TestSlowMetricExporterDoesNotBlockHTTPRequests(t *testing.T) {
 	started := make(chan struct{})
+	release := make(chan struct{})
+	recoverReceiver := sync.OnceFunc(func() { close(release) })
 	var first sync.Once
 	var unavailable atomic.Bool
 	unavailable.Store(true)
+	requests := make(chan []byte, 2)
 	receiver := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.Copy(io.Discard, r.Body)
+		body, _ := io.ReadAll(r.Body)
 		if unavailable.Load() {
 			first.Do(func() { close(started) })
-			<-r.Context().Done()
-			return
+			select {
+			case <-release:
+			case <-r.Context().Done():
+				return
+			}
 		}
+		requests <- body
 		w.Header().Set("Content-Type", "application/x-protobuf")
 	}))
 	t.Cleanup(receiver.Close)
@@ -160,6 +188,7 @@ func TestSlowMetricExporterDoesNotBlockHTTPRequests(t *testing.T) {
 	require.NoError(t, err)
 	lc.RequireStart()
 	t.Cleanup(func() { lc.RequireStop() })
+	t.Cleanup(recoverReceiver)
 	m, err := metrics.NewHTTPMetrics(provider)
 	require.NoError(t, err)
 	m.Start(context.Background(), "runner", "GET", "http")("/v1/jobs", 200)
@@ -191,7 +220,33 @@ func TestSlowMetricExporterDoesNotBlockHTTPRequests(t *testing.T) {
 	cancel()
 	require.Error(t, <-flushed)
 	unavailable.Store(false)
+	recoverReceiver()
 	require.NoError(t, provider.(*sdkmetric.MeterProvider).ForceFlush(context.Background()))
+	// Canceling ForceFlush stops waiting, not the reader's in-flight export.
+	body := <-requests
+	for len(requests) > 0 {
+		body = <-requests
+	}
+	payload := pmetricotlp.NewExportRequest()
+	require.NoError(t, payload.UnmarshalProto(body))
+	observed := payload.Metrics().ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
+	counts := map[int64]uint64{}
+	for i := 0; i < observed.Len(); i++ {
+		m := observed.At(i)
+		if m.Name() == "http.server.active_requests" {
+			require.Zero(t, m.Sum().DataPoints().At(0).IntValue())
+		}
+		if m.Name() != "http.server.request.duration" {
+			continue
+		}
+		require.Equal(t, pmetric.AggregationTemporalityCumulative, m.Histogram().AggregationTemporality())
+		points := m.Histogram().DataPoints()
+		for j := 0; j < points.Len(); j++ {
+			status, _ := points.At(j).Attributes().Get("http.response.status_code")
+			counts[status.Int()] += points.At(j).Count()
+		}
+	}
+	require.Equal(t, map[int64]uint64{200: 1, 202: 1}, counts, "recovery includes requests before and during the failed export")
 }
 
 func TestGenericTLSHeadersAndCompression(t *testing.T) {
@@ -383,7 +438,7 @@ func TestCardinalityOverflowPreservesCounts(t *testing.T) {
 	}
 }
 
-func TestPeriodicExportSeparatesProcessResources(t *testing.T) {
+func TestPeriodicExportSeparatesProcessResourcesAndRestart(t *testing.T) {
 	var mu sync.Mutex
 	observed := map[string]int64{}
 	receiver := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -414,24 +469,39 @@ func TestPeriodicExportSeparatesProcessResources(t *testing.T) {
 	t.Setenv("OTEL_METRIC_EXPORT_INTERVAL", "20")
 	t.Setenv("OTEL_RESOURCE_ATTRIBUTES", "nuon.control_plane.id=cp-test")
 	expected := map[string]int64{}
-	for _, count := range []int64{7, 2} {
+	var stops []func()
+	var advanceSurvivor func()
+	for i, count := range []int64{7, 2, 3} {
+		if i == 2 {
+			stops[0]()
+			advanceSurvivor()
+		}
 		lc := fxtest.NewLifecycle(t)
 		cfg, err := NewConfig(&internal.Config{OTELExporterOTLPEndpoint: receiver.URL, ServiceName: "ctl-api"})
 		require.NoError(t, err)
 		id, _ := cfg.Resource.Set().Value("service.instance.id")
+		require.NotContains(t, expected, id.AsString())
 		expected[id.AsString()] = count
 		provider, err := NewMeterProvider(lc, cfg)
 		require.NoError(t, err)
 		lc.RequireStart()
-		t.Cleanup(func() { lc.RequireStop() })
+		stop := sync.OnceFunc(func() { lc.RequireStop() })
+		stops = append(stops, stop)
+		t.Cleanup(stop)
 		counter, err := provider.Meter("test").Int64Counter("test.count")
 		require.NoError(t, err)
 		counter.Add(context.Background(), count)
+		if i == 1 {
+			advanceSurvivor = func() {
+				counter.Add(context.Background(), 3)
+				expected[id.AsString()] = 5
+			}
+		}
+		require.Eventually(t, func() bool {
+			mu.Lock()
+			defer mu.Unlock()
+			return reflect.DeepEqual(expected, observed)
+		}, 2*time.Second, 10*time.Millisecond)
 	}
-	require.Len(t, expected, 2)
-	require.Eventually(t, func() bool {
-		mu.Lock()
-		defer mu.Unlock()
-		return reflect.DeepEqual(expected, observed)
-	}, 2*time.Second, 10*time.Millisecond)
+	require.Len(t, expected, 3)
 }
