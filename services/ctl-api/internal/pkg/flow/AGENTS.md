@@ -1,14 +1,20 @@
 # Flow Package
 
-The flow package orchestrates workflow step execution in Temporal workflows. It handles step lifecycle, approval flows, and status updates.
+The flow package orchestrates workflow step execution in Temporal workflows. It handles step lifecycle, approval flows,
+and status updates.
 
 ## Key Files
 
-- `conductor.go` - Generic workflow conductor that drives step execution
-- `execute_flow_step.go` - Core step execution logic including approval handling
-- `execute_workflow_step.go` - Legacy step execution (being migrated)
-- `approval.go` - Approval signal handling and response processing
-- `rerun_flow.go` - Re-execution logic for failed/retried steps
+- `conductor.go` — generic workflow conductor that drives step execution
+- `step_dispatch.go` / `group_dispatch.go` — dispatch helpers
+- `step_generate.go` / `step_generate_signal.go` — step generation
+- `directive/` / `directive.go` — execution directives
+- `signals/executeflow/` — execute-flow signal handling
+- `signals/executeworkflowstep/` — workflow step execution
+- `signals/executeworkflowstepgroup/` — step-group execution
+- `signals/workflowstepawaitingretry/` — retry-await handling
+- `checks/` — plan/policy checks used during step execution
+- Related activity: `workflows/workflow/activities/check_noop_plan.go` (noop plan evaluation)
 
 ## Step Target Resolution
 
