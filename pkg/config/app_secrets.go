@@ -25,7 +25,7 @@ func validKubernetesName(val string) bool {
 }
 
 type SecretsConfig struct {
-	Secrets []*AppSecret `mapstructure:"secret,omitempty" toml:"secret,omitempty"`
+	Secrets []*AppSecret `json:"Secrets" mapstructure:"secret,omitempty" toml:"secret,omitempty"`
 }
 
 func (a SecretsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -77,33 +77,33 @@ func (a *SecretsConfig) Validate() error {
 }
 
 type AppSecret struct {
-	Name        string `mapstructure:"name" toml:"name" jsonschema:"required"`
-	DisplayName string `mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
-	Description string `mapstructure:"description" toml:"description" jsonschema:"required"`
+	Name        string `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
+	DisplayName string `json:"DisplayName" mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
+	Description string `json:"Description" mapstructure:"description" toml:"description" jsonschema:"required"`
 
-	Required     bool   `mapstructure:"required,omitempty" toml:"required,omitempty"`
-	AutoGenerate bool   `mapstructure:"auto_generate,omitempty" toml:"auto_generate,omitempty"`
-	Format       string `mapstructure:"format,omitempty" toml:"format,omitempty"`
-	Default      string `mapstructure:"default,omitempty" toml:"default,omitempty"`
+	Required     bool   `json:"Required" mapstructure:"required,omitempty" toml:"required,omitempty"`
+	AutoGenerate bool   `json:"AutoGenerate" mapstructure:"auto_generate,omitempty" toml:"auto_generate,omitempty"`
+	Format       string `json:"Format" mapstructure:"format,omitempty" toml:"format,omitempty"`
+	Default      string `json:"Default" mapstructure:"default,omitempty" toml:"default,omitempty"`
 
 	// optional fields. KubernetesSync is a pointer so we can distinguish "omitted" (nil) from an explicit
 	// "kubernetes_sync = false", which lets us warn when sync is explicitly disabled but v2 targets are present.
-	KubernetesSync            *bool  `mapstructure:"kubernetes_sync,omitempty" toml:"kubernetes_sync,omitempty"`
-	KubernetesSecretNamespace string `mapstructure:"kubernetes_secret_namespace,omitempty" toml:"kubernetes_secret_namespace,omitempty"`
-	KubernetesSecretName      string `mapstructure:"kubernetes_secret_name,omitempty" toml:"kubernetes_secret_name,omitempty"`
+	KubernetesSync            *bool  `json:"KubernetesSync" mapstructure:"kubernetes_sync,omitempty" toml:"kubernetes_sync,omitempty"`
+	KubernetesSecretNamespace string `json:"KubernetesSecretNamespace" mapstructure:"kubernetes_secret_namespace,omitempty" toml:"kubernetes_secret_namespace,omitempty"`
+	KubernetesSecretName      string `json:"KubernetesSecretName" mapstructure:"kubernetes_secret_name,omitempty" toml:"kubernetes_secret_name,omitempty"`
 
 	// kubernetes secrets v2: a secret may target multiple Kubernetes destinations, each with its own namespace(s),
 	// secret name, and key. When present, sync is implied. The single-valued kubernetes_secret_* fields above remain
 	// supported for backwards compatibility.
-	KubernetesSyncTargets []*KubernetesSyncTarget `mapstructure:"kubernetes_sync_targets,omitempty" toml:"kubernetes_sync_targets,omitempty"`
+	KubernetesSyncTargets []*KubernetesSyncTarget `json:"KubernetesSyncTargets" mapstructure:"kubernetes_sync_targets,omitempty" toml:"kubernetes_sync_targets,omitempty"`
 }
 
 // KubernetesSyncTarget describes a single Kubernetes destination for a secret: the secret name and key written into
 // each of the listed namespaces.
 type KubernetesSyncTarget struct {
-	Namespaces []string `mapstructure:"namespaces" toml:"namespaces" jsonschema:"required"`
-	Name       string   `mapstructure:"name" toml:"name" jsonschema:"required"`
-	Key        string   `mapstructure:"key" toml:"key" jsonschema:"required"`
+	Namespaces []string `json:"Namespaces" mapstructure:"namespaces" toml:"namespaces" jsonschema:"required"`
+	Name       string   `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
+	Key        string   `json:"Key" mapstructure:"key" toml:"key" jsonschema:"required"`
 }
 
 func (t KubernetesSyncTarget) JSONSchemaExtend(schema *jsonschema.Schema) {

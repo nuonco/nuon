@@ -141,7 +141,7 @@ func sourceMemberKey(path string, contents []byte) (string, error) {
 		return "", nil
 	}
 	var header struct {
-		Name string `toml:"name"`
+		Name string `json:"Name" toml:"name"`
 	}
 	if err := toml.Unmarshal(contents, &header); err != nil {
 		return "", err

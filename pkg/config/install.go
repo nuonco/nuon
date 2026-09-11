@@ -35,8 +35,8 @@ func (o InstallApprovalOption) APIType() models.AppInstallApprovalOption {
 }
 
 type AWSAccount struct {
-	Region    string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
-	AccountID string `mapstructure:"account_id,omitempty" toml:"account_id,omitempty"`
+	Region    string `json:"Region" mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
+	AccountID string `json:"AccountID" mapstructure:"account_id,omitempty" toml:"account_id,omitempty"`
 }
 
 func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -52,8 +52,8 @@ func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type GCPAccount struct {
-	ProjectID string `mapstructure:"project_id,omitempty" toml:"project_id,omitempty"`
-	Region    string `mapstructure:"region,omitempty" toml:"region,omitempty"`
+	ProjectID string `json:"ProjectID" mapstructure:"project_id,omitempty" toml:"project_id,omitempty"`
+	Region    string `json:"Region" mapstructure:"region,omitempty" toml:"region,omitempty"`
 }
 
 func (a GCPAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -68,8 +68,8 @@ func (a GCPAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type AzureAccount struct {
-	Location       string `mapstructure:"location,omitempty" toml:"location,omitempty" jsonschema:"required"`
-	SubscriptionID string `mapstructure:"subscription_id,omitempty" toml:"subscription_id,omitempty"`
+	Location       string `json:"Location" mapstructure:"location,omitempty" toml:"location,omitempty" jsonschema:"required"`
+	SubscriptionID string `json:"SubscriptionID" mapstructure:"subscription_id,omitempty" toml:"subscription_id,omitempty"`
 }
 
 func (a AzureAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -87,9 +87,9 @@ func (a AzureAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 type InputGroup struct {
 	// mapstructure is able to decode map into Inputgroup because the type of InputGroup.Inputs matches that of what
 	// expected by mapstructure.
-	Inputs map[string]string `mapstructure:"inputs" toml:"inputs"`
+	Inputs map[string]string `json:"Inputs" mapstructure:"inputs" toml:"inputs"`
 	// this property should only be used for writing comment for input group, and should not be used anywhere else.
-	Group string `mapstructure:"group" toml:"group"`
+	Group string `json:"Group" mapstructure:"group" toml:"group"`
 }
 
 func (ig InputGroup) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -135,9 +135,9 @@ func (ig InputGroup) TOMLComment() string {
 // InstallStackOverrides holds per-install overrides for the app-level stack
 // template configuration. Nil fields mean "use the app default".
 type InstallStackOverrides struct {
-	VPCNestedTemplateURL    string              `mapstructure:"vpc_nested_template_url,omitempty" toml:"vpc_nested_template_url,omitempty"`
-	RunnerNestedTemplateURL string              `mapstructure:"runner_nested_template_url,omitempty" toml:"runner_nested_template_url,omitempty"`
-	CustomNestedStacks      []CustomNestedStack `mapstructure:"custom_nested_stacks,omitempty" toml:"custom_nested_stacks,omitempty"`
+	VPCNestedTemplateURL    string              `json:"VPCNestedTemplateURL" mapstructure:"vpc_nested_template_url,omitempty" toml:"vpc_nested_template_url,omitempty"`
+	RunnerNestedTemplateURL string              `json:"RunnerNestedTemplateURL" mapstructure:"runner_nested_template_url,omitempty" toml:"runner_nested_template_url,omitempty"`
+	CustomNestedStacks      []CustomNestedStack `json:"CustomNestedStacks" mapstructure:"custom_nested_stacks,omitempty" toml:"custom_nested_stacks,omitempty"`
 }
 
 func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -160,26 +160,26 @@ func (s *InstallStackOverrides) HasOverrides() bool {
 
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
-	Name           string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
-	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
-	Labels         map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
-	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
-	GCPAccount     *GCPAccount           `mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
-	AzureAccount   *AzureAccount         `mapstructure:"azure_account,omitempty" toml:"azure_account,omitempty"`
-	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
+	Name           string                `json:"Name" mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
+	ApprovalOption InstallApprovalOption `json:"ApprovalOption" mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
+	Labels         map[string]string     `json:"Labels" mapstructure:"labels,omitempty" toml:"labels,omitempty"`
+	AWSAccount     *AWSAccount           `json:"AWSAccount" mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
+	GCPAccount     *GCPAccount           `json:"GCPAccount" mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
+	AzureAccount   *AzureAccount         `json:"AzureAccount" mapstructure:"azure_account,omitempty" toml:"azure_account,omitempty"`
+	InputGroups    []InputGroup          `json:"InputGroups" mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 
-	StackOverrides *InstallStackOverrides `mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
+	StackOverrides *InstallStackOverrides `json:"StackOverrides" mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
 
 	// ComponentToggles controls which toggleable components are enabled or disabled
 	// for this install, keyed by component name. true = enabled, false = disabled.
 	// Absent keys fall through to the component's default_enabled setting.
-	ComponentToggles map[string]bool `mapstructure:"component_toggles,omitempty" toml:"component_toggles,omitempty"`
+	ComponentToggles map[string]bool `json:"ComponentToggles" mapstructure:"component_toggles,omitempty" toml:"component_toggles,omitempty"`
 
 	// Components holds per-component install-level overrides, keyed by component
 	// name. Each override deep-merges over the component's app-config values and
 	// wins. It is carried through the install input system under a reserved
 	// synthetic input name (see component_override.go).
-	Components map[string]ComponentOverride `mapstructure:"components,omitempty" toml:"components,omitempty"`
+	Components map[string]ComponentOverride `json:"Components" mapstructure:"components,omitempty" toml:"components,omitempty"`
 }
 
 // ComponentOverride is a per-component install-level override. Exactly one field
@@ -187,10 +187,10 @@ type Install struct {
 type ComponentOverride struct {
 	// HelmValues is a raw YAML values override for a Helm component, merged as the
 	// highest-precedence values layer at deploy time.
-	HelmValues string `mapstructure:"helm_values,omitempty" toml:"helm_values,omitempty"`
+	HelmValues string `json:"HelmValues" mapstructure:"helm_values,omitempty" toml:"helm_values,omitempty"`
 	// TFVars is a raw .tfvars (HCL or JSON) override for a Terraform component,
 	// appended as the final, highest-precedence -var-file at deploy time.
-	TFVars string `mapstructure:"tf_vars,omitempty" toml:"tf_vars,omitempty"`
+	TFVars string `json:"TFVars" mapstructure:"tf_vars,omitempty" toml:"tf_vars,omitempty"`
 }
 
 func (c ComponentOverride) JSONSchemaExtend(schema *jsonschema.Schema) {

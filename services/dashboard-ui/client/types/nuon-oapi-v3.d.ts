@@ -323,6 +323,13 @@ export interface paths {
      */
     patch: operations["UpdateAppBranchConfig"];
   };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/intermediate-config": {
+    /**
+     * get an app branch's intermediate config
+     * @description Returns the parsed intermediate config for the branch's latest active config, plus a map of config names to database ids.
+     */
+    get: operations["GetAppBranchIntermediateConfig"];
+  };
   "/v1/apps/{app_id}/branches/{app_branch_id}/latest-config": {
     /**
      * get latest app branch config
@@ -674,6 +681,13 @@ export interface paths {
      * viewer](https://dreampuf.github.io/GraphvizOnline).
      */
     get: operations["GetAppConfigGraphV2"];
+  };
+  "/v1/apps/{app_id}/configs/{config_id}/intermediate": {
+    /**
+     * get an app config's intermediate config
+     * @description Returns the parsed intermediate config for a specific app config version, plus a map of config names to database ids.
+     */
+    get: operations["GetAppConfigIntermediate"];
   };
   "/v1/apps/{app_id}/configs/{config_id}/sync": {
     /**
@@ -3823,6 +3837,29 @@ export interface components {
       /** @description fields that are filled in via after query or views */
       version?: number;
     };
+    "app.AppConfigIntermediate": {
+      app_branch_id?: string;
+      app_id?: string;
+      checksum?: string;
+      cli_version?: string;
+      config?: components["schemas"]["config.AppConfig"];
+      config_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      resources?: components["schemas"]["app.AppConfigResource"][];
+      size?: number;
+      status?: components["schemas"]["app.AppConfigStatus"];
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+      version?: number;
+    };
+    "app.AppConfigResource": {
+      id?: string;
+      kind?: components["schemas"]["app.AppConfigResourceKind"];
+      name?: string;
+    };
+    /** @enum {string} */
+    "app.AppConfigResourceKind": "component" | "action" | "runbook";
     /** @enum {string} */
     "app.AppConfigStatus": "active" | "pending" | "syncing" | "error" | "outdated";
     /** @enum {string} */
@@ -6982,10 +7019,372 @@ export interface components {
     "compositeerrors.SectionKind": "markdown" | "text" | "code";
     /** @enum {string} */
     "compositeerrors.Severity": "fatal" | "error" | "warning" | "info";
+    "config.AWSAccount": {
+      AccountID?: string;
+      Region?: string;
+    };
+    "config.AWSECRConfig": {
+      AWSRegion?: string;
+      IAMRoleARN?: string;
+      ImageURL?: string;
+      Tag?: string;
+      /**
+       * @description UpdatePolicy is an optional Masterminds-compatible semver constraint
+       * (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
+       * matching tag from the registry at build time. Either tag or
+       * update_policy must be set.
+       */
+      UpdatePolicy?: string;
+    };
+    "config.ActionConfig": {
+      BreakGlassRole?: string;
+      Dependencies?: string[];
+      EnableKubeConfig?: boolean;
+      /**
+       * @description Image is an optional container image the action's steps run inside. When
+       * set, Nuon mounts the actions-supervisor into the image and executes each
+       * step's inline_contents there. Steps must use inline_contents.
+       */
+      Image?: string;
+      /**
+       * @description KubernetesContext is the name of a kubernetes_context this action
+       * targets. Empty means fall back to the implicit sandbox default (when
+       * the sandbox emits cluster outputs). See pkg/config/kubernetes_context.go.
+       */
+      KubernetesContext?: string;
+      Labels?: {
+        [key: string]: string;
+      };
+      Name?: string;
+      References?: components["schemas"]["refs.Ref"][];
+      Role?: string;
+      Steps?: components["schemas"]["config.ActionStepConfig"][];
+      Timeout?: string;
+      Triggers?: components["schemas"]["config.ActionTriggerConfig"][];
+    };
+    "config.ActionStepConfig": {
+      Command?: string;
+      ConnectedRepo?: components["schemas"]["config.ConnectedRepoConfig"];
+      EnvVarMap?: {
+        [key: string]: string;
+      };
+      InlineContents?: string;
+      Name?: string;
+      PublicRepo?: components["schemas"]["config.PublicRepoConfig"];
+      /** @description created during parsing */
+      References?: components["schemas"]["refs.Ref"][];
+    };
+    "config.ActionTriggerConfig": {
+      ComponentName?: string;
+      CronSchedule?: string;
+      Index?: number;
+      Type?: string;
+    };
+    "config.AppAWSIAMPolicy": {
+      AzureActions?: string[];
+      AzureBuiltInRoles?: string[];
+      Contents?: string;
+      GCPPermissions?: string[];
+      GCPPredefinedRole?: string;
+      ManagedPolicyName?: string;
+      /**
+       * @description Name is optional: a managed_policy_name attachment identifies itself, so a
+       * bare AWS managed policy needs no separate name. The runtime does not
+       * require it (see parse below).
+       */
+      Name?: string;
+    };
+    "config.AppAWSIAMRole": {
+      CloudPlatform?: string;
+      Description?: string;
+      DisplayName?: string;
+      EnabledInStack?: boolean;
+      Name?: string;
+      PermissionsBoundary?: string;
+      Policies?: components["schemas"]["config.AppAWSIAMPolicy"][];
+      Type?: string;
+    };
+    "config.AppBranchConfig": {
+      ConnectedRepo?: components["schemas"]["config.ConnectedRepoConfig"];
+      InstallGroups?: components["schemas"]["config.AppBranchInstallGroupConfig"][];
+      Name?: string;
+      Preview?: components["schemas"]["config.AppBranchPreviewConfig"];
+      PublicRepo?: components["schemas"]["config.PublicRepoConfig"];
+      ignore_changes_regex?: string;
+      post_deploy_runbooks?: string[];
+      send_statuses_on_ignore?: boolean;
+    };
+    "config.AppBranchInstallGroupConfig": {
+      AutoApproveOnPoliciesPassing?: boolean;
+      InstallIDs?: string[];
+      InstallNames?: string[];
+      LabelSelector?: {
+        [key: string]: string;
+      };
+      Name?: string;
+      Order?: number;
+    };
+    "config.AppBranchPreviewConfig": {
+      Comment?: boolean;
+      InstallID?: string;
+      InstallName?: string;
+      LabelSelector?: {
+        [key: string]: string;
+      };
+      Mode?: string;
+      SetStatuses?: boolean;
+    };
+    "config.AppConfig": {
+      Actions?: components["schemas"]["config.ActionConfig"][];
+      /** @description Default App Branch config */
+      Branch?: components["schemas"]["config.AppBranchConfig"];
+      /** @description App branch configs (from branches/ directory) */
+      Branches?: components["schemas"]["config.AppBranchConfig"][];
+      /** @description Break-glass config */
+      BreakGlass?: components["schemas"]["config.BreakGlass"];
+      /** @description Components are used to connect container images, automation and infrastructure as code to your Nuon App */
+      Components?: components["schemas"]["config.Component"][];
+      /** @description Labels applied to every install of the app; editable only via app config */
+      DefaultLabels?: {
+        [key: string]: string;
+      };
+      /** @description Description for your app, which is rendered in the installers */
+      Description?: string;
+      /** @description Display name for the app, rendered in the installer */
+      DisplayName?: string;
+      /** @description Input configuration */
+      Inputs?: components["schemas"]["config.AppInputConfig"];
+      Installs?: components["schemas"]["config.Install"][];
+      InstallsConfig?: components["schemas"]["config.InstallsConfig"];
+      /** @description Kubernetes contexts */
+      KubernetesContexts?: components["schemas"]["config.KubernetesContextsConfig"];
+      /** @description Color codes for label keys */
+      LabelColors?: {
+        [key: string]: string;
+      };
+      /** @description Operation rules */
+      OperationRoles?: components["schemas"]["config.OperationRolesConfig"];
+      /** @description Permissions config */
+      Permissions?: components["schemas"]["config.PermissionsConfig"];
+      /** @description Policies config */
+      Policies?: components["schemas"]["config.PoliciesConfig"];
+      /** @description Readme for the app */
+      Readme?: string;
+      Runbooks?: components["schemas"]["config.RunbookConfig"][];
+      /** @description Runner configuration */
+      Runner?: components["schemas"]["config.AppRunnerConfig"];
+      /** @description Sandbox configuration */
+      Sandbox?: components["schemas"]["config.AppSandboxConfig"];
+      /** @description Secrets config */
+      Secrets?: components["schemas"]["config.SecretsConfig"];
+      /** @description Slack webhook url to receive notifications */
+      SlackWebhookURL?: string;
+      /** @description Stack config */
+      Stack?: components["schemas"]["config.StackConfig"];
+      Triggers?: components["schemas"]["config.TriggersConfig"];
+      /** @description Config file version */
+      Version?: string;
+    };
+    "config.AppInput": {
+      Default?: unknown;
+      Description?: string;
+      DisplayName?: string;
+      Group?: string;
+      /** @description Deprecated: this field has no effect and will be ignored. */
+      Internal?: boolean;
+      Name?: string;
+      Required?: boolean;
+      Sensitive?: boolean;
+      Type?: string;
+      UserConfigurable?: boolean;
+    };
+    "config.AppInputConfig": {
+      Groups?: components["schemas"]["config.AppInputGroup"][];
+      Inputs?: components["schemas"]["config.AppInput"][];
+      Source?: string;
+      Sources?: string[];
+    };
+    "config.AppInputGroup": {
+      Description?: string;
+      DisplayName?: string;
+      Name?: string;
+    };
+    "config.AppPolicy": {
+      Components?: string[];
+      Contents?: string;
+      Engine?: components["schemas"]["config.AppPolicyEngine"];
+      Name?: string;
+      Type?: components["schemas"]["config.AppPolicyType"];
+    };
     /** @enum {string} */
     "config.AppPolicyEngine": "kyverno" | "opa";
     /** @enum {string} */
     "config.AppPolicyType": "kubernetes_cluster" | "terraform_module" | "helm_chart" | "kubernetes_manifest" | "docker_build" | "container_image" | "pulumi" | "sandbox";
+    "config.AppRunnerConfig": {
+      EnvVarMap?: {
+        [key: string]: string;
+      };
+      /** @description Deprecated */
+      EnvVars?: components["schemas"]["config.EnvironmentVariable"][];
+      HelmDriver?: string;
+      InitScriptURL?: string;
+      /** @description InstanceType sets the cloud machine/instance type for the install runner host. */
+      InstanceType?: string;
+      /** @description PhoneHomeScriptURL overrides the phone-home Lambda source for this app. */
+      PhoneHomeScriptURL?: string;
+      /** @description PublicAPIURL overrides the Nuon public API endpoint used for phone-home callbacks. */
+      PublicAPIURL?: string;
+      /** @description RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config. */
+      RunnerAPIURL?: string;
+      RunnerType?: string;
+      Source?: string;
+    };
+    "config.AppSandboxConfig": {
+      AutoApproveOnPoliciesPassing?: boolean;
+      ConnectedRepo?: components["schemas"]["config.ConnectedRepoConfig"];
+      DriftSchedule?: string;
+      EnvVarMap?: {
+        [key: string]: string;
+      };
+      MaxAutoRetries?: number;
+      OperationRoles?: components["schemas"]["config.EntityOperationRole"][];
+      PublicRepo?: components["schemas"]["config.PublicRepoConfig"];
+      PulumiConfig?: {
+        [key: string]: string;
+      };
+      PulumiVersion?: string;
+      References?: components["schemas"]["refs.Ref"][];
+      Runtime?: string;
+      SkipNoops?: boolean;
+      Source?: string;
+      TerraformVersion?: string;
+      Type?: string;
+      VariablesFiles?: components["schemas"]["config.TerraformVariablesFile"][];
+      VarsMap?: {
+        [key: string]: string;
+      };
+    };
+    "config.AppSecret": {
+      AutoGenerate?: boolean;
+      Default?: string;
+      Description?: string;
+      DisplayName?: string;
+      Format?: string;
+      KubernetesSecretName?: string;
+      KubernetesSecretNamespace?: string;
+      /**
+       * @description optional fields. KubernetesSync is a pointer so we can distinguish "omitted" (nil) from an explicit
+       * "kubernetes_sync = false", which lets us warn when sync is explicitly disabled but v2 targets are present.
+       */
+      KubernetesSync?: boolean;
+      /**
+       * @description kubernetes secrets v2: a secret may target multiple Kubernetes destinations, each with its own namespace(s),
+       * secret name, and key. When present, sync is implied. The single-valued kubernetes_secret_* fields above remain
+       * supported for backwards compatibility.
+       */
+      KubernetesSyncTargets?: components["schemas"]["config.KubernetesSyncTarget"][];
+      Name?: string;
+      Required?: boolean;
+    };
+    "config.AzureACRConfig": {
+      ClientCertificateName?: string;
+      ClientID?: string;
+      /**
+       * @description These name an AppSecret holding the credential; the "_name" suffix is
+       * load-bearing, because a field called client_secret invites pasting the
+       * secret itself into a file that gets committed.
+       */
+      ClientSecretName?: string;
+      ImageURL?: string;
+      RegistryURL?: string;
+      Tag?: string;
+      TenantID?: string;
+      /**
+       * @description UpdatePolicy is an optional Masterminds-compatible semver constraint
+       * (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
+       * matching tag from the registry at build time. Either tag or
+       * update_policy must be set.
+       */
+      UpdatePolicy?: string;
+    };
+    "config.AzureAccount": {
+      Location?: string;
+      SubscriptionID?: string;
+    };
+    "config.BreakGlass": {
+      Roles?: components["schemas"]["config.AppAWSIAMRole"][];
+    };
+    "config.Component": {
+      Checksum?: string;
+      DefaultEnabled?: boolean;
+      Dependencies?: string[];
+      DockerBuild?: components["schemas"]["config.DockerBuildComponentConfig"];
+      ExternalImage?: components["schemas"]["config.ExternalImageComponentConfig"];
+      /** @description WARNING: properties below should be ignored by nuonhash when empty */
+      HelmChart?: components["schemas"]["config.HelmChartComponentConfig"];
+      Job?: components["schemas"]["config.JobComponentConfig"];
+      /**
+       * @description KubernetesContext is the name of a kubernetes_context this component
+       * targets. Empty means fall back to the implicit sandbox default (when
+       * the sandbox emits cluster outputs). See pkg/config/kubernetes_context.go.
+       */
+      KubernetesContext?: string;
+      KubernetesManifest?: components["schemas"]["config.KubernetesManifestComponentConfig"];
+      Labels?: {
+        [key: string]: string;
+      };
+      Name?: string;
+      OperationRoles?: components["schemas"]["config.EntityOperationRole"][];
+      Pulumi?: components["schemas"]["config.PulumiComponentConfig"];
+      /**
+       * @description created during parsing
+       * WARNING: properties below should not be hashed with nuonhash
+       */
+      References?: components["schemas"]["refs.Ref"][];
+      Source?: string;
+      TerraformModule?: components["schemas"]["config.TerraformModuleComponentConfig"];
+      Toggleable?: boolean;
+      Type?: components["schemas"]["config.ComponentType"];
+      VarName?: string;
+    };
+    "config.ComponentHealthConfig": {
+      BlockDeploy?: boolean;
+      Enabled?: boolean;
+      Probes?: components["schemas"]["config.ComponentHealthProbeConfig"][];
+      /**
+       * @description RequiredChecks are pushed check names a deploy waits for. Unlike probes the
+       * runner cannot produce these, so the gate holds until something external
+       * reports them healthy — the point being that a deploy can depend on a fact
+       * only the vendor's own system knows.
+       */
+      RequiredChecks?: string[];
+      StabilizationWindow?: string;
+    };
+    "config.ComponentHealthProbeConfig": {
+      Command?: string[];
+      Name?: string;
+      Type?: string;
+      URL?: string;
+    };
+    "config.ComponentOverride": {
+      /**
+       * @description HelmValues is a raw YAML values override for a Helm component, merged as the
+       * highest-precedence values layer at deploy time.
+       */
+      HelmValues?: string;
+      /**
+       * @description TFVars is a raw .tfvars (HCL or JSON) override for a Terraform component,
+       * appended as the final, highest-precedence -var-file at deploy time.
+       */
+      TFVars?: string;
+    };
+    /** @enum {string} */
+    "config.ComponentType": "terraform_module" | "helm_chart" | "docker_build" | "container_image" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "";
+    "config.ConnectedRepoConfig": {
+      Branch?: string;
+      Directory?: string;
+      Repo?: string;
+    };
     "config.CustomNestedStack": {
       contents?: string;
       contents_hash?: string;
@@ -7007,10 +7406,383 @@ export interface components {
     };
     /** @enum {string} */
     "config.CustomNestedStackStatus": "pending" | "ready" | "error";
+    "config.DockerBuildComponentConfig": {
+      AutoApproveOnPoliciesPassing?: boolean;
+      BuildTimeout?: string;
+      ConnectedRepo?: components["schemas"]["config.ConnectedRepoConfig"];
+      DeployTimeout?: string;
+      Dockerfile?: string;
+      EnvVarMap?: {
+        [key: string]: string;
+      };
+      MaxAutoRetries?: number;
+      PublicRepo?: components["schemas"]["config.PublicRepoConfig"];
+      SkipNoops?: boolean;
+    };
+    "config.EntityOperationRole": {
+      Operation?: components["schemas"]["config.OperationType"];
+      RoleName?: string;
+    };
+    "config.EnvironmentVariable": {
+      Name?: string;
+      Value?: string;
+    };
+    "config.ExternalImageComponentConfig": {
+      AWSECRImageConfig?: components["schemas"]["config.AWSECRConfig"];
+      AzureACRImageConfig?: components["schemas"]["config.AzureACRConfig"];
+      BuildTimeout?: string;
+      DeployTimeout?: string;
+      GCPGARImageConfig?: components["schemas"]["config.GCPGARConfig"];
+      PublicImageConfig?: components["schemas"]["config.PublicImageConfig"];
+      Verification?: components["schemas"]["signature.Verification"];
+    };
+    "config.GCPAccount": {
+      ProjectID?: string;
+      Region?: string;
+    };
+    "config.GCPGARConfig": {
+      GCPProjectID?: string;
+      GCPRegion?: string;
+      ImageURL?: string;
+      ServiceAccountEmail?: string;
+      Tag?: string;
+      /**
+       * @description UpdatePolicy is an optional Masterminds-compatible semver constraint
+       * (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
+       * matching tag from the registry at build time. Either tag or
+       * update_policy must be set.
+       */
+      UpdatePolicy?: string;
+      WorkloadIdentityProvider?: string;
+    };
+    "config.HelmChartComponentConfig": {
+      AutoApproveOnPoliciesPassing?: boolean;
+      BuildTimeout?: string;
+      ChartName?: string;
+      ConnectedRepo?: components["schemas"]["config.ConnectedRepoConfig"];
+      DeployTimeout?: string;
+      DriftSchedule?: string;
+      Health?: components["schemas"]["config.ComponentHealthConfig"];
+      HelmRepo?: components["schemas"]["config.HelmRepoConfig"];
+      MaxAutoRetries?: number;
+      Namespace?: string;
+      PublicRepo?: components["schemas"]["config.PublicRepoConfig"];
+      SkipCRDs?: boolean;
+      SkipNoops?: boolean;
+      StorageDriver?: string;
+      TakeOwnership?: boolean;
+      /** @description deprecated */
+      Values?: components["schemas"]["config.HelmValue"][];
+      ValuesFiles?: components["schemas"]["config.HelmValuesFile"][];
+      ValuesMap?: {
+        [key: string]: string;
+      };
+    };
     "config.HelmRepoConfig": {
-      chart?: string;
-      repoURL?: string;
-      version?: string;
+      Chart?: string;
+      RepoURL?: string;
+      Version?: string;
+    };
+    "config.HelmValue": {
+      Name?: string;
+      Value?: string;
+    };
+    "config.HelmValuesFile": {
+      Contents?: string;
+      Path?: string;
+      Source?: string;
+    };
+    "config.InputGroup": {
+      /** @description this property should only be used for writing comment for input group, and should not be used anywhere else. */
+      Group?: string;
+      /**
+       * @description mapstructure is able to decode map into Inputgroup because the type of InputGroup.Inputs matches that of what
+       * expected by mapstructure.
+       */
+      Inputs?: {
+        [key: string]: string;
+      };
+    };
+    "config.Install": {
+      AWSAccount?: components["schemas"]["config.AWSAccount"];
+      ApprovalOption?: components["schemas"]["config.InstallApprovalOption"];
+      AzureAccount?: components["schemas"]["config.AzureAccount"];
+      /**
+       * @description ComponentToggles controls which toggleable components are enabled or disabled
+       * for this install, keyed by component name. true = enabled, false = disabled.
+       * Absent keys fall through to the component's default_enabled setting.
+       */
+      ComponentToggles?: {
+        [key: string]: boolean;
+      };
+      /**
+       * @description Components holds per-component install-level overrides, keyed by component
+       * name. Each override deep-merges over the component's app-config values and
+       * wins. It is carried through the install input system under a reserved
+       * synthetic input name (see component_override.go).
+       */
+      Components?: {
+        [key: string]: components["schemas"]["config.ComponentOverride"];
+      };
+      GCPAccount?: components["schemas"]["config.GCPAccount"];
+      InputGroups?: components["schemas"]["config.InputGroup"][];
+      Labels?: {
+        [key: string]: string;
+      };
+      Name?: string;
+      StackOverrides?: components["schemas"]["config.InstallStackOverrides"];
+    };
+    /** @enum {string} */
+    "config.InstallApprovalOption": "approve-all" | "auto" | "prompt" | "";
+    "config.InstallStackOverrides": {
+      CustomNestedStacks?: components["schemas"]["config.CustomNestedStack"][];
+      RunnerNestedTemplateURL?: string;
+      VPCNestedTemplateURL?: string;
+    };
+    "config.InstallsConfig": {
+      ConnectedRepo?: components["schemas"]["config.ConnectedRepoConfig"];
+      PublicRepo?: components["schemas"]["config.PublicRepoConfig"];
+    };
+    "config.JobComponentConfig": {
+      Args?: string[];
+      BuildTimeout?: string;
+      Cmd?: string[];
+      DeployTimeout?: string;
+      EnvVarMap?: {
+        [key: string]: string;
+      };
+      /** @description deprecated */
+      EnvVars?: components["schemas"]["config.EnvironmentVariable"][];
+      ImageURL?: string;
+      Tag?: string;
+    };
+    "config.KubernetesContext": {
+      Component?: string;
+      Name?: string;
+    };
+    "config.KubernetesContextsConfig": {
+      Contexts?: components["schemas"]["config.KubernetesContext"][];
+    };
+    "config.KubernetesManifestComponentConfig": {
+      AutoApproveOnPoliciesPassing?: boolean;
+      BuildTimeout?: string;
+      ConnectedRepo?: components["schemas"]["config.ConnectedRepoConfig"];
+      DeployTimeout?: string;
+      DriftSchedule?: string;
+      Health?: components["schemas"]["config.ComponentHealthConfig"];
+      /** @description Kustomize configuration (mutually exclusive with Manifest) */
+      Kustomize?: components["schemas"]["config.KustomizeConfig"];
+      /** @description Inline manifest (mutually exclusive with Kustomize) */
+      Manifest?: string;
+      MaxAutoRetries?: number;
+      /** @description Namespace supports template variables (e.g., {{.nuon.install.id}}) */
+      Namespace?: string;
+      /** @description VCS configuration for kustomize sources (similar to Helm chart) */
+      PublicRepo?: components["schemas"]["config.PublicRepoConfig"];
+      SkipNoops?: boolean;
+    };
+    "config.KubernetesSyncTarget": {
+      Key?: string;
+      Name?: string;
+      Namespaces?: string[];
+    };
+    "config.KustomizeConfig": {
+      /** @description Enable Helm chart inflation during kustomize build */
+      EnableHelm?: boolean;
+      /** @description Load restrictor: none, rootOnly (default: rootOnly) */
+      LoadRestrictor?: string;
+      /** @description Additional patch files to apply after kustomize build */
+      Patches?: string[];
+      /** @description Path to kustomization directory (relative to source root) */
+      Path?: string;
+    };
+    "config.OperationRoleRule": {
+      /** @description "provision", "deprovision", "update", "reprovision", "trigger" */
+      Operation?: components["schemas"]["config.OperationType"];
+      /** @description Format: "nuon::component:name", "nuon::sandbox", "nuon::action:name" */
+      Principal?: string;
+      RoleName?: string;
+    };
+    "config.OperationRolesConfig": {
+      RuleMatrix?: components["schemas"]["config.OperationRoleRule"][];
+      /** @description Should be "matrix" */
+      Type?: components["schemas"]["config.OperationRuleConfigType"];
+    };
+    /** @enum {string} */
+    "config.OperationRuleConfigType": "matrix";
+    /** @enum {string} */
+    "config.OperationType": "provision" | "deprovision" | "reprovision" | "deploy" | "teardown" | "trigger";
+    "config.PermissionsConfig": {
+      CustomRoles?: components["schemas"]["config.AppAWSIAMRole"][];
+      DeprovisionRole?: components["schemas"]["config.AppAWSIAMRole"];
+      MaintenanceRole?: components["schemas"]["config.AppAWSIAMRole"];
+      ProvisionRole?: components["schemas"]["config.AppAWSIAMRole"];
+      Roles?: components["schemas"]["config.AppAWSIAMRole"][];
+    };
+    "config.PoliciesConfig": {
+      Policies?: components["schemas"]["config.AppPolicy"][];
+    };
+    "config.PublicImageConfig": {
+      ImageURL?: string;
+      Tag?: string;
+      /**
+       * @description UpdatePolicy is an optional Masterminds-compatible semver constraint
+       * (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
+       * matching tag from the registry at build time. Either tag or
+       * update_policy must be set.
+       */
+      UpdatePolicy?: string;
+    };
+    "config.PublicRepoConfig": {
+      Branch?: string;
+      Directory?: string;
+      Repo?: string;
+    };
+    "config.PulumiComponentConfig": {
+      AutoApproveOnPoliciesPassing?: boolean;
+      BuildTimeout?: string;
+      ConfigMap?: {
+        [key: string]: string;
+      };
+      ConnectedRepo?: components["schemas"]["config.ConnectedRepoConfig"];
+      DeployTimeout?: string;
+      DriftSchedule?: string;
+      EnvVarMap?: {
+        [key: string]: string;
+      };
+      MaxAutoRetries?: number;
+      PublicRepo?: components["schemas"]["config.PublicRepoConfig"];
+      PulumiVersion?: string;
+      Runtime?: string;
+      SkipNoops?: boolean;
+    };
+    "config.RunbookConfig": {
+      Dependencies?: string[];
+      /**
+       * @description DeprecationWarnings collects messages about legacy field usage observed during parse().
+       * Populated by parse(); consumed by callers (e.g. the CLI sync) to surface to the
+       */
+      DeprecationWarnings?: string[];
+      Description?: string;
+      Inputs?: components["schemas"]["config.RunbookInput"][];
+      Labels?: {
+        [key: string]: string;
+      };
+      Name?: string;
+      Readme?: string;
+      References?: components["schemas"]["refs.Ref"][];
+      Steps?: components["schemas"]["config.RunbookStepConfig"][];
+    };
+    "config.RunbookInput": {
+      Default?: unknown;
+      Description?: string;
+      DisplayName?: string;
+      Name?: string;
+      Required?: boolean;
+      Sensitive?: boolean;
+      Type?: string;
+    };
+    "config.RunbookStepConfig": {
+      /** @description For type = "action" — reference existing action */
+      ActionName?: string;
+      /** @description For type = "action" — inline action (same fields as ActionStepConfig) */
+      Command?: string;
+      /** @description For type = "component_deploy" / "component_tear_down" */
+      ComponentName?: string;
+      /**
+       * @description Legacy alias for DeployDependents — kept for back-compat with TOML configs
+       * written before the rename. Folded into DeployDependents in parse().
+       */
+      DeployDependenciesLegacy?: boolean;
+      DeployDependents?: boolean;
+      EnvVarMap?: {
+        [key: string]: string;
+      };
+      EventTypes?: string[];
+      Filters?: components["schemas"]["config.TriggerFilterConfig"][];
+      InlineContents?: string;
+      MatchAll?: boolean;
+      Name?: string;
+      PlanOnly?: boolean;
+      References?: components["schemas"]["refs.Ref"][];
+      Role?: string;
+      /**
+       * @description For type = "sandbox_reprovision" — when true, only run the sandbox infra plan + apply
+       * and do NOT redeploy components on top.
+       */
+      SkipComponentDeploys?: boolean;
+      TearDownDependents?: boolean;
+      Timeout?: string;
+      Trigger?: string;
+      Type?: components["schemas"]["config.RunbookStepType"];
+    };
+    /** @enum {string} */
+    "config.RunbookStepType": "component_deploy" | "component_tear_down" | "action" | "sandbox_reprovision" | "sandbox_deprovision" | "wait_for_event" | "deploy";
+    "config.SecretsConfig": {
+      Secrets?: components["schemas"]["config.AppSecret"][];
+    };
+    "config.StackConfig": {
+      CustomNestedStacks?: components["schemas"]["config.CustomNestedStack"][];
+      DeploymentScope?: string;
+      Description?: string;
+      Name?: string;
+      RunnerNestedTemplateURL?: string;
+      Type?: string;
+      VPCNestedTemplateURL?: string;
+    };
+    "config.TerraformModuleComponentConfig": {
+      AutoApproveOnPoliciesPassing?: boolean;
+      BuildTimeout?: string;
+      ConnectedRepo?: components["schemas"]["config.ConnectedRepoConfig"];
+      DeployTimeout?: string;
+      DriftSchedule?: string;
+      EnvVarMap?: {
+        [key: string]: string;
+      };
+      EnvVars?: components["schemas"]["config.EnvironmentVariable"][];
+      MaxAutoRetries?: number;
+      PublicRepo?: components["schemas"]["config.PublicRepoConfig"];
+      SkipNoops?: boolean;
+      TerraformVersion?: string;
+      /** @description deprecated */
+      Variables?: components["schemas"]["config.TerraformVariable"][];
+      VariablesFiles?: components["schemas"]["config.TerraformVariablesFile"][];
+      VarsMap?: {
+        [key: string]: string;
+      };
+    };
+    "config.TerraformVariable": {
+      Name?: string;
+      Value?: string;
+    };
+    "config.TerraformVariablesFile": {
+      Contents?: string;
+    };
+    "config.TriggerFilterConfig": {
+      From?: string;
+      Op?: string;
+      Path?: string;
+      Value?: unknown;
+    };
+    "config.TriggerRuleConfig": {
+      EventTypes?: string[];
+      Filters?: components["schemas"]["config.TriggerFilterConfig"][];
+      MatchAll?: boolean;
+      Name?: string;
+      Target?: components["schemas"]["config.TriggerTargetConfig"];
+      Trigger?: string;
+    };
+    "config.TriggerTargetConfig": {
+      AppBranch?: string;
+      Inputs?: {
+        [key: string]: string;
+      };
+      Install?: string;
+      Runbook?: string;
+      Type?: string;
+    };
+    "config.TriggersConfig": {
+      Rules?: components["schemas"]["config.TriggerRuleConfig"][];
     };
     "configs.ACRAppRegistration": {
       clientCertificateName?: string;
@@ -12027,6 +12799,58 @@ export interface operations {
     };
   };
   /**
+   * get an app branch's intermediate config
+   * @description Returns the parsed intermediate config for the branch's latest active config, plus a map of config names to database ids.
+   */
+  GetAppBranchIntermediateConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfigIntermediate"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get latest app branch config
    * @description Returns the latest AppBranchConfig ordered by config_number (descending)
    */
@@ -14962,6 +15786,58 @@ export interface operations {
       200: {
         content: {
           "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app config's intermediate config
+   * @description Returns the parsed intermediate config for a specific app config version, plus a map of config names to database ids.
+   */
+  GetAppConfigIntermediate: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfigIntermediate"];
         };
       };
       /** @description Bad Request */

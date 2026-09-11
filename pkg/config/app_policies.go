@@ -10,7 +10,7 @@ import (
 )
 
 type PoliciesConfig struct {
-	Policies []AppPolicy `mapstructure:"policy,omitempty" toml:"policy,omitempty"`
+	Policies []AppPolicy `json:"Policies" mapstructure:"policy,omitempty" toml:"policy,omitempty"`
 
 	// SourceFile is the file path this config was parsed from (set during parsing, not serialized)
 	SourceFile string `mapstructure:"-" toml:"-" json:"-" jsonschema:"-"`
@@ -128,11 +128,11 @@ var AllAppPolicyEngines = []AppPolicyEngine{
 }
 
 type AppPolicy struct {
-	Type       AppPolicyType   `mapstructure:"type"`
-	Engine     AppPolicyEngine `mapstructure:"engine,omitempty"`
-	Name       string          `mapstructure:"name,omitempty"`
-	Contents   string          `mapstructure:"contents" features:"get,template"`
-	Components []string        `mapstructure:"components,omitempty"`
+	Type       AppPolicyType   `json:"Type" mapstructure:"type"`
+	Engine     AppPolicyEngine `json:"Engine" mapstructure:"engine,omitempty"`
+	Name       string          `json:"Name" mapstructure:"name,omitempty"`
+	Contents   string          `json:"Contents" mapstructure:"contents" features:"get,template"`
+	Components []string        `json:"Components" mapstructure:"components,omitempty"`
 
 	// SourceFile is the file path this policy was parsed from (set during parsing, not serialized)
 	SourceFile string `mapstructure:"-" toml:"-" json:"-" jsonschema:"-"`
@@ -229,7 +229,7 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type AppPolicyList struct {
-	Policy []AppPolicy `mapstructure:"policy" toml:"policy"`
+	Policy []AppPolicy `json:"Policy" mapstructure:"policy" toml:"policy"`
 }
 
 func (a AppPolicyList) JSONSchemaExtend(s *jsonschema.Schema) {

@@ -9,10 +9,10 @@ import (
 )
 
 type TriggerFilterConfig struct {
-	From  string `mapstructure:"from,omitempty" toml:"from,omitempty" jsonschema:"enum=payload,enum=headers"`
-	Op    string `mapstructure:"op" toml:"op" jsonschema:"required,enum=eq,enum=neq,enum=in,enum=prefix,enum=suffix,enum=contains,enum=gt,enum=gte,enum=lt,enum=lte,enum=regex,enum=exists,enum=not_exists"`
-	Path  string `mapstructure:"path" toml:"path" jsonschema:"required"`
-	Value any    `mapstructure:"value,omitempty" toml:"value,omitempty"`
+	From  string `json:"From" mapstructure:"from,omitempty" toml:"from,omitempty" jsonschema:"enum=payload,enum=headers"`
+	Op    string `json:"Op" mapstructure:"op" toml:"op" jsonschema:"required,enum=eq,enum=neq,enum=in,enum=prefix,enum=suffix,enum=contains,enum=gt,enum=gte,enum=lt,enum=lte,enum=regex,enum=exists,enum=not_exists"`
+	Path  string `json:"Path" mapstructure:"path" toml:"path" jsonschema:"required"`
+	Value any    `json:"Value" mapstructure:"value,omitempty" toml:"value,omitempty"`
 }
 
 func (c TriggerFilterConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -23,11 +23,11 @@ func (c TriggerFilterConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type TriggerTargetConfig struct {
-	Type      string            `mapstructure:"type" toml:"type" jsonschema:"required,enum=app_branch_run,enum=runbook"`
-	AppBranch string            `mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty"`
-	Runbook   string            `mapstructure:"runbook,omitempty" toml:"runbook,omitempty"`
-	Install   string            `mapstructure:"install,omitempty" toml:"install,omitempty"`
-	Inputs    map[string]string `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
+	Type      string            `json:"Type" mapstructure:"type" toml:"type" jsonschema:"required,enum=app_branch_run,enum=runbook"`
+	AppBranch string            `json:"AppBranch" mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty"`
+	Runbook   string            `json:"Runbook" mapstructure:"runbook,omitempty" toml:"runbook,omitempty"`
+	Install   string            `json:"Install" mapstructure:"install,omitempty" toml:"install,omitempty"`
+	Inputs    map[string]string `json:"Inputs" mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 }
 
 func (c TriggerTargetConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -39,12 +39,12 @@ func (c TriggerTargetConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type TriggerRuleConfig struct {
-	Name       string                `mapstructure:"name" toml:"name" jsonschema:"required"`
-	Trigger    string                `mapstructure:"trigger" toml:"trigger" jsonschema:"required"`
-	EventTypes []string              `mapstructure:"event_types,omitempty" toml:"event_types,omitempty"`
-	Filters    []TriggerFilterConfig `mapstructure:"filters,omitempty" toml:"filters,omitempty"`
-	MatchAll   bool                  `mapstructure:"match_all,omitempty" toml:"match_all,omitempty"`
-	Target     *TriggerTargetConfig  `mapstructure:"target" toml:"target" jsonschema:"required"`
+	Name       string                `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
+	Trigger    string                `json:"Trigger" mapstructure:"trigger" toml:"trigger" jsonschema:"required"`
+	EventTypes []string              `json:"EventTypes" mapstructure:"event_types,omitempty" toml:"event_types,omitempty"`
+	Filters    []TriggerFilterConfig `json:"Filters" mapstructure:"filters,omitempty" toml:"filters,omitempty"`
+	MatchAll   bool                  `json:"MatchAll" mapstructure:"match_all,omitempty" toml:"match_all,omitempty"`
+	Target     *TriggerTargetConfig  `json:"Target" mapstructure:"target" toml:"target" jsonschema:"required"`
 }
 
 func ValidateTriggerMatch(eventTypes []string, filters []TriggerFilterConfig, matchAll bool) error {
@@ -92,7 +92,7 @@ func (c TriggerRuleConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type TriggersConfig struct {
-	Rules []*TriggerRuleConfig `mapstructure:"rules,omitempty" toml:"rules,omitempty"`
+	Rules []*TriggerRuleConfig `json:"Rules" mapstructure:"rules,omitempty" toml:"rules,omitempty"`
 }
 
 func (c TriggersConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

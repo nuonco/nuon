@@ -3,10 +3,10 @@ package config
 import "errors"
 
 type ErrConfig struct {
-	Description string
-	Err         error
+	Description string `json:"Description"`
+	Err         error  `json:"-"`
 
-	Warning bool
+	Warning bool `json:"Warning"`
 }
 
 func (e ErrConfig) Error() string {

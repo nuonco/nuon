@@ -27,12 +27,12 @@ var AllPermissionsRoleTypes []PermissionsRoleType = []PermissionsRoleType{
 }
 
 type PermissionsConfig struct {
-	ProvisionRole   *AppAWSIAMRole   `mapstructure:"provision_role,omitempty" toml:"provision_role,omitempty"`
-	DeprovisionRole *AppAWSIAMRole   `mapstructure:"deprovision_role,omitempty" toml:"deprovision_role,omitempty"`
-	MaintenanceRole *AppAWSIAMRole   `mapstructure:"maintenance_role,omitempty" toml:"maintenance_role,omitempty"`
-	CustomRoles     []*AppAWSIAMRole `mapstructure:"custom_roles,omitempty" toml:"custom_roles,omitempty"`
+	ProvisionRole   *AppAWSIAMRole   `json:"ProvisionRole" mapstructure:"provision_role,omitempty" toml:"provision_role,omitempty"`
+	DeprovisionRole *AppAWSIAMRole   `json:"DeprovisionRole" mapstructure:"deprovision_role,omitempty" toml:"deprovision_role,omitempty"`
+	MaintenanceRole *AppAWSIAMRole   `json:"MaintenanceRole" mapstructure:"maintenance_role,omitempty" toml:"maintenance_role,omitempty"`
+	CustomRoles     []*AppAWSIAMRole `json:"CustomRoles" mapstructure:"custom_roles,omitempty" toml:"custom_roles,omitempty"`
 
-	Roles []*AppAWSIAMRole `mapstructure:"roles,omitempty" toml:"roles,omitempty"`
+	Roles []*AppAWSIAMRole `json:"Roles" mapstructure:"roles,omitempty" toml:"roles,omitempty"`
 }
 
 func (a PermissionsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

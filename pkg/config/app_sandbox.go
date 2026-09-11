@@ -12,27 +12,27 @@ import (
 )
 
 type AppSandboxConfig struct {
-	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
+	Source string `json:"Source" mapstructure:"source,omitempty" toml:"source,omitempty"`
 
-	Type             string               `mapstructure:"type,omitempty" toml:"type,omitempty"`
-	TerraformVersion string               `mapstructure:"terraform_version,omitempty" toml:"terraform_version,omitempty"`
-	Runtime          string               `mapstructure:"runtime,omitempty" toml:"runtime,omitempty"`
-	PulumiVersion    string               `mapstructure:"pulumi_version,omitempty" toml:"pulumi_version,omitempty"`
-	PulumiConfig     map[string]string    `mapstructure:"pulumi_config,omitempty" toml:"pulumi_config,omitempty"`
-	ConnectedRepo    *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
-	DriftSchedule    *string              `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty"`
+	Type             string               `json:"Type" mapstructure:"type,omitempty" toml:"type,omitempty"`
+	TerraformVersion string               `json:"TerraformVersion" mapstructure:"terraform_version,omitempty" toml:"terraform_version,omitempty"`
+	Runtime          string               `json:"Runtime" mapstructure:"runtime,omitempty" toml:"runtime,omitempty"`
+	PulumiVersion    string               `json:"PulumiVersion" mapstructure:"pulumi_version,omitempty" toml:"pulumi_version,omitempty"`
+	PulumiConfig     map[string]string    `json:"PulumiConfig" mapstructure:"pulumi_config,omitempty" toml:"pulumi_config,omitempty"`
+	ConnectedRepo    *ConnectedRepoConfig `json:"ConnectedRepo" mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
+	PublicRepo       *PublicRepoConfig    `json:"PublicRepo" mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
+	DriftSchedule    *string              `json:"DriftSchedule" mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty"`
 
-	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
-	VarsMap        map[string]string        `mapstructure:"vars,omitempty" toml:"vars,omitempty"`
-	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty" toml:"var_file,omitempty"`
-	OperationRoles []EntityOperationRole    `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
+	EnvVarMap      map[string]string        `json:"EnvVarMap" mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	VarsMap        map[string]string        `json:"VarsMap" mapstructure:"vars,omitempty" toml:"vars,omitempty"`
+	VariablesFiles []TerraformVariablesFile `json:"VariablesFiles" mapstructure:"var_file,omitempty" toml:"var_file,omitempty"`
+	OperationRoles []EntityOperationRole    `json:"OperationRoles" mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
 
-	MaxAutoRetries               *int  `mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
-	SkipNoops                    *bool `mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
-	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
+	MaxAutoRetries               *int  `json:"MaxAutoRetries" mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
+	SkipNoops                    *bool `json:"SkipNoops" mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
+	AutoApproveOnPoliciesPassing *bool `json:"AutoApproveOnPoliciesPassing" mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
 
-	References []refs.Ref `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
+	References []refs.Ref `json:"References" mapstructure:"-" jsonschema:"-" nuonhash:"-"`
 }
 
 const (

@@ -5,17 +5,17 @@ import (
 )
 
 type AppAWSIAMRole struct {
-	Type          string `mapstructure:"type" toml:"type"`
-	CloudPlatform string `mapstructure:"cloud_platform,omitempty" toml:"cloud_platform,omitempty"`
+	Type          string `json:"Type" mapstructure:"type" toml:"type"`
+	CloudPlatform string `json:"CloudPlatform" mapstructure:"cloud_platform,omitempty" toml:"cloud_platform,omitempty"`
 
-	Name        string            `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
-	Description string            `mapstructure:"description" toml:"description" jsonschema:"required" features:"template"`
-	DisplayName string            `mapstructure:"display_name,omitempty" toml:"display_name,omitempty" features:"template"`
-	Policies    []AppAWSIAMPolicy `mapstructure:"policies" toml:"policies" jsonschema:"required"`
+	Name        string            `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
+	Description string            `json:"Description" mapstructure:"description" toml:"description" jsonschema:"required" features:"template"`
+	DisplayName string            `json:"DisplayName" mapstructure:"display_name,omitempty" toml:"display_name,omitempty" features:"template"`
+	Policies    []AppAWSIAMPolicy `json:"Policies" mapstructure:"policies" toml:"policies" jsonschema:"required"`
 
-	PermissionsBoundary string `mapstructure:"permissions_boundary,omitempty" toml:"permissions_boundary,omitempty" features:"template,get"`
+	PermissionsBoundary string `json:"PermissionsBoundary" mapstructure:"permissions_boundary,omitempty" toml:"permissions_boundary,omitempty" features:"template,get"`
 
-	EnabledInStack *bool `mapstructure:"enabled_in_stack,omitempty" toml:"enabled_in_stack,omitempty"`
+	EnabledInStack *bool `json:"EnabledInStack" mapstructure:"enabled_in_stack,omitempty" toml:"enabled_in_stack,omitempty"`
 }
 
 func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
