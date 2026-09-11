@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useSSETimelineQuery } from '@/hooks/use-sse-timeline-query'
+import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getInstallWorkflows } from '@/lib'
 import { createSSEQueryListener } from '@/lib/sse-listeners'
 import { WorkflowTimeline } from './WorkflowTimeline'
@@ -44,6 +45,8 @@ export const WorkflowTimelineContainer = ({
     [queryClient, org?.id, install?.id]
   )
 
+  const onRefreshError = useRefreshErrorToast()
+
   const { data: result, isLoading } = useSSETimelineQuery({
     sseUrl:
       org?.id && installId
@@ -72,6 +75,7 @@ export const WorkflowTimelineContainer = ({
     shouldPoll,
     pollInterval,
     eventName: 'workflows',
+    onError: onRefreshError,
     extraListeners,
   })
 

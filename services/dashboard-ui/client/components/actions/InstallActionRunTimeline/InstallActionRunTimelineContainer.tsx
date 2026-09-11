@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useSSETimelineQuery } from '@/hooks/use-sse-timeline-query'
+import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getInstallAction } from '@/lib'
 import { InstallActionRunTimeline } from './InstallActionRunTimeline'
 
@@ -25,6 +26,8 @@ export const InstallActionRunTimelineContainer = ({
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
 
+  const onRefreshError = useRefreshErrorToast()
+
   const { data: action } = useSSETimelineQuery({
     sseUrl:
       org?.id && install?.id && actionId
@@ -43,6 +46,7 @@ export const InstallActionRunTimelineContainer = ({
     shouldPoll,
     pollInterval,
     eventName: 'action-runs',
+    onError: onRefreshError,
     transform: (data) => data?.data,
   })
 

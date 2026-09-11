@@ -8,12 +8,15 @@ import (
 )
 
 type GetInstallWorkflowsQuery struct {
-	Finished *bool
-	Planonly *bool
-	Type     string
-	Search   string
-	Limit    int
-	Offset   int
+	Finished     *bool
+	Planonly     *bool
+	Type         string
+	Status       string
+	Search       string
+	CreatedAtGte string
+	CreatedAtLte string
+	Limit        int
+	Offset       int
 }
 
 func (c *client) GetInstallWorkflows(ctx context.Context, installID string, query *GetInstallWorkflowsQuery) ([]*models.AppWorkflow, bool, error) {
@@ -29,8 +32,17 @@ func (c *client) GetInstallWorkflows(ctx context.Context, installID string, quer
 		if query.Type != "" {
 			params.Type = &query.Type
 		}
+		if query.Status != "" {
+			params.Status = &query.Status
+		}
 		if query.Search != "" {
 			params.Search = &query.Search
+		}
+		if query.CreatedAtGte != "" {
+			params.CreatedAtGte = &query.CreatedAtGte
+		}
+		if query.CreatedAtLte != "" {
+			params.CreatedAtLte = &query.CreatedAtLte
 		}
 		limit = query.Limit
 		offset = query.Offset
