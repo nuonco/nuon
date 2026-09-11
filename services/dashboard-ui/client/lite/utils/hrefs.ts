@@ -10,6 +10,9 @@ export const installSetupHref = (orgId: string, installId?: string) => {
   return `${path}?${new URLSearchParams({ installId })}`
 }
 
+export const installHref = (orgId: string, installId: string) =>
+  `/${orgId}/installs/${installId}`
+
 export const appBranchHref = (orgId: string, appId: string, branchId: string) =>
   `/${orgId}/apps/${appId}/branches/${branchId}`
 
