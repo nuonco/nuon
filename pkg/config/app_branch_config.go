@@ -8,23 +8,23 @@ import (
 )
 
 type AppBranchInstallGroupConfig struct {
-	Name  string `mapstructure:"name" toml:"name" jsonschema:"required"`
-	Order int    `mapstructure:"order" toml:"order"`
+	Name  string `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
+	Order int    `json:"Order" mapstructure:"order" toml:"order"`
 
-	InstallIDs    []string          `mapstructure:"install_ids,omitempty" toml:"install_ids,omitempty"`
-	InstallNames  []string          `mapstructure:"install_names,omitempty" toml:"install_names,omitempty"`
-	LabelSelector map[string]string `mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
+	InstallIDs    []string          `json:"InstallIDs" mapstructure:"install_ids,omitempty" toml:"install_ids,omitempty"`
+	InstallNames  []string          `json:"InstallNames" mapstructure:"install_names,omitempty" toml:"install_names,omitempty"`
+	LabelSelector map[string]string `json:"LabelSelector" mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
 
-	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty"`
+	AutoApproveOnPoliciesPassing *bool `json:"AutoApproveOnPoliciesPassing" mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty"`
 }
 
 type AppBranchPreviewConfig struct {
-	Mode          string            `mapstructure:"mode,omitempty" toml:"mode,omitempty"`
-	InstallID     string            `mapstructure:"install_id,omitempty" toml:"install_id,omitempty"`
-	InstallName   string            `mapstructure:"install_name,omitempty" toml:"install_name,omitempty"`
-	LabelSelector map[string]string `mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
-	SetStatuses   *bool             `mapstructure:"set_statuses,omitempty" toml:"set_statuses,omitempty"`
-	Comment       *bool             `mapstructure:"comment,omitempty" toml:"comment,omitempty"`
+	Mode          string            `json:"Mode" mapstructure:"mode,omitempty" toml:"mode,omitempty"`
+	InstallID     string            `json:"InstallID" mapstructure:"install_id,omitempty" toml:"install_id,omitempty"`
+	InstallName   string            `json:"InstallName" mapstructure:"install_name,omitempty" toml:"install_name,omitempty"`
+	LabelSelector map[string]string `json:"LabelSelector" mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
+	SetStatuses   *bool             `json:"SetStatuses" mapstructure:"set_statuses,omitempty" toml:"set_statuses,omitempty"`
+	Comment       *bool             `json:"Comment" mapstructure:"comment,omitempty" toml:"comment,omitempty"`
 }
 
 func (c AppBranchPreviewConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -46,13 +46,13 @@ func (c AppBranchInstallGroupConfig) JSONSchemaExtend(schema *jsonschema.Schema)
 }
 
 type AppBranchConfig struct {
-	Name          string               `mapstructure:"name" toml:"name" jsonschema:"required"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
+	Name          string               `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
+	ConnectedRepo *ConnectedRepoConfig `json:"ConnectedRepo" mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
+	PublicRepo    *PublicRepoConfig    `json:"PublicRepo" mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
 
-	InstallGroups []AppBranchInstallGroupConfig `mapstructure:"install_groups,omitempty" toml:"install_groups,omitempty"`
+	InstallGroups []AppBranchInstallGroupConfig `json:"InstallGroups" mapstructure:"install_groups,omitempty" toml:"install_groups,omitempty"`
 
-	Preview *AppBranchPreviewConfig `mapstructure:"preview,omitempty" toml:"preview,omitempty"`
+	Preview *AppBranchPreviewConfig `json:"Preview" mapstructure:"preview,omitempty" toml:"preview,omitempty"`
 
 	PostDeployRunbooks []string `mapstructure:"post_deploy_runbooks,omitempty" toml:"post_deploy_runbooks,omitempty" json:"post_deploy_runbooks,omitempty"`
 

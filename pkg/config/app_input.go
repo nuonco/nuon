@@ -19,17 +19,17 @@ const (
 )
 
 type AppInput struct {
-	Name        string `mapstructure:"name" toml:"name"`
-	DisplayName string `mapstructure:"display_name" toml:"display_name" jsonschema:"required"`
-	Description string `mapstructure:"description" toml:"description" jsonschema:"required"`
-	Group       string `mapstructure:"group" toml:"group" jsonschema:"required"`
-	Default     any    `mapstructure:"default,omitempty" toml:"default,omitempty"`
-	Required    bool   `mapstructure:"required,omitempty" toml:"required,omitempty"`
-	Sensitive   bool   `mapstructure:"sensitive" toml:"sensitive"`
-	Type        string `mapstructure:"type" toml:"type"`
+	Name        string `json:"Name" mapstructure:"name" toml:"name"`
+	DisplayName string `json:"DisplayName" mapstructure:"display_name" toml:"display_name" jsonschema:"required"`
+	Description string `json:"Description" mapstructure:"description" toml:"description" jsonschema:"required"`
+	Group       string `json:"Group" mapstructure:"group" toml:"group" jsonschema:"required"`
+	Default     any    `json:"Default" mapstructure:"default,omitempty" toml:"default,omitempty"`
+	Required    bool   `json:"Required" mapstructure:"required,omitempty" toml:"required,omitempty"`
+	Sensitive   bool   `json:"Sensitive" mapstructure:"sensitive" toml:"sensitive"`
+	Type        string `json:"Type" mapstructure:"type" toml:"type"`
 	// Deprecated: this field has no effect and will be ignored.
-	Internal         bool `mapstructure:"internal" toml:"internal"`
-	UserConfigurable bool `mapstructure:"user_configurable" toml:"user_configurable"`
+	Internal         bool `json:"Internal" mapstructure:"internal" toml:"internal"`
+	UserConfigurable bool `json:"UserConfigurable" mapstructure:"user_configurable" toml:"user_configurable"`
 }
 
 func (a AppInput) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -72,9 +72,9 @@ func (a AppInput) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type AppInputGroup struct {
-	Name        string `mapstructure:"name" toml:"name" jsonschema:"required"`
-	Description string `mapstructure:"description" toml:"description" jsonschema:"required"`
-	DisplayName string `mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
+	Name        string `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
+	Description string `json:"Description" mapstructure:"description" toml:"description" jsonschema:"required"`
+	DisplayName string `json:"DisplayName" mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
 }
 
 func (a AppInputGroup) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -91,11 +91,11 @@ func (a AppInputGroup) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type AppInputConfig struct {
-	Inputs []AppInput      `mapstructure:"input,omitempty" toml:"input"`
-	Groups []AppInputGroup `mapstructure:"group,omitempty" toml:"group"`
+	Inputs []AppInput      `json:"Inputs" mapstructure:"input,omitempty" toml:"input"`
+	Groups []AppInputGroup `json:"Groups" mapstructure:"group,omitempty" toml:"group"`
 
-	Source  string   `mapstructure:"source,omitempty" toml:"source,omitempty"`
-	Sources []string `mapstructure:"sources,omitempty" toml:"sources,omitempty"`
+	Source  string   `json:"Source" mapstructure:"source,omitempty" toml:"source,omitempty"`
+	Sources []string `json:"Sources" mapstructure:"sources,omitempty" toml:"sources,omitempty"`
 }
 
 func (a AppInputConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

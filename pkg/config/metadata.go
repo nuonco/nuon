@@ -6,20 +6,20 @@ import (
 
 type MetadataConfig struct {
 	// Config file version
-	Version string `mapstructure:"version" toml:"version" jsonschema:"required"`
+	Version string `json:"Version" mapstructure:"version" toml:"version" jsonschema:"required"`
 
 	// Description for your app, which is rendered in the installers
-	Description string `mapstructure:"description,omitempty" toml:"description,omitempty"`
+	Description string `json:"Description" mapstructure:"description,omitempty" toml:"description,omitempty"`
 	// Display name for the app, rendered in the installer
-	DisplayName string `mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
+	DisplayName string `json:"DisplayName" mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
 	// Slack webhook url to receive notifications
-	SlackWebhookURL string `mapstructure:"slack_webhook_url" toml:"slack_webhook_url"`
+	SlackWebhookURL string `json:"SlackWebhookURL" mapstructure:"slack_webhook_url" toml:"slack_webhook_url"`
 	// Readme for the app
-	Readme string `mapstructure:"readme,omitempty" toml:"readme,omitempty"`
+	Readme string `json:"Readme" mapstructure:"readme,omitempty" toml:"readme,omitempty"`
 	// Color codes for label keys, keyed by label key name
-	LabelColors map[string]string `mapstructure:"label_colors,omitempty" toml:"label_colors,omitempty"`
+	LabelColors map[string]string `json:"LabelColors" mapstructure:"label_colors,omitempty" toml:"label_colors,omitempty"`
 	// Labels applied to every install of the app; editable only via app config
-	DefaultLabels map[string]string `mapstructure:"default_labels,omitempty" toml:"default_labels,omitempty"`
+	DefaultLabels map[string]string `json:"DefaultLabels" mapstructure:"default_labels,omitempty" toml:"default_labels,omitempty"`
 }
 
 func (m MetadataConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

@@ -96,6 +96,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			appConfigs.POST("/:config_id/sync", s.SyncAppConfig)
 			appConfigs.POST("/:config_id/build", s.BuildAppConfig)
 			appConfigs.GET("/:config_id/diff", s.GetAppConfigDiff)
+			appConfigs.GET("/:config_id/intermediate", s.GetAppConfigIntermediate)
 		}
 
 		// app sandbox builds
@@ -213,6 +214,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			branches.POST("/:app_branch_id/configs", s.CreateAppBranchConfig)
 			branches.PATCH("/:app_branch_id/configs/:config_id", s.UpdateAppBranchConfig)
 			branches.GET("/:app_branch_id/latest-config", s.GetAppBranchLatestConfig)
+			branches.GET("/:app_branch_id/intermediate-config", s.GetAppBranchIntermediateConfig)
 			branches.GET("/:app_branch_id/preview-sources", s.GetAppBranchPreviewSources)
 			branches.GET("/:app_branch_id/preview-install-candidates", s.GetAppBranchPreviewInstallCandidates)
 			branches.POST("/:app_branch_id/runs", s.TriggerAppBranchRun)

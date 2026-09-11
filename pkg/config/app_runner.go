@@ -10,30 +10,30 @@ import (
 )
 
 type AppRunnerConfig struct {
-	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
+	Source string `json:"Source" mapstructure:"source,omitempty" toml:"source,omitempty"`
 
-	RunnerType string `mapstructure:"runner_type" toml:"runner_type" jsonschema:"required"`
+	RunnerType string `json:"RunnerType" mapstructure:"runner_type" toml:"runner_type" jsonschema:"required"`
 
-	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	EnvVarMap map[string]string `json:"EnvVarMap" mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
 
-	HelmDriver string `mapstructure:"helm_driver,omitempty" toml:"helm_driver,omitempty"`
+	HelmDriver string `json:"HelmDriver" mapstructure:"helm_driver,omitempty" toml:"helm_driver,omitempty"`
 
-	InitScriptURL string `mapstructure:"init_script_url" toml:"init_script_url"`
+	InitScriptURL string `json:"InitScriptURL" mapstructure:"init_script_url" toml:"init_script_url"`
 
 	// PhoneHomeScriptURL overrides the phone-home Lambda source for this app.
-	PhoneHomeScriptURL string `mapstructure:"phone_home_script_url,omitempty" toml:"phone_home_script_url,omitempty"`
+	PhoneHomeScriptURL string `json:"PhoneHomeScriptURL" mapstructure:"phone_home_script_url,omitempty" toml:"phone_home_script_url,omitempty"`
 
 	// InstanceType sets the cloud machine/instance type for the install runner host.
-	InstanceType string `mapstructure:"instance_type,omitempty" toml:"instance_type,omitempty"`
+	InstanceType string `json:"InstanceType" mapstructure:"instance_type,omitempty" toml:"instance_type,omitempty"`
 
 	// RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config.
-	RunnerAPIURL string `mapstructure:"runner_api_url,omitempty" toml:"runner_api_url,omitempty"`
+	RunnerAPIURL string `json:"RunnerAPIURL" mapstructure:"runner_api_url,omitempty" toml:"runner_api_url,omitempty"`
 
 	// PublicAPIURL overrides the Nuon public API endpoint used for phone-home callbacks.
-	PublicAPIURL string `mapstructure:"public_api_url,omitempty" toml:"public_api_url,omitempty"`
+	PublicAPIURL string `json:"PublicAPIURL" mapstructure:"public_api_url,omitempty" toml:"public_api_url,omitempty"`
 
 	// Deprecated
-	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var"`
+	EnvVars []EnvironmentVariable `json:"EnvVars" mapstructure:"env_var,omitempty" toml:"env_var"`
 }
 
 func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

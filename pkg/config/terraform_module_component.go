@@ -5,7 +5,7 @@ import (
 )
 
 type TerraformVariablesFile struct {
-	Contents string `toml:"contents" mapstructure:"contents,omitempty" features:"get,template"`
+	Contents string `json:"Contents" toml:"contents" mapstructure:"contents,omitempty" features:"get,template"`
 }
 
 func (t TerraformVariablesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -18,27 +18,27 @@ func (t TerraformVariablesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type TerraformModuleComponentConfig struct {
-	TerraformVersion string `mapstructure:"terraform_version" toml:"terraform_version" jsonschema:"required"`
+	TerraformVersion string `json:"TerraformVersion" mapstructure:"terraform_version" toml:"terraform_version" jsonschema:"required"`
 
-	EnvVarMap      map[string]string        `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
-	VarsMap        map[string]string        `mapstructure:"vars,omitempty" toml:"vars,omitempty"`
-	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty" toml:"var_file,omitempty"`
+	EnvVarMap      map[string]string        `json:"EnvVarMap" mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	VarsMap        map[string]string        `json:"VarsMap" mapstructure:"vars,omitempty" toml:"vars,omitempty"`
+	VariablesFiles []TerraformVariablesFile `json:"VariablesFiles" mapstructure:"var_file,omitempty" toml:"var_file,omitempty"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
+	PublicRepo    *PublicRepoConfig    `json:"PublicRepo" mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
+	ConnectedRepo *ConnectedRepoConfig `json:"ConnectedRepo" mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
 
-	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
+	DriftSchedule *string `json:"DriftSchedule" mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
-	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
-	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	BuildTimeout  string `json:"BuildTimeout" mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `json:"DeployTimeout" mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 
-	MaxAutoRetries               *int  `mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
-	SkipNoops                    *bool `mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
-	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
+	MaxAutoRetries               *int  `json:"MaxAutoRetries" mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
+	SkipNoops                    *bool `json:"SkipNoops" mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
+	AutoApproveOnPoliciesPassing *bool `json:"AutoApproveOnPoliciesPassing" mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
 
 	// deprecated
-	Variables []TerraformVariable   `mapstructure:"var,omitempty" toml:"var,omitempty"`
-	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
+	Variables []TerraformVariable   `json:"Variables" mapstructure:"var,omitempty" toml:"var,omitempty"`
+	EnvVars   []EnvironmentVariable `json:"EnvVars" mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
 }
 
 func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

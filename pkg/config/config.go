@@ -9,45 +9,45 @@ import (
 
 type AppConfig struct {
 	// Config file version
-	Version string `mapstructure:"version" toml:"version" jsonschema:"required"`
+	Version string `json:"Version" mapstructure:"version" toml:"version" jsonschema:"required"`
 
 	// Description for your app, which is rendered in the installers
-	Description string `mapstructure:"description,omitempty" toml:"description,omitempty"`
+	Description string `json:"Description" mapstructure:"description,omitempty" toml:"description,omitempty"`
 	// Display name for the app, rendered in the installer
-	DisplayName string `mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
+	DisplayName string `json:"DisplayName" mapstructure:"display_name,omitempty" toml:"display_name,omitempty"`
 	// Slack webhook url to receive notifications
-	SlackWebhookURL string `mapstructure:"slack_webhook_url" toml:"slack_webhook_url"`
+	SlackWebhookURL string `json:"SlackWebhookURL" mapstructure:"slack_webhook_url" toml:"slack_webhook_url"`
 	// Readme for the app
-	Readme string `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
+	Readme string `json:"Readme" mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
 	// Color codes for label keys
-	LabelColors map[string]string `mapstructure:"label_colors,omitempty" toml:"label_colors,omitempty"`
+	LabelColors map[string]string `json:"LabelColors" mapstructure:"label_colors,omitempty" toml:"label_colors,omitempty"`
 	// Labels applied to every install of the app; editable only via app config
-	DefaultLabels map[string]string `mapstructure:"default_labels,omitempty" toml:"default_labels,omitempty"`
+	DefaultLabels map[string]string `json:"DefaultLabels" mapstructure:"default_labels,omitempty" toml:"default_labels,omitempty"`
 
 	// Default App Branch config
-	Branch *AppBranchConfig `mapstructure:"branch,omitempty" toml:"branch,omitempty"`
+	Branch *AppBranchConfig `json:"Branch" mapstructure:"branch,omitempty" toml:"branch,omitempty"`
 	// App branch configs (from branches/ directory)
-	Branches []*AppBranchConfig `mapstructure:"branches,omitempty" toml:"branches,omitempty"`
+	Branches []*AppBranchConfig `json:"Branches" mapstructure:"branches,omitempty" toml:"branches,omitempty"`
 	// Input configuration
-	Inputs *AppInputConfig `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
+	Inputs *AppInputConfig `json:"Inputs" mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 	// Sandbox configuration
-	Sandbox *AppSandboxConfig `mapstructure:"sandbox" toml:"sandbox" jsonschema:"required"`
+	Sandbox *AppSandboxConfig `json:"Sandbox" mapstructure:"sandbox" toml:"sandbox" jsonschema:"required"`
 	// Runner configuration
-	Runner *AppRunnerConfig `mapstructure:"runner" toml:"runner" jsonschema:"required"`
+	Runner *AppRunnerConfig `json:"Runner" mapstructure:"runner" toml:"runner" jsonschema:"required"`
 	// Permissions config
-	Permissions *PermissionsConfig `mapstructure:"permissions,omitempty" toml:"permissions,omitempty"`
+	Permissions *PermissionsConfig `json:"Permissions" mapstructure:"permissions,omitempty" toml:"permissions,omitempty"`
 	// Policies config
-	Policies *PoliciesConfig `mapstructure:"policies,omitempty" toml:"policies,omitempty"`
+	Policies *PoliciesConfig `json:"Policies" mapstructure:"policies,omitempty" toml:"policies,omitempty"`
 	// Secrets config
-	Secrets *SecretsConfig `mapstructure:"secrets,omitempty" toml:"secrets,omitempty"`
+	Secrets *SecretsConfig `json:"Secrets" mapstructure:"secrets,omitempty" toml:"secrets,omitempty"`
 	// Break-glass config
-	BreakGlass *BreakGlass `mapstructure:"break_glass,omitempty" toml:"break_glass,omitempty"`
+	BreakGlass *BreakGlass `json:"BreakGlass" mapstructure:"break_glass,omitempty" toml:"break_glass,omitempty"`
 	// Stack config
-	Stack *StackConfig `mapstructure:"stack,omitempty" toml:"stack,omitempty"`
+	Stack *StackConfig `json:"Stack" mapstructure:"stack,omitempty" toml:"stack,omitempty"`
 	// Operation rules
-	OperationRoles *OperationRolesConfig `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
+	OperationRoles *OperationRolesConfig `json:"OperationRoles" mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
 	// Kubernetes contexts
-	KubernetesContexts *KubernetesContextsConfig `mapstructure:"kubernetes_contexts,omitempty" toml:"kubernetes_contexts,omitempty"`
+	KubernetesContexts *KubernetesContextsConfig `json:"KubernetesContexts" mapstructure:"kubernetes_contexts,omitempty" toml:"kubernetes_contexts,omitempty"`
 
 	// NOTE: in order to prevent users having to declare multiple arrays of _different_ component types:
 	// eg: [[terraform_module_components]]
@@ -56,16 +56,16 @@ type AppConfig struct {
 	// This requires a bit more work/indirection by us, but a bit less by our customers!
 
 	// Components are used to connect container images, automation and infrastructure as code to your Nuon App
-	Components ComponentList `mapstructure:"components,omitempty" toml:"components,omitempty"`
+	Components ComponentList `json:"Components" mapstructure:"components,omitempty" toml:"components,omitempty"`
 
-	Installs       []*Install      `mapstructure:"installs,omitempty" toml:"installs,omitempty"`
-	InstallsConfig *InstallsConfig `mapstructure:"installs_config,omitempty" toml:"installs_config,omitempty"`
+	Installs       []*Install      `json:"Installs" mapstructure:"installs,omitempty" toml:"installs,omitempty"`
+	InstallsConfig *InstallsConfig `json:"InstallsConfig" mapstructure:"installs_config,omitempty" toml:"installs_config,omitempty"`
 
-	Actions []*ActionConfig `mapstructure:"actions,omitempty" toml:"actions,omitempty"`
+	Actions []*ActionConfig `json:"Actions" mapstructure:"actions,omitempty" toml:"actions,omitempty"`
 
-	Runbooks []*RunbookConfig `mapstructure:"runbooks,omitempty" toml:"runbooks,omitempty"`
+	Runbooks []*RunbookConfig `json:"Runbooks" mapstructure:"runbooks,omitempty" toml:"runbooks,omitempty"`
 
-	Triggers *TriggersConfig `mapstructure:"triggers,omitempty" toml:"triggers,omitempty"`
+	Triggers *TriggersConfig `json:"Triggers" mapstructure:"triggers,omitempty" toml:"triggers,omitempty"`
 
 	SourceArchive *SourceArchive `mapstructure:"-" toml:"-" json:"-" jsonschema:"-" temporaljson:"source_archive,omitempty"`
 }

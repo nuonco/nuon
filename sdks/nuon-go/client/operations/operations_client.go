@@ -404,6 +404,8 @@ type ClientService interface {
 
 	GetAppBranchAppConfigs(params *GetAppBranchAppConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchAppConfigsOK, error)
 
+	GetAppBranchIntermediateConfig(params *GetAppBranchIntermediateConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchIntermediateConfigOK, error)
+
 	GetAppBranchLatestConfig(params *GetAppBranchLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchLatestConfigOK, error)
 
 	GetAppBranchPreviewInstallCandidates(params *GetAppBranchPreviewInstallCandidatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchPreviewInstallCandidatesOK, error)
@@ -451,6 +453,8 @@ type ClientService interface {
 	GetAppConfigGraph(params *GetAppConfigGraphParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigGraphOK, error)
 
 	GetAppConfigGraphV2(params *GetAppConfigGraphV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigGraphV2OK, error)
+
+	GetAppConfigIntermediate(params *GetAppConfigIntermediateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigIntermediateOK, error)
 
 	GetAppConfigTemplate(params *GetAppConfigTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigTemplateCreated, error)
 
@@ -7773,6 +7777,52 @@ func (a *Client) GetAppBranchAppConfigs(params *GetAppBranchAppConfigsParams, au
 }
 
 /*
+GetAppBranchIntermediateConfig gets an app branch s intermediate config
+
+Returns the parsed intermediate config for the branch's latest active config, plus a map of config names to database ids.
+*/
+func (a *Client) GetAppBranchIntermediateConfig(params *GetAppBranchIntermediateConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchIntermediateConfigOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppBranchIntermediateConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppBranchIntermediateConfig",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/intermediate-config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppBranchIntermediateConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppBranchIntermediateConfigOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppBranchIntermediateConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetAppBranchLatestConfig gets latest app branch config
 
 Returns the latest AppBranchConfig ordered by config_number (descending)
@@ -8879,6 +8929,52 @@ func (a *Client) GetAppConfigGraphV2(params *GetAppConfigGraphV2Params, authInfo
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppConfigGraphV2: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppConfigIntermediate gets an app config s intermediate config
+
+Returns the parsed intermediate config for a specific app config version, plus a map of config names to database ids.
+*/
+func (a *Client) GetAppConfigIntermediate(params *GetAppConfigIntermediateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigIntermediateOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppConfigIntermediateParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppConfigIntermediate",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/configs/{config_id}/intermediate",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppConfigIntermediateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppConfigIntermediateOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppConfigIntermediate: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
