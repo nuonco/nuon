@@ -14,9 +14,10 @@ import (
 )
 
 type HTTPMetrics struct {
-	duration metric.Float64Histogram
-	active   metric.Int64UpDownCounter
-	methods  map[string]bool
+	duration         metric.Float64Histogram
+	active           metric.Int64UpDownCounter
+	declaredBodySize metric.Int64Histogram
+	methods          map[string]bool
 }
 
 func NewHTTPMetrics(provider metric.MeterProvider) (*HTTPMetrics, error) {
@@ -36,11 +37,19 @@ func NewHTTPMetrics(provider metric.MeterProvider) (*HTTPMetrics, error) {
 	if err != nil {
 		return nil, err
 	}
+	declaredBodySize, err := meter.Int64Histogram("nuon.http.server.request.declared_body.size",
+		metric.WithUnit("By"),
+		metric.WithDescription("Declared HTTP request body size; unknown lengths are omitted."),
+		metric.WithExplicitBucketBoundaries(0, 128, 512, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216),
+	)
+	if err != nil {
+		return nil, err
+	}
 	methods := "CONNECT,DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT,TRACE"
 	if configured, ok := os.LookupEnv("OTEL_INSTRUMENTATION_HTTP_KNOWN_METHODS"); ok {
 		methods = configured
 	}
-	m := &HTTPMetrics{duration: duration, active: active, methods: make(map[string]bool)}
+	m := &HTTPMetrics{duration: duration, active: active, declaredBodySize: declaredBodySize, methods: make(map[string]bool)}
 	for _, method := range strings.Split(methods, ",") {
 		if method = strings.TrimSpace(method); method != "" {
 			m.methods[method] = true
@@ -70,19 +79,26 @@ func (m *HTTPMetrics) Start(ctx context.Context, api, method, scheme string) fun
 		if status >= http.StatusInternalServerError {
 			attrs = append(attrs, attribute.String("error.type", strconv.Itoa(status)))
 		}
-		m.duration.Record(ctx, time.Since(started).Seconds(), metric.WithAttributes(attrs...))
+		options := metric.WithAttributes(attrs...)
+		m.duration.Record(ctx, time.Since(started).Seconds(), options)
+		if request, ok := ctx.Value(httpRequestMetricsKey{}).(*httpRequestMetrics); ok {
+			if request.declaredBodySize >= 0 {
+				m.declaredBodySize.Record(ctx, request.declaredBodySize, options)
+			}
+		}
 	}
 }
 
-type httpRouteKey struct{}
+type httpRequestMetricsKey struct{}
 
-type httpRoute struct {
-	template string
+type httpRequestMetrics struct {
+	route            string
+	declaredBodySize int64
 }
 
 func SetHTTPRoute(ctx context.Context, template string) {
-	if route, ok := ctx.Value(httpRouteKey{}).(*httpRoute); ok {
-		route.template = template
+	if request, ok := ctx.Value(httpRequestMetricsKey{}).(*httpRequestMetrics); ok {
+		request.route = template
 	}
 }
 
@@ -92,11 +108,11 @@ func (m *HTTPMetrics) Handler(api string, next http.Handler) http.Handler {
 		if r.TLS != nil {
 			scheme = "https"
 		}
-		route := &httpRoute{}
-		r = r.WithContext(context.WithValue(r.Context(), httpRouteKey{}, route))
+		request := &httpRequestMetrics{declaredBodySize: r.ContentLength}
+		r = r.WithContext(context.WithValue(r.Context(), httpRequestMetricsKey{}, request))
 		finish := m.Start(r.Context(), api, r.Method, scheme)
 		status := http.StatusInternalServerError
-		defer func() { finish(route.template, status) }()
+		defer func() { finish(request.route, status) }()
 		status = httpsnoop.CaptureMetrics(next, w, r).Code
 	})
 }
