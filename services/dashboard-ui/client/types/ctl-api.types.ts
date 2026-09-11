@@ -405,6 +405,12 @@ export type TComponentConfig =
   components['schemas']['app.ComponentConfigConnection']
 export type TComponentType = components['schemas']['app.ComponentType']
 
+export type TSignatureVerification =
+  components['schemas']['signature.Verification']
+export type TSignatureAuthority = components['schemas']['signature.Authority']
+export type TSignatureAuthorityType =
+  components['schemas']['signature.AuthorityType']
+
 export type TComponentBuild = components['schemas']['app.ComponentBuild']
 export type TBuild = TComponentBuild & {
   org_id: string
