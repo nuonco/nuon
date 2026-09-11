@@ -14,6 +14,7 @@ import (
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
 	notebooksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/service"
+	nuonctlmcpservice "github.com/nuonco/nuon/services/ctl-api/internal/app/nuonctl-mcp/service"
 	oidcfederationservice "github.com/nuonco/nuon/services/ctl-api/internal/app/oidc-federation/service"
 	onboardingservice "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
@@ -103,6 +104,10 @@ var SlackServicesModule = fx.Module("slack-services", sharedServices)
 // tools through authservice, so pulling it in would only impose authservice's
 // config requirements (NUON_AUTH_CLIENT_SECRET et al) on the mcp deployment.
 var MCPServicesModule = fx.Module("mcp-services", sharedServices)
+
+var NuonctlMCPServicesModule = fx.Module("nuonctl-mcp-services",
+	fx.Provide(api.AsNuonctlMCPService(nuonctlmcpservice.New)),
+)
 
 // AllServicesModule provides all services including authservice (for dev mode).
 var AllServicesModule = fx.Module("all-services",
