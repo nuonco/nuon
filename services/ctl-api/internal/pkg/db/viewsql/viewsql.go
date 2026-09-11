@@ -61,6 +61,9 @@ var AppSandboxConfigsLatestViewV1 string
 //go:embed component_config_connections_v1.sql
 var ComponentConfigConnectionsV1 string
 
+//go:embed component_config_connections_v2.sql
+var ComponentConfigConnectionsV2 string
+
 //go:embed latest_component_config_connections_view_v1.sql
 var LatestComponentConfigConnectionsV1 string
 

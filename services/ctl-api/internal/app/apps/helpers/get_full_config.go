@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skipAdditionalChecks bool) (*app.AppConfig, error) {
@@ -81,11 +82,12 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 		missingComponents := []app.ComponentConfigConnection{}
 		// a newer row's dependency ids can name components absent from this version
 		var boundedCfgIDs []string
-		res = h.db.WithContext(ctx).Raw(`
+		res = h.db.WithContext(ctx).Raw(fmt.Sprintf(`
 			SELECT DISTINCT ON (component_id) id
-			FROM component_config_connections_view_v1
+			FROM %s
 			WHERE component_id IN ? AND app_config_version <= ?
 			ORDER BY component_id, app_config_version DESC`,
+			views.CurrentViewName(h.db, &app.ComponentConfigConnection{})),
 			missingComponentIds, appCfg.Version,
 		).Scan(&boundedCfgIDs)
 		if res.Error != nil {

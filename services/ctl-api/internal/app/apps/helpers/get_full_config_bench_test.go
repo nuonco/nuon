@@ -100,7 +100,7 @@ func fullConfigBenchmarkHelper(t testing.TB, actions int) *appshelpers.Helpers {
 		{"image", app.ComponentTypeExternalImage}, {"job", app.ComponentTypeJob}, {"pulumi", app.ComponentTypePulumi},
 	} {
 		add("components", "id name type", c.id, c.id, string(c.typ))
-		add("component_config_connections_view_v1", "app_config_id id component_id", "config", c.id+"-connection", c.id)
+		add("component_config_connections_view_v2", "app_config_id id component_id", "config", c.id+"-connection", c.id)
 	}
 	add("helm_component_configs", "component_config_connection_id id chart_name", "helm-connection", "helm-config", "my-chart")
 	add("terraform_module_component_configs", "component_config_connection_id id version", "terraform-connection", "terraform-config", "latest")
