@@ -28,6 +28,7 @@ func FromContext(ctx cctx.ValueContext) qcctx.SignalContext {
 // Apply restores the captured context values onto a context.Context so that
 // downstream consumers (e.g. Temporal propagators) see the original values.
 func Apply(ctx context.Context, sc qcctx.SignalContext) context.Context {
+	ctx = cctx.ClearLogStreamContext(ctx)
 	if sc.AccountID != "" {
 		ctx = cctx.SetAccountIDContext(ctx, sc.AccountID)
 	}
@@ -45,6 +46,7 @@ func Apply(ctx context.Context, sc qcctx.SignalContext) context.Context {
 // signal's Execute (and any activities it schedules via the Temporal
 // propagator) see the enqueuer's identity rather than the queue workflow's.
 func ApplyWorkflow(ctx workflow.Context, sc qcctx.SignalContext) workflow.Context {
+	ctx = cctx.ClearLogStreamWorkflowContext(ctx)
 	if sc.AccountID != "" {
 		ctx = cctx.SetAccountIDWorkflowContext(ctx, sc.AccountID)
 	}

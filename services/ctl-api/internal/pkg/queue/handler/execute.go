@@ -82,7 +82,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	execCtx, cancel := workflow.WithCancel(ctx)
 	defer cancel()
 
-	execCtx, err := h.signalExecutionContext(execCtx)
+	execCtx, err := h.signalContext(execCtx, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to restore signal context")
 	}
@@ -158,7 +158,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	return nil, nil
 }
 
-func (h *handler) signalExecutionContext(ctx workflow.Context) (workflow.Context, error) {
+func (h *handler) signalContext(ctx workflow.Context, refreshLogStream bool) (workflow.Context, error) {
 	if h.queueSignal == nil {
 		return ctx, nil
 	}
@@ -169,14 +169,20 @@ func (h *handler) signalExecutionContext(ctx workflow.Context) (workflow.Context
 		return ctx, nil
 	}
 
-	stream, err := activities.AwaitHydrateLogStream(ctx, &activities.HydrateLogStreamRequest{
-		LogStreamID: signalCtx.LogStreamID,
-		OrgID:       signalCtx.OrgID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to hydrate signal log stream")
+	if refreshLogStream {
+		h.signalLogStream = nil
 	}
-	return cctx.SetLogStreamWorkflowContext(ctx, stream), nil
+	if h.signalLogStream == nil {
+		stream, err := activities.AwaitHydrateLogStream(ctx, &activities.HydrateLogStreamRequest{
+			LogStreamID: signalCtx.LogStreamID,
+			OrgID:       signalCtx.OrgID,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to hydrate signal log stream")
+		}
+		h.signalLogStream = stream
+	}
+	return cctx.SetLogStreamWorkflowContext(ctx, h.signalLogStream), nil
 }
 
 // emitExecuteMetrics records the latency and execution count for the signal's
