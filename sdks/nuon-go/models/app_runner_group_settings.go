@@ -134,6 +134,9 @@ type AppRunnerGroupSettings struct {
 	// vendor telemetry enabled
 	VendorTelemetryEnabled bool `json:"vendor_telemetry_enabled,omitempty"`
 
+	// vendor telemetry resource attributes
+	VendorTelemetryResourceAttributes map[string]string `json:"vendor_telemetry_resource_attributes,omitempty"`
+
 	// vm max uptime
 	VMMaxUptime int64 `json:"vm_max_uptime,omitempty"`
 }
