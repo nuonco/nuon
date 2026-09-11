@@ -24,6 +24,18 @@ func isNotFoundErr(err error) bool {
 	return false
 }
 
+func parseOptionalBoolQuery(c *gin.Context, name string) *bool {
+	raw := c.Query(name)
+	if raw == "" {
+		return nil
+	}
+	value, err := strconv.ParseBool(raw)
+	if err != nil {
+		return nil
+	}
+	return &value
+}
+
 func timelineQuery(c *gin.Context) (limit, offset int) {
 	limit, _ = strconv.Atoi(c.DefaultQuery("limit", "10"))
 	offset, _ = strconv.Atoi(c.DefaultQuery("offset", "0"))
