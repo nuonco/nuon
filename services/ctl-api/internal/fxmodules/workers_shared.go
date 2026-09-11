@@ -22,7 +22,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
-	workflowmetrics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/metrics"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowsflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow"
 	flowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -72,8 +71,6 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(handleractivities.New),
 	fx.Provide(emitteractivities.New),
 	fx.Provide(statusactivities.New),
-	fx.Provide(fx.Annotate(workflowmetrics.NewCounters,
-		fx.As(new(statusactivities.WorkflowMetrics)), fx.As(new(flowactivities.WorkflowMetrics)))),
 	fx.Provide(workflowstepawaitingretry.NewNotifier),
 	fx.Provide(controlplanejob.NewActivities),
 	fx.Provide(activities.New),

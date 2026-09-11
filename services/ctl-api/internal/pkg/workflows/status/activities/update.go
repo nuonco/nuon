@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"maps"
 	"reflect"
 	"time"
 
@@ -248,9 +247,6 @@ func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req Upda
 		ID: req.ID,
 	}
 
-	requested := req.Status
-	// Persistence merges old metadata into req.Status; only new decisions count.
-	requested.Metadata = maps.Clone(req.Status.Metadata)
 	var loaded app.WorkflowStep
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
 		if err := a.getStatus(ctx, &loaded, req.ID); err != nil {
@@ -262,9 +258,6 @@ func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req Upda
 
 	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
 		return err
-	}
-	if a.counters != nil {
-		a.counters.StepStatusUpdated(ctx, loaded, requested)
 	}
 	a.logStepError(ctx, loaded, req.Status)
 	return nil
@@ -825,12 +818,14 @@ type UpdateQueueSignalStatusV2Request struct {
 func (a *Activities) UpdateQueueSignalStatusV2(ctx context.Context, req UpdateQueueSignalStatusV2Request) error {
 	obj := app.QueueSignal{ID: req.QueueSignalID}
 
-	var loaded app.QueueSignal
+	var signalType string
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		if err := a.getStatus(ctx, &loaded, req.QueueSignalID); err != nil {
+		var obj app.QueueSignal
+		if err := a.getStatus(ctx, &obj, req.QueueSignalID); err != nil {
 			return app.CompositeStatus{}, err
 		}
-		return loaded.Status, nil
+		signalType = string(obj.Type)
+		return obj.Status, nil
 	}
 
 	status := app.NewCompositeStatus(ctx, req.Status)
@@ -844,12 +839,9 @@ func (a *Activities) UpdateQueueSignalStatusV2(ctx context.Context, req UpdateQu
 		return generics.TemporalGormError(err)
 	}
 
-	if a.counters != nil {
-		a.counters.SignalStatusUpdated(ctx, loaded, req.Status)
-	}
 	if isTerminalStatus(req.Status) {
 		a.mw.Incr("queue.signal.processed", metrics.ToTags(map[string]string{
-			"signal_type": string(loaded.Type),
+			"signal_type": signalType,
 			"status":      string(req.Status),
 		}))
 	}
