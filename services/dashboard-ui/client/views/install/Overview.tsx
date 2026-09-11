@@ -8,7 +8,6 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { InstallDetailsButton } from '@/components/installs/ArchitectureDiagram'
-import { ViewCurrentInputsButton } from '@/components/installs/management/ViewCurrentInputs'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallReadme } from '@/lib'
@@ -37,13 +36,8 @@ export const Overview = () => {
 
       <SectionHeader
         title="Install overview"
-        description="View the install README, architecture, and current inputs."
-        actions={
-          <>
-            <InstallDetailsButton variant="secondary" />
-            <ViewCurrentInputsButton variant="secondary" />
-          </>
-        }
+        description="View the install README and architecture."
+        actions={<InstallDetailsButton variant="secondary" />}
       />
 
       {readme?.readme ? (
@@ -64,12 +58,8 @@ export const Overview = () => {
           )}
         </div>
       ) : (
-        // Blue informative Banner (theme="info") replaces the previous
-        // EmptyState when the rendered README is empty. The customer
-        // hits this before the install reaches an active state — any
-        // `original` README still needs live install data to template
-        // against, so the right UX is to tell them when it'll show up
-        // rather than imply "no README exists".
+        // An `original` README still needs live install data to template
+        // against, so an empty render means "not ready yet", not "none exists".
         <Banner theme="info">
           The readme will render after the install is active and live.
         </Banner>
