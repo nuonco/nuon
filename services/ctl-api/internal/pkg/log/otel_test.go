@@ -110,6 +110,48 @@ func TestLogStreamIgnoresOTELEnvironment(t *testing.T) {
 	}
 }
 
+func TestLogStreamEndpointPath(t *testing.T) {
+	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "https://collector.invalid/collector")
+	t.Setenv("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "https://logs.invalid/other/logs")
+	for _, tc := range []struct {
+		basePath string
+		wantPath string
+	}{
+		{"", "/v1/log-streams/stream-test/logs"},
+		{"/", "/v1/log-streams/stream-test/logs"},
+		{"/runner", "/runner/v1/log-streams/stream-test/logs"},
+		{"/runner/", "/runner/v1/log-streams/stream-test/logs"},
+	} {
+		t.Run(tc.basePath, func(t *testing.T) {
+			requests := make(chan *http.Request, 1)
+			receiver := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_, _ = io.Copy(io.Discard, r.Body)
+				requests <- r
+				w.Header().Set("Content-Type", "application/x-protobuf")
+			}))
+			t.Cleanup(receiver.Close)
+			stream := &app.LogStream{ID: "stream-test", RunnerAPIURL: receiver.URL + tc.basePath, WriteToken: "stream-token"}
+			provider, err := NewOTELProvider(stream)
+			require.NoError(t, err)
+			t.Cleanup(func() { require.NoError(t, provider.Shutdown(context.Background())) })
+			logger, err := NewLogStreamLogger(stream, provider, zap.NewNop())
+			require.NoError(t, err)
+			logger.Info("planning deployment")
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			require.NoError(t, provider.ForceFlush(ctx))
+			select {
+			case req := <-requests:
+				require.Equal(t, tc.wantPath, req.RequestURI)
+				require.Equal(t, http.MethodPost, req.Method)
+				require.Equal(t, "Bearer stream-token", req.Header.Get("Authorization"))
+			case <-ctx.Done():
+				t.Fatal("log stream endpoint did not receive the export")
+			}
+		})
+	}
+}
+
 func TestLogStreamTLSIgnoresOTELTrust(t *testing.T) {
 	receiver := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/x-protobuf")
