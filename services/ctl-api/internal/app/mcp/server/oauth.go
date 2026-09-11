@@ -64,3 +64,12 @@ func (s *Server) writeUnauthorized(w http.ResponseWriter, r *http.Request) {
 		"error_description": "missing or invalid access token",
 	})
 }
+
+func (s *Server) writeForbidden(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusForbidden)
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"error":             "access_denied",
+		"error_description": fmt.Sprintf("%s MCP is limited to Nuon employees", s.implementationName),
+	})
+}
