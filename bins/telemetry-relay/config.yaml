@@ -10,7 +10,7 @@ extensions:
   nuonpartialsuccess:
 
 receivers:
-  otlp:
+  otlp/install:
     protocols:
       http:
         endpoint: 0.0.0.0:4318
@@ -21,6 +21,15 @@ receivers:
         idle_timeout: 1m
         auth:
           authenticator: nuonjwtauth
+  otlp/environment:
+    protocols:
+      http:
+        endpoint: ${env:NUON_TELEMETRY_ENVIRONMENT_ENDPOINT:-0.0.0.0:5318}
+        max_request_body_size: 4194304
+        read_timeout: 30s
+        read_header_timeout: 10s
+        write_timeout: 35s
+        idle_timeout: 1m
 
 processors:
   memory_limiter:
@@ -28,9 +37,63 @@ processors:
     limit_mib: 512
     spike_limit_mib: 128
   nuonidentity:
+    allowed_org_ids: ${env:NUON_TELEMETRY_ALLOWED_ORG_IDS:-[]}
+  resource/install:
+    attributes:
+      - key: nuon.telemetry.source
+        value: install
+        action: upsert
+  resource/environment:
+    attributes:
+      - key: nuon.telemetry.source
+        value: environment
+        action: upsert
+  transform/provenance:
+    error_mode: propagate
+    log_statements:
+      - context: scope
+        statements:
+          - delete_key(attributes, "nuon.telemetry.source")
+      - context: log
+        statements:
+          - delete_key(attributes, "nuon.telemetry.source")
+    metric_statements:
+      - context: scope
+        statements:
+          - delete_key(attributes, "nuon.telemetry.source")
+      - context: metric
+        statements:
+          - delete_key(metadata, "nuon.telemetry.source")
+      - context: datapoint
+        statements:
+          - delete_key(attributes, "nuon.telemetry.source")
+      - context: exemplar
+        statements:
+          - delete_key(filtered_attributes, "nuon.telemetry.source")
+    trace_statements:
+      - context: scope
+        statements:
+          - delete_key(attributes, "nuon.telemetry.source")
+      - context: span
+        statements:
+          - delete_key(attributes, "nuon.telemetry.source")
+      - context: spanevent
+        statements:
+          - delete_key(attributes, "nuon.telemetry.source")
 
 exporters:
-  otlp_http/vendor:
+  otlp_http/install:
+    endpoint: ${env:VENDOR_OTLP_ENDPOINT}
+    middlewares:
+      - id: nuonpartialsuccess
+    headers:
+      Authorization: ${env:VENDOR_OTLP_AUTHORIZATION}
+    timeout: 30s
+    sending_queue:
+      enabled: false
+    retry_on_failure:
+      enabled: false
+  otlp_http/environment:
     endpoint: ${env:VENDOR_OTLP_ENDPOINT}
     middlewares:
       - id: nuonpartialsuccess
@@ -44,16 +107,50 @@ exporters:
 
 service:
   extensions: [health_check, nuonjwtauth, nuonpartialsuccess]
-  pipelines:
-    logs:
-      receivers: [otlp]
-      processors: [memory_limiter, nuonidentity]
-      exporters: [otlp_http/vendor]
+  telemetry:
+    resource:
+      service.name: nuon-telemetry-relay
     metrics:
-      receivers: [otlp]
-      processors: [memory_limiter, nuonidentity]
-      exporters: [otlp_http/vendor]
-    traces:
-      receivers: [otlp]
-      processors: [memory_limiter, nuonidentity]
-      exporters: [otlp_http/vendor]
+      level: normal
+      readers:
+        - periodic:
+            interval: 60000
+            timeout: 5000
+            exporter:
+              otlp:
+                protocol: http/protobuf
+                endpoint: ${env:NUON_TELEMETRY_SELF_OTLP_ENDPOINT:-http://127.0.0.1:5318}
+                timeout: 5000
+        - pull:
+            exporter:
+              prometheus:
+                host: 127.0.0.1
+                port: 8888
+                without_scope_info: true
+                without_type_suffix: true
+                without_units: true
+  pipelines:
+    logs/install:
+      receivers: [otlp/install]
+      processors: [memory_limiter, nuonidentity, resource/install, transform/provenance]
+      exporters: [otlp_http/install]
+    metrics/install:
+      receivers: [otlp/install]
+      processors: [memory_limiter, nuonidentity, resource/install, transform/provenance]
+      exporters: [otlp_http/install]
+    traces/install:
+      receivers: [otlp/install]
+      processors: [memory_limiter, nuonidentity, resource/install, transform/provenance]
+      exporters: [otlp_http/install]
+    logs/environment:
+      receivers: [otlp/environment]
+      processors: [memory_limiter, resource/environment, transform/provenance]
+      exporters: [otlp_http/environment]
+    metrics/environment:
+      receivers: [otlp/environment]
+      processors: [memory_limiter, resource/environment, transform/provenance]
+      exporters: [otlp_http/environment]
+    traces/environment:
+      receivers: [otlp/environment]
+      processors: [memory_limiter, resource/environment, transform/provenance]
+      exporters: [otlp_http/environment]
