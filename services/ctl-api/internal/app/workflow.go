@@ -368,6 +368,22 @@ func (i *Workflow) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 		{
+			Name: "idx_install_workflows_owner_type_created_at",
+			Columns: []string{
+				"owner_id",
+				"type",
+				"created_at DESC",
+			},
+		},
+		{
+			Name: "idx_install_workflows_owner_status_created_at",
+			Columns: []string{
+				"owner_id",
+				"(status->>'status')",
+				"created_at DESC",
+			},
+		},
+		{
 			Name: indexes.Name(db, &Workflow{}, "org_id"),
 			Columns: []string{
 				"org_id",
