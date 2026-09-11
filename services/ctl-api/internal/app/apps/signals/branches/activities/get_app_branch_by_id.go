@@ -19,7 +19,7 @@ func (a *Activities) getAppBranchByID(ctx context.Context, appBranchID string) (
 	res := a.db.WithContext(ctx).
 		Preload("Org").
 		Preload("App").
-		Preload("Queue", app.DefaultQueueScope).
+		Preload("Queue").
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_branch_configs_view_v1.created_at DESC").Limit(1)
 		}).
