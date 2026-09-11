@@ -104,14 +104,15 @@ func (metricContextMCPService) RegisterMCPTools(server *mcp.Server) {
 	})
 }
 
-func newMetricsTestServer(t *testing.T, service api.Service, writer *capturingMetricsWriter) *httptest.Server {
+func newMetricsTestServer(t *testing.T, service api.MCPService, writer *capturingMetricsWriter) *httptest.Server {
 	t.Helper()
 
 	s := &Server{
-		mw:            writer,
-		services:      []api.Service{service},
-		schemaCache:   mcp.NewSchemaCache(),
-		orgSelections: make(map[string]*orgSelection),
+		mw:                 writer,
+		mcpServices:        []api.MCPService{service},
+		schemaCache:        mcp.NewSchemaCache(),
+		implementationName: "nuon-ctl",
+		orgSelections:      make(map[string]*orgSelection),
 	}
 	mcpHandler := s.newMCPHandler()
 	handler := s.metricsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
