@@ -21,6 +21,7 @@ import {
   defaultRepoPolicyName,
   GITHUB_ACTIONS_ISSUER,
   githubSubClaim,
+  githubSubClaimAllBranches,
   hasSubCondition,
   type ClaimCondition,
   type OIDCFormValues,
@@ -88,10 +89,9 @@ const buildDefaultValues = ({
     claimConditions: [
       {
         key: 'sub',
-        value:
-          initialRepoFullName && initialRepoDefaultBranch
-            ? githubSubClaim(initialRepoFullName, initialRepoDefaultBranch)
-            : '',
+        value: initialRepoFullName
+          ? githubSubClaimAllBranches(initialRepoFullName)
+          : '',
       },
     ],
   }
@@ -143,9 +143,7 @@ export const OIDCTrustPolicyFormModal = ({
   const [repoFullName, setRepoFullName] = useState(initialRepoFullName ?? '')
   const [isNameDirty, setIsNameDirty] = useState(false)
   const [isSubDirty, setIsSubDirty] = useState(false)
-  const [manualBranch, setManualBranch] = useState(
-    initialRepoDefaultBranch ?? 'main'
-  )
+  const [manualBranch, setManualBranch] = useState('*')
 
   const schema = useMemo(
     () => buildOIDCSchema({ mode, reservedNames }),
@@ -223,16 +221,16 @@ export const OIDCTrustPolicyFormModal = ({
         defaultRepoPolicyName(nextRepoFullName, reservedNames)
       )
     }
-    if (!isSubDirty && nextRepoFullName && branch) {
-      setSubCondition(githubSubClaim(nextRepoFullName, branch))
+    if (!isSubDirty && nextRepoFullName) {
+      setSubCondition(
+        branch
+          ? githubSubClaim(nextRepoFullName, branch)
+          : githubSubClaimAllBranches(nextRepoFullName)
+      )
     }
   }
 
-  const selectRepo = (nextRepoFullName: string) =>
-    applyRepo(
-      nextRepoFullName,
-      repos.find((repo) => repo.full_name === nextRepoFullName)?.default_branch
-    )
+  const selectRepo = (nextRepoFullName: string) => applyRepo(nextRepoFullName)
 
   return (
     <Modal
@@ -313,7 +311,7 @@ export const OIDCTrustPolicyFormModal = ({
               <Label htmlFor="policy-branch">Branch</Label>
               <Input
                 id="policy-branch"
-                placeholder="main"
+                placeholder="*"
                 value={manualBranch}
                 onChange={(e) => {
                   setManualBranch(e.target.value)
@@ -322,9 +320,9 @@ export const OIDCTrustPolicyFormModal = ({
                 disabled={isPending}
               />
               <Text variant="subtext" theme="neutral">
-                Sets the <code>sub</code> claim below. Edit that directly for
-                anything other than a branch — a tag, an environment, or a
-                wildcard across branches.
+                Sets the <code>sub</code> claim below. Defaults to{' '}
+                <code>*</code> (all branches). Edit that field directly for
+                anything else — a specific branch, a tag, an environment.
               </Text>
             </div>
           ) : hasVCSConnections === false && !isLoadingRepos ? (

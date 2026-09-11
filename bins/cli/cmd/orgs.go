@@ -326,7 +326,15 @@ Example (GitHub Actions, main branch of acme/app only):
     --name gh-actions-main \
     --issuer https://token.actions.githubusercontent.com \
     --audience https://api.nuon.co \
-    --claim "sub=repo:acme/app:ref:refs/heads/main"`,
+    --claim "sub=repo:acme/app:ref:refs/heads/main"
+
+Example (GitHub Actions, any branch of acme/app):
+
+  nuon orgs oidc-trust-policies create \
+    --name gh-actions-any-branch \
+    --issuer https://token.actions.githubusercontent.com \
+    --audience https://api.nuon.co \
+    --claim "sub=repo:acme/app:ref:refs/heads/*"`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			conditions, err := orgs.ParseClaimConditions(claims)
 			if err != nil {

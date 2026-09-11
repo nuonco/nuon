@@ -479,7 +479,8 @@ nuon orgs oidc-trust-policies create \
 ```
 
 Claim patterns are exact strings or globs where `*` cannot cross `:` segments (safe for GitHub's
-`sub` format). Each policy gets a dedicated service account; deleting the policy revokes all its
+`sub` format), so `--claim "sub=repo:acme/app:ref:refs/heads/*"` matches any branch of a repo instead of
+just one. Each policy gets a dedicated service account; deleting the policy revokes all its
 tokens immediately.
 
 In a GitHub Actions workflow, auth setup is the `id-token` permission plus the control plane URL and
