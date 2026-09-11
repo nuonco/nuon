@@ -124,6 +124,19 @@ func TestBuildRefCanBePinned(t *testing.T) {
 		require.False(t, buildRefCanBePinned(publicBuild("acme/infra", "main", &ref)))
 	})
 
+	t.Run("configured branch from component config", func(t *testing.T) {
+		ref := "main"
+		build := &app.ComponentBuild{
+			GitRef: &ref,
+			ComponentConfigConnection: app.ComponentConfigConnection{
+				KubernetesManifestComponentConfig: &app.KubernetesManifestComponentConfig{
+					PublicGitVCSConfig: &app.PublicGitVCSConfig{Repo: "acme/infra", Branch: "main"},
+				},
+			},
+		}
+		require.True(t, buildRefCanBePinned(build))
+	})
+
 	t.Run("connected explicit ref", func(t *testing.T) {
 		ref := "feature"
 		build := connectedBuild("acme/infra", "main")
