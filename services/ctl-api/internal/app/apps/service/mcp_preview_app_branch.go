@@ -93,7 +93,7 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 
 	var queued app.AppBranch
 	res := s.db.WithContext(ctx).
-		Preload("Queue", app.DefaultQueueScope).
+		Preload("Queue").
 		First(&queued, "id = ?", branch.ID)
 	if res.Error != nil {
 		return nil, nil, fmt.Errorf("unable to load app branch queue: %w", res.Error)
