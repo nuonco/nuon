@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -25,6 +28,11 @@ import (
 // @Param					limit			query	int		false	"limit of results to return"	Default(10)
 // @Param					page			query	int		false	"page number of results to return"	Default(0)
 // @Param					planonly		query	bool	false	"exclude preview (plan only) runs when set to false"	Default(true)
+// @Param					q				query	string	false	"case-insensitive substring match against run title and id"
+// @Param					type			query	string	false	"filter by workflow type (comma-separated for several types)"
+// @Param					status			query	string	false	"filter by workflow status (comma-separated for several statuses)"
+// @Param					created_at_gte	query	string	false	"filter runs created after timestamp (RFC3339 format)"
+// @Param					created_at_lte	query	string	false	"filter runs created before timestamp (RFC3339 format)"
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -65,7 +73,12 @@ func (s *service) GetAppBranchRuns(ctx *gin.Context) {
 		}
 	}
 
-	// Verify branch exists and belongs to this org/app
+	filters, err := parseAppBranchRunFilters(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	var branch app.AppBranch
 	res := s.db.WithContext(ctx).
 		Where(app.AppBranch{
@@ -78,8 +91,7 @@ func (s *service) GetAppBranchRuns(ctx *gin.Context) {
 		return
 	}
 
-	// Get workflows
-	workflows, err := s.getAppBranchRuns(ctx, appBranchID, planOnly)
+	workflows, err := s.getAppBranchRuns(ctx, appBranchID, planOnly, filters)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get workflows: %w", err))
 		return
@@ -88,7 +100,62 @@ func (s *service) GetAppBranchRuns(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, workflows)
 }
 
-func (s *service) getAppBranchRuns(ctx *gin.Context, appBranchID string, includePlanOnly bool) ([]app.Workflow, error) {
+type appBranchRunFilters struct {
+	q            string
+	types        []string
+	statuses     []string
+	createdAtGte *time.Time
+	createdAtLte *time.Time
+}
+
+func parseAppBranchRunFilters(ctx *gin.Context) (appBranchRunFilters, error) {
+	filters := appBranchRunFilters{
+		q:        ctx.Query("q"),
+		types:    parseCommaSeparated(ctx.Query("type")),
+		statuses: parseCommaSeparated(ctx.Query("status")),
+	}
+
+	if param := ctx.Query("created_at_gte"); param != "" {
+		parsed, err := parseRFC3339Param("created_at_gte", param)
+		if err != nil {
+			return filters, err
+		}
+		filters.createdAtGte = parsed
+	}
+
+	if param := ctx.Query("created_at_lte"); param != "" {
+		parsed, err := parseRFC3339Param("created_at_lte", param)
+		if err != nil {
+			return filters, err
+		}
+		filters.createdAtLte = parsed
+	}
+
+	return filters, nil
+}
+
+func parseRFC3339Param(name, value string) (*time.Time, error) {
+	parsed, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("invalid %s parameter: %w", name, err),
+			Description: fmt.Sprintf("%s must be in RFC3339 format", name),
+		}
+	}
+	return &parsed, nil
+}
+
+func parseCommaSeparated(raw string) []string {
+	var values []string
+	for _, part := range strings.Split(raw, ",") {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			values = append(values, trimmed)
+		}
+	}
+	return values
+}
+
+func (s *service) getAppBranchRuns(ctx *gin.Context, appBranchID string, includePlanOnly bool, filters appBranchRunFilters) ([]app.Workflow, error) {
 	var workflows []app.Workflow
 
 	query := s.db.WithContext(ctx).
@@ -114,6 +181,27 @@ func (s *service) getAppBranchRuns(ctx *gin.Context, appBranchID string, include
 
 	if !includePlanOnly {
 		query = query.Where("plan_only = ?", false)
+	}
+
+	if len(filters.types) > 0 {
+		query = query.Where("type IN ?", filters.types)
+	}
+
+	if len(filters.statuses) > 0 {
+		query = query.Where("status->>'status' IN ?", filters.statuses)
+	}
+
+	for _, token := range strings.Fields(filters.q) {
+		like := "%" + token + "%"
+		query = query.Where("name ILIKE ? OR id ILIKE ?", like, like)
+	}
+
+	if filters.createdAtGte != nil {
+		query = query.Where("created_at >= ?", filters.createdAtGte)
+	}
+
+	if filters.createdAtLte != nil {
+		query = query.Where("created_at <= ?", filters.createdAtLte)
 	}
 
 	res := query.Find(&workflows)
