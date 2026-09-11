@@ -16,7 +16,7 @@ import (
 	queuecctx "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/cctx"
 )
 
-func TestSignalExecutionContextHydratesLogStream(t *testing.T) {
+func TestSignalContextHydratesLogStreamOnceAcrossPhases(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
 	env.SetDataConverter(converter.NewCompositeDataConverter(
@@ -48,7 +48,15 @@ func TestSignalExecutionContextHydratesLogStream(t *testing.T) {
 			},
 		}
 
-		execCtx, err := h.signalExecutionContext(ctx)
+		validateCtx, err := h.signalContext(ctx, true)
+		if err != nil {
+			return "", err
+		}
+		if _, err := cctx.GetLogStreamWorkflow(validateCtx); err != nil {
+			return "", err
+		}
+
+		execCtx, err := h.signalContext(ctx, false)
 		if err != nil {
 			return "", err
 		}
