@@ -64,11 +64,11 @@ func (a *Activities) BatchProcessHealthchecks(ctx context.Context, req BatchProc
 	var processes []app.RunnerProcess
 	if res := a.db.WithContext(ctx).
 		Select("id", "runner_id", "org_id", "created_by_id", "type", "composite_status", "started_at", "initial_health_check").
-		Where("org_id = ?", req.OrgID).
-		Where("composite_status->>'status' IN ?", []string{
+		Where(app.RunnerProcess{OrgID: req.OrgID}).
+		Scopes(generics.WhereJSONBStatusIn("composite_status",
 			string(app.RunnerProcessStatusActive),
 			string(app.RunnerProcessStatusOffline),
-		}).
+		)).
 		Where("id > ?", req.CursorID).
 		Order("id").
 		Limit(limit).
@@ -300,7 +300,7 @@ func (a *Activities) handleBatchProcessShutdown(ectx context.Context, p *app.Run
 			RunnerProcessID: p.ID,
 			Type:            app.RunnerProcessShutdownTypeGraceful,
 		}).
-		Where("composite_status->>'status' = ?", string(app.RunnerProcessShutdownStatusRequested)).
+		Scopes(generics.WhereJSONBStatus("composite_status", string(app.RunnerProcessShutdownStatusRequested))).
 		Count(&existing); res.Error != nil {
 		resp.Errors++
 		a.l.Warn("unable to check for existing process shutdown", zap.String("process_id", p.ID), zap.Error(res.Error))
@@ -468,10 +468,10 @@ func (a *Activities) guardedProcessStatusUpdate(ectx context.Context, current *a
 	res := a.db.WithContext(ectx).
 		Model(&app.RunnerProcess{}).
 		Where("id = ?", current.ID).
-		Where("composite_status->>'status' IN ?", []string{
+		Scopes(generics.WhereJSONBStatusIn("composite_status",
 			string(app.RunnerProcessStatusActive),
 			string(app.RunnerProcessStatusOffline),
-		}).
+		)).
 		Update("composite_status", newComposite)
 	if res.Error != nil {
 		return false, res.Error

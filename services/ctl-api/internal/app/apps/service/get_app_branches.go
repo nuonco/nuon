@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
@@ -210,7 +211,7 @@ func (s *service) markRunsAwaitingApproval(ctx context.Context, runs []app.AppBr
 			"ON responses.install_workflow_step_approval_id = approvals.id AND responses.deleted_at = 0").
 		Where("install_workflow_steps.install_workflow_id IN ?", workflowIDs).
 		Where("install_workflow_steps.execution_type = ?", app.WorkflowStepExecutionTypeApproval).
-		Where("install_workflow_steps.status->>'status' = ?", string(app.AwaitingApproval)).
+		Scopes(generics.WhereJSONBStatus("install_workflow_steps.status", string(app.AwaitingApproval))).
 		Where("responses.id IS NULL").
 		Pluck("install_workflow_steps.install_workflow_id", &awaitingWorkflowIDs)
 	if res.Error != nil {

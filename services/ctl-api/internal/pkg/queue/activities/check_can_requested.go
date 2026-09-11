@@ -37,15 +37,13 @@ func (a *Activities) checkCANRequested(ctx context.Context, queueID string) (boo
 // @wrapper-prefix QueueInternal
 // @local
 func (a *Activities) clearCANRequested(ctx context.Context, queueID string) error {
-	res := a.db.WithContext(ctx).Exec(`
-		UPDATE queues
-		SET status_v2 = jsonb_set(
-			COALESCE(status_v2::jsonb, '{}'::jsonb),
-			'{metadata}',
-			COALESCE(status_v2::jsonb -> 'metadata', '{}'::jsonb) - 'restart_hint'
-		)
-		WHERE id = ? AND deleted_at = 0
-	`, queueID)
+	res := generics.DeleteJSONBMetadataKey(
+		a.db.WithContext(ctx).
+			Model(&app.Queue{}).
+			Where(app.Queue{ID: queueID}),
+		"status_v2",
+		"restart_hint",
+	)
 	if res.Error != nil {
 		return generics.TemporalGormError(res.Error, "unable to clear restart_hint on queue")
 	}

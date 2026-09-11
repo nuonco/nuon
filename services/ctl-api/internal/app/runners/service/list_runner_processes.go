@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // @ID						ListRunnerProcesses
@@ -58,19 +59,19 @@ func (s *service) listRunnerProcesses(ctx context.Context, runnerID, orgID, proc
 	var processes []app.RunnerProcess
 
 	query := s.db.WithContext(ctx).
-		Where("runner_id = ? AND org_id = ?", runnerID, orgID).
+		Where(app.RunnerProcess{RunnerID: runnerID, OrgID: orgID}).
 		Preload("Shutdowns").
 		Order("created_at DESC")
 
 	if processType != "" {
-		query = query.Where("type = ?", processType)
+		query = query.Where(app.RunnerProcess{Type: app.RunnerProcessType(processType)})
 	}
 	if status != "" {
 		statuses := strings.Split(status, ",")
 		if len(statuses) == 1 {
-			query = query.Where("composite_status->>'status' = ?", status)
+			query = query.Scopes(generics.WhereJSONBStatus("composite_status", status))
 		} else {
-			query = query.Where("composite_status->>'status' IN ?", statuses)
+			query = query.Scopes(generics.WhereJSONBStatusIn("composite_status", statuses...))
 		}
 	}
 

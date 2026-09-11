@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -47,7 +48,7 @@ func (s *service) listOrgsDetails(ctx *gin.Context, statuses []string) ([]*Admin
 		Scopes(scopes.WithOffsetPagination).
 		Order("created_at desc")
 	if len(statuses) > 0 {
-		tx = tx.Where("status_v2->>'status' IN ?", statuses)
+		tx = tx.Scopes(generics.WhereJSONBStatusIn("status_v2", statuses...))
 	}
 	if err := tx.Find(&orgs).Error; err != nil {
 		return nil, fmt.Errorf("unable to list org details: %w", err)

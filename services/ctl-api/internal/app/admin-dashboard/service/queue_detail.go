@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
@@ -18,7 +19,7 @@ func (s *service) QueueDetail(c *gin.Context) {
 	var q app.Queue
 	res := s.readDB().WithContext(c.Request.Context()).
 		Preload("Emitters").
-		Where("id = ?", queueID).
+		Where(app.Queue{ID: queueID}).
 		First(&q)
 
 	if res.Error != nil {
@@ -39,7 +40,7 @@ func (s *service) QueueDetail(c *gin.Context) {
 	// Get recent signals
 	var signals []app.QueueSignal
 	s.readDB().WithContext(c.Request.Context()).
-		Where("queue_id = ?", queueID).
+		Where(app.QueueSignal{QueueID: queueID}).
 		Order("created_at desc").
 		Limit(20).
 		Find(&signals)
@@ -47,8 +48,8 @@ func (s *service) QueueDetail(c *gin.Context) {
 	// Get in-flight signals for this queue
 	var inFlightSignals []app.QueueSignal
 	s.readDB().WithContext(c.Request.Context()).
-		Where("queue_id = ?", queueID).
-		Where("status->>'status' IN ('executing', 'in-progress', 'active')").
+		Where(app.QueueSignal{QueueID: queueID}).
+		Scopes(generics.WhereJSONBStatusIn("status", "executing", "in-progress", "active")).
 		Order("updated_at desc").
 		Limit(50).
 		Find(&inFlightSignals)
@@ -67,8 +68,8 @@ func (s *service) QueueInFlightSignalsTable(c *gin.Context) {
 
 	var signals []app.QueueSignal
 	s.readDB().WithContext(c.Request.Context()).
-		Where("queue_id = ?", queueID).
-		Where("status->>'status' IN ('executing', 'in-progress', 'active')").
+		Where(app.QueueSignal{QueueID: queueID}).
+		Scopes(generics.WhereJSONBStatusIn("status", "executing", "in-progress", "active")).
 		Order("updated_at desc").
 		Limit(50).
 		Find(&signals)

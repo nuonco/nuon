@@ -3,6 +3,9 @@ package activities
 import (
 	"context"
 	"fmt"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type MarkActiveProcessesForShutdownRequest struct{}
@@ -18,20 +21,14 @@ type MarkActiveProcessesForShutdownResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (a *Activities) MarkActiveProcessesForShutdown(ctx context.Context, req MarkActiveProcessesForShutdownRequest) (*MarkActiveProcessesForShutdownResponse, error) {
-	res := a.db.WithContext(ctx).Exec(`
-		UPDATE runner_processes
-		SET composite_status = jsonb_set(
-			jsonb_set(
-				COALESCE(composite_status::jsonb, '{}'::jsonb),
-				'{metadata}',
-				COALESCE(composite_status::jsonb -> 'metadata', '{}'::jsonb)
-			),
-			'{metadata,shutdown_requested}',
-			'true'::jsonb
-		)
-		WHERE deleted_at = 0
-		AND composite_status::jsonb ->> 'status' IN ('active', 'offline')
-	`)
+	query := a.db.WithContext(ctx).
+		Model(&app.RunnerProcess{}).
+		Scopes(generics.WhereJSONBStatusIn(
+			"composite_status",
+			string(app.RunnerProcessStatusActive),
+			string(app.RunnerProcessStatusOffline),
+		))
+	res := generics.SetJSONBMetadataKey(query, "composite_status", "shutdown_requested", true)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to mark active processes for shutdown: %w", res.Error)
 	}

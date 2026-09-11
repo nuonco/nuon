@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // @ID						GetCurrentRunnerProcesses
@@ -50,7 +51,8 @@ func (s *service) getCurrentRunnerProcesses(ctx context.Context, runnerID, orgID
 
 	// get the most recent active process per type using a subquery
 	res := s.db.WithContext(ctx).
-		Where("runner_id = ? AND org_id = ? AND composite_status->>'status' = ?", runnerID, orgID, string(app.RunnerProcessStatusActive)).
+		Where(app.RunnerProcess{RunnerID: runnerID, OrgID: orgID}).
+		Scopes(generics.WhereJSONBStatus("composite_status", string(app.RunnerProcessStatusActive))).
 		Preload("Shutdowns").
 		Order("created_at DESC").
 		Find(&processes)

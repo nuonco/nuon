@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -118,7 +119,7 @@ func (s *service) getOrgWorkflows(ctx *gin.Context, orgID string, excludePlanOnl
 			query = query.Where("finished_at IS NOT NULL")
 		} else {
 			query = query.Where("finished_at IS NULL").
-				Where("(status->>'status') NOT IN ('cancelled', 'error', 'success')")
+				Scopes(generics.WhereJSONBStatusNotIn("status", "cancelled", "error", "success"))
 		}
 	}
 

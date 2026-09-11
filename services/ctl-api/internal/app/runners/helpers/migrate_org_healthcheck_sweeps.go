@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type OrgHealthcheckMigrationResult struct {
@@ -129,11 +130,11 @@ func (h *Helpers) MigrateOrgFromHealthcheckSweeps(ctx context.Context, orgID str
 	var processes []app.RunnerProcess
 	if res := h.db.WithContext(ctx).
 		Select("id", "runner_id", "org_id", "created_by_id").
-		Where("org_id = ?", orgID).
-		Where("composite_status->>'status' IN ?", []string{
+		Where(app.RunnerProcess{OrgID: orgID}).
+		Scopes(generics.WhereJSONBStatusIn("composite_status",
 			string(app.RunnerProcessStatusActive),
 			string(app.RunnerProcessStatusOffline),
-		}).
+		)).
 		Find(&processes); res.Error != nil {
 		return nil, fmt.Errorf("unable to list org runner processes: %w", res.Error)
 	}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // ShutdownOrgRunnerProcesses creates a shutdown record for the most recent
@@ -21,8 +22,11 @@ func (s *service) ShutdownOrgRunnerProcesses(c *gin.Context) {
 	// Get all active/offline runner processes for the org, most recent first.
 	var processes []app.RunnerProcess
 	if res := s.db.WithContext(ctx).
-		Where("org_id = ?", orgID).
-		Where("composite_status::jsonb ->> 'status' IN ('active', 'offline')").
+		Where(app.RunnerProcess{OrgID: orgID}).
+		Scopes(generics.WhereJSONBStatusIn("composite_status",
+			string(app.RunnerProcessStatusActive),
+			string(app.RunnerProcessStatusOffline),
+		)).
 		Order("runner_id, type, created_at DESC").
 		Find(&processes); res.Error != nil {
 		s.l.Error("failed to list runner processes", zap.Error(res.Error), zap.String("org_id", orgID))

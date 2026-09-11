@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type InflightBuildQueueSignal struct {
@@ -38,9 +39,12 @@ func (a *Activities) getInflightBuildQueueSignals(ctx context.Context, runID str
 	var queueSignals []app.QueueSignal
 	err = a.db.WithContext(ctx).
 		Select("id, owner_id").
-		Where("owner_id IN ? AND owner_type = ? AND type = ? AND (status->>'status' IN (?, ?))",
-			buildIDs, "component_builds", "component-build",
-			string(app.StatusQueued), string(app.StatusInProgress)).
+		Where(app.QueueSignal{
+			OwnerType: "component_builds",
+			Type:      "component-build",
+		}).
+		Where("owner_id IN ?", buildIDs).
+		Scopes(generics.WhereJSONBStatusIn("status", string(app.StatusQueued), string(app.StatusInProgress))).
 		Find(&queueSignals).Error
 	if err != nil {
 		return nil, fmt.Errorf("unable to get queue signals: %w", err)

@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -64,7 +65,7 @@ func (s *service) getPolicyReports(ctx *gin.Context, orgID, ownerType, ownerID, 
 
 	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
-		Where("org_id = ?", orgID)
+		Where(app.PolicyReport{OrgID: orgID})
 
 	if ownerType != "" {
 		if ownerType != string(app.PolicyReportOwnerTypeInstallDeploy) &&
@@ -75,23 +76,23 @@ func (s *service) getPolicyReports(ctx *gin.Context, orgID, ownerType, ownerID, 
 				Description: "invalid owner_type",
 			}
 		}
-		query = query.Where("owner_type = ?", ownerType)
+		query = query.Where(app.PolicyReport{OwnerType: app.PolicyReportOwnerType(ownerType)})
 	}
 
 	if ownerID != "" {
-		query = query.Where("owner_id = ?", ownerID)
+		query = query.Where(app.PolicyReport{OwnerID: ownerID})
 	}
 
 	if appID != "" {
-		query = query.Where("app_id = ?", appID)
+		query = query.Where(app.PolicyReport{AppID: appID})
 	}
 
 	if installID != "" {
-		query = query.Where("install_id = ?", installID)
+		query = query.Where(app.PolicyReport{InstallID: &installID})
 	}
 
 	if status != "" {
-		query = query.Where("status->>'status' = ?", status)
+		query = query.Scopes(generics.WhereJSONBStatus("status", status))
 	}
 
 	res := query.Order("created_at desc").Find(&reports)

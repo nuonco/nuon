@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	awsstacks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/aws"
 	azurestacks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/azure"
@@ -166,11 +167,15 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 	}
 
 	var latestVersion app.InstallStackVersion
+	templateReadyStatuses := make([]string, len(app.InstallStackVersionTemplateReadyStatuses))
+	for i, status := range app.InstallStackVersionTemplateReadyStatuses {
+		templateReadyStatuses[i] = string(status)
+	}
 	// No "latest version" FK exists — InstallStackVersion.InstallStackID
 	// only points the other way — so created_at ordering resolves "latest".
 	res := h.db.WithContext(ctx).
 		Where(app.InstallStackVersion{InstallID: install.ID}).
-		Where("status->>'status' IN ?", app.InstallStackVersionTemplateReadyStatuses).
+		Scopes(generics.WhereJSONBStatusIn("status", templateReadyStatuses...)).
 		Order("created_at DESC").
 		Limit(1).
 		First(&latestVersion)

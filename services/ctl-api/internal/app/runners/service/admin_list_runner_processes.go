@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // @ID						AdminListRunnerProcesses
@@ -49,15 +50,15 @@ func (s *service) adminListRunnerProcesses(ctx context.Context, runnerID, proces
 	var processes []app.RunnerProcess
 
 	query := s.db.WithContext(ctx).
-		Where("runner_id = ?", runnerID).
+		Where(app.RunnerProcess{RunnerID: runnerID}).
 		Preload("Shutdowns").
 		Order("created_at DESC")
 
 	if processType != "" {
-		query = query.Where("type = ?", processType)
+		query = query.Where(app.RunnerProcess{Type: app.RunnerProcessType(processType)})
 	}
 	if status != "" {
-		query = query.Where("composite_status->>'status' = ?", status)
+		query = query.Scopes(generics.WhereJSONBStatus("composite_status", status))
 	}
 
 	query = query.Limit(intFromString(limit, 25)).Offset(intFromString(offset, 0))

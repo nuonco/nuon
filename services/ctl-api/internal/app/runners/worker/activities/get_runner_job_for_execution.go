@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GetRunnerJobForExecutionRequest struct {
@@ -35,7 +36,8 @@ func (a *Activities) GetRunnerJobForExecution(ctx context.Context, req GetRunner
 	var activeCount int64
 	if err := a.db.WithContext(ctx).
 		Model(&app.RunnerProcess{}).
-		Where("runner_id = ? AND composite_status->>'status' = ?", req.RunnerID, string(app.RunnerProcessStatusActive)).
+		Where(app.RunnerProcess{RunnerID: req.RunnerID}).
+		Scopes(generics.WhereJSONBStatus("composite_status", string(app.RunnerProcessStatusActive))).
 		Count(&activeCount).Error; err != nil {
 		return nil, fmt.Errorf("unable to check active runner process: %w", err)
 	}

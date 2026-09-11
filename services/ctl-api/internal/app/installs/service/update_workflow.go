@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -148,8 +149,8 @@ func (s *service) updateWorkflow(ctx *gin.Context, installWorkflowID string, req
 func (s *service) approveStuckSteps(ctx *gin.Context, workflowID string) {
 	var steps []app.WorkflowStep
 	res := s.db.WithContext(ctx).
-		Where("install_workflow_id = ?", workflowID).
-		Where("status->>'status' IN ?", []string{string(app.AwaitingApproval), "awaiting-approval"}).
+		Where(app.WorkflowStep{InstallWorkflowID: workflowID}).
+		Scopes(generics.WhereJSONBStatusIn("status", string(app.AwaitingApproval), "awaiting-approval")).
 		Preload("Approval", func(db *gorm.DB) *gorm.DB {
 			return db.Omit("contents")
 		}).

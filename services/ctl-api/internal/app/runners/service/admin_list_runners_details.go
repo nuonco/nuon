@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -88,7 +89,7 @@ func (s *service) listRunnersDetails(ctx *gin.Context, statuses []string) ([]*Ad
 		Where("rg.type != ? OR installs.id IS NOT NULL", app.RunnerGroupTypeInstall).
 		Order("runners.created_at desc")
 	if len(statuses) > 0 {
-		tx = tx.Where("runners.status_v2->>'status' IN ?", statuses)
+		tx = tx.Scopes(generics.WhereJSONBStatusIn("runners.status_v2", statuses...))
 	}
 	if err := tx.Find(&runners).Error; err != nil {
 		return nil, fmt.Errorf("unable to list runner details: %w", err)

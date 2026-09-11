@@ -14,16 +14,13 @@ type ResetStaleInProgressSignalsRequest struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (a *Activities) ResetStaleInProgressSignals(ctx context.Context, req *ResetStaleInProgressSignalsRequest) error {
-	jdb := generics.NewJSONBQuery(a.db.WithContext(ctx))
-	res := jdb.WhereJSON(generics.JSONBQuery{
-		Operator: "=",
-		Field:    "status",
-		Path:     "status",
-		Value:    string(app.StatusInProgress),
-	}).Where(app.QueueSignal{
-		QueueID:  req.QueueID,
-		Enqueued: true,
-	}).Model(&app.QueueSignal{}).Update("status", map[string]any{
+	res := a.db.WithContext(ctx).
+		Model(&app.QueueSignal{}).
+		Scopes(generics.WhereJSONBStatus("status", string(app.StatusInProgress))).
+		Where(app.QueueSignal{
+			QueueID:  req.QueueID,
+			Enqueued: true,
+		}).Update("status", map[string]any{
 		"status": string(app.StatusQueued),
 	})
 	if res.Error != nil {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // WorkflowQueuePositionResponse describes the queue position of a workflow.
@@ -94,7 +95,7 @@ func (s *service) GetWorkflowQueuePosition(ctx *gin.Context) {
 		return db.
 			Where("queue_id = ?", qs.QueueID).
 			Where("owner_type IN ?", workflowOwnerTypes).
-			Where("status->>'status' NOT IN ?", terminalStatuses)
+			Scopes(generics.WhereJSONBStatusNotIn("status", terminalStatuses...))
 	}
 
 	// Total workflows still waiting in this queue (includes this one).
