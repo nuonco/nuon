@@ -2,6 +2,8 @@ package nuonidentityprocessor
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
@@ -12,7 +14,18 @@ import (
 	"go.opentelemetry.io/collector/processor/processorhelper"
 )
 
-type Config struct{}
+type Config struct {
+	AllowedOrgIDs []string `mapstructure:"allowed_org_ids"`
+}
+
+func (c *Config) Validate() error {
+	for i, orgID := range c.AllowedOrgIDs {
+		if orgID == "" || strings.TrimSpace(orgID) != orgID {
+			return fmt.Errorf("allowed_org_ids[%d] must be a non-empty org ID without surrounding whitespace", i)
+		}
+	}
+	return nil
+}
 
 var componentType = component.MustNewType("nuonidentity")
 
@@ -32,7 +45,7 @@ func createDefaultConfig() component.Config {
 
 func createLogsProcessor(ctx context.Context, settings processor.Settings, cfg component.Config, next consumer.Logs) (processor.Logs, error) {
 	return processorhelper.NewLogs(ctx, settings, cfg, next, func(ctx context.Context, logs plog.Logs) (plog.Logs, error) {
-		if err := processLogs(ctx, logs); err != nil {
+		if err := processLogs(ctx, logs, cfg.(*Config).AllowedOrgIDs); err != nil {
 			return logs, err
 		}
 		return logs, nil
@@ -41,7 +54,7 @@ func createLogsProcessor(ctx context.Context, settings processor.Settings, cfg c
 
 func createMetricsProcessor(ctx context.Context, settings processor.Settings, cfg component.Config, next consumer.Metrics) (processor.Metrics, error) {
 	return processorhelper.NewMetrics(ctx, settings, cfg, next, func(ctx context.Context, metrics pmetric.Metrics) (pmetric.Metrics, error) {
-		if err := processMetrics(ctx, metrics); err != nil {
+		if err := processMetrics(ctx, metrics, cfg.(*Config).AllowedOrgIDs); err != nil {
 			return metrics, err
 		}
 		return metrics, nil
@@ -50,7 +63,7 @@ func createMetricsProcessor(ctx context.Context, settings processor.Settings, cf
 
 func createTracesProcessor(ctx context.Context, settings processor.Settings, cfg component.Config, next consumer.Traces) (processor.Traces, error) {
 	return processorhelper.NewTraces(ctx, settings, cfg, next, func(ctx context.Context, traces ptrace.Traces) (ptrace.Traces, error) {
-		if err := processTraces(ctx, traces); err != nil {
+		if err := processTraces(ctx, traces, cfg.(*Config).AllowedOrgIDs); err != nil {
 			return traces, err
 		}
 		return traces, nil
