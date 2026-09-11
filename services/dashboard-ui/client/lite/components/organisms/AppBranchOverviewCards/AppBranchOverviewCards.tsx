@@ -3,6 +3,7 @@ import { latestBranchConfig } from '@/utils/branch-utils'
 import { Badge } from '../../atoms/Badge'
 import { Icon } from '../../atoms/Icon'
 import { Text } from '../../atoms/Text'
+import { Link } from '../../atoms/Link'
 import { CommitSummary } from '../../molecules/CommitSummary'
 import { OverviewCard, OverviewCardGrid } from '../../molecules/OverviewCard'
 
@@ -25,6 +26,11 @@ export const AppBranchOverviewCards = ({
   const repo =
     config?.connected_github_vcs_config?.repo ??
     config?.public_git_vcs_config?.repo
+  const repoHref = repo
+    ? repo.startsWith('http')
+      ? repo
+      : `https://github.com/${repo}`
+    : undefined
   const commit = branch?.latest_run?.vcs_connection_commit
 
   return (
@@ -41,22 +47,31 @@ export const AppBranchOverviewCards = ({
             {branch?.name ?? '—'}
           </Text>
         </span>
+        <span className="flex min-w-0 items-center gap-2">
+          <Icon variant="GitHub" size={16} />
+          {loading ? (
+            <Text variant="caption" family="mono" loading loadingWidth={18} />
+          ) : repoHref ? (
+            <Link
+              href={repoHref}
+              external
+              variant="caption"
+              className="min-w-0 truncate font-mono"
+            >
+              {repo}
+            </Link>
+          ) : (
+            <Text variant="caption" family="mono" color="tertiary" lines={1}>
+              {vcs?.directory ?? 'No repository configured'}
+            </Text>
+          )}
+        </span>
         <span className="flex flex-wrap items-center gap-2">
           {loading ? (
             <Badge loading loadingWidth={8} />
           ) : config?.config_number ? (
             <Badge>Config v{config.config_number}</Badge>
           ) : null}
-          <Text
-            variant="caption"
-            family="mono"
-            color="tertiary"
-            loading={loading}
-            loadingWidth={18}
-            lines={1}
-          >
-            {repo ?? vcs?.directory ?? 'No repository configured'}
-          </Text>
         </span>
       </OverviewCard>
 

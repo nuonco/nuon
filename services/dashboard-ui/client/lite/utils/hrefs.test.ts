@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'bun:test'
-import { appSetupHref, installSetupHref, resolveAppHref } from './hrefs'
+import {
+  appSetupHref,
+  installHref,
+  installSetupHref,
+  resolveAppHref,
+} from './hrefs'
 
 describe('setup hrefs', () => {
   test('starts a new resource on the bare setup path', () => {
@@ -13,6 +18,12 @@ describe('setup hrefs', () => {
     )
     expect(installSetupHref('org_a', 'inst_prod')).toBe(
       '/org_a/installs/setup?installId=inst_prod'
+    )
+  })
+
+  test('links to an existing install', () => {
+    expect(installHref('org_a', 'inst_prod')).toBe(
+      '/org_a/installs/inst_prod'
     )
   })
 })
