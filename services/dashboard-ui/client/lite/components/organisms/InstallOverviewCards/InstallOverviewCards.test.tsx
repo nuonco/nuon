@@ -7,20 +7,23 @@ afterEach(cleanup)
 const INSTALL = {
   id: 'inst_prod',
   composite_health_status: 'healthy',
+  lifecycle_phase: { phase: 'active' },
+  runner_status: 'active',
+  sandbox_status: 'active',
+  composite_component_status: 'active',
   drifted_objects: [{ target_id: 'cmp_api' }],
   app_branch: {
     id: 'br_main',
     name: 'main',
-    configs: [{ config_number: 14 }],
   },
 }
 
-const SYNC = {
-  id: 'sync_latest',
-  created_at: '2026-09-08T13:45:00Z',
-  app_branch_id: 'br_main',
-  triggered_by: 'git',
-  vcs_connection_commit: {
+const UPDATE = {
+  runId: 'run_01k4m8f6a9',
+  branchName: 'main',
+  status: 'success',
+  updatedAt: '2026-09-08T13:45:00Z',
+  commit: {
     sha: 'a1b2c3d4e5f6',
     message: 'Update component versions',
   },
@@ -70,20 +73,24 @@ describe('InstallOverviewCards', () => {
     expect(screen.queryByText(/drifted/)).toBeNull()
   })
 
-  test('reads the commit from the latest config sync', () => {
+  test('reads the expected commit from the latest branch update', () => {
     const view = render(<InstallOverviewCards install={INSTALL} />)
 
     expect(screen.queryByText('a1b2c3d')).toBeNull()
 
-    view.rerender(<InstallOverviewCards install={INSTALL} latestSync={SYNC} />)
+    view.rerender(
+      <InstallOverviewCards install={INSTALL} lastBranchUpdate={UPDATE} />
+    )
 
     expect(screen.getByText('a1b2c3d')).toBeTruthy()
+    expect(screen.getByText('run_01k4m8f6a9')).toBeTruthy()
   })
 
-  test('surfaces the branch name and config number', () => {
-    render(<InstallOverviewCards install={INSTALL} latestSync={SYNC} />)
+  test('keeps current services as separate status facets', () => {
+    render(<InstallOverviewCards install={INSTALL} lastBranchUpdate={UPDATE} />)
 
-    expect(screen.getByText('main')).toBeTruthy()
-    expect(screen.getByText(/\bv14\b/)).toBeTruthy()
+    expect(screen.getByText('Runner')).toBeTruthy()
+    expect(screen.getByText('Sandbox')).toBeTruthy()
+    expect(screen.getByText('Components')).toBeTruthy()
   })
 })

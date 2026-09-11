@@ -9,30 +9,30 @@ export const Overview = () => (
   <ComponentDocs
     name="InstallOverviewCards"
     tier="organism"
-    summary="The four-card summary at the top of an install overview: health, drift, branch, and last update."
+    summary="The install overview for current health, expected app-branch update, and running services."
     use={[
       'Place at the top of the install overview, above the rest of the page.',
-      'Use the loading state while the install and its latest config sync resolve.',
+      'Use the loading state while the install and its latest branch update resolve.',
     ]}
     avoid={[
-      'Do not collapse health and drift into one status; they are independent axes.',
-      'Do not report an unscanned install as having no drift.',
+      'Do not add app-branch history here; use the Activity timeline.',
+      'Do not promote every install status into an equal card.',
     ]}
     rules={[
-      'Health and drift each distinguish a missing evaluation from a healthy result.',
-      'Drift counts the install drifted objects and pluralizes the resource count.',
-      'Last update reads the commit from the latest config sync, not the branch latest run.',
+      'Install status combines lifecycle, health, and a secondary drift summary.',
+      'Expected update identifies the app-branch run and commit intended for this install.',
+      'Runner, sandbox, and components remain separate status facets.',
     ]}
     props={[
       {
         name: 'install',
         type: 'TInstall',
-        description: 'Install whose health, drift, and branch are summarized.',
+        description: 'Install whose lifecycle, health, and services are summarized.',
       },
       {
-        name: 'latestSync',
-        type: 'TInstallConfigSync',
-        description: 'Most recent config sync, used for the last update card.',
+        name: 'lastBranchUpdate',
+        type: 'IInstallBranchUpdate',
+        description: 'Most recent app-branch run expected on this install.',
       },
       {
         name: 'loading',
@@ -52,6 +52,10 @@ export const Default = () => (
         name: 'production',
         composite_health_status: 'healthy',
         composite_health_status_description: 'All components are healthy.',
+        lifecycle_phase: { phase: 'active' },
+        runner_status: 'active',
+        sandbox_status: 'active',
+        composite_component_status: 'active',
         drifted_objects: [],
         app_branch: {
           id: 'br_main',
@@ -59,12 +63,13 @@ export const Default = () => (
           configs: [{ config_number: 14 }],
         },
       }}
-      latestSync={{
-        id: 'sync_latest',
-        created_at: '2026-09-08T13:45:00Z',
-        app_branch_id: 'br_main',
-        triggered_by: 'git',
-        vcs_connection_commit: {
+      lastBranchUpdate={{
+        runId: 'run_01k4m8f6a9',
+        runHref: '/org_example/apps/app_payments/branches/br_main/activity',
+        branchName: 'main',
+        status: 'success',
+        updatedAt: '2026-09-08T13:45:00Z',
+        commit: {
           sha: 'a1b2c3d4e5f6',
           message: 'Update component versions',
           author_name: 'Alex Smith',
@@ -82,10 +87,96 @@ export const NeedsAttention = () => (
         name: 'production',
         composite_health_status: 'degraded',
         composite_health_status_description: 'One component is unhealthy.',
+        lifecycle_phase: { phase: 'active' },
+        runner_status: 'active',
+        sandbox_status: 'degraded',
+        sandbox_health_status: 'degraded',
+        composite_component_status: 'error',
         drifted_objects: [
           { target_id: 'cmp_api' },
           { target_id: 'cmp_worker' },
         ],
+        app_branch: { id: 'br_main', name: 'main' },
+      }}
+      lastBranchUpdate={{
+        runId: 'run_01k4m8f6a9',
+        branchName: 'main',
+        status: 'error',
+        commit: {
+          sha: 'b7c8d9e0f1a2',
+          message: 'Roll out worker update',
+        },
+      }}
+    />
+  </div>
+)
+
+export const Provisioning = () => (
+  <div className="p-8">
+    <InstallOverviewCards
+      install={{
+        id: 'inst_prod',
+        name: 'production',
+        lifecycle_phase: {
+          phase: 'provisioning',
+          description: 'Provisioning the install sandbox.',
+        },
+        runner_status: 'active',
+        sandbox_status: 'provisioning',
+        composite_component_status: 'pending',
+        app_branch: { id: 'br_main', name: 'main' },
+      }}
+      lastBranchUpdate={{
+        runId: 'run_01k4m8f6a9',
+        branchName: 'main',
+        status: 'pending',
+        commit: {
+          sha: 'a1b2c3d4e5f6',
+          message: 'Create production install',
+        },
+      }}
+    />
+  </div>
+)
+
+export const Deprovisioning = () => (
+  <div className="p-8">
+    <InstallOverviewCards
+      install={{
+        id: 'inst_prod',
+        name: 'production',
+        lifecycle_phase: {
+          phase: 'deprovisioning',
+          description: 'Tearing down install services.',
+        },
+        runner_status: 'active',
+        sandbox_status: 'active',
+        composite_component_status: 'active',
+        app_branch: { id: 'br_main', name: 'main' },
+      }}
+      lastBranchUpdate={{
+        runId: 'run_01k4m8f6a9',
+        branchName: 'main',
+        status: 'success',
+        commit: {
+          sha: 'a1b2c3d4e5f6',
+          message: 'Update component versions',
+        },
+      }}
+    />
+  </div>
+)
+
+export const NeverUpdated = () => (
+  <div className="p-8">
+    <InstallOverviewCards
+      install={{
+        id: 'inst_prod',
+        name: 'production',
+        lifecycle_phase: { phase: 'pending' },
+        runner_status: 'pending',
+        sandbox_status: 'pending',
+        composite_component_status: 'pending',
         app_branch: { id: 'br_main', name: 'main' },
       }}
     />

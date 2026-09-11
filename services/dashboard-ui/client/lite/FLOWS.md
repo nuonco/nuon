@@ -2,13 +2,13 @@
 
 Who uses Lite, what they are trying to get done, and what "done" looks like.
 
-Read this before building or changing a multi-step flow. It decides *whether* a
+Read this before building or changing a multi-step flow. It decides _whether_ a
 flow should exist and how it should feel; the mechanics of building one are in
 [DESIGN.md](./DESIGN.md) §4 "Task flows".
 
 ## This file is deliberately short
 
-It holds **eight flows** — the ones that have actually been decided. It is not
+It holds **nine flows** — the ones that have actually been decided. It is not
 an inventory of everything the product does, and the gaps are not oversights.
 
 **Do not add a flow here by inferring one** from a route, a production
@@ -22,10 +22,10 @@ If you need a flow that is not here, that is a conversation — see DESIGN.md
 
 ## Two layers, deliberately separate
 
-| Layer | Where | Changes |
-|---|---|---|
-| **Intent** — who, why, what done means | this file | rarely |
-| **Steps** — selectors and assertions | `e2e/flows-lite/*.flow.md` | every time the UI moves |
+| Layer                                  | Where                      | Changes                 |
+| -------------------------------------- | -------------------------- | ----------------------- |
+| **Intent** — who, why, what done means | this file                  | rarely                  |
+| **Steps** — selectors and assertions   | `e2e/flows-lite/*.flow.md` | every time the UI moves |
 
 They are apart because a flow's intent is stable while its selectors churn. One
 file would mean the volatile half constantly rewriting the stable half.
@@ -39,12 +39,12 @@ production suite, separate directory so the two never collide.
 
 ## Personas
 
-**1. Platform engineer** *(primary)* — works at the software vendor. Configures
+**1. Platform engineer** _(primary)_ — works at the software vendor. Configures
 apps, branches and deployment plans; owns the config repo. Lives in app and
 branch surfaces. Technical, reads Terraform plans closely, is the person an
 approval is asking.
 
-**2. Operator** *(primary)* — also at the vendor, often the same person wearing
+**2. Operator** _(primary)_ — also at the vendor, often the same person wearing
 a different hat. Runs and supports customer installs. Lives in install
 surfaces.
 
@@ -52,7 +52,7 @@ The two split by **surface, not seniority** — apps and branches are
 configuration, installs are operation. When a flow feels like it serves both,
 check which surface it lives on.
 
-**3. Customer** *(earmarked — no surfaces today)* — the vendor's end customer,
+**3. Customer** _(earmarked — no surfaces today)_ — the vendor's end customer,
 whose cloud account the app is installed into. They have **no access to the
 dashboard or to Lite at present.** A read-only view of their own install — its
 state, recent changes and health — is wanted and worth designing toward.
@@ -219,7 +219,7 @@ different shapes — a graph versus a timeline — and merging them loses one.
 # Day 2 operations
 
 Running things against an install that already exists. Distinct from the
-blessed path — these do not change what the app *is*, they carry out an
+blessed path — these do not change what the app _is_, they carry out an
 operation against a running install.
 
 Both flows have the same spine: **trigger → watch the workflow → read logs and
@@ -256,7 +256,7 @@ both hit DESIGN.md's open question about navigation inside a run detail page.
   the workflow step through its actions → read logs and outputs per step
 - **Done** — the runbook run finished and the operator can see the result of
   each action in it
-- **Must not break** — the readme is readable before *and during* the run, since
+- **Must not break** — the readme is readable before _and during_ the run, since
   it is the instructions for what is happening; a failure is attributable to the
   specific action that failed, not just to the runbook; each step's logs and
   outputs are reachable individually
@@ -269,11 +269,29 @@ both hit DESIGN.md's open question about navigation inside a run detail page.
 documentation for a human carrying out the procedure, which makes it part of the
 flow rather than decoration — it needs the markdown organism, also unbuilt.
 
+## 8. Deprovision an install
+
+- **Who** — operator
+- **Job** — When an install is no longer needed, I want to remove its services
+  and cloud stack in one guided flow, so no infrastructure is left behind.
+- **Trigger** — the operator chooses Deprovision install from its management
+  actions
+- **Path** — confirm the install name → watch components and sandbox teardown →
+  destroy the stack through Nuon or follow cloud-console instructions → complete
+- **Done** — install services and the cloud stack are gone, and the final state
+  remains visible in activity
+- **Must not break** — stack destruction cannot be skipped silently; teardown
+  progress remains visible; a Nuon-managed stack uses the connected IAM role; a
+  customer-managed stack gives explicit instructions and waits for confirmation
+- **Shape** — wizard in `DashboardShell`
+- **Status** — not built
+- **Spec** — none
+
 ---
 
 # Reviewing change
 
-## 8. Approve a change
+## 9. Approve a change
 
 - **Who** — platform engineer
 - **Job** — When a plan is waiting on me, I want to see exactly what will change
@@ -284,7 +302,7 @@ flow rather than decoration — it needs the markdown organism, also unbuilt.
   approve, deny, or approve all
 - **Done** — the plan is approved or denied, and the run continues or stops
 - **Must not break** — the diff is readable before the decision is possible;
-  approval copy names the *kind* of change (Terraform plan, Helm chart,
+  approval copy names the _kind_ of change (Terraform plan, Helm chart,
   Kubernetes manifest, install creation), never a generic "approval required";
   the decision is reflected immediately, not after a refetch
 - **Shape** — org-wide pending signal → banner on the run → modal to decide.
@@ -305,19 +323,20 @@ path"). A git push is the trigger, but rollout waits here until a human decides
 Where Lite actually is, so nobody reads this file as a description of the
 present:
 
-| Area | State |
-|---|---|
-| Navigation, shells, breadcrumbs, status bar | built |
-| Apps and installs lists (search, filter, pagination, card view) | built |
-| Install and branch overviews and activity timelines | built |
-| Branch config and plan diffs | built |
-| Onboarding, app setup, install setup wizards | page stubs |
-| Install and app topology graphs | not built |
-| Run detail pages, logs, markdown | not built |
-| Actions and runbooks | not built |
-| The approval chain around the diffs | not built |
-| Everything under org settings | scaffolds |
-| Customer-facing surfaces | none, by design |
+| Area                                                            | State           |
+| --------------------------------------------------------------- | --------------- |
+| Navigation, shells, breadcrumbs, status bar                     | built           |
+| Apps and installs lists (search, filter, pagination, card view) | built           |
+| Install and branch overviews and activity timelines             | built           |
+| Branch config and plan diffs                                    | built           |
+| Onboarding and app setup wizards                                | page stubs      |
+| Install setup and deprovision wizards                           | not built       |
+| Install and app topology graphs                                 | not built       |
+| Run detail pages, logs, markdown                                | not built       |
+| Actions and runbooks                                            | not built       |
+| The approval chain around the diffs                             | not built       |
+| Everything under org settings                                   | scaffolds       |
+| Customer-facing surfaces                                        | none, by design |
 
 The gap is concentrated in **templates** — `list page`, `detail page`, `wizard`
 and `dashboard` are all unbuilt (see `.planning/lite/NOTES.md`), and most of
@@ -329,10 +348,10 @@ When a flow gets built, add its step doc to `e2e/flows-lite/` and link it from
 that flow's **Spec** line. The lite suite is separate from the production one at
 every level:
 
-| Suite | Config | testDir | Target |
-|---|---|---|---|
-| Lite app | `e2e/lite.config.ts` | `e2e/specs-lite/` | :4000 with `nuon_dashboard_lite` on |
-| Lite Ladle | `e2e/lite-ladle.config.ts` | `e2e/specs-lite-ladle/` | :62002 |
+| Suite      | Config                     | testDir                 | Target                              |
+| ---------- | -------------------------- | ----------------------- | ----------------------------------- |
+| Lite app   | `e2e/lite.config.ts`       | `e2e/specs-lite/`       | :4000 with `nuon_dashboard_lite` on |
+| Lite Ladle | `e2e/lite-ladle.config.ts` | `e2e/specs-lite-ladle/` | :62002                              |
 
 `global-setup.ts`, `global-teardown.ts`, `env.ts`, `fixtures.ts` and
 `helpers.ts` are shared with the production suite — token and org seeding is

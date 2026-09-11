@@ -16,6 +16,12 @@ export const installHref = (orgId: string, installId: string) =>
 export const appBranchHref = (orgId: string, appId: string, branchId: string) =>
   `/${orgId}/apps/${appId}/branches/${branchId}`
 
+export const appBranchActivityHref = (
+  orgId: string,
+  appId: string,
+  branchId: string
+) => `${appBranchHref(orgId, appId, branchId)}/activity`
+
 export const resolveAppHref = ({
   orgId,
   appId,

@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getInstallConfigSyncs } from '@/lib'
 import { useInstall } from '../../../providers/install-provider'
 import { useOrg } from '../../../providers/org-provider'
+import { appBranchActivityHref } from '../../../utils/hrefs'
 import { InstallOverviewCards } from './InstallOverviewCards'
 
 export const InstallOverviewCardsContainer = () => {
@@ -18,11 +19,33 @@ export const InstallOverviewCardsContainer = () => {
     placeholderData: keepPreviousData,
     refetchInterval: 20_000,
   })
+  const sync = syncs?.at(0)
 
   return (
     <InstallOverviewCards
       install={install}
-      latestSync={syncs?.at(0)}
+      lastBranchUpdate={
+        sync
+          ? {
+              runId: sync.app_branch_run_id,
+              runHref:
+                sync.app_branch_run_id &&
+                orgId &&
+                install?.app_id &&
+                install?.app_branch_id
+                ? appBranchActivityHref(
+                    orgId,
+                    install.app_id,
+                    install.app_branch_id
+                  )
+                : undefined,
+              branchName: install?.app_branch?.name,
+              status: sync.status?.status,
+              commit: sync.vcs_connection_commit,
+              updatedAt: sync.created_at,
+            }
+          : undefined
+      }
       loading={installLoading || isLoadingSyncs}
     />
   )

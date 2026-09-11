@@ -1,107 +1,143 @@
-import type { TInstall, TInstallConfigSync } from '@/types'
-import { latestBranchConfig } from '@/utils/branch-utils'
-import { Badge } from '../../atoms/Badge'
+import type { TInstall, TVCSCommit } from '@/types'
 import { Icon } from '../../atoms/Icon'
+import { Link } from '../../atoms/Link'
 import { Status } from '../../atoms/Status'
 import { Text } from '../../atoms/Text'
 import { CommitSummary } from '../../molecules/CommitSummary'
 import { OverviewCard, OverviewCardGrid } from '../../molecules/OverviewCard'
+import { installStatusFacets } from '../../../utils/install-details'
+
+export interface IInstallBranchUpdate {
+  runId?: string
+  runHref?: string
+  branchName?: string
+  status?: string
+  commit?: TVCSCommit
+  updatedAt?: string
+}
 
 export interface IInstallOverviewCards {
   install?: TInstall
-  latestSync?: TInstallConfigSync
+  lastBranchUpdate?: IInstallBranchUpdate
   loading?: boolean
+}
+
+const SERVICE_LABELS: Record<string, string> = {
+  runner: 'Runner',
+  sandbox: 'Sandbox',
+  components: 'Components',
 }
 
 export const InstallOverviewCards = ({
   install,
-  latestSync,
+  lastBranchUpdate,
   loading = false,
 }: IInstallOverviewCards) => {
   const driftCount = install?.drifted_objects?.length
-  const branch = install?.app_branch
-  const branchConfig = branch ? latestBranchConfig(branch) : undefined
+  const lifecycle = install?.lifecycle_phase?.phase
+  const services = installStatusFacets(install).filter((facet) =>
+    ['runner', 'sandbox', 'components'].includes(facet.id)
+  )
 
   return (
-    <OverviewCardGrid>
-      <OverviewCard title="Health">
+    <OverviewCardGrid columns={3}>
+      <OverviewCard title="Install status">
         {loading ? (
-          <Status loading loadingWidth={10} />
-        ) : install?.composite_health_status ? (
           <>
-            <Status
-              status={install.composite_health_status}
-              description={install?.composite_health_status_description}
-            />
-            {install?.composite_health_status_description ? (
-              <Text variant="caption" color="tertiary" lines={2}>
-                {install.composite_health_status_description}
-              </Text>
-            ) : null}
+            <Status loading loadingWidth={10} />
+            <Status loading loadingWidth={12} />
           </>
         ) : (
           <>
-            <Text color="tertiary">Not reported</Text>
+            <Status
+              status={lifecycle ?? 'unknown'}
+              description={install?.lifecycle_phase?.description}
+            />
+            {install?.composite_health_status ? (
+              <Status
+                status={install.composite_health_status}
+                description={install?.composite_health_status_description}
+              />
+            ) : (
+              <Text color="tertiary">Health not reported</Text>
+            )}
             <Text variant="caption" color="tertiary">
-              Health will appear after the first evaluation.
+              {driftCount === undefined
+                ? 'Drift not scanned'
+                : driftCount === 0
+                  ? 'No drift detected'
+                  : `${driftCount} resource${driftCount === 1 ? '' : 's'} drifted`}
             </Text>
           </>
         )}
       </OverviewCard>
 
-      <OverviewCard title="Drift">
-        {loading ? (
-          <>
-            <Status loading loadingWidth={9} />
-            <Text loading loadingWidth={18} variant="caption" />
-          </>
-        ) : driftCount === undefined ? (
-          <>
-            <Text color="tertiary">Not scanned</Text>
-            <Text variant="caption" color="tertiary">
-              Drift will appear after the first scan.
+      <OverviewCard
+        title="Expected update"
+        footer={
+          !loading && lastBranchUpdate?.runHref ? (
+            <Link href={lastBranchUpdate.runHref}>View activity</Link>
+          ) : undefined
+        }
+      >
+        <span className="flex flex-wrap items-center justify-between gap-2">
+          <span className="flex items-center gap-2">
+            <Icon variant="GitBranchIcon" size={18} />
+            <Text
+              family="mono"
+              weight="medium"
+              loading={loading}
+              loadingWidth={12}
+            >
+              {lastBranchUpdate?.branchName ??
+                install?.app_branch?.name ??
+                '—'}
             </Text>
-          </>
-        ) : (
-          <>
-            <Status
-              status={driftCount > 0 ? 'drifted' : 'no-drift'}
-              label={driftCount > 0 ? 'Drift detected' : 'No drift'}
-            />
-            <Text variant="caption" color="tertiary">
-              {driftCount === 0
-                ? 'No resources have drifted.'
-                : `${driftCount} resource${driftCount === 1 ? '' : 's'} drifted`}
-            </Text>
-          </>
-        )}
-      </OverviewCard>
-
-      <OverviewCard title="Branch">
-        <span className="flex items-center gap-2">
-          <Icon variant="GitBranchIcon" size={18} />
-          <Text
-            family="mono"
-            weight="medium"
-            loading={loading}
-            loadingWidth={12}
-          >
-            {branch?.name ?? '—'}
-          </Text>
+          </span>
+          {loading ? (
+            <Status loading />
+          ) : lastBranchUpdate?.status ? (
+            <Status status={lastBranchUpdate.status} variant="inline" />
+          ) : null}
         </span>
-        {loading ? (
-          <Badge loading loadingWidth={8} />
-        ) : branchConfig?.config_number ? (
-          <Badge>Config v{branchConfig.config_number}</Badge>
+        <CommitSummary
+          commit={lastBranchUpdate?.commit}
+          updatedAt={lastBranchUpdate?.updatedAt}
+          loading={loading}
+        />
+        {!loading && lastBranchUpdate?.runId ? (
+          <Text variant="label" family="mono" color="tertiary">
+            {lastBranchUpdate.runId}
+          </Text>
         ) : null}
       </OverviewCard>
 
-      <OverviewCard title="Last update">
-        <CommitSummary
-          commit={latestSync?.vcs_connection_commit}
-          updatedAt={latestSync?.created_at}
-          loading={loading}
-        />
+      <OverviewCard title="Current services">
+        {loading ? (
+          <>
+            <Status loading loadingWidth={10} />
+            <Status loading loadingWidth={10} />
+            <Status loading loadingWidth={10} />
+          </>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {services.map((service) => (
+              <div
+                key={service.id}
+                className="flex items-center justify-between gap-3"
+              >
+                <Text variant="caption" color="secondary">
+                  {SERVICE_LABELS[service.id] ?? service.id}
+                </Text>
+                <Status
+                  status={service.status}
+                  description={service.description}
+                  variant="inline"
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </OverviewCard>
     </OverviewCardGrid>
   )
