@@ -11,7 +11,7 @@ import (
 )
 
 func (s *InstallsServiceTestSuite) TestDeprovisionSandboxSuccess() {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 
 	path := fmt.Sprintf("/v1/installs/%s/deprovision-sandbox", install.ID)
 	rr := s.makeRequest(http.MethodPost, path, nil)

@@ -11,7 +11,7 @@ import (
 )
 
 func (s *InstallsServiceTestSuite) TestDeployInstallComponentsSuccess() {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 
 	path := fmt.Sprintf("/v1/installs/%s/components/deploy-all", install.ID)
 	rr := s.makeRequest(http.MethodPost, path, nil)

@@ -940,6 +940,7 @@ export type TInstallWorkflowStep = components['schemas']['app.WorkflowStep']
 export type TWorkflow = components['schemas']['app.Workflow']
 export type TWorkflowType = components['schemas']['app.WorkflowType']
 export type TWorkflowStep = components['schemas']['app.WorkflowStep'] & {
+  status?: TCompositeStatus
   log_stream?: { id?: string; open?: boolean }
   links?: {
     event_wait?: TWorkflowStepEventWait
@@ -1096,7 +1097,9 @@ export type TAvailableRolesResponse =
 export type TOperationType = components['schemas']['app.OperationType']
 export type TPrincipalType = 'component' | 'sandbox' | 'action'
 
-export type TCompositeStatus = components['schemas']['app.CompositeStatus']
+export type TCompositeStatus = components['schemas']['app.CompositeStatus'] & {
+  composite_error?: TCompositeError
+}
 
 export type TOnboarding = components['schemas']['app.Onboarding']
 export type TExampleApp = components['schemas']['service.ExampleApp']

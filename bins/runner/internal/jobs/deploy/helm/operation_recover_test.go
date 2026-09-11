@@ -2,21 +2,14 @@ package helm
 
 import (
 	"context"
-	"io"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"helm.sh/helm/v4/pkg/action"
 	chart "helm.sh/helm/v4/pkg/chart/v2"
-	kubefake "helm.sh/helm/v4/pkg/kube/fake"
 	release "helm.sh/helm/v4/pkg/release/v1"
-	"helm.sh/helm/v4/pkg/storage"
-	"helm.sh/helm/v4/pkg/storage/driver"
-
-	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
 const testReleaseName = "recover-me"
@@ -26,30 +19,7 @@ const testReleaseName = "recover-me"
 func recoverHandler(t *testing.T, revisions ...*release.Release) (*handler, *action.Configuration) {
 	t.Helper()
 
-	store := storage.Init(driver.NewMemory())
-	for _, rev := range revisions {
-		require.NoError(t, store.Create(rev))
-	}
-
-	actionCfg := &action.Configuration{
-		Releases:   store,
-		KubeClient: &kubefake.PrintingKubeClient{Out: io.Discard, LogOutput: io.Discard},
-	}
-
-	h := &handler{
-		state: &handlerState{
-			plan: &plantypes.DeployPlan{
-				HelmDeployPlan: &plantypes.HelmDeployPlan{
-					Name:           testReleaseName,
-					Namespace:      "default",
-					RecoverRelease: true,
-				},
-			},
-			timeout: time.Minute,
-		},
-	}
-
-	return h, actionCfg
+	return helmHandler(t, nil, revisions...)
 }
 
 func testRevision(version int, status release.Status) *release.Release {

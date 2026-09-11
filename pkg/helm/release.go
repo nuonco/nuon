@@ -1,19 +1,37 @@
 package helm
 
 import (
+	"errors"
 	"strings"
 
 	"helm.sh/helm/v4/pkg/action"
 	release "helm.sh/helm/v4/pkg/release/v1"
+	"helm.sh/helm/v4/pkg/storage/driver"
 )
 
-// Matched on the string: the driver error is wrapped several layers deep.
 const releaseNotFound = "release: not found"
+
+// IsReleaseNotFound reports whether err means no such release is stored.
+//
+// Both forms have to be handled. Helm's own errors keep the sentinel in the
+// chain — including through the joined errors a partially failed uninstall
+// returns — but several paths format it with %s or %v instead of %w, leaving
+// only the message behind.
+func IsReleaseNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, driver.ErrReleaseNotFound) {
+		return true
+	}
+
+	return strings.Contains(err.Error(), releaseNotFound)
+}
 
 func GetRelease(cfg *action.Configuration, name string) (*release.Release, error) {
 	res, err := action.NewGet(cfg).Run(name)
 	if err != nil {
-		if strings.Contains(err.Error(), releaseNotFound) {
+		if IsReleaseNotFound(err) {
 			return nil, nil
 		}
 
@@ -29,7 +47,7 @@ func GetRelease(cfg *action.Configuration, name string) (*release.Release, error
 func History(cfg *action.Configuration, name string) ([]*release.Release, error) {
 	res, err := action.NewHistory(cfg).Run(name)
 	if err != nil {
-		if strings.Contains(err.Error(), releaseNotFound) {
+		if IsReleaseNotFound(err) {
 			return nil, nil
 		}
 
