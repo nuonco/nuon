@@ -61,6 +61,7 @@ import {
   XIcon,
   type IconProps as PhosphorIconProps,
 } from '@phosphor-icons/react'
+import { FaGithub } from 'react-icons/fa'
 
 const ICONS = {
   ArrowClockwiseIcon,
@@ -125,7 +126,11 @@ const ICONS = {
   XIcon,
 } as const
 
-export type TIconVariant = keyof typeof ICONS
+const CUSTOM_ICONS = {
+  GitHub: FaGithub,
+} as const
+
+export type TIconVariant = keyof typeof ICONS | keyof typeof CUSTOM_ICONS
 
 export interface IIcon extends Omit<PhosphorIconProps, 'ref' | 'color'> {
   variant: TIconVariant
@@ -137,7 +142,12 @@ export const Icon = ({
   weight = 'regular',
   ...props
 }: IIcon) => {
-  const Component = ICONS[variant]
+  const Custom = CUSTOM_ICONS[variant as keyof typeof CUSTOM_ICONS]
+  if (Custom) {
+    return <Custom size={size} aria-hidden {...(props as object)} />
+  }
+
+  const Component = ICONS[variant as keyof typeof ICONS]
 
   if (!Component) {
     if (process.env.NODE_ENV === 'development') {
