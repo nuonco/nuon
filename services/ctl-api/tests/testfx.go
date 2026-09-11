@@ -38,6 +38,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/mailchimp"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
@@ -126,6 +127,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 
 		// External services
 		fx.Provide(loops.New),
+		fx.Provide(mailchimp.New),
 		fx.Provide(salesforce.New),
 		fx.Provide(func() *github.Client { return github.NewClient(nil) }),
 		fx.Provide(metrics.New),
