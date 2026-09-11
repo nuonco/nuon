@@ -39,6 +39,7 @@ export const AppBranchProvider = ({ children }: { children: ReactNode }) => {
         orgId: orgId!,
         appId: appId!,
         branchId: branchId!,
+        latestConfig: true,
       }),
     enabled: !!orgId && !!appId && !!branchId,
     refetchInterval: 20_000,
