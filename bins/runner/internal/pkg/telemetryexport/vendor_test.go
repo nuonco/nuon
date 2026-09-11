@@ -3,6 +3,7 @@ package telemetryexport
 import (
 	"context"
 	"errors"
+	"maps"
 	"testing"
 	"time"
 
@@ -35,7 +36,7 @@ func TestVendorSupervisorStartsTokenBeforeCollector(t *testing.T) {
 	events := make([]string, 0, 2)
 	tokens := &fakeTokenLifecycle{events: &events}
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(_ context.Context, endpoint string) error {
+	s.replaceChildFn = func(_ context.Context, endpoint string, _ map[string]string) error {
 		if endpoint != "https://relay.example.com" {
 			t.Fatalf("unexpected endpoint: %q", endpoint)
 		}
@@ -53,7 +54,7 @@ func TestVendorSupervisorEnablesAfterBeingDisabled(t *testing.T) {
 	tokens := &fakeTokenLifecycle{}
 	replacements := 0
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(context.Context, string) error {
+	s.replaceChildFn = func(context.Context, string, map[string]string) error {
 		replacements++
 		return nil
 	}
@@ -73,7 +74,7 @@ func TestVendorSupervisorReplacesCollectorWhenEndpointChanges(t *testing.T) {
 	tokens := &fakeTokenLifecycle{}
 	var endpoints []string
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(_ context.Context, endpoint string) error {
+	s.replaceChildFn = func(_ context.Context, endpoint string, _ map[string]string) error {
 		endpoints = append(endpoints, endpoint)
 		return nil
 	}
@@ -89,7 +90,7 @@ func TestVendorSupervisorDisableStopsCollectorAndToken(t *testing.T) {
 	tokens := &fakeTokenLifecycle{}
 	stops := 0
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(context.Context, string) error { return nil }
+	s.replaceChildFn = func(context.Context, string, map[string]string) error { return nil }
 	s.stopChildFn = func() { stops++ }
 	s.reconcile(context.Background(), vendorSettings{enabled: true, endpoint: "https://relay.example.com"})
 
@@ -108,7 +109,7 @@ func TestVendorSupervisorRollsBackFailedEndpointChange(t *testing.T) {
 	tokens := &fakeTokenLifecycle{}
 	var endpoints []string
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(_ context.Context, endpoint string) error {
+	s.replaceChildFn = func(_ context.Context, endpoint string, _ map[string]string) error {
 		endpoints = append(endpoints, endpoint)
 		if endpoint == "https://relay-two.example.com" {
 			return errors.New("collector failed")
@@ -133,7 +134,7 @@ func TestVendorSupervisorRejectsInvalidEndpointWithoutStoppingActiveCollector(t 
 	tokens := &fakeTokenLifecycle{}
 	replacements := 0
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(context.Context, string) error {
+	s.replaceChildFn = func(context.Context, string, map[string]string) error {
 		replacements++
 		return nil
 	}
@@ -151,7 +152,7 @@ func TestVendorSupervisorRetainsActiveCollectorWhenSettingsUnavailable(t *testin
 	tokens := &fakeTokenLifecycle{}
 	replacements := 0
 	s := newVendorTestSupervisor(tokens)
-	s.replaceChildFn = func(context.Context, string) error {
+	s.replaceChildFn = func(context.Context, string, map[string]string) error {
 		replacements++
 		return nil
 	}
@@ -192,7 +193,7 @@ func TestVendorSupervisorRetriesTokenFailureWithoutStartingCollector(t *testing.
 	replacements := 0
 	s := newVendorTestSupervisor(tokens)
 	s.desiredEndpoint = "https://relay.example.com"
-	s.replaceChildFn = func(context.Context, string) error {
+	s.replaceChildFn = func(context.Context, string, map[string]string) error {
 		replacements++
 		return nil
 	}
@@ -205,7 +206,7 @@ func TestVendorSupervisorRetriesTokenFailureWithoutStartingCollector(t *testing.
 
 func TestVendorSupervisorBackoffSurvivesShortLivedRestarts(t *testing.T) {
 	s := newVendorTestSupervisor(&fakeTokenLifecycle{})
-	s.replaceChildFn = func(context.Context, string) error {
+	s.replaceChildFn = func(context.Context, string, map[string]string) error {
 		s.child = &childProcess{done: make(chan struct{}), startedAt: time.Now()}
 		return nil
 	}
@@ -237,7 +238,7 @@ func TestVendorSupervisorStopsTokenWhenInitialCollectorStartFails(t *testing.T) 
 	tokens := &fakeTokenLifecycle{}
 	s := newVendorTestSupervisor(tokens)
 	s.desiredEndpoint = "https://relay.example.com"
-	s.replaceChildFn = func(context.Context, string) error {
+	s.replaceChildFn = func(context.Context, string, map[string]string) error {
 		return errors.New("collector failed")
 	}
 
@@ -279,7 +280,7 @@ func TestVendorSupervisorShutdownCancelsReplacementWithoutRollback(t *testing.T)
 	s.initialSettings = vendorSettings{enabled: true, endpoint: "https://replacement.example.com"}
 	started := make(chan struct{})
 	replacements, stops := 0, 0
-	s.replaceChildFn = func(ctx context.Context, _ string) error {
+	s.replaceChildFn = func(ctx context.Context, _ string, _ map[string]string) error {
 		replacements++
 		if replacements == 1 {
 			close(started)
@@ -321,8 +322,79 @@ func TestVendorSupervisorDoesNotStartAfterCancellation(t *testing.T) {
 	if tokens.enables != 0 {
 		t.Fatal("canceled supervisor requested a token")
 	}
-	if err := s.replaceChild(ctx, "https://relay.example.com"); !errors.Is(err, context.Canceled) {
+	if err := s.replaceChild(ctx, "https://relay.example.com", nil); !errors.Is(err, context.Canceled) {
 		t.Fatalf("canceled replacement accessed collector resources: %v", err)
+	}
+}
+
+func TestVendorSupervisorRefreshesAttributeSnapshots(t *testing.T) {
+	s := newVendorTestSupervisor(&fakeTokenLifecycle{})
+	var applied []map[string]string
+	s.replaceChildFn = func(_ context.Context, _ string, attributes map[string]string) error {
+		applied = append(applied, maps.Clone(attributes))
+		return nil
+	}
+	current := vendorSettings{enabled: true, endpoint: "https://relay.example.com", attributes: map[string]string{
+		"nuon.install.name": "before", "nuon.install.labels.tier": "standard",
+	}}
+	s.fetchSettingsFn = func(context.Context) (vendorSettings, error) { return current, nil }
+	s.refreshSettings(context.Background())
+	current.attributes = map[string]string{"nuon.install.labels.tier": "standard", "nuon.install.name": "before"}
+	s.refreshSettings(context.Background())
+	if len(applied) != 1 {
+		t.Fatal("identical attribute contents restarted the collector")
+	}
+	current.attributes["nuon.install.name"] = "after"
+	delete(current.attributes, "nuon.install.labels.tier")
+	if s.activeAttributes["nuon.install.name"] != "before" || s.desiredAttributes["nuon.install.name"] != "before" {
+		t.Fatal("settings mutation modified an owned snapshot")
+	}
+	s.refreshSettings(context.Background())
+	if len(applied) != 2 || !maps.Equal(applied[1], map[string]string{"nuon.install.name": "after"}) {
+		t.Fatalf("rename and label deletion were not applied: %#v", applied)
+	}
+	s.fetchSettingsFn = func(context.Context) (vendorSettings, error) { return vendorSettings{}, errors.New("unavailable") }
+	s.refreshSettings(context.Background())
+	if !s.enabled || len(applied) != 2 || !maps.Equal(s.activeAttributes, applied[1]) {
+		t.Fatal("settings failure discarded active attributes")
+	}
+	s.disable()
+	if s.activeAttributes != nil || s.desiredAttributes != nil {
+		t.Fatal("disabled collector retained metadata")
+	}
+}
+
+func TestVendorSupervisorRollsBackAndRetriesAttributeChange(t *testing.T) {
+	s := newVendorTestSupervisor(&fakeTokenLifecycle{})
+	before := map[string]string{"nuon.install.name": "before", "nuon.install.labels.tier": "standard"}
+	after := map[string]string{"nuon.install.name": "after"}
+	var applied []map[string]string
+	fail := true
+	s.replaceChildFn = func(_ context.Context, endpoint string, attributes map[string]string) error {
+		if endpoint != "https://relay.example.com" {
+			t.Fatalf("metadata change altered endpoint: %s", endpoint)
+		}
+		applied = append(applied, maps.Clone(attributes))
+		if fail && attributes["nuon.install.name"] == "after" {
+			return errors.New("replacement failed")
+		}
+		return nil
+	}
+	s.reconcile(context.Background(), vendorSettings{enabled: true, endpoint: "https://relay.example.com", attributes: before})
+	update := vendorSettings{enabled: true, endpoint: "https://relay.example.com", attributes: after}
+	s.reconcile(context.Background(), update)
+	if len(applied) != 3 || !maps.Equal(applied[2], before) || !maps.Equal(s.activeAttributes, before) || !maps.Equal(s.desiredAttributes, after) || !s.enabled || s.nextStart.IsZero() {
+		t.Fatalf("metadata-only failure did not roll back the complete snapshot: %#v", applied)
+	}
+	s.reconcile(context.Background(), update)
+	if len(applied) != 3 {
+		t.Fatal("unchanged failed snapshot bypassed retry backoff")
+	}
+	fail = false
+	s.nextStart = time.Now().Add(-time.Second)
+	s.restartIfNeeded(context.Background())
+	if len(applied) != 4 || !maps.Equal(applied[3], after) || !maps.Equal(s.activeAttributes, after) || !s.nextStart.IsZero() {
+		t.Fatalf("retry failed to apply the desired attributes: %#v", applied)
 	}
 }
 
@@ -337,7 +409,7 @@ func newVendorTestSupervisor(tokens tokenLifecycle) *VendorSupervisor {
 	s.fetchSettingsFn = func(context.Context) (vendorSettings, error) {
 		return vendorSettings{}, nil
 	}
-	s.replaceChildFn = func(context.Context, string) error { return nil }
+	s.replaceChildFn = func(context.Context, string, map[string]string) error { return nil }
 	s.stopChildFn = func() {}
 	return s
 }
