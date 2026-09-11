@@ -534,7 +534,7 @@ const { data: deploy, isLoading, error } = useSSEResourceQuery<TDeploy>({
 })
 ```
 
-**`useSSETimelineQuery`** (`client/hooks/use-sse-timeline-query.ts`) — for paginated list containers (build/deploy/workflow timelines). Same idea with the simpler binary poll gate and `refetchOnMount: 'always'`; pass the container's `pollInterval` and optionally `transform`/`extraListeners`.
+**`useSSETimelineQuery`** (`client/lib/sse/use-sse-timeline-query.ts`) — for paginated list containers (build/deploy/workflow timelines). Same idea with the simpler binary poll gate and `refetchOnMount: 'always'`; pass the container's `pollInterval` and optionally `transform`/`extraListeners`.
 
 **`createSSEQueryListener`** (`client/lib/sse-listeners.ts`) — builds the parse → `setQueryData` listener for secondary events. The query key can be a function of the payload:
 

@@ -170,6 +170,7 @@ func (c *client) TriggerAppBranchRun(ctx context.Context, appID, appBranchID str
 
 type GetAppBranchRunsQuery struct {
 	Planonly     *bool
+	Preview      *bool
 	Type         string
 	Status       string
 	Q            string
@@ -189,6 +190,7 @@ func (c *client) GetAppBranchRunsWithQuery(ctx context.Context, appID, appBranch
 	var limit, offset int
 	if query != nil {
 		params.Planonly = query.Planonly
+		params.Preview = query.Preview
 		if query.Type != "" {
 			params.Type = &query.Type
 		}

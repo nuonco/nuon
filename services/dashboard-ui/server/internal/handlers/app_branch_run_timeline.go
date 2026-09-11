@@ -30,6 +30,7 @@ func appBranchRunsQuery(c *gin.Context) *nuon.GetAppBranchRunsQuery {
 
 	return &nuon.GetAppBranchRunsQuery{
 		Planonly:     &planonly,
+		Preview:      parseOptionalBoolQuery(c, "preview"),
 		Type:         c.Query("type"),
 		Status:       c.Query("status"),
 		Q:            c.Query("q"),

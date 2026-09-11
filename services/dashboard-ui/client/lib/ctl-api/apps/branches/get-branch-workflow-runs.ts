@@ -9,6 +9,12 @@ export const getBranchWorkflowRuns = ({
   limit,
   offset,
   planonly,
+  preview,
+  q,
+  status,
+  type,
+  created_at_gte,
+  created_at_lte,
 }: {
   appId: string
   branchId: string
@@ -16,9 +22,25 @@ export const getBranchWorkflowRuns = ({
   limit?: number
   offset?: number
   planonly?: boolean
+  preview?: boolean
+  q?: string
+  status?: string
+  type?: string
+  created_at_gte?: string
+  created_at_lte?: string
 }) =>
   api<TInstallWorkflow[]>({
-    path: `apps/${appId}/branches/${branchId}/runs${buildQueryParams({ limit, offset, planonly })}`,
+    path: `apps/${appId}/branches/${branchId}/runs${buildQueryParams({
+      limit,
+      offset,
+      planonly,
+      preview,
+      q,
+      status,
+      type,
+      created_at_gte,
+      created_at_lte,
+    })}`,
     orgId,
     paginated: true,
   })
