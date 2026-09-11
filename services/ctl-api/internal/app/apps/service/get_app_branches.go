@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -146,7 +147,7 @@ func (s *service) attachLatestBranchConfigs(ctx *gin.Context, branches []app.App
 	return nil
 }
 
-func (s *service) attachLatestBranchRuns(ctx *gin.Context, branches []app.AppBranch) error {
+func (s *service) attachLatestBranchRuns(ctx context.Context, branches []app.AppBranch) error {
 	if len(branches) == 0 {
 		return nil
 	}
@@ -189,7 +190,7 @@ func (s *service) attachLatestBranchRuns(ctx *gin.Context, branches []app.AppBra
 	return nil
 }
 
-func (s *service) markRunsAwaitingApproval(ctx *gin.Context, runs []app.AppBranchRun) error {
+func (s *service) markRunsAwaitingApproval(ctx context.Context, runs []app.AppBranchRun) error {
 	workflowIDs := make([]string, 0, len(runs))
 	for _, run := range runs {
 		if run.WorkflowID != nil {
