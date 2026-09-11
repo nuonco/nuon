@@ -1,4 +1,5 @@
 import type { TVCSCommit } from '@/types'
+import { Avatar } from '../atoms/Avatar'
 import { Icon } from '../atoms/Icon'
 import { Text } from '../atoms/Text'
 import { Time } from './Time'
@@ -48,9 +49,16 @@ export const CommitSummary = ({
       </Text>
       <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
         {commit?.author_name ? (
-          <Text variant="caption" color="tertiary">
-            {commit.author_name}
-          </Text>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <Avatar
+              size="xs"
+              name={commit.author_name}
+              src={commit.author_avatar_url}
+            />
+            <Text variant="caption" color="tertiary" lines={1}>
+              {commit.author_name}
+            </Text>
+          </span>
         ) : null}
         <Time value={commit?.created_at ?? updatedAt} format="relative" />
       </span>
