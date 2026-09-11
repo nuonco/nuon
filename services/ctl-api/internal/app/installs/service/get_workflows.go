@@ -23,7 +23,8 @@ import (
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param					planonly					query	bool	false	"exclude plan only workflows when set to false"	Default(true)
-// @Param					type						query	string	false	"filter by workflow type"
+// @Param					type						query	string	false	"filter by workflow type (comma-separated for several types)"
+// @Param					status						query	string	false	"filter by workflow status (comma-separated for several statuses)"
 // @Param					finished					query	bool	false	"filter by finished state"
 // @Param					created_at_gte				query	string	false	"filter workflows created after timestamp (RFC3339 format)"
 // @Param					created_at_lte				query	string	false	"filter workflows created before timestamp (RFC3339 format)"
@@ -54,7 +55,8 @@ func (s *service) GetWorkflows(ctx *gin.Context) {
 		}
 	}
 
-	workflowType := ctx.Query("type")
+	workflowTypes := parseCommaSeparated(ctx.Query("type"))
+	statuses := parseCommaSeparated(ctx.Query("status"))
 
 	var finished *bool
 	finishedParam := ctx.Query("finished")
@@ -91,7 +93,7 @@ func (s *service) GetWorkflows(ctx *gin.Context) {
 
 	search := ctx.Query("search")
 
-	workflows, err := s.getWorkflows(ctx, installID, planOnly, workflowType, search, finished, createdAtGte, createdAtLte)
+	workflows, err := s.getWorkflows(ctx, installID, planOnly, workflowTypes, statuses, search, finished, createdAtGte, createdAtLte)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get workflows"))
 		return
@@ -100,7 +102,7 @@ func (s *service) GetWorkflows(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, workflows)
 }
 
-func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOnly bool, workflowType, search string, finished *bool, createAtGte *time.Time, createdAtLte *time.Time) ([]app.Workflow, error) {
+func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOnly bool, workflowTypes, statuses []string, search string, finished *bool, createAtGte *time.Time, createdAtLte *time.Time) ([]app.Workflow, error) {
 	var workflows []app.Workflow
 	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -120,8 +122,12 @@ func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOn
 		}
 	}
 
-	if workflowType != "" {
-		query = query.Where("type = ?", workflowType)
+	if len(workflowTypes) > 0 {
+		query = query.Where("type IN ?", workflowTypes)
+	}
+
+	if len(statuses) > 0 {
+		query = query.Where("status->>'status' IN ?", statuses)
 	}
 
 	// Search matches the user-visible title each workflow is rendered with
@@ -155,4 +161,14 @@ func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOn
 	}
 
 	return workflows, nil
+}
+
+func parseCommaSeparated(raw string) []string {
+	var values []string
+	for _, part := range strings.Split(raw, ",") {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			values = append(values, trimmed)
+		}
+	}
+	return values
 }
