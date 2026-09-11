@@ -168,6 +168,64 @@ func (c *client) TriggerAppBranchRun(ctx context.Context, appID, appBranchID str
 	return resp.Payload, nil
 }
 
+type GetAppBranchRunsQuery struct {
+	Planonly     *bool
+	Preview      *bool
+	Type         string
+	Status       string
+	Q            string
+	CreatedAtGte string
+	CreatedAtLte string
+	Limit        int
+	Offset       int
+}
+
+func (c *client) GetAppBranchRunsWithQuery(ctx context.Context, appID, appBranchID string, query *GetAppBranchRunsQuery) ([]*models.AppWorkflow, bool, error) {
+	params := &operations.GetAppBranchRunsParams{
+		Context:     ctx,
+		AppID:       appID,
+		AppBranchID: appBranchID,
+	}
+
+	var limit, offset int
+	if query != nil {
+		params.Planonly = query.Planonly
+		params.Preview = query.Preview
+		if query.Type != "" {
+			params.Type = &query.Type
+		}
+		if query.Status != "" {
+			params.Status = &query.Status
+		}
+		if query.Q != "" {
+			params.Q = &query.Q
+		}
+		if query.CreatedAtGte != "" {
+			params.CreatedAtGte = &query.CreatedAtGte
+		}
+		if query.CreatedAtLte != "" {
+			params.CreatedAtLte = &query.CreatedAtLte
+		}
+		limit = query.Limit
+		offset = query.Offset
+	}
+	if limit == 0 {
+		limit = 10
+	}
+	l := int64(limit)
+	o := int64(offset)
+	params.Limit = &l
+	params.Offset = &o
+
+	hr := newResponseHeaderReader(&operations.GetAppBranchRunsReader{})
+	resp, err := c.genClient.Operations.GetAppBranchRuns(params, c.getOrgIDAuthInfo(), hr.ClientOption())
+	if err != nil {
+		return nil, false, err
+	}
+
+	return resp.Payload, hasNextPage(hr), nil
+}
+
 func (c *client) GetAppBranchRuns(ctx context.Context, appID, appBranchID string) ([]*models.AppWorkflow, error) {
 	resp, err := c.genClient.Operations.GetAppBranchRuns(&operations.GetAppBranchRunsParams{
 		Context:     ctx,
