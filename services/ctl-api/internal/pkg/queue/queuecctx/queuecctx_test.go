@@ -14,7 +14,12 @@ import (
 )
 
 func TestApplyDoesNotInstallPartialLogStream(t *testing.T) {
-	ctx := Apply(context.Background(), qcctx.SignalContext{LogStreamID: "log-stream-id"})
+	ctx := cctx.SetLogStreamContext(context.Background(), &app.LogStream{
+		ID:           "inherited-log-stream",
+		RunnerAPIURL: "https://runner.example.com",
+		WriteToken:   "inherited-token",
+	})
+	ctx = Apply(ctx, qcctx.SignalContext{LogStreamID: "log-stream-id"})
 
 	_, err := cctx.GetLogStreamContext(ctx)
 	require.Error(t, err)
@@ -25,6 +30,11 @@ func TestApplyWorkflowDoesNotInstallPartialLogStream(t *testing.T) {
 	env := suite.NewTestWorkflowEnvironment()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) (bool, error) {
+		ctx = cctx.SetLogStreamWorkflowContext(ctx, &app.LogStream{
+			ID:           "inherited-log-stream",
+			RunnerAPIURL: "https://runner.example.com",
+			WriteToken:   "inherited-token",
+		})
 		ctx = ApplyWorkflow(ctx, qcctx.SignalContext{LogStreamID: "log-stream-id"})
 		_, err := cctx.GetLogStreamWorkflow(ctx)
 		return err != nil, nil
