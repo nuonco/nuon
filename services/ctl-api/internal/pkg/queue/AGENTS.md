@@ -7,8 +7,8 @@ backed by these, meaning that when an org, app, install or other is created we a
 signals too.
 
 Signals are workflows that do a user action, such as generating a plan, waiting for approvals, or running a deploy. It's
-important that signals can be decoupled from each other and live in different directories. We have a registration system
-where we use `init` functions to pick
+important that signals can be decoupled from each other and live in different directories. Signal packages register
+themselves via `init` functions so the queue client can resolve handlers by signal type.
 
 Some requirements of the queue system:
 

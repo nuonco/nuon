@@ -1,1190 +1,228 @@
 # Dashboard UI Service
 
-The **Dashboard UI** is the primary web application frontend for the Nuon platform. It is a **Go BFF (Backend-for-Frontend) + React SPA** architecture.
-
-## Architecture Overview
+Nuon's primary web application: a **Go BFF + React SPA**. All production UI work goes in `client/`. There is no `src/`
+directory and no Next.js app in this service.
 
 ```
 services/dashboard-ui/
-├── client/     ← React SPA (ALL new work goes here)
-└── server/     ← Go BFF (Gin + Uber fx)
+├── client/     ← Production SPA + Lite rebuild (`lite/`)
+├── server/     ← Go BFF (Gin + Uber fx)
+└── dist/       ← Compiled SPA assets served by the BFF
 ```
 
-- **`client/`** — React SPA built with React Router v7, TanStack Query, Tailwind CSS, Bun bundler
-- **`server/`** — Go BFF that serves the SPA, validates auth cookies, injects runtime config, and provides streaming API handlers
+Entry: `client/index.tsx` (production `App` or `LiteApp` from runtime config).
 
-## Go BFF Server (`server/`)
+**Working in `client/lite/`?** Follow [client/lite/AGENTS.md](./client/lite/AGENTS.md) and ignore this file. Production
+code must not import from `client/lite/`.
 
-The Go server (Gin + Uber fx) handles:
-- Serving the compiled SPA from `dist/`
-- Auth middleware: validates the cookie set by the external auth service
-- Runtime config injection: writes `window.__NUON_CONFIG__` into the HTML before serving
-- **Reverse proxy**: all `/v1/*` requests from the SPA are forwarded to ctl-api — the BFF extracts the `X-Nuon-Auth` cookie server-side and sets `Authorization: Bearer <token>` so the browser never needs to send the cookie cross-domain
-- Streaming API handlers (e.g., log streaming, log download)
+## Go BFF (`server/`)
 
-### BFF API Endpoints (`server/internal/handlers/`)
+- Serves the compiled SPA from `dist/`
+- Validates the `X-Nuon-Auth` httponly cookie
+- Injects runtime config as `window.__NUON_CONFIG__`
+- Reverse-proxies `/v1/*` to ctl-api (cookie → `Authorization: Bearer`)
+- Exposes BFF-only `/api/*` (SSE streams, log download, etc.)
 
-The BFF exposes its own `/api/*` endpoints (separate from the `/v1/*` reverse proxy). These handlers authenticate via the `X-Nuon-Auth` cookie and create a nuon-go client server-side.
+| Path prefix | Role |
+|-------------|------|
+| `/v1/*` | Proxied to ctl-api |
+| `/api/*` | Handled by the BFF |
 
-**Log streams** (`log_streams.go`):
-- `GET /api/orgs/:orgId/log-streams/:logStreamId/logs/sse` — SSE streaming endpoint for real-time logs
-- `GET /api/orgs/:orgId/log-streams/:logStreamId/logs/download` — Download logs as a text file
-  - `?job_output=true` — Filter to job output only (keeps only logs with `ScopeName == "oteljob"`)
+Log streams (`server/internal/handlers/log_streams.go`): SSE and download endpoints; `?job_output=true` filters to
+`ScopeName == "oteljob"`. Runner OTEL scopes: `oteljob` (user-visible) and `system` (internal).
 
-**User vs internal logs**: The runner emits logs with two OTEL scope names — `oteljob` for job execution output (builds, deploys, actions) and `system` for internal runner logs. The `user_output=true` filter keeps only records where `ScopeName == "oteljob"`.
+### SSE resource endpoints
 
-### SSE Resource Endpoints (server-side pattern)
+~13 `/api/orgs/:orgId/.../sse` endpoints poll ctl-api, hash JSON, and emit events only on change.
 
-The BFF exposes ~13 `/api/orgs/:orgId/.../sse` endpoints that push resource updates to the SPA. There is no eventing backend — each endpoint is a server-side poll loop against ctl-api that converts polling into push: fetch the resource, SHA-256 hash the JSON, and emit a named SSE event only when the hash changes.
+**All shared plumbing is in `server/internal/handlers/sse.go`. Never hand-roll an SSE loop.** Auth with `sseAuth`, then
+pass a `Fetch` closure to `runSSEStream`.
 
-**All shared plumbing lives in `server/internal/handlers/sse.go`. Never hand-roll an SSE loop in a handler.** A handler is just auth + a `Fetch` closure:
+- First event in `Events` is the primary resource (`Finished` keys off it)
+- `sseAuth` before `runSSEStream` — after SSE headers flush, errors are `fetch-error` events
+- Wrap marshal failures with `errSSESilentRetry` for silent retry
+- Paginated lists: `timelineQuery` + `timelineFetcher` from `timeline.go`
+- `log_streams.go` is intentionally separate — do not fold into `runSSEStream`
 
-```go
-func (h *DeploysHandler) StreamDeploy(c *gin.Context) {
-	installID := c.Param("installId")
-	deployID := c.Param("deployId")
-
-	client, _, ok := sseAuth(c, h.cfg, h.l) // cookie auth + nuon client; writes 401/500 JSON on failure
-	if !ok {
-		return
-	}
-
-	runSSEStream(c, sseStreamConfig{
-		ClientErrMsg:        "failed to fetch deploy",       // payload for fetch-error events
-		FinishedGracePeriod: sseFinishedGracePeriod,         // omit for streams that never self-close
-		Log:                 h.l,
-		Fetch: func(ctx context.Context) (sseFetchResult, error) {
-			deploy, err := client.GetInstallDeploy(ctx, installID, deployID)
-			if err != nil {
-				return sseFetchResult{}, err // loop emits fetch-error + retries
-			}
-			ev, err := marshalEvent("deploy", deploy)
-			if err != nil {
-				return sseFetchResult{}, fmt.Errorf("marshal deploy: %v: %w", err, errSSESilentRetry)
-			}
-			status := ""
-			if deploy.StatusV2 != nil {
-				status = string(deploy.StatusV2.Status)
-			}
-			return sseFetchResult{Events: []sseEvent{ev}, Finished: terminalStatuses[status]}, nil
-		},
-	})
-}
-```
-
-**What `runSSEStream` handles for you**: SSE headers, per-event-name hash dedupe, `fetch-error` events with retry delay, `finished` events + slow-poll + grace-period close for terminal resources, `: keepalive` comments, and context cancellation. It is covered by `sse_test.go`.
-
-**Contract rules**:
-- The **first event in `Events` is the primary resource** — `Finished` detection keys off its hash changing. Secondary resources (e.g. a deploy's `component`/`workflow`) go after it, fetched best-effort (skip silently on error; their previous hash stays intact).
-- `sseAuth` must run **before** `runSSEStream` — once SSE headers are flushed, errors can only be reported as `fetch-error` events, never JSON.
-- Wrap errors that should retry **without** a client-visible `fetch-error` event (e.g. marshal failures) with `errSSESilentRetry`.
-- Paginated list endpoints use `timelineQuery(c)` + `timelineFetcher(eventName, fetch)` from `timeline.go` (handles limit/offset defaults, `timelinePayload` wrapping, and 404 → empty payload). Poll cadence: `sseWatchPollInterval` (2s) for single resources, `sseTimelinePollInterval` (3s) for timelines.
-- `log_streams.go` is intentionally different (long-poll tail, catch-up/complete state machine) — don't try to fold it into `runSSEStream`.
-
-## Client SPA (`client/`)
-
-### Directory Structure
+## Production SPA (`client/`)
 
 ```
 client/
-├── components/         ← Reusable UI components (organized by domain)
-│   ├── common/         ← Core primitives: Button, Card, Badge, Text, Modal, Toast
-│   ├── layout/         ← Page structure: PageLayout, PageContent, PageSection
-│   ├── navigation/     ← SubNav, Breadcrumbs, MainNav
-│   ├── surfaces/       ← Modal/Panel system
-│   └── [domain]/       ← Feature components (actions, workflows, runners, installs, etc.)
-├── hooks/              ← Custom React hooks (47+ hooks for state and utilities)
-├── lib/
-│   ├── api.ts          ← Fetch wrapper (returns T directly, throws TAPIError on failure)
-│   └── ctl-api/        ← Domain-specific API functions (organized by resource)
-│       ├── accounts/
-│       ├── apps/
-│       ├── installs/
-│       ├── runners/
-│       ├── workflows/
-│       └── ...
-├── providers/          ← React context providers
-├── types/
-│   ├── ctl-api.types.ts       ← Extracted API types (T prefix)
-│   ├── dashboard.types.ts     ← Custom types (TAPIError, etc.)
-│   └── nuon-oapi-v3.d.ts      ← Auto-generated OpenAPI types (do not import directly)
-├── views/              ← Page-level view components (mirrors route tree)
-└── main.tsx            ← App entry point
+├── components/     ← Reusable UI (domain + common/, layout/, surfaces/)
+├── hooks/
+├── lib/api.ts      ← Fetch wrapper (returns T, throws TAPIError)
+├── lib/ctl-api/    ← Domain API functions
+├── providers/
+├── types/ctl-api.types.ts   ← Import these (not nuon-oapi-v3.d.ts)
+├── views/          ← Route-level views only
+└── index.tsx
 ```
 
-## Views vs Components (Strict Separation)
+### Views vs components (strict)
 
-- **`views/`** contains **only**: page-level view components (route content), layout components (providers/breadcrumbs/tab nav), and route orchestration.
-- **`views/`** must **never** contain: modals, tables, reusable sub-components, action buttons, or any component meant to be consumed by a view.
-- All feature components belong in `client/components/[domain]/`. If a `components/[domain]/` directory doesn't exist yet, create it.
+- **`views/`** — route content, layout wrappers, orchestration only
+- **`views/` must never contain** modals, tables, reusable sub-components, or action buttons
+- Feature UI belongs in `client/components/[domain]/`
 
-## Layout System
+## Layout system
 
-The layout system handles page structure, scrolling, and back-to-top automatically. Pages assemble from clear building blocks without worrying about scroll containers, overflow, or positioning.
+Use sanctioned scaffolds — see [DESIGN.md](./DESIGN.md) §5.
 
-### Layout Component Hierarchy
+| Archetype | Scaffold |
+|-----------|----------|
+| Org-level list | `ListPage variant="page"` |
+| Child list via `<Outlet />` | `ListPage` default `variant="section"` |
+| Non-list section | `PageSection` + `SectionHeader` |
+| Run page | `DetailPage` + `DetailHeader` + routed `TabNav` |
+| Entity page | `DetailPage` + `HistoryRail` |
 
-```
-MainLayout (flex row: sidebar + content)
-├── MainSidebar (desktop: static flex child, mobile: fixed overlay)
-├── Mobile backdrop
-└── Content wrapper (flex-1, flex-col, overflow-hidden)
-    ├── PageLayout (flex-1, contains topbar + scroll container)
-    │   ├── MainTopbar
-    │   └── Scroll container (overflow-y-auto, auto BackToTop)
-    │       ├── PageHeader (optional)
-    │       ├── PageContent (flex direction: column or row)
-    │       │   ├── SubNav (optional, sticky on desktop)
-    │       │   └── Page content / Outlet
-    │       └── BackToTop (automatic, sticky bottom-right)
-    └── OrgStatusBar (flex-none, pinned at bottom)
-```
+Resource identity header → `DetailHeader`. Section name only → `SectionHeader`. `PageTitle` / `Breadcrumbs` are
+headless setters rendered as siblings **before** the scaffold.
 
-### Building Pages
-
-**Never hand-assemble a shell or a heading row.** `ListPage`/`SectionHeader` (list & section pages) and `DetailPage`/`DetailHeader` (detail, run and document pages) own both — see [DESIGN.md](./DESIGN.md) §5 "Page shells & headers" for the full rule.
-
-**`SectionHeader` or `DetailHeader`?** Does the header identify a resource — an ID, `BackLink`, label badges, a status chip, timestamps, or a metadata block? Then it is an identity header → `DetailHeader`. A heading that just names what you are looking at ("Components", "Install state") → `SectionHeader`.
-
-**Org-level list page** (top-level route like Apps, Installs, Team) — `variant="page"` owns the `PageLayout`:
-```tsx
-export const MyPage = () => (
-  <>
-    <PageTitle title="My page" />
-    <Breadcrumbs breadcrumbs={[...]} />
-    <ListPage
-      variant="page"
-      title="My page"
-      description="What this page is for."
-      createAction={<CreateThingButton variant="primary" />}
-    >
-      <ThingsTable shouldPoll />
-    </ListPage>
-  </>
-)
-```
-
-**Child list page inside App/Install/Settings layout** (rendered via `<Outlet />`) — default `variant="section"`, renders a bare `PageSection`:
-```tsx
-export const MyChildPage = () => (
-  <>
-    <PageTitle segments={['My page', app?.name]} />
-    <Breadcrumbs breadcrumbs={[...]} />
-    <ListPage title="My page" description="What this page is for.">
-      <ThingsTable />
-    </ListPage>
-  </>
-)
-```
-
-**Non-list section page** (document, config page, tab layout) — `SectionHeader` inside a `PageSection`:
-```tsx
-export const MyConfigPage = () => (
-  <PageSection>
-    <PageTitle segments={['Configuration', app?.name]} />
-    <Breadcrumbs breadcrumbs={[...]} />
-    <SectionHeader title="Configuration" description="What this page shows." actions={<EditButton />} />
-    {/* content */}
-  </PageSection>
-)
-```
-
-**Run page** (deploy, build, sandbox run, action run) — `DetailPage` + a `DetailHeader`-based header component + routed `TabNav`. Landing tab is always Summary (`RunSummary`), then Logs · Trace · component-type tabs:
-```tsx
-export const DeployLayout = () => (
-  <>
-    <Breadcrumbs breadcrumbs={[...]} />
-    <DetailPage
-      header={<DeployHeader component={component} workflow={workflow} stepId={step?.id} />}
-      banners={deploy?.composite_error ? <CompositeError error={deploy.composite_error} /> : null}
-      tabNav={{ basePath, tabs }}
-    >
-      <Outlet context={{ component, workflow, step }} />
-    </DetailPage>
-  </>
-)
-```
-
-**Entity page** (a configured thing: component, action, sandbox) — `DetailPage` + `HistoryRail`; the small-screen `HistoryPanelButton` goes in the header's `actions`. It graduates to routed `TabNav` once the page gains a third independent concern:
-```tsx
-export const Sandbox = () => {
-  const history = <SandboxRunsTimeline shouldPoll />
-  return (
-    <>
-      <PageTitle segments={['Sandbox', install?.name]} />
-      <Breadcrumbs breadcrumbs={[...]} />
-      <DetailPage
-        header={
-          <DetailHeader
-            backLink={false}
-            title="Sandbox details"
-            id={install?.sandbox?.id}
-            actions={<><HistoryPanelButton title="Sandbox history" history={history} /><ManagementDropdown /></>}
-          />
-        }
-      >
-        <HistoryRail title="Sandbox history" history={history}>
-          <SandboxConfigCard config={sandboxConfig} />
-        </HistoryRail>
-      </DetailPage>
-    </>
-  )
-}
-```
-
-**Metadata always goes in `DetailHeader`'s `metadata` slot** — it renders a `Card` of `LabeledValue`/`LabeledStatus` below the heading row. No inline top-right metadata block, no count threshold.
-
-`PageTitle` and `Breadcrumbs` are headless setters — render them as siblings before the scaffold, not inside it.
-
-### Layout Components
-
-| Component | Purpose | Key Props |
-|-----------|---------|-----------|
-| `PageLayout` | Top-level page wrapper. Renders topbar, scroll container, and BackToTop automatically. | `variant` (`dashboard-page` / `single-page`), `hideBreadcrumbs` |
-| `PageContent` | Sets flex direction for content area. | `variant` (`column` default, `row` for SubNav layouts) |
-| `PageSection` | Content block with standard padding/gap. | `flush` (removes padding/gap for full-bleed content) |
-| `PageHeader` | Page heading area above content. Rendered for you by `SectionHeader variant="page"`. | Standard div props |
-| `SectionHeader` | The only sanctioned heading row: heading group left, actions right. | `title`, `description`, `status`, `actions`, `variant` (`section` default / `page`) |
-| `ListPage` | List-archetype scaffold: `SectionHeader` + create action + body. Owns the shell per variant. | `title`, `description`, `status`, `actions`, `createAction`, `variant` |
-| `SubNav` | Secondary navigation sidebar. Sticky on desktop, horizontal scroll on mobile. | `basePath`, `links` |
-| `DetailHeader` | A resource's identity header: BackLink + heading row + ID/identity line + metadata `Card`. | `title`, `id`, `identity`, `icon`, `status`, `actions`, `metadata`, `backLink`, `loading`, `variant` |
-| `DetailPage` | Detail/run/document scaffold: header + banners + optional routed `TabNav` + body. | `header`, `banners`, `tabNav`, `variant` |
-| `HistoryRail` / `HistoryPanelButton` | Entity page's history rail (`@5xl` column) and its narrow-width panel trigger. | `title`, `history`, `children` |
-
-### What You Get For Free
-
-- **Scrolling**: PageLayout's inner div is always the scroll container (`overflow-y-auto`)
-- **Back to top**: Auto-rendered inside PageLayout, appears after 400px scroll
-- **SubNav sticky**: Stays pinned on desktop while content scrolls beside it
-- **OrgStatusBar**: Pinned at the bottom, outside the scroll area
-
-### Do NOT
-
-- Add `isScrollable` to any component — it's ignored (kept for backwards compat only)
-- Create `CONTAINER_ID` constants or pass `id` props to scroll containers
-- Import or render `<BackToTop />` in view files — PageLayout handles it
-- Use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead. (This rule is PageSection-specific: `Card` has no padding prop, so overriding it with paired values like `!p-4 !gap-4` is fine — always change padding and gap together so the spacing rhythm stays consistent.)
-- Hand-assemble a heading row (`PageHeader` + `HeadingGroup` + an actions `div`, or a bare heading `Text`) — use `SectionHeader`/`ListPage`
-- Hand-roll a detail page's identity header (`BackLink` + heading `Text` + `<ID>`) — use `DetailHeader`
-- Hand-roll a history rail (`@container` + `grid-cols-12` + a `@5xl:hidden` panel button) — use `HistoryRail` + `HistoryPanelButton`
-- Use unrouted `Tabs` for page structure on a detail page — detail-page tabs are always routed `TabNav`
-- Render `PageLayout` from a view mounted via a parent layout's `Outlet` — that's the `section` variant's job
-- Put metadata (IDs, timestamps, badges, grids) in a second header column — it's content below the heading row
-- Leave a create button in the table's `filterActions` or only in the empty state — it belongs in `ListPage`'s `createAction`
-- Add a page-level search or pagination control — `Table`/`Timeline` own those
-
-### Mobile Sidebar
-
-The main sidebar uses a fixed overlay on mobile (`w-[280px]`, slides in from left) with a backdrop. On desktop it's a normal flex child with a collapsible width transition (Alt+S).
+Do not: import `<BackToTop />` in views; use `!p-0` hacks (use `flush`); hand-assemble headers; use unrouted `Tabs`
+for detail structure; nest `PageLayout` under a parent layout `Outlet`; put create actions only in table filters.
 
 ## Routing
 
-Routing uses **React Router v7** with nested routes. Route files live in `client/views/` mirroring the URL hierarchy.
-
-Example route structure:
-```
-/:orgId/installs/:installId/
-├── actions/:actionId/
-│   └── runs/:actionRunId/    ← ActionRunLayout wraps with provider + breadcrumbs + TabNav
-│       ├── (summary tab)
-│       └── (logs tab)
-```
-
-### Redirects
-
-Use a `loader` with `redirect` from `react-router` — never `<Navigate>`:
-
-```tsx
-import { redirect, type RouteObject } from 'react-router'
-
-// ✅ Correct
-{ path: ':orgId/connections', loader: ({ params }) => redirect(`/${params.orgId}`) }
-
-// ❌ Wrong
-{ path: ':orgId/connections', element: <Navigate to=".." replace /> }
-```
-
-See `client/views/install/routes.tsx` for more examples.
-
-## Page Titles (`document.title`, UXDR 018)
+React Router v7. Redirects: `loader` + `redirect` — never `<Navigate>`. See `client/views/install/routes.tsx`.
 
-**Every routed view sets its own title. Layouts NEVER set it — the leaf view that renders the page owns `document.title`.** `PageTitleProvider` (mounted once at the app root) appends `| Nuon`, so a view supplies at most two segments, **most specific first**: `{specific} | {owning entity}`.
-
-- **`{specific}`** — sentence-case section name (`'Components'`, `'API tokens'`); the entity's own name for detail pages (`resource?.name`); for a **tab page**, fold the parent context in (`'Deploy logs'`, `` `${runbook?.name} steps` ``).
-- **`{owning entity}`** — the install or app name from `useInstall()` / `useApp()`. **Org-level pages have NO owner segment** — the org name is never a title segment (`<PageTitle title="Webhooks" />`).
-- Unset segments are dropped automatically — pass `install?.name`, never a guarded string or `${x?.name}` interpolation (which prints `"undefined"`).
-
-Render `<PageTitle>` as the **first element** the view returns:
-
-```tsx
-// Section / detail view
-<PageTitle title="Components" />
-<PageTitle segments={['Components', install?.name]} />
-
-// Views with early returns (loading/empty/error — common in tab panels):
-// wrap the body in a fragment so the title renders on every branch.
-export const DeployPlanTab = () => {
-  const { install } = useInstall()
-  return (
-    <>
-      <PageTitle segments={['Deploy plan', install?.name]} />
-      {isLoading ? <Skeleton /> : <Plan … />}
-    </>
-  )
-}
-```
-
-`PageTitle` lives in `client/components/navigation/PageTitle.tsx`. A `<PageTitle>` buried in only the happy-path return of an early-returning view is a bug — the title goes stale on the other branches; wrap in a fragment so it always renders. The `dashboard-ui:view` skill covers this for new views.
-
-## API Integration (`client/lib/api.ts`)
-
-### Return Type Behavior
-
-`api<T>()` returns `T` directly — **not `{ data: T }`**. It throws `TAPIError` on failure.
-
-```typescript
-// ✅ Correct
-const runner = await getRunner({ runnerId, orgId })
-runner.id  // direct access
-
-// ❌ Wrong — there is no .data wrapper in the client SPA
-const { data: runner } = await getRunner({ runnerId, orgId })
-```
-
-### API Function Pattern
-
-Functions in `client/lib/ctl-api/` follow this pattern:
-
-```typescript
-// GET function
-export const getRunner = ({
-  runnerId,
-  orgId,
-}: {
-  runnerId: string
-  orgId: string
-}) =>
-  api<TRunner>({
-    path: `runners/${runnerId}`,
-    orgId,
-  })
-
-// POST function with body
-export async function createInstallConfig({
-  body,
-  installId,
-  orgId,
-}: {
-  body: TCreateInstallConfigBody
-  installId: string
-  orgId: string
-}) {
-  return api<TInstallConfig>({
-    body,
-    method: 'POST',
-    orgId,
-    path: `installs/${installId}/configs`,
-  })
-}
-```
-
-Each domain directory has an `index.ts` barrel export. Import from `@/lib`:
-
-```typescript
-import { getRunner, createInstallConfig } from '@/lib'
-```
-
-### Error Handling
-
-`api()` throws `TAPIError` on non-2xx responses. Catch in `useMutation` `onError` or use TanStack Query's error state.
-
-## Defensive Data Access (CRITICAL)
-
-**Treat all API response data as potentially undefined — regardless of what the OpenAPI spec or TypeScript types say.** The API can return partial objects, null fields, or missing nested properties at any time. A single unguarded property access on undefined data will crash the entire page with an error boundary.
-
-### Rules
-
-1. **Always use optional chaining (`?.`) when accessing nested API data.** Never assume an object or its children exist just because the type says they will.
-
-   ```tsx
-   // ✅ Correct — defensive
-   step?.status?.status
-   actionRun?.config?.steps
-   deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name
-
-   // ❌ Wrong — will crash if any intermediate value is undefined
-   step.status.status
-   actionRun.config.steps
-   deploy.runner_jobs[0].install_role_usage.role_name
-   ```
-
-2. **Guard before rendering child components that depend on fetched data.** If a parent fetches data and passes it to children, add a null/undefined check before rendering the children — don't rely on the children to handle it.
-
-   ```tsx
-   // ✅ Correct — guard before rendering
-   if (error || !actionRun) {
-     return <ErrorState />
-   }
-   return <ActionRunDetails actionRun={actionRun} />
-
-   // ❌ Wrong — children will crash if actionRun is undefined
-   if (error) return <ErrorState />
-   return <ActionRunDetails actionRun={actionRun} />
-   ```
-
-3. **Use nullish coalescing (`?? defaultValue`) for values used in comparisons or arithmetic.**
-
-   ```tsx
-   // ✅ Correct
-   (step?.execution_duration ?? 0) > 1000000
-
-   // ❌ Wrong — undefined > 1000000 is always false but hides bugs
-   step?.execution_duration > 1000000
-   ```
-
-4. **In `useQuery` `queryFn` callbacks, use non-null assertions (`!`) only when the `enabled` guard guarantees the values exist.** This is the one place non-null assertions are acceptable — the `enabled` flag prevents the queryFn from running when values are missing.
-
-   ```tsx
-   // ✅ Correct — enabled guarantees org and step exist when queryFn runs
-   useQuery({
-     queryKey: ['deploy', org?.id, step?.step_target_id],
-     queryFn: () => getDeploy({ orgId: org!.id, deployId: step!.step_target_id }),
-     enabled: !!org?.id && !!step?.step_target_id,
-   })
-   ```
-
-5. **Provider hook values (`useOrg()`, `useInstall()`, etc.) can also be undefined** during initial render or when the provider is still loading. Always use `org?.id`, never `org.id`, when passing values to child components or building URLs.
-
-## State Management
-
-### Provider Hierarchy
-
-```
-ConfigProvider
-└── QueryClientProvider
-    └── AuthProvider
-        └── APIHealthProvider
-            └── (layout providers per page)
-                ├── InstallProvider
-                ├── ToastProvider
-                └── SurfacesProvider
-```
-
-### TanStack Query Patterns
-
-**Data fetching (`useQuery`)**:
-```typescript
-const { data: runner, isLoading, error } = useQuery({
-  queryKey: ['runner', runnerId],
-  queryFn: () => getRunner({ runnerId, orgId }),
-  enabled: !!runnerId,
-  refetchInterval: shouldPoll ? 5000 : false,
-})
-```
-
-**Mutations (`useMutation`)**:
-```typescript
-const queryClient = useQueryClient()
-const { mutate: cancel, isPending } = useMutation({
-  mutationFn: ({ workflowId }: { workflowId: string }) =>
-    cancelWorkflow({ workflowId, orgId }),
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['workflows'] })
-    removeModal(modalId)
-  },
-  onError: (err: TAPIError) => {
-    showErrorToast(err.error)
-  },
-})
-```
+## Page titles
 
-**Always invalidate related queries on mutation success.** When a mutation creates, updates, or deletes a resource, call `queryClient.invalidateQueries()` in `onSuccess` to refresh any lists or detail views that display that resource. Find the relevant `queryKey` by checking the `useQuery` call in the affected component's container.
+Every routed view sets its own title; layouts never set `document.title`. `PageTitleProvider` appends `| Nuon`. At most
+two segments, most specific first. Org-level pages have no owner segment. Pass `install?.name` directly (never
+`${x?.name}`). Put `<PageTitle>` first on every early-return branch (use a fragment).
 
-### Custom Hooks
+## API integration
 
-Access providers through custom hooks — never use `useContext` directly:
+`api<T>()` returns **`T` directly** — not `{ data: T }`. Import from `@/lib`. On 401, `api.ts` redirects to login.
 
-```typescript
-const { org } = useOrg()
-const { account } = useAccount()
-const { install } = useInstall()
-const config = useConfig()
-const { addModal, removeModal } = useSurfaces()
-```
+### Defensive data access
 
-## SSE / Real-Time Updates (client-side pattern)
+Treat API data as potentially undefined: optional chaining, guard before render, nullish coalescing, `enabled` for
+non-null assertions in `queryFn`, provider hooks may be undefined (`org?.id`).
 
-Live resource updates come from the BFF's `/api/orgs/:orgId/.../sse` endpoints (see the server-side pattern above). The client design: **SSE events are written straight into the TanStack Query cache** via `queryClient.setQueryData`, so components just `useQuery` and never know about SSE. While SSE is connected, browser polling is off; when it drops, `refetchInterval` polling takes over automatically.
+## State and TanStack Query
 
-**Use the shared hooks — never wire up `EventSource` or `useResourceSSE` + `useQuery` by hand in a provider/container.**
+Providers via hooks (`useOrg()`, `useInstall()`, …) — never raw `useContext`. Always invalidate related queries on
+mutation success. Lists: `placeholderData: keepPreviousData` when revisiting.
 
-**`useSSEResourceQuery`** (`client/lib/sse/use-sse-resource-query.ts`) — for single-resource providers (build, deploy, workflow, sandbox run, etc.). Bundles the EventSource, the cache-writing listener, and sse-gated fallback polling (4s active / 30s finished). The hooks live under `client/lib/sse/` so Lite shares them, so they raise no toast themselves — pass `onError` (the dashboard passes `useRefreshErrorToast()`, which is the "Refresh failed" toast):
+## SSE / real-time (client)
 
-```typescript
-const { data: deploy, isLoading, error } = useSSEResourceQuery<TDeploy>({
-  sseUrl: org?.id ? `/api/orgs/${org.id}/installs/${installId}/deploys/${deployId}/sse` : undefined,
-  queryKey: ['deploy', org?.id, installId, deployId],
-  queryFn: () => getDeploy({ orgId: org!.id, installId, deployId }),
-  enabled: !!org?.id && !!installId && !!deployId,
-  shouldPoll,
-  eventName: 'deploy',                  // primary SSE event name from the BFF handler
-  onPrimaryEvent: invalidateTabQueries, // optional: side effects on primary updates
-  extraListeners,                       // optional: secondary events (component/workflow)
-  isFinished: isTerminalStatusV2,       // gates the 30s finished poll interval
-})
-```
+SSE writes into the TanStack Query cache via `setQueryData`. Shared hooks live under `client/lib/sse/`
+(`useSSEResourceQuery`, `useSSETimelineQuery`) plus `createSSEQueryListener` — never hand-wire `EventSource` in a
+provider. Use `isTerminalStatusV2` for terminals. Hooks do not toast themselves; pass `onError` (dashboard uses
+`useRefreshErrorToast()`). New SSE views need **both** a Go `runSSEStream` handler and a client hook with matching
+event names.
 
-**`useSSETimelineQuery`** (`client/lib/sse/use-sse-timeline-query.ts`) — for paginated list containers (build/deploy/workflow timelines). Same idea with the simpler binary poll gate and `refetchOnMount: 'always'`; pass the container's `pollInterval` and optionally `transform`/`extraListeners`.
+## Auth and config
 
-**`createSSEQueryListener`** (`client/lib/sse-listeners.ts`) — builds the parse → `setQueryData` listener for secondary events. The query key can be a function of the payload:
+- Cookie `X-Nuon-Auth`; BFF validates and proxies
+- `useConfig()` reads `window.__NUON_CONFIG__` — never hardcode API URLs
+- Feature flags on the org via `useOrg()`: `org?.features?.['flag-name']`
+- New flags: `services/ctl-api/internal/app/org.go` — append to bottom of `GetFeatures()`
 
-```typescript
-const extraListeners = useMemo(() => ({
-  workflow: createSSEQueryListener<TWorkflow>(queryClient, (data) => ['workflow', org?.id, data?.id]),
-}), [queryClient, org?.id])
-```
+## TypeScript
 
-**Rules**:
-- `isTerminalStatusV2` (exported from `use-sse-resource-query.ts`) is the shared terminal-status predicate — don't re-list status strings.
-- Memoize `extraListeners` at the call site. Every value a listener closes over must co-vary with `sseUrl`/`queryKey`.
-- The base hook `useResourceSSE` handles reconnection with exponential backoff and **stops reconnecting after the server's `finished` event** (the server closes terminal-resource streams after a grace period; fallback polling takes over). Don't "fix" the lack of reconnect on finished streams.
-- Adding a new SSE-backed view means both sides: a Go handler on `runSSEStream` and a client call site on one of these hooks, with matching event names.
-- `log-stream-provider.tsx` is intentionally bespoke (accumulating log state, dedupe, catch-up/complete) — not a candidate for these hooks.
+- `T` prefix for data/API types; `I` for component props
+- Import types from `ctl-api.types.ts` only
 
-## Authentication
+## Comments
 
-The external auth service sets a `X-Nuon-Auth` httponly cookie scoped to the app domain. The Go BFF validates the cookie on page loads and extracts the token server-side when reverse-proxying `/v1/*` API requests — the browser never sends the cookie to ctl-api directly. On the client, `AuthProvider` calls `getMe()` at startup to load the current account. On 401 API responses, `api.ts` automatically redirects to the login page.
-
-## Org Feature Flags
-
-Feature flags are **already on the org object** — accessed via `useOrg()`. Do NOT create a separate API function or hook to fetch them.
-
-```typescript
-const { org } = useOrg()
-
-if (org?.features?.['deploy-outputs']) {
-  // feature is enabled
-}
-```
-
-Feature flags are defined in `services/ctl-api/internal/app/org.go` (constants, `GetFeatures()` registry, and `GetFeatureDescriptions()`). To add a new flag, add it to all three places in that file. **Always append new flags to the bottom of the `GetFeatures()` slice** — the list is in chronological order and the admin UI displays them newest-first.
-
-## Runtime Config (`useConfig()`)
-
-The Go server injects environment variables into the HTML as `window.__NUON_CONFIG__` before serving the SPA. Access config values via `useConfig()`:
-
-```typescript
-const config = useConfig()
-const apiUrl = config.apiUrl
-const datadogEnabled = config.datadogEnabled
-```
-
-Never hardcode API URLs or feature flags — always read from config.
-
-## TypeScript Conventions
-
-### Naming
-
-- **`T` prefix** — data types and API response types: `TApp`, `TInstall`, `TRunner`
-- **`I` prefix** — component props and configuration interfaces: `IModal`, `IButton`
-
-### Type Imports
-
-**Always import from `ctl-api.types.ts`** — never directly from the generated `nuon-oapi-v3.d.ts`:
-
-```typescript
-// ✅ Correct
-import type { TApp, TInstall, TRunner } from '@/types/ctl-api.types'
-
-// ❌ Wrong — never import directly from generated file
-import type { components } from '@/types/nuon-oapi-v3'
-type TApp = components['schemas']['app.App']
-```
-
-To add new types, extract them in `ctl-api.types.ts`:
-```typescript
-// In /client/types/ctl-api.types.ts
-export type TNewResource = components['schemas']['app.NewResource']
-```
-
-## Comments (CRITICAL)
-
-Do not add comments unless the logic is genuinely non-obvious. Never write comments that just describe what the code does. Let clear naming and structure document the code.
-
-```typescript
-// ❌ Wrong — comments that restate the code
-// Fetch the installs for the org
-const installs = await getInstalls(orgId)
-
-// Close the modal
-setIsOpen(false)
-
-// Loop through items and render a row for each
-{items.map((item) => (
-  <Row key={item.id} item={item} />
-))}
-
-// ✅ Correct — no comments needed, the code says it all
-const installs = await getInstalls(orgId)
-setIsOpen(false)
-{items.map((item) => (
-  <Row key={item.id} item={item} />
-))}
-```
-
-The only acceptable comments explain **why**, not **what** — a non-obvious constraint, workaround, or gotcha that the code itself cannot express. If a comment would just narrate what the next line does, delete it.
+Comment only when the *why* is non-obvious. Do not narrate what the code does.
 
 ## Forms (TanStack Form + Zod)
 
-Forms use **TanStack Form + Zod** behind the field-aware `Form*` wrappers in `client/components/common/form/` (`FormInput`, `FormSelect`, `FormTextarea`, `FormCheckbox`, `FormToggle`, `FormRadioGroup`, `FormCodeInput`, plus composite wrappers like `FormMatchPicker`). The form owns field state + validation; the container owns the async mutation. See the **`dashboard-ui:form` skill** for the full recipe and `client/components/api-tokens/CreateApiToken/` as the canonical example.
+Use `Form*` wrappers in `client/components/common/form/`. Canonical: `client/components/api-tokens/CreateApiToken/`.
 
-### When is it a form? (falsifiable rule)
+Always TanStack Form + Zod unless E1 (zero controls) or E2 (type-to-confirm not sent in body). Allowlist:
+`DeploymentPlanEditor` only — ask before adding another exception.
 
-**Always use TanStack Form + Zod for any surface that collects user input.** You may skip it ONLY if one of these mechanical tests passes:
+- Flat fields only (no nested objects — breaks `canSubmit` in Form v1)
+- No native `required` — Zod only
+- Errors → `FormErrorBanner`; success → close modal + toast
+- Every form gets `.stories.tsx`
 
-- **E1 — no inputs:** the surface has zero form controls (buttons + static text only). → plain confirm modal.
-- **E2 — confirmation gate:** the surface's only input is compared to a known literal and is **not** sent in the API request body (type-to-confirm delete, e.g. `disabled={confirm !== install.name}`). → plain confirm modal.
+## Component patterns
 
-There is **no "it's an editor" exception** an agent can invoke. Bespoke direct-manipulation editors exist only by explicit UXDR sign-off. Current allowlist: `DeploymentPlanEditor`. If you think you need another, **stop and ask** — do not hand-roll a form and call it an editor. Any non-TanStack form-like surface must cite E1, E2, or the allowlist.
+Container/presentational split under `client/components/[domain]/MyComponent/`; barrel exports the Container as the
+public name. Never shadow a directory with a flat sibling file.
 
-### Key rules
+Before building UI: check `common/` and domain dirs; read `.stories.tsx` first.
 
-- **Wrap the fields in a real `<form>` element** — `<form autoComplete="off" noValidate onSubmit={(e) => e.preventDefault()}>`. It IS a form, so use the element: this turns off browser autocomplete across every field. Submission is still driven by the modal's `primaryActionTrigger` calling `form.handleSubmit()` (the trigger is a footer prop outside the form), NOT native submit — hence `preventDefault`. Never drop the form element just because submit is button-driven.
-- **Flat fields, never nested objects** — `canSubmit` validation breaks on nested-object fields in TanStack Form v1 (`channelId`/`channelName`, not `channel: {id,name}`).
-- **Do not pass native `required`** to fields — Zod is the sole validation source.
-- **Errors → in-form `FormErrorBanner`, never a toast.** Success → close modal + toast.
-- **Edit reuses create** via a `mode: 'create' | 'edit'` prop **when create and edit hit the same endpoint** (webhooks, channel subs) — never a forked `EditXModal`. When they hit **different endpoints** (branches, OIDC policies, install editors), keep them as **separate in-place forms**. Edit-only forms also gate submit on a "no change" check (`name === currentName`) alongside `canSubmit`.
-- **No array-level Zod rules** — TanStack v1 won't clear a form-level schema error mapped to an array field, so the button stays disabled forever; gate "at least one valid row" on a live computed value on the submit button instead. Per-row field rules (`z.string().min(1)` on `items[i].key`) are fine.
-- Every form/wrapper gets a `.stories.tsx` and a Ladle behavior test (`e2e/specs-ladle/`).
+- Loading: primitive `loading` props / `<Table isLoading>` / `<Loading>` — no hand-built skeletons
+- Icons: only `Icon` from `@/components/common/Icon`
+- Links: `Link` from `@/components/common/Link` (`href`, not `to`)
+- Disabled button reasons: `tooltipProps` on `Button`
+- Admin tools: `AdminDashboardLink` / `TemporalLink` from `client/components/admin/`
+- Modals/panels: `Modal` / `Panel` from `surfaces/` — never `*Base`
+- Ladle v5: plain function exports; stories use presentational component + mocks
+- Tab object keys: all-lowercase
 
-## Component Patterns
+## Design, copy, toasts, dates
 
-### Always Check Existing Components First
+- [DESIGN.md](./DESIGN.md), [COPY_STYLE.md](./COPY_STYLE.md)
+- Toasts: heading + description; status transitions via `useStatusToast`
+- Dates: Luxon via `<Time>` / `<Duration>` only
 
-Before building a new component, **check `client/components/common/` and other domain directories** for an existing component that meets your needs.
-
-**Stories files (`.stories.tsx`) are the primary reference for how to use a component.** They contain live examples of correct prop usage, edge cases, and patterns. Always read a component's stories file before using or modifying it — this is faster and more reliable than inferring usage from the TypeScript interface alone.
+## Scripts
 
 ```bash
-# Find stories for a component
-glob pattern: client/components/**/*.stories.tsx
+bun run dev
+bun run lint
+bunx tsc --noEmit --project client/tsconfig.json
+bun run dev:ladle
+bun run test
+bun run test:e2e         # Playwright smokes (needs stack + E2E_EMAIL)
+bun run test:e2e:ui
+bun run test:e2e:headed
 ```
 
-### Loading states
+Do not run production builds (`build`, `build:js`, `build:css`) unless explicitly asked.
 
-**Never hand-build a `*Skeleton` component.** Skeletons are derived from the real components, not a
-second hand-measured copy of the layout. Use the primitive `loading` prop (`Text`, `LabeledValue`,
-`LabeledStatus`, `ID`, `Time`, `Duration`, `Badge`, `Status`, `Code` all take `loading` +
-`loadingWidth` in `ch`), `<Table isLoading>` / the `Timeline` loading state for collections, and
-`<Loading variant="large" />` only for genuinely unknown-shape content (plan diffs, dynamic-field
-forms, unknown outputs). Chrome and labels always render real. List/detail `useQuery` sites use
-`placeholderData: keepPreviousData` so revisits skip the cold load. Direct use of `common/Skeleton`
-in a feature component is a review smell. See [DESIGN.md](./DESIGN.md) §5 "Loading states".
+## Playwright (E2E and agent verification)
 
-### Icons
-
-**Use the `Icon` component (`client/components/common/Icon.tsx`) for ALL icons.** Never import from `lucide-react`, `heroicons`, or any other icon package. The project uses `@phosphor-icons/react` via the `Icon` wrapper — all icon usage must go through it.
-
-```tsx
-// ✅ Correct
-import { Icon } from '@/components/common/Icon'
-<Icon variant="MagnifyingGlassIcon" size={16} />
-
-// ❌ Wrong — do not import icons from other packages
-import { Search } from 'lucide-react'
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
-```
-
-**Always use the `Icon` suffix** for variant names (e.g., `HouseIcon` not `House`). This matches the current Phosphor Icons naming convention.
-
-**NEVER use the Phosphor GitHub icon (`GithubLogoIcon`) — it is ugly.** For anything GitHub/VCS-related, ALWAYS use the custom `GitHub` icon variant (`<Icon variant="GitHub" />`), which is the one used everywhere else in the app.
-
-Browse Phosphor icons at https://phosphoricons.com. Custom icons for cloud providers and tools are also available — see the `customIcons` map in `Icon.tsx`.
-
-**Adding a new icon:** The `Icon` component uses a static map of explicitly imported Phosphor icons for tree-shaking (only used icons are bundled). If you need an icon that isn't already in the map, update `client/components/common/Icon.tsx`:
-
-1. Add the named import: `import { NewIconNameIcon } from '@phosphor-icons/react'`
-2. Add it to the `phosphorIcons` object: `NewIconNameIcon,`
-
-A dev-mode console warning will tell you when a variant is missing from the map.
-
-### Links & Navigation
-
-**Never import `Link` from `react-router` directly.** Use `Link` from `@/components/common/Link`
-(uses `href`, not `to`).
-
-Every content link is one of three classes — see **[DESIGN.md](./DESIGN.md) §5 "Links"** and
-**[COPY_STYLE.md](./COPY_STYLE.md#links)** for the full taxonomy:
-
-- **Entity link** — the resource's name is the link text; the name navigates. No verb, no icon.
-- **View link** — a standalone `View {resource}` link. The default `Link` self-sizes at
-  subtext — no wrapper needed; use `textVariant` to size explicitly.
-- **External link** — set `isExternal`; the new-tab icon renders automatically (never hand-place
-  `ArrowSquareOutIcon`).
-
-**Sizing is component-owned:** the default `Link` renders at subtext on its own (`textVariant`
-to override); `variant="inline"` inherits the surrounding text — use it for links inside
-sentences, table cells, and other sized contexts. Never size a `Link` with a text-size class or
-a `Text` wrapper. Links never carry a trailing `CaretRightIcon`/`ArrowRightIcon` or a manual
-external icon. **Row navigation is the entity link — not** an icon-only
-`<Button href><Icon/></Button>` (deprecated; icon-only buttons are for non-nav chrome only).
-
-```tsx
-// ✅ Entity link in a sized context (table cell, sentence) — inherits via inline
-import { Link } from '@/components/common/Link'
-<Link href={`/${org.id}/connections/vcs/${id}`} variant="inline">{connection.name}</Link>
-
-// ✅ View link — standalone, self-sizes at subtext (no wrapper)
-<Link href={`/${org.id}/connections/vcs/${id}`}>View connection</Link>
-
-// ✅ External — isExternal renders the new-tab icon
-<Link href="https://docs.nuon.co" isExternal>View docs</Link>
-
-// ❌ Wrong — react-router import, sizing wrapper/class, icon-only nav button
-import { Link } from 'react-router'
-<Text variant="subtext"><Link href="...">View connection</Link></Text>
-<Link href="..." className="text-xs">View connection</Link>
-<Button href={`/${org.id}/...`} variant="ghost"><Icon variant="ArrowRightIcon" /></Button>
-```
-
-Markdown is the exception: the `Markdown` renderers emit plain styled `<a>` tags
-(`markdownAnchorClassName`), never the React `Link` — don't swap components into markdown.
-
-### Button tooltips (disabled reasons & nudges)
-
-**The `Button` owns its tooltip via the `tooltipProps` prop** (`tooltipProps?: Omit<ITooltip, 'children'>`). When present, Button renders itself wrapped in `Tooltip`. **Never hand-wrap `<Tooltip>` around a `Button`, and never put `title=` on a button** — both are review smells.
-
-Button solves the disabled-hover problem internally: when `disabled` + `tooltipProps`, it renders `aria-disabled` (not native `disabled`, which swallows pointer events) so the reason shows on hover **and** keyboard focus.
-
-```tsx
-// ✅ Disabled reason — shows on hover/focus even though disabled
-<Button disabled tooltipProps={{ tipContent: 'Sync the app config first' }}>
-  Trigger run
-</Button>
-
-// ❌ Wrong — native disabled swallows hover, tooltip never shows
-<Tooltip tipContent="Sync the app config first">
-  <Button disabled>Trigger run</Button>
-</Tooltip>
-```
-
-**Every disabled button whose reason isn't obvious from context gets a `tooltipProps` reason.** Reason copy follows [COPY_STYLE.md](./COPY_STYLE.md): sentence case, explains the unmet condition, fragment (no trailing period). A plain-string `tipContent` auto-wraps in `Text` `subtext` — pass a string, don't wrap it yourself.
-
-"Obvious from context" (→ **no** tooltip needed): the label already changes for an async op ("Saving…"), form fields show their own validation errors, a type-to-confirm input sits right above, or it's a pagination/positional convention.
-
-**Nudge** — a controlled tooltip opened by app state (not hover). Use `useNudge(trigger, durationMs?)` (`client/hooks/use-nudge.ts`) → `{ isOpen, close }`, wired to `tooltipProps`. Never re-implement the open/auto-close timer:
-
-```tsx
-const { isOpen, close } = useNudge(showNudge)
-<Button onClick={() => { close(); onRun() }} tooltipProps={{ isOpen, disableHover: true, position: 'bottom', tipContent: 'Trigger a run to deploy this branch' }}>
-  Trigger run
-</Button>
-```
-
-Tooltips on **non-Button** elements (text, icons, badges, toggles) keep the hand-wrapped `<Tooltip>` — `tooltipProps` is Button-only.
-
-### Admin Tool Links
-
-**Never create ad-hoc links to admin tooling (admin dashboard, Temporal UI).** Always use the dedicated components in `client/components/admin/`. These components handle auth checks and demo mode internally — they render nothing for non-admin users, so consumers don't need any conditional logic.
-
-**`AdminDashboardLink`** — links to the admin dashboard. Just pass `path` and `label`:
-```tsx
-import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
-
-<AdminDashboardLink path={`/queues?owner_id=${installId}`} label="View queues" />
-<AdminDashboardLink path={`/workflows/${workflowId}`} label="View in admin panel" />
-```
-
-**`TemporalLink`** — links to the Temporal UI. Pass `namespace` + `eventLoopId`, or an explicit `href`:
-```tsx
-import { TemporalLink } from '@/components/admin/TemporalLink'
-
-<TemporalLink namespace="installs" eventLoopId={installId} />
-<TemporalLink namespace="" href={step.links.event_loop_ui} />
-```
-
-Both render as small `text-xs` links with an external icon. Do not use `<Button>`, `<Link>`, or inline markup to link to admin tools — always use these components.
-
-### `Tabs` Component — Key Casing
-
-The `Tabs` component renders tab labels by running each object key through `toSentenceCase(camelToWords(key))`. `toSentenceCase` capitalizes the first character and **lowercases everything else**. Always write tab keys in all-lowercase so the rendered label is correct:
-
-```tsx
-// ✅ Correct — keys are all-lowercase, rendered as "Create your own app" / "Demo using a sample app"
-<Tabs tabs={{ 'create your own app': <CustomTab />, 'demo using a sample app': <DemoTab /> }} />
-
-// ❌ Wrong — title case keys render incorrectly: "Create your own app" loses capitals mid-string
-<Tabs tabs={{ 'Create Your Own App': <CustomTab /> }} />
-```
-
-### Container / Component Pattern
-
-Feature components use a **container/component split** to separate data-fetching from presentation. Every feature component directory follows this structure:
-
-```
-client/components/[domain]/MyComponent/
-├── MyComponent.tsx              ← Pure presentational component (props in, JSX out)
-├── MyComponentContainer.tsx     ← Data-fetching wrapper (hooks, queries, mutations)
-├── MyComponent.stories.tsx      ← Ladle stories (required)
-├── index.ts                     ← Barrel export
-```
-
-**`MyComponent.tsx`** — The presentational component. Receives all data as props. No `useQuery`, `useMutation`, or context hooks that require providers. This is the component that stories render directly.
-
-**`MyComponentContainer.tsx`** — The container. Calls hooks (`useOrg()`, `useQuery()`, etc.) and passes resolved data to the presentational component. Views and other containers import this via the barrel.
-
-**`index.ts`** — Barrel export. Exports the container as the default/primary export, and the presentational component as a named export:
-```typescript
-export { MyComponentContainer as MyComponent } from './MyComponentContainer'
-export { MyComponent as MyComponentComponent } from './MyComponent'
-```
-
-**When to use this pattern**: Any component that calls context hooks (`useOrg`, `useInstall`, `useDeploy`, etc.) or TanStack Query hooks. Simple presentational components (Button, Badge, etc.) stay as flat files.
-
-**Important**: Never have both a flat file `MyComponent.tsx` and a directory `MyComponent/` at the same level — the flat file shadows the directory's `index.ts` and causes import resolution bugs.
-
-### File Organization
-
-**Flat files (for simple presentational components)**:
-```
-client/components/common/
-├── Button.tsx
-├── Badge.tsx
-└── Text.tsx
-```
-
-**Directory structure (for feature components with container/component split)**:
-```
-client/components/[domain]/MyComponent/
-├── MyComponent.tsx
-├── MyComponentContainer.tsx
-├── MyComponent.stories.tsx
-└── index.ts
-```
-
-### Ladle Stories (Required)
-
-Every component directory must include a `.stories.tsx` file. Stories are written for **Ladle v5** — not Storybook.
-
-**Story format** — plain function exports only. Ladle does NOT support `StoryObj` with `render:`:
-```tsx
-// ✅ Correct — Ladle v5 format
-export default {
-  title: 'Domain/MyComponent',
-}
-
-import { MyComponent } from './MyComponent'
-
-export const Default = () => <MyComponent items={mockItems} />
-export const Empty = () => <MyComponent items={[]} />
-```
-
-```tsx
-// ❌ Wrong — Storybook syntax, breaks Ladle ("got: object" error)
-import type { Meta, StoryObj } from '@ladle/react'
-export const Default: StoryObj = { render: () => <MyComponent /> }
-```
-
-**Stories render the presentational component**, not the container. Pass all data as props — no provider dependencies needed.
-
-**When a component needs a context provider** (because it renders a child that calls a hook), mock the context in the story:
-```tsx
-import { SomeContext } from '@/providers/some-provider'
-
-const mockValue = { /* mock context shape */ }
-
-export const Default = () => (
-  <SomeContext.Provider value={mockValue}>
-    <MyComponent />
-  </SomeContext.Provider>
-)
-```
-
-**Modal stories** — use the `ModalStory` helper from `@/components/__stories__/helpers`:
-```tsx
-import { ModalStory } from '@/components/__stories__/helpers'
-import { MyModal } from './MyModal'
-
-export const Default = () => (
-  <ModalStory>
-    <MyModal someData={mockData} />
-  </ModalStory>
-)
-```
-
-**Timeline stories** — mock items must have unique `created_at` timestamps on different calendar days. The `Timeline` component groups by date, so duplicate dates cause React key warnings.
-
-**Ladle provides a `MemoryRouter`** globally — never wrap stories in another `MemoryRouter` or you'll get "cannot render a `<Router>` inside another `<Router>`".
-
-### Modal and Panel Components
-
-Always use `Modal` and `Panel` from `client/components/surfaces/` — never use `ModalBase` or `PanelBase` directly.
-
-The standard pattern is **two components**: a Modal/Panel component and a Button component:
-
-```typescript
-import { Modal, type IModal } from '@/components/surfaces/Modal'
-import { Button, type IButtonAsButton } from '@/components/common/Button'
-import { useSurfaces } from '@/hooks/use-surfaces'
-
-interface IDeleteModal extends IModal {
-  item: TItem
-}
-
-export const DeleteModal = ({ item, ...props }: IDeleteModal) => {
-  const { removeModal } = useSurfaces()
-  const { mutate: doDelete, isPending } = useMutation({
-    mutationFn: () => deleteItem({ itemId: item.id }),
-    onSuccess: () => removeModal(props.modalId),
-  })
-
-  return (
-    <Modal
-      heading="Delete Item"
-      primaryActionTrigger={{
-        children: isPending ? 'Deleting...' : 'Delete',
-        disabled: isPending,
-        onClick: () => doDelete(),
-        variant: 'danger',
-      }}
-      {...props}
-    >
-      <Text>Are you sure you want to delete {item.name}?</Text>
-    </Modal>
-  )
-}
-
-export const DeleteButton = ({ item, ...props }: { item: TItem } & IButtonAsButton) => {
-  const { addModal } = useSurfaces()
-  const modal = <DeleteModal item={item} />
-
-  return (
-    <Button onClick={() => addModal(modal)} {...props}>
-      Delete
-    </Button>
-  )
-}
-```
-
-**Rules**:
-- Always `{...props}` spread onto `Modal`/`Panel` — never destructure `modalId`, `isVisible`, `onClose` manually
-- Create the modal instance before passing to `addModal`: `const modal = <MyModal />` then `addModal(modal)`
-- Close modals on success via `removeModal(props.modalId)`
-
-## Design & Visual Conventions
-
-**See [DESIGN.md](./DESIGN.md) for the design system guide** — Stratus tokens (colors, type, motion), spacing rhythm, anti-slop rules, interaction patterns, accessibility baseline, and the Figma link. Read it before doing visual work. That doc owns visual/design guidance; this file owns code conventions; [COPY_STYLE.md](./COPY_STYLE.md) owns user-facing copy.
-
-## Text & Copy Style
-
-**See [COPY_STYLE.md](./COPY_STYLE.md) for the full copy style guide** — voice, tone, patterns for every UI context (buttons, modals, empty states, errors, toasts, forms), and a word list. Read it before writing any user-facing text.
-
-**Key rules (quick reference):**
-
-- **Sentence case everywhere** — capitalize the first word and proper nouns only. Never title case.
-- **Buttons: verb + object** — "Build component", "Create webhook", "Remove user". Loading state: gerund form ("Building component", "Creating...").
-- **Modal headings** — question for confirmations ("Delete webhook?"), statement for actions ("Create webhook").
-- **Empty states** — "No [things] yet" + explain what will make things appear.
-- **Errors** — "[thing] failed" for headings everywhere. "Unable to [action]" only in longer descriptions. No "Oops!" or humor.
-- **Toasts** — heading (plain string, what happened) + description (specific context with entity names). Async: "Deploying component" + "Deploying {name} to {install}." Instant: "Plan approved" + "Approved changes for {name}."
-- **No exclamation marks, no emoji, no "please", no "successfully".**
-
-The only capitalization exceptions are proper nouns (AWS, Nuon, Terraform, etc.) and acronyms.
-
-## Toast Patterns
-
-Every toast uses **heading + description**. The heading is a plain string saying what happened. The description (children) adds specific context — entity names, what to expect, duration hints. See [COPY_STYLE.md](./COPY_STYLE.md#toasts) for the full pattern reference.
-
-```tsx
-// Async action (job kicked off) — present progressive heading, info theme
-addToast(
-  <Toast heading="Deploying component" theme="info">
-    <Text>Deploying {component.name} to {install.name}. This may take a few minutes.</Text>
-  </Toast>
-)
-
-// Instant completion — past tense heading, success theme
-addToast(
-  <Toast heading="Plan approved" theme="success">
-    <Text>Approved changes for {component.name} on {install.name}.</Text>
-  </Toast>
-)
-
-// Error — "[thing] failed" heading, error theme, API error in description
-addToast(
-  <Toast heading="Build failed" theme="error">
-    <Text>{err?.error || 'Unable to start the build.'}</Text>
-  </Toast>
-)
-```
-
-**Rules:**
-- Heading is always a **plain string** — no JSX, no Badge components, no inline markup
-- Description is always a `<Text>` child with entity names and context
-- Don't say "successfully" — the success theme communicates that
-- Add "This may take a few minutes." for builds, deploys, and provisions
-
-### Completion toasts (status transition)
-
-Use the `useStatusToast` hook (`client/hooks/use-status-toast.tsx`) in providers that poll for status. The hook watches a status string and fires a toast once when it transitions from a non-terminal status to a terminal one (success/error). It will NOT fire if the page loads with an already-terminal status.
-
-```tsx
-useStatusToast({
-  status: build?.status_v2?.status,
-  label: build?.component_name,
-  resourceType: 'build',
-})
-```
-
-The hook uses `getStatusTheme()` from `client/utils/status-utils.ts` to determine whether a status is terminal (success/error theme) or non-terminal (info/warn/neutral). It tracks whether a non-terminal status has been seen — only then will a transition to terminal fire the toast.
-
-**Already wired into**: `build-provider`, `deploy-provider`, `sandbox-build-provider`, `sandbox-run-provider`.
-
-## Dates, Times & Durations
-
-**Always use [Luxon](https://moment.github.io/luxon/) for date/time operations.** Never use raw `Date` objects or manual millisecond math.
-
-**Use the existing components for rendering:**
-
-- **`<Time>`** (`client/components/common/Time.tsx`) — Renders timestamps. Supports `format="relative"` (e.g., "2 hours ago" with tooltip), `"short-datetime"`, `"long-datetime"`, `"time-only"`, `"log-datetime"`. Add `shouldTick` to auto-update a relative timestamp every 30s (opt-in, off by default).
-- **`<Duration>`** (`client/components/common/Duration.tsx`) — Renders durations between two times. Pass `beginTime` and optionally `endTime` (defaults to now). Supports `durationUnits`, `unitDisplay`, and `format` props.
-
-```tsx
-// ✅ Correct — use Time and Duration components
-<Time variant="subtext" time={item.created_at} format="relative" />
-<Duration variant="subtext" beginTime={process.started_at} durationUnits={['hours', 'minutes']} />
-
-// ❌ Wrong — manual date formatting
-const diffMs = Date.now() - new Date(dateStr).getTime()
-const minutes = Math.floor(diffMs / (1000 * 60))
-return `${minutes} minutes ago`
-```
-
-**For utility functions** that need date logic (not rendering), use Luxon's `DateTime` and `Duration` classes directly. Place shared helpers in `client/utils/time-utils.ts`.
-
-## Key Scripts
+Committed smoke tests live under `e2e/` (`playwright.config.ts`, `global-setup.ts`, `flows/` → `specs/`). See
+`e2e/flows/README.md` and `e2e/global-setup.ts` for setup details. Typical run:
 
 ```bash
-bun run dev            # Development: bun build watch + PostCSS watch + Bun dev server (SSE live reload)
-bun run build          # Production build (minified, content-hashed assets)
-bun run build:js       # Build JS only
-bun run build:css      # Build CSS only
-bun run lint           # ESLint for the SPA
-bun run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types + checks full codebase)
-bunx tsc --noEmit --project client/tsconfig.json  # Use this for type checking — scope to changed files
-bun run dev:ladle      # Ladle component stories (dashboard, :61000)
-bun run dev:ladle:lite # Ladle component stories (lite, :62002)
-bun run test           # bun test (unit tests)
-bun run test:e2e       # Playwright E2E tests (requires running local stack + env vars)
-bun run test:e2e:ui    # Playwright interactive UI mode
-bun run test:e2e:headed # Playwright with visible browser
+E2E_EMAIL=you@example.com bun run test:e2e
+# optional: E2E_ORG_ID=orgXXX  E2E_BASE_URL  E2E_ADMIN_API_URL  E2E_PUBLIC_API_URL
 ```
 
-**Do NOT run build commands** (`build`, `build:js`, `build:css`) unless explicitly asked. A dev process (nctl) is already running that handles builds automatically.
+Defaults assume dashboard `:4000`, public API `:8081`, admin API `:8082` when a local control plane + dashboard are
+available. Install browsers once: `bunx playwright install chromium`.
 
-## E2E Tests (Playwright)
+### Scratch checks and screenshots (agent workflow)
 
-Smoke tests in `e2e/` that run against a live local or staging environment. Chromium only.
+**Throwaway verification belongs in gitignored `tmp/` as a standalone `.mjs`, run with `bun run tmp/<name>.mjs` from
+`services/dashboard-ui`.** Do not write scratch checks as `e2e/specs/*.spec.ts` (or anywhere else committed). `tmp/` is
+gitignored so they cannot be committed by accident. Only graduate a check to `e2e/specs/` + `e2e/flows/` when it should
+be a permanent smoke — and say so explicitly.
 
-### Prerequisites
+Do not use the Playwright test runner for scratch work (`playwright test` / `.spec.ts` outside `testDir`): a plain `.mjs`
+needs no custom config.
 
-- Local dev stack running (dashboard-ui + ctl-api + postgres + temporal)
-- An admin account email with access to the admin API
-- Playwright browsers installed: `bunx playwright install chromium`
+Auth (same idea as `e2e/global-setup.ts`):
 
-### Running
+1. `POST http://127.0.0.1:8082/v1/general/seed-user` with `X-Nuon-Admin-Email` (`seed@nuon.co`, or `NUON_DEV_EMAIL` for
+   your own orgs) → `{ api_token }`
+2. Inject as cookie `X-Nuon-Auth` on `127.0.0.1`
+3. Optional: call public API `:8081` with `Authorization: Bearer <token>` + `X-Nuon-Org-ID` to discover org/app IDs
 
-```bash
-# Creates a fresh test org, runs tests, deletes org on teardown
-E2E_EMAIL=you@nuon.co bun run test:e2e
+Gotchas:
 
-# Use an existing org (skips create/teardown)
-E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX bun run test:e2e
-```
+- Never `waitUntil: 'networkidle'` — the SPA polls (SSE + `refetchInterval`); use `domcontentloaded` then `waitFor` a
+  page-specific selector
+- Dark mode is `prefers-color-scheme` — set `colorScheme: 'dark'` on the Playwright context (no `.dark` class)
+- From `tmp/`, `import { chromium } from 'playwright'` (Bun walks up to `node_modules`)
+- Screenshots: `deviceScaleFactor: 2`+, write under `tmp/`
 
-### Environment variables
-
-| Variable | Default | Required | Purpose |
-|----------|---------|----------|---------|
-| `E2E_BASE_URL` | `http://127.0.0.1:4000` | no | Dashboard URL |
-| `E2E_ADMIN_API_URL` | `http://127.0.0.1:8082` | no | Admin API for token generation |
-| `E2E_PUBLIC_API_URL` | `http://127.0.0.1:8081` | no | Public API for org creation |
-| `E2E_EMAIL` | — | yes | Admin email (used to auth and generate token) |
-| `E2E_ORG_ID` | — | no | Existing org ID (if omitted, a fresh org is created and deleted after tests) |
-
-### How it works
-
-1. Global setup generates a static token via the admin API (`POST /v1/general/admin-static-token`)
-2. If no `E2E_ORG_ID` is set, creates a fresh org via the public API (`POST /v1/orgs`) — the token user becomes org admin automatically
-3. Injects the token as the `X-Nuon-Auth` cookie and saves browser state to `e2e/.auth/user.json`
-4. Org ID is written to `e2e/.auth/org.json` so fixtures and teardown can read it
-5. Tests run against the org
-6. Global teardown deletes the org via admin API if it was created by setup
-
-### Structure
-
-```
-e2e/
-├── playwright.config.ts    # Config (Chromium, auth state, output dirs)
-├── global-setup.ts         # Token gen + org creation + cookie injection
-├── global-teardown.ts      # Org cleanup (if created by setup)
-├── fixtures.ts             # Custom test fixture (orgId from state file)
-├── env.ts                  # Env var loader with defaults
-├── specs/                  # Playwright test files
-└── flows/                  # Markdown flow specs (source-of-truth docs)
-```
-
-### Flow docs
-
-`e2e/flows/` contains structured markdown describing test scenarios. These are the source-of-truth — update the flow markdown, then regenerate or update the corresponding spec in `e2e/specs/`. See `e2e/flows/README.md` for the format.
-
-### Throwaway / scratch e2e checks (agent workflow) — CRITICAL
-
-**A scratch e2e check an agent writes to verify local work is a standalone Playwright `.mjs` script in the gitignored `tmp/` dir (i.e. `services/dashboard-ui/tmp/`), run with `bun run tmp/<name>.mjs`.** Never write it as a committed file — not `e2e/specs/`, not anywhere else in the tree. `tmp/` is in `.gitignore`, so scripts there can't be committed by accident; that's the whole point.
-
-This is the same pattern as the **Screenshotting the Running Dashboard** recipe below — auth via seed-user token → `X-Nuon-Auth` cookie → drive the page — just with assertions instead of a screenshot. Do NOT reach for the Playwright test runner (`playwright test` / `.spec.ts` / `e2e/playwright.config.ts`): a spec outside the repo's `testDir` isn't discovered and drags in a custom config + `NODE_PATH`. A plain `.mjs` needs none of that.
-
-**Recipe:**
-
-- Import chromium with a **bare specifier** — because the script lives inside the repo tree, Bun resolves `node_modules` by walking up, so no absolute path is needed:
-  ```js
-  import { chromium } from 'playwright'
-  ```
-- Get a token: `POST http://127.0.0.1:8082/v1/general/seed-user` with `X-Nuon-Admin-Email` (use `seed@nuon.co`, or `NUON_DEV_EMAIL` for your own orgs). Inject it as the `X-Nuon-Auth` cookie on `127.0.0.1`.
-- Seed/inspect state you need via the public API (`:8081`) with `Authorization: Bearer <token>` + `X-Nuon-Org-ID`.
-- `page.goto(..., { waitUntil: 'domcontentloaded' })` — never `networkidle` (the SPA polls). Drive with `getByRole`, assert with `waitFor`, `console.log` PASS/FAIL, `process.exit(pass ? 0 : 1)`, and screenshot to `tmp/` on failure.
-- Run from `services/dashboard-ui`: `bun run tmp/<name>.mjs`. No config, no env plumbing.
-
-Only turn a check into a committed `e2e/specs/*.spec.ts` (with a matching `e2e/flows/*.flow.md`) when it should become a permanent smoke test — and say so explicitly.
-
-## Screenshotting the Running Dashboard (agent workflow)
-
-When verifying a UI change, take a real screenshot of the running dashboard instead of relying on Ladle stories or guessing. This authenticates against the **local dev stack** the same way the e2e setup does — no personal credentials, no browser login.
-
-**Prerequisites:**
-
-- Local stack running: admin API (`:8082`), public API (`:8081`), dashboard (`:4000`).
-- Playwright chromium installed (`bunx playwright install chromium`).
-
-**How it works** (mirrors `e2e/global-setup.ts`):
-
-1. `POST http://127.0.0.1:8082/v1/general/seed-user` with header `X-Nuon-Admin-Email: <email>` returns `{ api_token }`. The admin API trusts this header locally — use **`seed@nuon.co`** (the shared seed account, already used across the e2e setup) so no personal email is committed. Override with your own nuon.co email via `NUON_DEV_EMAIL` if you need to see your own orgs.
-2. List orgs/apps with the token (`GET :8081/v1/orgs`, `GET :8081/v1/apps` with `X-Nuon-Org-ID`) to find what to navigate to.
-3. Inject the token as the `X-Nuon-Auth` cookie on `127.0.0.1` and drive the page with Playwright.
-
-**Gotchas that will waste your time if you skip them:**
-
-- **Do NOT `waitUntil: 'networkidle'`** — the SPA polls (SSE + `refetchInterval`), so the network never goes idle and `goto` times out. Use `waitUntil: 'domcontentloaded'` then `waitFor` a selector unique to the page.
-- **Dark mode** is `prefers-color-scheme`-based (no `.dark` class), so set `colorScheme: 'dark'` on the Playwright context — that's what triggers the app's dark styles.
-- Use `deviceScaleFactor: 2`+ for crisp screenshots; write them to the gitignored `tmp/` dir (`services/dashboard-ui/tmp/`), same as scratch e2e scripts.
-
-**Reusable script** — save under `tmp/` and run from `services/dashboard-ui` with `bun run tmp/<file>.mjs`:
+Minimal screenshot sketch:
 
 ```js
-import { chromium } from 'playwright-core'
+import { chromium } from 'playwright'
 
 const ADMIN = 'http://127.0.0.1:8082'
-const PUB = 'http://127.0.0.1:8081'
 const APP = 'http://127.0.0.1:4000'
 const EMAIL = process.env.NUON_DEV_EMAIL ?? 'seed@nuon.co'
 
@@ -1193,26 +231,17 @@ const seed = await fetch(`${ADMIN}/v1/general/seed-user`, {
   headers: { 'Content-Type': 'application/json', 'X-Nuon-Admin-Email': EMAIL },
   body: '{}',
 })
-const { api_token } = JSON.parse((await seed.text()).match(/^\{[^}]*\}/)[0])
+const seedBody = await seed.text()
+const { api_token } = JSON.parse(seedBody.match(/^\{[^}]*\}/)[0])
 
-// Discover an org + app (or hardcode ids you already know)
-const orgs = await (await fetch(`${PUB}/v1/orgs`, { headers: { Authorization: `Bearer ${api_token}` } })).json()
-const orgId = orgs[0].id
-const apps = await (await fetch(`${PUB}/v1/apps`, { headers: { Authorization: `Bearer ${api_token}`, 'X-Nuon-Org-ID': orgId } })).json()
-const appId = apps[0].id
-
-const path = `/${orgId}/apps/${appId}/labels` // whatever page you're verifying
 const browser = await chromium.launch()
-for (const scheme of ['light', 'dark']) {
-  const ctx = await browser.newContext({ colorScheme: scheme, viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 })
-  await ctx.addCookies([{ name: 'X-Nuon-Auth', value: api_token, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Lax' }])
-  const page = await ctx.newPage()
-  await page.goto(`${APP}${path}`, { waitUntil: 'domcontentloaded' })
-  await page.getByRole('heading').first().waitFor({ timeout: 15000 }).catch(() => {})
-  await page.waitForTimeout(1500)
-  await page.screenshot({ path: `tmp/shot-${scheme}.png`, fullPage: true })
-  await ctx.close()
-}
+const ctx = await browser.newContext({ colorScheme: 'dark', deviceScaleFactor: 2 })
+await ctx.addCookies([
+  { name: 'X-Nuon-Auth', value: api_token, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Lax' },
+])
+const page = await ctx.newPage()
+await page.goto(`${APP}/<orgId>/...`, { waitUntil: 'domcontentloaded' })
+await page.getByRole('heading').first().waitFor({ timeout: 15000 })
+await page.screenshot({ path: 'tmp/shot.png', fullPage: true })
 await browser.close()
 ```
-
