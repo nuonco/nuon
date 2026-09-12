@@ -12,8 +12,8 @@ func PreloadLatestConfig(db *gorm.DB) *gorm.DB {
 	return db.
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.
-				Table(views.DefaultViewName(db,
-					&app.ComponentConfigConnection{}, 1)).
+				Table(views.CurrentViewName(db,
+					&app.ComponentConfigConnection{})).
 				Order("created_at DESC").Limit(1)
 		}).
 
