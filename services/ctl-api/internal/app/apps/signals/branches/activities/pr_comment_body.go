@@ -87,6 +87,8 @@ type PRCommentParams struct {
 func BuildPRCommentBody(p *PRCommentParams) string {
 	var b strings.Builder
 
+	b.WriteString(previewCommentMarkerLine(previewTitleName(p), p.RunID) + "\n\n")
+
 	title := fmt.Sprintf("## Nuon Preview \u2014 %s", previewTitleName(p))
 	if label := p.Mode.Label(); label != "" {
 		title += fmt.Sprintf(" (%s)", label)
@@ -260,8 +262,15 @@ func mcpDebugPrompt(p *PRCommentParams) string {
 }
 
 func previewTitleName(p *PRCommentParams) string {
+	return PreviewCommentName(p.OrgName, p.AppName, p.BranchName)
+}
+
+// PreviewCommentName identifies the preview a PR comment belongs to. Comments
+// sharing a name are reports on the same preview, so all but the newest are
+// collapsed; a PR touching two apps keeps one live report per app.
+func PreviewCommentName(orgName, appName, branchName string) string {
 	parts := make([]string, 0, 3)
-	for _, part := range []string{p.OrgName, p.AppName, p.BranchName} {
+	for _, part := range []string{orgName, appName, branchName} {
 		if part != "" {
 			parts = append(parts, part)
 		}
