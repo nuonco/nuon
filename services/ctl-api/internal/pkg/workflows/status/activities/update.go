@@ -129,6 +129,10 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	}
 	history := existingStatus.History
 	existingStatus.History = nil
+	// A composite error carries the full diagnostic output, so keeping one per
+	// history entry would grow the status column without bound. Only the current
+	// status keeps its error.
+	existingStatus.CompositeError = nil
 	history = append(history, existingStatus)
 	// Limit history to the most recent 25 entries to prevent unbounded growth.
 	if len(history) > 25 {

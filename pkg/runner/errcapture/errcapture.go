@@ -161,6 +161,7 @@ func (c *captureCore) Write(ent zapcore.Entry, fs []zapcore.Field) error {
 			line = line + ": " + e
 		}
 	}
+	line = diagnosticField(fs, c.fields).render(line)
 	c.cap.append(line)
 	return nil
 }
@@ -184,4 +185,76 @@ func errorField(groups ...[]zapcore.Field) string {
 		}
 	}
 	return ""
+}
+
+// diagnosticKey is the field terraform's JSON log stream carries its structured
+// diagnostic under. pkg/zaphclog decodes each @level:"error" record and logs the
+// remaining keys as zap.Any fields, so the object arrives here as a map.
+const diagnosticKey = "diagnostic"
+
+// diagnostic is the subset of a terraform diagnostic worth capturing. The entry
+// message only carries the summary ("Error: creating S3 Bucket (x): ..."), while
+// the actual cause — the provider's response, the missing permission — lives in
+// detail, and the resource it happened on lives in address. Both are dropped if
+// we only capture the message.
+type diagnostic struct {
+	summary string
+	detail  string
+	address string
+}
+
+// diagnosticField returns the terraform diagnostic carried on a log entry,
+// preferring entry-level fields over accumulated With() fields. The zero value
+// is returned when the entry carries no diagnostic.
+func diagnosticField(groups ...[]zapcore.Field) diagnostic {
+	for _, g := range groups {
+		for _, f := range g {
+			if f.Key != diagnosticKey {
+				continue
+			}
+			m, ok := f.Interface.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			return diagnostic{
+				summary: diagnosticString(m, "summary"),
+				detail:  diagnosticString(m, "detail"),
+				address: diagnosticString(m, "address"),
+			}
+		}
+	}
+	return diagnostic{}
+}
+
+func diagnosticString(m map[string]interface{}, key string) string {
+	s, _ := m[key].(string)
+	return strings.TrimSpace(s)
+}
+
+// render folds the diagnostic into the captured line. The summary is used as the
+// headline when the entry message is empty or doesn't already carry it, prefixed
+// so ctl-api's terraform parser still recognises it as a diagnostic. Address and
+// detail are appended as their own lines.
+func (d diagnostic) render(msg string) string {
+	lines := make([]string, 0, 3)
+	if msg != "" {
+		lines = append(lines, msg)
+	}
+	if d.summary != "" && !strings.Contains(msg, d.summary) {
+		lines = append(lines, errorPrefixed(d.summary))
+	}
+	if d.address != "" {
+		lines = append(lines, "  with "+d.address)
+	}
+	if d.detail != "" {
+		lines = append(lines, d.detail)
+	}
+	return strings.Join(lines, "\n")
+}
+
+func errorPrefixed(summary string) string {
+	if strings.HasPrefix(summary, "Error:") {
+		return summary
+	}
+	return "Error: " + summary
 }

@@ -11,7 +11,7 @@ import (
 )
 
 func (s *InstallsServiceTestSuite) TestSyncSecretsSuccess() {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 
 	path := fmt.Sprintf("/v1/installs/%s/sync-secrets", install.ID)
 	rr := s.makeRequest(http.MethodPost, path, nil)

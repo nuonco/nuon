@@ -65,6 +65,16 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 		}
 	}
 
+	if requiresLiveInstallRunner(workflowType, metadata) {
+		active, err := s.HasActiveRunner(ctx, installID)
+		if err != nil {
+			return nil, err
+		}
+		if !active {
+			return nil, NewNoActiveRunnerConflict()
+		}
+	}
+
 	approvalOption := app.InstallApprovalOptionPrompt
 	installConfig, err := s.GetLatestInstallConfig(ctx, installID)
 	if err != nil {
@@ -121,4 +131,11 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	)
 
 	return &installWorkflow, nil
+}
+
+func requiresLiveInstallRunner(workflowType app.WorkflowType, metadata map[string]string) bool {
+	if workflowType == app.WorkflowTypeInputUpdate && metadata[app.WorkflowMetadataKeyInputsOnly] == "true" {
+		return false
+	}
+	return workflowType.RequiresLiveInstallRunner()
 }

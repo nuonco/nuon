@@ -159,9 +159,36 @@ func (s *InstallsServiceTestSuite) setupTestData() {
 	s.testAppConfig = s.deps.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
 }
 
-// createTestInstall seeds an install via the database for read-only endpoint tests.
 func (s *InstallsServiceTestSuite) createTestInstall() *app.Install {
-	return s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+	install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+	return install
+}
+
+func (s *InstallsServiceTestSuite) createTestInstallWithActiveRunner() *app.Install {
+	install := s.createTestInstall()
+	group := &app.RunnerGroup{
+		OwnerID:   install.ID,
+		OwnerType: "installs",
+		Type:      app.RunnerGroupTypeInstall,
+		Platform:  app.AppRunnerTypeAWS,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(group).Error)
+	runner := &app.Runner{
+		RunnerGroupID:     group.ID,
+		Name:              "runner-" + install.ID,
+		DisplayName:       "runner",
+		Status:            app.RunnerStatusActive,
+		StatusDescription: "active",
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(runner).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(&app.RunnerProcess{
+		RunnerID: runner.ID,
+		Type:     app.RunnerProcessTypeInstall,
+		CompositeStatus: app.CompositeStatus{
+			Status: app.Status(app.RunnerProcessStatusActive),
+		},
+	}).Error)
+	return install
 }
 
 // makeRequest sends an HTTP request through the test router and returns the recorder.

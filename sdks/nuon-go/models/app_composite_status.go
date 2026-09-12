@@ -20,6 +20,13 @@ import (
 // swagger:model app.CompositeStatus
 type AppCompositeStatus struct {
 
+	// CompositeError is the parsed, structured cause of a failure status. The
+	// human description is a one-line summary; this carries the full typed error
+	// so the dashboard can render the diagnostic instead of just the headline.
+	CompositeError struct {
+		CompositeerrorsCompositeErrorData
+	} `json:"composite_error,omitempty"`
+
 	// created at ts
 	CreatedAtTs int64 `json:"created_at_ts,omitempty"`
 
@@ -43,6 +50,10 @@ type AppCompositeStatus struct {
 func (m *AppCompositeStatus) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCompositeError(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateHistory(formats); err != nil {
 		res = append(res, err)
 	}
@@ -54,6 +65,14 @@ func (m *AppCompositeStatus) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppCompositeStatus) validateCompositeError(formats strfmt.Registry) error {
+	if swag.IsZero(m.CompositeError) { // not required
+		return nil
+	}
+
 	return nil
 }
 
@@ -112,6 +131,10 @@ func (m *AppCompositeStatus) validateStatus(formats strfmt.Registry) error {
 func (m *AppCompositeStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateCompositeError(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateHistory(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -123,6 +146,11 @@ func (m *AppCompositeStatus) ContextValidate(ctx context.Context, formats strfmt
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppCompositeStatus) contextValidateCompositeError(ctx context.Context, formats strfmt.Registry) error {
+
 	return nil
 }
 

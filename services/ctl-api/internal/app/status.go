@@ -8,6 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
 // generic statuses
@@ -125,6 +127,11 @@ type CompositeStatus struct {
 	Status                 Status         `json:"status,omitzero,omitempty" temporaljson:"status,omitzero,omitempty"`
 	StatusHumanDescription string         `json:"status_human_description,omitzero,omitempty" temporaljson:"status_human_description,omitzero,omitempty"`
 	Metadata               map[string]any `json:"metadata,omitzero,omitempty" temporaljson:"metadata,omitzero,omitempty"`
+
+	// CompositeError is the parsed, structured cause of a failure status. The
+	// human description is a one-line summary; this carries the full typed error
+	// so the dashboard can render the diagnostic instead of just the headline.
+	CompositeError *compositeerrors.CompositeErrorData `json:"composite_error,omitzero,omitempty" temporaljson:"composite_error,omitzero,omitempty"`
 
 	History []CompositeStatus `json:"history,omitzero,omitempty" temporaljson:"history,omitzero,omitempty"`
 }
