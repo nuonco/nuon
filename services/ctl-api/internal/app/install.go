@@ -84,6 +84,7 @@ type Install struct {
 	InstallSandbox          InstallSandbox            `json:"sandbox" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox,omitzero,omitempty"`
 	InstallConfig           *InstallConfig            `json:"install_config,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_config,omitzero,omitempty"`
 	InstallStates           []InstallState            `json:"install_states,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_states,omitzero,omitempty"`
+	OperatingModel          *InstallOperatingModel    `json:"operating_model,omitzero,omitempty" gorm:"foreignKey:InstallID;constraint:OnDelete:RESTRICT;" temporaljson:"operating_model,omitzero,omitempty"`
 
 	// InstallRoles is a list of roles associated with that install at given app config ID
 	InstallRoles []InstallRoles `json:"install_roles,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_roles,omitzero,omitempty"`
