@@ -13,6 +13,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	processGroupTerminationGracePeriod = 3 * time.Second
+	processGroupWaitDelay              = 5 * time.Second
+)
+
 func (c *command) ExecWithOutput(ctx context.Context) ([]byte, error) {
 	if c.Stdout != nil {
 		return nil, fmt.Errorf("must set stdout to nil for output")
@@ -50,27 +55,41 @@ func (c *command) Exec(ctx context.Context) error {
 //nolint:gosec
 func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 	cmd := exec.CommandContext(ctx, c.Cmd, c.Args...)
+	var commandDone chan struct{}
 
 	if c.UseProcessGroup {
+		commandDone = make(chan struct{})
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 		cmd.Cancel = func() error {
-			pgid := -cmd.Process.Pid
-			// Send SIGTERM first so children can clean up
-			_ = syscall.Kill(pgid, syscall.SIGTERM)
-
-			// Give processes time to exit gracefully, then force kill
-			done := make(chan struct{})
-			go func() {
-				cmd.Process.Wait()
-				close(done)
-			}()
-			select {
-			case <-done:
-				return nil
-			case <-time.After(3 * time.Second):
-				return syscall.Kill(pgid, syscall.SIGKILL)
+			processGroupID := -cmd.Process.Pid
+			if err := syscall.Kill(processGroupID, syscall.SIGTERM); err != nil {
+				if errors.Is(err, syscall.ESRCH) {
+					return os.ErrProcessDone
+				}
+				return err
 			}
+
+			go func() {
+				timer := time.NewTimer(processGroupTerminationGracePeriod)
+				defer timer.Stop()
+
+				select {
+				case <-commandDone:
+					return
+				case <-timer.C:
+				}
+
+				select {
+				case <-commandDone:
+					return
+				default:
+					_ = syscall.Kill(processGroupID, syscall.SIGKILL)
+				}
+			}()
+
+			return nil
 		}
+		cmd.WaitDelay = processGroupWaitDelay
 	}
 
 	envVars := os.Environ()
@@ -113,8 +132,12 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 		stdout = io.Discard
 	}
 
-	// cleanup function to close any file handles
 	cleanup := func() {}
+	if commandDone != nil {
+		cleanup = func() {
+			close(commandDone)
+		}
+	}
 
 	// if file output path is set, we also write to that.
 	if c.FileOutputPath != "" {
@@ -130,7 +153,9 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 			return nil, nil, errors.Wrap(err, "unable to open file output path")
 		}
 
+		previousCleanup := cleanup
 		cleanup = func() {
+			previousCleanup()
 			fpWriter.Close()
 		}
 
