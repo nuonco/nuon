@@ -11,14 +11,14 @@ import (
 
 // Step directive aliases for backward compatibility within this package.
 const (
-	DirectiveKey           = directive.MetadataKey
-	DirectiveContinue      = directive.StepContinue
-	DirectiveSkipGroup     = directive.StepSkipGroup
-	DirectiveStop          = directive.StepStop
-	DirectiveRetry         = directive.StepRetry
-	DirectiveRetryGroup    = directive.StepRetryGroup
-	DirectiveAwaitApproval = directive.StepAwaitApproval
-	DirectiveAwaitRetry    = directive.StepAwaitRetry
+	DirectiveKey              = directive.MetadataKey
+	DirectiveContinue         = directive.StepContinue
+	DirectiveSkipGroup        = directive.StepSkipGroup
+	DirectiveStop             = directive.StepStop
+	DirectiveAutoRetry        = directive.StepAutoRetry
+	DirectiveAutoRetryGroup   = directive.StepAutoRetryGroup
+	DirectiveAwaitApproval    = directive.StepAwaitApproval
+	DirectiveAwaitManualRetry = directive.StepAwaitManualRetry
 )
 
 // setResultDirective writes only the ResultDirective column on the step.

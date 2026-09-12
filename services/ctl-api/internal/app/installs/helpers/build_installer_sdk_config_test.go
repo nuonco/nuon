@@ -127,6 +127,15 @@ func (s *InstallerSDKConfigTestSuite) build(installID string) *app.InstallerSDKC
 	return cfg
 }
 
+func (s *InstallerSDKConfigTestSuite) setCustomNestedStacks(stacks []config.CustomNestedStack) {
+	var stackConfig app.AppStackConfig
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Where("app_config_id = ?", s.appCfg.ID).
+		First(&stackConfig).Error)
+	stackConfig.CustomNestedStacks = stacks
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Save(&stackConfig).Error)
+}
+
 // The config read is authenticated, so it serves the install's real current input
 // values — the names-only contract belonged to the unauthenticated tfvars flow.
 func (s *InstallerSDKConfigTestSuite) TestServesCurrentInputValues() {
@@ -199,14 +208,11 @@ func (s *InstallerSDKConfigTestSuite) TestCustomStacksEmptyWhenAbsent() {
 func (s *InstallerSDKConfigTestSuite) TestCustomStacksSortedByIndex() {
 	t := s.T()
 
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).
-		Model(&app.AppStackConfig{}).
-		Where("app_config_id = ?", s.appCfg.ID).
-		Update("custom_nested_stacks", []config.CustomNestedStack{
-			{Name: "second", Index: 2, Parameters: map[string]string{"a": "1"}},
-			{Name: "first", Index: 0, Parameters: map[string]string{"b": "2"}},
-			{Name: "third", Index: 1},
-		}).Error)
+	s.setCustomNestedStacks([]config.CustomNestedStack{
+		{Name: "second", Index: 2, Parameters: map[string]string{"a": "1"}},
+		{Name: "first", Index: 0, Parameters: map[string]string{"b": "2"}},
+		{Name: "third", Index: 1},
+	})
 
 	install := s.seedInstallWithRunner()
 
@@ -221,21 +227,19 @@ func (s *InstallerSDKConfigTestSuite) TestCustomStacksSortedByIndex() {
 func (s *InstallerSDKConfigTestSuite) TestCustomStacksInstallOverrideMerge() {
 	t := s.T()
 
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).
-		Model(&app.AppStackConfig{}).
-		Where("app_config_id = ?", s.appCfg.ID).
-		Update("custom_nested_stacks", []config.CustomNestedStack{
-			{Name: "shared", Index: 0, Parameters: map[string]string{"env": "app-default"}},
-		}).Error)
+	s.setCustomNestedStacks([]config.CustomNestedStack{
+		{Name: "shared", Index: 0, Parameters: map[string]string{"env": "app-default"}},
+	})
 
 	install := s.seedInstallWithRunner()
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(&app.InstallConfig{
+	installConfig := &app.InstallConfig{
 		InstallID: install.ID,
 		CustomNestedStacks: []config.CustomNestedStack{
 			{Name: "shared", Index: 0, Parameters: map[string]string{"env": "install-override"}},
 			{Name: "extra", Index: 1, Parameters: map[string]string{"env": "install-only"}},
 		},
-	}).Error)
+	}
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(installConfig).Error)
 
 	cfg := s.build(install.ID)
 	require.Len(t, cfg.CustomStacks, 2)
@@ -257,12 +261,9 @@ func (s *InstallerSDKConfigTestSuite) TestCustomStacksInputParametersFromLatestS
 		Default:          "default",
 	}).Error)
 
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).
-		Model(&app.AppStackConfig{}).
-		Where("app_config_id = ?", s.appCfg.ID).
-		Update("custom_nested_stacks", []config.CustomNestedStack{
-			{Name: "k8s-namespaces", Index: 0, TemplateURL: "https://nuon-artifacts.s3.us-west-2.amazonaws.com/does-not-exist.yaml"},
-		}).Error)
+	s.setCustomNestedStacks([]config.CustomNestedStack{
+		{Name: "k8s-namespaces", Index: 0, TemplateURL: "https://nuon-artifacts.s3.us-west-2.amazonaws.com/does-not-exist.yaml"},
+	})
 
 	install := s.seedInstallWithRunner()
 	installStack := &app.InstallStack{InstallID: install.ID}
@@ -270,6 +271,7 @@ func (s *InstallerSDKConfigTestSuite) TestCustomStacksInputParametersFromLatestS
 	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(&app.InstallStackVersion{
 		InstallID:      install.ID,
 		InstallStackID: installStack.ID,
+		AppConfigID:    s.appCfg.ID,
 		CustomStacksInputParametersMap: map[string]map[string]string{
 			"k8s-namespaces": {
 				"K8SNamespacesNamespaces": "namespaces",
@@ -296,25 +298,22 @@ func (s *InstallerSDKConfigTestSuite) TestCustomStacksGCPModuleName() {
 		Default:          "false",
 	}).Error)
 
-	require.NoError(t, s.deps.DB.WithContext(s.ctx).
-		Model(&app.AppStackConfig{}).
-		Where("app_config_id = ?", s.appCfg.ID).
-		Update("custom_nested_stacks", []config.CustomNestedStack{
-			{
-				Name:        "bucket",
-				Index:       0,
-				TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket",
-				Parameters: map[string]string{
-					"location":   "{{.nuon.install.inputs.bucket_location}}",
-					"versioning": "{{.nuon.install.inputs.bucket_versioning}}",
-				},
+	s.setCustomNestedStacks([]config.CustomNestedStack{
+		{
+			Name:        "bucket",
+			Index:       0,
+			TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket",
+			Parameters: map[string]string{
+				"location":   "{{.nuon.install.inputs.bucket_location}}",
+				"versioning": "{{.nuon.install.inputs.bucket_versioning}}",
 			},
-			{
-				Name:        "cf-nested",
-				Index:       1,
-				TemplateURL: "https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/nested.yaml",
-			},
-		}).Error)
+		},
+		{
+			Name:        "cf-nested",
+			Index:       1,
+			TemplateURL: "https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/nested.yaml",
+		},
+	})
 
 	install := s.seedInstallWithRunner()
 	s.deps.Seed.CreateInstallInputs(s.ctx, t, install.ID, s.inputCfg.ID, map[string]*string{

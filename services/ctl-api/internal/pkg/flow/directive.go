@@ -17,9 +17,9 @@ const (
 
 	DirectiveAwaitApproval = "await-approval"
 
-	DirectiveSkipGroup  = "skip-group"
-	DirectiveRetry      = "retry"
-	DirectiveRetryGroup = "retry-group"
+	DirectiveSkipGroup      = "skip-group"
+	DirectiveAutoRetry      = "retry"
+	DirectiveAutoRetryGroup = "retry-group"
 )
 
 // StepHumanDescription returns a user-facing error message for a failed step.
