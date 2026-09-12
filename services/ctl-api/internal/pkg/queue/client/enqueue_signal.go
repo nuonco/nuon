@@ -59,6 +59,16 @@ func (c *Client) EnqueueSignalInTransaction(ctx context.Context, tx *gorm.DB, re
 	return resp, err
 }
 
+// NotifySignal wakes the queue processor for a signal that was enqueued inside
+// a transaction (EnqueueSignalInTransaction cannot notify pre-commit). Call it
+// after the transaction commits; without it the signal only runs when the
+// enqueuer sweep finds it.
+func (c *Client) NotifySignal(queueSignalID string) {
+	if c.enqueuer != nil && queueSignalID != "" {
+		c.enqueuer.Send(queueSignalID)
+	}
+}
+
 func (c *Client) enqueueSignal(ctx context.Context, db *gorm.DB, req *EnqueueSignalRequest) (*queue.EnqueueResponse, *app.QueueSignal, error) {
 	var q app.Queue
 	if err := db.WithContext(ctx).Where(app.Queue{ID: req.QueueID}).First(&q).Error; err != nil {
