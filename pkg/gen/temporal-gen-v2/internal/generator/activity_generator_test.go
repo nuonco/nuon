@@ -61,6 +61,51 @@ func TestGenerateLocalActivity(t *testing.T) {
 	assert.NotContains(t, code, "workflow.ExecuteActivity(")
 }
 
+func TestGenerateLocalActivityHonorsLocalMaxRetries(t *testing.T) {
+	data := ActivityData{
+		Name:         "StartFlowStep",
+		OriginalName: "StartFlowStep",
+		InputType:    "StartFlowStepRequest",
+		Receiver:     "*Activities",
+		Options: &parser.ActivityOptions{
+			IsLocal:         true,
+			LocalMaxRetries: 3,
+		},
+	}
+
+	output, err := GenerateLocalActivity(data)
+	require.NoError(t, err)
+
+	code := string(output)
+	assert.Contains(t, code, "MaximumAttempts: 3")
+	assert.NotContains(t, code, "MaximumAttempts: 1")
+}
+
+// The generator injects a default into MaxRetries for every activity that does
+// not annotate one, so the local wrapper must ignore it and stay single-attempt
+// unless @local-retry-policy-max-attempts is set.
+func TestGenerateLocalActivityIgnoresRemoteMaxRetries(t *testing.T) {
+	data := ActivityData{
+		Name:         "GetRunner",
+		OriginalName: "GetRunner",
+		InputType:    "GetRunnerRequest",
+		OutputType:   "*app.Runner",
+		Receiver:     "*Activities",
+		Options: &parser.ActivityOptions{
+			IsLocal:     true,
+			MaxRetries:  3,
+			RetryPolicy: true,
+		},
+	}
+
+	output, err := GenerateLocalActivity(data)
+	require.NoError(t, err)
+
+	code := string(output)
+	assert.Contains(t, code, "MaximumAttempts: 1")
+	assert.NotContains(t, code, "MaximumAttempts: 3")
+}
+
 func TestGenerateLocalActivityHonorsAnnotatedTimeouts(t *testing.T) {
 	tests := []struct {
 		name        string

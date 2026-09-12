@@ -11,6 +11,7 @@ import (
 // @start-to-close-timeout 1m
 // @as-wrapper
 // @wrapper-prefix QueueInternal
+// @local
 func (a *Activities) checkRestartHint(ctx context.Context, queueID string) (bool, error) {
 	// Look up the queue to find the owning runner.
 	var queue app.Queue
@@ -35,6 +36,7 @@ func (a *Activities) checkRestartHint(ctx context.Context, queueID string) (bool
 // @start-to-close-timeout 1m
 // @as-wrapper
 // @wrapper-prefix QueueInternal
+// @local
 func (a *Activities) clearRestartHint(ctx context.Context, queueID string) error {
 	// Look up the queue to find the owning runner.
 	var queue app.Queue

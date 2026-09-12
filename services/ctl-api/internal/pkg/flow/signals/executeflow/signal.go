@@ -184,8 +184,10 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("workflow_id is required")
 	}
 
-	// Resolve owner from the workflow if not explicitly set.
-	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
+	// Resolve owner from the workflow if not explicitly set. Uses the Steps-free
+	// variant: Validate reads only identity and routing fields, so the full
+	// Steps preload made the cost of starting a flow scale with its step count.
+	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowMetaByID(ctx, s.WorkflowID)
 	if err != nil {
 		return s.failWorkflow(ctx, errors.Wrap(err, "unable to get workflow"))
 	}

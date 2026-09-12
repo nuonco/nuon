@@ -197,3 +197,8 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	// to the owner's default queue (used with per-step signal queue routing).
 	return nil
 }
+
+// InlineValidate marks Validate as activity-free: it only checks required
+// fields, so the handler folds the phase into execute rather than paying a
+// separate update round trip per step.
+func (s *Signal) InlineValidate() bool { return true }

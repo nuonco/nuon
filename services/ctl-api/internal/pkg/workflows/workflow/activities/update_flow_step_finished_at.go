@@ -16,6 +16,7 @@ type UpdateFlowStepFinishedAtRequest struct {
 
 // @temporal-gen-v2 activity
 // @by-field ID
+// @local
 func (a *Activities) PkgWorkflowsFlowUpdateFlowStepFinishedAt(ctx context.Context, req UpdateFlowStepFinishedAtRequest) error {
 	runner := app.WorkflowStep{
 		ID: req.ID,

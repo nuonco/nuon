@@ -30,6 +30,11 @@ type ActivityOptions struct {
 	WrapperPrefix          string // Prefix to add to generated wrapper function name
 	ReplicaRead            bool
 	IsLocal                bool
+	// LocalMaxRetries is deliberately separate from MaxRetries: the generator
+	// injects a default into MaxRetries for every activity that does not set
+	// one, so keying the local wrapper off it would silently give every
+	// existing @local activity retries it never had.
+	LocalMaxRetries int
 }
 
 type WorkflowOptions struct {
@@ -72,6 +77,9 @@ func (a *Annotation) Validate() error {
 		}
 		if a.ActivityOpts.ReplicaRead && !a.ActivityOpts.GenerateWrapper {
 			return fmt.Errorf("@replica-read requires @as-wrapper to be specified")
+		}
+		if a.ActivityOpts.LocalMaxRetries != 0 && !a.ActivityOpts.IsLocal {
+			return fmt.Errorf("@local-retry-policy-max-attempts requires @local to be specified")
 		}
 	}
 	if a.WorkflowOpts != nil {
@@ -407,6 +415,19 @@ func parseLines(comments []string) (*Annotation, error) {
 				continue
 			}
 			annotation.ActivityOpts.IsLocal = true
+
+		case "@local-retry-policy-max-attempts":
+			if annotation.Type != "activity" {
+				continue
+			}
+			if len(parts) < 2 {
+				return nil, fmt.Errorf("missing value for @local-retry-policy-max-attempts")
+			}
+			n, err := strconv.Atoi(parts[1])
+			if err != nil {
+				return nil, fmt.Errorf("invalid number for @local-retry-policy-max-attempts: %w", err)
+			}
+			annotation.ActivityOpts.LocalMaxRetries = n
 
 		case "@wrapper-prefix":
 			if annotation.Type != "activity" {
