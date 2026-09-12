@@ -65,11 +65,7 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 
 	// same env layering as the host path, minus any inherited host environment.
 	env := map[string]string{"COLUMNS": "500"}
-	env = generics.MergeMap(env, h.state.plan.BuiltinEnvVars)
-	env = generics.MergeMap(env, builtInEnv)
-	env = generics.MergeMap(env, h.state.run.RunEnvVars)
-	env = generics.MergeMap(env, envVars)
-	env = generics.MergeMap(env, h.state.plan.OverrideEnvVars)
+	env = generics.MergeMap(env, h.actionStepEnv(builtInEnv, envVars))
 
 	image, err := h.actionImageRef()
 	if err != nil {
