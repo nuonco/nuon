@@ -16,7 +16,7 @@ func TestAPIProviderGraphs(t *testing.T) {
 		name    string
 		modules fx.Option
 	}{
-		{"all", fx.Options(fxmodules.AllServicesModule, fxmodules.AllAPIsModule, fxmodules.MCPAPIModule)},
+		{"all", fx.Options(fxmodules.AllServicesModule, fxmodules.AllAPIsModule, fxmodules.MCPAPIModule, fxmodules.NuonctlMCPServicesModule, fxmodules.NuonctlMCPAPIModule)},
 		{"public", fx.Options(fxmodules.PublicServicesModule, fxmodules.PublicAPIModule)},
 		{"runner", fx.Options(fxmodules.RunnerServicesModule, fxmodules.RunnerAPIModule)},
 		{"auth", fx.Options(fxmodules.AuthServicesModule, fxmodules.AuthAPIModule)},
