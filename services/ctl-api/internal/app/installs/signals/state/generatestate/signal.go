@@ -45,7 +45,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	return stategen.HintOrGenerate(ctx, stategen.Request{
-		StateGenV2:      true,
 		InstallID:       s.InstallID,
 		AllTargets:      true,
 		TriggeredByID:   s.InstallID,
