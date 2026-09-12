@@ -357,7 +357,7 @@ done
 mkdir -p /opt/nuon/runner/bin
 curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner/install.sh > /tmp/install-runner.sh
 chmod +x /tmp/install-runner.sh
-yes | /tmp/install-runner.sh $RUNNER_BINARY_VERSION /opt/nuon/runner/bin
+RUNNER_API_URL="$RUNNER_API_URL" /tmp/install-runner.sh --no-input $RUNNER_BINARY_VERSION /opt/nuon/runner/bin
 rm /tmp/install-runner.sh
 
 # Write initial image config for the mng monitor
