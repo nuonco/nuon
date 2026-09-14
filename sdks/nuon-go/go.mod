@@ -9,7 +9,7 @@ require (
 	github.com/go-openapi/swag v0.23.1
 	github.com/go-openapi/validate v0.24.0
 	github.com/go-playground/validator/v10 v10.23.0
-	github.com/go-swagger/go-swagger v0.33.0
+	github.com/go-swagger/go-swagger v0.33.1
 	github.com/golang/mock v1.7.0-rc.1
 )
 

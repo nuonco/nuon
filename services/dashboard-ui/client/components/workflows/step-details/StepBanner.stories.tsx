@@ -30,6 +30,59 @@ export const Error = () => (
   />
 )
 
+const terraformCompositeError = {
+  version: 1,
+  type: 'terraform.error',
+  severity: 'error',
+  message: 'creating S3 Bucket (acme-artifacts): AccessDenied',
+  sections: [
+    {
+      heading: 'Output',
+      kind: 'code',
+      body: [
+        'Error: creating S3 Bucket (acme-artifacts): AccessDenied',
+        '  with module.storage.aws_s3_bucket.artifacts',
+        'User: arn:aws:sts::000000000000:assumed-role/acme/runner is not authorized',
+        'to perform: s3:CreateBucket on resource: arn:aws:s3:::acme-artifacts',
+      ].join('\n'),
+    },
+  ],
+}
+
+export const ErrorWithCompositeError = () => (
+  <StepBanner
+    step={
+      {
+        ...baseStep,
+        status: {
+          status: 'error',
+          status_human_description: 'unable to execute job: exit status 1',
+          history: [],
+          composite_error: terraformCompositeError,
+        },
+      } as TWorkflowStep
+    }
+  />
+)
+
+export const FailedPendingRetryWithCompositeError = () => (
+  <StepBanner
+    step={
+      {
+        ...baseStep,
+        retryable: true,
+        skippable: true,
+        status: {
+          status: 'failed-pending-retry',
+          status_human_description: 'step failed, awaiting user action',
+          history: [],
+          composite_error: terraformCompositeError,
+        },
+      } as TWorkflowStep
+    }
+  />
+)
+
 export const ErrorRetryable = () => (
   <StepBanner
     step={

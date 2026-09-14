@@ -12,7 +12,7 @@ import (
 )
 
 func (s *InstallsServiceTestSuite) TestUpdateInstallInputsSuccess() {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 
 	// Find the AppInputConfig created by CreateAppConfig.
 	var inputCfg app.AppInputConfig
@@ -64,7 +64,7 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallInputsSuccess() {
 // existing inputs. Previously this failed because the request had to carry every required
 // input.
 func (s *InstallsServiceTestSuite) TestUpdateInstallInputsPartialMerge() {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 
 	var inputCfg app.AppInputConfig
 	require.NoError(s.T(), s.deps.DB.
