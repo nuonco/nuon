@@ -59,6 +59,10 @@ type ServiceInstallPermissionsRoleStatus struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// NamedPolicyNames references AppNamedIAMPolicyConfig.Name values on the
+	// same permissions config. JSONB because each app config is a snapshot.
+	NamedPolicyNames []string `json:"named_policy_names"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 

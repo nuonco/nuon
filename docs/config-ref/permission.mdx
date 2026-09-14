@@ -19,6 +19,7 @@ title: 'Permission'
 | **`display_name`**<br/>string | display name of the role Human-readable display name shown in the installer UI. Supports templating | **Optional** | `"Application S3 Access"`, `"Database Admin"` |
 | **`permissions_boundary`**<br/>string | [AWS] permissions boundary policy [AWS only] Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) ... | **Optional** | `"./provision_boundary.json"`, `"./maintenance_boundary.json"` |
 | **`enabled_in_stack`**<br/>boolean | whether the role is enabled by default in the install stack Controls the default value of the Enable parameter for this role in the install stack (CloudFormation parameter or Terraform variable, de... | **Optional** | - |
+| **`named_policies`**<br/>[array](#named_policies) | named IAM policies to attach Named IAM policies to attach to this role, referenced by name. Use [[named_policies]] like [[policies]]. The name must match a named policy defined under permissions. T... | **Optional** | - |
 
 ### `policies`
 
@@ -31,4 +32,10 @@ title: 'Permission'
 | **`gcp_predefined_role`**<br/>string | [GCP] predefined role [GCP only] Name of a GCP predefined role to bind to the service account. This is the GCP equivalent of AWS managed policies — a Google-managed bundle of permissions. Mutually ... | **Optional** | `"roles/editor"`, `"roles/owner"` |
 | **`azure_actions`**<br/>array | [Azure] individual RBAC actions [Azure only] List of Azure RBAC action strings to include in a custom role definition bound to the operation's managed identity. Use this for fine-grained permission... | **Optional** | `"Microsoft.Compute/*"`, `"Microsoft.Resources/subscriptions/resourceGroups/*"` |
 | **`azure_built_in_roles`**<br/>array | [Azure] built-in roles [Azure only] Names of Azure built-in roles to assign to the operation's managed identity (e.g. Contributor, Reader). This is the Azure equivalent of AWS managed policies. Mut... | **Optional** | `"Contributor"`, `"Reader"` |
+
+### `named_policies`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`name`**<br/>string | named IAM policy name Must match the name of a named IAM policy defined under permissions. Same string as the policy's name field, including any templates | **✅ Required** | `"{{.nuon.install.id}}-alb-create"` |
 

@@ -41,6 +41,9 @@ type ServiceAppAWSIAMRoleConfig struct {
 	// Required: true
 	Name *string `json:"name"`
 
+	// named policy names
+	NamedPolicyNames []string `json:"named_policy_names"`
+
 	// permissions boundary
 	PermissionsBoundary string `json:"permissions_boundary,omitempty"`
 

@@ -16,6 +16,8 @@ type AppAWSIAMRole struct {
 	PermissionsBoundary string `mapstructure:"permissions_boundary,omitempty" toml:"permissions_boundary,omitempty" features:"template,get"`
 
 	EnabledInStack *bool `mapstructure:"enabled_in_stack,omitempty" toml:"enabled_in_stack,omitempty"`
+
+	NamedPolicies []NamedPolicyRef `mapstructure:"named_policies,omitempty" toml:"named_policies,omitempty"`
 }
 
 func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -49,5 +51,7 @@ func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("./provision_boundary.json").
 		Example("./maintenance_boundary.json").
 		Field("enabled_in_stack").Short("whether the role is enabled by default in the install stack").
-		Long("Controls the default value of the Enable parameter for this role in the install stack (CloudFormation parameter or Terraform variable, depending on which format the customer applies). When true, the role is created by default. When false, the role is not created unless the installer explicitly enables it. If omitted, the platform default is used (true for standard roles, false for break-glass roles)")
+		Long("Controls the default value of the Enable parameter for this role in the install stack (CloudFormation parameter or Terraform variable, depending on which format the customer applies). When true, the role is created by default. When false, the role is not created unless the installer explicitly enables it. If omitted, the platform default is used (true for standard roles, false for break-glass roles)").
+		Field("named_policies").Short("named IAM policies to attach").
+		Long("Named IAM policies to attach to this role, referenced by name. Use [[named_policies]] like [[policies]]. The name must match a named policy defined under permissions. Those policies are created even when this role is disabled")
 }

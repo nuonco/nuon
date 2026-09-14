@@ -133,6 +133,13 @@ func sourceMemberKey(path string, contents []byte) (string, error) {
 		return "runner:runner", nil
 	}
 	parts := strings.Split(path, "/")
+	if len(parts) == 3 && parts[0] == "permissions" && parts[1] == "policies" {
+		stem := strings.TrimSuffix(parts[2], ".toml")
+		if stem == "" || stem == parts[2] {
+			return "", fmt.Errorf("source file %s has no name field", path)
+		}
+		return "permission_policy:" + stem, nil
+	}
 	if len(parts) != 2 {
 		return "", nil
 	}

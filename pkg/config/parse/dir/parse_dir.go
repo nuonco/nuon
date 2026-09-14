@@ -1,7 +1,9 @@
 package dir
 
 import (
+	"path/filepath"
 	"reflect"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -42,6 +44,10 @@ func (p *parser) parseDir(path string, typ reflect.Type) (any, error) {
 	objs := reflect.MakeSlice(typ, 0, len(files))
 
 	for _, f := range files {
+		if skipPermissionsPoliciesAsRoles(path, f) {
+			continue
+		}
+
 		elemType := typ.Elem()
 		obj := reflect.New(elemType).Interface()
 
@@ -79,4 +85,15 @@ func (p *parser) parseDir(path string, typ reflect.Type) (any, error) {
 	}
 
 	return objs.Interface(), nil
+}
+
+// skipPermissionsPoliciesAsRoles keeps named IAM policy files from being parsed
+// as AppAWSIAMRole. permissions/policies/ is a reserved subdirectory; listDir
+// would otherwise recurse into it while walking permissions/.
+func skipPermissionsPoliciesAsRoles(dirPath, filePath string) bool {
+	if dirPath != "permissions" {
+		return false
+	}
+	slash := filepath.ToSlash(filePath)
+	return slash == "permissions/policies" || strings.HasPrefix(slash, "permissions/policies/")
 }

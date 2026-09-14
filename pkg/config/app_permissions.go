@@ -33,6 +33,8 @@ type PermissionsConfig struct {
 	CustomRoles     []*AppAWSIAMRole `mapstructure:"custom_roles,omitempty" toml:"custom_roles,omitempty"`
 
 	Roles []*AppAWSIAMRole `mapstructure:"roles,omitempty" toml:"roles,omitempty"`
+
+	NamedPolicies []NamedIAMPolicy `mapstructure:"named_policies,omitempty" toml:"named_policies,omitempty"`
 }
 
 func (a PermissionsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -46,7 +48,9 @@ func (a PermissionsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("custom_roles").Short("custom IAM roles").
 		Long("Additional IAM roles for specialized operations beyond the standard provision/maintenance/deprovision lifecycle. Each role must have type set to 'custom'").
 		Field("roles").Short("list of permission roles").
-		Long("Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, deprovision, or custom)")
+		Long("Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, deprovision, or custom)").
+		Field("named_policies").Short("named IAM policies").
+		Long("Customer-managed IAM policies created independently of any role's Enable parameter. Attach them from a role with named_policies. Distinct from the root policies/ directory, which is Kyverno/OPA")
 }
 
 func (a *PermissionsConfig) parse() error {
@@ -103,6 +107,70 @@ func (a *PermissionsConfig) Validate() error {
 	}
 	if a.DeprovisionRole == nil {
 		return errors.New("missing permission with type `deprovision`")
+	}
+
+	return validateNamedPolicyAttachments(a.NamedPolicies, a.allRoles())
+}
+
+func (a *PermissionsConfig) allRoles() []*AppAWSIAMRole {
+	roles := make([]*AppAWSIAMRole, 0, 3+len(a.CustomRoles)+len(a.Roles))
+	roles = append(roles, a.ProvisionRole, a.MaintenanceRole, a.DeprovisionRole)
+	roles = append(roles, a.CustomRoles...)
+	if len(a.Roles) > 0 {
+		// Directory parse copies into the typed fields; Roles still holds the
+		// same pointers. Deduplicate by identity so we don't double-check.
+		seen := make(map[*AppAWSIAMRole]struct{}, len(roles))
+		for _, role := range roles {
+			if role != nil {
+				seen[role] = struct{}{}
+			}
+		}
+		for _, role := range a.Roles {
+			if role == nil {
+				continue
+			}
+			if _, ok := seen[role]; ok {
+				continue
+			}
+			roles = append(roles, role)
+		}
+	}
+	return roles
+}
+
+func validateNamedPolicyAttachments(named []NamedIAMPolicy, roles []*AppAWSIAMRole) error {
+	if len(named) == 0 {
+		for _, role := range roles {
+			if role == nil {
+				continue
+			}
+			if len(role.NamedPolicies) > 0 {
+				return fmt.Errorf("role %q references named policies %v but none are defined", role.Name, NamedPolicyRefNames(role.NamedPolicies))
+			}
+		}
+		return nil
+	}
+
+	names := make(map[string]struct{}, len(named))
+	for _, policy := range named {
+		if policy.Name == "" {
+			return errors.New("named policy is missing a name")
+		}
+		if _, ok := names[policy.Name]; ok {
+			return fmt.Errorf("named policy %s is duplicated", policy.Name)
+		}
+		names[policy.Name] = struct{}{}
+	}
+
+	for _, role := range roles {
+		if role == nil {
+			continue
+		}
+		for _, ref := range role.NamedPolicies {
+			if _, ok := names[ref.Name]; !ok {
+				return fmt.Errorf("role %q references unknown named policy %q", role.Name, ref.Name)
+			}
+		}
 	}
 
 	return nil

@@ -491,6 +491,7 @@ func diffPermissions(old, new *PermissionsConfig) *diff.Diff {
 
 	// Custom roles matched by name
 	children = append(children, diffIAMRoles("custom_role", old.CustomRoles, new.CustomRoles)...)
+	children = append(children, diffNamedIAMPolicies(old.NamedPolicies, new.NamedPolicies)...)
 
 	return sectionDiff("permissions", old, new, children)
 }
@@ -515,6 +516,7 @@ func diffIAMRole(key string, old, new *AppAWSIAMRole) *diff.Diff {
 			diff.NewDiff(diff.WithKey("cloud_platform"), diff.WithStringDiff(old.CloudPlatform, new.CloudPlatform)),
 			diff.NewDiff(diff.WithKey("permissions_boundary"), diff.WithStringDiff(old.PermissionsBoundary, new.PermissionsBoundary)),
 			diff.NewDiff(diff.WithKey("enabled_in_stack"), diff.WithOptionalBoolDiff(old.EnabledInStack, new.EnabledInStack)),
+			diff.NewDiff(diff.WithKey("named_policies"), diff.WithStringSliceDiff(NamedPolicyRefNames(old.NamedPolicies), NamedPolicyRefNames(new.NamedPolicies))),
 		),
 	)
 }
@@ -543,6 +545,44 @@ func diffIAMRoles(prefix string, old, new []*AppAWSIAMRole) []*diff.Diff {
 		}
 	}
 
+	return diffs
+}
+
+func diffNamedIAMPolicies(old, new []NamedIAMPolicy) []*diff.Diff {
+	oldByID := make(map[string]NamedIAMPolicy, len(old))
+	for _, p := range old {
+		oldByID[p.Name] = p
+	}
+
+	var diffs []*diff.Diff
+	seen := make(map[string]bool)
+	for _, p := range new {
+		id := p.Name
+		seen[id] = true
+		op := oldByID[id]
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("named_policy."+id),
+			diff.WithChildren(
+				diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(op.Name, p.Name)),
+				diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(op.Description, p.Description)),
+				diff.NewDiff(diff.WithKey("contents"), diff.WithContentDiff(op.Contents, p.Contents)),
+			),
+		))
+	}
+	for _, p := range old {
+		id := p.Name
+		if seen[id] {
+			continue
+		}
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("named_policy."+id),
+			diff.WithChildren(
+				diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(p.Name, "")),
+				diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(p.Description, "")),
+				diff.NewDiff(diff.WithKey("contents"), diff.WithContentDiff(p.Contents, "")),
+			),
+		))
+	}
 	return diffs
 }
 
