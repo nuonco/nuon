@@ -12,7 +12,7 @@ import (
 )
 
 func (s *InstallsServiceTestSuite) TestCreateComponentDeploySuccess() {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 
 	// Get component and config connection from the seeded app config.
 	ccc := s.testAppConfig.ComponentConfigConnections[0]
