@@ -1,6 +1,7 @@
 package nuon
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -19,6 +20,7 @@ type stderrResponse interface {
 type httpAPIError struct {
 	statusCode int
 	body       string
+	payload    *models.StderrErrResponse
 }
 
 func (e *httpAPIError) Error() string {
@@ -34,6 +36,9 @@ func (e *httpAPIError) IsServerError() bool {
 }
 
 func (e *httpAPIError) GetPayload() *models.StderrErrResponse {
+	if e.payload != nil {
+		return e.payload
+	}
 	return &models.StderrErrResponse{
 		Error:       e.body,
 		Description: fmt.Sprintf("HTTP %d", e.statusCode),
@@ -41,7 +46,16 @@ func (e *httpAPIError) GetPayload() *models.StderrErrResponse {
 }
 
 func newHTTPAPIError(statusCode int, body string) error {
-	return &httpAPIError{statusCode: statusCode, body: body}
+	payload := new(models.StderrErrResponse)
+	if err := json.Unmarshal([]byte(body), payload); err != nil {
+		payload = nil
+	}
+
+	return &httpAPIError{
+		statusCode: statusCode,
+		body:       body,
+		payload:    payload,
+	}
 }
 
 // ToUserError returns the error as a user error if possible

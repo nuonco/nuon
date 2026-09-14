@@ -2,6 +2,9 @@ package nuon
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -38,34 +41,39 @@ func (c *client) GetInstallSandboxRun(ctx context.Context, installID, runID stri
 }
 
 func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
-	resp, err := c.genClient.Operations.DeprovisionInstallSandbox(&operations.DeprovisionInstallSandboxParams{
-		InstallID: installID,
-		Context:   ctx,
-		// TODO: make this configurable
-		Req: &models.ServiceDeprovisionInstallSandboxRequest{
-			PlanOnly: false,
-		},
-	}, c.getOrgIDAuthInfo())
+	var result models.AppWorkflowResponse
+	path := fmt.Sprintf("%s/v1/installs/%s/deprovision-sandbox", c.APIURL, url.PathEscape(installID))
+	err := c.triggerRequest(
+		ctx,
+		http.MethodPost,
+		path,
+		&models.ServiceDeprovisionInstallSandboxRequest{},
+		http.StatusCreated,
+		&result,
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	return resp.Payload, nil
+	return &result, nil
 }
 
 func (c *client) ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents ...bool) (*models.AppWorkflowResponse, error) {
 	skip := len(skipComponents) > 0 && skipComponents[0]
-	resp, err := c.genClient.Operations.ReprovisionInstallSandbox(&operations.ReprovisionInstallSandboxParams{
-		InstallID: installID,
-		Context:   ctx,
-		Req: &models.ServiceReprovisionInstallSandboxRequest{
+	var result models.AppWorkflowResponse
+	path := fmt.Sprintf("%s/v1/installs/%s/reprovision-sandbox", c.APIURL, url.PathEscape(installID))
+	err := c.triggerRequest(
+		ctx,
+		http.MethodPost,
+		path,
+		&models.ServiceReprovisionInstallSandboxRequest{
 			PlanOnly:       false,
 			SkipComponents: skip,
 		},
-	}, c.getOrgIDAuthInfo())
+		http.StatusCreated,
+		&result,
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	return resp.Payload, nil
+	return &result, nil
 }

@@ -22,11 +22,7 @@ func (a *Activities) HasActiveRunnerProcess(ctx context.Context, req HasActiveRu
 	res := a.db.WithContext(ctx).
 		Model(&app.RunnerProcess{}).
 		Where("runner_id = ?", req.RunnerID).
-		Where("composite_status->>'status' IN ?", []string{
-			string(app.RunnerProcessStatusActive),
-			string(app.RunnerProcessStatusPendingShutdown),
-			string(app.RunnerProcessStatusShuttingDown),
-		}).
+		Where("composite_status->>'status' IN ?", app.ActiveRunnerProcessStatuses()).
 		Count(&count)
 	if res.Error != nil {
 		return nil, res.Error

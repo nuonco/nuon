@@ -23,6 +23,10 @@ const SignalType signal.SignalType = "await-runner-healthy"
 // activities, so the disabled-runner short circuit must not apply on replay.
 const skipDisabledRunnerVersion = "await-runner-healthy-skip-disabled-runner-v1"
 
+// Offline or error runners will never become healthy during the poll window.
+// Old histories that already started the poll loop must not be interrupted.
+const failFastUnhealthyRunnerVersion = "await-runner-healthy-failfast-unhealthy-v1"
+
 type Signal struct {
 	InstallID      string `json:"install_id"`
 	WorkflowStepID string `json:"workflow_step_id"`
@@ -40,7 +44,9 @@ var (
 
 func (s *Signal) AutoRetry() bool { return true }
 
-func (s *Signal) MaxAutoRetries(ctx workflow.Context) int { return 3 }
+// Manual retry remains available if the runner is repaired, but another
+// automatic one-hour poll cannot repair it.
+func (s *Signal) MaxAutoRetries(ctx workflow.Context) int { return 0 }
 
 func (s *Signal) WithParams(params *signal.Params) {
 	s.v = params.V
@@ -105,6 +111,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
+	failFast := workflow.GetVersion(ctx, failFastUnhealthyRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if failFast && runnerCannotBecomeHealthy(runner.Status) {
+		return errors.Errorf("runner is %s and cannot process jobs; check the runner status and try again", runner.Status)
+	}
+
 	// Determine the process type to poll based on runner group type
 	processType := app.InstallProcessForRunnerGroupType(runner.RunnerGroup.Type)
 	if processType == app.RunnerProcessTypeUnknown {
@@ -157,4 +168,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	return nil
+}
+
+func runnerCannotBecomeHealthy(status app.RunnerStatus) bool {
+	return status == app.RunnerStatusOffline || status == app.RunnerStatusError
 }

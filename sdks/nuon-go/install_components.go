@@ -2,6 +2,9 @@ package nuon
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -110,19 +113,27 @@ func (c *client) ToggleInstallComponent(ctx context.Context, installID, componen
 }
 
 func (c *client) TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error) {
-	resp, err := c.genClient.Operations.TeardownInstallComponent(&operations.TeardownInstallComponentParams{
-		InstallID:   installID,
-		ComponentID: componentID,
-		Context:     ctx,
-		Req: &models.ServiceTeardownInstallComponentRequest{
+	var result models.AppWorkflowResponse
+	path := fmt.Sprintf(
+		"%s/v1/installs/%s/components/%s/teardown",
+		c.APIURL,
+		url.PathEscape(installID),
+		url.PathEscape(componentID),
+	)
+	err := c.triggerRequest(
+		ctx,
+		http.MethodPost,
+		path,
+		&models.ServiceTeardownInstallComponentRequest{
 			Role: roleName,
 		},
-	}, c.getOrgIDAuthInfo())
+		http.StatusCreated,
+		&result,
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	return resp.Payload, nil
+	return &result, nil
 }
 
 func (c *client) RecoverInstallComponentHelmRelease(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error) {
@@ -152,31 +163,38 @@ func (c *client) ForgetInstallComponent(ctx context.Context, installID, componen
 }
 
 func (c *client) TeardownInstallComponents(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
-	resp, err := c.genClient.Operations.TeardownInstallComponents(&operations.TeardownInstallComponentsParams{
-		InstallID: installID,
-		Context:   ctx,
-		// TODO(jm): make this configurable
-		Req: &models.ServiceTeardownInstallComponentsRequest{},
-	}, c.getOrgIDAuthInfo())
+	var result models.AppWorkflowResponse
+	path := fmt.Sprintf("%s/v1/installs/%s/components/teardown-all", c.APIURL, url.PathEscape(installID))
+	err := c.triggerRequest(
+		ctx,
+		http.MethodPost,
+		path,
+		&models.ServiceTeardownInstallComponentsRequest{},
+		http.StatusCreated,
+		&result,
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	return resp.Payload, nil
+	return &result, nil
 }
 
 func (c *client) DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool) (*models.AppWorkflowResponse, error) {
-	resp, err := c.genClient.Operations.DeployInstallComponents(&operations.DeployInstallComponentsParams{
-		InstallID: installID,
-		Context:   ctx,
-		Req: &models.ServiceDeployInstallComponentsRequest{
+	var result models.AppWorkflowResponse
+	path := fmt.Sprintf("%s/v1/installs/%s/components/deploy-all", c.APIURL, url.PathEscape(installID))
+	err := c.triggerRequest(
+		ctx,
+		http.MethodPost,
+		path,
+		&models.ServiceDeployInstallComponentsRequest{
 			PlanOnly: planOnly,
 			Role:     roleName,
 		},
-	}, c.getOrgIDAuthInfo())
+		http.StatusCreated,
+		&result,
+	)
 	if err != nil {
 		return nil, err
 	}
-
-	return resp.Payload, nil
+	return &result, nil
 }
