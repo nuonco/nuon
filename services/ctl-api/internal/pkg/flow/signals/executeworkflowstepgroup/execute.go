@@ -93,7 +93,7 @@ func (s *Signal) updateGroupStatus(ctx workflow.Context, status app.CompositeSta
 	if s.StepGroupID == "" {
 		return
 	}
-	statusactivities.AwaitPkgStatusUpdateFlowStepGroupStatus(ctx, statusactivities.UpdateStatusRequest{
+	updateGroupStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID:     s.StepGroupID,
 		Status: status,
 	})
@@ -182,7 +182,7 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb c
 	}
 
 	// Mark step as queued
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+	if err := updateStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status: app.StatusQueued,

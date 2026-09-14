@@ -52,6 +52,7 @@ type UpdateWorkflowRunStatusRequest struct {
 }
 
 // @temporal-gen-v2 activity
+// @local
 func (a *Activities) PkgWorkflowsFlowUpdateWorkflowRunStatus(ctx context.Context, req UpdateWorkflowRunStatusRequest) error {
 	res := a.db.WithContext(ctx).
 		Model(&app.WorkflowRun{}).

@@ -5,7 +5,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 )
 
 func (q *queue) ensureActive(ctx workflow.Context) error {
@@ -14,7 +13,7 @@ func (q *queue) ensureActive(ctx workflow.Context) error {
 		return err
 	}
 
-	exists, err := activities.AwaitQueueExistsByQueueID(ctx, q.queueID)
+	exists, err := queueExistsByID(ctx, q.queueID)
 	if err != nil {
 		return err
 	}

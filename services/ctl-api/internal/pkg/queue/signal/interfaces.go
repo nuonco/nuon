@@ -105,9 +105,19 @@ type SignalWithRetryGroup interface {
 // completion within a single workflow task, so it can never be abandoned
 // mid-phase and re-running it on recovery is safe. The stamps then serve no
 // purpose and only add status-write round-trips to the dispatch hot path.
-// Note: Validate still runs in full — only the two success-path stamps are skipped.
+// The handler also folds the phase into execute for such signals: the queue
+// skips the validate update entirely and the handler runs Validate at the head
+// of the execute phase, removing an update round trip and a callback from the
+// dispatch hot path. Validate still runs in full, and still emits its
+// lifecycle phase events; only the two success-path stamps are skipped.
 type SignalWithInlineValidate interface {
 	InlineValidate() bool
+}
+
+// IsInlineValidate reports whether s declares an inline, activity-free Validate.
+func IsInlineValidate(s Signal) bool {
+	iv, ok := s.(SignalWithInlineValidate)
+	return ok && iv.InlineValidate()
 }
 
 // ---------------------------------------------------------------------------

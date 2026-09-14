@@ -91,7 +91,7 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 	// Read the directive from the step group after the group finishes.
 	// Falls back to reading from the workflow for synthetic groups.
 	if group.ID != "" {
-		updatedGroup, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroupByID(ctx, group.ID)
+		updatedGroup, err := getFlowStepGroupByID(ctx, group.ID)
 		if err != nil {
 			return "", errors.Wrap(err, "unable to re-fetch step group after group")
 		}

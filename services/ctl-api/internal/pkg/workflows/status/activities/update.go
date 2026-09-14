@@ -238,6 +238,7 @@ func (a *Activities) syncInstallAppConfigVersionFromFlowStatus(ctx context.Conte
 }
 
 // @temporal-gen-v2 activity
+// @local
 func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req UpdateStatusRequest) error {
 	obj := app.WorkflowStep{
 		ID: req.ID,
@@ -260,6 +261,7 @@ func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req Upda
 }
 
 // @temporal-gen-v2 activity
+// @local
 func (a *Activities) PkgStatusUpdateFlowStepGroupStatus(ctx context.Context, req UpdateStatusRequest) error {
 	obj := app.WorkflowStepGroup{
 		ID: req.ID,

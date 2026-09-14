@@ -9,6 +9,7 @@ import (
 )
 
 // @temporal-gen-v2 activity
+// @local
 func (a *Activities) PkgWorkflowsFlowGetFlowStepGroups(ctx context.Context, workflowID string) ([]app.WorkflowStepGroup, error) {
 	var allGroups []app.WorkflowStepGroup
 	res := a.db.WithContext(ctx).

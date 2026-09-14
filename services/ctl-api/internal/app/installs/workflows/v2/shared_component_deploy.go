@@ -40,6 +40,11 @@ func (s *stepGroup) nextGroupParallel() {
 	s.nextGroupWithOpts("", true)
 }
 
+func (s *stepGroup) nextGroupEagerParallel() {
+	s.nextGroupWithOpts("", true)
+	s.currentGroup.EagerExecution = true
+}
+
 func (s *stepGroup) nextGroupNamed(name string) {
 	s.nextGroupWithOpts(name, false)
 }

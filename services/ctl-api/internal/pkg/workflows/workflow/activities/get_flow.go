@@ -39,28 +39,7 @@ func (a *Activities) PkgWorkflowsFlowGetFlow(ctx context.Context, req GetFlowReq
 		return nil, errors.Wrap(res.Error, "unable to get install workflow")
 	}
 
-	// Resolve the polymorphic owner's display name with one cheap PK lookup.
-	// This runs once per Validate(), not per event, and lets the lifecycle
-	// hook stamp owner_name onto webhook payloads without a per-event query.
-	// Best-effort: errors leave OwnerName empty.
-	if wf.OwnerID != "" {
-		var ownerTable string
-		switch wf.OwnerType {
-		case "installs":
-			ownerTable = "installs"
-		case "apps":
-			ownerTable = "apps"
-		case "app_branches":
-			ownerTable = "app_branches"
-		}
-		if ownerTable != "" {
-			_ = a.db.WithContext(ctx).
-				Table(ownerTable).
-				Select("name").
-				Where("id = ?", wf.OwnerID).
-				Scan(&wf.OwnerName).Error
-		}
-	}
+	a.resolveFlowOwnerName(ctx, &wf)
 
 	return &wf, nil
 }

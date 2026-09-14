@@ -81,10 +81,11 @@ func shouldCreateManagedAWSCloudFormationStack(createManagedStack bool, install 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	install, err := activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
+	res, err := activities.AwaitGetInstallAndStackForStackByStackID(ctx, s.InstallStackID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
+	install := res.Install
 
 	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
 	if err != nil {
@@ -92,7 +93,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	s.versionID = version.ID
 
-	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	appCfg, err := activities.AwaitGetAppConfigForStackAwaitByID(ctx, install.AppConfigID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get app config")
 	}

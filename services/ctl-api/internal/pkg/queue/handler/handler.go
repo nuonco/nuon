@@ -79,6 +79,15 @@ type handler struct {
 	validating bool
 	executing  bool
 
+	// validated guards the validate phase so the folded inline path in
+	// executeHandler cannot re-run it after the validate update already did.
+	validated bool
+
+	// sandboxMode caches the org's sandbox-mode flag across phases. It cannot
+	// change mid-signal, so re-fetching the org per phase only cost a round trip.
+	sandboxMode         bool
+	sandboxModeResolved bool
+
 	// finishedStatus and finishedErr capture the terminal outcome so the
 	// finishedHandler can return it to AwaitSignal callers without a DB round-trip.
 	finishedStatus app.Status

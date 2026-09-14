@@ -120,11 +120,26 @@ there is only one vocabulary. Allowed: `task-queue`,
 `start-to-close-timeout`, `heartbeat-timeout`, `wait-for-cancellation`,
 `disable-eager-execution`, `max-retries`, `retry-policy-max-attempts`.
 
-Structural annotations (`@as-wrapper`, `@by-field`, `@local`, `@namespace`,
-`@options-callback`, ...) are deliberately **not** settable from a tag: they
-describe an individual function rather than a class of them. They are also
-one-way — the annotation language has no "off" form for a boolean, so a
-function could never opt back out of a tag that set `@as-wrapper`.
+Structural annotations (`@as-wrapper`, `@by-field`, `@local`,
+`@local-retry-policy-max-attempts`, `@namespace`, `@options-callback`, ...) are
+deliberately **not** settable from a tag: they describe an individual function
+rather than a class of them. They are also one-way — the annotation language has
+no "off" form for a boolean, so a function could never opt back out of a tag
+that set `@as-wrapper`.
+
+### `@local` retries
+
+`@local` generates a `LocalAwait*` wrapper alongside the normal `Await*` one.
+The local wrapper defaults to `MaximumAttempts: 1` and deliberately ignores
+`@retry-policy-max-attempts` / `@max-retries`, because the generator injects a
+default into those for every activity that does not annotate one — honouring
+them would hand retries to every existing `@local` activity, including
+non-idempotent ones. Use `@local-retry-policy-max-attempts N` to opt in. It
+requires `@local`.
+
+Local activity retries run inside the workflow task, so keep `N` small and only
+set it on work that is safe to run more than once: a workflow task that fails
+mid-flight replays every local activity it had not yet completed.
 
 ### Precedence
 

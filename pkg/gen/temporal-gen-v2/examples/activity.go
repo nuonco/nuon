@@ -72,6 +72,15 @@ func LocalActivityWithByField(ctx context.Context, user User) error {
 	return nil
 }
 
+// LocalActivityWithRetries demonstrates @local-retry-policy-max-attempts, which
+// opts a local activity out of the single-attempt default.
+// @temporal-gen-v2 activity
+// @local
+// @local-retry-policy-max-attempts 3
+func LocalActivityWithRetries(ctx context.Context, input string) error {
+	return nil
+}
+
 type Activities struct{}
 
 // myPrivateActivity demonstrates the wrapper pattern

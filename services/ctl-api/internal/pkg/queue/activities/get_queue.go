@@ -12,6 +12,7 @@ import (
 // @wrapper-prefix QueueInternal
 // @by-field queueID
 // @start-to-close-timeout 5m
+// @local
 func (a *Activities) getQueue(ctx context.Context, queueID string) (*app.Queue, error) {
 	var queue app.Queue
 

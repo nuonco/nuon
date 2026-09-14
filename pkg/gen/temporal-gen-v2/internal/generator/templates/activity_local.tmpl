@@ -17,7 +17,11 @@ func LocalAwait{{.Name | ToPascal}}(ctx workflow.Context, input {{if .Options.By
 		ScheduleToCloseTimeout: 10 * time.Second,
 		{{- end}}
 		RetryPolicy: &temporal.RetryPolicy{
+			{{- if .Options.LocalMaxRetries}}
+			MaximumAttempts: {{.Options.LocalMaxRetries}},
+			{{- else}}
 			MaximumAttempts: 1,
+			{{- end}}
 		},
 	})
 	{{- if .Options.ByFieldOnly}}

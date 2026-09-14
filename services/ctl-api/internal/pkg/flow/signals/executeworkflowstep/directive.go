@@ -25,7 +25,7 @@ const (
 // Use this when the step status should NOT be changed (e.g., the step failed
 // and we want to keep it as StatusError while signaling retry-group).
 func setResultDirective(ctx workflow.Context, stepID string, d directive.Step) error {
-	return activities.AwaitPkgWorkflowsFlowUpdateFlowStepResultDirective(ctx, activities.UpdateFlowStepResultDirectiveRequest{
+	return updateStepResultDirective(ctx, activities.UpdateFlowStepResultDirectiveRequest{
 		StepID:    stepID,
 		Directive: string(d),
 	})
@@ -49,7 +49,7 @@ func writeDirective(ctx workflow.Context, stepID string, d directive.Step, extra
 		meta[k] = v
 	}
 
-	return statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+	return updateStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: stepID,
 		Status: app.CompositeStatus{
 			Status:   app.StatusSuccess,

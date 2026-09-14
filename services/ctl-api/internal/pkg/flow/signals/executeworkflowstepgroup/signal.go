@@ -140,6 +140,11 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
+// InlineValidate marks Validate as activity-free: it only checks required
+// fields, so the handler folds the phase into execute rather than paying a
+// separate update round trip per step group.
+func (s *Signal) InlineValidate() bool { return true }
+
 // RegisterUpdateHandlers registers group-level update handlers.
 func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "cancel-group",
@@ -222,9 +227,7 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 // When StepGroupID is set, steps are filtered by WorkflowStepGroupID;
 // otherwise falls back to GroupIdx filtering for backward compatibility.
 func (s *Signal) getGroupSteps(ctx workflow.Context) ([]app.WorkflowStep, error) {
-	allSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, activities.GetFlowStepsRequest{
-		FlowID: s.WorkflowID,
-	})
+	allSteps, err := getFlowSteps(ctx, s.WorkflowID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get flow steps")
 	}

@@ -17,6 +17,14 @@ const SignalType qsignal.SignalType = "generate-workflow-steps"
 // todo(sk): clean this after teminating old workflows
 const cancelFinishedAtVersion = "generate-steps-cancel-finished-at-v1"
 
+// earlyEagerPublishVersion gates handing the generator an eager publisher.
+// Publishing mid-generation completes the eager-step-groups update earlier in
+// history relative to the generator's activity commands, so in-flight
+// generate-steps executions must keep consuming the eager subset only once
+// gen() has returned.
+// todo(sk): clean this after terminating old workflows
+const earlyEagerPublishVersion = "generate-steps-early-eager-publish-v1"
+
 // generatorRegistry is populated at init time by packages that register
 // step generators for specific owner types. This avoids import cycles.
 var generatorRegistry = map[string]func() map[app.WorkflowType]flow.WorkflowStepGenerator{}
@@ -121,39 +129,34 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return s.err
 	}
 
-	result, err := gen(ctx, flw)
+	// Hand the generator a publisher so it can release its eager groups at its
+	// own boundary instead of forcing the conductor to wait for the whole
+	// generation. Without this the eager-step-groups handler unblocks only
+	// after gen() returns, so nothing starts early and the optimization is
+	// inert.
+	genCtx := ctx
+	if workflow.GetVersion(ctx, earlyEagerPublishVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		genCtx = flow.WithEagerPublisher(ctx, func(groups []*app.WorkflowStepGroup, steps []*app.WorkflowStep) {
+			if s.eagerStepGroupsReady {
+				return
+			}
+			s.eagerStepGroups = &app.GenerateStepsResult{Steps: steps, Groups: groups}
+			s.eagerStepGroupsReady = true
+		})
+	}
+
+	result, err := gen(genCtx, flw)
 	if err != nil {
 		s.err = errors.Wrapf(err, "unable to generate steps for workflow %s", flw.ID)
 		s.done = true
 		return s.err
 	}
 
-	// Extract eager step groups for early consumption before marking done.
-	// Eager groups are those marked with EagerExecution, or just the first
-	// group if none are explicitly marked.
-	if len(result.Groups) > 0 {
-		var eagerGroups []*app.WorkflowStepGroup
-		for _, g := range result.Groups {
-			if g.EagerExecution {
-				eagerGroups = append(eagerGroups, g)
-			}
-		}
-		// Default: if no groups are explicitly eager, use the first group.
-		if len(eagerGroups) == 0 {
-			eagerGroups = []*app.WorkflowStepGroup{result.Groups[0]}
-		}
-
-		eagerGroupIdxs := make(map[int]bool)
-		for _, g := range eagerGroups {
-			eagerGroupIdxs[g.GroupIdx] = true
-		}
-
-		var eagerSteps []*app.WorkflowStep
-		for _, step := range result.Steps {
-			if eagerGroupIdxs[step.GroupIdx] {
-				eagerSteps = append(eagerSteps, step)
-			}
-		}
+	// Fallback for a generator that published nothing: consume the eager subset
+	// of the finished result, which is what every caller did before generators
+	// could publish early.
+	if !s.eagerStepGroupsReady && len(result.Groups) > 0 {
+		eagerGroups, eagerSteps := flow.EagerSubset(result.Groups, result.Steps)
 		s.eagerStepGroups = &app.GenerateStepsResult{
 			Steps:  eagerSteps,
 			Groups: eagerGroups,

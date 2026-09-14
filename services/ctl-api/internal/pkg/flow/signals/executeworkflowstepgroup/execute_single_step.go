@@ -7,7 +7,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
-	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 // StepResult describes the outcome of executing a single step.
@@ -68,7 +67,7 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 
 		// Read the step's final state from DB.
 		var err error
-		updatedStep, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
+		updatedStep, err = getStep(ctx, step.ID)
 		if err != nil {
 			return StepResult{Error: err}
 		}

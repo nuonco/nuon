@@ -44,16 +44,23 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 		h.validating = false
 	}()
 
+	finStatus, finDesc, retErr = h.runValidatePhase(ctx)
+	return nil, retErr
+}
+
+// runValidatePhase runs the validate phase body: the lifecycle hooks, the
+// signal's Validate, and the status writes. It is shared by the validate update
+// and by the folded inline path in executeHandler so the two cannot drift.
+// Returns the terminal status and description to apply on failure.
+func (h *handler) runValidatePhase(ctx workflow.Context) (app.Status, string, error) {
 	if err := workflow.Await(ctx, func() bool {
 		return h.ready
 	}); err != nil {
-		finStatus, finDesc = app.StatusError, err.Error()
-		return nil, errors.Wrap(err, "unable to await for ready")
+		return app.StatusError, err.Error(), errors.Wrap(err, "unable to await for ready")
 	}
 
 	if h.sig == nil {
-		finStatus, finDesc = app.StatusError, "signal was empty can not proceed"
-		return nil, errors.New("signal was empty can not proceed")
+		return app.StatusError, "signal was empty can not proceed", errors.New("signal was empty can not proceed")
 	}
 
 	var err error
@@ -89,8 +96,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 				"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
-		finStatus, finDesc = app.StatusError, blockedErr.Error()
-		return nil, blockedErr
+		return app.StatusError, blockedErr.Error(), blockedErr
 	}
 
 	start := workflow.Now(ctx)
@@ -112,8 +118,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 					"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 				},
 			})
-			finStatus, finDesc = app.StatusError, panicErr.Error()
-			return nil, panicErr
+			return app.StatusError, panicErr.Error(), panicErr
 		}
 
 		validateErr := &signal.SignalErrValidate{Err: err}
@@ -126,8 +131,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 				"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
-		finStatus, finDesc = app.StatusError, humanDesc
-		return nil, temporal.NewNonRetryableApplicationError(
+		return app.StatusError, humanDesc, temporal.NewNonRetryableApplicationError(
 			"signal failure",
 			humanDesc,
 			validateErr)
@@ -144,7 +148,8 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 		})
 	}
 
-	return nil, nil
+	h.validated = true
+	return "", "", nil
 }
 
 // skipValidateStamps reports whether the validate-phase abandonment stamps
@@ -154,8 +159,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 // status-write round-trips to the dispatch hot path. Error-path status writes
 // are unaffected — only the two success-path metadata stamps are skipped.
 func (h *handler) skipValidateStamps() bool {
-	iv, ok := h.sig.(signal.SignalWithInlineValidate)
-	return ok && iv.InlineValidate()
+	return signal.IsInlineValidate(h.sig)
 }
 
 // runSignalValidate calls the user-provided signal Validate in a panic-safe boundary.

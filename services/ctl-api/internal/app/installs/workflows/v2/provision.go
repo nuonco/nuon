@@ -11,16 +11,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitinstallstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisiondns"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionrunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxplan"
-	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/syncsecrets"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 )
 
 func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -34,39 +30,6 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	sg.nextGroupEager()
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-	var stateSignal signal.Signal
-	if stateGenV2 {
-		stateSignal = &statepartialgenerate.Signal{
-			InstallID:       installID,
-			Targets:         statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
-			TriggeredByID:   installID,
-			TriggeredByType: "installs",
-		}
-	} else {
-		stateSignal = &generatestate.Signal{InstallID: installID}
-	}
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, stateSignal, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
-
-	sg.nextGroupEager() // provision service account
-
-	step, err = sg.installSignalStep(ctx, installID, "provision runner service account", pgtype.Hstore{}, &provisionrunner.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
-
 	// Resolve stack ID for install stack signals
 	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, installID)
 	if err != nil {
@@ -74,17 +37,31 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	stackID := stack.ID
 
-	sg.nextGroupEager() // install stack
+	if flw.PlanOnly {
+		// Plan-only keeps the three separate steps: getSignalStepMetadata skips
+		// the stack signal here but not state generation, so folding them into
+		// one step would stop generating state on a plan-only run.
+		planOnlySteps, err := provisionStatePlanOnlySteps(ctx, sg, flw, install, installID, stackID)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, planOnlySteps...)
+	} else {
+		sg.nextGroupEager()
 
-	step, err = sg.installSignalStep(ctx, installID, "generate install stack", pgtype.Hstore{}, &generateinstallstackversion.Signal{
-		InstallStackID: stackID,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
+		step, err := sg.installSignalStep(ctx, installID, "generate install stack", pgtype.Hstore{}, &generateinstallstackversion.Signal{
+			InstallStackID:        stackID,
+			PrepareStateAndRunner: true,
+		}, flw.PlanOnly, WithSkippable(false), WithRetryable(true))
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
 	}
-	steps = append(steps, step)
 
-	step, err = sg.installSignalStep(ctx, installID, "await install stack", pgtype.Hstore{}, &awaitinstallstackversionrun.Signal{
+	sg.nextGroupEager() // await install stack
+
+	step, err := sg.installSignalStep(ctx, installID, "await install stack", pgtype.Hstore{}, &awaitinstallstackversionrun.Signal{
 		InstallStackID:     stackID,
 		CreateManagedStack: true,
 	}, flw.PlanOnly, WithSkippable(false))
@@ -100,6 +77,13 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		return nil, err
 	}
 	steps = append(steps, step)
+
+	// Everything above is eager, and everything below needs the app config,
+	// action workflows, sandbox and component graph — reads that cost far more
+	// than the steps generated so far. Release the eager groups here so the
+	// conductor executes them while the rest of this generator runs, instead of
+	// idling until it returns.
+	flow.PublishEagerGroups(ctx, sg.Groups(), steps)
 
 	// Stop with the stack and runner up so inputs that are only knowable once the
 	// runner exists can be set before the sandbox reads them. Provisioning the
