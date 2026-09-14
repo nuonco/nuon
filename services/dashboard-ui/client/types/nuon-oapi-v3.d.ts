@@ -6176,6 +6176,9 @@ export interface components {
       telemetry_relay_endpoint?: string;
       updated_at?: string;
       vendor_telemetry_enabled?: boolean;
+      vendor_telemetry_resource_attributes?: {
+        [key: string]: string;
+      };
       vm_max_uptime?: number;
     };
     /** @enum {string} */

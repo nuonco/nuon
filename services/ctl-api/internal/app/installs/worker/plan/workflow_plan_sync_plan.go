@@ -5,10 +5,18 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+)
+
+// Placeholder identity for a sandboxed sync with no pullable source image.
+const (
+	fakeSyncRepository = "registry.example.com/nuon/app-service"
+	fakeSyncTag        = "v1.2.3"
 )
 
 func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanRequest) (*plantypes.SyncOCIPlan, error) {
@@ -105,9 +113,33 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 	if install.SandboxMode.Bool {
 		pln.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
-			Outputs: plantypes.FakeOCISyncOutputs("registry.example.com/nuon/app-service", "v1.2.3"),
+			Outputs: sandboxSyncOutputs(compBuild),
 		}
 	}
 
 	return pln, nil
+}
+
+// sandboxSyncOutputs decides what a sandboxed image sync reports as the artifact
+// it synced. A component sourcing a public image reports that image at its real
+// tag, so the install's outputs name the artifact the component actually points
+// at rather than a fabricated registry. Anything Nuon builds, and any source
+// behind registry credentials the sandbox never mints, keeps the placeholder.
+func sandboxSyncOutputs(build *app.ComponentBuild) map[string]any {
+	cfg := build.ComponentConfigConnection.ExternalImageComponentConfig
+	if cfg == nil || cfg.ImageURL == "" {
+		return plantypes.FakeOCISyncOutputs(fakeSyncRepository, fakeSyncTag)
+	}
+	if cfg.AWSECRImageConfig != nil || cfg.GCPGARImageConfig != nil || cfg.AzureACRImageConfig != nil {
+		return plantypes.FakeOCISyncOutputs(fakeSyncRepository, fakeSyncTag)
+	}
+
+	// A config carrying only an update_policy has no tag until a real build
+	// resolves one against the source registry, which a sandbox never does.
+	tag := generics.FirstNonEmptyString(build.ResolvedTag, cfg.Tag)
+	if tag == "" {
+		return plantypes.FakeOCISyncOutputs(fakeSyncRepository, fakeSyncTag)
+	}
+
+	return plantypes.FakePublicOCISyncOutputs(cfg.ImageURL, tag)
 }
