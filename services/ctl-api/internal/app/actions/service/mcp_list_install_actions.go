@@ -12,7 +12,7 @@ import (
 )
 
 type mcpListInstallActionsInput struct {
-	InstallID string `json:"install_id" jsonschema:"install ID to list actions for"`
+	Install string `json:"install" jsonschema:"install name or ID"`
 }
 
 type mcpInstallActionSummary struct {
@@ -28,9 +28,17 @@ func (s *service) mcpListInstallActions(ctx context.Context, _ *mcp.CallToolRequ
 		return nil, nil, err
 	}
 
+	if in.Install == "" {
+		return nil, nil, fmt.Errorf("install is required")
+	}
+	install, err := s.findInstall(ctx, orgID, in.Install)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to get install: %w", err)
+	}
+
 	var actions []app.InstallActionWorkflow
 	err = s.db.WithContext(ctx).
-		Where(app.InstallActionWorkflow{OrgID: orgID, InstallID: in.InstallID}).
+		Where(app.InstallActionWorkflow{OrgID: orgID, InstallID: install.ID}).
 		Preload("ActionWorkflow").
 		Order("created_at DESC").
 		Limit(50).
