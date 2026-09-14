@@ -3,11 +3,13 @@ package cloudformation
 import (
 	"testing"
 
+	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 	"github.com/awslabs/goformation/v7/cloudformation/tags"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
@@ -98,4 +100,98 @@ func TestGetRunnerPhoneHomeLambdaRole_NotRunnerAssumable(t *testing.T) {
 	role := tpl.getRunnerPhoneHomeLambdaRole(inp, tagBuilder{installID: inp.Install.ID})
 
 	assert.NotContains(t, role.Tags, tags.Tag{Key: TagKeyRunnerAssumable, Value: "true"})
+}
+
+func TestGetRolesResources_NamedPolicies(t *testing.T) {
+	tpl := &Templates{cfg: &internal.Config{}}
+	contents := []byte(`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"logs:*","Resource":"*"}]}`)
+	named := app.AppNamedIAMPolicyConfig{
+		Name:                    "logs",
+		PolicyName:              "install-logs",
+		Contents:                contents,
+		CloudFormationStackName: "NamedPolicyLogs",
+	}
+
+	inp := rolesTestInput()
+	inp.AppCfg.PermissionsConfig.NamedPolicies = []app.AppNamedIAMPolicyConfig{named}
+	inp.AppCfg.PermissionsConfig.Roles[0].NamedPolicyNames = []string{"logs"}
+	inp.AppCfg.PermissionsConfig.CustomRoles[0].NamedPolicyNames = []string{"logs"}
+
+	rsrcs := tpl.getRolesResources(inp, tagBuilder{installID: "inl123"})
+
+	policy, ok := rsrcs["NamedPolicyLogs"].(*iam.ManagedPolicy)
+	require.True(t, ok)
+	assert.Empty(t, policy.AWSCloudFormationCondition)
+	assert.Empty(t, policy.Roles)
+	require.NotNil(t, policy.ManagedPolicyName)
+	assert.Equal(t, "inl123-install-logs", *policy.ManagedPolicyName)
+
+	alreadyPrefixed := named
+	alreadyPrefixed.PolicyName = "inl123-install-logs"
+	inp.AppCfg.PermissionsConfig.NamedPolicies = []app.AppNamedIAMPolicyConfig{alreadyPrefixed}
+	rsrcs = tpl.getRolesResources(inp, tagBuilder{installID: "inl123"})
+	policy, ok = rsrcs["NamedPolicyLogs"].(*iam.ManagedPolicy)
+	require.True(t, ok)
+	assert.Equal(t, "inl123-install-logs", *policy.ManagedPolicyName)
+
+	provision, ok := rsrcs["ProvisionRole"].(*iam.Role)
+	require.True(t, ok)
+	assert.Contains(t, provision.ManagedPolicyArns, cloudformation.Ref("NamedPolicyLogs"))
+	assert.Equal(t, "ProvisionRoleEnabled", provision.AWSCloudFormationCondition)
+
+	custom, ok := rsrcs["BucketCleanupRole"].(*iam.Role)
+	require.True(t, ok)
+	assert.Contains(t, custom.ManagedPolicyArns, cloudformation.Ref("NamedPolicyLogs"))
+
+	breakGlass, ok := rsrcs["BreakGlassRole"].(*iam.Role)
+	require.True(t, ok)
+	assert.NotContains(t, breakGlass.ManagedPolicyArns, cloudformation.Ref("NamedPolicyLogs"))
+}
+
+// Both the policy's Name and the role's refs carry {{.nuon.install.id}}. They
+// are rendered before the template is generated, so a ref only resolves if it
+// renders alongside the policy name.
+func TestGetRolesResources_NamedPolicyRefsRenderWithPolicyName(t *testing.T) {
+	tpl := &Templates{cfg: &internal.Config{}}
+	inp := rolesTestInput()
+	inp.AppCfg.PermissionsConfig.NamedPolicies = []app.AppNamedIAMPolicyConfig{{
+		Name:                    "{{.nuon.install.id}}-alb-create",
+		CloudFormationStackName: app.NamedIAMPolicyCloudFormationStackName("{{.nuon.install.id}}-alb-create"),
+		Contents:                []byte(`{"Version":"2012-10-17","Statement":[]}`),
+	}}
+	inp.AppCfg.PermissionsConfig.Roles[0].NamedPolicyNames = []string{"{{.nuon.install.id}}-alb-create"}
+
+	stateData := map[string]any{"install": map[string]any{"id": "inl123"}}
+	require.NoError(t, render.RenderStruct(&inp.AppCfg.PermissionsConfig, stateData))
+
+	rsrcs := tpl.getRolesResources(inp, tagBuilder{installID: "inl123"})
+
+	policy, ok := rsrcs["NamedPolicyAlbCreate"].(*iam.ManagedPolicy)
+	require.True(t, ok)
+	assert.Equal(t, "inl123-alb-create", *policy.ManagedPolicyName)
+
+	provision, ok := rsrcs["ProvisionRole"].(*iam.Role)
+	require.True(t, ok)
+	assert.Contains(t, provision.ManagedPolicyArns, cloudformation.Ref("NamedPolicyAlbCreate"))
+}
+
+func TestGetRolesResources_NamedPolicyCreatedWhenUnattached(t *testing.T) {
+	tpl := &Templates{cfg: &internal.Config{}}
+	inp := rolesTestInput()
+	inp.AppCfg.PermissionsConfig.NamedPolicies = []app.AppNamedIAMPolicyConfig{{
+		Name:                    "logs",
+		Contents:                []byte(`{"Version":"2012-10-17","Statement":[]}`),
+		CloudFormationStackName: "NamedPolicyLogs",
+	}}
+
+	rsrcs := tpl.getRolesResources(inp, tagBuilder{installID: "inl123"})
+
+	policy, ok := rsrcs["NamedPolicyLogs"].(*iam.ManagedPolicy)
+	require.True(t, ok, "named policies are created even when no role attaches them")
+	require.NotNil(t, policy.ManagedPolicyName)
+	assert.Equal(t, "inl123-logs", *policy.ManagedPolicyName)
+
+	provision, ok := rsrcs["ProvisionRole"].(*iam.Role)
+	require.True(t, ok)
+	assert.NotContains(t, provision.ManagedPolicyArns, cloudformation.Ref("NamedPolicyLogs"))
 }
