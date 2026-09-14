@@ -2,6 +2,9 @@ package nuon
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -122,13 +125,16 @@ func (c *client) GetInstallRunbookRun(ctx context.Context, installID, runID stri
 
 // CreateInstallRunbookRun triggers a runbook run on an install.
 func (c *client) CreateInstallRunbookRun(ctx context.Context, installID, runbookID string) (*models.AppInstallRunbookRun, error) {
-	resp, err := c.genClient.Operations.CreateRunbookRun(&operations.CreateRunbookRunParams{
-		InstallID: installID,
-		RunbookID: runbookID,
-		Context:   ctx,
-	}, c.getOrgIDAuthInfo())
+	var result models.AppInstallRunbookRun
+	path := fmt.Sprintf(
+		"%s/v1/installs/%s/runbooks/%s/runs",
+		c.APIURL,
+		url.PathEscape(installID),
+		url.PathEscape(runbookID),
+	)
+	err := c.triggerRequest(ctx, http.MethodPost, path, nil, http.StatusCreated, &result)
 	if err != nil {
 		return nil, err
 	}
-	return resp.Payload, nil
+	return &result, nil
 }

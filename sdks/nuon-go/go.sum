@@ -57,6 +57,8 @@ github.com/go-playground/validator/v10 v10.23.0 h1:/PwmTwZhS0dPkav3cdK9kV1FsAmrL
 github.com/go-playground/validator/v10 v10.23.0/go.mod h1:dbuPbCMFw/DrkbEynArYaCwl3amGuJotoKCe95atGMM=
 github.com/go-swagger/go-swagger v0.33.0 h1:euKkZeLoiNWHbtbT5xEV+4/Co9EwOBqdF0itemyuuuA=
 github.com/go-swagger/go-swagger v0.33.0/go.mod h1:wJK762cSroJbM7hgJtKtbZxfevB3RSF3sC8/hK+kRwc=
+github.com/go-swagger/go-swagger v0.33.1 h1:BdtmxCvMxkrYIGAyn/qXPi4j85mFTwG4c9ED/27jtq4=
+github.com/go-swagger/go-swagger v0.33.1/go.mod h1:wJK762cSroJbM7hgJtKtbZxfevB3RSF3sC8/hK+kRwc=
 github.com/go-viper/mapstructure/v2 v2.4.0 h1:EBsztssimR/CONLSZZ04E8qAkxNYq4Qp9LvH92wZUgs=
 github.com/go-viper/mapstructure/v2 v2.4.0/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
 github.com/golang/mock v1.7.0-rc.1 h1:YojYx61/OLFsiv6Rw1Z96LpldJIy31o+UHmwAUMJ6/U=

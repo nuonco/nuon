@@ -15,11 +15,12 @@ type GetStepErrorHintsRequest struct {
 }
 
 type GetStepErrorHintsResponse struct {
-	Hints compositeerrors.Hints `json:"hints,omitempty"`
+	Hints compositeerrors.Hints               `json:"hints,omitempty"`
+	Error *compositeerrors.CompositeErrorData `json:"error,omitempty" temporaljson:"error,omitempty"`
 }
 
-// GetStepErrorHints returns the composite-error hints recorded for a failed
-// step's target. The source of the error depends on the target type:
+// GetStepErrorHints returns the composite error, and its hints, recorded for a
+// failed step's target. The source of the error depends on the target type:
 //
 //   - install_stack_versions: reads the row-level CompositeError field set by
 //     template render failures.
@@ -48,7 +49,7 @@ func (a *Activities) GetStepErrorHints(ctx context.Context, req GetStepErrorHint
 		return &GetStepErrorHintsResponse{}, nil
 	}
 
-	return &GetStepErrorHintsResponse{Hints: ce.Hints}, nil
+	return &GetStepErrorHintsResponse{Hints: ce.Hints, Error: ce}, nil
 }
 
 // stepTargetCompositeError reads the canonical composite error for the step's
