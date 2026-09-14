@@ -6,8 +6,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
 )
 
 var DB *gorm.DB

@@ -2,8 +2,9 @@ package noop
 
 import (
 	"github.com/go-playground/validator/v10"
-	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"go.uber.org/fx"
+
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 	"github.com/nuonco/nuon/pkg/runner/settings"

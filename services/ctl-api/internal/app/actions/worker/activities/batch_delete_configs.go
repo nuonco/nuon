@@ -3,9 +3,10 @@ package activities
 import (
 	"context"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/temporal"
 	"gorm.io/gorm/clause"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type BatchDeleteActionWorkflowRequest struct {

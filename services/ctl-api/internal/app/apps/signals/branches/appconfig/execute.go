@@ -223,17 +223,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 					RunID: s.RunID,
 				})
 				commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
-					OrgName:    branch.Org.Name,
-					AppName:    branch.App.Name,
-					BranchName: branch.Name,
-					RunID:      s.RunID,
-					RunURL:     previewRunURL(commentContext),
-					Status:     activities.PRCommentStatusSkipped,
-					Mode:       run.PreviewMode(),
+					OrgName:     branch.Org.Name,
+					AppName:     branch.App.Name,
+					AppBranchID: branch.ID,
+					BranchName:  branch.Name,
+					RunID:       s.RunID,
+					RunURL:      previewRunURL(commentContext),
+					Status:      activities.PRCommentStatusSkipped,
+					Mode:        run.PreviewMode(),
 				})
 				_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 					VcsConfigID:       vcsConfigID,
 					PRNumber:          *run.PRNumber,
+					AppBranchID:       run.AppBranchID,
 					ExistingCommentID: run.GithubCommentID,
 					Body:              commentBody,
 				})
@@ -412,19 +414,21 @@ func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams) error {
 			// updated yet), so we override the derived phase explicitly.
 			phases.Config = activities.PRCommentPhaseValid
 			commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
-				OrgName:    branch.Org.Name,
-				AppName:    branch.App.Name,
-				BranchName: branch.Name,
-				RunID:      s.RunID,
-				RunURL:     previewRunURL(commentContext),
-				Status:     activities.PRCommentStatusPending,
-				Mode:       run.PreviewMode(),
-				Diff:       configDiff,
-				Phases:     phases,
+				OrgName:     branch.Org.Name,
+				AppName:     branch.App.Name,
+				AppBranchID: branch.ID,
+				BranchName:  branch.Name,
+				RunID:       s.RunID,
+				RunURL:      previewRunURL(commentContext),
+				Status:      activities.PRCommentStatusPending,
+				Mode:        run.PreviewMode(),
+				Diff:        configDiff,
+				Phases:      phases,
 			})
 			_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 				VcsConfigID:       p.vcsConfigID,
 				PRNumber:          *run.PRNumber,
+				AppBranchID:       run.AppBranchID,
 				ExistingCommentID: run.GithubCommentID,
 				Body:              commentBody,
 			})
@@ -470,6 +474,7 @@ func (s *Signal) writePreviewComment(
 	body := activities.BuildPRCommentBody(&activities.PRCommentParams{
 		OrgName:      branch.Org.Name,
 		AppName:      branch.App.Name,
+		AppBranchID:  branch.ID,
 		BranchName:   branch.Name,
 		RunID:        s.RunID,
 		RunURL:       previewRunURL(commentContext),
@@ -481,6 +486,7 @@ func (s *Signal) writePreviewComment(
 	if _, err := activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 		VcsConfigID:       vcsConfigID,
 		PRNumber:          *run.PRNumber,
+		AppBranchID:       run.AppBranchID,
 		ExistingCommentID: run.GithubCommentID,
 		Body:              body,
 	}); err != nil {

@@ -10,10 +10,11 @@ import (
 
 	"github.com/avast/retry-go"
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/sdks/nuon-go"
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/pkg/api"
 	"github.com/nuonco/nuon/pkg/generics"

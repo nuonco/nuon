@@ -3,9 +3,10 @@ package validate
 import (
 	"testing"
 
-	"github.com/nuonco/nuon/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 func TestValidateOPAPolicy(t *testing.T) {

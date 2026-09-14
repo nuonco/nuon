@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 func (s *GeneralInternalTestSuite) TestGetMigrations() {

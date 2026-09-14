@@ -6,12 +6,15 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pkg/browser"
 
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
+
+	"github.com/nuonco/nuon/bins/cli/internal/installcreate"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/services/labels"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	appselector "github.com/nuonco/nuon/bins/cli/internal/ui/v3/app/selector"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/install/creator"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
@@ -32,7 +35,7 @@ type TargetAccount struct {
 	GCPProjectID        string
 }
 
-func (s *Service) Create(ctx context.Context, appID, name, region string, target TargetAccount, inputs, labelArgs []string, asJSON, noSelect, stackOnly bool) error {
+func (s *Service) Create(ctx context.Context, appID, name, region string, target TargetAccount, inputs, labelArgs []string, asJSON, noSelect, stackOnly bool, appBranchID, installGroupID string) error {
 	if appID == "" {
 		selectedID, err := appselector.App(ctx, s.cfg, s.api)
 		if err != nil {
@@ -55,6 +58,17 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 		return ui.PrintError(fmt.Errorf("label removal (key-) is not allowed at install creation; use `nuon installs label` after the install exists"))
 	}
 
+	branchID, groupLabels, err := s.resolveCreateInstallBranch(ctx, appID, appBranchID, installGroupID, asJSON)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+	for key, value := range groupLabels {
+		if existing, ok := labelsMap[key]; ok && existing != value {
+			return ui.PrintError(fmt.Errorf("label %q is %q, but the selected install group requires %q", key, existing, value))
+		}
+		labelsMap[key] = value
+	}
+
 	if s.cfg.Preview && !asJSON {
 		installID, _ := creator.InstallCreatorApp(
 			ctx,
@@ -64,6 +78,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 			name,
 			region,
 			labelsMap,
+			branchID,
 		)
 		if installID == "" {
 			ui.PrintLn("no install created")
@@ -86,7 +101,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 		return ui.PrintError(err)
 	}
 
-	req, err := s.buildCreateInstallRequest(ctx, appID, name, region, target, inputsMap, labelsMap)
+	req, err := s.buildCreateInstallRequest(ctx, appID, name, region, target, inputsMap, labelsMap, branchID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
@@ -119,11 +134,17 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, target
 	return nil
 }
 
-func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, region string, target TargetAccount, inputs, labelsMap map[string]string) (*models.ServiceCreateInstallRequest, error) {
+func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, region string, target TargetAccount, inputs, labelsMap map[string]string, appBranchID string) (*models.ServiceCreateInstallRequest, error) {
+	inputsWithDefaults, err := s.inputsWithDefaults(ctx, appID, appBranchID, inputs)
+	if err != nil {
+		return nil, err
+	}
+
 	req := &models.ServiceCreateInstallRequest{
-		Name:   &name,
-		Inputs: s.inputsWithDefaults(ctx, appID, inputs),
-		Labels: labelsMap,
+		Name:        &name,
+		Inputs:      inputsWithDefaults,
+		Labels:      labelsMap,
+		AppBranchID: appBranchID,
 	}
 
 	runnerCfg, err := s.api.GetAppRunnerLatestConfig(ctx, appID)
@@ -180,10 +201,16 @@ func parseInstallInputs(inputs []string) (map[string]string, error) {
 
 // inputsWithDefaults merges app input defaults with any explicitly provided values.
 // Explicit values win; defaults fill in anything not provided.
-func (s *Service) inputsWithDefaults(ctx context.Context, appID string, provided map[string]string) map[string]string {
-	inputCfg, err := s.api.GetAppInputLatestConfig(ctx, appID)
+func (s *Service) inputsWithDefaults(ctx context.Context, appID, appBranchID string, provided map[string]string) (map[string]string, error) {
+	inputCfg, err := installcreate.ResolveInputConfig(ctx, s.api, appID, appBranchID)
 	if err != nil || inputCfg == nil {
-		return provided
+		if appBranchID != "" {
+			if err == nil {
+				err = fmt.Errorf("selected app branch %s has no input config", appBranchID)
+			}
+			return nil, err
+		}
+		return provided, nil
 	}
 
 	merged := make(map[string]string)
@@ -196,5 +223,137 @@ func (s *Service) inputsWithDefaults(ctx context.Context, appID string, provided
 	for k, v := range provided {
 		merged[k] = v
 	}
-	return merged
+	return merged, nil
+}
+
+func (s *Service) resolveCreateInstallBranch(ctx context.Context, appID, appBranchID, installGroupID string, asJSON bool) (string, map[string]string, error) {
+	branches, err := s.api.GetAppBranches(ctx, appID)
+	if err != nil {
+		return "", nil, err
+	}
+	if len(branches) == 0 {
+		return "", nil, nil
+	}
+
+	if appBranchID == "" && installGroupID != "" {
+		return "", nil, fmt.Errorf("--install-group-id requires --app-branch-id")
+	}
+	if appBranchID == "" && (asJSON || !s.cfg.Interactive) {
+		return "", nil, nil
+	}
+
+	var selectedBranch *models.AppAppBranch
+	if appBranchID != "" {
+		for _, branch := range branches {
+			if branch != nil && branch.ID == appBranchID {
+				selectedBranch = branch
+				break
+			}
+		}
+		if selectedBranch == nil {
+			return "", nil, fmt.Errorf("app branch %q was not found on this app", appBranchID)
+		}
+	} else {
+		items := make([]bubbles.SelectorItem, 0, len(branches))
+		for _, branch := range branches {
+			if branch != nil {
+				items = append(items, bubbles.NewSelectorItem(branch.Name, branch.ID, branch.ID))
+			}
+		}
+		const skipBranch = "\x00skip-branch"
+		items = append(items, bubbles.NewSelectorItem(
+			"Skip app branch (use the most recent config from `nuon apps sync`)",
+			"",
+			skipBranch,
+		))
+		selectedID, err := bubbles.SelectFromItems("Select an app branch", items, s.cfg.Interactive)
+		if err != nil {
+			return "", nil, err
+		}
+		if selectedID == skipBranch {
+			return "", nil, nil
+		}
+		for _, branch := range branches {
+			if branch != nil && branch.ID == selectedID {
+				selectedBranch = branch
+				break
+			}
+		}
+	}
+
+	var groups []*models.AppAppBranchInstallGroup
+	if len(selectedBranch.Configs) > 0 && selectedBranch.Configs[0] != nil {
+		groups = selectedBranch.Configs[0].InstallGroups
+	}
+
+	eligible := make([]*models.AppAppBranchInstallGroup, 0, len(groups))
+	for _, group := range groups {
+		if _, err := createInstallGroupLabels(group); err == nil {
+			eligible = append(eligible, group)
+		}
+	}
+	if len(eligible) == 0 {
+		if installGroupID != "" {
+			return "", nil, fmt.Errorf("app branch %q has no selectable label-based install groups", selectedBranch.Name)
+		}
+		return selectedBranch.ID, nil, nil
+	}
+
+	var selectedGroup *models.AppAppBranchInstallGroup
+	if installGroupID != "" {
+		for _, group := range eligible {
+			if group.ID == installGroupID {
+				selectedGroup = group
+				break
+			}
+		}
+		if selectedGroup == nil {
+			return "", nil, fmt.Errorf("install group %q is not a selectable label-based group on app branch %q", installGroupID, selectedBranch.Name)
+		}
+	} else {
+		if asJSON || !s.cfg.Interactive {
+			return selectedBranch.ID, nil, nil
+		}
+		items := make([]bubbles.SelectorItem, 0, len(eligible))
+		for _, group := range eligible {
+			items = append(items, bubbles.NewSelectorItem(group.Name, group.ID, group.ID))
+		}
+		const skipGroup = "\x00skip-group"
+		items = append(items, bubbles.NewSelectorItem(
+			"Skip install group (the install will be orphaned until its labels match)",
+			"",
+			skipGroup,
+		))
+		selectedID, err := bubbles.SelectFromItems("Select an install group", items, s.cfg.Interactive)
+		if err != nil {
+			return "", nil, err
+		}
+		if selectedID == skipGroup {
+			return selectedBranch.ID, nil, nil
+		}
+		for _, group := range eligible {
+			if group.ID == selectedID {
+				selectedGroup = group
+				break
+			}
+		}
+	}
+
+	groupLabels, _ := createInstallGroupLabels(selectedGroup)
+	return selectedBranch.ID, groupLabels, nil
+}
+
+func createInstallGroupLabels(group *models.AppAppBranchInstallGroup) (map[string]string, error) {
+	if group == nil || group.ID == "" || group.LabelSelector == nil || len(group.LabelSelector.MatchLabels) == 0 {
+		return nil, fmt.Errorf("install group must use a label selector with match labels")
+	}
+
+	result := make(map[string]string, len(group.LabelSelector.MatchLabels))
+	for key, value := range group.LabelSelector.MatchLabels {
+		if value == "*" {
+			return nil, fmt.Errorf("install group label %q uses a wildcard and cannot be applied during creation", key)
+		}
+		result[key] = value
+	}
+	return result, nil
 }

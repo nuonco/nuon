@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/semver/v3"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 

@@ -12,12 +12,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
+<<<<<<< HEAD
 	"go.uber.org/zap/zaptest/observer"
+=======
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+>>>>>>> dc22dc13c (feat: config diffing + comment improvements)
 )
 
 func TestLogStreamIgnoresOTELEnvironment(t *testing.T) {

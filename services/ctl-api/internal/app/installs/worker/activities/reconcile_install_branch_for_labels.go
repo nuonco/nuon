@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 )
 
 type ReconcileInstallBranchForLabelsInput struct {
@@ -16,6 +17,11 @@ type ReconcileInstallBranchForLabelsOutput struct {
 	InstallGroupID string `json:"install_group_id,omitempty"`
 }
 
+// ReconcileInstallBranchForLabels finds which install group on the install's
+// own branch now targets it, so the branch can bring it up to that group's app
+// config. Labels move an install between groups inside its branch; they never
+// move it to another branch, so this reads AppBranchID and never writes it.
+//
 // @temporal-gen-v2 activity
 func (a *Activities) ReconcileInstallBranchForLabels(ctx context.Context, input *ReconcileInstallBranchForLabelsInput) (*ReconcileInstallBranchForLabelsOutput, error) {
 	var install app.Install
@@ -23,18 +29,29 @@ func (a *Activities) ReconcileInstallBranchForLabels(ctx context.Context, input 
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	matches, err := a.appsHelpers.FindBranchesMatchingLabels(ctx, install.AppID, install.Labels)
-	if err != nil {
-		return nil, err
-	}
-	if len(matches) != 1 {
+	branchID := install.AppBranchID.String
+	if !install.AppBranchID.Valid || branchID == "" {
 		return &ReconcileInstallBranchForLabelsOutput{}, nil
 	}
 
-	match := matches[0]
-	a.appsHelpers.SyncInstallBranchConnection(ctx, &install, match.Branch.ID)
-	return &ReconcileInstallBranchForLabelsOutput{
-		AppBranchID:    match.Branch.ID,
-		InstallGroupID: match.Group.ID,
-	}, nil
+	groups, err := a.appsHelpers.LatestConfigInstallGroups(ctx, branchID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := appshelpers.ValidateInstallSingleGroup(groups, &install); err != nil {
+		return nil, err
+	}
+
+	for i := range groups {
+		if !appshelpers.InstallMatchesGroup(&groups[i], &install) {
+			continue
+		}
+		return &ReconcileInstallBranchForLabelsOutput{
+			AppBranchID:    branchID,
+			InstallGroupID: groups[i].ID,
+		}, nil
+	}
+
+	return &ReconcileInstallBranchForLabelsOutput{}, nil
 }

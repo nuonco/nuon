@@ -42,6 +42,7 @@ import {
 } from '@/components/approvals/plan-diffs/config-diff-focus'
 import type { TAPIError } from '@/types'
 import { getBranchRunComparison, getBranchWorkflowRun } from '@/lib'
+import type { TBranchRunComparisonRunSummary } from '@/lib/ctl-api/apps/branches/get-branch-run-comparison'
 
 const BranchRunDetailContent = () => {
   const { org } = useOrg()
@@ -119,6 +120,10 @@ const BranchRunDetailContent = () => {
     (branchRun?.plan_only ? 'Plan only' : undefined)
   const previewSource = previewSourceLabel(branchRun)
   const previewInstall = branchRun?.preview?.install_name
+  const isDraftMode =
+    !!branchRun?.preview &&
+    'is_draft_mode' in branchRun.preview &&
+    branchRun.preview.is_draft_mode === true
 
   const prLink = resolvePrLink({
     repoSlug,
@@ -136,6 +141,28 @@ const BranchRunDetailContent = () => {
     !!branchRun?.pr_number ||
     !!comparison?.head_run ||
     !!comparison?.base_run
+  const currentComparisonRun: TBranchRunComparisonRunSummary | undefined =
+    comparison?.head_run ??
+    (branchRun?.id
+      ? {
+          id: branchRun.id,
+          workflow_id: branchRun.workflow_id,
+          status: branchRun.status,
+          created_at: branchRun.created_at,
+          pr_number: branchRun.pr_number,
+          base_branch: branchRun.base_branch,
+          event_type: branchRun.event_type,
+          vcs_connection_commit: branchRun.vcs_connection_commit
+            ? {
+                sha: branchRun.vcs_connection_commit.sha,
+                message: branchRun.vcs_connection_commit.message,
+                author_name: branchRun.vcs_connection_commit.author_name,
+                author_avatar_url:
+                  branchRun.vcs_connection_commit.author_avatar_url,
+              }
+            : undefined,
+        }
+      : undefined)
 
   return (
     <ConfigDiffFocusContext.Provider
@@ -193,6 +220,11 @@ const BranchRunDetailContent = () => {
                   {previewSource ? (
                     <Badge size="sm" variant="code" className="shrink-0">
                       {previewSource}
+                    </Badge>
+                  ) : null}
+                  {isDraftMode ? (
+                    <Badge size="sm" variant="code" className="shrink-0">
+                      draft pull request
                     </Badge>
                   ) : null}
                   {previewInstall ? (
@@ -273,7 +305,7 @@ const BranchRunDetailContent = () => {
                 appId={appId}
                 branchId={branchId}
                 baseRun={comparison?.base_run}
-                headRun={comparison?.head_run}
+                headRun={currentComparisonRun}
                 repoSlug={repoSlug}
                 currentGithubHref={currentGithubHref}
               />

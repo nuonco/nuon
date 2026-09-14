@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	tfjson "github.com/hashicorp/terraform-json"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 

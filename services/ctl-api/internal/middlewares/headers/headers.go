@@ -2,9 +2,10 @@ package headers
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"go.uber.org/zap"
 )
 
 type middleware struct {

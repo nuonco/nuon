@@ -66,6 +66,7 @@ type Client interface {
 	GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, error)
 	GetAppBranches(ctx context.Context, appID string) ([]*models.AppAppBranch, error)
 	GetAppBranch(ctx context.Context, appID, appBranchID string) (*models.AppAppBranch, error)
+	GetAppBranchAppConfigs(ctx context.Context, appID, appBranchID string, query *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error)
 	CreateAppBranch(ctx context.Context, appID string, req *models.ServiceCreateAppBranchRequest) (*models.AppAppBranch, error)
 	UpdateAppBranch(ctx context.Context, appID, appBranchID string, req *models.ServiceUpdateAppBranchRequest) (*models.AppAppBranch, error)
 	DeleteAppBranch(ctx context.Context, appID, appBranchID string) error

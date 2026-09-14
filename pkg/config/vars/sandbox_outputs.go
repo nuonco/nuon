@@ -4,11 +4,12 @@ import (
 	"context"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
+
 	sandboxes "github.com/nuonco/sandboxes/pkg/sandboxes"
 	awsecs "github.com/nuonco/sandboxes/pkg/sandboxes/aws-ecs"
 	awseks "github.com/nuonco/sandboxes/pkg/sandboxes/aws-eks"
 	azureaks "github.com/nuonco/sandboxes/pkg/sandboxes/azure-aks"
-	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/generics"
 )

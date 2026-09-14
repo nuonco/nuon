@@ -8,12 +8,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nuonco/nuon/pkg/types/workflows/canary"
-	"github.com/nuonco/nuon/pkg/workflows"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
+
+	"github.com/nuonco/nuon/pkg/types/workflows/canary"
+	"github.com/nuonco/nuon/pkg/workflows"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 const (

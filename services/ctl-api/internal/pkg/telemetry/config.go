@@ -13,10 +13,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"golang.org/x/net/http/httpguts"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 type Config struct {

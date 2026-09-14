@@ -3,11 +3,12 @@ package app
 import (
 	"time"
 
+	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
+
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
-	"gorm.io/gorm"
-	"gorm.io/plugin/soft_delete"
 )
 
 // PolicyReportOwnerType represents the type of resource that was evaluated by policies.
