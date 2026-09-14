@@ -12,7 +12,7 @@ import (
 )
 
 func (s *InstallsServiceTestSuite) TestTeardownInstallComponentSuccess() {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 	helmComp := s.getSeededComponent(app.ComponentTypeHelmChart)
 	s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), install.ID, helmComp.ID)
 

@@ -63,6 +63,31 @@ const (
 	WorkflowTypeRecoverHelmRelease WorkflowType = "recover_helm_release"
 )
 
+func (i WorkflowType) RequiresLiveInstallRunner() bool {
+	switch i {
+	case WorkflowTypeDeprovision,
+		WorkflowTypeDeprovisionSandbox,
+		WorkflowTypeManualDeploy,
+		WorkflowTypeInputUpdate,
+		WorkflowTypeDeployComponents,
+		WorkflowTypeTeardownComponent,
+		WorkflowTypeTeardownComponents,
+		WorkflowTypeReprovisionSandbox,
+		WorkflowTypeDriftRunReprovisionSandbox,
+		WorkflowTypeActionWorkflowRun,
+		WorkflowTypeSyncSecrets,
+		WorkflowTypeDriftRun,
+		WorkflowTypeRunbookRun,
+		WorkflowTypeComponentEnabled,
+		WorkflowTypeComponentDisabled,
+		WorkflowTypeAppBranchConfigUpdate,
+		WorkflowTypeRecoverHelmRelease:
+		return true
+	default:
+		return false
+	}
+}
+
 // RequiresInstallRunner reports whether this workflow type dispatches jobs to
 // the install runner and therefore cannot make progress while that runner is
 // disabled. Callers must scope it to install-owned workflows: app-owned types
