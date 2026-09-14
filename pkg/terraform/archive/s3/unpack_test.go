@@ -9,8 +9,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/mholt/archiver/v4"
-	"github.com/nuonco/nuon/pkg/terraform/archive"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
 func Test_s3_extract(t *testing.T) {

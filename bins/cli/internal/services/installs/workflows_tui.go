@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"

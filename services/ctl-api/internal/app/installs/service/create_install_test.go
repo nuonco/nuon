@@ -180,3 +180,25 @@ func (s *InstallsServiceTestSuite) TestCreateInstallDeprecatedRoute() {
 	assert.Equal(s.T(), "deprecated-route-install", install.Name)
 	assert.Equal(s.T(), s.testApp.ID, install.AppID)
 }
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2AllowsUnbranchedInstallWhenAppHasBranches() {
+	s.expectQueueCreation()
+
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+
+	body := CreateInstallV2Request{
+		AppID: s.testApp.ID,
+		CreateInstallParams: helpers.CreateInstallParams{
+			Name:       "branched-missing-ids",
+			AWSAccount: &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
+		},
+	}
+
+	rr := s.makeRequest(http.MethodPost, "/v1/installs", body)
+	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+
+	var install app.Install
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &install))
+	assert.False(s.T(), install.AppBranchID.Valid)
+}

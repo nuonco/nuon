@@ -35,5 +35,8 @@ func BuildRunLabels(req *TriggerAppBranchRunFromVCSPushRequest) labels.Labels {
 	if req.EventType != "" {
 		l["event_type"] = req.EventType
 	}
+	if req.Draft {
+		l[app.AppBranchRunLabelIsDraftMode] = "true"
+	}
 	return l
 }

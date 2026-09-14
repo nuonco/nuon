@@ -3,10 +3,11 @@ package activities
 import (
 	"context"
 
+	"gorm.io/gorm/clause"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
-	"gorm.io/gorm/clause"
 )
 
 type DeleteRequest struct {

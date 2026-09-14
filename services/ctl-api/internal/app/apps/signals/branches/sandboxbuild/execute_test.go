@@ -40,10 +40,11 @@ func TestExecuteAddsSandboxBuildIDToStepMetadata(t *testing.T) {
 		}, nil)
 	env.OnActivity((*branchactivities.Activities).GetAppConfigByID, mock.Anything, mock.Anything, mock.Anything).
 		Return(&app.AppConfig{ID: "config-1", AppID: "app-1"}, nil)
-	env.OnActivity((*branchactivities.Activities).GetLatestAppSandboxConfig, mock.Anything, mock.Anything, mock.Anything).
-		Return(&app.AppSandboxConfig{ID: "sandbox-config-1"}, nil)
-	env.OnActivity((*branchactivities.Activities).GetSandboxBuildGitSource, mock.Anything, mock.Anything, mock.Anything).
-		Return(&plantypes.GitSource{}, nil)
+	env.OnActivity((*branchactivities.Activities).ResolveSandboxBuildSource, mock.Anything, mock.Anything, mock.Anything).
+		Return(&branchactivities.ResolveSandboxBuildSourceOutput{
+			SandboxConfig: &app.AppSandboxConfig{ID: "sandbox-config-1"},
+			GitSource:     &plantypes.GitSource{},
+		}, nil)
 	env.OnActivity((*branchactivities.Activities).CreateSandboxBuild, mock.Anything, mock.Anything, mock.Anything).
 		Return(&app.AppSandboxBuild{ID: "sandbox-build-1"}, nil)
 	env.OnActivity((*statusactivities.Activities).PkgStatusUpdateFlowStepStatus, mock.Anything, mock.Anything, mock.Anything).

@@ -8,8 +8,9 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	"github.com/google/go-github/v50/github"
 	"github.com/google/uuid"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func Test_createInstallationToken(t *testing.T) {
