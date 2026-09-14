@@ -2,6 +2,9 @@ package nuon
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -50,14 +53,11 @@ func (c *client) CreateInstallInputs(ctx context.Context, installID string, req 
 }
 
 func (c *client) UpdateInstallInputs(ctx context.Context, installID string, req *models.ServiceUpdateInstallInputsRequest) (*models.AppInstallInputs, error) {
-	resp, err := c.genClient.Operations.UpdateInstallInputs(&operations.UpdateInstallInputsParams{
-		InstallID: installID,
-		Req:       req,
-		Context:   ctx,
-	}, c.getOrgIDAuthInfo())
+	var result models.AppInstallInputs
+	path := fmt.Sprintf("%s/v1/installs/%s/inputs", c.APIURL, url.PathEscape(installID))
+	err := c.triggerRequest(ctx, http.MethodPatch, path, req, http.StatusOK, &result)
 	if err != nil {
 		return nil, err
 	}
-
-	return resp.Payload, nil
+	return &result, nil
 }

@@ -4455,6 +4455,12 @@ export interface components {
     /** @enum {string} */
     "app.ComponentType": "terraform_module" | "helm_chart" | "docker_build" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "unknown";
     "app.CompositeStatus": {
+      /**
+       * @description CompositeError is the parsed, structured cause of a failure status. The
+       * human description is a one-line summary; this carries the full typed error
+       * so the dashboard can render the diagnostic instead of just the headline.
+       */
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at_ts?: number;
       created_by_id?: string;
       history?: components["schemas"]["app.CompositeStatus"][];
