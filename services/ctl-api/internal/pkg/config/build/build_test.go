@@ -70,6 +70,100 @@ func TestPermissionsConfigKeepsCustomAndBreakGlassRoles(t *testing.T) {
 	}
 }
 
+func TestPermissionsConfigKeepsNamedPolicies(t *testing.T) {
+	provision := role("provision")
+	provision.NamedPolicies = config.NamedPolicyRefs([]string{"install-{{.nuon.install.id}}-logs"})
+
+	obj, err := PermissionsConfig(PermissionsInput{
+		AppID:       "app1",
+		AppConfigID: "cfg1",
+		StackType:   "aws-cloudformation",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   provision,
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: role("deprovision"),
+			NamedPolicies: []config.NamedIAMPolicy{
+				{
+					Name:        "install-{{.nuon.install.id}}-logs",
+					Description: "shared logs",
+					Contents:    `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"logs:*","Resource":"*"}]}`,
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, obj.NamedPolicies, 1)
+	assert.Equal(t, "install-{{.nuon.install.id}}-logs", obj.NamedPolicies[0].Name)
+	assert.Equal(t, "install-{{.nuon.install.id}}-logs", obj.NamedPolicies[0].PolicyName)
+	assert.Equal(t, "NamedPolicyInstallLogs", obj.NamedPolicies[0].CloudFormationStackName)
+
+	for _, r := range obj.Roles {
+		if r.Type == app.AWSIAMRoleTypeRunnerProvision {
+			assert.Equal(t, []string{"install-{{.nuon.install.id}}-logs"}, r.NamedPolicyNames)
+		} else {
+			assert.Empty(t, r.NamedPolicyNames)
+		}
+	}
+}
+
+func TestPermissionsConfigRejectsNamedPoliciesWithoutCloudFormation(t *testing.T) {
+	_, err := PermissionsConfig(PermissionsInput{
+		AppConfigID: "cfg1",
+		StackType:   "gcp-terraform",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   role("provision"),
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: role("deprovision"),
+			NamedPolicies: []config.NamedIAMPolicy{
+				{Name: "logs", Contents: `{"Version":"2012-10-17","Statement":[]}`},
+			},
+		},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "aws-cloudformation")
+}
+
+func TestPermissionsConfigRejectsUnknownNamedPolicyRef(t *testing.T) {
+	provision := role("provision")
+	provision.NamedPolicies = config.NamedPolicyRefs([]string{"missing"})
+
+	_, err := PermissionsConfig(PermissionsInput{
+		AppConfigID: "cfg1",
+		StackType:   "aws-cloudformation",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   provision,
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: role("deprovision"),
+			NamedPolicies: []config.NamedIAMPolicy{
+				{Name: "logs", Contents: `{"Version":"2012-10-17","Statement":[]}`},
+			},
+		},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown named policy")
+}
+
+func TestPermissionsConfigRejectsNamedPoliciesOnGCPRole(t *testing.T) {
+	provision := role("provision")
+	provision.CloudPlatform = "gcp"
+	provision.NamedPolicies = config.NamedPolicyRefs([]string{"logs"})
+
+	_, err := PermissionsConfig(PermissionsInput{
+		AppConfigID: "cfg1",
+		StackType:   "aws-cloudformation",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   provision,
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: role("deprovision"),
+			NamedPolicies: []config.NamedIAMPolicy{
+				{Name: "logs", Contents: `{"Version":"2012-10-17","Statement":[]}`},
+			},
+		},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "AWS-only")
+}
+
 func TestPermissionsConfigKeepsEnabledInStack(t *testing.T) {
 	provision := role("provision")
 	provision.EnabledInStack = ptr(false)

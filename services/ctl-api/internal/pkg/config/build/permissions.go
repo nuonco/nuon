@@ -16,6 +16,9 @@ type PermissionsInput struct {
 	// Also written onto the permissions config so the rows are reachable from
 	// both owners, matching the CLI sync path.
 	BreakGlassRoles []*config.AppAWSIAMRole
+
+	// StackType is the app stack.toml type. Named policies are CloudFormation-only.
+	StackType string
 }
 
 func PermissionsConfig(in PermissionsInput) (*app.AppPermissionsConfig, error) {
@@ -46,11 +49,15 @@ func PermissionsConfig(in PermissionsInput) (*app.AppPermissionsConfig, error) {
 
 	obj.Roles = append(obj.Roles, IAMRoles(in.BreakGlassRoles, in.AppConfigID, app.AWSIAMRoleTypeBreakGlass)...)
 	obj.Roles = append(obj.Roles, IAMRoles(in.Permissions.CustomRoles, in.AppConfigID, app.AWSIAMRoleTypeCustom)...)
+	obj.NamedPolicies = NamedIAMPolicies(in.Permissions.NamedPolicies, in.AppConfigID)
 
 	if err := validatePermissionRoles(in); err != nil {
 		return nil, err
 	}
 	if err := ValidateInlinePolicyContents(obj.Roles); err != nil {
+		return nil, err
+	}
+	if err := ValidateNamedIAMPolicies(in, obj.Roles); err != nil {
 		return nil, err
 	}
 
