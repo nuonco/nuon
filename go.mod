@@ -83,7 +83,7 @@ require (
 	github.com/go-git/go-git/v5 v5.18.0
 	github.com/go-pdf/fpdf v0.6.0
 	github.com/go-playground/validator/v10 v10.30.1
-	github.com/go-swagger/go-swagger v0.33.0
+	github.com/go-swagger/go-swagger v0.33.1
 	github.com/godbus/dbus/v5 v5.2.2
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/google/go-containerregistry v0.21.3

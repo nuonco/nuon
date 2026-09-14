@@ -199,11 +199,9 @@ func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *a
 	client.Timeout = h.state.timeout
 
 	l.Info("calculating helm diff", zap.String("operation", "diff"), zap.String("exec", "uninstall"))
-	resp, err := client.Run(prevRel.Name)
-	if err != nil {
+	if _, err := client.Run(prevRel.Name); err != nil {
 		return "", nil, "", errors.Wrap(err, "unable to execute with dry-run")
 	}
-	l.Info(resp.Info)
 
 	diffH, diffReport, err := h.getDiff(l, kubeCfg, prevRel, nil, h.state.plan.HelmDeployPlan.Namespace)
 	if err != nil {
