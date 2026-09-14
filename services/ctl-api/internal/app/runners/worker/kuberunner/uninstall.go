@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
-
 	"github.com/nuonco/nuon/pkg/helm"
 	"github.com/nuonco/nuon/pkg/kube"
+	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 )
 
 type UninstallRequest struct {
@@ -28,13 +27,13 @@ func (a *Activities) Uninstall(ctx context.Context, req *UninstallRequest) (*Ins
 		return nil, fmt.Errorf("unable to get config for cluster: %w", err)
 	}
 
-	l := zap.L()
+	l := temporalzap.GetActivityLogger(ctx)
 	helmCfg, err := helm.Client(l, kubeCfg, req.Namespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get helm config: %w", err)
 	}
 
-	if err := a.uninstall(ctx, helmCfg, req.RunnerID); err != nil {
+	if err := a.uninstall(ctx, l, helmCfg, req.RunnerID); err != nil {
 		return nil, fmt.Errorf("unable to uninstall helm chart: %w", err)
 	}
 

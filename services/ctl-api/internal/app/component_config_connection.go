@@ -178,14 +178,14 @@ func (c *ComponentConfigConnection) UseView() bool {
 }
 
 func (c *ComponentConfigConnection) ViewVersion() string {
-	return "v1"
+	return "v2"
 }
 
 func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name:          views.DefaultViewName(db, &ComponentConfigConnection{}, 1),
-			SQL:           viewsql.ComponentConfigConnectionsV1,
+			Name:          views.DefaultViewName(db, &ComponentConfigConnection{}, 2),
+			SQL:           viewsql.ComponentConfigConnectionsV2,
 			AlwaysReapply: true,
 		},
 		{
@@ -203,6 +203,14 @@ func (a *ComponentConfigConnection) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"component_id",
 				"deleted_at",
+			},
+		},
+		{
+			Name: indexes.Name(db, &ComponentConfigConnection{}, "component_id_created_at"),
+			Columns: []string{
+				"component_id",
+				"created_at",
+				"id",
 			},
 		},
 		{

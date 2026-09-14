@@ -24,6 +24,15 @@ const (
 	RunnerProcessStatusUnknown         RunnerProcessStatus = "unknown"
 )
 
+// ActiveRunnerProcessStatuses is the canonical liveness set for runner admission checks.
+func ActiveRunnerProcessStatuses() []RunnerProcessStatus {
+	return []RunnerProcessStatus{
+		RunnerProcessStatusActive,
+		RunnerProcessStatusPendingShutdown,
+		RunnerProcessStatusShuttingDown,
+	}
+}
+
 type RunnerProcess struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero"`
 	CreatedByID string  `gorm:"not null;default:null" json:"created_by_id,omitzero"`
