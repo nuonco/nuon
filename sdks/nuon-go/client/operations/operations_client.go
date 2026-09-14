@@ -1042,6 +1042,12 @@ type ClientService interface {
 
 	WriteWebhookEvent(params *WriteWebhookEventParams, opts ...ClientOption) (*WriteWebhookEventOK, error)
 
+	GetAppRelease(params *GetAppReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleaseOK, error)
+
+	GetAppReleaseFileContent(params *GetAppReleaseFileContentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleaseFileContentOK, error)
+
+	ListAppReleases(params *ListAppReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAppReleasesOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -22522,6 +22528,72 @@ func (a *Client) WriteWebhookEvent(params *WriteWebhookEventParams, opts ...Clie
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for WriteWebhookEvent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
+}
+
+func (a *Client) GetAppRelease(params *GetAppReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleaseOK, error) {
+	if params == nil {
+		params = NewGetAppReleaseParams()
+	}
+	op := &runtime.ClientOperation{
+		ID: "GetAppRelease", Method: "GET", PathPattern: "/v1/apps/{app_id}/releases/{release_id}",
+		ProducesMediaTypes: []string{"application/json"}, ConsumesMediaTypes: []string{"application/json"}, Schemes: []string{"https"},
+		Params: params, Reader: &GetAppReleaseReader{formats: a.formats}, AuthInfo: authInfo, Context: params.Context, Client: params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	if success, ok := result.(*GetAppReleaseOK); ok {
+		return success, nil
+	}
+	panic(fmt.Sprintf("unexpected success response for GetAppRelease: API contract not enforced by server. Client expected to get an error, but got: %T", result))
+}
+
+func (a *Client) GetAppReleaseFileContent(params *GetAppReleaseFileContentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleaseFileContentOK, error) {
+	if params == nil {
+		params = NewGetAppReleaseFileContentParams()
+	}
+	op := &runtime.ClientOperation{
+		ID: "GetAppReleaseFileContent", Method: "GET", PathPattern: "/v1/apps/{app_id}/releases/{release_id}/files/content",
+		ProducesMediaTypes: []string{"application/json"}, ConsumesMediaTypes: []string{"application/json"}, Schemes: []string{"https"},
+		Params: params, Reader: &GetAppReleaseFileContentReader{formats: a.formats}, AuthInfo: authInfo, Context: params.Context, Client: params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	if success, ok := result.(*GetAppReleaseFileContentOK); ok {
+		return success, nil
+	}
+	panic(fmt.Sprintf("unexpected success response for GetAppReleaseFileContent: API contract not enforced by server. Client expected to get an error, but got: %T", result))
+}
+
+func (a *Client) ListAppReleases(params *ListAppReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAppReleasesOK, error) {
+	if params == nil {
+		params = NewListAppReleasesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID: "ListAppReleases", Method: "GET", PathPattern: "/v1/apps/{app_id}/releases",
+		ProducesMediaTypes: []string{"application/json"}, ConsumesMediaTypes: []string{"application/json"}, Schemes: []string{"https"},
+		Params: params, Reader: &ListAppReleasesReader{formats: a.formats}, AuthInfo: authInfo, Context: params.Context, Client: params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	if success, ok := result.(*ListAppReleasesOK); ok {
+		return success, nil
+	}
+	panic(fmt.Sprintf("unexpected success response for ListAppReleases: API contract not enforced by server. Client expected to get an error, but got: %T", result))
 }
 
 // SetTransport changes the transport on the client
