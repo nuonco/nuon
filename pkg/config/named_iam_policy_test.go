@@ -23,11 +23,12 @@ func TestNamedIAMPolicyNameSurvivesJSON(t *testing.T) {
 }
 
 func TestPermissionsConfigValidateNamedPolicies(t *testing.T) {
+	inline := []AppAWSIAMPolicy{{Name: "inline", Contents: `{"Version":"2012-10-17","Statement":[]}`}}
 	base := func() *PermissionsConfig {
 		return &PermissionsConfig{
-			ProvisionRole:   &AppAWSIAMRole{Name: "provision", Type: "provision"},
-			MaintenanceRole: &AppAWSIAMRole{Name: "maintenance", Type: "maintenance"},
-			DeprovisionRole: &AppAWSIAMRole{Name: "deprovision", Type: "deprovision"},
+			ProvisionRole:   &AppAWSIAMRole{Name: "provision", Type: "provision", Policies: inline},
+			MaintenanceRole: &AppAWSIAMRole{Name: "maintenance", Type: "maintenance", Policies: inline},
+			DeprovisionRole: &AppAWSIAMRole{Name: "deprovision", Type: "deprovision", Policies: inline},
 		}
 	}
 
@@ -60,5 +61,21 @@ func TestPermissionsConfigValidateNamedPolicies(t *testing.T) {
 		cfg.NamedPolicies = []NamedIAMPolicy{{Name: "{{.nuon.install.id}}-alb-create"}}
 		cfg.ProvisionRole.NamedPolicies = NamedPolicyRefs([]string{"{{.nuon.install.id}}-alb-create"})
 		require.NoError(t, cfg.Validate())
+	})
+
+	t.Run("accepts an empty policies block when the role attaches a named policy", func(t *testing.T) {
+		cfg := base()
+		cfg.NamedPolicies = []NamedIAMPolicy{{Name: "{{.nuon.install.id}}-alb-teardown"}}
+		cfg.DeprovisionRole.Policies = nil
+		cfg.DeprovisionRole.NamedPolicies = NamedPolicyRefs([]string{"{{.nuon.install.id}}-alb-teardown"})
+		require.NoError(t, cfg.Validate())
+	})
+
+	t.Run("rejects a role with neither policies nor named policies", func(t *testing.T) {
+		cfg := base()
+		cfg.DeprovisionRole.Policies = nil
+		err := cfg.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), `role "deprovision" has no permissions`)
 	})
 }

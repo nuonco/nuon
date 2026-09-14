@@ -106,6 +106,53 @@ func TestPermissionsConfigKeepsNamedPolicies(t *testing.T) {
 	}
 }
 
+func TestPermissionsConfigAllowsEmptyPoliciesWithNamedPolicy(t *testing.T) {
+	deprovision := role("deprovision")
+	deprovision.Policies = nil
+	deprovision.NamedPolicies = config.NamedPolicyRefs([]string{"install-alb-teardown"})
+
+	obj, err := PermissionsConfig(PermissionsInput{
+		AppID:       "app1",
+		AppConfigID: "cfg1",
+		StackType:   "aws-cloudformation",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   role("provision"),
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: deprovision,
+			NamedPolicies: []config.NamedIAMPolicy{
+				{Name: "install-alb-teardown", Contents: `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"elasticloadbalancing:*","Resource":"*"}]}`},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	for _, r := range obj.Roles {
+		if r.Type != app.AWSIAMRoleTypeRunnerDeprovision {
+			continue
+		}
+		assert.Empty(t, r.Policies)
+		assert.Equal(t, []string{"install-alb-teardown"}, r.NamedPolicyNames)
+	}
+}
+
+func TestPermissionsConfigRejectsRoleWithoutAnyPolicies(t *testing.T) {
+	deprovision := role("deprovision")
+	deprovision.Policies = nil
+
+	_, err := PermissionsConfig(PermissionsInput{
+		AppID:       "app1",
+		AppConfigID: "cfg1",
+		StackType:   "aws-cloudformation",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   role("provision"),
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: deprovision,
+		},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `role "deprovision_role" has no permissions`)
+}
+
 func TestPermissionsConfigRejectsNamedPoliciesWithoutCloudFormation(t *testing.T) {
 	_, err := PermissionsConfig(PermissionsInput{
 		AppConfigID: "cfg1",

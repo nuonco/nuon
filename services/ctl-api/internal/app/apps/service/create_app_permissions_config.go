@@ -36,7 +36,9 @@ type AppAWSIAMRoleConfig struct {
 	CloudPlatform       string `json:"cloud_platform,omitempty" validate:"omitempty,oneof=aws gcp azure"`
 	EnabledInStack      *bool  `json:"enabled_in_stack" swaggertype:"boolean" extensions:"x-nullable"`
 
-	Policies []AppAWSIAMPolicyConfig `json:"policies" validate:"min=1,dive"`
+	// Policies may be empty when the role attaches named policies instead. A
+	// role with neither grants nothing and is rejected.
+	Policies []AppAWSIAMPolicyConfig `json:"policies" validate:"dive"`
 
 	NamedPolicyNames []string `json:"named_policy_names,omitempty"`
 }

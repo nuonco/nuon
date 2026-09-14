@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/invopop/jsonschema"
 )
 
@@ -11,7 +13,7 @@ type AppAWSIAMRole struct {
 	Name        string            `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
 	Description string            `mapstructure:"description" toml:"description" jsonschema:"required" features:"template"`
 	DisplayName string            `mapstructure:"display_name,omitempty" toml:"display_name,omitempty" features:"template"`
-	Policies    []AppAWSIAMPolicy `mapstructure:"policies" toml:"policies" jsonschema:"required"`
+	Policies    []AppAWSIAMPolicy `mapstructure:"policies,omitempty" toml:"policies,omitempty"`
 
 	PermissionsBoundary string `mapstructure:"permissions_boundary,omitempty" toml:"permissions_boundary,omitempty" features:"template,get"`
 
@@ -44,8 +46,8 @@ func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Human-readable display name shown in the installer UI. Supports templating").
 		Example("Application S3 Access").
 		Example("Database Admin").
-		Field("policies").Short("policy definitions for the role").Required().
-		Long("List of policies to attach to the role. Each policy defines cloud-specific permissions (AWS IAM policies, GCP IAM permissions, or GCP predefined roles)").
+		Field("policies").Short("policy definitions for the role").
+		Long("List of policies to attach to the role. Each policy defines cloud-specific permissions (AWS IAM policies, GCP IAM permissions, or GCP predefined roles). May be omitted when the role attaches at least one named_policies entry, which carries the grants instead").
 		Field("permissions_boundary").Short("[AWS] permissions boundary policy").
 		Long("[AWS only] Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://example.com/boundary.json), git repositories (git::https://github.com/org/repo//boundary.json), file paths (file:///path/to/boundary.json), and relative paths (./boundary.json)").
 		Example("./provision_boundary.json").
@@ -54,4 +56,19 @@ func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Controls the default value of the Enable parameter for this role in the install stack (CloudFormation parameter or Terraform variable, depending on which format the customer applies). When true, the role is created by default. When false, the role is not created unless the installer explicitly enables it. If omitted, the platform default is used (true for standard roles, false for break-glass roles)").
 		Field("named_policies").Short("named IAM policies to attach").
 		Long("Named IAM policies to attach to this role, referenced by name. Use [[named_policies]] like [[policies]]. The name must match a named policy defined under permissions. Those policies are created even when this role is disabled")
+}
+
+// ValidateRoleGrants rejects a role that grants nothing. policies is empty only
+// when named_policies carries the grants instead, so the two are checked
+// together rather than with a jsonschema required tag on either one.
+func ValidateRoleGrants(label string, role *AppAWSIAMRole) error {
+	if role == nil {
+		return nil
+	}
+
+	if len(role.Policies) > 0 || len(role.NamedPolicies) > 0 {
+		return nil
+	}
+
+	return fmt.Errorf("role %q has no permissions: set at least one [[policies]] or [[named_policies]] entry", label)
 }

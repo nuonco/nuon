@@ -65,6 +65,15 @@ func PermissionsConfig(in PermissionsInput) (*app.AppPermissionsConfig, error) {
 }
 
 func BreakGlassConfig(appID, appConfigID string, roles []*config.AppAWSIAMRole) (*app.AppBreakGlassConfig, error) {
+	for _, role := range roles {
+		if role == nil {
+			continue
+		}
+		if err := config.ValidateRoleGrants(role.Name, role); err != nil {
+			return nil, err
+		}
+	}
+
 	obj := &app.AppBreakGlassConfig{
 		AppID:       appID,
 		AppConfigID: appConfigID,
@@ -107,6 +116,9 @@ func validatePermissionRoles(in PermissionsInput) error {
 	for _, entry := range named {
 		if entry.role == nil {
 			continue
+		}
+		if err := config.ValidateRoleGrants(entry.name, entry.role); err != nil {
+			return err
 		}
 		if err := ValidateAzureBuiltInRoles(entry.name, entry.role.Policies); err != nil {
 			return err

@@ -109,7 +109,17 @@ func (a *PermissionsConfig) Validate() error {
 		return errors.New("missing permission with type `deprovision`")
 	}
 
-	return validateNamedPolicyAttachments(a.NamedPolicies, a.allRoles())
+	roles := a.allRoles()
+	for _, role := range roles {
+		if role == nil {
+			continue
+		}
+		if err := ValidateRoleGrants(role.Name, role); err != nil {
+			return err
+		}
+	}
+
+	return validateNamedPolicyAttachments(a.NamedPolicies, roles)
 }
 
 func (a *PermissionsConfig) allRoles() []*AppAWSIAMRole {
