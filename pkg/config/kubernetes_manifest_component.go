@@ -17,7 +17,6 @@ type KubernetesManifestComponentConfig struct {
 	PublicRepo    *PublicRepoConfig    `json:"PublicRepo" mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
 	ConnectedRepo *ConnectedRepoConfig `json:"ConnectedRepo" mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
 
-	// Namespace supports template variables (e.g., {{.nuon.install.id}})
 	Namespace     string  `json:"Namespace" mapstructure:"namespace,omitempty" toml:"namespace,omitempty" jsonschema:"required"`
 	DriftSchedule *string `json:"DriftSchedule" mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
