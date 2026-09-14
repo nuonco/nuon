@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -145,17 +147,13 @@ func (c *client) ReprovisionInstallStack(ctx context.Context, installID string) 
 }
 
 func (c *client) DeprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
-	resp, err := c.genClient.Operations.DeprovisionInstall(&operations.DeprovisionInstallParams{
-		InstallID: installID,
-		Context:   ctx,
-		// TODO(jm): make this configurable
-		Req: &models.ServiceDeprovisionInstallRequest{},
-	}, c.getOrgIDAuthInfo())
+	var result models.AppWorkflowResponse
+	path := fmt.Sprintf("%s/v1/installs/%s/deprovision", c.APIURL, url.PathEscape(installID))
+	err := c.triggerRequest(ctx, http.MethodPost, path, &models.ServiceDeprovisionInstallRequest{}, http.StatusCreated, &result)
 	if err != nil {
 		return nil, err
 	}
-
-	return resp.Payload, nil
+	return &result, nil
 }
 
 func (c *client) AddInstallLabels(ctx context.Context, installID string, labels map[string]string) (*models.AppInstall, error) {

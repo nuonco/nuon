@@ -2,6 +2,9 @@ package nuon
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -161,12 +164,8 @@ func (c *client) GetInstallActionWorkflowRecentRuns(ctx context.Context, install
 }
 
 func (c *client) CreateInstallActionWorkflowRun(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) error {
-	_, err := c.genClient.Operations.CreateInstallActionWorkflowRun(&operations.CreateInstallActionWorkflowRunParams{
-		InstallID: installID,
-		Req:       req,
-		Context:   ctx,
-	}, c.getOrgIDAuthInfo())
-	return err
+	path := fmt.Sprintf("%s/v1/installs/%s/action-workflows/runs", c.APIURL, url.PathEscape(installID))
+	return c.triggerRequest(ctx, http.MethodPost, path, req, http.StatusCreated, nil)
 }
 
 func (c *client) CreateAdHocAction(ctx context.Context, installID string, req *models.ServiceCreateAdHocActionRequest) (*models.ServiceCreateAdHocActionResponse, error) {
