@@ -1,0 +1,22 @@
+{
+  "name": "nuon-bundle-portal-client",
+  "private": true,
+  "scripts": {
+    "build": "rm -rf dist && bun build.js && cp index.html dist/index.html && cp -R ../../dashboard-ui/public/fonts ../../dashboard-ui/public/empty-graphics dist/ && bun ../../dashboard-ui/scripts/build-portal-css.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.90.21",
+    "lucide-react": "0.575.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router": "7.13.1"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.7.5",
+    "@types/react": "18.3.23",
+    "@types/react-dom": "18.3.7",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "typescript": "5.9.2"
+  }
+}

@@ -44,7 +44,7 @@ func (h *Helpers) runnerImageURLForPlatform(platform app.CloudPlatform) string {
 	return h.cfg.RunnerContainerImageURL
 }
 
-func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Install) (*app.RunnerGroup, error) {
+func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Install, containerImageURL, containerImageTag string) (*app.RunnerGroup, error) {
 	ctx = cctx.SetOrgIDContext(ctx, install.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, install.CreatedByID)
 
@@ -62,6 +62,12 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 	instanceType := install.AppRunnerConfig.InstanceType
 	if instanceType == "" {
 		instanceType = app.DefaultInstanceTypeForPlatform(install.AppRunnerConfig.CloudPlatform)
+	}
+	if containerImageURL == "" {
+		containerImageURL = h.runnerImageURLForPlatform(install.AppRunnerConfig.CloudPlatform)
+	}
+	if containerImageTag == "" {
+		containerImageTag = h.cfg.RunnerContainerImageTag
 	}
 
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultInstallRunnerGroupSettingsGroups[:]...)
@@ -81,8 +87,8 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		},
 		Settings: app.RunnerGroupSettings{
 			SandboxMode:       sandboxMode,
-			ContainerImageURL: h.runnerImageURLForPlatform(install.AppRunnerConfig.CloudPlatform),
-			ContainerImageTag: h.cfg.RunnerContainerImageTag,
+			ContainerImageURL: containerImageURL,
+			ContainerImageTag: containerImageTag,
 			RunnerAPIURL:      firstNonEmpty(install.AppRunnerConfig.RunnerAPIURL, h.cfg.RunnerAPIURL),
 			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
 			EnableLogging:     true,

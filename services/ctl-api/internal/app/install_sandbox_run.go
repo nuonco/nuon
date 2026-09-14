@@ -96,6 +96,7 @@ type InstallSandboxRun struct {
 
 	AppSandboxConfigID string           `json:"-" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
 	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config,omitzero" temporaljson:"app_sandbox_config,omitzero,omitempty"`
+	AppSandboxBuildID  *string          `json:"app_sandbox_build_id,omitempty" temporaljson:"app_sandbox_build_id,omitzero,omitempty"`
 
 	Outputs map[string]any `json:"outputs,omitzero" gorm:"-" temporaljson:"outputs,omitzero,omitempty"`
 
