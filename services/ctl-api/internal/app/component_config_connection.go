@@ -178,7 +178,7 @@ func (c *ComponentConfigConnection) UseView() bool {
 }
 
 func (c *ComponentConfigConnection) ViewVersion() string {
-	return "v2"
+	return "v1"
 }
 
 func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
