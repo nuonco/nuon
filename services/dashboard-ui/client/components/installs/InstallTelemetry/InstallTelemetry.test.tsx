@@ -7,10 +7,13 @@ import {
   waitFor,
 } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router'
 import { ConfigContext } from '@/providers/config-provider'
 import { InstallContext } from '@/providers/install-provider'
 import { OrgContext } from '@/providers/org-provider'
+import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastContext } from '@/providers/toast-provider'
+import { InstallSettingsPanelContent } from '@/components/installs/InstallSettingsPanel/InstallSettingsPanelContent'
 import type { TInstallTelemetrySettings } from '@/types'
 import { InstallTelemetryContainer } from './InstallTelemetryContainer'
 
@@ -39,6 +42,7 @@ function setup({
   runnerId = 'runner-acme',
   loadSettings = false,
   loadStack = false,
+  renderPanel = false,
 } = {}) {
   const client = new QueryClient({
     defaultOptions: {
@@ -76,7 +80,15 @@ function setup({
             }}
           >
             <ToastContext.Provider value={{ addToast, removeToast: () => {} }}>
-              <InstallTelemetryContainer />
+              {renderPanel ? (
+                <MemoryRouter>
+                  <SurfacesProvider>
+                    <InstallSettingsPanelContent />
+                  </SurfacesProvider>
+                </MemoryRouter>
+              ) : (
+                <InstallTelemetryContainer />
+              )}
             </ToastContext.Provider>
           </InstallContext.Provider>
         </OrgContext.Provider>
@@ -93,17 +105,45 @@ function setup({
 
 test('hides telemetry outside BYOC even with an endpoint and enabled settings', () => {
   const fetch = spyOn(globalThis, 'fetch')
-  setup({ isByoc: false, telemetryEnabled: true })
-  expect(screen.queryByRole('switch')).toBeNull()
+  setup({
+    isByoc: false,
+    telemetryEnabled: true,
+    runnerId: '',
+    renderPanel: true,
+  })
+  expect(screen.queryByText('Telemetry', { exact: true })).toBeNull()
+  expect(screen.queryByRole('switch', { name: 'Enable telemetry' })).toBeNull()
   expect(fetch).not.toHaveBeenCalled()
 })
+
+test.each([false, true])(
+  'settings panel owns the telemetry card and shows it only in BYOC (%p)',
+  (isByoc) => {
+    setup({ isByoc, runnerId: '', renderPanel: true })
+    expect(
+      screen.getByText('Configuration', { exact: true })
+    ).toBeInTheDocument()
+    if (isByoc) {
+      const heading = screen.getByText('Telemetry', { exact: true })
+      const card = heading.closest('.shadow-sm')!
+      expect(card).toContainElement(
+        screen.getByRole('switch', { name: 'Enable telemetry' })
+      )
+      expect(card.querySelector('.shadow-sm')).toBeNull()
+      expect(
+        screen.getByRole('switch', { name: 'Enable telemetry' })
+      ).toBeDisabled()
+    } else {
+      expect(screen.queryByText('Telemetry', { exact: true })).toBeNull()
+    }
+  }
+)
 
 test.each(['', '  ', null, 123])(
   'shows but blocks enabling telemetry without an endpoint (%p)',
   (value) => {
     const fetch = spyOn(globalThis, 'fetch')
     setup({ telemetryEndpoint: value })
-    expect(screen.getByText('Telemetry', { exact: true })).toBeInTheDocument()
     const toggle = screen.getByRole('switch')
     expect(toggle).toBeDisabled()
     expect(toggle).toHaveAttribute('aria-checked', 'false')
@@ -185,7 +225,9 @@ test('keeps disable available when a previously enabled install loses its endpoi
     expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
   )
   expect(screen.getByRole('switch')).toBeDisabled()
-  expect(screen.getByText('Telemetry', { exact: true })).toBeInTheDocument()
+  expect(
+    screen.getByRole('link', { name: 'View telemetry setup' })
+  ).toBeInTheDocument()
 })
 
 test('preserves saved state and reports a failed write', async () => {
@@ -241,7 +283,7 @@ test('does not offer a toggle while loading or after a read error, and can retry
   )
 })
 
-test('keeps the card visible while checking the endpoint and can retry a failed stack read', async () => {
+test('shows loading while checking the endpoint and can retry a failed stack read', async () => {
   let finish!: (response: Response) => void
   mockFetch((url) =>
     String(url).endsWith('/stack')
@@ -251,7 +293,6 @@ test('keeps the card visible while checking the endpoint and can retry a failed 
       : Promise.resolve(Response.json({ enabled: false }))
   )
   setup({ loadStack: true })
-  expect(screen.getByText('Telemetry', { exact: true })).toBeInTheDocument()
   expect(screen.getByText('Loading settings...')).toBeInTheDocument()
   expect(screen.queryByRole('switch')).toBeNull()
   expect(screen.queryByText(/Update the install stack/)).toBeNull()

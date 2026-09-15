@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
-import { useConfig } from '@/hooks/use-config'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
@@ -11,14 +10,13 @@ import { updateInstallTelemetrySettings } from '@/lib/ctl-api/installs/update-in
 import { InstallTelemetry } from './InstallTelemetry'
 
 export const InstallTelemetryContainer = () => {
-  const { isByoc } = useConfig()
   const { install } = useInstall()
   const { org } = useOrg()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const orgId = org?.id
   const installId = install?.id
-  const canQuery = !!isByoc && !!orgId && !!installId
+  const canQuery = !!orgId && !!installId
   const telemetryKey = ['install-telemetry', orgId, installId]
 
   const stack = useQuery({
