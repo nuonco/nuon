@@ -5,9 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -157,18 +155,13 @@ func (h *handler) releaseActionImage(leaseID string) {
 	h.launcher.Release(leaseID)
 }
 
-// actionImageRef resolves the image ref the launcher runs. Production requires
-// the digest-pinned ref that ctl-api resolved, so a step can only ever run the
+// actionImageRef resolves the image ref the launcher runs. It is always the
+// digest-pinned ref that ctl-api resolved, so a step can only ever run the
 // exact manifest Nuon resolved. There is deliberately no mutable-tag fallback:
 // without a digest we fail rather than run whatever the tag happens to point at
-// now. The dev-only real-docker path pulls the app-authored source image
-// directly.
+// now.
 func (h *handler) actionImageRef() (string, error) {
 	plan := h.state.plan
-
-	if h.pullSourceImageDirectly() {
-		return plan.SourceImage, nil
-	}
 
 	if plan.ImageDigestRef == "" {
 		return "", errors.New("image-backed action plan is not pinned to an image digest")
@@ -184,10 +177,6 @@ func (h *handler) actionImageRef() (string, error) {
 // or GAR, which mint a token per pull.
 func (h *handler) actionImagePullAuth(ctx context.Context) (username, password string, err error) {
 	plan := h.state.plan
-
-	if h.pullSourceImageDirectly() {
-		return "", "", nil
-	}
 
 	if plan.ImageRegistry == nil {
 		return "", "", errors.New("image-backed action plan has no image registry")
@@ -214,23 +203,4 @@ func randContainerSuffix() string {
 		return "x"
 	}
 	return hex.EncodeToString(b)
-}
-
-// pullSourceImageDirectly reports whether the dev-only real-docker path is
-// active, in which case the launcher pulls the app-authored source image
-// directly (ctl-api can't know a local registry address) instead of the
-// mirror.
-//
-// It deliberately does not apply to an image that already resolved to the
-// install's own registry, which is the case when the plan pins the source ref
-// itself. That ref is never publicly pullable, so taking the shortcut would
-// skip credential resolution and 401 rather than fall back to anything.
-func (h *handler) pullSourceImageDirectly() bool {
-	plan := h.state.plan
-	if plan.ImageDigestRef != "" && plan.ImageDigestRef == plan.SourceImage {
-		return false
-	}
-
-	return os.Getenv("NUON_DEV_REAL_IMAGE_ACTIONS") == "true" &&
-		strings.EqualFold(os.Getenv("ENV"), "development")
 }

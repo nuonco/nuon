@@ -11,8 +11,8 @@ import (
 )
 
 type mcpGetActionInput struct {
-	InstallID string `json:"install_id" jsonschema:"install ID"`
-	ActionID  string `json:"action_id" jsonschema:"action workflow ID (same as REST /installs/{id}/actions/{action_id})"`
+	Install  string `json:"install" jsonschema:"install name or ID"`
+	ActionID string `json:"action_id" jsonschema:"action workflow ID (same as REST /installs/{id}/actions/{action_id})"`
 }
 
 type mcpActionDetail struct {
@@ -31,12 +31,15 @@ func (s *service) mcpGetAction(ctx context.Context, _ *mcp.CallToolRequest, in m
 		return nil, nil, err
 	}
 
-	install, err := s.findInstall(ctx, orgID, in.InstallID)
+	if in.Install == "" {
+		return nil, nil, fmt.Errorf("install is required")
+	}
+	install, err := s.findInstall(ctx, orgID, in.Install)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	iaw, err := s.getInstallActionWorkflow(ctx, in.InstallID, in.ActionID)
+	iaw, err := s.getInstallActionWorkflow(ctx, install.ID, in.ActionID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get install action: %w", err)
 	}
