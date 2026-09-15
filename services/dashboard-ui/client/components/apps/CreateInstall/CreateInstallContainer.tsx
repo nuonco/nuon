@@ -25,7 +25,9 @@ import {
   getAppConfig,
   createAppInstall,
   getAWSAccountConnections,
+  getComponents,
 } from '@/lib'
+import { shouldDefaultStackOnly } from '@/components/installs/CreateInstall/app-install-readiness'
 import { CreateInstallButton as CreateInstallButtonComponent } from './CreateInstall'
 
 const noop = () => {}
@@ -84,6 +86,16 @@ const CreateInstallModalContainer = ({ ...props }: IModal) => {
       enabled: !!org?.id && awsConnectionsEnabled,
     })
 
+  const componentIds = config?.component_ids ?? []
+  const needsComponents = componentIds.length > 0
+  const { data: componentsResult, isLoading: componentsLoading } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: ['components', org?.id, app?.id, 'create-install-gate'],
+    queryFn: () =>
+      getComponents({ orgId: org.id, appId: app.id, limit: 100 }),
+    enabled: !!org?.id && !!app?.id && needsComponents && !!config,
+  })
+
   const { mutateAsync, isPending: isSubmitting, error: submitError } =
     useMutation({
       mutationFn: (body: ReturnType<typeof buildCreateInstallBody>) =>
@@ -111,6 +123,7 @@ const CreateInstallModalContainer = ({ ...props }: IModal) => {
   const isLoading =
     configsLoading ||
     configLoading ||
+    (needsComponents && componentsLoading) ||
     (awsConnectionsEnabled && awsAccountConnectionsLoading)
   const loadError =
     configsError || configError || (!!configs && configs.length === 0)
@@ -175,6 +188,13 @@ const CreateInstallModalContainer = ({ ...props }: IModal) => {
         <CreateInstallFormFields
           app={app}
           inputConfig={inputConfig}
+          defaultStackOnly={shouldDefaultStackOnly(
+            {
+              ...app,
+              app_configs: [{ component_ids: config?.component_ids ?? [] }],
+            },
+            needsComponents ? componentsResult?.data : []
+          )}
           requireTargetAccount={requireTargetAccount}
           awsAccountConnections={
             awsConnectionsEnabled ? awsAccountConnections || [] : undefined
