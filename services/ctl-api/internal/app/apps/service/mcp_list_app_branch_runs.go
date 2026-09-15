@@ -15,6 +15,7 @@ type mcpListAppBranchRunsInput struct {
 	App    string `json:"app" jsonschema:"app name or ID"`
 	Branch string `json:"branch" jsonschema:"app branch name or ID"`
 	Limit  int    `json:"limit,omitempty" jsonschema:"maximum runs to return (default 20, max 100)"`
+	Offset int    `json:"offset,omitempty" jsonschema:"skip this many runs; use next_offset from a previous response when has_more is true"`
 }
 
 type mcpAppBranchRunHistoryItem struct {
@@ -32,9 +33,13 @@ type mcpAppBranchRunHistoryItem struct {
 }
 
 type mcpListAppBranchRunsResult struct {
-	App    mcpAppRef                    `json:"app"`
-	Branch mcpAppBranchOverview         `json:"branch"`
-	Runs   []mcpAppBranchRunHistoryItem `json:"runs"`
+	App        mcpAppRef                    `json:"app"`
+	Branch     mcpAppBranchOverview         `json:"branch"`
+	Runs       []mcpAppBranchRunHistoryItem `json:"runs"`
+	HasMore    bool                         `json:"has_more"`
+	Limit      int                          `json:"limit"`
+	Offset     int                          `json:"offset"`
+	NextOffset int                          `json:"next_offset,omitempty"`
 }
 
 func (s *service) mcpListAppBranchRuns(ctx context.Context, _ *mcp.CallToolRequest, in mcpListAppBranchRunsInput) (*mcp.CallToolResult, any, error) {
@@ -52,12 +57,9 @@ func (s *service) mcpListAppBranchRuns(ctx context.Context, _ *mcp.CallToolReque
 		return nil, nil, fmt.Errorf("branch is required")
 	}
 
-	limit := in.Limit
-	if limit == 0 {
-		limit = 20
-	}
-	if limit < 1 || limit > 100 {
-		return nil, nil, fmt.Errorf("limit must be between 1 and 100")
+	limit, offset, err := apiPkg.MCPListPage(in.Limit, in.Offset)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	a, err := s.findAppRef(ctx, orgID, in.App)
@@ -75,16 +77,23 @@ func (s *service) mcpListAppBranchRuns(ctx context.Context, _ *mcp.CallToolReque
 		Preload("Preview").
 		Where(app.AppBranchRun{AppBranchID: branch.ID}).
 		Order("created_at DESC").
-		Limit(limit).
+		Limit(limit + 1).
+		Offset(offset).
 		Find(&runs)
 	if res.Error != nil {
 		return nil, nil, fmt.Errorf("unable to list app branch runs: %w", res.Error)
 	}
 
+	runs, hasMore := apiPkg.MCPClipList(runs, limit)
+
 	result := mcpListAppBranchRunsResult{
-		App:    mcpAppRef{ID: a.ID, Name: a.Name},
-		Branch: mcpAppBranchOverview{ID: branch.ID, Name: branch.Name, ManagedBy: string(branch.ManagedBy)},
-		Runs:   make([]mcpAppBranchRunHistoryItem, 0, len(runs)),
+		App:        mcpAppRef{ID: a.ID, Name: a.Name},
+		Branch:     mcpAppBranchOverview{ID: branch.ID, Name: branch.Name, ManagedBy: string(branch.ManagedBy)},
+		Runs:       make([]mcpAppBranchRunHistoryItem, 0, len(runs)),
+		HasMore:    hasMore,
+		Limit:      limit,
+		Offset:     offset,
+		NextOffset: apiPkg.MCPNextOffset(offset, limit, hasMore),
 	}
 	for i := range runs {
 		run := &runs[i]
