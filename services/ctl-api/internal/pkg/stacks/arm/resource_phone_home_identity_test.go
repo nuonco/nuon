@@ -38,7 +38,7 @@ func TestGetPhoneHomeResource_NoIdentityWhenUnset(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	inp := minimalTemplateInput()
 
-	all := tmpl.getPhoneHomeResources(inp, nil, nil, armScope{})
+	all := tmpl.getPhoneHomeResources(inp, nil, nil, armScope{}, "")
 	res := phoneHomeScriptFrom(t, all)
 
 	if _, ok := res["identity"]; ok {
@@ -61,7 +61,7 @@ func TestGetPhoneHomeResource_AttachesIdentity(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.PhoneHomeIdentityName = "inst123-phone-home"
 
-	all := tmpl.getPhoneHomeResources(inp, nil, nil, armScope{})
+	all := tmpl.getPhoneHomeResources(inp, nil, nil, armScope{}, "")
 	res := phoneHomeScriptFrom(t, all)
 
 	identity, ok := res["identity"].(map[string]any)
@@ -100,7 +100,7 @@ func TestGetPhoneHomeResource_AuthenticatesWithoutLeakingToken(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.PhoneHomeIdentityName = "inst123-phone-home"
 
-	all := tmpl.getPhoneHomeResources(inp, nil, nil, armScope{})
+	all := tmpl.getPhoneHomeResources(inp, nil, nil, armScope{}, "")
 	res := phoneHomeScriptFrom(t, all)
 	props := res["properties"].(map[string]any)
 	script := props["scriptContent"].(string)
@@ -177,7 +177,7 @@ func TestGetPhoneHomeResources_SubscriptionScopeResolvesClientIDInside(t *testin
 	inp := subscriptionTemplateInput()
 	inp.PhoneHomeIdentityName = "inst123-phone-home"
 
-	res := tmpl.getPhoneHomeResources(inp, nil, nil, armScope{subscription: true})
+	res := tmpl.getPhoneHomeResources(inp, nil, nil, armScope{subscription: true}, "")
 	encoded, err := json.Marshal(res)
 	if err != nil {
 		t.Fatal(err)

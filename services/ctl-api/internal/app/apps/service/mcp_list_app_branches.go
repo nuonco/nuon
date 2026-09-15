@@ -12,7 +12,9 @@ import (
 )
 
 type mcpListAppBranchesInput struct {
-	App string `json:"app" jsonschema:"app name or ID"`
+	App    string `json:"app" jsonschema:"app name or ID"`
+	Limit  int    `json:"limit,omitempty" jsonschema:"maximum branches to return (default 20, max 100)"`
+	Offset int    `json:"offset,omitempty" jsonschema:"skip this many branches; use next_offset from a previous response when has_more is true"`
 }
 
 type mcpListAppBranchItem struct {
@@ -30,6 +32,16 @@ type mcpAppBranchRunListItem struct {
 	CreatedAt        string `json:"created_at"`
 }
 
+type mcpListAppBranchesResult struct {
+	AppID      string                 `json:"app_id"`
+	AppName    string                 `json:"app_name"`
+	Branches   []mcpListAppBranchItem `json:"branches"`
+	HasMore    bool                   `json:"has_more"`
+	Limit      int                    `json:"limit"`
+	Offset     int                    `json:"offset"`
+	NextOffset int                    `json:"next_offset,omitempty"`
+}
+
 func (s *service) mcpListAppBranches(ctx context.Context, _ *mcp.CallToolRequest, in mcpListAppBranchesInput) (*mcp.CallToolResult, any, error) {
 	orgID, err := require.Read(ctx)
 	if err != nil {
@@ -42,6 +54,11 @@ func (s *service) mcpListAppBranches(ctx context.Context, _ *mcp.CallToolRequest
 		return nil, nil, fmt.Errorf("app is required")
 	}
 
+	limit, offset, err := apiPkg.MCPListPage(in.Limit, in.Offset)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	a, err := s.findAppRef(ctx, orgID, in.App)
 	if err != nil {
 		return nil, nil, err
@@ -51,10 +68,14 @@ func (s *service) mcpListAppBranches(ctx context.Context, _ *mcp.CallToolRequest
 	res := s.db.WithContext(ctx).
 		Where(app.AppBranch{OrgID: orgID, AppID: a.ID}).
 		Order("name ASC").
+		Limit(limit + 1).
+		Offset(offset).
 		Find(&branches)
 	if res.Error != nil {
 		return nil, nil, fmt.Errorf("unable to list app branches: %w", res.Error)
 	}
+
+	branches, hasMore := apiPkg.MCPClipList(branches, limit)
 
 	out := make([]mcpListAppBranchItem, 0, len(branches))
 	for _, b := range branches {
@@ -78,9 +99,13 @@ func (s *service) mcpListAppBranches(ctx context.Context, _ *mcp.CallToolRequest
 		out = append(out, item)
 	}
 
-	return apiPkg.MCPJSONResult(map[string]any{
-		"app_id":   a.ID,
-		"app_name": a.Name,
-		"branches": out,
+	return apiPkg.MCPJSONResult(mcpListAppBranchesResult{
+		AppID:      a.ID,
+		AppName:    a.Name,
+		Branches:   out,
+		HasMore:    hasMore,
+		Limit:      limit,
+		Offset:     offset,
+		NextOffset: apiPkg.MCPNextOffset(offset, limit, hasMore),
 	})
 }

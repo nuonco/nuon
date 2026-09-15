@@ -19,6 +19,7 @@ export interface UseInstallFormParams {
   requireTargetAccount?: boolean
   showNameField?: boolean
   defaultAutoApprove?: boolean
+  defaultStackOnly?: boolean
   storageKey?: string
   onSubmit: (values: InstallFormValues) => void | Promise<unknown>
 }
@@ -31,6 +32,7 @@ export function useInstallForm({
   requireTargetAccount,
   showNameField,
   defaultAutoApprove,
+  defaultStackOnly,
   storageKey,
   onSubmit,
 }: UseInstallFormParams) {
@@ -47,8 +49,15 @@ export function useInstallForm({
   )
 
   const defaults = useMemo(
-    () => buildInstallDefaults({ mode, inputConfig, install, defaultAutoApprove }),
-    [mode, inputConfig, install, defaultAutoApprove]
+    () =>
+      buildInstallDefaults({
+        mode,
+        inputConfig,
+        install,
+        defaultAutoApprove,
+        defaultStackOnly,
+      }),
+    [mode, inputConfig, install, defaultAutoApprove, defaultStackOnly]
   )
 
   const validator = schema as unknown as FormValidateOrFn<InstallFormValues>

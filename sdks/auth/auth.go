@@ -49,7 +49,7 @@ func Resolve(ctx context.Context, opts Options, ex Exchanger) (string, error) {
 	if !oidctoken.Available() {
 		return "", fmt.Errorf(
 			"no credentials: set an api token, %s, or run somewhere an OIDC token is available "+
-				"(GitHub Actions with `permissions: id-token: write`, %s, or %s)",
+				"(GitHub Actions with `permissions: id-token: write`, HCP Terraform workload identity, %s, or %s)",
 			APITokenEnvVar, "NUON_OIDC_TOKEN", "NUON_OIDC_TOKEN_FILE",
 		)
 	}

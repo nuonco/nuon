@@ -10,7 +10,7 @@ import (
 func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity, scope armScope) (map[string]any, map[string]ARMParameter, error) {
 	templateURL := inp.RunnerNestedStackTemplateURL
 	if templateURL == "" {
-		return t.getDefaultRunnerDeployment(inp, operationIDs, scope), nil, nil
+		return t.getDefaultRunnerDeployment(inp, operationIDs, scope), telemetryIngressParameters(), nil
 	}
 
 	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
@@ -73,6 +73,14 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		// know about, ARM will surface a clear deployment error.
 	}
 
+	var customerParams map[string]ARMParameter
+	parameter, hasParameter := armTmpl.Parameters["enableTelemetryIngress"]
+	_, hasOutput := armTmpl.Outputs["telemetryEndpoint"]
+	if hasParameter && hasOutput && parameter.Type == "bool" {
+		customerParams = telemetryIngressParameters()
+		deploymentParams["enableTelemetryIngress"] = map[string]any{"value": "[parameters('enableTelemetryIngress')]"}
+	}
+
 	dependsOn := append([]string{vnetDeployment}, uamiDependsOn...)
 
 	deployment := map[string]any{
@@ -95,8 +103,7 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 	// template would be a separate opt-in.
 	scope.targetInstallRG(deployment)
 
-	// Nothing hoisted — runner params are never customer-facing.
-	return deployment, nil, nil
+	return deployment, customerParams, nil
 }
 
 func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity, scope armScope) map[string]any {
@@ -121,11 +128,12 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 				"scope": "inner",
 			},
 			"parameters": map[string]any{
-				"nuonInstallID":  map[string]any{"value": scope.nuonIDRef("nuonInstallID")},
-				"location":       map[string]any{"value": scope.rootLocationRef()},
-				"runnerSubnetId": map[string]any{"value": fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment)},
-				"customData":     map[string]any{"value": customData},
-				"commonTags":     map[string]any{"value": "[variables('commonTags')]"},
+				"enableTelemetryIngress": map[string]any{"value": "[parameters('enableTelemetryIngress')]"},
+				"nuonInstallID":          map[string]any{"value": scope.nuonIDRef("nuonInstallID")},
+				"location":               map[string]any{"value": scope.rootLocationRef()},
+				"runnerSubnetId":         map[string]any{"value": fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment)},
+				"customData":             map[string]any{"value": customData},
+				"commonTags":             map[string]any{"value": "[variables('commonTags')]"},
 			},
 			"template": t.getDefaultRunnerTemplate(operationIDs, runnerVMSize(inp)),
 		},
@@ -160,11 +168,12 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 		"$schema":        "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
 		"contentVersion": "1.0.0.0",
 		"parameters": map[string]any{
-			"nuonInstallID":  map[string]any{"type": "string"},
-			"location":       map[string]any{"type": "string"},
-			"runnerSubnetId": map[string]any{"type": "string"},
-			"customData":     map[string]any{"type": "string"},
-			"commonTags":     map[string]any{"type": "object"},
+			"enableTelemetryIngress": map[string]any{"type": "bool", "defaultValue": true},
+			"nuonInstallID":          map[string]any{"type": "string"},
+			"location":               map[string]any{"type": "string"},
+			"runnerSubnetId":         map[string]any{"type": "string"},
+			"customData":             map[string]any{"type": "string"},
+			"commonTags":             map[string]any{"type": "object"},
 		},
 		"resources": []any{
 			map[string]any{
@@ -173,6 +182,7 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 				"name":       "[format('{0}-vmss', parameters('nuonInstallID'))]",
 				"location":   "[parameters('location')]",
 				"tags":       "[parameters('commonTags')]",
+				"dependsOn":  []string{"[resourceId('Microsoft.Network/loadBalancers', format('{0}-telemetry', parameters('nuonInstallID')))]"},
 				"sku": map[string]any{
 					"name":     vmSize,
 					"tier":     "Standard",
@@ -239,6 +249,7 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 													"subnet": map[string]any{
 														"id": "[parameters('runnerSubnetId')]",
 													},
+													"loadBalancerBackendAddressPools": "[if(parameters('enableTelemetryIngress'), createArray(createObject('id', resourceId('Microsoft.Network/loadBalancers/backendAddressPools', format('{0}-telemetry', parameters('nuonInstallID')), 'runner'))), createArray())]",
 												},
 											},
 										},
@@ -273,8 +284,13 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 					},
 				},
 			},
+			getRunnerTelemetryLoadBalancer(),
 		},
 		"outputs": map[string]any{
+			"telemetryEndpoint": map[string]any{
+				"type":  "string",
+				"value": "[if(parameters('enableTelemetryIngress'), format('http://{0}:4318', first(reference(resourceId('Microsoft.Network/loadBalancers', format('{0}-telemetry', parameters('nuonInstallID'))), '2023-09-01').frontendIPConfigurations).properties.privateIPAddress), '')]",
+			},
 			"vmssName": map[string]any{
 				"type":  "string",
 				"value": "[format('{0}-vmss', parameters('nuonInstallID'))]",

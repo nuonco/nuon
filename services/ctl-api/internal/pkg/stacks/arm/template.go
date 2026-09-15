@@ -129,6 +129,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	}
 
 	// Runner linked deployment (or use default inline)
+	telemetryEndpoint := ""
 	if !t.cfg.UseLocalRunners {
 		runnerDeployment, runnerParams, err := t.getRunnerLinkedDeployment(inp, operationIDs, scope)
 		if err != nil {
@@ -137,6 +138,10 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		tmpl.Resources = append(tmpl.Resources, runnerDeployment)
 		for k, v := range runnerParams {
 			tmpl.Parameters[k] = v
+		}
+		if _, supported := runnerParams["enableTelemetryIngress"]; supported {
+			telemetryEndpoint = "[reference('runnerDeployment').outputs.telemetryEndpoint.value]"
+			tmpl.Outputs["telemetryEndpoint"] = ARMOutput{Type: "string", Value: telemetryEndpoint}
 		}
 	}
 
@@ -172,7 +177,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	}
 
 	// Phone home deployment script, and the identity it authenticates as
-	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResources(inp, customOutputs, vnetExtraOutputs, scope)...)
+	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResources(inp, customOutputs, vnetExtraOutputs, scope, telemetryEndpoint)...)
 
 	// Add standard outputs (VNet, subnets, key vault)
 	t.addStandardOutputs(tmpl, inp, scope)

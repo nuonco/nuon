@@ -54,12 +54,22 @@ import { RunnerJobDetail } from './RunnerJobDetail'
 import { Notebooks } from './Notebooks'
 import { NotebookDetail } from './NotebookDetail'
 import { InstallConfigs } from './InstallConfigs'
+import { SimpleIAGate } from '../SimpleIAGate'
 
 export const installRoutes: RouteObject[] = [
   {
     element: <InstallLayout />,
     children: [
       { path: ':orgId/installs/:installId', element: <Overview /> },
+      {
+        element: <SimpleIAGate />,
+        children: [
+          {
+            path: ':orgId/installs/:installId/activity',
+            element: <Workflows />,
+          },
+        ],
+      },
       {
         path: ':orgId/installs/:installId/components',
         element: <Components />,
