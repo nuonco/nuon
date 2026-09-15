@@ -71,14 +71,9 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 }
 
 func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, installRef, runbookRef string, req CreateRunbookRunRequest) (*runbookshelpers.TriggerRunbookRunResponse, error) {
-	var install app.Install
-	err := s.db.WithContext(ctx).
-		Select("id", "name", "app_id", "app_config_id").
-		Where(app.Install{OrgID: orgID}).
-		Where(s.db.Where(app.Install{ID: installRef}).Or(app.Install{Name: installRef})).
-		First(&install).Error
+	install, err := s.resolveInstallRef(ctx, orgID, installRef)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get install: %w", err)
+		return nil, err
 	}
 
 	var runbook app.Runbook
@@ -145,6 +140,20 @@ func (s *service) createRunbookRun(ctx context.Context, orgID, accountID, instal
 		return nil, err
 	}
 	return triggered, nil
+}
+
+// resolveInstallRef looks an install up by name or ID within the org.
+func (s *service) resolveInstallRef(ctx context.Context, orgID, installRef string) (*app.Install, error) {
+	var install app.Install
+	if err := s.db.WithContext(ctx).
+		Select("id", "name", "app_id", "app_config_id").
+		Where(app.Install{OrgID: orgID}).
+		Where(s.db.Where(app.Install{ID: installRef}).Or(app.Install{Name: installRef})).
+		First(&install).Error; err != nil {
+		return nil, fmt.Errorf("unable to get install: %w", err)
+	}
+
+	return &install, nil
 }
 
 // buildStepSelections validates the supplied step selections against the config's steps
