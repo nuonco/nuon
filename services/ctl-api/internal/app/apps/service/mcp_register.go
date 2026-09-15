@@ -54,6 +54,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"Preview app branch",
 		"WRITE OPERATION: Trigger an app-branch preview run (same as `nuon branches preview`). "+
 			"Pass pr_number (preview this PR against an install), git_ref, or app_config_id for a local synced config. "+
+			"Optional config_id selects a specific app branch config (defaults to latest). "+
 			"HTTP MCP cannot read the local workspace — sync with the CLI first, then pass app_config_id. "+
 			"Default mode is plan-only; ask before mode=apply. Returns run_id and workflow_id; follow that exact run with watch_workflow and get_app_branch_run.",
 		true,

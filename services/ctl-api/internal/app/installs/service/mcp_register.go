@@ -87,11 +87,21 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"Get the current input values for an install by name or ID. Returns the latest input revision as a name-to-value map.",
 	), s.mcpGetInstallInputs)
 
+	mcp.AddTool(server, apiPkg.MCPReadTool(
+		"list_available_roles",
+		"List available roles",
+		"List IAM roles an install can assume for an operation (same as GET /v1/installs/{id}/available-roles). "+
+			"Pass operation_type matching the write you will call (reprovision, deprovision, deploy, trigger, provision, teardown). "+
+			"Pass principal_type sandbox, component, or action — and principal_id for component or action — to mark the default role. "+
+			"Use a returned name as role on write tools; omit role to use the default.",
+	), s.mcpListAvailableRoles)
+
 	mcp.AddTool(server, apiPkg.MCPWriteTool(
 		"update_install_inputs",
 		"Update install inputs",
 		"WRITE OPERATION: Update install input values (partial merge over current values). Starts an input-update workflow. "+
-			"deploy_dependents defaults to true. Use get_install_inputs first to inspect current values.",
+			"deploy_dependents defaults to true. Use get_install_inputs first to inspect current values. "+
+			"Call list_available_roles (operation_type=deploy) before passing role.",
 		false,
 		false,
 	), s.mcpUpdateInstallInputs)
@@ -100,7 +110,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"deploy_install_components",
 		"Deploy install components",
 		"WRITE OPERATION: Deploy all components on an install. Returns a workflow_id; use get_workflow and watch_workflow to follow progress. "+
-			"Set plan_only to generate plans without applying.",
+			"Set plan_only to generate plans without applying. Call list_available_roles (operation_type=deploy, principal_type=component) before passing role.",
 		true,
 		false,
 	), s.mcpDeployInstallComponents)
@@ -109,7 +119,8 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"reprovision_install",
 		"Reprovision install",
 		"WRITE OPERATION: Reprovision an install (stack, sandbox, then components). Returns a workflow_id. "+
-			"Set plan_only to generate plans without applying.",
+			"Set plan_only to generate plans without applying. Set stack_only to reprovision only the stack (runner infra), leaving sandbox and components unchanged. "+
+			"Call list_available_roles (operation_type=reprovision, principal_type=sandbox) before passing role.",
 		true,
 		false,
 	), s.mcpReprovisionInstall)
@@ -118,7 +129,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"reprovision_sandbox",
 		"Reprovision sandbox",
 		"WRITE OPERATION: Reprovision only the install sandbox. Set skip_components to leave components unchanged after the sandbox apply. "+
-			"Returns a workflow_id.",
+			"Returns a workflow_id. Call list_available_roles (operation_type=reprovision, principal_type=sandbox) before passing role.",
 		true,
 		false,
 	), s.mcpReprovisionSandbox)
@@ -136,7 +147,8 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"deprovision_sandbox",
 		"Deprovision sandbox",
 		"WRITE OPERATION: Deprovision only the install sandbox, leaving the stack. This is destructive. "+
-			"confirm must be true to apply. Ask the user before setting confirm. plan_only does not require confirm. Returns a workflow_id.",
+			"confirm must be true to apply. Ask the user before setting confirm. plan_only does not require confirm. Returns a workflow_id. "+
+			"Call list_available_roles (operation_type=deprovision, principal_type=sandbox) before passing role.",
 		true,
 		false,
 	), s.mcpDeprovisionSandbox)
@@ -146,7 +158,8 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 		"Approve step",
 		"WRITE OPERATION: Approve a pending workflow step approval. This unblocks the workflow and allows it to proceed to the next step. "+
 			"The approval is irreversible — once approved, the workflow will continue executing (e.g., terraform apply, helm install). "+
-			"Always review the plan contents via get_workflow before approving. Requires the approval_id from get_workflow or get_pending_approvals.",
+			"Always review the plan contents via get_workflow before approving. Requires the approval_id from get_workflow or get_pending_approvals. "+
+			"Optional note is stored on the approval response.",
 		true,
 		false,
 	), s.mcpApproveStep)

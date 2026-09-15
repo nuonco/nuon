@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -52,7 +53,7 @@ func (s *service) GetInstallStackByInstallID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installStack)
 }
 
-func (s *service) getInstallStack(ctx *gin.Context, installID, orgID string) (*app.InstallStack, error) {
+func (s *service) getInstallStack(ctx context.Context, installID, orgID string) (*app.InstallStack, error) {
 	install := &app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallStack").
