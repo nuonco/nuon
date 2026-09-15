@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
-import { Card } from '@/components/common/Card'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
+import { InstallTelemetry } from '@/components/installs/InstallTelemetry'
 import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownRunnerControl'
 import { ReprovisionSandboxButton } from '@/components/sandbox/management/ReprovisionSandbox'
 import { useInstall } from '@/hooks/use-install'
@@ -19,6 +18,7 @@ import { GenerateInstallConfigButton } from '@/components/installs/management/Ge
 import { ReprovisionButton } from '@/components/installs/management/Reprovision'
 import { ReprovisionStackButton } from '@/components/installs/management/ReprovisionStack'
 import { SyncSecretsButton } from '@/components/installs/management/SyncSecrets'
+import { ActionCard } from './ActionCard'
 
 const Section = ({
   label,
@@ -35,26 +35,6 @@ const Section = ({
       {children}
     </div>
   </section>
-)
-
-const ActionCard = ({
-  title,
-  description,
-  children,
-}: {
-  title: string
-  description: string
-  children: ReactNode
-}) => (
-  <Card className="!p-4 !gap-4">
-    <HeadingGroup className="gap-1">
-      <Text weight="strong">{title}</Text>
-      <Text variant="subtext" theme="neutral">
-        {description}
-      </Text>
-    </HeadingGroup>
-    <div className="mt-auto">{children}</div>
-  </Card>
 )
 
 const InstallSettingsPanelContentInner = () => {
@@ -89,6 +69,7 @@ const InstallSettingsPanelContentInner = () => {
         >
           <GenerateInstallConfigButton />
         </ActionCard>
+        <InstallTelemetry />
       </Section>
 
       <Section label="Controls">
