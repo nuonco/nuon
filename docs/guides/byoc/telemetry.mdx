@@ -142,6 +142,24 @@ An endpoint output proves that ingress is provisioned, not that the Collector is
 
 ## Enable forwarding for the install
 
+### From the dashboard
+
+1. Open the downstream install in **your Nuon BYOC dashboard** and select **Settings**.
+2. Under **Configuration**, find the **Telemetry** card.
+3. After Nuon confirms the relay is ready, turn on **Enable telemetry** and wait for the save to complete.
+
+The card is always shown in BYOC install settings. Enabling is unavailable until the install has a runner and a
+nonempty `telemetry_endpoint` stack output; the card explains the prerequisites and links to this guide. Update
+the install stack if either prerequisite is missing. If forwarding is already enabled, you can still disable it
+without those prerequisites. An available toggle does not verify relay readiness or backend delivery.
+
+Installs default to disabled. A running runner checks settings every 15 seconds and applies changes without a
+runner restart; allow time for Collector startup and token issuance. The toggle shows the saved setting, not
+end-to-end delivery health. [Verify a sample reaches your backend](#verify-a-metric-reaches-your-backend) after enabling.
+
+### Using the API
+
+For automation, or when the dashboard toggle is unavailable, you can manage the same setting through the API.
 Use an API key with access to the install's organization, against **your BYOC API**, not the Nuon Cloud API.
 Set these variables locally; do not commit your API key:
 
@@ -163,8 +181,7 @@ curl --fail-with-body --request PATCH \
   --data '{"enabled":true}'
 ```
 
-The response is `{"enabled":true}`. Installs default to disabled. A running runner checks settings every 15 seconds
-and applies changes without a runner restart; allow time for Collector startup and token issuance.
+The response is `{"enabled":true}`. The runner applies it on the same settings refresh described above.
 The API response reports the saved setting, not end-to-end delivery health.
 
 Read the saved setting at any time:
@@ -256,9 +273,10 @@ Nuon to sync them, run preflight, and restart the relay deployment. Credentials 
 not automatically on secret changes.
 You do not need to update credentials in individual customer installs.
 
-To disable one install, repeat the PATCH request above with `{"enabled":false}`. The runner applies the change on
-its settings refresh. Stop or reconfigure application exporters too, so they do not keep sending to an unavailable
-Collector. This setting does not remove the stack's private ingress infrastructure or delete data in your backend.
+To disable one install, turn off **Enable telemetry** in **Settings → Configuration → Telemetry**, or repeat the
+PATCH request above with `{"enabled":false}`. The runner applies the change on its settings refresh. Stop or
+reconfigure application exporters too, so they do not keep sending to an unavailable Collector. This setting
+does not remove the stack's private ingress infrastructure or delete data in your backend.
 
 Before asking Nuon to disable the central relay, disable forwarding on its downstream installs. The relay component
 toggle does not automatically change their settings. Remove private ingress separately if it is no longer needed.
@@ -278,9 +296,11 @@ Collector process and queue, but still shares the runner host's resources.
 
 | Symptom | Check |
 | --- | --- |
+| Telemetry card is missing from Settings | Use your BYOC dashboard and ensure it is up to date. This feature is not shown in Nuon Cloud. |
+| Enable telemetry is disabled | Check that the install has a runner and a nonempty `telemetry_endpoint` stack output. Update the install stack if either is missing. If settings fail to load, use **Retry settings**. Already-enabled installs can still turn forwarding off. |
 | `telemetry_endpoint` is missing or empty | Update older stack templates/modules; check private ingress and runner enablement. The API forwarding setting does not provision ingress. |
 | Connection refused or timed out | Confirm the runner and Collector are running, allow time for settings refresh, and check source-network access. On GCP, check the client region and internal firewall. |
-| API reports enabled but no data arrives | Confirm Nuon has enabled the relay, then verify a sample reaches the backend. The API returns desired configuration, not health. |
+| Dashboard or API reports enabled but no data arrives | Confirm Nuon has enabled the relay, then verify a sample reaches the backend. The saved setting is desired configuration, not health. |
 | Local export succeeds but the backend has no data | Check the backend's supported signals, time range, and attribute mapping. Ask Nuon to check relay reachability, token issuance, and destination errors. |
 | Backend authentication fails | Check the complete `Basic` or `Bearer` header in the BYOC secret and coordinate secret sync and relay restart with Nuon. Do not add backend credentials to workloads. |
 | Identity appears missing or conflicting | Query resource attributes and inspect backend flattening. Use the four verified IDs, not names or custom install labels, as authoritative identity. |
