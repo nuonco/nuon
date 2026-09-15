@@ -121,7 +121,8 @@ func (a *Activities) resolvePusherAccount(ctx context.Context, orgID string, ema
 		}
 		var account app.Account
 		err := a.db.WithContext(ctx).
-			Where("LOWER(accounts.email) = LOWER(?)", email).
+			// emails are stored lowercased; compare on the raw column so idx_accounts_email is used
+			Where("accounts.email = LOWER(?)", email).
 			Joins("JOIN account_roles ON account_roles.account_id = accounts.id").
 			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.org_id = ?", orgID).
 			First(&account).Error
