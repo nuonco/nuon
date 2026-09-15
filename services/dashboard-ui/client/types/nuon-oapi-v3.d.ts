@@ -3613,6 +3613,8 @@ export interface components {
       /**
        * @description NamedPolicyNames references AppNamedIAMPolicyConfig.Name values on the
        * same permissions config. JSONB because each app config is a snapshot.
+       * Templated for the same reason the policy's Name is: both sides must
+       * render to the same string for the attachment to resolve.
        */
       named_policy_names?: string[];
       org_id?: string;
@@ -3949,8 +3951,8 @@ export interface components {
       description?: string;
       id?: string;
       /**
-       * @description Name is the logical id roles use in named_policy_names (file stem, or the
-       * config name when authored in permissions.toml).
+       * @description Name is the config identifier and the AWS IAM managed policy name.
+       * Roles attach this policy by repeating the same name.
        */
       name?: string;
       org_id?: string;
@@ -7799,6 +7801,10 @@ export interface components {
       name: string;
       named_policy_names?: string[];
       permissions_boundary?: string;
+      /**
+       * @description Policies may be empty when the role attaches named policies instead. A
+       * role with neither grants nothing and is rejected.
+       */
       policies?: components["schemas"]["service.AppAWSIAMPolicyConfig"][];
     };
     "service.AppBranchRunComparisonResponse": {
@@ -8911,6 +8917,8 @@ export interface components {
       /**
        * @description NamedPolicyNames references AppNamedIAMPolicyConfig.Name values on the
        * same permissions config. JSONB because each app config is a snapshot.
+       * Templated for the same reason the policy's Name is: both sides must
+       * render to the same string for the attachment to resolve.
        */
       named_policy_names?: string[];
       org_id?: string;
