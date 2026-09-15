@@ -9,6 +9,13 @@
         "description": "Force re-run of deployment scripts on each deploy."
       }
     },
+    "enableTelemetryIngress": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Provision a private OTLP HTTP endpoint for this install (additional Azure charges apply)."
+      }
+    },
     "location": {
       "type": "string",
       "defaultValue": "eastus",
@@ -968,6 +975,9 @@
           "customData": {
             "value": "#!/bin/bash\n\nRUNNER_ID=test-runner-id-0000000001\nRUNNER_API_URL=\nRUNNER_PLATFORM=azure\nCONTAINER_IMAGE_URL=example.com/runner\nCONTAINER_IMAGE_TAG=latest\nAWS_REGION=eastus\n\n# Remove any existing Docker packages\napt-get remove -y docker docker-engine docker.io containerd runc\n\n# Update package index and install prerequisites\napt-get update\napt-get install -y ca-certificates curl gnupg lsb-release jq\n\n# Add Docker's official GPG key\nmkdir -p /etc/apt/keyrings\ncurl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg\n\n# Set up the repository\necho \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | tee /etc/apt/sources.list.d/docker.list \u003e /dev/null\n\n# Install Docker Engine\napt-get update\napt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin\n\n# Force unmask and start Docker service\nrm -f /etc/systemd/system/docker.service\nrm -f /etc/systemd/system/docker.socket\nsystemctl daemon-reload\nsystemctl unmask docker.service\nsystemctl unmask docker.socket\nsystemctl enable docker\nsystemctl start docker\n\n# Ensure docker group exists and set up runner user\ngroupadd -f docker\nmkdir -p /opt/nuon/runner\nuseradd runner -G docker -c \"\" -d /opt/nuon/runner -m\nchown -R runner:runner /opt/nuon/runner\n\ncat \u003c\u003c EOF \u003e /opt/nuon/runner/env\nRUNNER_ID=$RUNNER_ID\nRUNNER_API_URL=$RUNNER_API_URL\nRUNNER_PLATFORM=$RUNNER_PLATFORM\nARM_USE_MSI=true\nHOST_IP=$(curl -s https://checkip.amazonaws.com)\nEOF\n\n# Determine runner binary version from public-settings endpoint\nRUNNER_BINARY_VERSION=\"${CONTAINER_IMAGE_TAG:-latest}\"\necho \"determining runner binary version\"\necho \"\u003e $RUNNER_API_URL/v1/runners/$RUNNER_ID/public-settings\"\nfor i in $(seq 1 30); do\n  runner_binary_version=$(curl -s \"$RUNNER_API_URL/v1/runners/$RUNNER_ID/public-settings\" | jq -r '.binary_version // empty')\n  if [ -n \"$runner_binary_version\" ] \u0026\u0026 [ \"$runner_binary_version\" != \"null\" ]; then\n    RUNNER_BINARY_VERSION=\"$runner_binary_version\"\n    echo \"determined runner binary version: $RUNNER_BINARY_VERSION\"\n    break\n  fi\n  echo \"attempt $i/30: failed to determine runner binary version, retrying in 2s\"\n  sleep 2\ndone\n\n# Install the runner binary on the host for mng mode using install.sh\nmkdir -p /opt/nuon/runner/bin\ncurl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner/install.sh \u003e /tmp/install-runner.sh\nchmod +x /tmp/install-runner.sh\nyes | /tmp/install-runner.sh $RUNNER_BINARY_VERSION /opt/nuon/runner/bin\nrm /tmp/install-runner.sh\n\n# Write initial image config for the mng monitor\ncat \u003c\u003c EOF \u003e /opt/nuon/runner/image\nCONTAINER_IMAGE_URL=$CONTAINER_IMAGE_URL\nCONTAINER_IMAGE_TAG=$CONTAINER_IMAGE_TAG\nEOF\n\nchown -R runner:runner /opt/nuon/runner\n\n# Create systemd unit file for mng mode\ncat \u003c\u003c 'EOF' \u003e /etc/systemd/system/nuon-runner-mng.service\n[Unit]\nDescription=Nuon Runner Management Service\nAfter=docker.service\nRequires=docker.service\n\n[Service]\nTimeoutStartSec=0\nUser=root\nEnvironmentFile=/opt/nuon/runner/env\nExecStart=/opt/nuon/runner/bin/runner mng\nRestart=always\nRestartSec=5\n\n[Install]\nWantedBy=default.target\nEOF\n\n# Reload systemd and start the mng service\nsystemctl daemon-reload\nsystemctl enable --now nuon-runner-mng\n"
           },
+          "enableTelemetryIngress": {
+            "value": "[parameters('enableTelemetryIngress')]"
+          },
           "location": {
             "value": "[parameters('location')]"
           },
@@ -982,6 +992,10 @@
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "1.0.0.0",
           "outputs": {
+            "telemetryEndpoint": {
+              "type": "string",
+              "value": "[if(parameters('enableTelemetryIngress'), format('http://{0}:4318', first(reference(resourceId('Microsoft.Network/loadBalancers', format('{0}-telemetry', parameters('nuonInstallID'))), '2023-09-01').frontendIPConfigurations).properties.privateIPAddress), '')]"
+            },
             "vmssName": {
               "type": "string",
               "value": "[format('{0}-vmss', parameters('nuonInstallID'))]"
@@ -998,6 +1012,10 @@
             "customData": {
               "type": "string"
             },
+            "enableTelemetryIngress": {
+              "defaultValue": true,
+              "type": "bool"
+            },
             "location": {
               "type": "string"
             },
@@ -1011,6 +1029,9 @@
           "resources": [
             {
               "apiVersion": "2023-03-01",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/loadBalancers', format('{0}-telemetry', parameters('nuonInstallID')))]"
+              ],
               "identity": {
                 "type": "SystemAssigned, UserAssigned",
                 "userAssignedIdentities": {
@@ -1062,6 +1083,7 @@
                             {
                               "name": "[format('{0}-ipc', parameters('nuonInstallID'))]",
                               "properties": {
+                                "loadBalancerBackendAddressPools": "[if(parameters('enableTelemetryIngress'), createArray(createObject('id', resourceId('Microsoft.Network/loadBalancers/backendAddressPools', format('{0}-telemetry', parameters('nuonInstallID')), 'runner'))), createArray())]",
                                 "subnet": {
                                   "id": "[parameters('runnerSubnetId')]"
                                 }
@@ -1113,6 +1135,68 @@
               },
               "tags": "[parameters('commonTags')]",
               "type": "Microsoft.Compute/virtualMachineScaleSets"
+            },
+            {
+              "apiVersion": "2023-09-01",
+              "condition": "[parameters('enableTelemetryIngress')]",
+              "location": "[parameters('location')]",
+              "name": "[format('{0}-telemetry', parameters('nuonInstallID'))]",
+              "properties": {
+                "backendAddressPools": [
+                  {
+                    "name": "runner"
+                  }
+                ],
+                "frontendIPConfigurations": [
+                  {
+                    "name": "telemetry",
+                    "properties": {
+                      "privateIPAllocationMethod": "Dynamic",
+                      "subnet": {
+                        "id": "[parameters('runnerSubnetId')]"
+                      }
+                    }
+                  }
+                ],
+                "loadBalancingRules": [
+                  {
+                    "name": "otlp",
+                    "properties": {
+                      "backendAddressPool": {
+                        "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', format('{0}-telemetry', parameters('nuonInstallID')), 'runner')]"
+                      },
+                      "backendPort": 4318,
+                      "disableOutboundSnat": true,
+                      "enableFloatingIP": false,
+                      "frontendIPConfiguration": {
+                        "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', format('{0}-telemetry', parameters('nuonInstallID')), 'telemetry')]"
+                      },
+                      "frontendPort": 4318,
+                      "probe": {
+                        "id": "[resourceId('Microsoft.Network/loadBalancers/probes', format('{0}-telemetry', parameters('nuonInstallID')), 'otlp')]"
+                      },
+                      "protocol": "Tcp"
+                    }
+                  }
+                ],
+                "probes": [
+                  {
+                    "name": "otlp",
+                    "properties": {
+                      "intervalInSeconds": 5,
+                      "numberOfProbes": 2,
+                      "port": 4318,
+                      "protocol": "Tcp"
+                    }
+                  }
+                ]
+              },
+              "sku": {
+                "name": "Standard",
+                "tier": "Regional"
+              },
+              "tags": "[parameters('commonTags')]",
+              "type": "Microsoft.Network/loadBalancers"
             }
           ]
         }
@@ -1163,6 +1247,7 @@
       "apiVersion": "2023-08-01",
       "dependsOn": [
         "vnetDeployment",
+        "runnerDeployment",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-provision', parameters('nuonInstallID')))]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-maintenance', parameters('nuonInstallID')))]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-deprovision', parameters('nuonInstallID')))]",
@@ -1287,6 +1372,10 @@
             "value": "[reference('runnerDeployment').outputs.vmssPrincipalId.value]"
           },
           {
+            "name": "TELEMETRY_ENDPOINT",
+            "value": "[reference('runnerDeployment').outputs.telemetryEndpoint.value]"
+          },
+          {
             "name": "PROVISION_IDENTITY_CLIENT_ID",
             "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-provision', parameters('nuonInstallID'))), '2023-01-31').clientId]"
           },
@@ -1309,7 +1398,7 @@
         ],
         "forceUpdateTag": "[parameters('deployTimestamp')]",
         "retentionInterval": "PT1H",
-        "scriptContent": "#!/bin/bash\n\nPAYLOAD=$(cat \u003c\u003c EOF\n{\n  \"request_type\": \"Create\",\n  \"phone_home_type\": \"azure\",\n  \"resource_group_id\": \"$RESOURCE_GROUP_ID\",\n  \"resource_group_name\": \"$RESOURCE_GROUP_NAME\",\n  \"resource_group_location\": \"$RESOURCE_GROUP_LOCATION\",\n  \"network_id\": \"$VNET_ID\",\n  \"network_name\": \"$VNET_NAME\",\n  \"key_vault_id\": \"$KEY_VAULT_ID\",\n  \"key_vault_name\": \"$KEY_VAULT_NAME\",\n  \"public_subnet_ids\": \"$PUBLIC_SUBNET_IDS_CSV\",\n  \"public_subnet_names\": \"$PUBLIC_SUBNET_NAMES_CSV\",\n  \"private_subnet_ids\": \"$PRIVATE_SUBNET_IDS_CSV\",\n  \"private_subnet_names\": \"$PRIVATE_SUBNET_NAMES_CSV\",\n  \"subscription_id\": \"$SUBSCRIPTION_ID\",\n  \"subscription_tenant_id\": \"$SUBSCRIPTION_TENANT_ID\",\n  \"runner_identity_principal_id\": \"$RUNNER_IDENTITY_PRINCIPAL_ID\",\n  \"provision_identity_client_id\": \"$PROVISION_IDENTITY_CLIENT_ID\",\n  \"maintenance_identity_client_id\": \"$MAINTENANCE_IDENTITY_CLIENT_ID\",\n  \"deprovision_identity_client_id\": \"$DEPROVISION_IDENTITY_CLIENT_ID\",\n  \"custom_identity_client_ids\": {\"db-admin\":\"$CUSTOM_DB_ADMIN_IDENTITY_CLIENT_ID\"},\n  \"break_glass_identity_client_ids\": {\"emergency\":\"$BG_EMERGENCY_IDENTITY_CLIENT_ID\"}\n}\nEOF\n)\n\ncurl -X POST \\\n  \"https://api.example.com/phone-home/phid-test\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Accept: application/json\" \\\n  -d \"$PAYLOAD\" \\\n  --fail \\\n  --silent \\\n  --show-error\n\nif [ $? -eq 0 ]; then\n  echo \"Phone home request sent successfully\"\nelse\n  echo \"Failed to send phone home request\"\n  exit 1\nfi\n",
+        "scriptContent": "#!/bin/bash\n\nPAYLOAD=$(cat \u003c\u003c EOF\n{\n  \"request_type\": \"Create\",\n  \"phone_home_type\": \"azure\",\n  \"resource_group_id\": \"$RESOURCE_GROUP_ID\",\n  \"resource_group_name\": \"$RESOURCE_GROUP_NAME\",\n  \"resource_group_location\": \"$RESOURCE_GROUP_LOCATION\",\n  \"network_id\": \"$VNET_ID\",\n  \"network_name\": \"$VNET_NAME\",\n  \"key_vault_id\": \"$KEY_VAULT_ID\",\n  \"key_vault_name\": \"$KEY_VAULT_NAME\",\n  \"public_subnet_ids\": \"$PUBLIC_SUBNET_IDS_CSV\",\n  \"public_subnet_names\": \"$PUBLIC_SUBNET_NAMES_CSV\",\n  \"private_subnet_ids\": \"$PRIVATE_SUBNET_IDS_CSV\",\n  \"private_subnet_names\": \"$PRIVATE_SUBNET_NAMES_CSV\",\n  \"subscription_id\": \"$SUBSCRIPTION_ID\",\n  \"subscription_tenant_id\": \"$SUBSCRIPTION_TENANT_ID\",\n  \"runner_identity_principal_id\": \"$RUNNER_IDENTITY_PRINCIPAL_ID\",\n  \"telemetry_endpoint\": \"$TELEMETRY_ENDPOINT\",\n  \"provision_identity_client_id\": \"$PROVISION_IDENTITY_CLIENT_ID\",\n  \"maintenance_identity_client_id\": \"$MAINTENANCE_IDENTITY_CLIENT_ID\",\n  \"deprovision_identity_client_id\": \"$DEPROVISION_IDENTITY_CLIENT_ID\",\n  \"custom_identity_client_ids\": {\"db-admin\":\"$CUSTOM_DB_ADMIN_IDENTITY_CLIENT_ID\"},\n  \"break_glass_identity_client_ids\": {\"emergency\":\"$BG_EMERGENCY_IDENTITY_CLIENT_ID\"}\n}\nEOF\n)\n\ncurl -X POST \\\n  \"https://api.example.com/phone-home/phid-test\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Accept: application/json\" \\\n  -d \"$PAYLOAD\" \\\n  --fail \\\n  --silent \\\n  --show-error\n\nif [ $? -eq 0 ]; then\n  echo \"Phone home request sent successfully\"\nelse\n  echo \"Failed to send phone home request\"\n  exit 1\nfi\n",
         "timeout": "PT30M"
       },
       "tags": "[variables('commonTags')]",
@@ -1384,6 +1473,10 @@
     "runnerSubnetName": {
       "type": "string",
       "value": "[reference('vnetDeployment').outputs.runnerSubnetName.value]"
+    },
+    "telemetryEndpoint": {
+      "type": "string",
+      "value": "[reference('runnerDeployment').outputs.telemetryEndpoint.value]"
     },
     "vnetId": {
       "type": "string",
