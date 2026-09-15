@@ -2,8 +2,10 @@ import type { ReactNode } from 'react'
 import { Card } from '@/components/common/Card'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
+import { InstallTelemetry } from '@/components/installs/InstallTelemetry'
 import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownRunnerControl'
 import { ReprovisionSandboxButton } from '@/components/sandbox/management/ReprovisionSandbox'
+import { useConfig } from '@/hooks/use-config'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { RunnerProvider } from '@/providers/runner-provider'
@@ -58,6 +60,7 @@ const ActionCard = ({
 )
 
 const InstallSettingsPanelContentInner = () => {
+  const { isByoc } = useConfig()
   const { install } = useInstall()
   const { org } = useOrg()
   const canRenameInstall = !!org?.features?.['install-rename']
@@ -89,6 +92,14 @@ const InstallSettingsPanelContentInner = () => {
         >
           <GenerateInstallConfigButton />
         </ActionCard>
+        {isByoc ? (
+          <ActionCard
+            title="Telemetry"
+            description="Forward application logs, metrics, and traces through the BYOC relay. Confirm the relay is setup before enabling."
+          >
+            <InstallTelemetry />
+          </ActionCard>
+        ) : null}
       </Section>
 
       <Section label="Controls">
