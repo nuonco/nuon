@@ -14,7 +14,7 @@ import (
 
 func clearEnv(t *testing.T) {
 	t.Helper()
-	for _, key := range []string{tokenEnvVar, tokenFileEnvVar, audienceEnvVar, ghaRequestURLEnvVar, ghaRequestTokenEnvVar} {
+	for _, key := range []string{tokenEnvVar, tokenFileEnvVar, audienceEnvVar, tfcTokenEnvVar, ghaRequestURLEnvVar, ghaRequestTokenEnvVar} {
 		t.Setenv(key, "")
 		os.Unsetenv(key)
 	}
@@ -56,12 +56,24 @@ func TestDetectPrecedence(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "token")
 		require.NoError(t, os.WriteFile(path, []byte("file-token\n"), 0o600))
 		t.Setenv(tokenFileEnvVar, path)
+		t.Setenv(tfcTokenEnvVar, "tfc-token")
 
 		token, source, ok, err := Detect(ctx, "")
 		require.NoError(t, err)
 		require.True(t, ok)
 		require.Equal(t, "file-token", token)
 		require.Equal(t, tokenFileEnvVar, source)
+	})
+
+	t.Run("HCP Terraform token", func(t *testing.T) {
+		clearEnv(t)
+		t.Setenv(tfcTokenEnvVar, "tfc-token")
+
+		token, source, ok, err := Detect(ctx, "")
+		require.NoError(t, err)
+		require.True(t, ok)
+		require.Equal(t, "tfc-token", token)
+		require.Equal(t, tfcTokenEnvVar, source)
 	})
 
 	t.Run("missing token file errors", func(t *testing.T) {
