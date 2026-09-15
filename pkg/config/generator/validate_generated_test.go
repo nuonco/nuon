@@ -24,6 +24,8 @@ func schemaTypeForFile(rel string) string {
 		return "input"
 	case strings.HasPrefix(rel, "policies/"):
 		return "policy"
+	case strings.HasPrefix(rel, "permissions/policies/"):
+		return "permission-policy"
 	case strings.HasPrefix(rel, "permissions/"):
 		return "permission"
 	case strings.HasPrefix(rel, "actions/"):

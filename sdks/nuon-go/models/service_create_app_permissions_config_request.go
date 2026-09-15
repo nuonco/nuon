@@ -39,6 +39,9 @@ type ServiceCreateAppPermissionsConfigRequest struct {
 	// Required: true
 	MaintenanceRole *ServiceAppAWSIAMRoleConfig `json:"maintenance_role"`
 
+	// named policies
+	NamedPolicies []*ServiceAppNamedIAMPolicyConfig `json:"named_policies"`
+
 	// provision role
 	// Required: true
 	ProvisionRole *ServiceAppAWSIAMRoleConfig `json:"provision_role"`
@@ -65,6 +68,10 @@ func (m *ServiceCreateAppPermissionsConfigRequest) Validate(formats strfmt.Regis
 	}
 
 	if err := m.validateMaintenanceRole(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNamedPolicies(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -195,6 +202,36 @@ func (m *ServiceCreateAppPermissionsConfigRequest) validateMaintenanceRole(forma
 	return nil
 }
 
+func (m *ServiceCreateAppPermissionsConfigRequest) validateNamedPolicies(formats strfmt.Registry) error {
+	if swag.IsZero(m.NamedPolicies) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.NamedPolicies); i++ {
+		if swag.IsZero(m.NamedPolicies[i]) { // not required
+			continue
+		}
+
+		if m.NamedPolicies[i] != nil {
+			if err := m.NamedPolicies[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("named_policies" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("named_policies" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *ServiceCreateAppPermissionsConfigRequest) validateProvisionRole(formats strfmt.Registry) error {
 
 	if err := validate.Required("provision_role", "body", m.ProvisionRole); err != nil {
@@ -236,6 +273,10 @@ func (m *ServiceCreateAppPermissionsConfigRequest) ContextValidate(ctx context.C
 	}
 
 	if err := m.contextValidateMaintenanceRole(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNamedPolicies(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -344,6 +385,35 @@ func (m *ServiceCreateAppPermissionsConfigRequest) contextValidateMaintenanceRol
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateAppPermissionsConfigRequest) contextValidateNamedPolicies(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.NamedPolicies); i++ {
+
+		if m.NamedPolicies[i] != nil {
+
+			if swag.IsZero(m.NamedPolicies[i]) { // not required
+				return nil
+			}
+
+			if err := m.NamedPolicies[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("named_policies" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("named_policies" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

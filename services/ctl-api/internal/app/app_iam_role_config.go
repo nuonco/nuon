@@ -61,10 +61,15 @@ type AppAWSIAMRoleConfig struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
-	Policies                     []AppAWSIAMPolicyConfig `json:"policies,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"policies,omitzero,omitempty"`
-	PermissionsBoundaryJSON      []byte                  `json:"permissions_boundary,omitzero" gorm:"type:jsonb" swaggertype:"string" features:"template" temporaljson:"permissions_boundary_json,omitzero,omitempty"`
-	CloudFormationStackName      string                  `json:"cloudformation_stack_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
-	CloudFormationStackParamName string                  `json:"cloudformation_param_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_param_name,omitzero,omitempty"`
+	Policies []AppAWSIAMPolicyConfig `json:"policies,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"policies,omitzero,omitempty"`
+	// NamedPolicyNames references AppNamedIAMPolicyConfig.Name values on the
+	// same permissions config. JSONB because each app config is a snapshot.
+	// Templated for the same reason the policy's Name is: both sides must
+	// render to the same string for the attachment to resolve.
+	NamedPolicyNames             []string `json:"named_policy_names,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" features:"template" temporaljson:"named_policy_names,omitzero,omitempty"`
+	PermissionsBoundaryJSON      []byte   `json:"permissions_boundary,omitzero" gorm:"type:jsonb" swaggertype:"string" features:"template" temporaljson:"permissions_boundary_json,omitzero,omitempty"`
+	CloudFormationStackName      string   `json:"cloudformation_stack_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
+	CloudFormationStackParamName string   `json:"cloudformation_param_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_param_name,omitzero,omitempty"`
 }
 
 func (a *AppAWSIAMRoleConfig) Indexes(db *gorm.DB) []migrations.Index {

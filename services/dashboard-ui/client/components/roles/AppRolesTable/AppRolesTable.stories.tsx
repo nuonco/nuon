@@ -24,9 +24,8 @@ const mockRoles = [
     name: 'nuon-provision-role',
     type: 'provision',
     created_at: '2024-06-15T10:30:00Z',
-    policies: [
-      { id: 'pol-1', managed_policy_name: 'AmazonEKSClusterPolicy' },
-    ],
+    named_policy_names: ['logs'],
+    policies: [{ id: 'pol-1', managed_policy_name: 'AmazonEKSClusterPolicy' }],
     permissions_boundary: undefined,
   },
   {
@@ -54,9 +53,30 @@ const mockRoles = [
   },
 ]
 
+const mockNamedPolicies = [
+  {
+    id: 'named-policy-1',
+    name: 'logs',
+    policy_name: 'nuon-install-logs',
+    description: 'Shared CloudWatch Logs access',
+    contents: btoa(
+      JSON.stringify({
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Effect: 'Allow',
+            Action: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+            Resource: '*',
+          },
+        ],
+      })
+    ),
+  },
+]
+
 export const Default = () => (
   <SurfacesContext.Provider value={mockSurfaces}>
-    <AppRolesTable roles={mockRoles} />
+    <AppRolesTable roles={mockRoles} namedPolicies={mockNamedPolicies} />
   </SurfacesContext.Provider>
 )
 
