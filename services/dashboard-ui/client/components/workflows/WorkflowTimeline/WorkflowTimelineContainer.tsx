@@ -18,6 +18,9 @@ interface IWorkflowTimelineContainer {
   type?: string
   planonly?: boolean
   search?: string
+  status?: string
+  createdAtGte?: string
+  isFiltered?: boolean
 }
 
 export const WorkflowTimelineContainer = ({
@@ -27,6 +30,9 @@ export const WorkflowTimelineContainer = ({
   planonly = true,
   type = '',
   search = '',
+  status = '',
+  createdAtGte,
+  isFiltered = false,
 }: IWorkflowTimelineContainer) => {
   const { org } = useOrg()
   const { install } = useInstall()
@@ -46,12 +52,23 @@ export const WorkflowTimelineContainer = ({
   )
 
   const onRefreshError = useRefreshErrorToast()
+  const sseUrl = useMemo(() => {
+    if (!org?.id || !installId) return undefined
+
+    const params = new URLSearchParams({
+      limit: String(LIMIT),
+      offset: String(offset),
+      planonly: String(planonly),
+    })
+    if (type) params.set('type', type)
+    if (status) params.set('status', status)
+    if (search) params.set('search', search)
+    if (createdAtGte) params.set('created_at_gte', createdAtGte)
+    return `/api/orgs/${org.id}/installs/${installId}/workflows/sse?${params}`
+  }, [createdAtGte, installId, offset, org?.id, planonly, search, status, type])
 
   const { data: result, isLoading } = useSSETimelineQuery({
-    sseUrl:
-      org?.id && installId
-        ? `/api/orgs/${org.id}/installs/${installId}/workflows/sse?limit=${LIMIT}&offset=${offset}&planonly=${planonly}&type=${type}&search=${encodeURIComponent(search)}`
-        : undefined,
+    sseUrl,
     queryKey: [
       'install-workflows',
       org?.id,
@@ -60,6 +77,8 @@ export const WorkflowTimelineContainer = ({
       planonly,
       type,
       search,
+      status,
+      createdAtGte,
     ],
     queryFn: () =>
       getInstallWorkflows({
@@ -70,6 +89,8 @@ export const WorkflowTimelineContainer = ({
         planonly,
         type,
         search,
+        status,
+        created_at_gte: createdAtGte,
       }),
     enabled: !!org?.id && !!installId,
     shouldPoll,
@@ -92,6 +113,7 @@ export const WorkflowTimelineContainer = ({
       installId={installId}
       install={install}
       isLoading={isLoading}
+      isFiltered={isFiltered}
     />
   )
 }
