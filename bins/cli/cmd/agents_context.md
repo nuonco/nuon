@@ -103,6 +103,8 @@ Tool JSON timestamps are UTC (Zulu) RFC3339 and always end in `Z`, for example `
 - If you name a calendar day, clock time, or age, convert the UTC instant to this machine's local timezone first. Example: `2026-09-04T04:23:00Z` is still the evening of September 3 in US Pacific.
 - Never say "today" or "yesterday" from the UTC date digits. The UTC calendar day can be a day ahead of local time.
 
+List tools are paginated (default 20, max 100). If `has_more` is true, tell the user there are more results. Do not keep paging until the list is complete unless they asked for everything; use `offset=next_offset` for the next page.
+
 ## IAM permission checks (local CLI extension)
 
 These checks are not MCP tools. They run on the app directory via the `policies` CLI extension.

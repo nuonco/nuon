@@ -10,7 +10,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_apps",
 		"List apps",
-		"List all apps in the current org with their components. Returns app name, ID, description, and associated components.",
+		"List apps in the current org with their components. Returns app name, ID, description, and associated components."+apiPkg.MCPListToolHint,
 	), s.mcpListApps)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
@@ -22,7 +22,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_app_branches",
 		"List app branches",
-		"List app branches for an app (name or ID). Returns each branch name, ID, and a summary of the latest run (status, whether it succeeded).",
+		"List app branches for an app (name or ID). Returns each branch name, ID, and a summary of the latest run (status, whether it succeeded)."+apiPkg.MCPListToolHint,
 	), s.mcpListAppBranches)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
@@ -34,7 +34,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_app_branch_runs",
 		"List app branch runs",
-		"List recent runs for an app branch. Returns run IDs, pull request numbers, preview status, workflow IDs, and outcomes. Use this to find a specific historical or preview run.",
+		"List recent runs for an app branch. Returns run IDs, pull request numbers, preview status, workflow IDs, and outcomes. Use this to find a specific historical or preview run."+apiPkg.MCPListToolHint,
 	), s.mcpListAppBranchRuns)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
