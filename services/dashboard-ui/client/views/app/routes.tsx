@@ -46,6 +46,8 @@ import { BranchActions } from './branches/scoped/BranchActions'
 import { BranchRunbooks } from './branches/scoped/BranchRunbooks'
 import { BranchInstalls } from './branches/scoped/BranchInstalls'
 import { BranchRunDetail } from './branches/BranchRunDetail'
+import { BranchConfigs } from './branches/BranchConfigs'
+import { SimpleIAGate } from '../SimpleIAGate'
 
 const legacy = (element: ReactNode, subPath?: (params: Params) => string) => (
   <LegacyAppRoute subPath={subPath}>{element}</LegacyAppRoute>
@@ -152,6 +154,13 @@ export const appRoutes: RouteObject[] = [
         element: <BranchLayout />,
         children: [
           { index: true, element: <BranchOverviewTab /> },
+          {
+            element: <SimpleIAGate />,
+            children: [
+              { path: 'activity', element: <BranchRunsTab /> },
+              { path: 'config', element: <BranchConfigs /> },
+            ],
+          },
           { path: 'runs', element: <BranchRunsTab /> },
           { path: 'runs/:runId', element: <BranchRunDetail /> },
           { path: 'plan', element: <BranchPlanTab /> },
