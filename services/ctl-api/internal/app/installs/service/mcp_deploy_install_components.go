@@ -14,7 +14,7 @@ import (
 type mcpDeployInstallComponentsInput struct {
 	Install  string `json:"install" jsonschema:"install name or ID"`
 	PlanOnly bool   `json:"plan_only,omitempty" jsonschema:"if true, only plan component deploys; do not apply"`
-	Role     string `json:"role,omitempty" jsonschema:"optional custom/IAM role name for component deploys"`
+	Role     string `json:"role,omitempty" jsonschema:"optional IAM role name from list_available_roles; omit to use the default"`
 }
 
 func (s *service) mcpDeployInstallComponents(ctx context.Context, _ *mcp.CallToolRequest, in mcpDeployInstallComponentsInput) (*mcp.CallToolResult, any, error) {

@@ -160,6 +160,11 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	var gitSource *plantypes.GitSource
 	var ociSource *plantypes.OCISource
 	switch {
+	case install.SandboxMode.Bool:
+		// A sandbox-mode org never provisions a real app repository — the record
+		// is faked — so its registry and region cannot mint credentials, and the
+		// run does not pull the artifact anyway.
+		l.Info("install is in sandbox mode, using git source")
 	case !ociArtifacts:
 		l.Info("sandbox-oci-artifacts disabled, using git source")
 	case req.OCISource != nil:
