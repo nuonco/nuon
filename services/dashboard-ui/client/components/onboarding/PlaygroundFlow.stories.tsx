@@ -248,7 +248,7 @@ const StatusStep = ({ onAdvance, nextStepTitle }: IWizardStepComponentProps) => 
               ) : taskRunning ? (
                 <Icon variant="Loading" size={18} />
               ) : (
-                <Icon variant="CircleIcon" size={18} theme="neutral" />
+                <Icon variant="ClockCountdownIcon" size={18} theme="neutral" />
               )}
               <Text variant="body" theme={taskDone || taskRunning ? 'default' : 'neutral'}>
                 {task}
