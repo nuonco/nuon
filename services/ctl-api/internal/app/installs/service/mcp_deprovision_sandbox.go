@@ -15,7 +15,7 @@ type mcpDeprovisionSandboxInput struct {
 	Install  string `json:"install" jsonschema:"install name or ID"`
 	Confirm  bool   `json:"confirm" jsonschema:"must be true to apply deprovision (not required for plan_only)"`
 	PlanOnly bool   `json:"plan_only,omitempty" jsonschema:"if true, only plan sandbox deprovision; do not apply"`
-	Role     string `json:"role,omitempty" jsonschema:"optional custom/IAM role name for the workflow"`
+	Role     string `json:"role,omitempty" jsonschema:"optional IAM role name from list_available_roles; omit to use the default"`
 }
 
 func (s *service) mcpDeprovisionSandbox(ctx context.Context, _ *mcp.CallToolRequest, in mcpDeprovisionSandboxInput) (*mcp.CallToolResult, any, error) {
