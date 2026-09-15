@@ -94,9 +94,27 @@ const InstallTemplate = () => {
         },
         {
           path: `/activity`,
-          iconVariant: 'PulseIcon',
+          iconVariant: 'ClockCounterClockwiseIcon',
           text: 'Activity',
         },
+        ...(org?.features?.['component-health']
+          ? [
+              {
+                path: `/resources`,
+                iconVariant: 'PulseIcon' as const,
+                text: 'Resources',
+              },
+            ]
+          : []),
+        ...(hasNotebooks
+          ? [
+              {
+                path: `/notebooks`,
+                iconVariant: 'NotebookIcon' as const,
+                text: 'Notebooks',
+              },
+            ]
+          : []),
       ]
     : [
         { type: 'section', label: 'Overview' },

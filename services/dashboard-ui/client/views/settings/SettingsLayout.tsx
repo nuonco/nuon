@@ -41,12 +41,11 @@ const SettingsTemplate = () => {
       iconVariant: 'WebhooksLogoIcon' as const,
       text: 'Webhooks',
     },
-    !hasSimpleIA &&
-      hasSlack && {
-        path: `/slack`,
-        iconVariant: 'SlackLogoIcon' as const,
-        text: 'Slack',
-      },
+    hasSlack && {
+      path: `/slack`,
+      iconVariant: 'SlackLogoIcon' as const,
+      text: 'Slack',
+    },
     hasTriggers && {
       path: `/triggers`,
       iconVariant: 'LightningIcon' as const,

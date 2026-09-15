@@ -10,9 +10,15 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RadioInput } from '@/components/common/form/RadioInput'
 import type { TApp } from '@/types'
+import {
+  APP_INSTALL_BADGE_LABEL,
+  type AppInstallBadge,
+  hasRunnerConfig,
+} from './app-install-readiness'
 
 interface AppSelectProps {
   apps: TApp[]
+  badges?: Record<string, AppInstallBadge | undefined>
   isLoading: boolean
   isLoadingMore: boolean
   hasMorePages: boolean
@@ -26,6 +32,7 @@ interface AppSelectProps {
 
 export const AppSelect = ({
   apps,
+  badges,
   isLoading,
   isLoadingMore,
   hasMorePages,
@@ -112,7 +119,8 @@ export const AppSelect = ({
       <>
         <div className="flex flex-col gap-1">
           {apps.map((app) => {
-            const isProvisionable = app?.runner_config?.app_runner_type
+            const isProvisionable = hasRunnerConfig(app)
+            const badge = badges?.[app.id]
             return (
               <RadioInput
                 key={app.id}
@@ -147,9 +155,9 @@ export const AppSelect = ({
                           )}
                         </div>
                       </div>
-                      {!isProvisionable && (
+                      {badge && (
                         <Badge size="sm" theme="neutral">
-                          Not provisionable
+                          {APP_INSTALL_BADGE_LABEL[badge]}
                         </Badge>
                       )}
                     </div>

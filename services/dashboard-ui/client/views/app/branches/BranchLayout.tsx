@@ -67,8 +67,21 @@ const BranchTemplate = () => {
   const navLinks: TNavItem[] = hasSimpleIA
     ? [
         { path: `/`, iconVariant: 'HouseSimpleIcon', text: 'Overview' },
-        { path: `/activity`, iconVariant: 'PulseIcon', text: 'Activity' },
+        {
+          path: `/activity`,
+          iconVariant: 'ClockCounterClockwiseIcon',
+          text: 'Activity',
+        },
         { path: `/config`, iconVariant: 'FadersIcon', text: 'Config' },
+        ...(hasInstallSyncing
+          ? [
+              {
+                path: `/install-configs`,
+                iconVariant: 'ArrowsClockwiseIcon' as const,
+                text: 'Install configs',
+              },
+            ]
+          : []),
       ]
     : [
         { path: `/`, iconVariant: 'HouseSimpleIcon', text: 'Overview' },
