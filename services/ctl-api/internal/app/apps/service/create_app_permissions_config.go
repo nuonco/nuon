@@ -21,8 +21,9 @@ type CreateAppPermissionsConfigRequest struct {
 	DeprovisionRole AppAWSIAMRoleConfig `json:"deprovision_role" validate:"required"`
 	MaintenanceRole AppAWSIAMRoleConfig `json:"maintenance_role" validate:"required"`
 
-	BreakGlassRoles *[]AppAWSIAMRoleConfig `json:"break_glass_roles"`
-	CustomRoles     *[]AppAWSIAMRoleConfig `json:"custom_roles"`
+	BreakGlassRoles *[]AppAWSIAMRoleConfig    `json:"break_glass_roles"`
+	CustomRoles     *[]AppAWSIAMRoleConfig    `json:"custom_roles"`
+	NamedPolicies   []AppNamedIAMPolicyConfig `json:"named_policies,omitempty"`
 
 	AppConfigID string `json:"app_config_id" validate:"required"`
 }
@@ -35,7 +36,11 @@ type AppAWSIAMRoleConfig struct {
 	CloudPlatform       string `json:"cloud_platform,omitempty" validate:"omitempty,oneof=aws gcp azure"`
 	EnabledInStack      *bool  `json:"enabled_in_stack" swaggertype:"boolean" extensions:"x-nullable"`
 
-	Policies []AppAWSIAMPolicyConfig `json:"policies" validate:"min=1,dive"`
+	// Policies may be empty when the role attaches named policies instead. A
+	// role with neither grants nothing and is rejected.
+	Policies []AppAWSIAMPolicyConfig `json:"policies" validate:"dive"`
+
+	NamedPolicyNames []string `json:"named_policy_names,omitempty"`
 }
 
 type AppAWSIAMPolicyConfig struct {
@@ -47,6 +52,13 @@ type AppAWSIAMPolicyConfig struct {
 	GCPPredefinedRole string   `json:"gcp_predefined_role,omitempty"`
 	AzureActions      []string `json:"azure_actions,omitempty"`
 	AzureBuiltInRoles []string `json:"azure_built_in_roles,omitempty"`
+}
+
+type AppNamedIAMPolicyConfig struct {
+	Name        string `json:"name" validate:"required"`
+	PolicyName  string `json:"policy_name,omitempty"`
+	Description string `json:"description,omitempty"`
+	Contents    string `json:"contents" swaggertype:"string" validate:"required"`
 }
 
 func (a AppAWSIAMRoleConfig) toConfig() *config.AppAWSIAMRole {
@@ -71,6 +83,7 @@ func (a AppAWSIAMRoleConfig) toConfig() *config.AppAWSIAMRole {
 		PermissionsBoundary: a.PermissionsBoundary,
 		EnabledInStack:      a.EnabledInStack,
 		Policies:            policies,
+		NamedPolicies:       config.NamedPolicyRefs(a.NamedPolicyNames),
 	}
 }
 
@@ -81,6 +94,22 @@ func toConfigRoles(roles *[]AppAWSIAMRoleConfig) []*config.AppAWSIAMRole {
 	out := make([]*config.AppAWSIAMRole, 0, len(*roles))
 	for _, role := range *roles {
 		out = append(out, role.toConfig())
+	}
+	return out
+}
+
+func toConfigNamedPolicies(policies []AppNamedIAMPolicyConfig) []config.NamedIAMPolicy {
+	out := make([]config.NamedIAMPolicy, 0, len(policies))
+	for _, policy := range policies {
+		awsName := policy.PolicyName
+		if awsName == "" {
+			awsName = policy.Name
+		}
+		out = append(out, config.NamedIAMPolicy{
+			Name:        awsName,
+			Description: policy.Description,
+			Contents:    policy.Contents,
+		})
 	}
 	return out
 }
@@ -142,8 +171,10 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 			DeprovisionRole: req.DeprovisionRole.toConfig(),
 			MaintenanceRole: req.MaintenanceRole.toConfig(),
 			CustomRoles:     toConfigRoles(req.CustomRoles),
+			NamedPolicies:   toConfigNamedPolicies(req.NamedPolicies),
 		},
 		BreakGlassRoles: toConfigRoles(req.BreakGlassRoles),
+		StackType:       s.stackTypeForAppConfig(ctx, req.AppConfigID),
 	})
 	if err != nil {
 		return nil, stderr.NewInvalidRequest(err)
@@ -163,4 +194,12 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 	}
 
 	return obj, nil
+}
+
+func (s *service) stackTypeForAppConfig(ctx context.Context, appConfigID string) string {
+	var stack app.AppStackConfig
+	if err := s.db.WithContext(ctx).Where(&app.AppStackConfig{AppConfigID: appConfigID}).First(&stack).Error; err != nil {
+		return ""
+	}
+	return string(stack.Type)
 }

@@ -15,6 +15,7 @@ const mockInstallRole = {
     name: 'nuon-provision-role',
     type: 'provision',
     created_at: '2024-06-15T10:30:00Z',
+    named_policy_names: ['logs'],
     enabled: true,
     arn: 'arn:aws:iam::123456789012:role/nuon-provision-role',
     policies: [
@@ -60,7 +61,33 @@ const mockInstallRole = {
   created_at: '2024-06-15T10:30:00Z',
 }
 
-export const Default = () => <InstallRoleDetail installRole={mockInstallRole} />
+const mockNamedPolicies = [
+  {
+    id: 'named-policy-1',
+    name: 'logs',
+    policy_name: 'nuon-install-logs',
+    description: 'Shared CloudWatch Logs access',
+    contents: btoa(
+      JSON.stringify({
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Effect: 'Allow',
+            Action: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+            Resource: '*',
+          },
+        ],
+      })
+    ),
+  },
+]
+
+export const Default = () => (
+  <InstallRoleDetail
+    installRole={mockInstallRole}
+    namedPolicies={mockNamedPolicies}
+  />
+)
 
 export const Unprovisioned = () => (
   <InstallRoleDetail
@@ -69,6 +96,7 @@ export const Unprovisioned = () => (
       provisioned: false,
       role_id: '',
     }}
+    namedPolicies={mockNamedPolicies}
   />
 )
 
@@ -81,5 +109,6 @@ export const NoPolicies = () => (
         policies: [],
       },
     }}
+    namedPolicies={mockNamedPolicies}
   />
 )

@@ -28,6 +28,7 @@ const mockRoles = [
       name: 'nuon-provision-role',
       type: 'provision',
       created_at: '2024-06-15T10:30:00Z',
+      named_policy_names: ['logs', 'artifacts'],
       enabled: true,
       arn: 'arn:aws:iam::123456789012:role/nuon-provision-role',
       policies: [
@@ -65,7 +66,46 @@ const mockRoles = [
 
 export const Default = () => (
   <SurfacesContext.Provider value={mockSurfaces}>
-    <InstallRolesTable roles={mockRoles} />
+    <InstallRolesTable
+      roles={mockRoles}
+      namedPolicies={[
+        {
+          id: 'named-policy-1',
+          name: 'logs',
+          policy_name: 'nuon-install-logs',
+          description: 'Shared CloudWatch Logs access',
+          contents: btoa(
+            JSON.stringify({
+              Version: '2012-10-17',
+              Statement: [
+                {
+                  Effect: 'Allow',
+                  Action: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+                  Resource: '*',
+                },
+              ],
+            })
+          ),
+        },
+        {
+          id: 'named-policy-2',
+          name: 'artifacts',
+          policy_name: 'nuon-install-artifacts',
+          contents: btoa(
+            JSON.stringify({
+              Version: '2012-10-17',
+              Statement: [
+                {
+                  Effect: 'Allow',
+                  Action: ['s3:GetObject'],
+                  Resource: 'arn:aws:s3:::example-artifacts/*',
+                },
+              ],
+            })
+          ),
+        },
+      ]}
+    />
   </SurfacesContext.Provider>
 )
 
