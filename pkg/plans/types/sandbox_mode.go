@@ -15,11 +15,24 @@ const fakeSandboxDigest = "sha256:a123b456c789d012e345f678a901b234c567d890a123b4
 // `{{.repository}}:{{.tag}}`, `ref` is the additive digest-pinned form, and
 // `display_tag` carries the human-friendly tag.
 func FakeOCISyncOutputs(repository, tag string) map[string]any {
+	return fakeOCISyncOutputs(repository, tag, repository+"@"+fakeSandboxDigest)
+}
+
+// FakePublicOCISyncOutputs reports the same shape for a component whose source
+// image is a real, publicly pullable ref. A sandbox never runs the copy, so the
+// artifact only exists at its source and only at its tag: pinning the
+// placeholder digest here would hand downstream consumers a ref that resolves
+// to nothing.
+func FakePublicOCISyncOutputs(repository, tag string) map[string]any {
+	return fakeOCISyncOutputs(repository, tag, repository+":"+tag)
+}
+
+func fakeOCISyncOutputs(repository, tag, ref string) map[string]any {
 	return map[string]any{
 		"image": map[string]any{
 			"repository":    repository,
 			"tag":           tag,
-			"ref":           repository + "@" + fakeSandboxDigest,
+			"ref":           ref,
 			"display_tag":   tag,
 			"media_type":    "application/vnd.docker.distribution.manifest.v2+json",
 			"digest":        fakeSandboxDigest,
