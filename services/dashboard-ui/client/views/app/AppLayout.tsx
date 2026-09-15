@@ -7,6 +7,7 @@ import { PageContent } from '@/components/layout/PageContent'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useApp } from '@/hooks/use-app'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
+import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { useOrg } from '@/hooks/use-org'
 import { AppProvider } from '@/providers/app-provider'
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
@@ -63,10 +64,11 @@ const AppTemplate = () => {
   const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
   const hasNewAppIA = useNewAppIA()
+  const hasSimpleIA = useSimpleIA()
 
   if (!app) return null
 
-  if (hasNewAppIA) {
+  if (hasSimpleIA || hasNewAppIA) {
     return (
       <PageLayout>
         {!isChildRoute ? <AppHeader isBranchPicker /> : null}
@@ -82,8 +84,16 @@ const AppTemplate = () => {
       iconVariant: 'ShippingContainerIcon' as const,
       text: 'Sandbox builds',
     },
-    { path: `/components`, iconVariant: 'CardsIcon' as const, text: 'Components' },
-    { path: `/actions`, iconVariant: 'TerminalWindowIcon' as const, text: 'Actions' },
+    {
+      path: `/components`,
+      iconVariant: 'CardsIcon' as const,
+      text: 'Components',
+    },
+    {
+      path: `/actions`,
+      iconVariant: 'TerminalWindowIcon' as const,
+      text: 'Actions',
+    },
     {
       path: `/runbooks`,
       iconVariant: 'BookIcon' as const,
@@ -95,7 +105,11 @@ const AppTemplate = () => {
       text: 'Branches',
     },
     { path: `/roles`, iconVariant: 'FileLockIcon' as const, text: 'Roles' },
-    { path: `/policies`, iconVariant: 'ShieldCheckIcon' as const, text: 'Policies' },
+    {
+      path: `/policies`,
+      iconVariant: 'ShieldCheckIcon' as const,
+      text: 'Policies',
+    },
     { path: `/installs`, iconVariant: 'CubeIcon' as const, text: 'Installs' },
     hasInstallSyncing && {
       path: `/install-syncs`,
@@ -110,7 +124,11 @@ const AppTemplate = () => {
     <PageLayout>
       {!isChildRoute ? <AppHeader /> : null}
       <PageContent className="border-t" variant="row">
-        <SubNav basePath={`/${org?.id}/apps/${app?.id}`} links={navLinks} storageKey="subnav:app" />
+        <SubNav
+          basePath={`/${org?.id}/apps/${app?.id}`}
+          links={navLinks}
+          storageKey="subnav:app"
+        />
         <div className="flex flex-col flex-1 min-w-0">
           <Outlet />
         </div>
