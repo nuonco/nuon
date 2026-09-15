@@ -32,7 +32,7 @@ type PermissionsConfig struct {
 	MaintenanceRole *AppAWSIAMRole   `json:"MaintenanceRole" mapstructure:"maintenance_role,omitempty" toml:"maintenance_role,omitempty"`
 	CustomRoles     []*AppAWSIAMRole `json:"CustomRoles" mapstructure:"custom_roles,omitempty" toml:"custom_roles,omitempty"`
 	Roles           []*AppAWSIAMRole `json:"Roles" mapstructure:"roles,omitempty" toml:"roles,omitempty"`
-	NamedPolicies   []NamedIAMPolicy `json:"NamedIAMPolicies" mapstructure:"named_policies,omitempty" toml:"named_policies,omitempty"`
+	NamedPolicies   []NamedIAMPolicy `json:"NamedPolicies" mapstructure:"named_policies,omitempty" toml:"named_policies,omitempty"`
 }
 
 func (a PermissionsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
