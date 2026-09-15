@@ -543,6 +543,8 @@ export type TInstallRoleUsage = components['schemas']['app.InstallRoleUsage']
 export type TInstallInputs = components['schemas']['app.InstallInputs']
 export type TInstallComponentOutputs = Record<string, string>
 export type TInstallConfig = components['schemas']['app.InstallConfig']
+export type TInstallTelemetrySettings =
+  components['schemas']['service.InstallTelemetrySettings']
 export type TInstallAuditLog = components['schemas']['app.InstallAuditLog']
 export type TDriftedObject = components['schemas']['app.DriftedObject']
 export type TInstallResource =
