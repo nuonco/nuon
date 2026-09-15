@@ -64,8 +64,8 @@ func TestSnakeCase(t *testing.T) {
 func TestPhoneHome_VNetPassthroughIsNamespaced(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
-	res := tmpl.getPhoneHomeResources(minimalTemplateInput(), nil,
-		[]string{"resourceGroupName", "apiserverSubnetId"}, armScope{})
+	res := tmpl.getPhoneHomeResources(minimalTemplateInput(), nil, []string{"resourceGroupName", "apiserverSubnetId"}, armScope{}, "")
+
 	props := res[0].(map[string]any)["properties"].(map[string]any)
 	script := props["scriptContent"].(string)
 
@@ -107,7 +107,7 @@ func TestPhoneHome_VNetPassthroughSurvivesSubscriptionWrapper(t *testing.T) {
 
 	inp := subscriptionTemplateInput()
 	scope := armScope{subscription: true}
-	res := tmpl.getPhoneHomeResources(inp, nil, []string{"resourceGroupName"}, scope)
+	res := tmpl.getPhoneHomeResources(inp, nil, []string{"resourceGroupName"}, scope, "")
 
 	want := fmt.Sprintf("reference('%s').outputs.resourceGroupName", scope.vnetDeploymentName(inp.Install.ID))
 
