@@ -88,6 +88,7 @@ func fullConfigBenchmarkHelper(t testing.TB, actions int) *appshelpers.Helpers {
 		add("app_awsiam_role_configs", "owner_id id owner_type type name", role.owner, role.typ, role.owner, role.typ, "read-only")
 		add("app_awsiam_policy_configs", "app_awsiam_role_config_id id name contents", role.typ, role.typ+"-policy", "read", `{"Version":"2012-10-17","Statement":[]}`)
 	}
+	add("app_named_iam_policy_configs", "app_permissions_config_id id name contents", "app_permissions_configs", "named-policy", "alb-create", `{"Version":"2012-10-17","Statement":[]}`)
 	add("app_policy_configs", "app_policies_config_id id name contents", "app_policies_configs", "policy", "allow", "package main\ndefault allow = true")
 	add("app_operation_role_rules", "app_operation_role_config_id id operation role", "app_operation_role_configs", "rule", "deploy", "read-only")
 	add("app_kubernetes_context_configs", "app_kubernetes_contexts_config_id id name source_component_id", "app_kubernetes_contexts_configs", "context", "primary", "terraform")
@@ -208,6 +209,9 @@ func checkFullConfigBenchmark(b testing.TB, got *app.AppConfig, configID, compon
 	require.Len(b, got.PermissionsConfig.Roles, 1)
 	require.Len(b, got.PermissionsConfig.Roles[0].Policies, 1)
 	require.NotEmpty(b, got.PermissionsConfig.ProvisionRole.ID, "AfterQuery must run")
+	require.Len(b, got.PermissionsConfig.NamedPolicies, 1)
+	require.Equal(b, "alb-create", got.PermissionsConfig.NamedPolicies[0].Name)
+	require.Equal(b, "NamedPolicyAlbCreate", got.PermissionsConfig.NamedPolicies[0].CloudFormationStackName)
 	require.Len(b, got.BreakGlassConfig.Roles, 1)
 	require.Len(b, got.BreakGlassConfig.Roles[0].Policies, 1)
 	require.Len(b, got.PoliciesConfig.Policies, 1)

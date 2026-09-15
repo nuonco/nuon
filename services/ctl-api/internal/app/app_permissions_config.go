@@ -28,6 +28,8 @@ type AppPermissionsConfig struct {
 
 	Roles []AppAWSIAMRoleConfig `json:"aws_iam_roles,omitzero" gorm:"constraint:OnDelete:CASCADE;polymorphic:Owner" temporaljson:"roles,omitzero,omitempty"`
 
+	NamedPolicies []AppNamedIAMPolicyConfig `json:"named_policies,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"named_policies,omitzero,omitempty"`
+
 	// loaded via an after query
 	ProvisionRole   AppAWSIAMRoleConfig   `json:"provision_aws_iam_role,omitzero" gorm:"-" temporaljson:"provision_role,omitzero,omitempty"`
 	MaintenanceRole AppAWSIAMRoleConfig   `json:"maintenance_aws_iam_role,omitzero" gorm:"-" temporaljson:"maintenance_role,omitzero,omitempty"`
