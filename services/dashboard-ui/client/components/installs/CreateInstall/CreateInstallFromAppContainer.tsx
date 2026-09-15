@@ -21,8 +21,10 @@ import {
   getAppBranches,
   createAppInstall,
   getAWSAccountConnections,
+  getComponents,
 } from '@/lib'
 import type { TApp } from '@/types'
+import { shouldDefaultStackOnly } from './app-install-readiness'
 import { BranchConnectionStep } from './BranchConnectionStep'
 import {
   CreateInstallFormFields,
@@ -110,6 +112,16 @@ export const CreateInstallFromAppContainer = ({
       enabled: !!org?.id && awsConnectionsEnabled,
     })
 
+  const componentIds = config?.component_ids ?? []
+  const needsComponents = componentIds.length > 0
+  const { data: componentsResult, isLoading: componentsLoading } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: ['components', org?.id, app.id, 'create-install-gate'],
+    queryFn: () =>
+      getComponents({ orgId: org.id, appId: app.id, limit: 100 }),
+    enabled: !!org?.id && !!app.id && needsComponents && !!config,
+  })
+
   const { data: branchList, isSuccess: branchesLoaded } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-branches', org?.id, app.id],
@@ -167,6 +179,7 @@ export const CreateInstallFromAppContainer = ({
   const isLoading =
     configsLoading ||
     configLoading ||
+    (needsComponents && componentsLoading) ||
     (awsConnectionsEnabled && awsAccountConnectionsLoading)
   const loadError = configsError || configError
   const inputConfig = config?.input
@@ -259,6 +272,13 @@ export const CreateInstallFromAppContainer = ({
         <CreateInstallFormFields
           app={app}
           inputConfig={inputConfig}
+          defaultStackOnly={shouldDefaultStackOnly(
+            {
+              ...app,
+              app_configs: [{ component_ids: config?.component_ids ?? [] }],
+            },
+            needsComponents ? componentsResult?.data : []
+          )}
           requireTargetAccount={requireTargetAccount}
           awsAccountConnections={
             awsConnectionsEnabled ? awsAccountConnections || [] : undefined
