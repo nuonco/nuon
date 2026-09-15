@@ -16,6 +16,7 @@ title: 'Permissions'
 | **`maintenance_role`**<br/>AppAWSIAMRole | maintenance IAM role IAM role used for day-to-day maintenance, updates, and operational tasks | **Optional** | - |
 | **`custom_roles`**<br/>array | custom IAM roles Additional IAM roles for specialized operations beyond the standard provision/maintenance/deprovision lifecycle. Each role must have type set to 'custom' | **Optional** | - |
 | **`roles`**<br/>array | list of permission roles Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, deprovision, or custom) | **Optional** | - |
+| **`named_policies`**<br/>[array](#named_policies) | named IAM policies Customer-managed IAM policies created independently of any role's Enable parameter. Attach them from a role with named_policies. Distinct from the root policies/ directory, which... | **Optional** | - |
 
 ### `provision_role`
 
@@ -23,10 +24,19 @@ title: 'Permissions'
 |----------|----------|----------|----------|
 | **`name`**<br/>string | name of the role Name used for the role in the target cloud platform. Supports Go templating using standard template variables (e.g., \{\{.nuon.install.id\}\}) | **✅ Required** | `"app-{{.nuon.install.id}}-role"`, `"admin-role"` |
 | **`description`**<br/>string | description of the role Human-readable description that explains the role's purpose. Rendered in the installer to customers. Supports templating | **✅ Required** | `"Provides S3 bucket access for the application"`, `"Database migration role with elevated permissions"` |
-| **`policies`**<br/>array | policy definitions for the role List of policies to attach to the role. Each policy defines cloud-specific permissions (AWS IAM policies, GCP IAM permissions, or GCP predefined roles) | **✅ Required** | - |
 | **`type`**<br/>string | role type in permission directory Used when defining permissions in a directory. Indicates when the role is active (provision, maintenance, or deprovision). Supports templating | **Optional** | `"provision"`, `"maintenance"`, `"deprovision"` |
 | **`cloud_platform`**<br/>string | target cloud platform Cloud platform this role targets. Determines which downstream renderer processes the role (e.g., AWS CloudFormation vs GCP IAM). Defaults to aws if omitted | **Optional**<br/>`"aws"`, `"azure"`, `"gcp"` | `"aws"`, `"gcp"` |
 | **`display_name`**<br/>string | display name of the role Human-readable display name shown in the installer UI. Supports templating | **Optional** | `"Application S3 Access"`, `"Database Admin"` |
+| **`policies`**<br/>array | policy definitions for the role List of policies to attach to the role. Each policy defines cloud-specific permissions (AWS IAM policies, GCP IAM permissions, or GCP predefined roles). May be omitt... | **Optional** | - |
 | **`permissions_boundary`**<br/>string | [AWS] permissions boundary policy [AWS only] Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) ... | **Optional** | `"./provision_boundary.json"`, `"./maintenance_boundary.json"` |
 | **`enabled_in_stack`**<br/>boolean | whether the role is enabled by default in the install stack Controls the default value of the Enable parameter for this role in the install stack (CloudFormation parameter or Terraform variable, de... | **Optional** | - |
+| **`named_policies`**<br/>array | named IAM policies to attach Named IAM policies to attach to this role, referenced by name. Use [[named_policies]] like [[policies]]. The name must match a named policy defined under permissions. T... | **Optional** | - |
+
+### `named_policies`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`name`**<br/>string | AWS IAM managed policy name Name used for the customer-managed IAM policy in the install account, and the identifier roles use in [[named_policies]]. Supports Nuon templating | **✅ Required** | `"{{.nuon.install.id}}-alb-create"`, `"shared-logs-policy"` |
+| **`contents`**<br/>string | IAM policy document JSON policy document for the customer-managed IAM policy. Created in the install stack even when no role is enabled. Supports Nuon templating and external file sources: HTTP(S) ... | **✅ Required** | `"{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"logs:*\",\"Resource\":\"*\"}]}"` |
+| **`description`**<br/>string | description of the policy Human-readable description of the named IAM policy | **Optional** | `"Shared CloudWatch Logs access for runner roles"` |
 

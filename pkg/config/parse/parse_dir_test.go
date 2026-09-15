@@ -416,3 +416,11 @@ func TestSourceMemberIdentity(t *testing.T) {
 		require.Empty(t, name)
 	})
 }
+
+func TestSourceMemberIdentityNamedIAMPolicyUsesFileStem(t *testing.T) {
+	kind, name := sourceMemberIdentity("permissions/policies", "permissions/policies/logs.toml", &config.NamedIAMPolicy{
+		Name: "install-{{.nuon.install.id}}-logs",
+	})
+	require.Equal(t, "permission_policy", kind)
+	require.Equal(t, "logs", name)
+}

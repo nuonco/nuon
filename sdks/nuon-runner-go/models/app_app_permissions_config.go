@@ -50,6 +50,9 @@ type AppAppPermissionsConfig struct {
 	// maintenance aws iam role
 	MaintenanceAwsIamRole *AppAppAWSIAMRoleConfig `json:"maintenance_aws_iam_role,omitempty"`
 
+	// named policies
+	NamedPolicies []*AppAppNamedIAMPolicyConfig `json:"named_policies"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
@@ -83,6 +86,10 @@ func (m *AppAppPermissionsConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateMaintenanceAwsIamRole(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNamedPolicies(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -225,6 +232,36 @@ func (m *AppAppPermissionsConfig) validateMaintenanceAwsIamRole(formats strfmt.R
 	return nil
 }
 
+func (m *AppAppPermissionsConfig) validateNamedPolicies(formats strfmt.Registry) error {
+	if swag.IsZero(m.NamedPolicies) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.NamedPolicies); i++ {
+		if swag.IsZero(m.NamedPolicies[i]) { // not required
+			continue
+		}
+
+		if m.NamedPolicies[i] != nil {
+			if err := m.NamedPolicies[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("named_policies" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("named_policies" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppAppPermissionsConfig) validateProvisionAwsIamRole(formats strfmt.Registry) error {
 	if swag.IsZero(m.ProvisionAwsIamRole) { // not required
 		return nil
@@ -254,6 +291,10 @@ func (m *AppAppPermissionsConfig) ContextValidate(ctx context.Context, formats s
 	}
 
 	if err := m.contextValidateMaintenanceAwsIamRole(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNamedPolicies(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -395,6 +436,35 @@ func (m *AppAppPermissionsConfig) contextValidateMaintenanceAwsIamRole(ctx conte
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppAppPermissionsConfig) contextValidateNamedPolicies(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.NamedPolicies); i++ {
+
+		if m.NamedPolicies[i] != nil {
+
+			if swag.IsZero(m.NamedPolicies[i]) { // not required
+				return nil
+			}
+
+			if err := m.NamedPolicies[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("named_policies" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("named_policies" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

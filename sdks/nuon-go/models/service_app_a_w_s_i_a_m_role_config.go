@@ -41,11 +41,14 @@ type ServiceAppAWSIAMRoleConfig struct {
 	// Required: true
 	Name *string `json:"name"`
 
+	// named policy names
+	NamedPolicyNames []string `json:"named_policy_names"`
+
 	// permissions boundary
 	PermissionsBoundary string `json:"permissions_boundary,omitempty"`
 
-	// policies
-	// Min Items: 1
+	// Policies may be empty when the role attaches named policies instead. A
+	// role with neither grants nothing and is rejected.
 	Policies []*ServiceAppAWSIAMPolicyConfig `json:"policies"`
 }
 
@@ -154,12 +157,6 @@ func (m *ServiceAppAWSIAMRoleConfig) validateName(formats strfmt.Registry) error
 func (m *ServiceAppAWSIAMRoleConfig) validatePolicies(formats strfmt.Registry) error {
 	if swag.IsZero(m.Policies) { // not required
 		return nil
-	}
-
-	iPoliciesSize := int64(len(m.Policies))
-
-	if err := validate.MinItems("policies", "body", iPoliciesSize, 1); err != nil {
-		return err
 	}
 
 	for i := 0; i < len(m.Policies); i++ {
