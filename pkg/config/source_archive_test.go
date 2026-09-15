@@ -116,3 +116,14 @@ func TestSourceArchiveReindexRejectsDuplicateNames(t *testing.T) {
 	require.ErrorContains(t, err, "both define")
 	require.ErrorContains(t, err, "component:same-name")
 }
+
+func TestSourceArchiveReindexKeysNamedIAMPoliciesByFileStem(t *testing.T) {
+	archive := SourceArchive{Files: map[string]string{
+		"permissions/policies/logs.toml": "name = \"install-logs\"\ncontents = \"{}\"\n",
+		"permissions/provision.toml":     "type = \"provision\"\nname = \"provision\"\n",
+	}}
+
+	require.NoError(t, archive.ReindexMembers())
+	require.Equal(t, "permissions/policies/logs.toml", archive.Members["permission_policy:logs"])
+	require.Equal(t, "permissions/provision.toml", archive.Members["permission:provision"])
+}

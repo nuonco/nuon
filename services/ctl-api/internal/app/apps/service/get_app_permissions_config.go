@@ -56,6 +56,7 @@ func (s *service) getAppPermissionsConfig(ctx context.Context, appID, appPermiss
 		}).
 		Preload("AWSIAMRoles").
 		Preload("AWSIAMRoles.AppAWSIAMPolicyConfigs").
+		Preload("NamedPolicies").
 		Order("created_at desc").
 		Limit(1).
 		First(&appPermissionsCfg)
