@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { PageSection } from '@/components/layout/PageSection'
@@ -7,12 +8,15 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { AutoApproveToggle } from '@/components/installs/management/EnableAutoApprove'
 import { ActiveWorkflows } from '@/components/workflows/ActiveWorkflows'
 import { WorkflowTimeline } from '@/components/workflows/WorkflowTimeline'
-import { ShowDriftScanContainer as ShowDriftScan } from '@/components/workflows/filters/ShowDriftScans'
-import { WorkflowTypeFilter } from '@/components/workflows/filters/WorkflowTypeFilter'
-import { WorkflowSearch } from '@/components/workflows/filters/WorkflowSearch'
+import { WorkflowFilters } from '@/components/workflows/filters/WorkflowFilters'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { getInstallWorkflows } from '@/lib'
+import {
+  datePresetQueryParameter,
+  readWorkflowFilters,
+} from '@/utils/workflow-filters'
 
 const POLL_INTERVAL = 20000
 
@@ -20,10 +24,12 @@ export const Workflows = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const [searchParams] = useSearchParams()
-
-  const type = searchParams.get('type') || ''
-  const search = searchParams.get('search') || ''
-  const showDrifts = searchParams.get('drifts') !== 'false'
+  const filters = readWorkflowFilters(searchParams, 'install')
+  const since = searchParams.get('since')
+  const createdAtGte = useMemo(() => datePresetQueryParameter(since), [since])
+  const hasSimpleIA = useSimpleIA()
+  const pageName = hasSimpleIA ? 'Activity' : 'Workflows'
+  const pagePath = hasSimpleIA ? 'activity' : 'workflows'
 
   const { data } = useQuery({
     placeholderData: keepPreviousData,
@@ -50,45 +56,42 @@ export const Workflows = () => {
 
   return (
     <PageSection>
-      <PageTitle segments={['Workflows', install?.name]} />
+      <PageTitle segments={[pageName, install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/installs`, text: 'Installs' },
           { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
           {
-            path: `/${org?.id}/installs/${install?.id}/workflows`,
-            text: 'Workflows',
+            path: `/${org?.id}/installs/${install?.id}/${pagePath}`,
+            text: pageName,
           },
         ]}
       />
 
-      <ActiveWorkflows
-        workflows={activeWorkflows}
-        install={install}
-      />
+      <ActiveWorkflows workflows={activeWorkflows} install={install} />
 
       <SectionHeader
-        title="Workflow history"
+        title={hasSimpleIA ? 'Activity' : 'Workflow history'}
         description="View past and active workflows for this install."
       />
 
       <div className="flex items-center justify-between gap-4">
-        <WorkflowSearch />
-
-        <div className="shrink-0 flex items-center gap-4">
+        <WorkflowFilters owner="install" />
+        <div className="shrink-0">
           <AutoApproveToggle />
-          <ShowDriftScan />
-          <WorkflowTypeFilter />
         </div>
       </div>
 
       <WorkflowTimeline
         installId={install?.id}
         shouldPoll
-        planonly={showDrifts}
-        type={type}
-        search={search}
+        planonly
+        type={filters.api.type}
+        status={filters.api.status}
+        search={filters.api.search}
+        createdAtGte={createdAtGte}
+        isFiltered={filters.filtered}
       />
     </PageSection>
   )
