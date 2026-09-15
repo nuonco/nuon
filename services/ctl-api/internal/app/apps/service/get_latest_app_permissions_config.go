@@ -51,6 +51,7 @@ func (s *service) getLatestAppPermissionsConfig(ctx context.Context, appID strin
 			AppID: appID,
 		}).
 		Preload("Roles").
+		Preload("NamedPolicies").
 		Order("created_at desc").
 		Limit(1).
 		First(&appPermissionsCfg)
