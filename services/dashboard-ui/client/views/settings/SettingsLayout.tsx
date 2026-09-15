@@ -5,6 +5,7 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useOrg } from '@/hooks/use-org'
 import { useCLIConfig } from '@/hooks/use-cli-config'
+import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
 import type { TNavItem } from '@/types/dashboard.types'
 
@@ -19,6 +20,7 @@ export const SettingsLayout = () => {
 const SettingsTemplate = () => {
   const { org } = useOrg()
   const { data: cliConfig } = useCLIConfig()
+  const hasSimpleIA = useSimpleIA()
 
   if (!org) return null
 
@@ -32,18 +34,19 @@ const SettingsTemplate = () => {
     {
       path: `/vcs`,
       iconVariant: 'GitHub' as const,
-      text: 'VCS connections',
+      text: hasSimpleIA ? 'Connections' : 'VCS connections',
     },
     {
       path: `/webhooks`,
       iconVariant: 'WebhooksLogoIcon' as const,
       text: 'Webhooks',
     },
-    hasSlack && {
-      path: `/slack`,
-      iconVariant: 'SlackLogoIcon' as const,
-      text: 'Slack',
-    },
+    !hasSimpleIA &&
+      hasSlack && {
+        path: `/slack`,
+        iconVariant: 'SlackLogoIcon' as const,
+        text: 'Slack',
+      },
     hasTriggers && {
       path: `/triggers`,
       iconVariant: 'LightningIcon' as const,
@@ -70,7 +73,11 @@ const SettingsTemplate = () => {
     <PageLayout>
       <SectionHeader variant="page" title={`${org?.name} settings`} />
       <PageContent className="border-t" variant="row">
-        <SubNav basePath={`/${org?.id}/settings`} links={navLinks} storageKey="subnav:settings" />
+        <SubNav
+          basePath={`/${org?.id}/settings`}
+          links={navLinks}
+          storageKey="subnav:settings"
+        />
         <div className="flex flex-col flex-1 min-w-0">
           <Outlet />
         </div>

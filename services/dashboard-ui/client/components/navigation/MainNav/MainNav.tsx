@@ -59,6 +59,9 @@ export const MainNav = ({
         },
       ]
     : MAIN_LINKS
+  const settingsLinks = org?.features?.['simple-ia']
+    ? SETTINGS_LINKS.filter((link) => link.path !== '/runner')
+    : SETTINGS_LINKS
 
   return (
     <nav className="flex flex-col gap-4">
@@ -73,7 +76,7 @@ export const MainNav = ({
       <div className="flex flex-col gap-1">
         <NavLabel isSidebarOpen={isSidebarOpen}>Manage</NavLabel>
 
-        {SETTINGS_LINKS.map((link) => (
+        {settingsLinks.map((link) => (
           <MainNavLink key={link.text} basePath={basePath} {...link} />
         ))}
       </div>
