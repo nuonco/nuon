@@ -10,7 +10,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_components",
 		"List components",
-		"List all components in the org. Optionally filter by app_id. Returns component name, ID, type, and app association.",
+		"List components in the org. Optionally filter by app_id. Returns component name, ID, type, and app association."+apiPkg.MCPListToolHint,
 	), s.mcpListComponents)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
