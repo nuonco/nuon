@@ -24,7 +24,7 @@ func snakeCase(s string) string {
 	return strings.ToLower(envNameRegexp.ReplaceAllString(s, "_"))
 }
 
-func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs, vnetExtraOutputs []string, scope armScope) []any {
+func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs, vnetExtraOutputs []string, scope armScope, telemetryEndpoint string) []any {
 	phoneHomeURL := inp.CloudFormationStackVersion.PhoneHomeURL
 
 	operationIDs := azureOperationIdentities(inp.AppCfg)
@@ -87,6 +87,9 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 	// Local runners have no runnerDeployment to reference.
 	if !t.cfg.UseLocalRunners {
 		payloadFields = append(payloadFields, `  "runner_identity_principal_id": "$RUNNER_IDENTITY_PRINCIPAL_ID"`)
+	}
+	if telemetryEndpoint != "" {
+		payloadFields = append(payloadFields, `  "telemetry_endpoint": "$TELEMETRY_ENDPOINT"`)
 	}
 	payloadFields = append(payloadFields, secretPayloadFields...)
 
@@ -211,6 +214,9 @@ fi
 			"value": "[reference('runnerDeployment').outputs.vmssPrincipalId.value]",
 		})
 	}
+	if telemetryEndpoint != "" {
+		envVars = append(envVars, map[string]any{"name": "TELEMETRY_ENDPOINT", "value": telemetryEndpoint})
+	}
 	envVars = append(envVars, secretEnvVars...)
 	if len(customerInputs) > 0 {
 		envVars = append(envVars, map[string]any{
@@ -225,6 +231,9 @@ fi
 	// Depend on the identity role setup so a failed role deployment blocks the
 	// outputs rather than reporting half-configured identities.
 	dependsOn := []string{vnetDeployment}
+	if telemetryEndpoint != "" {
+		dependsOn = append(dependsOn, "runnerDeployment")
+	}
 	for _, co := range customOutputs {
 		dependsOn = append(dependsOn, co.DeploymentName)
 	}
