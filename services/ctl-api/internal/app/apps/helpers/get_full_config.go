@@ -84,7 +84,7 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 		var boundedCfgIDs []string
 		res = h.db.WithContext(ctx).Raw(fmt.Sprintf(`
 			SELECT DISTINCT ON (component_id) id
-			FROM %s
+			FROM component_config_connections_view_v1
 			WHERE component_id IN ? AND app_config_version <= ?
 			ORDER BY component_id, app_config_version DESC`,
 			views.CurrentViewName(h.db, &app.ComponentConfigConnection{})),
