@@ -197,7 +197,10 @@ func (a *Activities) applyRunnerHealthDecision(ectx context.Context, r *app.Runn
 	if d.SetOfflineTS {
 		if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ectx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
 			RunnerID: r.ID,
-			Metadata: map[string]any{app.RunnerOfflineTSMetadataKey: now.Unix()},
+			Metadata: map[string]any{
+				app.RunnerOfflineTSMetadataKey:         now.Unix(),
+				app.RunnerOfflineFromStatusMetadataKey: d.OfflineFromStatus,
+			},
 		}); err != nil {
 			return fmt.Errorf("unable to set runner offline metadata: %w", err)
 		}
@@ -205,7 +208,10 @@ func (a *Activities) applyRunnerHealthDecision(ectx context.Context, r *app.Runn
 	if d.ClearOfflineTS {
 		if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ectx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
 			RunnerID: r.ID,
-			Metadata: map[string]any{app.RunnerOfflineTSMetadataKey: nil},
+			Metadata: map[string]any{
+				app.RunnerOfflineTSMetadataKey:         nil,
+				app.RunnerOfflineFromStatusMetadataKey: nil,
+			},
 		}); err != nil {
 			return fmt.Errorf("unable to clear runner offline metadata: %w", err)
 		}
@@ -282,7 +288,8 @@ func (a *Activities) emitRunnerAlerts(ctx context.Context, orgID string, alerts 
 		if in, ok := installsByID[r.RunnerGroup.OwnerID]; ok {
 			install = &in
 		}
-		event, ownerName := runnerOfflineEvent(&r, install, al.reason, al.tags)
+		fromStatus := runnerOfflineFromStatus(&r)
+		event, ownerName := runnerOfflineEvent(&r, install, fromStatus, al.reason, al.tags)
 
 		ectx := cctx.SetOrgIDContext(ctx, r.OrgID)
 		ectx = cctx.SetAccountIDContext(ectx, r.CreatedByID)
@@ -296,7 +303,7 @@ func (a *Activities) emitRunnerAlerts(ctx context.Context, orgID string, alerts 
 				RunnerName:           r.DisplayName,
 				OrgID:                r.OrgID,
 				OrgName:              r.Org.Name,
-				FromStatus:           app.RunnerStatusActive,
+				FromStatus:           fromStatus,
 				ToStatus:             app.RunnerStatusOffline,
 				Reason:               al.reason,
 				RunnerGroupID:        r.RunnerGroupID,
@@ -346,7 +353,14 @@ func runnerHealthTags(r *app.Runner, presence runnerProcessPresence, d runnerHea
 	return tags
 }
 
-func runnerOfflineEvent(r *app.Runner, install *app.Install, reason string, tags map[string]string) (*statsd.Event, string) {
+func runnerOfflineFromStatus(r *app.Runner) app.RunnerStatus {
+	if raw, ok := r.StatusV2.Metadata[app.RunnerOfflineFromStatusMetadataKey].(string); ok && raw != "" {
+		return app.RunnerStatus(raw)
+	}
+	return app.RunnerStatusUnknown
+}
+
+func runnerOfflineEvent(r *app.Runner, install *app.Install, fromStatus app.RunnerStatus, reason string, tags map[string]string) (*statsd.Event, string) {
 	eventTags := []string{
 		metrics.ToTag("runner_id", r.ID),
 		metrics.ToTag("runner_type", string(r.RunnerGroup.Type)),
@@ -356,8 +370,8 @@ func runnerOfflineEvent(r *app.Runner, install *app.Install, reason string, tags
 
 	title := fmt.Sprintf("Runner went offline (type: %s)", string(r.RunnerGroup.Type))
 	text := fmt.Sprintf(
-		"Runner %s (org: %s) transitioned from active to offline.\nReason: %s",
-		r.ID, r.Org.Name, reason,
+		"Runner %s (org: %s) transitioned from %s to offline.\nReason: %s",
+		r.ID, r.Org.Name, fromStatus, reason,
 	)
 	ownerName := ""
 	if r.RunnerGroup.OwnerType == "orgs" {
@@ -373,8 +387,8 @@ func runnerOfflineEvent(r *app.Runner, install *app.Install, reason string, tags
 			metrics.ToTag("created_by", install.CreatedBy.Email),
 		)
 		text = fmt.Sprintf(
-			"Runner %s (org: %s, app: %s, install: %s) transitioned from active to offline.\nReason: %s\nInstall created by: %s",
-			r.ID, r.Org.Name, install.App.Name, install.Name, reason, install.CreatedBy.Email,
+			"Runner %s (org: %s, app: %s, install: %s) transitioned from %s to offline.\nReason: %s\nInstall created by: %s",
+			r.ID, r.Org.Name, install.App.Name, install.Name, fromStatus, reason, install.CreatedBy.Email,
 		)
 	}
 

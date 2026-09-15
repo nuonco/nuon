@@ -17,6 +17,7 @@ import (
 	basemetrics "github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/runnerunhealthy"
 	runneractivities "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -36,7 +37,9 @@ func TestFirstFailedHealthCheckMarksRunnerOfflineWithoutAlerting(t *testing.T) {
 	var calls []string
 
 	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2Metadata, mock.MatchedBy(func(req statusactivities.UpdateRunnerStatusV2MetadataRequest) bool {
-		return len(req.Metadata) == 1 && req.Metadata[app.RunnerOfflineTSMetadataKey] == now.Unix()
+		return len(req.Metadata) == 2 &&
+			req.Metadata[app.RunnerOfflineTSMetadataKey] == now.Unix() &&
+			req.Metadata[app.RunnerOfflineFromStatusMetadataKey] == string(app.RunnerStatusActive)
 	})).Run(func(mock.Arguments) { calls = append(calls, "offline-ts") }).Return(nil).Once()
 	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
 		Run(func(mock.Arguments) { calls = append(calls, "status") }).
@@ -88,6 +91,7 @@ func TestOfflineRunnerEnqueuesIdempotentAlertAfterDelay(t *testing.T) {
 
 	offlineAt := now.Add(-runnerUnhealthyAlertDelay)
 	runner := runnerWithOfflineMetadata(app.RunnerStatusOffline, offlineAt)
+	runner.StatusV2.Metadata[app.RunnerOfflineFromStatusMetadataKey] = string(app.RunnerStatusError)
 	runner.RunnerGroup.Type = app.RunnerGroupTypeOrg
 	runner.RunnerGroup.OwnerID = runner.OrgID
 	runner.RunnerGroup.OwnerType = "orgs"
@@ -96,6 +100,10 @@ func TestOfflineRunnerEnqueuesIdempotentAlertAfterDelay(t *testing.T) {
 	var calls []string
 
 	env.OnActivity(new(sharedactivities.Activities).EnqueueSignalToOwner, mock.Anything, mock.MatchedBy(func(req *sharedactivities.EnqueueSignalToOwnerRequest) bool {
+		unhealthy, ok := req.Signal.(*runnerunhealthy.Signal)
+		if !ok || unhealthy.FromStatus != app.RunnerStatusError {
+			return false
+		}
 		return req.IdempotencyKey == fmt.Sprintf("runner-unhealthy:%s:%d", runner.ID, offlineAt.Unix())
 	})).
 		Run(func(mock.Arguments) { calls = append(calls, "notification") }).
@@ -228,7 +236,9 @@ func TestHealthyCheckClearsOfflineMetadataAndRestoresActive(t *testing.T) {
 	var calls []string
 
 	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2Metadata, mock.MatchedBy(func(req statusactivities.UpdateRunnerStatusV2MetadataRequest) bool {
-		return len(req.Metadata) == 1 && req.Metadata[app.RunnerOfflineTSMetadataKey] == nil
+		return len(req.Metadata) == 2 &&
+			req.Metadata[app.RunnerOfflineTSMetadataKey] == nil &&
+			req.Metadata[app.RunnerOfflineFromStatusMetadataKey] == nil
 	})).Run(func(mock.Arguments) { calls = append(calls, "clear") }).Return(nil).Once()
 	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
 		Run(func(mock.Arguments) { calls = append(calls, "status") }).
