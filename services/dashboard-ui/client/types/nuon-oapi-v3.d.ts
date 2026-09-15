@@ -3610,6 +3610,11 @@ export interface components {
       enabled_in_stack?: components["schemas"]["sql.NullBool"];
       id?: string;
       name?: string;
+      /**
+       * @description NamedPolicyNames references AppNamedIAMPolicyConfig.Name values on the
+       * same permissions config. JSONB because each app config is a snapshot.
+       */
+      named_policy_names?: string[];
       org_id?: string;
       owner_id?: string;
       owner_type?: string;
@@ -3934,6 +3939,25 @@ export interface components {
       org_id?: string;
       updated_at?: string;
     };
+    "app.AppNamedIAMPolicyConfig": {
+      app_config_id?: string;
+      app_permissions_config_id?: string;
+      cloudformation_stack_name?: string;
+      contents?: string;
+      created_at?: string;
+      created_by_id?: string;
+      description?: string;
+      id?: string;
+      /**
+       * @description Name is the logical id roles use in named_policy_names (file stem, or the
+       * config name when authored in permissions.toml).
+       */
+      name?: string;
+      org_id?: string;
+      /** @description PolicyName is the AWS IAM managed policy name. Empty means use Name. */
+      policy_name?: string;
+      updated_at?: string;
+    };
     "app.AppOperationRoleConfig": {
       app_config_id?: string;
       app_id?: string;
@@ -3968,6 +3992,7 @@ export interface components {
       deprovision_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
       id?: string;
       maintenance_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
+      named_policies?: components["schemas"]["app.AppNamedIAMPolicyConfig"][];
       org_id?: string;
       /** @description loaded via an after query */
       provision_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
@@ -7772,6 +7797,7 @@ export interface components {
       display_name: string;
       enabled_in_stack?: boolean | null;
       name: string;
+      named_policy_names?: string[];
       permissions_boundary?: string;
       policies?: components["schemas"]["service.AppAWSIAMPolicyConfig"][];
     };
@@ -7855,6 +7881,12 @@ export interface components {
         [key: string]: string;
       };
       labels?: components["schemas"]["service.AppLabelKeySummary"][];
+    };
+    "service.AppNamedIAMPolicyConfig": {
+      contents: string;
+      description?: string;
+      name: string;
+      policy_name?: string;
     };
     "service.AppPolicyConfig": {
       components?: string[];
@@ -8143,6 +8175,7 @@ export interface components {
       custom_roles?: components["schemas"]["service.AppAWSIAMRoleConfig"][];
       deprovision_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
       maintenance_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
+      named_policies?: components["schemas"]["service.AppNamedIAMPolicyConfig"][];
       provision_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
     };
     "service.CreateAppPoliciesConfigRequest": {
@@ -8875,6 +8908,11 @@ export interface components {
       enabled_in_stack?: components["schemas"]["sql.NullBool"];
       id?: string;
       name?: string;
+      /**
+       * @description NamedPolicyNames references AppNamedIAMPolicyConfig.Name values on the
+       * same permissions config. JSONB because each app config is a snapshot.
+       */
+      named_policy_names?: string[];
       org_id?: string;
       owner_id?: string;
       owner_type?: string;

@@ -66,6 +66,16 @@ func TestPermissionVsPermissionsSchemas(t *testing.T) {
 	}
 }
 
+func TestPermissionPolicySchema(t *testing.T) {
+	schm, err := LookupSchemaType("permission-policy")
+	if err != nil || schm == nil {
+		t.Fatalf("permission-policy schema unavailable: %v", err)
+	}
+	if schm.ID == "" {
+		t.Fatal("permission-policy schema must declare a root $id")
+	}
+}
+
 func TestLookupSchemaTypeNormalizesUnderscores(t *testing.T) {
 	tests := []struct {
 		typ   string
