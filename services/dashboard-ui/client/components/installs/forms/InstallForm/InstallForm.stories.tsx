@@ -53,14 +53,17 @@ const inputConfig = {
 const CreateStory = ({
   platform,
   withInputs,
+  defaultStackOnly,
 }: {
   platform: InstallPlatform
   withInputs?: boolean
+  defaultStackOnly?: boolean
 }) => {
   const { form } = useInstallForm({
     mode: 'create',
     platform,
     inputConfig: withInputs ? inputConfig : undefined,
+    defaultStackOnly,
     onSubmit: () => {},
   })
 
@@ -77,6 +80,9 @@ const CreateStory = ({
 }
 
 export const CreateAws = () => <CreateStory platform="aws" />
+export const CreateAwsStackOnly = () => (
+  <CreateStory platform="aws" defaultStackOnly />
+)
 export const CreateAwsWithInputs = () => (
   <CreateStory platform="aws" withInputs />
 )
