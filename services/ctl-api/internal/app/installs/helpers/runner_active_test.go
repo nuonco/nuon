@@ -81,6 +81,17 @@ func (s *RunnerActiveTestSuite) TestInactiveProcess() {
 	require.False(s.T(), active)
 }
 
+func (s *RunnerActiveTestSuite) TestActiveProcessOnAnotherInstallDoesNotCount() {
+	install, _ := s.seedRunner()
+
+	_, otherRunner := s.seedRunner()
+	s.seedProcess(otherRunner.ID, app.RunnerProcessStatusActive)
+
+	active, err := s.deps.Helpers.HasActiveRunner(s.ctx, install.ID)
+	require.NoError(s.T(), err)
+	require.False(s.T(), active)
+}
+
 func (s *RunnerActiveTestSuite) TestActiveProcesses() {
 	for _, status := range app.ActiveRunnerProcessStatuses() {
 		s.Run(string(status), func() {
