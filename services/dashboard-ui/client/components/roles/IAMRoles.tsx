@@ -16,6 +16,7 @@ import type { TAppConfig } from '@/types'
 import type {
   TInstallAppPermissionsConfig,
   TInstallPermissionsRoleStatus,
+  TNamedIAMPolicy,
 } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
 import { decodeAsString } from '@/utils/data-utils'
@@ -46,9 +47,9 @@ export const IAMRoleBoundaryExpand = ({
         </CodeBlock>
       ) : (
         <Text>
-          Set a permissions boundary to control the maximum permissions
-          this role can have. This is not a common setting but can be
-          used to delegate permission management to others.{' '}
+          Set a permissions boundary to control the maximum permissions this
+          role can have. This is not a common setting but can be used to
+          delegate permission management to others.{' '}
           <Link
             className="!inline-flex"
             href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html?icmpid=docs_iam_console"
@@ -73,6 +74,59 @@ export type TPolicy = {
   azure_built_in_roles?: string[]
   azure_actions?: string[]
 }
+
+export const IAMRoleNamedPoliciesExpand = ({
+  policies = [],
+  id,
+}: {
+  policies?: TNamedIAMPolicy[]
+  id: string
+}) => (
+  <Expand
+    id={`${id}-named-policies`}
+    className="rounded-md border"
+    heading={
+      <Text weight="strong">
+        Named policies{' '}
+        <Text variant="subtext" weight="normal" theme="neutral">
+          ({policies.length})
+        </Text>
+      </Text>
+    }
+    headerClassName="p-4"
+  >
+    <div className="flex flex-col gap-4 p-4 border-t">
+      {policies.length ? (
+        policies.map((policy, index) => (
+          <div
+            key={policy.id ?? policy.name ?? index}
+            className="flex flex-col gap-2"
+          >
+            <HeadingGroup>
+              <Text weight="strong" family="mono">
+                {policy.policy_name ?? policy.name}
+              </Text>
+              {policy.description ? (
+                <Text variant="subtext" theme="neutral">
+                  {policy.description}
+                </Text>
+              ) : null}
+            </HeadingGroup>
+            {policy.contents ? (
+              <CodeBlock language="json">
+                {decodeAsString(policy.contents)}
+              </CodeBlock>
+            ) : null}
+          </div>
+        ))
+      ) : (
+        <Text variant="subtext" theme="neutral">
+          No named policies are attached to this role.
+        </Text>
+      )}
+    </div>
+  </Expand>
+)
 
 export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
   <Card>
@@ -101,10 +155,7 @@ export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
         </Text>
       </div>
       {policies?.map((policy) => (
-        <div
-          key={policy?.id}
-          className="grid grid-cols-3 gap-6 py-2 border-t"
-        >
+        <div key={policy?.id} className="grid grid-cols-3 gap-6 py-2 border-t">
           {policy?.managed_policy_name ? (
             <>
               <Code variant="inline" className="!px-2">
@@ -308,15 +359,15 @@ export const IAMRoles = ({ appConfig }: { appConfig: TAppConfig }) => {
               </LabeledValue>
               <LabeledValue label="Name">{role?.name}</LabeledValue>
               <LabeledValue label="Type">
-                <Badge size="sm">
-                  {humanize(role?.type)}
-                </Badge>
+                <Badge size="sm">{humanize(role?.type)}</Badge>
               </LabeledValue>
             </div>
           </Card>
 
           <IAMRolePoliciesCard policies={role?.policies} />
-          <IAMRoleBoundaryExpand permissionsBoundary={role?.permissions_boundary} />
+          <IAMRoleBoundaryExpand
+            permissionsBoundary={role?.permissions_boundary}
+          />
         </div>
       ))}
     </div>
@@ -337,7 +388,13 @@ export const InstallIAMRoles = ({
         return (
           <div className="flex flex-col gap-4 pb-8" key={installRole.id}>
             <div className="flex flex-col">
-              <Text variant="h3" weight="strong" level={3} role="heading" id={role?.display_name}>
+              <Text
+                variant="h3"
+                weight="strong"
+                level={3}
+                role="heading"
+                id={role?.display_name}
+              >
                 {role.display_name}
               </Text>
               <Text variant="subtext" theme="neutral">
@@ -349,23 +406,33 @@ export const InstallIAMRoles = ({
               <Text weight="strong">Summary</Text>
               <div className="grid grid-cols-5 gap-6">
                 <LabeledValue label="Created at">
-                  <Time variant="subtext" time={role.created_at} format="long-datetime" />
+                  <Time
+                    variant="subtext"
+                    time={role.created_at}
+                    format="long-datetime"
+                  />
                 </LabeledValue>
                 <LabeledValue label="Name">{role.name}</LabeledValue>
                 <LabeledValue label="Type">
-                  <Badge size="sm">
-                    {humanize(role.type)}
-                  </Badge>
+                  <Badge size="sm">{humanize(role.type)}</Badge>
                 </LabeledValue>
                 <LabeledValue label="Status">
-                  <Status status={installRole.provisioned ? 'active' : 'inactive'}>
-                    {installRole.provisioned ? 'Provisioned' : 'Not provisioned'}
+                  <Status
+                    status={installRole.provisioned ? 'active' : 'inactive'}
+                  >
+                    {installRole.provisioned
+                      ? 'Provisioned'
+                      : 'Not provisioned'}
                   </Status>
                 </LabeledValue>
                 <LabeledValue label="ARN">
                   {installRole.role_id ? (
                     <div className="flex items-start gap-1 min-w-0">
-                      <Text variant="subtext" family="mono" className="break-all">
+                      <Text
+                        variant="subtext"
+                        family="mono"
+                        className="break-all"
+                      >
                         {installRole.role_id}
                       </Text>
                       <ClickToCopyButton textToCopy={installRole.role_id} />
@@ -380,7 +447,9 @@ export const InstallIAMRoles = ({
             </Card>
 
             <IAMRolePoliciesCard policies={role.policies} />
-            <IAMRoleBoundaryExpand permissionsBoundary={role.permissions_boundary} />
+            <IAMRoleBoundaryExpand
+              permissionsBoundary={role.permissions_boundary}
+            />
           </div>
         )
       })}

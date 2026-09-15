@@ -8,6 +8,9 @@ The permissions/IAM model was originally designed for AWS and the naming reflect
 |---|---|---|---|---|
 | `AppAWSIAMRole` / `AppAWSIAMRoleConfig` | **Permission Identity** | IAM Role | Service Account | Managed Identity |
 | `AppAWSIAMPolicy` / `AppAWSIAMPolicyConfig` | **Permission Grant** | Inline or managed IAM policy | Permission list or predefined role | Role assignment |
+| `NamedIAMPolicy` / `AppNamedIAMPolicyConfig` | **Named IAM policy** | Customer-managed IAM policy (`AWS::IAM::ManagedPolicy`) created even when roles are disabled | Not in v1 | Not in v1 |
+
+Named IAM policies live under `permissions/policies/` (or `named_policies` in `permissions.toml`). Roles attach them with `[[named_policies]]` / `name`, matching the policy's `name` field (same pattern as inline `[[policies]]`). They are not the Kyverno/OPA documents in the root `policies/` directory.
 | `AWSIAMRoleType` | **Role Purpose** | Same across all clouds |
 
 ## Policy Fields by Cloud

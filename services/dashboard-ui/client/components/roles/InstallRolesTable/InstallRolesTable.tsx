@@ -10,6 +10,7 @@ import { Time } from '@/components/common/Time'
 import { Panel } from '@/components/surfaces/Panel'
 import { InstallRoleDetail } from '../InstallRoleDetail'
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
+import type { TNamedIAMPolicy } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
 import { humanize } from '@/utils/string-utils'
 
 const panelLinkClass =
@@ -18,9 +19,7 @@ const panelLinkClass =
 function RolePanelHeading({ role }: { role: TInstallRole }) {
   return (
     <div className="flex flex-col">
-      <Text variant="h3">
-        {role.app_role_config?.display_name}
-      </Text>
+      <Text variant="h3">{role.app_role_config?.display_name}</Text>
       <Text variant="subtext" theme="neutral" weight="normal">
         {role.app_role_config?.description}
       </Text>
@@ -30,10 +29,12 @@ function RolePanelHeading({ role }: { role: TInstallRole }) {
 
 export const InstallRolesTable = ({
   roles,
+  namedPolicies = [],
   isLoading,
   pagination,
 }: {
   roles: TInstallRole[]
+  namedPolicies?: TNamedIAMPolicy[]
   isLoading?: boolean
   pagination?: Omit<IPagination, 'position'>
 }) => {
@@ -58,7 +59,10 @@ export const InstallRolesTable = ({
               ),
             }}
           >
-            <InstallRoleDetail installRole={row.original} />
+            <InstallRoleDetail
+              installRole={row.original}
+              namedPolicies={namedPolicies}
+            />
           </Panel>
         ),
       },
@@ -69,6 +73,15 @@ export const InstallRolesTable = ({
           <Badge theme="neutral">
             {humanize(row.original.app_role_config?.type)}
           </Badge>
+        ),
+      },
+      {
+        id: 'named_policies',
+        header: 'Named policies',
+        cell: ({ row }) => (
+          <Text variant="subtext">
+            {row.original.app_role_config?.named_policy_names?.length ?? 0}
+          </Text>
         ),
       },
       {
@@ -109,18 +122,19 @@ export const InstallRolesTable = ({
               variant: 'ghost',
               className: panelLinkClass,
               children: (
-                <span className="flex items-center gap-1.5">
-                  View role
-                </span>
+                <span className="flex items-center gap-1.5">View role</span>
               ),
             }}
           >
-            <InstallRoleDetail installRole={row.original} />
+            <InstallRoleDetail
+              installRole={row.original}
+              namedPolicies={namedPolicies}
+            />
           </Panel>
         ),
       },
     ],
-    []
+    [namedPolicies]
   )
 
   return (

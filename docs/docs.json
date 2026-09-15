@@ -296,6 +296,7 @@
                   "config-ref/installer",
                   "config-ref/metadata",
                   "config-ref/permissions",
+                  "config-ref/permission-policy",
                   "config-ref/policies",
                   "config-ref/runner",
                   "config-ref/sandbox",
