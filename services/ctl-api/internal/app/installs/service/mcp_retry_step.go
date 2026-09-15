@@ -22,6 +22,12 @@ func (s *service) mcpRetryStep(ctx context.Context, _ *mcp.CallToolRequest, in m
 	if err != nil {
 		return nil, nil, err
 	}
+	if in.WorkflowID == "" {
+		return nil, nil, fmt.Errorf("workflow_id is required")
+	}
+	if in.StepID == "" {
+		return nil, nil, fmt.Errorf("step_id is required")
+	}
 
 	var workflow app.Workflow
 	if err := s.db.WithContext(ctx).
@@ -32,8 +38,7 @@ func (s *service) mcpRetryStep(ctx context.Context, _ *mcp.CallToolRequest, in m
 
 	var step app.WorkflowStep
 	if err := s.db.WithContext(ctx).
-		Where(app.WorkflowStep{OrgID: orgID}).
-		Where("id = ? AND owner_id = ?", in.StepID, workflow.ID).
+		Where("id = ? AND install_workflow_id = ? AND org_id = ?", in.StepID, workflow.ID, orgID).
 		First(&step).Error; err != nil {
 		return nil, nil, fmt.Errorf("unable to find step %q: %w", in.StepID, err)
 	}

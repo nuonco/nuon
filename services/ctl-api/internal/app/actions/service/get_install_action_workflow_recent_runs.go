@@ -98,7 +98,8 @@ func (s *service) GetInstallActionWorkflowRecentRuns(ctx *gin.Context) {
 func (s *service) findInstall(ctx context.Context, orgID, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := s.db.WithContext(ctx).
-		Where("id = ? and org_id = ?", installID, orgID).
+		Where("org_id = ?", orgID).
+		Where(s.db.Where("name = ?", installID).Or("id = ?", installID)).
 		First(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)

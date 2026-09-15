@@ -4,46 +4,31 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
-func TestPullSourceImageDirectly(t *testing.T) {
-	tests := []struct {
-		name   string
-		plan   *plantypes.ActionWorkflowRunPlan
-		devEnv bool
-		want   bool
-	}{
-		{
-			name:   "mirrored plan in dev pulls the public source directly",
-			plan:   &plantypes.ActionWorkflowRunPlan{SourceImage: "curlimages/curl:latest", ImageDigestRef: "reg/org/app@sha256:abc"},
-			devEnv: true,
-			want:   true,
-		},
-		{
-			name:   "install-registry plan never takes the dev shortcut",
-			plan:   &plantypes.ActionWorkflowRunPlan{SourceImage: "reg/org/app/tools@sha256:abc", ImageDigestRef: "reg/org/app/tools@sha256:abc"},
-			devEnv: true,
-			want:   false,
-		},
-		{
-			name:   "mirrored plan outside dev uses the mirror",
-			plan:   &plantypes.ActionWorkflowRunPlan{SourceImage: "curlimages/curl:latest", ImageDigestRef: "reg/org/app@sha256:abc"},
-			devEnv: false,
-			want:   false,
-		},
-	}
+func TestActionImageRef(t *testing.T) {
+	t.Run("runs the manifest ctl-api pinned", func(t *testing.T) {
+		h := &handler{state: &handlerState{plan: &plantypes.ActionWorkflowRunPlan{
+			SourceImage:    "curlimages/curl:latest",
+			ImageDigestRef: "reg/org/app@sha256:abc",
+		}}}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.devEnv {
-				t.Setenv("NUON_DEV_REAL_IMAGE_ACTIONS", "true")
-				t.Setenv("ENV", "development")
-			}
+		ref, err := h.actionImageRef()
+		require.NoError(t, err)
+		assert.Equal(t, "reg/org/app@sha256:abc", ref)
+	})
 
-			h := &handler{state: &handlerState{plan: tt.plan}}
-			assert.Equal(t, tt.want, h.pullSourceImageDirectly())
-		})
-	}
+	// Without a digest there is nothing to run but whatever the tag points at
+	// now, which is not what Nuon resolved.
+	t.Run("fails when the plan carries no digest", func(t *testing.T) {
+		h := &handler{state: &handlerState{plan: &plantypes.ActionWorkflowRunPlan{
+			SourceImage: "curlimages/curl:latest",
+		}}}
+
+		_, err := h.actionImageRef()
+		assert.Error(t, err)
+	})
 }

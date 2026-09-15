@@ -24,6 +24,9 @@ func (s *service) mcpCancelWorkflow(ctx context.Context, _ *mcp.CallToolRequest,
 	if err != nil {
 		return nil, nil, err
 	}
+	if in.WorkflowID == "" {
+		return nil, nil, fmt.Errorf("workflow_id is required")
+	}
 
 	var wf app.Workflow
 	if err := s.db.WithContext(ctx).
