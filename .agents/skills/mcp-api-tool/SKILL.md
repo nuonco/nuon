@@ -17,8 +17,9 @@ This skill enforces the ctl-api MCP tool registration pattern for the stateless 
 6. For mutating tools: prefix `Description` with `WRITE OPERATION:`, use `api.MCPWriteTool(..., destructive, idempotent)`, and call `require.Write(ctx)` at the start of the handler.
 7. For read tools scoped to an org: use `api.MCPReadTool(...)` and call `require.Read(ctx)` at the start of the handler.
 8. Prefer trimmed response shapes over full GORM models when the payload would be large for LLM context. Format times with `api.MCPTime` (UTC RFC3339 `…Z`) — do not serialize `time.Time`, add relative age strings, or localize on the server.
-9. No new MCP-specific FX wiring — `RegisterMCPTools` is discovered via type assert on `api.MCPService`.
-10. Update the tool tables in `docs/guides/agents/tools.mdx` and `bins/cli/cmd/agents_context.md`. Add a prompt to `docs/guides/agents/sample-queries.mdx` if the tool is part of a user-facing flow.
+9. List tools must use `api.MCPListPage` (default 20, max 100), `Limit(limit+1)`, and `api.MCPClipList`. Return `has_more` / `next_offset`. Append `api.MCPListToolHint` to the description. Do not loop until the full set is loaded.
+10. No new MCP-specific FX wiring — `RegisterMCPTools` is discovered via type assert on `api.MCPService`.
+11. Update the tool tables in `docs/guides/agents/tools.mdx` and `bins/cli/cmd/agents_context.md`. Add a prompt to `docs/guides/agents/sample-queries.mdx` if the tool is part of a user-facing flow.
 
 Reference examples: `apps/service/mcp_list_apps.go`, `apps/service/mcp_register.go`, `installs/service/mcp_approve_step.go`.
 
@@ -31,3 +32,4 @@ Reference examples: `apps/service/mcp_list_apps.go`, `apps/service/mcp_register.
 - **Do not** key request state on `Mcp-Session-Id` — the server is `Stateless: true`; use bearer token + `X-Nuon-Org-ID` / `select_org`.
 - **Do not** print to stdout from tool handlers — MCP protocol owns the stream.
 - **Do not** serialize `time.Time`, add `*_relative` age fields, or render local timestamps — use `MCPTime`; agents convert UTC to local.
+- **Do not** `Find` a collection without `api.MCPListPage` / `Limit(limit+1)` / `MCPClipList`. Return `has_more` and `next_offset`; do not loop until the full set is loaded.
