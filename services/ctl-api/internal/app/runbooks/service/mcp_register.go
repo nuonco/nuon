@@ -22,7 +22,8 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPWriteTool(
 		"run_runbook",
 		"Run runbook",
-		"WRITE OPERATION: Run a configured runbook on an install. Accepts install and runbook names or IDs, optional inputs, step selections, and role. Ask the user before triggering. Returns run_id and workflow_id; use watch_workflow to follow progress.",
+		"WRITE OPERATION: Run a configured runbook on an install. Accepts install and runbook names or IDs, optional inputs, step selections, and role. "+
+			"Call list_available_roles (operation_type=trigger) before passing role. Ask the user before triggering. Returns run_id and workflow_id; use watch_workflow to follow progress.",
 		true,
 		false,
 	), s.mcpRunRunbook)

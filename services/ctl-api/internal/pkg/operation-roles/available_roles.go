@@ -46,6 +46,12 @@ func AvailableRoles(
 	return roles, nil
 }
 
+// RenderRoleName renders a role name template against install state, matching
+// how role selection renders a runtime override before looking it up.
+func RenderRoleName(roleName string, installState *state.State) (string, error) {
+	return renderRoleName(roleName, installState)
+}
+
 // MaintenanceRoleName returns the install's rendered maintenance role name, the
 // default identity for day-2 operations.
 func MaintenanceRoleName(appCfg *app.AppConfig, installState *state.State) (string, error) {
