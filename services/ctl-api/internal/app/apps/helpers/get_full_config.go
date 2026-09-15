@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skipAdditionalChecks bool) (*app.AppConfig, error) {
@@ -82,13 +81,15 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 		missingComponents := []app.ComponentConfigConnection{}
 		// a newer row's dependency ids can name components absent from this version
 		var boundedCfgIDs []string
-		res = h.db.WithContext(ctx).Raw(fmt.Sprintf(`
-			SELECT DISTINCT ON (component_id) id
-			FROM %s
-			WHERE component_id IN ? AND app_config_version <= ?
-			ORDER BY component_id, app_config_version DESC`,
-			views.CurrentViewName(h.db, &app.ComponentConfigConnection{})),
-			missingComponentIds, appCfg.Version,
+		// app_config_version in the view is a correlated window subquery that is re-evaluated for every
+		// candidate row; bound by the app config's (created_at, id) on the base tables instead.
+		res = h.db.WithContext(ctx).Raw(`
+			SELECT DISTINCT ON (ccc.component_id) ccc.id
+			FROM component_config_connections ccc
+			JOIN app_configs ac ON ac.id = ccc.app_config_id
+			WHERE ccc.component_id IN ? AND ac.app_id = ? AND (ac.created_at, ac.id) <= (?, ?)
+			ORDER BY ccc.component_id, ac.created_at DESC, ac.id DESC`,
+			missingComponentIds, appCfg.AppID, appCfg.CreatedAt, appCfg.ID,
 		).Scan(&boundedCfgIDs)
 		if res.Error != nil {
 			return nil, errors.Wrap(res.Error, "unable to resolve component configs at config version")
