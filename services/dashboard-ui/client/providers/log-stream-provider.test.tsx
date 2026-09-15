@@ -1,8 +1,15 @@
 import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
-import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  waitFor,
+} from '@testing-library/react'
 import { useContext } from 'react'
 import { MemoryRouter, useSearchParams } from 'react-router'
 import * as sseLogs from '@/components/log-stream/SSELogs'
+import { OrgContext } from './org-provider'
 
 const getLogStreamLogs = mock(async (_args: unknown): Promise<unknown[]> => [])
 
@@ -12,9 +19,6 @@ mock.module('@/lib/ctl-api/log-streams/get-log-stream-logs', () => ({
 mock.module('@/components/log-stream/SSELogs', () => ({
   ...sseLogs,
   LogsPageSkeleton: () => null,
-}))
-mock.module('@/hooks/use-org', () => ({
-  useOrg: () => ({ org: { id: 'org1' } }),
 }))
 
 class FakeEventSource {
@@ -86,9 +90,11 @@ const renderProvider = ({
 }: { search?: string; runnerJobId?: string } = {}) => {
   const { getByTestId } = render(
     <MemoryRouter initialEntries={[`/logs${search}`]}>
-      <LogStreamProvider logStreamId="ls1" runnerJobId={runnerJobId}>
-        <Probe />
-      </LogStreamProvider>
+      <OrgContext.Provider value={{ org: { id: 'org1' }, refresh: () => {} }}>
+        <LogStreamProvider logStreamId="ls1" runnerJobId={runnerJobId}>
+          <Probe />
+        </LogStreamProvider>
+      </OrgContext.Provider>
     </MemoryRouter>
   )
   const stream = FakeEventSource.instances.at(-1)
@@ -96,8 +102,7 @@ const renderProvider = ({
   return {
     stream,
     ids: () => getByTestId('ids').textContent,
-    switchToNewestFirst: () =>
-      fireEvent.click(getByTestId('to-newest-first')),
+    switchToNewestFirst: () => fireEvent.click(getByTestId('to-newest-first')),
   }
 }
 
