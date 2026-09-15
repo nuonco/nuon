@@ -90,6 +90,7 @@ func AllModels() []any {
 		&app.AppPermissionsConfig{},
 		&app.AppAWSIAMRoleConfig{},
 		&app.AppAWSIAMPolicyConfig{},
+		&app.AppNamedIAMPolicyConfig{},
 		&app.AppBreakGlassConfig{},
 		&app.AppStackConfig{},
 		&app.AppOperationRoleConfig{},

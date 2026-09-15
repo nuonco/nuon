@@ -29,6 +29,7 @@ func Sync(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpe
 		AppConfigID:     appConfigID,
 		Permissions:     cfg.Permissions,
 		BreakGlassRoles: breakGlassRoles,
+		StackType:       stackType(cfg),
 	})
 	if err != nil {
 		return sync.SyncErr{
@@ -57,4 +58,11 @@ func Sync(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpe
 	})
 
 	return err
+}
+
+func stackType(cfg *config.AppConfig) string {
+	if cfg == nil || cfg.Stack == nil {
+		return ""
+	}
+	return cfg.Stack.Type
 }

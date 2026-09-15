@@ -6,6 +6,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel } from '@/components/surfaces/Panel'
 import { AppRoleDetail } from '../AppRoleDetail'
+import type { TNamedIAMPolicy } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
 
 type TAppRole = {
   id?: string
@@ -24,6 +25,7 @@ type TAppRole = {
     azure_built_in_roles?: string[]
     azure_actions?: string[]
   }[]
+  named_policy_names?: string[]
   permissions_boundary?: string
 }
 
@@ -41,9 +43,11 @@ const RolePanelHeading = ({ role }: { role: TAppRole }) => (
 
 export const AppRolesTable = ({
   roles,
+  namedPolicies = [],
   isLoading,
 }: {
   roles: TAppRole[]
+  namedPolicies?: TNamedIAMPolicy[]
   isLoading?: boolean
 }) => {
   const columns = useMemo<ColumnDef<TAppRole, unknown>[]>(
@@ -62,7 +66,7 @@ export const AppRolesTable = ({
               children: row.original.display_name,
             }}
           >
-            <AppRoleDetail role={row.original} />
+            <AppRoleDetail role={row.original} namedPolicies={namedPolicies} />
           </Panel>
         ),
       },
@@ -73,6 +77,15 @@ export const AppRolesTable = ({
           <Badge variant="code" theme="neutral">
             {info.getValue() as string}
           </Badge>
+        ),
+      },
+      {
+        id: 'named_policies',
+        header: 'Named policies',
+        cell: ({ row }) => (
+          <Text variant="subtext">
+            {row.original.named_policy_names?.length ?? 0}
+          </Text>
         ),
       },
       {
@@ -99,18 +112,16 @@ export const AppRolesTable = ({
               variant: 'ghost',
               className: panelLinkClass,
               children: (
-                <span className="flex items-center gap-1.5">
-                  View role
-                </span>
+                <span className="flex items-center gap-1.5">View role</span>
               ),
             }}
           >
-            <AppRoleDetail role={row.original} />
+            <AppRoleDetail role={row.original} namedPolicies={namedPolicies} />
           </Panel>
         ),
       },
     ],
-    []
+    [namedPolicies]
   )
 
   return (

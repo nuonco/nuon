@@ -248,8 +248,14 @@ func sourceMemberIdentity(group, path string, value any) (string, string) {
 		kind = "runbook"
 	case "permissions":
 		kind = "permission"
+	case "permissions/policies":
+		kind = "permission_policy"
 	default:
 		return "", ""
+	}
+
+	if kind == "permission_policy" {
+		return kind, namedIAMPolicyMemberName(path)
 	}
 
 	reflected := reflect.ValueOf(value)
@@ -267,6 +273,11 @@ func sourceMemberIdentity(group, path string, value any) (string, string) {
 		return "", ""
 	}
 	return kind, field.String()
+}
+
+func namedIAMPolicyMemberName(path string) string {
+	base := filepath.Base(path)
+	return strings.TrimSuffix(base, filepath.Ext(base))
 }
 
 func hasTomlFiles(fs afero.Fs) (bool, error) {

@@ -16,9 +16,14 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallRoleUsages } from '@/lib'
 import type { TInstallRoleUsage } from '@/types'
-import { IAMRolePoliciesCard, IAMRoleBoundaryExpand } from './IAMRoles'
+import {
+  IAMRoleBoundaryExpand,
+  IAMRoleNamedPoliciesExpand,
+  IAMRolePoliciesCard,
+} from './IAMRoles'
 import { humanize } from '@/utils/string-utils'
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
+import type { TNamedIAMPolicy } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
 
 const USAGE_LIMIT = 10
 const USAGE_OFFSET_PARAM = 'usage_offset'
@@ -48,8 +53,10 @@ const operationLabel = (usage: TInstallRoleUsage): string => {
 
 export const InstallRoleDetail = ({
   installRole,
+  namedPolicies = [],
 }: {
   installRole: TInstallRole
+  namedPolicies?: TNamedIAMPolicy[]
 }) => {
   const { org } = useOrg()
   const { panels, removePanel } = useSurfaces()
@@ -60,6 +67,9 @@ export const InstallRoleDetail = ({
   const roleName = role?.name ?? ''
   const installId = installRole.install_id ?? ''
   const offset = Number(searchParams.get(USAGE_OFFSET_PARAM) ?? 0)
+  const attachedNamedPolicies = namedPolicies.filter((policy) =>
+    role?.named_policy_names?.includes(policy.name ?? '')
+  )
 
   const { data: result, isLoading: usagesLoading } = useQuery({
     queryKey: ['install-role-usages', org?.id, installId, roleName, offset],
@@ -173,9 +183,7 @@ export const InstallRoleDetail = ({
           </LabeledValue>
           <LabeledValue label="Name">{role.name}</LabeledValue>
           <LabeledValue label="Type">
-            <Badge size="sm">
-              {humanize(role.type)}
-            </Badge>
+            <Badge size="sm">{humanize(role.type)}</Badge>
           </LabeledValue>
           <LabeledValue label="Status">
             <Status status={installRole.provisioned ? 'active' : 'inactive'}>
@@ -213,6 +221,10 @@ export const InstallRoleDetail = ({
       </Card>
 
       <IAMRolePoliciesCard policies={role.policies} />
+      <IAMRoleNamedPoliciesExpand
+        id={role.id}
+        policies={attachedNamedPolicies}
+      />
       <IAMRoleBoundaryExpand permissionsBoundary={role.permissions_boundary} />
 
       <Card>
