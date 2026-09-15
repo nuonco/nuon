@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, mock, test } from 'bun:test'
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { useContext } from 'react'
 import { MemoryRouter, useSearchParams } from 'react-router'
+import * as sseLogs from '@/components/log-stream/SSELogs'
 
 const getLogStreamLogs = mock(async (_args: unknown): Promise<unknown[]> => [])
 
@@ -9,6 +10,7 @@ mock.module('@/lib/ctl-api/log-streams/get-log-stream-logs', () => ({
   getLogStreamLogs,
 }))
 mock.module('@/components/log-stream/SSELogs', () => ({
+  ...sseLogs,
   LogsPageSkeleton: () => null,
 }))
 mock.module('@/hooks/use-org', () => ({

@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { useApp } from '@/hooks/use-app'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
+import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { useOrg } from '@/hooks/use-org'
 import { WorkflowTimelineComponent } from '@/components/workflows/WorkflowTimeline'
 import { ShowPreviewRunsContainer as ShowPreviewRuns } from '@/components/branches/filters/ShowPreviewRuns'
@@ -80,6 +81,7 @@ const BranchRunsContent = () => {
 
 export const BranchRunsTab = () => {
   const hasNewAppIA = useNewAppIA()
+  const hasSimpleIA = useSimpleIA()
 
-  return hasNewAppIA ? <BranchRunsContent /> : <BranchDetail />
+  return hasSimpleIA || hasNewAppIA ? <BranchRunsContent /> : <BranchDetail />
 }
