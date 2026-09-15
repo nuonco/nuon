@@ -12,7 +12,9 @@ import (
 )
 
 type mcpListInstallsInput struct {
-	AppID string `json:"app_id,omitempty" jsonschema:"filter installs by app ID"`
+	AppID  string `json:"app_id,omitempty" jsonschema:"filter installs by app ID"`
+	Limit  int    `json:"limit,omitempty" jsonschema:"maximum installs to return (default 20, max 100)"`
+	Offset int    `json:"offset,omitempty" jsonschema:"skip this many installs; use next_offset from a previous response when has_more is true"`
 }
 
 type mcpInstallListItem struct {
@@ -27,8 +29,21 @@ type mcpInstallListItem struct {
 	CreatedAt       string `json:"created_at"`
 }
 
+type mcpListInstallsResult struct {
+	Installs   []mcpInstallListItem `json:"installs"`
+	HasMore    bool                 `json:"has_more"`
+	Limit      int                  `json:"limit"`
+	Offset     int                  `json:"offset"`
+	NextOffset int                  `json:"next_offset,omitempty"`
+}
+
 func (s *service) mcpListInstalls(ctx context.Context, _ *mcp.CallToolRequest, in mcpListInstallsInput) (*mcp.CallToolResult, any, error) {
 	orgID, err := require.Read(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	limit, offset, err := apiPkg.MCPListPage(in.Limit, in.Offset)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -37,7 +52,9 @@ func (s *service) mcpListInstalls(ctx context.Context, _ *mcp.CallToolRequest, i
 	tx := s.db.WithContext(ctx).
 		Preload("App").
 		Where(app.Install{OrgID: orgID}).
-		Order("name ASC")
+		Order("name ASC").
+		Limit(limit + 1).
+		Offset(offset)
 
 	if in.AppID != "" {
 		tx = tx.Where(app.Install{AppID: in.AppID})
@@ -46,6 +63,8 @@ func (s *service) mcpListInstalls(ctx context.Context, _ *mcp.CallToolRequest, i
 	if res := tx.Find(&installs); res.Error != nil {
 		return nil, nil, fmt.Errorf("unable to list installs: %w", res.Error)
 	}
+
+	installs, hasMore := apiPkg.MCPClipList(installs, limit)
 
 	out := make([]mcpInstallListItem, 0, len(installs))
 	for _, inst := range installs {
@@ -63,5 +82,11 @@ func (s *service) mcpListInstalls(ctx context.Context, _ *mcp.CallToolRequest, i
 		out = append(out, item)
 	}
 
-	return apiPkg.MCPJSONResult(out)
+	return apiPkg.MCPJSONResult(mcpListInstallsResult{
+		Installs:   out,
+		HasMore:    hasMore,
+		Limit:      limit,
+		Offset:     offset,
+		NextOffset: apiPkg.MCPNextOffset(offset, limit, hasMore),
+	})
 }
