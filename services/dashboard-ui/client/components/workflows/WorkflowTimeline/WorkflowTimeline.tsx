@@ -34,6 +34,7 @@ export interface IWorkflowTimeline {
   installId?: string
   install?: TInstall
   isLoading?: boolean
+  isFiltered?: boolean
   getWorkflowHref?: (workflow: TWorkflow) => string
 }
 
@@ -44,6 +45,7 @@ export const WorkflowTimeline = ({
   installId,
   install,
   isLoading,
+  isFiltered = false,
   getWorkflowHref,
 }: IWorkflowTimeline) => {
   const { approvals } = useWorkflowApprovals()
@@ -271,8 +273,16 @@ export const WorkflowTimeline = ({
     <div className="mx-auto mt-24">
       <EmptyState
         variant="table"
-        emptyMessage="There are no workflows to display. This could be because no workflows have run yet, or your current filters are not matching any results."
-        emptyTitle="No workflows found"
+        emptyMessage={
+          isFiltered
+            ? 'Clear a filter to widen the results.'
+            : 'Workflow activity will appear here when a run starts.'
+        }
+        emptyTitle={
+          isFiltered
+            ? 'No runs match these filters'
+            : 'No workflow activity yet'
+        }
       />
     </div>
   )
