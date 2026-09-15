@@ -197,6 +197,18 @@ export const Empty = () => (
   </ApprovalsProvider>
 )
 
+export const FilteredEmpty = () => (
+  <ApprovalsProvider>
+    <WorkflowTimeline
+      workflows={[]}
+      pagination={{ hasNext: false, offset: 0, limit: 10 }}
+      orgId="org-123"
+      installId="inst-456"
+      isFiltered
+    />
+  </ApprovalsProvider>
+)
+
 export const Loading = () => (
   <ApprovalsProvider>
     <WorkflowTimeline
