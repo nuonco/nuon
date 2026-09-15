@@ -2,7 +2,7 @@
 
 import { describe, expect, test, beforeAll, afterAll, spyOn } from 'bun:test'
 import { formatToRelativeDay, parseActivityTimeline } from './timeline-utils'
-import { DateTime } from 'luxon'
+import { DateTime, Settings } from 'luxon'
 
 describe('timeline-utils', () => {
   describe('formatToRelativeDay', () => {
@@ -93,6 +93,24 @@ describe('timeline-utils', () => {
 
       expect(groupedItems).toHaveLength(1)
       expect(groupedItems[0]).toEqual(items[0])
+    })
+
+    test('should group by the local day, not the UTC day', () => {
+      const originalZone = Settings.defaultZone
+      Settings.defaultZone = 'America/New_York'
+
+      try {
+        const items = [
+          { id: '1', created_at: '2023-01-01T18:00:00.000Z' },
+          { id: '2', created_at: '2023-01-02T02:00:00.000Z' },
+        ]
+
+        const result = parseActivityTimeline(items)
+
+        expect(Object.keys(result)).toEqual(['2023-01-01'])
+      } finally {
+        Settings.defaultZone = originalZone
+      }
     })
 
     test('should sort items within the same date', () => {
