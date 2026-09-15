@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestLogStreamIgnoresOTELEnvironment(t *testing.T) {
@@ -188,16 +189,19 @@ func TestLogStreamTLSIgnoresOTELTrust(t *testing.T) {
 	}
 }
 
-func TestLogStreamRejectsInvalidEndpoint(t *testing.T) {
+func TestLogStreamWarnsOnInvalidEndpoint(t *testing.T) {
 	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector.invalid")
-	for _, endpoint := range []string{"", "http://%", "ftp://example.com"} {
+	for _, endpoint := range []string{"", "/runner", "http://%", "ftp://example.com"} {
 		t.Run(endpoint, func(t *testing.T) {
+			core, logs := observer.New(zap.WarnLevel)
+			t.Cleanup(zap.ReplaceGlobals(zap.New(core)))
+
 			provider, err := NewOTELProvider(&app.LogStream{ID: "stream-test", RunnerAPIURL: endpoint})
-			if provider != nil {
-				t.Cleanup(func() { _ = provider.Shutdown(context.Background()) })
-			}
-			require.Error(t, err)
-			require.Nil(t, provider)
+			require.NoError(t, err)
+			require.NotNil(t, provider)
+			t.Cleanup(func() { require.NoError(t, provider.Shutdown(context.Background())) })
+			require.Equal(t, 1, logs.Len())
+			require.Equal(t, "stream-test", logs.All()[0].ContextMap()["log_stream_id"])
 		})
 	}
 }
