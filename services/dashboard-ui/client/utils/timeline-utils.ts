@@ -32,7 +32,9 @@ export function parseActivityTimeline<T extends IHasCreatedAt>(
       return acc
     }
 
-    const date = item.created_at.split('T')[0]
+    const date =
+      DateTime.fromISO(item.created_at).toISODate() ??
+      item.created_at.split('T')[0]
 
     if (!acc[date]) {
       acc[date] = []
