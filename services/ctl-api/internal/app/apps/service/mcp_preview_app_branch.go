@@ -22,6 +22,7 @@ type mcpPreviewAppBranchInput struct {
 	HeadSHA     string `json:"head_sha,omitempty" jsonschema:"optional commit SHA for the preview source"`
 	Mode        string `json:"mode,omitempty" jsonschema:"plan-only (default), apply, or build-only. Ask the user before apply"`
 	AppConfigID string `json:"app_config_id,omitempty" jsonschema:"synced app config ID for a local-source preview (after nuon apps sync). HTTP MCP cannot read the local workspace"`
+	ConfigID    string `json:"config_id,omitempty" jsonschema:"optional app branch config ID; defaults to the latest config on the branch"`
 	Force       bool   `json:"force,omitempty" jsonschema:"force rebuild all components"`
 	AutoApprove bool   `json:"auto_approve,omitempty" jsonschema:"skip the approval gate before deploy steps"`
 }
@@ -40,6 +41,7 @@ type mcpPreviewAppBranchResult struct {
 	PRNumber    *int   `json:"pr_number,omitempty"`
 	GitRef      string `json:"git_ref,omitempty"`
 	HeadSHA     string `json:"head_sha,omitempty"`
+	ConfigID    string `json:"config_id,omitempty"`
 }
 
 func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolRequest, in mcpPreviewAppBranchInput) (*mcp.CallToolResult, any, error) {
@@ -55,6 +57,11 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 	}
 	if in.Branch == "" {
 		return nil, nil, fmt.Errorf("branch is required")
+	}
+
+	// A negative number would otherwise read as "no pr_number given".
+	if in.PRNumber < 0 {
+		return nil, nil, fmt.Errorf("pr_number must be greater than zero")
 	}
 
 	sourceCount := 0
@@ -103,11 +110,17 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 	}
 
 	var config app.AppBranchConfig
-	res = s.db.WithContext(ctx).
-		Where("app_branch_id = ?", branch.ID).
-		Order("config_number DESC").
-		First(&config)
+	tx := s.db.WithContext(ctx).Where("app_branch_id = ?", branch.ID)
+	if in.ConfigID != "" {
+		tx = tx.Where("id = ?", in.ConfigID)
+	} else {
+		tx = tx.Order("config_number DESC")
+	}
+	res = tx.First(&config)
 	if res.Error != nil {
+		if in.ConfigID != "" {
+			return nil, nil, fmt.Errorf("unable to find branch config %q: %w", in.ConfigID, res.Error)
+		}
 		return nil, nil, fmt.Errorf("unable to find latest branch config: %w", res.Error)
 	}
 
@@ -215,6 +228,7 @@ func (s *service) mcpPreviewAppBranch(ctx context.Context, _ *mcp.CallToolReques
 		PRNumber:   prNumber,
 		GitRef:     in.GitRef,
 		HeadSHA:    headSHA,
+		ConfigID:   config.ID,
 	}
 	if triggerResp.Workflow != nil {
 		result.WorkflowID = triggerResp.Workflow.ID

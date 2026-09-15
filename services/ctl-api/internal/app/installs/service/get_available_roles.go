@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -58,24 +59,12 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 	operationType := ctx.Query("operation_type")
 	principalID := ctx.Query("principal_id")
 
-	if principalType != "" {
-		if err := validatePrincipalType(principalType); err != nil {
-			ctx.Error(stderr.ErrUser{
-				Err:         err,
-				Description: err.Error(),
-			})
-			return
-		}
-	}
-
-	if operationType != "" {
-		if err := validateOperationType(operationType); err != nil {
-			ctx.Error(stderr.ErrUser{
-				Err:         err,
-				Description: err.Error(),
-			})
-			return
-		}
+	if err := validateRoleSelectionParams(principalType, operationType); err != nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         err,
+			Description: err.Error(),
+		})
+		return
 	}
 
 	install, err := s.getInstall(ctx, installID)
@@ -84,32 +73,41 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		return
 	}
 
+	roles, err := s.availableRolesForInstall(ctx, org.ID, install, principalType, operationType, principalID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: roles})
+}
+
+func (s *service) availableRolesForInstall(
+	ctx context.Context,
+	orgID string,
+	install *app.Install,
+	principalType, operationType, principalID string,
+) ([]AvailableRole, error) {
 	appCfg, err := s.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, false)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get app config: %w", err))
-		return
+		return nil, fmt.Errorf("unable to get app config: %w", err)
 	}
 
-	installState, err := s.helpers.GetInstallState(ctx, installID, false, false)
+	installState, err := s.helpers.GetInstallState(ctx, install.ID, false, false)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install state: %w", err))
-		return
+		return nil, fmt.Errorf("unable to get install state: %w", err)
 	}
 
-	installStack, err := s.getInstallStack(ctx, installID, org.ID)
+	installStack, err := s.getInstallStack(ctx, install.ID, orgID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install stack: %w", err))
-		return
+		return nil, fmt.Errorf("unable to get install stack: %w", err)
 	}
 
 	if installStack == nil {
-		ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: []AvailableRole{}})
-		return
+		return []AvailableRole{}, nil
 	}
 
 	outputs := installStack.InstallStackOutputs
-	var roles []AvailableRole
-
 	var stackOutput app.StackOutput
 	switch {
 	case outputs.AWSStackOutputs != nil:
@@ -119,17 +117,14 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 	case outputs.GCPStackOutputs != nil:
 		stackOutput = outputs.GCPStackOutputs
 	default:
-		ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: []AvailableRole{}})
-		return
+		return []AvailableRole{}, nil
 	}
 
-	roles, err = buildAvailableRoles(stackOutput, appCfg, installState, operationType)
+	roles, err := buildAvailableRoles(stackOutput, appCfg, installState, operationType)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to build available roles: %w", err))
-		return
+		return nil, fmt.Errorf("unable to build available roles: %w", err)
 	}
 
-	// Determine which role would be selected by default (no runtime override)
 	if principalType != "" && operationType != "" {
 		defaultRoleName, err := s.getDefaultRoleName(ctx, principal.Type(principalType), principalID, app.OperationType(operationType), appCfg, installStack, installState)
 		if err != nil {
@@ -146,11 +141,11 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		}
 	}
 
-	ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: roles})
+	return roles, nil
 }
 
 func (s *service) getDefaultRoleName(
-	ctx *gin.Context,
+	ctx context.Context,
 	principalType principal.Type,
 	principalID string,
 	operationType app.OperationType,
@@ -327,9 +322,26 @@ func buildAvailableRoles(stackOutputs app.StackOutput, appCfg *app.AppConfig, st
 	return roles, nil
 }
 
+func validateRoleSelectionParams(principalType, operationType string) error {
+	if (principalType == "") != (operationType == "") {
+		return fmt.Errorf("principal_type and operation_type must be provided together")
+	}
+	if principalType != "" {
+		if err := validatePrincipalType(principalType); err != nil {
+			return err
+		}
+	}
+	if operationType != "" {
+		if err := validateOperationType(operationType); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func validatePrincipalType(principalType string) error {
 	if principalType == "" {
-		return errors.New("principal_type query parameter is required")
+		return errors.New("principal_type is required")
 	}
 
 	for _, validType := range principal.ValidTypes {
@@ -343,7 +355,7 @@ func validatePrincipalType(principalType string) error {
 
 func validateOperationType(operationType string) error {
 	if operationType == "" {
-		return errors.New("operation_type query parameter is required")
+		return errors.New("operation_type is required")
 	}
 
 	for _, validOp := range app.ValidOperations {

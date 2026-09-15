@@ -16,7 +16,7 @@ type mcpRunRunbookInput struct {
 	Runbook string                          `json:"runbook" jsonschema:"runbook name or ID"`
 	Inputs  map[string]*string              `json:"inputs,omitempty" jsonschema:"runbook input values"`
 	Steps   []CreateRunbookRunStepSelection `json:"steps,omitempty" jsonschema:"optional step selections; empty runs all steps"`
-	Role    string                          `json:"role,omitempty" jsonschema:"optional custom or IAM role name"`
+	Role    string                          `json:"role,omitempty" jsonschema:"optional IAM role name from list_available_roles; omit to use the default"`
 }
 
 type mcpRunRunbookResult struct {
@@ -45,7 +45,15 @@ func (s *service) mcpRunRunbook(ctx context.Context, _ *mcp.CallToolRequest, in 
 		return nil, nil, fmt.Errorf("authenticated account is required")
 	}
 
-	triggered, err := s.createRunbookRun(ctx, orgID, accountID, in.Install, in.Runbook, CreateRunbookRunRequest{
+	install, err := s.resolveInstallRef(ctx, orgID, in.Install)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.installHelpers.ValidateInstallRole(ctx, install.ID, in.Role); err != nil {
+		return nil, nil, err
+	}
+
+	triggered, err := s.createRunbookRun(ctx, orgID, accountID, install.ID, in.Runbook, CreateRunbookRunRequest{
 		Inputs: in.Inputs,
 		Steps:  in.Steps,
 		Role:   in.Role,

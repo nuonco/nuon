@@ -14,7 +14,7 @@ import (
 type mcpReprovisionSandboxInput struct {
 	Install        string `json:"install" jsonschema:"install name or ID"`
 	PlanOnly       bool   `json:"plan_only,omitempty" jsonschema:"if true, only plan sandbox reprovision; do not apply"`
-	Role           string `json:"role,omitempty" jsonschema:"optional custom/IAM role name for the workflow"`
+	Role           string `json:"role,omitempty" jsonschema:"optional IAM role name from list_available_roles; omit to use the default"`
 	SkipComponents bool   `json:"skip_components,omitempty" jsonschema:"if true, skip deploying components after sandbox reprovision"`
 }
 
