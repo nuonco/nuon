@@ -25,6 +25,7 @@ interface ICreateInstallFormFields {
   awsAccountConnections?: TAWSAccountConnection[]
   requireTargetAccount?: boolean
   defaultAutoApprove?: boolean
+  defaultStackOnly?: boolean
   autoApproveDescription?: string
   submitError?: TAPIError | null
   onSubmit: (values: InstallFormValues) => Promise<unknown> | void
@@ -37,6 +38,7 @@ export const CreateInstallFormFields = ({
   awsAccountConnections,
   requireTargetAccount,
   defaultAutoApprove,
+  defaultStackOnly,
   autoApproveDescription,
   submitError,
   onSubmit,
@@ -57,13 +59,14 @@ export const CreateInstallFormFields = ({
       inputConfig,
       requireTargetAccount,
       defaultAutoApprove,
+      defaultStackOnly,
       storageKey: `install-draft:${app.id}`,
       onSubmit: async (values) => {
         try {
           await onSubmit(values)
           clearDraft()
         } catch {
-          // error surfaced via submitError → FormErrorBanner
+          return
         }
       },
     })
