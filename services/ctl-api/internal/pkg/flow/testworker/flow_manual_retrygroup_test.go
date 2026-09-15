@@ -174,3 +174,76 @@ func (e *FlowTestSuite) TestManualRetryStepWithRetryGroup() {
 	require.True(e.T(), g2Succeeded, "group 2 finalize should have succeeded")
 	e.assertTemporalDrained(ctx, flw.ID)
 }
+
+// TestManualRetryAfterAutoBudgetExhausted pins the boundary between the two
+// retry budgets: AutoRetryBudgetSignal sets MaxAutoRetries=1 < MaxRetries=2.
+// The first failure consumes the auto budget and clones the group; the second
+// failure must park the workflow for a manual retry rather than error out;
+// the manual retry must clone the group a second time (three generations
+// total) and the clone's success must complete the workflow.
+func (e *FlowTestSuite) TestManualRetryAfterAutoBudgetExhausted() {
+	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
+	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
+	ownerID, ownerType := newTestOwner()
+
+	budgetSignal := &AutoRetryBudgetSignal{}
+
+	flw, queueID := e.setupFlowTest(ctx, ownerID, ownerType, []app.WorkflowStep{
+		{Name: "budget-step", Idx: 100, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
+			Retryable:   true,
+			QueueSignal: &signaldb.SignalData{Signal: budgetSignal}},
+	})
+
+	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
+
+	// Auto retry runs once, fails again, and the workflow parks for manual retry.
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusFailedPendingRetry)
+
+	steps := e.getStepsByWorkflow(ctx, flw.ID)
+	var failedStepID string
+	maxGroupRetryIdx := -1
+	for _, step := range steps {
+		if step.GroupIdx == 1 && step.Status.Status == app.StatusError && step.GroupRetryIdx > maxGroupRetryIdx {
+			failedStepID = step.ID
+			maxGroupRetryIdx = step.GroupRetryIdx
+		}
+	}
+	require.NotEmpty(e.T(), failedStepID, "should have a failed apply step")
+	require.Equal(e.T(), 1, maxGroupRetryIdx, "auto budget should have produced exactly one retry generation")
+
+	resp, err := e.service.FlowClient.RetryStep(ctx, &flowclient.RetryStepRequest{
+		InstallWorkflowID: flw.ID,
+		StepID:            failedStepID,
+	})
+	require.Nil(e.T(), err)
+	require.True(e.T(), resp.Retryable)
+
+	// The manual retry clones the group again; the clone succeeds.
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
+
+	steps = e.getStepsByWorkflow(ctx, flw.ID)
+	generations := make(map[int]bool)
+	for _, step := range steps {
+		if step.GroupIdx != 1 {
+			continue
+		}
+		generations[step.GroupRetryIdx] = true
+		switch step.GroupRetryIdx {
+		case 0:
+			// Original: failed on the first run and was superseded by the auto retry.
+			require.Equal(e.T(), app.StatusError, step.Status.Status)
+			require.True(e.T(), step.Retried)
+		case 1:
+			// Auto-retry generation: this is the row the manual retry was
+			// triggered on, so createStepRetryHandler marked it discarded
+			// (retry_type=manual) rather than keeping the error.
+			require.Equal(e.T(), app.StatusDiscarded, step.Status.Status)
+			require.True(e.T(), step.Retried)
+		default:
+			require.Equal(e.T(), app.StatusSuccess, step.Status.Status,
+				"manual retry generation should have succeeded")
+		}
+	}
+	require.Len(e.T(), generations, 3, "expected three group generations (original, auto retry, manual retry)")
+	e.assertTemporalDrained(ctx, flw.ID)
+}

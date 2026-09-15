@@ -280,6 +280,58 @@ var _ signal.SignalWithMaxAutoRetries = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithStepContext = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithRetryCount = (*ManualRetryGroupCountdownSignal)(nil)
 
+// --- ManualRetryGroupCountdownSignal: group-retry signal with no auto budget,
+// succeeds on the first manual retry (GroupRetryIdx >= 1) ---
+
+// --- AutoRetryBudgetSignal: group-retry signal with a limited auto budget
+// (MaxAutoRetries=1 < MaxRetries=2). The first failure consumes the auto
+// budget and clones the group; the second failure parks for a manual retry.
+// The manual retry clones the group again, so a workflow using this signal
+// passes through three generations, and the signal succeeds only on
+// GroupRetryIdx >= 2 -- proving the manual retry path after auto exhaustion. ---
+
+const AutoRetryBudgetSignalType signal.SignalType = "test-flow-auto-retry-budget"
+
+type AutoRetryBudgetSignal struct {
+	StepID string `json:"step_id,omitempty"`
+	FlowID string `json:"flow_id,omitempty"`
+}
+
+func init() {
+	catalog.Register(AutoRetryBudgetSignalType, func() signal.Signal { return &AutoRetryBudgetSignal{} })
+}
+
+func (s *AutoRetryBudgetSignal) Type() signal.SignalType         { return AutoRetryBudgetSignalType }
+func (s *AutoRetryBudgetSignal) Validate(workflow.Context) error { return nil }
+func (s *AutoRetryBudgetSignal) AutoRetry() bool                 { return true }
+func (s *AutoRetryBudgetSignal) RetryGroup() bool                { return true }
+func (s *AutoRetryBudgetSignal) MaxRetries() int                 { return 2 }
+func (s *AutoRetryBudgetSignal) MaxAutoRetries(workflow.Context) int {
+	return 1
+}
+func (s *AutoRetryBudgetSignal) SleepAfter() time.Duration { return 250 * time.Millisecond }
+func (s *AutoRetryBudgetSignal) SetStepContext(stepID, flowID string) {
+	s.StepID = stepID
+	s.FlowID = flowID
+}
+
+func (s *AutoRetryBudgetSignal) Execute(ctx workflow.Context) error {
+	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, s.StepID)
+	if err != nil {
+		return fmt.Errorf("auto-retry-budget: unable to get step: %w", err)
+	}
+	if step.GroupRetryIdx >= 2 {
+		return nil // success on the manual retry
+	}
+	return fmt.Errorf("auto-retry-budget: group retry %d < 2", step.GroupRetryIdx)
+}
+
+var _ signal.SignalWithAutoRetry = (*AutoRetryBudgetSignal)(nil)
+var _ signal.SignalWithRetryGroup = (*AutoRetryBudgetSignal)(nil)
+var _ signal.SignalWithMaxRetries = (*AutoRetryBudgetSignal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*AutoRetryBudgetSignal)(nil)
+var _ signal.SignalWithStepContext = (*AutoRetryBudgetSignal)(nil)
+
 // --- CancellableTestSignal: blocks until cancelled, writes marker on Cancel() ---
 // This proves the Cancel() method was called by writing to the step's
 // ResultDirective field (a known, queryable column).

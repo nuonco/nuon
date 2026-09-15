@@ -97,6 +97,11 @@ func (e *FlowTestSuite) TestResumeStartsAtCorrectGroup() {
 		}
 	}
 	require.GreaterOrEqual(e.T(), g2StepCount, 2, "group 2 should have original + retry clone")
+
+	// End state: the retry clone failed terminally (FailSignal has no retry
+	// budget), so the workflow must be back in StatusError, not parked.
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+
 	e.cancelWorkflow(ctx, flw.ID)
 	e.assertTemporalDrained(ctx, flw.ID)
 }
