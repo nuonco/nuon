@@ -370,7 +370,7 @@ func TestGetAzureTemplate_SubscriptionScopeHidesNuonInternalsFromTheForm(t *test
 func TestGetAzureTemplate_DeploymentLocationReportedOnlyAtSubscriptionScope(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
-	sub := tmpl.getPhoneHomeResources(subscriptionTemplateInput(), nil, nil, armScope{subscription: true})
+	sub := tmpl.getPhoneHomeResources(subscriptionTemplateInput(), nil, nil, armScope{subscription: true}, "")
 	blob, err := json.Marshal(sub)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
@@ -383,7 +383,7 @@ func TestGetAzureTemplate_DeploymentLocationReportedOnlyAtSubscriptionScope(t *t
 
 	// deployment().location does not exist at resource-group scope, and emitting the
 	// field there would drift the golden template for every existing install.
-	rg := tmpl.getPhoneHomeResources(minimalTemplateInput(), nil, nil, armScope{})
+	rg := tmpl.getPhoneHomeResources(minimalTemplateInput(), nil, nil, armScope{}, "")
 	rgBlob, err := json.Marshal(rg)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
