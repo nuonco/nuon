@@ -41,8 +41,8 @@ type AppAppNamedIAMPolicyConfig struct {
 	// id
 	ID string `json:"id,omitempty"`
 
-	// Name is the logical id roles use in named_policy_names (file stem, or the
-	// config name when authored in permissions.toml).
+	// Name is the config identifier and the AWS IAM managed policy name.
+	// Roles attach this policy by repeating the same name.
 	Name string `json:"name,omitempty"`
 
 	// org id
