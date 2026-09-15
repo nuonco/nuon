@@ -153,4 +153,36 @@ func TestSupervisor(t *testing.T) {
 			t.Fatalf("expected hello=world, got %v", out["hello"])
 		}
 	})
+
+	t.Run("forwards extra args to the script", func(t *testing.T) {
+		workdir := t.TempDir()
+		outputFile := filepath.Join(workdir, outputs.Filename(0))
+		script := filepath.Join(workdir, "step.sh")
+		if err := os.WriteFile(script, []byte("#!/bin/sh\nnuon_output got \"$1\"\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+
+		supPath, err := Write(workdir)
+		if err != nil {
+			t.Fatalf("write supervisor: %v", err)
+		}
+		cmd := exec.CommandContext(context.Background(), "/bin/sh", supPath, "--script", script, "--workdir", workdir, "--", "extra")
+		cmd.Env = append(os.Environ(),
+			RootEnvVar+"="+workdir,
+			OutputFilepathEnvVar+"="+outputFile,
+		)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("run supervisor: %v", err)
+		}
+
+		out, err := outputs.ParseFile(outputFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if out["got"] != "extra" {
+			t.Fatalf("expected got=extra, got %v", out["got"])
+		}
+	})
 }

@@ -3,8 +3,8 @@
 // image's own /bin/sh. It installs the nuon_output helper and runs the
 // rendered step script. Shipping it as a shell script (rather than a compiled
 // binary) means it runs in any base image that has a shell — which
-// image-backed actions require anyway, since the customer's inline_contents is
-// itself a shell script — with no arch/libc/static-linking concerns.
+// image-backed actions require anyway, since command, inline_contents, and
+// repo-backed scripts all run as a shell script — with no arch/libc/static-linking concerns.
 package supervisor
 
 import (
