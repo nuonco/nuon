@@ -13,6 +13,7 @@ const (
 	tokenEnvVar     = "NUON_OIDC_TOKEN"
 	tokenFileEnvVar = "NUON_OIDC_TOKEN_FILE"
 	audienceEnvVar  = "NUON_OIDC_AUDIENCE"
+	tfcTokenEnvVar  = "TFC_WORKLOAD_IDENTITY_TOKEN"
 )
 
 // Audience resolves the audience: explicit value, then NUON_OIDC_AUDIENCE, then
@@ -31,11 +32,12 @@ func Audience(explicit, fallback string) string {
 func Available() bool {
 	return os.Getenv(tokenEnvVar) != "" ||
 		os.Getenv(tokenFileEnvVar) != "" ||
+		os.Getenv(tfcTokenEnvVar) != "" ||
 		githubActionsAvailable()
 }
 
 // Detect returns an ambient OIDC ID token and its source. Precedence:
-// NUON_OIDC_TOKEN, NUON_OIDC_TOKEN_FILE, GitHub Actions.
+// NUON_OIDC_TOKEN, NUON_OIDC_TOKEN_FILE, HCP Terraform, GitHub Actions.
 func Detect(ctx context.Context, audience string) (token, source string, ok bool, err error) {
 	if raw := strings.TrimSpace(os.Getenv(tokenEnvVar)); raw != "" {
 		return raw, tokenEnvVar, true, nil
@@ -51,6 +53,10 @@ func Detect(ctx context.Context, audience string) (token, source string, ok bool
 			return "", tokenFileEnvVar, true, fmt.Errorf("token file %s is empty", path)
 		}
 		return token, tokenFileEnvVar, true, nil
+	}
+
+	if raw := strings.TrimSpace(os.Getenv(tfcTokenEnvVar)); raw != "" {
+		return raw, tfcTokenEnvVar, true, nil
 	}
 
 	if githubActionsAvailable() {
