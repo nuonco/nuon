@@ -10,7 +10,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_installs",
 		"List installs",
-		"List all installs in the current org. Optionally filter by app_id to see installs for a specific app. Returns install name, ID, app, status, and cloud platform.",
+		"List installs in the current org. Optionally filter by app_id to see installs for a specific app. Returns install name, ID, app, status, and cloud platform."+apiPkg.MCPListToolHint,
 	), s.mcpListInstalls)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
@@ -52,7 +52,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_pending_approvals",
 		"Get pending approvals",
-		"List all pending workflow step approvals across the entire org. Returns approvals that have not yet received a response. Use approve_step or reject_step to respond to them.",
+		"List pending workflow step approvals across the org (id, type, step, workflow). Does not return plan contents. Use get_workflow for step details, then approve_step or reject_step."+apiPkg.MCPListToolHint,
 	), s.mcpGetPendingApprovals)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
