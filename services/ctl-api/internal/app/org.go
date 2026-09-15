@@ -114,6 +114,7 @@ const (
 	// image via the mounted actions-supervisor. VM-based runners only.
 	OrgFeatureImageBackedActions OrgFeature = "image-backed-actions"
 	OrgFeatureDefaultAppBranches OrgFeature = "default-app-branches"
+	OrgFeatureSimpleIA           OrgFeature = "simple-ia"
 )
 
 type Org struct {
@@ -274,6 +275,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureAppInstallSyncing:       false,
 		OrgFeatureSandboxOCIArtifacts:     false,
 		OrgFeatureDefaultAppBranches:      false,
+		OrgFeatureSimpleIA:                false,
 
 		// Enabled by default
 		OrgFeatureAppBranches:   true,
@@ -313,6 +315,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureSandboxOCIArtifacts,
 		OrgFeatureImageBackedActions,
 		OrgFeatureDefaultAppBranches,
+		OrgFeatureSimpleIA,
 	}
 }
 
@@ -356,6 +359,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureAppInstallSyncing:        "Enable app install config syncing: point an app at a git repo of per-install configs so pushes to that repo sync every install's config and create missing installs behind an approval step. Gates the install syncs API, the VCS push fan-out, and the dashboard install syncs tab.",
 		OrgFeatureSandboxOCIArtifacts:      "Build the app sandbox into an OCI artifact during branch runs and resolve sandbox runs against that artifact instead of cloning the sandbox git source. With it off, sandbox runs always clone git.",
 		OrgFeatureImageBackedActions:       "Allow actions to declare a container image their steps run inside. Nuon mirrors the image into the install registry and the mng process runs each step's inline_contents in the image via the mounted actions-supervisor. VM-based runners only.",
+		OrgFeatureSimpleIA:                 "Enable the simplified dashboard information architecture.",
 		OrgFeatureDefaultAppBranches:       "Route `nuon apps sync` through an app branch run: every app gets a `default` branch covering all of its installs, and the sync hands its config to a run on that branch instead of the standalone config sync plus install rollout. Requires app-branches.",
 	}
 }
