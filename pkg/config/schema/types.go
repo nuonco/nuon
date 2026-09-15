@@ -31,6 +31,7 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"kubernetes-manifest": KubernetesManifestConfigSchema,
 	"metadata":            MetadataConfigSchema,
 	"permission":          PermissionSchema,
+	"permission-policy":   PermissionPolicySchema,
 	"permissions":         PermissionsConfigSchema,
 	"policy":              PolicyConfigSchema,
 	"policies":            PoliciesConfigSchema,
@@ -320,6 +321,19 @@ func PermissionSchema() (*jsonschema.Schema, error) {
 	}
 
 	return r.Reflect(config.AppAWSIAMRole{}), nil
+}
+
+func PermissionPolicySchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.NamedIAMPolicy{}); err != nil {
+		return nil, errors.Wrap(err, "NamedIAMPolicy validation failed")
+	}
+
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.NamedIAMPolicy{}), nil
 }
 
 func PermissionsConfigSchema() (*jsonschema.Schema, error) {

@@ -54,7 +54,8 @@ func PreloadAppConfigStackConfig(db *gorm.DB) *gorm.DB {
 func PreloadAppConfigPermissionsConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("PermissionsConfig").
 		Preload("PermissionsConfig.Roles").
-		Preload("PermissionsConfig.Roles.Policies")
+		Preload("PermissionsConfig.Roles.Policies").
+		Preload("PermissionsConfig.NamedPolicies")
 }
 
 // policies config
