@@ -17,6 +17,11 @@ func healthEvent(signalType signal.SignalType) signal.SignalPhaseEvent {
 
 // Health carriers are emitted outside any workflow, so they must classify with
 // no WorkflowType, no StepID, and no DB — the paths every other signal relies on.
+//
+// Component health (unhealthy/recovered) slugs are still produced by Classify
+// for diagnostic/webhook-payload purposes, but the matcher suppresses them
+// unconditionally (see match.go). Install degraded slugs are likewise still
+// classified but suppressed by the matcher.
 func TestClassifyComponentHealthSlugs(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -47,8 +52,9 @@ func TestClassifyComponentHealthSlugs(t *testing.T) {
 	}
 }
 
-// A single component_health flag has to deliver both directions, and must not
-// be satisfied by any neighbouring flag on the same resource.
+// Component health and install degraded notifications are retired — the
+// matcher suppresses them unconditionally for all subscribers, including
+// AllEvents and existing subscriptions that still carry the flags.
 func TestMatchesComponentHealth(t *testing.T) {
 	componentsCfg := func(cfg ResourceCfg) Interests {
 		return Interests{Resources: map[ResourceKind]ResourceCfg{ResourceComponents: cfg}}
@@ -63,29 +69,17 @@ func TestMatchesComponentHealth(t *testing.T) {
 		in         Interests
 		want       bool
 	}{
-		{"unhealthy matches when flag set", signalTypeComponentUnhealthy, componentsCfg(ResourceCfg{ComponentHealth: true}), true},
-		{"recovered matches the same flag", signalTypeComponentRecovered, componentsCfg(ResourceCfg{ComponentHealth: true}), true},
-		{"unhealthy muted when flag unset", signalTypeComponentUnhealthy, componentsCfg(ResourceCfg{}), false},
-		{"recovered muted when flag unset", signalTypeComponentRecovered, componentsCfg(ResourceCfg{}), false},
+		// Component health is suppressed unconditionally — no config matches.
+		{"unhealthy suppressed even with flag set", signalTypeComponentUnhealthy, componentsCfg(ResourceCfg{ComponentHealth: true}), false},
+		{"recovered suppressed even with flag set", signalTypeComponentRecovered, componentsCfg(ResourceCfg{ComponentHealth: true}), false},
+		{"unhealthy suppressed under all events", signalTypeComponentUnhealthy, AllEvents(), false},
+		{"unhealthy suppressed under default", signalTypeComponentUnhealthy, Default(), false},
 
-		// Independent of outcome and ops, exactly like drift-detected.
-		{"outcome none does not mute health", signalTypeComponentUnhealthy, componentsCfg(ResourceCfg{ComponentHealth: true, Outcome: OutcomeNone}), true},
-		{"unrelated ops filter does not mute health", signalTypeComponentUnhealthy, componentsCfg(ResourceCfg{ComponentHealth: true, Ops: []string{"deploy"}}), true},
-
-		// Neighbouring flags must not stand in for it.
-		{"drift flag does not deliver health", signalTypeComponentUnhealthy, componentsCfg(ResourceCfg{DriftDetected: true}), false},
-		{"health flag does not deliver drift-only subscribers extra events", signalTypeComponentRecovered, componentsCfg(ResourceCfg{DriftDetected: true}), false},
-
-		{"install degraded matches installs flag", signalTypeInstallDegraded, installsCfg(ResourceCfg{InstallDegraded: true}), true},
-		{"install degraded muted when flag unset", signalTypeInstallDegraded, installsCfg(ResourceCfg{}), false},
-		{"component flag does not deliver the install rollup", signalTypeInstallDegraded, installsCfg(ResourceCfg{ComponentHealth: true}), false},
-		{"install flag on components does not deliver component health", signalTypeComponentUnhealthy, componentsCfg(ResourceCfg{InstallDegraded: true}), false},
-
-		{"all events delivers health", signalTypeComponentUnhealthy, AllEvents(), true},
-		{"all events delivers the install rollup", signalTypeInstallDegraded, AllEvents(), true},
-
-		{"default opts into component health", signalTypeComponentUnhealthy, Default(), true},
-		{"default opts into the install rollup", signalTypeInstallDegraded, Default(), true},
+		// Install degraded is suppressed unconditionally — no config matches.
+		{"install degraded suppressed even with flag set", signalTypeInstallDegraded, installsCfg(ResourceCfg{InstallDegraded: true}), false},
+		{"install degraded suppressed when flag unset", signalTypeInstallDegraded, installsCfg(ResourceCfg{}), false},
+		{"install degraded suppressed under all events", signalTypeInstallDegraded, AllEvents(), false},
+		{"install degraded suppressed under default", signalTypeInstallDegraded, Default(), false},
 	}
 
 	for _, tt := range tests {

@@ -109,15 +109,17 @@ func SupportsConfigSynced(kind ResourceKind) bool {
 }
 
 // SupportsComponentHealth reports whether ComponentHealth is meaningful for the
-// given resource. Only components carry a live health verdict.
+// given resource. Always false — component health notifications are retired.
+// The field remains on ResourceCfg for JSONB deserialization compatibility.
 func SupportsComponentHealth(kind ResourceKind) bool {
-	return kind == ResourceComponents
+	return false
 }
 
 // SupportsInstallDegraded reports whether InstallDegraded is meaningful for the
-// given resource. The install-level health rollup is an install event.
+// given resource. Always false — install degraded notifications are retired.
+// The field remains on ResourceCfg for JSONB deserialization compatibility.
 func SupportsInstallDegraded(kind ResourceKind) bool {
-	return kind == ResourceInstalls
+	return false
 }
 
 // Interests is the full per-subscriber config. Stored as JSONB on both
