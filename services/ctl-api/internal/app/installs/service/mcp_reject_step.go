@@ -23,6 +23,9 @@ func (s *service) mcpRejectStep(ctx context.Context, _ *mcp.CallToolRequest, in 
 	if err != nil {
 		return nil, nil, err
 	}
+	if in.ApprovalID == "" {
+		return nil, nil, fmt.Errorf("approval_id is required")
+	}
 
 	var approval app.WorkflowStepApproval
 	err = s.db.WithContext(ctx).

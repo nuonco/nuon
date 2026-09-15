@@ -29,6 +29,10 @@ func (s *service) startInstallWorkflow(
 		return nil, fmt.Errorf("unable to get install %q: %w", installRef, err)
 	}
 
+	if err := s.helpers.ValidateInstallRole(ctx, install.ID, role); err != nil {
+		return nil, err
+	}
+
 	md := map[string]string{}
 	for k, v := range metadata {
 		md[k] = v

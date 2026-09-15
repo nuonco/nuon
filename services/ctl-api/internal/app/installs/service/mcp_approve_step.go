@@ -15,12 +15,16 @@ import (
 
 type mcpApproveStepInput struct {
 	ApprovalID string `json:"approval_id" jsonschema:"the approval ID to approve"`
+	Note       string `json:"note,omitempty" jsonschema:"optional note stored on the approval response"`
 }
 
 func (s *service) mcpApproveStep(ctx context.Context, _ *mcp.CallToolRequest, in mcpApproveStepInput) (*mcp.CallToolResult, any, error) {
 	orgID, err := require.Write(ctx)
 	if err != nil {
 		return nil, nil, err
+	}
+	if in.ApprovalID == "" {
+		return nil, nil, fmt.Errorf("approval_id is required")
 	}
 
 	var approval app.WorkflowStepApproval
@@ -40,6 +44,7 @@ func (s *service) mcpApproveStep(ctx context.Context, _ *mcp.CallToolRequest, in
 	response := app.WorkflowStepApprovalResponse{
 		InstallWorkflowStepApprovalID: approval.ID,
 		Type:                          app.WorkflowStepApprovalResponseTypeApprove,
+		Note:                          in.Note,
 	}
 	if err := s.db.WithContext(ctx).Create(&response).Error; err != nil {
 		return nil, nil, fmt.Errorf("unable to create approval response: %w", err)
