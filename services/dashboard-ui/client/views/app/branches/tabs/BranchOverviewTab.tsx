@@ -11,6 +11,7 @@ import { PageSection } from '@/components/layout/PageSection'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
+import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { useOrg } from '@/hooks/use-org'
 import { BranchSourceCard } from '@/components/branches/BranchSourceCard'
 import { DeploymentPlanGraph } from '@/components/branches/DeploymentPlanGraph'
@@ -108,7 +109,9 @@ const BranchOverviewContent = () => {
               </Badge>
             )}
           </div>
-          {hasDeploymentPlan && <Link href={`${basePath}/plan`}>View plan</Link>}
+          {hasDeploymentPlan && (
+            <Link href={`${basePath}/plan`}>View plan</Link>
+          )}
         </div>
         {hasDeploymentPlan && currentConfig ? (
           <DeploymentPlanGraph
@@ -141,7 +144,9 @@ const BranchOverviewContent = () => {
           <Text variant="base" weight="strong">
             Recent runs
           </Text>
-          {runs.length > 0 && <Link href={`${basePath}/runs`}>View all runs</Link>}
+          {runs.length > 0 && (
+            <Link href={`${basePath}/runs`}>View all runs</Link>
+          )}
         </div>
         {isLoadingRuns ? (
           <TimelineSkeleton eventCount={3} />
@@ -168,6 +173,11 @@ const BranchOverviewContent = () => {
 
 export const BranchOverviewTab = () => {
   const hasNewAppIA = useNewAppIA()
+  const hasSimpleIA = useSimpleIA()
 
-  return hasNewAppIA ? <BranchOverviewContent /> : <BranchDetail />
+  return hasSimpleIA || hasNewAppIA ? (
+    <BranchOverviewContent />
+  ) : (
+    <BranchDetail />
+  )
 }
