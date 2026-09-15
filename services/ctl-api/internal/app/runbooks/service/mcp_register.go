@@ -10,7 +10,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_runbooks",
 		"List runbooks",
-		"List all runbooks for an app. Runbooks define ordered sequences of deploy and action steps that can be executed on installs.",
+		"List runbooks for an app. Runbooks define ordered sequences of deploy and action steps that can be executed on installs."+apiPkg.MCPListToolHint,
 	), s.mcpListRunbooks)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
