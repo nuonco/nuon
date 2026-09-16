@@ -438,6 +438,64 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigImageBackedAction
 			},
 		},
 		{
+			name:          "image set with command steps and feature enabled succeeds",
+			actionName:    "image-action-command",
+			enableFeature: true,
+			requestFunc: func(appConfigID string) CreateActionWorkflowConfigRequest {
+				return CreateActionWorkflowConfigRequest{
+					AppConfigID: appConfigID,
+					Image:       "ghcr.io/nuonco/actions-runner:latest",
+					Triggers: []CreateActionWorkflowConfigTriggerRequest{
+						{Type: app.ActionWorkflowTriggerTypeManual},
+					},
+					Steps: []CreateActionWorkflowConfigStepRequest{
+						{Name: "step1", Command: "migrate up"},
+						{Name: "step2", InlineContents: "echo 'two'"},
+					},
+				}
+			},
+			expectedCode: http.StatusCreated,
+			validateFunc: func(config *app.ActionWorkflowConfig) {
+				assert.Equal(s.T(), "ghcr.io/nuonco/actions-runner:latest", config.Image)
+				require.Len(s.T(), config.Steps, 2)
+				assert.Equal(s.T(), "migrate up", config.Steps[0].Command)
+				assert.Equal(s.T(), "echo 'two'", config.Steps[1].InlineContents)
+			},
+		},
+		{
+			name:          "image set with a public repo step and feature enabled succeeds",
+			actionName:    "image-action-repo",
+			enableFeature: true,
+			requestFunc: func(appConfigID string) CreateActionWorkflowConfigRequest {
+				return CreateActionWorkflowConfigRequest{
+					AppConfigID: appConfigID,
+					Image:       "ghcr.io/nuonco/actions-runner:latest",
+					Triggers: []CreateActionWorkflowConfigTriggerRequest{
+						{Type: app.ActionWorkflowTriggerTypeManual},
+					},
+					Steps: []CreateActionWorkflowConfigStepRequest{
+						{
+							Name:    "check",
+							Command: "./healthcheck",
+							basicVCSConfigRequest: basicVCSConfigRequest{
+								PublicGitVCSConfig: &PublicGitVCSActionWorkflowConfigRequest{
+									Repo:      "nuonco/actions",
+									Directory: "common",
+									Branch:    "main",
+								},
+							},
+						},
+					},
+				}
+			},
+			expectedCode: http.StatusCreated,
+			validateFunc: func(config *app.ActionWorkflowConfig) {
+				assert.Equal(s.T(), "ghcr.io/nuonco/actions-runner:latest", config.Image)
+				require.Len(s.T(), config.Steps, 1)
+				assert.Equal(s.T(), "./healthcheck", config.Steps[0].Command)
+			},
+		},
+		{
 			name:          "image set but org feature disabled is rejected",
 			actionName:    "image-action-disabled",
 			enableFeature: false,
@@ -676,7 +734,7 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigValidation() {
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name: "image set with a step missing inline_contents",
+			name: "image set with a step missing command, inline_contents, and repo",
 			requestFunc: func() CreateActionWorkflowConfigRequest {
 				return CreateActionWorkflowConfigRequest{
 					AppConfigID: appConfig.ID,
@@ -685,8 +743,7 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigValidation() {
 						{Type: app.ActionWorkflowTriggerTypeManual},
 					},
 					Steps: []CreateActionWorkflowConfigStepRequest{
-						{Name: "inline-step", InlineContents: "echo 'ok'"},
-						{Name: "command-step", Command: "echo 'not allowed with image'"},
+						{Name: "empty-step"},
 					},
 				}
 			},

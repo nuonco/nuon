@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/launcher"
 	"github.com/nuonco/nuon/pkg/actions/supervisor"
 	"github.com/nuonco/nuon/pkg/generics"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/runner/oci"
 	"github.com/nuonco/nuon/pkg/runner/op"
 	"github.com/nuonco/nuon/pkg/zapwriter"
@@ -30,14 +31,14 @@ const actionCPUShares = 512
 // execCommandInContainer runs an image-backed action step inside its container.
 // The workspace is bind-mounted so the supervisor writes outputs to a file the
 // runner reads back on the host after the container exits.
-func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, envVars map[string]string) error {
+func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource, envVars map[string]string) error {
 	if h.launcher == nil {
 		return errors.New("image-backed action received by a runner without a container launcher")
 	}
 
-	scriptHostPath, err := h.prepareInlineContentsCommand(ctx, l, cfg)
+	scriptHostPath, workdirHostPath, scriptArgs, err := h.prepareContainerStep(ctx, l, cfg, src)
 	if err != nil {
-		return errors.Wrap(err, "unable to prepare inline command")
+		return errors.Wrap(err, "unable to prepare step script")
 	}
 
 	root := h.state.workspace.Root()
@@ -74,6 +75,16 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 	lOut := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.InfoLevel), zapwriter.WithLineBuffering())
 	lErr := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.ErrorLevel), zapwriter.WithLineBuffering())
 
+	command := []string{
+		"/bin/sh", mapPath(supervisorHostPath),
+		"--script", mapPath(scriptHostPath),
+		"--workdir", mapPath(workdirHostPath),
+	}
+	if len(scriptArgs) > 0 {
+		command = append(command, "--")
+		command = append(command, scriptArgs...)
+	}
+
 	spec := launcher.RunSpec{
 		Image:         image,
 		ContainerName: fmt.Sprintf("nuon-action-%s-%d-%s", h.state.run.ID, cfg.Idx, randContainerSuffix()),
@@ -82,12 +93,8 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 		},
 		// run the supervisor via the image's own /bin/sh so it works in any
 		// base image (musl/glibc/any arch) — no mounted binary to exec.
-		Command: []string{
-			"/bin/sh", mapPath(supervisorHostPath),
-			"--script", mapPath(scriptHostPath),
-			"--workdir", containerWorkspaceMount,
-		},
-		Env: env,
+		Command: command,
+		Env:     env,
 		Labels: map[string]string{
 			"nuon.install_id": h.state.plan.InstallID,
 			"nuon.run_id":     h.state.run.ID,
