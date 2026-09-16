@@ -47,7 +47,8 @@ const INSTALLS: TInstall[] = [
     runner_status: 'offline',
     sandbox_status: 'active',
     sandbox_health_status: 'unhealthy',
-    sandbox_health_message: 'The sandbox cluster stopped reporting node health.',
+    sandbox_health_message:
+      'The sandbox cluster stopped reporting node health.',
     composite_component_status: 'failed',
     composite_component_status_description:
       'Terraform apply exited with status 1.',
@@ -158,6 +159,7 @@ export const Overview = () => (
       'Runner, sandbox, and components are independent axes, each its own marker keyed to its own icon.',
       'Health and drift render only once the API reports them; health stays empty until the evaluator runs.',
       'A deprovisioning or deprovisioned lifecycle phase overrides axes still reading active, so a torn-down install never looks live.',
+      'An install still in its first provision reads Setup incomplete and links back into setup, never to its product pages.',
       'Sandbox health replaces the sandbox status only while the sandbox itself is active.',
       'Stack status is absent from /v1/installs and belongs on the install page, not this table.',
       'An empty selected set means the filter is off, so every install passes.',
@@ -223,6 +225,12 @@ export const Overview = () => (
         description: 'Moves the page window.',
       },
       {
+        name: 'incompleteIds',
+        type: 'ReadonlySet<string>',
+        description:
+          'Install ids still in first provision, from isWizardComplete. Their row links into install setup and carries a Setup incomplete chip beside the install name.',
+      },
+      {
         name: 'loading',
         type: 'boolean',
         default: 'false',
@@ -258,6 +266,14 @@ export const Filtered = () => (
       selected: new Set(['env:production']),
       constrained: true,
     }}
+  />
+)
+
+export const SetupIncomplete = () => (
+  <InstallsTable
+    {...props}
+    installs={INSTALLS}
+    incompleteIds={new Set(['inst_payments_staging'])}
   />
 )
 

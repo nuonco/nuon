@@ -67,6 +67,16 @@ describe('AppsTable', () => {
     expect(offset).toBe(20)
   })
 
+  test('sends incomplete apps to setup', () => {
+    renderTable({ incompleteIds: new Set(['app_payments']) })
+
+    expect(screen.getByRole('link', { name: 'Payments API' })).toHaveAttribute(
+      'href',
+      '/org_example/apps/setup?appId=app_payments'
+    )
+    expect(screen.getByText('Setup incomplete')).not.toBeNull()
+  })
+
   test('renders the request failure in the empty collection', () => {
     renderTable({ apps: [], error: new globalThis.Error('Request failed') })
     expect(screen.getByText('Apps failed to load')).not.toBeNull()
