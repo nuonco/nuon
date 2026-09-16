@@ -1608,6 +1608,13 @@ export interface paths {
      */
     get: operations["GetInstallActionRecentRuns"];
   };
+  "/v1/installs/{install_id}/app-branch": {
+    /**
+     * move an install to another app branch
+     * @description Moves the install to the given app branch and reconciles it onto that branch's current app config. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app and have an active, non-preview app config. There is no way to move an install off a branch without naming another.
+     */
+    patch: operations["MoveInstallToAppBranch"];
+  };
   "/v1/installs/{install_id}/app-config-updates": {
     /**
      * trigger an app config update for an install
@@ -2262,6 +2269,13 @@ export interface paths {
     get: operations["GetInstallTelemetrySettings"];
     /** Update an install's telemetry settings */
     patch: operations["UpdateInstallTelemetrySettings"];
+  };
+  "/v1/installs/{install_id}/updates": {
+    /**
+     * get typed updates for an install
+     * @description Returns app config, input, stack, and install config updates in reverse chronological order.
+     */
+    get: operations["GetInstallUpdates"];
   };
   "/v1/installs/{install_id}/workflows": {
     /**
@@ -3677,7 +3691,7 @@ export interface components {
     };
     "app.AppBranchInstallGroup": {
       /**
-       * @description AllInstalls claims every install on the app that no other branch owns.
+       * @description AllInstalls targets every install owned by this group's app branch.
        * A nil LabelSelector already means "use InstallIDs", so there is no
        * selector shape that expresses "everything" — hence the explicit flag.
        */
@@ -3697,10 +3711,12 @@ export interface components {
     };
     "app.AppBranchPreviewConfig": {
       comment?: boolean;
+      ignore_drafts?: boolean;
       install_id?: string;
       install_name?: string;
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
+      react?: boolean;
       set_statuses?: boolean;
     };
     "app.AppBranchPreviewOverride": {
@@ -3767,6 +3783,7 @@ export interface components {
       input_app_config_id?: string;
       install_id?: string;
       install_name?: string;
+      is_draft_mode?: boolean;
       mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
       org_id?: string;
       override_preview_config?: components["schemas"]["app.AppBranchPreviewOverride"];
@@ -4439,6 +4456,7 @@ export interface components {
       component_id?: string;
       component_name?: string;
       component_type?: string;
+      impact_reasons?: components["schemas"]["diff.ImpactReason"][];
       new_build_id?: string;
       new_checksum?: string;
       old_build_id?: string;
@@ -5021,10 +5039,14 @@ export interface components {
       sandbox_new_id?: string;
       sandbox_old_id?: string;
       stack_changed?: boolean;
+      stack_impact_reasons?: components["schemas"]["diff.ImpactReason"][];
+      stack_impacts?: components["schemas"]["app.InstallConfigImpact"][];
       stack_new_id?: string;
       stack_old_id?: string;
       unchanged?: components["schemas"]["app.ComponentDiffEntry"][];
     };
+    /** @enum {string} */
+    "app.InstallConfigImpact": "stack_config" | "permissions" | "break_glass" | "secrets" | "runner_config";
     "app.InstallConfigSync": {
       app_branch_config_id?: string;
       app_branch_id?: string;
@@ -7098,7 +7120,10 @@ export interface components {
     "diff.Diff": {
       children?: components["schemas"]["diff.Diff"][];
       diff?: components["schemas"]["diff.DiffKey"];
+      impact_reasons?: components["schemas"]["diff.ImpactReason"][];
+      impacted?: boolean;
       key?: string;
+      resource_id?: string;
     };
     "diff.DiffKey": {
       after?: string;
@@ -7112,6 +7137,12 @@ export interface components {
       has_changed?: boolean;
       removed?: number;
       unchanged?: number;
+    };
+    /** @enum {string} */
+    "diff.EdgeReason": "component_dependency" | "component_reference" | "input_reference" | "install_stack_output" | "operation_role" | "sandbox_output" | "secret_reference" | "stack_render";
+    "diff.ImpactReason": {
+      edge?: components["schemas"]["diff.EdgeReason"];
+      from?: string;
     };
     /** @enum {string} */
     "diff.Op": "add" | "remove" | "change" | "noop" | "";
@@ -8430,6 +8461,13 @@ export interface components {
       };
     };
     "service.CreateInstallRequest": {
+      /**
+       * @description AppBranchID is the optional app branch this install belongs to. When set,
+       * the install starts on that branch's active app config and stays on the
+       * branch until explicitly moved. When empty, the install uses the latest
+       * unbranched config from apps sync.
+       */
+      app_branch_id?: string;
       aws_account?: components["schemas"]["helpers.CreateInstallAWSAccountParams"];
       azure_account?: components["schemas"]["helpers.CreateInstallAzureAccountParams"];
       gcp_account?: components["schemas"]["helpers.CreateInstallGCPAccountParams"];
@@ -8453,6 +8491,13 @@ export interface components {
       stack_only?: boolean;
     };
     "service.CreateInstallV2Request": {
+      /**
+       * @description AppBranchID is the optional app branch this install belongs to. When set,
+       * the install starts on that branch's active app config and stays on the
+       * branch until explicitly moved. When empty, the install uses the latest
+       * unbranched config from apps sync.
+       */
+      app_branch_id?: string;
       app_id: string;
       aws_account?: components["schemas"]["helpers.CreateInstallAWSAccountParams"];
       azure_account?: components["schemas"]["helpers.CreateInstallAzureAccountParams"];
@@ -8825,6 +8870,10 @@ export interface components {
       repo_url: string;
       version?: string;
     };
+    "service.InstallAppConfigUpdate": {
+      diff?: components["schemas"]["app.InstallConfigDiff"];
+      version?: components["schemas"]["app.InstallAppConfigVersion"];
+    };
     "service.InstallAppPermissionsConfigResponse": {
       break_glass_roles?: components["schemas"]["service.InstallPermissionsRoleStatus"][];
       custom_roles?: components["schemas"]["service.InstallPermissionsRoleStatus"][];
@@ -8857,9 +8906,12 @@ export interface components {
       transitions?: components["schemas"]["service.HealthTransitionResponse"][];
       uptime_percent?: number;
     };
+    "service.InstallConfigUpdate": {
+      version?: components["schemas"]["app.InstallConfigVersion"];
+    };
     "service.InstallGroupRequest": {
       /**
-       * @description AllInstalls targets every install on the app that no other branch owns.
+       * @description AllInstalls targets every install owned by this branch.
        * Mutually exclusive with InstallIDs and LabelSelector.
        */
       all_installs?: boolean;
@@ -8900,6 +8952,10 @@ export interface components {
       observed_seconds?: number;
       uptime_percent?: number;
     };
+    "service.InstallInputsUpdate": {
+      input_config_id?: string;
+      keys?: string[];
+    };
     "service.InstallPermissionsRoleStatus": {
       app_config_id?: string;
       arn?: string;
@@ -8932,8 +8988,35 @@ export interface components {
     "service.InstallPhoneHomeRequest": {
       [key: string]: unknown;
     };
+    "service.InstallStackUpdate": {
+      input_diff?: components["schemas"]["app.StackVersionRunInputDiff"];
+      role_diff?: components["schemas"]["app.StackVersionRunRoleDiff"];
+      run_type?: components["schemas"]["app.StackVersionRunType"];
+      status?: components["schemas"]["app.CompositeStatus"];
+      version_id?: string;
+    };
     "service.InstallTelemetrySettings": {
       enabled?: boolean;
+    };
+    "service.InstallUpdate": {
+      app_config?: components["schemas"]["service.InstallAppConfigUpdate"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      inputs?: components["schemas"]["service.InstallInputsUpdate"];
+      install_config?: components["schemas"]["service.InstallConfigUpdate"];
+      stack?: components["schemas"]["service.InstallStackUpdate"];
+      type?: components["schemas"]["service.InstallUpdateType"];
+      workflow_id?: string;
+    };
+    /** @enum {string} */
+    "service.InstallUpdateType": "app_config" | "inputs" | "stack" | "install_config";
+    "service.InstallUpdatesResponse": {
+      current_app_branch_run?: components["schemas"]["app.AppBranchRun"];
+      has_more?: boolean;
+      limit?: number;
+      page?: number;
+      updates?: components["schemas"]["service.InstallUpdate"][];
     };
     "service.InstallsHealthResponse": {
       all_healthy?: boolean;
@@ -9000,6 +9083,13 @@ export interface components {
     "service.MngShutDownRequest": Record<string, never>;
     "service.MngUpdateRequest": Record<string, never>;
     "service.MngVMShutDownRequest": Record<string, never>;
+    "service.MoveInstallToAppBranchRequest": {
+      /**
+       * @description AppBranchID is the branch to move the install to. It must belong to the
+       * install's app and have an app config to deploy.
+       */
+      app_branch_id: string;
+    };
     "service.OperationRoleRuleRequest": {
       operation: components["schemas"]["app.OperationType"];
       principal: string;
@@ -21877,6 +21967,62 @@ export interface operations {
     };
   };
   /**
+   * move an install to another app branch
+   * @description Moves the install to the given app branch and reconciles it onto that branch's current app config. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app and have an active, non-preview app config. There is no way to move an install off a branch without naming another.
+   */
+  MoveInstallToAppBranch: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.MoveInstallToAppBranchRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * trigger an app config update for an install
    * @description Creates a workflow to diff and deploy a new app config to an install.
    */
@@ -26574,6 +26720,56 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get typed updates for an install
+   * @description Returns app config, input, stack, and install config updates in reverse chronological order.
+   */
+  GetInstallUpdates: {
+    parameters: {
+      query?: {
+        /** @description page number */
+        page?: number;
+        /** @description page size */
+        limit?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallUpdatesResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

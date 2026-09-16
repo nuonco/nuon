@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/invopop/jsonschema"
+
 	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 )
 

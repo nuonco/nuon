@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/go-playground/validator/v10"
-	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	"github.com/nuonco/nuon/pkg/runner/errs"

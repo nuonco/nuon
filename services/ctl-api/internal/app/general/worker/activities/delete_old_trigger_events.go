@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 const (

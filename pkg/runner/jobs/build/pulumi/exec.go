@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"

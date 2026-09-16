@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	runnerctx "github.com/nuonco/nuon/pkg/runner/ctx"

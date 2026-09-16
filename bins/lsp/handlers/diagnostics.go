@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/invopop/jsonschema"
-	"github.com/nuonco/nuon/bins/lsp/models"
-	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 	"github.com/tliron/glsp"
 	protocol "github.com/tliron/glsp/protocol_3_16"
+
+	"github.com/nuonco/nuon/bins/lsp/models"
+	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 )
 
 // PublishDiagnostics handles the full diagnostic cycle: detection, parsing, diagnosis, and publishing

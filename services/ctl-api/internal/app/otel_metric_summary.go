@@ -4,9 +4,10 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 )
 
 type OtelMetricSummaryExemplar struct {

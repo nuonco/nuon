@@ -20,6 +20,12 @@ import (
 // swagger:model service.CreateInstallV2Request
 type ServiceCreateInstallV2Request struct {
 
+	// AppBranchID is the optional app branch this install belongs to. When set,
+	// the install starts on that branch's active app config and stays on the
+	// branch until explicitly moved. When empty, the install uses the latest
+	// unbranched config from apps sync.
+	AppBranchID string `json:"app_branch_id,omitempty"`
+
 	// app id
 	// Required: true
 	AppID *string `json:"app_id"`

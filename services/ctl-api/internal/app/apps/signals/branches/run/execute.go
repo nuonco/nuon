@@ -246,6 +246,7 @@ func (s *Signal) writeFinalizerComment(ctx workflow.Context, run *app.AppBranchR
 	commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
 		OrgName:            branch.Org.Name,
 		AppName:            branch.App.Name,
+		AppBranchID:        branch.ID,
 		BranchName:         branch.Name,
 		RunID:              s.RunID,
 		RunURL:             previewRunURL(commentContext),
@@ -264,6 +265,7 @@ func (s *Signal) writeFinalizerComment(ctx workflow.Context, run *app.AppBranchR
 	_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 		VcsConfigID:       vcsConfigID,
 		PRNumber:          *run.PRNumber,
+		AppBranchID:       run.AppBranchID,
 		ExistingCommentID: run.GithubCommentID,
 		Body:              commentBody,
 	})

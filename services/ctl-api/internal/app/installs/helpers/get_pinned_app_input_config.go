@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // GetPinnedAppInputConfig gets the pinned input config for an install.

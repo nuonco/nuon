@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Branch Run Configuration</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; padding: 40px 32px 80px; }
+  h1 { text-align: center; margin-bottom: 8px; color: #58a6ff; font-size: 24px; }
+  .subtitle { text-align: center; margin-bottom: 40px; color: #8b949e; font-size: 14px; }
+
+  .wrap { max-width: 1000px; margin: 0 auto; }
+
+  h2 { font-size: 15px; color: #f0f6fc; margin: 48px 0 6px; padding-bottom: 8px; border-bottom: 1px solid #30363d; letter-spacing: .3px; }
+  h2 .num { color: #58a6ff; font-family: monospace; margin-right: 8px; }
+  .lede { font-size: 13px; color: #8b949e; line-height: 1.6; margin: 12px 0 20px; }
+  .lede code, p code, li code, td code { background: #21262d; padding: 1px 6px; border-radius: 4px; font-size: 12px; color: #79c0ff; font-family: monospace; }
+  .lede strong, li strong, td strong { color: #c9d1d9; font-weight: 600; }
+
+  svg { display: block; margin: 0 auto 8px; max-width: 100%; }
+
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 12.5px; }
+  th { background: #161b22; color: #8b949e; font-weight: 600; text-align: left; padding: 9px 12px; border: 1px solid #30363d; font-size: 11px; letter-spacing: .5px; text-transform: uppercase; }
+  td { padding: 9px 12px; border: 1px solid #30363d; vertical-align: top; line-height: 1.5; }
+  tbody tr:nth-child(odd) { background: #161b2266; }
+  td.mode { font-family: monospace; color: #d2a8ff; white-space: nowrap; }
+
+  .yes { color: #7ee787; font-weight: 600; }
+  .no  { color: #8b949e; }
+  .cond { color: #f0883e; }
+
+  pre { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 18px; overflow-x: auto; font-size: 12.5px; line-height: 1.65; font-family: 'SF Mono', Menlo, monospace; margin: 8px 0 12px; }
+  pre .k { color: #7ee787; }
+  pre .s { color: #a5d6ff; }
+  pre .c { color: #8b949e; font-style: italic; }
+  pre .h { color: #ff7b72; }
+  pre .t { color: #79c0ff; }
+
+  .cols { display: flex; gap: 16px; flex-wrap: wrap; }
+  .cols > * { flex: 1 1 380px; min-width: 0; }
+
+  ul { margin: 4px 0 12px 20px; font-size: 13px; line-height: 1.75; color: #c9d1d9; }
+  li::marker { color: #8b949e; }
+
+  .callout { border: 1px solid #30363d; border-left: 3px solid #f0883e; background: #161b22; border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 16px 0; font-size: 13px; line-height: 1.65; }
+  .callout .hd { color: #f0883e; font-weight: 700; font-size: 11px; letter-spacing: .6px; text-transform: uppercase; margin-bottom: 6px; }
+  .callout.info { border-left-color: #58a6ff; }
+  .callout.info .hd { color: #58a6ff; }
+
+  .file { color: #d2a8ff; font-family: monospace; font-size: 12px; }
+  footer { max-width: 1000px; margin: 56px auto 0; padding-top: 16px; border-top: 1px solid #30363d; font-size: 11.5px; color: #8b949e; text-align: center; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<h1>App Branch Run Configuration</h1>
+<p class="subtitle">One trunk, many release cadences &mdash; <code style="background:#21262d;padding:1px 6px;border-radius:4px;color:#79c0ff;font-family:monospace">all</code> &bull; <code style="background:#21262d;padding:1px 6px;border-radius:4px;color:#79c0ff;font-family:monospace">on_tag_prefix</code> &bull; <code style="background:#21262d;padding:1px 6px;border-radius:4px;color:#79c0ff;font-family:monospace">on_github_label</code> &bull; <code style="background:#21262d;padding:1px 6px;border-radius:4px;color:#79c0ff;font-family:monospace">manual_only</code></p>
+
+<div class="wrap">
+
+<h2><span class="num">01</span>One trunk, many cadences</h2>
+<p class="lede">
+  Every app branch below tracks the <strong>same</strong> git branch (<code>main</code>) in the <strong>same</strong> repo. The tracked branch says
+  <em>which product line</em> the app branch is a cadence of. <code>run.mode</code> says <em>when it runs</em> and <em>which commit it builds</em>.
+</p>
+
+<svg viewBox="0 0 1000 486" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <defs>
+    <marker id="a-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#58a6ff"/></marker>
+    <marker id="a-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#7ee787"/></marker>
+    <marker id="a-orange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f0883e"/></marker>
+    <marker id="a-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#d2a8ff"/></marker>
+  </defs>
+
+  <!-- commit columns -->
+  <rect x="556" y="84" width="88" height="386" rx="10" fill="#bc8cff" opacity=".07"/>
+  <rect x="836" y="84" width="88" height="386" rx="10" fill="#f0883e" opacity=".07"/>
+
+  <!-- tag + PR flags -->
+  <rect x="508" y="14" width="184" height="38" rx="6" fill="#bc8cff18" stroke="#bc8cff88"/>
+  <text x="600" y="30" text-anchor="middle" fill="#d2a8ff" font-size="11" font-weight="700">tag foobar/v0.0.1</text>
+  <text x="600" y="44" text-anchor="middle" fill="#8b949e" font-size="9.5">pushed later, points at C</text>
+  <line x1="600" y1="52" x2="600" y2="86" stroke="#d2a8ff" stroke-width="1.5" stroke-dasharray="3,3"/>
+
+  <rect x="772" y="14" width="216" height="38" rx="6" fill="#f0883e18" stroke="#f0883e88"/>
+  <text x="880" y="30" text-anchor="middle" fill="#f0883e" font-size="11" font-weight="700">PR #42 merged</text>
+  <text x="880" y="44" text-anchor="middle" fill="#8b949e" font-size="9.5">label: deploy-cadence-daily</text>
+  <line x1="880" y1="52" x2="880" y2="86" stroke="#f0883e" stroke-width="1.5" stroke-dasharray="3,3"/>
+
+  <!-- trunk -->
+  <text x="232" y="106" text-anchor="end" fill="#8b949e" font-size="11" font-weight="600">main</text>
+  <line x1="290" y1="100" x2="962" y2="100" stroke="#30363d" stroke-width="3"/>
+  <circle cx="360" cy="100" r="9" fill="#21262d" stroke="#8b949e" stroke-width="2"/>
+  <circle cx="480" cy="100" r="9" fill="#21262d" stroke="#8b949e" stroke-width="2"/>
+  <circle cx="600" cy="100" r="10" fill="#21262d" stroke="#d2a8ff" stroke-width="2.5"/>
+  <circle cx="730" cy="100" r="9" fill="#21262d" stroke="#8b949e" stroke-width="2"/>
+  <circle cx="880" cy="100" r="10" fill="#21262d" stroke="#f0883e" stroke-width="2.5"/>
+  <text x="360" y="128" text-anchor="middle" fill="#8b949e" font-size="11" font-family="monospace">A</text>
+  <text x="480" y="128" text-anchor="middle" fill="#8b949e" font-size="11" font-family="monospace">B</text>
+  <text x="600" y="128" text-anchor="middle" fill="#d2a8ff" font-size="11" font-family="monospace">C</text>
+  <text x="730" y="128" text-anchor="middle" fill="#8b949e" font-size="11" font-family="monospace">D</text>
+  <text x="880" y="128" text-anchor="middle" fill="#f0883e" font-size="11" font-family="monospace">M</text>
+  <text x="972" y="104" fill="#8b949e" font-size="10">tip</text>
+
+  <!-- lane: GA -->
+  <rect x="20" y="158" width="232" height="56" rx="8" fill="#1f6feb18" stroke="#1f6feb88" stroke-width="1.5"/>
+  <text x="36" y="180" fill="#58a6ff" font-size="12" font-weight="700">GA branch</text>
+  <text x="36" y="198" fill="#8b949e" font-size="10" font-family="monospace">mode = all (default)</text>
+  <line x1="276" y1="186" x2="962" y2="186" stroke="#21262d" stroke-width="1" stroke-dasharray="4,4"/>
+  <g fill="#1f6feb22" stroke="#58a6ff">
+    <rect x="334" y="172" width="52" height="28" rx="6"/>
+    <rect x="454" y="172" width="52" height="28" rx="6"/>
+    <rect x="574" y="172" width="52" height="28" rx="6"/>
+    <rect x="704" y="172" width="52" height="28" rx="6"/>
+    <rect x="854" y="172" width="52" height="28" rx="6"/>
+  </g>
+  <g fill="#58a6ff" font-size="10" font-weight="600" text-anchor="middle">
+    <text x="360" y="190">run</text><text x="480" y="190">run</text><text x="600" y="190">run</text><text x="730" y="190">run</text><text x="880" y="190">run</text>
+  </g>
+
+  <!-- lane: foobar -->
+  <rect x="20" y="244" width="232" height="56" rx="8" fill="#bc8cff14" stroke="#bc8cff88" stroke-width="1.5"/>
+  <text x="36" y="266" fill="#d2a8ff" font-size="12" font-weight="700">Foobar branch</text>
+  <text x="36" y="284" fill="#8b949e" font-size="10" font-family="monospace">on_tag_prefix &#8226; foobar/</text>
+  <line x1="276" y1="272" x2="962" y2="272" stroke="#21262d" stroke-width="1" stroke-dasharray="4,4"/>
+  <rect x="562" y="258" width="76" height="28" rx="6" fill="#bc8cff22" stroke="#d2a8ff"/>
+  <text x="600" y="276" text-anchor="middle" fill="#d2a8ff" font-size="10" font-weight="600">run at C</text>
+
+  <!-- lane: daily -->
+  <rect x="20" y="330" width="232" height="56" rx="8" fill="#f0883e14" stroke="#f0883e88" stroke-width="1.5"/>
+  <text x="36" y="352" fill="#f0883e" font-size="12" font-weight="700">Daily branch</text>
+  <text x="36" y="370" fill="#8b949e" font-size="10" font-family="monospace">on_github_label</text>
+  <line x1="276" y1="358" x2="962" y2="358" stroke="#21262d" stroke-width="1" stroke-dasharray="4,4"/>
+  <rect x="842" y="344" width="76" height="28" rx="6" fill="#f0883e22" stroke="#f0883e"/>
+  <text x="880" y="362" text-anchor="middle" fill="#f0883e" font-size="10" font-weight="600">run at M</text>
+
+  <!-- lane: manual -->
+  <rect x="20" y="416" width="232" height="50" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+  <text x="36" y="438" fill="#8b949e" font-size="12" font-weight="700">Pinned branch</text>
+  <text x="36" y="456" fill="#8b949e" font-size="10" font-family="monospace">manual_only</text>
+  <line x1="276" y1="441" x2="962" y2="441" stroke="#21262d" stroke-width="1" stroke-dasharray="4,4"/>
+  <rect x="404" y="428" width="420" height="26" rx="6" fill="#0d1117" stroke="#30363d"/>
+  <text x="614" y="445" text-anchor="middle" fill="#8b949e" font-size="10.5" font-style="italic">no automatic runs &mdash; operator picks the commit</text>
+</svg>
+
+<div class="callout info">
+  <div class="hd">The key idea</div>
+  Foobar sits on <code>C</code> while GA has already taken <code>D</code> and <code>M</code>. Same history, slower clock. The clone keys off the
+  <strong>commit SHA</strong>, so a tag run builds the tagged commit &mdash; never the current tip of <code>main</code>.
+</div>
+
+<h2><span class="num">02</span>Mode matrix</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width:20%">run.mode</th>
+      <th>Push to tracked branch</th>
+      <th>PR against tracked branch</th>
+      <th>Tag push</th>
+      <th style="width:14%">Manual</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="mode">all<br><span style="color:#8b949e;font-size:11px">(default, omit run)</span></td>
+      <td class="yes">run</td>
+      <td class="yes">preview</td>
+      <td class="no">ignored &mdash; the commit push already ran</td>
+      <td class="yes">allowed</td>
+    </tr>
+    <tr>
+      <td class="mode">on_tag_prefix<br><span style="color:#8b949e;font-size:11px">+ tag_prefix</span></td>
+      <td class="no">skip</td>
+      <td class="no">skip</td>
+      <td><span class="yes">run</span> <span class="cond">if</span> name starts with prefix <span class="cond">and</span> SHA is on trunk history</td>
+      <td class="yes">allowed</td>
+    </tr>
+    <tr>
+      <td class="mode">on_github_label<br><span style="color:#8b949e;font-size:11px">+ github_label</span></td>
+      <td><span class="yes">run</span> <span class="cond">if</span> the landing commit's associated PR carries the label</td>
+      <td class="no">skip &mdash; merge-time, not preview-time</td>
+      <td class="no">skip</td>
+      <td class="yes">allowed</td>
+    </tr>
+    <tr>
+      <td class="mode">manual_only</td>
+      <td class="no">skip</td>
+      <td class="no">skip</td>
+      <td class="no">skip</td>
+      <td class="yes">allowed</td>
+    </tr>
+  </tbody>
+</table>
+<p class="lede" style="margin-top:4px">
+  Manual triggers (dashboard, CLI, MCP) are <strong>never</strong> gated by <code>run.mode</code>. &ldquo;Manual only&rdquo; means VCS will not start a run;
+  an operator still can, at any commit &mdash; which is the hotfix and catch-up path for every cadence mode.
+</p>
+
+<h2><span class="num">03</span>Event routing</h2>
+<p class="lede">
+  Today a tag push dies at the parser: <span class="file">github_event/parse.go</span> rejects any ref that is not <code>refs/heads/*</code>.
+  Candidate matching is repo + git branch in <span class="file">find_matching_app_branches.go</span>. Both grow a tag path, then every matched branch
+  passes through one gate.
+</p>
+
+<svg viewBox="0 0 1000 680" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <!-- webhook -->
+  <rect x="390" y="16" width="220" height="50" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+  <text x="500" y="38" text-anchor="middle" fill="#f0f6fc" font-size="12.5" font-weight="600">GitHub webhook</text>
+  <text x="500" y="55" text-anchor="middle" fill="#8b949e" font-size="10">push &bull; pull_request</text>
+  <line x1="500" y1="66" x2="500" y2="96" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <!-- parse -->
+  <rect x="330" y="100" width="340" height="62" rx="8" fill="#1f6feb18" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="500" y="122" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="700">parse ref</text>
+  <text x="500" y="139" text-anchor="middle" fill="#8b949e" font-size="10"><tspan fill="#79c0ff" font-family="monospace">refs/heads/*</tspan> &rarr; branch push  (exists today)</text>
+  <text x="500" y="154" text-anchor="middle" fill="#8b949e" font-size="10"><tspan fill="#79c0ff" font-family="monospace">refs/tags/*</tspan> &rarr; tag push  <tspan fill="#7ee787">(new)</tspan></text>
+  <line x1="500" y1="162" x2="500" y2="190" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <!-- candidates -->
+  <rect x="280" y="194" width="440" height="62" rx="8" fill="#23863618" stroke="#238636" stroke-width="1.5"/>
+  <text x="500" y="216" text-anchor="middle" fill="#7ee787" font-size="12.5" font-weight="700">find candidate app branches</text>
+  <text x="500" y="233" text-anchor="middle" fill="#8b949e" font-size="10">branch push / PR: match on repo <tspan fill="#c9d1d9">+ tracked branch</tspan></text>
+  <text x="500" y="248" text-anchor="middle" fill="#8b949e" font-size="10">tag push: match on repo, then filter by mode</text>
+  <line x1="500" y1="256" x2="500" y2="286" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <!-- gate container -->
+  <rect x="50" y="290" width="900" height="372" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="70" y="315" fill="#f0883e" font-size="11" font-weight="700" letter-spacing=".6">FOR EACH MATCHED APP BRANCH &mdash; APPLY run.mode</text>
+
+  <!-- row 1: all -->
+  <rect x="70" y="328" width="860" height="72" rx="8" fill="#0d1117" stroke="#30363d"/>
+  <rect x="86" y="348" width="150" height="32" rx="6" fill="#1f6feb22" stroke="#58a6ff"/>
+  <text x="161" y="369" text-anchor="middle" fill="#58a6ff" font-size="11.5" font-weight="700" font-family="monospace">all</text>
+  <text x="258" y="358" fill="#c9d1d9" font-size="11.5">branch push, or PR against the tracked branch</text>
+  <text x="258" y="376" fill="#8b949e" font-size="10.5">tag pushes ignored &mdash; the commit push already covered it</text>
+  <rect x="800" y="348" width="114" height="32" rx="16" fill="#23863622" stroke="#7ee787"/>
+  <text x="857" y="369" text-anchor="middle" fill="#7ee787" font-size="11" font-weight="700">RUN</text>
+
+  <!-- row 2: tag -->
+  <rect x="70" y="408" width="860" height="72" rx="8" fill="#0d1117" stroke="#30363d"/>
+  <rect x="86" y="428" width="150" height="32" rx="6" fill="#bc8cff22" stroke="#d2a8ff"/>
+  <text x="161" y="449" text-anchor="middle" fill="#d2a8ff" font-size="10.5" font-weight="700" font-family="monospace">on_tag_prefix</text>
+  <text x="258" y="438" fill="#c9d1d9" font-size="11.5">tag name starts with <tspan font-family="monospace" fill="#79c0ff">tag_prefix</tspan>  &#8594;  ancestry check</text>
+  <text x="258" y="456" fill="#8b949e" font-size="10.5">tagged SHA must be reachable from the tracked branch</text>
+  <rect x="800" y="428" width="114" height="32" rx="16" fill="#23863622" stroke="#7ee787"/>
+  <text x="857" y="449" text-anchor="middle" fill="#7ee787" font-size="11" font-weight="700">RUN at tag</text>
+
+  <!-- row 3: label -->
+  <rect x="70" y="488" width="860" height="72" rx="8" fill="#0d1117" stroke="#30363d"/>
+  <rect x="86" y="508" width="150" height="32" rx="6" fill="#f0883e22" stroke="#f0883e"/>
+  <text x="161" y="529" text-anchor="middle" fill="#f0883e" font-size="10" font-weight="700" font-family="monospace">on_github_label</text>
+  <text x="258" y="518" fill="#c9d1d9" font-size="11.5">push to tracked branch  &#8594;  GitHub API: PRs for this commit</text>
+  <text x="258" y="536" fill="#8b949e" font-size="10.5">exact label match on <tspan font-family="monospace" fill="#79c0ff">github_label</tspan>; no PR / no label = no run</text>
+  <rect x="800" y="508" width="114" height="32" rx="16" fill="#23863622" stroke="#7ee787"/>
+  <text x="857" y="529" text-anchor="middle" fill="#7ee787" font-size="11" font-weight="700">RUN at merge</text>
+
+  <!-- row 4: manual -->
+  <rect x="70" y="568" width="860" height="72" rx="8" fill="#0d1117" stroke="#30363d"/>
+  <rect x="86" y="588" width="150" height="32" rx="6" fill="#21262d" stroke="#8b949e"/>
+  <text x="161" y="609" text-anchor="middle" fill="#8b949e" font-size="11" font-weight="700" font-family="monospace">manual_only</text>
+  <text x="258" y="598" fill="#c9d1d9" font-size="11.5">nothing from VCS</text>
+  <text x="258" y="616" fill="#8b949e" font-size="10.5">dashboard / CLI / MCP submit a commit directly</text>
+  <rect x="800" y="588" width="114" height="32" rx="16" fill="#21262d" stroke="#8b949e"/>
+  <text x="857" y="609" text-anchor="middle" fill="#8b949e" font-size="11" font-weight="700">NO RUN</text>
+</svg>
+
+<div class="callout">
+  <div class="hd">Skip early, not late</div>
+  A mode skip happens <strong>after</strong> matching and <strong>before</strong> a run row is created &mdash; the same shape as the existing draft-PR skip in
+  <span class="file">trigger_app_branch_run_from_vcs_push.go</span>. Never create a run and mark it not-attempted: at scale, one customer&rsquo;s tag would
+  leave a dead run on every other customer&rsquo;s branch. That noise is the whole reason this gate exists on the app branch instead of the install group.
+</div>
+
+<h2><span class="num">04</span>Tag runs: prefix, then ancestry</h2>
+<p class="lede">
+  Two independent checks. The <strong>name</strong> decides which app branch cares (<code>strings.HasPrefix</code>, case-sensitive, not a regex).
+  The <strong>commit</strong> decides whether the tag is legitimate for that trunk.
+</p>
+
+<svg viewBox="0 0 1000 330" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <!-- accepted tag -->
+  <rect x="380" y="20" width="230" height="46" rx="7" fill="#23863618" stroke="#7ee787" stroke-width="1.5"/>
+  <text x="495" y="39" text-anchor="middle" fill="#7ee787" font-size="11.5" font-weight="700" font-family="monospace">foobar/v0.0.1 &rarr; C</text>
+  <text x="495" y="55" text-anchor="middle" fill="#8b949e" font-size="10">prefix matches &bull; C is on main &rarr; <tspan fill="#7ee787" font-weight="700">RUN</tspan></text>
+  <line x1="495" y1="66" x2="495" y2="126" stroke="#7ee787" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#a-green)"/>
+
+  <!-- trunk -->
+  <text x="40" y="146" fill="#8b949e" font-size="11" font-weight="600">main</text>
+  <line x1="96" y1="140" x2="820" y2="140" stroke="#30363d" stroke-width="3"/>
+  <circle cx="180" cy="140" r="9" fill="#21262d" stroke="#8b949e" stroke-width="2"/>
+  <circle cx="340" cy="140" r="9" fill="#21262d" stroke="#8b949e" stroke-width="2"/>
+  <circle cx="495" cy="140" r="10" fill="#21262d" stroke="#7ee787" stroke-width="2.5"/>
+  <circle cx="660" cy="140" r="9" fill="#21262d" stroke="#8b949e" stroke-width="2"/>
+  <text x="180" y="167" text-anchor="middle" fill="#8b949e" font-size="11" font-family="monospace">A</text>
+  <text x="340" y="167" text-anchor="middle" fill="#8b949e" font-size="11" font-family="monospace">B</text>
+  <text x="495" y="167" text-anchor="middle" fill="#7ee787" font-size="11" font-family="monospace">C</text>
+  <text x="660" y="167" text-anchor="middle" fill="#8b949e" font-size="11" font-family="monospace">D (tip)</text>
+
+  <!-- feature branch -->
+  <path d="M340,140 C 380,140 390,236 440,236" fill="none" stroke="#30363d" stroke-width="2.5"/>
+  <line x1="440" y1="236" x2="580" y2="236" stroke="#30363d" stroke-width="2.5"/>
+  <circle cx="560" cy="236" r="9" fill="#21262d" stroke="#f78166" stroke-width="2.5"/>
+  <text x="560" y="263" text-anchor="middle" fill="#f78166" font-size="11" font-family="monospace">F</text>
+  <text x="392" y="228" fill="#8b949e" font-size="10" font-style="italic">feature branch</text>
+
+  <!-- rejected tag -->
+  <rect x="640" y="214" width="300" height="46" rx="7" fill="#da368818" stroke="#f78166" stroke-width="1.5"/>
+  <text x="790" y="233" text-anchor="middle" fill="#f78166" font-size="11.5" font-weight="700" font-family="monospace">foobar/v0.0.2 &rarr; F</text>
+  <text x="790" y="249" text-anchor="middle" fill="#8b949e" font-size="10">prefix matches, but F is not on main &rarr; <tspan fill="#f78166" font-weight="700">SKIP</tspan></text>
+  <line x1="580" y1="236" x2="634" y2="236" stroke="#f78166" stroke-width="1.5" stroke-dasharray="3,3"/>
+
+  <rect x="96" y="290" width="824" height="30" rx="6" fill="#21262d" stroke="#30363d"/>
+  <text x="112" y="309" fill="#8b949e" font-size="11">Gate: <tspan fill="#79c0ff" font-family="monospace">git merge-base --is-ancestor &lt;sha&gt; &lt;tracked&gt;</tspan>, or GitHub CompareCommits accepting <tspan fill="#7ee787" font-family="monospace">identical</tspan> / <tspan fill="#7ee787" font-family="monospace">behind</tspan> &mdash; reject <tspan fill="#f78166" font-family="monospace">ahead</tspan> / <tspan fill="#f78166" font-family="monospace">diverged</tspan></text>
+</svg>
+
+<p class="lede">
+  <strong>Behind is fine.</strong> Tagging an older commit is the normal case for a customer catching up to an earlier release, so <code>behind</code> is
+  accepted, not just <code>identical</code>. What gets rejected is history that is not on the trunk at all.
+</p>
+
+<h2><span class="num">05</span>Label runs happen at merge, via the API</h2>
+<p class="lede">
+  A labeled PR against <code>main</code> still previews on the GA branch only. The cadence branch waits for the merge. The label lives on the
+  <strong>pull request</strong>, and a squash or rebase merge payload carries none of it &mdash; so the push webhook cannot answer the question and we ask GitHub.
+</p>
+
+<svg viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <rect x="16" y="86" width="164" height="76" rx="8" fill="#f0883e18" stroke="#f0883e88" stroke-width="1.5"/>
+  <text x="98" y="110" text-anchor="middle" fill="#f0883e" font-size="12" font-weight="700">PR #42 merged</text>
+  <text x="98" y="128" text-anchor="middle" fill="#8b949e" font-size="9.5">label:</text>
+  <text x="98" y="143" text-anchor="middle" fill="#79c0ff" font-size="9.5" font-family="monospace">deploy-cadence-daily</text>
+  <line x1="180" y1="124" x2="212" y2="124" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <rect x="216" y="86" width="164" height="76" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+  <text x="298" y="110" text-anchor="middle" fill="#f0f6fc" font-size="12" font-weight="600">push to main</text>
+  <text x="298" y="128" text-anchor="middle" fill="#8b949e" font-size="9.5">head_sha =</text>
+  <text x="298" y="143" text-anchor="middle" fill="#79c0ff" font-size="10" font-family="monospace">M</text>
+  <line x1="380" y1="124" x2="412" y2="124" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <rect x="416" y="86" width="176" height="76" rx="8" fill="#23863618" stroke="#238636" stroke-width="1.5"/>
+  <text x="504" y="110" text-anchor="middle" fill="#7ee787" font-size="12" font-weight="600">matched branch</text>
+  <text x="504" y="128" text-anchor="middle" fill="#8b949e" font-size="9.5">tracks main,</text>
+  <text x="504" y="143" text-anchor="middle" fill="#f0883e" font-size="9.5" font-family="monospace">on_github_label</text>
+  <line x1="592" y1="124" x2="624" y2="124" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <rect x="628" y="86" width="180" height="76" rx="8" fill="#bc8cff18" stroke="#bc8cff88" stroke-width="1.5"/>
+  <text x="718" y="108" text-anchor="middle" fill="#d2a8ff" font-size="11.5" font-weight="700">GitHub API</text>
+  <text x="718" y="126" text-anchor="middle" fill="#8b949e" font-size="9">PRs associated with M</text>
+  <text x="718" y="142" text-anchor="middle" fill="#8b949e" font-size="9">&rarr; read their labels</text>
+  <line x1="808" y1="124" x2="840" y2="124" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <rect x="844" y="88" width="140" height="34" rx="17" fill="#23863622" stroke="#7ee787"/>
+  <text x="914" y="110" text-anchor="middle" fill="#7ee787" font-size="11" font-weight="700">match &rarr; RUN</text>
+  <rect x="844" y="128" width="140" height="34" rx="17" fill="#21262d" stroke="#8b949e"/>
+  <text x="914" y="150" text-anchor="middle" fill="#8b949e" font-size="11" font-weight="700">none &rarr; skip</text>
+
+  <rect x="216" y="188" width="592" height="34" rx="6" fill="#da368818" stroke="#f7816688"/>
+  <text x="512" y="210" text-anchor="middle" fill="#f78166" font-size="10.5">The squash / rebase push payload has no PR and no labels &mdash; resolving it from the webhook alone is not possible</text>
+
+  <rect x="16" y="244" width="968" height="34" rx="6" fill="#21262d" stroke="#30363d"/>
+  <text x="32" y="266" fill="#8b949e" font-size="10.5">Client resolution follows <tspan fill="#d2a8ff" font-family="monospace">fetch_commit_pr_info.go</tspan>; API failure retries, then fails the activity &mdash; silently skipping would let a cadence branch go stale with no signal</text>
+</svg>
+
+<h2><span class="num">06</span>Configuration</h2>
+<div class="cols">
+  <div>
+    <pre><span class="c"># customer cadence, driven by tags</span>
+[[<span class="k">branch</span>]]
+<span class="k">name</span> = <span class="s">"foobar"</span>
+
+[<span class="k">branch.connected_repo</span>]
+<span class="k">repo</span>      = <span class="s">"acme/app"</span>
+<span class="k">directory</span> = <span class="s">"."</span>
+<span class="k">branch</span>    = <span class="s">"main"</span>   <span class="c"># same trunk as GA</span>
+
+[<span class="k">branch.run</span>]
+<span class="k">mode</span>       = <span class="s">"on_tag_prefix"</span>
+<span class="k">tag_prefix</span> = <span class="s">"foobar/"</span></pre>
+  </div>
+  <div>
+    <pre><span class="c"># shared cadence, driven by PR labels</span>
+[[<span class="k">branch</span>]]
+<span class="k">name</span> = <span class="s">"daily"</span>
+
+[<span class="k">branch.connected_repo</span>]
+<span class="k">repo</span>      = <span class="s">"acme/app"</span>
+<span class="k">directory</span> = <span class="s">"."</span>
+<span class="k">branch</span>    = <span class="s">"main"</span>
+
+[<span class="k">branch.run</span>]
+<span class="k">mode</span>         = <span class="s">"on_github_label"</span>
+<span class="k">github_label</span> = <span class="s">"deploy-cadence-daily"</span></pre>
+  </div>
+</div>
+
+<p class="lede" style="margin-bottom:6px">
+  Stored as JSONB on <code>AppBranchConfig</code>, mirroring <code>preview_config</code>, so every config revision snapshots the rule it ran under.
+  Omitting the <code>run</code> block means <code>all</code> &mdash; today&rsquo;s behavior, unchanged for every existing branch.
+</p>
+
+<pre><span class="h">type</span> <span class="t">AppBranchRunConfig</span> <span class="h">struct</span> {
+    Mode        <span class="h">string</span> <span class="s">`json:"mode"`</span>                    <span class="c">// all | on_tag_prefix | on_github_label | manual_only</span>
+    TagPrefix   <span class="h">string</span> <span class="s">`json:"tag_prefix,omitempty"`</span>
+    GithubLabel <span class="h">string</span> <span class="s">`json:"github_label,omitempty"`</span>
+}</pre>
+
+<h2><span class="num">07</span>Validation</h2>
+<table>
+  <thead><tr><th style="width:26%">Rule</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td><code>on_tag_prefix</code> requires <code>tag_prefix</code></td><td>Without it the mode would match every tag in the repo &mdash; the opposite of the intent.</td></tr>
+    <tr><td><code>on_github_label</code> requires <code>github_label</code></td><td>Same reason, and an empty label would match nothing rather than everything, which is harder to notice.</td></tr>
+    <tr><td><code>on_github_label</code> requires <code>connected_repo</code></td><td>Label lookup needs the GitHub App API. A <code>public_repo</code> branch has no credential to ask with.</td></tr>
+    <tr><td>Cross-field exclusion</td><td><code>tag_prefix</code> only with <code>on_tag_prefix</code>, <code>github_label</code> only with <code>on_github_label</code>. Reject rather than ignore, so the TOML cannot lie about what triggers a deploy.</td></tr>
+    <tr><td>Unknown <code>mode</code> fails the sync</td><td>A typo like <code>on_tag</code> silently falling back to <code>all</code> would ship every commit to a customer that opted out.</td></tr>
+    <tr><td>Tag deletes ignored</td><td>Deleting <code>foobar/v0.0.1</code> is not a release event.</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="num">08</span>What the run records</h2>
+<table>
+  <thead><tr><th style="width:22%">Trigger</th><th style="width:18%">event_type</th><th style="width:28%">git_ref</th><th>head_sha</th></tr></thead>
+  <tbody>
+    <tr><td>Branch push (<code>all</code>)</td><td><code>push</code></td><td>branch name</td><td>pushed commit</td></tr>
+    <tr><td>Tag push</td><td><code>tag</code></td><td>full tag name, e.g. <code>foobar/v0.0.1</code></td><td>tagged commit</td></tr>
+    <tr><td>Labeled PR merge</td><td><code>push</code> with <code>pr_number</code> set</td><td>tracked branch</td><td>merge / squash commit</td></tr>
+  </tbody>
+</table>
+<p class="lede">
+  A distinct <code>tag</code> event type is what lets run titles, filters, and the PR comment say &ldquo;tag <code>foobar/v0.0.1</code>&rdquo;
+  instead of an anonymous push.
+</p>
+
+<h2><span class="num">09</span>Footguns worth designing around</h2>
+<ul>
+  <li><strong>Tag on a commit that never landed.</strong> Tagging a hotfix branch will not update the customer until that commit reaches the tracked branch and a matching tag points at it. The skip must be logged loudly or it looks like a dropped webhook.</li>
+  <li><strong>Label added after the merge.</strong> Nothing backfills. The run is decided at the moment of the push; a late label needs a manual run.</li>
+  <li><strong>Label removed before the merge.</strong> Silently no deploy &mdash; the PR looks merged and done.</li>
+  <li><strong>Cherry-picks associate multiple PRs</strong> with one commit. Any matching label counts.</li>
+  <li><strong>Every cadence branch shares a trunk with GA.</strong> That is exactly why <code>on_tag_prefix</code> and <code>on_github_label</code> must skip PR previews; otherwise one PR fans out a preview to every customer branch in the repo.</li>
+</ul>
+
+<h2><span class="num">10</span>Out of scope for this slice</h2>
+<p class="lede">
+  Called out in the tags plan, but not this change: branch-level component / stack / sandbox overrides, install-group staleness when groups advance at
+  different times, and re-running a stale plan. This slice is only about <em>whether and at which commit</em> an app branch run starts.
+</p>
+
+</div>
+
+<footer>
+  App branch run configuration &bull; source of truth: <span class="file">plans/app-branch-tags.md</span><br>
+  Touches <span class="file">pkg/config/app_branch_config.go</span> &bull; <span class="file">config/syncer/branches/sync.go</span> &bull;
+  <span class="file">vcs/signals/github_event/</span> &bull; <span class="file">apps/signals/branches/activities/</span> &mdash; no Temporal workflow shape change
+</footer>
+
+</body>
+</html>

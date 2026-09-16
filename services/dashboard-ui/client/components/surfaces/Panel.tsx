@@ -44,14 +44,17 @@ export const PanelBase = ({
   ...props
 }: Omit<IPanel, 'triggerButton'>) => {
   const [size, setSize] = useState(defaultExpanded ? 'full' : initSize)
-  const { removePanel, panels } = useSurfaces()
+  const { removePanel, panels, modals } = useSurfaces()
   const handleClose = () => {
     if (onClose) onClose?.()
     removePanel(panels?.at(-1)?.id, panelKey)
   }
   const panelRef = useRef<HTMLDivElement>(null)
+  const hasVisibleModal = modals.some((m) => m.isVisible)
+  const isTopPanel =
+    [...panels].reverse().find((p) => p.isVisible)?.id === panelId
   useAutoFocusOnVisible(panelRef, isVisible)
-  useEscapeKey(handleClose)
+  useEscapeKey(handleClose, isVisible && isTopPanel && !hasVisibleModal)
 
   return (
     <>

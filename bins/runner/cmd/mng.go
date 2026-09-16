@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spf13/cobra"
+	"go.uber.org/fx"
+
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/actions"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/management"
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
@@ -17,8 +20,6 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/shutdownbeacon"
 	"github.com/nuonco/nuon/pkg/runner/log"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
-	"github.com/spf13/cobra"
-	"go.uber.org/fx"
 )
 
 func (c *cli) registerMng() error {

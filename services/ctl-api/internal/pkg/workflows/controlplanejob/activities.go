@@ -9,16 +9,17 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/nuonco/nuon/pkg/metrics"
-	runnercontrolplane "github.com/nuonco/nuon/pkg/runner/controlplane"
-	"github.com/nuonco/nuon/pkg/runner/errcapture"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/temporal"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/nuonco/nuon/pkg/metrics"
+	runnercontrolplane "github.com/nuonco/nuon/pkg/runner/controlplane"
+	"github.com/nuonco/nuon/pkg/runner/errcapture"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"

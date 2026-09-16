@@ -160,7 +160,7 @@ export const DeployHeader = ({
     >
       {deploy?.install_workflow_id ? (
         <Button
-          href={`/${install?.org_id}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
+          href={`/${install?.org_id}/installs/${install?.id}/history/${workflow?.id}?panel=${stepId}`}
         >
           View workflow
         </Button>

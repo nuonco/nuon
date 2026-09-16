@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/pkg/browser"
+
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) ConnectGithub(ctx context.Context) error {

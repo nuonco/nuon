@@ -20,12 +20,14 @@ type Signal struct {
 	EventType           string   `json:"event_type,omitempty"` // "push" or "pull_request"
 	PRNumber            *int     `json:"pr_number,omitempty"`
 	HeadSHA             string   `json:"head_sha,omitempty"`
+	HeadRef             string   `json:"head_ref,omitempty"`
 	BaseBranch          string   `json:"base_branch,omitempty"`
 	BaseSHA             string   `json:"base_sha,omitempty"`
 	ChangedFiles        []string `json:"changed_files,omitempty"`
 	PusherEmails        []string `json:"pusher_emails,omitempty"`
 	SenderLogin         string   `json:"sender_login,omitempty"`
 	FallbackCreatedByID string   `json:"fallback_created_by_id,omitempty"`
+	Draft               bool     `json:"draft,omitempty"`
 }
 
 var _ signal.Signal = (*Signal)(nil)

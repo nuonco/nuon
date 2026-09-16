@@ -3,12 +3,13 @@ package plan
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestImageNameSegment(t *testing.T) {

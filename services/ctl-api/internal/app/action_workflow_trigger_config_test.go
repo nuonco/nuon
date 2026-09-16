@@ -5,11 +5,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func TestActionWorkflowTriggerConfigSize(t *testing.T) {

@@ -15,8 +15,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
@@ -25,6 +23,9 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.uber.org/fx/fxtest"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 )
 
 func postgresPool(t *testing.T, max int32) *pgxpool.Pool {

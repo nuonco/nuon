@@ -98,7 +98,7 @@ export function getApprovalHref(
     return undefined
   }
 
-  return `/${orgId}/installs/${step.owner_id}/workflows/${workflowId}`
+  return `/${orgId}/installs/${step.owner_id}/history/${workflowId}`
 }
 
 export function getWorkflowHref(orgId: string, workflow: TWorkflow): string {
@@ -110,7 +110,7 @@ export function getWorkflowHref(orgId: string, workflow: TWorkflow): string {
       return `/${orgId}/apps/${appId}/branches/${branchId}/runs/${workflow.id}`
     }
   }
-  return `/${orgId}/installs/${workflow?.owner_id}/workflows/${workflow?.id}`
+  return `/${orgId}/installs/${workflow?.owner_id}/history/${workflow?.id}`
 }
 
 // The retry "lineage" badge — how this attempt relates to its retries. Distinct

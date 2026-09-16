@@ -6,6 +6,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/nuonco/nuon/sdks/nuon-go"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
