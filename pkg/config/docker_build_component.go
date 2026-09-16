@@ -6,19 +6,19 @@ import (
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type DockerBuildComponentConfig struct {
-	Dockerfile string `mapstructure:"dockerfile" toml:"dockerfile" jsonschema:"required"`
+	Dockerfile string `json:"Dockerfile" mapstructure:"dockerfile" toml:"dockerfile" jsonschema:"required"`
 
-	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	EnvVarMap map[string]string `json:"EnvVarMap" mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
+	PublicRepo    *PublicRepoConfig    `json:"PublicRepo" mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
+	ConnectedRepo *ConnectedRepoConfig `json:"ConnectedRepo" mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"  jsonschema:"oneof_required=public_repo"`
 
-	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
-	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	BuildTimeout  string `json:"BuildTimeout" mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `json:"DeployTimeout" mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 
-	MaxAutoRetries               *int  `mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
-	SkipNoops                    *bool `mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
-	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
+	MaxAutoRetries               *int  `json:"MaxAutoRetries" mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
+	SkipNoops                    *bool `json:"SkipNoops" mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
+	AutoApproveOnPoliciesPassing *bool `json:"AutoApproveOnPoliciesPassing" mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
 
 	// NOTE: the following parameters are not supported in the provider
 	// Target	     string		   `mapstructure:"target" toml:"target"`

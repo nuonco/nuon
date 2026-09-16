@@ -7,8 +7,8 @@ import (
 )
 
 type HelmValue struct {
-	Name  string `toml:"name" mapstructure:"name,omitempty"`
-	Value string `toml:"value" mapstructure:"value,omitempty"`
+	Name  string `json:"Name" toml:"name" mapstructure:"name,omitempty"`
+	Value string `json:"Value" toml:"value" mapstructure:"value,omitempty"`
 }
 
 func (h HelmValue) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -18,9 +18,9 @@ func (h HelmValue) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type HelmValuesFile struct {
-	Source   string `toml:"source" mapstructure:"source,omitempty" features:"template"`
-	Contents string `toml:"contents" mapstructure:"contents,omitempty" features:"get,template"`
-	Path     string `toml:"path" mapstructure:"path,omitempty"`
+	Source   string `json:"Source" toml:"source" mapstructure:"source,omitempty" features:"template"`
+	Contents string `json:"Contents" toml:"contents" mapstructure:"contents,omitempty" features:"get,template"`
+	Path     string `json:"Path" toml:"path" mapstructure:"path,omitempty"`
 }
 
 func (h HelmValuesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -32,34 +32,34 @@ func (h HelmValuesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type HelmChartComponentConfig struct {
-	ChartName string `mapstructure:"chart_name,omitempty" toml:"chart_name,omitempty" jsonschema:"required"`
+	ChartName string `json:"ChartName" mapstructure:"chart_name,omitempty" toml:"chart_name,omitempty" jsonschema:"required"`
 
-	ValuesMap   map[string]string `mapstructure:"values,omitempty" toml:"values,omitempty"`
-	ValuesFiles []HelmValuesFile  `mapstructure:"values_file,omitempty" toml:"values_file,omitempty"`
+	ValuesMap   map[string]string `json:"ValuesMap" mapstructure:"values,omitempty" toml:"values,omitempty"`
+	ValuesFiles []HelmValuesFile  `json:"ValuesFiles" mapstructure:"values_file,omitempty" toml:"values_file,omitempty"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	HelmRepo      *HelmRepoConfig      `mapstructure:"helm_repo,omitempty" toml:"helm_repo,omitempty" jsonschema:"oneof_required=helm_repo"`
+	PublicRepo    *PublicRepoConfig    `json:"PublicRepo" mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
+	ConnectedRepo *ConnectedRepoConfig `json:"ConnectedRepo" mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
+	HelmRepo      *HelmRepoConfig      `json:"HelmRepo" mapstructure:"helm_repo,omitempty" toml:"helm_repo,omitempty" jsonschema:"oneof_required=helm_repo"`
 
-	Namespace     string `mapstructure:"namespace" toml:"namespace" features:"template"`
-	StorageDriver string `mapstructure:"storage_driver,omitempty" toml:"storage_driver,omitempty" features:"template"`
+	Namespace     string `json:"Namespace" mapstructure:"namespace" toml:"namespace" features:"template"`
+	StorageDriver string `json:"StorageDriver" mapstructure:"storage_driver,omitempty" toml:"storage_driver,omitempty" features:"template"`
 
-	TakeOwnership bool `mapstructure:"take_ownership" toml:"take_ownership" features:"template"`
-	SkipCRDs      bool `mapstructure:"skip_crds,omitempty" toml:"skip_crds,omitempty" nuonhash:"omitempty"`
+	TakeOwnership bool `json:"TakeOwnership" mapstructure:"take_ownership" toml:"take_ownership" features:"template"`
+	SkipCRDs      bool `json:"SkipCRDs" mapstructure:"skip_crds,omitempty" toml:"skip_crds,omitempty" nuonhash:"omitempty"`
 
-	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
+	DriftSchedule *string `json:"DriftSchedule" mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
-	Health *ComponentHealthConfig `mapstructure:"health,omitempty" toml:"health,omitempty" nuonhash:"omitempty"`
+	Health *ComponentHealthConfig `json:"Health" mapstructure:"health,omitempty" toml:"health,omitempty" nuonhash:"omitempty"`
 
-	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
-	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	BuildTimeout  string `json:"BuildTimeout" mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `json:"DeployTimeout" mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 
-	MaxAutoRetries               *int  `mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
-	SkipNoops                    *bool `mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
-	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
+	MaxAutoRetries               *int  `json:"MaxAutoRetries" mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
+	SkipNoops                    *bool `json:"SkipNoops" mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
+	AutoApproveOnPoliciesPassing *bool `json:"AutoApproveOnPoliciesPassing" mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
 
 	// deprecated
-	Values []HelmValue `mapstructure:"value,omitempty" toml:"value,omitempty"`
+	Values []HelmValue `json:"Values" mapstructure:"value,omitempty" toml:"value,omitempty"`
 }
 
 func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -128,9 +128,9 @@ func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type HelmRepoConfig struct {
-	RepoURL string `mapstructure:"repo_url" toml:"repo_url" jsonschema:"required"`
-	Chart   string `mapstructure:"chart" toml:"chart" jsonschema:"required"`
-	Version string `mapstructure:"version,omitempty" toml:"version,omitempty"`
+	RepoURL string `json:"RepoURL" mapstructure:"repo_url" toml:"repo_url" jsonschema:"required"`
+	Chart   string `json:"Chart" mapstructure:"chart" toml:"chart" jsonschema:"required"`
+	Version string `json:"Version" mapstructure:"version,omitempty" toml:"version,omitempty"`
 }
 
 func (h HelmRepoConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

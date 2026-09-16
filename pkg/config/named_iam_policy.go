@@ -11,9 +11,9 @@ type NamedIAMPolicy struct {
 	// Name is both the config identifier and the AWS IAM managed policy name.
 	// Roles attach this policy by repeating the same name, matching inline
 	// [[policies]] name = "..." attachments. Supports templating.
-	Name        string `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
-	Description string `mapstructure:"description,omitempty" toml:"description,omitempty" features:"template"`
-	Contents    string `mapstructure:"contents" toml:"contents" jsonschema:"required" features:"template,get"`
+	Name        string `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
+	Description string `json:"Description" mapstructure:"description,omitempty" toml:"description,omitempty" features:"template"`
+	Contents    string `json:"Contents" mapstructure:"contents" toml:"contents" jsonschema:"required" features:"template,get"`
 
 	SourceFile string `mapstructure:"-" toml:"-" json:"-" jsonschema:"-"`
 }
@@ -42,7 +42,7 @@ func (p NamedIAMPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 // NamedPolicyRef attaches a NamedIAMPolicy to a role by name.
 type NamedPolicyRef struct {
-	Name string `mapstructure:"name" toml:"name" json:"name" jsonschema:"required"`
+	Name string `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
 }
 
 func (p NamedPolicyRef) JSONSchemaExtend(schema *jsonschema.Schema) {

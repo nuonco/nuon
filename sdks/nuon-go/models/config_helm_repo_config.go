@@ -18,13 +18,13 @@ import (
 type ConfigHelmRepoConfig struct {
 
 	// chart
-	Chart string `json:"chart,omitempty"`
+	Chart string `json:"Chart,omitempty"`
 
 	// repo URL
-	RepoURL string `json:"repoURL,omitempty"`
+	RepoURL string `json:"RepoURL,omitempty"`
 
 	// version
-	Version string `json:"version,omitempty"`
+	Version string `json:"Version,omitempty"`
 }
 
 // Validate validates this config helm repo config

@@ -23,8 +23,8 @@ func TerraformVariables(input []TerraformVariable) []string {
 }
 
 type TerraformVariable struct {
-	Name  string `mapstructure:"name,omitempty" toml:"name"`
-	Value string `mapstructure:"value,omitempty" toml:"value"`
+	Name  string `json:"Name" mapstructure:"name,omitempty" toml:"name"`
+	Value string `json:"Value" mapstructure:"value,omitempty" toml:"value"`
 }
 
 func (t TerraformVariable) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -34,8 +34,8 @@ func (t TerraformVariable) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type EnvironmentVariable struct {
-	Name  string `mapstructure:"name,omitempty" toml:"name"`
-	Value string `mapstructure:"value,omitempty" toml:"value"`
+	Name  string `json:"Name" mapstructure:"name,omitempty" toml:"name"`
+	Value string `json:"Value" mapstructure:"value,omitempty" toml:"value"`
 }
 
 func (e EnvironmentVariable) JSONSchemaExtend(schema *jsonschema.Schema) {

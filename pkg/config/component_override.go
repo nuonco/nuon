@@ -98,16 +98,16 @@ func IsComponentOverrideInputName(name string) bool {
 // the regular install-input machinery (validation, storage, state, redeploy).
 type SyntheticOverrideInput struct {
 	// Name is the reserved synthetic input name (see ComponentOverrideInputPrefix).
-	Name string
+	Name string `json:"Name"`
 	// Kind is the override axis this input drives (helm_values / tf_vars).
-	Kind ComponentOverrideKind
+	Kind ComponentOverrideKind `json:"Kind"`
 	// Component is the component name this override targets.
-	Component string
+	Component string `json:"Component"`
 	// Index is the suggested ordering index, offset well past real inputs.
-	Index int
+	Index int `json:"Index"`
 	// Default is the synthetic input's default value. For the enabled kind this
 	// carries the component's default_enabled ("true"/"false"); empty otherwise.
-	Default string
+	Default string `json:"Default"`
 }
 
 // SyntheticComponentOverrideInputs enumerates the synthetic override inputs that

@@ -10,25 +10,25 @@ import (
 )
 
 type InstallerConfig struct {
-	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
+	Source string `json:"Source" mapstructure:"source,omitempty" toml:"source,omitempty"`
 
-	Name        string   `mapstructure:"name,omitempty" toml:"name"`
-	Description string   `mapstructure:"description,omitempty" toml:"description"`
-	Slug        string   `mapstructure:"slug,omitempty" toml:"slug"`
-	Apps        []string `mapstructure:"apps,omitempty" toml:"apps"`
+	Name        string   `json:"Name" mapstructure:"name,omitempty" toml:"name"`
+	Description string   `json:"Description" mapstructure:"description,omitempty" toml:"description"`
+	Slug        string   `json:"Slug" mapstructure:"slug,omitempty" toml:"slug"`
+	Apps        []string `json:"Apps" mapstructure:"apps,omitempty" toml:"apps"`
 
-	DocumentationURL string `mapstructure:"documentation_url,omitempty" toml:"documentation_url"`
-	CommunityURL     string `mapstructure:"community_url,omitempty" toml:"community_url"`
-	HomepageURL      string `mapstructure:"homepage_url,omitempty" toml:"homepage_url"`
-	GithubURL        string `mapstructure:"github_url,omitempty" toml:"github_url"`
-	LogoURL          string `mapstructure:"logo_url,omitempty" toml:"logo_url"`
-	FaviconURL       string `mapstructure:"favicon_url,omitempty" toml:"favicon_url"`
+	DocumentationURL string `json:"DocumentationURL" mapstructure:"documentation_url,omitempty" toml:"documentation_url"`
+	CommunityURL     string `json:"CommunityURL" mapstructure:"community_url,omitempty" toml:"community_url"`
+	HomepageURL      string `json:"HomepageURL" mapstructure:"homepage_url,omitempty" toml:"homepage_url"`
+	GithubURL        string `json:"GithubURL" mapstructure:"github_url,omitempty" toml:"github_url"`
+	LogoURL          string `json:"LogoURL" mapstructure:"logo_url,omitempty" toml:"logo_url"`
+	FaviconURL       string `json:"FaviconURL" mapstructure:"favicon_url,omitempty" toml:"favicon_url"`
 
-	OgImageURL          string `mapstructure:"og_image_url" toml:"og_image_url"`
-	DemoURL             string `mapstructure:"demo_url" toml:"demo_url"`
-	PostInstallMarkdown string `mapstructure:"post_install_markdown" toml:"post_install_markdown"`
-	CopyrightMarkdown   string `mapstructure:"copyright_markdown" toml:"copyright_markdown"`
-	FooterMarkdown      string `mapstructure:"footer_markdown" toml:"footer_markdown"`
+	OgImageURL          string `json:"OgImageURL" mapstructure:"og_image_url" toml:"og_image_url"`
+	DemoURL             string `json:"DemoURL" mapstructure:"demo_url" toml:"demo_url"`
+	PostInstallMarkdown string `json:"PostInstallMarkdown" mapstructure:"post_install_markdown" toml:"post_install_markdown"`
+	CopyrightMarkdown   string `json:"CopyrightMarkdown" mapstructure:"copyright_markdown" toml:"copyright_markdown"`
+	FooterMarkdown      string `json:"FooterMarkdown" mapstructure:"footer_markdown" toml:"footer_markdown"`
 }
 
 func (a InstallerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

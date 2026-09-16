@@ -6,18 +6,18 @@ import (
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type JobComponentConfig struct {
-	ImageURL string   `mapstructure:"image_url" toml:"image_url" jsonschema:"required"`
-	Tag      string   `mapstructure:"tag" toml:"tag" jsonschema:"required"`
-	Cmd      []string `mapstructure:"cmd" toml:"cmd"`
+	ImageURL string   `json:"ImageURL" mapstructure:"image_url" toml:"image_url" jsonschema:"required"`
+	Tag      string   `json:"Tag" mapstructure:"tag" toml:"tag" jsonschema:"required"`
+	Cmd      []string `json:"Cmd" mapstructure:"cmd" toml:"cmd"`
 
-	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
-	Args      []string          `mapstructure:"args,omitempty" toml:"args,omitempty"`
+	EnvVarMap map[string]string `json:"EnvVarMap" mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	Args      []string          `json:"Args" mapstructure:"args,omitempty" toml:"args,omitempty"`
 
-	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
-	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	BuildTimeout  string `json:"BuildTimeout" mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `json:"DeployTimeout" mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 
 	// deprecated
-	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
+	EnvVars []EnvironmentVariable `json:"EnvVars" mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
 }
 
 func (j JobComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

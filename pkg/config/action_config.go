@@ -12,49 +12,49 @@ import (
 )
 
 type ActionConfig struct {
-	Name     string                 `mapstructure:"name" toml:"name" jsonschema:"required"`
-	Timeout  string                 `mapstructure:"timeout,omitempty" toml:"timeout,omitempty"`
-	Labels   map[string]string      `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
-	Triggers []*ActionTriggerConfig `mapstructure:"triggers" toml:"triggers" jsonschema:"required"`
-	Steps    []*ActionStepConfig    `mapstructure:"steps" toml:"steps" jsonschema:"required"`
+	Name     string                 `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
+	Timeout  string                 `json:"Timeout" mapstructure:"timeout,omitempty" toml:"timeout,omitempty"`
+	Labels   map[string]string      `json:"Labels" mapstructure:"labels,omitempty" toml:"labels,omitempty"`
+	Triggers []*ActionTriggerConfig `json:"Triggers" mapstructure:"triggers" toml:"triggers" jsonschema:"required"`
+	Steps    []*ActionStepConfig    `json:"Steps" mapstructure:"steps" toml:"steps" jsonschema:"required"`
 
-	References     []refs.Ref `mapstructure:"-" jsonschema:"-"`
-	Dependencies   []string   `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
-	BreakGlassRole string     `mapstructure:"break_glass_role,omitempty" toml:"break_glass_role,omitempty"`
-	Role           string     `mapstructure:"role,omitempty" toml:"role,omitempty"`
+	References     []refs.Ref `json:"References" mapstructure:"-" jsonschema:"-"`
+	Dependencies   []string   `json:"Dependencies" mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
+	BreakGlassRole string     `json:"BreakGlassRole" mapstructure:"break_glass_role,omitempty" toml:"break_glass_role,omitempty"`
+	Role           string     `json:"Role" mapstructure:"role,omitempty" toml:"role,omitempty"`
 
-	EnableKubeConfig *bool `mapstructure:"enable_kube_config,omitempty" toml:"enable_kube_config,omitempty"`
+	EnableKubeConfig *bool `json:"EnableKubeConfig" mapstructure:"enable_kube_config,omitempty" toml:"enable_kube_config,omitempty"`
 
 	// Image is an optional container image the action's steps run inside. When
 	// set, Nuon mounts the actions-supervisor into the image and executes each
 	// step's inline_contents there. Steps must use inline_contents.
-	Image string `mapstructure:"image,omitempty" toml:"image,omitempty" features:"template"`
+	Image string `json:"Image" mapstructure:"image,omitempty" toml:"image,omitempty" features:"template"`
 
 	// KubernetesContext is the name of a kubernetes_context this action
 	// targets. Empty means fall back to the implicit sandbox default (when
 	// the sandbox emits cluster outputs). See pkg/config/kubernetes_context.go.
-	KubernetesContext string `mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty" nuonhash:"omitempty"`
+	KubernetesContext string `json:"KubernetesContext" mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty" nuonhash:"omitempty"`
 }
 
 type ActionTriggerConfig struct {
-	Type string `mapstructure:"type" toml:"type" jsonschema:"required"`
+	Type string `json:"Type" mapstructure:"type" toml:"type" jsonschema:"required"`
 
-	Index         int64  `mapstructure:"index,omitempty" toml:"index,omitempty"`
-	CronSchedule  string `mapstructure:"cron_schedule,omitempty" toml:"cron_schedule,omitempty"`
-	ComponentName string `mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
+	Index         int64  `json:"Index" mapstructure:"index,omitempty" toml:"index,omitempty"`
+	CronSchedule  string `json:"CronSchedule" mapstructure:"cron_schedule,omitempty" toml:"cron_schedule,omitempty"`
+	ComponentName string `json:"ComponentName" mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
 }
 
 type ActionStepConfig struct {
-	Name          string               `mapstructure:"name" toml:"name" jsonschema:"required"`
-	EnvVarMap     map[string]string    `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
+	Name          string               `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
+	EnvVarMap     map[string]string    `json:"EnvVarMap" mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	PublicRepo    *PublicRepoConfig    `json:"PublicRepo" mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
+	ConnectedRepo *ConnectedRepoConfig `json:"ConnectedRepo" mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty"`
 
-	Command        string `mapstructure:"command" toml:"command" features:"template"`
-	InlineContents string `mapstructure:"inline_contents" toml:"inline_contents" features:"get,template"`
+	Command        string `json:"Command" mapstructure:"command" toml:"command" features:"template"`
+	InlineContents string `json:"InlineContents" mapstructure:"inline_contents" toml:"inline_contents" features:"get,template"`
 
 	// created during parsing
-	References []refs.Ref `mapstructure:"-" jsonschema:"-"`
+	References []refs.Ref `json:"References" mapstructure:"-" jsonschema:"-"`
 }
 
 func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

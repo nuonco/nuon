@@ -11,69 +11,69 @@ import (
 )
 
 type AWSECRConfig struct {
-	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty" jsonschema:"required"`
-	AWSRegion  string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
-	ImageURL   string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
-	Tag        string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
+	IAMRoleARN string `json:"IAMRoleARN" mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty" jsonschema:"required"`
+	AWSRegion  string `json:"AWSRegion" mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
+	ImageURL   string `json:"ImageURL" mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
+	Tag        string `json:"Tag" mapstructure:"tag,omitempty" toml:"tag,omitempty"`
 	// UpdatePolicy is an optional Masterminds-compatible semver constraint
 	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
 	// matching tag from the registry at build time. Either tag or
 	// update_policy must be set.
-	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
+	UpdatePolicy string `json:"UpdatePolicy" mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
 type PublicImageConfig struct {
-	ImageURL string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required" `
-	Tag      string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
+	ImageURL string `json:"ImageURL" mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required" `
+	Tag      string `json:"Tag" mapstructure:"tag,omitempty" toml:"tag,omitempty"`
 	// UpdatePolicy is an optional Masterminds-compatible semver constraint
 	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
 	// matching tag from the registry at build time. Either tag or
 	// update_policy must be set.
-	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
+	UpdatePolicy string `json:"UpdatePolicy" mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
 type GCPGARConfig struct {
-	GCPProjectID             string `mapstructure:"gcp_project_id,omitempty" toml:"gcp_project_id,omitempty" jsonschema:"required"`
-	GCPRegion                string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
-	ImageURL                 string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
-	Tag                      string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
-	ServiceAccountEmail      string `mapstructure:"service_account_email,omitempty" toml:"service_account_email,omitempty"`
-	WorkloadIdentityProvider string `mapstructure:"workload_identity_provider,omitempty" toml:"workload_identity_provider,omitempty"`
+	GCPProjectID             string `json:"GCPProjectID" mapstructure:"gcp_project_id,omitempty" toml:"gcp_project_id,omitempty" jsonschema:"required"`
+	GCPRegion                string `json:"GCPRegion" mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
+	ImageURL                 string `json:"ImageURL" mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
+	Tag                      string `json:"Tag" mapstructure:"tag,omitempty" toml:"tag,omitempty"`
+	ServiceAccountEmail      string `json:"ServiceAccountEmail" mapstructure:"service_account_email,omitempty" toml:"service_account_email,omitempty"`
+	WorkloadIdentityProvider string `json:"WorkloadIdentityProvider" mapstructure:"workload_identity_provider,omitempty" toml:"workload_identity_provider,omitempty"`
 	// UpdatePolicy is an optional Masterminds-compatible semver constraint
 	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
 	// matching tag from the registry at build time. Either tag or
 	// update_policy must be set.
-	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
+	UpdatePolicy string `json:"UpdatePolicy" mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
 type AzureACRConfig struct {
-	ImageURL    string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
-	Tag         string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
-	RegistryURL string `mapstructure:"registry_url,omitempty" toml:"registry_url,omitempty" jsonschema:"required"`
-	TenantID    string `mapstructure:"tenant_id,omitempty" toml:"tenant_id,omitempty"`
-	ClientID    string `mapstructure:"client_id,omitempty" toml:"client_id,omitempty"`
+	ImageURL    string `json:"ImageURL" mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
+	Tag         string `json:"Tag" mapstructure:"tag,omitempty" toml:"tag,omitempty"`
+	RegistryURL string `json:"RegistryURL" mapstructure:"registry_url,omitempty" toml:"registry_url,omitempty" jsonschema:"required"`
+	TenantID    string `json:"TenantID" mapstructure:"tenant_id,omitempty" toml:"tenant_id,omitempty"`
+	ClientID    string `json:"ClientID" mapstructure:"client_id,omitempty" toml:"client_id,omitempty"`
 	// These name an AppSecret holding the credential; the "_name" suffix is
 	// load-bearing, because a field called client_secret invites pasting the
 	// secret itself into a file that gets committed.
-	ClientSecretName      string `mapstructure:"client_secret_name,omitempty" toml:"client_secret_name,omitempty"`
-	ClientCertificateName string `mapstructure:"client_certificate_name,omitempty" toml:"client_certificate_name,omitempty"`
+	ClientSecretName      string `json:"ClientSecretName" mapstructure:"client_secret_name,omitempty" toml:"client_secret_name,omitempty"`
+	ClientCertificateName string `json:"ClientCertificateName" mapstructure:"client_certificate_name,omitempty" toml:"client_certificate_name,omitempty"`
 	// UpdatePolicy is an optional Masterminds-compatible semver constraint
 	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
 	// matching tag from the registry at build time. Either tag or
 	// update_policy must be set.
-	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
+	UpdatePolicy string `json:"UpdatePolicy" mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
 type ExternalImageComponentConfig struct {
-	AWSECRImageConfig   *AWSECRConfig           `mapstructure:"aws_ecr,omitempty" toml:"aws_ecr,omitempty" jsonschema:"oneof_required=ecr_source"`
-	GCPGARImageConfig   *GCPGARConfig           `mapstructure:"gcp_gar,omitempty" toml:"gcp_gar,omitempty" jsonschema:"oneof_required=gar_source"`
-	AzureACRImageConfig *AzureACRConfig         `mapstructure:"azure_acr,omitempty" toml:"azure_acr,omitempty" jsonschema:"oneof_required=acr_source"`
-	PublicImageConfig   *PublicImageConfig      `mapstructure:"public,omitempty" toml:"public,omitempty" jsonschema:"oneof_required=public_source"`
-	Verification        *signature.Verification `mapstructure:"verification,omitempty" toml:"verification,omitempty"`
+	AWSECRImageConfig   *AWSECRConfig           `json:"AWSECRImageConfig" mapstructure:"aws_ecr,omitempty" toml:"aws_ecr,omitempty" jsonschema:"oneof_required=ecr_source"`
+	GCPGARImageConfig   *GCPGARConfig           `json:"GCPGARImageConfig" mapstructure:"gcp_gar,omitempty" toml:"gcp_gar,omitempty" jsonschema:"oneof_required=gar_source"`
+	AzureACRImageConfig *AzureACRConfig         `json:"AzureACRImageConfig" mapstructure:"azure_acr,omitempty" toml:"azure_acr,omitempty" jsonschema:"oneof_required=acr_source"`
+	PublicImageConfig   *PublicImageConfig      `json:"PublicImageConfig" mapstructure:"public,omitempty" toml:"public,omitempty" jsonschema:"oneof_required=public_source"`
+	Verification        *signature.Verification `json:"Verification" mapstructure:"verification,omitempty" toml:"verification,omitempty"`
 
-	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
-	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	BuildTimeout  string `json:"BuildTimeout" mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `json:"DeployTimeout" mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 }
 
 func (a AWSECRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

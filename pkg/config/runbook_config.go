@@ -28,55 +28,55 @@ const (
 )
 
 type RunbookConfig struct {
-	Name        string               `mapstructure:"name" toml:"name" jsonschema:"required"`
-	Description string               `mapstructure:"description,omitempty" toml:"description,omitempty"`
-	Readme      string               `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
-	Labels      map[string]string    `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
-	Steps       []*RunbookStepConfig `mapstructure:"steps" toml:"steps" jsonschema:"required"`
-	Inputs      []RunbookInput       `mapstructure:"input,omitempty" toml:"input"`
+	Name        string               `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
+	Description string               `json:"Description" mapstructure:"description,omitempty" toml:"description,omitempty"`
+	Readme      string               `json:"Readme" mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
+	Labels      map[string]string    `json:"Labels" mapstructure:"labels,omitempty" toml:"labels,omitempty"`
+	Steps       []*RunbookStepConfig `json:"Steps" mapstructure:"steps" toml:"steps" jsonschema:"required"`
+	Inputs      []RunbookInput       `json:"Inputs" mapstructure:"input,omitempty" toml:"input"`
 
-	References   []refs.Ref `mapstructure:"-" jsonschema:"-"`
-	Dependencies []string   `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
+	References   []refs.Ref `json:"References" mapstructure:"-" jsonschema:"-"`
+	Dependencies []string   `json:"Dependencies" mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
 
 	// DeprecationWarnings collects messages about legacy field usage observed during parse().
 	// Populated by parse(); consumed by callers (e.g. the CLI sync) to surface to the
-	DeprecationWarnings []string `mapstructure:"-" toml:"-" jsonschema:"-"`
+	DeprecationWarnings []string `json:"DeprecationWarnings" mapstructure:"-" toml:"-" jsonschema:"-"`
 }
 
 type RunbookStepConfig struct {
-	Name     string          `mapstructure:"name" toml:"name" jsonschema:"required"`
-	Type     RunbookStepType `mapstructure:"type" toml:"type" jsonschema:"required"`
-	PlanOnly bool            `mapstructure:"plan_only,omitempty" toml:"plan_only,omitempty"`
+	Name     string          `json:"Name" mapstructure:"name" toml:"name" jsonschema:"required"`
+	Type     RunbookStepType `json:"Type" mapstructure:"type" toml:"type" jsonschema:"required"`
+	PlanOnly bool            `json:"PlanOnly" mapstructure:"plan_only,omitempty" toml:"plan_only,omitempty"`
 
 	// For type = "component_deploy" / "component_tear_down"
-	ComponentName      string `mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
-	DeployDependents   bool   `mapstructure:"deploy_dependents,omitempty" toml:"deploy_dependents,omitempty"`
-	TearDownDependents bool   `mapstructure:"tear_down_dependents,omitempty" toml:"tear_down_dependents,omitempty"`
+	ComponentName      string `json:"ComponentName" mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
+	DeployDependents   bool   `json:"DeployDependents" mapstructure:"deploy_dependents,omitempty" toml:"deploy_dependents,omitempty"`
+	TearDownDependents bool   `json:"TearDownDependents" mapstructure:"tear_down_dependents,omitempty" toml:"tear_down_dependents,omitempty"`
 
 	// Legacy alias for DeployDependents — kept for back-compat with TOML configs
 	// written before the rename. Folded into DeployDependents in parse().
-	DeployDependenciesLegacy bool `mapstructure:"deploy_dependencies,omitempty" toml:"deploy_dependencies,omitempty"`
+	DeployDependenciesLegacy bool `json:"DeployDependenciesLegacy" mapstructure:"deploy_dependencies,omitempty" toml:"deploy_dependencies,omitempty"`
 
 	// For type = "sandbox_reprovision" — when true, only run the sandbox infra plan + apply
 	// and do NOT redeploy components on top.
-	SkipComponentDeploys bool `mapstructure:"skip_component_deploys,omitempty" toml:"skip_component_deploys,omitempty"`
+	SkipComponentDeploys bool `json:"SkipComponentDeploys" mapstructure:"skip_component_deploys,omitempty" toml:"skip_component_deploys,omitempty"`
 
 	// For type = "action" — reference existing action
-	ActionName string `mapstructure:"action_name,omitempty" toml:"action_name,omitempty"`
+	ActionName string `json:"ActionName" mapstructure:"action_name,omitempty" toml:"action_name,omitempty"`
 
 	// For type = "action" — inline action (same fields as ActionStepConfig)
-	Command        string            `mapstructure:"command,omitempty" toml:"command,omitempty" features:"template"`
-	InlineContents string            `mapstructure:"inline_contents,omitempty" toml:"inline_contents,omitempty" features:"get,template"`
-	EnvVarMap      map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
-	Timeout        string            `mapstructure:"timeout,omitempty" toml:"timeout,omitempty"`
-	Role           string            `mapstructure:"role,omitempty" toml:"role,omitempty"`
+	Command        string            `json:"Command" mapstructure:"command,omitempty" toml:"command,omitempty" features:"template"`
+	InlineContents string            `json:"InlineContents" mapstructure:"inline_contents,omitempty" toml:"inline_contents,omitempty" features:"get,template"`
+	EnvVarMap      map[string]string `json:"EnvVarMap" mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	Timeout        string            `json:"Timeout" mapstructure:"timeout,omitempty" toml:"timeout,omitempty"`
+	Role           string            `json:"Role" mapstructure:"role,omitempty" toml:"role,omitempty"`
 
-	Trigger    string                `mapstructure:"trigger,omitempty" toml:"trigger,omitempty"`
-	EventTypes []string              `mapstructure:"event_types,omitempty" toml:"event_types,omitempty"`
-	Filters    []TriggerFilterConfig `mapstructure:"filters,omitempty" toml:"filters,omitempty"`
-	MatchAll   bool                  `mapstructure:"match_all,omitempty" toml:"match_all,omitempty"`
+	Trigger    string                `json:"Trigger" mapstructure:"trigger,omitempty" toml:"trigger,omitempty"`
+	EventTypes []string              `json:"EventTypes" mapstructure:"event_types,omitempty" toml:"event_types,omitempty"`
+	Filters    []TriggerFilterConfig `json:"Filters" mapstructure:"filters,omitempty" toml:"filters,omitempty"`
+	MatchAll   bool                  `json:"MatchAll" mapstructure:"match_all,omitempty" toml:"match_all,omitempty"`
 
-	References []refs.Ref `mapstructure:"-" jsonschema:"-"`
+	References []refs.Ref `json:"References" mapstructure:"-" jsonschema:"-"`
 }
 
 func (r RunbookConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

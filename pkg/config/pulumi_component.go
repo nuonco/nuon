@@ -6,23 +6,23 @@ import (
 
 // PulumiComponentConfig is the configuration for a Pulumi component.
 type PulumiComponentConfig struct {
-	Runtime       string `mapstructure:"runtime" toml:"runtime" jsonschema:"required"`
-	PulumiVersion string `mapstructure:"pulumi_version,omitempty" toml:"pulumi_version,omitempty"`
+	Runtime       string `json:"Runtime" mapstructure:"runtime" toml:"runtime" jsonschema:"required"`
+	PulumiVersion string `json:"PulumiVersion" mapstructure:"pulumi_version,omitempty" toml:"pulumi_version,omitempty"`
 
-	ConfigMap map[string]string `mapstructure:"config,omitempty" toml:"config,omitempty"`
-	EnvVarMap map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
+	ConfigMap map[string]string `json:"ConfigMap" mapstructure:"config,omitempty" toml:"config,omitempty"`
+	EnvVarMap map[string]string `json:"EnvVarMap" mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
 
-	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
-	ConnectedRepo *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=public_repo"`
+	PublicRepo    *PublicRepoConfig    `json:"PublicRepo" mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
+	ConnectedRepo *ConnectedRepoConfig `json:"ConnectedRepo" mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=public_repo"`
 
-	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
+	DriftSchedule *string `json:"DriftSchedule" mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
-	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
-	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	BuildTimeout  string `json:"BuildTimeout" mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
+	DeployTimeout string `json:"DeployTimeout" mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 
-	MaxAutoRetries               *int  `mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
-	SkipNoops                    *bool `mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
-	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
+	MaxAutoRetries               *int  `json:"MaxAutoRetries" mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
+	SkipNoops                    *bool `json:"SkipNoops" mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
+	AutoApproveOnPoliciesPassing *bool `json:"AutoApproveOnPoliciesPassing" mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
 }
 
 func (p PulumiComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
