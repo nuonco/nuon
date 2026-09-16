@@ -45,16 +45,16 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
       wait; \
       echo "wipe-wait: $(($(date +%s) - WAIT))s"; \
       [ "$stream_status" -eq 0 ] && \
-      if [ "${GOCACHE_COMPACT}" = "true" ]; then \
-        find /go/pkg/build-cache -mindepth 2 -maxdepth 2 -exec touch -d "@0" {} +; \
-        touch /go/pkg/build-cache/.nuon-compact-since; \
-        date +%s > /go/pkg/build-cache/trim.txt; \
-      fi && \
       echo "${GOCACHE_S3_ETAG}" > /go/pkg/build-cache/.nuon-s3-etag; \
     elif [ -z "${GOCACHE_S3_URI}" ]; then \
       echo "WARNING: no Go cache seed available, this build compiles cold"; \
     else \
       echo "Go cache already current"; \
+    fi && \
+    if [ "${GOCACHE_COMPACT}" = "true" ]; then \
+      find /go/pkg/build-cache -mindepth 2 -maxdepth 2 -exec touch -d "@0" {} +; \
+      touch /go/pkg/build-cache/.nuon-compact-since; \
+      date +%s > /go/pkg/build-cache/trim.txt; \
     fi
 
 # --- Admin dashboard React SPA build ---
