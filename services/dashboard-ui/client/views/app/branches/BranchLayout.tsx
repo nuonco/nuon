@@ -3,6 +3,7 @@ import { Outlet, useMatch, useParams, useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { PageContent } from '@/components/layout/PageContent'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -151,6 +152,14 @@ const BranchTemplate = () => {
             identity={
               <>
                 <BranchVcsBadges repo={vcs?.repo} branch={vcs?.branch} />
+                {branch.managed_by ? (
+                  <LabelBadge
+                    labelKey="managed by"
+                    labelValue={branch.managed_by}
+                    size="sm"
+                    theme={branch.managed_by === 'config' ? 'brand' : 'default'}
+                  />
+                ) : null}
                 <Text variant="subtext" theme="info">
                   Last updated{' '}
                   <Time

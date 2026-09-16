@@ -19,7 +19,7 @@ export const Overview = () => (
       'Do not use it for install-scoped facts such as health or drift.',
     ]}
     rules={[
-      'The branch card reads the latest branch config: branch name, then the repository as an external link, then the config version.',
+      'The branch card reads the latest branch config: branch name, repository, config version, then the run cadence and its tag prefix or GitHub label when configured.',
       'The repository falls back to the VCS directory, unlinked, when no repository is set.',
       'Last update reads the latest run commit and renders nothing but an empty state when the branch has never run.',
       'An install count that is capped by pagination renders with a trailing plus.',
@@ -85,7 +85,10 @@ export const Default = () => (
 
 export const Empty = () => (
   <div className="p-8">
-    <AppBranchOverviewCards branch={{ id: 'br_main', name: 'main' }} installCount={0} />
+    <AppBranchOverviewCards
+      branch={{ id: 'br_main', name: 'main' }}
+      installCount={0}
+    />
   </div>
 )
 

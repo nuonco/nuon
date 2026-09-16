@@ -32,12 +32,23 @@ export const Branches = () => {
     <PageSection>
       <PageTitle segments={['Branches', app?.name]} />
       <Breadcrumbs breadcrumbs={breadcrumbs} />
-      <SectionHeader
-        title="Branches"
-        description="Manage app branches for version control and deployment"
-        actions={<CreateBranchButton variant="primary" />}
-      />
-      {hasNewAppIA ? <BranchCards shouldPoll /> : <BranchesTable shouldPoll />}
+      {hasNewAppIA ? (
+        <>
+          <div className="flex justify-end">
+            <CreateBranchButton variant="primary" />
+          </div>
+          <BranchCards shouldPoll />
+        </>
+      ) : (
+        <>
+          <SectionHeader
+            title="Branches"
+            description="Manage app branches for version control and deployment"
+            actions={<CreateBranchButton variant="primary" />}
+          />
+          <BranchesTable shouldPoll />
+        </>
+      )}
     </PageSection>
   )
 }
