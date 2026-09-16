@@ -184,6 +184,11 @@ export const Overview = () => (
         description: 'Clears a create error before retrying.',
       },
       {
+        name: 'onDiscard',
+        type: '() => void',
+        description: 'Clears the draft and leaves install setup.',
+      },
+      {
         name: 'onSubmit',
         type: '(values: ICreateInstallValues) => void',
         description: 'Creates the install.',

@@ -119,10 +119,41 @@ describe('Wizard', () => {
     expect(screen.getByText('Step 1 of 3')).toBeTruthy()
   })
 
-  test('opens a done step read-only from the stepper', () => {
-    renderWizard({ name: 'Payments', connected: true, provisioned: false })
+  test('edits a completed step and returns it to read-only', () => {
+    const onNameChange = () => {}
+    render(
+      <Wizard
+        descriptor={descriptor(onNameChange)}
+        state={{ name: 'Payments', connected: true, provisioned: false }}
+      />
+    )
 
     fireEvent.click(screen.getByRole('button', { name: '1. Name' }))
     expect(screen.getByLabelText('Name')).toHaveProperty('disabled', true)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit step' }))
+    expect(screen.getByLabelText('Name')).toHaveProperty('disabled', false)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Done editing' }))
+    expect(screen.getByLabelText('Name')).toHaveProperty('disabled', true)
+  })
+
+  test('runs the discard action', () => {
+    let discarded = false
+    render(
+      <Wizard
+        descriptor={descriptor()}
+        state={{ name: '', connected: false, provisioned: false }}
+        discardAction={{
+          children: 'Discard setup',
+          onClick: () => {
+            discarded = true
+          },
+        }}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard setup' }))
+    expect(discarded).toBe(true)
   })
 })

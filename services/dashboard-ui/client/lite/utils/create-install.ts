@@ -6,6 +6,7 @@ import type {
   TAppInputConfig,
   TCloudPlatform,
 } from '@/types'
+import { COMPONENT_OVERRIDE_INPUT_GROUP } from '@/utils/install-utils'
 import type { IInstallSetupInput } from '../components/organisms/InstallSetup/InstallSetup'
 
 export interface ICreateInstallInputValue {
@@ -87,15 +88,18 @@ export const installSetupInputs = (
   const all = inputConfig?.inputs ?? []
   if (!all.length) return []
 
-  return [...(inputConfig?.input_groups ?? [])].sort(byIndex).flatMap((group) =>
-    all
-      .filter((input) => input?.group_id === group?.id)
-      .sort(byIndex)
-      .flatMap((input) => {
-        const resolved = inputFromApi(input)
-        return resolved ? [resolved] : []
-      })
-  )
+  return [...(inputConfig?.input_groups ?? [])]
+    .filter((group) => group?.name !== COMPONENT_OVERRIDE_INPUT_GROUP)
+    .sort(byIndex)
+    .flatMap((group) =>
+      all
+        .filter((input) => input?.group_id === group?.id)
+        .sort(byIndex)
+        .flatMap((input) => {
+          const resolved = inputFromApi(input)
+          return resolved ? [resolved] : []
+        })
+    )
 }
 
 export const pickInstallConfig = (
@@ -107,6 +111,21 @@ export const pickInstallConfig = (
     if (config?.labels?.source === 'git-preview-run') return false
     return !requireUnbranched || !config?.app_branch_id
   })
+
+export const resolveInstallConfig = (
+  configs?: TAppConfig[],
+  selectedBranchId?: string
+): { config?: TAppConfig; branchId: string } => {
+  if (selectedBranchId) {
+    return { config: pickInstallConfig(configs), branchId: selectedBranchId }
+  }
+
+  const unbranched = pickInstallConfig(configs, true)
+  if (unbranched) return { config: unbranched, branchId: '' }
+
+  const latest = pickInstallConfig(configs)
+  return { config: latest, branchId: latest?.app_branch_id ?? '' }
+}
 
 export const buildCreateInstallBody = ({
   values,

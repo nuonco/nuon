@@ -5,12 +5,14 @@ export type TWizardStepStatus = 'done' | 'current' | 'upcoming'
 export interface IWizardStepContext<TState> {
   state: TState
   readOnly: boolean
+  editing: boolean
 }
 
 export interface IWizardStep<TState> {
   id: string
   label: string
   complete: (state: TState) => boolean
+  editable?: (state: TState) => boolean
   render: (context: IWizardStepContext<TState>) => ReactNode
 }
 

@@ -28,7 +28,7 @@ import {
   buildCreateInstallBody,
   installSetupInputs,
   normalizeInstallPlatform,
-  pickInstallConfig,
+  resolveInstallConfig,
   type ICreateInstallValues,
 } from '../../../utils/create-install'
 import {
@@ -224,7 +224,8 @@ export const InstallSetupContainer = () => {
           }),
     enabled: !!orgId && !!selectedAppId && !installId,
   })
-  const selectedConfig = pickInstallConfig(configList, !selectedBranchId)
+  const { config: selectedConfig, branchId: effectiveBranchId } =
+    resolveInstallConfig(configList, selectedBranchId)
   const { data: config, isLoading: configLoading } = useQuery({
     queryKey: [
       'app-config',
@@ -264,7 +265,10 @@ export const InstallSetupContainer = () => {
         orgId: orgId!,
         appId: selectedAppId,
         body: buildCreateInstallBody({
-          values,
+          values: {
+            ...values,
+            branchId: values.branchId || effectiveBranchId,
+          },
           platform,
           groupLabels: selectedGroup?.labels,
         }),
@@ -303,6 +307,7 @@ export const InstallSetupContainer = () => {
       onAppChange={setSelectedAppId}
       onBranchChange={setSelectedBranchId}
       onClearError={mutation.reset}
+      onDiscard={() => navigate(`/${orgId}/installs`)}
       onSubmit={(values) => mutation.mutate(values)}
     />
   )

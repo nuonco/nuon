@@ -12,12 +12,14 @@ export interface IWizard<TState>
   extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   descriptor: IWizardDescriptor<TState>
   state: TState
+  discardAction?: IButton
   exitAction?: IButton
 }
 
 export const Wizard = <TState,>({
   descriptor,
   state,
+  discardAction,
   exitAction,
   className,
   ...props
@@ -27,12 +29,14 @@ export const Wizard = <TState,>({
   const currentId = resolved.current?.id ?? steps.at(-1)?.id
   const currentIndex = steps.findIndex((step) => step.id === currentId)
   const [revisitedId, setRevisitedId] = useState<string>()
+  const [editingId, setEditingId] = useState<string>()
   const lastCurrentId = useRef(currentId)
 
   useEffect(() => {
     if (lastCurrentId.current === currentId) return
     lastCurrentId.current = currentId
     setRevisitedId(undefined)
+    setEditingId(undefined)
   }, [currentId])
 
   const revisitedIndex = steps.findIndex((step) => step.id === revisitedId)
@@ -43,22 +47,50 @@ export const Wizard = <TState,>({
       ? revisitedIndex
       : currentIndex
   const showing = steps[showingIndex]
-  const readOnly = resolved.statuses[showingIndex] !== 'current'
+  const canEdit = showing?.editable?.(state) ?? true
+  const editing = canEdit && showing?.id === editingId
+  const readOnly = resolved.statuses[showingIndex] !== 'current' && !editing
 
   return (
     <div className={cn('flex w-full flex-col gap-6', className)} {...props}>
-      <WizardStepper
-        steps={steps.map((step, index) => ({
-          id: step.id,
-          label: step.label,
-          status: resolved.statuses[index] ?? 'upcoming',
-        }))}
-        selectedId={showing?.id}
-        onSelect={(id) => setRevisitedId(id === currentId ? undefined : id)}
-      />
+      <div className="flex items-start justify-between gap-4">
+        <WizardStepper
+          steps={steps.map((step, index) => ({
+            id: step.id,
+            label: step.label,
+            status: resolved.statuses[index] ?? 'upcoming',
+          }))}
+          selectedId={showing?.id}
+          onSelect={(id) => {
+            setEditingId(undefined)
+            setRevisitedId(id === currentId ? undefined : id)
+          }}
+        />
+        {discardAction ? (
+          <Button
+            {...discardAction}
+            variant={discardAction.variant ?? 'ghost'}
+          />
+        ) : null}
+      </div>
       {showing ? (
         <Card className="flex flex-col gap-4">
-          {showing.render({ state, readOnly })}
+          {revisitedStatus === 'done' && canEdit ? (
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  setEditingId((current) =>
+                    current === showing.id ? undefined : showing.id
+                  )
+                }
+              >
+                {editing ? 'Done editing' : 'Edit step'}
+              </Button>
+            </div>
+          ) : null}
+          {showing.render({ state, readOnly, editing })}
         </Card>
       ) : null}
       {exitAction ? (

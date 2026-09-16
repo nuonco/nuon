@@ -31,6 +31,7 @@ describe('InstallSetup', () => {
     const onAppChange = mock()
     const onBranchChange = mock()
     const onClearError = mock()
+    const onDiscard = mock()
 
     render(
       <InstallSetup
@@ -70,6 +71,7 @@ describe('InstallSetup', () => {
         onAppChange={onAppChange}
         onBranchChange={onBranchChange}
         onClearError={onClearError}
+        onDiscard={onDiscard}
         onSubmit={() => {}}
       />
     )
@@ -83,6 +85,28 @@ describe('InstallSetup', () => {
     expect(onAppChange).toHaveBeenCalledWith('app_payments')
     expect(onBranchChange).toHaveBeenCalledWith('branch_main')
 
+    fireEvent.click(screen.getByRole('button', { name: '2. Install details' }))
+    expect(screen.getByLabelText('Install name')).toHaveProperty(
+      'disabled',
+      true
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit step' }))
+    expect(screen.getByLabelText('Install name')).toHaveProperty(
+      'disabled',
+      false
+    )
+    expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Done editing' }))
+    expect(screen.getByLabelText('Install name')).toHaveProperty(
+      'disabled',
+      true
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', { name: '3. Labels and inputs' })
+    )
     fireEvent.click(screen.getByRole('button', { name: 'Edit install name' }))
 
     const nameInput = screen.getByLabelText('Install name')
@@ -110,5 +134,9 @@ describe('InstallSetup', () => {
         values: { labels: Array<{ key: string; value: string }> }
       }>(orgId, wizard)?.values.values.labels
     ).toEqual([{ key: 'team', value: 'payments' }])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard setup' }))
+    expect(onDiscard).toHaveBeenCalledTimes(1)
+    expect(loadDraft(orgId, wizard)).toBeUndefined()
   })
 })

@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test'
+import type { TAppConfig } from '@/types'
 import {
   buildCreateInstallBody,
   installSetupInputs,
   isDuplicateInstallNameError,
+  resolveInstallConfig,
   normalizeInstallPlatform,
   pickInstallConfig,
 } from './create-install'
@@ -76,12 +78,60 @@ describe('create install helpers', () => {
     })
   })
 
+  test('falls back to the newest branch config when nothing is unbranched', () => {
+    const branched = [
+      { id: 'cfg_new', status: 'active', app_branch_id: 'branch_main' },
+      { id: 'cfg_old', status: 'active', app_branch_id: 'branch_stable' },
+    ] as TAppConfig[]
+
+    expect(resolveInstallConfig(branched)).toEqual({
+      config: branched[0],
+      branchId: 'branch_main',
+    })
+
+    const withUnbranched = [
+      ...branched,
+      { id: 'cfg_sync', status: 'active' },
+    ] as TAppConfig[]
+
+    expect(resolveInstallConfig(withUnbranched)).toEqual({
+      config: withUnbranched[2],
+      branchId: '',
+    })
+
+    expect(
+      resolveInstallConfig(
+        [
+          { id: 'cfg_branch', status: 'active', app_branch_id: 'branch_main' },
+        ] as TAppConfig[],
+        'branch_main'
+      )
+    ).toEqual({
+      config: {
+        id: 'cfg_branch',
+        status: 'active',
+        app_branch_id: 'branch_main',
+      },
+      branchId: 'branch_main',
+    })
+
+    expect(
+      resolveInstallConfig([{ id: 'cfg_bad', status: 'error' }] as TAppConfig[])
+    ).toEqual({ config: undefined, branchId: '' })
+  })
+
   test('reads inputs from the flat array the API populates', () => {
     expect(
       installSetupInputs({
         input_groups: [
           { id: 'group_advanced', index: 1, app_inputs: [] },
           { id: 'group_main', index: 0, app_inputs: [] },
+          {
+            id: 'group_overrides',
+            name: 'nuon_component_overrides',
+            index: 1_000_000,
+            app_inputs: [],
+          },
         ],
         inputs: [
           {
@@ -109,6 +159,11 @@ describe('create install helpers', () => {
             name: 'customer_only',
             group_id: 'group_main',
             source: 'customer',
+          },
+          {
+            name: 'nuon_component_override_v1_helm_values_6162',
+            group_id: 'group_overrides',
+            type: 'yaml',
           },
         ],
       })

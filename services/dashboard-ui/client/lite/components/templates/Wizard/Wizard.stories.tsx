@@ -52,9 +52,7 @@ const ConnectStep = ({
       Connect the branch
     </Text>
     <Text color="secondary">
-      {readOnly
-        ? 'The branch is connected.'
-        : 'Connect a branch to continue.'}
+      {readOnly ? 'The branch is connected.' : 'Connect a branch to continue.'}
     </Text>
     {readOnly ? null : (
       <button type="button" onClick={onConnect}>
@@ -101,7 +99,11 @@ const demoDescriptor = (
       label: 'Name',
       complete: (state) => state.name.trim().length > 0,
       render: ({ state, readOnly }) => (
-        <NameStep state={state} readOnly={readOnly} onNameChange={onNameChange} />
+        <NameStep
+          state={state}
+          readOnly={readOnly}
+          onNameChange={onNameChange}
+        />
       ),
     },
     {
@@ -139,6 +141,10 @@ const DemoWizard = ({ initial }: { initial: IDemoState }) => {
     <Wizard
       descriptor={descriptor}
       state={state}
+      discardAction={{
+        children: 'Discard setup',
+        onClick: () => {},
+      }}
       exitAction={{
         children: 'Continue to app',
         variant: 'primary',
@@ -152,7 +158,7 @@ export const Overview = () => (
   <ComponentDocs
     name="Wizard"
     tier="template"
-    summary="The setup template that derives the current step from server state and renders earlier steps read-only."
+    summary="The setup template that derives the current step from server state and lets users revisit or edit completed steps."
     use={[
       'Mount it from onboarding, app setup, and install setup once those flows supply a descriptor.',
     ]}
@@ -163,7 +169,8 @@ export const Overview = () => (
     ]}
     rules={[
       'The current step is the first whose complete callback returns false.',
-      'Earlier steps are done and render read-only; later steps are listed and unreachable.',
+      'Earlier steps open read-only until the user chooses Edit step; later steps are listed and unreachable.',
+      'Editing keeps later answers intact and Done editing returns the step to read-only.',
       'When every step is complete the wizard is finished and the exit action is enabled.',
       'State going backwards moves the current step back.',
       'The stepper is internal to Wizard and shows every step plus the total count.',
@@ -172,7 +179,8 @@ export const Overview = () => (
       {
         name: 'descriptor',
         type: 'IWizardDescriptor<TState>',
-        description: 'Ordered steps with complete predicates and render bodies.',
+        description:
+          'Ordered steps with complete predicates and render bodies.',
       },
       {
         name: 'state',
@@ -185,16 +193,25 @@ export const Overview = () => (
         description:
           'Shown throughout and enabled only when every step is complete.',
       },
+      {
+        name: 'discardAction',
+        type: 'IButton',
+        description: 'Optional action for abandoning the wizard.',
+      },
     ]}
   />
 )
 
 export const CurrentStep = () => (
-  <DemoWizard initial={{ name: 'Payments', connected: false, provisioned: false }} />
+  <DemoWizard
+    initial={{ name: 'Payments', connected: false, provisioned: false }}
+  />
 )
 
 export const ReadOnlyEarlierSteps = () => (
-  <DemoWizard initial={{ name: 'Payments', connected: true, provisioned: false }} />
+  <DemoWizard
+    initial={{ name: 'Payments', connected: true, provisioned: false }}
+  />
 )
 
 export const Finished = () => (

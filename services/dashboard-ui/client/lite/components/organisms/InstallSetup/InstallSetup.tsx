@@ -70,6 +70,7 @@ export interface IInstallSetup {
   onAppChange: (appId: string) => void
   onBranchChange: (branchId?: string) => void
   onClearError?: () => void
+  onDiscard?: () => void
   onSubmit: (values: ICreateInstallValues) => void
 }
 
@@ -352,6 +353,7 @@ export const InstallSetup = ({
   onAppChange,
   onBranchChange,
   onClearError,
+  onDiscard,
   onSubmit,
 }: IInstallSetup) => {
   const [initialDraft] = useState(() =>
@@ -457,7 +459,8 @@ export const InstallSetup = ({
           label: 'App',
           complete: (current) =>
             current.created || (current.app && Boolean(current.values.appId)),
-          render: ({ readOnly }) => (
+          editable: (current) => !current.created,
+          render: ({ readOnly, editing }) => (
             <div className="flex flex-col gap-5">
               <StepHeading
                 title="Select app"
@@ -517,7 +520,7 @@ export const InstallSetup = ({
                 </form.Field>
               ) : null}
               <StepAction
-                readOnly={readOnly}
+                readOnly={readOnly || editing}
                 disabled={!values.appId}
                 onClick={() =>
                   setProgress((current) => ({ ...current, app: true }))
@@ -535,7 +538,8 @@ export const InstallSetup = ({
               detailSchema(platform, requireTargetAccount).safeParse(
                 current.values
               ).success),
-          render: ({ readOnly }) => {
+          editable: (current) => !current.created,
+          render: ({ readOnly, editing }) => {
             const copy = LOCATION_COPY[platform]
             return (
               <div className="flex flex-col gap-5">
@@ -625,7 +629,7 @@ export const InstallSetup = ({
                   </form.Field>
                 </div>
                 <StepAction
-                  readOnly={readOnly}
+                  readOnly={readOnly || editing}
                   disabled={!detailsValid || nameTaken}
                   onClick={() =>
                     setProgress((current) => ({
@@ -642,6 +646,7 @@ export const InstallSetup = ({
           id: 'labels-inputs',
           label: 'Labels and inputs',
           complete: (current) => current.created,
+          editable: (current) => !current.created,
           render: ({ readOnly }) => (
             <div className="flex flex-col gap-6">
               <StepHeading
@@ -898,7 +903,23 @@ export const InstallSetup = ({
       noValidate
       onSubmit={(event) => event.preventDefault()}
     >
-      <Wizard descriptor={descriptor} state={state} />
+      <Wizard
+        descriptor={descriptor}
+        state={state}
+        discardAction={
+          onDiscard && !install
+            ? {
+                children: 'Discard setup',
+                onClick: () => {
+                  if (persistence) {
+                    clearDraft(persistence.orgId, persistence.wizard)
+                  }
+                  onDiscard()
+                },
+              }
+            : undefined
+        }
+      />
     </form>
   )
 }
