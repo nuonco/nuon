@@ -284,7 +284,6 @@ test('adds glass chrome after content scrolls', () => {
   )
   const header = screen.getByRole('banner')
   const sidebar = screen.getByRole('complementary')
-  const statusBar = screen.getByRole('contentinfo')
 
   expect(container.querySelector('[data-shell-background]')).toBeTruthy()
   expect(header.classList.contains('!bg-transparent')).toBe(true)
@@ -292,9 +291,7 @@ test('adds glass chrome after content scrolls', () => {
   expect(
     sidebar.classList.contains('shadow-[var(--card-shadow-floating)]')
   ).toBe(true)
-  expect(
-    statusBar.classList.contains('shadow-[var(--card-shadow-floating)]')
-  ).toBe(true)
+  expect(screen.queryByRole('contentinfo')).toBeNull()
 
   Object.defineProperty(scrollRegion!, 'scrollTop', {
     configurable: true,
@@ -306,5 +303,4 @@ test('adds glass chrome after content scrolls', () => {
   expect(
     header.classList.contains('shadow-[var(--card-shadow-floating)]')
   ).toBe(true)
-  expect(statusBar.textContent).toContain('Connected')
 })
