@@ -18,9 +18,15 @@ RUN --mount=type=cache,target=/var/cache/apt,id=gobase-apt \
     make \
     git \
     curl \
+    zstd \
     protobuf-compiler \
     libx11-dev \
     jq && rm -rf /var/lib/apt/lists/*
+
+ARG S5CMD_VERSION=2.2.2
+RUN curl -sSL -o /tmp/s5cmd.tar.gz https://github.com/peak/s5cmd/releases/download/v${S5CMD_VERSION}/s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz && \
+    tar -xz -C /usr/local/bin -f /tmp/s5cmd.tar.gz s5cmd && \
+    rm /tmp/s5cmd.tar.gz
 
 # Get golangci-lint from the official image
 FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/golangci/golangci-lint:v2.5.0 AS golangci
