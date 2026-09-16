@@ -174,18 +174,6 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		}
 	}
 
-	// image-backed actions require every step to use inline_contents
-	if c.Image != "" {
-		for _, step := range c.Steps {
-			if step.InlineContents == "" {
-				return stderr.ErrUser{
-					Err:         errors.New("image-backed actions require inline_contents on every step"),
-					Description: fmt.Sprintf("step %s must use inline_contents because the action sets an image (command and repo steps are not supported with image-backed actions)", step.Name),
-				}
-			}
-		}
-	}
-
 	// validate execution methods: inline_contents is mutually exclusive, command can be used with VCS, only one VCS allowed
 	for _, step := range c.Steps {
 		// Check if multiple VCS configs are set
