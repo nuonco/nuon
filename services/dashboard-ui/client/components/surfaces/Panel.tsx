@@ -17,6 +17,7 @@ type TPanelSize = 'default' | 'half' | '3/4' | 'full'
 export interface IPanel extends React.HTMLAttributes<HTMLDivElement> {
   childrenClassName?: string
   defaultExpanded?: boolean
+  footer?: React.ReactNode
   heading?: React.ReactNode
   headerClassName?: string
   isVisible?: boolean
@@ -33,6 +34,7 @@ export const PanelBase = ({
   children,
   childrenClassName,
   defaultExpanded,
+  footer,
   heading,
   headerClassName,
   isVisible = false,
@@ -68,7 +70,7 @@ export const PanelBase = ({
         />
         <section
           className={cn(
-            'panel fixed h-screen top-0 right-0 border flex flex-col drop-shadow-2xl overflow-y-auto overflow-x-hidden',
+            'panel fixed h-screen top-0 right-0 border flex flex-col drop-shadow-2xl overflow-hidden',
             'bg-white dark:bg-dark-grey-900',
             {
               'w-screen md:w-104': size === 'default',
@@ -153,12 +155,17 @@ export const PanelBase = ({
           </header>
           <div
             className={cn(
-              'px-4 md:px-6 pb-4 md:pb-6 flex flex-col flex-auto gap-4 md:gap-6',
+              'px-4 md:px-6 pb-4 md:pb-6 flex flex-col flex-auto min-h-0 overflow-y-auto gap-4 md:gap-6',
               childrenClassName
             )}
           >
             {children}
           </div>
+          {footer ? (
+            <footer className="flex shrink-0 items-center justify-end gap-4 border-t px-4 md:px-6 py-4 bg-white dark:bg-dark-grey-900">
+              {footer}
+            </footer>
+          ) : null}
         </section>
       </TransitionDiv>
     </>
