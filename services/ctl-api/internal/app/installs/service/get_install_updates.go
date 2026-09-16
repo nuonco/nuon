@@ -36,11 +36,11 @@ type InstallInputsUpdate struct {
 }
 
 type InstallStackUpdate struct {
-	VersionID string                           `json:"version_id"`
-	Status    app.CompositeStatus              `json:"status"`
-	RoleDiff  *app.StackVersionRunRoleDiff     `json:"role_diff,omitempty"`
-	InputDiff *app.StackVersionRunInputDiff    `json:"input_diff,omitempty"`
-	RunType   app.StackVersionRunType          `json:"run_type,omitempty"`
+	VersionID string                        `json:"version_id"`
+	Status    app.CompositeStatus           `json:"status"`
+	RoleDiff  *app.StackVersionRunRoleDiff  `json:"role_diff,omitempty"`
+	InputDiff *app.StackVersionRunInputDiff `json:"input_diff,omitempty"`
+	RunType   app.StackVersionRunType       `json:"run_type,omitempty"`
 }
 
 type InstallConfigUpdate struct {
@@ -61,11 +61,11 @@ type InstallUpdate struct {
 }
 
 type InstallUpdatesResponse struct {
-	Updates             []InstallUpdate       `json:"updates"`
-	CurrentAppBranchRun *app.AppBranchRun     `json:"current_app_branch_run,omitempty"`
-	Page                int                   `json:"page"`
-	Limit               int                   `json:"limit"`
-	HasMore             bool                  `json:"has_more"`
+	Updates             []InstallUpdate   `json:"updates"`
+	CurrentAppBranchRun *app.AppBranchRun `json:"current_app_branch_run,omitempty"`
+	Page                int               `json:"page"`
+	Limit               int               `json:"limit"`
+	HasMore             bool              `json:"has_more"`
 }
 
 // @ID                    GetInstallUpdates
@@ -73,6 +73,7 @@ type InstallUpdatesResponse struct {
 // @Description           Returns app config, input, stack, and install config updates in reverse chronological order.
 // @Param                 install_id path string true "install ID"
 // @Param                 page query int false "page number" Default(0)
+// @Param                 offset query int false "offset of results to return" Default(0)
 // @Param                 limit query int false "page size" Default(20)
 // @Tags                  installs
 // @Produce               json
@@ -91,9 +92,15 @@ func (s *service) GetInstallUpdates(ctx *gin.Context) {
 		return
 	}
 
-	page := queryInt(ctx, "page", 0, 0, 10_000)
 	limit := queryInt(ctx, "limit", 20, 1, 100)
-	response, err := s.getInstallUpdates(ctx, org.ID, ctx.Param("install_id"), page, limit)
+	page := queryInt(ctx, "page", 0, 0, 10_000)
+	offset := queryInt(ctx, "offset", 0, 0, 1_000_000)
+	if ctx.Query("page") != "" {
+		offset = page * limit
+	} else {
+		page = offset / limit
+	}
+	response, err := s.getInstallUpdates(ctx, org.ID, ctx.Param("install_id"), page, offset, limit)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install updates: %w", err))
 		return
@@ -112,8 +119,8 @@ func queryInt(ctx *gin.Context, key string, fallback, minValue, maxValue int) in
 	return value
 }
 
-func (s *service) getInstallUpdates(ctx *gin.Context, orgID, installID string, page, limit int) (*InstallUpdatesResponse, error) {
-	fetchLimit := (page + 1) * limit + 1
+func (s *service) getInstallUpdates(ctx *gin.Context, orgID, installID string, page, offset, limit int) (*InstallUpdatesResponse, error) {
+	fetchLimit := offset + limit + 1
 	updates := make([]InstallUpdate, 0, fetchLimit*4)
 
 	var appVersions []app.InstallAppConfigVersion
@@ -223,7 +230,7 @@ func (s *service) getInstallUpdates(ctx *gin.Context, orgID, installID string, p
 	sort.SliceStable(updates, func(i, j int) bool {
 		return updates[i].CreatedAt.After(updates[j].CreatedAt)
 	})
-	start := page * limit
+	start := offset
 	if start > len(updates) {
 		start = len(updates)
 	}

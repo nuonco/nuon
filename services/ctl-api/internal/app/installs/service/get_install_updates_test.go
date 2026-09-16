@@ -48,4 +48,15 @@ func (s *InstallsServiceTestSuite) TestGetInstallUpdatesPaginatesMergedFeed() {
 	require.NoError(s.T(), json.Unmarshal(secondPage.Body.Bytes(), &secondResponse))
 	require.Len(s.T(), secondResponse.Updates, 1)
 	require.NotEqual(s.T(), firstResponse.Updates[0].ID, secondResponse.Updates[0].ID)
+
+	offsetPage := s.makeRequest(
+		http.MethodGet,
+		fmt.Sprintf("/v1/installs/%s/updates?limit=1&offset=1", install.ID),
+		nil,
+	)
+	require.Equal(s.T(), http.StatusOK, offsetPage.Code, offsetPage.Body.String())
+	var offsetResponse InstallUpdatesResponse
+	require.NoError(s.T(), json.Unmarshal(offsetPage.Body.Bytes(), &offsetResponse))
+	require.Len(s.T(), offsetResponse.Updates, 1)
+	require.Equal(s.T(), secondResponse.Updates[0].ID, offsetResponse.Updates[0].ID)
 }

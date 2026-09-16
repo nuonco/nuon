@@ -28,4 +28,3 @@ func TestParseInstallInputs(t *testing.T) {
 		})
 	}
 }
-
