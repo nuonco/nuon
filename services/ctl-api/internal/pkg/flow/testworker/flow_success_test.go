@@ -72,9 +72,13 @@ func (e *FlowTestSuite) TestSequentialGroupSuccess() {
 		{Name: "g2-step2", Idx: 400, GroupIdx: 2, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 	})
+	e.phase("fixtures")
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
+	e.phase("enqueue")
+
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
+	e.phase("db-success")
 
 	// Verify all steps completed
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
@@ -82,5 +86,8 @@ func (e *FlowTestSuite) TestSequentialGroupSuccess() {
 		require.Equal(e.T(), app.StatusSuccess, step.Status.Status,
 			"step %s should be success, got %s", step.Name, step.Status.Status)
 	}
+	e.phase("assertions")
+
 	e.assertTemporalDrained(ctx, flw.ID)
+	e.phase("drain")
 }
