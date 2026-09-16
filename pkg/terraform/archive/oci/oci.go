@@ -8,9 +8,10 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/nuonco/nuon/pkg/terraform/archive"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
+
+	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
 // Package oci exposes an archive that loads a terraform archive from an oci artifact

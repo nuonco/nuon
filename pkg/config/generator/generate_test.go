@@ -5,8 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nuonco/nuon/pkg/config"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 func NewTestingConfigStructure(name string) *ConfigStructure {

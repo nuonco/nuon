@@ -6,9 +6,10 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {

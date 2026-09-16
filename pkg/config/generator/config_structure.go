@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/invopop/jsonschema"
+
 	"github.com/nuonco/nuon/pkg/config"
 )
 

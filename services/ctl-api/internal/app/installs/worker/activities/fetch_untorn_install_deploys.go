@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type FetchUntornInstallDeploysRequest struct {

@@ -48,6 +48,7 @@ func (h *Helpers) ListPreviewSources(ctx context.Context, branch *app.AppBranch,
 			PerPage: 100,
 		},
 	}
+	preview := branchPreviewConfigOrDefault(config)
 	for {
 		prs, resp, err := client.PullRequests.List(ctx, owner, repo, prOpts)
 		if err != nil {
@@ -55,6 +56,10 @@ func (h *Helpers) ListPreviewSources(ctx context.Context, branch *app.AppBranch,
 		}
 
 		for _, pr := range prs {
+			if pr.GetDraft() && preview.IgnoreDrafts {
+				continue
+			}
+
 			headRef := ""
 			headSHA := ""
 			if pr.Head != nil {

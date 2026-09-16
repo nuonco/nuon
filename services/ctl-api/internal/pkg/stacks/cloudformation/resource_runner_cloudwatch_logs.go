@@ -6,6 +6,7 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 	"github.com/awslabs/goformation/v7/cloudformation/logs"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 

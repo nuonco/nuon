@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -37,11 +38,12 @@ type ComputeAndStoreAppBranchRunComparisonOutput struct {
 
 // ConfigDiffWithSourceOutput is FullDiff enriched with source_changed flags.
 type ConfigDiffWithSourceOutput struct {
-	ConfigFile string                        `json:"config_file"`
-	Additions  int                           `json:"additions"`
-	Removals   int                           `json:"removals"`
-	Changed    int                           `json:"changed"`
-	Sections   []ConfigDiffSectionWithSource `json:"sections"`
+	ConfigFile             string                        `json:"config_file"`
+	Additions              int                           `json:"additions"`
+	Removals               int                           `json:"removals"`
+	Changed                int                           `json:"changed"`
+	ComponentSourceChanged map[string]bool               `json:"component_source_changed,omitempty"`
+	Sections               []ConfigDiffSectionWithSource `json:"sections"`
 }
 
 type ConfigDiffSectionWithSource struct {
@@ -80,19 +82,35 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 		return out, nil
 	}
 
+	var headRun app.AppBranchRun
+	if err := a.db.WithContext(ctx).
+		Preload("VCSConnectionCommit").
+		Preload("Preview").
+		First(&headRun, "id = ?", input.RunID).Error; err != nil {
+		return nil, fmt.Errorf("unable to load head run: %w", err)
+	}
+
+	if comparison.BaseRunID == nil || *comparison.BaseRunID == "" {
+		baseRun, findErr := a.helpers.FindBaseAppBranchRunForHead(ctx, &headRun)
+		if findErr == nil {
+			comparison.BaseRunID = &baseRun.ID
+			if err := a.db.WithContext(ctx).
+				Model(&comparison).
+				Select("base_run_id").
+				Updates(&comparison).Error; err != nil {
+				return nil, fmt.Errorf("unable to persist comparison base run: %w", err)
+			}
+		} else if findErr != gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("unable to resolve comparison base run: %w", findErr)
+		}
+	}
+
 	if comparison.BaseRunID == nil || *comparison.BaseRunID == "" {
 		out.Skipped = true
 		out.SkipReason = "no base run"
 		return out, nil
 	}
 	out.BaseRunID = *comparison.BaseRunID
-
-	var headRun app.AppBranchRun
-	if err := a.db.WithContext(ctx).
-		Preload("VCSConnectionCommit").
-		First(&headRun, "id = ?", input.RunID).Error; err != nil {
-		return nil, fmt.Errorf("unable to load head run: %w", err)
-	}
 
 	var baseRun app.AppBranchRun
 	if err := a.db.WithContext(ctx).
@@ -171,13 +189,13 @@ func (a *Activities) ComputeAndStoreAppBranchRunComparison(ctx context.Context, 
 	}
 	out.FullDiffStored = true
 
-	componentDirs, dirErr := a.loadComponentDirectories(ctx, headRun.AppConfigID)
+	componentSources, dirErr := a.loadComponentSources(ctx, headRun.AppConfigID)
 	if dirErr != nil {
-		a.l.Warn("unable to load component directories for source_changed", zap.Error(dirErr))
-		componentDirs = map[string]string{}
+		a.l.Warn("unable to load component sources for source_changed", zap.Error(dirErr))
+		componentSources = nil
 	}
 
-	configDiff := enrichConfigDiffWithSourceChanged(fullDiff, componentDirs, changedPaths)
+	configDiff := enrichConfigDiffWithSourceChanged(fullDiff, componentSources, branchRepo(branch), changedPaths)
 	if err := a.uploadComparisonBlob(ctx, comparison.ID, "config_diff", configDiff, &comparison.ConfigDiff); err != nil {
 		return nil, fmt.Errorf("unable to store config diff blob: %w", err)
 	}
@@ -198,6 +216,20 @@ func runCommitSHA(run *app.AppBranchRun) string {
 		return run.VCSConnectionCommit.SHA
 	}
 	return run.HeadSHA
+}
+
+func branchRepo(branch *app.AppBranch) string {
+	if branch == nil || len(branch.Configs) == 0 {
+		return ""
+	}
+	cfg := branch.Configs[0]
+	if cfg.ConnectedGithubVCSConfig != nil {
+		return cfg.ConnectedGithubVCSConfig.Repo
+	}
+	if cfg.PublicGitVCSConfig != nil {
+		return cfg.PublicGitVCSConfig.Repo
+	}
+	return ""
 }
 
 func branchVCSConfigID(branch *app.AppBranch) string {
@@ -287,7 +319,7 @@ func (a *Activities) persistComparisonBlobs(ctx context.Context, comparison *app
 	return nil
 }
 
-func (a *Activities) loadComponentDirectories(ctx context.Context, appConfigID string) (map[string]string, error) {
+func (a *Activities) loadComponentSources(ctx context.Context, appConfigID string) ([]componentSource, error) {
 	var conns []app.ComponentConfigConnection
 	err := a.db.WithContext(ctx).
 		Preload("Component").
@@ -307,7 +339,7 @@ func (a *Activities) loadComponentDirectories(ctx context.Context, appConfigID s
 		return nil, err
 	}
 
-	out := make(map[string]string, len(conns))
+	out := make([]componentSource, 0, len(conns))
 	for i := range conns {
 		c := &conns[i]
 		name := c.ComponentName
@@ -317,28 +349,25 @@ func (a *Activities) loadComponentDirectories(ctx context.Context, appConfigID s
 		if name == "" {
 			continue
 		}
-		dir := ""
+		src := componentSource{Name: name}
 		if c.ConnectedGithubVCSConfig != nil {
-			dir = c.ConnectedGithubVCSConfig.Directory
+			src.Repo = c.ConnectedGithubVCSConfig.Repo
+			src.Directory = c.ConnectedGithubVCSConfig.Directory
 		} else if c.PublicGitVCSConfig != nil {
-			dir = c.PublicGitVCSConfig.Directory
+			src.Repo = c.PublicGitVCSConfig.Repo
+			src.Directory = c.PublicGitVCSConfig.Directory
 		}
 		if c.KubernetesManifestComponentConfig != nil &&
 			c.KubernetesManifestComponentConfig.Kustomize != nil &&
 			c.KubernetesManifestComponentConfig.Kustomize.Path != "" {
 			kustomizePath := c.KubernetesManifestComponentConfig.Kustomize.Path
-			if dir == "." || dir == "" {
-				dir = kustomizePath
+			if src.Directory == "." || src.Directory == "" {
+				src.Directory = kustomizePath
 			} else {
-				dir = strings.TrimSuffix(dir, "/") + "/" + strings.TrimPrefix(kustomizePath, "./")
+				src.Directory = strings.TrimSuffix(src.Directory, "/") + "/" + strings.TrimPrefix(kustomizePath, "./")
 			}
 		}
-		// Omit missing / repo-root "." so inputs-only git changes do not
-		// mark every component source_changed (enrich skips missing names).
-		if normalizeRepoPath(dir) == "" {
-			continue
-		}
-		out[name] = dir
+		out = append(out, src)
 	}
 	return out, nil
 }
