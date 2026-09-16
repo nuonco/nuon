@@ -143,7 +143,7 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 		return nil, markSyncFailed(ctx, deps.DB, &appConfig, err)
 	}
 
-	if err := provisionDeferredQueues(ctx, deps, &result); err != nil {
+	if err := provisionDeferredQueues(ctx, deps, req.AppID, &result); err != nil {
 		return nil, markSyncFailed(ctx, deps.DB, &appConfig, err)
 	}
 
@@ -152,8 +152,28 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 
 // Queue creation starts Temporal workflows, so the sync transaction defers it to
 // here. It lives in Run rather than in each caller so no caller can skip it.
-func provisionDeferredQueues(ctx context.Context, deps RunDeps, result *RunResult) error {
+func provisionDeferredQueues(ctx context.Context, deps RunDeps, appID string, result *RunResult) error {
 	queueClient := deps.ComponentHelpers.QueueClient()
+
+	// Signals enqueued inside the sync transaction (e.g. the custom-stacks
+	// upload) were persisted but never notified — EnqueueSignalInTransaction
+	// cannot wake the processor for an uncommitted row. Look up the app queue's
+	// un-enqueued signals and notify them now; without this they only run when
+	// the enqueuer sweep happens to find them.
+	appsQueue, err := queueClient.GetQueueByOwner(ctx, appID, "apps")
+	if err != nil {
+		return fmt.Errorf("unable to get apps queue for app %s: %w", appID, err)
+	}
+	var unnotified []app.QueueSignal
+	if res := deps.DB.WithContext(ctx).
+		Select("id").
+		Where("queue_id = ? AND enqueued = ?", appsQueue.ID, false).
+		Find(&unnotified); res.Error != nil {
+		return fmt.Errorf("unable to list un-enqueued signals for app %s: %w", appID, res.Error)
+	}
+	for _, sig := range unnotified {
+		queueClient.NotifySignal(sig.ID)
+	}
 
 	for _, componentID := range result.ComponentsCreated {
 		if _, err := deps.ComponentHelpers.EnsureComponentQueues(ctx, componentID); err != nil {
