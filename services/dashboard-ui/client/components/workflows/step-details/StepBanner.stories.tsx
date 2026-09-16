@@ -30,6 +30,35 @@ export const Error = () => (
   />
 )
 
+const logLine = (level: string, message: string) =>
+  `{"level":"${level}","module":"terraform.ui","timestamp":"2026-01-01T00:00:00Z","resource":{"addr":"acme_widget.example","implied_provider":"acme","resource_type":"acme_widget","resource_name":"example"},"message":"${message}"}`
+
+const longUnbrokenDescription = [
+  'Step encountered an error: job did not finish successfully:',
+  logLine('info', 'acme_widget.example: Destroying...'),
+  logLine('error', 'acme_widget.example: deletion denied by policy acme/example'),
+].join(' ')
+
+export const ErrorWithLongUnbrokenDescription = () => (
+  <StepBanner
+    step={
+      {
+        ...baseStep,
+        name: 'teardown apply plan acme-widgets',
+        retryable: true,
+        skippable: true,
+        status: {
+          status: 'failed-pending-retry',
+          status_human_description: longUnbrokenDescription,
+          history: [],
+        },
+      } as TWorkflowStep
+    }
+    planOnly
+    onViewDetails={() => alert('view details')}
+  />
+)
+
 const terraformCompositeError = {
   version: 1,
   type: 'terraform.error',
