@@ -8,7 +8,7 @@ import (
 
 func WithOverrideTable(name string) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.InstanceSet(views.DisableViewsKey, true).Table(name)
+		return db.InstanceSet(views.DisableViewsKey, true).Table(views.RewriteName(db, name))
 	}
 }
 
