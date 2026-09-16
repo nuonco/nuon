@@ -26,6 +26,7 @@ export const Overview = () => (
       'Color is the default.',
       'Unknown platforms use the Phosphor question mark.',
       'Icon-only display includes a keyboard-accessible tooltip.',
+      'Turn the tooltip off inside buttons, options and other interactive rows, which cannot contain a focusable child; the provider name stays available to screen readers.',
       'The mark is sized in em, so it follows the surrounding text unless iconSize says otherwise.',
     ]}
     props={[
@@ -51,6 +52,13 @@ export const Overview = () => (
         type: 'number | string',
         default: "'1em'",
         description: 'Size of the provider mark, in pixels or any CSS length.',
+      },
+      {
+        name: 'tooltip',
+        type: 'boolean',
+        default: 'true',
+        description:
+          'Wraps icon-only display in a focusable tooltip. Turn off inside interactive containers.',
       },
     ]}
   />
@@ -79,6 +87,20 @@ export const Icons = () => (
         key={platform}
         platform={platform}
         display="icon"
+        iconSize={24}
+      />
+    ))}
+  </div>
+)
+
+export const IconsWithoutTooltip = () => (
+  <div className="flex items-center gap-6 p-8">
+    {PLATFORMS.map((platform) => (
+      <CloudPlatform
+        key={platform}
+        platform={platform}
+        display="icon"
+        tooltip={false}
         iconSize={24}
       />
     ))}

@@ -106,6 +106,12 @@ export const Overview = () => (
         description: 'Moves the page window.',
       },
       {
+        name: 'incompleteIds',
+        type: 'ReadonlySet<string>',
+        description:
+          'App ids whose setup is still incomplete, from isWizardComplete.',
+      },
+      {
         name: 'loading',
         type: 'boolean',
         default: 'false',
@@ -134,6 +140,14 @@ export const Empty = () => <AppsTable {...props} apps={[]} />
 
 export const ErrorState = () => (
   <AppsTable {...props} apps={[]} error={new Error('Request failed')} />
+)
+
+export const SetupIncomplete = () => (
+  <AppsTable
+    {...props}
+    apps={APPS}
+    incompleteIds={new Set(['app_internal_tools'])}
+  />
 )
 
 export const NextPage = () => (
