@@ -164,16 +164,18 @@ live inside a project directory.
 
 ## Upgrade Flow
 
-`Upgrade` only works for compiled extensions installed from a release:
+`Upgrade` follows the same asset-then-clone split as `Install`. Local installs (`repo` prefix `local:`) are rejected.
 
 1. Fetches `getLatestRelease` for the extension's repo.
-2. Compares `release.TagName` against the installed `Tag`.
-3. If different, downloads the new binary (with archive extraction) and updates `manifest.json`.
+2. If a matching platform asset exists, this is a compiled upgrade:
+   - Compares `release.TagName` against the installed `Tag` (skipped with `--force`).
+   - Downloads the new binary (with archive extraction) and updates `manifest.json`.
+3. If there is no matching platform asset (python/script clones, pre-release tags, empty `assets`), the extension
+   directory is replaced via `installByClone` of the default branch — the same path as an unpinned install. GitHub
+   release tags are not treated as "already up to date" here, because they stamp the clone rather than identifying its
+   SHA. `InstalledAt` is preserved; `UpdatedAt` and version come from the new clone.
 
 `UpgradeAll` iterates all installed extensions and calls `Upgrade` on each.
-
-Interpreted extensions (script/python) installed via clone do not have an upgrade path — they should be removed and
-re-installed.
 
 ## Execution (`Exec`)
 
@@ -342,9 +344,9 @@ tar tzf /tmp/nuon-ext-api-darwin-arm64.tar.gz
    in addition to the bare binary name. If you add support for a new archive format, update both `findReleaseAsset`
    (matching) and `downloadAndExtractBinary` (extraction).
 
-2. **`Upgrade` shares the same asset-matching logic.** If you change `findReleaseAsset` or archive extraction in
-   `install.go`, make sure `upgrade.go` stays in sync — it calls `findReleaseAsset` and `downloadAndExtractBinary`
-   directly.
+2. **`Upgrade` shares install's asset-then-clone split.** If you change `findReleaseAsset`, archive extraction, or
+   `installByClone` in `install.go`, make sure `upgrade.go` stays in sync — compiled upgrades call
+   `findReleaseAsset` and `downloadAndExtractBinary`; clone-based upgrades call `installByClone`.
 
 3. **No GitHub authentication.** All API calls are unauthenticated. Private extension repos won't work. The 60 req/hour
    rate limit can be hit during development — if you get 403s, wait or add a `GITHUB_TOKEN` header (not currently
