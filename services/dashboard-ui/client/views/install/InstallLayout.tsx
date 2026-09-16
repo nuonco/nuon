@@ -17,7 +17,6 @@ import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { PageSection } from '@/components/layout/PageSection'
-import { DeprovisionBanner } from '@/components/installs/DeprovisionBanner'
 import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import {
@@ -248,7 +247,6 @@ const InstallTemplate = () => {
         ) : (
           <>
             <PageHeader>
-              <DeprovisionBanner />
               <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
                 <HeadingGroup className="gap-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
