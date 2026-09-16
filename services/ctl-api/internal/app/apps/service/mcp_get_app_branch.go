@@ -43,9 +43,9 @@ type mcpAppRef struct {
 }
 
 type mcpAppBranchOverview struct {
-	ID        string                   `json:"id"`
-	Name      string                   `json:"name"`
-	ManagedBy string                   `json:"managed_by"`
+	ID        string                  `json:"id"`
+	Name      string                  `json:"name"`
+	ManagedBy string                  `json:"managed_by"`
 	RunConfig *app.AppBranchRunConfig `json:"run_config,omitempty"`
 }
 
