@@ -18,7 +18,6 @@ import {
 } from '../../../providers/dashboard-shell-provider'
 import { ShellBackground } from '../../atoms/ShellBackground'
 import type { INavItem } from '../../molecules/NavLink'
-import { Card } from '../../atoms/Card'
 import { DashboardHeader } from '../../organisms/DashboardHeader'
 import { DashboardSidebar } from '../../organisms/DashboardSidebar'
 
@@ -46,7 +45,7 @@ const DashboardShellLayout = ({
   userMenu,
   headerLeading,
   headerActions,
-  statusBar,
+  statusBar: _statusBar,
   children,
   contentClassName,
   className,
@@ -146,19 +145,6 @@ const DashboardShellLayout = ({
           </main>
         </div>
       </div>
-      {statusBar ? (
-        <div className="relative z-10 shrink-0 px-4 pb-4">
-          <Card
-            as="footer"
-            padding="none"
-            blur="lg"
-            shadow="floating"
-            className="overflow-hidden"
-          >
-            {statusBar}
-          </Card>
-        </div>
-      ) : null}
     </div>
   )
 }

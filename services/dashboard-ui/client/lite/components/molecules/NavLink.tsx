@@ -2,7 +2,6 @@ import type { MouseEvent } from 'react'
 import { NavLink as RouterNavLink } from 'react-router'
 import { cn } from '@/utils/classnames'
 import { Icon, type TIconVariant } from '../atoms/Icon'
-import { Kbd } from '../atoms/Kbd'
 import { Text } from '../atoms/Text'
 import { Tooltip } from '../atoms/Tooltip'
 
@@ -26,22 +25,10 @@ const LINK_CLASSES =
   'focus-ring ' +
   'aria-[current=page]:bg-surface-accent aria-[current=page]:text-accent'
 
-const Shortcut = ({ shortcut }: { shortcut: string }) => (
-  <span className="inline-flex items-center gap-1">
-    {shortcut
-      .trim()
-      .split(/\s+/)
-      .map((key) => (
-        <Kbd key={key}>{key.toUpperCase()}</Kbd>
-      ))}
-  </span>
-)
-
 export const NavLink = ({
   href,
   label,
   icon,
-  shortcut,
   external = false,
   end,
   collapsed = false,
@@ -66,7 +53,6 @@ export const NavLink = ({
         >
           {label}
         </Text>
-        {shortcut ? <Shortcut shortcut={shortcut} /> : null}
         {external ? (
           <Icon variant="ArrowSquareOutIcon" size={13} className="shrink-0" />
         ) : null}
@@ -107,7 +93,6 @@ export const NavLink = ({
       content={
         <span className="flex items-center gap-2">
           <Text variant="caption">{label}</Text>
-          {shortcut ? <Shortcut shortcut={shortcut} /> : null}
           {external ? <Icon variant="ArrowSquareOutIcon" size={13} /> : null}
         </span>
       }
