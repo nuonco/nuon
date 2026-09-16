@@ -424,6 +424,51 @@ export const PanelSizeVariants = () => (
   </SurfacesProvider>
 )
 
+const StickyFooterDemo = () => {
+  const { addPanel } = useSurfaces()
+
+  const openPanel = () => {
+    addPanel(
+      <Panel
+        heading="Organization features"
+        size="half"
+        footer={<Button variant="primary">Update features</Button>}
+      >
+        {Array.from({ length: 40 }).map((_, index) => (
+          <Card key={index}>
+            <Text variant="base">Setting {index + 1}</Text>
+            <Text variant="subtext" theme="neutral">
+              The body scrolls while the heading and footer stay in place.
+            </Text>
+          </Card>
+        ))}
+      </Panel>
+    )
+  }
+
+  return <Button onClick={openPanel}>Open panel with sticky footer</Button>
+}
+
+export const StickyFooter = () => (
+  <SurfacesProvider>
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Sticky Footer</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Pass a <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">footer</code>{' '}
+          to pin primary actions to the bottom of the panel. Only the body scrolls,
+          so the heading and the footer actions stay reachable no matter how long
+          the content gets.
+        </p>
+      </div>
+
+      <div className="p-4 border rounded-lg">
+        <StickyFooterDemo />
+      </div>
+    </div>
+  </SurfacesProvider>
+)
+
 export const PanelUsageExamples = () => (
   <SurfacesProvider>
     <div className="space-y-6">

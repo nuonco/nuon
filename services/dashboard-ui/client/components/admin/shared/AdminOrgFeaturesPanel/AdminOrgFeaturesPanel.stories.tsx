@@ -23,6 +23,22 @@ export const Default = () => (
   />
 )
 
+export const ScrollingList = () => (
+  <AdminOrgFeaturesPanel
+    isVisible
+    org={{ features: { 'feature-3': true, 'feature-9': true } } as any}
+    orgId="org-1"
+    featuresList={Array.from({ length: 30 }).map((_, index) => ({
+      name: `feature-${index}`,
+      description:
+        'A longer description so the list overflows the panel and scrolls beneath the footer.',
+    }))}
+    isLoading={false}
+    isSubmitting={false}
+    onSubmit={(e) => e.preventDefault()}
+  />
+)
+
 export const Loading = () => (
   <AdminOrgFeaturesPanel
     org={{} as any}
