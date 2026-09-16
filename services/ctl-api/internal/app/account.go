@@ -73,6 +73,7 @@ func (a *Account) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == "" {
 		a.ID = domains.NewAccountID()
 	}
+	a.Email = strings.ToLower(a.Email)
 
 	return nil
 }
