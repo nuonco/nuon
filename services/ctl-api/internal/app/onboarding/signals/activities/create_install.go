@@ -87,6 +87,10 @@ func (a *Activities) createOnboardingInstall(ctx context.Context, input *CreateO
 		}
 	}
 
+	if onboarding.AppBranchID != nil && *onboarding.AppBranchID != "" {
+		installParams.AppBranchID = *onboarding.AppBranchID
+	}
+
 	install, err := a.installsHelpers.CreateInstall(ctx, input.AppID, installParams)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create install: %w", err)

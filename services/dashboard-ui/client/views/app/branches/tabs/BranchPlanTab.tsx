@@ -20,24 +20,27 @@ const BranchPlanContent = () => {
   const appId = app.id!
 
   const currentConfig = useMemo(() => latestBranchConfig(branch), [branch])
+  const branchId = branch?.id
 
   const { data: appInstallsResult } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['app-installs', orgId, appId],
-    queryFn: () => getAppInstalls({ appId, orgId, limit: 100 }),
-    enabled: !!orgId && !!appId,
+    queryKey: ['app-installs', orgId, appId, branchId],
+    queryFn: () =>
+      getAppInstalls({ appId, orgId, app_branch_id: branchId, limit: 100 }),
+    enabled: !!orgId && !!appId && !!branchId,
     refetchInterval: 10000,
   })
 
   const installsById = useMemo(
     () =>
-      (appInstallsResult?.data ?? []).reduce<Record<string, TInstall>>(
-        (acc, install) => {
-          acc[install.id] = install
-          return acc
-        },
-        {}
-      ),
+      (appInstallsResult?.data ?? [])
+        .reduce<Record<string, TInstall>>(
+          (acc, install) => {
+            acc[install.id] = install
+            return acc
+          },
+          {}
+        ),
     [appInstallsResult]
   )
 

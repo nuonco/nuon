@@ -98,6 +98,24 @@ export const DeploymentPlanEditor = ({
     [availableInstalls, assignedInstallIds]
   )
 
+  const overlappingInstalls = useMemo(() => {
+    const matches = new Map<string, number>()
+    groups.forEach((g) => {
+      const matchedIds =
+        g.selection_mode === 'all'
+          ? availableInstalls.map((i) => i.id)
+          : g.selection_mode === 'labels'
+            ? availableInstalls
+                .filter((i) => matchesSelector(i.labels, g.label_selector))
+                .map((i) => i.id)
+            : g.install_ids.filter((id) =>
+                availableInstalls.some((i) => i.id === id)
+              )
+      matchedIds.forEach((id) => matches.set(id, (matches.get(id) ?? 0) + 1))
+    })
+    return availableInstalls.filter((i) => (matches.get(i.id) ?? 0) > 1)
+  }, [groups, availableInstalls])
+
   const groupContentError = (g: IInstallGroup): string | undefined => {
     if (g.selection_mode === 'all') return undefined
     if (g.selection_mode === 'labels') {
@@ -110,13 +128,17 @@ export const DeploymentPlanEditor = ({
     return undefined
   }
 
-  const hasErrors = groups.some((g) => !g.name.trim() || !!groupContentError(g))
+  const hasErrors =
+    groups.some((g) => !g.name.trim() || !!groupContentError(g)) ||
+    overlappingInstalls.length > 0
   const canSave = !isSaving && !loadingInstalls && groups.length > 0 && !hasErrors
   const isDisabled = isSaving || loadingInstalls
 
   const saveDisabledReason = (() => {
     if (canSave || isSaving || loadingInstalls) return undefined
     if (groups.length === 0) return 'Add at least one install group.'
+    if (overlappingInstalls.length > 0)
+      return 'Each install must match exactly one install group.'
     const needsName = groups.some((g) => !g.name.trim())
     const needsInstalls = groups.some((g) => !!groupContentError(g))
     if (needsName && needsInstalls)
@@ -245,6 +267,16 @@ export const DeploymentPlanEditor = ({
             </Banner>
           )}
 
+          {overlappingInstalls.length > 0 && (
+            <Banner theme="error">
+              {overlappingInstalls.length === 1
+                ? `${overlappingInstalls[0].name} matches more than one install group.`
+                : `${overlappingInstalls.length} installs match more than one install group.`}{' '}
+              Each install must match exactly one group before this deployment
+              plan can be saved.
+            </Banner>
+          )}
+
           {groups.length >= 2 && (
             <DeploymentPlanGraph config={previewConfig} installsById={installsById} orgId={orgId} />
           )}
@@ -311,12 +343,16 @@ export const DeploymentPlanEditor = ({
 
           {groups.length > 0 && unassignedInstalls.length > 0 && (
             <div className="border-t pt-4">
-              <div className="flex items-baseline gap-2 mb-2">
-                <Text variant="base" weight="strong">Unassigned</Text>
+              <div className="flex items-baseline gap-2 mb-1">
+                <Text variant="base" weight="strong">Orphaned</Text>
                 <Text variant="subtext" theme="neutral">
-                  — {unassignedInstalls.length} install{unassignedInstalls.length !== 1 ? 's' : ''} won&apos;t deploy
+                  — {unassignedInstalls.length} install{unassignedInstalls.length !== 1 ? 's' : ''} won&apos;t receive updates
                 </Text>
               </div>
+              <Text variant="subtext" theme="neutral" className="mb-2">
+                These installs belong to this branch but don&apos;t match any
+                group. They will not be updated when this branch runs.
+              </Text>
               <div className="flex flex-col gap-1.5">
                 {unassignedInstalls.map((install) => (
                   <InstallRow key={install.id} install={install} labelColors={labelColors} />

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/invopop/jsonschema"
+
 	"github.com/nuonco/nuon/pkg/principal"
 )
 

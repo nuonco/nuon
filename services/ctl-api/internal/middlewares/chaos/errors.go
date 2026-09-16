@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 func panicHandler(ctx *gin.Context, logger *zap.Logger) {

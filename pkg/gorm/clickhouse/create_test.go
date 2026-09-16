@@ -6,8 +6,9 @@ import (
 	"slices"
 	"testing"
 
-	chClause "github.com/nuonco/nuon/pkg/gorm/clickhouse/pkg/clause"
 	"gorm.io/gorm/utils/tests"
+
+	chClause "github.com/nuonco/nuon/pkg/gorm/clickhouse/pkg/clause"
 )
 
 func TestCreate(t *testing.T) {

@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.opentelemetry.io/contrib/bridges/otelzap"
 	"go.opentelemetry.io/otel/attribute"
 	otellog "go.opentelemetry.io/otel/log"
@@ -14,6 +13,8 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 const controlPlaneRunnerID = "control-plane"

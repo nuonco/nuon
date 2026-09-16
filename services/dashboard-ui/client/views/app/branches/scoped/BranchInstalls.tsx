@@ -12,7 +12,11 @@ const BranchInstallsContent = () => {
   const branchId = params.branchId as string
 
   const createButton = app?.runner_config ? (
-    <CreateInstallButton initialApp={app} variant="secondary" />
+    <CreateInstallButton
+      initialApp={app}
+      initialBranchId={branchId}
+      variant="secondary"
+    />
   ) : undefined
 
   return (

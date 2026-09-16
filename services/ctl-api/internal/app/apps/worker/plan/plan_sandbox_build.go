@@ -23,6 +23,9 @@ func (p *Planner) createSandboxBuildPlan(ctx workflow.Context, req *CreateSandbo
 	if err != nil {
 		return nil, fmt.Errorf("unable to get git source for sandbox build: %w", err)
 	}
+	if build.VCSConnectionCommit != nil && build.VCSConnectionCommit.SHA != "" {
+		gitSource.Ref = build.VCSConnectionCommit.SHA
+	}
 
 	dstCfg, err := sharedactivities.AwaitGetSandboxBuildOCIRegistry(ctx, sharedactivities.GetSandboxBuildOCIRegistryRequest{
 		AppID: build.AppID,

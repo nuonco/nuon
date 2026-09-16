@@ -3,12 +3,13 @@ package cmd
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+	"go.uber.org/fx"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/poolmetrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/fx"
 )
 
 func TestAPIProviderGraphs(t *testing.T) {

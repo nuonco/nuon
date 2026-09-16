@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/metrics"
 )
 
 func (s *GeneralRunnerTestSuite) TestPublishMetrics_Success() {

@@ -2,9 +2,10 @@ package admin
 
 import (
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"go.uber.org/zap"
 )
 
 func (m *middleware) setAccount(ctx *gin.Context) error {

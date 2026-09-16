@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/nuonco/nuon/pkg/types/state"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 func TestGetRoleForDeploy(t *testing.T) {

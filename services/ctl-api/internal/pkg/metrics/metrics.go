@@ -8,8 +8,6 @@ import (
 	ddotel "github.com/DataDog/dd-trace-go/v2/ddtrace/opentelemetry"
 	"github.com/DataDog/dd-trace-go/v2/ddtrace/tracer"
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/pkg/metrics"
-	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -18,6 +16,9 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (metrics.Writer, error) {

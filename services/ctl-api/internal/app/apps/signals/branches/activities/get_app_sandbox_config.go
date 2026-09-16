@@ -27,6 +27,25 @@ func (a *Activities) getLatestAppSandboxConfig(ctx context.Context, appID string
 	return &cfg, nil
 }
 
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 30s
+// @as-wrapper
+// @by-field appConfigID
+func (a *Activities) getAppSandboxConfigByAppConfigID(ctx context.Context, appConfigID string) (*app.AppSandboxConfig, error) {
+	var cfg app.AppSandboxConfig
+	res := a.db.WithContext(ctx).
+		Preload("ConnectedGithubVCSConfig").
+		Preload("ConnectedGithubVCSConfig.VCSConnection").
+		Preload("PublicGitVCSConfig").
+		Where("app_config_id = ?", appConfigID).
+		Order("created_at DESC").
+		First(&cfg)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get app sandbox config for app config %s: %w", appConfigID, res.Error)
+	}
+	return &cfg, nil
+}
+
 type GetSandboxBuildGitSourceRequest struct {
 	SandboxConfigID string `json:"sandbox_config_id" validate:"required"`
 }

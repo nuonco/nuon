@@ -3,9 +3,10 @@ package activities
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
-	"github.com/pkg/errors"
 )
 
 type RenderAWSStackTemplateRequest struct {

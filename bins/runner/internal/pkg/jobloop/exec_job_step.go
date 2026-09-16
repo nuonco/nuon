@@ -7,10 +7,11 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/sourcegraph/conc/panics"
 	"go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/retry"
