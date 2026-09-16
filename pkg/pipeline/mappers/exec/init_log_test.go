@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
-	"github.com/nuonco/nuon/pkg/pipeline"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/pipeline"
 )
 
 func Test_execInitLogFn_exec(t *testing.T) {

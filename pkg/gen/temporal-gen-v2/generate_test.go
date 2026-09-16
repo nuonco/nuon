@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/cmd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/cmd"
 )
 
 func repoRoot(t *testing.T) string {

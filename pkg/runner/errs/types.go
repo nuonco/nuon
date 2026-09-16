@@ -5,6 +5,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/errors/errbase"
+
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 

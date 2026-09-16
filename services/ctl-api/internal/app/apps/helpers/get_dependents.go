@@ -6,8 +6,9 @@ import (
 	"slices"
 
 	"github.com/dominikbraun/graph"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (h *Helpers) GetComponentDependents(ctx context.Context, appCfgID string, compID string) ([]string, error) {

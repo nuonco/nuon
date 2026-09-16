@@ -5,10 +5,11 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/spf13/cobra"
+
 	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	initui "github.com/nuonco/nuon/bins/cli/internal/ui/v3/init"
-	"github.com/spf13/cobra"
 )
 
 func initRootParams(cmd *cobra.Command) apps.ConfigGenParams {

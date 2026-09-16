@@ -10,7 +10,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 )
 
-const commitOnlyPreviewStatusesVersion = "app-branch-commit-only-preview-statuses-v1"
+const (
+	commitOnlyPreviewStatusesVersion = "app-branch-commit-only-preview-statuses-v1"
+	previewEyesReactionVersion       = "app-branch-preview-eyes-reaction-v1"
+)
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
@@ -28,8 +31,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return s.executeLegacy(ctx, logger, run)
 	}
 
-	// Statuses only need a commit; comments are what need a PR to live on.
-	if !run.PreviewGitHubSetStatuses() && (!run.PreviewGitHubComment() || run.PRNumber == nil) {
+	// Statuses only need a commit; comments and reactions need a PR.
+	needsComment := run.PreviewGitHubComment() && run.PRNumber != nil
+	needsStatus := run.PreviewGitHubSetStatuses() && run.HeadSHA != ""
+	needsReact := run.PreviewGitHubReact() && run.PRNumber != nil
+	if !needsComment && !needsStatus && !needsReact {
 		logger.Info("preview GitHub integration disabled, skipping setup")
 		return nil
 	}
@@ -63,7 +69,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		})
 	}
 
-	if !run.PreviewGitHubComment() || run.PRNumber == nil {
+	if workflow.GetVersion(ctx, previewEyesReactionVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion &&
+		needsReact {
+		if _, err := activities.AwaitCreatePRReaction(ctx, &activities.CreatePRReactionInput{
+			VcsConfigID: vcsConfigID,
+			PRNumber:    *run.PRNumber,
+			Content:     "eyes",
+		}); err != nil {
+			logger.Warn("unable to add PR reaction", "error", err)
+		}
+	}
+
+	if !needsComment {
 		logger.Info("preview setup complete", "run_id", s.RunID)
 		return nil
 	}
@@ -85,18 +102,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		RunID: s.RunID,
 	})
 	commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
-		OrgName:    branch.Org.Name,
-		AppName:    branch.App.Name,
-		BranchName: branch.Name,
-		RunID:      s.RunID,
-		Status:     activities.PRCommentStatusPending,
-		Mode:       run.PreviewMode(),
-		RunURL:     previewRunURL(commentContext),
+		OrgName:     branch.Org.Name,
+		AppName:     branch.App.Name,
+		AppBranchID: branch.ID,
+		BranchName:  branch.Name,
+		RunID:       s.RunID,
+		HeadSHA:     run.HeadSHA,
+		Status:      activities.PRCommentStatusPending,
+		Mode:        run.PreviewMode(),
+		RunURL:      previewRunURL(commentContext),
 	})
 
 	commentResult, err := activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 		VcsConfigID:       vcsConfigID,
 		PRNumber:          *run.PRNumber,
+		AppBranchID:       run.AppBranchID,
 		ExistingCommentID: existingCommentID,
 		Body:              commentBody,
 	})
@@ -181,15 +201,17 @@ func (s *Signal) executeLegacy(ctx workflow.Context, logger log.Logger, run *app
 	commentResult, err := activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 		VcsConfigID:       vcsConfigID,
 		PRNumber:          *run.PRNumber,
+		AppBranchID:       run.AppBranchID,
 		ExistingCommentID: existingCommentID,
 		Body: activities.BuildPRCommentBody(&activities.PRCommentParams{
-			OrgName:    branch.Org.Name,
-			AppName:    branch.App.Name,
-			BranchName: branch.Name,
-			RunID:      s.RunID,
-			Status:     activities.PRCommentStatusPending,
-			Mode:       run.PreviewMode(),
-			RunURL:     previewRunURL(commentContext),
+			OrgName:     branch.Org.Name,
+			AppName:     branch.App.Name,
+			AppBranchID: branch.ID,
+			BranchName:  branch.Name,
+			RunID:       s.RunID,
+			Status:      activities.PRCommentStatusPending,
+			Mode:        run.PreviewMode(),
+			RunURL:      previewRunURL(commentContext),
 		}),
 	})
 	if err != nil {

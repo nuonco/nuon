@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/invopop/jsonschema"
+
 	"github.com/nuonco/nuon/pkg/generics"
 )
 

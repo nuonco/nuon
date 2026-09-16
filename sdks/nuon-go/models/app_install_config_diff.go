@@ -50,6 +50,12 @@ type AppInstallConfigDiff struct {
 	// stack changed
 	StackChanged bool `json:"stack_changed,omitempty"`
 
+	// stack impact reasons
+	StackImpactReasons []*DiffImpactReason `json:"stack_impact_reasons"`
+
+	// stack impacts
+	StackImpacts []AppInstallConfigImpact `json:"stack_impacts"`
+
 	// stack new id
 	StackNewID string `json:"stack_new_id,omitempty"`
 
@@ -73,6 +79,14 @@ func (m *AppInstallConfigDiff) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRemoved(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStackImpactReasons(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStackImpacts(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -176,6 +190,61 @@ func (m *AppInstallConfigDiff) validateRemoved(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppInstallConfigDiff) validateStackImpactReasons(formats strfmt.Registry) error {
+	if swag.IsZero(m.StackImpactReasons) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.StackImpactReasons); i++ {
+		if swag.IsZero(m.StackImpactReasons[i]) { // not required
+			continue
+		}
+
+		if m.StackImpactReasons[i] != nil {
+			if err := m.StackImpactReasons[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("stack_impact_reasons" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("stack_impact_reasons" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppInstallConfigDiff) validateStackImpacts(formats strfmt.Registry) error {
+	if swag.IsZero(m.StackImpacts) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.StackImpacts); i++ {
+
+		if err := m.StackImpacts[i].Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("stack_impacts" + "." + strconv.Itoa(i))
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("stack_impacts" + "." + strconv.Itoa(i))
+			}
+
+			return err
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppInstallConfigDiff) validateUnchanged(formats strfmt.Registry) error {
 	if swag.IsZero(m.Unchanged) { // not required
 		return nil
@@ -219,6 +288,14 @@ func (m *AppInstallConfigDiff) ContextValidate(ctx context.Context, formats strf
 	}
 
 	if err := m.contextValidateRemoved(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStackImpactReasons(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStackImpacts(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -312,6 +389,61 @@ func (m *AppInstallConfigDiff) contextValidateRemoved(ctx context.Context, forma
 
 				return err
 			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppInstallConfigDiff) contextValidateStackImpactReasons(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.StackImpactReasons); i++ {
+
+		if m.StackImpactReasons[i] != nil {
+
+			if swag.IsZero(m.StackImpactReasons[i]) { // not required
+				return nil
+			}
+
+			if err := m.StackImpactReasons[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("stack_impact_reasons" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("stack_impact_reasons" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppInstallConfigDiff) contextValidateStackImpacts(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.StackImpacts); i++ {
+
+		if swag.IsZero(m.StackImpacts[i]) { // not required
+			return nil
+		}
+
+		if err := m.StackImpacts[i].ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("stack_impacts" + "." + strconv.Itoa(i))
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("stack_impacts" + "." + strconv.Itoa(i))
+			}
+
+			return err
 		}
 
 	}

@@ -3,10 +3,11 @@ package log
 import (
 	"testing"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 func TestAuditEventType(t *testing.T) {

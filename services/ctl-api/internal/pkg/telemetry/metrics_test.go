@@ -18,9 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nuonco/nuon/pkg/services/config"
-	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
@@ -29,6 +26,10 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx/fxtest"
+
+	"github.com/nuonco/nuon/pkg/services/config"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 )
 
 func TestMeterProviderWithoutEndpoint(t *testing.T) {

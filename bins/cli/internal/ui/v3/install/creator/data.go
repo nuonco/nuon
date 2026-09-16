@@ -6,6 +6,8 @@ import (
 
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
+
+	"github.com/nuonco/nuon/bins/cli/internal/installcreate"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -40,7 +42,7 @@ type inputMapping struct {
 
 func fetchConfigCmd(m model) tea.Cmd {
 	return func() tea.Msg {
-		inputConfig, err := m.api.GetAppInputLatestConfig(m.ctx, m.appID)
+		inputConfig, err := installcreate.ResolveInputConfig(m.ctx, m.api, m.appID, m.appBranchID)
 		if err != nil {
 			return configFetchedMsg{err: err}
 		}
@@ -267,9 +269,10 @@ func (m *model) submitForm() tea.Cmd {
 		name := strings.TrimSpace(m.inputs[0].Value())
 
 		req := &models.ServiceCreateInstallRequest{
-			Name:   &name,
-			Inputs: inputsMap,
-			Labels: m.presetLabels,
+			Name:        &name,
+			Inputs:      inputsMap,
+			Labels:      m.presetLabels,
+			AppBranchID: m.appBranchID,
 		}
 		switch m.cloudPlatform {
 		case models.AppCloudPlatformGcp:

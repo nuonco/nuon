@@ -3,9 +3,10 @@ package actionworkflowrun
 import (
 	"testing"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/stretchr/testify/suite"
 	"go.temporal.io/sdk/testsuite"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type SignalTestSuite struct {

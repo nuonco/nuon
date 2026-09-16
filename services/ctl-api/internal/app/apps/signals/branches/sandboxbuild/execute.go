@@ -30,44 +30,25 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
 
-	// Get the app config (with App preloaded) to get AppID
-	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
+	source, err := activities.AwaitResolveSandboxBuildSource(ctx, &activities.ResolveSandboxBuildSourceInput{
+		AppConfigID: run.AppConfigID,
+		RunID:       s.RunID,
+	})
 	if err != nil {
-		return fmt.Errorf("unable to get app config: %w", err)
+		return fmt.Errorf("unable to resolve sandbox build source: %w", err)
 	}
-
-	// Get the sandbox config for this app — if not found, skip gracefully
-	sandboxConfig, err := activities.AwaitGetLatestAppSandboxConfigByAppID(ctx, appConfig.AppID)
-	if err != nil {
-		l.Info("no sandbox config found for app, skipping sandbox build", "app_id", appConfig.AppID)
+	if source == nil || source.Skipped || source.SandboxConfig == nil {
+		l.Info("no sandbox config found for app config, skipping sandbox build", "app_config_id", run.AppConfigID)
 		return nil
 	}
 
-	// Resolve git source for the sandbox build
-	gitSource, err := activities.AwaitGetSandboxBuildGitSource(ctx, activities.GetSandboxBuildGitSourceRequest{
-		SandboxConfigID: sandboxConfig.ID,
-	})
+	sandboxConfig := source.SandboxConfig
+	gitSource := source.GitSource
+	commitID := source.VCSConnectionCommitID
+
+	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
 	if err != nil {
-		return fmt.Errorf("unable to get sandbox build git source: %w", err)
-	}
-
-	// If sandbox config shares the same VCS config as the branch run's commit, pin to that specific SHA
-	if run.VCSConnectionCommit != nil {
-		var sandboxVCSConfigID string
-		if sandboxConfig.ConnectedGithubVCSConfig != nil {
-			sandboxVCSConfigID = sandboxConfig.ConnectedGithubVCSConfig.ID
-		} else if sandboxConfig.PublicGitVCSConfig != nil {
-			sandboxVCSConfigID = sandboxConfig.PublicGitVCSConfig.ID
-		}
-		if sandboxVCSConfigID != "" && sandboxVCSConfigID == run.VCSConnectionCommit.OwnerID {
-			gitSource.Ref = run.VCSConnectionCommit.SHA
-		}
-	}
-
-	// Resolve VCS commit ID for the sandbox build record
-	var commitID *string
-	if run.VCSConnectionCommit != nil {
-		commitID = &run.VCSConnectionCommit.ID
+		return fmt.Errorf("unable to get app config: %w", err)
 	}
 
 	// Create the sandbox build record

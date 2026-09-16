@@ -52,7 +52,11 @@ func (h *Helpers) ListPreviewSources(ctx context.Context, branch *app.AppBranch,
 		return nil, fmt.Errorf("unable to list pull requests: %w", err)
 	}
 
+	preview := branchPreviewConfigOrDefault(config)
 	for _, pr := range prs {
+		if pr.GetDraft() && preview.IgnoreDrafts {
+			continue
+		}
 		headRef := ""
 		headSHA := ""
 		if pr.Head != nil {

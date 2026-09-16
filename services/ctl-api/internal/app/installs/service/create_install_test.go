@@ -180,3 +180,63 @@ func (s *InstallsServiceTestSuite) TestCreateInstallDeprecatedRoute() {
 	assert.Equal(s.T(), "deprecated-route-install", install.Name)
 	assert.Equal(s.T(), s.testApp.ID, install.AppID)
 }
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2AllowsUnbranchedInstallWhenAppHasBranches() {
+	s.expectQueueCreation()
+
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+
+	body := CreateInstallV2Request{
+		AppID: s.testApp.ID,
+		CreateInstallParams: helpers.CreateInstallParams{
+			Name:       "branched-missing-ids",
+			AWSAccount: &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
+		},
+	}
+
+	rr := s.makeRequest(http.MethodPost, "/v1/installs", body)
+	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+
+	var install app.Install
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &install))
+	assert.False(s.T(), install.AppBranchID.Valid)
+}
+
+func (s *InstallsServiceTestSuite) TestCreateInstallV2PersistsExplicitBranchOwnership() {
+	s.expectQueueCreation()
+
+	branch := &app.AppBranch{AppID: s.testApp.ID, Name: "prod"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+
+	branchConfig := s.deps.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(branchConfig).
+		Update("app_branch_id", branch.ID).Error)
+
+	body := CreateInstallV2Request{
+		AppID: s.testApp.ID,
+		CreateInstallParams: helpers.CreateInstallParams{
+			Name:        "branch-owned",
+			AppBranchID: branch.ID,
+			AWSAccount:  &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
+		},
+	}
+
+	rr := s.makeRequest(http.MethodPost, "/v1/installs", body)
+	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+
+	var install app.Install
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &install))
+	require.True(s.T(), install.AppBranchID.Valid)
+	assert.Equal(s.T(), branch.ID, install.AppBranchID.String)
+
+	var connection app.InstallAppBranchConnection
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Where(app.InstallAppBranchConnection{
+			InstallID:   install.ID,
+			AppBranchID: branch.ID,
+			Active:      true,
+		}).
+		First(&connection).Error)
+}

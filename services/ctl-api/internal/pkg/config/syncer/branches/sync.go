@@ -235,6 +235,10 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		return err
 	}
 
+	if err := validateInstallGroupOwnership(ctx, db, branchID, branchCfg.Name, installGroups); err != nil {
+		return err
+	}
+
 	previewConfig, err := buildPreviewConfig(branchCfg, nameToID)
 	if err != nil {
 		return err
@@ -256,6 +260,33 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create config for branch %q", branchCfg.Name),
 			Err:         err,
+		}
+	}
+
+	return nil
+}
+
+// validateInstallGroupOwnership holds config-as-code to the same rule as the
+// API: a group selects among the installs its branch already owns. Naming an
+// install that lives on another branch — or on no branch yet — does not move it
+// here, so the sync fails instead of writing a config that resolves to nothing.
+func validateInstallGroupOwnership(ctx context.Context, db *gorm.DB, branchID, branchName string, groups []app.AppBranchInstallGroup) error {
+	var installIDs []string
+	for _, group := range groups {
+		installIDs = append(installIDs, group.InstallIDs...)
+	}
+
+	if err := appshelpers.ValidateInstallIDsOwnedByBranchWithDB(ctx, db, branchID, installIDs); err != nil {
+		return sync.SyncErr{
+			Resource:    "app-branches",
+			Description: fmt.Sprintf("branch %q: %s", branchName, err.Error()),
+		}
+	}
+
+	if err := appshelpers.ValidateBranchInstallsSingleGroupWithDB(ctx, db, branchID, groups); err != nil {
+		return sync.SyncErr{
+			Resource:    "app-branches",
+			Description: fmt.Sprintf("branch %q: %s", branchName, err.Error()),
 		}
 	}
 
@@ -348,6 +379,16 @@ func buildPreviewConfig(branchCfg *config.AppBranchConfig, nameToID map[string]s
 		out.Comment = *p.Comment
 	} else {
 		out.Comment = true
+	}
+	if p.IgnoreDrafts != nil {
+		out.IgnoreDrafts = *p.IgnoreDrafts
+	} else {
+		out.IgnoreDrafts = true
+	}
+	if p.React != nil {
+		out.React = *p.React
+	} else {
+		out.React = true
 	}
 	if err := out.Validate(); err != nil {
 		return nil, sync.SyncErr{Resource: "app-branches", Description: err.Error()}

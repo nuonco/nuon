@@ -3,8 +3,9 @@ package jobs
 import (
 	"context"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 type JobHandler interface {

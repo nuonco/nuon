@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
-	"github.com/pkg/errors"
-	"gorm.io/gorm"
 )
 
 const (

@@ -3,9 +3,10 @@ package service
 import (
 	"testing"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
 // A name the push endpoint would refuse can never be reported, so gating a
