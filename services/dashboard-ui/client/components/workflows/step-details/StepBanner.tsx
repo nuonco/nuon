@@ -51,9 +51,11 @@ export const StepBanner = ({
         <>
           <Banner theme={bannerCfg.theme} onDismiss={onDismiss}>
             <div className="flex items-end justify-between gap-4">
-              <div className="flex flex-col">
-                <Text weight="strong">{bannerCfg.title}</Text>
-                <Text variant="subtext" theme="neutral">
+              <div className="flex flex-col min-w-0">
+                <Text weight="strong" className="break-words">
+                  {bannerCfg.title}
+                </Text>
+                <Text variant="subtext" theme="neutral" className="break-words">
                   {bannerCfg.copy}
                 </Text>
                 {(stepStatus === 'error' ||
@@ -61,7 +63,11 @@ export const StepBanner = ({
                 statusDescription &&
                 !showCompositeError &&
                 bannerCfg.theme === 'error' ? (
-                  <Text variant="subtext" theme="error">
+                  <Text
+                    variant="subtext"
+                    theme="error"
+                    className="break-words"
+                  >
                     {statusDescription}
                   </Text>
                 ) : null}
