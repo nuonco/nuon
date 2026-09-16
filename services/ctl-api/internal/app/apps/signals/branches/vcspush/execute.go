@@ -23,15 +23,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		EventType:           s.EventType,
 		PRNumber:            s.PRNumber,
 		HeadSHA:             s.HeadSHA,
+		HeadRef:             s.HeadRef,
 		BaseBranch:          s.BaseBranch,
 		BaseSHA:             s.BaseSHA,
 		ChangedFiles:        s.ChangedFiles,
 		PusherEmails:        s.PusherEmails,
 		SenderLogin:         s.SenderLogin,
 		FallbackCreatedByID: s.FallbackCreatedByID,
+		Draft:               s.Draft,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to trigger app branch run from vcs push: %w", err)
+	}
+
+	if resp.RunID == "" {
+		logger.Info("app branch run skipped from vcs push",
+			"app_branch_id", s.AppBranchID,
+		)
+		return nil
 	}
 
 	logger.Info("app branch run triggered from vcs push",

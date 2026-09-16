@@ -20,8 +20,10 @@ type pullRequestEventInfo struct {
 	Repo       string // "owner/repo"
 	BaseBranch string // target branch (e.g., "main")
 	HeadSHA    string // head commit SHA
+	HeadRef    string // head branch name (e.g., "jm/test-ci")
 	PRNumber   int    // pull request number
 	Action     string // "opened", "synchronize", "closed", etc.
+	Draft      bool
 }
 
 func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
@@ -189,6 +191,8 @@ func parsePullRequestEvent(payload map[string]any) (*pullRequestEventInfo, error
 		return nil, fmt.Errorf("missing pull_request.head")
 	}
 	headSHA, _ := head["sha"].(string)
+	headRef, _ := head["ref"].(string)
+	draft, _ := prData["draft"].(bool)
 
 	repository, ok := payload["repository"].(map[string]any)
 	if !ok {
@@ -203,7 +207,9 @@ func parsePullRequestEvent(payload map[string]any) (*pullRequestEventInfo, error
 		Repo:       fullName,
 		BaseBranch: baseBranch,
 		HeadSHA:    headSHA,
+		HeadRef:    headRef,
 		PRNumber:   int(number),
 		Action:     action,
+		Draft:      draft,
 	}, nil
 }

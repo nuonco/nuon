@@ -8,10 +8,11 @@ import (
 	"path/filepath"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
+
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/generator"
 	"github.com/nuonco/nuon/pkg/config/parse"
-	"github.com/pkg/errors"
 )
 
 const (

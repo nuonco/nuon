@@ -4,6 +4,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -17,6 +18,18 @@ type configFetchedMsg struct {
 type installCreatedMsg struct {
 	install *models.AppInstall
 	err     error
+}
+
+type nameCheckDebounceMsg struct {
+	name       string
+	generation int
+}
+
+type nameCheckedMsg struct {
+	name       string
+	generation int
+	exists     bool
+	err        error
 }
 
 type autoExitMsg struct{}

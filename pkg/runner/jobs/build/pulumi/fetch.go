@@ -3,8 +3,9 @@ package pulumi
 import (
 	"context"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )

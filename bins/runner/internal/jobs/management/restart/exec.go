@@ -4,8 +4,9 @@ import (
 	"context"
 
 	"github.com/fidiego/systemctl"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/monitor"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"

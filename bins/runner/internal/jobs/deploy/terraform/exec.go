@@ -8,9 +8,10 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/pkg/kube/config"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"

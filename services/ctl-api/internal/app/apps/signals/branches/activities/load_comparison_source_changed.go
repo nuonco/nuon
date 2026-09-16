@@ -50,6 +50,11 @@ func (a *Activities) LoadComparisonSourceChanged(ctx context.Context, input *Loa
 		return out, nil
 	}
 
+	if len(configDiff.ComponentSourceChanged) > 0 {
+		out.ByComponentName = configDiff.ComponentSourceChanged
+		return out, nil
+	}
+
 	for _, sec := range configDiff.Sections {
 		if sec.Name != "Components" {
 			continue

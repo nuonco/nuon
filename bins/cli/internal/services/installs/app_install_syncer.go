@@ -8,9 +8,10 @@ import (
 	"maps"
 	"time"
 
+	"github.com/pkg/browser"
+
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
-	"github.com/pkg/browser"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"

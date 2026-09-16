@@ -1,10 +1,11 @@
 package executeworkflowstepgroup
 
 import (
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 )
 
 // executeSequential dispatches steps one at a time. After each step completes,

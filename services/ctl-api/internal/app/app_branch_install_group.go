@@ -37,7 +37,7 @@ type AppBranchInstallGroup struct {
 
 	LabelSelector *labels.Selector `json:"label_selector,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"label_selector,omitzero,omitempty"`
 
-	// AllInstalls claims every install on the app that no other branch owns.
+	// AllInstalls targets every install owned by this group's app branch.
 	// A nil LabelSelector already means "use InstallIDs", so there is no
 	// selector shape that expresses "everything" — hence the explicit flag.
 	AllInstalls bool `json:"all_installs,omitzero" gorm:"default:false" temporaljson:"all_installs,omitzero,omitempty"`
