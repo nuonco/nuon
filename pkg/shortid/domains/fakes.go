@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/go-faker/faker/v4"
+
 	"github.com/nuonco/nuon/pkg/shortid"
 )
 

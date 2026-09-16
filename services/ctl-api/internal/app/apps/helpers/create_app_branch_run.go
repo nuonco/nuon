@@ -18,7 +18,9 @@ type CreateAppBranchRunRequest struct {
 	EventType              string
 	PRNumber               *int
 	HeadSHA                string
+	GitRef                 string
 	BaseBranch             string
+	IsDraftMode            bool
 	Labels                 labels.Labels
 	TriggerEventDispatchID *string
 	Preview                *PreviewRunInput
@@ -68,7 +70,11 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 			run.Preview = preview
 		} else if configErr == nil && branchErr == nil {
 			preview, err := h.BuildAppBranchRunPreview(ctx, branch.AppID, &branchConfig, previewInput)
-			if err == nil {
+			if err != nil {
+				if runType == app.AppBranchRunTypeGitPreview {
+					return nil, err
+				}
+			} else {
 				run.Preview = preview
 			}
 		}

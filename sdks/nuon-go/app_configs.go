@@ -91,6 +91,24 @@ func (c *client) GetAppConfigs(ctx context.Context, appID string, query *models.
 	return resp.Payload, hasNextPage(hr), nil
 }
 
+func (c *client) GetAppBranchAppConfigs(ctx context.Context, appID, appBranchID string, query *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error) {
+	params := &operations.GetAppBranchAppConfigsParams{
+		AppID:       appID,
+		AppBranchID: appBranchID,
+		Context:     ctx,
+	}
+
+	params.Offset, params.Limit = applyPaginationQuery(query)
+
+	hr := newResponseHeaderReader(&operations.GetAppBranchAppConfigsReader{})
+	resp, err := c.genClient.Operations.GetAppBranchAppConfigs(params, c.getOrgIDAuthInfo(), hr.ClientOption())
+	if err != nil {
+		return nil, false, err
+	}
+
+	return resp.Payload, hasNextPage(hr), nil
+}
+
 func (c *client) UpdateAppConfig(ctx context.Context, appID, appConfigID string, req *models.ServiceUpdateAppConfigRequest) (*models.AppAppConfig, error) {
 	resp, err := c.genClient.Operations.UpdateAppConfig(&operations.UpdateAppConfigParams{
 		AppID:       appID,

@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/Masterminds/semver/v3"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"

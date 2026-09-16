@@ -6,9 +6,10 @@ import (
 
 	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/pkg/metrics"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/metrics"
 )
 
 type Writer interface {

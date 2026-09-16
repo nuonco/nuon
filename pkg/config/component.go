@@ -4,8 +4,9 @@ import (
 	"sort"
 
 	"github.com/invopop/jsonschema"
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"

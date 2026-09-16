@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/dir"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/dir"
 )
 
 func pkgDir(t *testing.T) string {

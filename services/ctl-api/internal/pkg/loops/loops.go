@@ -2,6 +2,7 @@ package loops
 
 import (
 	"github.com/go-playground/validator/v10"
+
 	loopsclient "github.com/nuonco/nuon/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )

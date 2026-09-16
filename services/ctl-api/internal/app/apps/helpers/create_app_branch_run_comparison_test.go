@@ -10,7 +10,7 @@ import (
 
 func TestShouldCreateComparison(t *testing.T) {
 	require.True(t, shouldCreateComparison(app.AppBranchRunTypeGit, false))
-	require.False(t, shouldCreateComparison(app.AppBranchRunTypeGitPreview, false))
+	require.True(t, shouldCreateComparison(app.AppBranchRunTypeGitPreview, false))
 	require.True(t, shouldCreateComparison(app.AppBranchRunTypeManual, false))
 	require.False(t, shouldCreateComparison(app.AppBranchRunTypeManual, true))
 }

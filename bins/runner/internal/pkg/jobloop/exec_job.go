@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/sandboxhandler"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"

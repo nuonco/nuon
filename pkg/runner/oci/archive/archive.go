@@ -3,10 +3,11 @@ package ociarchive
 import (
 	"context"
 
-	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"go.uber.org/zap"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
+
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 type Archive interface {

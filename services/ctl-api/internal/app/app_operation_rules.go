@@ -3,10 +3,11 @@ package app
 import (
 	"time"
 
-	"github.com/nuonco/nuon/pkg/principal"
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/nuonco/nuon/pkg/principal"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 )
 
 type OperationType string

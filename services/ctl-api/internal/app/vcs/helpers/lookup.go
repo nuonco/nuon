@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"gorm.io/gorm"
 )
 
 // LookupVCSConnection: lookup a VCS connection from a list of vcs conns, for the one that has access to the repo

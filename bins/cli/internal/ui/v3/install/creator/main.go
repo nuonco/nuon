@@ -34,6 +34,15 @@ const (
 	minRequiredHeight int = 16
 )
 
+// createStep is which screen the creator is showing. Group selection follows the
+// form so the group's labels can be merged into the create request.
+type createStep int
+
+const (
+	stepForm createStep = iota
+	stepGroup
+)
+
 type model struct {
 	// common/base
 	ctx context.Context
@@ -45,6 +54,7 @@ type model struct {
 	name         string
 	presetRegion string
 	presetLabels map[string]string
+	appBranchID  string
 
 	width  int
 	height int
@@ -55,10 +65,19 @@ type model struct {
 	cloudPlatform models.AppCloudPlatform
 
 	// form state
-	inputs        []textinput.Model
-	focusIndex    int
-	regionIndex   int
-	inputMappings []inputMapping
+	inputs              []textinput.Model
+	focusIndex          int
+	regionIndex         int
+	inputMappings       []inputMapping
+	nameCheckGeneration int
+	nameChecked         string
+	nameChecking        bool
+	nameValidationErr   error
+
+	// group selection, shown after the form when the branch has selectable groups
+	step       createStep
+	groups     []*models.AppAppBranchInstallGroup
+	groupIndex int
 
 	// ui components
 	viewport viewport.Model
@@ -87,6 +106,9 @@ func initialModel(
 	name string,
 	region string,
 	labels map[string]string,
+	appBranchID string,
+	inputConfig *models.AppAppInputConfig,
+	groups []*models.AppAppBranchInstallGroup,
 ) model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
@@ -103,6 +125,9 @@ func initialModel(
 		name:         name,
 		presetRegion: region,
 		presetLabels: labels,
+		appBranchID:  appBranchID,
+		inputConfig:  inputConfig,
+		groups:       groups,
 		viewport:     vp,
 		spinner:      s,
 		help:         help.New(),
@@ -143,7 +168,32 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.cloudPlatform = msg.cloudPlatform
 			m.createFormInputs()
 			m.setLogMessage("Fill in the form and press Enter to create install", "info")
+			return m, m.scheduleNameCheck()
 		}
+		return m, nil
+
+	case nameCheckDebounceMsg:
+		if msg.generation != m.nameCheckGeneration {
+			return m, nil
+		}
+		return m, checkInstallNameCmd(m, msg.name, msg.generation)
+
+	case nameCheckedMsg:
+		if msg.generation != m.nameCheckGeneration {
+			return m, nil
+		}
+		m.nameChecking = false
+		m.nameChecked = msg.name
+		switch {
+		case msg.err != nil:
+			m.nameValidationErr = fmt.Errorf("unable to check install name: %w", msg.err)
+		case msg.exists:
+			m.nameValidationErr = errDuplicateInstallName(msg.name)
+		default:
+			m.nameValidationErr = nil
+			m.setLogMessage("Fill in the form and press Enter to create install", "info")
+		}
+		m.updateViewportContent()
 		return m, nil
 
 	case installCreatedMsg:
@@ -194,16 +244,37 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		if m.step == stepGroup {
+			return m.updateGroupStep(msg)
+		}
+
 		// Form navigation
 		switch {
 		case key.Matches(msg, m.keys.Enter):
 			if !m.submitting {
+				if err := m.validateForm(); err != nil {
+					m.setLogMessage(err.Error(), "error")
+					return m, nil
+				}
+				if len(m.groups) > 0 {
+					m.step = stepGroup
+					m.viewport.SetYOffset(0)
+					m.setLogMessage("Select an install group, or skip to leave the install orphaned", "info")
+					m.updateViewportContent()
+					return m, nil
+				}
 				m.submitting = true
 				m.setLogMessage("Creating install...", "info")
 				return m, m.submitForm()
 			}
 
 		case key.Matches(msg, m.keys.Tab):
+			if m.focusIndex == 0 {
+				if err := m.validateName(); err != nil {
+					m.setLogMessage(err.Error(), "error")
+					return m, nil
+				}
+			}
 			m.nextInput()
 			m.ensureFocusVisible()
 			return m, nil
@@ -237,8 +308,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				// Text input field
 				if inputIdx := m.focusIndexToInputIndex(m.focusIndex); inputIdx >= 0 {
+					previousValue := m.inputs[inputIdx].Value()
 					m.inputs[inputIdx], cmd = m.inputs[inputIdx].Update(msg)
 					cmds = append(cmds, cmd)
+					if inputIdx == 0 && m.inputs[inputIdx].Value() != previousValue {
+						cmds = append(cmds, m.scheduleNameCheck())
+					}
 					m.updateViewportContent()
 				}
 			}
@@ -257,6 +332,44 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// updateGroupStep handles keys on the group selection screen. The last row is the
+// skip option, which leaves the install without group labels.
+func (m model) updateGroupStep(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, m.keys.Up):
+		if m.groupIndex > 0 {
+			m.groupIndex--
+			m.updateViewportContent()
+		}
+		return m, nil
+
+	case key.Matches(msg, m.keys.Down):
+		if m.groupIndex < len(m.groups) {
+			m.groupIndex++
+			m.updateViewportContent()
+		}
+		return m, nil
+
+	case key.Matches(msg, m.keys.ShiftTab):
+		m.step = stepForm
+		m.viewport.SetYOffset(0)
+		m.setLogMessage("Fill in the form and press Enter to continue", "info")
+		m.updateViewportContent()
+		return m, nil
+
+	case key.Matches(msg, m.keys.Enter):
+		if err := m.applyGroupSelection(); err != nil {
+			m.setLogMessage(err.Error(), "error")
+			return m, nil
+		}
+		m.submitting = true
+		m.setLogMessage("Creating install...", "info")
+		return m, m.submitForm()
+	}
+
+	return m, nil
+}
+
 func (m model) View() tea.View {
 	v := tea.NewView(m.viewContent())
 	v.AltScreen = true
@@ -271,12 +384,15 @@ func InstallCreatorApp(
 	name string,
 	region string,
 	labels map[string]string,
+	appBranchID string,
+	inputConfig *models.AppAppInputConfig,
+	groups []*models.AppAppBranchInstallGroup,
 ) (string, error) {
 	if !cfg.Interactive {
 		return "", errors.New("interactive terminal required for install creation; use nuon installs create --name <name> --region <region> flags")
 	}
 
-	m := initialModel(ctx, cfg, api, appID, name, region, labels)
+	m := initialModel(ctx, cfg, api, appID, name, region, labels, appBranchID, inputConfig, groups)
 	p := tea.NewProgram(m)
 
 	finalModel, err := p.Run()

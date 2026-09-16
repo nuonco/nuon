@@ -15,6 +15,7 @@ func (a *Activities) getAppSandboxBuildByID(ctx context.Context, buildID string)
 	var build app.AppSandboxBuild
 	res := a.db.WithContext(ctx).
 		Preload("AppSandboxConfig").
+		Preload("VCSConnectionCommit").
 		Where(&app.AppSandboxBuild{ID: buildID}).
 		First(&build)
 	if res.Error != nil {

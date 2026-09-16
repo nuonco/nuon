@@ -5,10 +5,11 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type middleware struct {
