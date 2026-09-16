@@ -31,6 +31,14 @@ const BranchSettingsCards = () => {
   const hasGitHubSource =
     !!currentConfig?.connected_github_vcs_config ||
     !!currentConfig?.public_git_vcs_config
+  const runConfig = currentConfig?.run_config
+  const runMode = runConfig?.mode ?? 'all'
+  const runModeDescription = {
+    all: 'Runs on pushes and previews pull requests.',
+    on_tag_prefix: `Runs when a tag starts with ${runConfig?.tag_prefix ?? 'the configured prefix'}.`,
+    on_github_label: `Runs after a merged pull request has the ${runConfig?.github_label ?? 'configured'} label.`,
+    manual_only: 'Runs only when triggered manually.',
+  }[runMode]
 
   return (
     <div className="flex flex-col gap-4">
@@ -68,6 +76,23 @@ const BranchSettingsCards = () => {
           )
         }
       />
+
+      <Card className="gap-4 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col gap-0.5">
+            <Text weight="strong">Run cadence</Text>
+            <Text variant="subtext" theme="neutral">
+              {runModeDescription}
+            </Text>
+          </div>
+          <LabelBadge
+            labelKey="mode"
+            labelValue={runMode}
+            size="sm"
+            theme={runMode === 'all' ? 'default' : 'brand'}
+          />
+        </div>
+      </Card>
 
       {hasGitHubSource ? (
         <BranchCISettings

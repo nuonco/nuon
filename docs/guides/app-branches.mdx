@@ -64,6 +64,31 @@ Three things to get right:
 
 Every field is documented in the [branch config reference](/config-ref/branch).
 
+### Control when the branch runs
+
+Omit `[run]` to run on every push and preview pull requests. To give a customer its own release cadence while still
+tracking `main`, gate the branch with a tag prefix:
+
+```toml
+[run]
+mode       = "on_tag_prefix"
+tag_prefix = "foobar/"
+```
+
+Pushing `foobar/v0.0.1` runs the tagged commit only when that commit is on the tracked branch's history.
+
+For a merge-driven cadence, require an exact pull request label:
+
+```toml
+[run]
+mode         = "on_github_label"
+github_label = "deploy-cadence-daily"
+```
+
+When the PR lands, Nuon looks up the PR associated with the new commit and runs if the label matches.
+`on_github_label` requires `[connected_repo]`. The other modes are `all` and `manual_only`; manual triggers remain
+available in every mode.
+
 ### Selecting installs for a group
 
 Each group picks its installs one of two ways: a `label_selector`, or an explicit list (`install_ids` and

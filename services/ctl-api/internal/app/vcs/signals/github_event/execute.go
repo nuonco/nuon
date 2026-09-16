@@ -2,6 +2,7 @@ package githubevent
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -52,16 +53,28 @@ func (s *Signal) handlePushEvent(ctx workflow.Context, l *zap.Logger, connEvent 
 		l.Info(fmt.Sprintf("unable to parse push event payload: %v", err))
 		return nil
 	}
+	if pushInfo.Deleted {
+		l.Info("ignoring deleted git ref")
+		return nil
+	}
 
-	l.Info(fmt.Sprintf("processing push event for repo=%s branch=%s vcs_connection=%s",
-		pushInfo.Repo, pushInfo.Branch, connEvent.VCSConnectionID))
+	eventType := "push"
+	headRef := ""
+	if pushInfo.Tag != "" {
+		eventType = "tag"
+		headRef = pushInfo.Tag
+	}
+
+	l.Info(fmt.Sprintf("processing push event for repo=%s branch=%s tag=%s vcs_connection=%s",
+		pushInfo.Repo, pushInfo.Branch, pushInfo.Tag, connEvent.VCSConnectionID))
 
 	return s.fanOutToAppBranches(ctx, l, connEvent, fanOutRequest{
 		Repo:         pushInfo.Repo,
 		Branch:       pushInfo.Branch,
 		PlanOnly:     false,
-		EventType:    "push",
+		EventType:    eventType,
 		HeadSHA:      pushInfo.HeadSHA,
+		HeadRef:      headRef,
 		BaseSHA:      pushInfo.BeforeSHA,
 		PusherEmails: pushInfo.PusherEmails,
 		SenderLogin:  pushInfo.SenderLogin,
@@ -124,6 +137,9 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 	}
 
 	for _, match := range matches {
+		if !matchesRunConfig(match.RunConfig, req) {
+			continue
+		}
 		_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:   match.AppBranchID,
 			OwnerType: "app_branches",
@@ -151,13 +167,16 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 		l.Info(fmt.Sprintf("enqueued vcs-push signal for app branch %s (event_type=%s)", match.AppBranchID, req.EventType))
 	}
 
-	installSyncMatches, err := activities.AwaitFindMatchingInstallSyncApps(ctx, activities.FindMatchingInstallSyncAppsRequest{
-		OrgID:  connEvent.OrgID,
-		Repo:   req.Repo,
-		Branch: req.Branch,
-	})
-	if err != nil {
-		l.Error(fmt.Sprintf("failed to find matching install sync apps: %v", err))
+	var installSyncMatches []activities.MatchingInstallSyncApp
+	if req.Branch != "" {
+		installSyncMatches, err = activities.AwaitFindMatchingInstallSyncApps(ctx, activities.FindMatchingInstallSyncAppsRequest{
+			OrgID:  connEvent.OrgID,
+			Repo:   req.Repo,
+			Branch: req.Branch,
+		})
+		if err != nil {
+			l.Error(fmt.Sprintf("failed to find matching install sync apps: %v", err))
+		}
 	}
 
 	for _, match := range installSyncMatches {
@@ -184,4 +203,18 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 	}
 
 	return nil
+}
+
+func matchesRunConfig(config app.AppBranchRunConfig, req fanOutRequest) bool {
+	config.Normalize()
+	switch req.EventType {
+	case "pull_request":
+		return config.Mode == app.AppBranchRunModeAll
+	case "tag":
+		return config.Mode == app.AppBranchRunModeTagPrefix && strings.HasPrefix(req.HeadRef, config.TagPrefix)
+	case "push":
+		return config.Mode == app.AppBranchRunModeAll || config.Mode == app.AppBranchRunModeGithubLabel
+	default:
+		return false
+	}
 }

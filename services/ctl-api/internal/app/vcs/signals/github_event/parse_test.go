@@ -46,3 +46,27 @@ func TestParsePullRequestEventReadyForReview(t *testing.T) {
 	require.False(t, info.Draft)
 	require.Equal(t, "ready_for_review", info.Action)
 }
+
+func TestParseTagPush(t *testing.T) {
+	info, err := parsePushEvent(map[string]any{
+		"ref":        "refs/tags/foobar/v0.0.1",
+		"after":      "abc123",
+		"repository": map[string]any{"full_name": "acme/app"},
+	})
+	require.NoError(t, err)
+	require.Empty(t, info.Branch)
+	require.Equal(t, "foobar/v0.0.1", info.Tag)
+	require.Equal(t, "abc123", info.HeadSHA)
+	require.False(t, info.Deleted)
+}
+
+func TestParseDeletedTagPush(t *testing.T) {
+	info, err := parsePushEvent(map[string]any{
+		"ref":        "refs/tags/foobar/v0.0.1",
+		"after":      "0000000000000000000000000000000000000000",
+		"deleted":    true,
+		"repository": map[string]any{"full_name": "acme/app"},
+	})
+	require.NoError(t, err)
+	require.True(t, info.Deleted)
+}

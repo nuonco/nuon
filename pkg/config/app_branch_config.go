@@ -29,6 +29,18 @@ type AppBranchPreviewConfig struct {
 	React         *bool             `mapstructure:"react,omitempty" toml:"react,omitempty"`
 }
 
+type AppBranchRunConfig struct {
+	Mode        string `mapstructure:"mode,omitempty" toml:"mode,omitempty"`
+	TagPrefix   string `mapstructure:"tag_prefix,omitempty" toml:"tag_prefix,omitempty"`
+	GithubLabel string `mapstructure:"github_label,omitempty" toml:"github_label,omitempty"`
+}
+
+func (c AppBranchRunConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	addDescription(schema, "mode", "automatic run mode: all, on_tag_prefix, on_github_label, or manual_only")
+	addDescription(schema, "tag_prefix", "case-sensitive git tag prefix required by on_tag_prefix")
+	addDescription(schema, "github_label", "exact pull request label required by on_github_label")
+}
+
 func (c AppBranchPreviewConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "mode", "preview run mode: plan-only, apply, or build-only")
 	addDescription(schema, "install_id", "default install ID for preview runs")
@@ -57,6 +69,7 @@ type AppBranchConfig struct {
 	InstallGroups []AppBranchInstallGroupConfig `mapstructure:"install_groups,omitempty" toml:"install_groups,omitempty"`
 
 	Preview *AppBranchPreviewConfig `mapstructure:"preview,omitempty" toml:"preview,omitempty"`
+	Run     *AppBranchRunConfig     `mapstructure:"run,omitempty" toml:"run,omitempty"`
 
 	PostDeployRunbooks []string `mapstructure:"post_deploy_runbooks,omitempty" toml:"post_deploy_runbooks,omitempty" json:"post_deploy_runbooks,omitempty"`
 
@@ -71,12 +84,45 @@ func (c AppBranchConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "public_repo", "public git repo the branch tracks")
 	addDescription(schema, "install_groups", "ordered deployment groups for this branch")
 	addDescription(schema, "preview", "default preview run settings for this branch")
+	addDescription(schema, "run", "controls which VCS events automatically run this branch")
 	addDescription(schema, "post_deploy_runbooks", "names of runbooks to run on each install, in order, after its deploy succeeds; resolved to IDs at sync time")
 	addDescription(schema, "ignore_changes_regex", "RE2 regex matched against every changed file path; a run whose entire changed file set matches is not attempted")
 	addDescription(schema, "send_statuses_on_ignore", "whether to send a successful commit status when a run is ignored by ignore_changes_regex")
 }
 
 func (c *AppBranchConfig) Validate() error {
+	if c.Run != nil {
+		mode := c.Run.Mode
+		if mode == "" {
+			mode = "all"
+		}
+		switch mode {
+		case "all", "manual_only":
+			if c.Run.TagPrefix != "" || c.Run.GithubLabel != "" {
+				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode %q cannot set tag_prefix or github_label", c.Name, mode)}
+			}
+		case "on_tag_prefix":
+			if c.Run.TagPrefix == "" {
+				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode on_tag_prefix requires tag_prefix", c.Name)}
+			}
+			if c.Run.GithubLabel != "" {
+				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode on_tag_prefix cannot set github_label", c.Name)}
+			}
+		case "on_github_label":
+			if c.Run.GithubLabel == "" {
+				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode on_github_label requires github_label", c.Name)}
+			}
+			if c.Run.TagPrefix != "" {
+				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode on_github_label cannot set tag_prefix", c.Name)}
+			}
+			if c.ConnectedRepo == nil {
+				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode on_github_label requires connected_repo", c.Name)}
+			}
+		default:
+			return ErrConfig{Description: fmt.Sprintf("branch %q: unknown run mode %q", c.Name, mode)}
+		}
+	}
+
 	if c.IgnoreChangesRegex != "" {
 		if _, err := regexp.Compile(c.IgnoreChangesRegex); err != nil {
 			return ErrConfig{
