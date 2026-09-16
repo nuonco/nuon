@@ -54,6 +54,7 @@ type CreateAppBranchConfigRequest struct {
 	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 
 	PreviewConfig *app.AppBranchPreviewConfig `json:"preview_config,omitempty"`
+	RunConfig     *app.AppBranchRunConfig     `json:"run_config,omitempty"`
 }
 
 func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
@@ -117,6 +118,15 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 		c.PreviewConfig.Normalize()
 		if err := c.PreviewConfig.Validate(); err != nil {
 			return stderr.NewInvalidRequest(err)
+		}
+	}
+	if c.RunConfig != nil {
+		c.RunConfig.Normalize()
+		if err := c.RunConfig.Validate(); err != nil {
+			return stderr.NewInvalidRequest(err)
+		}
+		if c.RunConfig.Mode == app.AppBranchRunModeGithubLabel && c.ConnectedGithubVCSConfig == nil {
+			return stderr.NewInvalidRequest(fmt.Errorf("run mode on_github_label requires connected_github_vcs_config"))
 		}
 	}
 
@@ -288,6 +298,7 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 			SendStatusesOnIgnore: req.SendStatusesOnIgnore,
 		},
 		req.PreviewConfig,
+		req.RunConfig,
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch config: %w", err))

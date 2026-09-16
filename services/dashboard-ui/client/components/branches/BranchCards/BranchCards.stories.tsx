@@ -10,7 +10,6 @@ const mockCards: TBranchCardData[] = [
     branchId: 'br-001',
     name: 'main',
     href: '/org-1/apps/app-1/branches/br-001',
-    managedBy: 'config',
     repo: 'acme/platform-configs',
     repoBranch: 'main',
     latestRun: {
@@ -19,13 +18,16 @@ const mockCards: TBranchCardData[] = [
       commitMessage: 'bump api image to v1.42.0',
       createdAt: '2026-07-30T10:30:00Z',
     },
-    planSummary: { groups: 2, installs: 7, hasSelector: false },
+    planGroups: [
+      { name: 'staging', installs: 2, hasSelector: false },
+      { name: 'customers', installs: 4, hasSelector: false },
+      { name: 'enterprise', installs: 1, hasSelector: false },
+    ],
   },
   {
     branchId: 'br-002',
     name: 'staging',
     href: '/org-1/apps/app-1/branches/br-002',
-    managedBy: 'manually',
     repo: 'acme/platform-configs',
     repoBranch: 'staging',
     latestRun: {
@@ -35,14 +37,13 @@ const mockCards: TBranchCardData[] = [
       createdAt: '2026-08-01T14:00:00Z',
       awaitingApproval: true,
     },
-    planSummary: { groups: 1, installs: 0, hasSelector: true },
+    planGroups: [{ name: 'customers', installs: 0, hasSelector: true }],
   },
   {
     branchId: 'br-003',
     name: 'feature/new-deploy',
     href: '/org-1/apps/app-1/branches/br-003',
-    managedBy: null,
-    planSummary: { groups: 0, installs: 0, hasSelector: false },
+    planGroups: [],
   },
 ]
 

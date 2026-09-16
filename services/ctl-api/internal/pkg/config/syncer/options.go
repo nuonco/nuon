@@ -17,3 +17,12 @@ func WithComponentBuildDispatch() Option {
 		s.dispatchBuilds = true
 	}
 }
+
+// WithoutBranchSync prevents branch definitions in the app config from being
+// synced. Branch runs use this to avoid changing branch configuration while
+// applying the config fetched for that run.
+func WithoutBranchSync() Option {
+	return func(s *syncer) {
+		s.syncBranches = false
+	}
+}
