@@ -7,6 +7,7 @@ import { Pagination } from '@/components/common/Pagination'
 import { SearchInput } from '@/components/common/SearchInput'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { OwnerLink } from '@/components/common/OwnerLink'
 import { formatDate, truncateId } from '@/utils/format'
 
 function getStatus(status: any): string {
@@ -99,10 +100,7 @@ export const WorkflowsList = () => {
                   </td>
                   <td className="font-mono text-xs text-gray-900 dark:text-gray-100">{wf.type}</td>
                   <td className="text-gray-500 dark:text-gray-400">
-                    <Link to={`/installs/${wf.owner_id}`} className="font-mono text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
-                      {truncateId(wf.owner_id)}
-                    </Link>
-                    <span className="ml-1 text-[11px] text-gray-400 dark:text-gray-500">({wf.owner_type})</span>
+                    <OwnerLink ownerId={wf.owner_id} ownerType={wf.owner_type} />
                   </td>
                   <td className="text-gray-500 dark:text-gray-400 text-xs">{wf.steps?.length ?? 0}</td>
                   <td>

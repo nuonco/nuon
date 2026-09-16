@@ -6,6 +6,7 @@ import { Badge } from '@/components/common/Badge'
 import { Pagination } from '@/components/common/Pagination'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { OwnerLink } from '@/components/common/OwnerLink'
 import { formatDate, truncateId } from '@/utils/format'
 
 function severityColor(severity: string): string {
@@ -127,7 +128,7 @@ export const LogStreamDetail = () => {
             Org: <Link to={`/orgs/${log_stream.org_id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-mono">{truncateId(log_stream.org_id)}</Link>
           </div>
           <div>
-            Owner: <span className="font-mono text-xs">{truncateId(log_stream.owner_id)}</span>{' '}
+            Owner: <OwnerLink ownerId={log_stream.owner_id} ownerType={log_stream.owner_type} showType={false} />{' '}
             <Badge variant="default">{log_stream.owner_type}</Badge>
           </div>
           <div>Created: {formatDate(log_stream.created_at)}</div>

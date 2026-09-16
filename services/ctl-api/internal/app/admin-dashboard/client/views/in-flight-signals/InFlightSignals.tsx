@@ -6,6 +6,7 @@ import { Badge } from '@/components/common/Badge'
 import { SignalLink } from '@/components/common/SignalLink'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { OwnerLink } from '@/components/common/OwnerLink'
 import { formatDate, truncateId } from '@/utils/format'
 
 function getElapsed(dateStr: string | undefined): string {
@@ -77,8 +78,7 @@ export const InFlightSignals = () => {
                   <Badge>{signal.type}</Badge>
                 </td>
                 <td className="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  <span className="font-mono text-xs">{truncateId(signal.owner_id)}</span>
-                  <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">({signal.owner_type})</span>
+                  <OwnerLink ownerId={signal.owner_id} ownerType={signal.owner_type} />
                 </td>
                 <td className="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
                   <Link to={`/queues/${signal.queue_id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">

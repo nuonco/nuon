@@ -249,6 +249,12 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/installs/:id/forget", s.ProxyForgetInstall)
 		api.POST("/installs/:id/deprovision", s.ProxyDeprovisionInstall)
 
+		// App branches
+		api.GET("/app-branches", s.AppBranches)
+		api.GET("/app-branches/:id", s.AppBranchDetail)
+		api.GET("/app-branches/:id/runs", s.AppBranchRunsTable)
+		api.GET("/app-branches/:id/workflows", s.AppBranchWorkflowsTable)
+
 		// Workflows
 		api.GET("/workflows", s.Workflows)
 		api.GET("/workflows/table", s.WorkflowsTable)
