@@ -2,17 +2,22 @@ import { useMemo, useState } from 'react'
 import { useForm, useStore } from '@tanstack/react-form'
 import { z } from 'zod'
 import { ComponentDocs } from '../../__stories__/ComponentDocs'
+import { Badge } from '../../atoms/Badge'
 import { Button } from '../../atoms/Button'
 import { Icon } from '../../atoms/Icon'
 import { Input } from '../../atoms/Input'
+import { Radio } from '../../atoms/Radio'
 import { Status } from '../../atoms/Status'
 import { Text } from '../../atoms/Text'
+import { Disclosure } from '../../molecules/Disclosure'
 import { FormInput } from '../../molecules/FormInput'
-import { FormRadioGroup } from '../../molecules/FormRadioGroup'
 import { FormSelect } from '../../molecules/FormSelect'
 import { FormSwitch } from '../../molecules/FormSwitch'
+import { CloudRegion } from '../../molecules/CloudRegion'
 import { AppSelect, type IAppSelectItem } from '../../organisms/AppSelect'
 import type { IWizardDescriptor } from '../../../utils/wizard'
+import { cloudRegionsFor } from '../../../utils/cloud-regions'
+import type { TCloudPlatform } from '@/types'
 import { Wizard } from './Wizard'
 
 export default {
@@ -51,49 +56,142 @@ const APPS: IAppSelectItem[] = [
   },
 ]
 
-const AWS_REGIONS = [
-  {
-    value: 'us-east-1',
-    label: 'US East (N. Virginia)',
-    description: 'us-east-1',
+const REGION_COPY: Record<
+  TCloudPlatform,
+  { label: string; placeholder: string; error: string }
+> = {
+  aws: {
+    label: 'AWS region',
+    placeholder: 'Choose an AWS region',
+    error: 'Choose an AWS region',
   },
-  {
-    value: 'us-west-2',
-    label: 'US West (Oregon)',
-    description: 'us-west-2',
+  azure: {
+    label: 'Azure location',
+    placeholder: 'Choose an Azure location',
+    error: 'Choose an Azure location',
   },
-  {
-    value: 'eu-west-1',
-    label: 'Europe (Ireland)',
-    description: 'eu-west-1',
+  gcp: {
+    label: 'GCP region',
+    placeholder: 'Choose a GCP region',
+    error: 'Choose a GCP region',
   },
-]
+  unknown: {
+    label: 'Region',
+    placeholder: 'Choose a region',
+    error: 'Choose a region',
+  },
+}
 
-const BRANCHES = [
-  {
-    value: 'branch_main',
-    label: 'main · Production',
-    description: 'Applies env=production and tier=critical',
-  },
-  {
-    value: 'branch_release',
-    label: 'release · Staging',
-    description: 'Applies env=staging',
-  },
-  {
-    value: 'none',
-    label: 'No app branch',
-    description: 'Create the install without a deployment plan assignment.',
-  },
-]
+const regionOptions = (platform: TCloudPlatform) =>
+  cloudRegionsFor(platform).map((region) => ({
+    value: region.value,
+    textValue: `${region.text} ${region.value}`,
+    label: (
+      <CloudRegion
+        platform={platform}
+        region={platform === 'azure' ? undefined : region.value}
+        location={platform === 'azure' ? region.value : undefined}
+      />
+    ),
+    description: region.helpText ?? region.value,
+  }))
 
-const installDetailsSchema = z.object({
-  name: z.string().trim().min(1, 'Enter an install name'),
-  region: z.string().min(1, 'Choose an AWS region'),
-  awsAccountId: z
-    .string()
-    .regex(/^[0-9]{12}$/, 'Enter a 12-digit AWS account ID'),
-})
+type TEnrollmentGroupKind = 'labels' | 'all' | 'install-ids' | 'wildcard'
+
+interface IEnrollmentGroup {
+  id: string
+  name: string
+  kind: TEnrollmentGroupKind
+  labels?: Record<string, string>
+}
+
+interface IEnrollmentBranch {
+  id: string
+  name: string
+  groups: IEnrollmentGroup[]
+}
+
+const APP_BRANCHES: Record<string, IEnrollmentBranch[]> = {
+  app98e2wpzdxwoey393edtqj45: [
+    {
+      id: 'branch_payments_main',
+      name: 'main',
+      groups: [
+        {
+          id: 'group_payments_production',
+          name: 'Production',
+          kind: 'labels',
+          labels: { env: 'production', tier: 'critical' },
+        },
+        {
+          id: 'group_payments_preview',
+          name: 'Preview',
+          kind: 'wildcard',
+          labels: { env: 'preview', pull_request: '*' },
+        },
+      ],
+    },
+    {
+      id: 'branch_payments_release',
+      name: 'release',
+      groups: [
+        {
+          id: 'group_payments_staging',
+          name: 'Staging',
+          kind: 'labels',
+          labels: { env: 'staging' },
+        },
+        {
+          id: 'group_payments_all',
+          name: 'Every install',
+          kind: 'all',
+        },
+      ],
+    },
+  ],
+  app7fplr1up5atx5zpxotbabm: [
+    {
+      id: 'branch_support_main',
+      name: 'main',
+      groups: [
+        {
+          id: 'group_support_production',
+          name: 'Production',
+          kind: 'labels',
+          labels: { env: 'production' },
+        },
+      ],
+    },
+    {
+      id: 'branch_support_next',
+      name: 'next',
+      groups: [],
+    },
+  ],
+  appk933tcyzji01s7us3aeo3x: [
+    {
+      id: 'branch_analytics_main',
+      name: 'main',
+      groups: [
+        {
+          id: 'group_analytics_pinned',
+          name: 'Pinned installs',
+          kind: 'install-ids',
+        },
+      ],
+    },
+  ],
+  appm41s7us3aeo3xk933tcyz: [],
+}
+
+const installDetailsSchema = (platform: TCloudPlatform) =>
+  z.object({
+    name: z.string().trim().min(1, 'Enter an install name'),
+    region: z.string().min(1, REGION_COPY[platform].error),
+    awsAccountId: z
+      .string()
+      .regex(/^[0-9]{12}$/, 'Enter a 12-digit AWS account ID'),
+  })
 
 const inputsSchema = z.object({
   hostname: z.string().trim().min(1, 'Enter a hostname'),
@@ -112,13 +210,13 @@ interface IInstallSetupValues {
   replicas: string
   metricsEnabled: boolean
   branchId: string
+  installGroupId: string
 }
 
 interface IInstallSetupProgress {
   app: boolean
   details: boolean
   inputs: boolean
-  branch: boolean
   provisioned: boolean
 }
 
@@ -158,12 +256,130 @@ const StepActions = ({
     </div>
   )
 
+const enrollmentDescription = (group: IEnrollmentGroup) => {
+  if (group.kind === 'all') {
+    return 'This group already includes every install automatically.'
+  }
+  if (group.kind === 'install-ids') {
+    return 'This group is managed with explicit install IDs.'
+  }
+  if (group.kind === 'wildcard') {
+    return 'Wildcard selectors cannot be joined by applying labels.'
+  }
+  const labels = Object.entries(group.labels ?? {})
+    .map(([key, value]) => `${key}=${value}`)
+    .join(', ')
+  return labels ? `Joining applies ${labels}.` : undefined
+}
+
+const BranchEnrollment = ({
+  branches,
+  selectedBranchId,
+  selectedGroupId,
+  readOnly,
+  onSelect,
+  onClear,
+}: {
+  branches: IEnrollmentBranch[]
+  selectedBranchId: string
+  selectedGroupId: string
+  readOnly: boolean
+  onSelect: (branchId: string, groupId: string) => void
+  onClear: () => void
+}) => (
+  <div className="flex flex-col gap-3 border-t pt-5">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <span className="flex flex-col gap-1">
+        <span className="flex items-center gap-2">
+          <Text weight="medium">App branch enrollment</Text>
+          <Badge>Optional</Badge>
+        </span>
+        <Text variant="caption" color="tertiary">
+          Join an install group now, or enroll this install later.
+        </Text>
+      </span>
+      {!readOnly && selectedGroupId ? (
+        <Button size="sm" variant="ghost" onClick={onClear}>
+          Clear enrollment
+        </Button>
+      ) : null}
+    </div>
+
+    {branches.length ? (
+      <div className="flex flex-col gap-2">
+        {branches.map((branch) => (
+          <Disclosure
+            key={branch.id}
+            title={branch.name}
+            icon={<Icon variant="GitBranchIcon" size={16} />}
+            status={
+              <Badge>
+                {branch.groups.length}{' '}
+                {branch.groups.length === 1 ? 'group' : 'groups'}
+              </Badge>
+            }
+            defaultOpen={
+              branches.length === 1 || selectedBranchId === branch.id
+            }
+            className="rounded-lg border border-divider"
+            headerClassName="px-3"
+            contentClassName="flex flex-col gap-2 border-t border-divider p-3"
+          >
+            {branch.groups.length ? (
+              branch.groups.map((group) => {
+                const selectable = group.kind === 'labels'
+                return (
+                  <div key={group.id} className="rounded-lg bg-surface-01 p-3">
+                    <Radio
+                      name="installGroupId"
+                      value={group.id}
+                      checked={
+                        selectedBranchId === branch.id &&
+                        selectedGroupId === group.id
+                      }
+                      disabled={readOnly || !selectable}
+                      onChange={() => onSelect(branch.id, group.id)}
+                      label={
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span>{group.name}</span>
+                          {Object.entries(group.labels ?? {}).map(
+                            ([key, value]) => (
+                              <Badge
+                                key={key}
+                                variant="code"
+                                labelKey={key}
+                                labelValue={value}
+                              />
+                            )
+                          )}
+                        </span>
+                      }
+                      description={enrollmentDescription(group)}
+                    />
+                  </div>
+                )
+              })
+            ) : (
+              <Text variant="caption" color="tertiary">
+                No install groups in this branch.
+              </Text>
+            )}
+          </Disclosure>
+        ))}
+      </div>
+    ) : (
+      <Text variant="caption" color="tertiary">
+        This app has no app branches. You can continue without enrollment.
+      </Text>
+    )}
+  </div>
+)
+
 const InstallSetupStory = () => {
   const [progress, setProgress] = useState<IInstallSetupProgress>({
     app: false,
     details: false,
     inputs: false,
-    branch: false,
     provisioned: false,
   })
   const form = useForm({
@@ -179,12 +395,17 @@ const InstallSetupStory = () => {
       replicas: '2',
       metricsEnabled: true,
       branchId: '',
+      installGroupId: '',
     } satisfies IInstallSetupValues,
   })
   const values = useStore(form.store, (state) => state.values)
   const state: IInstallSetupState = { ...progress, values }
-  const detailsValid = installDetailsSchema.safeParse(values).success
+  const selectedApp = APPS.find((app) => app.id === values.appId)
+  const platform = selectedApp?.platform ?? 'unknown'
+  const detailsValid = installDetailsSchema(platform).safeParse(values).success
   const inputsValid = inputsSchema.safeParse(values).success
+  const selectedBranches = APP_BRANCHES[values.appId] ?? []
+  const regionField = REGION_COPY[platform]
 
   const complete = (key: keyof IInstallSetupProgress) => {
     setProgress((current) => ({ ...current, [key]: true }))
@@ -208,9 +429,38 @@ const InstallSetupStory = () => {
                 validators={{ onBlur: z.string().min(1, 'Choose an app') }}
               >
                 {(field) => (
-                  <AppSelect field={field} apps={APPS} disabled={readOnly} />
+                  <AppSelect
+                    field={field}
+                    apps={APPS}
+                    disabled={readOnly}
+                    onValueChange={() => {
+                      form.setFieldValue('branchId', '')
+                      form.setFieldValue('installGroupId', '')
+                      form.setFieldValue('region', '')
+                    }}
+                  />
                 )}
               </form.Field>
+              {values.appId ? (
+                <form.Field name="installGroupId">
+                  {(field) => (
+                    <BranchEnrollment
+                      branches={selectedBranches}
+                      selectedBranchId={values.branchId}
+                      selectedGroupId={field.state.value}
+                      readOnly={readOnly}
+                      onSelect={(branchId, groupId) => {
+                        form.setFieldValue('branchId', branchId)
+                        field.handleChange(groupId)
+                      }}
+                      onClear={() => {
+                        form.setFieldValue('branchId', '')
+                        field.handleChange('')
+                      }}
+                    />
+                  )}
+                </form.Field>
+              ) : null}
               <StepActions
                 readOnly={readOnly}
                 disabled={!values.appId}
@@ -224,12 +474,15 @@ const InstallSetupStory = () => {
           label: 'Install details',
           complete: (current) =>
             current.details &&
-            installDetailsSchema.safeParse(current.values).success,
+            installDetailsSchema(
+              APPS.find((app) => app.id === current.values.appId)?.platform ??
+                'unknown'
+            ).safeParse(current.values).success,
           render: ({ readOnly }) => (
             <div className="flex flex-col gap-5">
               <StepHeading
                 title="Configure install"
-                description="Set the install identity, AWS destination, approval behavior, and initial provisioning scope."
+                description="Set the install identity, destination, approval behavior, and initial provisioning scope."
               />
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <form.Field
@@ -250,15 +503,15 @@ const InstallSetupStory = () => {
                 <form.Field
                   name="region"
                   validators={{
-                    onBlur: z.string().min(1, 'Choose an AWS region'),
+                    onBlur: z.string().min(1, regionField.error),
                   }}
                 >
                   {(field) => (
                     <FormSelect
                       field={field}
-                      label="AWS region"
-                      options={AWS_REGIONS}
-                      placeholder="Choose an AWS region"
+                      label={regionField.label}
+                      options={regionOptions(platform)}
+                      placeholder={regionField.placeholder}
                       searchable
                       disabled={readOnly}
                     />
@@ -448,35 +701,6 @@ const InstallSetupStory = () => {
           ),
         },
         {
-          id: 'app-branch',
-          label: 'App branch',
-          complete: (current) =>
-            current.branch && Boolean(current.values.branchId),
-          render: ({ readOnly }) => (
-            <div className="flex flex-col gap-5">
-              <StepHeading
-                title="Assign to app branch"
-                description="Optionally add this install to an app branch deployment plan."
-              />
-              <form.Field name="branchId">
-                {(field) => (
-                  <FormRadioGroup
-                    field={field}
-                    label="App branch"
-                    options={BRANCHES}
-                    disabled={readOnly}
-                  />
-                )}
-              </form.Field>
-              <StepActions
-                readOnly={readOnly}
-                disabled={!values.branchId}
-                onContinue={() => complete('branch')}
-              />
-            </div>
-          ),
-        },
-        {
           id: 'provision',
           label: 'Provision',
           complete: (current) => current.provisioned,
@@ -515,7 +739,7 @@ const InstallSetupStory = () => {
         },
       ],
     }),
-    [detailsValid, form, inputsValid, values]
+    [detailsValid, form, inputsValid, platform, regionField, values]
   )
 
   const reset = () => {
@@ -524,7 +748,6 @@ const InstallSetupStory = () => {
       app: false,
       details: false,
       inputs: false,
-      branch: false,
       provisioned: false,
     })
   }
@@ -550,9 +773,9 @@ export const Overview = () => (
   <ComponentDocs
     name="Install setup wizard"
     tier="template"
-    summary="An interactive five-step fixture for designing the Lite install setup flow."
+    summary="An interactive four-step fixture for designing the Lite install setup flow."
     use={[
-      'Enter mock values and continue through app selection, install details, labels and inputs, app branch assignment, and provision.',
+      'Enter mock values and continue through app and optional install-group selection, install details, labels and inputs, and provision.',
     ]}
     avoid={[
       'Do not treat this fixture as API wiring or the final provision workflow.',
@@ -561,7 +784,9 @@ export const Overview = () => (
     rules={[
       'Every input is backed by TanStack Form and validated with Zod where required.',
       'Completed steps remain reachable and render their controls read-only.',
-      'No app branch is an explicit valid choice because assignment is optional.',
+      'Selecting an app reveals its branches and install groups in the same step.',
+      'Install-group enrollment is optional and never blocks Continue.',
+      'Only concrete label-selector groups can be joined during setup; automatic, install-ID and wildcard groups remain visible but disabled.',
       'Each step owns the single primary action that advances it, so the flow never shows two primaries at once.',
     ]}
     props={[]}

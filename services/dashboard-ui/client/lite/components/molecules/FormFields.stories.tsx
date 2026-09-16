@@ -76,7 +76,7 @@ export const Overview = () => (
         name: 'onValueChange',
         type: '(value: string) => void',
         description:
-          'FormRadioGroup: receives the chosen value after the field updates.',
+          'FormRadioGroup and FormSelect: receives the chosen value after the field updates.',
       },
     ]}
   />
