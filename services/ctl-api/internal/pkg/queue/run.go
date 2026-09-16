@@ -193,9 +193,7 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return true, nil
 	}
 
-	// handle idle functionality
-	// drained > 0 forces continue-as-new so requeueSignals recovers those signals
-	if q.isIdle(ctx) && q.activeWorkers == 0 && drained == 0 {
+	if q.canCompleteIdle(ctx, drained) {
 		l.Info("queue is idle, terminating workflow")
 		q.setStatus(ctx, l, QueueStatusIdle)
 		return true, nil
@@ -205,6 +203,14 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		l.Warn("unable to set finished_at metadata", zap.Error(err))
 	}
 	return false, nil
+}
+
+// Retained or drained references need continue-as-new, not idle completion.
+// Keep this separate from isIdle: inactivity must still trigger draining when
+// a handler is stuck waiting for a callback.
+func (q *queue) canCompleteIdle(ctx workflow.Context, drained int) bool {
+	return q.isIdle(ctx) && q.activeWorkers == 0 && drained == 0 &&
+		(!q.bufferedDispatch || len(q.inFlightSignals) == 0)
 }
 
 func (q *queue) setStatus(ctx workflow.Context, l *zap.Logger, status string) {

@@ -113,10 +113,13 @@ type queue struct {
 	// Used to prevent continue-as-new while workers are mid-processing.
 	activeWorkers int
 
-	// inFlightSignals tracks signals currently in the dispatcher channel or being
+	// inFlightSignals tracks signals pending delivery, in the dispatcher channel, or being
 	// processed. Used to prevent double-dispatch when requeueSignals and enqueueHandler
 	// both try to dispatch the same signal.
 	inFlightSignals map[string]bool
+
+	bufferedDispatch bool
+	pendingSignals   []QueueRef
 
 	// state is used to store state that will continue between continue-as-news
 	state *QueueState
