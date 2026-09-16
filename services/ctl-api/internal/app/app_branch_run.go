@@ -22,6 +22,35 @@ const (
 	AppBranchRunTypeGitPreview AppBranchRunType = "git-preview-run"
 )
 
+type AppBranchRunTrigger string
+
+const (
+	AppBranchRunTriggerManual      AppBranchRunTrigger = "manual"
+	AppBranchRunTriggerPush        AppBranchRunTrigger = "push"
+	AppBranchRunTriggerPullRequest AppBranchRunTrigger = "pull_request"
+	AppBranchRunTriggerTag         AppBranchRunTrigger = "tag"
+	AppBranchRunTriggerGithubLabel AppBranchRunTrigger = "github_label"
+	AppBranchRunTriggerOnboarding  AppBranchRunTrigger = "onboarding"
+)
+
+// AppBranchRunMetadata is the immutable provenance snapshot for a run.
+// Runtime status metadata remains reserved for workflow state.
+type AppBranchRunMetadata struct {
+	Trigger AppBranchRunTrigger `json:"trigger,omitempty"`
+
+	HeadSHA    string `json:"head_sha,omitempty"`
+	GitRef     string `json:"git_ref,omitempty"`
+	BaseBranch string `json:"base_branch,omitempty"`
+
+	PRNumber    *int   `json:"pr_number,omitempty"`
+	Tag         string `json:"tag,omitempty"`
+	GithubLabel string `json:"github_label,omitempty"`
+	IsDraft     bool   `json:"is_draft,omitempty"`
+
+	RunMode   string `json:"run_mode,omitempty"`
+	TagPrefix string `json:"tag_prefix,omitempty"`
+}
+
 // AppBranchRunLabelBuildsCompleted is set on AppBranchRun.labels when the builds
 // step finishes. Used to select baseline runs for AppBranchRunComparison.
 const AppBranchRunLabelBuildsCompleted = "builds_completed"
@@ -52,6 +81,8 @@ type AppBranchRun struct {
 	Status string `json:"status,omitzero" gorm:"notnull;default:'pending'" temporaljson:"status,omitzero,omitempty"`
 
 	RunType AppBranchRunType `json:"run_type,omitzero" gorm:"notnull;default:'manual-run'" temporaljson:"run_type,omitzero,omitempty"`
+
+	Metadata AppBranchRunMetadata `json:"metadata,omitzero" gorm:"type:jsonb;serializer:json;not null;default:'{}'" temporaljson:"metadata,omitzero,omitempty"`
 
 	Force bool `json:"force,omitzero" temporaljson:"force,omitzero,omitempty"`
 
@@ -100,6 +131,31 @@ func (a *AppBranchRun) IsPreview() bool {
 		return true
 	}
 	return a.RunType == AppBranchRunTypeGitPreview || a.PlanOnly
+}
+
+// RunMetadata returns the provenance snapshot with legacy columns filled in
+// for rows created before metadata was introduced.
+func (a *AppBranchRun) RunMetadata() AppBranchRunMetadata {
+	metadata := a.Metadata
+	if metadata.Trigger == "" {
+		metadata.Trigger = AppBranchRunTrigger(a.EventType)
+	}
+	if metadata.HeadSHA == "" {
+		metadata.HeadSHA = a.HeadSHA
+	}
+	if metadata.BaseBranch == "" {
+		metadata.BaseBranch = a.BaseBranch
+	}
+	if metadata.PRNumber == nil {
+		metadata.PRNumber = a.PRNumber
+	}
+	if a.Preview != nil {
+		metadata.IsDraft = metadata.IsDraft || a.Preview.IsDraftMode
+		if metadata.GitRef == "" {
+			metadata.GitRef = a.Preview.GitRef
+		}
+	}
+	return metadata
 }
 
 func (a *AppBranchRun) PreviewGitHubSetStatuses() bool {
