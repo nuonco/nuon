@@ -2,7 +2,7 @@
 title: "AI and App Building"
 description: "Use AI agents to generate and manage your Nuon app configuration."
 icon: "code"
-keywords: ["AI assistant", "generate app config", "AI app builder", "automated configuration", "Claude Code", "nuon-plugin"]
+keywords: ["AI assistant", "generate app config", "AI app builder", "automated configuration", "Claude Code"]
 ---
 
 You can use any terminal-based AI agent to build Nuon app configurations — instead of writing TOML files by hand, describe your application and let the agent scaffold everything for you.
@@ -24,13 +24,3 @@ When starting the agent, also point it at your own resources — Helm charts, Te
 <Tip>
 Works with any agent: Claude Code, Google Gemini CLI, Amp Code, and others. For agents that don't read `CLAUDE.md`, create a symlink — e.g., `ln -s AGENTS.md GEMINI.md`.
 </Tip>
-
-## Claude Code
-
-Claude Code users can also load the [nuon-plugin](https://github.com/nuonco/nuon-plugin) for deeper integration, or install individual [skills](https://github.com/nuonco/skills) from the Nuon skills library.
-
-The plugin adds `/nuon:init`, `/nuon:convert`, and `/nuon:validate` slash commands directly in your Claude session. The skills (`nuon-creator`, `nuon-app-config`, `nuon-actions`, `nuon-policy`) provide focused, auto-invoked assistance for specific tasks like config generation, action scripting, and policy authoring.
-
-```bash
-npx skills add nuonco/skills
-```
