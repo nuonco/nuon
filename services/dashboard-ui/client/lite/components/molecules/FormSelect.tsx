@@ -10,10 +10,12 @@ export interface IFormSelect
     >,
     Pick<IField, 'label' | 'description' | 'optional' | 'className'> {
   field: AnyFieldApi
+  onValueChange?: (value: string) => void
 }
 
 export const FormSelect = ({
   field,
+  onValueChange,
   label,
   description,
   optional,
@@ -30,7 +32,10 @@ export const FormSelect = ({
     <Select
       name={field.name}
       value={(field.state.value as string | undefined) ?? ''}
-      onChange={(value) => field.handleChange(value)}
+      onChange={(value) => {
+        field.handleChange(value)
+        onValueChange?.(value)
+      }}
       onBlur={field.handleBlur}
       {...props}
     />

@@ -56,6 +56,8 @@ export const Overview = () => (
       'Brand marks are decorative and always hidden from assistive technology.',
       'Every SVG path lives in the lite source tree.',
       'Nuon is the glyph only; Logo remains the separate wordmark component.',
+      'size is the optical size, not a box: marks are normalized to equal visual area, so a wide mark renders shorter and wider than a compact one.',
+      'Height never exceeds size, so a mark always fits the line it sits on; width varies with the artwork.',
     ]}
     props={[
       {
@@ -73,7 +75,8 @@ export const Overview = () => (
         name: 'size',
         type: 'number | string',
         default: '16',
-        description: 'Rendered width and height.',
+        description:
+          'Optical size. Caps the height and scales the width to the mark\u2019s aspect ratio. Accepts any CSS length, including em.',
       },
     ]}
   />
@@ -88,6 +91,43 @@ export const Color = () => (
 export const Mono = () => (
   <div className="max-w-4xl p-8 text-secondary">
     <Grid tone="mono" />
+  </div>
+)
+
+export const OpticalBalance = () => (
+  <div className="flex flex-col gap-6 p-8">
+    <Text variant="caption" color="tertiary">
+      All marks at size 24, on a shared baseline.
+    </Text>
+    <div className="flex flex-wrap items-baseline gap-6">
+      {VARIANTS.map((variant) => (
+        <span key={variant} className="flex items-baseline gap-2">
+          <Brand variant={variant} size={24} />
+          <Text variant="caption">{variant}</Text>
+        </span>
+      ))}
+    </div>
+    <div className="flex flex-wrap items-center gap-6">
+      {VARIANTS.map((variant) => (
+        <span
+          key={variant}
+          className="flex items-center gap-2 bg-surface-02 p-2"
+        >
+          <Brand variant={variant} size={24} />
+        </span>
+      ))}
+    </div>
+  </div>
+)
+
+export const InlineWithText = () => (
+  <div className="flex max-w-md flex-col gap-3 p-8">
+    {VARIANTS.slice(0, 5).map((variant) => (
+      <Text key={variant} variant="caption" className="flex items-center gap-2">
+        <Brand variant={variant} size="1.25em" />
+        <span>Runs on {variant}</span>
+      </Text>
+    ))}
   </div>
 )
 
