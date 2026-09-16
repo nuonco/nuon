@@ -6,9 +6,10 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/pipeline"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_execBytesLogFn_exec(t *testing.T) {

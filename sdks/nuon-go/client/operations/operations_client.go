@@ -678,6 +678,8 @@ type ClientService interface {
 
 	GetInstallTelemetrySettings(params *GetInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTelemetrySettingsOK, error)
 
+	GetInstallUpdates(params *GetInstallUpdatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallUpdatesOK, error)
+
 	GetInstallWorkflow(params *GetInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallWorkflowOK, error)
 
 	GetInstallWorkflowStep(params *GetInstallWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallWorkflowStepOK, error)
@@ -891,6 +893,8 @@ type ClientService interface {
 	LogStreamTailLogs(params *LogStreamTailLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamTailLogsOK, error)
 
 	MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MngVMShutDownOK, error)
+
+	MoveInstallToAppBranch(params *MoveInstallToAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MoveInstallToAppBranchOK, error)
 
 	PhoneHome(params *PhoneHomeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PhoneHomeCreated, error)
 
@@ -14138,6 +14142,52 @@ func (a *Client) GetInstallTelemetrySettings(params *GetInstallTelemetrySettings
 }
 
 /*
+GetInstallUpdates gets typed updates for an install
+
+Returns app config, input, stack, and install config updates in reverse chronological order.
+*/
+func (a *Client) GetInstallUpdates(params *GetInstallUpdatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallUpdatesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallUpdatesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallUpdates",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/updates",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallUpdatesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallUpdatesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallUpdates: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallWorkflow gets an install workflow
 
 Return a workflow.
@@ -19045,6 +19095,52 @@ func (a *Client) MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.Cli
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for MngVMShutDown: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+MoveInstallToAppBranch moves an install to another app branch
+
+Moves the install to the given app branch and reconciles it onto that branch's current app config. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app and have an active, non-preview app config. There is no way to move an install off a branch without naming another.
+*/
+func (a *Client) MoveInstallToAppBranch(params *MoveInstallToAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MoveInstallToAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewMoveInstallToAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "MoveInstallToAppBranch",
+		Method:             "PATCH",
+		PathPattern:        "/v1/installs/{install_id}/app-branch",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &MoveInstallToAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*MoveInstallToAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for MoveInstallToAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

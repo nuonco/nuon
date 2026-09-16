@@ -1,8 +1,9 @@
 package ecrrepository
 
 import (
-	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"go.uber.org/fx"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 type Activities struct {

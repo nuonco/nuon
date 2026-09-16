@@ -2,8 +2,9 @@ package pulumi
 
 import (
 	"github.com/go-playground/validator/v10"
-	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"go.uber.org/fx"
+
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	"github.com/nuonco/nuon/pkg/runner/errs"

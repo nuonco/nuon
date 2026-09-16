@@ -8,8 +8,9 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/pkg/errors"
+
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 )

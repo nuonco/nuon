@@ -2,6 +2,7 @@ package logs
 
 import (
 	"charm.land/lipgloss/v2"
+
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 

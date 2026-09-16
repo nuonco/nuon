@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func TestPipeline_AddStep(t *testing.T) {

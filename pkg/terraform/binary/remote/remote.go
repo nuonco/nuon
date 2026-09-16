@@ -6,6 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/releases"
+
 	"github.com/nuonco/nuon/pkg/terraform/binary"
 )
 

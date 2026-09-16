@@ -3,9 +3,29 @@ package activities
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
+
+func TestBuildPRCommentBodyIncludesMarkerWaveAndSHA(t *testing.T) {
+	body := BuildPRCommentBody(&PRCommentParams{
+		AppBranchID: "abranch123",
+		AppName:     "acme",
+		RunID:       "run1",
+		HeadSHA:     "abcdef123456",
+		Status:      PRCommentStatusPending,
+	})
+	if !strings.Contains(body, PRCommentMarker("abranch123")) {
+		t.Errorf("missing marker\n%s", body)
+	}
+	if !strings.Contains(body, "\U0001f44b") {
+		t.Errorf("missing wave\n%s", body)
+	}
+	if !strings.Contains(body, "`abcdef1`") {
+		t.Errorf("missing short sha\n%s", body)
+	}
+}
 
 func TestBuildPRCommentBodyIncludesInstallImpact(t *testing.T) {
 	body := BuildPRCommentBody(&PRCommentParams{
@@ -97,7 +117,7 @@ func TestBuildPRCommentBodyIncludesModeRunLinkBuildLabelsAndStackWarning(t *test
 	})
 
 	for _, want := range []string{
-		"## Nuon Preview \u2014 acme/payments/production (build and validate)",
+		"## \U0001f44b Nuon Preview \u2014 acme/payments/production (build and validate)",
 		"[View preview run \u2192](https://app.example.com/org/apps/app/branches/branch/runs/workflow)",
 		"\U0001f6a8 Stack changes require customers to reprovision the stack. Learn more [here](https://docs.nuon.co/concepts/stacks).",
 		"<details>\n<summary><strong>Builds</strong> <code>2</code></summary>",
@@ -136,7 +156,7 @@ func TestBuildPRCommentBodyApplyNamesPreviewInstall(t *testing.T) {
 		InstallApplied:     true,
 	})
 
-	if !strings.Contains(body, "## Nuon Preview \u2014 acme/payments/production (apply)") {
+	if !strings.Contains(body, "## \U0001f44b Nuon Preview \u2014 acme/payments/production (apply)") {
 		t.Errorf("comment body missing apply mode\n%s", body)
 	}
 	if !strings.Contains(body, "Applied to [`preview-us-west`](https://app.example.com/org/installs/install/app-branch-runs).") {
@@ -165,7 +185,7 @@ func TestBuildPRCommentBodyApplyOmitsInstallWhenNotApplied(t *testing.T) {
 	}
 }
 
-func TestBuildPRCommentBodySkippedOmitsMCPPrompt(t *testing.T) {
+func TestBuildPRCommentBodySkippedIncludesMCPPrompt(t *testing.T) {
 	body := BuildPRCommentBody(&PRCommentParams{
 		AppName: "production",
 		RunID:   "abrun-example",
@@ -173,8 +193,8 @@ func TestBuildPRCommentBodySkippedOmitsMCPPrompt(t *testing.T) {
 		Mode:    app.AppBranchRunPreviewModePlanOnly,
 	})
 
-	if strings.Contains(body, "Debug with MCP") {
-		t.Errorf("skipped comment should not contain an MCP debug prompt\n%s", body)
+	if !strings.Contains(body, "Debug with MCP") {
+		t.Errorf("skipped comment should retain the shared MCP debug section\n%s", body)
 	}
 	if strings.Contains(body, "Updated:") {
 		t.Errorf("skipped comment should not contain a redundant timestamp footer\n%s", body)
@@ -242,7 +262,7 @@ func TestBuildPRCommentBodyEmptyDiffCollapsesToNoChanges(t *testing.T) {
 	if !strings.Contains(body, "<summary><strong>Config changes</strong> <code>no changes</code></summary>") {
 		t.Errorf("comment body missing empty diff summary\n%s", body)
 	}
-	if !strings.Contains(body, "## Nuon Preview \u2014 production (plan-only)") {
+	if !strings.Contains(body, "## \U0001f44b Nuon Preview \u2014 production (plan-only)") {
 		t.Errorf("heading should fall back to the branch name alone\n%s", body)
 	}
 }
@@ -401,15 +421,66 @@ func TestBuildPRCommentBodyMCPDocsLink(t *testing.T) {
 	}
 }
 
-func TestBuildPRCommentBodySkippedOmitsMCPLink(t *testing.T) {
+func TestBuildPRCommentBodySkippedIncludesMCPLink(t *testing.T) {
 	body := BuildPRCommentBody(&PRCommentParams{
 		AppName: "acme",
 		RunID:   "abrun-example",
 		Status:  PRCommentStatusSkipped,
 	})
 
-	if strings.Contains(body, "docs.nuon.co") {
-		t.Errorf("skipped comment should not contain MCP docs link\n%s", body)
+	if !strings.Contains(body, "docs.nuon.co") {
+		t.Errorf("skipped comment should retain MCP docs link\n%s", body)
+	}
+}
+
+func TestBuildPRCommentBodyUsesSharedTemplateForEveryStatus(t *testing.T) {
+	for _, status := range []PRCommentStatus{
+		PRCommentStatusPending,
+		PRCommentStatusSuccess,
+		PRCommentStatusFailed,
+		PRCommentStatusSkipped,
+	} {
+		t.Run(string(status), func(t *testing.T) {
+			body := BuildPRCommentBody(&PRCommentParams{
+				AppBranchID: "branch-1",
+				AppName:     "payments",
+				RunID:       "run-1",
+				Status:      status,
+				Mode:        app.AppBranchRunPreviewModePlanOnly,
+			})
+			for _, want := range []string{
+				PRCommentMarker("branch-1"),
+				"## \U0001f44b Nuon Preview",
+				"**Status**:",
+				"### Debug with MCP",
+			} {
+				if !strings.Contains(body, want) {
+					t.Errorf("status %q missing shared template element %q\n%s", status, want, body)
+				}
+			}
+		})
+	}
+}
+
+func TestNormalizePRCommentBodyReplacesMarkerAndLastUpdatedAt(t *testing.T) {
+	updatedAt := time.Date(2026, time.September, 15, 23, 30, 0, 0, time.UTC)
+	body := normalizePRCommentBody(
+		"<!-- nuon-app-branch-preview:stale -->\n## \U0001f44b Nuon Preview \u2014 acme\n\n**Last updated at:** stale\n\ncontent\n",
+		"branch-1",
+		updatedAt,
+	)
+
+	if strings.Count(body, prCommentMarkerPrefix) != 1 {
+		t.Fatalf("expected one marker\n%s", body)
+	}
+	if !strings.HasPrefix(body, PRCommentMarker("branch-1")+"\n") {
+		t.Fatalf("expected current marker first\n%s", body)
+	}
+	if strings.Count(body, lastUpdatedPrefix) != 1 {
+		t.Fatalf("expected one last-updated line\n%s", body)
+	}
+	if !strings.Contains(body, "**Last updated at:** 2026-09-15 23:30:00 UTC") {
+		t.Fatalf("expected UTC last-updated timestamp\n%s", body)
 	}
 }
 

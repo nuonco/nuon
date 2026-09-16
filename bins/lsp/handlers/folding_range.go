@@ -3,9 +3,10 @@ package handlers
 import (
 	"strings"
 
-	"github.com/nuonco/nuon/pkg/parser/toml"
 	"github.com/tliron/glsp"
 	protocol "github.com/tliron/glsp/protocol_3_16"
+
+	"github.com/nuonco/nuon/pkg/parser/toml"
 )
 
 func TextDocumentFoldingRange(ctx *glsp.Context, params *protocol.FoldingRangeParams) ([]protocol.FoldingRange, error) {

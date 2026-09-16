@@ -105,6 +105,18 @@ export const PreviewConfigSection = ({
                 {defaults.comment ? 'Enabled' : 'Disabled'}
               </Badge>
             </LabeledValue>
+            <LabeledValue
+              label="Ignore draft PRs"
+              loading={isLoading}
+              loadingWidth={8}
+            >
+              <Badge
+                size="sm"
+                theme={defaults.ignoreDrafts ? 'success' : 'neutral'}
+              >
+                {defaults.ignoreDrafts ? 'Enabled' : 'Disabled'}
+              </Badge>
+            </LabeledValue>
           </>
         ) : null}
       </div>

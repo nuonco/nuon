@@ -253,6 +253,16 @@ func previewConfigRequest(ctx context.Context, resolver *branchNameResolver, cfg
 	} else {
 		out.Comment = true
 	}
+	if p.IgnoreDrafts != nil {
+		out.IgnoreDrafts = *p.IgnoreDrafts
+	} else {
+		out.IgnoreDrafts = true
+	}
+	if p.React != nil {
+		out.React = *p.React
+	} else {
+		out.React = true
+	}
 	return out, nil
 }
 

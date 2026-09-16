@@ -1,8 +1,9 @@
 package metrics
 
 import (
-	"github.com/nuonco/nuon/pkg/metrics"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/metrics"
 )
 
 type internalMiddleware struct {

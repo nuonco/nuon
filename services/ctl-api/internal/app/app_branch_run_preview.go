@@ -33,6 +33,7 @@ type AppBranchRunPreview struct {
 
 	GitRef           string `json:"git_ref,omitempty" temporaljson:"git_ref,omitzero,omitempty"`
 	InputAppConfigID string `json:"input_app_config_id,omitempty" temporaljson:"input_app_config_id,omitzero,omitempty"`
+	IsDraftMode      bool   `json:"is_draft_mode,omitempty" temporaljson:"is_draft_mode,omitzero,omitempty"`
 
 	BranchPreviewConfig   AppBranchPreviewConfig    `json:"branch_preview_config,omitzero" gorm:"type:jsonb;serializer:json;not null" temporaljson:"branch_preview_config,omitzero,omitempty"`
 	OverridePreviewConfig *AppBranchPreviewOverride `json:"override_preview_config,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"override_preview_config,omitzero,omitempty"`
@@ -84,4 +85,18 @@ func (p *AppBranchRunPreview) GitHubComment() bool {
 		return false
 	}
 	return p.ResolvedPreviewConfig.Comment
+}
+
+func (p *AppBranchRunPreview) GitHubReact() bool {
+	if p == nil {
+		return false
+	}
+	return p.ResolvedPreviewConfig.React
+}
+
+func (p *AppBranchRunPreview) GitHubIgnoreDrafts() bool {
+	if p == nil {
+		return true
+	}
+	return p.ResolvedPreviewConfig.IgnoreDrafts
 }

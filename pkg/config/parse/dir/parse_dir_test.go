@@ -3,8 +3,9 @@ package dir
 import (
 	"testing"
 
-	"github.com/nuonco/nuon/pkg/config"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 func TestSourceFileSetter_InterfaceAssertion(t *testing.T) {
