@@ -177,7 +177,41 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 		})
 	}
 
+	if err := s.proxyResources(ctx, upstream, server); err != nil {
+		return nil, fmt.Errorf("listing upstream resources: %w", err)
+	}
+
 	return server, nil
+}
+
+// proxyResources mirrors upstream's resources and resource templates (e.g.
+// agent skills) onto the local server, forwarding reads back upstream.
+// Resources are read-only content, so they're never subject to the
+// --allow-writes filter applied to tools.
+func (s *Service) proxyResources(ctx context.Context, upstream *mcp.ClientSession, server *mcp.Server) error {
+	resources, err := upstream.ListResources(ctx, nil)
+	if err != nil {
+		return err
+	}
+	for _, resource := range resources.Resources {
+		resourceCopy := *resource
+		server.AddResource(&resourceCopy, func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+			return upstream.ReadResource(ctx, &mcp.ReadResourceParams{URI: req.Params.URI})
+		})
+	}
+
+	templates, err := upstream.ListResourceTemplates(ctx, nil)
+	if err != nil {
+		return err
+	}
+	for _, tmpl := range templates.ResourceTemplates {
+		tmplCopy := *tmpl
+		server.AddResourceTemplate(&tmplCopy, func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+			return upstream.ReadResource(ctx, &mcp.ReadResourceParams{URI: req.Params.URI})
+		})
+	}
+
+	return nil
 }
 
 func isWriteTool(tool *mcp.Tool) bool {
