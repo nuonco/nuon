@@ -57,7 +57,7 @@ export const Overview = () => (
       'The platform is the icon alone, with its name kept for screen readers.',
       'Search matches the app name, its id, or its source repo.',
       'A readiness value adds a badge that stays visible on the trigger once selected.',
-      'Only not-provisionable disables an option, because the other states are still installable.',
+      'Not provisionable and no valid config disable an option. The other readiness states remain installable.',
       'Search and empty-state copy are owned by the component.',
     ]}
     props={[
@@ -139,6 +139,14 @@ export const Readiness = () => (
         source: 'acme/edge-gateway',
         updatedLabel: 'synced 1 hour ago',
         readiness: 'no-components',
+      },
+      {
+        id: 'appv7fplr1up5atx5zpxotba5',
+        name: 'Internal console',
+        platform: 'azure',
+        source: 'acme/internal-console',
+        updatedLabel: 'synced 3 days ago',
+        readiness: 'no-valid-config',
       },
       {
         id: 'apps7fplr1up5atx5zpxotba4',

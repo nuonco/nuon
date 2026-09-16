@@ -7,11 +7,13 @@ import { FormSelect, type IFormSelect } from '../../molecules/FormSelect'
 
 export type TAppSelectReadiness =
   | 'not-provisionable'
+  | 'no-valid-config'
   | 'no-components'
   | 'no-component-builds'
 
 export const APP_SELECT_READINESS_LABEL: Record<TAppSelectReadiness, string> = {
   'not-provisionable': 'Not provisionable',
+  'no-valid-config': 'No valid config',
   'no-components': 'No components',
   'no-component-builds': 'No component builds',
 }
@@ -89,7 +91,9 @@ export const AppSelect = ({ apps, ...props }: IAppSelect) => (
       label: <AppName app={app} />,
       textValue: [app.name, app.id, app.source].filter(Boolean).join(' '),
       description: <AppDetails app={app} />,
-      disabled: app.readiness === 'not-provisionable',
+      disabled:
+        app.readiness === 'not-provisionable' ||
+        app.readiness === 'no-valid-config',
     }))}
     placeholder="Choose an app"
     searchable
