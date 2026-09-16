@@ -3421,6 +3421,9 @@ export interface components {
         [key: string]: string;
       };
       maintenance_iam_role_arn?: string;
+      named_policy_arns?: {
+        [key: string]: string;
+      };
       private_subnets?: string[];
       provision_iam_role_arn?: string;
       public_subnets?: string[];
