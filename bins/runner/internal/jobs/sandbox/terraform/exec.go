@@ -8,9 +8,10 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	tfjson "github.com/hashicorp/terraform-json"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/pkg/kube"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"

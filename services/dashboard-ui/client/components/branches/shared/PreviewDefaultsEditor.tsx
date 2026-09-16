@@ -18,6 +18,7 @@ export type IPreviewDefaults = {
   labelSelector: Record<string, string>
   setStatuses: boolean
   comment: boolean
+  ignoreDrafts: boolean
 }
 
 export const defaultPreviewDefaults = (): IPreviewDefaults => ({
@@ -27,6 +28,7 @@ export const defaultPreviewDefaults = (): IPreviewDefaults => ({
   labelSelector: {},
   setStatuses: true,
   comment: true,
+  ignoreDrafts: true,
 })
 
 export const previewDefaultsFromConfig = (
@@ -39,6 +41,7 @@ export const previewDefaultsFromConfig = (
   const mode = config.mode ?? base.mode
   const setStatuses = config.set_statuses ?? true
   const comment = config.comment ?? true
+  const ignoreDrafts = config.ignore_drafts ?? true
 
   if (
     config.label_selector?.match_labels &&
@@ -51,6 +54,7 @@ export const previewDefaultsFromConfig = (
       labelSelector: config.label_selector.match_labels,
       setStatuses,
       comment,
+      ignoreDrafts,
     }
   }
 
@@ -66,6 +70,7 @@ export const previewDefaultsFromConfig = (
     labelSelector: {},
     setStatuses,
     comment,
+    ignoreDrafts,
   }
 }
 
@@ -78,6 +83,7 @@ export const previewDefaultsToConfig = (
     mode: defaults.mode,
     set_statuses: defaults.setStatuses,
     comment: defaults.comment,
+    ignore_drafts: defaults.ignoreDrafts,
   }
 
   if (
@@ -188,6 +194,15 @@ export const PreviewDefaultsEditor = ({
             onChange={(e) => onChange({ ...value, comment: e.target.checked })}
             disabled={disabled}
             labelProps={{ labelText: 'Comment on pull request' }}
+          />
+          <CheckboxInput
+            id="preview-ignore-drafts"
+            checked={value.ignoreDrafts}
+            onChange={(e) =>
+              onChange({ ...value, ignoreDrafts: e.target.checked })
+            }
+            disabled={disabled}
+            labelProps={{ labelText: 'Ignore draft pull requests' }}
           />
         </div>
       )}

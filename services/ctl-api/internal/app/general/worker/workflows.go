@@ -7,11 +7,12 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 type Workflows struct {

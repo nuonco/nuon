@@ -3,8 +3,9 @@ package oci
 import (
 	"testing"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func TestImage_RepoURL(t *testing.T) {

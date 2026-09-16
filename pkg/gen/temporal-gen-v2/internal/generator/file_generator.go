@@ -11,11 +11,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"golang.org/x/tools/go/packages"
+	"golang.org/x/tools/imports"
+
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/config"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/dir"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/file"
-	"golang.org/x/tools/go/packages"
-	"golang.org/x/tools/imports"
 )
 
 // Param is defined in activity_generator.go

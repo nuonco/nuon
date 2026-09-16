@@ -10,6 +10,7 @@ import (
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 )
@@ -145,4 +146,46 @@ func (s *AppBranchRunStepsTestSuite) TestPreviewSetupStepIsHidden() {
 
 	s.Equal("setup preview", result.Steps[1].Name)
 	s.Equal(app.WorkflowStepExecutionTypeHidden, result.Steps[1].ExecutionType)
+}
+
+func (s *AppBranchRunStepsTestSuite) TestPlanOnlyPreviewUsesLabelSelectorTarget() {
+	s.stubActivities(
+		app.AppBranchRunTypeGitPreview,
+		&app.AppBranchRunPreview{
+			Mode: app.AppBranchRunPreviewModePlanOnly,
+			ResolvedPreviewConfig: app.AppBranchPreviewConfig{
+				LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "staging"}},
+			},
+		},
+	)
+
+	result := s.generate(map[string]string{
+		"app_branch_id": "branch-1",
+		"run_id":        "run-1",
+		"config_id":     "config-1",
+	})
+
+	s.Contains(stepNames(result), "plan preview install")
+	s.NotContains(stepNames(result), "preview install impact")
+}
+
+func (s *AppBranchRunStepsTestSuite) TestApplyPreviewUsesLabelSelectorTarget() {
+	s.stubActivities(
+		app.AppBranchRunTypeGitPreview,
+		&app.AppBranchRunPreview{
+			Mode: app.AppBranchRunPreviewModeApply,
+			ResolvedPreviewConfig: app.AppBranchPreviewConfig{
+				LabelSelector: &labels.Selector{MatchLabels: labels.Labels{"env": "staging"}},
+			},
+		},
+	)
+
+	result := s.generate(map[string]string{
+		"app_branch_id": "branch-1",
+		"run_id":        "run-1",
+		"config_id":     "config-1",
+	})
+
+	s.Contains(stepNames(result), "apply preview install")
+	s.NotContains(stepNames(result), "preview install impact")
 }

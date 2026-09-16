@@ -3,11 +3,12 @@ package activities
 import (
 	"context"
 
+	"go.temporal.io/sdk/temporal"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	"go.temporal.io/sdk/temporal"
 )
 
 // @temporal-gen-v2 activity

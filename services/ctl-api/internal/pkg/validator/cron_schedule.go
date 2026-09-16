@@ -4,8 +4,9 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
 	"github.com/robfig/cron"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
 )
 
 // MinCronInterval is the minimum allowed interval between consecutive fires of

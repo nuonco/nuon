@@ -6,6 +6,7 @@ import (
 	"os"
 
 	tea "charm.land/bubbletea/v2"
+
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 )

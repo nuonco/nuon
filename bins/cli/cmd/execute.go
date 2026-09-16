@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"github.com/charmbracelet/fang"
-	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
 	"github.com/spf13/cobra"
+
+	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
 )
 
 // Building the description calls the API, so only do it when root help will

@@ -3,8 +3,9 @@ package worker
 import (
 	"fmt"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 )
 
 func (w *Workflows) ensureOrg(ctx workflow.Context, appID string) error {

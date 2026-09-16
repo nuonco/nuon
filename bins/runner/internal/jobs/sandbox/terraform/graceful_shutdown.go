@@ -3,9 +3,10 @@ package terraform
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/pkg/runner/log"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
-	"go.uber.org/zap"
 )
 
 func (p *handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob, l *zap.Logger) error {

@@ -22,6 +22,8 @@ func (c *cli) installsCmd() *cobra.Command {
 		azureSubscriptionID string
 		gcpProjectID        string
 		appID               string
+		appBranchID         string
+		installGroupID      string
 		deployID            string
 		runID               string
 		installCompID       string
@@ -147,7 +149,7 @@ sandbox and components unprovisioned:
 				AWSAccountID:        awsAccountID,
 				AzureSubscriptionID: azureSubscriptionID,
 				GCPProjectID:        gcpProjectID,
-			}, inputs, labelArgs, PrintJSON, noSelect, stackOnly)
+			}, inputs, labelArgs, PrintJSON, noSelect, stackOnly, appBranchID, installGroupID)
 		}),
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
@@ -164,6 +166,8 @@ sandbox and components unprovisioned:
 	createCmd.Flags().StringSliceVar(&labelArgs, "label", []string{}, "Labels to set on the install (repeatable, format: key=value). Example: --label env=prod --label team=platform")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")
 	createCmd.Flags().BoolVar(&stackOnly, "stack-only", false, "Provision the install stack and runner only, stopping before the sandbox and components")
+	createCmd.Flags().StringVar(&appBranchID, "app-branch-id", "", "App branch that will own this install (omit to use the most recent config from `nuon apps sync`)")
+	createCmd.Flags().StringVar(&installGroupID, "install-group-id", "", "Label-based install group whose labels should be applied (requires --app-branch-id)")
 	installsCmds.AddCommand(createCmd)
 
 	confirmDelete := false

@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/labels"

@@ -8,8 +8,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func Test_writer_Incr(t *testing.T) {
