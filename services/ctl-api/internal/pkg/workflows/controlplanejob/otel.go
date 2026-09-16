@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"time"
 
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	runnercontrolplane "github.com/nuonco/nuon/pkg/runner/controlplane"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 func (a *Activities) WriteControlPlaneLogs(ctx context.Context, logStreamID string, records []runnercontrolplane.OTELLogRecord) error {

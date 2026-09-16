@@ -70,6 +70,7 @@ export function useInstallForm({
 
   const canSubmit = useStore(form.store, (s) => s.canSubmit)
   const isSubmitting = useStore(form.store, (s) => s.isSubmitting)
+  const isValidating = useStore(form.store, (s) => s.isFieldsValidating)
   const values = useStore(form.store, (s) => s.values)
 
   const { hasDraft, draftTimestamp, draftValues, clearDraft } =
@@ -88,6 +89,7 @@ export function useInstallForm({
     form,
     canSubmit,
     isSubmitting,
+    isValidating,
     hasDraft,
     draftTimestamp,
     clearDraft,

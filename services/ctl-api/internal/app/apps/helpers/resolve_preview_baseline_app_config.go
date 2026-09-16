@@ -38,7 +38,21 @@ func (h *Helpers) ResolvePreviewBaselineAppConfig(ctx context.Context, runID, ap
 		return nil, fmt.Errorf("unable to load comparison: %w", err)
 	}
 
-	baseRun, findErr := h.FindBaseAppBranchRun(ctx, appBranchID)
+	var headRun app.AppBranchRun
+	if loadErr := h.db.WithContext(ctx).
+		Preload("Preview").
+		First(&headRun, "id = ?", runID).Error; loadErr != nil {
+		if loadErr == gorm.ErrRecordNotFound {
+			headRun = app.AppBranchRun{
+				ID:          runID,
+				AppBranchID: appBranchID,
+			}
+		} else {
+			return nil, fmt.Errorf("unable to load preview run: %w", loadErr)
+		}
+	}
+
+	baseRun, findErr := h.FindBaseAppBranchRunForHead(ctx, &headRun)
 	if findErr != nil {
 		if findErr == gorm.ErrRecordNotFound {
 			return out, nil

@@ -104,6 +104,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.DELETE("", s.DeleteInstall)
 		installs.POST("/labels", s.AddInstallLabels)
 		installs.DELETE("/labels", s.RemoveInstallLabels)
+		installs.PATCH("/app-branch", s.MoveInstallToAppBranch)
 		installs.POST("/reprovision", s.ReprovisionInstall)
 		installs.POST("/reprovision-stack", s.ReprovisionInstallStack)
 		installs.POST("/deprovision", s.DeprovisionInstall)
@@ -252,6 +253,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// install app config versions
 		installs.GET("/app-config-versions", s.GetInstallAppConfigVersions)
 		installs.GET("/app-config-versions/:version_id/diff", s.GetInstallAppConfigVersionDiff)
+		installs.GET("/updates", s.GetInstallUpdates)
 		installs.GET("/config-versions", s.GetInstallConfigVersions)
 		installs.GET("/config-versions/:version_id/diff", s.GetInstallConfigVersionDiff)
 		installs.GET("/config-syncs", s.GetInstallConfigSyncs)

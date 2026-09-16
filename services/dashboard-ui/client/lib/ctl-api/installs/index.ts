@@ -25,6 +25,7 @@ export * from './get-latest-install-roles'
 export * from './get-install-role-usages'
 
 export * from './get-install-workflows'
+export * from './get-install-updates'
 
 export * from './get-install-policy-reports'
 
@@ -45,3 +46,4 @@ export * from './update-install-inputs'
 export * from './update-install'
 export * from './update-install-telemetry-settings'
 export * from './post-phone-home'
+export * from './move-install-app-branch'

@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
-	"github.com/nuonco/nuon/pkg/metrics"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/nuonco/nuon/pkg/metrics"
 )
 
 func (w *writer) Incr(ctx workflow.Context, name string, tags ...string) {

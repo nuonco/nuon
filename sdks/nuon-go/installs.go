@@ -32,6 +32,9 @@ func (c *client) GetAppInstalls(ctx context.Context, appID string, query *models
 	}
 
 	params.Offset, params.Limit = applyPaginationQuery(query)
+	if query != nil && query.Q != "" {
+		params.Q = &query.Q
+	}
 
 	hr := newResponseHeaderReader(&operations.GetAppInstallsReader{})
 	resp, err := c.genClient.Operations.GetAppInstalls(params, c.getOrgIDAuthInfo(), hr.ClientOption())

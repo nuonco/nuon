@@ -11,9 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 func TestNewProbeSpec(t *testing.T) {

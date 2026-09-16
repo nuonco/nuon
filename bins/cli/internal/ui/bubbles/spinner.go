@@ -28,6 +28,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/cockroachdb/errors"
+
 	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go"

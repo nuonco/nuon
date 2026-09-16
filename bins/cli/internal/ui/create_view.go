@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors/withstack"
+
 	"github.com/nuonco/nuon/pkg/errs"
 )
 

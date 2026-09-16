@@ -10,11 +10,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	tfjson "github.com/hashicorp/terraform-json"
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
 )
 
 // @ID						GetTerraformWorkspaceStatesJSONByIDV2

@@ -30,6 +30,11 @@ func nonRetryableGitHubError(err error) error {
 	return nil
 }
 
+func isGitHubNotFound(err error) bool {
+	var ghErr *github.ErrorResponse
+	return errors.As(err, &ghErr) && ghErr.Response != nil && ghErr.Response.StatusCode == 404
+}
+
 type FetchCommitPRInfoInput struct {
 	VcsConfigID string `json:"vcs_config_id" validate:"required"`
 	Branch      string `json:"branch" validate:"required"`

@@ -6,9 +6,10 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
+
 	"github.com/nuonco/nuon/pkg/services/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/stretchr/testify/require"
 )
 
 func TestConfigValidation(t *testing.T) {

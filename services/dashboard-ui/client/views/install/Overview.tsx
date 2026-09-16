@@ -1,12 +1,17 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
+import { Card } from '@/components/common/Card'
 import { Expand } from '@/components/common/Expand'
 import { Markdown } from '@/components/common/Markdown'
+import { Text } from '@/components/common/Text'
+import { CurrentAppBranchRun } from '@/components/install-updates/CurrentAppBranchRun'
+import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { ReadmeWarnings } from '@/components/installs/ReadmeWarnings'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { useCurrentAppBranchRun } from '@/hooks/use-current-app-branch-run'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallReadme } from '@/lib'
@@ -17,10 +22,10 @@ export const Overview = () => {
   const { data: readme } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-readme', org?.id, install?.id],
-    queryFn: () =>
-      getInstallReadme({ orgId: org.id, installId: install.id }),
+    queryFn: () => getInstallReadme({ orgId: org.id, installId: install.id }),
     enabled: !!org?.id && !!install?.id,
   })
+  const { run: currentAppBranchRun } = useCurrentAppBranchRun()
 
   return (
     <PageSection>
@@ -35,7 +40,29 @@ export const Overview = () => {
 
       <SectionHeader
         title="Install overview"
-        description="View the install README."
+        description="Current install status and applied app configuration."
+      />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <div className="flex flex-col gap-1">
+            <Text variant="h3">Install status</Text>
+            <Text variant="subtext" theme="neutral">
+              Runner, sandbox, and component status.
+            </Text>
+          </div>
+          {install ? <InstallStatuses install={install} /> : null}
+        </Card>
+        <CurrentAppBranchRun
+          run={currentAppBranchRun}
+          orgId={org?.id}
+          appId={install?.app_id}
+        />
+      </div>
+
+      <SectionHeader
+        title="README"
+        description="Instructions and details rendered for this install."
       />
 
       {readme?.readme ? (
