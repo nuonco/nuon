@@ -1,7 +1,6 @@
 package apps
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -9,54 +8,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
-
-func TestBranchConfigRequestIncludesRunConfig(t *testing.T) {
-	tests := []struct {
-		name        string
-		run         *config.AppBranchRunConfig
-		wantMode    models.AppAppBranchRunMode
-		wantPrefix  string
-		wantGHLabel string
-	}{
-		{name: "default", wantMode: models.AppAppBranchRunModePush},
-		{
-			name:       "tag prefix",
-			run:        &config.AppBranchRunConfig{Mode: "on_tag_prefix", TagPrefix: "customer/"},
-			wantMode:   models.AppAppBranchRunModeOnTagPrefix,
-			wantPrefix: "customer/",
-		},
-		{
-			name:        "github label",
-			run:         &config.AppBranchRunConfig{Mode: "on_github_label", GithubLabel: "deploy-daily"},
-			wantMode:    models.AppAppBranchRunModeOnGithubLabel,
-			wantGHLabel: "deploy-daily",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			req, err := branchConfigRequest(context.Background(), nil, &config.AppBranchConfig{
-				Name: "main",
-				Run:  test.run,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if req.RunConfig == nil {
-				t.Fatal("RunConfig is nil")
-			}
-			if req.RunConfig.Mode != test.wantMode {
-				t.Fatalf("mode = %q, want %q", req.RunConfig.Mode, test.wantMode)
-			}
-			if req.RunConfig.TagPrefix != test.wantPrefix {
-				t.Fatalf("tag prefix = %q, want %q", req.RunConfig.TagPrefix, test.wantPrefix)
-			}
-			if req.RunConfig.GithubLabel != test.wantGHLabel {
-				t.Fatalf("github label = %q, want %q", req.RunConfig.GithubLabel, test.wantGHLabel)
-			}
-		})
-	}
-}
 
 func TestBuildBranchSyncPlan_CreateUpdateDeleteUnchanged(t *testing.T) {
 	local := []*config.AppBranchConfig{

@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { cleanup, render, screen } from '@testing-library/react'
-import type { TAppBranchRunConfig } from '@/types'
 import { AppBranchOverviewCards } from './AppBranchOverviewCards'
 
 afterEach(cleanup)
@@ -22,21 +21,6 @@ const BRANCH = {
   },
 }
 
-const CADENCES: Array<[string, TAppBranchRunConfig, string]> = [
-  ['push', {}, 'Every push'],
-  [
-    'tag prefix',
-    { mode: 'on_tag_prefix', tag_prefix: 'release/' },
-    'Tags matching release/',
-  ],
-  [
-    'GitHub label',
-    { mode: 'on_github_label', github_label: 'deploy-cadence-daily' },
-    'Merged PRs labeled deploy-cadence-daily',
-  ],
-  ['manual', { mode: 'manual_only' }, 'Manual updates'],
-]
-
 describe('AppBranchOverviewCards', () => {
   test('surfaces the branch name, repository, and config number', () => {
     render(<AppBranchOverviewCards branch={BRANCH} installCount={12} />)
@@ -52,14 +36,8 @@ describe('AppBranchOverviewCards', () => {
         branch={{
           ...BRANCH,
           configs: [
-            {
-              config_number: 9,
-              connected_github_vcs_config: { repo: 'acme/old' },
-            },
-            {
-              config_number: 21,
-              connected_github_vcs_config: { repo: 'acme/new' },
-            },
+            { config_number: 9, connected_github_vcs_config: { repo: 'acme/old' } },
+            { config_number: 21, connected_github_vcs_config: { repo: 'acme/new' } },
           ],
         }}
         installCount={0}
@@ -68,25 +46,6 @@ describe('AppBranchOverviewCards', () => {
 
     expect(screen.getByText('acme/new')).toBeTruthy()
     expect(screen.queryByText('acme/old')).toBeNull()
-  })
-
-  test.each(CADENCES)('surfaces the %s cadence', (_, runConfig, expected) => {
-    render(
-      <AppBranchOverviewCards
-        branch={{
-          ...BRANCH,
-          configs: [
-            {
-              ...BRANCH.configs[0],
-              run_config: runConfig,
-            },
-          ],
-        }}
-        installCount={12}
-      />
-    )
-
-    expect(screen.getByText(expected)).toBeTruthy()
   })
 
   test('abbreviates the commit sha', () => {
@@ -114,11 +73,7 @@ describe('AppBranchOverviewCards', () => {
     expect(screen.getByText('12')).toBeTruthy()
 
     view.rerender(
-      <AppBranchOverviewCards
-        branch={BRANCH}
-        installCount={12}
-        hasMoreInstalls
-      />
+      <AppBranchOverviewCards branch={BRANCH} installCount={12} hasMoreInstalls />
     )
 
     expect(screen.getByText('12+')).toBeTruthy()

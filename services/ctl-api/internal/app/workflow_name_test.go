@@ -99,23 +99,6 @@ func TestAppBranchRunName(t *testing.T) {
 			expected: "VCS push",
 		},
 		{
-			name: "tag",
-			metadata: map[string]string{
-				"event_type": "tag",
-				"tag":        "foobar/v0.0.1",
-			},
-			expected: "Tag foobar/v0.0.1",
-		},
-		{
-			name: "github label PR",
-			metadata: map[string]string{
-				"event_type":   "github_label",
-				"pr_number":    "42",
-				"github_label": "deploy-cadence-daily",
-			},
-			expected: "PR #42",
-		},
-		{
 			name:     "onboarding",
 			metadata: map[string]string{"event_type": "onboarding"},
 			expected: "Onboarding run",

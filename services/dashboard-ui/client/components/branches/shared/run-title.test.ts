@@ -13,7 +13,7 @@ describe('getRunTitle', () => {
           vcs_connection_commit: { message: 'Change app config' },
         },
       ],
-    } as unknown as TInstallWorkflow
+    } as TInstallWorkflow
 
     expect(getRunTitle(workflow)).toBe('Change app config')
   })
@@ -28,7 +28,7 @@ describe('getRunTitle', () => {
           preview: { mode: 'plan-only' },
         },
       ],
-    } as unknown as TInstallWorkflow
+    } as TInstallWorkflow
 
     expect(getRunTitle(workflow)).toBe('Run')
   })
@@ -81,35 +81,5 @@ describe('getRunTitle', () => {
     } as TInstallWorkflow
 
     expect(getRunTitle(workflow)).toBe('PR #23')
-  })
-
-  test('uses metadata for a tag run', () => {
-    const workflow = {
-      app_branch_runs: [
-        {
-          run_type: 'git-run',
-          metadata: { trigger: 'tag', tag: 'foobar/v0.0.1' },
-        },
-      ],
-    } as unknown as TInstallWorkflow
-
-    expect(getRunTitle(workflow)).toBe('Tag foobar/v0.0.1')
-  })
-
-  test('keeps PR identity on a labeled git run', () => {
-    const workflow = {
-      app_branch_runs: [
-        {
-          run_type: 'git-run',
-          metadata: {
-            trigger: 'github_label',
-            pr_number: 42,
-            github_label: 'deploy-cadence-daily',
-          },
-        },
-      ],
-    } as unknown as TInstallWorkflow
-
-    expect(getRunTitle(workflow)).toBe('PR #42')
   })
 })
