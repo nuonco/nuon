@@ -102,7 +102,7 @@ func (s *service) fetchComponentsWithLatestBuildByApp(ctx context.Context, appID
 	if err := s.db.WithContext(ctx).
 		Where("app_id IN ?", appIDs).
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable("component_config_connections_latest_configs_view"))
+			return db.Scopes(scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName))
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
 			return db.Order("component_builds.created_at DESC").Limit(1)

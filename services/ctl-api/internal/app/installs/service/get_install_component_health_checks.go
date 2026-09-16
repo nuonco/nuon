@@ -161,7 +161,7 @@ func (s *service) currentComponentConfig(ctx context.Context, installID, compone
 	if err := s.db.WithContext(ctx).
 		Scopes(
 			scopes.WithDisableViews,
-			scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
+			scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName),
 		).
 		Where(app.ComponentConfigConnection{ComponentID: componentID}).
 		First(&ccc).Error; err != nil {
