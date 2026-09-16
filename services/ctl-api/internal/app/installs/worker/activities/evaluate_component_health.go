@@ -729,7 +729,7 @@ func (a *Activities) componentDependencies(ctx context.Context, appConfigID stri
 		if err := a.db.WithContext(ctx).
 			Scopes(
 				scopes.WithDisableViews,
-				scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
+				scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName),
 			).
 			Select("component_id", "component_dependency_ids").
 			Where("component_id IN ?", missing).
