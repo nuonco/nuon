@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
   buildCreateInstallBody,
+  installSetupInputs,
   isDuplicateInstallNameError,
   normalizeInstallPlatform,
   pickInstallConfig,
@@ -73,6 +74,70 @@ describe('create install helpers', () => {
         region: 'us-west-2',
       },
     })
+  })
+
+  test('reads inputs from the flat array the API populates', () => {
+    expect(
+      installSetupInputs({
+        input_groups: [
+          { id: 'group_advanced', index: 1, app_inputs: [] },
+          { id: 'group_main', index: 0, app_inputs: [] },
+        ],
+        inputs: [
+          {
+            name: 'replicas',
+            display_name: 'Replica count',
+            group_id: 'group_main',
+            index: 1,
+            type: 'number',
+            default: '2',
+          },
+          {
+            name: 'hostname',
+            display_name: 'Public hostname',
+            group_id: 'group_main',
+            index: 0,
+            required: true,
+          },
+          {
+            name: 'metrics',
+            group_id: 'group_advanced',
+            type: 'bool',
+            default: 'true',
+          },
+          {
+            name: 'customer_only',
+            group_id: 'group_main',
+            source: 'customer',
+          },
+        ],
+      })
+    ).toEqual([
+      {
+        name: 'hostname',
+        label: 'Public hostname',
+        description: undefined,
+        required: true,
+        type: 'text',
+        defaultValue: '',
+      },
+      {
+        name: 'replicas',
+        label: 'Replica count',
+        description: undefined,
+        required: undefined,
+        type: 'number',
+        defaultValue: '2',
+      },
+      {
+        name: 'metrics',
+        label: 'metrics',
+        description: undefined,
+        required: undefined,
+        type: 'boolean',
+        defaultValue: true,
+      },
+    ])
   })
 
   test('recognizes duplicate install name errors', () => {

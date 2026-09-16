@@ -18,7 +18,7 @@ import {
   getComponents,
   getInstall,
 } from '@/lib'
-import type { TApp, TAppBranch, TAppInput, TComponent } from '@/types'
+import type { TApp, TAppBranch, TComponent } from '@/types'
 import { useToast } from '../../../hooks/use-toast'
 import { useOrg } from '../../../providers/org-provider'
 import { appSourceFromApp } from '../../molecules/AppSource'
@@ -26,6 +26,7 @@ import type { IAppSelectItem } from '../AppSelect'
 import { installSetupHref } from '../../../utils/hrefs'
 import {
   buildCreateInstallBody,
+  installSetupInputs,
   normalizeInstallPlatform,
   pickInstallConfig,
   type ICreateInstallValues,
@@ -34,7 +35,6 @@ import {
   InstallSetup,
   type IInstallSetupBranch,
   type IInstallSetupGroup,
-  type IInstallSetupInput,
 } from './InstallSetup'
 
 const appPlatform = (app?: TApp) =>
@@ -89,30 +89,6 @@ const branchFromApi = (branch: TAppBranch): IInstallSetupBranch | undefined => {
       const resolved = groupFromApi(group)
       return resolved ? [resolved] : []
     }),
-  }
-}
-
-const inputFromApi = (input: TAppInput): IInstallSetupInput | undefined => {
-  if (!input?.name || input?.source === 'customer') return undefined
-  const boolean =
-    input?.type === 'bool' ||
-    input?.default === 'true' ||
-    input?.default === 'false'
-  const type = boolean
-    ? 'boolean'
-    : input?.type === 'number'
-      ? 'number'
-      : input?.sensitive
-        ? 'password'
-        : 'text'
-
-  return {
-    name: input.name,
-    label: input?.display_name ?? input.name,
-    description: input?.description,
-    required: input?.required,
-    type,
-    defaultValue: boolean ? input?.default === 'true' : (input?.default ?? ''),
   }
 }
 
@@ -267,16 +243,7 @@ export const InstallSetupContainer = () => {
     enabled: !!orgId && !!selectedAppId && !!selectedConfig?.id && !installId,
   })
 
-  const inputs = useMemo(
-    () =>
-      (config?.input?.input_groups ?? []).flatMap((group) =>
-        (group?.app_inputs ?? []).flatMap((input) => {
-          const resolved = inputFromApi(input)
-          return resolved ? [resolved] : []
-        })
-      ),
-    [config]
-  )
+  const inputs = useMemo(() => installSetupInputs(config?.input), [config])
 
   const { data: existingInstall } = useQuery({
     queryKey: ['install', orgId, installId],

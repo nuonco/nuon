@@ -1,5 +1,12 @@
 import type { TCreateAppInstallBody } from '@/lib'
-import type { TAPIError, TAppConfig, TCloudPlatform } from '@/types'
+import type {
+  TAPIError,
+  TAppConfig,
+  TAppInput,
+  TAppInputConfig,
+  TCloudPlatform,
+} from '@/types'
+import type { IInstallSetupInput } from '../components/organisms/InstallSetup/InstallSetup'
 
 export interface ICreateInstallInputValue {
   name: string
@@ -44,6 +51,50 @@ export const isDuplicateInstallNameError = (
     text.includes('duplicate key') ||
     text.includes('duplicated key') ||
     text.includes('already exists')
+  )
+}
+
+const inputFromApi = (input: TAppInput): IInstallSetupInput | undefined => {
+  if (!input?.name || input?.source === 'customer') return undefined
+  const boolean =
+    input?.type === 'bool' ||
+    input?.default === 'true' ||
+    input?.default === 'false'
+  const type = boolean
+    ? 'boolean'
+    : input?.type === 'number'
+      ? 'number'
+      : input?.sensitive
+        ? 'password'
+        : 'text'
+
+  return {
+    name: input.name,
+    label: input?.display_name ?? input.name,
+    description: input?.description,
+    required: input?.required,
+    type,
+    defaultValue: boolean ? input?.default === 'true' : (input?.default ?? ''),
+  }
+}
+
+const byIndex = <T extends { index?: number }>(a: T, b: T) =>
+  (a?.index ?? 0) - (b?.index ?? 0)
+
+export const installSetupInputs = (
+  inputConfig?: TAppInputConfig
+): IInstallSetupInput[] => {
+  const all = inputConfig?.inputs ?? []
+  if (!all.length) return []
+
+  return [...(inputConfig?.input_groups ?? [])].sort(byIndex).flatMap((group) =>
+    all
+      .filter((input) => input?.group_id === group?.id)
+      .sort(byIndex)
+      .flatMap((input) => {
+        const resolved = inputFromApi(input)
+        return resolved ? [resolved] : []
+      })
   )
 }
 
