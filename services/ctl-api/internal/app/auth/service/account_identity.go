@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -84,7 +85,7 @@ func (s *service) getOrCreateAccountByIdentityStrict(
 	// 2. No existing identity - check if there's an existing account with this email
 	var existingAccount app.Account
 	err = s.db.WithContext(ctx).
-		Where("email = ?", userInfo.Email).
+		Where("email = ?", strings.ToLower(userInfo.Email)).
 		First(&existingAccount).Error
 
 	if err == nil {
@@ -191,7 +192,7 @@ func (s *service) getOrCreateAccountByIdentity(
 	// 2. No existing identity - check if there's an existing account with this email
 	var existingAccount app.Account
 	err = s.db.WithContext(ctx).
-		Where("email = ?", userInfo.Email).
+		Where("email = ?", strings.ToLower(userInfo.Email)).
 		First(&existingAccount).Error
 
 	if err == nil {
