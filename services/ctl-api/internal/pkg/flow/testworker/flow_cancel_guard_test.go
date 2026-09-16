@@ -45,10 +45,17 @@ func (e *FlowTestSuite) setupCancelledParkedFlow(ctx context.Context) (*app.Work
 
 func (e *FlowTestSuite) assertStillCancelled(ctx context.Context, flw *app.Workflow, wantSteps int) {
 	require.Never(e.T(), func() bool {
-		if e.getWorkflow(ctx, flw.ID).Status.Status != app.StatusCancelled {
+		var wf app.Workflow
+		if err := e.service.DB.WithContext(ctx).First(&wf, "id = ?", flw.ID).Error; err != nil {
+			return false
+		}
+		if wf.Status.Status != app.StatusCancelled {
 			return true
 		}
-		steps := e.getStepsByWorkflow(ctx, flw.ID)
+		steps, err := e.stepsByWorkflow(ctx, flw.ID)
+		if err != nil {
+			return false
+		}
 		if len(steps) != wantSteps {
 			return true
 		}
