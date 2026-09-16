@@ -78,6 +78,28 @@ branch only is run when a tag is imported.
 > have a lot of "noise". you'd have many (at scale) tag pushes for specific customers that still result in a build/plan, 
 > vs just being out-right skipped.
 
+### Run Configuration
+
+Run cadence is configured on the app branch:
+
+```toml
+[run]
+mode = "on_tag_prefix"
+tag_prefix = "foobar/"
+```
+
+Supported modes:
+
+- `all` (default): run tracked-branch pushes and PR previews.
+- `on_tag_prefix`: run a matching tag only when its commit is on the tracked branch's history.
+- `on_github_label`: after a PR lands, run when its GitHub labels contain the configured exact label.
+- `manual_only`: never run automatically.
+
+Every run stores a JSONB provenance snapshot on `AppBranchRun.metadata`. `run_type` remains the execution shape
+(`git-run`, `git-preview-run`, or `manual-run`), while metadata records why it ran (push, PR, tag, GitHub label, or
+manual), the SHA/ref, PR number, and the branch run mode that matched. Status metadata is not the source of truth for
+run identity.
+
 ### Overrides
 
 We currently support install overrides, which allow you to declare overrides of a component, the stack, or sandbox at 
