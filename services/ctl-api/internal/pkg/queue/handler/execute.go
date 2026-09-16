@@ -145,15 +145,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 			execErr)
 	}
 
-	// persist success status to DB — unless the signal was cancelled
-	// mid-execute: cancellation must win over a nil-error return, otherwise
-	// the success write resurrects a signal the cancel handler already
-	// finalised.
-	if h.canceled {
-		finStatus, finDesc = app.StatusCancelled, "signal was canceled during execution"
-		return nil, errors.New("signal was canceled during execution")
-	}
-
+	// persist success status to DB
 	_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusSuccess,
