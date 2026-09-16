@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/mcp/skills"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
@@ -228,6 +229,7 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 	for _, svc := range s.mcpServices {
 		svc.RegisterMCPTools(server)
 	}
+	skills.Register(server)
 
 	return server
 }
