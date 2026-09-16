@@ -3,6 +3,16 @@
 The **Control API (ctl-api)** is the Nuon control-plane backend: apps, components, installs, runners, workflows, and
 org-scoped operations. Go service using Gin, PostgreSQL/GORM, Temporal, and FX dependency injection.
 
+## Comments and tests
+
+Do not add comments unless the developer explicitly asks. If a comment seems necessary, ask first instead of writing it.
+
+Do not add or extend unit or integration tests unless the developer explicitly asks. When they do, stop and ask which
+sample they want:
+
+- table test: `map[name]struct{...}` plus testify (`github.com/stretchr/testify`)
+- integration test: FX suite that seeds and updates through the existing harness
+
 ## API Surfaces
 
 Each surface is a separate HTTP listener (defaults in `internal/config.go`). Run all locally with `go run . api` from
@@ -122,7 +132,6 @@ When adding config fields:
 2. Validation in `internal/pkg/config/validation`
 3. Wire HTTP handler **and** syncer step
 4. Do not change `Create*Request` JSON shapes; map onto builder input
-5. Cover the field in `build/build_test.go`
 
 Never add a second sync implementation. `// Duplicates logic from ...` means extract to `build`.
 
@@ -205,4 +214,4 @@ subscriptions. See [queue AGENTS.md](internal/pkg/queue/AGENTS.md) for queue/sig
 ## Integration Tests
 
 `internal/integration/` — HTTP-level tests against PostgreSQL. Mock persistence in unit tests; do not use SQLite for
-SQL semantics.
+SQL semantics. Do not add tests here unless the developer explicitly asks (see Comments and tests).

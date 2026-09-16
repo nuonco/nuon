@@ -27,7 +27,6 @@ export function parseBranchToCardData(
     branchId: branch.id || '',
     name: branch.name || '',
     href,
-    managedBy: branch.managed_by,
     repo: vcs?.repo,
     repoBranch: vcs?.branch,
     latestRun: branch.latest_run
@@ -44,14 +43,13 @@ export function parseBranchToCardData(
           awaitingApproval: branch.latest_run.awaiting_approval,
         }
       : undefined,
-    planSummary: {
-      groups: installGroups.length,
-      installs: installGroups.reduce(
-        (sum, group) => sum + (group.install_ids?.length ?? 0),
-        0
-      ),
-      hasSelector: installGroups.some((group) => !!group.label_selector),
-    },
+    planGroups: [...installGroups]
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((group, index) => ({
+        name: group.name || `Group ${index + 1}`,
+        installs: group.install_ids?.length ?? 0,
+        hasSelector: !!group.label_selector,
+      })),
     action: (
       <BranchManagementDropdown branch={branch} appId={appId} orgId={orgId} />
     ),

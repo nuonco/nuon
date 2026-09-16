@@ -125,6 +125,18 @@ func branchConfigRequest(ctx context.Context, resolver *branchNameResolver, cfg 
 	req := &models.ServiceCreateAppBranchConfigRequest{
 		IgnoreChangesRegex:   generics.ToPtr(cfg.IgnoreChangesRegex),
 		SendStatusesOnIgnore: generics.ToPtr(cfg.SendStatusesOnIgnore),
+		RunConfig: &models.AppAppBranchRunConfig{
+			Mode: models.AppAppBranchRunModePush,
+		},
+	}
+	if cfg.Run != nil {
+		mode := cfg.Run.Mode
+		if mode == "" || mode == "all" {
+			mode = "push"
+		}
+		req.RunConfig.Mode = models.AppAppBranchRunMode(mode)
+		req.RunConfig.TagPrefix = cfg.Run.TagPrefix
+		req.RunConfig.GithubLabel = cfg.Run.GithubLabel
 	}
 
 	if cfg.ConnectedRepo != nil {
