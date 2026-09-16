@@ -20,6 +20,7 @@ import {
   installCloudLocation,
   installStatusFacets,
 } from '../../../utils/install-details'
+import { installSetupHref } from '../../../utils/hrefs'
 
 export type TLabelColors = Record<string, Record<string, string>>
 
@@ -45,13 +46,20 @@ export interface IInstallsTable {
   labelFilter?: IInstallFilter
   branchFilter?: IInstallFilter
   labelColors?: TLabelColors
+  incompleteIds?: ReadonlySet<string>
   loading?: boolean
   fetching?: boolean
   error?: unknown
 }
 
-const installHref = (orgId: string, install: TInstall) =>
-  `/${orgId}/installs/${install?.id ?? ''}`
+const installHref = (
+  orgId: string,
+  install: TInstall,
+  incomplete: boolean
+) =>
+  incomplete && install?.id
+    ? installSetupHref(orgId, install.id)
+    : `/${orgId}/installs/${install?.id ?? ''}`
 
 const appHref = (orgId: string, install: TInstall) =>
   `/${orgId}/apps/${install?.app_id ?? ''}`
@@ -64,8 +72,17 @@ const installPlatform = (install: TInstall): TBrandVariant | undefined => {
   return undefined
 }
 
-const InstallStatuses = ({ install }: { install: TInstall }) => (
+const InstallStatuses = ({
+  install,
+  incomplete,
+}: {
+  install: TInstall
+  incomplete: boolean
+}) => (
   <span className="flex flex-wrap items-center gap-1.5">
+    {incomplete ? (
+      <Status status="pending" theme="warn" label="Setup incomplete" />
+    ) : null}
     {installStatusFacets(install).map((facet) => (
       <Status
         key={facet.id}
@@ -148,7 +165,8 @@ const InstallLabels = ({
 
 export const columnsFor = (
   orgId: string,
-  labelColors?: TLabelColors
+  labelColors?: TLabelColors,
+  incompleteIds?: ReadonlySet<string>
 ): ColumnDef<TInstall>[] => [
   {
     id: 'name',
@@ -157,7 +175,11 @@ export const columnsFor = (
     cell: ({ row }) => (
       <span className="flex min-w-0 flex-col gap-0.5">
         <Link
-          href={installHref(orgId, row.original)}
+          href={installHref(
+            orgId,
+            row.original,
+            Boolean(row.original?.id && incompleteIds?.has(row.original.id))
+          )}
           variant="body"
           className="w-fit"
         >
@@ -192,7 +214,14 @@ export const columnsFor = (
     id: 'statuses',
     header: 'Statuses',
     size: 130,
-    cell: ({ row }) => <InstallStatuses install={row.original} />,
+    cell: ({ row }) => (
+      <InstallStatuses
+        install={row.original}
+        incomplete={Boolean(
+          row.original?.id && incompleteIds?.has(row.original.id)
+        )}
+      />
+    ),
   },
   {
     id: 'platform',
@@ -232,16 +261,18 @@ const InstallCard = ({
   install,
   orgId,
   labelColors,
+  incomplete,
 }: {
   install: TInstall
   orgId: string
   labelColors?: TLabelColors
+  incomplete: boolean
 }) => {
   return (
     <Card className="flex h-full flex-col gap-4">
       <span className="flex min-w-0 flex-col gap-1">
         <Link
-          href={installHref(orgId, install)}
+          href={installHref(orgId, install, incomplete)}
           variant="heading"
           className="w-fit"
         >
@@ -255,7 +286,7 @@ const InstallCard = ({
           </Text>
         )}
       </span>
-      <InstallStatuses install={install} />
+      <InstallStatuses install={install} incomplete={incomplete} />
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
         <div className="min-w-0">
           <Text as="dt" variant="label" color="tertiary">
@@ -333,6 +364,7 @@ export const InstallsTable = ({
   labelFilter,
   branchFilter,
   labelColors,
+  incompleteIds,
   loading = false,
   fetching = false,
   error,
@@ -340,7 +372,7 @@ export const InstallsTable = ({
   <div className="flex min-w-0 flex-col gap-4">
     <Table
       data={installs}
-      columns={columnsFor(orgId, labelColors)}
+      columns={columnsFor(orgId, labelColors, incompleteIds)}
       getRowId={(install) => install?.id ?? ''}
       loading={loading}
       loadingLabel="Loading installs"
@@ -363,6 +395,9 @@ export const InstallsTable = ({
           install={row.original}
           orgId={orgId}
           labelColors={labelColors}
+          incomplete={Boolean(
+            row.original?.id && incompleteIds?.has(row.original.id)
+          )}
         />
       )}
     />

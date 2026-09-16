@@ -10,6 +10,11 @@ import {
 import { useListQueryState } from '../../../hooks/use-list-query-state'
 import { commaSetQueryParameter } from '../../../utils/list-query'
 import { useOrg } from '../../../providers/org-provider'
+import {
+  installSetupDescriptor,
+  installSetupStateFromInstall,
+} from '../../../utils/install-setup'
+import { isWizardComplete } from '../../../utils/wizard'
 import { Badge } from '../../atoms/Badge'
 import {
   InstallsTable,
@@ -148,6 +153,19 @@ export const InstallsTableContainer = () => {
         .filter((name): name is string => !!name)
     ),
   ]
+
+  const incompleteIds = new Set(
+    installs.flatMap((install) =>
+      install?.id &&
+      !isWizardComplete(
+        installSetupDescriptor,
+        installSetupStateFromInstall(install)
+      )
+        ? [install.id]
+        : []
+    )
+  )
+
   return (
     <InstallsTable
       installs={installs}
@@ -184,6 +202,7 @@ export const InstallsTableContainer = () => {
           value === '__none__' ? 'No branch' : value,
       })}
       labelColors={labelColors}
+      incompleteIds={incompleteIds}
       loading={isLoading}
       fetching={isPlaceholderData}
       error={error}

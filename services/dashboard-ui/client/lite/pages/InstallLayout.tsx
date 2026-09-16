@@ -5,6 +5,7 @@ import { usePageTitle } from '../hooks/use-page-title'
 import type { IBreadcrumbItem } from '../providers/breadcrumb-provider'
 import { InstallProvider, useInstall } from '../providers/install-provider'
 import { useOrg } from '../providers/org-provider'
+import { InstallResolver } from './InstallResolver'
 
 export const installNavigation = (
   orgId: string,
@@ -63,6 +64,8 @@ const InstallChrome = () => {
 
 export const InstallLayout = () => (
   <InstallProvider>
-    <InstallChrome />
+    <InstallResolver>
+      <InstallChrome />
+    </InstallResolver>
   </InstallProvider>
 )
