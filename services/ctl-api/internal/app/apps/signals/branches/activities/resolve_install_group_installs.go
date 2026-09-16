@@ -23,9 +23,17 @@ type ResolveInstallGroupInstallsInput struct {
 	// InstallIDs.
 	AllInstalls bool `json:"all_installs,omitempty"`
 
-	// AppBranchID is the branch the group belongs to. Every mode resolves within
-	// the installs that branch owns.
+	// AppBranchID is the branch the group belongs to. Install groups resolve
+	// within the installs that branch owns; AppScoped callers use it only for
+	// logging/validation context.
 	AppBranchID string `json:"app_branch_id,omitempty"`
+
+	// AppScoped resolves against every install on AppID instead of the
+	// installs AppBranchID owns. Preview targets are the only caller: a
+	// preview can point at an install on another branch (e.g. main), and the
+	// preview-candidate picker offers exactly those installs, so applying the
+	// preview must be able to reach them too.
+	AppScoped bool `json:"app_scoped,omitempty"`
 }
 
 type ResolveInstallGroupInstallsOutput struct {
@@ -35,7 +43,8 @@ type ResolveInstallGroupInstallsOutput struct {
 // ResolveInstallGroupInstalls turns an install group into the installs it
 // deploys to. All three targeting modes start from the installs the branch
 // owns, so a group can never reach an install that belongs to another branch,
-// whatever its selector or ID list says.
+// whatever its selector or ID list says. AppScoped callers (preview targets)
+// are the one exception: they start from every install on the app instead.
 //
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
@@ -44,7 +53,16 @@ func (a *Activities) ResolveInstallGroupInstalls(ctx context.Context, input *Res
 		return nil, fmt.Errorf("app_branch_id is required to resolve install group %s", input.GroupID)
 	}
 
-	owned, err := a.helpers.BranchInstalls(ctx, input.AppBranchID)
+	var owned []app.Install
+	var err error
+	if input.AppScoped {
+		if input.AppID == "" {
+			return nil, fmt.Errorf("app_id is required to resolve an app-scoped preview target")
+		}
+		owned, err = a.helpers.AppInstalls(ctx, input.AppID)
+	} else {
+		owned, err = a.helpers.BranchInstalls(ctx, input.AppBranchID)
+	}
 	if err != nil {
 		return nil, err
 	}

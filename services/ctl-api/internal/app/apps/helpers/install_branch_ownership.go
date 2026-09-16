@@ -97,6 +97,20 @@ func BranchInstallsWithDB(ctx context.Context, db *gorm.DB, branchID string) ([]
 	return installs, nil
 }
 
+// AppInstalls returns every install on the app, regardless of which branch
+// owns it. Unlike BranchInstalls, this is not the target population for
+// install groups; it exists for callers that intentionally reach across
+// branches, such as resolving a preview target.
+func (h *Helpers) AppInstalls(ctx context.Context, appID string) ([]app.Install, error) {
+	var installs []app.Install
+	if err := h.db.WithContext(ctx).
+		Where(app.Install{AppID: appID}).
+		Find(&installs).Error; err != nil {
+		return nil, fmt.Errorf("unable to load installs for app %s: %w", appID, err)
+	}
+	return installs, nil
+}
+
 // InstallMatchesGroup reports whether a group targets an install the branch
 // already owns. Ownership is the caller's responsibility: a group never reaches
 // outside its branch, so passing an install another branch owns is a bug.

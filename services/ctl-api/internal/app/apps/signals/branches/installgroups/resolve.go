@@ -27,10 +27,21 @@ func ResolvePreviewTarget(
 	if hasInstallID == hasSelector {
 		return nil, fmt.Errorf("preview requires exactly one of install_id or label_selector")
 	}
+	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, appBranchID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get app branch for preview resolution: %w", err)
+	}
+
 	if hasInstallID {
+		// A preview target can point at an install owned by another branch
+		// (e.g. main); the preview-candidate picker offers exactly those
+		// installs, so resolution has to be app-scoped rather than limited to
+		// installs this branch owns.
 		resolved, err := activities.AwaitResolveInstallGroupInstalls(ctx, &activities.ResolveInstallGroupInstallsInput{
+			AppID:       branch.AppID,
 			InstallIDs:  []string{installID},
 			AppBranchID: appBranchID,
+			AppScoped:   true,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to resolve preview install: %w", err)
@@ -38,14 +49,11 @@ func ResolvePreviewTarget(
 		return &Resolved{InstallIDs: resolved.InstallIDs, GroupName: "preview"}, nil
 	}
 
-	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, appBranchID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get app branch for preview label resolution: %w", err)
-	}
 	resolved, err := activities.AwaitResolveInstallGroupInstalls(ctx, &activities.ResolveInstallGroupInstallsInput{
 		AppID:       branch.AppID,
 		Selector:    selector,
 		AppBranchID: appBranchID,
+		AppScoped:   true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve preview labels: %w", err)
