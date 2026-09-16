@@ -12,7 +12,7 @@ export const Overview = () => (
     summary="A route-aware dashboard navigation link."
     use={[
       'Use for destinations in persistent application navigation.',
-      'Provide the displayed keyboard chord from the same navigation configuration that handles it.',
+      'Keep the keyboard chord on the same navigation item that useNavShortcuts handles.',
     ]}
     avoid={[
       'Do not use for links inside page content.',
@@ -20,7 +20,7 @@ export const Overview = () => (
     ]}
     rules={[
       'Internal routes expose aria-current when active.',
-      'Collapsed links expose their label and shortcut in a tooltip.',
+      'Collapsed links expose their label in a tooltip.',
       'External navigation opens in a new tab and never receives a route shortcut.',
       'onNavigate fires for internal routes only, so an external link never closes the mobile sidebar.',
     ]}

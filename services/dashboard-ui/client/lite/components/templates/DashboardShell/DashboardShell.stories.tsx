@@ -128,7 +128,7 @@ export const Overview = () => (
       'Desktop sidebar preference persists independently from mobile drawer state.',
       'The user menu moves between desktop header and mobile sidebar footer.',
       'The header sticks within the page scroll region and gains its glass surface after scrolling.',
-      'The sidebar and full-width status bar remain outside the page scroll region.',
+      'The sidebar remains outside the page scroll region.',
       'headerLeading and headerActions belong in the sticky header, not in the page.',
       'initialDesktopExpanded seeds the desktop sidebar before a stored preference exists.',
     ]}
@@ -167,7 +167,7 @@ export const Overview = () => (
       {
         name: 'statusBar',
         type: 'ReactNode',
-        description: 'Pinned status content below the main scroll region.',
+        description: 'Currently unused. Status content is not rendered in the shell.',
       },
       {
         name: 'children',
