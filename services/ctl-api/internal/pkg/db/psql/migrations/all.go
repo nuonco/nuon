@@ -200,5 +200,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "131-repoint-orphaned-install-role-usages",
 			Fn:   m.Migration131RepointOrphanedInstallRoleUsages,
 		},
+		{
+			Name: "132-backfill-app-branch-run-config",
+			Fn:   m.Migration132BackfillAppBranchRunConfig,
+		},
 	}
 }

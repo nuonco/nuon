@@ -3683,6 +3683,7 @@ export interface components {
       post_deploy_runbook_ids?: string[];
       preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      run_config?: components["schemas"]["app.AppBranchRunConfig"];
       runbook_ids?: string[];
       /**
        * @description SendStatusesOnIgnore posts a successful commit status when a run is ignored
@@ -3747,6 +3748,7 @@ export interface components {
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       log_stream?: components["schemas"]["app.LogStream"];
       log_stream_id?: string;
+      metadata?: components["schemas"]["app.AppBranchRunMetadata"];
       no_config_changes?: boolean;
       plan_only?: boolean;
       pr_number?: number;
@@ -3775,6 +3777,25 @@ export interface components {
       org_id?: string;
       updated_at?: string;
     };
+    "app.AppBranchRunConfig": {
+      github_label?: string;
+      mode?: components["schemas"]["app.AppBranchRunMode"];
+      tag_prefix?: string;
+    };
+    "app.AppBranchRunMetadata": {
+      base_branch?: string;
+      git_ref?: string;
+      github_label?: string;
+      head_sha?: string;
+      is_draft?: boolean;
+      pr_number?: number;
+      run_mode?: string;
+      tag?: string;
+      tag_prefix?: string;
+      trigger?: components["schemas"]["app.AppBranchRunTrigger"];
+    };
+    /** @enum {string} */
+    "app.AppBranchRunMode": "push" | "on_tag_prefix" | "on_github_label" | "manual_only";
     "app.AppBranchRunPreview": {
       app_branch_run_id?: string;
       branch_preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
@@ -3799,6 +3820,8 @@ export interface components {
     "app.AppBranchRunPreviewMode": "plan-only" | "apply" | "build-only";
     /** @enum {string} */
     "app.AppBranchRunPreviewSource": "pr" | "commit" | "branch" | "local";
+    /** @enum {string} */
+    "app.AppBranchRunTrigger": "manual" | "push" | "pull_request" | "tag" | "github_label" | "onboarding";
     /** @enum {string} */
     "app.AppBranchRunType": "manual-run" | "git-run" | "git-preview-run";
     "app.AppBreakGlassConfig": {
@@ -8149,6 +8172,7 @@ export interface components {
       post_deploy_runbook_ids?: string[];
       preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
+      run_config?: components["schemas"]["app.AppBranchRunConfig"];
       /**
        * @description SendStatusesOnIgnore posts a successful commit status for runs ignored by
        * IgnoreChangesRegex. Omit to carry the current setting forward.
@@ -26744,6 +26768,8 @@ export interface operations {
       query?: {
         /** @description page number */
         page?: number;
+        /** @description offset of results to return */
+        offset?: number;
         /** @description page size */
         limit?: number;
       };

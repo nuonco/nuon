@@ -56,6 +56,7 @@ type syncer struct {
 	prevState *sync.State
 
 	dispatchBuilds bool
+	syncBranches   bool
 }
 
 // Params defines the dependencies required by the syncer.
@@ -81,6 +82,7 @@ func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers
 		tfClient:         tfClient,
 		appID:            appID,
 		appConfigID:      appConfigID,
+		syncBranches:     true,
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -354,14 +356,16 @@ func (s *syncer) syncSteps() []syncStep {
 		})
 	}
 
-	// Branches run last: post_deploy_runbooks references runbooks by name, so the
-	// runbook steps above must have created them before name resolution.
-	steps = append(steps, syncStep{
-		Resource: "app-branches",
-		Method: func(ctx context.Context) error {
-			return branches.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID, s.state)
-		},
-	})
+	if s.syncBranches {
+		// Branches run last: post_deploy_runbooks references runbooks by name, so the
+		// runbook steps above must have created them before name resolution.
+		steps = append(steps, syncStep{
+			Resource: "app-branches",
+			Method: func(ctx context.Context) error {
+				return branches.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID, s.state)
+			},
+		})
+	}
 
 	return steps
 }
