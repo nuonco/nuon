@@ -222,7 +222,7 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 		Version: "1.0.0",
 	}, &mcp.ServerOptions{
 		SchemaCache:  s.schemaCache,
-		Instructions: fmt.Sprintf("%s Authenticated as account %s in org %q. %s %s %s", s.serverPurpose, accountID, orgID, s.orgInstructions, api.MCPTimeInstructions, api.MCPPoliciesInstructions),
+		Instructions: fmt.Sprintf("%s Authenticated as account %s in org %q. %s %s %s %s", s.serverPurpose, accountID, orgID, s.orgInstructions, api.MCPTimeInstructions, api.MCPPoliciesInstructions, skills.Instructions),
 	})
 	server.AddReceivingMiddleware(s.receivingMetricsMiddleware)
 
