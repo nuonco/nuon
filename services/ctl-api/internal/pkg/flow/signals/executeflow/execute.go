@@ -983,6 +983,11 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 			app.WorkflowStepNoDrift, app.WorkflowStepDrifted:
 			continue
 		case app.StatusError:
+			// Treat a settled failure (terminal directive) as complete so
+			// failures do not leak forever-open workflows: the group already
+			// acted on it, so nothing will resume this run. A parked error
+			// (await-retry, await-approval, or a legacy empty directive)
+			// still waits on a user decision and is not complete.
 			if flowdirective.Step(step.ResultDirective).IsTerminal() {
 				continue
 			}
