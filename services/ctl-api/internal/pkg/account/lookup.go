@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -18,7 +19,7 @@ func (c *Client) FindAccount(ctx context.Context, emailOrSubjectOrID string) (*a
 		Preload("Roles").
 		Preload("Roles.Org").
 		Preload("Roles.Policies").
-		Where("email = ?", emailOrSubjectOrID).
+		Where("email = ?", strings.ToLower(emailOrSubjectOrID)).
 		Or(app.Account{
 			Subject: emailOrSubjectOrID,
 		}).
