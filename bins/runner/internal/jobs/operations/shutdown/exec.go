@@ -3,8 +3,9 @@ package shutdown
 import (
 	"context"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 )

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/lib/pq"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 

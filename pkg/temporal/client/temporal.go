@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/uber-go/tally/v4"
 	tclient "go.temporal.io/sdk/client"
 	temporalotel "go.temporal.io/sdk/contrib/opentelemetry"
@@ -14,6 +13,8 @@ import (
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/metrics"
 )
 
 const (

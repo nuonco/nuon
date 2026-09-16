@@ -13,9 +13,9 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 type InstallMetadata struct {
@@ -73,26 +73,22 @@ type CreateInstallParams struct {
 	// StackOnly provisions the install stack and runner, then stops. The sandbox
 	// and components stay unprovisioned until the install is provisioned again.
 	StackOnly bool `json:"stack_only,omitempty"`
+
+	// AppBranchID is the optional app branch this install belongs to. When set,
+	// the install starts on that branch's active app config and stays on the
+	// branch until explicitly moved. When empty, the install uses the latest
+	// unbranched config from apps sync.
+	AppBranchID string `json:"app_branch_id,omitempty"`
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
 	parentApp := app.App{}
 	res := s.db.WithContext(ctx).
-		Preload("Components").
 		Preload("AppSandboxConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_sandbox_configs.created_at DESC").Limit(1)
 		}).
 		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_runner_configs.created_at DESC").Limit(1)
-		}).
-		Preload("AppInputConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_input_configs.created_at DESC").Limit(1)
-		}).
-		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.
-				Where(views.TableOrViewName(s.db, &app.AppConfig{}, ".status_v2 ->> 'status' = ?"), string(app.AppConfigStatusActive)).
-				Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).
-				Limit(1)
 		}).
 		Preload("AppPermissionsConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_permissions_configs.created_at DESC").Limit(1)
@@ -103,18 +99,16 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
 	}
 
-	if len(parentApp.AppConfigs) == 0 {
-		return nil, stderr.ErrUser{
-			Err:         fmt.Errorf("no active app config found for app %s", appID),
-			Description: "No active app config found. Please sync your app configuration before creating an install.",
-		}
+	pin, err := s.resolveCreateInstallPin(ctx, appID, req)
+	if err != nil {
+		return nil, err
 	}
 
 	// Validate and pin against the input config belonging to the app config this
 	// install is pinned to. Using the app's newest input config instead lets the
 	// two diverge whenever a newer app config exists, and the config-migration
 	// lookup then misses the install's inputs.
-	pinnedAppInputConfig, err := s.GetPinnedAppInputConfig(ctx, appID, parentApp.AppConfigs[0].ID)
+	pinnedAppInputConfig, err := s.GetPinnedAppInputConfig(ctx, appID, pin.AppConfig.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get pinned app input config: %w", err)
 	}
@@ -122,13 +116,29 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if err := s.ValidateInstallInputs(ctx, pinnedAppInputConfig, req.Inputs); err != nil {
 		return nil, err
 	}
+
+	sandboxConfigID := pin.AppConfig.SandboxConfig.ID
+	if sandboxConfigID == "" && len(parentApp.AppSandboxConfigs) > 0 {
+		sandboxConfigID = parentApp.AppSandboxConfigs[0].ID
+	}
+	runnerConfigID := pin.AppConfig.RunnerConfig.ID
+	if runnerConfigID == "" && len(parentApp.AppRunnerConfigs) > 0 {
+		runnerConfigID = parentApp.AppRunnerConfigs[0].ID
+	}
+	if sandboxConfigID == "" || runnerConfigID == "" {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("no sandbox or runner config found for app %s", appID),
+			Description: "No sandbox or runner config found. Please sync your app configuration before creating an install.",
+		}
+	}
+
 	install := app.Install{
 		AppID:              appID,
 		Name:               req.Name,
 		SandboxMode:        pkggenerics.NewNullBool(req.SandboxMode),
-		AppSandboxConfigID: parentApp.AppSandboxConfigs[0].ID,
-		AppRunnerConfigID:  parentApp.AppRunnerConfigs[0].ID,
-		AppConfigID:        parentApp.AppConfigs[0].ID,
+		AppSandboxConfigID: sandboxConfigID,
+		AppRunnerConfigID:  runnerConfigID,
+		AppConfigID:        pin.AppConfig.ID,
 		InstallSandbox: app.InstallSandbox{
 			Status: app.InstallSandboxStatusQueued,
 			TerraformWorkspace: app.TerraformWorkspace{
@@ -185,7 +195,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 
 	targetSource := ""
 
-	runnerType := parentApp.AppRunnerConfigs[0].Type
+	runnerType := pin.AppConfig.RunnerConfig.Type
+	if runnerType == "" && len(parentApp.AppRunnerConfigs) > 0 {
+		runnerType = parentApp.AppRunnerConfigs[0].Type
+	}
 	switch runnerType {
 	case app.AppRunnerTypeGCP, app.AppRunnerTypeGCPGKE:
 		if req.GCPAccount == nil {
@@ -308,10 +321,14 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 		install.CloudPlatformMetadata.TargetSource = targetSource
 	}
-	if parentApp.AppPermissionsConfig.ID != "" && len(parentApp.AppPermissionsConfig.Roles) > 0 {
+	permissions := pin.AppConfig.PermissionsConfig
+	if permissions.ID == "" {
+		permissions = parentApp.AppPermissionsConfig
+	}
+	if permissions.ID != "" && len(permissions.Roles) > 0 {
 		installRoles := make([]app.InstallRoles, 0)
 
-		for _, role := range parentApp.AppPermissionsConfig.Roles {
+		for _, role := range permissions.Roles {
 			installRoles = append(installRoles, app.InstallRoles{
 				AppRoleConfigID: role.ID,
 			})
@@ -329,7 +346,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
-	switch parentApp.AppRunnerConfigs[0].Type {
+	switch runnerType {
 	case "aws":
 		install.InstallStack = &app.InstallStack{
 			InstallStackOutputs: app.InstallStackOutputs{
@@ -350,9 +367,36 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
-	res = s.db.WithContext(ctx).Create(&install)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create install: %w", res.Error)
+	// The install's labels decide which of the branch's groups deploys it, so
+	// labels that put it in two groups have to fail here rather than at the
+	// branch's next run.
+	if pin.BranchID != "" {
+		install.AppBranchID = pkggenerics.NewNullString(pin.BranchID)
+		groups, err := s.appsHelpers.LatestConfigInstallGroups(ctx, pin.BranchID)
+		if err != nil {
+			return nil, err
+		}
+		if err := appshelpers.ValidateInstallSingleGroup(groups, &install); err != nil {
+			return nil, err
+		}
+	}
+
+	if pin.BranchID == "" {
+		if err := s.db.WithContext(ctx).Create(&install).Error; err != nil {
+			return nil, fmt.Errorf("unable to create install: %w", err)
+		}
+	} else {
+		if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			if err := tx.WithContext(ctx).Create(&install).Error; err != nil {
+				return fmt.Errorf("unable to create install: %w", err)
+			}
+			if err := appshelpers.SetInstallAppBranchWithDB(ctx, tx, install.ID, pin.BranchID); err != nil {
+				return fmt.Errorf("unable to add install to app branch: %w", err)
+			}
+			return nil
+		}); err != nil {
+			return nil, err
+		}
 	}
 
 	s.mw.Incr("install.created", metrics.ToTags(map[string]string{
@@ -360,13 +404,6 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		"app_id":     appID,
 		"install_id": install.ID,
 	}))
-
-	if len(install.Labels) > 0 {
-		matches, _ := s.appsHelpers.FindBranchesMatchingLabels(ctx, install.AppID, install.Labels)
-		if len(matches) == 1 {
-			s.appsHelpers.SyncInstallBranchConnection(ctx, &install, matches[0].Branch.ID)
-		}
-	}
 
 	// Create all install queues (workflows, signals, actions, drift, etc.)
 	if err := s.EnsureInstallQueues(ctx, install.ID); err != nil {

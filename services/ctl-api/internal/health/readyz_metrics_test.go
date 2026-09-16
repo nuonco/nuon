@@ -13,9 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nuonco/nuon/pkg/metrics"
-	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
-	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -23,6 +20,10 @@ import (
 	"go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/pkg/metrics"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 type healthMetricsWriter struct {

@@ -79,10 +79,13 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 		children = append(children, d)
 	}
 
-	return diff.NewDiff(
+	result := diff.NewDiff(
 		diff.WithKey("app_config"),
 		diff.WithChildren(children...),
 	)
+	graph := appConfigDependencyGraph(old, a)
+	result.ApplyImpacts(graph.Propagate(changedResourceIDs(result)...))
+	return result
 }
 
 // --- Branch ---
@@ -199,6 +202,8 @@ func diffBranchPreview(old, new *AppBranchPreviewConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("install_name"), diff.WithStringDiff(old.InstallName, new.InstallName)),
 		diff.NewDiff(diff.WithKey("set_statuses"), diff.WithOptionalBoolDiff(old.SetStatuses, new.SetStatuses)),
 		diff.NewDiff(diff.WithKey("comment"), diff.WithOptionalBoolDiff(old.Comment, new.Comment)),
+		diff.NewDiff(diff.WithKey("ignore_drafts"), diff.WithOptionalBoolDiff(old.IgnoreDrafts, new.IgnoreDrafts)),
+		diff.NewDiff(diff.WithKey("react"), diff.WithOptionalBoolDiff(old.React, new.React)),
 	}
 	if d := diff.MapDiff("label_selector", old.LabelSelector, new.LabelSelector); d != nil {
 		children = append(children, d)
@@ -267,7 +272,9 @@ func diffSandbox(old, new *AppSandboxConfig) *diff.Diff {
 		children = append(children, d)
 	}
 
-	return sectionDiff("sandbox", old, new, children)
+	result := sectionDiff("sandbox", old, new, children)
+	result.ResourceID = SandboxResourceID
+	return result
 }
 
 // --- Runner ---
@@ -293,7 +300,9 @@ func diffRunner(old, new *AppRunnerConfig) *diff.Diff {
 		children = append(children, d)
 	}
 
-	return sectionDiff("runner", old, new, children)
+	result := sectionDiff("runner", old, new, children)
+	result.ResourceID = RunnerResourceID
+	return result
 }
 
 // --- Stack ---
@@ -321,7 +330,9 @@ func diffStack(old, new *StackConfig) *diff.Diff {
 	// Custom nested stacks matched by name
 	children = append(children, diffCustomNestedStacks(old.CustomNestedStacks, new.CustomNestedStacks)...)
 
-	return sectionDiff("stack", old, new, children)
+	result := sectionDiff("stack", old, new, children)
+	result.ResourceID = StackResourceID
+	return result
 }
 
 func diffCustomNestedStacks(old, new []CustomNestedStack) []*diff.Diff {
@@ -432,6 +443,7 @@ func diffAppInputs(old, new []AppInput) []*diff.Diff {
 	diffInput := func(oi, i AppInput) *diff.Diff {
 		return diff.NewDiff(
 			diff.WithKey("input."+i.Name),
+			diff.WithResourceID(InputResourceID(i.Name)),
 			diff.WithChildren(
 				diff.NewDiff(diff.WithKey("display_name"), diff.WithStringDiff(oi.DisplayName, i.DisplayName)),
 				diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(oi.Description, i.Description)),
@@ -507,9 +519,11 @@ func diffIAMRole(key string, old, new *AppAWSIAMRole) *diff.Diff {
 		new = &AppAWSIAMRole{}
 	}
 
-	return diff.NewDiff(
-		diff.WithKey(key),
-		diff.WithChildren(
+	result := sectionDiff(
+		key,
+		old,
+		new,
+		[]*diff.Diff{
 			diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(old.Name, new.Name)),
 			diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(old.Description, new.Description)),
 			diff.NewDiff(diff.WithKey("display_name"), diff.WithStringDiff(old.DisplayName, new.DisplayName)),
@@ -517,8 +531,10 @@ func diffIAMRole(key string, old, new *AppAWSIAMRole) *diff.Diff {
 			diff.NewDiff(diff.WithKey("permissions_boundary"), diff.WithStringDiff(old.PermissionsBoundary, new.PermissionsBoundary)),
 			diff.NewDiff(diff.WithKey("enabled_in_stack"), diff.WithOptionalBoolDiff(old.EnabledInStack, new.EnabledInStack)),
 			diff.NewDiff(diff.WithKey("named_policies"), diff.WithStringSliceDiff(NamedPolicyRefNames(old.NamedPolicies), NamedPolicyRefNames(new.NamedPolicies))),
-		),
+		},
 	)
+	result.ResourceID = roleNodeID(old, new)
+	return result
 }
 
 func diffIAMRoles(prefix string, old, new []*AppAWSIAMRole) []*diff.Diff {
@@ -659,9 +675,11 @@ func diffSecrets(old, new *SecretsConfig) *diff.Diff {
 	seen := make(map[string]bool)
 
 	diffSecret := func(os, s *AppSecret) *diff.Diff {
-		return diff.NewDiff(
-			diff.WithKey("secret."+s.Name),
-			diff.WithChildren(
+		result := sectionDiff(
+			"secret."+s.Name,
+			os,
+			s,
+			[]*diff.Diff{
 				diff.NewDiff(diff.WithKey("display_name"), diff.WithStringDiff(os.DisplayName, s.DisplayName)),
 				diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(os.Description, s.Description)),
 				diff.NewDiff(diff.WithKey("required"), diff.WithBoolDiff(os.Required, s.Required)),
@@ -671,8 +689,10 @@ func diffSecrets(old, new *SecretsConfig) *diff.Diff {
 				diff.NewDiff(diff.WithKey("kubernetes_sync"), diff.WithOptionalBoolDiff(os.KubernetesSync, s.KubernetesSync)),
 				diff.NewDiff(diff.WithKey("kubernetes_secret_namespace"), diff.WithStringDiff(os.KubernetesSecretNamespace, s.KubernetesSecretNamespace)),
 				diff.NewDiff(diff.WithKey("kubernetes_secret_name"), diff.WithStringDiff(os.KubernetesSecretName, s.KubernetesSecretName)),
-			),
+			},
 		)
+		result.ResourceID = SecretResourceID(s.Name)
+		return result
 	}
 
 	for _, s := range new.Secrets {
@@ -761,7 +781,11 @@ func diffOperationRoles(old, new *OperationRolesConfig) *diff.Diff {
 		}
 	}
 
-	return diff.NewDiff(diff.WithKey("operation_roles"), diff.WithChildren(children...))
+	return diff.NewDiff(
+		diff.WithKey("operation_roles"),
+		diff.WithResourceID(OperationRolesResourceID),
+		diff.WithChildren(children...),
+	)
 }
 
 // --- Components ---
@@ -831,7 +855,9 @@ func diffComponent(old, new *Component) *diff.Diff {
 	children = append(children, diffJob(old.Job, new.Job)...)
 	children = append(children, diffPulumi(old.Pulumi, new.Pulumi)...)
 
-	return diff.NewDiff(diff.WithKey("component."+new.Name), diff.WithChildren(children...))
+	result := sectionDiff("component."+new.Name, old, new, children)
+	result.ResourceID = ComponentResourceID(new.Name)
+	return result
 }
 
 // --- Component type-specific diffs ---
@@ -1321,7 +1347,9 @@ func diffAction(old, new *ActionConfig) *diff.Diff {
 	// Triggers matched by index
 	children = append(children, diffActionTriggers(old.Triggers, new.Triggers)...)
 
-	return diff.NewDiff(diff.WithKey("action."+new.Name), diff.WithChildren(children...))
+	result := sectionDiff("action."+new.Name, old, new, children)
+	result.ResourceID = ActionResourceID(new.Name)
+	return result
 }
 
 func diffActionSteps(old, new []*ActionStepConfig) []*diff.Diff {

@@ -12,8 +12,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 )
 
 func auditEnabledConfig(endpoint string) string {

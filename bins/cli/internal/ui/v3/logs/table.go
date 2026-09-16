@@ -7,6 +7,7 @@ import (
 
 	"charm.land/bubbles/v2/table"
 	"charm.land/lipgloss/v2"
+
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 

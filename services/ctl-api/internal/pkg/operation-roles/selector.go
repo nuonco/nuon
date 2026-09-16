@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"maps"
 
+	"github.com/pkg/errors"
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
 )
 
 // SelectionContext contains all information needed for role selection

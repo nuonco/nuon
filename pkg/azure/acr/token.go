@@ -8,8 +8,9 @@ import (
 	"net/url"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
-	"github.com/nuonco/nuon/pkg/azure/credentials"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/azure/credentials"
 )
 
 const (

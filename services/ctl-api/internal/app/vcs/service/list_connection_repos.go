@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v50/github"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 

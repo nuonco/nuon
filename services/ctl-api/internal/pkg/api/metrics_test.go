@@ -11,9 +11,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
@@ -21,6 +18,10 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 )
 
 func TestAPIMetricsAllSurfaces(t *testing.T) {
