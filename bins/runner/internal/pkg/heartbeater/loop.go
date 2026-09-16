@@ -6,10 +6,11 @@ import (
 	"math/rand/v2"
 	"time"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/client/operations"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/client/operations"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/metrics"

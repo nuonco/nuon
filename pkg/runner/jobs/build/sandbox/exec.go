@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	terraformbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/terraform"

@@ -124,14 +124,14 @@ const InstallTemplate = () => {
           text: 'Overview',
         },
         {
-          path: `/workflows`,
+          path: `/history`,
           iconVariant: 'TreeStructureIcon' as const,
-          text: 'Workflows',
+          text: 'History',
         },
         {
-          path: `/app-branch-runs`,
+          path: `/updates`,
           iconVariant: 'GitBranchIcon' as const,
-          text: 'App branch runs',
+          text: 'Updates',
         },
         {
           type: 'action',
@@ -218,6 +218,7 @@ const InstallTemplate = () => {
           text: 'Install runner',
         },
       ]
+
   const isChildRoute = !!useMatch(
     '/:orgId/installs/:installId/:section/:rest/*'
   )

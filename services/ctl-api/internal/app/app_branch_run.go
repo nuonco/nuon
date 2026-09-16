@@ -25,6 +25,7 @@ const (
 // AppBranchRunLabelBuildsCompleted is set on AppBranchRun.labels when the builds
 // step finishes. Used to select baseline runs for AppBranchRunComparison.
 const AppBranchRunLabelBuildsCompleted = "builds_completed"
+const AppBranchRunLabelIsDraftMode = "is-draft-mode"
 
 type AppBranchRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
@@ -111,6 +112,13 @@ func (a *AppBranchRun) PreviewGitHubSetStatuses() bool {
 func (a *AppBranchRun) PreviewGitHubComment() bool {
 	if a.Preview != nil {
 		return a.Preview.GitHubComment()
+	}
+	return a.IsPreview()
+}
+
+func (a *AppBranchRun) PreviewGitHubReact() bool {
+	if a.Preview != nil {
+		return a.Preview.GitHubReact()
 	}
 	return a.IsPreview()
 }

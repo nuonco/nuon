@@ -6,8 +6,9 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func TestCurrentRequestPrefersPullRequest(t *testing.T) {

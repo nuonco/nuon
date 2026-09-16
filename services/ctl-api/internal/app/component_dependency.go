@@ -3,10 +3,11 @@ package app
 import (
 	"time"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 // ComponentDependency is a many2many table used by gorm under the hood

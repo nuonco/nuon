@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -69,19 +70,26 @@ func (s *service) RemoveInstallLabels(ctx *gin.Context) {
 		}
 	}
 
-	install.Labels.RemoveKeys(req.Keys)
+	remaining := make(labels.Labels, len(install.Labels))
+	for key, val := range install.Labels {
+		remaining[key] = val
+	}
+	remaining.RemoveKeys(req.Keys)
+
+	// Dropping a label can widen which groups on the branch match, so the same
+	// one-group-per-install rule applies here as on add. It never changes which
+	// branch owns the install.
+	if err := s.appsHelpers.ValidateInstallLabelsSingleGroup(ctx, &install, remaining); err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	install.Labels = remaining
 	install.LabelTemplates.RemoveKeys(req.Keys)
 
 	if err := s.db.WithContext(ctx).Model(&install).Select("labels", "label_templates").Updates(&install).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update install labels: %w", err))
 		return
-	}
-
-	matches, _ := s.appsHelpers.FindBranchesMatchingLabels(ctx, install.AppID, install.Labels)
-	if len(matches) == 0 {
-		s.appsHelpers.DeactivateInstallBranchConnections(ctx, install.ID)
-	} else if len(matches) == 1 {
-		s.appsHelpers.SyncInstallBranchConnection(ctx, &install, matches[0].Branch.ID)
 	}
 
 	ctx.JSON(http.StatusOK, install)

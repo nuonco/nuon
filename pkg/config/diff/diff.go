@@ -1,6 +1,9 @@
 package diff
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Op string
 
@@ -24,9 +27,12 @@ type DiffKey struct {
 }
 
 type Diff struct {
-	Key      string   `json:"key"`
-	Diff     *DiffKey `json:"diff,omitempty"`
-	Children []*Diff  `json:"children,omitempty"`
+	Key           string         `json:"key"`
+	ResourceID    NodeID         `json:"resource_id,omitempty"`
+	Diff          *DiffKey       `json:"diff,omitempty"`
+	Children      []*Diff        `json:"children,omitempty"`
+	Impacted      bool           `json:"impacted,omitempty"`
+	ImpactReasons []ImpactReason `json:"impact_reasons,omitempty"`
 }
 
 // String returns the full diff tree with +/-/~ prefixes indicating
@@ -38,8 +44,11 @@ func (d *Diff) String(indent string) string {
 	}
 
 	if d.Diff != nil {
-		if d.Diff.Op == OpNoop && d.Diff.Diff == "'' (unchanged)" {
+		if d.Diff.Op == OpNoop && !d.Impacted && d.Diff.Diff == "'' (unchanged)" {
 			return ""
+		}
+		if d.Diff.Op == OpNoop && d.Impacted {
+			return fmt.Sprintf(indent+"%s: %s\n", d.Key, d.impactDescription())
 		}
 		return fmt.Sprintf(indent+"%s: %s\n", d.Key, d.Diff.Diff)
 	}
@@ -60,6 +69,9 @@ func (d *Diff) FormatChanged(indent string) string {
 
 	if d.Diff != nil {
 		if d.Diff.Op == OpNoop {
+			if d.Impacted {
+				return fmt.Sprintf("~ %s%s: %s\n", indent, d.Key, d.impactDescription())
+			}
 			return ""
 		}
 		prefix := opPrefix(d.Diff.Op)
@@ -71,9 +83,26 @@ func (d *Diff) FormatChanged(indent string) string {
 		childOutput += child.FormatChanged(indent + "\t")
 	}
 	if childOutput == "" {
+		if d.Impacted {
+			return fmt.Sprintf("~ %s%s: %s\n", indent, d.Key, d.impactDescription())
+		}
 		return ""
 	}
+	if d.Impacted {
+		childOutput = fmt.Sprintf("\t~ impacted: %s\n%s", d.impactDescription(), childOutput)
+	}
 	return fmt.Sprintf("%s%s:\n%s", indent, d.Key, childOutput)
+}
+
+func (d *Diff) impactDescription() string {
+	reasons := make([]string, 0, len(d.ImpactReasons))
+	for _, reason := range d.ImpactReasons {
+		reasons = append(reasons, fmt.Sprintf("%s via %s", reason.From, reason.Edge))
+	}
+	if len(reasons) == 0 {
+		return "impacted by dependency change"
+	}
+	return "impacted by " + strings.Join(reasons, ", ")
 }
 
 func opPrefix(op Op) string {
@@ -98,6 +127,15 @@ type DiffSummary struct {
 }
 
 func (d *Diff) Summary() DiffSummary {
+	return d.summary(true)
+}
+
+// DirectSummary ignores dependency impacts and reports only value changes.
+func (d *Diff) DirectSummary() DiffSummary {
+	return d.summary(false)
+}
+
+func (d *Diff) summary(includeImpacts bool) DiffSummary {
 	summary := DiffSummary{}
 	if d == nil {
 		return summary
@@ -119,7 +157,7 @@ func (d *Diff) Summary() DiffSummary {
 		}
 	} else {
 		for _, child := range d.Children {
-			childSummary := child.Summary()
+			childSummary := child.summary(includeImpacts)
 			summary.Added += childSummary.Added
 			summary.Removed += childSummary.Removed
 			summary.Changed += childSummary.Changed
@@ -129,6 +167,10 @@ func (d *Diff) Summary() DiffSummary {
 			}
 		}
 	}
+	if includeImpacts && d.Impacted && !summary.HasChanged {
+		summary.HasChanged = true
+		summary.Changed++
+	}
 	return summary
 }
 
@@ -137,6 +179,12 @@ type DiffOption func(*Diff)
 func WithKey(key string) DiffOption {
 	return func(dt *Diff) {
 		dt.Key = key
+	}
+}
+
+func WithResourceID(id NodeID) DiffOption {
+	return func(dt *Diff) {
+		dt.ResourceID = id
 	}
 }
 
@@ -166,6 +214,36 @@ func NewDiff(opts ...DiffOption) *Diff {
 		opt(&dt)
 	}
 	return &dt
+}
+
+// ApplyImpacts annotates resource nodes in the tree with propagated graph
+// impacts. It leaves their direct Diff operations unchanged.
+func (d *Diff) ApplyImpacts(impacts map[NodeID][]ImpactReason) {
+	if d == nil {
+		return
+	}
+	if reasons := impacts[d.ResourceID]; d.ResourceID != "" && len(reasons) > 0 {
+		d.Impacted = true
+		d.ImpactReasons = append([]ImpactReason(nil), reasons...)
+	}
+	for _, child := range d.Children {
+		child.ApplyImpacts(impacts)
+	}
+}
+
+func (d *Diff) FindResource(id NodeID) *Diff {
+	if d == nil {
+		return nil
+	}
+	if d.ResourceID == id {
+		return d
+	}
+	for _, child := range d.Children {
+		if result := child.FindResource(id); result != nil {
+			return result
+		}
+	}
+	return nil
 }
 
 type StringDiffer struct {

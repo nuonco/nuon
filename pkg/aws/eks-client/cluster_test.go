@@ -9,8 +9,9 @@ import (
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func Test_commands_Deprovision(t *testing.T) {

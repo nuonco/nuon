@@ -1,8 +1,9 @@
 package registry
 
 import (
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 // ToAPIResult builds the base success request for an image build/copy. The

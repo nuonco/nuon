@@ -3,6 +3,8 @@ package cmd
 import (
 	"go.uber.org/fx"
 
+	"github.com/nuonco/nuon/sdks/nuon-go"
+
 	"github.com/nuonco/nuon/bins/cli/internal/services/actions"
 	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
 	"github.com/nuonco/nuon/bins/cli/internal/services/auth"
