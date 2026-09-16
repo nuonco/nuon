@@ -63,7 +63,7 @@ func (s *service) getInstallActionWorkflowOutputs(ctx context.Context, orgID, in
 	// find the latest run and its runner job
 	var run app.InstallActionWorkflowRun
 	res = s.db.WithContext(ctx).
-		Preload("RunnerJob").
+		Preload("RunnerJob", app.PreloadActionExecutionRunnerJob).
 		Where("install_action_workflow_id = ?", iaw.ID).
 		Order("created_at DESC").
 		First(&run)

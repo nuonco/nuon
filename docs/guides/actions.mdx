@@ -182,15 +182,13 @@ image   = "ghcr.io/acme/migrate-tools:v1.4.0"
 type = "manual"
 
 [[steps]]
-name            = "migrate"
-inline_contents = """
-#!/usr/bin/env sh
-migrate -database "$DATABASE_URL" -path /migrations up
-"""
+name    = "migrate"
+command = "migrate -database \"$DATABASE_URL\" -path /migrations up"
 ```
 
-This is behind an org feature flag and has a few constraints (all steps must use `inline_contents`,
-AWS install runners only). See [Container actions](/guides/container-actions) for the full guide.
+This is behind an org feature flag. Steps can use `command`, `inline_contents`,
+or a repo (`public_repo` / `connected_repo`). Container actions run on AWS, Azure, and
+GCP VM install runners. See [Container actions](/guides/container-actions) for the full guide.
 
 ## Monitoring workflow runs
 
