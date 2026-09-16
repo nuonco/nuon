@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
-import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { useDismissedStepBanners } from '@/hooks/use-dismissed-step-banners'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -119,8 +119,47 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
   const mostRecent = visibleSteps[visibleSteps.length - 1]
   const olderSteps = visibleSteps.slice(0, -1)
 
+  const toggle = () => setExpanded((prev) => !prev)
+
   return (
     <div className="flex flex-col gap-2 mt-2">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onClick={toggle}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            toggle()
+          }
+        }}
+        className="flex items-center justify-between gap-3 cursor-pointer select-none focus:outline-none"
+      >
+        <Text
+          as="span"
+          variant="subtext"
+          weight="strong"
+          theme="error"
+          flex
+          nowrap
+        >
+          <Icon variant="WarningOctagonIcon" size={14} />
+          {visibleSteps.length} steps failed
+        </Text>
+        <Text
+          as="span"
+          variant="subtext"
+          weight="strong"
+          flex
+          nowrap
+          className="shrink-0 text-primary-600 dark:text-primary-400"
+        >
+          {expanded ? 'Show less' : `Show ${olderSteps.length} more`}
+          <Icon variant={expanded ? 'MinusIcon' : 'PlusIcon'} size={14} />
+        </Text>
+      </div>
+
       <div className="flex flex-col gap-4">
         <StepBanner
           step={mostRecent}
@@ -131,19 +170,6 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
           onViewDetails={() => openPanel(mostRecent)}
         />
       </div>
-
-      {olderSteps.length > 0 && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setExpanded(!expanded)}
-          className="self-start"
-        >
-          {expanded
-            ? 'Hide older errors'
-            : `${olderSteps.length} more error${olderSteps.length > 1 ? 's' : ''}`}
-        </Button>
-      )}
 
       {expanded &&
         olderSteps.map((step) => (
