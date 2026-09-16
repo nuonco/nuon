@@ -12,6 +12,7 @@ export interface ICloudPlatform extends Omit<IText, 'children'> {
   display?: TCloudPlatformDisplay
   tone?: 'color' | 'mono'
   iconSize?: number | string
+  tooltip?: boolean
 }
 
 const PLATFORMS: Record<
@@ -59,12 +60,22 @@ export const CloudPlatform = ({
   display = 'abbr',
   tone = 'color',
   iconSize = '1em',
+  tooltip = true,
   className,
   ...props
 }: ICloudPlatform) => {
   const config = PLATFORMS[platform] ?? PLATFORMS.unknown
 
   if (display === 'icon') {
+    if (!tooltip) {
+      return (
+        <Text className={cn('inline-flex items-center', className)} {...props}>
+          <PlatformMark brand={config.brand} size={iconSize} tone={tone} />
+          <span className="sr-only">{config.name}</span>
+        </Text>
+      )
+    }
+
     return (
       <Tooltip content={config.name} tabIndex={0} aria-label={config.name}>
         <PlatformMark brand={config.brand} size={iconSize} tone={tone} />
