@@ -35,7 +35,7 @@ jobs:
   # time.
   service:
     name: all
-    runs-on: build-only
+    runs-on: ${{ contains(fromJSON('["ctl-api","cli","lsp","runner"]'), inputs.service) && 'build-isolated' || 'build-only' }}
     timeout-minutes: 30
     env:
       NO_CACHE: ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') }}
@@ -57,7 +57,10 @@ jobs:
 
       - name: Setup BuildKit
         if: ${{ env.NO_REMOTE_BUILDKIT != 'true' }}
-        run: CI=true nuonctl builds driver ctl-api
+        run: |
+          if ! (CI=true nuonctl builds driver ctl-api && nuonctl builds driver-health ctl-api); then
+            docker buildx ls
+          fi
 
       - name: 🔧 Enable local API types generation (dashboard-ui only)
         if: ${{ inputs.service == 'dashboard-ui' && env.GEN_API_TYPES == 'true' }}
@@ -71,16 +74,24 @@ jobs:
 
       - name: 😎 Tests
         run: |
-          CI=true nuonctl tests run-all ${{inputs.service}}
+          CACHE_ARGS=()
+          if [[ "${{ inputs.service }}" == "ctl-api" || "${{ inputs.service }}" == "cli" || "${{ inputs.service }}" == "lsp" || "${{ inputs.service }}" == "runner" ]] && [[ "${IS_FORK_PR}" != "true" ]]; then
+            CACHE_ARGS=(--write-cache --max-mode)
+          fi
+          CI=true nuonctl tests run-all ${{inputs.service}} "${CACHE_ARGS[@]}"
 
       - name: 📦 Build
         run: |
+          CACHE_ARGS=()
+          if [[ "${{ inputs.service }}" == "ctl-api" || "${{ inputs.service }}" == "cli" || "${{ inputs.service }}" == "lsp" || "${{ inputs.service }}" == "runner" ]] && [[ "${IS_FORK_PR}" != "true" ]]; then
+            CACHE_ARGS=(--write-cache --max-mode)
+          fi
           CI=true nuonctl builds release \
             ${{inputs.service}} \
             --tag=${{inputs.tag}} \
             --no-cache=${{ env.NO_CACHE == 'true' || inputs.is_promotion }} \
-            --push=${{ env.IS_FORK_PR != 'true' }}
-        # --write-cache=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+            --push=${{ env.IS_FORK_PR != 'true' }} \
+            "${CACHE_ARGS[@]}"
         env:
           BUILD_PROMOTION: ${{ inputs.is_promotion }}
           GITHUB_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
@@ -126,6 +137,7 @@ jobs:
           CI=true nuonctl deploys deploy ${{inputs.service}} --env=prod --tag=${{inputs.tag}}
 
       - name: 💾 Save cache
+        if: ${{ !contains(fromJSON('["ctl-api","cli","lsp","runner"]'), inputs.service) }}
         run: |
           CI=true nuonctl builds release ${{inputs.service}} --tag=${{inputs.tag}} --push=false --write-cache --max-mode > /tmp/save-cache-build.log 2>&1 &
           BUILD_PID=$!
@@ -147,3 +159,9 @@ jobs:
             echo "save-cache failed: builds=$BUILD_RC tests=$TESTS_RC"
             exit 1
           fi
+
+      - name: Save Go build cache to S3
+        if: ${{ contains(fromJSON('["ctl-api","cli","lsp","runner"]'), inputs.service) && env.IS_FORK_PR != 'true' }}
+        run: CI=true nuonctl builds gocache ${{inputs.service}} --tag=${{inputs.tag}}
+        env:
+          AWS_REGION: us-west-2
