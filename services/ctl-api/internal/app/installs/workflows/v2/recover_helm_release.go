@@ -22,7 +22,6 @@ import (
 func RecoverHelmRelease(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 
-
 	componentID, ok := flw.Metadata["component_id"]
 	if !ok {
 		return nil, errors.New("component id is not set on the install workflow for a helm release recovery")
