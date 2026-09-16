@@ -62,6 +62,10 @@ export const InstallForm = ({
                 ? {
                     onChangeAsyncDebounceMs: NAME_CHECK_DEBOUNCE_MS,
                     onChangeAsync: ({ value }) => validateName(value),
+                    // A restored draft or prefilled value never fires a change,
+                    // so the name also has to be checked on blur and on submit.
+                    onBlurAsync: ({ value }) => validateName(value),
+                    onSubmitAsync: ({ value }) => validateName(value),
                   }
                 : undefined
             }

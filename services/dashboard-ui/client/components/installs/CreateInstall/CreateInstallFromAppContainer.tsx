@@ -341,9 +341,10 @@ export const CreateInstallFromAppContainer = ({
           name: trimmed,
         })
         return taken ? `An install named "${trimmed}" already exists` : undefined
-      } catch {
+      } catch (err) {
         // A failed lookup shouldn't block creation; the API still enforces
-        // uniqueness on submit.
+        // uniqueness. Log it so it can't masquerade as an available name.
+        console.warn('Unable to check install name availability:', err)
         return undefined
       }
     },
