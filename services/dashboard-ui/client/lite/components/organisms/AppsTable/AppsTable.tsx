@@ -5,10 +5,12 @@ import { Card } from '../../atoms/Card'
 import { Link } from '../../atoms/Link'
 import { Status } from '../../atoms/Status'
 import { Text } from '../../atoms/Text'
+import { AppSource, appSourceFromApp } from '../../molecules/AppSource'
 import { ID } from '../../molecules/ID'
 import { ListSearch } from '../../molecules/ListSearch'
 import { Pagination } from '../../molecules/Pagination'
 import { Time } from '../../molecules/Time'
+import { appSetupHref } from '../../../utils/hrefs'
 import { Table } from '../Table/Table'
 
 export interface IAppsTable {
@@ -20,12 +22,39 @@ export interface IAppsTable {
   pageSize: number
   hasNext: boolean
   onOffsetChange: (offset: number) => void
+  incompleteIds?: ReadonlySet<string>
   loading?: boolean
   fetching?: boolean
   error?: unknown
 }
 
-const appHref = (orgId: string, app: TApp) => `/${orgId}/apps/${app?.id ?? ''}`
+const appHref = (orgId: string, app: TApp, incomplete: boolean) =>
+  incomplete && app?.id
+    ? appSetupHref(orgId, app.id)
+    : `/${orgId}/apps/${app?.id ?? ''}`
+
+const AppStatus = ({
+  app,
+  incomplete,
+  className,
+}: {
+  app: TApp
+  incomplete: boolean
+  className?: string
+}) =>
+  incomplete ? (
+    <Status
+      status="pending"
+      theme="warn"
+      label="Setup incomplete"
+      className={className}
+    />
+  ) : (
+    <Status
+      status={app?.status_v2 ?? app?.status ?? 'unknown'}
+      className={className}
+    />
+  )
 
 const appPlatform = (app: TApp): TBrandVariant | undefined => {
   const platform =
@@ -36,11 +65,6 @@ const appPlatform = (app: TApp): TBrandVariant | undefined => {
   if (normalized === 'gcp') return 'GCP'
   return undefined
 }
-
-const appSource = (app: TApp) =>
-  app?.sandbox_config?.public_git_vcs_config?.repo ??
-  app?.sandbox_config?.connected_github_vcs_config?.repo ??
-  app?.config_repo
 
 const Platform = ({ app }: { app: TApp }) => {
   const platform = appPlatform(app)
@@ -60,7 +84,10 @@ const Platform = ({ app }: { app: TApp }) => {
   )
 }
 
-const columnsFor = (orgId: string): ColumnDef<TApp>[] => [
+const columnsFor = (
+  orgId: string,
+  incompleteIds?: ReadonlySet<string>
+): ColumnDef<TApp>[] => [
   {
     id: 'name',
     header: 'App',
@@ -68,7 +95,11 @@ const columnsFor = (orgId: string): ColumnDef<TApp>[] => [
     cell: ({ row }) => (
       <span className="flex min-w-0 flex-col gap-0.5">
         <Link
-          href={appHref(orgId, row.original)}
+          href={appHref(
+            orgId,
+            row.original,
+            Boolean(row.original?.id && incompleteIds?.has(row.original.id))
+          )}
           variant="body"
           className="w-fit"
         >
@@ -89,8 +120,11 @@ const columnsFor = (orgId: string): ColumnDef<TApp>[] => [
     header: 'Status',
     size: 150,
     cell: ({ row }) => (
-      <Status
-        status={row.original?.status_v2 ?? row.original?.status ?? 'unknown'}
+      <AppStatus
+        app={row.original}
+        incomplete={Boolean(
+          row.original?.id && incompleteIds?.has(row.original.id)
+        )}
       />
     ),
   },
@@ -105,9 +139,10 @@ const columnsFor = (orgId: string): ColumnDef<TApp>[] => [
     header: 'Source',
     size: 280,
     cell: ({ row }) => (
-      <Text variant="caption" family="mono" color="secondary" lines={1}>
-        {appSource(row.original) ?? '—'}
-      </Text>
+      <AppSource
+        source={appSourceFromApp(row.original)}
+        className="max-w-full"
+      />
     ),
   },
   {
@@ -120,10 +155,22 @@ const columnsFor = (orgId: string): ColumnDef<TApp>[] => [
   },
 ]
 
-const AppCard = ({ app, orgId }: { app: TApp; orgId: string }) => (
+const AppCard = ({
+  app,
+  orgId,
+  incomplete,
+}: {
+  app: TApp
+  orgId: string
+  incomplete: boolean
+}) => (
   <Card className="flex h-full flex-col gap-4">
     <span className="flex min-w-0 flex-col gap-1">
-      <Link href={appHref(orgId, app)} variant="heading" className="w-fit">
+      <Link
+        href={appHref(orgId, app, incomplete)}
+        variant="heading"
+        className="w-fit"
+      >
         {app?.name ?? 'Unnamed app'}
       </Link>
       {app?.id ? (
@@ -134,10 +181,7 @@ const AppCard = ({ app, orgId }: { app: TApp; orgId: string }) => (
         </Text>
       )}
     </span>
-    <Status
-      status={app?.status_v2 ?? app?.status ?? 'unknown'}
-      className="self-start"
-    />
+    <AppStatus app={app} incomplete={incomplete} className="self-start" />
     <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
       <div className="min-w-0">
         <Text as="dt" variant="label" color="tertiary">
@@ -159,9 +203,10 @@ const AppCard = ({ app, orgId }: { app: TApp; orgId: string }) => (
         <Text as="dt" variant="label" color="tertiary">
           Source
         </Text>
-        <Text as="dd" family="mono" color="secondary" lines={1}>
-          {appSource(app) ?? '—'}
-        </Text>
+        <AppSource
+          source={appSourceFromApp(app)}
+          className="mt-0.5 max-w-full"
+        />
       </div>
     </dl>
   </Card>
@@ -176,6 +221,7 @@ export const AppsTable = ({
   pageSize,
   hasNext,
   onOffsetChange,
+  incompleteIds,
   loading = false,
   fetching = false,
   error,
@@ -183,7 +229,7 @@ export const AppsTable = ({
   <div className="flex min-w-0 flex-col gap-4">
     <Table
       data={apps}
-      columns={columnsFor(orgId)}
+      columns={columnsFor(orgId, incompleteIds)}
       getRowId={(app) => app?.id ?? ''}
       loading={loading}
       loadingLabel="Loading apps"
@@ -197,7 +243,15 @@ export const AppsTable = ({
           className="w-full max-w-sm"
         />
       }
-      renderCard={({ row }) => <AppCard app={row.original} orgId={orgId} />}
+      renderCard={({ row }) => (
+        <AppCard
+          app={row.original}
+          orgId={orgId}
+          incomplete={Boolean(
+            row.original?.id && incompleteIds?.has(row.original.id)
+          )}
+        />
+      )}
     />
     <Pagination
       label="Apps pagination"
