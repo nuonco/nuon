@@ -149,11 +149,19 @@ func (i *InstallActionWorkflowRun) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+func PreloadActionExecutionRunnerJob(db *gorm.DB) *gorm.DB {
+	return db.Where("type = ?", RunnerJobTypeActionsWorkflowRun)
+}
+
+func isActionExecutionRunnerJob(job *RunnerJob) bool {
+	return job != nil && job.Type == RunnerJobTypeActionsWorkflowRun
+}
+
 func (i *InstallActionWorkflowRun) AfterQuery(tx *gorm.DB) error {
 	if i.RunnerJob != nil {
 		i.ExecutionTime = i.RunnerJob.ExecutionTime
 
-		if len(i.RunnerJob.ParsedOutputs) > 0 {
+		if isActionExecutionRunnerJob(i.RunnerJob) && len(i.RunnerJob.ParsedOutputs) > 0 {
 			i.Outputs = i.RunnerJob.ParsedOutputs
 		}
 	}
