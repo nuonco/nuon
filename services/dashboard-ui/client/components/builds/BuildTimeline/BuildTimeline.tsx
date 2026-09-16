@@ -14,6 +14,8 @@ interface IBuildTimeline {
   appId: string
   componentId: string
   componentName: string
+  branchId?: string
+  excludeBuildId?: string
 }
 
 export const BuildTimeline = ({
@@ -23,12 +25,22 @@ export const BuildTimeline = ({
   appId,
   componentId,
   componentName,
+  branchId,
+  excludeBuildId,
 }: IBuildTimeline) => {
+  const filtered = builds.filter(
+    (b) =>
+      b.id !== excludeBuildId && (!branchId || b.app_branch_id === branchId)
+  )
+
   return (
     <Timeline<TBuild>
-      events={builds}
+      events={filtered}
       pagination={pagination}
       renderEvent={(build) => {
+        const href = branchId
+          ? `/${orgId}/apps/${appId}/branches/${branchId}/components/${componentId}/builds/${build.id}`
+          : `/${orgId}/apps/${appId}/components/${componentId}/builds/${build.id}`
         return (
           <TimelineEvent
             key={build.id}
@@ -37,10 +49,7 @@ export const BuildTimeline = ({
             status={build?.status}
             title={
               <span className="flex items-center gap-2">
-                <Link
-                  href={`/${orgId}/apps/${appId}/components/${componentId}/builds/${build.id}`}
-                  variant="inline"
-                >
+                <Link href={href} variant="inline">
                   {componentName} build
                 </Link>
                 {build?.status_v2?.status === 'drifted' ? (

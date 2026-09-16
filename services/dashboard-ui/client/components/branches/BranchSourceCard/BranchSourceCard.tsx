@@ -17,9 +17,10 @@ const runCadence = (config?: TAppBranchConfig) => {
     !runConfig?.mode || runConfig.mode === 'all' ? 'push' : runConfig.mode
 
   switch (mode) {
+    case 'on_tag':
     case 'on_tag_prefix':
       return {
-        mode,
+        mode: 'on_tag',
         description: `Tags matching ${runConfig?.tag_prefix ?? 'the configured prefix'}`,
       }
     case 'on_github_label':

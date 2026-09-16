@@ -3,8 +3,8 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
-import { Text } from '@/components/common/Text'
 import { BuildTimeline } from '@/components/builds/BuildTimeline'
+import { CurrentComponentBuild } from '@/components/builds/CurrentComponentBuild'
 import { ComponentConfigCard } from '@/components/components/ComponentConfigCard'
 import { ComponentDependencies } from '@/components/components/ComponentDependencies'
 import { ComponentDependencyGraphButton } from '@/components/components/ComponentDependencyGraph'
@@ -16,6 +16,7 @@ import {
   HistoryPanelButton,
   HistoryRail,
 } from '@/components/layout/HistoryRail'
+import { Text } from '@/components/common/Text'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -25,8 +26,11 @@ import {
   getAppConfigs,
   getBranchWorkflowRuns,
   getComponent,
+  getComponentBuild,
   getComponentBuilds,
 } from '@/lib'
+import { isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
+import { getComponentConfigDisplayData } from '@/utils/component-config-display'
 
 export const ComponentDetail = () => {
   const { componentId, branchId } = useParams()
@@ -104,33 +108,42 @@ export const ComponentDetail = () => {
   })
   const latestResolvedBuild = latestBuilds?.data?.find((b) => !!b.source_digest)
 
-  const latestBuildWithCommit = latestBuilds?.data?.find(
-    (b) =>
-      !!b.vcs_connection_commit && (!branchId || b.app_branch_id === branchId)
+  const latestBuildSummary = latestBuilds?.data?.find(
+    (b) => !branchId || b.app_branch_id === branchId
   )
-  const buildCommit = latestBuildWithCommit?.vcs_connection_commit
+
+  const { data: latestBuild } = useQuery({
+    placeholderData: latestBuildSummary,
+    queryKey: ['component-build', org?.id, componentId, latestBuildSummary?.id],
+    queryFn: () =>
+      getComponentBuild({
+        orgId: org!.id,
+        componentId: componentId!,
+        buildId: latestBuildSummary!.id,
+      }),
+    enabled:
+      !!org?.id && !!componentId && !!branchId && !!latestBuildSummary?.id,
+    refetchInterval: (query) => {
+      if (isTerminalStatusV2(query.state.data)) return false
+      return 5000
+    },
+  })
+
+  const sourceRepo = config
+    ? getComponentConfigDisplayData(config).vcsInfo?.repo
+    : undefined
   const appBase = branchId
     ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
     : `/${org?.id}/apps/${app?.id}`
   const componentBasePath = `${appBase}/components/${componentId}`
-  const latestCommit = buildCommit
-    ? {
-        status: latestBuildWithCommit?.status_v2?.status,
-        href: `${componentBasePath}/builds/${latestBuildWithCommit?.id}`,
-        message: buildCommit.message?.split('\n')[0],
-        author: buildCommit.author_name,
-        avatarUrl: buildCommit.author_avatar_url,
-        sha: buildCommit.sha,
-        createdAt: buildCommit.created_at,
-      }
-    : undefined
-
   const labelKeys = Object.keys(component?.labels ?? {}).sort()
   const history = (
     <BuildTimeline
       componentId={componentId!}
       componentName={component?.name ?? ''}
       shouldPoll
+      branchId={branchId}
+      excludeBuildId={latestBuild?.id}
     />
   )
 
@@ -200,7 +213,7 @@ export const ComponentDetail = () => {
             }
             actions={
               <>
-                <HistoryPanelButton title="Build history" history={history} />
+                <HistoryPanelButton title="Previous builds" history={history} />
                 {component ? (
                   <BuildComponentButton
                     component={component}
@@ -212,57 +225,67 @@ export const ComponentDetail = () => {
           />
         }
       >
-        <HistoryRail title="Build history" history={history}>
+        <HistoryRail title="Previous builds" history={history}>
           {isLoadingConfig ? (
             <ComponentConfigCard loading />
           ) : config ? (
-            <ComponentConfigCard
-              config={config}
-              latestBuild={latestResolvedBuild}
-              latestCommit={latestCommit}
-              headerActions={
-                appConfig && componentId && component?.name ? (
-                  <ComponentDependencyGraphButton
-                    componentId={componentId}
-                    componentName={component.name}
-                    componentType={component.type}
-                    appConfig={appConfig}
-                    basePath={`/${org?.id}/apps/${app?.id}/components`}
-                    size="sm"
-                  />
-                ) : null
-              }
-              footer={
-                config.component_dependency_ids?.length ||
-                dependentIds.length > 0 ? (
-                  <>
-                    {config.component_dependency_ids?.length ? (
-                      <div className="flex flex-col gap-2">
-                        <Text variant="body" weight="strong" level={5}>
-                          Dependencies
-                        </Text>
-                        <ComponentDependencies
-                          deps={config.component_dependency_ids}
-                          variant="inline"
-                        />
-                      </div>
-                    ) : null}
-                    {dependentIds.length > 0 ? (
-                      <div className="flex flex-col gap-2">
-                        <Text variant="body" weight="strong" level={5}>
-                          Dependents
-                        </Text>
-                        <ComponentDependencies
-                          deps={dependentIds}
-                          variant="inline"
-                          tooltipTitle="More dependents"
-                        />
-                      </div>
-                    ) : null}
-                  </>
-                ) : undefined
-              }
-            />
+            <div className="flex flex-col gap-4">
+              {branchId && latestBuild ? (
+                <CurrentComponentBuild
+                  appId={app?.id}
+                  orgId={org?.id}
+                  build={latestBuild}
+                  buildHref={`${componentBasePath}/builds/${latestBuild.id}`}
+                  sourceRepo={sourceRepo}
+                />
+              ) : null}
+              <ComponentConfigCard
+                config={config}
+                latestBuild={latestResolvedBuild}
+                headerActions={
+                  appConfig && componentId && component?.name ? (
+                    <ComponentDependencyGraphButton
+                      componentId={componentId}
+                      componentName={component.name}
+                      componentType={component.type}
+                      appConfig={appConfig}
+                      basePath={`/${org?.id}/apps/${app?.id}/components`}
+                      size="sm"
+                    />
+                  ) : null
+                }
+                footer={
+                  config.component_dependency_ids?.length ||
+                  dependentIds.length > 0 ? (
+                    <>
+                      {config.component_dependency_ids?.length ? (
+                        <div className="flex flex-col gap-2">
+                          <Text variant="body" weight="strong" level={5}>
+                            Dependencies
+                          </Text>
+                          <ComponentDependencies
+                            deps={config.component_dependency_ids}
+                            variant="inline"
+                          />
+                        </div>
+                      ) : null}
+                      {dependentIds.length > 0 ? (
+                        <div className="flex flex-col gap-2">
+                          <Text variant="body" weight="strong" level={5}>
+                            Dependents
+                          </Text>
+                          <ComponentDependencies
+                            deps={dependentIds}
+                            variant="inline"
+                            tooltipTitle="More dependents"
+                          />
+                        </div>
+                      ) : null}
+                    </>
+                  ) : undefined
+                }
+              />
+            </div>
           ) : (
             <EmptyState
               variant="table"

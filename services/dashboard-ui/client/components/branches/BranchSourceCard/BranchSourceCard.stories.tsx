@@ -29,7 +29,7 @@ export const PublicRepo = () => (
         branch: 'main',
         directory: 'httpbin',
       },
-      run_config: { mode: 'on_tag_prefix', tag_prefix: 'customer/' },
+      run_config: { mode: 'on_tag', tag_prefix: 'customer/' },
     }}
   />
 )

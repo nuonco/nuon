@@ -23,6 +23,7 @@ export interface IRunSummary {
   isLoading?: boolean
   jobHref?: (job: TRunnerJob) => string | undefined
   jobs?: TRunnerJob[]
+  showTiming?: boolean
   status?: { status?: string; status_human_description?: string }
   statusDescription?: string
   timings?: IRunSummaryTiming[]
@@ -38,6 +39,7 @@ export const RunSummary = ({
   isLoading,
   jobHref,
   jobs,
+  showTiming = true,
   status,
   statusDescription,
   timings,
@@ -45,7 +47,8 @@ export const RunSummary = ({
 }: IRunSummary) => {
   const hasFailed = getStatusTheme(status?.status ?? '') === 'error'
   const failedJobs = (jobs ?? []).filter(
-    (job) => getStatusTheme(job?.status_v2?.status ?? job?.status ?? '') === 'error'
+    (job) =>
+      getStatusTheme(job?.status_v2?.status ?? job?.status ?? '') === 'error'
   )
   const reason =
     status?.status_human_description ||
@@ -70,39 +73,41 @@ export const RunSummary = ({
         </Banner>
       ) : null}
 
-      <div className="flex flex-col gap-4">
-        <SectionHeader title="Timing" />
-        <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
-          <LabeledValue label="Status" loading={isLoading}>
-            <Status status={status?.status ?? 'unknown'} />
-          </LabeledValue>
-          {timings?.map(({ label, time }) => (
-            <LabeledValue key={label} label={label} loading={isLoading}>
-              {time ? (
-                <Time variant="subtext" time={time} format="short-datetime" />
-              ) : (
-                <Text variant="subtext" theme="neutral">
-                  —
-                </Text>
-              )}
+      {showTiming ? (
+        <div className="flex flex-col gap-4">
+          <SectionHeader title="Timing" />
+          <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
+            <LabeledValue label="Status" loading={isLoading}>
+              <Status status={status?.status ?? 'unknown'} />
             </LabeledValue>
-          ))}
-          {duration ? (
-            <LabeledValue label="Duration" loading={isLoading}>
-              <Duration
-                variant="subtext"
-                beginTime={duration.beginTime}
-                endTime={duration.endTime}
-              />
-            </LabeledValue>
-          ) : null}
-          {triggeredBy ? (
-            <LabeledValue label="Triggered by" loading={isLoading}>
-              {triggeredBy}
-            </LabeledValue>
-          ) : null}
+            {timings?.map(({ label, time }) => (
+              <LabeledValue key={label} label={label} loading={isLoading}>
+                {time ? (
+                  <Time variant="subtext" time={time} format="short-datetime" />
+                ) : (
+                  <Text variant="subtext" theme="neutral">
+                    —
+                  </Text>
+                )}
+              </LabeledValue>
+            ))}
+            {duration ? (
+              <LabeledValue label="Duration" loading={isLoading}>
+                <Duration
+                  variant="subtext"
+                  beginTime={duration.beginTime}
+                  endTime={duration.endTime}
+                />
+              </LabeledValue>
+            ) : null}
+            {triggeredBy ? (
+              <LabeledValue label="Triggered by" loading={isLoading}>
+                {triggeredBy}
+              </LabeledValue>
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="flex flex-col gap-4">
         <SectionHeader title="Execution" />

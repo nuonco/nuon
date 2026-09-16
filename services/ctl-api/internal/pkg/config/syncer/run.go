@@ -61,6 +61,8 @@ type RunResult struct {
 
 	// Caller must provision these queues after Run returns; the sync is transactional.
 	AppBranchesCreated []string
+
+	AppBranchConfigsUpdated []configsync.AppBranchConfigState
 }
 
 // Run syncs an app config from its stored intermediate config, driving the
@@ -134,13 +136,14 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 		}
 
 		result = RunResult{
-			AppConfigID:         s.GetAppConfigID(),
-			ComponentIDs:        s.GetComponentStateIds(),
-			ActionIDs:           s.GetActionStateIds(),
-			RunbookIDs:          s.GetRunbookStateIds(),
-			ComponentsScheduled: s.GetComponentsScheduled(),
-			ComponentsCreated:   s.GetComponentsCreated(),
-			AppBranchesCreated:  s.GetAppBranchesCreated(),
+			AppConfigID:             s.GetAppConfigID(),
+			ComponentIDs:            s.GetComponentStateIds(),
+			ActionIDs:               s.GetActionStateIds(),
+			RunbookIDs:              s.GetRunbookStateIds(),
+			ComponentsScheduled:     s.GetComponentsScheduled(),
+			ComponentsCreated:       s.GetComponentsCreated(),
+			AppBranchesCreated:      s.GetAppBranchesCreated(),
+			AppBranchConfigsUpdated: s.GetAppBranchConfigsUpdated(),
 		}
 
 		return nil
@@ -189,20 +192,11 @@ func provisionDeferredQueues(ctx context.Context, deps RunDeps, result *RunResul
 		if err := deps.AppsHelpers.EnsureAppBranchQueues(ctx, branchID); err != nil {
 			return fmt.Errorf("unable to create queues for app branch %s: %w", branchID, err)
 		}
+	}
 
-		var config app.AppBranchConfig
-		err := deps.DB.WithContext(ctx).
-			Where(app.AppBranchConfig{AppBranchID: branchID}).
-			Order("created_at DESC").
-			First(&config).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			continue
-		}
-		if err != nil {
-			return fmt.Errorf("unable to load first app branch config for %s: %w", branchID, err)
-		}
-		if err := deps.AppsHelpers.EnqueueAppBranchCreatedIfFirst(ctx, branchID, config.ID); err != nil {
-			return fmt.Errorf("unable to enqueue app-branch-created for %s: %w", branchID, err)
+	for _, branchConfig := range result.AppBranchConfigsUpdated {
+		if err := deps.AppsHelpers.EnqueueAppBranchConfigSignals(ctx, branchConfig.AppBranchID, branchConfig.AppBranchConfigID); err != nil {
+			return fmt.Errorf("unable to enqueue app branch config signals for %s: %w", branchConfig.AppBranchID, err)
 		}
 	}
 

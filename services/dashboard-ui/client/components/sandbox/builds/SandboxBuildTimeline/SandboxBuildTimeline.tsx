@@ -13,6 +13,8 @@ interface ISandboxBuildTimeline {
   orgId: string
   appId: string
   isEmpty: boolean
+  branchId?: string
+  excludeBuildId?: string
 }
 
 export const SandboxBuildTimeline = ({
@@ -21,12 +23,23 @@ export const SandboxBuildTimeline = ({
   orgId,
   appId,
   isEmpty,
+  branchId,
+  excludeBuildId,
 }: ISandboxBuildTimeline) => {
-  if (isEmpty) {
+  const filtered = builds.filter(
+    (b) =>
+      b.id !== excludeBuildId && (!branchId || b.app_branch_id === branchId)
+  )
+
+  const isFiltered = !!excludeBuildId || !!branchId
+  const showEmpty =
+    filtered.length === 0 && (isEmpty || (isFiltered && !pagination.hasNext))
+
+  if (showEmpty) {
     return (
       <EmptyState
-        emptyTitle="No sandbox builds"
-        emptyMessage="Sandbox builds will appear here once triggered."
+        emptyTitle="No previous builds"
+        emptyMessage="Previous sandbox builds will appear here once triggered."
         variant="history"
       />
     )
@@ -34,9 +47,12 @@ export const SandboxBuildTimeline = ({
 
   return (
     <Timeline<TAppSandboxBuild>
-      events={builds}
+      events={filtered}
       pagination={pagination}
       renderEvent={(build) => {
+        const href = branchId
+          ? `/${orgId}/apps/${appId}/branches/${branchId}/sandbox/builds/${build.id}`
+          : `/${orgId}/apps/${appId}/sandbox/builds/${build.id}`
         return (
           <TimelineEvent
             key={build.id}
@@ -45,10 +61,7 @@ export const SandboxBuildTimeline = ({
             status={build?.status}
             title={
               <span className="flex items-center gap-2">
-                <Link
-                  href={`/${orgId}/apps/${appId}/sandbox/builds/${build.id}`}
-                  variant="inline"
-                >
+                <Link href={href} variant="inline">
                   Sandbox build
                 </Link>
                 {build?.status_v2?.status === 'drifted' ? (
