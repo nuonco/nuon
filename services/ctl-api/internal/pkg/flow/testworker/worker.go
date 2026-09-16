@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
+	"go.temporal.io/api/serviceerror"
+	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/go-playground/validator/v10"
 
@@ -24,7 +28,7 @@ var defaultNamespace = func() string {
 	if ns := os.Getenv("TESTWORKER_NAMESPACE"); ns != "" {
 		return ns
 	}
-	return "default"
+	return fmt.Sprintf("ctl-api-flow-testworker-%d", os.Getpid())
 }()
 
 type Worker struct {
@@ -73,17 +77,47 @@ func New(params WorkerParams) (*Worker, error) {
 	}
 
 	params.Lc.Append(fx.Hook{
-		OnStart: func(context.Context) error {
+		OnStart: func(ctx context.Context) error {
 			params.L.Info("starting flow test worker")
-			go func() {
-				wkr.Run(worker.InterruptCh())
-			}()
-			return nil
+			if err := registerTestNamespace(ctx, params.Tclient); err != nil {
+				return err
+			}
+			return wkr.Start()
 		},
 		OnStop: func(_ context.Context) error {
+			wkr.Stop()
 			return nil
 		},
 	})
 
 	return &Worker{wkr}, nil
+}
+
+func registerTestNamespace(ctx context.Context, client temporalclient.Client) error {
+	_, err := client.WorkflowService().RegisterNamespace(ctx, &workflowservice.RegisterNamespaceRequest{
+		Namespace:                        defaultNamespace,
+		WorkflowExecutionRetentionPeriod: durationpb.New(24 * time.Hour),
+	})
+	if err != nil {
+		if _, ok := err.(*serviceerror.NamespaceAlreadyExists); !ok {
+			return err
+		}
+	}
+
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		_, err = client.WorkflowService().DescribeNamespace(ctx, &workflowservice.DescribeNamespaceRequest{Namespace: defaultNamespace})
+		if err == nil {
+			return nil
+		}
+		if _, ok := err.(*serviceerror.NamespaceNotFound); !ok {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+	}
 }
