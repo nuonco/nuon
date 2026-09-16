@@ -1,6 +1,8 @@
 package generateworkflowsteps
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -69,6 +71,14 @@ func (s *Signal) LifecycleContext() qsignal.SignalLifecycleContext {
 func (s *Signal) Type() qsignal.SignalType {
 	return SignalType
 }
+
+// SleepAfter returns 1s instead of the 1-minute default: both consumers
+// (eager-step-groups and FetchSteps) are served before Execute returns, so
+// the post-completion cache window serves nothing (this signal is enqueued
+// at most once per workflow) and a 60s idle would only linger a dead handler.
+// The short window keeps the flow test lane fast: no dead handler workflow
+// parks for a minute per generated flow, and drain assertions don't wait it out.
+func (s *Signal) SleepAfter() time.Duration { return time.Second }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.WorkflowID == "" {
