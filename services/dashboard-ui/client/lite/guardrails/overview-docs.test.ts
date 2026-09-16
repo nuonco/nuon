@@ -9,6 +9,7 @@ const INTERNAL_COMPONENTS = new Set([
   'organisms/surfaces/SurfaceOverlay',
   'organisms/surfaces/SurfaceTransition',
   'organisms/toasts/ToastStack',
+  'templates/Wizard/WizardStepper',
 ])
 
 const KNOWN_GAPS: Record<string, string[]> = {}
