@@ -11,22 +11,32 @@ Write prompts need `--allow-writes` on the stdio proxy and [Admin](/concepts/acc
 
 Replace names like `acme-prod` with your own install, app, or workflow IDs.
 
-<AccordionGroup>
-  <Accordion title="What's in this org?">
-    ```
-    What apps and installs are in this org? Summarize each install's app and status.
-    ```
+## Review org status
 
-    Variants: `Show me installs for the payments app.`
-  </Accordion>
-  <Accordion title="Status of an install">
+<AccordionGroup>
+  <Accordion title="Find recently-updated installs">
     ```
-    What's the status of install acme-prod? Include components, recent workflows, and anything unhealthy.
+    Which installs have been updated in the last 24 hours?
     ```
   </Accordion>
-  <Accordion title="Pending approvals">
+  <Accordion title="Find unhealthy installs">
+    ```
+    Are any installs in this org in an unhealthy state?
+    ```
+  </Accordion>
+  <Accordion title="Find pending approvals">
     ```
     Are there any pending workflow approvals in this org? For each one, tell me the install, workflow, and what is waiting.
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Manage workflows
+
+<AccordionGroup>
+  <Accordion title="Watch a workflow">
+    ```
+    Watch workflow <workflow_id> until it finishes. Tell me when the status changes and when it reaches a terminal state.
     ```
   </Accordion>
   <Accordion title="Approve or reject a plan">
@@ -36,53 +46,31 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
 
     Write. The agent should inspect the workflow first and wait for your confirmation.
   </Accordion>
-  <Accordion title="Why did this deploy fail?">
+  <Accordion title="Retry a failed step">
     ```
-    Why did the latest deploy on install acme-prod fail? Pull the deploy and workflow step logs and quote the error.
-    ```
-  </Accordion>
-  <Accordion title="Why did this build fail?">
-    ```
-    Why did the latest build for component <component> fail? Show the git ref and the relevant log lines.
-    ```
-  </Accordion>
-  <Accordion title="Watch a workflow">
-    ```
-    Watch workflow <workflow_id> until it finishes. Tell me when the status changes and when it reaches a terminal state.
-    ```
-  </Accordion>
-  <Accordion title="Actions on an install">
-    ```
-    What actions can I run on install acme-prod? For each one, say whether it can be triggered manually.
-    ```
-  </Accordion>
-  <Accordion title="Run an action">
-    ```
-    Run the <action name> action on install acme-prod. Confirm the action with me before triggering it, then watch the workflow.
+    Workflow <workflow_id> failed. Tell me which step failed and whether it is retryable. If I say yes, retry it and watch until it finishes.
     ```
 
     Write.
   </Accordion>
-  <Accordion title="Runbooks">
+  <Accordion title="Cancel a workflow">
     ```
-    Show the runbooks for app <app>. Summarize the steps in each one.
-    ```
-  </Accordion>
-  <Accordion title="Run a runbook">
-    ```
-    Run the <runbook> runbook on install acme-prod. Summarize its inputs and steps first, ask me before triggering it, then follow its workflow.
+    Cancel in-progress workflow <workflow_id> on install acme-prod. Confirm with me first, then verify it stopped.
     ```
 
     Write.
   </Accordion>
-  <Accordion title="App branch overview">
+</AccordionGroup>
+
+## Deploy app versions to installs
+
+<AccordionGroup>
+  <Accordion title="Review an app branch">
     ```
     What's the latest on the default branch for app <app>? Did the last run succeed, what changed, and how far have install-group deploys gotten?
     ```
-
-    Requires the app-branches org feature.
   </Accordion>
-  <Accordion title="Changes in a branch run or PR preview">
+  <Accordion title="Review changes in a branch run or PR preview">
     ```
     What changed in the most recent run of the default branch for app <app>?
     ```
@@ -98,12 +86,56 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
 
     HTTP MCP cannot read the local workspace. For local toml, run `nuon apps sync --branch <branch> --output agent` first, then pass the resulting `app_config_id`.
   </Accordion>
-  <Accordion title="Describe an install">
+  <Accordion title="See why a build failed">
     ```
-    Describe install acme-prod. Include what most recently updated it, its components, current health, and its rendered README.
+    Why did the latest build for component <component> fail? Show the git ref and the relevant log lines.
     ```
   </Accordion>
-  <Accordion title="Deprovision or reprovision">
+  <Accordion title="See why a deploy failed">
+    ```
+    Why did the latest deploy on install acme-prod fail? Pull the deploy and workflow step logs and quote the error.
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Debug installs
+
+<AccordionGroup>
+  <Accordion title="Review the status of an install">
+    ```
+    What's the status of install acme-prod? Include components, recent workflows, and anything unhealthy.
+    ```
+  </Accordion>
+  <Accordion title="Find actions you can run for an install">
+    ```
+    What actions can I run on install acme-prod? For each one, say whether it can be triggered manually.
+    ```
+  </Accordion>
+  <Accordion title="Run an action">
+    ```
+    Run the <action name> action on install acme-prod. Confirm the action with me before triggering it, then watch the workflow.
+    ```
+
+    Write.
+  </Accordion>
+  <Accordion title="See what runbooks you can run for an install">
+    ```
+    Show the runbooks available for install acme-prod. Summarize the steps in each one.
+    ```
+  </Accordion>
+  <Accordion title="Run a runbook">
+    ```
+    Run the <runbook> runbook on install acme-prod. Summarize its inputs and steps first, ask me before triggering it, then follow its workflow.
+    ```
+
+    Write.
+  </Accordion>
+</AccordionGroup>
+
+## Update installs
+
+<AccordionGroup>
+  <Accordion title="Deprovision or reprovision an install">
     ```
     Plan a reprovision of install acme-prod. Do not apply until I confirm. List available roles for reprovision first if I want a non-default IAM role. If I ask to deprovision, require an explicit confirm from me first.
     ```
@@ -113,20 +145,6 @@ Replace names like `acme-prod` with your own install, app, or workflow IDs.
   <Accordion title="Inspect or update install inputs">
     ```
     What are the current inputs on install acme-prod? Propose an update for <input_name> and wait for my approval before writing it.
-    ```
-
-    Write.
-  </Accordion>
-  <Accordion title="Retry a failed step">
-    ```
-    Workflow <workflow_id> failed. Tell me which step failed and whether it is retryable. If I say yes, retry it and watch until it finishes.
-    ```
-
-    Write.
-  </Accordion>
-  <Accordion title="Cancel a workflow">
-    ```
-    Cancel in-progress workflow <workflow_id> on install acme-prod. Confirm with me first, then verify it stopped.
     ```
 
     Write.
