@@ -6,12 +6,18 @@ import type { IButtonAsButton } from '@/components/common/Button'
 
 export const CreateInstallButtonContainer = ({
   initialApp,
+  initialBranchId,
   ...props
-}: { initialApp?: TApp } & IButtonAsButton) => {
+}: { initialApp?: TApp; initialBranchId?: string } & IButtonAsButton) => {
   const { addModal } = useSurfaces()
 
   const handleOpen = () => {
-    const modal = <CreateInstallModal initialApp={initialApp} />
+    const modal = (
+      <CreateInstallModal
+        initialApp={initialApp}
+        initialBranchId={initialBranchId}
+      />
+    )
     addModal(modal)
   }
 

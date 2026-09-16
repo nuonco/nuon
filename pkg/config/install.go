@@ -7,11 +7,12 @@ import (
 	"strings"
 
 	"github.com/invopop/jsonschema"
+	"github.com/pelletier/go-toml/v2"
+
 	"github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
-	"github.com/pelletier/go-toml/v2"
 )
 
 type InstallApprovalOption string

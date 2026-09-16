@@ -3,8 +3,9 @@ package config
 import (
 	"testing"
 
-	"github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/config/diff"
 )
 
 func TestNormalizeIntermediateConfigSortsComponentsAndManifests(t *testing.T) {

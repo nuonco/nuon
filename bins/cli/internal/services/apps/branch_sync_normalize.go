@@ -118,6 +118,8 @@ func normalizeRemoteBranch(ctx context.Context, resolver *branchNameResolver, na
 		}
 		preview.SetStatuses = generics.ToPtr(p.SetStatuses)
 		preview.Comment = generics.ToPtr(p.Comment)
+		preview.IgnoreDrafts = generics.ToPtr(p.IgnoreDrafts)
+		preview.React = generics.ToPtr(p.React)
 		normalizePreviewDefaults(preview)
 		out.Preview = preview
 	}
@@ -134,6 +136,12 @@ func normalizePreviewDefaults(p *config.AppBranchPreviewConfig) {
 	}
 	if p.Comment == nil {
 		p.Comment = generics.ToPtr(true)
+	}
+	if p.IgnoreDrafts == nil {
+		p.IgnoreDrafts = generics.ToPtr(true)
+	}
+	if p.React == nil {
+		p.React = generics.ToPtr(true)
 	}
 }
 
@@ -160,6 +168,12 @@ func cloneAppBranchConfig(in *config.AppBranchConfig) *config.AppBranchConfig {
 		}
 		if in.Preview.Comment != nil {
 			preview.Comment = generics.ToPtr(*in.Preview.Comment)
+		}
+		if in.Preview.IgnoreDrafts != nil {
+			preview.IgnoreDrafts = generics.ToPtr(*in.Preview.IgnoreDrafts)
+		}
+		if in.Preview.React != nil {
+			preview.React = generics.ToPtr(*in.Preview.React)
 		}
 		out.Preview = &preview
 	}

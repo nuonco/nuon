@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
 	"gorm.io/gorm"
 	"gorm.io/gorm/utils/tests"
+
+	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
 )
 
 func TestUpdateLocalTable(t *testing.T) {

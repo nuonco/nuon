@@ -31,9 +31,9 @@ type AdminBackfillDefaultAppBranchesRequest struct {
 // @Summary				backfill default app branches
 // @Description			Starts a workflow that gives every app a branch named `default` with a single all-installs group, which is what `nuon apps sync` creates lazily on its first run once the org has default-app-branches enabled. Running this first means flipping the flag does not turn the next sync of every app into a migration.
 // @Description
-// @Description			Existing installs are recorded as members of that branch: every install the all-installs group resolves to and that no branch owns gets an active branch connection and its `app_branch_id` set, so the install reads as part of the branch instead of belonging to nothing. A branch holding installs only through an all-installs group is a weak owner, so a dev branch created later can still claim them by label or by ID. An app whose latest config on another branch already claims all installs is skipped, since two branches claiming everything would deploy over each other.
+// @Description			Existing installs are left unchanged. The workflow creates branch/config records only; it never infers or backfills install ownership. An install joins a branch only when selected during install creation or through an explicit move.
 // @Description
-// @Description			This does not touch the flag and does not trigger runs. An app that already has a `default` branch is still visited so its installs get connected.
+// @Description			This does not touch the flag, trigger runs, or connect installs. An app that already has a configured `default` branch is left unchanged.
 // @Description
 // @Description			Leave `org_ids` empty (or omit the body) to cover every org. Set `dry_run` to count the apps that would be backfilled without creating anything. Re-running drains whatever is left; an already-running backfill is reused rather than duplicated.
 // @Tags					general/admin
@@ -98,7 +98,7 @@ type BackfillDefaultAppBranchesStatusResponse struct {
 
 // @ID						GetBackfillDefaultAppBranchesStatus
 // @Summary				get default app branch backfill progress
-// @Description			Reports whether the default app branch backfill is still running and, when available, how many apps were given a `default` branch, already had one, were skipped because another branch claims all installs, or failed, plus how many installs were connected to their branch.
+// @Description			Reports whether the default app branch backfill is still running and, when available, how many apps were given a `default` branch, already had one, or failed. Existing install ownership is not changed.
 // @Tags					general/admin
 // @Accept					json
 // @Produce				json

@@ -5,13 +5,14 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/monitor"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 
+	"go.uber.org/fx"
+
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/management/noop"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/management/restart"
 	shutdown "github.com/nuonco/nuon/bins/runner/internal/jobs/management/shutdown"
 	update "github.com/nuonco/nuon/bins/runner/internal/jobs/management/update"
 	vmshutdown "github.com/nuonco/nuon/bins/runner/internal/jobs/management/vm_shutdown"
-	"go.uber.org/fx"
 )
 
 func GetJobs() []fx.Option {

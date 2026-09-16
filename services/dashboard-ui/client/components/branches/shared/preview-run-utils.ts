@@ -88,6 +88,7 @@ export const formatPreviewDefaultsSummary = (
   if (options?.includeGithub !== false) {
     if (defaults.setStatuses) parts.push('statuses on')
     if (defaults.comment) parts.push('PR comments on')
+    if (defaults.ignoreDrafts) parts.push('ignore drafts')
   }
 
   return parts.join(' · ')

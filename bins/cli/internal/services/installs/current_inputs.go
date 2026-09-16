@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"charm.land/lipgloss/v2"
+
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/pkg/cli/styles"

@@ -49,6 +49,7 @@ export const PreviewConfigEditorModal = ({
     installId: initialDefaults.installId,
     setStatuses: initialDefaults.setStatuses,
     comment: initialDefaults.comment,
+    ignoreDrafts: initialDefaults.ignoreDrafts,
   }
 
   const form = useForm({
@@ -78,7 +79,8 @@ export const PreviewConfigEditorModal = ({
     values.mode === initialValues.mode &&
     values.installId === initialValues.installId &&
     values.setStatuses === initialValues.setStatuses &&
-    values.comment === initialValues.comment
+    values.comment === initialValues.comment &&
+    values.ignoreDrafts === initialValues.ignoreDrafts
   const installOptions = installs.map((install) => ({
     value: install.id,
     label: install.name,
@@ -197,6 +199,29 @@ export const PreviewConfigEditorModal = ({
                         <Text weight="strong">Comment on pull request</Text>
                         <Text variant="subtext" theme="neutral">
                           Post preview results to the pull request.
+                        </Text>
+                      </>
+                    ),
+                    labelTextProps: {
+                      as: 'div',
+                      className: 'flex flex-col gap-1',
+                    },
+                  }}
+                  className="items-start"
+                />
+              )}
+            </form.Field>
+            <form.Field name="ignoreDrafts">
+              {(field) => (
+                <FormCheckbox
+                  field={field}
+                  disabled={isPending || isLoading}
+                  labelProps={{
+                    labelText: (
+                      <>
+                        <Text weight="strong">Ignore draft pull requests</Text>
+                        <Text variant="subtext" theme="neutral">
+                          Skip preview runs for draft pull requests.
                         </Text>
                       </>
                     ),

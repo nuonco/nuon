@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 

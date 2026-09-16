@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx/fxtest"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 )
 
 func BenchmarkHTTPMetrics(b *testing.B) {

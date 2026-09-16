@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
+
 	"github.com/nuonco/nuon/pkg/metrics"
 	statesignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
