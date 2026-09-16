@@ -31,7 +31,16 @@ var (
 	groupTitleStyle = lipgloss.NewStyle().
 			Foreground(styles.SecondaryColor).
 			Bold(true)
+
+	warningStyle = styles.TextError.Italic(true)
+
+	selectedGroupStyle = lipgloss.NewStyle().
+				Foreground(styles.PrimaryColor).
+				Bold(true)
 )
+
+// alarmIcon prefixes warnings that block the user from continuing.
+const alarmIcon = "🚨 "
 
 func groupHeaderStyle(width int) lipgloss.Style {
 	return lipgloss.NewStyle().

@@ -11,6 +11,8 @@ import { LabelsField } from './LabelsField'
 import type { InstallFormApi } from './useInstallForm'
 import type { InstallFormMode, InstallPlatform } from './schema'
 
+const NAME_CHECK_DEBOUNCE_MS = 400
+
 export interface IInstallForm {
   form: InstallFormApi
   mode: InstallFormMode
@@ -22,6 +24,7 @@ export interface IInstallForm {
   requireTargetAccount?: boolean
   autoApproveDescription?: string
   showNameField?: boolean
+  validateName?: (name: string) => Promise<string | undefined>
 }
 
 export const InstallForm = ({
@@ -35,6 +38,7 @@ export const InstallForm = ({
   requireTargetAccount,
   autoApproveDescription,
   showNameField = true,
+  validateName,
 }: IInstallForm) => {
   const showName = mode === 'create' || showNameField
 
@@ -51,7 +55,17 @@ export const InstallForm = ({
           required
           helpText="A unique name for this install"
         >
-          <form.Field name="name">
+          <form.Field
+            name="name"
+            validators={
+              validateName
+                ? {
+                    onChangeAsyncDebounceMs: NAME_CHECK_DEBOUNCE_MS,
+                    onChangeAsync: ({ value }) => validateName(value),
+                  }
+                : undefined
+            }
+          >
             {(field) => (
               <FormInput field={field} placeholder="Enter install name" />
             )}

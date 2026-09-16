@@ -20,6 +20,18 @@ type installCreatedMsg struct {
 	err     error
 }
 
+type nameCheckDebounceMsg struct {
+	name       string
+	generation int
+}
+
+type nameCheckedMsg struct {
+	name       string
+	generation int
+	exists     bool
+	err        error
+}
+
 type autoExitMsg struct{}
 
 func autoExitAfterDelay() tea.Cmd {

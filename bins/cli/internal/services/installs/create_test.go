@@ -3,7 +3,6 @@ package installs
 import (
 	"testing"
 
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,34 +29,3 @@ func TestParseInstallInputs(t *testing.T) {
 	}
 }
 
-func TestCreateInstallGroupLabels(t *testing.T) {
-	t.Run("returns concrete match labels", func(t *testing.T) {
-		group := &models.AppAppBranchInstallGroup{
-			ID: "group-id",
-			LabelSelector: &models.GithubComNuoncoNuonPkgLabelsSelector{
-				MatchLabels: map[string]string{"env": "staging", "tier": "api"},
-			},
-		}
-
-		got, err := createInstallGroupLabels(group)
-		require.NoError(t, err)
-		assert.Equal(t, map[string]string{"env": "staging", "tier": "api"}, got)
-	})
-
-	t.Run("rejects static groups", func(t *testing.T) {
-		_, err := createInstallGroupLabels(&models.AppAppBranchInstallGroup{ID: "group-id"})
-		require.Error(t, err)
-	})
-
-	t.Run("rejects wildcard selectors", func(t *testing.T) {
-		group := &models.AppAppBranchInstallGroup{
-			ID: "group-id",
-			LabelSelector: &models.GithubComNuoncoNuonPkgLabelsSelector{
-				MatchLabels: map[string]string{"env": "*"},
-			},
-		}
-
-		_, err := createInstallGroupLabels(group)
-		require.EqualError(t, err, `install group label "env" uses a wildcard and cannot be applied during creation`)
-	})
-}

@@ -11,6 +11,7 @@ import {
 
 interface ICreateInstall {
   initialApp?: TApp
+  initialBranchId?: string
 }
 
 const INITIAL_STATE: ICreateFromAppState = {
@@ -60,6 +61,7 @@ const primaryLabel = (state: ICreateFromAppState): React.ReactNode => {
 
 export const CreateInstallModal = ({
   initialApp,
+  initialBranchId,
   ...props
 }: ICreateInstall & IModal) => {
   const [selectedApp, setSelectedApp] = useState<TApp | undefined>(initialApp)
@@ -105,6 +107,7 @@ export const CreateInstallModal = ({
       {selectedApp ? (
         <CreateInstallFromAppContainer
           app={selectedApp}
+          initialBranchId={initialBranchId}
           onBack={
             initialApp
               ? undefined

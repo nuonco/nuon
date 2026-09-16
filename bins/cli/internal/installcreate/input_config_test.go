@@ -46,6 +46,32 @@ func TestResolveInputConfigUsesSelectedBranchConfig(t *testing.T) {
 	require.Same(t, want, got)
 }
 
+func TestResolveInputConfigHydratesBranchInputGroups(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	api := nuon.NewMockClient(ctrl)
+	ctx := context.Background()
+	group := &models.AppAppInputGroup{ID: "group-id"}
+	input := &models.AppAppInput{ID: "input-id", GroupID: group.ID}
+
+	api.EXPECT().
+		GetAppBranchAppConfigs(ctx, "app-id", "branch-id", gomock.Any()).
+		Return([]*models.AppAppConfig{
+			{ID: "branch-config", Status: models.AppAppConfigStatusActive},
+		}, false, nil)
+	api.EXPECT().
+		GetAppConfig(ctx, "app-id", "branch-config", gomock.Any()).
+		Return(&models.AppAppConfig{
+			Input: &models.AppAppInputConfig{
+				InputGroups: []*models.AppAppInputGroup{group},
+				Inputs:      []*models.AppAppInput{input},
+			},
+		}, nil)
+
+	got, err := ResolveInputConfig(ctx, api, "app-id", "branch-id")
+	require.NoError(t, err)
+	require.Equal(t, []*models.AppAppInput{input}, got.InputGroups[0].AppInputs)
+}
+
 func TestResolveInputConfigUsesLegacyAppInputWithoutBranch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	api := nuon.NewMockClient(ctrl)
@@ -71,5 +97,5 @@ func TestResolveInputConfigRejectsBranchWithoutEligibleConfig(t *testing.T) {
 		}, false, nil)
 
 	_, err := ResolveInputConfig(ctx, api, "app-id", "branch-id")
-	require.EqualError(t, err, "selected app branch branch-id has no active non-preview app config")
+	require.EqualError(t, err, "selected app branch branch-id has no active non-preview app config (no successful branch run to pin)")
 }

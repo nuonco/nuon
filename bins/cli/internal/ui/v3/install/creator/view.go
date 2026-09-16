@@ -2,10 +2,13 @@ package creator
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 
 	"charm.land/lipgloss/v2"
 
+	"github.com/nuonco/nuon/bins/cli/internal/installcreate"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
@@ -106,6 +109,11 @@ func (m model) viewContent() string {
 // updateViewportContent builds the form content and sets it in the viewport.
 // This should be called whenever the form content changes (not in View()).
 func (m *model) updateViewportContent() {
+	if m.step == stepGroup {
+		m.updateGroupViewportContent()
+		return
+	}
+
 	width := min(m.width, maxWidth) - 4
 
 	// fieldLines tracks the ending line (exclusive) for each focusIndex.
@@ -145,6 +153,11 @@ func (m *model) updateViewportContent() {
 			sections = appendSection(sections, focusedInputStyle.Render(fieldContent))
 		} else {
 			sections = appendSection(sections, blurredInputStyle.Render(fieldContent))
+		}
+		if m.nameChecking {
+			sections = appendSection(sections, styles.TextDim.Render("Checking name availability..."))
+		} else if m.nameValidationErr != nil {
+			sections = appendSection(sections, warningStyle.Render(alarmIcon+m.nameValidationErr.Error()))
 		}
 		fieldLines[0] = lineCount
 	}
@@ -230,6 +243,43 @@ func (m *model) updateViewportContent() {
 
 	m.viewport.SetContent(lipgloss.JoinVertical(lipgloss.Top, sections...))
 	m.fieldEndLines = fieldLines
+}
+
+// updateGroupViewportContent renders the install group picker shown after the
+// form. The final row skips group assignment.
+func (m *model) updateGroupViewportContent() {
+	sections := []string{
+		titleStyle.Render("Select an install group"),
+		descStyle.Render("The group's labels are applied to this install so it joins the branch deployment plan."),
+		"",
+	}
+
+	row := func(selected bool, label string) string {
+		if selected {
+			return selectedGroupStyle.Render("> " + label)
+		}
+		return "  " + label
+	}
+
+	for i, group := range m.groups {
+		selected := i == m.groupIndex
+		sections = append(sections, row(selected, group.Name))
+
+		if labels, err := installcreate.GroupLabels(group); err == nil {
+			for _, key := range slices.Sorted(maps.Keys(labels)) {
+				sections = append(sections, fmt.Sprintf("      %s = %s",
+					styles.TextAccent.Render(key),
+					styles.TextDim.Render(labels[key]),
+				))
+			}
+		}
+	}
+
+	skip := warningStyle.Render(alarmIcon + "Skip install group (the install will be orphaned until its labels match)")
+	sections = append(sections, "", row(m.groupIndex >= len(m.groups), skip))
+
+	m.viewport.SetContent(lipgloss.JoinVertical(lipgloss.Top, sections...))
+	m.fieldEndLines = map[int]int{}
 }
 
 // ensureFocusVisible scrolls the viewport so the focused field is visible.

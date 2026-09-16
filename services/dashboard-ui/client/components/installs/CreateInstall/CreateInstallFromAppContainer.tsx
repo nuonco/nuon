@@ -1,6 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -24,8 +29,14 @@ import {
   createAppInstall,
   getAWSAccountConnections,
   getComponents,
+  installNameTaken,
 } from '@/lib'
-import type { TApp, TAppBranch, TAppBranchInstallGroup, TAppConfig } from '@/types'
+import type {
+  TApp,
+  TAppBranch,
+  TAppBranchInstallGroup,
+  TAppConfig,
+} from '@/types'
 import { shouldDefaultStackOnly } from './app-install-readiness'
 import { BranchStep } from './BranchStep'
 import {
@@ -66,11 +77,14 @@ export const pickCreateInstallConfig = (
     if (opts?.requireUnbranched && config.app_branch_id) return false
     return true
   })
-  return selected ?? (opts?.fallbackToFirst === false ? undefined : configs?.[0])
+  return (
+    selected ?? (opts?.fallbackToFirst === false ? undefined : configs?.[0])
+  )
 }
 
 interface ICreateInstallFromAppContainer {
   app: TApp
+  initialBranchId?: string
   onBack?: () => void
   onStateChange: (state: ICreateFromAppState) => void
   modalId?: string
@@ -78,6 +92,7 @@ interface ICreateInstallFromAppContainer {
 
 export const CreateInstallFromAppContainer = ({
   app,
+  initialBranchId,
   onBack,
   onStateChange,
   modalId,
@@ -99,6 +114,8 @@ export const CreateInstallFromAppContainer = ({
   })
   const [selectedBranch, setSelectedBranch] = useState<TAppBranch | null>(null)
   const [branchDecisionMade, setBranchDecisionMade] = useState(false)
+  const [initialBranchApplied, setInitialBranchApplied] =
+    useState(!initialBranchId)
   const [pendingFormValues, setPendingFormValues] =
     useState<InstallFormValues | null>(null)
   const [selectedGroup, setSelectedGroup] = useState<TGroupStepSelection>(null)
@@ -113,14 +130,27 @@ export const CreateInstallFromAppContainer = ({
     queryFn: () => getAppBranches({ appId: app.id, orgId: org?.id || '' }),
     enabled: !!org?.id && !!app.id,
   })
-  const hasBranches =
-    !branchesError && (branchList?.data ?? []).length > 0
+  const hasBranches = !branchesError && (branchList?.data ?? []).length > 0
+
+  // Opening from a branch page preselects that branch and skips the picker.
+  // Applied once so Back still returns to the picker.
+  useEffect(() => {
+    if (initialBranchApplied || branchesLoading) return
+    const match = (branchList?.data ?? []).find(
+      (branch) => branch.id === initialBranchId
+    )
+    if (match) {
+      setSelectedBranch(match)
+      setBranchDecisionMade(true)
+    }
+    setInitialBranchApplied(true)
+  }, [initialBranchApplied, branchesLoading, branchList, initialBranchId])
 
   // Derive phase
   const phase: CreateInstallPhase = (() => {
+    if (!initialBranchApplied) return 'select-branch'
     if (hasBranches && !branchDecisionMade) return 'select-branch'
-    if (selectedBranch && pendingFormValues !== null)
-      return 'pick-group'
+    if (selectedBranch && pendingFormValues !== null) return 'pick-group'
     return 'form'
   })()
 
@@ -180,71 +210,75 @@ export const CreateInstallFromAppContainer = ({
     enabled: !!org?.id && !!configId && phase === 'form',
   })
 
-  const { data: awsAccountConnections, isLoading: awsAccountConnectionsLoading } =
-    useQuery({
-      placeholderData: keepPreviousData,
-      queryKey: ['aws-account-connections', org?.id],
-      queryFn: () => getAWSAccountConnections({ orgId: org.id }),
-      enabled: !!org?.id && awsConnectionsEnabled && phase === 'form',
-    })
+  const {
+    data: awsAccountConnections,
+    isLoading: awsAccountConnectionsLoading,
+  } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: ['aws-account-connections', org?.id],
+    queryFn: () => getAWSAccountConnections({ orgId: org.id }),
+    enabled: !!org?.id && awsConnectionsEnabled && phase === 'form',
+  })
 
   const componentIds = config?.component_ids ?? []
   const needsComponents = componentIds.length > 0
   const { data: componentsResult, isLoading: componentsLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['components', org?.id, app.id, 'create-install-gate'],
-    queryFn: () =>
-      getComponents({ orgId: org.id, appId: app.id, limit: 100 }),
+    queryFn: () => getComponents({ orgId: org.id, appId: app.id, limit: 100 }),
     enabled: !!org?.id && !!app.id && needsComponents && !!config,
   })
 
-  const { mutateAsync, isPending: isSubmitting, error: submitError } =
-    useMutation({
-      mutationFn: (body: ReturnType<typeof buildCreateInstallBody>) =>
-        createAppInstall({ appId: app.id, body, orgId: org?.id || '' }),
-      onSuccess: (result) => {
-        trackEvent({
-          event: 'install_create',
-          status: 'ok',
-          user,
-          props: {
-            appId: app.id,
-            installId: result.data.id,
-          },
-        })
-        addToast(
-          <Toast heading="Install created" theme="success">
-            <Text>
-              Created {result.data?.name ?? 'install'}. Provisioning may take a
-              few minutes.
-            </Text>
-          </Toast>
-        )
-        queryClient.invalidateQueries({ queryKey: ['installs'] })
-        queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
-        queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
-        const suffix =
-          result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
-        removeModal(modalId)
-        const workflowId = result.data.workflow_id
-        navigate(
-          workflowId
-            ? `/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
-            : `/${org?.id}/installs/${result.data.id}/workflows${suffix}`
-        )
-      },
-      onError: (err: any) => {
-        trackEvent({
-          event: 'install_create',
-          status: 'error',
-          user,
-          props: {
-            appId: app.id,
-            err: err?.error,
-          },
-        })
-      },
-    })
+  const {
+    mutateAsync,
+    isPending: isSubmitting,
+    error: submitError,
+  } = useMutation({
+    mutationFn: (body: ReturnType<typeof buildCreateInstallBody>) =>
+      createAppInstall({ appId: app.id, body, orgId: org?.id || '' }),
+    onSuccess: (result) => {
+      trackEvent({
+        event: 'install_create',
+        status: 'ok',
+        user,
+        props: {
+          appId: app.id,
+          installId: result.data.id,
+        },
+      })
+      addToast(
+        <Toast heading="Install created" theme="success">
+          <Text>
+            Created {result.data?.name ?? 'install'}. Provisioning may take a
+            few minutes.
+          </Text>
+        </Toast>
+      )
+      queryClient.invalidateQueries({ queryKey: ['installs'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
+      const suffix =
+        result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
+      removeModal(modalId)
+      const workflowId = result.data.workflow_id
+      navigate(
+        workflowId
+          ? `/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
+          : `/${org?.id}/installs/${result.data.id}/workflows${suffix}`
+      )
+    },
+    onError: (err: any) => {
+      trackEvent({
+        event: 'install_create',
+        status: 'error',
+        user,
+        props: {
+          appId: app.id,
+          err: err?.error,
+        },
+      })
+    },
+  })
 
   const isFormLoading =
     unbranchedConfigsLoading ||
@@ -293,7 +327,28 @@ export const CreateInstallFromAppContainer = ({
       }
     : undefined
 
-  const formReady = phase === 'form' && !isFormLoading && !loadError && !!inputConfig
+  const formReady =
+    phase === 'form' && !isFormLoading && !loadError && !!inputConfig
+
+  const validateName = useCallback(
+    async (name: string) => {
+      const trimmed = name.trim()
+      if (!trimmed || !org?.id) return undefined
+      try {
+        const taken = await installNameTaken({
+          appId: app.id,
+          orgId: org.id,
+          name: trimmed,
+        })
+        return taken ? `An install named "${trimmed}" already exists` : undefined
+      } catch {
+        // A failed lookup shouldn't block creation; the API still enforces
+        // uniqueness on submit.
+        return undefined
+      }
+    },
+    [app.id, org?.id]
+  )
 
   // Build merged labels for the pick-group → submit step
   const buildGroupLabels = (
@@ -305,7 +360,9 @@ export const CreateInstallFromAppContainer = ({
       const trimmed = key.trim()
       if (trimmed) formLabels[trimmed] = value.trim()
     }
-    const groupLabels = group ? concreteMatchLabels(group as TAppBranchInstallGroup) : {}
+    const groupLabels = group
+      ? concreteMatchLabels(group as TAppBranchInstallGroup)
+      : {}
     const merged = { ...formLabels, ...groupLabels }
     return Object.keys(merged).length > 0 ? merged : undefined
   }
@@ -494,6 +551,7 @@ export const CreateInstallFromAppContainer = ({
                 } as any)
               : null
           }
+          validateName={validateName}
           onSubmit={
             selectedBranch
               ? (values) => {
