@@ -47,7 +47,8 @@ const INSTALLS: TInstall[] = [
     runner_status: 'offline',
     sandbox_status: 'active',
     sandbox_health_status: 'unhealthy',
-    sandbox_health_message: 'The sandbox cluster stopped reporting node health.',
+    sandbox_health_message:
+      'The sandbox cluster stopped reporting node health.',
     composite_component_status: 'failed',
     composite_component_status_description:
       'Terraform apply exited with status 1.',
@@ -227,7 +228,7 @@ export const Overview = () => (
         name: 'incompleteIds',
         type: 'ReadonlySet<string>',
         description:
-          'Install ids still in first provision, from isWizardComplete. Their row links into install setup and leads with a Setup incomplete chip.',
+          'Install ids still in first provision, from isWizardComplete. Their row links into install setup and carries a Setup incomplete chip beside the install name.',
       },
       {
         name: 'loading',

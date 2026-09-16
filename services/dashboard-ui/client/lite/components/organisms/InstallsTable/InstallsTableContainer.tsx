@@ -114,7 +114,9 @@ export const InstallsTableContainer = () => {
   const installs = result?.data ?? []
   const appIds = [
     ...new Set(
-      installs.map((install) => install?.app_id).filter((id): id is string => !!id)
+      installs
+        .map((install) => install?.app_id)
+        .filter((id): id is string => !!id)
     ),
   ]
 
@@ -198,8 +200,7 @@ export const InstallsTableContainer = () => {
         values: ['__none__', ...branchNames],
         constrained: list.filters.branches,
         onChange: (value) => list.setFilter('branches', value),
-        renderOption: (value) =>
-          value === '__none__' ? 'No branch' : value,
+        renderOption: (value) => (value === '__none__' ? 'No branch' : value),
       })}
       labelColors={labelColors}
       incompleteIds={incompleteIds}
