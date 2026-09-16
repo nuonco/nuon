@@ -10,9 +10,10 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/terraform/archive"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_oci_unpackDir(t *testing.T) {

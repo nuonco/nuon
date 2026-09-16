@@ -25,8 +25,10 @@ interface ICreateInstallFormFields {
   awsAccountConnections?: TAWSAccountConnection[]
   requireTargetAccount?: boolean
   defaultAutoApprove?: boolean
+  defaultStackOnly?: boolean
   autoApproveDescription?: string
   submitError?: TAPIError | null
+  validateName?: (name: string) => Promise<string | undefined>
   onSubmit: (values: InstallFormValues) => Promise<unknown> | void
   onStateChange: (state: ICreateFormTriggerState) => void
 }
@@ -37,8 +39,10 @@ export const CreateInstallFormFields = ({
   awsAccountConnections,
   requireTargetAccount,
   defaultAutoApprove,
+  defaultStackOnly,
   autoApproveDescription,
   submitError,
+  validateName,
   onSubmit,
   onStateChange,
 }: ICreateInstallFormFields) => {
@@ -50,27 +54,38 @@ export const CreateInstallFormFields = ({
     | 'gcp'
     | undefined
 
-  const { form, canSubmit, hasDraft, draftTimestamp, clearDraft, restoreDraft } =
-    useInstallForm({
+  const {
+    form,
+    canSubmit,
+    isValidating,
+    hasDraft,
+    draftTimestamp,
+    clearDraft,
+    restoreDraft,
+  } = useInstallForm({
       mode: 'create',
       platform,
       inputConfig,
       requireTargetAccount,
       defaultAutoApprove,
+      defaultStackOnly,
       storageKey: `install-draft:${app.id}`,
       onSubmit: async (values) => {
         try {
           await onSubmit(values)
           clearDraft()
         } catch {
-          // error surfaced via submitError → FormErrorBanner
+          return
         }
       },
     })
 
   useEffect(() => {
-    onStateChange({ canSubmit, submit: () => form.handleSubmit() })
-  }, [canSubmit, form, onStateChange])
+    onStateChange({
+      canSubmit: canSubmit && !isValidating,
+      submit: () => form.handleSubmit(),
+    })
+  }, [canSubmit, isValidating, form, onStateChange])
 
   useEffect(() => {
     if (!hasDraft || draftShownRef.current || !draftTimestamp) return
@@ -113,6 +128,7 @@ export const CreateInstallFormFields = ({
         awsAccountConnections={awsAccountConnections}
         requireTargetAccount={requireTargetAccount}
         autoApproveDescription={autoApproveDescription}
+        validateName={validateName}
       />
     </div>
   )

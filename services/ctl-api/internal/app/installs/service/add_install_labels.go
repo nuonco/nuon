@@ -123,7 +123,7 @@ func (s *service) AddInstallLabels(ctx *gin.Context) {
 		merged.Merge(rendered)
 	}
 
-	if err := s.appsHelpers.ValidateInstallBranchExclusivity(ctx, &install, merged); err != nil {
+	if err := s.appsHelpers.ValidateInstallLabelsSingleGroup(ctx, &install, merged); err != nil {
 		ctx.Error(err)
 		return
 	}

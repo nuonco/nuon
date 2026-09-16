@@ -3,7 +3,6 @@ package kubernetes_manifest
 import (
 	"context"
 
-	"github.com/nuonco/nuon/pkg/kube"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
@@ -11,6 +10,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/restmapper"
+
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 type kubernetesClient struct {

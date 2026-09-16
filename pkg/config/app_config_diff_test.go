@@ -3,8 +3,9 @@ package config
 import (
 	"testing"
 
-	"github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/nuonco/nuon/pkg/config/diff"
 )
 
 type AppConfigDiffSuite struct {

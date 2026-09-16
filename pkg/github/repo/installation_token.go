@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/go-github/v50/github"
+
 	"github.com/nuonco/nuon/pkg/github/client"
 	"github.com/nuonco/nuon/pkg/kube/secret"
 )

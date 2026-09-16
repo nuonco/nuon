@@ -13,10 +13,11 @@ import (
 	"time"
 
 	"github.com/invopop/jsonschema"
-	"github.com/nuonco/nuon/pkg/config/schema"
-	"github.com/nuonco/nuon/pkg/gen/markdown-docs/mdast"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+
+	"github.com/nuonco/nuon/pkg/config/schema"
+	"github.com/nuonco/nuon/pkg/gen/markdown-docs/mdast"
 )
 
 // Command-line flags

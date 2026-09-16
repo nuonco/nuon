@@ -57,6 +57,7 @@
                   "guides/byoc/requirements",
                   "guides/byoc/installation",
                   "guides/byoc/optional",
+                  "guides/byoc/telemetry",
                   "guides/byoc/updates"
                 ]
               },

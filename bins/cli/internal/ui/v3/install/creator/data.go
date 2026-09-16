@@ -3,9 +3,12 @@ package creator
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
+
+	"github.com/nuonco/nuon/bins/cli/internal/installcreate"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -26,6 +29,8 @@ var awsRegions = []string{
 	"us-gov-east-1", "us-gov-west-1",
 }
 
+const installNameDebounce = 300 * time.Millisecond
+
 type inputMapping struct {
 	name             string
 	displayName      string
@@ -40,9 +45,13 @@ type inputMapping struct {
 
 func fetchConfigCmd(m model) tea.Cmd {
 	return func() tea.Msg {
-		inputConfig, err := m.api.GetAppInputLatestConfig(m.ctx, m.appID)
-		if err != nil {
-			return configFetchedMsg{err: err}
+		inputConfig := m.inputConfig
+		if inputConfig == nil {
+			var err error
+			inputConfig, err = installcreate.ResolveInputConfig(m.ctx, m.api, m.appID, m.appBranchID)
+			if err != nil {
+				return configFetchedMsg{err: err}
+			}
 		}
 
 		app, err := m.api.GetApp(m.ctx, m.appID)
@@ -123,14 +132,21 @@ func (m *model) createFormInputs() {
 	}
 
 	// 3. Dynamic inputs from app config, organized by groups
+	seenInputs := make(map[string]struct{})
+	inputKey := func(input *models.AppAppInput) string {
+		if input.ID != "" {
+			return input.ID
+		}
+		return input.Name
+	}
 	if m.inputConfig != nil && m.inputConfig.InputGroups != nil {
 		for _, group := range m.inputConfig.InputGroups {
-			if group.AppInputs == nil {
+			if group == nil || group.AppInputs == nil {
 				continue
 			}
 
 			for _, input := range group.AppInputs {
-				if input.Internal {
+				if input == nil || input.Internal {
 					continue
 				}
 
@@ -161,7 +177,44 @@ func (m *model) createFormInputs() {
 					groupDescription: group.Description,
 					groupID:          group.ID,
 				})
+				seenInputs[inputKey(input)] = struct{}{}
 			}
+		}
+	}
+
+	// Full app configs expose inputs as a flat list. Render any inputs that
+	// were not nested into a group so branch configs and ungrouped inputs work.
+	if m.inputConfig != nil {
+		for _, input := range m.inputConfig.Inputs {
+			if input == nil || input.Internal {
+				continue
+			}
+			if _, ok := seenInputs[inputKey(input)]; ok {
+				continue
+			}
+
+			ti := textinput.New()
+			ti.Placeholder = fmt.Sprintf("Enter %s", input.DisplayName)
+			ti.CharLimit = 500
+			ti.SetWidth(50)
+			ti.Prompt = ""
+			if input.Default != "" {
+				ti.SetValue(input.Default)
+			}
+			if input.Sensitive {
+				ti.EchoMode = textinput.EchoPassword
+				ti.EchoCharacter = '•'
+			}
+
+			m.inputs = append(m.inputs, ti)
+			m.inputMappings = append(m.inputMappings, inputMapping{
+				name:        input.Name,
+				displayName: input.DisplayName,
+				description: input.Description,
+				inputType:   input.Type,
+				required:    input.Required,
+				sensitive:   input.Sensitive,
+			})
 		}
 	}
 
@@ -231,8 +284,8 @@ func (m *model) prevInput() {
 }
 
 func (m *model) validateForm() error {
-	if strings.TrimSpace(m.inputs[0].Value()) == "" {
-		return fmt.Errorf("install name is required")
+	if err := m.validateName(); err != nil {
+		return err
 	}
 
 	for i, mapping := range m.inputMappings {
@@ -244,6 +297,94 @@ func (m *model) validateForm() error {
 		}
 	}
 
+	return nil
+}
+
+func (m *model) validateName() error {
+	name := strings.TrimSpace(m.inputs[0].Value())
+	if name == "" {
+		return fmt.Errorf("install name is required")
+	}
+	if m.nameChecking || m.nameChecked != name {
+		return fmt.Errorf("checking whether install name %q is available", name)
+	}
+	return m.nameValidationErr
+}
+
+func errDuplicateInstallName(name string) error {
+	return fmt.Errorf("an install named %q already exists", name)
+}
+
+func (m *model) scheduleNameCheck() tea.Cmd {
+	name := strings.TrimSpace(m.inputs[0].Value())
+	m.nameCheckGeneration++
+	generation := m.nameCheckGeneration
+	m.nameChecked = ""
+	m.nameValidationErr = nil
+	m.nameChecking = name != ""
+
+	if name == "" {
+		return nil
+	}
+	m.setLogMessage("Checking install name availability...", "info")
+	return tea.Tick(installNameDebounce, func(time.Time) tea.Msg {
+		return nameCheckDebounceMsg{name: name, generation: generation}
+	})
+}
+
+func checkInstallNameCmd(m model, name string, generation int) tea.Cmd {
+	return func() tea.Msg {
+		const pageSize = 100
+		query := &models.GetPaginatedQuery{Limit: pageSize, Q: name}
+		for {
+			installs, hasNext, err := m.api.GetAppInstalls(m.ctx, m.appID, query)
+			if err != nil {
+				return nameCheckedMsg{name: name, generation: generation, err: err}
+			}
+			for _, install := range installs {
+				if install != nil && install.Name == name {
+					return nameCheckedMsg{name: name, generation: generation, exists: true}
+				}
+			}
+			if !hasNext || len(installs) == 0 {
+				return nameCheckedMsg{name: name, generation: generation}
+			}
+			query.Offset += len(installs)
+		}
+	}
+}
+
+// selectedGroup returns the highlighted group, or nil when the cursor is on the
+// skip row.
+func (m *model) selectedGroup() *models.AppAppBranchInstallGroup {
+	if m.groupIndex < 0 || m.groupIndex >= len(m.groups) {
+		return nil
+	}
+	return m.groups[m.groupIndex]
+}
+
+// applyGroupSelection folds the selected group's labels into the install's labels
+// so group membership is set at creation time rather than afterwards.
+func (m *model) applyGroupSelection() error {
+	group := m.selectedGroup()
+	if group == nil {
+		return nil
+	}
+
+	groupLabels, err := installcreate.GroupLabels(group)
+	if err != nil {
+		return err
+	}
+
+	merged := make(map[string]string, len(m.presetLabels)+len(groupLabels))
+	for key, value := range m.presetLabels {
+		merged[key] = value
+	}
+	if err := installcreate.MergeGroupLabels(merged, groupLabels); err != nil {
+		return err
+	}
+
+	m.presetLabels = merged
 	return nil
 }
 
@@ -267,9 +408,10 @@ func (m *model) submitForm() tea.Cmd {
 		name := strings.TrimSpace(m.inputs[0].Value())
 
 		req := &models.ServiceCreateInstallRequest{
-			Name:   &name,
-			Inputs: inputsMap,
-			Labels: m.presetLabels,
+			Name:        &name,
+			Inputs:      inputsMap,
+			Labels:      m.presetLabels,
+			AppBranchID: m.appBranchID,
 		}
 		switch m.cloudPlatform {
 		case models.AppCloudPlatformGcp:

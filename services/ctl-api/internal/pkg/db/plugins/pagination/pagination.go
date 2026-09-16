@@ -1,8 +1,9 @@
 package pagination
 
 import (
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 func NewOffsetPaginationPlugin() *offsetPaginationPlugin {

@@ -1,0 +1,309 @@
+---
+title: 'Collect Install Telemetry'
+sidebarTitle: 'Install Telemetry'
+description: 'Send logs, metrics, and traces from customer installs to your observability backend through your Nuon BYOC telemetry relay.'
+icon: 'chart-line'
+keywords: ['Nuon BYOC', 'telemetry relay', 'OpenTelemetry', 'OTLP', 'install metrics', 'install logs', 'install traces']
+---
+
+Nuon's telemetry relay lets you collect OpenTelemetry data from customer installs in your own observability backend.
+Configure the destination once in your Nuon BYOC deployment, then choose which installs can forward telemetry.
+Backend credentials stay with the relay; you do not need to distribute them to customer environments.
+
+<Note>
+This guide is for **Nuon BYOC customers**. Work with Nuon to deploy and enable the relay before enabling downstream
+installs. Relay availability alone is not a guarantee of lossless delivery; review [delivery limits](#delivery-limits).
+</Note>
+
+## How it works
+
+```diagram
+┌──────────────────┐   ┌──────────────────┐
+│ Customer install │   │ Your Nuon BYOC   │
+│ Application      │   │                  │
+│   ↓ private OTLP │   │                  │   ┌──────────┐
+│ Runner Collector │──▶│ Telemetry relay  │──▶│ Backend  │
+│                  │   │ Verified IDs     │   └──────────┘
+│                  │   │ Backend secrets  │
+└──────────────────┘   └──────────────────┘
+```
+
+1. Your application sends OTLP logs, metrics, or traces to a private endpoint in its install's cloud network.
+2. A Collector managed by the install runner buffers and forwards the data to your relay over HTTPS, using
+   automatically renewed, short-lived Nuon credentials.
+3. The relay verifies the sending runner and attaches authoritative organization, app, install, and runner IDs.
+4. The relay forwards the data to your configured OTLP/HTTP backend.
+
+All enabled installs use the same destination. Your backend provides storage, queries, dashboards, and alerting.
+Enabling forwarding does not instrument your application or automatically scrape its metrics: configure your
+application's OpenTelemetry SDK, agent, or Collector to send data to the install endpoint.
+
+This is separate from [runner audit-log export](/guides/export-runner-audit-logs) and telemetry about the Nuon control
+plane itself. The audit-log `telemetry-export-config` secret does not configure this relay.
+
+## Configure your relay once
+
+These steps apply to the stack that hosts **your Nuon BYOC control plane**, not each downstream customer install.
+You need an OTLP/HTTP backend that accepts the signals you intend to send and authenticates through an
+`Authorization` header.
+
+### Prepare the BYOC deployment
+
+Coordinate relay setup with Nuon. For existing deployments, Nuon will confirm compatible control-plane, runner,
+and stack versions before you enable collection.
+
+### Supply the backend secrets
+
+Update the values of these existing BYOC secrets in AWS Secrets Manager or GCP Secret Manager:
+
+- `telemetry_otlp_endpoint`: HTTPS OTLP/HTTP **base URL**, for example `https://otel.example.com/otlp`.
+  Do not append `/v1/logs`, `/v1/metrics`, or `/v1/traces`.
+- `telemetry_otlp_authorization`: Complete backend `Authorization` header value, including its `Basic ` or `Bearer ` prefix.
+
+<Tabs>
+<Tab title="AWS">
+
+1. Open **AWS Secrets Manager** in the account and region hosting your Nuon BYOC deployment.
+2. Find the existing secrets corresponding to `telemetry_otlp_endpoint` and `telemetry_otlp_authorization` for
+   **your BYOC install**, not a downstream customer install.
+3. Update each secret's value: the endpoint secret contains the base URL, and the authorization secret contains
+   the complete header value. Save both changes.
+4. Let Nuon know the secrets are ready to sync and the relay can be enabled. Do not send Nuon the secret values.
+
+</Tab>
+<Tab title="GCP">
+
+1. Open **Secret Manager** in the GCP project hosting your Nuon BYOC deployment.
+2. Find the existing secrets corresponding to `telemetry_otlp_endpoint` and `telemetry_otlp_authorization` for
+   **your BYOC install**, not a downstream customer install.
+3. Add a new version to each secret: the endpoint secret contains the base URL, and the authorization secret
+   contains the complete header value. Ensure the new versions are enabled.
+4. Let Nuon know the secrets are ready to sync and the relay can be enabled. Do not send Nuon the secret values.
+
+</Tab>
+</Tabs>
+
+Keep credentials out of app inputs, Helm values, and source control. No stack update is needed if the secrets
+already exist.
+
+<Note>
+If either secret is missing, coordinate with Nuon to update your BYOC stack first. Use the current CloudFormation
+template or [Terraform stack configuration](/guides/byoc/installation#provide-the-inputs-and-secrets) to provision
+the missing secrets with the required values.
+</Note>
+
+### Have Nuon enable the relay
+
+Nuon syncs the secrets, runs the relay preflight, enables the relay component, and verifies its deployment and HTTPS
+endpoint. **Supplying secrets alone does not enable the relay.** Wait for Nuon to confirm it is ready before enabling
+downstream installs. Your application will use its install-local endpoint, not this central relay address.
+
+## Prepare an install's private endpoint
+
+These steps apply to each **downstream customer install** from which you want to collect telemetry. The relay,
+private stack ingress, and per-install forwarding setting are three independent controls; all must be ready.
+
+Private telemetry ingress is **enabled by default in current install stacks**. Ensure the install's stack is up to
+date and its runner is running. No ingress change is needed unless the customer previously disabled it; in that
+case, re-enable the stack's telemetry ingress setting. This does not enable per-install forwarding, which you
+configure in the next section.
+
+<Tabs>
+<Tab title="AWS CloudFormation">
+
+Ensure the install uses current VPC and runner stack templates. **EnableTelemetryIngress** defaults to `true`.
+If the customer set it to `false`, update the stack to set it back to `true`.
+
+The private OTLP/HTTP endpoint uses port 4318, restricted to the install VPC by the runner ingress security groups.
+Additional AWS infrastructure charges apply.
+
+</Tab>
+<Tab title="GCP Terraform">
+
+Ensure the GCP install stack is up to date with `runner_enabled = true`. The `enable_telemetry_ingress` setting
+defaults to `true`; if the customer set it to `false`, set it back to `true` and apply the stack update.
+
+The private load balancer uses port 4318. Clients must be in the same region and permitted by the stack's internal
+firewall; the default source range is `10.128.0.0/16`.
+
+The endpoint remains stable across runner replacements and is empty when ingress or the runner is disabled.
+
+</Tab>
+</Tabs>
+
+Confirm that the install's stack outputs include a nonempty `telemetry_endpoint`. For example, using the CLI
+authenticated to your BYOC control plane:
+
+```sh
+nuon installs outputs --stack -i "<install-id>"
+```
+
+An endpoint output proves that ingress is provisioned, not that the Collector is enabled or data reaches the backend.
+
+## Enable forwarding for the install
+
+### From the dashboard
+
+1. Open the downstream install in **your Nuon BYOC dashboard** and select **Settings**.
+2. Under **Configuration**, find the **Telemetry** card.
+3. After Nuon confirms the relay is ready, turn on **Enable telemetry** and wait for the save to complete.
+
+The card is always shown in BYOC install settings. Enabling is unavailable until the install has a runner and a
+nonempty `telemetry_endpoint` stack output; the card explains the prerequisites and links to this guide. Update
+the install stack if either prerequisite is missing. If forwarding is already enabled, you can still disable it
+without those prerequisites. An available toggle does not verify relay readiness or backend delivery.
+
+Installs default to disabled. A running runner checks settings every 15 seconds and applies changes without a
+runner restart; allow time for Collector startup and token issuance. The toggle shows the saved setting, not
+end-to-end delivery health. [Verify a sample reaches your backend](#verify-a-metric-reaches-your-backend) after enabling.
+
+### Using the API
+
+For automation, or when the dashboard toggle is unavailable, you can manage the same setting through the API.
+Use an API key with access to the install's organization, against **your BYOC API**, not the Nuon Cloud API.
+Set these variables locally; do not commit your API key:
+
+```sh
+export NUON_API_URL="https://api.<your-root-domain>"
+export NUON_API_TOKEN="<your-api-key>"
+export NUON_ORG_ID="<org-id>"
+export NUON_INSTALL_ID="<install-id>"
+```
+
+Enable forwarding:
+
+```sh
+curl --fail-with-body --request PATCH \
+  "$NUON_API_URL/v1/installs/$NUON_INSTALL_ID/telemetry" \
+  --header "Authorization: Bearer $NUON_API_TOKEN" \
+  --header "X-Nuon-Org-ID: $NUON_ORG_ID" \
+  --header "Content-Type: application/json" \
+  --data '{"enabled":true}'
+```
+
+The response is `{"enabled":true}`. The runner applies it on the same settings refresh described above.
+The API response reports the saved setting, not end-to-end delivery health.
+
+Read the saved setting at any time:
+
+```sh
+curl --fail-with-body \
+  "$NUON_API_URL/v1/installs/$NUON_INSTALL_ID/telemetry" \
+  --header "Authorization: Bearer $NUON_API_TOKEN" \
+  --header "X-Nuon-Org-ID: $NUON_ORG_ID"
+```
+
+## Send telemetry from your application
+
+Configure these environment variables in your application's component configuration:
+
+```toml
+OTEL_EXPORTER_OTLP_PROTOCOL = "http/protobuf"
+OTEL_EXPORTER_OTLP_ENDPOINT = "{{ .nuon.install_stack.outputs.telemetry_endpoint }}"
+```
+
+Nuon resolves the template when rendering the component configuration. Outside Nuon templates, use the actual
+`telemetry_endpoint` output value. Do not send the literal template string from a shell or application.
+
+The endpoint is a base URL. Standard OTLP/HTTP exporters append `/v1/metrics`, `/v1/logs`, or `/v1/traces` for the
+appropriate signal. If your SDK uses a signal-specific endpoint setting, configure the corresponding full path.
+You do not need your backend credentials, a runner token, or the central relay URL in the application.
+
+### Verify a metric reaches your backend
+
+From a workload or shell with network access to the install's private endpoint, send one recognizable OTLP/JSON
+gauge. The HTTP receiver accepts this format as well as the protobuf format recommended for SDKs above.
+Replace the endpoint placeholder with the actual stack output:
+
+```sh
+export TELEMETRY_ENDPOINT="<telemetry_endpoint-output>"
+timestamp="$(date +%s)000000000"
+
+curl --fail-with-body "$TELEMETRY_ENDPOINT/v1/metrics" \
+  --header "Content-Type: application/json" \
+  --data @- <<EOF
+{
+  "resourceMetrics": [{
+    "resource": {
+      "attributes": [{"key":"service.name","value":{"stringValue":"acme-telemetry-check"}}]
+    },
+    "scopeMetrics": [{
+      "scope": {"name":"acme.telemetry.check"},
+      "metrics": [{
+        "name":"acme.telemetry.check",
+        "description":"Manual install telemetry delivery check",
+        "unit":"1",
+        "gauge": {"dataPoints":[{"timeUnixNano":"$timestamp","asDouble":1}]}
+      }]
+    }]
+  }]
+}
+EOF
+```
+
+A successful local response is not proof of backend delivery. Find the metric in your backend (which may normalize
+its name), check its timestamp and value of `1`, and verify the expected install identity below. If you also use logs
+or traces, send and verify a sample of each; success for metrics does not prove your backend accepts other signals.
+
+## Identify the originating install
+
+The relay attaches these **verified resource attributes** using the authenticated runner identity:
+
+| Attribute | Identifies |
+| --- | --- |
+| `nuon.org.id` | Nuon organization |
+| `nuon.app.id` | Nuon application |
+| `nuon.install.id` | Customer install |
+
+Caller-supplied copies of these four IDs are removed throughout the payload before the relay stamps the resource.
+Matching is case-insensitive and includes underscored aliases such as `nuon_install_id`. This prevents a producer
+from using these fields to claim another install's identity; it does not attest to the integrity of the workload.
+
+The runner also adds `nuon.org.name`, `nuon.app.name`, `nuon.install.name`, and `nuon.install.labels.<key>` from its
+settings. These are useful display and filtering metadata, but the relay does **not** verify them against the IDs.
+Other attributes are preserved. The relay sets resource-level `nuon.telemetry.source` to `install` for this path.
+
+Use resource-aware queries for authoritative filtering. Some backends flatten or rename resource attributes into
+metric labels; confirm that mapping and its collision behavior before using the labels for dashboards or alerts.
+
+## Rotate credentials or disable collection
+
+To rotate backend credentials, update the existing BYOC secrets in your cloud's secret manager and coordinate with
+Nuon to sync them, run preflight, and restart the relay deployment. Credentials are loaded at relay pod startup,
+not automatically on secret changes.
+You do not need to update credentials in individual customer installs.
+
+To disable one install, turn off **Enable telemetry** in **Settings → Configuration → Telemetry**, or repeat the
+PATCH request above with `{"enabled":false}`. The runner applies the change on its settings refresh. Stop or
+reconfigure application exporters too, so they do not keep sending to an unavailable Collector. This setting
+does not remove the stack's private ingress infrastructure or delete data in your backend.
+
+Before asking Nuon to disable the central relay, disable forwarding on its downstream installs. The relay component
+toggle does not automatically change their settings. Remove private ingress separately if it is no longer needed.
+
+## Delivery limits
+
+The runner Collector uses a bounded disk-backed queue and forwards asynchronously. The relay itself has no persistent
+queue or retry loop. Local acceptance is not a backend acknowledgement, and delivery is not exactly once: retries
+can produce duplicates, while queue exhaustion, storage failures, permanent rejections, and some authentication or
+downstream failure responses can lose telemetry.
+
+Do not rely on indefinite outage retention or automatic historical backfill. Monitor missing data in your backend
+and agree on capacity and failure expectations with Nuon before production use. Audit export uses a separate
+Collector process and queue, but still shares the runner host's resources.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| Telemetry card is missing from Settings | Use your BYOC dashboard and ensure it is up to date. This feature is not shown in Nuon Cloud. |
+| Enable telemetry is disabled | Check that the install has a runner and a nonempty `telemetry_endpoint` stack output. Update the install stack if either is missing. If settings fail to load, use **Retry settings**. Already-enabled installs can still turn forwarding off. |
+| `telemetry_endpoint` is missing or empty | Update older stack templates/modules; check private ingress and runner enablement. The API forwarding setting does not provision ingress. |
+| Connection refused or timed out | Confirm the runner and Collector are running, allow time for settings refresh, and check source-network access. On GCP, check the client region and internal firewall. |
+| Dashboard or API reports enabled but no data arrives | Confirm Nuon has enabled the relay, then verify a sample reaches the backend. The saved setting is desired configuration, not health. |
+| Local export succeeds but the backend has no data | Check the backend's supported signals, time range, and attribute mapping. Ask Nuon to check relay reachability, token issuance, and destination errors. |
+| Backend authentication fails | Check the complete `Basic` or `Bearer` header in the BYOC secret and coordinate secret sync and relay restart with Nuon. Do not add backend credentials to workloads. |
+| Identity appears missing or conflicting | Query resource attributes and inspect backend flattening. Use the four verified IDs, not names or custom install labels, as authoritative identity. |
+
+When contacting Nuon, provide the install ID, signal, sample timestamp, and sanitized error details. Do not include
+API keys, backend credentials, runner tokens, or sensitive telemetry payloads.

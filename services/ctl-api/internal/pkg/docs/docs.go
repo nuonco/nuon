@@ -14,8 +14,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 
-	swagger "github.com/nuonco/gin-swagger"
 	swaggerfiles "github.com/swaggo/files"
+
+	swagger "github.com/nuonco/gin-swagger"
 )
 
 type Docs struct {

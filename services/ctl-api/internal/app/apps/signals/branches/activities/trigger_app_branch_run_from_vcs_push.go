@@ -20,19 +20,20 @@ type TriggerAppBranchRunFromVCSPushResponse struct {
 }
 
 type TriggerAppBranchRunFromVCSPushRequest struct {
-	AppBranchID       string   `json:"app_branch_id"`
-	AppBranchConfigID string   `json:"app_branch_config_id"`
-	PlanOnly          bool     `json:"plan_only,omitempty"`
-	EventType         string   `json:"event_type,omitempty"`
-	PRNumber          *int     `json:"pr_number,omitempty"`
-	HeadSHA           string   `json:"head_sha,omitempty"`
-	BaseBranch        string   `json:"base_branch,omitempty"`
-	BaseSHA           string   `json:"base_sha,omitempty"`
-	ChangedFiles      []string `json:"changed_files,omitempty"`
-	PusherEmails      []string `json:"pusher_emails,omitempty"`
-
-	SenderLogin         string `json:"sender_login,omitempty"`
-	FallbackCreatedByID string `json:"fallback_created_by_id,omitempty"`
+	AppBranchID         string   `json:"app_branch_id"`
+	AppBranchConfigID   string   `json:"app_branch_config_id"`
+	PlanOnly            bool     `json:"plan_only,omitempty"`
+	EventType           string   `json:"event_type,omitempty"`
+	PRNumber            *int     `json:"pr_number,omitempty"`
+	HeadSHA             string   `json:"head_sha,omitempty"`
+	HeadRef             string   `json:"head_ref,omitempty"`
+	BaseBranch          string   `json:"base_branch,omitempty"`
+	BaseSHA             string   `json:"base_sha,omitempty"`
+	ChangedFiles        []string `json:"changed_files,omitempty"`
+	PusherEmails        []string `json:"pusher_emails,omitempty"`
+	SenderLogin         string   `json:"sender_login,omitempty"`
+	FallbackCreatedByID string   `json:"fallback_created_by_id,omitempty"`
+	Draft               bool     `json:"draft,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -55,6 +56,20 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		return nil, fmt.Errorf("unable to find app branch config: %w", err)
 	}
 
+	previewDefaults := appshelpers.BranchPreviewConfigOrDefault(&config)
+	if req.Draft && previewDefaults.IgnoreDrafts {
+		a.l.Info("skipping draft pull request preview",
+			zap.String("app_branch_id", appBranchID),
+			zap.String("app_branch_config_id", appBranchConfigID),
+		)
+		return &TriggerAppBranchRunFromVCSPushResponse{}, nil
+	}
+
+	gitRef := req.HeadRef
+	if gitRef == "" {
+		gitRef = req.HeadSHA
+	}
+
 	ctx = a.resolvePusherAccount(ctx, branch.OrgID, req.PusherEmails, req.FallbackCreatedByID)
 
 	runType := RunTypeFromEventType(req.EventType)
@@ -73,6 +88,9 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 	}
 	if req.HeadSHA != "" {
 		metadata["head_sha"] = req.HeadSHA
+	}
+	if gitRef != "" {
+		metadata["git_ref"] = gitRef
 	}
 	if req.BaseBranch != "" {
 		metadata["base_branch"] = req.BaseBranch
@@ -97,7 +115,9 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 			EventType:         req.EventType,
 			PRNumber:          req.PRNumber,
 			HeadSHA:           req.HeadSHA,
+			GitRef:            gitRef,
 			BaseBranch:        req.BaseBranch,
+			IsDraftMode:       req.Draft,
 			Labels:            runLabels,
 		},
 		QueueID:  branch.Queue.ID,
@@ -121,7 +141,8 @@ func (a *Activities) resolvePusherAccount(ctx context.Context, orgID string, ema
 		}
 		var account app.Account
 		err := a.db.WithContext(ctx).
-			Where("LOWER(accounts.email) = LOWER(?)", email).
+			// emails are stored lowercased; compare on the raw column so idx_accounts_email is used
+			Where("accounts.email = LOWER(?)", email).
 			Joins("JOIN account_roles ON account_roles.account_id = accounts.id").
 			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.org_id = ?", orgID).
 			First(&account).Error

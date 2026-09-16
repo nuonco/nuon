@@ -3,11 +3,12 @@ package service
 import (
 	"net/http"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/promotion"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func (s *GeneralInternalTestSuite) TestAdminPromotion() {

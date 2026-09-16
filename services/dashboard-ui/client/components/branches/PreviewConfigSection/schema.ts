@@ -5,6 +5,7 @@ export const previewConfigSchema = z.object({
   installId: z.string(),
   setStatuses: z.boolean(),
   comment: z.boolean(),
+  ignoreDrafts: z.boolean(),
 })
 
 export type PreviewConfigFormValues = z.infer<typeof previewConfigSchema>

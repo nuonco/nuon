@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/facebookgo/symwalk"
+
 	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 

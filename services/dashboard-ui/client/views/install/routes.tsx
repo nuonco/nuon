@@ -10,8 +10,8 @@ import { Runner } from './Runner'
 import { ProcessSystemLogs } from './ProcessSystemLogs'
 import { Sandbox } from './Sandbox'
 import { Stacks } from './Stacks'
-import { Versions } from './Versions'
-import { Workflows } from './Workflows'
+import { Updates } from './Updates'
+import { History } from './History'
 import { Readme } from './Readme'
 import { InstallComponentLayout } from './InstallComponentLayout'
 import { InstallComponentOverviewTab } from './install-component-tabs/InstallComponentOverviewTab'
@@ -54,12 +54,37 @@ import { RunnerJobDetail } from './RunnerJobDetail'
 import { Notebooks } from './Notebooks'
 import { NotebookDetail } from './NotebookDetail'
 import { InstallConfigs } from './InstallConfigs'
+import { SimpleIAGate } from '../SimpleIAGate'
+
+// Legacy install paths redirect to the Updates/History IA. Carry the query string and
+// hash across so deep links like ?panel=<stepId> survive the hop.
+const legacyRedirect =
+  (to: (params: Record<string, string | undefined>) => string) =>
+  ({
+    params,
+    request,
+  }: {
+    params: Record<string, string | undefined>
+    request: Request
+  }) => {
+    const { search, hash } = new URL(request.url)
+    return redirect(`${to(params)}${search}${hash}`)
+  }
 
 export const installRoutes: RouteObject[] = [
   {
     element: <InstallLayout />,
     children: [
       { path: ':orgId/installs/:installId', element: <Overview /> },
+      {
+        element: <SimpleIAGate />,
+        children: [
+          {
+            path: ':orgId/installs/:installId/activity',
+            element: <History />,
+          },
+        ],
+      },
       {
         path: ':orgId/installs/:installId/components',
         element: <Components />,
@@ -107,26 +132,47 @@ export const installRoutes: RouteObject[] = [
         ],
       },
       {
-        path: ':orgId/installs/:installId/workflows/:workflowId',
+        path: ':orgId/installs/:installId/history/:workflowId',
         element: <WorkflowDetail />,
+      },
+      {
+        path: ':orgId/installs/:installId/workflows/:workflowId',
+        loader: legacyRedirect(
+          (params) =>
+            `/${params.orgId}/installs/${params.installId}/history/${params.workflowId}`
+        ),
       },
       { path: ':orgId/installs/:installId/stacks', element: <Stacks /> },
       {
+        path: ':orgId/installs/:installId/updates',
+        element: <Updates />,
+      },
+      {
+        path: ':orgId/installs/:installId/history',
+        element: <History />,
+      },
+      {
         path: ':orgId/installs/:installId/app-branch-runs',
-        element: <Versions />,
+        loader: legacyRedirect(
+          (params) => `/${params.orgId}/installs/${params.installId}/updates`
+        ),
       },
       {
         path: ':orgId/installs/:installId/versions',
-        loader: ({ params }) =>
-          redirect(
-            `/${params.orgId}/installs/${params.installId}/app-branch-runs`
-          ),
+        loader: legacyRedirect(
+          (params) => `/${params.orgId}/installs/${params.installId}/updates`
+        ),
+      },
+      {
+        path: ':orgId/installs/:installId/workflows',
+        loader: legacyRedirect(
+          (params) => `/${params.orgId}/installs/${params.installId}/history`
+        ),
       },
       {
         path: ':orgId/installs/:installId/configs',
         element: <InstallConfigs />,
       },
-      { path: ':orgId/installs/:installId/workflows', element: <Workflows /> },
       { path: ':orgId/installs/:installId/readme', element: <Readme /> },
       {
         path: ':orgId/installs/:installId/components/:componentId',
