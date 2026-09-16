@@ -130,7 +130,7 @@
   );
   --field-border: light-dark(rgba(29, 29, 29, 0.14), transparent);
   --field-text: var(--text-primary);
-  --field-placeholder: var(--text-tertiary);
+  --field-placeholder: var(--neutral-500);
   --field-invalid: light-dark(var(--error-700), var(--error-300));
   --field-option-selected: light-dark(
     rgba(76, 201, 240, 0.12),
