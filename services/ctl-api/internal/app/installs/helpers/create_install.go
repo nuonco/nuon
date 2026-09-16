@@ -381,9 +381,22 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
-	res = s.db.WithContext(ctx).Create(&install)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create install: %w", res.Error)
+	if pin.BranchID == "" {
+		if err := s.db.WithContext(ctx).Create(&install).Error; err != nil {
+			return nil, fmt.Errorf("unable to create install: %w", err)
+		}
+	} else {
+		if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			if err := tx.WithContext(ctx).Create(&install).Error; err != nil {
+				return fmt.Errorf("unable to create install: %w", err)
+			}
+			if err := appshelpers.SetInstallAppBranchWithDB(ctx, tx, install.ID, pin.BranchID); err != nil {
+				return fmt.Errorf("unable to add install to app branch: %w", err)
+			}
+			return nil
+		}); err != nil {
+			return nil, err
+		}
 	}
 
 	s.mw.Incr("install.created", metrics.ToTags(map[string]string{
@@ -391,12 +404,6 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		"app_id":     appID,
 		"install_id": install.ID,
 	}))
-
-	if pin.BranchID != "" {
-		if err := s.appsHelpers.SetInstallAppBranch(ctx, install.ID, pin.BranchID); err != nil {
-			return nil, fmt.Errorf("unable to add install to app branch: %w", err)
-		}
-	}
 
 	// Create all install queues (workflows, signals, actions, drift, etc.)
 	if err := s.EnsureInstallQueues(ctx, install.ID); err != nil {

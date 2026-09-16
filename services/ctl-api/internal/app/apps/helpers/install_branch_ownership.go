@@ -26,51 +26,58 @@ import (
 // other active connection. Both halves of the record move in one transaction so
 // a failure cannot leave the pin and the connection disagreeing.
 func (h *Helpers) SetInstallAppBranch(ctx context.Context, installID, branchID string) error {
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return SetInstallAppBranchWithDB(ctx, tx, installID, branchID)
+	})
+}
+
+// SetInstallAppBranchWithDB updates both ownership records using the caller's
+// transaction. It is used during install creation so the install row and its
+// ownership connection cannot be committed separately.
+func SetInstallAppBranchWithDB(ctx context.Context, db *gorm.DB, installID, branchID string) error {
 	now := time.Now()
 
-	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.WithContext(ctx).
-			Model(&app.InstallAppBranchConnection{}).
-			Where(app.InstallAppBranchConnection{InstallID: installID, Active: true}).
-			Where("app_branch_id != ?", branchID).
-			Updates(map[string]any{
-				"active":         false,
-				"deactivated_at": now,
-			}).Error; err != nil {
-			return fmt.Errorf("unable to deactivate install branch connections: %w", err)
-		}
+	if err := db.WithContext(ctx).
+		Model(&app.InstallAppBranchConnection{}).
+		Where(app.InstallAppBranchConnection{InstallID: installID, Active: true}).
+		Where("app_branch_id != ?", branchID).
+		Updates(map[string]any{
+			"active":         false,
+			"deactivated_at": now,
+		}).Error; err != nil {
+		return fmt.Errorf("unable to deactivate install branch connections: %w", err)
+	}
 
-		var existing app.InstallAppBranchConnection
-		err := tx.WithContext(ctx).
-			Where(app.InstallAppBranchConnection{
-				InstallID:   installID,
-				AppBranchID: branchID,
-				Active:      true,
-			}).
-			First(&existing).Error
-		switch {
-		case errors.Is(err, gorm.ErrRecordNotFound):
-			if err := tx.WithContext(ctx).Create(&app.InstallAppBranchConnection{
-				InstallID:   installID,
-				AppBranchID: branchID,
-				Active:      true,
-				ActivatedAt: now,
-			}).Error; err != nil {
-				return fmt.Errorf("unable to create install branch connection: %w", err)
-			}
-		case err != nil:
-			return fmt.Errorf("unable to load install branch connection: %w", err)
+	var existing app.InstallAppBranchConnection
+	err := db.WithContext(ctx).
+		Where(app.InstallAppBranchConnection{
+			InstallID:   installID,
+			AppBranchID: branchID,
+			Active:      true,
+		}).
+		First(&existing).Error
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		if err := db.WithContext(ctx).Create(&app.InstallAppBranchConnection{
+			InstallID:   installID,
+			AppBranchID: branchID,
+			Active:      true,
+			ActivatedAt: now,
+		}).Error; err != nil {
+			return fmt.Errorf("unable to create install branch connection: %w", err)
 		}
+	case err != nil:
+		return fmt.Errorf("unable to load install branch connection: %w", err)
+	}
 
-		if err := tx.WithContext(ctx).
-			Model(&app.Install{}).
-			Where("id = ?", installID).
-			Update("app_branch_id", branchID).Error; err != nil {
-			return fmt.Errorf("unable to pin install to app branch: %w", err)
-		}
+	if err := db.WithContext(ctx).
+		Model(&app.Install{}).
+		Where(app.Install{ID: installID}).
+		Update("app_branch_id", branchID).Error; err != nil {
+		return fmt.Errorf("unable to pin install to app branch: %w", err)
+	}
 
-		return nil
-	})
+	return nil
 }
 
 // BranchInstalls returns the installs the branch owns, which is the only
