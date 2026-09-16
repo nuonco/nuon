@@ -1,8 +1,9 @@
 package scopes
 
 import (
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
 )
 
 func WithPatcher(options patcher.PatcherOptions) func(db *gorm.DB) *gorm.DB {

@@ -50,6 +50,21 @@ func appBranchRunName(w *Workflow) string {
 	switch eventType {
 	case "push":
 		base = "VCS push"
+	case "tag":
+		if tag := metaValue(w, "tag"); tag != "" {
+			base = "Tag " + tag
+		} else {
+			base = "Tag push"
+		}
+	case "github_label":
+		prNum := metaValue(w, "pr_number")
+		if prNum != "" {
+			base = "PR #" + prNum
+		} else if label := metaValue(w, "github_label"); label != "" {
+			base = "Label " + label
+		} else {
+			base = "Labeled pull request"
+		}
 	case "pull_request":
 		prNum := metaValue(w, "pr_number")
 		if prNum != "" {

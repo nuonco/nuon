@@ -6,11 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 	"github.com/stretchr/testify/require"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 )
 
 func TestOTELMetricsIncludesAuthFailuresWithoutRawPaths(t *testing.T) {

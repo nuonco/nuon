@@ -20,6 +20,12 @@ import (
 // swagger:model service.CreateInstallRequest
 type ServiceCreateInstallRequest struct {
 
+	// AppBranchID is the optional app branch this install belongs to. When set,
+	// the install starts on that branch's active app config and stays on the
+	// branch until explicitly moved. When empty, the install uses the latest
+	// unbranched config from apps sync.
+	AppBranchID string `json:"app_branch_id,omitempty"`
+
 	// aws account
 	AwsAccount *HelpersCreateInstallAWSAccountParams `json:"aws_account,omitempty"`
 

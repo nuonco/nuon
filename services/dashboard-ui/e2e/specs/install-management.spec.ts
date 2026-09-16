@@ -11,9 +11,14 @@ test.describe("Install management", () => {
     const installId = installIds[0];
     test.skip(!installId, "No seed install available");
 
+    // /workflows is a legacy path now; landing on /history also covers the redirect.
     await page.goto(`/${orgId}/installs/${installId}/workflows`);
     await page.waitForLoadState("domcontentloaded");
-    await expect(page).toHaveTitle(/^Workflows \|/, { timeout: 15000 });
+    await expect(page).toHaveURL(
+      new RegExp(`/installs/${installId}/history$`),
+      { timeout: 15000 }
+    );
+    await expect(page).toHaveTitle(/^History \|/, { timeout: 15000 });
 
     const toggle = page.getByRole("switch", { name: "Auto approval" });
     await expect(toggle).toBeVisible({ timeout: 15000 });

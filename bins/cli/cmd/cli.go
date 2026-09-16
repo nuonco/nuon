@@ -8,10 +8,11 @@ import (
 	"sync"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/sdks/nuon-go"
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+
+	"github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/bins/cli/internal/config"

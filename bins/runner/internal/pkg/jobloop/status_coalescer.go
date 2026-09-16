@@ -5,8 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 // statusCoalescer is a per-execution single-writer that drops intermediate

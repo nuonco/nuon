@@ -4,9 +4,10 @@ import (
 	"context"
 	"os"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/git"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"

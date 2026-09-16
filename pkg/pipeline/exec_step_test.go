@@ -9,8 +9,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/hashicorp/go-hclog"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 //go:generate -command mockgen go run github.com/golang/mock/mockgen

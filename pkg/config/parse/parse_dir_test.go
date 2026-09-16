@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse/dir"
-	"github.com/stretchr/testify/require"
 )
 
 func TestParseDirErrors(t *testing.T) {

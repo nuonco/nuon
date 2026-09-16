@@ -125,6 +125,18 @@ func branchConfigRequest(ctx context.Context, resolver *branchNameResolver, cfg 
 	req := &models.ServiceCreateAppBranchConfigRequest{
 		IgnoreChangesRegex:   generics.ToPtr(cfg.IgnoreChangesRegex),
 		SendStatusesOnIgnore: generics.ToPtr(cfg.SendStatusesOnIgnore),
+		RunConfig: &models.AppAppBranchRunConfig{
+			Mode: models.AppAppBranchRunModePush,
+		},
+	}
+	if cfg.Run != nil {
+		mode := cfg.Run.Mode
+		if mode == "" || mode == "all" {
+			mode = "push"
+		}
+		req.RunConfig.Mode = models.AppAppBranchRunMode(mode)
+		req.RunConfig.TagPrefix = cfg.Run.TagPrefix
+		req.RunConfig.GithubLabel = cfg.Run.GithubLabel
 	}
 
 	if cfg.ConnectedRepo != nil {
@@ -252,6 +264,16 @@ func previewConfigRequest(ctx context.Context, resolver *branchNameResolver, cfg
 		out.Comment = *p.Comment
 	} else {
 		out.Comment = true
+	}
+	if p.IgnoreDrafts != nil {
+		out.IgnoreDrafts = *p.IgnoreDrafts
+	} else {
+		out.IgnoreDrafts = true
+	}
+	if p.React != nil {
+		out.React = *p.React
+	} else {
+		out.React = true
 	}
 	return out, nil
 }

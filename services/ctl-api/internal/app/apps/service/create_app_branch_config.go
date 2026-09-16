@@ -26,7 +26,7 @@ type InstallGroupRequest struct {
 	// Mutually exclusive with InstallIDs.
 	LabelSelector *labels.Selector `json:"label_selector,omitempty"`
 
-	// AllInstalls targets every install on the app that no other branch owns.
+	// AllInstalls targets every install owned by this branch.
 	// Mutually exclusive with InstallIDs and LabelSelector.
 	AllInstalls bool `json:"all_installs,omitempty"`
 
@@ -54,6 +54,7 @@ type CreateAppBranchConfigRequest struct {
 	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 
 	PreviewConfig *app.AppBranchPreviewConfig `json:"preview_config,omitempty"`
+	RunConfig     *app.AppBranchRunConfig     `json:"run_config,omitempty"`
 }
 
 func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
@@ -117,6 +118,15 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 		c.PreviewConfig.Normalize()
 		if err := c.PreviewConfig.Validate(); err != nil {
 			return stderr.NewInvalidRequest(err)
+		}
+	}
+	if c.RunConfig != nil {
+		c.RunConfig.Normalize()
+		if err := c.RunConfig.Validate(); err != nil {
+			return stderr.NewInvalidRequest(err)
+		}
+		if c.RunConfig.Mode == app.AppBranchRunModeGithubLabel && c.ConnectedGithubVCSConfig == nil {
+			return stderr.NewInvalidRequest(fmt.Errorf("run mode on_github_label requires connected_github_vcs_config"))
 		}
 	}
 
@@ -243,33 +253,25 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Collect label selectors and explicit install IDs for validation
-	var labelSelectors []*labels.Selector
+	// Collect explicit install IDs for ownership validation.
 	var explicitInstallIDs []string
 	for _, g := range req.InstallGroups {
-		if g.LabelSelector != nil && len(g.LabelSelector.MatchLabels) > 0 {
-			labelSelectors = append(labelSelectors, g.LabelSelector)
-		}
 		explicitInstallIDs = append(explicitInstallIDs, g.InstallIDs...)
 	}
 
-	if len(labelSelectors) > 0 {
-		if err := s.helpers.ValidateBranchConfigLabelUniqueness(ctx, appID, appBranchID, labelSelectors); err != nil {
-			ctx.Error(err)
-			return
-		}
-
-		if err := s.helpers.ValidateBranchConfigInstallsNotOnOtherBranch(ctx, appID, appBranchID, labelSelectors); err != nil {
-			ctx.Error(err)
-			return
-		}
+	// Naming an install in a group selects which of this branch's groups deploys
+	// it; it does not take it from another branch. The install has to already be
+	// here, via creation or an explicit move.
+	if err := s.helpers.ValidateInstallIDsOwnedByBranch(ctx, appBranchID, explicitInstallIDs); err != nil {
+		ctx.Error(err)
+		return
 	}
 
-	if len(explicitInstallIDs) > 0 {
-		if err := s.helpers.ValidateInstallIDsNotOnOtherBranch(ctx, appBranchID, explicitInstallIDs); err != nil {
-			ctx.Error(err)
-			return
-		}
+	installGroups := installGroupsFromRequest(req.InstallGroups)
+
+	if err := s.helpers.ValidateBranchInstallsSingleGroup(ctx, appBranchID, installGroups); err != nil {
+		ctx.Error(err)
+		return
 	}
 
 	previousGroups, err := s.helpers.LatestConfigInstallGroups(ctx, appBranchID)
@@ -284,8 +286,6 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		}
 	}
 
-	installGroups := installGroupsFromRequest(req.InstallGroups)
-
 	config, err := s.helpers.CreateAppBranchConfig(
 		ctx,
 		appBranchID,
@@ -298,6 +298,7 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 			SendStatusesOnIgnore: req.SendStatusesOnIgnore,
 		},
 		req.PreviewConfig,
+		req.RunConfig,
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch config: %w", err))
@@ -309,12 +310,11 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
+	// Installs newly named by a group are brought up to the branch's app config.
+	// Nothing here changes which branch owns an install, so a group that drops an
+	// install leaves it on this branch, in whichever group still matches it.
 	for _, group := range config.InstallGroups {
 		for _, installID := range group.InstallIDs {
-			var install app.Install
-			if err := s.db.WithContext(ctx).First(&install, "id = ?", installID).Error; err == nil {
-				s.helpers.SyncInstallBranchConnection(ctx, &install, appBranchID)
-			}
 			if _, existed := previousInstallIDs[installID]; existed {
 				continue
 			}
@@ -323,16 +323,6 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 				return
 			}
 		}
-	}
-
-	if err := s.helpers.ClaimSelectorInstallsFromWeakOwners(ctx, appID, appBranchID, labelSelectors); err != nil {
-		ctx.Error(fmt.Errorf("unable to claim installs from weak owners: %w", err))
-		return
-	}
-
-	if err := s.helpers.ReconcileRemovedBranchInstalls(ctx, appBranchID, explicitInstallIDs, labelSelectors); err != nil {
-		ctx.Error(fmt.Errorf("unable to reconcile removed branch installs: %w", err))
-		return
 	}
 
 	ctx.JSON(http.StatusCreated, config)

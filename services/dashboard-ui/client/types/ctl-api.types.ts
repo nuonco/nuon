@@ -1,19 +1,63 @@
 import { components } from '@/types/nuon-oapi-v3'
 import type { Interests as TInterests } from '@/components/interests/types'
 
-export type TAppBranch = components['schemas']['app.AppBranch'] & {
+export type TAppBranch = Omit<
+  components['schemas']['app.AppBranch'],
+  'configs' | 'latest_run'
+> & {
+  configs?: TAppBranchConfig[]
   latest_run?: TAppBranchRun
 }
-export type TAppBranchConfig = components['schemas']['app.AppBranchConfig'] & {
+export type TAppBranchConfig = Omit<
+  components['schemas']['app.AppBranchConfig'],
+  'run_config'
+> & {
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean
   preview_config?: TAppBranchPreviewConfig
+  run_config?: TAppBranchRunConfig
 }
 export type TAppBranchInstallGroup =
   components['schemas']['app.AppBranchInstallGroup']
-export type TAppBranchRun = components['schemas']['app.AppBranchRun'] & {
+export type TAppBranchRun = Omit<
+  components['schemas']['app.AppBranchRun'],
+  'metadata' | 'preview'
+> & {
   awaiting_approval?: boolean
   preview?: TAppBranchRunPreview
+  metadata?: TAppBranchRunMetadata
+}
+
+export type TAppBranchRunMode =
+  | 'push'
+  | 'all'
+  | 'on_tag_prefix'
+  | 'on_github_label'
+  | 'manual_only'
+
+export type TAppBranchRunConfig = {
+  mode?: TAppBranchRunMode
+  tag_prefix?: string
+  github_label?: string
+}
+
+export type TAppBranchRunMetadata = {
+  trigger?:
+    | 'manual'
+    | 'push'
+    | 'pull_request'
+    | 'tag'
+    | 'github_label'
+    | 'onboarding'
+  head_sha?: string
+  git_ref?: string
+  base_branch?: string
+  pr_number?: number
+  tag?: string
+  github_label?: string
+  is_draft?: boolean
+  run_mode?: string
+  tag_prefix?: string
 }
 
 export type TAppBranchRunPreviewMode = 'plan-only' | 'apply' | 'build-only'
@@ -26,6 +70,7 @@ export type TAppBranchPreviewConfig = {
   label_selector?: { match_labels?: Record<string, string> }
   set_statuses?: boolean
   comment?: boolean
+  ignore_drafts?: boolean
 }
 
 export type TAppBranchRunPreview = {
@@ -35,6 +80,7 @@ export type TAppBranchRunPreview = {
   install_id?: string
   install_name?: string
   git_ref?: string
+  is_draft_mode?: boolean
   resolved_preview_config?: TAppBranchPreviewConfig
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean
@@ -1174,4 +1220,70 @@ export type TInstallCreationApproval = {
   status: 'pending' | 'approved' | 'denied'
   approved_at?: string
   approved_by_id?: string
+}
+
+// Install updates — hand types (endpoint not yet in generated spec)
+export type TInstallUpdateImpactReason = {
+  from: string
+  edge: string
+}
+
+export type TInstallUpdateComponentDiff = {
+  component_id: string
+  component_name?: string
+  component_type?: string
+  old_checksum?: string
+  new_checksum?: string
+  old_build_id?: string
+  new_build_id?: string
+  build_changed?: boolean
+  impact_reasons?: TInstallUpdateImpactReason[]
+}
+
+export type TInstallUpdateDiff = {
+  added: TInstallUpdateComponentDiff[]
+  removed: TInstallUpdateComponentDiff[]
+  changed: TInstallUpdateComponentDiff[]
+  unchanged: TInstallUpdateComponentDiff[]
+  sandbox_changed?: boolean
+  sandbox_build_changed?: boolean
+  stack_changed?: boolean
+  stack_impacts?: string[]
+  stack_impact_reasons?: TInstallUpdateImpactReason[]
+}
+
+export type TInstallAppConfigUpdate = {
+  version: TInstallAppConfigVersion
+  diff?: TInstallUpdateDiff
+}
+
+export type TInstallUpdate = {
+  id: string
+  type: 'app_config' | 'inputs' | 'stack' | 'install_config'
+  created_at: string
+  created_by_id?: string
+  workflow_id?: string
+  app_config?: TInstallAppConfigUpdate
+  inputs?: {
+    input_config_id?: string
+    keys: string[]
+  }
+  stack?: {
+    version_id: string
+    status: TCompositeStatus
+    role_diff?: unknown
+    input_diff?: unknown
+    run_type?: string
+  }
+  install_config?: {
+    version: TInstallConfigVersion
+  }
+}
+
+export type TInstallUpdatesResponse = {
+  updates: TInstallUpdate[]
+  current_app_branch_run?: TAppBranchRun
+  page: number
+  limit: number
+  has_more: boolean
 }

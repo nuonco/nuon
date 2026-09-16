@@ -18,7 +18,10 @@ type CreateAppBranchRunRequest struct {
 	EventType              string
 	PRNumber               *int
 	HeadSHA                string
+	GitRef                 string
 	BaseBranch             string
+	IsDraftMode            bool
+	Metadata               app.AppBranchRunMetadata
 	Labels                 labels.Labels
 	TriggerEventDispatchID *string
 	Preview                *PreviewRunInput
@@ -30,12 +33,31 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 		runType = app.AppBranchRunTypeManual
 	}
 
+	metadata := req.Metadata
+	if metadata.Trigger == "" {
+		metadata.Trigger = triggerFromLegacyFields(req.EventType, runType)
+	}
+	if metadata.HeadSHA == "" {
+		metadata.HeadSHA = req.HeadSHA
+	}
+	if metadata.GitRef == "" {
+		metadata.GitRef = req.GitRef
+	}
+	if metadata.BaseBranch == "" {
+		metadata.BaseBranch = req.BaseBranch
+	}
+	if metadata.PRNumber == nil {
+		metadata.PRNumber = req.PRNumber
+	}
+	metadata.IsDraft = metadata.IsDraft || req.IsDraftMode
+
 	run := &app.AppBranchRun{
 		AppBranchID:            req.AppBranchID,
 		AppBranchConfigID:      req.AppBranchConfigID,
 		TriggerEventDispatchID: req.TriggerEventDispatchID,
 		AppConfigID:            req.AppConfigID,
 		RunType:                runType,
+		Metadata:               metadata,
 		Force:                  req.Force,
 		PlanOnly:               req.PlanOnly,
 		EventType:              req.EventType,
@@ -68,7 +90,11 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 			run.Preview = preview
 		} else if configErr == nil && branchErr == nil {
 			preview, err := h.BuildAppBranchRunPreview(ctx, branch.AppID, &branchConfig, previewInput)
-			if err == nil {
+			if err != nil {
+				if runType == app.AppBranchRunTypeGitPreview {
+					return nil, err
+				}
+			} else {
 				run.Preview = preview
 			}
 		}
@@ -96,4 +122,28 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 	}
 
 	return run, nil
+}
+
+func triggerFromLegacyFields(eventType string, runType app.AppBranchRunType) app.AppBranchRunTrigger {
+	switch eventType {
+	case string(app.AppBranchRunTriggerPush):
+		return app.AppBranchRunTriggerPush
+	case string(app.AppBranchRunTriggerPullRequest):
+		return app.AppBranchRunTriggerPullRequest
+	case string(app.AppBranchRunTriggerTag):
+		return app.AppBranchRunTriggerTag
+	case string(app.AppBranchRunTriggerGithubLabel):
+		return app.AppBranchRunTriggerGithubLabel
+	case string(app.AppBranchRunTriggerOnboarding):
+		return app.AppBranchRunTriggerOnboarding
+	case string(app.AppBranchRunTriggerManual):
+		return app.AppBranchRunTriggerManual
+	}
+	if runType == app.AppBranchRunTypeGitPreview {
+		return app.AppBranchRunTriggerPullRequest
+	}
+	if runType == app.AppBranchRunTypeGit {
+		return app.AppBranchRunTriggerPush
+	}
+	return app.AppBranchRunTriggerManual
 }

@@ -3,6 +3,7 @@ package activities
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -64,8 +65,10 @@ type ComponentBuildChange struct {
 type PRCommentParams struct {
 	OrgName            string
 	AppName            string
+	AppBranchID        string
 	BranchName         string
 	RunID              string
+	HeadSHA            string
 	RunURL             string
 	Status             PRCommentStatus
 	Mode               app.AppBranchRunPreviewMode
@@ -82,16 +85,37 @@ type PRCommentParams struct {
 	// rendered when the install step actually succeeded, not just when builds
 	// finished with an apply-mode run.
 	InstallApplied bool
+	// UpdatedAt renders the "Last updated at" line. Workflows leave it zero;
+	// the comment activity stamps it at write time so the value reflects when
+	// GitHub actually received the edit.
+	UpdatedAt time.Time
 }
 
+const lastUpdatedPrefix = "**Last updated at:** "
+
+func lastUpdatedLine(t time.Time) string {
+	return lastUpdatedPrefix + t.UTC().Format("2006-01-02 15:04:05 MST")
+}
+
+// BuildPRCommentBody renders the preview comment. Every run status shares the
+// same section skeleton so an edited comment keeps its shape as a run
+// progresses; sections appear when their data does, not per status.
 func BuildPRCommentBody(p *PRCommentParams) string {
 	var b strings.Builder
 
-	title := fmt.Sprintf("## Nuon Preview \u2014 %s", previewTitleName(p))
+	if marker := PRCommentMarker(p.AppBranchID); marker != "" {
+		b.WriteString(marker + "\n")
+	}
+
+	title := fmt.Sprintf("## \U0001f44b Nuon Preview \u2014 %s", previewTitleName(p))
 	if label := p.Mode.Label(); label != "" {
 		title += fmt.Sprintf(" (%s)", label)
 	}
 	b.WriteString(title + "\n\n")
+
+	if !p.UpdatedAt.IsZero() {
+		b.WriteString(lastUpdatedLine(p.UpdatedAt) + "\n\n")
+	}
 
 	if p.RunURL != "" {
 		b.WriteString(fmt.Sprintf("[View preview run \u2192](%s)\n\n", p.RunURL))
@@ -102,6 +126,14 @@ func BuildPRCommentBody(p *PRCommentParams) string {
 	if hasStackChanges(p) {
 		b.WriteString("> [!WARNING]\n")
 		b.WriteString("> \U0001f6a8 Stack changes require customers to reprovision the stack. Learn more [here](https://docs.nuon.co/concepts/stacks).\n\n")
+	}
+
+	if p.HeadSHA != "" {
+		sha := p.HeadSHA
+		if len(sha) > 7 {
+			sha = sha[:7]
+		}
+		b.WriteString(fmt.Sprintf("Commit: `%s`\n\n", sha))
 	}
 
 	switch p.Status {
@@ -119,54 +151,60 @@ func BuildPRCommentBody(p *PRCommentParams) string {
 		writePhaseChecksSection(&b, p.Phases, p.Mode != app.AppBranchRunPreviewModeBuildOnly)
 	}
 
-	if p.Status == PRCommentStatusSkipped {
-		b.WriteString("No changes to `nuon.toml` detected in this PR. Preview skipped.\n")
-	} else if p.Status == PRCommentStatusFailed && p.ErrorMessage != "" {
-		if p.Diff != nil {
-			writeDiffSection(&b, p.Diff)
-		}
-		b.WriteString("### Error\n\n")
-		b.WriteString(fmt.Sprintf("```\n%s\n```\n", p.ErrorMessage))
-	} else if p.Status == PRCommentStatusPending {
-		if p.Diff != nil {
-			writeDiffSection(&b, p.Diff)
-			b.WriteString("\u23f3 Building components...\n")
-		} else {
-			b.WriteString("\u23f3 Parsing config...\n")
-		}
-	} else if p.Diff != nil {
+	if note := statusNote(p); note != "" {
+		b.WriteString(note + "\n\n")
+	}
+
+	if p.Diff != nil {
 		writeDiffSection(&b, p.Diff)
 	}
 
-	if p.Status != PRCommentStatusPending && p.Status != PRCommentStatusSkipped && len(p.ComponentChanges) > 0 {
+	if len(p.ComponentChanges) > 0 {
 		writeBuildsSection(&b, p.ComponentChanges)
 	}
 
-	if p.Status == PRCommentStatusSuccess && p.Mode == app.AppBranchRunPreviewModeBuildOnly {
-		b.WriteString("Builds and config validation succeeded. No install was planned or applied.\n")
-	}
-
-	if p.Status == PRCommentStatusSuccess && p.Mode == app.AppBranchRunPreviewModeApply && p.InstallApplied && p.PreviewInstallName != "" {
-		b.WriteString("### Preview install\n\n")
-		if p.PreviewInstallURL != "" {
-			b.WriteString(fmt.Sprintf("Applied to [`%s`](%s).\n", p.PreviewInstallName, p.PreviewInstallURL))
-		} else {
-			b.WriteString(fmt.Sprintf("Applied to `%s`.\n", p.PreviewInstallName))
+	if p.Mode == app.AppBranchRunPreviewModeApply {
+		if p.InstallApplied && p.PreviewInstallName != "" {
+			b.WriteString("### Preview install\n\n")
+			if p.PreviewInstallURL != "" {
+				b.WriteString(fmt.Sprintf("Applied to [`%s`](%s).\n\n", p.PreviewInstallName, p.PreviewInstallURL))
+			} else {
+				b.WriteString(fmt.Sprintf("Applied to `%s`.\n\n", p.PreviewInstallName))
+			}
 		}
 	} else if p.Status != PRCommentStatusSkipped &&
 		p.Mode != app.AppBranchRunPreviewModeBuildOnly &&
-		p.Mode != app.AppBranchRunPreviewModeApply &&
 		len(p.InstallImpact) > 0 {
 		writeInstallImpactSection(&b, p.InstallImpact)
 	}
 
-	if p.Status != PRCommentStatusSkipped {
-		b.WriteString("\n### Debug with MCP\n\n")
-		b.WriteString("Copy this prompt into an [MCP-enabled assistant](https://docs.nuon.co/guides/agents/overview):\n\n")
-		b.WriteString(fmt.Sprintf("```text\n%s\n```\n", mcpDebugPrompt(p)))
+	if p.ErrorMessage != "" {
+		b.WriteString("### Error\n\n")
+		b.WriteString(fmt.Sprintf("```\n%s\n```\n\n", p.ErrorMessage))
 	}
 
+	b.WriteString("### Debug with MCP\n\n")
+	b.WriteString("Copy this prompt into an [MCP-enabled assistant](https://docs.nuon.co/guides/agents/overview):\n\n")
+	b.WriteString(fmt.Sprintf("```text\n%s\n```\n", mcpDebugPrompt(p)))
+
 	return b.String()
+}
+
+// statusNote is the single progress sentence under the checks table. It tracks
+// what the run is doing, while the surrounding sections stay fixed.
+func statusNote(p *PRCommentParams) string {
+	switch {
+	case p.Status == PRCommentStatusSkipped:
+		return "No changes to `nuon.toml` detected in this PR. Preview skipped."
+	case p.Status == PRCommentStatusPending && p.Diff == nil:
+		return "\u23f3 Parsing config..."
+	case p.Status == PRCommentStatusPending:
+		return "\u23f3 Building components..."
+	case p.Status == PRCommentStatusSuccess && p.Mode == app.AppBranchRunPreviewModeBuildOnly:
+		return "Builds and config validation succeeded. No install was planned or applied."
+	default:
+		return ""
+	}
 }
 
 // writePhaseChecksSection renders the Checks table into the comment body.

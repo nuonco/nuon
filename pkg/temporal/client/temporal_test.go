@@ -5,9 +5,10 @@ import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zaptest"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func TestNew(t *testing.T) {

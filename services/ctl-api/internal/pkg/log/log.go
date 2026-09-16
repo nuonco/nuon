@@ -3,8 +3,9 @@ package log
 import (
 	"fmt"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 func New(cfg *internal.Config) (*zap.Logger, error) {

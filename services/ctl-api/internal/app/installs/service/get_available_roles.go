@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -14,7 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
-	"go.uber.org/zap"
 )
 
 type AvailableRole struct {
@@ -323,9 +324,6 @@ func buildAvailableRoles(stackOutputs app.StackOutput, appCfg *app.AppConfig, st
 }
 
 func validateRoleSelectionParams(principalType, operationType string) error {
-	if (principalType == "") != (operationType == "") {
-		return fmt.Errorf("principal_type and operation_type must be provided together")
-	}
 	if principalType != "" {
 		if err := validatePrincipalType(principalType); err != nil {
 			return err

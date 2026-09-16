@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/nuonco/nuon/bins/lsp/handlers"
 	"github.com/tliron/commonlog"
 	"github.com/tliron/glsp"
 	protocol "github.com/tliron/glsp/protocol_3_16"
 	"github.com/tliron/glsp/server"
+
+	"github.com/nuonco/nuon/bins/lsp/handlers"
 
 	_ "github.com/tliron/commonlog/simple"
 )

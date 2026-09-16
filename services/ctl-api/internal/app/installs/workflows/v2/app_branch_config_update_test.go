@@ -93,6 +93,41 @@ func TestFilterComponentsByDiff(t *testing.T) {
 	}
 }
 
+func TestFilterComponentsByDiffIncludesGraphImpacts(t *testing.T) {
+	const (
+		databaseID = "component-database"
+		apiID      = "component-api"
+		webID      = "component-web"
+		workerID   = "component-worker"
+	)
+	cfg := &app.AppConfig{
+		ComponentIDs: pq.StringArray{databaseID, apiID, webID, workerID},
+		ComponentConfigConnections: []app.ComponentConfigConnection{
+			{ComponentID: databaseID},
+			{ComponentID: apiID, ComponentDependencyIDs: pq.StringArray{databaseID}},
+			{ComponentID: webID, ComponentDependencyIDs: pq.StringArray{apiID}},
+			{ComponentID: workerID},
+		},
+	}
+	diff := &app.InstallConfigDiff{
+		Changed: []app.ComponentDiffEntry{
+			{ComponentID: databaseID},
+			{ComponentID: apiID},
+			{ComponentID: webID},
+		},
+		Unchanged: []app.ComponentDiffEntry{
+			{ComponentID: workerID},
+		},
+	}
+
+	got := filterComponentsByDiff(
+		[]string{databaseID, apiID, webID, workerID},
+		cfg,
+		diff,
+	)
+	require.Equal(t, []string{databaseID, apiID, webID}, got)
+}
+
 type appBranchConfigUpdateSuite struct {
 	suite.Suite
 	testsuite.WorkflowTestSuite

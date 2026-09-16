@@ -6,8 +6,9 @@ import (
 	"time"
 
 	clickhousego "github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
 )
 
 type User struct {
