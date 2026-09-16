@@ -73,7 +73,7 @@ func (w *queue) enqueue(ctx workflow.Context, input EnqueueHandlerInput) error {
 
 	w.inFlightSignals[input.QueueSignalID] = true
 	l.Info("queueing signal for processing", zap.String("workflow-id", input.WorkflowID))
-	if !w.ch.SendAsync(QueueRef{
+	if !w.dispatchSignal(QueueRef{
 		WorkflowID: input.WorkflowID,
 		ID:         input.QueueSignalID,
 	}) {

@@ -28,7 +28,7 @@ func (w *queue) requeueSignals(ctx workflow.Context) error {
 		}
 		l.Info("requeuing signal", zap.String("queue-signal-id", queueSignal.ID), zap.Any("type", queueSignal.Type))
 		w.inFlightSignals[queueSignal.ID] = true
-		if !w.ch.SendAsync(QueueRef{
+		if !w.dispatchSignal(QueueRef{
 			WorkflowID: queueSignal.Workflow.ID,
 			ID:         queueSignal.ID,
 		}) {
