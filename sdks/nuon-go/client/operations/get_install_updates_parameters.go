@@ -76,6 +76,12 @@ type GetInstallUpdatesParams struct {
 	*/
 	Limit *int64
 
+	/* Offset.
+
+	   offset of results to return
+	*/
+	Offset *int64
+
 	/* Page.
 
 	   page number
@@ -102,12 +108,15 @@ func (o *GetInstallUpdatesParams) SetDefaults() {
 	var (
 		limitDefault = int64(20)
 
+		offsetDefault = int64(0)
+
 		pageDefault = int64(0)
 	)
 
 	val := GetInstallUpdatesParams{
-		Limit: &limitDefault,
-		Page:  &pageDefault,
+		Limit:  &limitDefault,
+		Offset: &offsetDefault,
+		Page:   &pageDefault,
 	}
 
 	val.timeout = o.timeout
@@ -171,6 +180,17 @@ func (o *GetInstallUpdatesParams) SetLimit(limit *int64) {
 	o.Limit = limit
 }
 
+// WithOffset adds the offset to the get install updates params
+func (o *GetInstallUpdatesParams) WithOffset(offset *int64) *GetInstallUpdatesParams {
+	o.SetOffset(offset)
+	return o
+}
+
+// SetOffset adds the offset to the get install updates params
+func (o *GetInstallUpdatesParams) SetOffset(offset *int64) {
+	o.Offset = offset
+}
+
 // WithPage adds the page to the get install updates params
 func (o *GetInstallUpdatesParams) WithPage(page *int64) *GetInstallUpdatesParams {
 	o.SetPage(page)
@@ -207,6 +227,23 @@ func (o *GetInstallUpdatesParams) WriteToRequest(r runtime.ClientRequest, reg st
 		if qLimit != "" {
 
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Offset != nil {
+
+		// query param offset
+		var qrOffset int64
+
+		if o.Offset != nil {
+			qrOffset = *o.Offset
+		}
+		qOffset := swag.FormatInt64(qrOffset)
+		if qOffset != "" {
+
+			if err := r.SetQueryParam("offset", qOffset); err != nil {
 				return err
 			}
 		}

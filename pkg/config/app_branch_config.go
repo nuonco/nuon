@@ -36,7 +36,7 @@ type AppBranchRunConfig struct {
 }
 
 func (c AppBranchRunConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "mode", "automatic run mode: all, on_tag_prefix, on_github_label, or manual_only")
+	addDescription(schema, "mode", "automatic run mode: push, on_tag_prefix, on_github_label, or manual_only")
 	addDescription(schema, "tag_prefix", "case-sensitive git tag prefix required by on_tag_prefix")
 	addDescription(schema, "github_label", "exact pull request label required by on_github_label")
 }
@@ -93,11 +93,11 @@ func (c AppBranchConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 func (c *AppBranchConfig) Validate() error {
 	if c.Run != nil {
 		mode := c.Run.Mode
-		if mode == "" {
-			mode = "all"
+		if mode == "" || mode == "all" {
+			mode = "push"
 		}
 		switch mode {
-		case "all", "manual_only":
+		case "push", "manual_only":
 			if c.Run.TagPrefix != "" || c.Run.GithubLabel != "" {
 				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode %q cannot set tag_prefix or github_label", c.Name, mode)}
 			}

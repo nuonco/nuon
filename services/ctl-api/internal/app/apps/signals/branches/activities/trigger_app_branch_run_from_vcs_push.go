@@ -158,7 +158,7 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 }
 
 func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.AppBranchConfig, req *TriggerAppBranchRunFromVCSPushRequest) (app.AppBranchRunMetadata, bool, error) {
-	runConfig := app.AppBranchRunConfig{Mode: app.AppBranchRunModeAll}
+	runConfig := app.AppBranchRunConfig{Mode: app.AppBranchRunModePush}
 	if config.RunConfig != nil {
 		runConfig = *config.RunConfig
 		runConfig.Normalize()
@@ -177,7 +177,7 @@ func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.Ap
 
 	switch req.EventType {
 	case "pull_request":
-		return metadata, runConfig.Mode == app.AppBranchRunModeAll, nil
+		return metadata, runConfig.Mode == app.AppBranchRunModePush, nil
 	case "tag":
 		if runConfig.Mode != app.AppBranchRunModeTagPrefix || !strings.HasPrefix(req.HeadRef, runConfig.TagPrefix) {
 			return metadata, false, nil
@@ -206,7 +206,7 @@ func (a *Activities) evaluateBranchRunConfig(ctx context.Context, config *app.Ap
 		return metadata, status == "behind" || status == "identical", nil
 	case "push":
 		switch runConfig.Mode {
-		case app.AppBranchRunModeAll:
+		case app.AppBranchRunModePush:
 			return metadata, true, nil
 		case app.AppBranchRunModeGithubLabel:
 			baseBranch, vcsConfigID, err := branchVCSIdentity(config)

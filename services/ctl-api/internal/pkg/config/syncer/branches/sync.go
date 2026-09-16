@@ -255,7 +255,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		Regex:                &branchCfg.IgnoreChangesRegex,
 		SendStatusesOnIgnore: &branchCfg.SendStatusesOnIgnore,
 	}
-	runConfig := &app.AppBranchRunConfig{Mode: app.AppBranchRunModeAll}
+	runConfig := &app.AppBranchRunConfig{Mode: app.AppBranchRunModePush}
 	if branchCfg.Run != nil {
 		runConfig.Mode = app.AppBranchRunMode(branchCfg.Run.Mode)
 		runConfig.TagPrefix = branchCfg.Run.TagPrefix

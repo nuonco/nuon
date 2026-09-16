@@ -66,8 +66,8 @@ Every field is documented in the [branch config reference](/config-ref/branch).
 
 ### Control when the branch runs
 
-Omit `[run]` to run on every push and preview pull requests. To give a customer its own release cadence while still
-tracking `main`, gate the branch with a tag prefix:
+Omit `[run]` to use the default `push` mode, which runs on every push and previews pull requests. To give a customer
+its own release cadence while still tracking `main`, gate the branch with a tag prefix:
 
 ```toml
 [run]

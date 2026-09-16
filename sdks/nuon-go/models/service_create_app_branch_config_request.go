@@ -41,6 +41,9 @@ type ServiceCreateAppBranchConfigRequest struct {
 	// public git vcs config
 	PublicGitVcsConfig *HelpersPublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
 
+	// run config
+	RunConfig *AppAppBranchRunConfig `json:"run_config,omitempty"`
+
 	// SendStatusesOnIgnore posts a successful commit status for runs ignored by
 	// IgnoreChangesRegex. Omit to carry the current setting forward.
 	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty"`
@@ -63,6 +66,10 @@ func (m *ServiceCreateAppBranchConfigRequest) Validate(formats strfmt.Registry) 
 	}
 
 	if err := m.validatePublicGitVcsConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRunConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -171,6 +178,29 @@ func (m *ServiceCreateAppBranchConfigRequest) validatePublicGitVcsConfig(formats
 	return nil
 }
 
+func (m *ServiceCreateAppBranchConfigRequest) validateRunConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.RunConfig) { // not required
+		return nil
+	}
+
+	if m.RunConfig != nil {
+		if err := m.RunConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("run_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("run_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this service create app branch config request based on the context it is used
 func (m *ServiceCreateAppBranchConfigRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -188,6 +218,10 @@ func (m *ServiceCreateAppBranchConfigRequest) ContextValidate(ctx context.Contex
 	}
 
 	if err := m.contextValidatePublicGitVcsConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRunConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -292,6 +326,31 @@ func (m *ServiceCreateAppBranchConfigRequest) contextValidatePublicGitVcsConfig(
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("public_git_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateAppBranchConfigRequest) contextValidateRunConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.RunConfig != nil {
+
+		if swag.IsZero(m.RunConfig) { // not required
+			return nil
+		}
+
+		if err := m.RunConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("run_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("run_config")
 			}
 
 			return err

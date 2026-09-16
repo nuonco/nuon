@@ -28,17 +28,12 @@ func (h *Helpers) LookupVCSConnection(ctx context.Context,
 			return "", fmt.Errorf("unable to get client: %w", err)
 		}
 
-		repo, _, err := client.Repositories.Get(ctx, owner, name)
+		_, _, err = client.Repositories.Get(ctx, owner, name)
 		if err != nil {
 			continue
 		}
-
-		if *repo.Visibility == "public" {
-			return "", stderr.ErrUser{
-				Err:         fmt.Errorf("can not use a public repo with a connected_repo config"),
-				Description: "please use a `public_repo` block instead",
-			}
-		}
+		// Connected repositories may be public when authenticated GitHub
+		// features, such as pull request label lookup, are required.
 		return vcsConn.ID, nil
 	}
 

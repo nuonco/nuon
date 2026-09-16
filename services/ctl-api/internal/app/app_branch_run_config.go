@@ -5,7 +5,7 @@ import "fmt"
 type AppBranchRunMode string
 
 const (
-	AppBranchRunModeAll         AppBranchRunMode = "all"
+	AppBranchRunModePush        AppBranchRunMode = "push"
 	AppBranchRunModeTagPrefix   AppBranchRunMode = "on_tag_prefix"
 	AppBranchRunModeGithubLabel AppBranchRunMode = "on_github_label"
 	AppBranchRunModeManualOnly  AppBranchRunMode = "manual_only"
@@ -18,14 +18,15 @@ type AppBranchRunConfig struct {
 }
 
 func (c *AppBranchRunConfig) Normalize() {
-	if c != nil && c.Mode == "" {
-		c.Mode = AppBranchRunModeAll
+	if c != nil && (c.Mode == "" || c.Mode == "all") {
+		c.Mode = AppBranchRunModePush
 	}
 }
 
 func (c AppBranchRunConfig) Validate() error {
+	c.Normalize()
 	switch c.Mode {
-	case "", AppBranchRunModeAll, AppBranchRunModeManualOnly:
+	case AppBranchRunModePush, AppBranchRunModeManualOnly:
 		if c.TagPrefix != "" || c.GithubLabel != "" {
 			return fmt.Errorf("run mode %q cannot set tag_prefix or github_label", c.Mode)
 		}

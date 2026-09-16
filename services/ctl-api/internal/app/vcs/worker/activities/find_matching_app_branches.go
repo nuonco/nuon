@@ -17,7 +17,7 @@ type FindMatchingAppBranchesRequest struct {
 type MatchingAppBranch struct {
 	AppBranchID       string                 `json:"app_branch_id"`
 	AppBranchConfigID string                 `json:"app_branch_config_id"`
-	RunConfig         app.AppBranchRunConfig `json:"run_config"`
+	RunConfig         app.AppBranchRunConfig `json:"run_config" gorm:"-"`
 }
 
 // @temporal-gen-v2 activity
@@ -54,7 +54,7 @@ func (a *Activities) FindMatchingAppBranches(ctx context.Context, req FindMatchi
 	}
 	runConfigs := make(map[string]app.AppBranchRunConfig, len(configs))
 	for _, config := range configs {
-		runConfig := app.AppBranchRunConfig{Mode: app.AppBranchRunModeAll}
+		runConfig := app.AppBranchRunConfig{Mode: app.AppBranchRunModePush}
 		if config.RunConfig != nil {
 			runConfig = *config.RunConfig
 			runConfig.Normalize()
