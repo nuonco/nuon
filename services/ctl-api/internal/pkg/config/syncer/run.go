@@ -44,6 +44,9 @@ type RunRequest struct {
 
 	// DispatchBuilds: see components.SyncComponentParams.DispatchBuilds.
 	DispatchBuilds bool
+
+	// SkipBranches leaves existing app branch configuration unchanged.
+	SkipBranches bool
 }
 
 type RunResult struct {
@@ -87,6 +90,9 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 	var opts []Option
 	if req.DispatchBuilds {
 		opts = append(opts, WithComponentBuildDispatch())
+	}
+	if req.SkipBranches {
+		opts = append(opts, WithoutBranchSync())
 	}
 
 	var result RunResult
