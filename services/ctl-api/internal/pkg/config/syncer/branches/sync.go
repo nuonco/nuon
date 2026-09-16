@@ -255,8 +255,14 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		Regex:                &branchCfg.IgnoreChangesRegex,
 		SendStatusesOnIgnore: &branchCfg.SendStatusesOnIgnore,
 	}
+	runConfig := &app.AppBranchRunConfig{Mode: app.AppBranchRunModePush}
+	if branchCfg.Run != nil {
+		runConfig.Mode = app.AppBranchRunMode(branchCfg.Run.Mode)
+		runConfig.TagPrefix = branchCfg.Run.TagPrefix
+		runConfig.GithubLabel = branchCfg.Run.GithubLabel
+	}
 
-	if _, err := appsHelper.CreateAppBranchConfigWithDB(ctx, db, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs, ignoreChanges, previewConfig); err != nil {
+	if _, err := appsHelper.CreateAppBranchConfigWithDB(ctx, db, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs, ignoreChanges, previewConfig, runConfig); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create config for branch %q", branchCfg.Name),
 			Err:         err,

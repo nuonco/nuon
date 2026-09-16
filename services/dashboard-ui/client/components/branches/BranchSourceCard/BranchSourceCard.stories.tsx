@@ -12,6 +12,10 @@ export const Connected = () => (
         branch: 'main',
         directory: 'apps/api',
       },
+      run_config: {
+        mode: 'on_github_label',
+        github_label: 'deploy-cadence-daily',
+      },
     }}
     onEdit={() => {}}
   />
@@ -25,6 +29,7 @@ export const PublicRepo = () => (
         branch: 'main',
         directory: 'httpbin',
       },
+      run_config: { mode: 'on_tag_prefix', tag_prefix: 'customer/' },
     }}
   />
 )
