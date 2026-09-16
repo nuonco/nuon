@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { getInstall } from '@/lib'
-import { Card } from '../components/atoms/Card'
-import { Text } from '../components/atoms/Text'
+import { InstallSetup as InstallSetupWizard } from '../components/organisms/InstallSetup'
 import { useBreadcrumbs } from '../hooks/use-breadcrumbs'
 import { usePageTitle } from '../hooks/use-page-title'
 import { useOrg } from '../providers/org-provider'
@@ -40,11 +39,5 @@ export const InstallSetup = () => {
     { label: 'Install setup' },
   ])
 
-  return (
-    <Card className="min-h-40">
-      <Text variant="caption" color="tertiary">
-        Page content will be added in a follow-up.
-      </Text>
-    </Card>
-  )
+  return <InstallSetupWizard />
 }
