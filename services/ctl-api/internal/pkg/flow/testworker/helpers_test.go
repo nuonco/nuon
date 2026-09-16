@@ -3,7 +3,6 @@ package testworker
 import (
 	"context"
 	"errors"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -155,13 +154,11 @@ func (e *FlowTestSuite) tryStepsByWorkflow(ctx context.Context, workflowID strin
 	return steps, err
 }
 
-// fakeString serializes go-faker access: faker mutates package-global state
-// and is not safe for concurrent cases.
-var fakeMu sync.Mutex
-
+// fakeString generates faker strings. GetFakeObj is race-safe for plain
+// strings: go-faker draws from the global math/rand functions, which are
+// internally locked. Struct fakes with "unique" tags are NOT safe; keep
+// fake data string-only if concurrent.
 func fakeString() string {
-	fakeMu.Lock()
-	defer fakeMu.Unlock()
 	return generics.GetFakeObj[string]()
 }
 
