@@ -242,6 +242,14 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 
 	cb := callback.New(ctx, step.ID)
 	dedupeKey := fmt.Sprintf("workflow-step:%s:retry:%d:group-retry:%d", step.ID, step.RetryIndex, step.GroupRetryIdx)
+	// Cancel() already wrote the stop directive (Execute exits on s.canceled);
+	// a lifecycle cancel has none yet, so return an error for Execute's fallback.
+	if s.canceled {
+		return nil
+	}
+	if ctx.Err() != nil {
+		return errors.Errorf("step %s cancelled before inner signal dispatch", step.Name)
+	}
 	// Dispatch on a disconnected context: the enqueue commits the inner signal
 	// to the DB before returning, so a cancel landing mid-dispatch cannot stop
 	// the write — it can only hide the committed result, orphaning a signal
@@ -266,11 +274,9 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 	// Track the inner signal ID so Cancel() can propagate cancellation
 	s.innerQueueSignalID = enqueueResp.QueueSignalID
 
-	// Cancel() may have completed while the dispatch was in flight, seeing
-	// innerQueueSignalID still empty. Assignment and this check happen with no
-	// yield in between, so either Cancel() saw the ID above or this check sees
-	// s.canceled — one of the two always propagates the cancel.
-	if s.canceled {
+	// Cancellation may have landed while the dispatch was in flight. Cancel the
+	// committed inner signal whether it came from Cancel() or the handler lifecycle.
+	if s.canceled || ctx.Err() != nil {
 		cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
 		defer cancelCtxCancel()
 		if _, err := client.AwaitCancelSignal(cancelCtx, enqueueResp.QueueSignalID); err != nil {

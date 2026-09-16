@@ -193,11 +193,17 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 	}
 
 	var loaded app.Workflow
-	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		if err := a.getStatus(ctx, &loaded, req.ID); err != nil {
-			return app.CompositeStatus{}, err
-		}
+	if err := a.getStatus(ctx, &loaded, req.ID); err != nil {
+		return err
+	}
 
+	_, cancelRequested := loaded.Status.Metadata["cancel_requested_at"]
+	// Cancellation is terminal because downstream step/group writers can race the cancel handler with stale statuses.
+	if req.Status.Status != app.StatusCancelled && (loaded.Status.Status == app.StatusCancelled || cancelRequested) {
+		return nil
+	}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
 		return loaded.Status, nil
 	}
 

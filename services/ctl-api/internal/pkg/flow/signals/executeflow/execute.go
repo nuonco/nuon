@@ -974,6 +974,7 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 	if err != nil {
 		return false
 	}
+	terminalErrorComplete := workflow.GetVersion(ctx, workflowCompleteTerminalErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 
 	for _, step := range steps {
 		switch step.Status.Status {
@@ -983,6 +984,9 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 			app.WorkflowStepNoDrift, app.WorkflowStepDrifted:
 			continue
 		case app.StatusError:
+			if !terminalErrorComplete {
+				return false
+			}
 			// Treat a settled failure (terminal directive) as complete so
 			// failures do not leak forever-open workflows: the group already
 			// acted on it, so nothing will resume this run. A parked error
@@ -1082,6 +1086,10 @@ const flowCancelStatusVersion = "execute-flow-cancel-status-v1"
 // groupStopReasonVersion gates the GetFlowSteps lookup that derives the stop
 // reason; in-flight histories never scheduled it before the sweeps.
 const groupStopReasonVersion = "execute-flow-group-stop-reason-v1"
+
+// workflowCompleteTerminalErrorVersion gates terminal errored steps counting as
+// complete because in-flight histories previously parked after every error.
+const workflowCompleteTerminalErrorVersion = "execute-flow-terminal-error-complete-v1"
 
 // stopIfRunnerDisabled halts a workflow whose install runner was disabled after
 // it started. Creation already rejects these, so without this the workflow would

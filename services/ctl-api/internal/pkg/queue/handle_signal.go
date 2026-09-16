@@ -21,6 +21,10 @@ import (
 // and the dispatcher encounters it again. Callers should check for this error and skip gracefully.
 var ErrSignalNoop = errors.New("queue signal already in terminal state")
 
+// queueSignalErrorStatusGuardVersion gates the status re-read before the error
+// write because in-flight histories scheduled the write without that activity.
+const queueSignalErrorStatusGuardVersion = "queue-signal-error-status-guard-v1"
+
 func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -77,8 +81,12 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		// handler already finalised the signal (e.g. cancelled mid-execute):
 		// the handler's status is the meaningful one and a blanket error
 		// write would corrupt it.
-		fresh, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, queueRef.ID)
-		if err != nil || !generics.SliceContains(fresh.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled}) {
+		shouldWriteError := true
+		if workflow.GetVersion(ctx, queueSignalErrorStatusGuardVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			fresh, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, queueRef.ID)
+			shouldWriteError = err != nil || !generics.SliceContains(fresh.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled})
+		}
+		if shouldWriteError {
 			if statusErr := statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 				QueueSignalID: queueSignal.ID,
 				Status:        app.StatusError,
