@@ -1,4 +1,4 @@
-import type { TInstallWorkflow } from '@/types'
+import type { TAppBranchRun, TInstallWorkflow } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 
 export const WORKFLOW_TYPE_LABELS: Record<string, string> = {
@@ -9,9 +9,17 @@ export const WORKFLOW_TYPE_LABELS: Record<string, string> = {
 }
 
 export const getRunTitle = (run?: TInstallWorkflow): string => {
-  const branchRun = run?.app_branch_runs?.at(0)
-  if (branchRun?.pr_number != null) {
-    return `PR #${branchRun.pr_number}`
+  const branchRun = run?.app_branch_runs?.at(0) as TAppBranchRun | undefined
+  const metadata = branchRun?.metadata
+  const prNumber = metadata?.pr_number ?? branchRun?.pr_number
+  if (metadata?.trigger === 'tag' && metadata.tag) {
+    return `Tag ${metadata.tag}`
+  }
+  if (prNumber != null) {
+    return `PR #${prNumber}`
+  }
+  if (metadata?.trigger === 'github_label' && metadata.github_label) {
+    return `Label ${metadata.github_label}`
   }
 
   const commitMessage = branchRun?.vcs_connection_commit?.message

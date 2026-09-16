@@ -19,17 +19,18 @@ type mcpListAppBranchRunsInput struct {
 }
 
 type mcpAppBranchRunHistoryItem struct {
-	ID               string `json:"id"`
-	Status           string `json:"status"`
-	Succeeded        bool   `json:"succeeded"`
-	AwaitingApproval bool   `json:"awaiting_approval"`
-	RunType          string `json:"run_type"`
-	Preview          bool   `json:"preview"`
-	PlanOnly         bool   `json:"plan_only"`
-	PRNumber         *int   `json:"pr_number,omitempty"`
-	HeadSHA          string `json:"head_sha,omitempty"`
-	WorkflowID       string `json:"workflow_id,omitempty"`
-	CreatedAt        string `json:"created_at"`
+	ID               string                   `json:"id"`
+	Status           string                   `json:"status"`
+	Succeeded        bool                     `json:"succeeded"`
+	AwaitingApproval bool                     `json:"awaiting_approval"`
+	RunType          string                   `json:"run_type"`
+	Metadata         app.AppBranchRunMetadata `json:"metadata"`
+	Preview          bool                     `json:"preview"`
+	PlanOnly         bool                     `json:"plan_only"`
+	PRNumber         *int                     `json:"pr_number,omitempty"`
+	HeadSHA          string                   `json:"head_sha,omitempty"`
+	WorkflowID       string                   `json:"workflow_id,omitempty"`
+	CreatedAt        string                   `json:"created_at"`
 }
 
 type mcpListAppBranchRunsResult struct {
@@ -100,7 +101,8 @@ func (s *service) mcpListAppBranchRuns(ctx context.Context, _ *mcp.CallToolReque
 		if err := s.markRunAwaitingApproval(ctx, run); err != nil {
 			return nil, nil, err
 		}
-		headSHA := run.HeadSHA
+		metadata := run.RunMetadata()
+		headSHA := metadata.HeadSHA
 		if run.VCSConnectionCommit != nil && run.VCSConnectionCommit.SHA != "" {
 			headSHA = run.VCSConnectionCommit.SHA
 		}
@@ -114,9 +116,10 @@ func (s *service) mcpListAppBranchRuns(ctx context.Context, _ *mcp.CallToolReque
 			Succeeded:        run.Status == "success",
 			AwaitingApproval: run.AwaitingApproval,
 			RunType:          string(run.RunType),
+			Metadata:         metadata,
 			Preview:          run.IsPreview(),
 			PlanOnly:         run.PlanOnly,
-			PRNumber:         run.PRNumber,
+			PRNumber:         metadata.PRNumber,
 			HeadSHA:          headSHA,
 			WorkflowID:       workflowID,
 			CreatedAt:        apiPkg.MCPTime(run.CreatedAt),

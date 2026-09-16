@@ -1,22 +1,63 @@
 import { components } from '@/types/nuon-oapi-v3'
 import type { Interests as TInterests } from '@/components/interests/types'
 
-export type TAppBranch = components['schemas']['app.AppBranch'] & {
+export type TAppBranch = Omit<
+  components['schemas']['app.AppBranch'],
+  'configs' | 'latest_run'
+> & {
+  configs?: TAppBranchConfig[]
   latest_run?: TAppBranchRun
 }
-export type TAppBranchConfig = components['schemas']['app.AppBranchConfig'] & {
+export type TAppBranchConfig = Omit<
+  components['schemas']['app.AppBranchConfig'],
+  'run_config'
+> & {
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean
   preview_config?: TAppBranchPreviewConfig
+  run_config?: TAppBranchRunConfig
 }
 export type TAppBranchInstallGroup =
   components['schemas']['app.AppBranchInstallGroup']
 export type TAppBranchRun = Omit<
   components['schemas']['app.AppBranchRun'],
-  'preview'
+  'metadata' | 'preview'
 > & {
   awaiting_approval?: boolean
   preview?: TAppBranchRunPreview
+  metadata?: TAppBranchRunMetadata
+}
+
+export type TAppBranchRunMode =
+  | 'push'
+  | 'all'
+  | 'on_tag_prefix'
+  | 'on_github_label'
+  | 'manual_only'
+
+export type TAppBranchRunConfig = {
+  mode?: TAppBranchRunMode
+  tag_prefix?: string
+  github_label?: string
+}
+
+export type TAppBranchRunMetadata = {
+  trigger?:
+    | 'manual'
+    | 'push'
+    | 'pull_request'
+    | 'tag'
+    | 'github_label'
+    | 'onboarding'
+  head_sha?: string
+  git_ref?: string
+  base_branch?: string
+  pr_number?: number
+  tag?: string
+  github_label?: string
+  is_draft?: boolean
+  run_mode?: string
+  tag_prefix?: string
 }
 
 export type TAppBranchRunPreviewMode = 'plan-only' | 'apply' | 'build-only'

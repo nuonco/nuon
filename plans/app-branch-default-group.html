@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Branch Default Install Group</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; padding: 40px 32px 80px; }
+  h1 { text-align: center; margin-bottom: 8px; color: #58a6ff; font-size: 24px; }
+  .subtitle { text-align: center; margin-bottom: 40px; color: #8b949e; font-size: 14px; }
+
+  .wrap { max-width: 1000px; margin: 0 auto; }
+
+  h2 { font-size: 15px; color: #f0f6fc; margin: 48px 0 6px; padding-bottom: 8px; border-bottom: 1px solid #30363d; letter-spacing: .3px; }
+  h2 .num { color: #58a6ff; font-family: monospace; margin-right: 8px; }
+  h3 { font-size: 12.5px; color: #8b949e; margin: 20px 0 6px; letter-spacing: .5px; text-transform: uppercase; }
+  .lede { font-size: 13px; color: #8b949e; line-height: 1.6; margin: 12px 0 20px; }
+  .lede code, p code, li code, td code { background: #21262d; padding: 1px 6px; border-radius: 4px; font-size: 12px; color: #79c0ff; font-family: monospace; }
+  .lede strong, li strong, td strong, p strong { color: #c9d1d9; font-weight: 600; }
+
+  svg { display: block; margin: 0 auto 8px; max-width: 100%; }
+
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 12.5px; }
+  th { background: #161b22; color: #8b949e; font-weight: 600; text-align: left; padding: 9px 12px; border: 1px solid #30363d; font-size: 11px; letter-spacing: .5px; text-transform: uppercase; }
+  td { padding: 9px 12px; border: 1px solid #30363d; vertical-align: top; line-height: 1.5; }
+  tbody tr:nth-child(odd) { background: #161b2266; }
+  td.mode { font-family: monospace; color: #d2a8ff; white-space: nowrap; }
+
+  .yes { color: #7ee787; font-weight: 600; }
+  .no  { color: #f78166; font-weight: 600; }
+  .cond { color: #f0883e; }
+
+  pre { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 18px; overflow-x: auto; font-size: 12.5px; line-height: 1.65; font-family: 'SF Mono', Menlo, monospace; margin: 8px 0 12px; }
+  pre .k { color: #7ee787; }
+  pre .s { color: #a5d6ff; }
+  pre .c { color: #8b949e; font-style: italic; }
+  pre .h { color: #ff7b72; }
+  pre .t { color: #79c0ff; }
+  pre .new { color: #7ee787; font-weight: 700; }
+  pre .bad { color: #f78166; }
+
+  .cols { display: flex; gap: 16px; flex-wrap: wrap; }
+  .cols > * { flex: 1 1 380px; min-width: 0; }
+
+  ul { margin: 4px 0 12px 20px; font-size: 13px; line-height: 1.75; color: #c9d1d9; }
+  li::marker { color: #8b949e; }
+
+  .callout { border: 1px solid #30363d; border-left: 3px solid #f0883e; background: #161b22; border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 16px 0; font-size: 13px; line-height: 1.65; }
+  .callout .hd { color: #f0883e; font-weight: 700; font-size: 11px; letter-spacing: .6px; text-transform: uppercase; margin-bottom: 6px; }
+  .callout.info { border-left-color: #58a6ff; }
+  .callout.info .hd { color: #58a6ff; }
+  .callout.good { border-left-color: #7ee787; }
+  .callout.good .hd { color: #7ee787; }
+
+  .file { color: #d2a8ff; font-family: monospace; font-size: 12px; }
+  footer { max-width: 1000px; margin: 56px auto 0; padding-top: 16px; border-top: 1px solid #30363d; font-size: 11.5px; color: #8b949e; text-align: center; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<h1>App Branch Default Install Group</h1>
+<p class="subtitle">One group per branch marked <code style="background:#21262d;padding:1px 6px;border-radius:4px;color:#79c0ff;font-family:monospace">default = true</code> &mdash; every install no other group claims lands there, until labels promote it out</p>
+
+<div class="wrap">
+
+<h2><span class="num">01</span>The gap this closes</h2>
+<p class="lede">
+  You pick the app branch when you create an install &mdash; that is the one decision available up front. Group membership comes from
+  <strong>labels</strong>, and labels usually arrive later: after the install provisions, after the customer is onboarded, after someone decides
+  which tier it is. In between, the install belongs to a branch but matches no group, so every run of that branch skips it. Today the dashboard
+  calls that state <em>Orphaned</em>. A default group turns that hole into a landing zone.
+</p>
+
+<svg viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <defs>
+    <marker id="a-grey" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#8b949e"/></marker>
+    <marker id="a-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#7ee787"/></marker>
+    <marker id="a-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f78166"/></marker>
+    <marker id="a-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#58a6ff"/></marker>
+  </defs>
+
+  <!-- lane: today -->
+  <text x="16" y="34" fill="#f78166" font-size="11" font-weight="700" letter-spacing=".6">TODAY</text>
+  <rect x="16" y="44" width="200" height="66" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+  <text x="116" y="70" text-anchor="middle" fill="#f0f6fc" font-size="12" font-weight="600">Create install</text>
+  <text x="116" y="89" text-anchor="middle" fill="#8b949e" font-size="10">branch <tspan fill="#79c0ff" font-family="monospace">main</tspan> chosen up front</text>
+  <line x1="216" y1="77" x2="252" y2="77" stroke="#8b949e" stroke-width="2" marker-end="url(#a-grey)"/>
+
+  <rect x="256" y="44" width="200" height="66" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+  <text x="356" y="70" text-anchor="middle" fill="#f0f6fc" font-size="12" font-weight="600">No labels yet</text>
+  <text x="356" y="89" text-anchor="middle" fill="#8b949e" font-size="10"><tspan font-family="monospace" fill="#79c0ff">env</tspan>, <tspan font-family="monospace" fill="#79c0ff">tier</tspan> still unset</text>
+  <line x1="456" y1="77" x2="492" y2="77" stroke="#8b949e" stroke-width="2" marker-end="url(#a-grey)"/>
+
+  <rect x="496" y="44" width="212" height="66" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+  <text x="602" y="70" text-anchor="middle" fill="#f0f6fc" font-size="12" font-weight="600">No selector matches</text>
+  <text x="602" y="89" text-anchor="middle" fill="#8b949e" font-size="10">every group is label-selected</text>
+  <line x1="708" y1="77" x2="744" y2="77" stroke="#f78166" stroke-width="2" marker-end="url(#a-red)"/>
+
+  <rect x="748" y="44" width="236" height="66" rx="8" fill="#da368818" stroke="#f78166" stroke-width="1.5"/>
+  <text x="866" y="70" text-anchor="middle" fill="#f78166" font-size="12" font-weight="700">Orphaned</text>
+  <text x="866" y="89" text-anchor="middle" fill="#8b949e" font-size="10">silently skipped by every run</text>
+
+  <!-- divider -->
+  <line x1="16" y1="140" x2="984" y2="140" stroke="#30363d" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- lane: with default -->
+  <text x="16" y="176" fill="#7ee787" font-size="11" font-weight="700" letter-spacing=".6">WITH A DEFAULT GROUP</text>
+  <rect x="16" y="186" width="200" height="66" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+  <text x="116" y="212" text-anchor="middle" fill="#f0f6fc" font-size="12" font-weight="600">Create install</text>
+  <text x="116" y="231" text-anchor="middle" fill="#8b949e" font-size="10">branch <tspan fill="#79c0ff" font-family="monospace">main</tspan> chosen up front</text>
+  <line x1="216" y1="219" x2="252" y2="219" stroke="#8b949e" stroke-width="2" marker-end="url(#a-grey)"/>
+
+  <rect x="256" y="186" width="200" height="66" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+  <text x="356" y="212" text-anchor="middle" fill="#f0f6fc" font-size="12" font-weight="600">No labels yet</text>
+  <text x="356" y="231" text-anchor="middle" fill="#8b949e" font-size="10">same install, same moment</text>
+  <line x1="456" y1="219" x2="492" y2="219" stroke="#7ee787" stroke-width="2" marker-end="url(#a-green)"/>
+
+  <rect x="496" y="186" width="212" height="66" rx="8" fill="#23863618" stroke="#7ee787" stroke-width="1.5"/>
+  <text x="602" y="212" text-anchor="middle" fill="#7ee787" font-size="12" font-weight="700">Falls back to default</text>
+  <text x="602" y="231" text-anchor="middle" fill="#8b949e" font-size="10">group <tspan font-family="monospace" fill="#79c0ff">staging</tspan></text>
+  <line x1="708" y1="219" x2="744" y2="219" stroke="#7ee787" stroke-width="2" marker-end="url(#a-green)"/>
+
+  <rect x="748" y="186" width="236" height="66" rx="8" fill="#23863618" stroke="#7ee787" stroke-width="1.5"/>
+  <text x="866" y="212" text-anchor="middle" fill="#7ee787" font-size="12" font-weight="700">Deploys on the next run</text>
+  <text x="866" y="231" text-anchor="middle" fill="#8b949e" font-size="10">labels later promote it out</text>
+
+  <rect x="16" y="268" width="968" height="26" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="32" y="286" fill="#8b949e" font-size="11">The install never changes branch. A default group only decides <tspan fill="#c9d1d9" font-weight="600">which group inside that branch</tspan> deploys it while nothing else claims it.</text>
+</svg>
+
+<h2><span class="num">02</span>Resolution: selectors first, default last</h2>
+<p class="lede">
+  The default group is a <strong>pure fallback</strong>. It carries no <code>label_selector</code>, no <code>install_ids</code>, no
+  <code>all_installs</code> &mdash; its membership is defined entirely by what the other groups did not take. Resolution runs per install, over the
+  installs the branch already owns, and is recomputed on every run.
+</p>
+
+<svg viewBox="0 0 1000 400" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <rect x="370" y="14" width="260" height="50" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+  <text x="500" y="36" text-anchor="middle" fill="#f0f6fc" font-size="12.5" font-weight="600">One install on this branch</text>
+  <text x="500" y="53" text-anchor="middle" fill="#8b949e" font-size="10">with whatever labels it carries right now</text>
+  <line x1="500" y1="64" x2="500" y2="94" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <rect x="290" y="98" width="420" height="64" rx="8" fill="#1f6feb18" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="500" y="122" text-anchor="middle" fill="#58a6ff" font-size="12.5" font-weight="700">Evaluate every non-default group</text>
+  <text x="500" y="141" text-anchor="middle" fill="#8b949e" font-size="10">explicit <tspan font-family="monospace" fill="#79c0ff">install_ids</tspan> &bull; <tspan font-family="monospace" fill="#79c0ff">label_selector</tspan> &bull; <tspan font-family="monospace" fill="#79c0ff">all_installs</tspan></text>
+  <text x="500" y="156" text-anchor="middle" fill="#8b949e" font-size="10">the default group is <tspan fill="#c9d1d9">not</tspan> a candidate in this pass</text>
+
+  <line x1="500" y1="162" x2="500" y2="186" stroke="#58a6ff" stroke-width="2"/>
+  <line x1="170" y1="186" x2="830" y2="186" stroke="#58a6ff" stroke-width="2"/>
+  <line x1="170" y1="186" x2="170" y2="212" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+  <line x1="500" y1="186" x2="500" y2="212" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+  <line x1="830" y1="186" x2="830" y2="212" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <!-- exactly one -->
+  <rect x="40" y="216" width="260" height="96" rx="8" fill="#23863618" stroke="#7ee787" stroke-width="1.5"/>
+  <text x="170" y="240" text-anchor="middle" fill="#7ee787" font-size="12" font-weight="700">Exactly one match</text>
+  <text x="170" y="262" text-anchor="middle" fill="#c9d1d9" font-size="11">that group deploys it</text>
+  <text x="170" y="282" text-anchor="middle" fill="#8b949e" font-size="10">unchanged from today &mdash; the default</text>
+  <text x="170" y="297" text-anchor="middle" fill="#8b949e" font-size="10">group never overrides a real match</text>
+
+  <!-- zero -->
+  <rect x="370" y="216" width="260" height="96" rx="8" fill="#bc8cff14" stroke="#d2a8ff" stroke-width="1.5"/>
+  <text x="500" y="240" text-anchor="middle" fill="#d2a8ff" font-size="12" font-weight="700">No match</text>
+  <text x="500" y="262" text-anchor="middle" fill="#c9d1d9" font-size="11">the default group deploys it</text>
+  <text x="500" y="282" text-anchor="middle" fill="#8b949e" font-size="10">no default configured &rarr; orphaned,</text>
+  <text x="500" y="297" text-anchor="middle" fill="#8b949e" font-size="10">exactly as it behaves today</text>
+
+  <!-- two or more -->
+  <rect x="700" y="216" width="260" height="96" rx="8" fill="#da368818" stroke="#f78166" stroke-width="1.5"/>
+  <text x="830" y="240" text-anchor="middle" fill="#f78166" font-size="12" font-weight="700">Two or more matches</text>
+  <text x="830" y="262" text-anchor="middle" fill="#c9d1d9" font-size="11">rejected, as it is today</text>
+  <text x="830" y="282" text-anchor="middle" fill="#8b949e" font-size="10">a default group is not a tie-breaker;</text>
+  <text x="830" y="297" text-anchor="middle" fill="#8b949e" font-size="10">ambiguous membership stays an error</text>
+
+  <rect x="40" y="336" width="920" height="48" rx="8" fill="#161b22" stroke="#30363d"/>
+  <text x="60" y="357" fill="#8b949e" font-size="11.5"><tspan fill="#c9d1d9" font-weight="600">Order is independent of default.</tspan> <tspan font-family="monospace" fill="#79c0ff">order</tspan> still decides when the group deploys within the run.</text>
+  <text x="60" y="375" fill="#8b949e" font-size="11.5">Put the default first when it is your canary ring, last when it is a holding pen. That is a rollout decision, not a fallback one.</text>
+</svg>
+
+<div class="callout info">
+  <div class="hd">Why fallback rather than a wildcard selector</div>
+  A group could already be written to catch everything with <code>all_installs</code>, but that collides with every other group the moment a label
+  matches &mdash; an install would be in two groups, which is an error. &ldquo;Everything nobody else took&rdquo; is not expressible as a selector,
+  so it is a flag, for the same reason <code>all_installs</code> is a flag rather than an empty selector.
+</div>
+
+<h2><span class="num">03</span>Configuring it &mdash; kitchen-sink, before and after</h2>
+<p class="lede">
+  This is <span class="file">~/nuon/kitchen-sink/branches/default.toml</span> as it stands, then with <code>staging</code> converted into the branch&rsquo;s
+  default group. The change is a deletion plus one key: <code>staging</code> stops asking for <code>env = "staging"</code> and instead accepts whatever
+  <code>customers</code> and <code>enterprise</code> do not claim.
+</p>
+
+<div class="cols">
+<div>
+<h3>Today</h3>
+<pre><span class="c"># branches/default.toml</span>
+<span class="k">name</span> = <span class="s">"main"</span>
+<span class="k">post_deploy_runbooks</span> = [<span class="s">"full-health-check"</span>]
+
+[<span class="t">public_repo</span>]
+<span class="k">repo</span>      = <span class="s">"nuonco/kitchen-sink"</span>
+<span class="k">directory</span> = <span class="s">"."</span>
+<span class="k">branch</span>    = <span class="s">"jm/change-tests"</span>
+
+[<span class="t">run</span>]
+<span class="k">mode</span> = <span class="s">"push"</span>
+
+[[<span class="t">install_groups</span>]]
+<span class="k">name</span>  = <span class="s">"staging"</span>
+<span class="k">order</span> = <span class="s">1</span>
+
+[<span class="t">install_groups.label_selector</span>]
+<span class="k">env</span> = <span class="s">"staging"</span>          <span class="c"># must be labeled to land here</span>
+
+[[<span class="t">install_groups</span>]]
+<span class="k">name</span>  = <span class="s">"customers"</span>
+<span class="k">order</span> = <span class="s">2</span>
+
+[<span class="t">install_groups.label_selector</span>]
+<span class="k">env</span>  = <span class="s">"production"</span>
+<span class="k">tier</span> = <span class="s">"customer"</span>
+
+[[<span class="t">install_groups</span>]]
+<span class="k">name</span>  = <span class="s">"enterprise"</span>
+<span class="k">order</span> = <span class="s">3</span>
+
+[<span class="t">install_groups.label_selector</span>]
+<span class="k">env</span>  = <span class="s">"production"</span>
+<span class="k">tier</span> = <span class="s">"enterprise"</span>
+</pre>
+</div>
+
+<div>
+<h3>With a default group</h3>
+<pre><span class="c"># branches/default.toml</span>
+<span class="k">name</span> = <span class="s">"main"</span>
+<span class="k">post_deploy_runbooks</span> = [<span class="s">"full-health-check"</span>]
+
+[<span class="t">public_repo</span>]
+<span class="k">repo</span>      = <span class="s">"nuonco/kitchen-sink"</span>
+<span class="k">directory</span> = <span class="s">"."</span>
+<span class="k">branch</span>    = <span class="s">"jm/change-tests"</span>
+
+[<span class="t">run</span>]
+<span class="k">mode</span> = <span class="s">"push"</span>
+
+[[<span class="t">install_groups</span>]]
+<span class="k">name</span>    = <span class="s">"staging"</span>
+<span class="k">order</span>   = <span class="s">1</span>
+<span class="new">default = true</span>          <span class="c"># catches every unclaimed install</span>
+
+<span class="c"># no label_selector, no install_ids: membership is</span>
+<span class="c"># "whatever the groups below did not match"</span>
+
+[[<span class="t">install_groups</span>]]
+<span class="k">name</span>  = <span class="s">"customers"</span>
+<span class="k">order</span> = <span class="s">2</span>
+
+[<span class="t">install_groups.label_selector</span>]
+<span class="k">env</span>  = <span class="s">"production"</span>
+<span class="k">tier</span> = <span class="s">"customer"</span>
+
+[[<span class="t">install_groups</span>]]
+<span class="k">name</span>  = <span class="s">"enterprise"</span>
+<span class="k">order</span> = <span class="s">3</span>
+
+[<span class="t">install_groups.label_selector</span>]
+<span class="k">env</span>  = <span class="s">"production"</span>
+<span class="k">tier</span> = <span class="s">"enterprise"</span>
+</pre>
+</div>
+</div>
+
+<h3>Rejected at sync and at save</h3>
+<div class="cols">
+<div>
+<pre><span class="c"># A default group cannot also select.</span>
+[[<span class="t">install_groups</span>]]
+<span class="k">name</span>    = <span class="s">"staging"</span>
+<span class="new">default = true</span>
+[<span class="t">install_groups.label_selector</span>]
+<span class="bad">env = "staging"</span>   <span class="c"># &larr; error</span>
+
+<span class="c">branch "main": install group "staging" is the</span>
+<span class="c">default group and cannot set label_selector,</span>
+<span class="c">install_ids, install_names, or all_installs</span>
+</pre>
+</div>
+<div>
+<pre><span class="c"># Only one default per branch.</span>
+[[<span class="t">install_groups</span>]]
+<span class="k">name</span>    = <span class="s">"staging"</span>
+<span class="new">default = true</span>
+
+[[<span class="t">install_groups</span>]]
+<span class="k">name</span>    = <span class="s">"canary"</span>
+<span class="bad">default = true</span>   <span class="c"># &larr; error</span>
+
+<span class="c">branch "main": install groups "canary" and</span>
+<span class="c">"staging" are both marked default; a branch</span>
+<span class="c">has at most one default group</span>
+</pre>
+</div>
+</div>
+
+<p class="lede" style="margin-top:4px">
+  Omitting <code>default</code> everywhere is the existing behaviour, unchanged: unmatched installs stay orphaned and the dashboard keeps warning about
+  them. Nothing about this is required to adopt.
+</p>
+
+<h2><span class="num">04</span>Marking the default in the deployment plan editor</h2>
+<p class="lede">
+  Same modal as today (<span class="file">DeploymentPlanEditor</span>), one new group-level control. It reads as a <strong>choice among groups</strong>,
+  not a per-group checkbox &mdash; marking a new default clears the old one in place, so the plan can never be saved with two.
+</p>
+
+<svg viewBox="0 0 1000 468" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <!-- modal shell -->
+  <rect x="20" y="14" width="960" height="440" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="44" y="46" fill="#f0f6fc" font-size="13.5" font-weight="700">Deployment plan</text>
+  <line x1="20" y1="62" x2="980" y2="62" stroke="#30363d"/>
+
+  <!-- group 1: default -->
+  <rect x="44" y="80" width="912" height="112" rx="8" fill="#0d1117" stroke="#7ee787" stroke-width="1.5"/>
+  <rect x="64" y="98" width="188" height="28" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="76" y="117" fill="#f0f6fc" font-size="11.5" font-weight="700" font-family="monospace">staging</text>
+  <rect x="264" y="100" width="72" height="24" rx="12" fill="#23863622" stroke="#7ee787"/>
+  <text x="300" y="116" text-anchor="middle" fill="#7ee787" font-size="10" font-weight="700">Default</text>
+  <text x="352" y="117" fill="#8b949e" font-size="10.5">order 1</text>
+
+  <!-- radio marked -->
+  <circle cx="712" cy="112" r="7" fill="#0d1117" stroke="#7ee787" stroke-width="2"/>
+  <circle cx="712" cy="112" r="3.2" fill="#7ee787"/>
+  <text x="728" y="116" fill="#7ee787" font-size="11" font-weight="600">Default group</text>
+  <rect x="890" y="98" width="28" height="28" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="904" y="118" text-anchor="middle" fill="#8b949e" font-size="13">&#8942;</text>
+
+  <line x1="64" y1="140" x2="936" y2="140" stroke="#21262d"/>
+  <text x="76" y="162" fill="#c9d1d9" font-size="11.5">Targeting controls are replaced by the fallback summary:</text>
+  <text x="76" y="180" fill="#8b949e" font-size="11">&ldquo;Installs on this branch that no other group matches. <tspan fill="#c9d1d9">4 installs today.</tspan>&rdquo;</text>
+
+  <!-- group 2 -->
+  <rect x="44" y="204" width="912" height="112" rx="8" fill="#0d1117" stroke="#30363d" stroke-width="1.5"/>
+  <rect x="64" y="222" width="188" height="28" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="76" y="241" fill="#f0f6fc" font-size="11.5" font-weight="700" font-family="monospace">customers</text>
+  <text x="264" y="241" fill="#8b949e" font-size="10.5">order 2</text>
+
+  <!-- toggle group manual/labels/all -->
+  <rect x="440" y="224" width="240" height="26" rx="6" fill="#161b22" stroke="#30363d"/>
+  <rect x="442" y="226" width="78" height="22" rx="5" fill="#0d1117"/>
+  <text x="481" y="241" text-anchor="middle" fill="#8b949e" font-size="10">Manual</text>
+  <rect x="520" y="226" width="78" height="22" rx="5" fill="#1f6feb33"/>
+  <text x="559" y="241" text-anchor="middle" fill="#58a6ff" font-size="10" font-weight="600">Labels</text>
+  <rect x="598" y="226" width="80" height="22" rx="5" fill="#0d1117"/>
+  <text x="638" y="241" text-anchor="middle" fill="#8b949e" font-size="10">All installs</text>
+
+  <circle cx="712" cy="236" r="7" fill="#0d1117" stroke="#8b949e" stroke-width="2"/>
+  <text x="728" y="240" fill="#8b949e" font-size="11">Default group</text>
+  <rect x="890" y="222" width="28" height="28" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="904" y="242" text-anchor="middle" fill="#8b949e" font-size="13">&#8942;</text>
+
+  <line x1="64" y1="264" x2="936" y2="264" stroke="#21262d"/>
+  <rect x="76" y="276" width="124" height="22" rx="11" fill="#1f6feb1a" stroke="#1f6feb66"/>
+  <text x="138" y="291" text-anchor="middle" fill="#79c0ff" font-size="10" font-family="monospace">env=production</text>
+  <rect x="210" y="276" width="110" height="22" rx="11" fill="#1f6feb1a" stroke="#1f6feb66"/>
+  <text x="265" y="291" text-anchor="middle" fill="#79c0ff" font-size="10" font-family="monospace">tier=customer</text>
+  <text x="340" y="292" fill="#8b949e" font-size="10.5">2 installs match today</text>
+
+  <!-- group 3 collapsed -->
+  <rect x="44" y="328" width="912" height="56" rx="8" fill="#0d1117" stroke="#30363d" stroke-width="1.5"/>
+  <text x="76" y="361" fill="#f0f6fc" font-size="11.5" font-weight="700" font-family="monospace">enterprise</text>
+  <text x="200" y="361" fill="#8b949e" font-size="10.5">order 3 &bull; <tspan font-family="monospace" fill="#79c0ff">env=production</tspan>, <tspan font-family="monospace" fill="#79c0ff">tier=enterprise</tspan></text>
+  <circle cx="712" cy="356" r="7" fill="#0d1117" stroke="#8b949e" stroke-width="2"/>
+  <text x="728" y="360" fill="#8b949e" font-size="11">Default group</text>
+
+  <line x1="20" y1="404" x2="980" y2="404" stroke="#30363d"/>
+  <rect x="44" y="418" width="104" height="26" rx="6" fill="#161b22" stroke="#30363d"/>
+  <text x="96" y="436" text-anchor="middle" fill="#c9d1d9" font-size="11">Add group</text>
+  <rect x="844" y="418" width="112" height="26" rx="6" fill="#6e40c9" stroke="#8957e5"/>
+  <text x="900" y="436" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="600">Save changes</text>
+</svg>
+
+<ul>
+  <li>Marking a group default <strong>clears its targeting</strong> in the editor and swaps the Manual / Labels / All installs control for the fallback summary. Unmarking it restores an empty Manual group.</li>
+  <li>The live count under the default group is the same effective-membership calculation the plan view uses, so the editor and the plan never disagree.</li>
+  <li>A default group is the one group that <strong>may legitimately be empty</strong>. It is exempt from &ldquo;a group can&rsquo;t be saved empty&rdquo;.</li>
+</ul>
+
+<h2><span class="num">05</span>Creating an install: the group step disappears</h2>
+<p class="lede">
+  Today the flow is <strong>branch &rarr; details &rarr; pick a group</strong>, where the group picker exists to apply the labels that would make the
+  install match something. On a branch with a default group, the picker has nothing to ask: the install already has a home, and labels &mdash; entered
+  on the details step like any other label &mdash; decide whether it stays there.
+</p>
+
+<svg viewBox="0 0 1000 400" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <!-- step 1 -->
+  <rect x="16" y="20" width="300" height="248" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="36" y="46" fill="#58a6ff" font-size="11" font-weight="700" letter-spacing=".5">STEP 1 &mdash; SELECT BRANCH</text>
+  <rect x="36" y="60" width="260" height="56" rx="7" fill="#1f6feb1a" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="52" y="82" fill="#f0f6fc" font-size="11.5" font-weight="700" font-family="monospace">main</text>
+  <text x="52" y="100" fill="#8b949e" font-size="10">3 groups &bull; default: <tspan fill="#7ee787" font-family="monospace">staging</tspan></text>
+  <rect x="250" y="70" width="34" height="18" rx="9" fill="#23863622" stroke="#7ee787"/>
+  <text x="267" y="83" text-anchor="middle" fill="#7ee787" font-size="9" font-weight="700">&#10003;</text>
+
+  <rect x="36" y="124" width="260" height="56" rx="7" fill="#0d1117" stroke="#30363d"/>
+  <text x="52" y="146" fill="#c9d1d9" font-size="11.5" font-weight="600" font-family="monospace">tagged-release</text>
+  <text x="52" y="164" fill="#8b949e" font-size="10">1 group &bull; no default group</text>
+
+  <rect x="36" y="188" width="260" height="56" rx="7" fill="#0d1117" stroke="#30363d"/>
+  <text x="52" y="210" fill="#c9d1d9" font-size="11.5" font-weight="600" font-family="monospace">labeled-release</text>
+  <text x="52" y="228" fill="#8b949e" font-size="10">1 group &bull; no default group</text>
+
+  <line x1="316" y1="144" x2="348" y2="144" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <!-- step 2 -->
+  <rect x="352" y="20" width="300" height="248" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="372" y="46" fill="#58a6ff" font-size="11" font-weight="700" letter-spacing=".5">STEP 2 &mdash; DETAILS &amp; LABELS</text>
+  <rect x="372" y="60" width="260" height="26" rx="6" fill="#0d1117" stroke="#30363d"/>
+  <text x="384" y="78" fill="#c9d1d9" font-size="10.5" font-family="monospace">acme-payments</text>
+  <rect x="372" y="94" width="260" height="26" rx="6" fill="#0d1117" stroke="#30363d"/>
+  <text x="384" y="112" fill="#8b949e" font-size="10.5">us-west-2</text>
+
+  <text x="372" y="140" fill="#8b949e" font-size="10" letter-spacing=".4">LABELS (OPTIONAL)</text>
+  <rect x="372" y="148" width="260" height="26" rx="6" fill="#0d1117" stroke="#30363d"/>
+  <text x="384" y="166" fill="#8b949e" font-size="10.5" font-style="italic">env=production &mdash; press Enter to add</text>
+
+  <rect x="372" y="188" width="260" height="56" rx="7" fill="#23863614" stroke="#7ee787" stroke-width="1.5"/>
+  <text x="388" y="208" fill="#7ee787" font-size="10" font-weight="700" letter-spacing=".4">DEPLOYS WITH</text>
+  <text x="388" y="228" fill="#c9d1d9" font-size="11.5" font-family="monospace">staging</text>
+  <rect x="468" y="216" width="56" height="16" rx="8" fill="#23863622" stroke="#7ee787"/>
+  <text x="496" y="228" text-anchor="middle" fill="#7ee787" font-size="8.5" font-weight="700">Default</text>
+
+  <line x1="652" y1="144" x2="684" y2="144" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <!-- step 3 -->
+  <rect x="688" y="20" width="296" height="248" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="708" y="46" fill="#8b949e" font-size="11" font-weight="700" letter-spacing=".5">STEP 3 &mdash; PICK A GROUP</text>
+  <rect x="708" y="80" width="248" height="120" rx="8" fill="#0d1117" stroke="#30363d" stroke-dasharray="4,4"/>
+  <text x="832" y="128" text-anchor="middle" fill="#8b949e" font-size="12" font-weight="700">Skipped</text>
+  <text x="832" y="150" text-anchor="middle" fill="#8b949e" font-size="10.5">this branch has a default group</text>
+  <text x="832" y="167" text-anchor="middle" fill="#8b949e" font-size="10.5">&mdash; there is nothing to choose</text>
+  <text x="832" y="226" text-anchor="middle" fill="#8b949e" font-size="10.5">Create runs straight from step 2</text>
+
+  <!-- fallback path -->
+  <rect x="16" y="292" width="968" height="92" rx="10" fill="#0d1117" stroke="#30363d" stroke-width="1.5"/>
+  <text x="40" y="318" fill="#f0883e" font-size="11" font-weight="700" letter-spacing=".5">BRANCH WITHOUT A DEFAULT GROUP &mdash; UNCHANGED</text>
+  <text x="40" y="342" fill="#c9d1d9" font-size="11.5">Step 3 still appears: pick a label-selected group to join (applying its labels), or choose <tspan font-family="monospace" fill="#79c0ff">No group</tspan>.</text>
+  <text x="40" y="364" fill="#8b949e" font-size="11">Choosing no group produces the orphaned install this feature exists to avoid &mdash; which is the nudge toward configuring a default.</text>
+</svg>
+
+<div class="callout good">
+  <div class="hd">The preview is a hint, not the decision</div>
+  &ldquo;Deploys with <code>staging</code>&rdquo; on step 2 is computed client-side from the labels in the form against the branch&rsquo;s current plan.
+  The install is created with labels only &mdash; never with a group ID &mdash; and the server resolves membership at run time. If someone edits the
+  plan between the preview and the run, the run is right and the preview was stale, which is the correct direction for that race.
+</div>
+
+<h2><span class="num">06</span>Presenting the plan</h2>
+<p class="lede">
+  The default group renders as a group like any other, with a <code>Default</code> badge and the installs currently falling through to it. The
+  <strong>Orphaned</strong> block only appears on branches with no default &mdash; with one configured, there is nothing left to orphan.
+</p>
+
+<svg viewBox="0 0 1000 368" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <text x="16" y="28" fill="#8b949e" font-size="11" font-weight="700" letter-spacing=".5">DEPLOYMENT PLAN &mdash; BRANCH <tspan fill="#79c0ff" font-family="monospace">main</tspan></text>
+
+  <!-- group 1 -->
+  <rect x="16" y="44" width="300" height="200" rx="9" fill="#161b22" stroke="#7ee787" stroke-width="1.5"/>
+  <text x="36" y="70" fill="#f0f6fc" font-size="12" font-weight="700" font-family="monospace">staging</text>
+  <rect x="120" y="56" width="58" height="18" rx="9" fill="#23863622" stroke="#7ee787"/>
+  <text x="149" y="69" text-anchor="middle" fill="#7ee787" font-size="9" font-weight="700">Default</text>
+  <text x="280" y="70" text-anchor="end" fill="#8b949e" font-size="10">order 1</text>
+  <text x="36" y="90" fill="#8b949e" font-size="10">Installs no other group matches</text>
+
+  <rect x="32" y="102" width="268" height="26" rx="6" fill="#0d1117" stroke="#21262d"/>
+  <text x="46" y="119" fill="#58a6ff" font-size="10.5">acme-payments</text>
+  <text x="286" y="119" text-anchor="end" fill="#8b949e" font-size="9">no labels</text>
+  <rect x="32" y="134" width="268" height="26" rx="6" fill="#0d1117" stroke="#21262d"/>
+  <text x="46" y="151" fill="#58a6ff" font-size="10.5">globex-eu</text>
+  <text x="286" y="151" text-anchor="end" fill="#8b949e" font-size="9">no labels</text>
+  <rect x="32" y="166" width="268" height="26" rx="6" fill="#0d1117" stroke="#21262d"/>
+  <text x="46" y="183" fill="#58a6ff" font-size="10.5">initech-dev</text>
+  <text x="286" y="183" text-anchor="end" fill="#8b949e" font-size="9" font-family="monospace">env=staging</text>
+  <rect x="32" y="198" width="268" height="26" rx="6" fill="#0d1117" stroke="#21262d"/>
+  <text x="46" y="215" fill="#58a6ff" font-size="10.5">umbrella-qa</text>
+  <text x="286" y="215" text-anchor="end" fill="#8b949e" font-size="9" font-family="monospace">env=staging</text>
+
+  <line x1="316" y1="144" x2="348" y2="144" stroke="#8b949e" stroke-width="2" marker-end="url(#a-grey)"/>
+
+  <!-- group 2 -->
+  <rect x="352" y="44" width="300" height="200" rx="9" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="372" y="70" fill="#f0f6fc" font-size="12" font-weight="700" font-family="monospace">customers</text>
+  <text x="616" y="70" text-anchor="end" fill="#8b949e" font-size="10">order 2</text>
+  <rect x="372" y="80" width="112" height="18" rx="9" fill="#1f6feb1a" stroke="#1f6feb66"/>
+  <text x="428" y="93" text-anchor="middle" fill="#79c0ff" font-size="9" font-family="monospace">env=production</text>
+  <rect x="490" y="80" width="98" height="18" rx="9" fill="#1f6feb1a" stroke="#1f6feb66"/>
+  <text x="539" y="93" text-anchor="middle" fill="#79c0ff" font-size="9" font-family="monospace">tier=customer</text>
+
+  <rect x="368" y="110" width="268" height="26" rx="6" fill="#0d1117" stroke="#21262d"/>
+  <text x="382" y="127" fill="#58a6ff" font-size="10.5">ramp-prod</text>
+  <rect x="368" y="142" width="268" height="26" rx="6" fill="#0d1117" stroke="#21262d"/>
+  <text x="382" y="159" fill="#58a6ff" font-size="10.5">lenovo-prod</text>
+
+  <line x1="652" y1="144" x2="684" y2="144" stroke="#8b949e" stroke-width="2" marker-end="url(#a-grey)"/>
+
+  <!-- group 3 -->
+  <rect x="688" y="44" width="296" height="200" rx="9" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="708" y="70" fill="#f0f6fc" font-size="12" font-weight="700" font-family="monospace">enterprise</text>
+  <text x="960" y="70" text-anchor="end" fill="#8b949e" font-size="10">order 3</text>
+  <rect x="708" y="80" width="112" height="18" rx="9" fill="#1f6feb1a" stroke="#1f6feb66"/>
+  <text x="764" y="93" text-anchor="middle" fill="#79c0ff" font-size="9" font-family="monospace">env=production</text>
+  <rect x="826" y="80" width="104" height="18" rx="9" fill="#1f6feb1a" stroke="#1f6feb66"/>
+  <text x="878" y="93" text-anchor="middle" fill="#79c0ff" font-size="9" font-family="monospace">tier=enterprise</text>
+
+  <rect x="704" y="110" width="264" height="26" rx="6" fill="#0d1117" stroke="#21262d"/>
+  <text x="718" y="127" fill="#58a6ff" font-size="10.5">sony-prod</text>
+
+  <!-- footnote panel -->
+  <rect x="16" y="264" width="968" height="88" rx="9" fill="#0d1117" stroke="#30363d" stroke-width="1.5"/>
+  <text x="40" y="290" fill="#c9d1d9" font-size="11.5"><tspan font-weight="600">Note the two kinds of member in</tspan> <tspan font-family="monospace" fill="#79c0ff">staging</tspan><tspan font-weight="600">.</tspan></text>
+  <text x="40" y="312" fill="#8b949e" font-size="11"><tspan fill="#c9d1d9" font-family="monospace">acme-payments</tspan>, <tspan fill="#c9d1d9" font-family="monospace">globex-eu</tspan> &mdash; brand new, no labels, caught by the fallback.</text>
+  <text x="40" y="332" fill="#8b949e" font-size="11"><tspan fill="#c9d1d9" font-family="monospace">initech-dev</tspan>, <tspan fill="#c9d1d9" font-family="monospace">umbrella-qa</tspan> &mdash; deliberately labeled <tspan font-family="monospace" fill="#79c0ff">env=staging</tspan>, which no other group asks for, so they land here too.</text>
+</svg>
+
+<h2><span class="num">07</span>Promotion out of the default</h2>
+<p class="lede">
+  Nothing is &ldquo;moved&rdquo;. Labels change, the next resolution finds a non-default match, and the install deploys from that group instead &mdash;
+  in that group&rsquo;s order, with that group&rsquo;s approval and auto-approve settings.
+</p>
+
+<svg viewBox="0 0 1000 232" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <rect x="16" y="24" width="252" height="96" rx="9" fill="#23863614" stroke="#7ee787" stroke-width="1.5"/>
+  <text x="142" y="52" text-anchor="middle" fill="#7ee787" font-size="11.5" font-weight="700">In the default group</text>
+  <text x="142" y="74" text-anchor="middle" fill="#c9d1d9" font-size="11" font-family="monospace">acme-payments</text>
+  <text x="142" y="94" text-anchor="middle" fill="#8b949e" font-size="10">no labels &bull; deploys with <tspan font-family="monospace" fill="#79c0ff">staging</tspan></text>
+  <text x="142" y="110" text-anchor="middle" fill="#8b949e" font-size="10">order 1</text>
+
+  <line x1="268" y1="72" x2="326" y2="72" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <rect x="330" y="24" width="340" height="96" rx="9" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+  <text x="500" y="50" text-anchor="middle" fill="#f0f6fc" font-size="11.5" font-weight="600">Label it, however you label anything</text>
+  <rect x="352" y="62" width="296" height="24" rx="6" fill="#0d1117" stroke="#30363d"/>
+  <text x="364" y="79" fill="#79c0ff" font-size="10" font-family="monospace">nuon installs labels set -i acme-payments \</text>
+  <text x="364" y="105" fill="#79c0ff" font-size="10" font-family="monospace">  env=production tier=enterprise</text>
+
+  <line x1="670" y1="72" x2="728" y2="72" stroke="#58a6ff" stroke-width="2" marker-end="url(#a-blue)"/>
+
+  <rect x="732" y="24" width="252" height="96" rx="9" fill="#bc8cff14" stroke="#d2a8ff" stroke-width="1.5"/>
+  <text x="858" y="52" text-anchor="middle" fill="#d2a8ff" font-size="11.5" font-weight="700">Promoted on next run</text>
+  <text x="858" y="74" text-anchor="middle" fill="#c9d1d9" font-size="11" font-family="monospace">acme-payments</text>
+  <text x="858" y="94" text-anchor="middle" fill="#8b949e" font-size="10">deploys with <tspan font-family="monospace" fill="#79c0ff">enterprise</tspan></text>
+  <text x="858" y="110" text-anchor="middle" fill="#8b949e" font-size="10">order 3 &bull; leaves the default group</text>
+
+  <rect x="16" y="144" width="968" height="72" rx="9" fill="#161b22" stroke="#30363d"/>
+  <text x="40" y="170" fill="#c9d1d9" font-size="11.5" font-weight="600">Demotion is the same mechanism in reverse.</text>
+  <text x="40" y="192" fill="#8b949e" font-size="11">Unset <tspan font-family="monospace" fill="#79c0ff">tier</tspan> and the install stops matching <tspan font-family="monospace" fill="#79c0ff">enterprise</tspan>; the next resolution drops it back into the default group rather than orphaning it.</text>
+  <text x="40" y="210" fill="#8b949e" font-size="11">Without a default group, that same unset is a silent exit from every run &mdash; the failure mode this removes.</text>
+</svg>
+
+<h2><span class="num">08</span>Rules at a glance</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width:30%">Situation</th>
+      <th>Behaviour</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="mode">default = true<br><span style="color:#8b949e;font-size:11px">on one group</span></td>
+      <td>Allowed. That group holds every install the branch owns that no other group matches.</td>
+    </tr>
+    <tr>
+      <td class="mode">default on two groups</td>
+      <td><span class="no">Rejected</span> at config sync and at plan save. The editor makes it unreachable by treating default as a single choice across groups.</td>
+    </tr>
+    <tr>
+      <td class="mode">default + label_selector<br><span style="color:#8b949e;font-size:11px">or install_ids / all_installs</span></td>
+      <td><span class="no">Rejected.</span> A default group is a pure fallback; mixing the two makes &ldquo;which installs are here&rdquo; unanswerable without precedence rules nobody asked for.</td>
+    </tr>
+    <tr>
+      <td class="mode">no default group</td>
+      <td><span class="yes">Unchanged.</span> Unmatched installs are orphaned and the plan keeps warning about them. Every existing branch keeps working untouched.</td>
+    </tr>
+    <tr>
+      <td class="mode">default group is empty</td>
+      <td>Fine, and expected on a fully-labeled fleet. It is exempt from the &ldquo;a group can&rsquo;t be saved empty&rdquo; rule and its run steps are a no-op.</td>
+    </tr>
+    <tr>
+      <td class="mode">install matches two<br>non-default groups</td>
+      <td><span class="no">Still an error.</span> The default group is a fallback, not a tie-breaker &mdash; ambiguity between real selectors keeps failing loudly.</td>
+    </tr>
+    <tr>
+      <td class="mode">preview runs</td>
+      <td>Unaffected. Preview targets come from <code>preview.install_id</code> / <code>preview.label_selector</code> and never consult install groups.</td>
+    </tr>
+    <tr>
+      <td class="mode">install moved to<br>another branch</td>
+      <td>Resolution starts from branch-owned installs, so an install only ever falls into the default group <strong>of the branch that owns it</strong>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="hd">Open question worth settling before build</div>
+  Should the default group be allowed to carry <code>auto_approve_on_policies_passing = true</code>? It is the group that will contain installs nobody
+  has classified yet, so auto-approving it is the most convenient setting and the easiest one to regret. Leaving it configurable (defaulting off) is the
+  proposal here, but a hard block is defensible.
+</div>
+
+</div>
+
+<footer>
+  App branch default install group &mdash; UX and config flow.<br>
+  Example config adapted from <span class="file">~/nuon/kitchen-sink/branches/default.toml</span>; install names are illustrative.
+</footer>
+
+</body>
+</html>
