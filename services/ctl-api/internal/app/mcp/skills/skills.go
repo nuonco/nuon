@@ -16,6 +16,11 @@ import (
 //go:embed apps/*.md
 var files embed.FS
 
+// Instructions is included in MCP server instructions so clients call
+// list_skills for tasks a skill covers (e.g. writing or updating a README)
+// instead of guessing at conventions from scratch.
+const Instructions = "Before writing or updating an app config, app/runbook README, or other app-config artifact, call list_skills to check for a relevant skill, then load_skill for the full guide."
+
 // Skill is one focused how-to guide, scoped to a domain.
 type Skill struct {
 	Domain      string

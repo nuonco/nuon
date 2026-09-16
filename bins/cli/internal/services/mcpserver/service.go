@@ -154,10 +154,20 @@ func (s *Service) buildProxyServer(ctx context.Context, upstream *mcp.ClientSess
 		return nil, fmt.Errorf("listing upstream tools: %w", err)
 	}
 
+	// Carry upstream's Instructions (e.g. the skills pointer) onto the local
+	// proxy server — it's only sent to clients on initialize, so it doesn't
+	// show up in ListTools/ListResources and must be forwarded explicitly.
+	var instructions string
+	if init := upstream.InitializeResult(); init != nil {
+		instructions = init.Instructions
+	}
+
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    s.serverName(),
 		Version: version.Version,
-	}, nil)
+	}, &mcp.ServerOptions{
+		Instructions: instructions,
+	})
 
 	for _, tool := range res.Tools {
 		if !s.allowWrites && isWriteTool(tool) {
