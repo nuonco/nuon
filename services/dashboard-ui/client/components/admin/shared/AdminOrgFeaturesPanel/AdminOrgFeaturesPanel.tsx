@@ -1,5 +1,8 @@
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/common/Button'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
+import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
@@ -29,6 +32,17 @@ export const AdminOrgFeaturesPanel = ({
   size = 'half',
   ...props
 }: IAdminOrgFeaturesPanel) => {
+  const [query, setQuery] = useState('')
+  const features = useMemo(
+    () => [...featuresList].reverse(),
+    [featuresList]
+  )
+  const match = query.trim().toLowerCase()
+  const visibleCount = match
+    ? features.filter((feature) => feature.name.toLowerCase().includes(match))
+        .length
+    : features.length
+
   return (
     <Panel
       heading={
@@ -38,6 +52,25 @@ export const AdminOrgFeaturesPanel = ({
         </div>
       }
       size={size}
+      footer={
+        isLoading || featuresList.length > 0 ? (
+          <Button
+            type="submit"
+            form="features-form"
+            disabled={isSubmitting || isLoading}
+            variant="primary"
+          >
+            {isSubmitting ? (
+              <>
+                <Icon variant="Loading" className="animate-spin" />
+                Updating...
+              </>
+            ) : (
+              'Update features'
+            )}
+          </Button>
+        ) : null
+      }
       {...props}
     >
       <div className="@container flex flex-col gap-6">
@@ -63,16 +96,41 @@ export const AdminOrgFeaturesPanel = ({
                 </div>
               ))}
             </div>
-            <div className="flex justify-end pt-4 border-t">
-              <Skeleton className="h-10 w-32" />
-            </div>
           </div>
         ) : featuresList.length > 0 ? (
-          <form id="features-form" onSubmit={onSubmit}>
-            <div className="grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 gap-4">
-              {[...featuresList].reverse().map((feature) => (
-                <CheckboxInput
+          <form id="features-form" onSubmit={onSubmit} className="flex flex-col gap-4">
+            <SearchInput
+              aria-label="Search feature flags"
+              labelClassName="w-full max-w-full"
+              className="w-full md:min-w-0"
+              placeholder="Search by flag name"
+              value={query}
+              onChange={setQuery}
+              onClear={() => setQuery('')}
+            />
+            {visibleCount === 0 ? (
+              <EmptyState
+                variant="table"
+                emptyTitle="No flags match this search"
+                emptyMessage="Clear the search to see all feature flags."
+              />
+            ) : null}
+            <div
+              className={cn(
+                'grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 gap-4',
+                visibleCount === 0 && 'hidden'
+              )}
+            >
+              {features.map((feature) => (
+                <div
                   key={feature.name}
+                  className={
+                    match && !feature.name.toLowerCase().includes(match)
+                      ? 'hidden'
+                      : undefined
+                  }
+                >
+                <CheckboxInput
                   name={feature.name}
                   defaultChecked={feature.forced || org?.features?.[feature.name] || false}
                   disabled={feature.forced}
@@ -100,23 +158,8 @@ export const AdminOrgFeaturesPanel = ({
                     ),
                   }}
                 />
+                </div>
               ))}
-            </div>
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-              <Button
-                type="submit"
-                disabled={isSubmitting || isLoading}
-                variant="primary"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Icon variant="Loading" className="animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  'Update features'
-                )}
-              </Button>
             </div>
           </form>
         ) : (
