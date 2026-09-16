@@ -335,7 +335,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			install.PATCH("/admin-update-runner", s.AdminUpdateInstallRunner)
 			install.POST("/admin-reconcile-entities", s.AdminReconcileInstallEntities)
 			install.POST("/admin-generate-state", s.AdminInstallGenerateInstallState)
-			install.POST("/admin-generate-state-v2", s.AdminInstallGenerateInstallStateV2)
 
 			// NOTE(JM): the following endpoints should be removed after workflows/independent runners are rolled out
 			install.POST("/admin-reprovision", s.ReprovisionInstall)
