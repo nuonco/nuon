@@ -6,14 +6,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 func (s *Seeder) EnsureOrg(ctx context.Context, t *testing.T) context.Context {
 	org := app.Org{
-		Name:        generics.GetFakeObj[string](),
+		Name:        FakeString(),
 		OrgType:     app.OrgTypeSandbox,
 		Status:      app.OrgStatusActive,
 		SandboxMode: false,
