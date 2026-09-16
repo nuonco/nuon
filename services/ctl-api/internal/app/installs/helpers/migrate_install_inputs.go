@@ -6,10 +6,11 @@ import (
 	"sort"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 // MigrateInstallInputsToNewConfig creates new InstallInputs records for installs

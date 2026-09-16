@@ -36,12 +36,15 @@ export const BranchRunComparisonRuns = ({
   currentGithubHref,
 }: IBranchRunComparisonRuns) => {
   const hasBaseline = !!baseRun?.id
+  const targetBranch = headRun?.base_branch
 
   return (
     <div className="flex flex-col gap-2">
       {!hasBaseline ? (
         <Text variant="subtext" theme="neutral">
-          First run on this branch — no previous baseline to compare against.
+          {targetBranch
+            ? `No previous run found on ${targetBranch} to compare against.`
+            : 'First run on this branch — no previous baseline to compare against.'}
         </Text>
       ) : null}
 
@@ -55,11 +58,20 @@ export const BranchRunComparisonRuns = ({
             <BranchRunComparisonCard
               label="Previous run"
               run={baseRun}
-              runHref={runDetailHref(orgId, appId, branchId, baseRun?.workflow_id)}
+              runHref={runDetailHref(
+                orgId,
+                appId,
+                branchId,
+                baseRun?.workflow_id
+              )}
               repoSlug={repoSlug}
             />
             <div className="hidden md:flex items-center justify-center px-1">
-              <Icon variant="ArrowRightIcon" size={20} className="text-cool-grey-400" />
+              <Icon
+                variant="ArrowRightIcon"
+                size={20}
+                className="text-cool-grey-400"
+              />
             </div>
           </>
         ) : null}

@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"gorm.io/gorm/clause"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type DeleteInstallComponentRequest struct {

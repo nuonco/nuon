@@ -25,6 +25,8 @@ type AppBranchPreviewConfig struct {
 	LabelSelector map[string]string `mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
 	SetStatuses   *bool             `mapstructure:"set_statuses,omitempty" toml:"set_statuses,omitempty"`
 	Comment       *bool             `mapstructure:"comment,omitempty" toml:"comment,omitempty"`
+	IgnoreDrafts  *bool             `mapstructure:"ignore_drafts,omitempty" toml:"ignore_drafts,omitempty"`
+	React         *bool             `mapstructure:"react,omitempty" toml:"react,omitempty"`
 }
 
 func (c AppBranchPreviewConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -34,6 +36,8 @@ func (c AppBranchPreviewConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "label_selector", "label key-value pairs to select the default preview install")
 	addDescription(schema, "set_statuses", "whether to set GitHub commit statuses for preview runs")
 	addDescription(schema, "comment", "whether to comment on the pull request with preview results")
+	addDescription(schema, "ignore_drafts", "skip preview runs for draft pull requests until they are marked ready for review. Defaults to true")
+	addDescription(schema, "react", "whether to add a GitHub eyes reaction when a preview run starts. Defaults to true")
 }
 
 func (c AppBranchInstallGroupConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

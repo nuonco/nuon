@@ -56,7 +56,17 @@ func (s *Signal) handlePushEvent(ctx workflow.Context, l *zap.Logger, connEvent 
 	l.Info(fmt.Sprintf("processing push event for repo=%s branch=%s vcs_connection=%s",
 		pushInfo.Repo, pushInfo.Branch, connEvent.VCSConnectionID))
 
-	return s.fanOutToAppBranches(ctx, l, connEvent, pushInfo.Repo, pushInfo.Branch, false, "push", nil, pushInfo.HeadSHA, "", pushInfo.BeforeSHA, pushInfo.PusherEmails, pushInfo.SenderLogin, pushInfo.ChangedFiles)
+	return s.fanOutToAppBranches(ctx, l, connEvent, fanOutRequest{
+		Repo:         pushInfo.Repo,
+		Branch:       pushInfo.Branch,
+		PlanOnly:     false,
+		EventType:    "push",
+		HeadSHA:      pushInfo.HeadSHA,
+		BaseSHA:      pushInfo.BeforeSHA,
+		PusherEmails: pushInfo.PusherEmails,
+		SenderLogin:  pushInfo.SenderLogin,
+		ChangedFiles: pushInfo.ChangedFiles,
+	})
 }
 
 func (s *Signal) handlePullRequestEvent(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, event *app.GithubEvent, payload map[string]any) error {
@@ -66,22 +76,48 @@ func (s *Signal) handlePullRequestEvent(ctx workflow.Context, l *zap.Logger, con
 		return nil
 	}
 
-	if prInfo.Action != "opened" && prInfo.Action != "synchronize" {
+	if prInfo.Action != "opened" && prInfo.Action != "synchronize" && prInfo.Action != "ready_for_review" {
 		l.Info(fmt.Sprintf("ignoring pull_request action: %s", prInfo.Action))
 		return nil
 	}
 
-	l.Info(fmt.Sprintf("processing pull_request event for repo=%s base=%s pr=%d head=%s vcs_connection=%s",
-		prInfo.Repo, prInfo.BaseBranch, prInfo.PRNumber, prInfo.HeadSHA, connEvent.VCSConnectionID))
+	l.Info(fmt.Sprintf("processing pull_request event for repo=%s base=%s pr=%d head=%s ref=%s draft=%t vcs_connection=%s",
+		prInfo.Repo, prInfo.BaseBranch, prInfo.PRNumber, prInfo.HeadSHA, prInfo.HeadRef, prInfo.Draft, connEvent.VCSConnectionID))
 
-	return s.fanOutToAppBranches(ctx, l, connEvent, prInfo.Repo, prInfo.BaseBranch, true, "pull_request", &prInfo.PRNumber, prInfo.HeadSHA, prInfo.BaseBranch, "", nil, "", nil)
+	return s.fanOutToAppBranches(ctx, l, connEvent, fanOutRequest{
+		Repo:       prInfo.Repo,
+		Branch:     prInfo.BaseBranch,
+		PlanOnly:   true,
+		EventType:  "pull_request",
+		PRNumber:   &prInfo.PRNumber,
+		HeadSHA:    prInfo.HeadSHA,
+		HeadRef:    prInfo.HeadRef,
+		BaseBranch: prInfo.BaseBranch,
+		Draft:      prInfo.Draft,
+	})
 }
 
-func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, repo, branch string, planOnly bool, eventType string, prNumber *int, headSHA, baseBranch, baseSHA string, pusherEmails []string, senderLogin string, changedFiles []string) error {
+type fanOutRequest struct {
+	Repo         string
+	Branch       string
+	PlanOnly     bool
+	EventType    string
+	PRNumber     *int
+	HeadSHA      string
+	HeadRef      string
+	BaseBranch   string
+	BaseSHA      string
+	PusherEmails []string
+	SenderLogin  string
+	ChangedFiles []string
+	Draft        bool
+}
+
+func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, req fanOutRequest) error {
 	matches, err := activities.AwaitFindMatchingAppBranches(ctx, activities.FindMatchingAppBranchesRequest{
 		OrgID:  connEvent.OrgID,
-		Repo:   repo,
-		Branch: branch,
+		Repo:   req.Repo,
+		Branch: req.Branch,
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to find matching app branches")
@@ -94,29 +130,31 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 			Signal: &vcspush.Signal{
 				AppBranchID:         match.AppBranchID,
 				AppBranchConfigID:   match.AppBranchConfigID,
-				PlanOnly:            planOnly,
-				EventType:           eventType,
-				PRNumber:            prNumber,
-				HeadSHA:             headSHA,
-				BaseBranch:          baseBranch,
-				BaseSHA:             baseSHA,
-				ChangedFiles:        changedFiles,
-				PusherEmails:        pusherEmails,
-				SenderLogin:         senderLogin,
+				PlanOnly:            req.PlanOnly,
+				EventType:           req.EventType,
+				PRNumber:            req.PRNumber,
+				HeadSHA:             req.HeadSHA,
+				HeadRef:             req.HeadRef,
+				BaseBranch:          req.BaseBranch,
+				BaseSHA:             req.BaseSHA,
+				ChangedFiles:        req.ChangedFiles,
+				PusherEmails:        req.PusherEmails,
+				SenderLogin:         req.SenderLogin,
 				FallbackCreatedByID: connEvent.CreatedByID,
+				Draft:               req.Draft,
 			},
 		})
 		if err != nil {
 			l.Error(fmt.Sprintf("failed to enqueue vcs-push signal for app branch %s: %v", match.AppBranchID, err))
 			continue
 		}
-		l.Info(fmt.Sprintf("enqueued vcs-push signal for app branch %s (event_type=%s)", match.AppBranchID, eventType))
+		l.Info(fmt.Sprintf("enqueued vcs-push signal for app branch %s (event_type=%s)", match.AppBranchID, req.EventType))
 	}
 
 	installSyncMatches, err := activities.AwaitFindMatchingInstallSyncApps(ctx, activities.FindMatchingInstallSyncAppsRequest{
 		OrgID:  connEvent.OrgID,
-		Repo:   repo,
-		Branch: branch,
+		Repo:   req.Repo,
+		Branch: req.Branch,
 	})
 	if err != nil {
 		l.Error(fmt.Sprintf("failed to find matching install sync apps: %v", err))
@@ -129,7 +167,7 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 			QueueName: appshelpers.AppInstallSyncsQueueName,
 			Signal: &syncinstalls.Signal{
 				AppID:               match.AppID,
-				CommitSHA:           headSHA,
+				CommitSHA:           req.HeadSHA,
 				TriggeredBy:         "vcs-push",
 				FallbackCreatedByID: connEvent.CreatedByID,
 			},

@@ -117,6 +117,36 @@ func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingFalseForSynt
 	s.False(result)
 }
 
+func (s *PlanInstallGroupTestSuite) TestPreviewLabelSelectorResolvesOnlyMatchingInstalls() {
+	selector := &labels.Selector{MatchLabels: labels.Labels{"env": "staging"}}
+	sig := &Signal{
+		PreviewLabelSelector: selector,
+		SyntheticGroupName:   "preview",
+		AppBranchID:          "branch-1",
+		RunID:                "run-1",
+	}
+
+	s.env.OnActivity((*activities.Activities).AppBranchesGetAppBranchByID, mock.Anything, mock.Anything, mock.Anything).Return(
+		&app.AppBranch{ID: "branch-1", AppID: "app-1"},
+		nil,
+	)
+	s.env.OnActivity((*activities.Activities).ResolveInstallGroupInstalls, mock.Anything, mock.Anything, mock.Anything).Return(
+		&activities.ResolveInstallGroupInstallsOutput{InstallIDs: []string{"install-1", "install-2"}},
+		nil,
+	)
+
+	s.env.ExecuteWorkflow(func(ctx workflow.Context) ([]string, error) {
+		installIDs, _, err := sig.resolveInstallIDs(ctx)
+		return installIDs, err
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+	var installIDs []string
+	s.NoError(s.env.GetWorkflowResult(&installIDs))
+	s.Equal([]string{"install-1", "install-2"}, installIDs)
+}
+
 func (s *PlanInstallGroupTestSuite) TestEmptyInstallGroup() {
 	sig := &Signal{
 		InstallGroupID: "group-1",
@@ -137,6 +167,12 @@ func (s *PlanInstallGroupTestSuite) TestEmptyInstallGroup() {
 			Name:       "prod",
 			InstallIDs: []string{},
 		}, nil)
+
+	s.env.OnActivity((*activities.Activities).AppBranchesGetAppBranchByID, mock.Anything, mock.Anything, mock.Anything).Return(
+		&app.AppBranch{ID: "branch-1", AppID: "app-1"}, nil)
+
+	s.env.OnActivity((*activities.Activities).ResolveInstallGroupInstalls, mock.Anything, mock.Anything, mock.Anything).Return(
+		&activities.ResolveInstallGroupInstallsOutput{InstallIDs: []string{}}, nil)
 
 	s.env.ExecuteWorkflow(sig.Execute)
 
@@ -164,6 +200,12 @@ func (s *PlanInstallGroupTestSuite) TestNoStepIDSkipsApproval() {
 			Name:       "prod",
 			InstallIDs: []string{"install-1"},
 		}, nil)
+
+	s.env.OnActivity((*activities.Activities).AppBranchesGetAppBranchByID, mock.Anything, mock.Anything, mock.Anything).Return(
+		&app.AppBranch{ID: "branch-1", AppID: "app-1"}, nil)
+
+	s.env.OnActivity((*activities.Activities).ResolveInstallGroupInstalls, mock.Anything, mock.Anything, mock.Anything).Return(
+		&activities.ResolveInstallGroupInstallsOutput{InstallIDs: []string{"install-1"}}, nil)
 
 	s.env.OnActivity("GetInstall", mock.Anything, mock.Anything).Return(
 		&app.Install{

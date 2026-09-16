@@ -5,11 +5,12 @@ import (
 	"strings"
 	"testing"
 
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
-	"go.uber.org/zap"
 )
 
 func ptr(s string) *string { return &s }

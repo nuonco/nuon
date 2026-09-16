@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"charm.land/bubbles/v2/viewport"
+
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
