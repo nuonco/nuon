@@ -20,6 +20,7 @@ import {
   installCloudLocation,
   installStatusFacets,
 } from '../../../utils/install-details'
+import { installSetupHref } from '../../../utils/hrefs'
 
 export type TLabelColors = Record<string, Record<string, string>>
 
@@ -45,13 +46,16 @@ export interface IInstallsTable {
   labelFilter?: IInstallFilter
   branchFilter?: IInstallFilter
   labelColors?: TLabelColors
+  incompleteIds?: ReadonlySet<string>
   loading?: boolean
   fetching?: boolean
   error?: unknown
 }
 
-const installHref = (orgId: string, install: TInstall) =>
-  `/${orgId}/installs/${install?.id ?? ''}`
+const installHref = (orgId: string, install: TInstall, incomplete: boolean) =>
+  incomplete && install?.id
+    ? installSetupHref(orgId, install.id)
+    : `/${orgId}/installs/${install?.id ?? ''}`
 
 const appHref = (orgId: string, install: TInstall) =>
   `/${orgId}/apps/${install?.app_id ?? ''}`
@@ -63,6 +67,10 @@ const installPlatform = (install: TInstall): TBrandVariant | undefined => {
   if (normalized === 'gcp') return 'GCP'
   return undefined
 }
+
+const SetupIncomplete = () => (
+  <Status status="pending" theme="warn" label="Setup incomplete" />
+)
 
 const InstallStatuses = ({ install }: { install: TInstall }) => (
   <span className="flex flex-wrap items-center gap-1.5">
@@ -81,8 +89,11 @@ const InstallStatuses = ({ install }: { install: TInstall }) => (
 
 const Platform = ({ install }: { install: TInstall }) => {
   const platform = installPlatform(install)
-  const { platform: cloudPlatform, region, location } =
-    installCloudLocation(install)
+  const {
+    platform: cloudPlatform,
+    region,
+    location,
+  } = installCloudLocation(install)
 
   if (!platform && !region && !location) {
     return (
@@ -148,30 +159,40 @@ const InstallLabels = ({
 
 export const columnsFor = (
   orgId: string,
-  labelColors?: TLabelColors
+  labelColors?: TLabelColors,
+  incompleteIds?: ReadonlySet<string>
 ): ColumnDef<TInstall>[] => [
   {
     id: 'name',
     header: 'Install',
-    size: 200,
-    cell: ({ row }) => (
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <Link
-          href={installHref(orgId, row.original)}
-          variant="body"
-          className="w-fit"
-        >
-          {row.original?.name ?? 'Unnamed install'}
-        </Link>
-        {row.original?.id ? (
-          <ID value={row.original.id} label="Copy install ID" truncate />
-        ) : (
-          <Text variant="caption" color="tertiary">
-            —
-          </Text>
-        )}
-      </span>
-    ),
+    size: 240,
+    cell: ({ row }) => {
+      const incomplete = Boolean(
+        row.original?.id && incompleteIds?.has(row.original.id)
+      )
+
+      return (
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <Link
+              href={installHref(orgId, row.original, incomplete)}
+              variant="body"
+              className="w-fit"
+            >
+              {row.original?.name ?? 'Unnamed install'}
+            </Link>
+            {incomplete ? <SetupIncomplete /> : null}
+          </span>
+          {row.original?.id ? (
+            <ID value={row.original.id} label="Copy install ID" truncate />
+          ) : (
+            <Text variant="caption" color="tertiary">
+              —
+            </Text>
+          )}
+        </span>
+      )
+    },
   },
   {
     id: 'app',
@@ -191,7 +212,7 @@ export const columnsFor = (
   {
     id: 'statuses',
     header: 'Statuses',
-    size: 130,
+    size: 120,
     cell: ({ row }) => <InstallStatuses install={row.original} />,
   },
   {
@@ -203,7 +224,7 @@ export const columnsFor = (
   {
     id: 'labels',
     header: 'Labels',
-    size: 165,
+    size: 145,
     cell: ({ row }) => (
       <InstallLabels install={row.original} labelColors={labelColors} />
     ),
@@ -232,21 +253,26 @@ const InstallCard = ({
   install,
   orgId,
   labelColors,
+  incomplete,
 }: {
   install: TInstall
   orgId: string
   labelColors?: TLabelColors
+  incomplete: boolean
 }) => {
   return (
     <Card className="flex h-full flex-col gap-4">
       <span className="flex min-w-0 flex-col gap-1">
-        <Link
-          href={installHref(orgId, install)}
-          variant="heading"
-          className="w-fit"
-        >
-          {install?.name ?? 'Unnamed install'}
-        </Link>
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <Link
+            href={installHref(orgId, install, incomplete)}
+            variant="heading"
+            className="w-fit"
+          >
+            {install?.name ?? 'Unnamed install'}
+          </Link>
+          {incomplete ? <SetupIncomplete /> : null}
+        </span>
         {install?.id ? (
           <ID value={install.id} label="Copy install ID" />
         ) : (
@@ -333,6 +359,7 @@ export const InstallsTable = ({
   labelFilter,
   branchFilter,
   labelColors,
+  incompleteIds,
   loading = false,
   fetching = false,
   error,
@@ -340,7 +367,7 @@ export const InstallsTable = ({
   <div className="flex min-w-0 flex-col gap-4">
     <Table
       data={installs}
-      columns={columnsFor(orgId, labelColors)}
+      columns={columnsFor(orgId, labelColors, incompleteIds)}
       getRowId={(install) => install?.id ?? ''}
       loading={loading}
       loadingLabel="Loading installs"
@@ -363,6 +390,9 @@ export const InstallsTable = ({
           install={row.original}
           orgId={orgId}
           labelColors={labelColors}
+          incomplete={Boolean(
+            row.original?.id && incompleteIds?.has(row.original.id)
+          )}
         />
       )}
     />

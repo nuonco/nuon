@@ -4,7 +4,12 @@ import { getAppBranches } from '@/lib'
 import { Spinner } from '../components/atoms/Spinner'
 import { Text } from '../components/atoms/Text'
 import { getLastAppBranch } from '../utils/app-branch-session'
-import { resolveAppHref } from '../utils/hrefs'
+import {
+  appSetupDescriptor,
+  appSetupStateFromBranches,
+} from '../utils/app-setup'
+import { appSetupHref, resolveAppHref } from '../utils/hrefs'
+import { isWizardComplete } from '../utils/wizard'
 import { useApp } from '../providers/app-provider'
 import { useOrg } from '../providers/org-provider'
 
@@ -39,7 +44,17 @@ export const AppResolver = () => {
     )
   }
 
-  const branchIds = (result?.data ?? [])
+  const branches = result?.data ?? []
+  if (
+    !isWizardComplete(
+      appSetupDescriptor,
+      appSetupStateFromBranches(branches)
+    )
+  ) {
+    return <Navigate replace to={appSetupHref(orgId, appId)} />
+  }
+
+  const branchIds = branches
     .map((branch) => branch?.id)
     .filter((id): id is string => !!id)
 

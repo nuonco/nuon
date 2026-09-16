@@ -41,6 +41,7 @@ export const Overview = () => (
     rules={[
       'Errors appear after a field is touched.',
       'API errors use FormErrorBanner inside the form.',
+      'A server error that belongs to one field goes on that field through error, which wins over the validation message.',
       'onValueChange runs after the field has taken the new value. It reacts to a change, it does not own it.',
     ]}
     props={[
@@ -67,6 +68,12 @@ export const Overview = () => (
         description: 'Guidance shown before the control.',
       },
       {
+        name: 'error',
+        type: 'ReactNode',
+        description:
+          'FormInput: a server-side error for this field, which replaces the validation message.',
+      },
+      {
         name: 'disabled',
         type: 'boolean',
         default: 'false',
@@ -76,7 +83,7 @@ export const Overview = () => (
         name: 'onValueChange',
         type: '(value: string) => void',
         description:
-          'FormRadioGroup: receives the chosen value after the field updates.',
+          'FormRadioGroup and FormSelect: receives the chosen value after the field updates.',
       },
     ]}
   />
