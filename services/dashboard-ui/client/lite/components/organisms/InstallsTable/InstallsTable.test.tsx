@@ -126,6 +126,16 @@ describe('InstallsTable', () => {
     expect(screen.getByLabelText('Drift detected')).not.toBeNull()
   })
 
+  test('sends an install still in first provision back to setup', () => {
+    renderTable({ incompleteIds: new Set(['inst_production']) })
+
+    expect(screen.getByRole('link', { name: 'Production' })).toHaveAttribute(
+      'href',
+      '/org_example/installs/setup?installId=inst_production'
+    )
+    expect(screen.getByText('Setup incomplete')).not.toBeNull()
+  })
+
   test('reports a deprovisioned install rather than a stale active axis', () => {
     renderTable({
       installs: [
