@@ -206,7 +206,7 @@ func (s *service) populateComponentEnabled(ctx context.Context, installID string
 		if err := s.db.WithContext(ctx).
 			Scopes(
 				scopes.WithDisableViews,
-				scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
+				scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName),
 			).
 			Preload("Component").
 			Where("component_id IN ?", missingComponentIDs).

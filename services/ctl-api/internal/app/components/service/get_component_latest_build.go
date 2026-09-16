@@ -89,7 +89,7 @@ func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.
 	// via the double join.
 	res := s.db.WithContext(ctx).
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable("component_config_connections_latest_configs_view"))
+			return db.Scopes(scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName))
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
 			return withoutPreviewBuilds(db).

@@ -55,7 +55,7 @@ func (a *Activities) GetCurrentComponentConfig(ctx context.Context, req *GetCurr
 	err := a.db.WithContext(ctx).
 		Scopes(
 			scopes.WithDisableViews,
-			scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
+			scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName),
 		).
 		Where(app.ComponentConfigConnection{ComponentID: req.ComponentID}).
 		First(&fallback).Error
