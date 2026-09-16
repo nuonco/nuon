@@ -14,6 +14,23 @@ export interface IAppBranchOverviewCards {
   loading?: boolean
 }
 
+const runCadence = (
+  mode?: string,
+  tagPrefix?: string,
+  githubLabel?: string
+) => {
+  switch (mode) {
+    case 'on_tag_prefix':
+      return `Tags matching ${tagPrefix ?? 'the configured prefix'}`
+    case 'on_github_label':
+      return `Merged PRs labeled ${githubLabel ?? 'with the configured label'}`
+    case 'manual_only':
+      return 'Manual updates'
+    default:
+      return 'Every push'
+  }
+}
+
 export const AppBranchOverviewCards = ({
   branch,
   installCount,
@@ -32,6 +49,11 @@ export const AppBranchOverviewCards = ({
       : `https://github.com/${repo}`
     : undefined
   const commit = branch?.latest_run?.vcs_connection_commit
+  const cadence = runCadence(
+    config?.run_config?.mode,
+    config?.run_config?.tag_prefix,
+    config?.run_config?.github_label
+  )
 
   return (
     <OverviewCardGrid columns={3}>
@@ -73,6 +95,14 @@ export const AppBranchOverviewCards = ({
             <Badge>Config v{config.config_number}</Badge>
           ) : null}
         </span>
+        <Text
+          variant="caption"
+          color="tertiary"
+          loading={loading}
+          loadingWidth={16}
+        >
+          {cadence}
+        </Text>
       </OverviewCard>
 
       <OverviewCard title="Last update">
