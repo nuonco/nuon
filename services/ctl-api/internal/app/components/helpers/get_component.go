@@ -31,7 +31,7 @@ func (s *Helpers) getComponent(ctx context.Context, db *gorm.DB, cmpID string) (
 		// preload configs (latest only via view to bound memory + match other callers)
 		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable("component_config_connections_latest_configs_view"))
+			return db.Scopes(scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName))
 		}).
 
 		// preload all terraform configs
