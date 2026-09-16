@@ -324,9 +324,6 @@ func buildAvailableRoles(stackOutputs app.StackOutput, appCfg *app.AppConfig, st
 }
 
 func validateRoleSelectionParams(principalType, operationType string) error {
-	if (principalType == "") != (operationType == "") {
-		return fmt.Errorf("principal_type and operation_type must be provided together")
-	}
 	if principalType != "" {
 		if err := validatePrincipalType(principalType); err != nil {
 			return err
