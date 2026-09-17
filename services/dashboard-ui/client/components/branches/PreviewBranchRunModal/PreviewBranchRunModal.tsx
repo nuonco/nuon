@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Select } from '@/components/common/form/Select'
@@ -170,6 +171,7 @@ export const PreviewBranchRunModal = ({
                     : 'Select a pull request'
                 }
                 disabled={isPending || loadingSources || prOptions.length === 0}
+                searchable
               />
               <Text variant="subtext" theme="neutral">
                 Open pull requests onto this branch.
@@ -252,6 +254,7 @@ export const PreviewBranchRunModalContainer = ({
   onSuccess,
   ...props
 }: IPreviewBranchRunModalContainer) => {
+  const navigate = useNavigate()
   const { addToast } = useToast()
   const { removeModal } = useSurfaces()
 
@@ -391,7 +394,7 @@ export const PreviewBranchRunModalContainer = ({
         },
       })
     },
-    onSuccess: () => {
+    onSuccess: (run) => {
       addToast(
         <Toast theme="success" heading="Preview run triggered">
           <Text>Your preview run has been queued.</Text>
@@ -399,6 +402,10 @@ export const PreviewBranchRunModalContainer = ({
       )
       onSuccess?.()
       removeModal(props.modalId)
+      const runId = run.workflow_id ?? run.workflow?.id ?? run.id
+      if (runId) {
+        navigate(`/${orgId}/apps/${appId}/branches/${branch.id}/runs/${runId}`)
+      }
     },
     onError: (error: TAPIError) => {
       addToast(
