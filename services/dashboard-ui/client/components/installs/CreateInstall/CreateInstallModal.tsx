@@ -4,6 +4,7 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TApp } from '@/types'
 import { AppSelectContainer as AppSelect } from './AppSelectContainer'
+import { StackOnlyCheckbox } from '@/components/installs/forms/InstallForm'
 import {
   CreateInstallFromAppContainer,
   type ICreateFromAppState,
@@ -102,6 +103,11 @@ export const CreateInstallModal = ({
               variant: 'primary',
             }
           : undefined
+      }
+      footerActions={
+        state.phase === 'form' && state.form ? (
+          <StackOnlyCheckbox form={state.form} />
+        ) : undefined
       }
     >
       {selectedApp ? (
