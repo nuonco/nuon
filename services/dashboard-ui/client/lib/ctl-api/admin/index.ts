@@ -347,18 +347,6 @@ export const adminGenerateInstallState = ({
     path: `installs/${installId}/admin-generate-state`,
   })
 
-export const adminGenerateInstallStateV2 = ({
-  installId,
-  adminEmail,
-}: { installId: string } & AdminMutation) =>
-  api<void>({
-    baseUrl: '/admin',
-    method: 'POST',
-    body: {},
-    headers: adminHeaders(adminEmail),
-    path: `installs/${installId}/admin-generate-state-v2`,
-  })
-
 export const adminDeprovisionOrg = ({
   orgId,
   adminEmail,
