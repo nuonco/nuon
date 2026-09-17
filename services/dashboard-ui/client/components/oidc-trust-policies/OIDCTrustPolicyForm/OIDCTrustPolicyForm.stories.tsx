@@ -17,6 +17,7 @@ const roleOptions = [
 const repos = [
   {
     id: 1,
+    owner_id: 1,
     name: 'api',
     full_name: 'acme/api',
     private: true,
@@ -27,6 +28,7 @@ const repos = [
   },
   {
     id: 2,
+    owner_id: 1,
     name: 'infra',
     full_name: 'acme/infra',
     private: true,
