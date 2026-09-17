@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -41,6 +42,7 @@ type RunnerJobNotifyListener struct {
 	l        *zap.Logger
 	mw       metrics.Writer
 	registry *RunnerJobWakeRegistry
+	metrics  *runnerJobListenerMetrics
 
 	cancel context.CancelFunc
 	done   chan struct{}
@@ -49,10 +51,11 @@ type RunnerJobNotifyListener struct {
 type RunnerJobNotifyListenerParams struct {
 	fx.In
 
-	Cfg      *internal.Config
-	L        *zap.Logger
-	MW       metrics.Writer
-	Registry *RunnerJobWakeRegistry
+	Cfg           *internal.Config
+	L             *zap.Logger
+	MW            metrics.Writer
+	Registry      *RunnerJobWakeRegistry
+	MeterProvider metric.MeterProvider `optional:"true"`
 }
 
 // StartRunnerJobNotifyListener constructs the listener and binds its lifecycle
@@ -64,6 +67,7 @@ func StartRunnerJobNotifyListener(p RunnerJobNotifyListenerParams, lc fx.Lifecyc
 		l:        p.L.With(zap.String("component", "runner_job_notify_listener")),
 		mw:       p.MW,
 		registry: p.Registry,
+		metrics:  newRunnerJobListenerMetrics(p.MeterProvider),
 		done:     make(chan struct{}),
 	}
 
@@ -106,6 +110,7 @@ func (rl *RunnerJobNotifyListener) run(ctx context.Context) {
 		} else {
 			rl.l.Warn("notify listener disconnected, reconnecting", zap.Error(err))
 			rl.mw.Count("runner_job_tail.listener_error", 1, nil)
+			rl.metrics.failure(ctx)
 		}
 
 		select {
@@ -143,6 +148,8 @@ func (rl *RunnerJobNotifyListener) listenOnce(parent context.Context) (clean boo
 
 	rl.mw.Gauge("runner_job_tail.listener_up", 1, nil)
 	defer rl.mw.Gauge("runner_job_tail.listener_up", 0, nil)
+	rl.metrics.setConnected(1)
+	defer rl.metrics.setConnected(0)
 	rl.l.Info("notify listener connected")
 
 	for {
@@ -159,9 +166,11 @@ func (rl *RunnerJobNotifyListener) listenOnce(parent context.Context) (clean boo
 		var payload runnerJobNotifyPayload
 		if jerr := json.Unmarshal([]byte(n.Payload), &payload); jerr != nil || payload.RunnerID == "" {
 			rl.mw.Count("runner_job_tail.notify_payload_invalid", 1, nil)
+			rl.metrics.notification(ctx, "invalid")
 			continue
 		}
 
+		rl.metrics.notification(ctx, "valid")
 		rl.registry.Wake(payload.RunnerID)
 	}
 }
