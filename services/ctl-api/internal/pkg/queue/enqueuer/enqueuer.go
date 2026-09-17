@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/metric"
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
@@ -34,6 +35,7 @@ type Enqueuer struct {
 	tClient temporalclient.Client
 	l       *zap.Logger
 	mw      metrics.Writer
+	metrics *enqueuerMetrics
 
 	ctx        context.Context
 	cancel     context.CancelFunc
@@ -47,12 +49,13 @@ type Enqueuer struct {
 type Params struct {
 	fx.In
 
-	DB      *gorm.DB `name:"psql"`
-	Cfg     *internal.Config
-	TClient temporalclient.Client
-	L       *zap.Logger
-	MW      metrics.Writer
-	LC      fx.Lifecycle
+	DB            *gorm.DB `name:"psql"`
+	Cfg           *internal.Config
+	TClient       temporalclient.Client
+	L             *zap.Logger
+	MW            metrics.Writer
+	MeterProvider metric.MeterProvider `optional:"true"`
+	LC            fx.Lifecycle
 }
 
 func New(params Params) *Enqueuer {
@@ -76,6 +79,7 @@ func New(params Params) *Enqueuer {
 		stopCh:     make(chan struct{}),
 		doneCh:     make(chan struct{}),
 	}
+	e.metrics = newEnqueuerMetrics(params.MeterProvider, func() int { return len(e.ch) })
 
 	params.LC.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -84,6 +88,7 @@ func New(params Params) *Enqueuer {
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
+			defer e.metrics.close()
 			e.cancel()
 			close(e.stopCh)
 			select {
@@ -103,6 +108,7 @@ func (e *Enqueuer) Send(queueSignalID string) {
 	select {
 	case e.ch <- queueSignalID:
 	default:
+		e.metrics.channelDropped(context.Background())
 		e.l.Warn("enqueue channel full, signal will be enqueued inline by AwaitSignal",
 			zap.String("queue-signal-id", queueSignalID))
 	}
