@@ -23,6 +23,8 @@ import (
 type InstallStateGenerateSource string
 
 const (
+	// Legacy is never written anymore; it is kept so the API enum still
+	// accepts rows generated before the state manager.
 	InstallStateGenerateSourceLegacy       InstallStateGenerateSource = "legacy"
 	InstallStateGenerateSourceStateManager InstallStateGenerateSource = "state-manager"
 )
