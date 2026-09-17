@@ -575,31 +575,34 @@ func diffNamedIAMPolicies(old, new []NamedIAMPolicy) []*diff.Diff {
 	for _, p := range new {
 		id := p.Name
 		seen[id] = true
-		op := oldByID[id]
-		diffs = append(diffs, diff.NewDiff(
-			diff.WithKey("named_policy."+id),
-			diff.WithChildren(
-				diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(op.Name, p.Name)),
-				diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(op.Description, p.Description)),
-				diff.NewDiff(diff.WithKey("contents"), diff.WithContentDiff(op.Contents, p.Contents)),
-			),
-		))
+		diffs = append(diffs, diffNamedIAMPolicy(oldByID[id], p))
 	}
 	for _, p := range old {
 		id := p.Name
 		if seen[id] {
 			continue
 		}
-		diffs = append(diffs, diff.NewDiff(
-			diff.WithKey("named_policy."+id),
-			diff.WithChildren(
-				diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(p.Name, "")),
-				diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(p.Description, "")),
-				diff.NewDiff(diff.WithKey("contents"), diff.WithContentDiff(p.Contents, "")),
-			),
-		))
+		diffs = append(diffs, diffNamedIAMPolicy(p, NamedIAMPolicy{}))
 	}
 	return diffs
+}
+
+func diffNamedIAMPolicy(old, new NamedIAMPolicy) *diff.Diff {
+	name := new.Name
+	if name == "" {
+		name = old.Name
+	}
+
+	result := diff.NewDiff(
+		diff.WithKey("named_policy."+name),
+		diff.WithChildren(
+			diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(old.Name, new.Name)),
+			diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(old.Description, new.Description)),
+			diff.NewDiff(diff.WithKey("contents"), diff.WithContentDiff(old.Contents, new.Contents)),
+		),
+	)
+	result.ResourceID = NamedPolicyResourceID(name)
+	return result
 }
 
 // --- Policies ---
