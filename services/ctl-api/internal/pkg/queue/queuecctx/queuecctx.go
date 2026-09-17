@@ -17,6 +17,7 @@ func FromContext(ctx cctx.ValueContext) qcctx.SignalContext {
 	sc.AccountID, _ = cctx.AccountIDFromContext(ctx)
 	sc.OrgID, _ = cctx.OrgIDFromContext(ctx)
 	sc.TraceID = cctx.TraceIDFromContext(ctx)
+	sc.WorkflowTelemetry = cctx.WorkflowTelemetryFromContext(ctx)
 
 	if ls, err := cctx.GetLogStreamContext(ctx); err == nil && ls != nil {
 		sc.LogStreamID = ls.ID
@@ -38,6 +39,7 @@ func Apply(ctx context.Context, sc qcctx.SignalContext) context.Context {
 	if sc.TraceID != "" {
 		ctx = cctx.SetTraceIDContext(ctx, sc.TraceID)
 	}
+	ctx = cctx.SetWorkflowTelemetryContext(ctx, sc.WorkflowTelemetry)
 	return ctx
 }
 
@@ -56,5 +58,6 @@ func ApplyWorkflow(ctx workflow.Context, sc qcctx.SignalContext) workflow.Contex
 	if sc.TraceID != "" {
 		ctx = cctx.SetTraceIDWorkflowContext(ctx, sc.TraceID)
 	}
+	ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, sc.WorkflowTelemetry)
 	return ctx
 }
