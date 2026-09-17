@@ -51,7 +51,7 @@ func (s *service) mcpGetDeploy(ctx context.Context, _ *mcp.CallToolRequest, in m
 		BuildID:           deploy.ComponentBuildID,
 		Status:            string(deploy.Status),
 		StatusDescription: deploy.StatusDescription,
-		CreatedAt:         deploy.CreatedAt.String(),
+		CreatedAt:         apiPkg.MCPTime(deploy.CreatedAt),
 	}
 
 	if deploy.InstallComponent.Component.ID != "" {
@@ -62,10 +62,10 @@ func (s *service) mcpGetDeploy(ctx context.Context, _ *mcp.CallToolRequest, in m
 		detail.LogStreamID = deploy.LogStream.ID
 	}
 	if deploy.PlannedAt != nil {
-		detail.PlannedAt = deploy.PlannedAt.String()
+		detail.PlannedAt = apiPkg.MCPTimePtr(deploy.PlannedAt)
 	}
 	if deploy.AppliedAt != nil {
-		detail.AppliedAt = deploy.AppliedAt.String()
+		detail.AppliedAt = apiPkg.MCPTimePtr(deploy.AppliedAt)
 	}
 
 	return apiPkg.MCPJSONResult(detail)

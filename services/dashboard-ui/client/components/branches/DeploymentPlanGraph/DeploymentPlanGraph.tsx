@@ -29,6 +29,7 @@ interface GroupNodeData {
   accent: GraphAccent
   installs: PlanGroupInstall[]
   labelEntries: [string, string][]
+  allInstalls: boolean
   maxParallel: number
   compact: boolean
   orgId: string
@@ -81,7 +82,7 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
 
       {installs.length === 0 ? (
         <span className="text-[11px] text-cool-grey-500 dark:text-cool-grey-500">
-          No matching installs
+          {data.allInstalls ? 'All installs — none yet' : 'No matching installs'}
         </span>
       ) : (
         <>
@@ -149,8 +150,13 @@ export const DeploymentPlanGraph = ({ config, installsById, orgId, compact = fal
 
     const built: Node<GroupNodeData>[] = groups.map((group, idx) => {
       const labelEntries = Object.entries(group.label_selector?.match_labels ?? {})
-      const installs: PlanGroupInstall[] =
-        labelEntries.length > 0
+      const installs: PlanGroupInstall[] = group.all_installs
+        ? Object.values(installsById).map((i) => ({
+            id: i.id,
+            name: i.name ?? i.id,
+            labels: i.labels,
+          }))
+        : labelEntries.length > 0
           ? Object.values(installsById)
               .filter((i) => matchesSelector(i.labels, group.label_selector))
               .map((i) => ({ id: i.id, name: i.name ?? i.id, labels: i.labels }))
@@ -171,6 +177,7 @@ export const DeploymentPlanGraph = ({ config, installsById, orgId, compact = fal
           accent: groupAccent(idx),
           installs,
           labelEntries,
+          allInstalls: !!group.all_installs,
           maxParallel: group.max_parallel ?? 1,
           compact,
           orgId,

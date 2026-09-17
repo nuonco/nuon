@@ -5,8 +5,9 @@ import (
 	_ "embed"
 
 	"github.com/google/uuid"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (m *Migrations) Migration088AccountsEmailsNotEmpty(ctx context.Context, db *gorm.DB) error {

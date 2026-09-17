@@ -10,39 +10,30 @@ export const Overview = () => (
   <ComponentDocs
     name="Link"
     tier="atom"
-    summary="A content link. One job, two destinations, and the destination is inferred from href rather than declared by a prop."
+    summary="A content link. The destination decides how it renders."
     use={[
-      'Relative href — routes through React Router, no full page load.',
-      'Absolute href (any scheme, or protocol-relative) — opens in a new tab with rel=noopener, the new-tab icon, and a screen-reader-only "opens in a new tab".',
-      'Same-origin but not a router route, like a BFF download — pass reloadDocument and the browser handles the response.',
+      'Use a relative href for in-app navigation, which routes client-side with no page load.',
+      'Use an absolute href for anything external, which opens in a new tab with the new-tab icon.',
+      'Pass reloadDocument for a same-origin URL that is not a route, such as a download.',
     ]}
     avoid={[
-      'Navigation chrome. Main nav, tab nav and breadcrumbs are their own components on React Router NavLink, which supplies the active state instead of us passing it in.',
+      'Navigation chrome. Main nav, tab nav and breadcrumbs are their own components.',
       'Anything that runs an action instead of changing the URL — that is a Button.',
+      'Sizing a link with a class or a Text wrapper. Use variant, or let it inherit.',
     ]}
     rules={[
-      'Links inherit surrounding type by default. A link in a sentence should match the sentence; variant is only for a standalone link with no type to inherit.',
-      'Links are underlined. Colour alone is not a sufficient affordance, and in high contrast the link yellow and body white are only 1.07:1 apart.',
-      'disabled renders a span with aria-disabled. An anchor cannot be disabled and a dead href is worse than no href.',
-      'External links always open in a new tab.',
+      'Links inherit the surrounding type by default. Set variant only for a standalone link with no type to inherit.',
+      'External links are detected from the href. Pass external only when the href lies about itself.',
+      'A disabled link renders a span rather than a dead anchor.',
     ]}
     props={[
       { name: 'href', type: 'string', description: 'Destination. Its shape decides internal vs external.' },
       { name: 'variant', type: 'TTextVariant', default: 'inherit', description: 'Sizes a standalone link. Omit inside prose.' },
-      { name: 'external', type: 'boolean', description: 'Forces the external treatment for an href that lies about itself.' },
-      { name: 'reloadDocument', type: 'boolean', description: 'Same-origin full page load, for BFF endpoints and downloads.' },
+      { name: 'external', type: 'boolean', description: 'Forces the external treatment.' },
+      { name: 'reloadDocument', type: 'boolean', description: 'Same-origin full page load, for endpoints and downloads.' },
       { name: 'disabled', type: 'boolean', default: 'false', description: 'Renders a non-interactive span.' },
-      { name: 'loading', type: 'boolean', default: 'false', description: 'Delegates to Text, so a link labelled by a resource name shimmers like text.' },
-    ]}
-    sections={[
-      {
-        heading: 'Why inference is safe here',
-        body: 'It is one mechanical rule on one value. The old dashboard Link had three booleans — isATag, isExternal, and an implicit third case — deciding the element through a nested ternary, with a silent winner when two were set together.',
-      },
-      {
-        heading: 'Colour',
-        body: 'Links have their own tokens rather than reusing --text-accent, which is only 4.1:1 in light and would ship a link below AA. Measured 8.00:1 light, 11.90:1 dark, 12.37:1 high contrast.',
-      },
+      { name: 'loading', type: 'boolean', default: 'false', description: 'Shimmer, for a link labelled by a resource name.' },
+      { name: 'loadingWidth', type: 'number', description: 'Skeleton width in ch.' },
     ]}
   />
 )

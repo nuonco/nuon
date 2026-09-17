@@ -1,12 +1,14 @@
 package service
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/golang-lru/v2/expirable"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -35,6 +37,7 @@ type Params struct {
 	DB                   *gorm.DB `name:"psql"`
 	CHDB                 *gorm.DB `name:"ch"`
 	MW                   metrics.Writer
+	MeterProvider        metric.MeterProvider `optional:"true"`
 	L                    *zap.Logger
 	AccountClient        *account.Client
 	Helpers              *helpers.Helpers
@@ -53,24 +56,28 @@ type Params struct {
 
 type service struct {
 	apiPkg.RouteRegister
-	v                    *validator.Validate
-	l                    *zap.Logger
-	db                   *gorm.DB
-	chDB                 *gorm.DB
-	mw                   metrics.Writer
-	cfg                  *internal.Config
-	acctClient           *account.Client
-	helpers              *helpers.Helpers
-	installsHelpers      *installshelpers.Helpers
-	runnerHeartbeatCache *RunnerHeartbeatCache
-	heartbeater          *heartbeater.Heartbeater
-	kafka                *kafka.Producer
-	featuresClient       *features.Features
-	temporalClient       temporalclient.Client
-	runnerJobWake        *RunnerJobWakeRegistry
-	blobSvc              blobstore.Service
-	emitterClient        *emitterclient.Client
-	queueClient          *queueclient.Client
+	v                      *validator.Validate
+	l                      *zap.Logger
+	db                     *gorm.DB
+	chDB                   *gorm.DB
+	mw                     metrics.Writer
+	tailMetrics            *runnerJobTailMetrics
+	meterProvider          metric.MeterProvider
+	cfg                    *internal.Config
+	acctClient             *account.Client
+	helpers                *helpers.Helpers
+	installsHelpers        *installshelpers.Helpers
+	runnerHeartbeatCache   *RunnerHeartbeatCache
+	heartbeater            *heartbeater.Heartbeater
+	kafka                  *kafka.Producer
+	featuresClient         *features.Features
+	temporalClient         temporalclient.Client
+	runnerJobWake          *RunnerJobWakeRegistry
+	blobSvc                blobstore.Service
+	emitterClient          *emitterclient.Client
+	queueClient            *queueclient.Client
+	telemetryTokenIssuer   *telemetryTokenIssuer
+	telemetryRelayEndpoint string
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
 	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
 	// are effectively immutable for the life of the stream, so a 5min TTL
@@ -93,6 +100,7 @@ const (
 var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
+	api.GET("/.well-known/jwks.json", s.GetTelemetryJWKS)
 	api.GET("/v1/runners/:runner_id", s.GetRunnerCtlAPI)
 	api.GET("/v1/runners/:runner_id/connected", s.GetRunnerConnectStatus)
 	api.GET("/v1/runners/:runner_id/jobs", s.GetRunnerJobsCtlAPI)
@@ -289,6 +297,9 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	s.tailMetrics = newRunnerJobTailMetrics(s.meterProvider)
+	api.POST("/v1/telemetry/access-token", s.CreateTelemetryAccessToken)
+
 	runners := api.Group("/v1/runners/:runner_id")
 	runners.POST("/health-checks", s.CreateRunnerHealthCheck)
 	runners.POST("/heart-beats", s.CreateRunnerHeartBeat)
@@ -383,31 +394,43 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func New(params Params) *service {
+func New(params Params) (*service, error) {
+	telemetryTokenIssuer, err := newTelemetryTokenIssuer(params.Cfg)
+	if err != nil {
+		return nil, fmt.Errorf("initialize telemetry token issuer: %w", err)
+	}
+	telemetryRelayEndpoint, err := newTelemetryRelayEndpoint(params.Cfg, telemetryTokenIssuer)
+	if err != nil {
+		return nil, fmt.Errorf("invalid telemetry relay configuration: %w", err)
+	}
+
 	return &service{
 		RouteRegister: apiPkg.RouteRegister{
 			EndpointAudit: params.EndpointAudit,
 		},
-		cfg:                  params.Cfg,
-		l:                    params.L,
-		v:                    params.V,
-		db:                   params.DB,
-		chDB:                 params.CHDB,
-		mw:                   params.MW,
-		acctClient:           params.AccountClient,
-		helpers:              params.Helpers,
-		installsHelpers:      params.InstallsHelpers,
-		runnerHeartbeatCache: params.RunnerHeartbeatCache,
-		heartbeater:          params.Heartbeater,
-		kafka:                params.Kafka,
-		featuresClient:       params.FeaturesClient,
-		temporalClient:       params.TemporalClient,
-		runnerJobWake:        params.RunnerJobWake,
-		blobSvc:              params.BlobSvc,
-		emitterClient:        params.EmitterClient,
-		queueClient:          params.QueueClient,
-		logStreamCache:       expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
-	}
+		cfg:                    params.Cfg,
+		l:                      params.L,
+		v:                      params.V,
+		db:                     params.DB,
+		chDB:                   params.CHDB,
+		mw:                     params.MW,
+		meterProvider:          params.MeterProvider,
+		acctClient:             params.AccountClient,
+		helpers:                params.Helpers,
+		installsHelpers:        params.InstallsHelpers,
+		runnerHeartbeatCache:   params.RunnerHeartbeatCache,
+		heartbeater:            params.Heartbeater,
+		kafka:                  params.Kafka,
+		featuresClient:         params.FeaturesClient,
+		temporalClient:         params.TemporalClient,
+		runnerJobWake:          params.RunnerJobWake,
+		blobSvc:                params.BlobSvc,
+		emitterClient:          params.EmitterClient,
+		queueClient:            params.QueueClient,
+		telemetryTokenIssuer:   telemetryTokenIssuer,
+		telemetryRelayEndpoint: telemetryRelayEndpoint,
+		logStreamCache:         expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
+	}, nil
 }
 
 func (s *service) RegisterSlackRoutes(api *gin.Engine) error {

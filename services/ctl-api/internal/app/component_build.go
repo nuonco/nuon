@@ -66,6 +66,8 @@ type ComponentBuild struct {
 	ComponentName          string `gorm:"-" json:"component_name,omitzero" temporaljson:"component_name,omitzero,omitempty"`
 	ComponentConfigVersion int    `gorm:"-" json:"component_config_version,omitzero" temporaljson:"component_config_version,omitzero,omitempty"`
 	AppBranchID            string `gorm:"-" json:"app_branch_id,omitzero" temporaljson:"app_branch_id,omitzero,omitempty"`
+	// IsPreview is true when this build came from a preview branch run.
+	IsPreview bool `gorm:"-" json:"is_preview" temporaljson:"is_preview,omitempty"`
 
 	// checksum of our intermediate component config
 	Checksum string `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
@@ -162,6 +164,7 @@ func (c *ComponentBuild) AfterQuery(tx *gorm.DB) error {
 
 	if c.AppBranchRun != nil {
 		c.AppBranchID = c.AppBranchRun.AppBranchID
+		c.IsPreview = c.AppBranchRun.IsPreview()
 		if c.VCSConnectionCommit == nil && c.AppBranchRun.VCSConnectionCommit != nil {
 			c.VCSConnectionCommit = c.AppBranchRun.VCSConnectionCommit
 		}

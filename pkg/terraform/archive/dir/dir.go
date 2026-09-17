@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 

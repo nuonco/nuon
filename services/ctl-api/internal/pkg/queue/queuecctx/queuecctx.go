@@ -5,7 +5,6 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	qcctx "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/cctx"
 )
@@ -29,6 +28,7 @@ func FromContext(ctx cctx.ValueContext) qcctx.SignalContext {
 // Apply restores the captured context values onto a context.Context so that
 // downstream consumers (e.g. Temporal propagators) see the original values.
 func Apply(ctx context.Context, sc qcctx.SignalContext) context.Context {
+	ctx = cctx.ClearLogStreamContext(ctx)
 	if sc.AccountID != "" {
 		ctx = cctx.SetAccountIDContext(ctx, sc.AccountID)
 	}
@@ -38,9 +38,6 @@ func Apply(ctx context.Context, sc qcctx.SignalContext) context.Context {
 	if sc.TraceID != "" {
 		ctx = cctx.SetTraceIDContext(ctx, sc.TraceID)
 	}
-	if sc.LogStreamID != "" {
-		ctx = cctx.SetLogStreamContext(ctx, &app.LogStream{ID: sc.LogStreamID})
-	}
 	return ctx
 }
 
@@ -49,6 +46,7 @@ func Apply(ctx context.Context, sc qcctx.SignalContext) context.Context {
 // signal's Execute (and any activities it schedules via the Temporal
 // propagator) see the enqueuer's identity rather than the queue workflow's.
 func ApplyWorkflow(ctx workflow.Context, sc qcctx.SignalContext) workflow.Context {
+	ctx = cctx.ClearLogStreamWorkflowContext(ctx)
 	if sc.AccountID != "" {
 		ctx = cctx.SetAccountIDWorkflowContext(ctx, sc.AccountID)
 	}
@@ -57,9 +55,6 @@ func ApplyWorkflow(ctx workflow.Context, sc qcctx.SignalContext) workflow.Contex
 	}
 	if sc.TraceID != "" {
 		ctx = cctx.SetTraceIDWorkflowContext(ctx, sc.TraceID)
-	}
-	if sc.LogStreamID != "" {
-		ctx = cctx.SetLogStreamWorkflowContext(ctx, &app.LogStream{ID: sc.LogStreamID})
 	}
 	return ctx
 }

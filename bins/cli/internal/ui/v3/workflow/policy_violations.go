@@ -6,6 +6,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/mitchellh/go-wordwrap"
+
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 

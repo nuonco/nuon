@@ -202,7 +202,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update install workflow")
 	}
 
-	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installDeploy.LogStream)
+	logStream, err := activities.AwaitGetLogStreamByLogStreamID(ctx, installDeploy.LogStream.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to hydrate log stream")
+	}
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err

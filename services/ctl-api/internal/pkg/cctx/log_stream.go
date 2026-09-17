@@ -14,17 +14,25 @@ func SetLogStreamContext(ctx context.Context, ls *app.LogStream) context.Context
 	return context.WithValue(ctx, keys.LogStreamCtxKey, ls)
 }
 
+func ClearLogStreamContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, keys.LogStreamCtxKey, struct{}{})
+}
+
 func GetLogStreamContext(ctx ValueContext) (*app.LogStream, error) {
-	ls := ctx.Value(keys.LogStreamCtxKey)
-	if ls == nil {
+	ls, ok := ctx.Value(keys.LogStreamCtxKey).(*app.LogStream)
+	if !ok || ls == nil {
 		return nil, fmt.Errorf("log stream not set on context")
 	}
 
-	return ls.(*app.LogStream), nil
+	return ls, nil
 }
 
 func SetLogStreamWorkflowContext(ctx workflow.Context, ls *app.LogStream) workflow.Context {
 	return workflow.WithValue(ctx, keys.LogStreamCtxKey, ls)
+}
+
+func ClearLogStreamWorkflowContext(ctx workflow.Context) workflow.Context {
+	return workflow.WithValue(ctx, keys.LogStreamCtxKey, struct{}{})
 }
 
 func GetLogStreamIDWorkflow(ctx ValueContext) (string, error) {
@@ -37,10 +45,10 @@ func GetLogStreamIDWorkflow(ctx ValueContext) (string, error) {
 }
 
 func GetLogStreamWorkflow(ctx ValueContext) (*app.LogStream, error) {
-	val := ctx.Value(keys.LogStreamCtxKey)
-	if val == nil {
+	ls, ok := ctx.Value(keys.LogStreamCtxKey).(*app.LogStream)
+	if !ok || ls == nil {
 		return nil, fmt.Errorf("no log stream found")
 	}
 
-	return val.(*app.LogStream), nil
+	return ls, nil
 }

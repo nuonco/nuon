@@ -38,6 +38,9 @@ var localFaviconRewrites = map[string]string{
 const (
 	shellDefault = "default"
 	shellLite    = "lite"
+
+	shellCookieName   = "nuon-shell"
+	shellCookieMaxAge = 365 * 24 * 60 * 60
 )
 
 var shellLinkRE = regexp.MustCompile(`(?i)[\t ]*<link[^>]*data-shell="([a-z]+)"[^>]*>\n?`)
@@ -116,6 +119,14 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 	return cc
 }
 
+func buildHeadReplacement(cc clientConfig, lite bool) []byte {
+	cc.DashboardLite = lite
+	ccJSON, _ := json.Marshal(cc)
+	return []byte(fmt.Sprintf(
+		`<script id="nuon-config">window.__NUON_CONFIG__=%s;</script></head>`, ccJSON,
+	))
+}
+
 type Handler struct {
 	cfg *internal.Config
 	l   *zap.Logger
@@ -155,15 +166,28 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 	}
 
 	cc := buildClientConfig(h.cfg)
-	ccJSON, _ := json.Marshal(cc)
-	configScript := []byte(fmt.Sprintf(`<script id="nuon-config">window.__NUON_CONFIG__=%s;</script>`, ccJSON))
 	h.l.Info("prepared client config", zap.String("apiUrl", cc.APIUrl), zap.String("appUrl", cc.AppUrl))
 
-	shell := shellDefault
-	if h.cfg.DashboardLite {
-		shell = shellLite
+	headForShell := map[string][]byte{
+		shellDefault: buildHeadReplacement(cc, false),
+		shellLite:    buildHeadReplacement(cc, true),
 	}
-	h.l.Info("serving dashboard shell", zap.String("shell", shell))
+
+	defaultShell := shellDefault
+	if h.cfg.DashboardLite {
+		defaultShell = shellLite
+	}
+	h.l.Info("serving dashboard shell", zap.String("shell", defaultShell))
+
+	resolveShell := func(c *gin.Context) string {
+		switch v, _ := c.Cookie(shellCookieName); v {
+		case shellLite:
+			return shellLite
+		case shellDefault:
+			return shellDefault
+		}
+		return defaultShell
+	}
 
 	serveIndex := func(c *gin.Context) {
 		raw, err := fs.ReadFile(distFS, "index.html")
@@ -171,8 +195,9 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 			c.Status(http.StatusNotFound)
 			return
 		}
+		shell := resolveShell(c)
 		html := selectShellLinks(raw, shell)
-		html = bytes.Replace(html, []byte("</head>"), append(configScript, []byte("</head>")...), 1)
+		html = bytes.Replace(html, []byte("</head>"), headForShell[shell], 1)
 		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 		c.Data(http.StatusOK, "text/html; charset=utf-8", html)
 	}
@@ -184,6 +209,15 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 	}
 
 	isLocalEnv := strings.Contains(h.cfg.AppUrl, "localhost") || strings.Contains(h.cfg.AppUrl, "127.0.0.1")
+
+	e.GET("/lite", func(c *gin.Context) {
+		shell := shellLite
+		if c.Query("off") != "" {
+			shell = shellDefault
+		}
+		c.SetCookie(shellCookieName, shell, shellCookieMaxAge, "/", "", !isLocalEnv, true)
+		c.Redirect(http.StatusFound, "/")
+	})
 
 	var distFileServer http.Handler
 	if hasDistDir {

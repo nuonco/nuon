@@ -168,189 +168,30 @@ Pre-configured deployment templates:
 - Service definitions and networking
 - IAM roles and security configuration
 
-## Key Features
+## Capabilities
 
-### Multi-Platform Execution
-
-- **Kubernetes**: Runs as containerized workloads
-- **AWS VMs**: Native EC2 instance execution
-- **Azure VMs**: Azure Virtual Machine execution
-- **GCP VMs**: Google Compute Engine execution
-
-### Job Execution Engine
-
-- **Job Processing**: Processes jobs from the control plane queue
-- **Lifecycle Management**: Complete job lifecycle from fetch to completion
-- **State Management**: Manages deployment state and outputs
-- **Error Handling**: Robust error handling and recovery
-
-### Deployment Capabilities
-
-- **Terraform**: Full Terraform workflow execution
-- **Helm**: Kubernetes Helm chart deployments
-- **Kubernetes Manifests**: Raw Kubernetes resource management
-- **Container Jobs**: Kubernetes job execution
-- **Custom Actions**: Extensible action workflow system
-
-### Security & Isolation
-
-- **Customer Boundary**: Operates within customer security perimeters
-- **Secure Communication**: Encrypted communication with control plane
-- **Credential Management**: Secure handling of cloud credentials
-- **Audit Logging**: Comprehensive audit trail
-
-### Observability
-
-- **Metrics**: Runtime and deployment metrics
-- **Logging**: Structured logging with OTEL integration
-- **Tracing**: Distributed tracing for operations
-- **Health Monitoring**: Continuous health reporting
+Runs in Kubernetes and cloud VMs (AWS, Azure, GCP). Executes Terraform, Helm, Kubernetes manifests, container jobs, and
+action workflows. Reports status to the ctl-api runner API; emits OTEL metrics/logs.
 
 ## Deployment Modes
 
-### Kubernetes Deployment
-
-- **Helm Chart**: Pre-configured Helm chart in `/bundle/helm/`
-- **Container Image**: Docker image with all dependencies
-- **Resource Management**: CPU/memory limits and auto-scaling
-- **RBAC**: Proper Kubernetes permissions
-
-### VM Deployment (AWS/Azure)
-
-- **Installation Script**: Automated installation via `install.sh`
-- **Service Management**: Systemd service configuration
-- **Auto-updates**: Automatic runner updates
-- **Monitoring**: VM health and status monitoring
-
-### Local Development
-
-- **Dev Mode**: `nuonctl` integration for local testing
-- **Hot Reload**: Development workflow with file watching
-- **Mock Execution**: Local job execution for testing
+- **Kubernetes**: Helm chart under `bundle/helm/`
+- **VM**: `install.sh` + systemd (`install` / `mng` modes)
+- **Local**: `./runner run-local`
 
 ## Development
-
-### Setup
 
 ```bash
 cd bins/runner
 go build -o runner .
-```
-
-### Local Testing
-
-```bash
-./runner run-local  # Local development mode
-./runner --help     # Available commands
-```
-
-### Building Container
-
-```bash
+./runner --help
+./runner run-local
 docker build -t nuon-runner .
 ```
 
-### Deploying Local Builds to Cloud Runners
-
-Use `scripts/runner-dev-push.sh` to build, upload, and deploy locally-built runner artifacts to a cloud VM runner.
-
-**Docker image only** (updates the install-mode container via ttl.sh):
-```bash
-./scripts/runner-dev-push.sh <runner_id>
-```
-
-**Docker image + host binary** (also cross-compiles the mng binary, uploads to Azure Blob Storage, and deploys to the VM via `az vmss run-command`):
-```bash
-./scripts/runner-dev-push.sh <runner_id> --with-binary
-```
-
-The `--with-binary` flow is the recommended path for Azure VM runners. It:
-1. Builds the Docker image (for install-mode container) and pushes to ttl.sh
-2. Cross-compiles the runner binary for linux/amd64
-3. Uploads the binary to Azure Blob Storage and generates a SAS URL
-4. PATCHes runner settings via the admin API (`CTL_API_URL`, default `http://localhost:8082`)
-5. Deploys the binary to the VMSS instance(s) via `az vmss run-command invoke` (downloads binary, replaces `/usr/local/bin/runner`, restarts `nuon-runner-mng.service`)
-6. Polls until the runner reaches "active" status
-
-**Key environment variables:**
-| Variable | Default | Description |
-|---|---|---|
-| `CTL_API_URL` | `http://localhost:8082` | Admin API base URL |
-| `MONO_ROOT` | `../mono` relative to script | Path to mono repo (for Docker image build) |
-| `AZURE_RG` | auto-detected | Azure resource group |
-| `AZURE_SA` | auto-created `nuondevrunner*` | Azure storage account for binary upload |
-| `AZURE_VMSS` | auto-detected from RG | VMSS name |
-| `AZURE_VMSS_IDS` | all instances | Space-separated VMSS instance IDs |
-| `TTL` | `2h` | ttl.sh image expiry |
-| `ADMIN_TOKEN` | _(none)_ | Bearer token for remote admin API |
-
-**Important notes:**
-- The runner's mng process does **not** auto-update the host binary from settings. The script handles deployment directly via `az vmss run-command`. The `runner_binary_url` setting is only used during initial VM provisioning (in the Bicep template).
-- The Docker image update path (settings PATCH → restart signal → docker pull) works for the install-mode container but not the mng binary.
-- Requires `az` CLI authenticated with access to the runner's resource group.
-
-## Configuration
-
-### Environment Variables
-
-- Runner identification and registration
-- Control plane API endpoints
-- Cloud provider credentials
-- Execution environment settings
-
-### Job Configuration
-
-- Job-specific parameters and inputs
-- Resource limits and timeouts
-- Output destinations and formats
-- Error handling policies
-
 ## Execution Flow
 
-### Job Lifecycle
-
-1. **Registration**: Runner registers with control plane
-2. **Job Polling**: Continuously polls for available jobs
-3. **Job Fetch**: Downloads job specification and resources
-4. **Initialization**: Sets up execution environment
-5. **Execution**: Runs deployment operations
-6. **Output Collection**: Collects and processes outputs
-7. **Status Reporting**: Reports progress and completion
-8. **Cleanup**: Cleans up temporary resources
-
-### Deployment Process
-
-1. **Plan Generation**: Creates deployment plans
-2. **Validation**: Validates configurations and permissions
-3. **Resource Provisioning**: Creates/updates cloud resources
-4. **Application Deployment**: Deploys applications and services
-5. **Verification**: Verifies deployment success
-6. **State Management**: Updates deployment state
-
-## Technologies Used
-
-### Core Technologies
-
-- **Go**: Primary language with extensive library ecosystem
-- **Terraform**: Infrastructure as Code execution
-- **Helm**: Kubernetes package management
-- **Kubernetes**: Container orchestration client libraries
-
-### Cloud Integration
-
-- **AWS SDK**: Amazon Web Services integration
-- **Azure SDK**: Microsoft Azure integration
-- **GCP SDK**: Google Cloud Platform integration (gcloud CLI + gke-gcloud-auth-plugin)
-- **Docker**: Container runtime and registry
-- **OCI**: Open Container Initiative standards
-
-### Observability
-
-- **OpenTelemetry**: Metrics, logging, and tracing
-- **Prometheus**: Metrics collection
-- **Structured Logging**: JSON-based logging
-- **Distributed Tracing**: End-to-end request tracing
-
-The Runner is the critical execution component that enables Nuon to securely deploy and manage applications within
-customer infrastructure while maintaining the security and isolation requirements of enterprise customers.
+1. Register with control plane → poll for jobs
+2. Fetch job spec and resources → initialize workspace
+3. Execute (plan/apply/action) → collect outputs → report status → cleanup
 

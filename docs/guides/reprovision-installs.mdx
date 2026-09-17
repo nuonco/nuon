@@ -2,7 +2,7 @@
 title: "Reprovision an install"
 description: "Re-run provisioning against the current app config to recreate an install's stack, sandbox, and components."
 icon: "arrow-rotate-right"
-keywords: ["reprovision", "reprovision install", "reprovision stack", "reprovision sandbox", "recreate runner", "stack-only", "skip components", "AWS install", "GCP install", "Terraform stack update", "ASG recreate", "install workflow"]
+keywords: ["reprovision", "reprovision install", "reprovision stack", "reprovision sandbox", "recreate runner", "stack-only", "AWS install", "GCP install", "Terraform stack update", "ASG recreate", "install workflow"]
 ---
 
 Reprovisioning triggers a full install workflow against current app config. Used when customer stack app config changes needs to be
@@ -60,18 +60,8 @@ nuon installs reprovision -i $INSTALL_ID --stack-only
 ```
 
 `nuon installs stacks reprovision -i $INSTALL_ID` is the same operation. In the dashboard, it is
-<Icon icon="gear" /> **Settings**, then **Reprovision stack**.
-
-Add `--skip-components` to stop once the stack is healthy instead of redeploying components:
-
-```sh
-nuon installs reprovision -i $INSTALL_ID --stack-only --skip-components
-```
-
-<Note>
-  `--skip-components` is only valid with `--stack-only`. The CLI rejects it on a full reprovision.
-</Note>
-
+<Icon icon="gear" /> **Settings**, then **Reprovision stack**. Components are never redeployed by a stack
+reprovision — use a full reprovision when you also want the sandbox and components rebuilt.
 
 ### On AWS
 

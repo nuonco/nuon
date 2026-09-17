@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors/withstack"
+
 	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/sdks/nuon-go"
@@ -76,6 +77,12 @@ func printHumanError(err error) error {
 		return err
 	}
 
+	var parseErr parse.ParseErr
+	if errors.As(err, &parseErr) {
+		fmt.Println(bubbles.ErrorStyle.Render(parseErr.Error()))
+		return parseErr
+	}
+
 	var cfgErr config.ErrConfig
 	if errors.As(err, &cfgErr) {
 		if cfgErr.Warning {
@@ -103,16 +110,6 @@ func printHumanError(err error) error {
 	if errors.As(err, &syncAPIErr) {
 		fmt.Println(bubbles.ErrorStyle.Render(syncAPIErr.Error()))
 		return syncAPIErr
-	}
-
-	var parseErr parse.ParseErr
-	if errors.As(err, &parseErr) {
-		fmt.Println(bubbles.ErrorStyle.Render(parseErr.Error()))
-		if parseErr.Err != nil {
-			fmt.Println(bubbles.ErrorStyle.Render(parseErr.Err.Error()))
-		}
-
-		return parseErr
 	}
 
 	// Filter out ugly technical error messages that shouldn't be shown to users

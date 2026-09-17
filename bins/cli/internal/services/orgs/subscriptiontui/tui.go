@@ -61,7 +61,7 @@ var (
 	// payload means "every op for this resource", so leaving the
 	// multi-select blank is a valid (and idiomatic) choice.
 	resourceOps = map[string][]string{
-		"installs":               {"provision", "deprovision", "reprovision"},
+		"installs":               {"provision", "deprovision", "reprovision", "label_added"},
 		"stacks":                 {"version_active"},
 		"components":             {"deploy", "teardown"},
 		"sandboxes":              {"provision", "reprovision", "deprovision"},

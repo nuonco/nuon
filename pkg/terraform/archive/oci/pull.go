@@ -26,7 +26,7 @@ func (o *oci) getSrc() (oras.ReadOnlyTarget, error) {
 	}
 	repo.Client = &auth.Client{
 		Client: retry.DefaultClient,
-		Cache:  auth.DefaultCache,
+		Cache:  auth.NewCache(),
 		Credential: auth.StaticCredential(o.Image.Registry, auth.Credential{
 			Username: o.Auth.Username,
 			Password: o.Auth.Token,

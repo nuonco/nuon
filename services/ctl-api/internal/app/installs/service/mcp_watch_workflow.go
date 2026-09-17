@@ -98,7 +98,7 @@ func (s *service) fetchWorkflowSummary(ctx context.Context, orgID, workflowID st
 		StatusDescription: workflow.Status.StatusHumanDescription,
 		OwnerID:           workflow.OwnerID,
 		OwnerName:         workflow.OwnerName,
-		CreatedAt:         workflow.CreatedAt.String(),
+		CreatedAt:         apiPkg.MCPTime(workflow.CreatedAt),
 	}
 
 	for _, step := range workflow.Steps {

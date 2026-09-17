@@ -1,6 +1,7 @@
 import { createContext, type ReactNode } from 'react'
 import { useOrg } from '@/hooks/use-org'
-import { useSSEResourceQuery, isTerminalStatusV2 } from '@/hooks/use-sse-resource-query'
+import { useSSEResourceQuery, isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { useStatusToast } from '@/hooks/use-status-toast'
 import { getComponentBuild } from '@/lib'
 import { ProviderError } from '@/components/layout/ProviderError'
@@ -31,6 +32,8 @@ export function BuildProvider({
 }) {
   const { org } = useOrg()
 
+  const onRefreshError = useRefreshErrorToast()
+
   const { data: build, isLoading, error } = useSSEResourceQuery<TBuild>({
     sseUrl: org?.id && componentId && buildId
       ? `/api/orgs/${org.id}/components/${componentId}/builds/${buildId}/sse`
@@ -40,6 +43,7 @@ export function BuildProvider({
     enabled: !!org?.id && !!componentId && !!buildId,
     shouldPoll,
     eventName: 'build',
+    onError: onRefreshError,
     isFinished: isTerminalStatusV2,
   })
 

@@ -3,7 +3,7 @@ export interface ILabelSelector {
   not_match_labels?: Record<string, string>
 }
 
-export type InstallSelectionMode = 'manual' | 'labels'
+export type InstallSelectionMode = 'manual' | 'labels' | 'all'
 
 export interface IInstallGroup {
   id: string
@@ -13,4 +13,5 @@ export interface IInstallGroup {
   selection_mode: InstallSelectionMode
   order: number
   max_parallel: number
+  auto_approve_on_policies_passing: boolean
 }

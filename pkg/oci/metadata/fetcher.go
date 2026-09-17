@@ -93,6 +93,23 @@ type FetchOptions struct {
 	Guardrails *FetchGuardrails
 }
 
+// Always isolate: a nil repo.Client falls back to the process-global auth.DefaultClient
+// and its host-keyed auth.DefaultCache, which replays a dead token (ECR TTL 12h) and can
+// attach one fetch's credential to another's anonymous pull of the same host.
+func newAuthClient(serverAddr string, regAuth *RegistryAuth) *auth.Client {
+	client := &auth.Client{
+		Client: retry.DefaultClient,
+		Cache:  auth.NewCache(),
+	}
+	if regAuth != nil && regAuth.Username != "" {
+		client.Credential = auth.StaticCredential(serverAddr, auth.Credential{
+			Username: regAuth.Username,
+			Password: regAuth.Password,
+		})
+	}
+	return client
+}
+
 func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata, error) {
 	normalizedImage := dockerhub.NormalizeReference(opts.Image)
 	repo, err := remote.NewRepository(normalizedImage)
@@ -100,25 +117,18 @@ func FetchImageMetadata(ctx context.Context, opts *FetchOptions) (*ImageMetadata
 		return nil, fmt.Errorf("unable to create repository client: %w", err)
 	}
 
-	if opts.Auth != nil && opts.Auth.Username != "" {
-		serverAddr := opts.Auth.ServerAddress
-		serverAddr = strings.TrimPrefix(serverAddr, "https://")
+	serverAddr := ""
+	if opts.Auth != nil {
+		serverAddr = strings.TrimPrefix(opts.Auth.ServerAddress, "https://")
 		serverAddr = strings.TrimPrefix(serverAddr, "http://")
-		if serverAddr == "" {
-			parts := strings.SplitN(opts.Image, "/", 2)
-			if len(parts) > 0 {
-				serverAddr = parts[0]
-			}
-		}
-		repo.Client = &auth.Client{
-			Client: retry.DefaultClient,
-			Cache:  auth.DefaultCache,
-			Credential: auth.StaticCredential(serverAddr, auth.Credential{
-				Username: opts.Auth.Username,
-				Password: opts.Auth.Password,
-			}),
+	}
+	if serverAddr == "" {
+		parts := strings.SplitN(opts.Image, "/", 2)
+		if len(parts) > 0 {
+			serverAddr = parts[0]
 		}
 	}
+	repo.Client = newAuthClient(serverAddr, opts.Auth)
 
 	tag := opts.Tag
 	if tag == "" {

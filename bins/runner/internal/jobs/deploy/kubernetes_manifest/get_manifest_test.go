@@ -3,7 +3,6 @@ package kubernetes_manifest
 import (
 	"testing"
 
-	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -11,6 +10,8 @@ import (
 	discoveryFake "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/restmapper"
 	kubetesting "k8s.io/client-go/testing"
+
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
 // func TestObjDiff(t *testing.T) {

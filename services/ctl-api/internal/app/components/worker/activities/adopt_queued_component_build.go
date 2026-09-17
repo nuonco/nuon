@@ -76,5 +76,9 @@ func (a *Activities) AdoptQueuedComponentBuild(ctx context.Context, req AdoptQue
 		return nil, err
 	}
 
+	if err := a.pinBuildToBranchRunCommit(ctx, out.BuildID, req.AppConfigID); err != nil {
+		return nil, err
+	}
+
 	return out, nil
 }

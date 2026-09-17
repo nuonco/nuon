@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { useSSETimelineQuery } from '@/hooks/use-sse-timeline-query'
+import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getSandboxBuilds } from '@/lib'
 import { SandboxBuildTimeline } from './SandboxBuildTimeline'
 
@@ -21,6 +22,8 @@ export const SandboxBuildTimelineContainer = ({
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
 
+  const onRefreshError = useRefreshErrorToast()
+
   const { data: result } = useSSETimelineQuery({
     sseUrl:
       org?.id && app?.id
@@ -38,6 +41,7 @@ export const SandboxBuildTimelineContainer = ({
     shouldPoll,
     pollInterval,
     eventName: 'sandbox-builds',
+    onError: onRefreshError,
   })
 
   const builds = result?.data ?? []

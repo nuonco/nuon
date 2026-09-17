@@ -6,6 +6,7 @@ import (
 	// apps signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/appconfigsync"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/appconfigsynced"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/addinstall"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/appconfig"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/comparison"
@@ -35,6 +36,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/updatesandbox"
 
 	// general signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/bulk_cancel_workflows"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/promotion"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/slack_auto_link"
 
@@ -79,6 +81,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/inputsupdated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigdiff"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/labeladded"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/phonehomebackfill"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/polldependencies"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisiondns"

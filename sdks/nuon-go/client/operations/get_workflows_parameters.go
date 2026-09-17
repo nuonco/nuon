@@ -120,9 +120,15 @@ type GetWorkflowsParams struct {
 	*/
 	Search *string
 
+	/* Status.
+
+	   filter by workflow status (comma-separated for several statuses)
+	*/
+	Status *string
+
 	/* Type.
 
-	   filter by workflow type
+	   filter by workflow type (comma-separated for several types)
 	*/
 	Type *string
 
@@ -298,6 +304,17 @@ func (o *GetWorkflowsParams) SetSearch(search *string) {
 	o.Search = search
 }
 
+// WithStatus adds the status to the get workflows params
+func (o *GetWorkflowsParams) WithStatus(status *string) *GetWorkflowsParams {
+	o.SetStatus(status)
+	return o
+}
+
+// SetStatus adds the status to the get workflows params
+func (o *GetWorkflowsParams) SetStatus(status *string) {
+	o.Status = status
+}
+
 // WithType adds the typeVar to the get workflows params
 func (o *GetWorkflowsParams) WithType(typeVar *string) *GetWorkflowsParams {
 	o.SetType(typeVar)
@@ -453,6 +470,23 @@ func (o *GetWorkflowsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		if qSearch != "" {
 
 			if err := r.SetQueryParam("search", qSearch); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Status != nil {
+
+		// query param status
+		var qrStatus string
+
+		if o.Status != nil {
+			qrStatus = *o.Status
+		}
+		qStatus := qrStatus
+		if qStatus != "" {
+
+			if err := r.SetQueryParam("status", qStatus); err != nil {
 				return err
 			}
 		}

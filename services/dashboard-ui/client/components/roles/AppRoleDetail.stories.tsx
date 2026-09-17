@@ -11,6 +11,7 @@ const mockRole = {
   name: 'nuon-provision-role',
   type: 'provision',
   created_at: '2024-06-15T10:30:00Z',
+  named_policy_names: ['logs'],
   policies: [
     {
       id: 'pol-1',
@@ -55,12 +56,41 @@ const mockRole = {
   ),
 }
 
-export const Default = () => <AppRoleDetail role={mockRole} />
+const mockNamedPolicies = [
+  {
+    id: 'named-policy-1',
+    name: 'logs',
+    policy_name: 'nuon-install-logs',
+    description: 'Shared CloudWatch Logs access',
+    contents: btoa(
+      JSON.stringify({
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Effect: 'Allow',
+            Action: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+            Resource: '*',
+          },
+        ],
+      })
+    ),
+  },
+]
+
+export const Default = () => (
+  <AppRoleDetail role={mockRole} namedPolicies={mockNamedPolicies} />
+)
 
 export const NoPolicies = () => (
-  <AppRoleDetail role={{ ...mockRole, policies: [] }} />
+  <AppRoleDetail
+    role={{ ...mockRole, policies: [] }}
+    namedPolicies={mockNamedPolicies}
+  />
 )
 
 export const NoBoundary = () => (
-  <AppRoleDetail role={{ ...mockRole, permissions_boundary: undefined }} />
+  <AppRoleDetail
+    role={{ ...mockRole, permissions_boundary: undefined }}
+    namedPolicies={mockNamedPolicies}
+  />
 )

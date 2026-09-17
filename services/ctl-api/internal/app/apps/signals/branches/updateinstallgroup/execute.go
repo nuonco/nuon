@@ -40,6 +40,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}
 
+	if run.NoConfigChanges && !run.Force {
+		logger.Info("no config changes, skipping install group update")
+		return nil
+	}
+
+	if run.AppConfigID == "" {
+		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
+	}
+
 	installIDs, groupName, err := s.resolveInstallIDs(ctx)
 	if err != nil {
 		return err
@@ -50,7 +59,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	isPreviewApply := s.PreviewInstallID != ""
+	isPreviewApply := s.PreviewInstallID != "" || s.PreviewLabelSelector != nil
 
 	enqueued, err := s.enqueueInstallUpdates(ctx, installIDs, run)
 	if err != nil {
@@ -122,12 +131,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, string, error) {
-	if s.PreviewInstallID != "" {
+	if s.PreviewInstallID != "" || s.PreviewLabelSelector != nil {
+		resolved, err := installgroups.ResolvePreviewTarget(ctx, s.AppBranchID, s.PreviewInstallID, s.PreviewLabelSelector)
+		if err != nil {
+			return nil, "", err
+		}
 		name := s.SyntheticGroupName
 		if name == "" {
-			name = "preview"
+			name = resolved.GroupName
 		}
-		return []string{s.PreviewInstallID}, name, nil
+		return resolved.InstallIDs, name, nil
 	}
 	resolved, err := installgroups.Resolve(ctx, s.InstallGroupID, s.AppBranchID)
 	if err != nil {

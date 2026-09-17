@@ -10,8 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// RenderAndUploadCustomStacksTemplate renders and uploads the custom-stacks-only
-// CloudFormation artifact for the Terraform install path.
 func RenderAndUploadCustomStacksTemplate(
 	ctx workflow.Context,
 	installID string,
@@ -25,19 +23,38 @@ func RenderAndUploadCustomStacksTemplate(
 
 	inp.CustomStacksOnly = true
 
-	customRendered, err := activities.AwaitRenderAWSStackTemplate(ctx, &activities.RenderAWSStackTemplateRequest{
-		Input: inp,
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to render custom stacks only template")
+	var template []byte
+	var outputMap map[string]map[string]string
+	var inputParametersMap map[string]map[string]string
+	switch inp.AppCfg.RunnerConfig.Type {
+	case app.AppRunnerTypeAWS:
+		customRendered, err := activities.AwaitRenderAWSStackTemplate(ctx, &activities.RenderAWSStackTemplateRequest{
+			Input: inp,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to render custom stacks only template")
+		}
+		template = customRendered.RAWJson
+		outputMap = customRendered.CustomStacksOutputMap
+		inputParametersMap = customRendered.CustomStacksInputParametersMap
+	case app.AppRunnerTypeAzure:
+		customRendered, err := activities.AwaitRenderARMStackTemplate(ctx, &activities.RenderARMStackTemplateRequest{
+			Input: inp,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to render custom stacks only template")
+		}
+		template = customRendered.RAWJson
+		outputMap = customRendered.CustomStacksOutputMap
+		inputParametersMap = customRendered.CustomStacksInputParametersMap
+	default:
+		return nil
 	}
 
-	// BuildInstallerSDKConfig reads it back off stackVersion instead of
-	// re-fetching/parsing templates on every terraform plan.
 	if err := activities.AwaitSaveInstallStackVersionCustomStacksOutputMap(ctx, &activities.SaveInstallStackVersionCustomStacksOutputMapRequest{
 		ID:                 stackVersion.ID,
-		OutputMap:          customRendered.CustomStacksOutputMap,
-		InputParametersMap: customRendered.CustomStacksInputParametersMap,
+		OutputMap:          outputMap,
+		InputParametersMap: inputParametersMap,
 	}); err != nil {
 		return errors.Wrap(err, "unable to save custom stacks output map")
 	}
@@ -49,7 +66,7 @@ func RenderAndUploadCustomStacksTemplate(
 
 	if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
 		BucketKey: stackVersion.CustomStacksAWSBucketKey,
-		Template:  customRendered.RAWJson,
+		Template:  template,
 	}); err != nil {
 		return errors.Wrap(err, "unable to upload custom stacks only template")
 	}

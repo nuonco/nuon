@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/go-playground/validator/v10"
+
 	pkgcommand "github.com/nuonco/nuon/pkg/command"
 	"github.com/nuonco/nuon/pkg/zapwriter"
 )

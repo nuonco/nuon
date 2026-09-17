@@ -159,6 +159,9 @@ func GenerateLocalActivity(data ActivityData) ([]byte, error) {
 	}
 
 	tmpl, err := template.New("activity_local").Funcs(template.FuncMap{
+		"durationToNs": func(d time.Duration) int64 {
+			return d.Nanoseconds()
+		},
 		"ToPascal": func(s string) string {
 			if s == "" {
 				return ""

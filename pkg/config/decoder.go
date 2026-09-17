@@ -4,8 +4,9 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-func DecoderConfig() *mapstructure.DecoderConfig {
+func DecoderConfig(opts ...ParseOption) *mapstructure.DecoderConfig {
+	cfg := parseOptions(opts...)
 	return &mapstructure.DecoderConfig{
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(DecodeSource, DecodeComponent, DecodeInstallInputs),
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(DecodeSource, DecodeComponent(cfg.RootDir), DecodeInstallInputs),
 	}
 }

@@ -59,12 +59,34 @@ func TestWriteUnauthorizedSetsWWWAuthenticate(t *testing.T) {
 		w.Header().Get("WWW-Authenticate"))
 }
 
+func TestWriteForbidden(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	(&Server{implementationName: "nuonctl"}).writeForbidden(w)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.JSONEq(t, `{
+		"error": "access_denied",
+		"error_description": "nuonctl MCP is limited to Nuon employees"
+	}`, w.Body.String())
+}
+
 func TestAccountHasOrgAccess(t *testing.T) {
 	acct := &app.Account{OrgIDs: []string{"org_a", "org_b"}}
 	assert.True(t, accountHasOrgAccess(acct, "org_a"))
 	assert.True(t, accountHasOrgAccess(acct, "org_b"))
 	assert.False(t, accountHasOrgAccess(acct, "org_c"))
 	assert.False(t, accountHasOrgAccess(&app.Account{}, "org_a"))
+}
+
+func TestAccountAllowed(t *testing.T) {
+	employee := &app.Account{IsEmployee: true}
+	external := &app.Account{IsEmployee: false}
+
+	assert.True(t, (&Server{}).accountAllowed(employee))
+	assert.True(t, (&Server{}).accountAllowed(external))
+	assert.True(t, (&Server{requireEmployee: true}).accountAllowed(employee))
+	assert.False(t, (&Server{requireEmployee: true}).accountAllowed(external))
 }
 
 func newTestServer() *Server {

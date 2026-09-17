@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	defaultNamespace string = "default"
+	defaultNamespace string = "emitters"
 )
 
 type Worker struct {

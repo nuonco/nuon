@@ -17,18 +17,14 @@ import (
 )
 
 // ReprovisionStack recreates the install stack — and with it the runner — without
-// touching the sandbox. Components are only redeployed when the caller opts in by
-// leaving the skip_components metadata off; a bare stack reprovision leaves whatever
-// is running on the sandbox alone.
+// touching the sandbox or redeploying components. Whatever is already running on
+// the sandbox is left alone.
 //
 // No pre/post reprovision lifecycle actions run around the stack itself: actions
 // execute on the runner, and the runner is torn down and recreated mid-workflow, so a
-// pre-hook would run against the old runner and a post-hook against the new one. The
-// component deploys, when they run, still carry their own
-// pre/post-deploy-all-components hooks.
+// pre-hook would run against the old runner and a post-hook against the new one.
 func ReprovisionStack(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
-	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup(flw)
 
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
@@ -40,35 +36,8 @@ func ReprovisionStack(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSte
 	if err != nil {
 		return nil, err
 	}
-	steps = append(steps, stackSteps...)
 
-	if generics.FromPtrStr(flw.Metadata["skip_components"]) == "true" {
-		return sg.Result(steps), nil
-	}
-
-	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get app config")
-	}
-
-	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
-		InstallID: installID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get action workflows")
-	}
-
-	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
-
-	// getStackReprovisionSteps ends on the wait for the recreated runner, so the
-	// deploys do not need to gate on it again.
-	deploySteps, err := deployAllComponents(ctx, dg, false)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, deploySteps...)
-
-	return sg.Result(steps), nil
+	return sg.Result(stackSteps), nil
 }
 
 // getStackReprovisionSteps emits the steps that recreate an install's stack: a new

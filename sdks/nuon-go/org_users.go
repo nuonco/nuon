@@ -23,6 +23,27 @@ func (c *client) GetOrgInvites(ctx context.Context, query *models.GetPaginatedQu
 	return resp.Payload, hasNextPage(hr), nil
 }
 
+func (c *client) GetOrgMembers(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppOrgMember, bool, error) {
+	params := &operations.GetOrgMembersParams{
+		Context: ctx,
+	}
+
+	params.Offset, params.Limit = applyPaginationQuery(query)
+
+	if query != nil && query.Q != "" {
+		q := query.Q
+		params.Q = &q
+	}
+
+	hr := newResponseHeaderReader(&operations.GetOrgMembersReader{})
+	resp, err := c.genClient.Operations.GetOrgMembers(params, c.getOrgIDAuthInfo(), hr.ClientOption())
+	if err != nil {
+		return nil, false, err
+	}
+
+	return resp.Payload, hasNextPage(hr), nil
+}
+
 func (c *client) CreateOrgInvite(ctx context.Context, req *models.ServiceCreateOrgInviteRequest) (*models.AppOrgInvite, error) {
 	resp, err := c.genClient.Operations.CreateOrgInvite(&operations.CreateOrgInviteParams{
 		Req:     req,

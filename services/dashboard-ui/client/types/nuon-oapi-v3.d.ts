@@ -5,6 +5,13 @@
 
 
 export interface paths {
+  "/.well-known/jwks.json": {
+    /**
+     * Get telemetry JWT public keys
+     * @description Returns the public RSA keys used to verify BYOC telemetry access tokens.
+     */
+    get: operations["GetTelemetryJWKS"];
+  };
   "/slack/commands/nuon": {
     /**
      * Slack /nuon slash command webhook
@@ -348,6 +355,13 @@ export interface paths {
      * @description Creates and triggers a workflow run for an app branch. If config_id is not provided, uses the latest config.
      */
     post: operations["TriggerAppBranchRun"];
+  };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}": {
+    /**
+     * get an app branch workflow run
+     * @description Returns a branch workflow by either app branch run ID or workflow ID.
+     */
+    get: operations["GetAppBranchRun"];
   };
   "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/builds": {
     /**
@@ -1594,6 +1608,13 @@ export interface paths {
      */
     get: operations["GetInstallActionRecentRuns"];
   };
+  "/v1/installs/{install_id}/app-branch": {
+    /**
+     * move an install to another app branch
+     * @description Moves the install to the given app branch and reconciles it onto that branch's current app config. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app and have an active, non-preview app config. There is no way to move an install off a branch without naming another.
+     */
+    patch: operations["MoveInstallToAppBranch"];
+  };
   "/v1/installs/{install_id}/app-config-updates": {
     /**
      * trigger an app config update for an install
@@ -2109,7 +2130,7 @@ export interface paths {
   "/v1/installs/{install_id}/reprovision-stack": {
     /**
      * reprovision an install stack
-     * @description Reprovision an install stack, recreating the runner and its infrastructure. Set `skip_components` to avoid redeploying components on top of the new stack.
+     * @description Reprovision an install stack, recreating the runner and its infrastructure. Components are not redeployed.
      */
     post: operations["ReprovisionInstallStack"];
   };
@@ -2242,6 +2263,19 @@ export interface paths {
      * @description Execute the sync secrets workflow.
      */
     post: operations["SyncSecrets"];
+  };
+  "/v1/installs/{install_id}/telemetry": {
+    /** Get an install's telemetry settings */
+    get: operations["GetInstallTelemetrySettings"];
+    /** Update an install's telemetry settings */
+    patch: operations["UpdateInstallTelemetrySettings"];
+  };
+  "/v1/installs/{install_id}/updates": {
+    /**
+     * get typed updates for an install
+     * @description Returns app config, input, stack, and install config updates in reverse chronological order.
+     */
+    get: operations["GetInstallUpdates"];
   };
   "/v1/installs/{install_id}/workflows": {
     /**
@@ -2498,6 +2532,13 @@ export interface paths {
      * Only org admins can revoke invites. Only pending invites can be revoked.
      */
     post: operations["RevokeOrgInvite"];
+  };
+  "/v1/orgs/current/members": {
+    /**
+     * Get current org members and pending invites
+     * @description Returns a paginated, searchable list of the current org's active members and pending invites.
+     */
+    get: operations["GetOrgMembers"];
   };
   "/v1/orgs/current/remove-user": {
     /**
@@ -2973,7 +3014,7 @@ export interface paths {
   "/v1/stacks/{install_id}/service-account": {
     /**
      * get an install stack's service account
-     * @description Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
+     * @description Return the service account an install stack's Terraform module authenticates as, whether it holds a usable API token, and the runner API URL its provider authenticates against. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
      */
     get: operations["GetStackServiceAccount"];
   };
@@ -3583,6 +3624,13 @@ export interface components {
       enabled_in_stack?: components["schemas"]["sql.NullBool"];
       id?: string;
       name?: string;
+      /**
+       * @description NamedPolicyNames references AppNamedIAMPolicyConfig.Name values on the
+       * same permissions config. JSONB because each app config is a snapshot.
+       * Templated for the same reason the policy's Name is: both sides must
+       * render to the same string for the attachment to resolve.
+       */
+      named_policy_names?: string[];
       org_id?: string;
       owner_id?: string;
       owner_type?: string;
@@ -3632,6 +3680,7 @@ export interface components {
       post_deploy_runbook_ids?: string[];
       preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      run_config?: components["schemas"]["app.AppBranchRunConfig"];
       runbook_ids?: string[];
       /**
        * @description SendStatusesOnIgnore posts a successful commit status when a run is ignored
@@ -3643,12 +3692,13 @@ export interface components {
     };
     "app.AppBranchInstallGroup": {
       /**
-       * @description AllInstalls claims every install on the app that no other branch owns.
+       * @description AllInstalls targets every install owned by this group's app branch.
        * A nil LabelSelector already means "use InstallIDs", so there is no
        * selector shape that expresses "everything" — hence the explicit flag.
        */
       all_installs?: boolean;
       app_branch_config_id?: string;
+      auto_approve_on_policies_passing?: boolean | null;
       created_at?: string;
       created_by_id?: string;
       id?: string;
@@ -3662,10 +3712,12 @@ export interface components {
     };
     "app.AppBranchPreviewConfig": {
       comment?: boolean;
+      ignore_drafts?: boolean;
       install_id?: string;
       install_name?: string;
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
+      react?: boolean;
       set_statuses?: boolean;
     };
     "app.AppBranchPreviewOverride": {
@@ -3693,6 +3745,7 @@ export interface components {
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       log_stream?: components["schemas"]["app.LogStream"];
       log_stream_id?: string;
+      metadata?: components["schemas"]["app.AppBranchRunMetadata"];
       no_config_changes?: boolean;
       plan_only?: boolean;
       pr_number?: number;
@@ -3721,6 +3774,25 @@ export interface components {
       org_id?: string;
       updated_at?: string;
     };
+    "app.AppBranchRunConfig": {
+      github_label?: string;
+      mode?: components["schemas"]["app.AppBranchRunMode"];
+      tag_prefix?: string;
+    };
+    "app.AppBranchRunMetadata": {
+      base_branch?: string;
+      git_ref?: string;
+      github_label?: string;
+      head_sha?: string;
+      is_draft?: boolean;
+      pr_number?: number;
+      run_mode?: string;
+      tag?: string;
+      tag_prefix?: string;
+      trigger?: components["schemas"]["app.AppBranchRunTrigger"];
+    };
+    /** @enum {string} */
+    "app.AppBranchRunMode": "push" | "on_tag_prefix" | "on_github_label" | "manual_only";
     "app.AppBranchRunPreview": {
       app_branch_run_id?: string;
       branch_preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
@@ -3732,6 +3804,7 @@ export interface components {
       input_app_config_id?: string;
       install_id?: string;
       install_name?: string;
+      is_draft_mode?: boolean;
       mode?: components["schemas"]["app.AppBranchRunPreviewMode"];
       org_id?: string;
       override_preview_config?: components["schemas"]["app.AppBranchPreviewOverride"];
@@ -3744,6 +3817,8 @@ export interface components {
     "app.AppBranchRunPreviewMode": "plan-only" | "apply" | "build-only";
     /** @enum {string} */
     "app.AppBranchRunPreviewSource": "pr" | "commit" | "branch" | "local";
+    /** @enum {string} */
+    "app.AppBranchRunTrigger": "manual" | "push" | "pull_request" | "tag" | "github_label" | "onboarding";
     /** @enum {string} */
     "app.AppBranchRunType": "manual-run" | "git-run" | "git-preview-run";
     "app.AppBreakGlassConfig": {
@@ -3783,6 +3858,7 @@ export interface components {
       runner?: components["schemas"]["app.AppRunnerConfig"];
       sandbox?: components["schemas"]["app.AppSandboxConfig"];
       secrets?: components["schemas"]["app.AppSecretsConfig"];
+      source_config?: components["schemas"]["blobstore.Blob"];
       stack?: components["schemas"]["app.AppStackConfig"];
       state?: string;
       status?: components["schemas"]["app.AppConfigStatus"];
@@ -3905,6 +3981,25 @@ export interface components {
       org_id?: string;
       updated_at?: string;
     };
+    "app.AppNamedIAMPolicyConfig": {
+      app_config_id?: string;
+      app_permissions_config_id?: string;
+      cloudformation_stack_name?: string;
+      contents?: string;
+      created_at?: string;
+      created_by_id?: string;
+      description?: string;
+      id?: string;
+      /**
+       * @description Name is the config identifier and the AWS IAM managed policy name.
+       * Roles attach this policy by repeating the same name.
+       */
+      name?: string;
+      org_id?: string;
+      /** @description PolicyName is the AWS IAM managed policy name. Empty means use Name. */
+      policy_name?: string;
+      updated_at?: string;
+    };
     "app.AppOperationRoleConfig": {
       app_config_id?: string;
       app_id?: string;
@@ -3939,6 +4034,7 @@ export interface components {
       deprovision_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
       id?: string;
       maintenance_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
+      named_policies?: components["schemas"]["app.AppNamedIAMPolicyConfig"][];
       org_id?: string;
       /** @description loaded via an after query */
       provision_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
@@ -4263,6 +4359,8 @@ export interface components {
       git_ref?: string;
       id?: string;
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
+      /** @description IsPreview is true when this build came from a preview branch run. */
+      is_preview?: boolean;
       log_stream?: components["schemas"]["app.LogStream"];
       /**
        * @description NoOp is true when the runner detected SourceDigest matches the previous
@@ -4381,6 +4479,7 @@ export interface components {
       component_id?: string;
       component_name?: string;
       component_type?: string;
+      impact_reasons?: components["schemas"]["diff.ImpactReason"][];
       new_build_id?: string;
       new_checksum?: string;
       old_build_id?: string;
@@ -4424,6 +4523,12 @@ export interface components {
     /** @enum {string} */
     "app.ComponentType": "terraform_module" | "helm_chart" | "docker_build" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "unknown";
     "app.CompositeStatus": {
+      /**
+       * @description CompositeError is the parsed, structured cause of a failure status. The
+       * human description is a one-line summary; this carries the full typed error
+       * so the dashboard can render the diagnostic instead of just the headline.
+       */
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at_ts?: number;
       created_by_id?: string;
       history?: components["schemas"]["app.CompositeStatus"][];
@@ -4957,10 +5062,14 @@ export interface components {
       sandbox_new_id?: string;
       sandbox_old_id?: string;
       stack_changed?: boolean;
+      stack_impact_reasons?: components["schemas"]["diff.ImpactReason"][];
+      stack_impacts?: components["schemas"]["app.InstallConfigImpact"][];
       stack_new_id?: string;
       stack_old_id?: string;
       unchanged?: components["schemas"]["app.ComponentDiffEntry"][];
     };
+    /** @enum {string} */
+    "app.InstallConfigImpact": "stack_config" | "permissions" | "break_glass" | "secrets" | "runner_config";
     "app.InstallConfigSync": {
       app_branch_config_id?: string;
       app_branch_id?: string;
@@ -5678,6 +5787,19 @@ export interface components {
     };
     /** @enum {string} */
     "app.OrgInviteStatus": "pending" | "accepted" | "revoked";
+    "app.OrgMember": {
+      account_id?: string;
+      created_at?: string;
+      email?: string;
+      id?: string;
+      invite_id?: string;
+      joined_at?: string;
+      name?: string;
+      role_type?: components["schemas"]["app.RoleType"];
+      status?: components["schemas"]["app.OrgMemberStatus"];
+    };
+    /** @enum {string} */
+    "app.OrgMemberStatus": "active" | "invited";
     "app.OtelLogRecord": {
       body?: string;
       created_at?: string;
@@ -5937,6 +6059,8 @@ export interface components {
       description?: string;
       id?: string;
       managed?: boolean;
+      /** @description NOTE: not all roles have to belong to an org, this is mainly for historical reasons. */
+      org_id?: string;
       policies?: components["schemas"]["app.Policy"][];
       role_type?: components["schemas"]["app.RoleType"];
       /**
@@ -6127,7 +6251,12 @@ export interface components {
       runner_group_id?: string;
       /** @description configuration for managing the runner server side */
       sandbox_mode?: boolean;
+      telemetry_relay_endpoint?: string;
       updated_at?: string;
+      vendor_telemetry_enabled?: boolean;
+      vendor_telemetry_resource_attributes?: {
+        [key: string]: string;
+      };
       vm_max_uptime?: number;
     };
     /** @enum {string} */
@@ -7014,7 +7143,10 @@ export interface components {
     "diff.Diff": {
       children?: components["schemas"]["diff.Diff"][];
       diff?: components["schemas"]["diff.DiffKey"];
+      impact_reasons?: components["schemas"]["diff.ImpactReason"][];
+      impacted?: boolean;
       key?: string;
+      resource_id?: string;
     };
     "diff.DiffKey": {
       after?: string;
@@ -7028,6 +7160,12 @@ export interface components {
       has_changed?: boolean;
       removed?: number;
       unchanged?: number;
+    };
+    /** @enum {string} */
+    "diff.EdgeReason": "component_dependency" | "component_reference" | "input_reference" | "install_stack_output" | "operation_role" | "sandbox_output" | "secret_reference" | "stack_render";
+    "diff.ImpactReason": {
+      edge?: components["schemas"]["diff.EdgeReason"];
+      from?: string;
     };
     /** @enum {string} */
     "diff.Op": "add" | "remove" | "change" | "noop" | "";
@@ -7715,7 +7853,12 @@ export interface components {
       display_name: string;
       enabled_in_stack?: boolean | null;
       name: string;
+      named_policy_names?: string[];
       permissions_boundary?: string;
+      /**
+       * @description Policies may be empty when the role attaches named policies instead. A
+       * role with neither grants nothing and is rejected.
+       */
       policies?: components["schemas"]["service.AppAWSIAMPolicyConfig"][];
     };
     "service.AppBranchRunComparisonResponse": {
@@ -7798,6 +7941,12 @@ export interface components {
         [key: string]: string;
       };
       labels?: components["schemas"]["service.AppLabelKeySummary"][];
+    };
+    "service.AppNamedIAMPolicyConfig": {
+      contents: string;
+      description?: string;
+      name: string;
+      policy_name?: string;
     };
     "service.AppPolicyConfig": {
       components?: string[];
@@ -8011,21 +8160,21 @@ export interface components {
        * it matches this RE2 pattern. Omit to carry the current setting forward; send
        * an empty string to clear it.
        */
-      ignore_changes_regex?: string;
+      ignore_changes_regex?: string | null;
       install_groups?: components["schemas"]["service.InstallGroupRequest"][];
       /**
        * @description PostDeployRunbookIDs run on each install, in order, after its deploy succeeds.
        * Omit to carry the current setting forward; send an empty array to clear it.
        */
       post_deploy_runbook_ids?: string[];
-      /** @description PreviewConfig sets branch-level preview defaults. Omit to carry forward. */
       preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
+      run_config?: components["schemas"]["app.AppBranchRunConfig"];
       /**
        * @description SendStatusesOnIgnore posts a successful commit status for runs ignored by
        * IgnoreChangesRegex. Omit to carry the current setting forward.
        */
-      send_statuses_on_ignore?: boolean;
+      send_statuses_on_ignore?: boolean | null;
     };
     "service.CreateAppBranchRequest": {
       managed_by?: string;
@@ -8087,6 +8236,7 @@ export interface components {
       custom_roles?: components["schemas"]["service.AppAWSIAMRoleConfig"][];
       deprovision_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
       maintenance_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
+      named_policies?: components["schemas"]["service.AppNamedIAMPolicyConfig"][];
       provision_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
     };
     "service.CreateAppPoliciesConfigRequest": {
@@ -8335,6 +8485,13 @@ export interface components {
       };
     };
     "service.CreateInstallRequest": {
+      /**
+       * @description AppBranchID is the optional app branch this install belongs to. When set,
+       * the install starts on that branch's active app config and stays on the
+       * branch until explicitly moved. When empty, the install uses the latest
+       * unbranched config from apps sync.
+       */
+      app_branch_id?: string;
       aws_account?: components["schemas"]["helpers.CreateInstallAWSAccountParams"];
       azure_account?: components["schemas"]["helpers.CreateInstallAzureAccountParams"];
       gcp_account?: components["schemas"]["helpers.CreateInstallGCPAccountParams"];
@@ -8358,6 +8515,13 @@ export interface components {
       stack_only?: boolean;
     };
     "service.CreateInstallV2Request": {
+      /**
+       * @description AppBranchID is the optional app branch this install belongs to. When set,
+       * the install starts on that branch's active app config and stays on the
+       * branch until explicitly moved. When empty, the install uses the latest
+       * unbranched config from apps sync.
+       */
+      app_branch_id?: string;
       app_id: string;
       aws_account?: components["schemas"]["helpers.CreateInstallAWSAccountParams"];
       azure_account?: components["schemas"]["helpers.CreateInstallAzureAccountParams"];
@@ -8730,6 +8894,10 @@ export interface components {
       repo_url: string;
       version?: string;
     };
+    "service.InstallAppConfigUpdate": {
+      diff?: components["schemas"]["app.InstallConfigDiff"];
+      version?: components["schemas"]["app.InstallAppConfigVersion"];
+    };
     "service.InstallAppPermissionsConfigResponse": {
       break_glass_roles?: components["schemas"]["service.InstallPermissionsRoleStatus"][];
       custom_roles?: components["schemas"]["service.InstallPermissionsRoleStatus"][];
@@ -8762,12 +8930,20 @@ export interface components {
       transitions?: components["schemas"]["service.HealthTransitionResponse"][];
       uptime_percent?: number;
     };
+    "service.InstallConfigUpdate": {
+      version?: components["schemas"]["app.InstallConfigVersion"];
+    };
     "service.InstallGroupRequest": {
       /**
-       * @description AllInstalls targets every install on the app that no other branch owns.
+       * @description AllInstalls targets every install owned by this branch.
        * Mutually exclusive with InstallIDs and LabelSelector.
        */
       all_installs?: boolean;
+      /**
+       * @description AutoApproveOnPoliciesPassing approves this group's plan step without user
+       * input when its policy checks pass. Omit to leave it unset (off).
+       */
+      auto_approve_on_policies_passing?: boolean | null;
       install_ids?: string[];
       /**
        * @description LabelSelector dynamically resolves installs at deploy time.
@@ -8800,6 +8976,10 @@ export interface components {
       observed_seconds?: number;
       uptime_percent?: number;
     };
+    "service.InstallInputsUpdate": {
+      input_config_id?: string;
+      keys?: string[];
+    };
     "service.InstallPermissionsRoleStatus": {
       app_config_id?: string;
       arn?: string;
@@ -8814,6 +8994,13 @@ export interface components {
       enabled_in_stack?: components["schemas"]["sql.NullBool"];
       id?: string;
       name?: string;
+      /**
+       * @description NamedPolicyNames references AppNamedIAMPolicyConfig.Name values on the
+       * same permissions config. JSONB because each app config is a snapshot.
+       * Templated for the same reason the policy's Name is: both sides must
+       * render to the same string for the attachment to resolve.
+       */
+      named_policy_names?: string[];
       org_id?: string;
       owner_id?: string;
       owner_type?: string;
@@ -8824,6 +9011,36 @@ export interface components {
     };
     "service.InstallPhoneHomeRequest": {
       [key: string]: unknown;
+    };
+    "service.InstallStackUpdate": {
+      input_diff?: components["schemas"]["app.StackVersionRunInputDiff"];
+      role_diff?: components["schemas"]["app.StackVersionRunRoleDiff"];
+      run_type?: components["schemas"]["app.StackVersionRunType"];
+      status?: components["schemas"]["app.CompositeStatus"];
+      version_id?: string;
+    };
+    "service.InstallTelemetrySettings": {
+      enabled?: boolean;
+    };
+    "service.InstallUpdate": {
+      app_config?: components["schemas"]["service.InstallAppConfigUpdate"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      inputs?: components["schemas"]["service.InstallInputsUpdate"];
+      install_config?: components["schemas"]["service.InstallConfigUpdate"];
+      stack?: components["schemas"]["service.InstallStackUpdate"];
+      type?: components["schemas"]["service.InstallUpdateType"];
+      workflow_id?: string;
+    };
+    /** @enum {string} */
+    "service.InstallUpdateType": "app_config" | "inputs" | "stack" | "install_config";
+    "service.InstallUpdatesResponse": {
+      current_app_branch_run?: components["schemas"]["app.AppBranchRun"];
+      has_more?: boolean;
+      limit?: number;
+      page?: number;
+      updates?: components["schemas"]["service.InstallUpdate"][];
     };
     "service.InstallsHealthResponse": {
       all_healthy?: boolean;
@@ -8890,6 +9107,13 @@ export interface components {
     "service.MngShutDownRequest": Record<string, never>;
     "service.MngUpdateRequest": Record<string, never>;
     "service.MngVMShutDownRequest": Record<string, never>;
+    "service.MoveInstallToAppBranchRequest": {
+      /**
+       * @description AppBranchID is the branch to move the install to. It must belong to the
+       * install's app and have an app config to deploy.
+       */
+      app_branch_id: string;
+    };
     "service.OperationRoleRuleRequest": {
       operation: components["schemas"]["app.OperationType"];
       principal: string;
@@ -9014,7 +9238,6 @@ export interface components {
     "service.ReprovisionInstallStackRequest": {
       plan_only?: boolean;
       role?: string;
-      skip_components?: boolean;
     };
     "service.ResetInstallHealthBaselineResponse": {
       baseline_at?: string;
@@ -9081,6 +9304,8 @@ export interface components {
        * expired or been revoked; the caller fixes both the same way.
        */
       has_live_token?: boolean;
+      /** @description Without it a dashboard points the module's provider at production. */
+      runner_api_url?: string;
     };
     "service.SyncSecretsRequest": {
       plan_only?: boolean;
@@ -9092,6 +9317,17 @@ export interface components {
     "service.TeardownInstallComponentsRequest": {
       plan_only?: boolean;
       role?: string;
+    };
+    "service.TelemetryJSONWebKey": {
+      alg?: string;
+      e?: string;
+      kid?: string;
+      kty?: string;
+      n?: string;
+      use?: string;
+    };
+    "service.TelemetryJSONWebKeySet": {
+      keys?: components["schemas"]["service.TelemetryJSONWebKey"][];
     };
     "service.TimeseriesBucket": {
       denies?: number;
@@ -9132,9 +9368,9 @@ export interface components {
        * @description IgnoreChangesRegex marks a run not-attempted when every changed file path in
        * it matches this RE2 pattern. Send an empty string to clear it.
        */
-      ignore_changes_regex?: string;
+      ignore_changes_regex?: string | null;
       /** @description SendStatusesOnIgnore posts a successful commit status for ignored runs. */
-      send_statuses_on_ignore?: boolean;
+      send_statuses_on_ignore?: boolean | null;
     };
     "service.UpdateAppBranchRequest": {
       name: string;
@@ -9217,6 +9453,9 @@ export interface components {
       name?: string;
     };
     "service.UpdateInstallRoleRequest": {
+      enabled: boolean;
+    };
+    "service.UpdateInstallTelemetryRequest": {
       enabled: boolean;
     };
     "service.UpdateNotebookRequest": {
@@ -9531,6 +9770,26 @@ export type external = Record<string, never>;
 
 export interface operations {
 
+  /**
+   * Get telemetry JWT public keys
+   * @description Returns the public RSA keys used to verify BYOC telemetry access tokens.
+   */
+  GetTelemetryJWKS: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.TelemetryJSONWebKeySet"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * Slack /nuon slash command webhook
    * @description Slack invokes this endpoint when a user runs `/nuon <subcommand>` in any channel of an installed workspace. Authenticated via the Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Subcommands: subscribe, unsubscribe, status, help. Responses are ephemeral.
@@ -11480,6 +11739,8 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
+        /** @description filter branches by name */
+        q?: string;
       };
       path: {
         /** @description app ID */
@@ -12109,6 +12370,18 @@ export interface operations {
         page?: number;
         /** @description exclude preview (plan only) runs when set to false */
         planonly?: boolean;
+        /** @description return only preview runs when true, only rollout runs when false */
+        preview?: boolean;
+        /** @description case-insensitive substring match against run title and id */
+        q?: string;
+        /** @description filter by workflow type (comma-separated for several types) */
+        type?: string;
+        /** @description filter by workflow status (comma-separated for several statuses) */
+        status?: string;
+        /** @description filter runs created after timestamp (RFC3339 format) */
+        created_at_gte?: string;
+        /** @description filter runs created before timestamp (RFC3339 format) */
+        created_at_lte?: string;
       };
       path: {
         /** @description app ID */
@@ -12180,6 +12453,60 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.AppBranchRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app branch workflow run
+   * @description Returns a branch workflow by either app branch run ID or workflow ID.
+   */
+  GetAppBranchRun: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+        /** @description app branch run ID or workflow ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"];
         };
       };
       /** @description Bad Request */
@@ -20124,6 +20451,8 @@ export interface operations {
         runner_id?: string;
         /** @description filter installs by branch name (comma-separated; use __none__ for installs with no branch) */
         branches?: string;
+        /** @description include install components */
+        include_components?: boolean;
         /** @description limit of results to return */
         limit?: number;
         /** @description page number of results to return */
@@ -21627,6 +21956,62 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * move an install to another app branch
+   * @description Moves the install to the given app branch and reconciles it onto that branch's current app config. An install belongs to exactly one app branch and this is the only way to change which one; labels and install group selectors decide which group inside the owning branch deploys it. The destination branch must belong to the same app and have an active, non-preview app config. There is no way to move an install off a branch without naming another.
+   */
+  MoveInstallToAppBranch: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.MoveInstallToAppBranchRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"];
         };
       };
       /** @description Bad Request */
@@ -25072,7 +25457,7 @@ export interface operations {
   };
   /**
    * reprovision an install stack
-   * @description Reprovision an install stack, recreating the runner and its infrastructure. Set `skip_components` to avoid redeploying components on top of the new stack.
+   * @description Reprovision an install stack, recreating the runner and its infrastructure. Components are not redeployed.
    */
   ReprovisionInstallStack: {
     parameters: {
@@ -26277,6 +26662,152 @@ export interface operations {
       };
     };
   };
+  /** Get an install's telemetry settings */
+  GetInstallTelemetrySettings: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallTelemetrySettings"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** Update an install's telemetry settings */
+  UpdateInstallTelemetrySettings: {
+    parameters: {
+      path: {
+        /** @description Install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateInstallTelemetryRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallTelemetrySettings"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get typed updates for an install
+   * @description Returns app config, input, stack, and install config updates in reverse chronological order.
+   */
+  GetInstallUpdates: {
+    parameters: {
+      query?: {
+        /** @description page number */
+        page?: number;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description page size */
+        limit?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallUpdatesResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * get workflows
    * @description Return workflows for an install.
@@ -26292,8 +26823,10 @@ export interface operations {
         page?: number;
         /** @description exclude plan only workflows when set to false */
         planonly?: boolean;
-        /** @description filter by workflow type */
+        /** @description filter by workflow type (comma-separated for several types) */
         type?: string;
+        /** @description filter by workflow status (comma-separated for several statuses) */
+        status?: string;
         /** @description filter by finished state */
         finished?: boolean;
         /** @description filter workflows created after timestamp (RFC3339 format) */
@@ -27706,6 +28239,66 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.OrgInvite"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get current org members and pending invites
+   * @description Returns a paginated, searchable list of the current org's active members and pending invites.
+   */
+  GetOrgMembers: {
+    parameters: {
+      query?: {
+        /** @description search query to filter members by email or name */
+        q?: string;
+        /** @description comma-separated statuses: active and/or invited */
+        status?: string;
+        /** @description comma-separated role types */
+        role_type?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OrgMember"][];
         };
       };
       /** @description Bad Request */
@@ -30993,7 +31586,7 @@ export interface operations {
   };
   /**
    * get an install stack's service account
-   * @description Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
+   * @description Return the service account an install stack's Terraform module authenticates as, whether it holds a usable API token, and the runner API URL its provider authenticates against. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
    */
   GetStackServiceAccount: {
     parameters: {

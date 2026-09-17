@@ -43,7 +43,11 @@ import (
 
 // testDomainServices returns all domain services that register swagger-annotated routes,
 // instantiated with zero-value params for route registration testing.
-func testDomainServices(ea *api.EndpointAudit) []api.Service {
+func testDomainServices(t *testing.T, ea *api.EndpointAudit) []api.Service {
+	t.Helper()
+	runnersService, err := runnersservice.New(runnersservice.Params{EndpointAudit: ea})
+	require.NoError(t, err)
+
 	return []api.Service{
 		accountsservice.New(accountsservice.Params{}),
 		actionsservice.New(actionsservice.Params{EndpointAudit: ea}),
@@ -58,7 +62,7 @@ func testDomainServices(ea *api.EndpointAudit) []api.Service {
 		policyreportsservice.New(policyreportsservice.Params{EndpointAudit: ea}),
 		queuesservice.New(queuesservice.Params{}),
 		runnerauthservice.New(runnerauthservice.Params{}),
-		runnersservice.New(runnersservice.Params{EndpointAudit: ea}),
+		runnersService,
 		runbooksservice.New(runbooksservice.Params{EndpointAudit: ea}),
 		slackservice.New(slackservice.Params{
 			EndpointAudit: ea,
@@ -222,7 +226,7 @@ func TestSwaggerRoutesRegisteredInGin(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	ea := api.NewEndpointAudit()
-	services := testDomainServices(ea)
+	services := testDomainServices(t, ea)
 
 	// Each swagger spec maps to one or more route-registration methods.
 	// The public spec includes routes from both RegisterPublicRoutes (unauthenticated)

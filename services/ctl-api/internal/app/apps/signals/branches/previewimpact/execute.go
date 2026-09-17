@@ -22,6 +22,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}
 
+	if run.NoConfigChanges && !run.Force {
+		l.Info("no config changes, skipping preview impact")
+		return nil
+	}
+
+	if run.AppConfigID == "" {
+		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
+	}
+
 	groups, err := s.computeImpact(ctx, l, run.AppConfigID)
 	if err != nil {
 		return err
@@ -198,6 +207,7 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 	body := activities.BuildPRCommentBody(&activities.PRCommentParams{
 		OrgName:          branch.Org.Name,
 		AppName:          branch.App.Name,
+		AppBranchID:      branch.ID,
 		BranchName:       branch.Name,
 		RunID:            s.RunID,
 		RunURL:           previewRunURL(commentContext),
@@ -212,6 +222,7 @@ func (s *Signal) updatePRComment(ctx workflow.Context, l log.Logger, run *app.Ap
 	if _, err := activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 		VcsConfigID:       vcsConfigID,
 		PRNumber:          *run.PRNumber,
+		AppBranchID:       run.AppBranchID,
 		ExistingCommentID: run.GithubCommentID,
 		Body:              body,
 	}); err != nil {

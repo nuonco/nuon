@@ -3,6 +3,7 @@ import { Outlet, useMatch, useParams, useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { PageContent } from '@/components/layout/PageContent'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -11,6 +12,7 @@ import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
+import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { BranchProvider } from '@/providers/branch-provider'
 import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
 import { BranchVcsBadges } from '@/components/branches/BranchVcsBadges'
@@ -61,46 +63,74 @@ const BranchTemplate = () => {
     hasDeploymentPlan && !isLoadingLatestRun && !latestRun
 
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
+  const hasSimpleIA = useSimpleIA()
 
-  const navLinks: TNavItem[] = [
-    { path: `/`, iconVariant: 'HouseSimpleIcon', text: 'Overview' },
-    { path: `/runs`, iconVariant: 'PlayIcon', text: 'Updates' },
-    { type: 'section', label: 'Installs', defaultOpen: false },
-    { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
-    { path: `/plan`, iconVariant: 'TreeStructureIcon', text: 'Install groups' },
-    ...(hasInstallSyncing
-      ? [
-          {
-            path: `/install-configs`,
-            iconVariant: 'ArrowsClockwiseIcon' as const,
-            text: 'Install configs',
-          },
-        ]
-      : []),
-    { type: 'section', label: 'Template' },
-    { path: `/inputs`, iconVariant: 'ListChecksIcon', text: 'Inputs' },
-    { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },
-    { path: `/actions`, iconVariant: 'TerminalWindowIcon', text: 'Actions' },
-    { path: `/runbooks`, iconVariant: 'BookIcon', text: 'Runbooks' },
-    {
-      path: `/sandbox`,
-      iconVariant: 'ShippingContainerIcon',
-      text: 'Sandboxes',
-    },
-    { path: `/policies`, iconVariant: 'ShieldCheckIcon', text: 'Policies' },
-    { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
-    { type: 'section', label: 'Configuration' },
-    { path: `/labels`, iconVariant: 'TagIcon', text: 'Labels' },
-    { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
-    {
-      type: 'action',
-      key: 'settings',
-      iconVariant: 'GearIcon',
-      text: 'Settings',
-      onClick: openSettings,
-      isActive: isSettingsOpen,
-    },
-  ]
+  const navLinks: TNavItem[] = hasSimpleIA
+    ? [
+        { path: `/`, iconVariant: 'HouseSimpleIcon', text: 'Overview' },
+        {
+          path: `/activity`,
+          iconVariant: 'ClockCounterClockwiseIcon',
+          text: 'Activity',
+        },
+        { path: `/config`, iconVariant: 'FadersIcon', text: 'Config' },
+        ...(hasInstallSyncing
+          ? [
+              {
+                path: `/install-configs`,
+                iconVariant: 'ArrowsClockwiseIcon' as const,
+                text: 'Install configs',
+              },
+            ]
+          : []),
+      ]
+    : [
+        { path: `/`, iconVariant: 'HouseSimpleIcon', text: 'Overview' },
+        { path: `/runs`, iconVariant: 'PlayIcon', text: 'Updates' },
+        { type: 'section', label: 'Installs', defaultOpen: false },
+        { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
+        {
+          path: `/plan`,
+          iconVariant: 'TreeStructureIcon',
+          text: 'Install groups',
+        },
+        ...(hasInstallSyncing
+          ? [
+              {
+                path: `/install-configs`,
+                iconVariant: 'ArrowsClockwiseIcon' as const,
+                text: 'Install configs',
+              },
+            ]
+          : []),
+        { type: 'section', label: 'Template' },
+        { path: `/inputs`, iconVariant: 'ListChecksIcon', text: 'Inputs' },
+        { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },
+        {
+          path: `/actions`,
+          iconVariant: 'TerminalWindowIcon',
+          text: 'Actions',
+        },
+        { path: `/runbooks`, iconVariant: 'BookIcon', text: 'Runbooks' },
+        {
+          path: `/sandbox`,
+          iconVariant: 'ShippingContainerIcon',
+          text: 'Sandboxes',
+        },
+        { path: `/policies`, iconVariant: 'ShieldCheckIcon', text: 'Policies' },
+        { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
+        { type: 'section', label: 'Configuration' },
+        { path: `/labels`, iconVariant: 'TagIcon', text: 'Labels' },
+        { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
+        {
+          type: 'action',
+          key: 'settings',
+          iconVariant: 'GearIcon',
+          text: 'Settings',
+          onClick: openSettings,
+          isActive: isSettingsOpen,
+        },
+      ]
 
   return (
     <>
@@ -122,6 +152,14 @@ const BranchTemplate = () => {
             identity={
               <>
                 <BranchVcsBadges repo={vcs?.repo} branch={vcs?.branch} />
+                {branch.managed_by ? (
+                  <LabelBadge
+                    labelKey="managed by"
+                    labelValue={branch.managed_by}
+                    size="sm"
+                    theme={branch.managed_by === 'config' ? 'brand' : 'default'}
+                  />
+                ) : null}
                 <Text variant="subtext" theme="info">
                   Last updated{' '}
                   <Time
@@ -168,10 +206,11 @@ const BranchTemplate = () => {
 
 export const BranchLayout = () => {
   const hasNewAppIA = useNewAppIA()
+  const hasSimpleIA = useSimpleIA()
   const params = useParams()
   const branchId = params.branchId as string
 
-  if (!hasNewAppIA) return <Outlet />
+  if (!hasSimpleIA && !hasNewAppIA) return <Outlet />
 
   return (
     <BranchProvider branchId={branchId} shouldPoll>

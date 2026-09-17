@@ -5,8 +5,9 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
 )
 
 type ConfigInit struct{}

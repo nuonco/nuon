@@ -118,6 +118,8 @@ type ClientService interface {
 
 	CreateRunnerProcess(params *CreateRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerProcessCreated, error)
 
+	CreateTelemetryAccessToken(params *CreateTelemetryAccessTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTelemetryAccessTokenOK, error)
+
 	CreateTerraformWorkspaceV2(params *CreateTerraformWorkspaceV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformWorkspaceV2Created, error)
 
 	DeleteHelmRelease(params *DeleteHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteHelmReleaseOK, error)
@@ -634,6 +636,52 @@ func (a *Client) CreateRunnerProcess(params *CreateRunnerProcessParams, authInfo
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateRunnerProcess: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateTelemetryAccessToken creates a telemetry access token
+
+Creates a short-lived, install-runner-scoped JWT for the BYOC telemetry relay.
+*/
+func (a *Client) CreateTelemetryAccessToken(params *CreateTelemetryAccessTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTelemetryAccessTokenOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateTelemetryAccessTokenParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateTelemetryAccessToken",
+		Method:             "POST",
+		PathPattern:        "/v1/telemetry/access-token",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateTelemetryAccessTokenReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateTelemetryAccessTokenOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateTelemetryAccessToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

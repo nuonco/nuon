@@ -45,6 +45,21 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		return nil
 	}
 
+	build, err := activities.AwaitGetComponentBuildByID(ctx, buildID)
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get build", err))
+		return fmt.Errorf("unable to get component build: %w", err)
+	}
+	org, err := activities.AwaitGetOrgByID(ctx, build.OrgID)
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get org", err))
+		return fmt.Errorf("unable to get org: %w", err)
+	}
+	if !shouldFetchImageMetadataForPolicy(policyCheckResult.HasPolicies, org.SandboxMode) {
+		l.Info("sandbox mode enabled, skipping image metadata fetch and policy evaluation")
+		return nil
+	}
+
 	l.Info("container image policies found, proceeding with metadata fetch")
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
@@ -254,6 +269,14 @@ func (w *Workflows) recordComponentPolicyEvaluationFailure(ctx workflow.Context,
 }
 
 const maxDescriptionLength = 500
+
+// shouldFetchImageMetadataForPolicy is the gate in front of the
+// fetch-image-metadata job. Sandbox orgs cannot reach vendor registries, and
+// fake metadata would still fail typical deny policies (signature/SBOM), so
+// we skip the fetch and the rest of policy eval together.
+func shouldFetchImageMetadataForPolicy(hasPolicies, orgSandbox bool) bool {
+	return hasPolicies && !orgSandbox
+}
 
 func truncateErrorMessage(prefix string, err error) string {
 	if err == nil {

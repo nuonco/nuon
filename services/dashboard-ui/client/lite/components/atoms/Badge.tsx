@@ -30,7 +30,7 @@ const SHAPE_CLASSES: Record<TBadgeVariant, string> = {
 }
 
 const CELL_CLASSES =
-  'inline-flex items-center gap-1 border px-2 py-0.5 text-caption'
+  'inline-flex h-5.5 items-center gap-1 border px-2 text-label'
 
 export const Badge = ({
   tone = 'neutral',
@@ -52,7 +52,7 @@ export const Badge = ({
       <span
         aria-hidden
         className={cn(
-          'skeleton inline-block px-2 py-0.5 text-caption',
+          'skeleton inline-block h-5.5 w-fit px-2 text-label',
           SHAPE_CLASSES[variant],
           className
         )}
@@ -70,7 +70,7 @@ export const Badge = ({
       onClick={onRemove}
       disabled={disabled}
       aria-label={`${removeLabel} ${labelKey ?? ''}`.trim()}
-      className="-mr-0.5 inline-flex cursor-pointer items-center rounded-xs opacity-70 transition-opacity not-disabled:hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring"
+      className="-mr-0.5 inline-flex cursor-pointer items-center rounded-xs opacity-70 transition-opacity not-disabled:hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40 focus-ring focus-ring-tight"
     >
       <Icon variant="XIcon" size={12} />
     </button>
@@ -83,7 +83,7 @@ export const Badge = ({
       <span
         className={cn(
           CELL_CLASSES,
-          'shrink-0',
+          'w-fit shrink-0',
           SHAPE_CLASSES[variant],
           TONE_CLASSES[tone],
           className
@@ -101,7 +101,7 @@ export const Badge = ({
     : undefined
 
   return (
-    <span className={cn('inline-flex max-w-full', className)} {...props}>
+    <span className={cn('inline-flex w-fit max-w-full', className)} {...props}>
       <span
         className={cn(
           CELL_CLASSES,
@@ -111,7 +111,7 @@ export const Badge = ({
         )}
       >
         <Text
-          variant="caption"
+          variant="label"
           family={variant === 'code' ? 'mono' : 'sans'}
           className="block min-w-0 truncate"
         >
@@ -128,7 +128,7 @@ export const Badge = ({
         )}
       >
         <Text
-          variant="caption"
+          variant="label"
           family={variant === 'code' ? 'mono' : 'sans'}
           className="block min-w-0 truncate"
         >

@@ -3,8 +3,9 @@ package dir
 import (
 	"testing"
 
-	"github.com/nuonco/nuon/pkg/config"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/config"
 )
 
 func TestSourceFileSetter_InterfaceAssertion(t *testing.T) {
@@ -47,4 +48,10 @@ func TestValueType_DoesNotImplementInterfaces(t *testing.T) {
 
 	_, ok = interface{}(policy).(nameFromSourceFileSetter)
 	require.False(t, ok, "AppPolicy (value type) should NOT implement nameFromSourceFileSetter - methods have pointer receivers")
+}
+
+func TestSkipPermissionsPoliciesAsRoles(t *testing.T) {
+	require.True(t, skipPermissionsPoliciesAsRoles("permissions", "permissions/policies/logs.toml"))
+	require.False(t, skipPermissionsPoliciesAsRoles("permissions", "permissions/provision.toml"))
+	require.False(t, skipPermissionsPoliciesAsRoles("permissions/policies", "permissions/policies/logs.toml"))
 }

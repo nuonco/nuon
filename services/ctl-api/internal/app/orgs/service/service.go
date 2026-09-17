@@ -81,6 +81,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 			// accounts
 			current.GET("/accounts", s.GetOrgAccounts)
+			current.GET("/members", s.GetOrgMembers)
 			current.PATCH("/accounts/:account_id/role", s.UpdateOrgAccountRole)
 
 			// invites

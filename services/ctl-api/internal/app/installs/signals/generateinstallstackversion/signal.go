@@ -364,9 +364,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			}
 		}
 
-		if err := stackworkflow.RenderAndUploadCustomStacksTemplate(ctx, install.ID, stackVersion, *inp, s.cfg.AWSCloudFormationStackTemplateBucket); err != nil {
-			return err
-		}
 	case app.AppRunnerTypeAzure:
 		if cfg.RunnerConfig.InitScriptURL != "" {
 			inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL
@@ -395,6 +392,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		checksum = armResult.Checksum
 		quickLinkWrapperByts = armResult.QuickLinkWrapperJSON
 		quickLinkUIDefByts = armResult.QuickLinkUIDefJSON
+	}
+
+	if err := stackworkflow.RenderAndUploadCustomStacksTemplate(ctx, install.ID, stackVersion, *inp, s.cfg.AWSCloudFormationStackTemplateBucket); err != nil {
+		return err
 	}
 
 	if s.cfg.AWSCloudFormationStackTemplateBucket == "" {

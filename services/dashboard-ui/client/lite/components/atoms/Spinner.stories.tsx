@@ -11,24 +11,22 @@ export const Overview = () => (
   <ComponentDocs
     name="Spinner"
     tier="atom"
-    summary="An indeterminate progress indicator for work already in flight, drawn as a track plus a rotating arc."
+    summary="An indeterminate progress indicator for work already in flight."
     use={[
-      'Inside a Button while its action is in flight — Button does this for you via loading.',
-      'Any short wait where the shape of the incoming content is unknown.',
+      'Show one inside a button while its action runs, which the button does for you via loading.',
+      'Cover a short wait where the shape of the incoming content is unknown.',
     ]}
     avoid={[
-      'Waiting on content whose shape you already know — that is a skeleton, via the loading prop on Text, Link or Badge.',
-      'Long or multi-step work, where progress or a status message tells the user more than a spinner does.',
+      'Do not use one for content whose shape you already know. That is a skeleton, via the loading prop on Text, Link, Badge or ID.',
+      'Avoid it for long or multi-step work, where progress or a status message says more.',
     ]}
     rules={[
-      'currentColor, so it inherits the colour of whatever it sits in. It never takes a colour prop.',
-      'Not an Icon. Phosphor glyphs sit in a 256 viewBox with about 12.5% transparent padding a side, so a rotating one wobbles off-centre; this is drawn on its own 16 viewBox centred on the rotation axis.',
-      'Decorative by default (aria-hidden). Pass label only when the spinner is the sole announcement of the wait — inside a Button the button already owns aria-busy.',
-      'Stops animating under prefers-reduced-motion, leaving the static ring.',
+      'The spinner uses the current text colour, so it inherits whatever it sits in.',
+      'The spinner is decorative by default. Pass a label only when it is the sole announcement of the wait, since a button already reports its own.',
     ]}
     props={[
-      { name: 'size', type: 'number', default: '16', description: 'Width and height in px. Stroke stays proportional.' },
-      { name: 'label', type: 'string', description: 'Makes it a live status with this accessible name. Omit when something else announces the wait.' },
+      { name: 'size', type: 'number', default: '16', description: 'Width and height in px.' },
+      { name: 'label', type: 'string', description: 'Makes it a live status with this accessible name.' },
     ]}
   />
 )

@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"helm.sh/helm/v4/pkg/action"
 	release "helm.sh/helm/v4/pkg/release/v1"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/pkg/diff"
 	"github.com/nuonco/nuon/pkg/helm"
@@ -190,7 +191,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		// TODO(fd): figure out the best way to get a plan for this
 		helmPlan.Op = "uninstall"
 		l = l.With(zap.String("helm.operation", helmPlan.Op))
-		l.Info("executing helm uninstall plan")
+		l.Info("calculating helm uninstall plan with a dry run; nothing is removed until this plan is applied")
 
 		opCtx, end := pkgop.Tool(ctx, "helm", "uninstall_diff")
 		opLog := pkgctx.LoggerOrDefault(opCtx, l)

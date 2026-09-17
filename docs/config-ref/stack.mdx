@@ -11,11 +11,11 @@ title: 'Stack'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`name`**<br/>string | stack name Name of the CloudFormation stack when deployed in the customer account. Supports Go templating | **✅ Required** | `"myapp-{{.nuon.install.id}}"`, `"production-stack"` |
-| **`description`**<br/>string | stack description Description of the stack, displayed in the CloudFormation console. Supports templating | **✅ Required** | `"Infrastructure stack for MyApp application"` |
-| **`vpc_nested_template_url`**<br/>string | VPC nested template URL URL to the CloudFormation nested template for VPC resources | **✅ Required** | `"https://s3.amazonaws.com/bucket/vpc-template.yaml"` |
-| **`runner_nested_template_url`**<br/>string | runner nested template URL URL to the CloudFormation nested template for the Nuon runner infrastructure | **✅ Required** | `"https://s3.amazonaws.com/bucket/runner-template.yaml"` |
+| **`name`**<br/>string | stack name Name of the install stack when deployed in the customer account or project. Supports Go templating | **✅ Required** | `"myapp-{{.nuon.install.id}}"`, `"production-stack"` |
+| **`description`**<br/>string | stack description Description of the install stack. Supports Go templating | **✅ Required** | `"Infrastructure stack for MyApp application"` |
 | **`type`**<br/>string | stack type Type of infrastructure stack. Supported values: 'aws-cloudformation', 'azure-bicep' (Azure), 'gcp-terraform' (Google Cloud). | **Optional** | `"aws-cloudformation"`, `"azure-bicep"`, `"gcp-terraform"` |
+| **`vpc_nested_template_url`**<br/>string | VPC nested template URL URL to the CloudFormation nested template for VPC resources | **Optional** | `"https://s3.amazonaws.com/bucket/vpc-template.yaml"` |
+| **`runner_nested_template_url`**<br/>string | runner nested template URL URL to the CloudFormation nested template for the Nuon runner infrastructure | **Optional** | `"https://s3.amazonaws.com/bucket/runner-template.yaml"` |
 | **`deployment_scope`**<br/>string | deployment scope Scope the generated install stack root template deploys at. Only supported for 'azure-bicep'. Supported values: 'resource_group' (the default) confines every resource to the instal... | **Optional** | `"subscription"` |
-| **`custom_nested_stacks`**<br/>object | custom nested stacks Custom CloudFormation nested stack templates to include. Each entry has a name, template_url, index, and optional parameters. The index field determines execution order (ascend... | **Optional** | - |
+| **`custom_nested_stacks`**<br/>object | custom nested stacks Custom install-stack resources to include. Each entry has a name, template_url, index, and optional parameters. AWS uses CloudFormation templates, Azure uses compiled ARM JSON,... | **Optional** | - |
 

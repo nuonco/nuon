@@ -1,0 +1,161 @@
+import { ComponentDocs } from '../__stories__/ComponentDocs'
+import { Card } from '../atoms/Card'
+import { Text } from '../atoms/Text'
+import { OrgSwitcherMenuComponent } from './OrgSwitcherMenu'
+import { UserDropdown } from './UserDropdown'
+
+export default {
+  title: 'lite/organisms/UserDropdown',
+}
+
+const USER = {
+  name: 'Alex Morgan',
+  email: 'alex@example.com',
+}
+
+const SIGN_OUT_HREF = 'https://auth.example.com/logout'
+
+export const Overview = () => (
+  <ComponentDocs
+    name="UserDropdown"
+    tier="organism"
+    summary="A user-profile trigger with account actions."
+    use={[
+      'Use in application chrome where the signed-in user needs account actions.',
+      'Use compact mode for an icon-sized header control.',
+      'Nest the organization switcher here so account and workspace context stay together.',
+      'Open browser preferences from the account action group.',
+    ]}
+    avoid={[
+      'Do not add unrelated resource navigation or setup actions to this menu.',
+      'Do not open sign-out in a new browser tab.',
+    ]}
+    rules={[
+      'The visible trigger is always UserProfile.',
+      'Organization switching is a nested menu before the sign-out action.',
+      'Preferences appear before the separated sign-out action.',
+      'The sign-out destination performs a same-window navigation.',
+    ]}
+    props={[
+      {
+        name: 'user',
+        type: 'IUserProfileData | null',
+        description: 'Identity rendered in the trigger.',
+      },
+      {
+        name: 'loading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Shows profile loading shapes in the trigger.',
+      },
+      {
+        name: 'compact',
+        type: 'boolean',
+        default: 'false',
+        description: 'Uses an avatar-only trigger.',
+      },
+      {
+        name: 'signOutHref',
+        type: 'string',
+        description: 'Authentication-service logout URL.',
+      },
+      {
+        name: 'triggerClassName',
+        type: 'string',
+        description: 'Extra classes for the trigger button.',
+      },
+      {
+        name: 'orgSwitcher',
+        type: 'ReactNode',
+        description: 'Nested organization menu rendered above the account actions.',
+      },
+      {
+        name: 'org',
+        type: 'TOrg | null',
+        description: 'Organization named in the nested switcher trigger.',
+      },
+      {
+        name: 'orgLoading',
+        type: 'boolean',
+        default: 'false',
+        description: 'Shows organization loading shapes in the nested trigger.',
+      },
+      {
+        name: 'onOpenPreferences',
+        type: '() => void',
+        description: 'Opens the preferences panel from the account action group.',
+      },
+    ]}
+  />
+)
+
+export const Default = () => (
+  <div className="flex justify-end p-20">
+    <UserDropdown
+      user={USER}
+      signOutHref={SIGN_OUT_HREF}
+      org={{ id: 'org_alpha', name: 'alpha', status: 'active' }}
+      onOpenPreferences={() => {}}
+      orgSwitcher={
+        <OrgSwitcherMenuComponent
+          orgs={[
+            { id: 'org_alpha', name: 'alpha' },
+            { id: 'org_beta', name: 'beta' },
+          ]}
+          currentOrgId="org_alpha"
+          search=""
+          onSearchChange={() => {}}
+          onLoadMore={() => {}}
+        />
+      }
+      defaultOpen
+    />
+  </div>
+)
+
+export const Compact = () => (
+  <div className="flex justify-end p-20">
+    <UserDropdown user={USER} signOutHref={SIGN_OUT_HREF} compact defaultOpen />
+  </div>
+)
+
+export const Loading = () => (
+  <div className="flex justify-end p-20">
+    <UserDropdown loading signOutHref={SIGN_OUT_HREF} defaultOpen />
+  </div>
+)
+
+export const LongIdentity = () => (
+  <div className="flex justify-end p-20">
+    <UserDropdown
+      user={{
+        name: 'Alexandra Morgan-Sanchez with a long name',
+        email: 'alexandra.morgan-sanchez@example.com',
+      }}
+      signOutHref={SIGN_OUT_HREF}
+      defaultOpen
+    />
+  </div>
+)
+
+export const SidebarPlacement = () => (
+  <div className="flex min-h-[28rem] items-end p-8">
+    <Card
+      as="aside"
+      padding="sm"
+      className="flex h-96 w-64 flex-col justify-between"
+    >
+      <Text variant="caption" color="secondary">
+        Sidebar content
+      </Text>
+      <UserDropdown
+        user={USER}
+        signOutHref={SIGN_OUT_HREF}
+        side="top"
+        align="start"
+        stretch
+        defaultOpen
+      />
+    </Card>
+  </div>
+)

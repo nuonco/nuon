@@ -358,7 +358,21 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		}
 
 		if flw.GenerateStepsSignal == nil || flw.GenerateStepsSignal.Signal == nil {
-			return errors.Errorf("workflow %s has no steps and no generate-steps signal", s.WorkflowID)
+			missingStepsErr := errors.Errorf("workflow %s has no steps and no generate-steps signal", s.WorkflowID)
+			_ = statusactivities.AwaitUpdateFlowStatusMetadata(ctx, statusactivities.UpdateFlowStatusMetadataRequest{
+				WorkflowID: s.WorkflowID,
+				Metadata: map[string]any{
+					"error_message": missingStepsErr.Error(),
+				},
+			})
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: s.WorkflowID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusError,
+					StatusHumanDescription: missingStepsErr.Error(),
+				},
+			})
+			return missingStepsErr
 		}
 
 		// Use eager step groups: fetch and persist the eager groups so we can
@@ -960,6 +974,7 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 	if err != nil {
 		return false
 	}
+	terminalErrorComplete := workflow.GetVersion(ctx, workflowCompleteTerminalErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 
 	for _, step := range steps {
 		switch step.Status.Status {
@@ -968,6 +983,19 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 			app.WorkflowStepApprovalStatusApproved,
 			app.WorkflowStepNoDrift, app.WorkflowStepDrifted:
 			continue
+		case app.StatusError:
+			if !terminalErrorComplete {
+				return false
+			}
+			// Treat a settled failure (terminal directive) as complete so
+			// failures do not leak forever-open workflows: the group already
+			// acted on it, so nothing will resume this run. A parked error
+			// (await-retry, await-approval, or a legacy empty directive)
+			// still waits on a user decision and is not complete.
+			if flowdirective.Step(step.ResultDirective).IsTerminal() {
+				continue
+			}
+			return false
 		default:
 			return false
 		}
@@ -1058,6 +1086,10 @@ const flowCancelStatusVersion = "execute-flow-cancel-status-v1"
 // groupStopReasonVersion gates the GetFlowSteps lookup that derives the stop
 // reason; in-flight histories never scheduled it before the sweeps.
 const groupStopReasonVersion = "execute-flow-group-stop-reason-v1"
+
+// workflowCompleteTerminalErrorVersion gates terminal errored steps counting as
+// complete because in-flight histories previously parked after every error.
+const workflowCompleteTerminalErrorVersion = "execute-flow-terminal-error-complete-v1"
 
 // stopIfRunnerDisabled halts a workflow whose install runner was disabled after
 // it started. Creation already rejects these, so without this the workflow would

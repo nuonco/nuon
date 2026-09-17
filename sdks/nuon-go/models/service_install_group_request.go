@@ -19,9 +19,13 @@ import (
 // swagger:model service.InstallGroupRequest
 type ServiceInstallGroupRequest struct {
 
-	// AllInstalls targets every install on the app that no other branch owns.
+	// AllInstalls targets every install owned by this branch.
 	// Mutually exclusive with InstallIDs and LabelSelector.
 	AllInstalls bool `json:"all_installs,omitempty"`
+
+	// AutoApproveOnPoliciesPassing approves this group's plan step without user
+	// input when its policy checks pass. Omit to leave it unset (off).
+	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty"`
 
 	// install ids
 	InstallIds []string `json:"install_ids"`

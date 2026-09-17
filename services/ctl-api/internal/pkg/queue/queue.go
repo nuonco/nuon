@@ -43,6 +43,10 @@ type QueueState struct {
 // @id-template queue-{{.QueueID}}
 // @memo type queue
 func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error {
+	// Queues outlive individual signals and must not inherit their log streams,
+	// including incomplete streams persisted in the context of a retrying queue.
+	ctx = cctx.ClearLogStreamWorkflowContext(ctx)
+
 	q := &queue{
 		cfg:             w.cfg,
 		v:               w.v,

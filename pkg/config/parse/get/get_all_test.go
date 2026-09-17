@@ -356,3 +356,107 @@ func TestGetAll_GitDirectoryPassthrough(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, src, input.Contents)
 }
+
+func TestRecordLocalFile(t *testing.T) {
+	newGet := func(onLocalFile func(string, []byte) error, root string) *get {
+		return &get{opts: &Options{RootDir: root, OnLocalFile: onLocalFile}}
+	}
+
+	t.Run("records root-relative path for current-dir reference", func(t *testing.T) {
+		root := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(root, "values.yaml"), []byte("replicas: 1"), 0o644))
+
+		var recordedPath string
+		var recordedContents []byte
+		g := newGet(func(path string, contents []byte) error {
+			recordedPath, recordedContents = path, contents
+			return nil
+		}, root)
+
+		require.NoError(t, g.recordLocalFile("./values.yaml", root))
+		require.Equal(t, "values.yaml", recordedPath)
+		require.Equal(t, []byte("replicas: 1"), recordedContents)
+	})
+
+	t.Run("resolves parent-dir reference to a root-relative path", func(t *testing.T) {
+		root := t.TempDir()
+		require.NoError(t, os.MkdirAll(filepath.Join(root, "sub"), 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(root, "shared.rego"), []byte("package main"), 0o644))
+
+		var recordedPath string
+		g := newGet(func(path string, contents []byte) error {
+			recordedPath = path
+			return nil
+		}, root)
+
+		require.NoError(t, g.recordLocalFile("../shared.rego", filepath.Join(root, "sub")))
+		require.Equal(t, "shared.rego", recordedPath)
+	})
+
+	t.Run("skips references that escape the config root", func(t *testing.T) {
+		root := t.TempDir()
+		sub := filepath.Join(root, "sub")
+		require.NoError(t, os.MkdirAll(sub, 0o755))
+		outside := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(outside, "secret.yaml"), []byte("x"), 0o644))
+
+		var called bool
+		g := newGet(func(path string, contents []byte) error {
+			called = true
+			return nil
+		}, root)
+
+		require.NoError(t, g.recordLocalFile("../../secret.yaml", sub))
+		require.False(t, called)
+	})
+
+	t.Run("skips non-local references", func(t *testing.T) {
+		var called bool
+		g := newGet(func(path string, contents []byte) error {
+			called = true
+			return nil
+		}, t.TempDir())
+
+		require.NoError(t, g.recordLocalFile("https://example.com/file.yaml", t.TempDir()))
+		require.False(t, called)
+	})
+
+	t.Run("skips symlinks", func(t *testing.T) {
+		root := t.TempDir()
+		real := filepath.Join(root, "real.yaml")
+		require.NoError(t, os.WriteFile(real, []byte("x"), 0o644))
+		link := filepath.Join(root, "link.yaml")
+		require.NoError(t, os.Symlink(real, link))
+
+		var called bool
+		g := newGet(func(path string, contents []byte) error {
+			called = true
+			return nil
+		}, root)
+
+		require.NoError(t, g.recordLocalFile("./link.yaml", root))
+		require.False(t, called)
+	})
+
+	t.Run("skips directories", func(t *testing.T) {
+		root := t.TempDir()
+		require.NoError(t, os.MkdirAll(filepath.Join(root, "sub"), 0o755))
+
+		var called bool
+		g := newGet(func(path string, contents []byte) error {
+			called = true
+			return nil
+		}, root)
+
+		require.NoError(t, g.recordLocalFile("./sub", root))
+		require.False(t, called)
+	})
+
+	t.Run("is a no-op without a hook", func(t *testing.T) {
+		root := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(root, "values.yaml"), []byte("x"), 0o644))
+		g := newGet(nil, root)
+
+		require.NoError(t, g.recordLocalFile("./values.yaml", root))
+	})
+}

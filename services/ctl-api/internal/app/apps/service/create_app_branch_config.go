@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/addinstall"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -25,9 +26,13 @@ type InstallGroupRequest struct {
 	// Mutually exclusive with InstallIDs.
 	LabelSelector *labels.Selector `json:"label_selector,omitempty"`
 
-	// AllInstalls targets every install on the app that no other branch owns.
+	// AllInstalls targets every install owned by this branch.
 	// Mutually exclusive with InstallIDs and LabelSelector.
 	AllInstalls bool `json:"all_installs,omitempty"`
+
+	// AutoApproveOnPoliciesPassing approves this group's plan step without user
+	// input when its policy checks pass. Omit to leave it unset (off).
+	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 }
 
 type CreateAppBranchConfigRequest struct {
@@ -42,14 +47,14 @@ type CreateAppBranchConfigRequest struct {
 	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
 	// it matches this RE2 pattern. Omit to carry the current setting forward; send
 	// an empty string to clear it.
-	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty"`
+	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty" swaggertype:"string" extensions:"x-nullable"`
 
 	// SendStatusesOnIgnore posts a successful commit status for runs ignored by
 	// IgnoreChangesRegex. Omit to carry the current setting forward.
-	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty"`
+	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 
-	// PreviewConfig sets branch-level preview defaults. Omit to carry forward.
 	PreviewConfig *app.AppBranchPreviewConfig `json:"preview_config,omitempty"`
+	RunConfig     *app.AppBranchRunConfig     `json:"run_config,omitempty"`
 }
 
 func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
@@ -115,8 +120,36 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 			return stderr.NewInvalidRequest(err)
 		}
 	}
+	if c.RunConfig != nil {
+		c.RunConfig.Normalize()
+		if err := c.RunConfig.Validate(); err != nil {
+			return stderr.NewInvalidRequest(err)
+		}
+		if c.RunConfig.Mode == app.AppBranchRunModeGithubLabel && c.ConnectedGithubVCSConfig == nil {
+			return stderr.NewInvalidRequest(fmt.Errorf("run mode on_github_label requires connected_github_vcs_config"))
+		}
+	}
 
 	return nil
+}
+
+func installGroupsFromRequest(reqGroups []InstallGroupRequest) []app.AppBranchInstallGroup {
+	installGroups := make([]app.AppBranchInstallGroup, len(reqGroups))
+	for i, g := range reqGroups {
+		selector := g.LabelSelector
+		if selector != nil && len(selector.MatchLabels) == 0 {
+			selector = nil
+		}
+		installGroups[i] = app.AppBranchInstallGroup{
+			Name:                         g.Name,
+			Order:                        g.Order,
+			InstallIDs:                   g.InstallIDs,
+			LabelSelector:                selector,
+			AllInstalls:                  g.AllInstalls,
+			AutoApproveOnPoliciesPassing: g.AutoApproveOnPoliciesPassing,
+		}
+	}
+	return installGroups
 }
 
 // @ID						CreateAppBranchConfig
@@ -220,48 +253,36 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Collect label selectors and explicit install IDs for validation
-	var labelSelectors []*labels.Selector
+	// Collect explicit install IDs for ownership validation.
 	var explicitInstallIDs []string
 	for _, g := range req.InstallGroups {
-		if g.LabelSelector != nil && len(g.LabelSelector.MatchLabels) > 0 {
-			labelSelectors = append(labelSelectors, g.LabelSelector)
-		}
 		explicitInstallIDs = append(explicitInstallIDs, g.InstallIDs...)
 	}
 
-	if len(labelSelectors) > 0 {
-		if err := s.helpers.ValidateBranchConfigLabelUniqueness(ctx, appID, appBranchID, labelSelectors); err != nil {
-			ctx.Error(err)
-			return
-		}
-
-		if err := s.helpers.ValidateBranchConfigInstallsNotOnOtherBranch(ctx, appID, appBranchID, labelSelectors); err != nil {
-			ctx.Error(err)
-			return
-		}
+	// Naming an install in a group selects which of this branch's groups deploys
+	// it; it does not take it from another branch. The install has to already be
+	// here, via creation or an explicit move.
+	if err := s.helpers.ValidateInstallIDsOwnedByBranch(ctx, appBranchID, explicitInstallIDs); err != nil {
+		ctx.Error(err)
+		return
 	}
 
-	if len(explicitInstallIDs) > 0 {
-		if err := s.helpers.ValidateInstallIDsNotOnOtherBranch(ctx, appBranchID, explicitInstallIDs); err != nil {
-			ctx.Error(err)
-			return
-		}
+	installGroups := installGroupsFromRequest(req.InstallGroups)
+
+	if err := s.helpers.ValidateBranchInstallsSingleGroup(ctx, appBranchID, installGroups); err != nil {
+		ctx.Error(err)
+		return
 	}
 
-	// Convert request install groups to model
-	installGroups := make([]app.AppBranchInstallGroup, len(req.InstallGroups))
-	for i, g := range req.InstallGroups {
-		selector := g.LabelSelector
-		if selector != nil && len(selector.MatchLabels) == 0 {
-			selector = nil
-		}
-		installGroups[i] = app.AppBranchInstallGroup{
-			Name:          g.Name,
-			Order:         g.Order,
-			InstallIDs:    g.InstallIDs,
-			LabelSelector: selector,
-			AllInstalls:   g.AllInstalls,
+	previousGroups, err := s.helpers.LatestConfigInstallGroups(ctx, appBranchID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	previousInstallIDs := make(map[string]struct{})
+	for _, group := range previousGroups {
+		for _, installID := range group.InstallIDs {
+			previousInstallIDs[installID] = struct{}{}
 		}
 	}
 
@@ -277,29 +298,31 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 			SendStatusesOnIgnore: req.SendStatusesOnIgnore,
 		},
 		req.PreviewConfig,
+		req.RunConfig,
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch config: %w", err))
 		return
 	}
 
-	if len(explicitInstallIDs) > 0 {
-		for _, installID := range explicitInstallIDs {
-			var install app.Install
-			if err := s.db.WithContext(ctx).First(&install, "id = ?", installID).Error; err == nil {
-				s.helpers.SyncInstallBranchConnection(ctx, &install, appBranchID)
+	if err := s.helpers.EnqueueAppBranchCreatedIfFirst(ctx, appBranchID, config.ID); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue app-branch-created: %w", err))
+		return
+	}
+
+	// Installs newly named by a group are brought up to the branch's app config.
+	// Nothing here changes which branch owns an install, so a group that drops an
+	// install leaves it on this branch, in whichever group still matches it.
+	for _, group := range config.InstallGroups {
+		for _, installID := range group.InstallIDs {
+			if _, existed := previousInstallIDs[installID]; existed {
+				continue
+			}
+			if err := addinstall.Enqueue(ctx, s.queueClient, appBranchID, installID, group.ID); err != nil {
+				ctx.Error(fmt.Errorf("unable to enqueue branch config update for install %s: %w", installID, err))
+				return
 			}
 		}
-	}
-
-	if err := s.helpers.ClaimSelectorInstallsFromWeakOwners(ctx, appID, appBranchID, labelSelectors); err != nil {
-		ctx.Error(fmt.Errorf("unable to claim installs from weak owners: %w", err))
-		return
-	}
-
-	if err := s.helpers.ReconcileRemovedBranchInstalls(ctx, appBranchID, explicitInstallIDs, labelSelectors); err != nil {
-		ctx.Error(fmt.Errorf("unable to reconcile removed branch installs: %w", err))
-		return
 	}
 
 	ctx.JSON(http.StatusCreated, config)

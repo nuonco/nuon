@@ -1,12 +1,7 @@
 package errparse_test
 
 import (
-	"context"
 	"testing"
-
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
@@ -90,49 +85,5 @@ func TestParseRunnerJobResultActionToolGate(t *testing.T) {
 	}
 	if got == nil || got.Type != "terraform.aws_permission" {
 		t.Fatalf("action provider error type = %v, want terraform.aws_permission", got)
-	}
-}
-
-func TestResolveRunnerJobProvider(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
-	if err != nil {
-		t.Fatalf("open database: %v", err)
-	}
-	if err := db.Exec(`CREATE TABLE runners (id text PRIMARY KEY, runner_group_id text, deleted_at integer DEFAULT 0)`).Error; err != nil {
-		t.Fatalf("create runners table: %v", err)
-	}
-	if err := db.Exec(`CREATE TABLE runner_groups (id text PRIMARY KEY, platform text, deleted_at integer DEFAULT 0)`).Error; err != nil {
-		t.Fatalf("create runner groups table: %v", err)
-	}
-
-	tests := []struct {
-		name     string
-		runnerID string
-		groupID  string
-		platform app.AppRunnerType
-		want     errparse.Provider
-	}{
-		{name: "AWS", runnerID: "runner-aws", groupID: "group-aws", platform: app.AppRunnerTypeAWS, want: errparse.ProviderAWS},
-		{name: "Azure", runnerID: "runner-azure", groupID: "group-azure", platform: app.AppRunnerTypeAzure, want: errparse.ProviderAzure},
-		{name: "GCP", runnerID: "runner-gcp", groupID: "group-gcp", platform: app.AppRunnerTypeGCP, want: errparse.ProviderGCP},
-		{name: "local is unknown", runnerID: "runner-local", groupID: "group-local", platform: app.AppRunnerTypeLocal, want: errparse.ProviderUnknown},
-	}
-	for _, test := range tests {
-		if err := db.Exec(`INSERT INTO runner_groups (id, platform, deleted_at) VALUES (?, ?, 0)`, test.groupID, test.platform).Error; err != nil {
-			t.Fatalf("insert runner group: %v", err)
-		}
-		if err := db.Exec(`INSERT INTO runners (id, runner_group_id, deleted_at) VALUES (?, ?, 0)`, test.runnerID, test.groupID).Error; err != nil {
-			t.Fatalf("insert runner: %v", err)
-		}
-		t.Run(test.name, func(t *testing.T) {
-			got := errparse.ResolveRunnerJobProvider(context.Background(), db, &app.RunnerJob{RunnerID: test.runnerID})
-			if got != test.want {
-				t.Fatalf("provider = %q, want %q", got, test.want)
-			}
-		})
-	}
-
-	if got := errparse.ResolveRunnerJobProvider(context.Background(), db, &app.RunnerJob{RunnerID: "missing"}); got != errparse.ProviderUnknown {
-		t.Fatalf("missing runner provider = %q, want unknown", got)
 	}
 }

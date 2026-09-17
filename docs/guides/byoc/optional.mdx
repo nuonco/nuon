@@ -53,13 +53,22 @@ module "nuon_byoc_stack" {
 }
 ```
 
-## Export Telemetry
+## Export Runner Audit Logs
 
 On AWS, the Stack creates the `nuon/<install-id>/telemetry-export-config` secret and grants the Runner read access.
 On GCP, the secret is named `<install-id>-telemetry-export-config`.
-Update the secret to configure telemetry export to your own OTLP-compatible backend, starting with Runner audit logs.
+Update the secret to export Runner audit logs to your own OTLP-compatible backend.
 
 See [Export Runner Audit Logs](/guides/export-runner-audit-logs) for the configuration reference, cloud-specific steps, and verification guidance.
+
+## Collect Install Telemetry
+
+With Nuon's assistance, deploy a telemetry relay in your BYOC control plane and configure your observability backend
+credentials once. Then enable forwarding for individual customer installs and send application logs, metrics, and
+traces to their private OTLP endpoints. The relay attaches verified install identity before forwarding the data.
+
+This is separate from Runner audit-log export and does not use the `telemetry-export-config` secret.
+See [Collect Install Telemetry](/guides/byoc/telemetry) for setup, per-install enablement, and verification.
 
 ## Use your own S3 Bucket
 

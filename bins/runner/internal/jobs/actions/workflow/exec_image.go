@@ -5,9 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -16,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/launcher"
 	"github.com/nuonco/nuon/pkg/actions/supervisor"
 	"github.com/nuonco/nuon/pkg/generics"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/runner/oci"
 	"github.com/nuonco/nuon/pkg/runner/op"
 	"github.com/nuonco/nuon/pkg/zapwriter"
@@ -32,14 +31,14 @@ const actionCPUShares = 512
 // execCommandInContainer runs an image-backed action step inside its container.
 // The workspace is bind-mounted so the supervisor writes outputs to a file the
 // runner reads back on the host after the container exits.
-func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, envVars map[string]string) error {
+func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource, envVars map[string]string) error {
 	if h.launcher == nil {
 		return errors.New("image-backed action received by a runner without a container launcher")
 	}
 
-	scriptHostPath, err := h.prepareInlineContentsCommand(ctx, l, cfg)
+	scriptHostPath, workdirHostPath, scriptArgs, err := h.prepareContainerStep(ctx, l, cfg, src)
 	if err != nil {
-		return errors.Wrap(err, "unable to prepare inline command")
+		return errors.Wrap(err, "unable to prepare step script")
 	}
 
 	root := h.state.workspace.Root()
@@ -80,6 +79,16 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 	lOut := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.InfoLevel), zapwriter.WithLineBuffering())
 	lErr := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.ErrorLevel), zapwriter.WithLineBuffering())
 
+	command := []string{
+		"/bin/sh", mapPath(supervisorHostPath),
+		"--script", mapPath(scriptHostPath),
+		"--workdir", mapPath(workdirHostPath),
+	}
+	if len(scriptArgs) > 0 {
+		command = append(command, "--")
+		command = append(command, scriptArgs...)
+	}
+
 	spec := launcher.RunSpec{
 		Image:         image,
 		ContainerName: fmt.Sprintf("nuon-action-%s-%d-%s", h.state.run.ID, cfg.Idx, randContainerSuffix()),
@@ -88,12 +97,8 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 		},
 		// run the supervisor via the image's own /bin/sh so it works in any
 		// base image (musl/glibc/any arch) — no mounted binary to exec.
-		Command: []string{
-			"/bin/sh", mapPath(supervisorHostPath),
-			"--script", mapPath(scriptHostPath),
-			"--workdir", containerWorkspaceMount,
-		},
-		Env: env,
+		Command: command,
+		Env:     env,
 		Labels: map[string]string{
 			"nuon.install_id": h.state.plan.InstallID,
 			"nuon.run_id":     h.state.run.ID,
@@ -161,18 +166,13 @@ func (h *handler) releaseActionImage(leaseID string) {
 	h.launcher.Release(leaseID)
 }
 
-// actionImageRef resolves the image ref the launcher runs. Production requires
-// the digest-pinned ref that ctl-api resolved, so a step can only ever run the
+// actionImageRef resolves the image ref the launcher runs. It is always the
+// digest-pinned ref that ctl-api resolved, so a step can only ever run the
 // exact manifest Nuon resolved. There is deliberately no mutable-tag fallback:
 // without a digest we fail rather than run whatever the tag happens to point at
-// now. The dev-only real-docker path pulls the app-authored source image
-// directly.
+// now.
 func (h *handler) actionImageRef() (string, error) {
 	plan := h.state.plan
-
-	if h.pullSourceImageDirectly() {
-		return plan.SourceImage, nil
-	}
 
 	if plan.ImageDigestRef == "" {
 		return "", errors.New("image-backed action plan is not pinned to an image digest")
@@ -188,10 +188,6 @@ func (h *handler) actionImageRef() (string, error) {
 // or GAR, which mint a token per pull.
 func (h *handler) actionImagePullAuth(ctx context.Context) (username, password string, err error) {
 	plan := h.state.plan
-
-	if h.pullSourceImageDirectly() {
-		return "", "", nil
-	}
 
 	if plan.ImageRegistry == nil {
 		return "", "", errors.New("image-backed action plan has no image registry")
@@ -218,23 +214,4 @@ func randContainerSuffix() string {
 		return "x"
 	}
 	return hex.EncodeToString(b)
-}
-
-// pullSourceImageDirectly reports whether the dev-only real-docker path is
-// active, in which case the launcher pulls the app-authored source image
-// directly (ctl-api can't know a local registry address) instead of the
-// mirror.
-//
-// It deliberately does not apply to an image that already resolved to the
-// install's own registry, which is the case when the plan pins the source ref
-// itself. That ref is never publicly pullable, so taking the shortcut would
-// skip credential resolution and 401 rather than fall back to anything.
-func (h *handler) pullSourceImageDirectly() bool {
-	plan := h.state.plan
-	if plan.ImageDigestRef != "" && plan.ImageDigestRef == plan.SourceImage {
-		return false
-	}
-
-	return os.Getenv("NUON_DEV_REAL_IMAGE_ACTIONS") == "true" &&
-		strings.EqualFold(os.Getenv("ENV"), "development")
 }

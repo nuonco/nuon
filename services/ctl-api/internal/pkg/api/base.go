@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -16,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 )
 
 type API struct {
@@ -34,11 +36,19 @@ type API struct {
 	db *gorm.DB
 }
 
-func (a *API) init() error {
+func (a *API) init(httpMetrics *metrics.HTTPMetrics) error {
 	a.handler = gin.New()
+	if httpMetrics != nil {
+		a.handler.Use(func(c *gin.Context) {
+			metrics.SetHTTPRoute(c.Request.Context(), c.FullPath())
+		})
+	}
 	a.srv = &http.Server{
 		Addr:    fmt.Sprintf("0.0.0.0:%v", a.port),
 		Handler: a.handler.Handler(),
+	}
+	if httpMetrics != nil {
+		a.srv.Handler = httpMetrics.Handler(a.name, a.srv.Handler)
 	}
 
 	return nil
@@ -52,6 +62,8 @@ func (a *API) middlewareDebugWrapper(name string, fn gin.HandlerFunc) gin.Handle
 	}
 }
 
+const panickerMiddlewareName = "panicker"
+
 func (a *API) registerMiddlewares() error {
 	// register middlewares
 	middlewaresLookup := make(map[string]gin.HandlerFunc, 0)
@@ -59,7 +71,20 @@ func (a *API) registerMiddlewares() error {
 		middlewaresLookup[middleware.Name()] = middleware.Handler()
 	}
 
+	// gin.CustomRecovery only recovers what runs after it, and gin.New() installs no
+	// recovery of its own, so a panic in an earlier middleware kills the connection
+	// and the caller sees a proxy 503 with no body instead of an error response.
+	ordered := make([]string, 0, len(a.configuredMiddlewares))
+	if slices.Contains(a.configuredMiddlewares, panickerMiddlewareName) {
+		ordered = append(ordered, panickerMiddlewareName)
+	}
 	for _, middleware := range a.configuredMiddlewares {
+		if middleware != panickerMiddlewareName {
+			ordered = append(ordered, middleware)
+		}
+	}
+
+	for _, middleware := range ordered {
 		a.l.Info(fmt.Sprintf("registering middleware: %s", middleware), zap.String("name", middleware))
 		fn, ok := middlewaresLookup[middleware]
 		if !ok {

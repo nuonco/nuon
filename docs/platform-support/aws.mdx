@@ -67,7 +67,7 @@ Both formats describe the same set of resources (IAM operation roles, secrets, a
 
 Navigate to the Installs tab in the Nuon dashboard, click "Create Install", and select the app you want to install.
 
-This kicks off a provision workflow. Both the CloudFormation stack and the Terraform tfvars are generated with the install ID, region, and other settings already interpolated. The provision workflow's "await install stack" step exposes both via tabs ("CloudFormation" and "Terraform"), which can be shared with your customer.
+This kicks off a provision workflow. Both the CloudFormation stack and the Terraform tfvars are templated with the install ID, region, and other settings. The provision workflow's "await install stack" step exposes both via tabs ("CloudFormation" and "Terraform"), which can be shared with your customer.
 
 ### Install the Stack
 

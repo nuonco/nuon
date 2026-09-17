@@ -23,9 +23,14 @@ const toEditorGroups = (config?: TAppBranchConfig): IInstallGroup[] =>
       name: g.name || '',
       install_ids: g.install_ids || [],
       label_selector: g.label_selector || null,
-      selection_mode: hasLabelSelector ? 'labels' as const : 'manual' as const,
+      selection_mode: g.all_installs
+        ? ('all' as const)
+        : hasLabelSelector
+          ? ('labels' as const)
+          : ('manual' as const),
       order: g.order ?? idx,
       max_parallel: g.max_parallel || 1,
+      auto_approve_on_policies_passing: !!g.auto_approve_on_policies_passing,
     }
   }) || []
 
@@ -49,18 +54,20 @@ export const DeploymentPlanEditorContainer = ({
 
   const { data: installsResult, isLoading: loadingInstalls } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['app-installs', org.id, app.id],
+    queryKey: ['app-installs', org.id, app.id, branch.id],
     queryFn: () =>
-      getAppInstalls({ appId: app.id!, orgId: org.id!, limit: 100 }),
-    enabled: !!org.id && !!app.id,
+      getAppInstalls({
+        appId: app.id!,
+        orgId: org.id!,
+        app_branch_id: branch.id,
+        limit: 100,
+      }),
+    enabled: !!org.id && !!app.id && !!branch.id,
   })
 
   const availableInstalls = useMemo(
-    () =>
-      (installsResult?.data ?? []).filter(
-        (i) => !i.app_branch_id || i.app_branch_id === branch.id
-      ),
-    [installsResult, branch.id]
+    () => installsResult?.data ?? [],
+    [installsResult]
   )
 
   const { data: runbooksResult, isLoading: loadingRunbooks } = useQuery({
@@ -90,15 +97,19 @@ export const DeploymentPlanEditorContainer = ({
     }) => {
       const installGroupsForApi = groups.map((group, index) => {
         const matchLabels = group.label_selector?.match_labels
+        const useAll = group.selection_mode === 'all'
         const useLabels =
           group.selection_mode === 'labels' && !!matchLabels && Object.keys(matchLabels).length > 0
 
         return {
           name: group.name,
-          install_ids: useLabels ? [] : group.install_ids || [],
+          install_ids: useAll || useLabels ? [] : group.install_ids || [],
           label_selector: useLabels ? group.label_selector : undefined,
+          all_installs: useAll || undefined,
           order: index,
           max_parallel: group.max_parallel || 1,
+          auto_approve_on_policies_passing:
+            group.auto_approve_on_policies_passing,
         }
       })
 

@@ -41,8 +41,8 @@ nuon variables delete --id=app_variable_id
 ## Using App Variables
 
 App variables are included in the install state, and are available in job plans.
-Using our example secret named `external_api_key`, you could interpolate it's
-value in your app using `{{ .nuon.app.variables.external_api_key }}`.
+Using our example secret named `external_api_key`, you could reference its
+value in your app with the template expression `{{ .nuon.app.variables.external_api_key }}`.
 
 <Note>
 	If you add or update an app variable after an install has been created, you

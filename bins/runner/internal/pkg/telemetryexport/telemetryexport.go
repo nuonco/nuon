@@ -263,15 +263,15 @@ func (s *Supervisor) replaceChild(cfg config) error {
 		}
 		close(child.done)
 	}()
-	if err := waitForCollector(child, collectorHealthURL); err != nil {
+	if err := waitForCollector(context.Background(), child, collectorHealthURL); err != nil {
 		s.stopChild()
 		return err
 	}
 	return nil
 }
 
-func waitForCollector(child *childProcess, healthURL string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), collectorStartTimeout)
+func waitForCollector(ctx context.Context, child *childProcess, healthURL string) error {
+	ctx, cancel := context.WithTimeout(ctx, collectorStartTimeout)
 	defer cancel()
 	client := &http.Client{Timeout: collectorHealthPollInterval}
 	for {

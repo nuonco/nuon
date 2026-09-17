@@ -1,0 +1,152 @@
+---
+title: "Sample queries"
+description: "Prompts to paste into an LLM client after Nuon MCP is connected."
+icon: "comments"
+keywords: ["MCP", "agents", "sample queries", "prompts"]
+---
+
+Copy a prompt into Claude Code, Cursor, or Amp after [MCP is connected](/guides/agents/overview). The client should pick tools from the [catalog](/guides/agents/tools); you do not need to name them.
+
+Write prompts need `--allow-writes` on the stdio proxy and [Admin](/concepts/access-control) (`org_admin`) on the identity.
+
+Replace names like `acme-prod` with your own install, app, or workflow IDs.
+
+## Review org status
+
+<AccordionGroup>
+  <Accordion title="Find recently-updated installs">
+    ```
+    Which installs have been updated in the last 24 hours?
+    ```
+  </Accordion>
+  <Accordion title="Find unhealthy installs">
+    ```
+    Are any installs in this org in an unhealthy state?
+    ```
+  </Accordion>
+  <Accordion title="Find pending approvals">
+    ```
+    Are there any pending workflow approvals in this org? For each one, tell me the install, workflow, and what is waiting.
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Manage workflows
+
+<AccordionGroup>
+  <Accordion title="Watch a workflow">
+    ```
+    Watch workflow <workflow_id> until it finishes. Tell me when the status changes and when it reaches a terminal state.
+    ```
+  </Accordion>
+  <Accordion title="Approve or reject a plan">
+    ```
+    Review the pending plan on workflow <workflow_id>. Summarize the change, then ask me before approving or rejecting it.
+    ```
+
+    Write. The agent should inspect the workflow first and wait for your confirmation.
+  </Accordion>
+  <Accordion title="Retry a failed step">
+    ```
+    Workflow <workflow_id> failed. Tell me which step failed and whether it is retryable. If I say yes, retry it and watch until it finishes.
+    ```
+
+    Write.
+  </Accordion>
+  <Accordion title="Cancel a workflow">
+    ```
+    Cancel in-progress workflow <workflow_id> on install acme-prod. Confirm with me first, then verify it stopped.
+    ```
+
+    Write.
+  </Accordion>
+</AccordionGroup>
+
+## Deploy app versions to installs
+
+<AccordionGroup>
+  <Accordion title="Review an app branch">
+    ```
+    What's the latest on the default branch for app <app>? Did the last run succeed, what changed, and how far have install-group deploys gotten?
+    ```
+  </Accordion>
+  <Accordion title="Review changes in a branch run or PR preview">
+    ```
+    What changed in the most recent run of the default branch for app <app>?
+    ```
+
+    Variants: `In the preview run for PR <number>, what changed?` and `Show progress for branch run <run_id>, including updated installs and what is left.`
+  </Accordion>
+  <Accordion title="Preview a PR or git ref">
+    ```
+    Preview PR <number> for app <app> against install acme-prod. Use plan-only unless I ask you to apply. Follow the returned run_id and workflow_id, then summarize the result.
+    ```
+
+    Write. Same as `nuon apps branches preview`. Ask before `apply`.
+
+    HTTP MCP cannot read the local workspace. For local toml, run `nuon apps sync --branch <branch> --output agent` first, then pass the resulting `app_config_id`.
+  </Accordion>
+  <Accordion title="See why a build failed">
+    ```
+    Why did the latest build for component <component> fail? Show the git ref and the relevant log lines.
+    ```
+  </Accordion>
+  <Accordion title="See why a deploy failed">
+    ```
+    Why did the latest deploy on install acme-prod fail? Pull the deploy and workflow step logs and quote the error.
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Debug installs
+
+<AccordionGroup>
+  <Accordion title="Review the status of an install">
+    ```
+    What's the status of install acme-prod? Include components, recent workflows, and anything unhealthy.
+    ```
+  </Accordion>
+  <Accordion title="Find actions you can run for an install">
+    ```
+    What actions can I run on install acme-prod? For each one, say whether it can be triggered manually.
+    ```
+  </Accordion>
+  <Accordion title="Run an action">
+    ```
+    Run the <action name> action on install acme-prod. Confirm the action with me before triggering it, then watch the workflow.
+    ```
+
+    Write.
+  </Accordion>
+  <Accordion title="See what runbooks you can run for an install">
+    ```
+    Show the runbooks available for install acme-prod. Summarize the steps in each one.
+    ```
+  </Accordion>
+  <Accordion title="Run a runbook">
+    ```
+    Run the <runbook> runbook on install acme-prod. Summarize its inputs and steps first, ask me before triggering it, then follow its workflow.
+    ```
+
+    Write.
+  </Accordion>
+</AccordionGroup>
+
+## Update installs
+
+<AccordionGroup>
+  <Accordion title="Deprovision or reprovision an install">
+    ```
+    Plan a reprovision of install acme-prod. Do not apply until I confirm. List available roles for reprovision first if I want a non-default IAM role. If I ask to deprovision, require an explicit confirm from me first.
+    ```
+
+    Write. Deprovision requires `confirm=true`. `plan_only` does not.
+  </Accordion>
+  <Accordion title="Inspect or update install inputs">
+    ```
+    What are the current inputs on install acme-prod? Propose an update for <input_name> and wait for my approval before writing it.
+    ```
+
+    Write.
+  </Accordion>
+</AccordionGroup>

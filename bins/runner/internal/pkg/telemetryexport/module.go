@@ -7,14 +7,14 @@ import (
 )
 
 var Module = fx.Options(
-	fx.Provide(newAWSFactory, newAzureFactory, newGCPFactory, newConfigSourceResolver, New, asAuditRouteLifecycle),
-	fx.Invoke(func(*Supervisor) {}),
+	fx.Provide(newAWSFactory, newAzureFactory, newGCPFactory, newConfigSourceResolver, New, NewVendor, asAuditRouteLifecycle),
+	fx.Invoke(func(*Supervisor, *VendorSupervisor) {}),
 )
 
 type auditRouteLifecycle struct{}
 
 func (auditRouteLifecycle) AuditRouteLifecycle() {}
 
-func asAuditRouteLifecycle(*Supervisor) audit.LocalRouteLifecycle {
+func asAuditRouteLifecycle(*Supervisor, *VendorSupervisor) audit.LocalRouteLifecycle {
 	return auditRouteLifecycle{}
 }

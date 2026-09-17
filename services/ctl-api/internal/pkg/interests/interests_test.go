@@ -907,6 +907,20 @@ func TestClassifySlugs(t *testing.T) {
 			},
 		},
 		{
+			name: "label added succeeded",
+			event: signal.SignalPhaseEvent{
+				SignalType: signalTypeLabelAdded,
+				Phase:      signal.SignalPhaseExecute,
+			},
+			outcome: &signal.SignalPhaseOutcome{Status: signal.SignalStatusSuccess},
+			want: []string{
+				"resource:installs",
+				"op:installs.label_added",
+				"event:lifecycle.succeeded",
+				"outcome:completion",
+			},
+		},
+		{
 			name: "execute-workflow provision failed",
 			event: signal.SignalPhaseEvent{
 				SignalType:   signalTypeExecuteWorkflow,

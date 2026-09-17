@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/hashicorp/go-hclog"
+	goversion "github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
 )
@@ -83,6 +84,8 @@ type Terraform interface {
 	// ExecPath returns the path to the Terraform executable.
 	ExecPath() string
 	Init(ctx context.Context, opts ...tfexec.InitOption) error
+	// Version returns structured output from the terraform version command.
+	Version(ctx context.Context, skipCache bool) (*goversion.Version, map[string]*goversion.Version, error)
 	// Apply represents the terraform apply subcommand.
 	Apply(ctx context.Context, opts ...tfexec.ApplyOption) error
 	// ApplyJSON represents the terraform apply subcommand with the `-json` flag.

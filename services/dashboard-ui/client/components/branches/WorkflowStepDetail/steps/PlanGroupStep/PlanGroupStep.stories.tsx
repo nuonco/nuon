@@ -143,7 +143,7 @@ const actions = (
 
 const StepInCard = (props: ComponentProps<typeof PlanGroupStep>) => (
   <StepCardStory name="plan install group" status="awaiting-approval">
-    <PlanGroupStep {...props} />
+    <PlanGroupStep orgId="org123" {...props} />
   </StepCardStory>
 )
 

@@ -217,15 +217,9 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 		return notify(errors.Wrap(err, "unable to create plan"))
 	}
 
-	if runPlan.ContainerImagePullPlan != nil {
-		if err := sharedactivities.EnsureGARAuth(ctx, runPlan.ContainerImagePullPlan.RepoCfg); err != nil {
-			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get GAR access token")
-			return notify(errors.Wrap(err, "unable to get GAR access token"))
-		}
-		if err := sharedactivities.EnsureACRAuth(ctx, runPlan.ContainerImagePullPlan.RepoCfg); err != nil {
-			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get ACR access token")
-			return notify(errors.Wrap(err, "unable to get ACR access token"))
-		}
+	if err := sharedactivities.EnsureContainerImagePullAuth(ctx, runPlan); err != nil {
+		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get image source credentials")
+		return notify(err)
 	}
 
 	planJSON, err := json.Marshal(runPlan)

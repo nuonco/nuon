@@ -101,6 +101,7 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 		Preload("LogStream").
 		Preload("QueueSignal").
 		Preload("AppBranchRun").
+		Preload("AppBranchRun.Preview").
 		First(&bld, "id = ? AND org_id = ?", bldID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component build: %w", res.Error)

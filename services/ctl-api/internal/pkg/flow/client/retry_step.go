@@ -31,9 +31,9 @@ func (c *Client) RetryStep(ctx context.Context, req *RetryStepRequest) (*RetrySt
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	_, err = handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
+	handle, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
 		UpdateName:   "retry-step",
-		WaitForStage: tclient.WorkflowUpdateStageAccepted,
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
 		Args: []any{
 			executeflow.RetryStepRequest{
 				StepID: req.StepID,
@@ -44,8 +44,9 @@ func (c *Client) RetryStep(ctx context.Context, req *RetryStepRequest) (*RetrySt
 		return nil, fmt.Errorf("unable to send retry-step update: %w", err)
 	}
 
-	return &RetryStepResponse{
-		WorkflowID: qs.Workflow.ID,
-		Retryable:  true,
-	}, nil
+	var resp RetryStepResponse
+	if err := handle.Get(ctx, &resp); err != nil {
+		return nil, fmt.Errorf("retry-step update failed: %w", err)
+	}
+	return &resp, nil
 }

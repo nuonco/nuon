@@ -68,6 +68,14 @@ type GetOrgInstallsParams struct {
 	*/
 	Branches *string
 
+	/* IncludeComponents.
+
+	   include install components
+
+	   Default: true
+	*/
+	IncludeComponents *bool
+
 	/* Labels.
 
 	   label filter (key:value,key:value)
@@ -124,6 +132,8 @@ func (o *GetOrgInstallsParams) WithDefaults() *GetOrgInstallsParams {
 // All values with no default are reset to their zero value.
 func (o *GetOrgInstallsParams) SetDefaults() {
 	var (
+		includeComponentsDefault = bool(true)
+
 		limitDefault = int64(10)
 
 		offsetDefault = int64(0)
@@ -132,9 +142,10 @@ func (o *GetOrgInstallsParams) SetDefaults() {
 	)
 
 	val := GetOrgInstallsParams{
-		Limit:  &limitDefault,
-		Offset: &offsetDefault,
-		Page:   &pageDefault,
+		IncludeComponents: &includeComponentsDefault,
+		Limit:             &limitDefault,
+		Offset:            &offsetDefault,
+		Page:              &pageDefault,
 	}
 
 	val.timeout = o.timeout
@@ -185,6 +196,17 @@ func (o *GetOrgInstallsParams) WithBranches(branches *string) *GetOrgInstallsPar
 // SetBranches adds the branches to the get org installs params
 func (o *GetOrgInstallsParams) SetBranches(branches *string) {
 	o.Branches = branches
+}
+
+// WithIncludeComponents adds the includeComponents to the get org installs params
+func (o *GetOrgInstallsParams) WithIncludeComponents(includeComponents *bool) *GetOrgInstallsParams {
+	o.SetIncludeComponents(includeComponents)
+	return o
+}
+
+// SetIncludeComponents adds the includeComponents to the get org installs params
+func (o *GetOrgInstallsParams) SetIncludeComponents(includeComponents *bool) {
+	o.IncludeComponents = includeComponents
 }
 
 // WithLabels adds the labels to the get org installs params
@@ -273,6 +295,23 @@ func (o *GetOrgInstallsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if qBranches != "" {
 
 			if err := r.SetQueryParam("branches", qBranches); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.IncludeComponents != nil {
+
+		// query param include_components
+		var qrIncludeComponents bool
+
+		if o.IncludeComponents != nil {
+			qrIncludeComponents = *o.IncludeComponents
+		}
+		qIncludeComponents := swag.FormatBool(qrIncludeComponents)
+		if qIncludeComponents != "" {
+
+			if err := r.SetQueryParam("include_components", qIncludeComponents); err != nil {
 				return err
 			}
 		}

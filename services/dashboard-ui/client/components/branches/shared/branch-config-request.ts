@@ -12,9 +12,13 @@ export const installGroupsForApi = (
       name: g.name ?? '',
       order: g.order ?? idx,
       max_parallel: g.max_parallel || 1,
-      ...(hasSelector
-        ? { label_selector: g.label_selector }
-        : { install_ids: g.install_ids || [] }),
+      auto_approve_on_policies_passing:
+        g.auto_approve_on_policies_passing ?? undefined,
+      ...(g.all_installs
+        ? { all_installs: true }
+        : hasSelector
+          ? { label_selector: g.label_selector }
+          : { install_ids: g.install_ids || [] }),
     }
   })
 

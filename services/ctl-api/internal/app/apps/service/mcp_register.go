@@ -10,7 +10,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_apps",
 		"List apps",
-		"List all apps in the current org with their components. Returns app name, ID, description, and associated components.",
+		"List apps in the current org with their components. Returns app name, ID, description, and associated components."+apiPkg.MCPListToolHint,
 	), s.mcpListApps)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
@@ -22,14 +22,26 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_app_branches",
 		"List app branches",
-		"List app branches for an app (name or ID). Returns each branch name, ID, and a summary of the latest run (status, whether it succeeded).",
+		"List app branches for an app (name or ID). Returns each branch name, ID, and a summary of the latest run (status, whether it succeeded)."+apiPkg.MCPListToolHint,
 	), s.mcpListAppBranches)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_app_branch",
 		"Get app branch overview",
-		"Get an overview of an app branch. Answers: did the last run succeed, what changed (config sections / git files), and how far install-group deploys have gotten (per-install status). Pass app and branch by name or ID. Use after preview_app_branch to follow preview progress.",
+		"Get an overview of an app branch. Answers: did the last run succeed, what changed (config sections / git files), and how far install-group deploys have gotten (per-install status). Pass app and branch by name or ID.",
 	), s.mcpGetAppBranch)
+
+	mcp.AddTool(server, apiPkg.MCPReadTool(
+		"list_app_branch_runs",
+		"List app branch runs",
+		"List recent runs for an app branch. Returns run IDs, pull request numbers, preview status, workflow IDs, and outcomes. Use this to find a specific historical or preview run."+apiPkg.MCPListToolHint,
+	), s.mcpListAppBranchRuns)
+
+	mcp.AddTool(server, apiPkg.MCPReadTool(
+		"get_app_branch_run",
+		"Get app branch run",
+		"Get one app branch run with its change summary, workflow progress, and per-install deployment status. Select by run_id or pr_number; omit both for the latest run. Use the returned workflow_id with watch_workflow.",
+	), s.mcpGetAppBranchRun)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"list_app_branch_preview_sources",
@@ -40,10 +52,11 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPWriteTool(
 		"preview_app_branch",
 		"Preview app branch",
-		"WRITE OPERATION: Trigger an app-branch preview run (same as `nuon apps branches preview`). "+
+		"WRITE OPERATION: Trigger an app-branch preview run (same as `nuon branches preview`). "+
 			"Pass pr_number (preview this PR against an install), git_ref, or app_config_id for a local synced config. "+
+			"Optional config_id selects a specific app branch config (defaults to latest). "+
 			"HTTP MCP cannot read the local workspace — sync with the CLI first, then pass app_config_id. "+
-			"Default mode is plan-only; ask before mode=apply. Returns run_id and workflow_id; follow with watch_workflow and get_app_branch.",
+			"Default mode is plan-only; ask before mode=apply. Returns run_id and workflow_id; follow that exact run with watch_workflow and get_app_branch_run.",
 		true,
 		false,
 	), s.mcpPreviewAppBranch)

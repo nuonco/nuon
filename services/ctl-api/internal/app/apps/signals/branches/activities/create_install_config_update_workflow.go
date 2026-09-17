@@ -46,11 +46,13 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 	}
 
 	update := app.InstallAppConfigVersion{
-		AppBranchRunID: &input.AppBranchRunID,
 		InstallID:      input.InstallID,
 		OldAppConfigID: install.AppConfigID,
 		NewAppConfigID: input.NewAppConfigID,
 		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
+	}
+	if input.AppBranchRunID != "" {
+		update.AppBranchRunID = &input.AppBranchRunID
 	}
 	if input.InstallGroupID != "" {
 		update.InstallGroupID = &input.InstallGroupID
@@ -65,8 +67,10 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 
 	metadata := map[string]string{
 		"new_app_config_id":        input.NewAppConfigID,
-		"app_branch_run_id":        input.AppBranchRunID,
 		"install_config_update_id": update.ID,
+	}
+	if input.AppBranchRunID != "" {
+		metadata["app_branch_run_id"] = input.AppBranchRunID
 	}
 	if input.InstallGroupID != "" {
 		metadata["install_group_id"] = input.InstallGroupID

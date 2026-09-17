@@ -44,6 +44,9 @@ type RunRequest struct {
 
 	// DispatchBuilds: see components.SyncComponentParams.DispatchBuilds.
 	DispatchBuilds bool
+
+	// SkipBranches leaves existing app branch configuration unchanged.
+	SkipBranches bool
 }
 
 type RunResult struct {
@@ -87,6 +90,9 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 	var opts []Option
 	if req.DispatchBuilds {
 		opts = append(opts, WithComponentBuildDispatch())
+	}
+	if req.SkipBranches {
+		opts = append(opts, WithoutBranchSync())
 	}
 
 	var result RunResult
@@ -182,6 +188,21 @@ func provisionDeferredQueues(ctx context.Context, deps RunDeps, result *RunResul
 	for _, branchID := range result.AppBranchesCreated {
 		if err := deps.AppsHelpers.EnsureAppBranchQueues(ctx, branchID); err != nil {
 			return fmt.Errorf("unable to create queues for app branch %s: %w", branchID, err)
+		}
+
+		var config app.AppBranchConfig
+		err := deps.DB.WithContext(ctx).
+			Where(app.AppBranchConfig{AppBranchID: branchID}).
+			Order("created_at DESC").
+			First(&config).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("unable to load first app branch config for %s: %w", branchID, err)
+		}
+		if err := deps.AppsHelpers.EnqueueAppBranchCreatedIfFirst(ctx, branchID, config.ID); err != nil {
+			return fmt.Errorf("unable to enqueue app-branch-created for %s: %w", branchID, err)
 		}
 	}
 

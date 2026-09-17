@@ -27,7 +27,7 @@ type ActionConfig struct {
 
 	// Image is an optional container image the action's steps run inside. When
 	// set, Nuon mounts the actions-supervisor into the image and executes each
-	// step's inline_contents there. Steps must use inline_contents.
+	// step's command, inline_contents, or repo-backed script there.
 	Image string `mapstructure:"image,omitempty" toml:"image,omitempty" features:"template"`
 
 	// KubernetesContext is the name of a kubernetes_context this action
@@ -89,7 +89,7 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("true").
 		Example("false").
 		Field("image").Short("container image the action's steps run inside").
-		Long("Requires the image-backed-actions org feature, which is off by default. Optional container image supplying the tools the action needs. Each step's inline_contents runs inside it via the mounted actions-supervisor, and all steps must use inline_contents when an image is set. A public ref (e.g. ghcr.io/acme/kubernetes-tools:v1) is mirrored into the install registry first. Templating the digest-pinned image.ref output of a container_image component instead pulls it straight from the install's own registry, which allows a private image and skips the mirror. Only supported on AWS VM-based runners").
+		Long("Requires the image-backed-actions org feature, which is off by default. Optional container image supplying the tools the action needs. Each step's command, inline_contents, or repo-backed script runs inside it via the mounted actions-supervisor. A public ref (e.g. ghcr.io/acme/kubernetes-tools:v1) is mirrored into the install registry first. Templating the digest-pinned image.ref output of a container_image component instead pulls it straight from the install's own registry, which allows a private image and skips the mirror. Supported on AWS, Azure, and GCP VM-based runners").
 		Example("ghcr.io/acme/kubernetes-tools:v1").
 		Example("{{.nuon.components.runbook-tools.outputs.image.ref}}").
 		Field("kubernetes_context").Short("kubernetes context this action targets").
@@ -125,7 +125,7 @@ func (a ActionStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("healthcheck").
 		Example("database_migration").
 		Field("command").Short("command to execute").
-		Long("Required field. Supports Go templating (e.g., {{.nuon.install.id}}). The command is executed in the runner environment").
+		Long("Single-line command to execute. Mutually exclusive with inline_contents. Supports Go templating (e.g., {{.nuon.install.id}}). Runs on the install runner, or inside the action's image when image is set").
 		Example("./healthcheck").
 		Example("bash -c 'curl https://example.com'").
 		Field("env_vars").Short("environment variables to pass to the step").
@@ -157,9 +157,9 @@ func (a *ActionConfig) parse() error {
 
 	if a.Image != "" {
 		for _, step := range a.Steps {
-			if step.InlineContents == "" {
+			if step.InlineContents == "" && step.Command == "" && step.PublicRepo == nil && step.ConnectedRepo == nil {
 				return ErrConfig{
-					Description: fmt.Sprintf("action %s sets an image, so step %s must use inline_contents (command and repo steps are not supported with image-backed actions)", a.Name, step.Name),
+					Description: fmt.Sprintf("action %s sets an image, so step %s must use command, inline_contents, or a repo", a.Name, step.Name),
 				}
 			}
 		}

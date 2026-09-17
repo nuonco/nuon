@@ -12,6 +12,9 @@ services: |
     - go.sum
     - pkg/**
 
+  telemetry-relay:
+    - bins/telemetry-relay/**
+
   runner:
     - go.mod
     - go.sum

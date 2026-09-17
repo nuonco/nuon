@@ -50,7 +50,7 @@ func (s *service) mcpListDeploys(ctx context.Context, _ *mcp.CallToolRequest, in
 			ID:        d.ID,
 			BuildID:   d.ComponentBuildID,
 			Status:    string(d.Status),
-			CreatedAt: d.CreatedAt.String(),
+			CreatedAt: apiPkg.MCPTime(d.CreatedAt),
 		}
 		if d.InstallComponent.Component.ID != "" {
 			summary.ComponentID = d.InstallComponent.Component.ID

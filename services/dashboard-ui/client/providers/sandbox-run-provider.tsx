@@ -1,7 +1,8 @@
 import { createContext, useMemo, useCallback, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { useSSEResourceQuery, isTerminalStatusV2 } from '@/hooks/use-sse-resource-query'
+import { useSSEResourceQuery, isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { useStatusToast } from '@/hooks/use-status-toast'
 import { getInstallSandboxRun } from '@/lib'
 import { createSSEQueryListener } from '@/lib/sse-listeners'
@@ -43,6 +44,8 @@ export function SandboxRunProvider({
     ),
   }), [queryClient, org?.id])
 
+  const onRefreshError = useRefreshErrorToast()
+
   const { data: sandboxRun, isLoading, error } = useSSEResourceQuery<TSandboxRun>({
     sseUrl: org?.id && installId && runId
       ? `/api/orgs/${org.id}/installs/${installId}/sandbox-runs/${runId}/sse`
@@ -52,6 +55,7 @@ export function SandboxRunProvider({
     enabled: !!org?.id && !!runId,
     shouldPoll,
     eventName: 'sandbox-run',
+    onError: onRefreshError,
     onPrimaryEvent: invalidateTabQueries,
     extraListeners,
     isFinished: isTerminalStatusV2,

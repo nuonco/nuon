@@ -6,8 +6,10 @@ import (
 )
 
 type pushEventInfo struct {
-	Repo         string   // "owner/repo" - matches ConnectedGithubVCSConfig.Repo
-	Branch       string   // "main" - matches ConnectedGithubVCSConfig.Branch
+	Repo         string // "owner/repo" - matches ConnectedGithubVCSConfig.Repo
+	Branch       string // "main" for a branch push
+	Tag          string // "foobar/v0.0.1" for a tag push
+	Deleted      bool
 	PusherEmail  string   // email of the person who pushed
 	SenderLogin  string   // GitHub username of the sender (always present)
 	PusherEmails []string // all unique emails from the payload (pusher, commit author/committer)
@@ -20,8 +22,10 @@ type pullRequestEventInfo struct {
 	Repo       string // "owner/repo"
 	BaseBranch string // target branch (e.g., "main")
 	HeadSHA    string // head commit SHA
+	HeadRef    string // head branch name (e.g., "jm/test-ci")
 	PRNumber   int    // pull request number
 	Action     string // "opened", "synchronize", "closed", etc.
+	Draft      bool
 }
 
 func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
@@ -31,10 +35,14 @@ func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
 		return nil, fmt.Errorf("missing or invalid ref in push payload")
 	}
 
-	branch := strings.TrimPrefix(ref, "refs/heads/")
-	if branch == ref {
-		// ref didn't have the expected prefix (e.g. tag push)
-		return nil, fmt.Errorf("ref %q is not a branch push", ref)
+	var branch, tag string
+	switch {
+	case strings.HasPrefix(ref, "refs/heads/"):
+		branch = strings.TrimPrefix(ref, "refs/heads/")
+	case strings.HasPrefix(ref, "refs/tags/"):
+		tag = strings.TrimPrefix(ref, "refs/tags/")
+	default:
+		return nil, fmt.Errorf("ref %q is not a branch or tag push", ref)
 	}
 
 	// Extract repository.full_name (e.g. "owner/repo")
@@ -65,11 +73,20 @@ func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
 	if hc, ok := payload["head_commit"].(map[string]any); ok {
 		headSHA, _ = hc["id"].(string)
 	}
+	if headSHA == "" {
+		headSHA, _ = payload["after"].(string)
+	}
 	beforeSHA, _ := payload["before"].(string)
+	deleted, _ := payload["deleted"].(bool)
+	if strings.Trim(headSHA, "0") == "" {
+		deleted = true
+	}
 
 	return &pushEventInfo{
 		Repo:         fullName,
 		Branch:       branch,
+		Tag:          tag,
+		Deleted:      deleted,
 		PusherEmail:  pusherEmail,
 		SenderLogin:  senderLogin,
 		PusherEmails: emails,
@@ -189,6 +206,8 @@ func parsePullRequestEvent(payload map[string]any) (*pullRequestEventInfo, error
 		return nil, fmt.Errorf("missing pull_request.head")
 	}
 	headSHA, _ := head["sha"].(string)
+	headRef, _ := head["ref"].(string)
+	draft, _ := prData["draft"].(bool)
 
 	repository, ok := payload["repository"].(map[string]any)
 	if !ok {
@@ -203,7 +222,9 @@ func parsePullRequestEvent(payload map[string]any) (*pullRequestEventInfo, error
 		Repo:       fullName,
 		BaseBranch: baseBranch,
 		HeadSHA:    headSHA,
+		HeadRef:    headRef,
 		PRNumber:   int(number),
 		Action:     action,
+		Draft:      draft,
 	}, nil
 }

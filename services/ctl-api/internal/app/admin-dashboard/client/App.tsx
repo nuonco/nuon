@@ -9,6 +9,8 @@ import { AccountsList } from '@/views/accounts/AccountsList'
 import { AccountDetail } from '@/views/accounts/AccountDetail'
 import { InstallsList } from '@/views/installs/InstallsList'
 import { InstallDetail } from '@/views/installs/InstallDetail'
+import { AppBranchesList } from '@/views/app-branches/AppBranchesList'
+import { AppBranchDetail } from '@/views/app-branches/AppBranchDetail'
 import { AllRunners } from '@/views/runners/AllRunners'
 import { RunnerDetail } from '@/views/runners/RunnerDetail'
 import { QueuesList } from '@/views/queues/QueuesList'
@@ -17,6 +19,7 @@ import { QueueSignalDetail as QueueSignalDetailView } from '@/views/queues/Queue
 import { QueueEmitterDetail as QueueEmitterDetailView } from '@/views/queues/QueueEmitterDetail'
 import { SignalGraphView } from '@/views/queues/SignalGraphView'
 import { WorkflowsList } from '@/views/workflows/WorkflowsList'
+import { BulkCancelWorkflows } from '@/views/workflows/BulkCancelWorkflows'
 import { WorkflowDetail } from '@/views/workflows/WorkflowDetail'
 import { LogStreams } from '@/views/log-streams/LogStreams'
 import { LogStreamDetail } from '@/views/log-streams/LogStreamDetail'
@@ -57,6 +60,8 @@ const router = createBrowserRouter([
       { path: 'accounts/:id', element: <AccountDetail /> },
       { path: 'installs', element: <InstallsList /> },
       { path: 'installs/:id', element: <InstallDetail /> },
+      { path: 'app-branches', element: <AppBranchesList /> },
+      { path: 'app-branches/:id', element: <AppBranchDetail /> },
       { path: 'runners/all', element: <AllRunners /> },
       { path: 'runners/:id', element: <RunnerDetail /> },
       { path: 'queues', element: <QueuesList /> },
@@ -65,6 +70,7 @@ const router = createBrowserRouter([
       { path: 'queues/:id/signals/:signalId/graph', element: <SignalGraphView /> },
       { path: 'queues/:id/emitters/:emitterId', element: <QueueEmitterDetailView /> },
       { path: 'workflows', element: <WorkflowsList /> },
+      { path: 'bulk-cancel-workflows', element: <BulkCancelWorkflows /> },
       { path: 'workflows/:workflowId', element: <WorkflowDetail /> },
       { path: 'log-streams', element: <LogStreams /> },
       { path: 'log-streams/:logStreamId', element: <LogStreamDetail /> },

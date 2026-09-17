@@ -30,6 +30,88 @@ export const Error = () => (
   />
 )
 
+const logLine = (level: string, message: string) =>
+  `{"level":"${level}","module":"terraform.ui","timestamp":"2026-01-01T00:00:00Z","resource":{"addr":"acme_widget.example","implied_provider":"acme","resource_type":"acme_widget","resource_name":"example"},"message":"${message}"}`
+
+const longUnbrokenDescription = [
+  'Step encountered an error: job did not finish successfully:',
+  logLine('info', 'acme_widget.example: Destroying...'),
+  logLine('error', 'acme_widget.example: deletion denied by policy acme/example'),
+].join(' ')
+
+export const ErrorWithLongUnbrokenDescription = () => (
+  <StepBanner
+    step={
+      {
+        ...baseStep,
+        name: 'teardown apply plan acme-widgets',
+        retryable: true,
+        skippable: true,
+        status: {
+          status: 'failed-pending-retry',
+          status_human_description: longUnbrokenDescription,
+          history: [],
+        },
+      } as TWorkflowStep
+    }
+    planOnly
+    onViewDetails={() => alert('view details')}
+  />
+)
+
+const terraformCompositeError = {
+  version: 1,
+  type: 'terraform.error',
+  severity: 'error',
+  message: 'creating S3 Bucket (acme-artifacts): AccessDenied',
+  sections: [
+    {
+      heading: 'Output',
+      kind: 'code',
+      body: [
+        'Error: creating S3 Bucket (acme-artifacts): AccessDenied',
+        '  with module.storage.aws_s3_bucket.artifacts',
+        'User: arn:aws:sts::000000000000:assumed-role/acme/runner is not authorized',
+        'to perform: s3:CreateBucket on resource: arn:aws:s3:::acme-artifacts',
+      ].join('\n'),
+    },
+  ],
+}
+
+export const ErrorWithCompositeError = () => (
+  <StepBanner
+    step={
+      {
+        ...baseStep,
+        status: {
+          status: 'error',
+          status_human_description: 'unable to execute job: exit status 1',
+          history: [],
+          composite_error: terraformCompositeError,
+        },
+      } as TWorkflowStep
+    }
+  />
+)
+
+export const FailedPendingRetryWithCompositeError = () => (
+  <StepBanner
+    step={
+      {
+        ...baseStep,
+        retryable: true,
+        skippable: true,
+        status: {
+          status: 'failed-pending-retry',
+          status_human_description: 'step failed, awaiting user action',
+          history: [],
+          composite_error: terraformCompositeError,
+        },
+      } as TWorkflowStep
+    }
+  />
+)
+
 export const ErrorRetryable = () => (
   <StepBanner
     step={

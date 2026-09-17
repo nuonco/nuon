@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 )
 
 type Params struct {
@@ -21,4 +22,5 @@ type Params struct {
 	Cfg           *internal.Config
 	DB            *gorm.DB `name:"psql"`
 	EndpointAudit *EndpointAudit
+	HTTPMetrics   *metrics.HTTPMetrics
 }

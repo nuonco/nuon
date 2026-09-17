@@ -92,12 +92,18 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 	prevDeploymentName := ""
 
 	scope := scopeFor(inp)
+	if inp.CustomStacksOnly {
+		scope = armScope{subscription: true}
+	}
 	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
 
-	// param name -> producing deployment; seeded with vnet outputs so they win over custom ones
 	wiredOutputs := map[string]string{}
 	for _, name := range vnetContractOutputs {
-		wiredOutputs[name] = vnetDeployment
+		if inp.CustomStacksOnly {
+			wiredOutputs[name] = fmt.Sprintf("[parameters('%s')]", name)
+			continue
+		}
+		wiredOutputs[name] = fmt.Sprintf("[reference('%s').outputs.%s.value]", vnetDeployment, name)
 	}
 
 	for i, stack := range sorted {
@@ -124,7 +130,9 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 
 		// Resolve template URL (use uploaded S3 URL if contents were uploaded)
 		templateURL := stack.TemplateURL
-		if stack.ContentsHash != "" && t.cfg.AWSCloudFormationStackTemplateBaseURL != "" {
+		if stack.TemplateSourceURL != "" {
+			templateURL = stack.TemplateSourceURL
+		} else if stack.ContentsHash != "" && t.cfg.AWSCloudFormationStackTemplateBaseURL != "" {
 			templateURL = cloudformation.CustomNestedStackTemplateURL(
 				t.cfg.AWSCloudFormationStackTemplateBaseURL,
 				inp.Install.OrgID,
@@ -199,7 +207,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			// Evaluated in the root, so it has to follow the root's declaration of the
 			// region — a parameter at resource-group scope, a variable at subscription
 			// scope where it is hidden from the portal's deployment form.
-			"location": scopeFor(inp).rootLocationRef(),
+			"location": scope.rootLocationRef(),
 		}
 		for paramName := range params {
 			if val, ok := nuonParams[paramName]; ok {
@@ -232,18 +240,23 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			if _, alreadySet := deploymentParams[paramName]; alreadySet {
 				continue
 			}
-			sourceDeployment, ok := wiredOutputs[paramName]
+			sourceValue, ok := wiredOutputs[paramName]
 			if !ok {
 				continue
 			}
 
 			deploymentParams[paramName] = map[string]any{
-				"value": fmt.Sprintf("[reference('%s').outputs.%s.value]", sourceDeployment, paramName),
+				"value": sourceValue,
 			}
 			delete(defaultParams, paramName)
 		}
 
-		// Runs after pruning: only names that actually reach the parent can conflict
+		for paramName, param := range defaultParams {
+			if !hoistableDefault(param.DefaultValue) {
+				delete(defaultParams, paramName)
+			}
+		}
+
 		for paramName := range defaultParams {
 			if owner, exists := allParamNames[paramName]; exists {
 				return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q conflicts with stack %q", i, stack.Name, paramName, owner)
@@ -267,7 +280,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		var dependsOn []string
 		if prevDeploymentName != "" {
 			dependsOn = append(dependsOn, prevDeploymentName)
-		} else {
+		} else if !inp.CustomStacksOnly {
 			dependsOn = append(dependsOn, vnetDeployment)
 			if !t.cfg.UseLocalRunners {
 				dependsOn = append(dependsOn, "runnerDeployment")
@@ -288,6 +301,14 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			},
 		}
 
+		if isSubscriptionScopedTemplate(armTmpl) {
+			scope.targetSubscription(deployment)
+		} else if inp.CustomStacksOnly {
+			deployment["resourceGroup"] = scope.rgNameExpr()
+		} else {
+			scope.targetInstallRG(deployment)
+		}
+
 		resources = append(resources, deployment)
 
 		// Registered after the deployment so a stack cannot wire to its own outputs
@@ -297,7 +318,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 				continue
 			}
 			if _, exists := wiredOutputs[key]; !exists {
-				wiredOutputs[key] = deploymentName
+				wiredOutputs[key] = fmt.Sprintf("[reference('%s').outputs.%s.value]", deploymentName, key)
 			}
 		}
 

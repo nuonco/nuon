@@ -3,6 +3,7 @@ package health
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.temporal.io/sdk/client"
@@ -16,9 +17,13 @@ import (
 // temporal). Returns 207 Multi-Status with a degraded list when any
 // dependency is unhappy.
 func (s *Service) GetReadyzHandler(ctx *gin.Context) {
+	var checks [dependencyCount]dependencyCheck
+	defer func() { s.metrics.record(ctx.Request.Context(), checks) }()
+	checks[postgresDependency].started = time.Now()
 	// ping psql
 	sqlDB, err := s.db.DB()
 	if err != nil {
+		checks[postgresDependency].finish("connection")
 		ctx.Error(stderr.ErrSystem{
 			Err:         err,
 			Description: "unable to get psql connection",
@@ -26,6 +31,7 @@ func (s *Service) GetReadyzHandler(ctx *gin.Context) {
 		return
 	}
 	if err := sqlDB.PingContext(ctx); err != nil {
+		checks[postgresDependency].finish("ping")
 		s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 			"system": "psql",
 			"status": "unable_to_ping",
@@ -36,6 +42,7 @@ func (s *Service) GetReadyzHandler(ctx *gin.Context) {
 		})
 		return
 	}
+	checks[postgresDependency].finish("")
 	s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 		"system": "psql",
 		"status": "ok",
@@ -44,8 +51,11 @@ func (s *Service) GetReadyzHandler(ctx *gin.Context) {
 	degraded := make([]string, 0)
 
 	// ping ch
+	checks[clickhouseDependency].started = time.Now()
+	chFailure := ""
 	chDB, err := s.chDB.DB()
 	if err != nil {
+		chFailure = "connection"
 		degraded = append(degraded, "ch")
 		s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 			"system": "ch",
@@ -54,6 +64,7 @@ func (s *Service) GetReadyzHandler(ctx *gin.Context) {
 	} else {
 		// attempt to ping clickhouse, if we get a connection
 		if err := chDB.PingContext(ctx); err != nil {
+			chFailure = "ping"
 			degraded = append(degraded, "ch")
 			s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 				"system": "ch",
@@ -70,6 +81,7 @@ func (s *Service) GetReadyzHandler(ctx *gin.Context) {
 		// Check for read-only replicas (only if connection was successful)
 		rows, err := chDB.Query("SELECT table FROM system.replicas WHERE database = 'ctl_api' AND is_readonly = 1")
 		if err != nil {
+			chFailure = "query"
 			degraded = append(degraded, "ch")
 			s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 				"system": "ch",
@@ -84,6 +96,7 @@ func (s *Service) GetReadyzHandler(ctx *gin.Context) {
 			for rows.Next() {
 				err := rows.Scan(&tableName)
 				if err != nil {
+					chFailure = "scan"
 					// Handle scan error
 					degraded = append(degraded, "ch")
 					s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
@@ -97,6 +110,7 @@ func (s *Service) GetReadyzHandler(ctx *gin.Context) {
 
 			// NOTE(fd): we check for iteration errors (but why?)
 			if err = rows.Err(); err != nil {
+				chFailure = "iteration"
 				degraded = append(degraded, "ch")
 				s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 					"system": "ch",
@@ -106,6 +120,7 @@ func (s *Service) GetReadyzHandler(ctx *gin.Context) {
 
 			rowCount := len(tables)
 			if rowCount > 0 {
+				chFailure = "readonly_replicas"
 				degraded = append(degraded, "ch")
 				s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 					"system": "ch",
@@ -117,16 +132,21 @@ func (s *Service) GetReadyzHandler(ctx *gin.Context) {
 			}
 		}
 	}
+	checks[clickhouseDependency].finish(chFailure)
 
 	// ping temporal
+	checks[temporalDependency].started = time.Now()
 	_, err = s.tclient.CheckHealth(ctx, &client.CheckHealthRequest{})
+	temporalFailure := ""
 	if err != nil {
+		temporalFailure = "ping"
 		degraded = append(degraded, "temporal")
 		s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 			"system": "temporal",
 			"status": "unable_to_ping",
 		}))
 	}
+	checks[temporalDependency].finish(temporalFailure)
 	s.mw.Incr("healthcheck.check", metrics.ToTags(map[string]string{
 		"system": "temporal",
 		"status": "ok",

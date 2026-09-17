@@ -70,6 +70,147 @@ func TestPermissionsConfigKeepsCustomAndBreakGlassRoles(t *testing.T) {
 	}
 }
 
+func TestPermissionsConfigKeepsNamedPolicies(t *testing.T) {
+	provision := role("provision")
+	provision.NamedPolicies = config.NamedPolicyRefs([]string{"install-{{.nuon.install.id}}-logs"})
+
+	obj, err := PermissionsConfig(PermissionsInput{
+		AppID:       "app1",
+		AppConfigID: "cfg1",
+		StackType:   "aws-cloudformation",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   provision,
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: role("deprovision"),
+			NamedPolicies: []config.NamedIAMPolicy{
+				{
+					Name:        "install-{{.nuon.install.id}}-logs",
+					Description: "shared logs",
+					Contents:    `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"logs:*","Resource":"*"}]}`,
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, obj.NamedPolicies, 1)
+	assert.Equal(t, "install-{{.nuon.install.id}}-logs", obj.NamedPolicies[0].Name)
+	assert.Equal(t, "install-{{.nuon.install.id}}-logs", obj.NamedPolicies[0].PolicyName)
+	assert.Equal(t, "NamedPolicyInstallLogs", obj.NamedPolicies[0].CloudFormationStackName)
+
+	for _, r := range obj.Roles {
+		if r.Type == app.AWSIAMRoleTypeRunnerProvision {
+			assert.Equal(t, []string{"install-{{.nuon.install.id}}-logs"}, r.NamedPolicyNames)
+		} else {
+			assert.Empty(t, r.NamedPolicyNames)
+		}
+	}
+}
+
+func TestPermissionsConfigAllowsEmptyPoliciesWithNamedPolicy(t *testing.T) {
+	deprovision := role("deprovision")
+	deprovision.Policies = nil
+	deprovision.NamedPolicies = config.NamedPolicyRefs([]string{"install-alb-teardown"})
+
+	obj, err := PermissionsConfig(PermissionsInput{
+		AppID:       "app1",
+		AppConfigID: "cfg1",
+		StackType:   "aws-cloudformation",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   role("provision"),
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: deprovision,
+			NamedPolicies: []config.NamedIAMPolicy{
+				{Name: "install-alb-teardown", Contents: `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"elasticloadbalancing:*","Resource":"*"}]}`},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	for _, r := range obj.Roles {
+		if r.Type != app.AWSIAMRoleTypeRunnerDeprovision {
+			continue
+		}
+		assert.Empty(t, r.Policies)
+		assert.Equal(t, []string{"install-alb-teardown"}, r.NamedPolicyNames)
+	}
+}
+
+func TestPermissionsConfigRejectsRoleWithoutAnyPolicies(t *testing.T) {
+	deprovision := role("deprovision")
+	deprovision.Policies = nil
+
+	_, err := PermissionsConfig(PermissionsInput{
+		AppID:       "app1",
+		AppConfigID: "cfg1",
+		StackType:   "aws-cloudformation",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   role("provision"),
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: deprovision,
+		},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `role "deprovision_role" has no permissions`)
+}
+
+func TestPermissionsConfigRejectsNamedPoliciesWithoutCloudFormation(t *testing.T) {
+	_, err := PermissionsConfig(PermissionsInput{
+		AppConfigID: "cfg1",
+		StackType:   "gcp-terraform",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   role("provision"),
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: role("deprovision"),
+			NamedPolicies: []config.NamedIAMPolicy{
+				{Name: "logs", Contents: `{"Version":"2012-10-17","Statement":[]}`},
+			},
+		},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "aws-cloudformation")
+}
+
+func TestPermissionsConfigRejectsUnknownNamedPolicyRef(t *testing.T) {
+	provision := role("provision")
+	provision.NamedPolicies = config.NamedPolicyRefs([]string{"missing"})
+
+	_, err := PermissionsConfig(PermissionsInput{
+		AppConfigID: "cfg1",
+		StackType:   "aws-cloudformation",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   provision,
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: role("deprovision"),
+			NamedPolicies: []config.NamedIAMPolicy{
+				{Name: "logs", Contents: `{"Version":"2012-10-17","Statement":[]}`},
+			},
+		},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown named policy")
+}
+
+func TestPermissionsConfigRejectsNamedPoliciesOnGCPRole(t *testing.T) {
+	provision := role("provision")
+	provision.CloudPlatform = "gcp"
+	provision.NamedPolicies = config.NamedPolicyRefs([]string{"logs"})
+
+	_, err := PermissionsConfig(PermissionsInput{
+		AppConfigID: "cfg1",
+		StackType:   "aws-cloudformation",
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   provision,
+			MaintenanceRole: role("maintenance"),
+			DeprovisionRole: role("deprovision"),
+			NamedPolicies: []config.NamedIAMPolicy{
+				{Name: "logs", Contents: `{"Version":"2012-10-17","Statement":[]}`},
+			},
+		},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "AWS-only")
+}
+
 func TestPermissionsConfigKeepsEnabledInStack(t *testing.T) {
 	provision := role("provision")
 	provision.EnabledInStack = ptr(false)
@@ -277,6 +418,111 @@ func TestStackConfigRejectsNestedStackWithoutContents(t *testing.T) {
 	}, "app1", "cfg1")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "contents is required")
+}
+
+func TestStackConfigRejectsInvalidCustomStackIdentity(t *testing.T) {
+	for name, stacks := range map[string][]config.CustomNestedStack{
+		"duplicate names": {
+			{Name: "shared", Index: 0, TemplateURL: "https://example.com/a.yaml", Contents: "{}"},
+			{Name: "shared", Index: 1, TemplateURL: "https://example.com/b.yaml", Contents: "{}"},
+		},
+		"duplicate indices": {
+			{Name: "first", Index: 0, TemplateURL: "https://example.com/a.yaml", Contents: "{}"},
+			{Name: "second", Index: 0, TemplateURL: "https://example.com/b.yaml", Contents: "{}"},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := StackConfig(&config.StackConfig{
+				Type:               string(app.StackTypeAWS),
+				Name:               "stack",
+				Description:        "stack",
+				CustomNestedStacks: stacks,
+			}, "app1", "cfg1")
+			require.Error(t, err)
+		})
+	}
+}
+
+func TestStackConfigRejectsAzureBicepCustomStackSource(t *testing.T) {
+	const armJSON = `{"$schema":"https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#","contentVersion":"1.0.0.0","resources":[]}`
+
+	for name, tc := range map[string]struct {
+		stacks  []config.CustomNestedStack
+		wantErr string
+	}{
+		"bicep template_url": {
+			stacks:  []config.CustomNestedStack{{Name: "storage", Index: 0, TemplateURL: "./arm/storage.bicep", Contents: armJSON}},
+			wantErr: "az bicep build --file ./arm/storage.bicep --outfile ./arm/storage.json",
+		},
+		"bicep contents": {
+			stacks:  []config.CustomNestedStack{{Name: "storage", Index: 0, TemplateURL: "./arm/storage.json", Contents: "param location string = resourceGroup().location"}},
+			wantErr: "are not valid ARM JSON",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := StackConfig(&config.StackConfig{
+				Type:               string(app.StackTypeAzure),
+				Name:               "stack",
+				Description:        "stack",
+				CustomNestedStacks: tc.stacks,
+			}, "app1", "cfg1")
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.wantErr)
+		})
+	}
+}
+
+func TestStackConfigAllowsAzureARMJSONCustomStack(t *testing.T) {
+	obj, err := StackConfig(&config.StackConfig{
+		Type:        string(app.StackTypeAzure),
+		Name:        "stack",
+		Description: "stack",
+		CustomNestedStacks: []config.CustomNestedStack{
+			{Name: "storage", Index: 0, TemplateURL: "./arm/storage.json", Contents: `{"$schema":"https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#","contentVersion":"1.0.0.0","resources":[]}`},
+		},
+	}, "app1", "cfg1")
+	require.NoError(t, err)
+	require.Len(t, obj.CustomNestedStacks, 1)
+	assert.Equal(t, config.CustomNestedStackStatusPending, obj.CustomNestedStacks[0].Status)
+}
+
+func TestStackConfigRejectsInvalidGCPCustomStackModule(t *testing.T) {
+	_, err := StackConfig(&config.StackConfig{
+		Type:        string(app.StackTypeGCP),
+		Name:        "stack",
+		Description: "stack",
+		CustomNestedStacks: []config.CustomNestedStack{
+			{Name: "bucket", Index: 0, TemplateURL: "https://example.com/template.tf", Contents: "{}"},
+		},
+	}, "app1", "cfg1")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must reference a gcp modules path")
+}
+
+func TestStackConfigAllowsGCPModuleWithoutTemplateContents(t *testing.T) {
+	obj, err := StackConfig(&config.StackConfig{
+		Type:        string(app.StackTypeGCP),
+		Name:        "stack",
+		Description: "stack",
+		CustomNestedStacks: []config.CustomNestedStack{
+			{Name: "storage", Index: 0, TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket"},
+		},
+	}, "app1", "cfg1")
+	require.NoError(t, err)
+	require.Len(t, obj.CustomNestedStacks, 1)
+	assert.Equal(t, config.CustomNestedStackStatusReady, obj.CustomNestedStacks[0].Status)
+}
+
+func TestStackConfigRejectsGCPDNSWithoutName(t *testing.T) {
+	_, err := StackConfig(&config.StackConfig{
+		Type:        string(app.StackTypeGCP),
+		Name:        "stack",
+		Description: "stack",
+		CustomNestedStacks: []config.CustomNestedStack{
+			{Name: "dns", Index: 0, TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/dns"},
+		},
+	}, "app1", "cfg1")
+	require.EqualError(t, err, "custom_nested_stacks[0] (dns): parameters.dns_name is required for the GCP dns module")
 }
 
 func TestPoliciesConfigKeepsName(t *testing.T) {
@@ -555,4 +801,71 @@ func TestInputsFromConfigDedupesByName(t *testing.T) {
 	}
 	assert.Equal(t, "second", byName["dupe"].Description, "last input declaration wins")
 	assert.Equal(t, "only", byName["unique"].Description)
+}
+
+func TestSecretsConfigAcceptsTemplatedAndStaticNames(t *testing.T) {
+	tests := []struct {
+		name    string
+		secret  string
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "templated name",
+			secret: "{{.nuon.install.inputs.prefix}}_retool_encryption_key",
+			want:   "{{.nuon.install.inputs.prefix}}_retool_encryption_key",
+		},
+		{
+			name:   "hyphenated static name",
+			secret: "my-secret",
+			want:   "my-secret",
+		},
+		{
+			name:   "underscore static name",
+			secret: "retool_encryption_key",
+			want:   "retool_encryption_key",
+		},
+		{
+			name:    "uppercase rejected",
+			secret:  "MY-SECRET",
+			wantErr: true,
+		},
+		{
+			name:    "spaces rejected",
+			secret:  "my secret",
+			wantErr: true,
+		},
+		{
+			name:    "empty rejected",
+			secret:  "",
+			wantErr: true,
+		},
+		{
+			name:    "templated name with uppercase rejected",
+			secret:  "{{.nuon.install.inputs.Prefix}}_key",
+			wantErr: true,
+		},
+		{
+			name:    "templated name with hyphen outside braces rejected",
+			secret:  "{{.nuon.install.inputs.prefix}}-key",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			obj, err := SecretsConfig([]SecretInput{{
+				Name:        tt.secret,
+				DisplayName: "Display",
+				Description: "Description",
+			}}, "app1", "cfg1")
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Len(t, obj.Secrets, 1)
+			assert.Equal(t, tt.want, obj.Secrets[0].Name)
+		})
+	}
 }

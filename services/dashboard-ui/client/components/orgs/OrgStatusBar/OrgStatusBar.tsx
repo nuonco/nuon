@@ -11,6 +11,7 @@ import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { VCSConnectionsStatusIndicator } from '@/components/vcs-connections/VCSConnectionsStatusIndicator'
 import { humanize } from '@/utils/string-utils'
 import { getStatusTheme } from '@/utils/status-utils'
+import { cn } from '@/utils/classnames'
 import type { TApp, TAppBranch, TAppConfig, TInstall, TInstallStack, TOrg, TWorkflow, TWorkflowStepApproval } from '@/types'
 
 interface IOrgStatusBar {
@@ -29,6 +30,25 @@ interface IOrgStatusBar {
   byocTextColor?: string
 }
 
+const NAME_WIDTHS = {
+  org: 'shrink-0 max-w-[16ch] @6xl:max-w-[24ch] @7xl:max-w-[32ch]',
+  app: 'shrink-0 max-w-[20ch] @6xl:max-w-[28ch] @7xl:max-w-[36ch]',
+  branch: 'shrink-0 max-w-[16ch] @6xl:max-w-[24ch] @7xl:max-w-[32ch]',
+  install: 'min-w-[14ch] @max-[29rem]:min-w-[10ch]',
+}
+
+const HIDE_TIERS = {
+  org: '@max-[54rem]:!hidden',
+  app: '@max-[47rem]:hidden',
+  branch: '@max-[38rem]:hidden',
+}
+
+const Separator = () => (
+  <span className="shrink-0 text-cool-grey-300 dark:text-white/20 text-xs">
+    ›
+  </span>
+)
+
 export const OrgStatusBar = ({
   org,
   app,
@@ -44,9 +64,18 @@ export const OrgStatusBar = ({
   byocColor,
   byocTextColor,
 }: IOrgStatusBar) => {
+  const hasResourceContext = !!app || !!install
+
   return (
-    <div className="hidden md:flex border-t w-full px-4 py-1.5 items-center flex-none bg-code z-[1] gap-3">
-      <Text family="mono" variant="subtext" className="!flex items-center gap-1.5">
+    <div className="@container hidden md:flex border-t w-full px-4 py-1.5 items-center flex-none flex-nowrap overflow-hidden bg-code z-[1] gap-3">
+      <Text
+        family="mono"
+        variant="subtext"
+        nowrap
+        className={cn('!flex items-center gap-1.5', NAME_WIDTHS.org, {
+          [HIDE_TIERS.org]: hasResourceContext,
+        })}
+      >
         {org.sandbox_mode && (
           <Tooltip tipContent={<Text variant="subtext" as="span">Sandbox mode</Text>} tipContentClassName="!py-0.5" position="top">
             <Icon
@@ -56,12 +85,13 @@ export const OrgStatusBar = ({
             />
           </Tooltip>
         )}
-        {org.name}
+        <span className="min-w-0 truncate">{org.name}</span>
       </Text>
 
       <VCSConnectionsStatusIndicator />
 
       <ContextTooltip
+        className="shrink-0"
         position="top"
         title="Pending approvals"
         showCount
@@ -72,6 +102,7 @@ export const OrgStatusBar = ({
           theme={approvals.length ? 'warn' : 'neutral'}
           family="mono"
           variant="subtext"
+          nowrap
           className="!flex gap-1.5 items-center cursor-default"
         >
           <Icon variant="BellIcon" size={14} />
@@ -81,6 +112,7 @@ export const OrgStatusBar = ({
 
       {activeWorkflows.length > 0 && (
         <ContextTooltip
+          className="shrink-0"
           position="top"
           title="Active workflows"
           showCount
@@ -91,6 +123,7 @@ export const OrgStatusBar = ({
             theme="info"
             family="mono"
             variant="subtext"
+            nowrap
             className="!flex gap-1.5 items-center cursor-default"
           >
             <Icon variant="TreeStructureIcon" size={14} />
@@ -101,27 +134,44 @@ export const OrgStatusBar = ({
 
       {app && (
         <>
-          <span className="text-cool-grey-300 dark:text-white/20 text-xs">
-            ›
-          </span>
-          <Text family="mono" variant="subtext">
-            {app.name}
-          </Text>
+          <div
+            className={cn('flex items-center gap-3 shrink-0', {
+              [HIDE_TIERS.app]: !!install,
+            })}
+          >
+            <Separator />
+            <Text
+              family="mono"
+              variant="subtext"
+              nowrap
+              className={cn('truncate', NAME_WIDTHS.app)}
+            >
+              {app.name}
+            </Text>
+          </div>
 
           {branch && (
-            <>
-              <span className="text-cool-grey-300 dark:text-white/20 text-xs">
-                ›
-              </span>
-              <Icon variant="GitBranchIcon" size={12} className="text-cool-grey-500 dark:text-cool-grey-400" />
-              <Text family="mono" variant="subtext">
+            <div
+              className={cn('flex items-center gap-3 shrink-0', {
+                [HIDE_TIERS.branch]: !!install,
+              })}
+            >
+              <Separator />
+              <Icon variant="GitBranchIcon" size={12} className="shrink-0 text-cool-grey-500 dark:text-cool-grey-400" />
+              <Text
+                family="mono"
+                variant="subtext"
+                nowrap
+                className={cn('truncate', NAME_WIDTHS.branch)}
+              >
                 {branch.name}
               </Text>
-            </>
+            </div>
           )}
 
           {latestConfig && (
             <ContextTooltip
+              className="shrink-0"
               position="top"
               title="Config sync"
               items={[
@@ -146,7 +196,7 @@ export const OrgStatusBar = ({
                 },
               ]}
             >
-              <Text theme={getStatusTheme(latestConfig.status ?? '')}>
+              <Text theme={getStatusTheme(latestConfig.status ?? '')} className="!flex">
                 <Icon
                   variant="ArrowsCounterClockwiseIcon"
                   size={14}
@@ -159,26 +209,30 @@ export const OrgStatusBar = ({
       )}
 
       {install && (
-        <>
-          <span className="text-cool-grey-300 dark:text-white/20 text-xs">
-            ›
-          </span>
-          <Text family="mono" variant="subtext">
+        <div className="flex items-center gap-3 min-w-0">
+          <Separator />
+          <Text
+            family="mono"
+            variant="subtext"
+            nowrap
+            className={cn('truncate', NAME_WIDTHS.install)}
+          >
             {install.name}
           </Text>
 
           <InstallStatuses
+            className="shrink-0"
             install={install}
             stack={stack}
             variant="icon"
             tooltipPosition="top"
           />
-        </>
+        </div>
       )}
 
       {byocName && (
         <span
-          className="ml-auto max-w-56 truncate rounded px-2 py-px font-mono text-xs font-strong tracking-widest uppercase"
+          className="ml-auto shrink-0 max-w-32 @3xl:max-w-56 truncate rounded px-2 py-px font-mono text-xs font-strong tracking-widest uppercase"
           style={{ backgroundColor: byocColor, color: byocTextColor }}
         >
           {byocName}

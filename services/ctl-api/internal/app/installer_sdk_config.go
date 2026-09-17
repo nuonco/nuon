@@ -32,6 +32,9 @@ type InstallerSDKConfig struct {
 
 	CustomStacks            []InstallerSDKCustomStack `json:"custom_stacks,omitempty"`
 	CustomStacksTemplateURL string                    `json:"custom_stacks_template_url,omitempty"`
+
+	// Carried into the module's phone home so a new version produces a diff.
+	StackVersionID string `json:"stack_version_id,omitempty"`
 }
 
 // InstallerSDKCustomStack is a custom nested stack.
@@ -49,6 +52,10 @@ type InstallerSDKAWSConfig struct {
 	Region            string `json:"region,omitempty"`
 	ClusterName       string `json:"cluster_name,omitempty"`
 	RunnerMachineType string `json:"runner_machine_type,omitempty"`
+
+	// Deployed instead of the module's own VPC, which lacks its extra resources.
+	VPCNestedTemplateURL    string `json:"vpc_nested_template_url,omitempty"`
+	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
 
 	NuonSupportIAMRoleARNs []string `json:"nuon_support_iam_role_arns,omitempty"`
 
@@ -118,6 +125,10 @@ type InstallerSDKAzureConfig struct {
 	RunnerVMSize      string `json:"runner_vm_size,omitempty"`
 	ContainerImageURL string `json:"container_image_url,omitempty"`
 	ContainerImageTag string `json:"container_image_tag,omitempty"`
+
+	// Deployed instead of the module's own network, which lacks its extra resources.
+	VPCNestedTemplateURL    string `json:"vpc_nested_template_url,omitempty"`
+	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
 
 	ProvisionActions        []string `json:"provision_actions,omitempty"`
 	ProvisionBuiltInRoles   []string `json:"provision_built_in_roles,omitempty"`

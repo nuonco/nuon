@@ -370,17 +370,21 @@ func (h *ProxyHandler) verifyAndCache(c *gin.Context, token string) (string, err
 }
 
 func (h *ProxyHandler) requireAuth() gin.HandlerFunc {
-	loginURL := h.cfg.AuthServiceUrl + "/?url=" + h.cfg.AppUrl
 	return func(c *gin.Context) {
+		redirectToLogin := func() {
+			returnURL := h.cfg.AppUrl + c.Request.URL.RequestURI()
+			c.Redirect(http.StatusFound, h.cfg.AuthServiceUrl+"/?url="+url.QueryEscape(returnURL))
+			c.Abort()
+		}
+
 		token, err := c.Cookie(authCookie)
 		if err != nil || token == "" {
-			c.Redirect(http.StatusFound, loginURL)
-			c.Abort()
+			redirectToLogin()
 			return
 		}
 		if _, verifyErr := h.verifyAndCache(c, token); verifyErr != nil {
-			c.Redirect(http.StatusFound, loginURL)
-			c.Abort()
+			h.l.Warn("admin proxy auth check failed", zap.Error(verifyErr))
+			redirectToLogin()
 			return
 		}
 		c.Next()

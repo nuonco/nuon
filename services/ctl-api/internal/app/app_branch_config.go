@@ -53,6 +53,7 @@ type AppBranchConfig struct {
 	SendStatusesOnIgnore bool `json:"send_statuses_on_ignore,omitempty" temporaljson:"send_statuses_on_ignore,omitzero,omitempty"`
 
 	PreviewConfig *AppBranchPreviewConfig `json:"preview_config,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"preview_config,omitzero,omitempty"`
+	RunConfig     *AppBranchRunConfig     `json:"run_config,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"run_config,omitzero,omitempty"`
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 

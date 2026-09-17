@@ -112,6 +112,15 @@ var PhoneHomeTokenEligibleStatuses = []Status{
 	InstallStackVersionStatusActive,
 }
 
+// Statuses whose templates were uploaded. Earlier ones carry URLs written at
+// creation, pointing at objects that never landed.
+var InstallStackVersionTemplateReadyStatuses = []Status{
+	InstallStackVersionStatusPendingUser,
+	InstallStackVersionStatusProvisioning,
+	InstallStackVersionStatusActive,
+	InstallStackVersionStatusOutdated,
+}
+
 // PhoneHomeTokenEligible reports whether this version should hold a live phone-home
 // token. A tombstoned token is never reissued: that is what distinguishes a
 // deliberate revocation from a version that has simply never been minted for.

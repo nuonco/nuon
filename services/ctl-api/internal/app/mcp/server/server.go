@@ -15,22 +15,39 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	controlplanemetrics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 )
 
 type Params struct {
 	fx.In
 
-	LC         fx.Lifecycle
-	Shutdowner fx.Shutdowner
-	DB         *gorm.DB `name:"psql"`
-	L          *zap.Logger
-	Cfg        *internal.Config
-	Services   []api.Service `group:"services"`
+	LC          fx.Lifecycle
+	Shutdowner  fx.Shutdowner
+	DB          *gorm.DB `name:"psql"`
+	L           *zap.Logger
+	Cfg         *internal.Config
+	MW          metrics.Writer
+	HTTPMetrics *controlplanemetrics.HTTPMetrics
+	Services    []api.Service `group:"services"`
+}
+
+type NuonctlParams struct {
+	fx.In
+
+	LC          fx.Lifecycle
+	Shutdowner  fx.Shutdowner
+	DB          *gorm.DB `name:"psql"`
+	L           *zap.Logger
+	Cfg         *internal.Config
+	MW          metrics.Writer
+	HTTPMetrics *controlplanemetrics.HTTPMetrics
+	Services    []api.MCPService `group:"nuonctl_mcp_services"`
 }
 
 // orgSelectionTTL bounds how long an idle org selection is retained.
@@ -46,9 +63,16 @@ type Server struct {
 	db          *gorm.DB
 	l           *zap.Logger
 	cfg         *internal.Config
-	services    []api.Service
+	mw          metrics.Writer
+	httpMetrics *controlplanemetrics.HTTPMetrics
+	mcpServices []api.MCPService
 	httpServer  *http.Server
 	schemaCache *mcp.SchemaCache
+
+	implementationName string
+	requireEmployee    bool
+	serverPurpose      string
+	orgInstructions    string
 
 	mu            sync.RWMutex
 	orgSelections map[string]*orgSelection
@@ -56,14 +80,77 @@ type Server struct {
 }
 
 func New(params Params) *Server {
+	mcpServices := make([]api.MCPService, 0, len(params.Services))
+	for _, svc := range params.Services {
+		if mcpSvc, ok := svc.(api.MCPService); ok {
+			mcpServices = append(mcpServices, mcpSvc)
+		}
+	}
+
+	return newServer(
+		params.LC,
+		params.Shutdowner,
+		params.DB,
+		params.L,
+		params.Cfg,
+		params.MW,
+		params.HTTPMetrics,
+		mcpServices,
+		params.Cfg.MCPHTTPPort,
+		"nuon-ctl",
+		false,
+		"Nuon control plane MCP server.",
+		"If no org is selected, call list_orgs then select_org.",
+	)
+}
+
+func NewNuonctl(params NuonctlParams) *Server {
+	return newServer(
+		params.LC,
+		params.Shutdowner,
+		params.DB,
+		params.L,
+		params.Cfg,
+		params.MW,
+		params.HTTPMetrics,
+		params.Services,
+		params.Cfg.NuonctlMCPHTTPPort,
+		"nuonctl",
+		true,
+		"Nuon employee-only nuonctl MCP server.",
+		"If no org is selected, run nuon orgs select and reconnect.",
+	)
+}
+
+func newServer(
+	lc fx.Lifecycle,
+	shutdowner fx.Shutdowner,
+	db *gorm.DB,
+	l *zap.Logger,
+	cfg *internal.Config,
+	mw metrics.Writer,
+	httpMetrics *controlplanemetrics.HTTPMetrics,
+	mcpServices []api.MCPService,
+	port string,
+	implementationName string,
+	requireEmployee bool,
+	serverPurpose string,
+	orgInstructions string,
+) *Server {
 	s := &Server{
-		db:            params.DB,
-		l:             params.L.Named("mcp"),
-		cfg:           params.Cfg,
-		services:      params.Services,
-		schemaCache:   mcp.NewSchemaCache(),
-		orgSelections: make(map[string]*orgSelection),
-		stopJanitor:   make(chan struct{}),
+		db:                 db,
+		l:                  l.Named("mcp"),
+		cfg:                cfg,
+		mw:                 mw,
+		httpMetrics:        httpMetrics,
+		mcpServices:        mcpServices,
+		schemaCache:        mcp.NewSchemaCache(),
+		implementationName: implementationName,
+		requireEmployee:    requireEmployee,
+		serverPurpose:      serverPurpose,
+		orgInstructions:    orgInstructions,
+		orgSelections:      make(map[string]*orgSelection),
+		stopJanitor:        make(chan struct{}),
 	}
 
 	mcpHandler := s.newMCPHandler()
@@ -75,17 +162,17 @@ func New(params Params) *Server {
 	mux.Handle("/", s.authContextMiddleware(mcpHandler))
 
 	s.httpServer = &http.Server{
-		Addr:    net.JoinHostPort("0.0.0.0", params.Cfg.MCPHTTPPort),
-		Handler: mux,
+		Addr:    net.JoinHostPort("0.0.0.0", port),
+		Handler: s.otelMetricsMiddleware(s.metricsMiddleware(mux)),
 	}
 
-	params.LC.Append(fx.Hook{
+	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			s.l.Info("starting MCP server", zap.String("addr", s.httpServer.Addr))
 			go func() {
 				if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 					s.l.Error("MCP server error", zap.Error(err))
-					_ = params.Shutdowner.Shutdown()
+					_ = shutdowner.Shutdown()
 				}
 			}()
 			go s.runSelectionJanitor()
@@ -130,17 +217,16 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 	orgID := keys.OrgIDFromContext(r.Context())
 
 	server := mcp.NewServer(&mcp.Implementation{
-		Name:    "nuon-ctl",
+		Name:    s.implementationName,
 		Version: "1.0.0",
 	}, &mcp.ServerOptions{
 		SchemaCache:  s.schemaCache,
-		Instructions: fmt.Sprintf("Nuon control plane MCP server. Authenticated as account %s in org %q. If no org is selected, call list_orgs then select_org.", accountID, orgID),
+		Instructions: fmt.Sprintf("%s Authenticated as account %s in org %q. %s %s %s", s.serverPurpose, accountID, orgID, s.orgInstructions, api.MCPTimeInstructions, api.MCPPoliciesInstructions),
 	})
+	server.AddReceivingMiddleware(s.receivingMetricsMiddleware)
 
-	for _, svc := range s.services {
-		if mcpSvc, ok := svc.(api.MCPService); ok {
-			mcpSvc.RegisterMCPTools(server)
-		}
+	for _, svc := range s.mcpServices {
+		svc.RegisterMCPTools(server)
 	}
 
 	return server
@@ -247,6 +333,11 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 		if err != nil {
 			l.Warn("MCP auth failed", zap.Error(err))
 			s.writeUnauthorized(w, r)
+			return
+		}
+		if !s.accountAllowed(acct) {
+			l.Warn("MCP employee access denied", zap.String("account_id", acct.ID))
+			s.writeForbidden(w)
 			return
 		}
 

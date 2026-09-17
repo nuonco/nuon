@@ -104,6 +104,7 @@ func (s *service) listOrgComponentBuilds(ctx *gin.Context, orgID string, cursor 
 		Preload("CreatedBy").
 		Preload("VCSConnectionCommit").
 		Preload("ComponentConfigConnection.Component").
+		Preload("AppBranchRun.Preview").
 		Where(&app.ComponentBuild{OrgID: orgID})
 
 	newer := cursor != nil && cursor.Direction == componentBuildCursorNewer

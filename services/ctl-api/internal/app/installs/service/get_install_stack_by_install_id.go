@@ -1,14 +1,16 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"gorm.io/gorm"
 )
 
 // @ID						GetInstallStackByInstallID
@@ -52,7 +54,7 @@ func (s *service) GetInstallStackByInstallID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installStack)
 }
 
-func (s *service) getInstallStack(ctx *gin.Context, installID, orgID string) (*app.InstallStack, error) {
+func (s *service) getInstallStack(ctx context.Context, installID, orgID string) (*app.InstallStack, error) {
 	install := &app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallStack").

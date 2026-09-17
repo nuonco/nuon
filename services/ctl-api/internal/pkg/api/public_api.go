@@ -16,7 +16,7 @@ func NewPublicAPI(params Params) (*API, error) {
 		db:                    params.DB,
 		endpointAudit:         params.EndpointAudit,
 	}
-	if err := api.init(); err != nil {
+	if err := api.init(params.HTTPMetrics); err != nil {
 		return nil, errors.Wrap(err, "unable to initialize")
 	}
 

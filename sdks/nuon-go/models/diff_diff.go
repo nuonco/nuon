@@ -26,8 +26,17 @@ type DiffDiff struct {
 	// diff
 	Diff *DiffDiffKey `json:"diff,omitempty"`
 
+	// impact reasons
+	ImpactReasons []*DiffImpactReason `json:"impact_reasons"`
+
+	// impacted
+	Impacted bool `json:"impacted,omitempty"`
+
 	// key
 	Key string `json:"key,omitempty"`
+
+	// resource id
+	ResourceID string `json:"resource_id,omitempty"`
 }
 
 // Validate validates this diff diff
@@ -39,6 +48,10 @@ func (m *DiffDiff) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateDiff(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateImpactReasons(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -101,6 +114,36 @@ func (m *DiffDiff) validateDiff(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *DiffDiff) validateImpactReasons(formats strfmt.Registry) error {
+	if swag.IsZero(m.ImpactReasons) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.ImpactReasons); i++ {
+		if swag.IsZero(m.ImpactReasons[i]) { // not required
+			continue
+		}
+
+		if m.ImpactReasons[i] != nil {
+			if err := m.ImpactReasons[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("impact_reasons" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("impact_reasons" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this diff diff based on the context it is used
 func (m *DiffDiff) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -110,6 +153,10 @@ func (m *DiffDiff) ContextValidate(ctx context.Context, formats strfmt.Registry)
 	}
 
 	if err := m.contextValidateDiff(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateImpactReasons(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -168,6 +215,35 @@ func (m *DiffDiff) contextValidateDiff(ctx context.Context, formats strfmt.Regis
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *DiffDiff) contextValidateImpactReasons(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.ImpactReasons); i++ {
+
+		if m.ImpactReasons[i] != nil {
+
+			if swag.IsZero(m.ImpactReasons[i]) { // not required
+				return nil
+			}
+
+			if err := m.ImpactReasons[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("impact_reasons" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("impact_reasons" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

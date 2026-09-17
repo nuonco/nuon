@@ -17,7 +17,6 @@ import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { PageSection } from '@/components/layout/PageSection'
-import { DeprovisionBanner } from '@/components/installs/DeprovisionBanner'
 import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import {
@@ -32,6 +31,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useSimpleIA } from '@/hooks/use-simple-ia'
 import type { TNavItem } from '@/types'
 
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
@@ -78,113 +78,146 @@ const InstallTemplate = () => {
   const { install, labelColors } = useInstall()
   const { pathname } = useLocation()
   const hasNotebooks = !!org?.features?.notebooks
+  const hasSimpleIA = useSimpleIA()
   const openSettings = useOpenInstallSettings()
   const [searchParams] = useSearchParams()
   const isSettingsOpen =
     searchParams.get('panel') === INSTALL_SETTINGS_PANEL_KEY
 
-  const navLinks: TNavItem[] = [
-    { type: 'section', label: 'Overview' },
-    {
-      path: `/`,
-      iconVariant: 'HouseSimpleIcon' as const,
-      text: 'Overview',
-    },
-    {
-      path: `/workflows`,
-      iconVariant: 'TreeStructureIcon' as const,
-      text: 'Workflows',
-    },
-    {
-      path: `/app-branch-runs`,
-      iconVariant: 'GitBranchIcon' as const,
-      text: 'App branch runs',
-    },
-    {
-      type: 'action',
-      key: 'settings',
-      iconVariant: 'GearIcon' as const,
-      text: 'Settings',
-      onClick: openSettings,
-      isActive: isSettingsOpen,
-    },
-    { type: 'section', label: 'App' },
-    ...(org?.features?.['component-health']
-      ? [
-          {
-            path: `/resources`,
-            iconVariant: 'PulseIcon' as const,
-            text: 'Resources',
-          },
-        ]
-      : []),
-    {
-      path: `/components`,
-      iconVariant: 'CardsIcon' as const,
-      text: 'Components',
-    },
-    {
-      path: '/sandbox',
-      iconVariant: 'ShippingContainerIcon' as const,
-      text: 'Sandbox',
-    },
-    {
-      path: `/roles`,
-      iconVariant: 'FileLockIcon' as const,
-      text: 'Roles',
-    },
-    {
-      path: `/actions`,
-      iconVariant: 'TerminalWindowIcon' as const,
-      text: 'Actions',
-    },
-    {
-      path: `/runbooks`,
-      iconVariant: 'BookIcon' as const,
-      text: 'Runbooks',
-    },
-    ...(hasNotebooks
-      ? [
-          {
-            path: `/notebooks`,
-            iconVariant: 'NotebookIcon' as const,
-            text: 'Notebooks',
-          },
-        ]
-      : []),
-    { type: 'section', label: 'Customer' },
-    {
-      path: `/stacks`,
-      iconVariant: 'StackIcon' as const,
-      text: 'Stacks',
-    },
-    {
-      path: `/policies`,
-      iconVariant: 'ShieldCheckIcon' as const,
-      text: 'Policy reports',
-    },
-    {
-      path: `/inputs`,
-      iconVariant: 'ListChecksIcon' as const,
-      text: 'Current inputs',
-    },
-    {
-      path: `/state`,
-      iconVariant: 'CodeBlockIcon' as const,
-      text: 'View state',
-    },
-    { type: 'section', label: 'Advanced' },
-    {
-      path: `/configs`,
-      iconVariant: 'FadersIcon' as const,
-      text: 'Configs',
-    },
-    {
-      path: `/runner`,
-      iconVariant: 'SneakerMoveIcon' as const,
-      text: 'Install runner',
-    },
-  ]
+  const navLinks: TNavItem[] = hasSimpleIA
+    ? [
+        {
+          path: `/`,
+          iconVariant: 'HouseSimpleIcon',
+          text: 'Overview',
+        },
+        {
+          path: `/activity`,
+          iconVariant: 'ClockCounterClockwiseIcon',
+          text: 'Activity',
+        },
+        ...(org?.features?.['component-health']
+          ? [
+              {
+                path: `/resources`,
+                iconVariant: 'PulseIcon' as const,
+                text: 'Resources',
+              },
+            ]
+          : []),
+        ...(hasNotebooks
+          ? [
+              {
+                path: `/notebooks`,
+                iconVariant: 'NotebookIcon' as const,
+                text: 'Notebooks',
+              },
+            ]
+          : []),
+      ]
+    : [
+        { type: 'section', label: 'Overview' },
+        {
+          path: `/`,
+          iconVariant: 'HouseSimpleIcon' as const,
+          text: 'Overview',
+        },
+        {
+          path: `/history`,
+          iconVariant: 'TreeStructureIcon' as const,
+          text: 'History',
+        },
+        {
+          path: `/updates`,
+          iconVariant: 'GitBranchIcon' as const,
+          text: 'Updates',
+        },
+        {
+          type: 'action',
+          key: 'settings',
+          iconVariant: 'GearIcon' as const,
+          text: 'Settings',
+          onClick: openSettings,
+          isActive: isSettingsOpen,
+        },
+        { type: 'section', label: 'App' },
+        ...(org?.features?.['component-health']
+          ? [
+              {
+                path: `/resources`,
+                iconVariant: 'PulseIcon' as const,
+                text: 'Resources',
+              },
+            ]
+          : []),
+        {
+          path: `/components`,
+          iconVariant: 'CardsIcon' as const,
+          text: 'Components',
+        },
+        {
+          path: '/sandbox',
+          iconVariant: 'ShippingContainerIcon' as const,
+          text: 'Sandbox',
+        },
+        {
+          path: `/roles`,
+          iconVariant: 'FileLockIcon' as const,
+          text: 'Roles',
+        },
+        {
+          path: `/actions`,
+          iconVariant: 'TerminalWindowIcon' as const,
+          text: 'Actions',
+        },
+        {
+          path: `/runbooks`,
+          iconVariant: 'BookIcon' as const,
+          text: 'Runbooks',
+        },
+        ...(hasNotebooks
+          ? [
+              {
+                path: `/notebooks`,
+                iconVariant: 'NotebookIcon' as const,
+                text: 'Notebooks',
+              },
+            ]
+          : []),
+        { type: 'section', label: 'Customer' },
+        {
+          path: `/stacks`,
+          iconVariant: 'StackIcon' as const,
+          text: 'Stacks',
+        },
+        {
+          path: `/policies`,
+          iconVariant: 'ShieldCheckIcon' as const,
+          text: 'Policy reports',
+        },
+        {
+          path: `/inputs`,
+          iconVariant: 'ListChecksIcon' as const,
+          text: 'Current inputs',
+        },
+        {
+          path: `/state`,
+          iconVariant: 'CodeBlockIcon' as const,
+          text: 'View state',
+        },
+        { type: 'section', label: 'Advanced' },
+        {
+          path: `/configs`,
+          iconVariant: 'FadersIcon' as const,
+          text: 'Configs',
+        },
+        {
+          path: `/runner`,
+          iconVariant: 'SneakerMoveIcon' as const,
+          text: 'Install runner',
+        },
+      ]
+
   const isChildRoute = !!useMatch(
     '/:orgId/installs/:installId/:section/:rest/*'
   )
@@ -214,7 +247,6 @@ const InstallTemplate = () => {
         ) : (
           <>
             <PageHeader>
-              <DeprovisionBanner />
               <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
                 <HeadingGroup className="gap-1.5">
                   <div className="flex items-center gap-2 flex-wrap">

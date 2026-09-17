@@ -16,6 +16,10 @@ while [ "$#" -gt 0 ]; do
 		workdir="${2:-}"
 		shift 2
 		;;
+	--)
+		shift
+		break
+		;;
 	*)
 		shift
 		;;
@@ -71,5 +75,5 @@ cd "$workdir" || {
 	exit 1
 }
 
-"$script"
+"$script" "$@"
 exit "$?"

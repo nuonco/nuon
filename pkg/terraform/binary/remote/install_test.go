@@ -7,8 +7,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/hc-install/product"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func Test_remote_getInstaller(t *testing.T) {

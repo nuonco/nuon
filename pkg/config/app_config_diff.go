@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/nuonco/nuon/pkg/config/diff"
 )
@@ -77,10 +79,13 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 		children = append(children, d)
 	}
 
-	return diff.NewDiff(
+	result := diff.NewDiff(
 		diff.WithKey("app_config"),
 		diff.WithChildren(children...),
 	)
+	graph := appConfigDependencyGraph(old, a)
+	result.ApplyImpacts(graph.Propagate(changedResourceIDs(result)...))
+	return result
 }
 
 // --- Branch ---
@@ -89,6 +94,17 @@ func diffBranch(old, new *AppBranchConfig) *diff.Diff {
 	if old == nil && new == nil {
 		return nil
 	}
+	return branchDiff("branch", old, new)
+}
+
+// Diff compares the receiver (desired config) against old (the config currently
+// applied to the branch) and returns a hierarchical diff tree covering every
+// field an app branch config can express.
+func (c *AppBranchConfig) Diff(old *AppBranchConfig) *diff.Diff {
+	return branchDiff("branch", old, c)
+}
+
+func branchDiff(key string, old, new *AppBranchConfig) *diff.Diff {
 	if old == nil {
 		old = &AppBranchConfig{}
 	}
@@ -100,8 +116,100 @@ func diffBranch(old, new *AppBranchConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(old.Name, new.Name)),
 	}
 	children = append(children, diffConnectedRepo("connected_repo", old.ConnectedRepo, new.ConnectedRepo)...)
+	children = append(children, diffPublicRepo("public_repo", old.PublicRepo, new.PublicRepo)...)
+	if d := diffBranchInstallGroups(old.InstallGroups, new.InstallGroups); d != nil {
+		children = append(children, d)
+	}
+	if d := diffBranchPreview(old.Preview, new.Preview); d != nil {
+		children = append(children, d)
+	}
+	children = append(children,
+		// post_deploy_runbooks runs in the order listed, so compare the sequence
+		// rather than the set.
+		diff.NewDiff(diff.WithKey("post_deploy_runbooks"), diff.WithStringDiff(
+			strings.Join(old.PostDeployRunbooks, ", "),
+			strings.Join(new.PostDeployRunbooks, ", "),
+		)),
+		diff.NewDiff(diff.WithKey("ignore_changes_regex"), diff.WithStringDiff(old.IgnoreChangesRegex, new.IgnoreChangesRegex)),
+		diff.NewDiff(diff.WithKey("send_statuses_on_ignore"), diff.WithBoolDiff(old.SendStatusesOnIgnore, new.SendStatusesOnIgnore)),
+	)
 
-	return diff.NewDiff(diff.WithKey("branch"), diff.WithChildren(children...))
+	return diff.NewDiff(diff.WithKey(key), diff.WithChildren(children...))
+}
+
+func diffBranchInstallGroups(old, new []AppBranchInstallGroupConfig) *diff.Diff {
+	if len(old) == 0 && len(new) == 0 {
+		return nil
+	}
+
+	oldByName := make(map[string]AppBranchInstallGroupConfig, len(old))
+	for _, g := range old {
+		oldByName[g.Name] = g
+	}
+
+	var children []*diff.Diff
+	seen := make(map[string]bool, len(new))
+
+	for _, g := range new {
+		seen[g.Name] = true
+		children = append(children, diffBranchInstallGroup(oldByName[g.Name], g))
+	}
+
+	for _, g := range old {
+		if !seen[g.Name] {
+			children = append(children, diffBranchInstallGroup(g, AppBranchInstallGroupConfig{Name: g.Name}))
+		}
+	}
+
+	return diff.NewDiff(diff.WithKey("install_groups"), diff.WithChildren(children...))
+}
+
+func diffBranchInstallGroup(old, new AppBranchInstallGroupConfig) *diff.Diff {
+	name := new.Name
+	if name == "" {
+		name = old.Name
+	}
+
+	children := []*diff.Diff{
+		diff.NewDiff(diff.WithKey("order"), diff.WithStringDiff(strconv.Itoa(old.Order), strconv.Itoa(new.Order))),
+		diff.NewDiff(diff.WithKey("install_ids"), diff.WithStringSliceDiff(old.InstallIDs, new.InstallIDs)),
+		diff.NewDiff(diff.WithKey("install_names"), diff.WithStringSliceDiff(old.InstallNames, new.InstallNames)),
+		diff.NewDiff(diff.WithKey("auto_approve_on_policies_passing"), diff.WithOptionalBoolDiff(
+			old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing,
+		)),
+	}
+	if d := diff.MapDiff("label_selector", old.LabelSelector, new.LabelSelector); d != nil {
+		children = append(children, d)
+	}
+
+	return diff.NewDiff(diff.WithKey("install_group."+name), diff.WithChildren(children...))
+}
+
+func diffBranchPreview(old, new *AppBranchPreviewConfig) *diff.Diff {
+	if old == nil && new == nil {
+		return nil
+	}
+	if old == nil {
+		old = &AppBranchPreviewConfig{}
+	}
+	if new == nil {
+		new = &AppBranchPreviewConfig{}
+	}
+
+	children := []*diff.Diff{
+		diff.NewDiff(diff.WithKey("mode"), diff.WithStringDiff(old.Mode, new.Mode)),
+		diff.NewDiff(diff.WithKey("install_id"), diff.WithStringDiff(old.InstallID, new.InstallID)),
+		diff.NewDiff(diff.WithKey("install_name"), diff.WithStringDiff(old.InstallName, new.InstallName)),
+		diff.NewDiff(diff.WithKey("set_statuses"), diff.WithOptionalBoolDiff(old.SetStatuses, new.SetStatuses)),
+		diff.NewDiff(diff.WithKey("comment"), diff.WithOptionalBoolDiff(old.Comment, new.Comment)),
+		diff.NewDiff(diff.WithKey("ignore_drafts"), diff.WithOptionalBoolDiff(old.IgnoreDrafts, new.IgnoreDrafts)),
+		diff.NewDiff(diff.WithKey("react"), diff.WithOptionalBoolDiff(old.React, new.React)),
+	}
+	if d := diff.MapDiff("label_selector", old.LabelSelector, new.LabelSelector); d != nil {
+		children = append(children, d)
+	}
+
+	return diff.NewDiff(diff.WithKey("preview"), diff.WithChildren(children...))
 }
 
 // --- Sandbox ---
@@ -164,7 +272,9 @@ func diffSandbox(old, new *AppSandboxConfig) *diff.Diff {
 		children = append(children, d)
 	}
 
-	return sectionDiff("sandbox", old, new, children)
+	result := sectionDiff("sandbox", old, new, children)
+	result.ResourceID = SandboxResourceID
+	return result
 }
 
 // --- Runner ---
@@ -190,7 +300,9 @@ func diffRunner(old, new *AppRunnerConfig) *diff.Diff {
 		children = append(children, d)
 	}
 
-	return sectionDiff("runner", old, new, children)
+	result := sectionDiff("runner", old, new, children)
+	result.ResourceID = RunnerResourceID
+	return result
 }
 
 // --- Stack ---
@@ -218,7 +330,9 @@ func diffStack(old, new *StackConfig) *diff.Diff {
 	// Custom nested stacks matched by name
 	children = append(children, diffCustomNestedStacks(old.CustomNestedStacks, new.CustomNestedStacks)...)
 
-	return sectionDiff("stack", old, new, children)
+	result := sectionDiff("stack", old, new, children)
+	result.ResourceID = StackResourceID
+	return result
 }
 
 func diffCustomNestedStacks(old, new []CustomNestedStack) []*diff.Diff {
@@ -329,6 +443,7 @@ func diffAppInputs(old, new []AppInput) []*diff.Diff {
 	diffInput := func(oi, i AppInput) *diff.Diff {
 		return diff.NewDiff(
 			diff.WithKey("input."+i.Name),
+			diff.WithResourceID(InputResourceID(i.Name)),
 			diff.WithChildren(
 				diff.NewDiff(diff.WithKey("display_name"), diff.WithStringDiff(oi.DisplayName, i.DisplayName)),
 				diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(oi.Description, i.Description)),
@@ -388,6 +503,7 @@ func diffPermissions(old, new *PermissionsConfig) *diff.Diff {
 
 	// Custom roles matched by name
 	children = append(children, diffIAMRoles("custom_role", old.CustomRoles, new.CustomRoles)...)
+	children = append(children, diffNamedIAMPolicies(old.NamedPolicies, new.NamedPolicies)...)
 
 	return sectionDiff("permissions", old, new, children)
 }
@@ -403,17 +519,22 @@ func diffIAMRole(key string, old, new *AppAWSIAMRole) *diff.Diff {
 		new = &AppAWSIAMRole{}
 	}
 
-	return diff.NewDiff(
-		diff.WithKey(key),
-		diff.WithChildren(
+	result := sectionDiff(
+		key,
+		old,
+		new,
+		[]*diff.Diff{
 			diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(old.Name, new.Name)),
 			diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(old.Description, new.Description)),
 			diff.NewDiff(diff.WithKey("display_name"), diff.WithStringDiff(old.DisplayName, new.DisplayName)),
 			diff.NewDiff(diff.WithKey("cloud_platform"), diff.WithStringDiff(old.CloudPlatform, new.CloudPlatform)),
 			diff.NewDiff(diff.WithKey("permissions_boundary"), diff.WithStringDiff(old.PermissionsBoundary, new.PermissionsBoundary)),
 			diff.NewDiff(diff.WithKey("enabled_in_stack"), diff.WithOptionalBoolDiff(old.EnabledInStack, new.EnabledInStack)),
-		),
+			diff.NewDiff(diff.WithKey("named_policies"), diff.WithStringSliceDiff(NamedPolicyRefNames(old.NamedPolicies), NamedPolicyRefNames(new.NamedPolicies))),
+		},
 	)
+	result.ResourceID = roleNodeID(old, new)
+	return result
 }
 
 func diffIAMRoles(prefix string, old, new []*AppAWSIAMRole) []*diff.Diff {
@@ -440,6 +561,44 @@ func diffIAMRoles(prefix string, old, new []*AppAWSIAMRole) []*diff.Diff {
 		}
 	}
 
+	return diffs
+}
+
+func diffNamedIAMPolicies(old, new []NamedIAMPolicy) []*diff.Diff {
+	oldByID := make(map[string]NamedIAMPolicy, len(old))
+	for _, p := range old {
+		oldByID[p.Name] = p
+	}
+
+	var diffs []*diff.Diff
+	seen := make(map[string]bool)
+	for _, p := range new {
+		id := p.Name
+		seen[id] = true
+		op := oldByID[id]
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("named_policy."+id),
+			diff.WithChildren(
+				diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(op.Name, p.Name)),
+				diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(op.Description, p.Description)),
+				diff.NewDiff(diff.WithKey("contents"), diff.WithContentDiff(op.Contents, p.Contents)),
+			),
+		))
+	}
+	for _, p := range old {
+		id := p.Name
+		if seen[id] {
+			continue
+		}
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("named_policy."+id),
+			diff.WithChildren(
+				diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(p.Name, "")),
+				diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(p.Description, "")),
+				diff.NewDiff(diff.WithKey("contents"), diff.WithContentDiff(p.Contents, "")),
+			),
+		))
+	}
 	return diffs
 }
 
@@ -516,9 +675,11 @@ func diffSecrets(old, new *SecretsConfig) *diff.Diff {
 	seen := make(map[string]bool)
 
 	diffSecret := func(os, s *AppSecret) *diff.Diff {
-		return diff.NewDiff(
-			diff.WithKey("secret."+s.Name),
-			diff.WithChildren(
+		result := sectionDiff(
+			"secret."+s.Name,
+			os,
+			s,
+			[]*diff.Diff{
 				diff.NewDiff(diff.WithKey("display_name"), diff.WithStringDiff(os.DisplayName, s.DisplayName)),
 				diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(os.Description, s.Description)),
 				diff.NewDiff(diff.WithKey("required"), diff.WithBoolDiff(os.Required, s.Required)),
@@ -528,8 +689,10 @@ func diffSecrets(old, new *SecretsConfig) *diff.Diff {
 				diff.NewDiff(diff.WithKey("kubernetes_sync"), diff.WithOptionalBoolDiff(os.KubernetesSync, s.KubernetesSync)),
 				diff.NewDiff(diff.WithKey("kubernetes_secret_namespace"), diff.WithStringDiff(os.KubernetesSecretNamespace, s.KubernetesSecretNamespace)),
 				diff.NewDiff(diff.WithKey("kubernetes_secret_name"), diff.WithStringDiff(os.KubernetesSecretName, s.KubernetesSecretName)),
-			),
+			},
 		)
+		result.ResourceID = SecretResourceID(s.Name)
+		return result
 	}
 
 	for _, s := range new.Secrets {
@@ -618,7 +781,11 @@ func diffOperationRoles(old, new *OperationRolesConfig) *diff.Diff {
 		}
 	}
 
-	return diff.NewDiff(diff.WithKey("operation_roles"), diff.WithChildren(children...))
+	return diff.NewDiff(
+		diff.WithKey("operation_roles"),
+		diff.WithResourceID(OperationRolesResourceID),
+		diff.WithChildren(children...),
+	)
 }
 
 // --- Components ---
@@ -688,7 +855,9 @@ func diffComponent(old, new *Component) *diff.Diff {
 	children = append(children, diffJob(old.Job, new.Job)...)
 	children = append(children, diffPulumi(old.Pulumi, new.Pulumi)...)
 
-	return diff.NewDiff(diff.WithKey("component."+new.Name), diff.WithChildren(children...))
+	result := sectionDiff("component."+new.Name, old, new, children)
+	result.ResourceID = ComponentResourceID(new.Name)
+	return result
 }
 
 // --- Component type-specific diffs ---
@@ -1178,7 +1347,9 @@ func diffAction(old, new *ActionConfig) *diff.Diff {
 	// Triggers matched by index
 	children = append(children, diffActionTriggers(old.Triggers, new.Triggers)...)
 
-	return diff.NewDiff(diff.WithKey("action."+new.Name), diff.WithChildren(children...))
+	result := sectionDiff("action."+new.Name, old, new, children)
+	result.ResourceID = ActionResourceID(new.Name)
+	return result
 }
 
 func diffActionSteps(old, new []*ActionStepConfig) []*diff.Diff {

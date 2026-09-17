@@ -132,15 +132,15 @@ type ActionWorkflowTriggerConfig struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	App   App    `json:"-" swaggerignore:"true" temporaljson:"app,omitzero,omitempty"`
+	App   *App   `json:"-" swaggerignore:"true" temporaljson:"app,omitzero,omitempty"`
 	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_install_name,unique" temporaljson:"app_id,omitzero,omitempty"`
 
 	// this belongs to an app config id
-	AppConfigID string    `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
-	AppConfig   AppConfig `json:"-" temporaljson:"app_config,omitzero,omitempty"`
+	AppConfigID string     `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
+	AppConfig   *AppConfig `json:"-" temporaljson:"app_config,omitzero,omitempty"`
 
-	ActionWorkflowConfigID string               `json:"action_workflow_config_id,omitzero" gorm:"index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
-	ActionWorkflowConfig   ActionWorkflowConfig `json:"-" temporaljson:"action_workflow_config,omitzero,omitempty"`
+	ActionWorkflowConfigID string                `json:"action_workflow_config_id,omitzero" gorm:"index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
+	ActionWorkflowConfig   *ActionWorkflowConfig `json:"-" temporaljson:"action_workflow_config,omitzero,omitempty"`
 
 	Type ActionWorkflowTriggerType `json:"type,omitzero" swaggertype:"string" gorm:"default null;not null;index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"type,omitzero,omitempty"`
 

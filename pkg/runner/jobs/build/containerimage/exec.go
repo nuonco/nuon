@@ -71,6 +71,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		h.writeErrorResult(ctx, "verify image signature", err)
 		return fmt.Errorf("unable to verify image signature: %w", err)
 	}
+	if h.state.cfg.Verification != nil && h.state.cfg.Verification.RequireSignature {
+		l.Info(fmt.Sprintf("verified image signature for %s@%s", h.state.cfg.Image, resolvedDigest))
+	}
 	noOp := h.state.cfg.PreviousSourceDigest != "" && h.state.cfg.PreviousSourceDigest == resolvedDigest
 
 	// Each build gets its own result tag (the build id), so the copy must run

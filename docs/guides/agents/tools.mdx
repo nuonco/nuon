@@ -1,0 +1,34 @@
+---
+title: "Tools"
+description: "Control-plane tools available to LLM clients via MCP."
+icon: "wrench"
+keywords: ["MCP", "tools", "agents", "whoami", "list_installs"]
+---
+
+Writes are hidden from the stdio proxy unless `--allow-writes` is set. Setup examples always include that flag. HTTP MCP lists writes when the identity has [Admin](/concepts/access-control) (`org_admin`).
+
+Timestamps in tool JSON are UTC (Zulu) RFC3339 and end in `Z` (for example `2026-09-04T04:23:00Z`). If you name a calendar day, clock time, or age, convert that UTC instant to the local machine’s timezone first. Do not say “today” or “yesterday” from the UTC date digits. That calendar day can be a day ahead of local time.
+
+List tools return a page (default 20, max 100) plus `has_more`. They do not keep fetching until the full set is loaded. If `has_more` is true, tell the user there are more results and only pass `offset=next_offset` when they need the next page.
+
+For prompts to paste into a client, see [Sample queries](/guides/agents/sample-queries). To connect, see [Agents](/guides/agents/overview).
+
+## Catalog
+
+| Domain | Read | Write |
+| --- | --- | --- |
+| Orgs | `whoami`, `list_orgs`, `select_org` | |
+| Apps | `list_apps`, `get_app`, `list_app_branches`, `get_app_branch`, `list_app_branch_runs`, `get_app_branch_run`, `list_app_branch_preview_sources` | `preview_app_branch` |
+| Components | `list_components`, `get_component`, `list_builds`, `get_build` | |
+| Installs | `list_installs`, `get_install`, `get_install_readme`, `get_install_health`, `list_install_components`, `get_install_inputs`, `list_available_roles`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `reject_step`, `retry_step`, `cancel_workflow` |
+| Actions | `list_install_actions`, `get_action` | `run_action` |
+| Logs | `get_workflow_step_logs`, `get_deploy_logs`, `get_build_logs` | |
+| Runbooks | `list_runbooks`, `get_runbook` | `run_runbook` |
+
+## Writes
+
+Mutating tools are prefixed with `WRITE OPERATION:` in their descriptions. The stdio proxy hides them unless you pass `--allow-writes`. The identity still needs [Admin](/concepts/access-control) (`org_admin`), not Read-only.
+
+Destructive tools (deprovision, approve/reject, preview apply, and similar) should be confirmed with the user before the client sets flags such as `confirm=true` or `mode=apply`.
+
+Write tools that take `role` use an IAM role name from the install's stack. Call `list_available_roles` first (with the matching `operation_type` / `principal_type`) and pass a returned `name`, or omit `role` to use the default. A role the install cannot assume is rejected before any workflow starts, and the error lists the names that are available.

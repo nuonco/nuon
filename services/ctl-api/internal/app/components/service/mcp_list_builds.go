@@ -52,7 +52,7 @@ func (s *service) mcpListBuilds(ctx context.Context, _ *mcp.CallToolRequest, in 
 		summary := mcpBuildSummary{
 			ID:        b.ID,
 			Status:    string(b.Status),
-			CreatedAt: b.CreatedAt.String(),
+			CreatedAt: apiPkg.MCPTime(b.CreatedAt),
 		}
 		if b.GitRef != nil {
 			summary.GitRef = *b.GitRef

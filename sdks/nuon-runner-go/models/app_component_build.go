@@ -68,6 +68,9 @@ type AppComponentBuild struct {
 	// install deploys
 	InstallDeploys []*AppInstallDeploy `json:"install_deploys"`
 
+	// IsPreview is true when this build came from a preview branch run.
+	IsPreview bool `json:"is_preview,omitempty"`
+
 	// log stream
 	LogStream *AppLogStream `json:"log_stream,omitempty"`
 

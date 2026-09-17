@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/nuonco/nuon/pkg/runner/jobs"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/runner/jobs"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 func (j *jobLoop) monitorJob(ctx context.Context, cancel func(), doneCh chan struct{}, jobID string, l *zap.Logger, jh jobs.JobHandler) {

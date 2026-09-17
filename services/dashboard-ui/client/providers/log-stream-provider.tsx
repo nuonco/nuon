@@ -1,12 +1,15 @@
 import {
   createContext,
+  useCallback,
   useEffect,
   useState,
   useRef,
   type ReactNode,
 } from 'react'
+import { useSearchParams } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
 import { LogsPageSkeleton } from '@/components/log-stream/SSELogs'
+import { getLogStreamLogs } from '@/lib'
 import type { TOTELLog, TAPIError } from '@/types'
 
 type ConnectionState =
@@ -41,6 +44,8 @@ export function LogStreamProvider({
   renderWhilePending?: boolean
 }) {
   const { org } = useOrg()
+  const [searchParams] = useSearchParams()
+  const isNewestFirst = searchParams.get('sort') !== 'asc'
 
   const [logs, setLogs] = useState<TOTELLog[]>([])
   const [connectionState, setConnectionState] =
@@ -54,6 +59,48 @@ export function LogStreamProvider({
   const isCompleteRef = useRef(false)
   const reconnectAttemptRef = useRef(0)
   const connStateRef = useRef<ConnectionState>('disconnected')
+  const seedRequestedRef = useRef(false)
+  const isNewestFirstRef = useRef(isNewestFirst)
+  const logStreamIdRef = useRef(logStreamId)
+
+  useEffect(() => {
+    isNewestFirstRef.current = isNewestFirst
+  }, [isNewestFirst])
+
+  const appendLogs = useCallback((incoming: TOTELLog[]) => {
+    const unique = incoming.filter((log) => {
+      if (seenIdsRef.current.has(log.id)) return false
+      seenIdsRef.current.add(log.id)
+      return true
+    })
+    if (unique.length > 0) {
+      setLogs((prev) => [...prev, ...unique])
+    }
+  }, [])
+
+  // The stream itself must stay ASC: the tail cursor only moves forward, so an
+  // `order=desc` stream would page backwards into history and never surface new
+  // lines on a running job. Instead fetch the newest page once, so newest-first
+  // has a correct top immediately and the ASC stream backfills below it.
+  const seedNewestPage = useCallback(
+    (streamId: string, orgId: string, jobId?: string) => {
+      if (seedRequestedRef.current || !isNewestFirstRef.current) return
+      seedRequestedRef.current = true
+
+      getLogStreamLogs({ logStreamId: streamId, orgId, order: 'desc' })
+        .then((newest) => {
+          if (streamId !== logStreamIdRef.current) return
+          if (!Array.isArray(newest)) return
+          appendLogs(
+            jobId
+              ? newest.filter((log) => log?.runner_job_id === jobId)
+              : newest
+          )
+        })
+        .catch(() => {})
+    },
+    [appendLogs]
+  )
 
   const setConnState = (state: ConnectionState) => {
     if (connStateRef.current === state) return
@@ -78,6 +125,8 @@ export function LogStreamProvider({
 
     isCompleteRef.current = false
     reconnectAttemptRef.current = 0
+    seedRequestedRef.current = false
+    logStreamIdRef.current = logStreamId
     seenIdsRef.current = new Set()
     setLogs([])
     setError(null)
@@ -99,14 +148,7 @@ export function LogStreamProvider({
       eventSource.onmessage = (event) => {
         try {
           const newLogs: TOTELLog[] = JSON.parse(event.data)
-          const unique = newLogs.filter((log) => {
-            if (seenIdsRef.current.has(log.id)) return false
-            seenIdsRef.current.add(log.id)
-            return true
-          })
-          if (unique.length > 0) {
-            setLogs((prev) => [...prev, ...unique])
-          }
+          appendLogs(newLogs)
           setConnState('connected')
           reconnectAttemptRef.current = 0
         } catch {
@@ -122,6 +164,7 @@ export function LogStreamProvider({
       eventSource.addEventListener('status', (event: MessageEvent) => {
         if (event.data === 'catching-up') {
           setIsCatchingUp(true)
+          seedNewestPage(logStreamId, org.id, runnerJobId)
         } else if (event.data === 'live') {
           setIsCatchingUp(false)
         } else if (event.data === 'complete') {
@@ -184,6 +227,20 @@ export function LogStreamProvider({
       disconnect()
     }
   }, [logStreamId, org?.id, runnerJobId])
+
+  // Switching to newest-first while a long catch-up is still draining needs the
+  // same seed; the `catching-up` event has already come and gone by then.
+  useEffect(() => {
+    if (!logStreamId || !org?.id || !isNewestFirst || !isCatchingUp) return
+    seedNewestPage(logStreamId, org.id, runnerJobId)
+  }, [
+    logStreamId,
+    org?.id,
+    runnerJobId,
+    isNewestFirst,
+    isCatchingUp,
+    seedNewestPage,
+  ])
 
   if (!logStreamId) {
     if (!renderWhilePending) return <LogsPageSkeleton />
