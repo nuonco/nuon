@@ -4,12 +4,15 @@ import (
 	_ "embed"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
+
+const cloudSchemaBaseURL = "https://api.nuon.co"
 
 type AppConfigTemplateType string
 
@@ -88,6 +91,17 @@ func (s *service) GetAppConfigTemplate(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, tmpl)
 }
 
+func (s *service) schemaBaseURL() string {
+	if s.cfg != nil && s.cfg.PublicAPIURL != "" {
+		return strings.TrimRight(s.cfg.PublicAPIURL, "/")
+	}
+	return cloudSchemaBaseURL
+}
+
+func (s *service) withSchemaBaseURL(content string) string {
+	return strings.ReplaceAll(content, cloudSchemaBaseURL, s.schemaBaseURL())
+}
+
 func (s *service) createAppTemplate(currentApp *app.App, typ AppConfigTemplateType) (*AppConfigTemplate, error) {
 	nam := fmt.Sprintf("nuon.%s.toml", currentApp.Name)
 	switch typ {
@@ -95,79 +109,79 @@ func (s *service) createAppTemplate(currentApp *app.App, typ AppConfigTemplateTy
 		return &AppConfigTemplate{
 			Filename: fmt.Sprintf("nuon-template.%s.toml", currentApp.Name),
 			Format:   app.AppConfigVersionDefault,
-			Content:  fmt.Sprintf(topLevelConfig, nam, nam),
+			Content:  s.withSchemaBaseURL(fmt.Sprintf(topLevelConfig, nam, nam)),
 		}, nil
 	case AppConfigTemplateTypeInstaller:
 		return &AppConfigTemplate{
 			Filename: "template_installer.toml",
 			Format:   app.AppConfigVersionDefault,
-			Content:  installerConfig,
+			Content:  s.withSchemaBaseURL(installerConfig),
 		}, nil
 	case AppConfigTemplateTypeRunner:
 		return &AppConfigTemplate{
 			Filename: "template_runner.toml",
 			Format:   app.AppConfigVersionDefault,
-			Content:  runnerConfig,
+			Content:  s.withSchemaBaseURL(runnerConfig),
 		}, nil
 	case AppConfigTemplateTypeSandbox:
 		return &AppConfigTemplate{
 			Filename: "template_sandbox.toml",
 			Format:   app.AppConfigVersionDefault,
-			Content:  sandboxConfig,
+			Content:  s.withSchemaBaseURL(sandboxConfig),
 		}, nil
 	case AppConfigTemplateTypeInputs:
 		return &AppConfigTemplate{
 			Filename: "template_inputs.toml",
 			Format:   app.AppConfigVersionDefault,
-			Content:  inputsConfig,
+			Content:  s.withSchemaBaseURL(inputsConfig),
 		}, nil
 	case AppConfigTemplateTypeTerraform:
 		return &AppConfigTemplate{
 			Filename: "template_terraform_component.toml",
 			Format:   app.AppConfigVersionDefault,
-			Content:  terraformComponentConfig,
+			Content:  s.withSchemaBaseURL(terraformComponentConfig),
 		}, nil
 	case AppConfigTemplateTypeTerraformInfra:
 		return &AppConfigTemplate{
 			Filename: "template_terraform_infra_component.toml",
 			Format:   app.AppConfigVersionDefault,
-			Content:  terraformInfraComponentConfig,
+			Content:  s.withSchemaBaseURL(terraformInfraComponentConfig),
 		}, nil
 	case AppConfigTemplateTypeHelm:
 		return &AppConfigTemplate{
 			Filename: "template_helm_component.toml",
 			Format:   app.AppConfigVersionDefault,
-			Content:  helmComponentConfig,
+			Content:  s.withSchemaBaseURL(helmComponentConfig),
 		}, nil
 	case AppConfigTemplateTypeDockerBuild:
 		return &AppConfigTemplate{
 			Filename: "template_docker_build_component.toml",
 			Format:   app.AppConfigVersionDefault,
-			Content:  dockerBuildComponentConfig,
+			Content:  s.withSchemaBaseURL(dockerBuildComponentConfig),
 		}, nil
 	case AppConfigTemplateTypeContainerImage:
 		return &AppConfigTemplate{
 			Filename: "template_container_image_component.toml",
 			Format:   app.AppConfigVersionDefault,
-			Content:  containerImageComponentConfig,
+			Content:  s.withSchemaBaseURL(containerImageComponentConfig),
 		}, nil
 	case AppConfigTemplateTypeJob:
 		return &AppConfigTemplate{
 			Filename: "template_job_component.toml",
 			Format:   app.AppConfigVersionDefault,
-			Content:  jobComponentConfig,
+			Content:  s.withSchemaBaseURL(jobComponentConfig),
 		}, nil
 	case AppConfigTemplateTypeECRContainerImage:
 		return &AppConfigTemplate{
 			Filename: "template_ecr_container_image_component.toml",
 			Format:   app.AppConfigVersionDefault,
-			Content:  ecrContainerImageComponentConfig,
+			Content:  s.withSchemaBaseURL(ecrContainerImageComponentConfig),
 		}, nil
 	default:
 		return &AppConfigTemplate{
 			Filename: fmt.Sprintf("nuon-template.%s.toml", currentApp.Name),
 			Format:   app.AppConfigVersionDefault,
-			Content:  fmt.Sprintf(flatAppConfigTemplate, nam, nam, currentApp.Name),
+			Content:  s.withSchemaBaseURL(fmt.Sprintf(flatAppConfigTemplate, nam, nam, currentApp.Name)),
 		}, nil
 	}
 }
