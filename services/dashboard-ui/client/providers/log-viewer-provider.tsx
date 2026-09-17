@@ -32,10 +32,10 @@ export function LogViewerProvider({ children, spans }: LogViewerProviderProps) {
     throw new Error('LogViewerProvider must be used within a LogStreamProvider')
   }
 
-  const { logs } = logStreamContext
+  const { logs, logStreamId } = logStreamContext
   const [activeLog, setActiveLog] = useState<TOTELLog | undefined>()
   const cycleDirectionRef = useRef<'up' | 'down' | undefined>()
-  const filters = useLogFilters(logs || [], spans)
+  const filters = useLogFilters(logs || [], spans, logStreamId)
   const { addPanel, updatePanel, removePanel } = useSurfaces()
   const navigate = useNavigate()
 
