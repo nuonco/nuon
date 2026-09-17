@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/golang-lru/v2/expirable"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -36,6 +37,7 @@ type Params struct {
 	DB                   *gorm.DB `name:"psql"`
 	CHDB                 *gorm.DB `name:"ch"`
 	MW                   metrics.Writer
+	MeterProvider        metric.MeterProvider `optional:"true"`
 	L                    *zap.Logger
 	AccountClient        *account.Client
 	Helpers              *helpers.Helpers
@@ -59,6 +61,8 @@ type service struct {
 	db                     *gorm.DB
 	chDB                   *gorm.DB
 	mw                     metrics.Writer
+	tailMetrics            *runnerJobTailMetrics
+	meterProvider          metric.MeterProvider
 	cfg                    *internal.Config
 	acctClient             *account.Client
 	helpers                *helpers.Helpers
@@ -293,6 +297,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	s.tailMetrics = newRunnerJobTailMetrics(s.meterProvider)
 	api.POST("/v1/telemetry/access-token", s.CreateTelemetryAccessToken)
 
 	runners := api.Group("/v1/runners/:runner_id")
@@ -409,6 +414,7 @@ func New(params Params) (*service, error) {
 		db:                     params.DB,
 		chDB:                   params.CHDB,
 		mw:                     params.MW,
+		meterProvider:          params.MeterProvider,
 		acctClient:             params.AccountClient,
 		helpers:                params.Helpers,
 		installsHelpers:        params.InstallsHelpers,
