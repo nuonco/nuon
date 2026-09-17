@@ -4,6 +4,7 @@ import type { TWorkflowResponse } from '@/types'
 export type TTeardownComponentsBody = {
   error_behavior?: 'continue' | 'abort'
   plan_only?: boolean
+  role?: string
 }
 
 export const teardownComponents = ({
