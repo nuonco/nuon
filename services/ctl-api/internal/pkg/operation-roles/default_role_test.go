@@ -32,7 +32,7 @@ func TestDefaultRoleForWorkflowType(t *testing.T) {
 		{app.WorkflowTypeInputUpdate, "maintenance"},
 		{app.WorkflowTypeDeployComponents, "maintenance"},
 		{app.WorkflowTypeTeardownComponent, "maintenance"},
-		{app.WorkflowTypeTeardownComponents, "maintenance"},
+		{app.WorkflowTypeTeardownComponents, "deprovision"},
 		{app.WorkflowTypeActionWorkflowRun, "maintenance"},
 		{app.WorkflowTypeSyncSecrets, "maintenance"},
 		{app.WorkflowTypeDriftRun, "maintenance"},

@@ -20,7 +20,8 @@ func DefaultRoleForWorkflowType(appCfg *app.AppConfig, workflowType app.Workflow
 		app.WorkflowTypeDriftRunReprovisionSandbox:
 		return appCfg.PermissionsConfig.ProvisionRole.Name
 	case app.WorkflowTypeDeprovision,
-		app.WorkflowTypeDeprovisionSandbox:
+		app.WorkflowTypeDeprovisionSandbox,
+		app.WorkflowTypeTeardownComponents:
 		return appCfg.PermissionsConfig.DeprovisionRole.Name
 	default:
 		return appCfg.PermissionsConfig.MaintenanceRole.Name
