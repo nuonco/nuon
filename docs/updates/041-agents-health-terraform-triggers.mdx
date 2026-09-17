@@ -1,0 +1,114 @@
+---
+title: 041 - Agents, component health, Terraform modules, and triggers
+description: Manage your fleet with an agent, find out an install is broken before your customer tells you, hand customers a versioned Terraform module, and let an alert fix the install it fired on.
+boost: 0.3
+---
+
+_September 17, 2026_
+
+## Nuon MCP
+
+Manage your fleet of BYOC installs with your agent.
+
+```sh
+claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes
+```
+
+Diagnose an issue, execute a [runbook](/guides/runbooks), and maintain the same approvals and controls
+through MCP tool calls that you get on the Nuon control plane.
+
+Read more at [Agents](/guides/agents/overview).
+
+---
+
+## BYOC component health
+
+Find out a customer's install is broken before they tell you.
+
+```sh
+nuon installs health --labels tier:canary
+```
+
+Live status for every resource each component manages, [debounced alerts](/guides/component-health#alerting)
+to Slack and webhooks, and 90 days of uptime history per install.
+
+<div style={{
+  backgroundImage: 'url(/images/screenshot-backdrop.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/041-component-health-timeline.png"
+    alt="A component's 90-day health timeline showing 96.40% uptime, with a transitions log recording a pod crash looping after being OOMKilled and recovering an hour later"
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+Read more at [Component health](/guides/component-health).
+
+---
+
+## Terraform stack modules
+
+Make a Nuon install an ordinary pull request in a pipeline your customer already trusts.
+
+```hcl
+module "aws_stack" {
+  source     = "nuonco/stack/aws"
+  version    = "~> 1.0"
+  install_id = "<install-id>"
+}
+```
+
+[Published modules for AWS, Azure, and GCP](/guides/provision-stacks-with-terraform-module), each
+authenticated with a service account scoped to that one install — reviewed and applied by their
+platform team like any other Terraform.
+
+Read more at [Provision stacks with a Terraform module](/guides/provision-stacks-with-terraform-module).
+
+---
+
+## Triggers
+
+Let an alert fix the install it fired on.
+
+```sh
+nuon triggers create my-trigger --preset datadog
+```
+
+Your alerting system POSTs to Nuon, and Nuon runs the [runbook](/guides/runbooks) with the access it
+already holds — nothing needs credentials into your customer's cloud.
+
+<div style={{
+  backgroundImage: 'url(/images/screenshot-backdrop.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/041-create-trigger.png"
+    alt="The Create trigger modal asking where events come from, with presets for GitHub, Slack, Datadog, AWS, Google Cloud, Azure, and a custom option"
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+Read more at [Triggers](/guides/triggers).
