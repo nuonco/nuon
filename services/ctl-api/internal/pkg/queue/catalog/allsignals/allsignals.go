@@ -36,6 +36,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/updatesandbox"
 
 	// general signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/bulk_cancel_workflows"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/promotion"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/slack_auto_link"
 

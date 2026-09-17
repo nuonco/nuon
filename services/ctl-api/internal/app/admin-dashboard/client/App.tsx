@@ -19,6 +19,7 @@ import { QueueSignalDetail as QueueSignalDetailView } from '@/views/queues/Queue
 import { QueueEmitterDetail as QueueEmitterDetailView } from '@/views/queues/QueueEmitterDetail'
 import { SignalGraphView } from '@/views/queues/SignalGraphView'
 import { WorkflowsList } from '@/views/workflows/WorkflowsList'
+import { BulkCancelWorkflows } from '@/views/workflows/BulkCancelWorkflows'
 import { WorkflowDetail } from '@/views/workflows/WorkflowDetail'
 import { LogStreams } from '@/views/log-streams/LogStreams'
 import { LogStreamDetail } from '@/views/log-streams/LogStreamDetail'
@@ -69,6 +70,7 @@ const router = createBrowserRouter([
       { path: 'queues/:id/signals/:signalId/graph', element: <SignalGraphView /> },
       { path: 'queues/:id/emitters/:emitterId', element: <QueueEmitterDetailView /> },
       { path: 'workflows', element: <WorkflowsList /> },
+      { path: 'bulk-cancel-workflows', element: <BulkCancelWorkflows /> },
       { path: 'workflows/:workflowId', element: <WorkflowDetail /> },
       { path: 'log-streams', element: <LogStreams /> },
       { path: 'log-streams/:logStreamId', element: <LogStreamDetail /> },
