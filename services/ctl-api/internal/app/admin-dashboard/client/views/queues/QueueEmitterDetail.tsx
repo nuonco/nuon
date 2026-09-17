@@ -6,6 +6,7 @@ import { JsonViewer } from '@/components/common/JsonViewer'
 import { TemporalWorkflowCard } from '@/components/common/TemporalWorkflowCard'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { OwnerLink } from '@/components/common/OwnerLink'
 import { formatDate, truncateId } from '@/utils/format'
 
 function getStatus(s: any): string {
@@ -148,8 +149,7 @@ export const QueueEmitterDetail = () => {
                     <td className="text-xs"><Badge>{sig.type}</Badge></td>
                     <td><Badge variant="status" status={getStatus(sig.status)}>{getStatus(sig.status)}</Badge></td>
                     <td className="text-xs text-gray-500 dark:text-gray-400">
-                      <span className="font-mono">{truncateId(sig.owner_id)}</span>
-                      {sig.owner_type && <span className="text-gray-400 dark:text-gray-500 ml-1">({sig.owner_type})</span>}
+                      <OwnerLink ownerId={sig.owner_id} ownerType={sig.owner_type} />
                     </td>
                     <td className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDate(sig.created_at)}</td>
                   </tr>
