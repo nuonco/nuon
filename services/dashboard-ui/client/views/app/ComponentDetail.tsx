@@ -12,14 +12,13 @@ import { ComponentType } from '@/components/components/ComponentType'
 import { BuildComponentButton } from '@/components/components/management/BuildComponent'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
-import {
-  HistoryPanelButton,
-  HistoryRail,
-} from '@/components/layout/HistoryRail'
+import { HistoryPanelButton } from '@/components/layout/HistoryPanelButton'
+import { StatusWithDescription } from '@/components/common/StatusWithDescription'
 import { Text } from '@/components/common/Text'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
+import { useOptionalBranch } from '@/hooks/use-branch'
 import { useOrg } from '@/hooks/use-org'
 import {
   getAppConfig,
@@ -34,6 +33,7 @@ export const ComponentDetail = () => {
   const { componentId, branchId } = useParams()
   const { org } = useOrg()
   const { app, labelColors } = useApp()
+  const branch = useOptionalBranch()?.branch
 
   const { data: component, isLoading: isLoadingComponent } = useQuery({
     placeholderData: keepPreviousData,
@@ -150,6 +150,9 @@ export const ComponentDetail = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
+          ...(branchId && branch?.name
+            ? [{ path: appBase, text: branch.name }]
+            : []),
           {
             path: `${appBase}/components`,
             text: 'Components',
@@ -176,21 +179,39 @@ export const ComponentDetail = () => {
             loading={isLoadingComponent}
             loadingWidth={20}
             status={
-              config?.toggleable ? (
+              latestBuild || config?.toggleable ? (
                 <>
-                  <Badge size="sm" theme="info">
-                    Toggleable
-                  </Badge>
-                  <Badge
-                    size="sm"
-                    theme={config?.default_enabled ? 'success' : 'neutral'}
-                  >
-                    {config?.default_enabled ? 'Default: on' : 'Default: off'}
-                  </Badge>
+                  {latestBuild ? (
+                    <StatusWithDescription
+                      statusProps={{
+                        status:
+                          latestBuild.status_v2?.status ?? latestBuild.status,
+                      }}
+                      tooltipProps={{
+                        tipContent:
+                          latestBuild.status_v2?.status_human_description ??
+                          latestBuild.status_description,
+                      }}
+                    />
+                  ) : null}
+                  {config?.toggleable ? (
+                    <>
+                      <Badge size="sm" theme="info">
+                        Toggleable
+                      </Badge>
+                      <Badge
+                        size="sm"
+                        theme={config?.default_enabled ? 'success' : 'neutral'}
+                      >
+                        {config?.default_enabled
+                          ? 'Default: on'
+                          : 'Default: off'}
+                      </Badge>
+                    </>
+                  ) : null}
                 </>
               ) : null
             }
-            id={component?.id}
             identity={
               labelKeys.length ? (
                 <span className="flex flex-wrap gap-1">
@@ -220,74 +241,72 @@ export const ComponentDetail = () => {
           />
         }
       >
-        <HistoryRail title="Previous builds" history={history}>
-          {isLoadingConfig ? (
-            <ComponentConfigCard loading />
-          ) : config ? (
-            <div className="flex flex-col gap-4">
-              {branchId && latestBuild ? (
-                <CurrentComponentBuild
-                  appId={app?.id}
-                  orgId={org?.id}
-                  build={latestBuild}
-                  buildHref={`${componentBasePath}/builds/${latestBuild.id}`}
-                />
-              ) : null}
-              <ComponentConfigCard
-                config={config}
-                latestBuild={latestResolvedBuild}
-                headerActions={
-                  appConfig && componentId && component?.name ? (
-                    <ComponentDependencyGraphButton
-                      componentId={componentId}
-                      componentName={component.name}
-                      componentType={component.type}
-                      appConfig={appConfig}
-                      basePath={`/${org?.id}/apps/${app?.id}/components`}
-                      size="sm"
-                    />
-                  ) : null
-                }
-                footer={
-                  config.component_dependency_ids?.length ||
-                  dependentIds.length > 0 ? (
-                    <>
-                      {config.component_dependency_ids?.length ? (
-                        <div className="flex flex-col gap-2">
-                          <Text variant="body" weight="strong" level={5}>
-                            Dependencies
-                          </Text>
-                          <ComponentDependencies
-                            deps={config.component_dependency_ids}
-                            variant="inline"
-                          />
-                        </div>
-                      ) : null}
-                      {dependentIds.length > 0 ? (
-                        <div className="flex flex-col gap-2">
-                          <Text variant="body" weight="strong" level={5}>
-                            Dependents
-                          </Text>
-                          <ComponentDependencies
-                            deps={dependentIds}
-                            variant="inline"
-                            tooltipTitle="More dependents"
-                          />
-                        </div>
-                      ) : null}
-                    </>
-                  ) : undefined
-                }
+        {isLoadingConfig ? (
+          <ComponentConfigCard loading />
+        ) : config ? (
+          <div className="flex flex-col gap-4">
+            {branchId && latestBuild ? (
+              <CurrentComponentBuild
+                appId={app?.id}
+                orgId={org?.id}
+                build={latestBuild}
+                buildHref={`${componentBasePath}/builds/${latestBuild.id}`}
               />
-            </div>
-          ) : (
-            <EmptyState
-              variant="table"
-              emptyTitle="No configuration"
-              emptyMessage="This component has no configuration yet."
+            ) : null}
+            <ComponentConfigCard
+              config={config}
+              latestBuild={latestResolvedBuild}
+              headerActions={
+                appConfig && componentId && component?.name ? (
+                  <ComponentDependencyGraphButton
+                    componentId={componentId}
+                    componentName={component.name}
+                    componentType={component.type}
+                    appConfig={appConfig}
+                    basePath={`/${org?.id}/apps/${app?.id}/components`}
+                    size="sm"
+                  />
+                ) : null
+              }
+              footer={
+                config.component_dependency_ids?.length ||
+                dependentIds.length > 0 ? (
+                  <>
+                    {config.component_dependency_ids?.length ? (
+                      <div className="flex flex-col gap-2">
+                        <Text variant="body" weight="strong" level={5}>
+                          Dependencies
+                        </Text>
+                        <ComponentDependencies
+                          deps={config.component_dependency_ids}
+                          variant="inline"
+                        />
+                      </div>
+                    ) : null}
+                    {dependentIds.length > 0 ? (
+                      <div className="flex flex-col gap-2">
+                        <Text variant="body" weight="strong" level={5}>
+                          Dependents
+                        </Text>
+                        <ComponentDependencies
+                          deps={dependentIds}
+                          variant="inline"
+                          tooltipTitle="More dependents"
+                        />
+                      </div>
+                    ) : null}
+                  </>
+                ) : undefined
+              }
             />
-          )}
-        </HistoryRail>
+          </div>
+        ) : (
+          <EmptyState
+            variant="table"
+            emptyTitle="No configuration"
+            emptyMessage="This component has no configuration yet."
+          />
+        )}
       </DetailPage>
     </>
   )

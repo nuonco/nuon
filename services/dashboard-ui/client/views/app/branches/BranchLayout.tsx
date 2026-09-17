@@ -12,8 +12,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { BranchProvider } from '@/providers/branch-provider'
 import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
-import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
-import { BranchVcsBadges } from '@/components/branches/BranchVcsBadges'
+import { BranchTrackingCard } from '@/components/branches/BranchTrackingCard'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { BranchPendingApprovals } from '@/components/branches/BranchRunApproval'
 import {
@@ -141,49 +140,51 @@ const BranchTemplate = () => {
 
   return (
     <>
+      {/* Detail routes set their own, more specific breadcrumbs */}
       {!isDetailRoute ? (
-        <>
-          <Breadcrumbs
-            breadcrumbs={[
-              { path: `/${orgId}`, text: org.name },
-              { path: `/${orgId}/apps`, text: 'Apps' },
-              { path: `/${orgId}/apps/${appId}`, text: app.name },
-              { path: basePath, text: branch.name },
-            ]}
-          />
-          <DetailHeader
-            variant="page"
-            backLink={false}
-            title={app.name}
-            status={<AppBranchSwitcher />}
-            identity={
-              <>
-                <BranchVcsBadges repo={vcs?.repo} branch={vcs?.branch} />
-                {!hasSimpleIA && latestRun ? (
-                  <BranchRunCommit
-                    status={latestBranchRun?.status}
-                    href={`${basePath}/runs/${latestRun.id}`}
-                    message={latestCommit?.message?.split('\n')[0]}
-                    author={latestCommit?.author_name}
-                    avatarUrl={latestCommit?.author_avatar_url}
-                    sha={latestCommit?.sha}
-                    createdAt={latestRun.created_at}
-                  />
-                ) : null}
-              </>
-            }
-            actions={
-              <BranchDetailActions
-                branch={branch}
-                currentConfig={currentConfig}
-                appId={appId}
-                orgId={orgId}
-                showTriggerNudge={showTriggerNudge}
-              />
-            }
-          />
-        </>
+        <Breadcrumbs
+          breadcrumbs={[
+            { path: `/${orgId}`, text: org.name },
+            { path: `/${orgId}/apps`, text: 'Apps' },
+            { path: `/${orgId}/apps/${appId}`, text: app.name },
+            { path: basePath, text: branch.name },
+          ]}
+        />
       ) : null}
+      <DetailHeader
+        variant="page"
+        backLink={false}
+        title={app.name}
+        status={<AppBranchSwitcher />}
+        actions={
+          <BranchDetailActions
+            branch={branch}
+            currentConfig={currentConfig}
+            appId={appId}
+            orgId={orgId}
+            showTriggerNudge={showTriggerNudge}
+          />
+        }
+      >
+        <BranchTrackingCard
+          repo={vcs?.repo}
+          branch={vcs?.branch}
+          directory={vcs?.directory}
+          latestRun={
+            !hasSimpleIA && latestRun
+              ? {
+                  status: latestBranchRun?.status,
+                  href: `${basePath}/runs/${latestRun.id}`,
+                  message: latestCommit?.message?.split('\n')[0],
+                  author: latestCommit?.author_name,
+                  avatarUrl: latestCommit?.author_avatar_url,
+                  sha: latestCommit?.sha,
+                  createdAt: latestRun.created_at,
+                }
+              : undefined
+          }
+        />
+      </DetailHeader>
       <BranchSettingsPanel />
       <PageContent className="border-t" variant="row">
         <SubNav

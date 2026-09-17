@@ -9,10 +9,7 @@ import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { StatusWithDescription } from '@/components/common/StatusWithDescription'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
-import {
-  HistoryPanelButton,
-  HistoryRail,
-} from '@/components/layout/HistoryRail'
+import { HistoryPanelButton } from '@/components/layout/HistoryPanelButton'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -170,29 +167,27 @@ export const Sandbox = () => {
           />
         }
       >
-        <HistoryRail title="Previous builds" history={history}>
-          {isLoading ? (
-            <SandboxConfigCard loading />
-          ) : sandboxConfig ? (
-            <div className="flex flex-col gap-4">
-              {latestBuild ? (
-                <CurrentSandboxBuild
-                  appId={app?.id}
-                  orgId={org?.id}
-                  build={latestBuild}
-                  buildHref={`${sandboxBasePath}/builds/${latestBuild.id}`}
-                />
-              ) : null}
-              <SandboxConfigCard config={sandboxConfig} />
-            </div>
-          ) : (
-            <EmptyState
-              variant="diagram"
-              emptyTitle="No sandbox configured"
-              emptyMessage="Configure a sandbox in your application configuration to see it here."
-            />
-          )}
-        </HistoryRail>
+        {isLoading ? (
+          <SandboxConfigCard loading />
+        ) : sandboxConfig ? (
+          <div className="flex flex-col gap-4">
+            {latestBuild ? (
+              <CurrentSandboxBuild
+                appId={app?.id}
+                orgId={org?.id}
+                build={latestBuild}
+                buildHref={`${sandboxBasePath}/builds/${latestBuild.id}`}
+              />
+            ) : null}
+            <SandboxConfigCard config={sandboxConfig} />
+          </div>
+        ) : (
+          <EmptyState
+            variant="diagram"
+            emptyTitle="No sandbox configured"
+            emptyMessage="Configure a sandbox in your application configuration to see it here."
+          />
+        )}
       </DetailPage>
     </>
   )
