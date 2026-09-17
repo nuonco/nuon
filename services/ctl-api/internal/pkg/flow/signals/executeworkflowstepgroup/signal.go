@@ -176,6 +176,11 @@ func (s *Signal) cancelGroupHandler(ctx workflow.Context) error {
 
 // Cancel propagates cancellation to all in-flight step signals.
 func (s *Signal) Cancel(ctx workflow.Context) error {
+	// Stop the execute loop from dispatching further steps: the loop checks
+	// this flag before each step and on wake, and an external cancel (via the
+	// queue handler's cancel update) doesn't go through cancelGroupHandler.
+	s.cancelRequested = true
+
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
 	defer cancel()
 

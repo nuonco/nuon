@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -76,7 +77,13 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	}
 
 	defer func() {
-		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(ctx, step.ID); err != nil {
+		activityCtx := ctx
+		if ctx.Err() != nil {
+			var cancel workflow.CancelFunc
+			activityCtx, cancel = workflow.NewDisconnectedContext(ctx)
+			defer cancel()
+		}
+		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(activityCtx, step.ID); err != nil {
 			l.Error("unable to update finished at", zap.Error(err))
 		}
 	}()
@@ -235,7 +242,21 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 
 	cb := callback.New(ctx, step.ID)
 	dedupeKey := fmt.Sprintf("workflow-step:%s:retry:%d:group-retry:%d", step.ID, step.RetryIndex, step.GroupRetryIdx)
-	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+	// Cancel() already wrote the stop directive (Execute exits on s.canceled);
+	// a lifecycle cancel has none yet, so return an error for Execute's fallback.
+	if s.canceled {
+		return nil
+	}
+	if ctx.Err() != nil {
+		return errors.Errorf("step %s cancelled before inner signal dispatch", step.Name)
+	}
+	// Dispatch on a disconnected context: the enqueue commits the inner signal
+	// to the DB before returning, so a cancel landing mid-dispatch cannot stop
+	// the write — it can only hide the committed result, orphaning a signal
+	// whose ID nobody ever learns (failed TestCancelWorkflowPropagatesDown).
+	dispatchCtx, dispatchCancel := workflow.NewDisconnectedContext(ctx)
+	defer dispatchCancel()
+	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(dispatchCtx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.OwnerID,
 		OwnerType:       s.OwnerType,
 		QueueName:       s.TargetQueueName,
@@ -252,6 +273,21 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 
 	// Track the inner signal ID so Cancel() can propagate cancellation
 	s.innerQueueSignalID = enqueueResp.QueueSignalID
+
+	// Cancellation may have landed while the dispatch was in flight. Cancel the
+	// committed inner signal whether it came from Cancel() or the handler lifecycle.
+	if s.canceled || ctx.Err() != nil {
+		cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
+		defer cancelCtxCancel()
+		if _, err := client.AwaitCancelSignal(cancelCtx, enqueueResp.QueueSignalID); err != nil {
+			if l, logErr := log.WorkflowLogger(ctx); logErr == nil {
+				l.Warn("failed to cancel inner signal after mid-dispatch cancel",
+					zap.String("step_id", step.ID),
+					zap.String("inner_queue_signal_id", enqueueResp.QueueSignalID),
+					zap.Error(err))
+			}
+		}
+	}
 
 	logger.Info("waiting for queue signal to complete",
 		"step_name", step.Name,
