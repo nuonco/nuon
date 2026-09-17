@@ -14,8 +14,25 @@ export const hasSubCondition = (claimConditions: ClaimCondition[]) =>
     (condition) => condition.key.trim() === 'sub' && condition.value.trim()
   )
 
-export const githubSubClaim = (repoFullName: string, branch: string) =>
-  `repo:${repoFullName}:ref:refs/heads/${branch}`
+export type GithubRepoSubjectIds = {
+  ownerId: number
+  repoId: number
+}
+
+// GitHub can issue either a legacy `repo:{owner}/{repo}:ref:...` sub claim or
+// an immutable one with numeric IDs appended (`{owner}@{ownerId}`). The
+// `{,@id}` alternation matches either form without weakening the ID check.
+export const githubSubClaim = (
+  repoFullName: string,
+  branch: string,
+  ids?: GithubRepoSubjectIds
+) => {
+  if (!ids) {
+    return `repo:${repoFullName}:ref:refs/heads/${branch}`
+  }
+  const [owner, repo] = repoFullName.split('/')
+  return `repo:${owner}{,@${ids.ownerId}}/${repo}{,@${ids.repoId}}:ref:refs/heads/${branch}`
+}
 
 export const defaultRepoPolicyName = (
   repoFullName: string,
