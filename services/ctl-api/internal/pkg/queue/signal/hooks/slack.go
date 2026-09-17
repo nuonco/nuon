@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/metric"
 	"go.temporal.io/sdk/activity"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -29,11 +30,12 @@ import (
 type SlackParams struct {
 	fx.In
 
-	Cfg         *internal.Config    `optional:"true"`
-	L           *zap.Logger         `optional:"true"`
-	DB          *gorm.DB            `name:"psql" optional:"true"`
-	SlackClient *slackclient.Client `optional:"true"`
-	MW          metrics.Writer      `optional:"true"`
+	Cfg           *internal.Config     `optional:"true"`
+	L             *zap.Logger          `optional:"true"`
+	DB            *gorm.DB             `name:"psql" optional:"true"`
+	SlackClient   *slackclient.Client  `optional:"true"`
+	MW            metrics.Writer       `optional:"true"`
+	MeterProvider metric.MeterProvider `optional:"true"`
 }
 
 // SlackSignalLifecycleHook fans out workflow / step / approval lifecycle
@@ -57,12 +59,13 @@ type SlackParams struct {
 // lightweight delegate so both hooks share one source of truth for payload
 // shape.
 type SlackSignalLifecycleHook struct {
-	l           *zap.Logger
-	db          *gorm.DB
-	slackClient *slackclient.Client
-	appURL      string
-	enricher    *WebhookSignalLifecycleHook
-	mw          metrics.Writer
+	l               *zap.Logger
+	db              *gorm.DB
+	slackClient     *slackclient.Client
+	appURL          string
+	enricher        *WebhookSignalLifecycleHook
+	mw              metrics.Writer
+	deliveryMetrics *deliveryMetrics
 }
 
 var _ signal.SignalLifecycleHook = (*SlackSignalLifecycleHook)(nil)
@@ -95,13 +98,30 @@ func NewSlackSignalLifecycleHook(params SlackParams) *SlackSignalLifecycleHook {
 	}
 
 	return &SlackSignalLifecycleHook{
-		l:           logger,
-		db:          params.DB,
-		slackClient: params.SlackClient,
-		appURL:      appURL,
-		enricher:    enricher,
-		mw:          params.MW,
+		l:               logger,
+		db:              params.DB,
+		slackClient:     params.SlackClient,
+		appURL:          appURL,
+		enricher:        enricher,
+		mw:              params.MW,
+		deliveryMetrics: newDeliveryMetrics(params.MeterProvider),
 	}
+}
+
+func (h *SlackSignalLifecycleHook) postMessage(ctx context.Context, botToken string, req slackclient.PostMessageRequest) (resp *slackclient.PostMessageResponse, retErr error) {
+	started := time.Now()
+	defer func() {
+		h.deliveryMetrics.record(ctx, deliveryChannelSlack, deliveryOperationPost, started, retErr)
+	}()
+	return h.slackClient.PostMessage(ctx, botToken, req)
+}
+
+func (h *SlackSignalLifecycleHook) updateMessage(ctx context.Context, botToken string, req slackclient.UpdateMessageRequest) (resp *slackclient.UpdateMessageResponse, retErr error) {
+	started := time.Now()
+	defer func() {
+		h.deliveryMetrics.record(ctx, deliveryChannelSlack, deliveryOperationUpdate, started, retErr)
+	}()
+	return h.slackClient.UpdateMessage(ctx, botToken, req)
 }
 
 // metricNamespace returns the Temporal namespace tag value for metrics emitted
@@ -456,7 +476,7 @@ func (h *SlackSignalLifecycleHook) postOrThread(
 		// Defensive: without a workflow id we can't thread. Fall back to a
 		// flat post.
 		flat := slackrender.BuildFlatMessage(rendered.event)
-		_, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		_, err := h.postMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
 			Channel: sub.ChannelID,
 			Text:    flat.Text,
 			Blocks:  flat.Blocks,
@@ -484,7 +504,7 @@ func (h *SlackSignalLifecycleHook) postOrThread(
 	} else {
 		// Cache miss: post the parent first (with no thread_ts).
 		parentMsg := slackrender.BuildParentMessage(rendered.event, startedAt)
-		parentResp, postErr := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		parentResp, postErr := h.postMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
 			Channel: sub.ChannelID,
 			Text:    parentMsg.Text,
 			Blocks:  parentMsg.Blocks,
@@ -542,7 +562,7 @@ func (h *SlackSignalLifecycleHook) postOrThread(
 	// state lands on the card.
 	if rendered.event.Kind != slackrender.KindWorkflow {
 		childMsg := slackrender.BuildChildMessage(rendered.event)
-		if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		if _, err := h.postMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
 			Channel:  sub.ChannelID,
 			Text:     childMsg.Text,
 			Blocks:   childMsg.Blocks,
@@ -559,7 +579,7 @@ func (h *SlackSignalLifecycleHook) postOrThread(
 	// current state. Failure here is logged but never returned.
 	if found {
 		rollup := slackrender.BuildParentRollup(rendered.event, startedAt)
-		if _, err := h.slackClient.UpdateMessage(ctx, install.BotAccessToken, slackclient.UpdateMessageRequest{
+		if _, err := h.updateMessage(ctx, install.BotAccessToken, slackclient.UpdateMessageRequest{
 			Channel: sub.ChannelID,
 			TS:      parentTS,
 			Text:    rollup.Text,
@@ -587,7 +607,7 @@ func (h *SlackSignalLifecycleHook) postFlatDriftDetected(
 	rendered renderEvent,
 ) error {
 	msg := slackrender.BuildDriftDetectedMessage(rendered.event)
-	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+	if _, err := h.postMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
 		Channel: sub.ChannelID,
 		Text:    msg.Text,
 		Blocks:  msg.Blocks,
@@ -607,7 +627,7 @@ func (h *SlackSignalLifecycleHook) postFlatRoleChange(
 	rendered renderEvent,
 ) error {
 	msg := slackrender.BuildRoleChangeMessage(rendered.event)
-	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+	if _, err := h.postMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
 		Channel: sub.ChannelID,
 		Text:    msg.Text,
 		Blocks:  msg.Blocks,
@@ -624,7 +644,7 @@ func (h *SlackSignalLifecycleHook) postFlatAppConfigSynced(
 	rendered renderEvent,
 ) error {
 	msg := slackrender.BuildAppConfigSyncedMessage(rendered.event)
-	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+	if _, err := h.postMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
 		Channel: sub.ChannelID,
 		Text:    msg.Text,
 		Blocks:  msg.Blocks,
@@ -641,7 +661,7 @@ func (h *SlackSignalLifecycleHook) postFlatUpdateAppConfig(
 	rendered renderEvent,
 ) error {
 	msg := slackrender.BuildUpdateAppConfigMessage(rendered.event)
-	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+	if _, err := h.postMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
 		Channel: sub.ChannelID,
 		Text:    msg.Text,
 		Blocks:  msg.Blocks,
@@ -666,7 +686,7 @@ func (h *SlackSignalLifecycleHook) postFlatComponentHealth(
 		signalType == signalTypeComponentRecovered,
 		signalType == signalTypeInstallDegraded,
 	)
-	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+	if _, err := h.postMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
 		Channel: sub.ChannelID,
 		Text:    msg.Text,
 		Blocks:  msg.Blocks,
@@ -683,7 +703,7 @@ func (h *SlackSignalLifecycleHook) postFlatRunnerUnhealthy(
 	rendered renderEvent,
 ) error {
 	msg := slackrender.BuildRunnerUnhealthyMessage(rendered.event)
-	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+	if _, err := h.postMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
 		Channel: sub.ChannelID,
 		Text:    msg.Text,
 		Blocks:  msg.Blocks,
@@ -719,7 +739,7 @@ func (h *SlackSignalLifecycleHook) postFlatNotification(
 		return h.postFlatComponentHealth(ctx, install, sub, rendered, signalType)
 	}
 	msg := slackrender.BuildFlatMessage(rendered.event)
-	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+	if _, err := h.postMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
 		Channel: sub.ChannelID,
 		Text:    msg.Text,
 		Blocks:  msg.Blocks,
