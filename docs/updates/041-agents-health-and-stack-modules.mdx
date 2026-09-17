@@ -1,0 +1,179 @@
+---
+title: 041 - Agents, component health, and Terraform stack modules
+description: Operate your fleet from an LLM client, know whether every component on every install is actually running, and hand your customers a versioned Terraform module instead of a generated tfvars file.
+boost: 0.3
+---
+
+_September 17, 2026_
+
+## Run Nuon from your agent
+
+Connect Claude Code, Cursor, or Amp to your org and ask in plain language. _Which installs have been
+updated in the last 24 hours?_ _Are any installs unhealthy?_ _Watch this workflow and tell me when it
+finishes._ The client picks the right tools on its own — you never name them.
+
+{/* ANIMATION: agent session — prompt typed into a client, tool calls resolving, fleet answer returned */}
+
+Connect through the stdio proxy. Your token and org stay in `~/.nuon`, so nothing secret goes into
+your client config:
+
+```sh
+nuon auth login
+nuon orgs select
+nuon agents mcp --allow-writes
+```
+
+Reads span orgs, apps, components, installs, workflows, logs, and runbooks. Writes — deploying
+components, approving or rejecting a plan, running a runbook, reprovisioning an install — stay hidden
+unless you pass `--allow-writes`, and the identity still needs the Admin role.
+
+<Tip>
+  Start with the [walkthrough](/guides/agents/mcp-walkthrough), which connects a client and runs your
+  first calls. [Sample queries](/guides/agents/sample-queries) are prompts you can paste as-is, and the
+  [tool catalog](/guides/agents/tools) lists everything exposed. Two commands print your own setup:
+  `nuon agents help` for you, `nuon agents context` for your agent.
+</Tip>
+
+---
+
+## Component health
+
+Your deploy succeeded. Is your app actually serving?
+
+Those are different questions, and only one of them is the one your customer asks. `helm upgrade`
+exits 0 while the release sits in `pending-install` and nothing serves traffic. Terraform and Helm
+skip when state already matches, so a component reports Active while its pods are stuck.
+
+Component health answers the live question instead — continuously, per component, on every install.
+It is a separate axis from deploy status, and Nuon never overwrites one with the other.
+
+{/* ANIMATION: install Resources tab — components resolving to live per-resource health, one turning unhealthy and alerting */}
+
+- Every resource each component manages, with live status, browsable per install.
+- Debounced alerts to Slack and webhooks, naming the failing resource and why.
+- Deploy gates that hold until a component stays healthy through a bake period.
+- 90 days of timeline and uptime, per component and per install.
+
+Nothing runs in your customers' clusters. Health reads them with the access your deploys already use,
+and needs no configuration to start.
+
+<Note>
+  Component health is behind the `component-health` org feature. Reach out and we will switch it on for
+  your organization.
+</Note>
+
+<Tip>
+  The [Component health](/guides/component-health) guide covers the Resources tab, custom checks,
+  required checks, and bake periods.
+</Tip>
+
+---
+
+## Terraform stack modules
+
+Hand your customer an install ID and a versioned module instead of a generated tfvars file.
+
+Install stacks can be provisioned from modules we publish on the public Terraform registry for Amazon
+Web Services, Microsoft Azure, and Google Cloud Platform. The module reads stack configuration from
+your control plane at plan time, so customers pick up new inputs without you regenerating and
+re-sending files. Each stack gets its own service account, so the phone home identity no longer has to
+be rotated on every reprovision.
+
+{/* ANIMATION: install creation — TF Module tab revealing templated code, then a customer-side terraform apply */}
+
+```hcl
+provider "stack" {}
+
+module "aws_stack" {
+  source  = "nuonco/stack/aws"
+  version = "~> 1.0"
+
+  install_id = "<install-id>"
+
+  inputs = {
+    instance_type = "t3a.medium"
+  }
+
+  secrets = {
+    license_key = { value = var.license_key }
+  }
+}
+```
+
+Creating an install now offers a **TF Module** tab with the code templated for that install, including
+its install ID, region, and customer-facing inputs and secrets. This is now the recommended way to
+provision install stacks with Terraform; the older `inputs.auto.tfvars` flow is still documented.
+
+<Tip>
+  See [Provision stacks with a Terraform module](/guides/provision-stacks-with-terraform-module), and
+  [the Nuon stack Terraform provider](/guides/nuon-stack-terraform-provider) if you are composing the
+  provider directly.
+</Tip>
+
+---
+
+## Other updates in this release
+
+### Container actions and signed images
+
+- An action can declare a container image its steps run inside, so the tools a step needs ship with
+  the action instead of being installed on the runner mid-run. Behind the `image-backed-actions` org
+  feature, off by default.
+- `container_image` components can require a valid signature before Nuon copies an image into the
+  install registry. Sigstore keyless identities and Cosign key pairs are both supported, and
+  verification runs at build time — an unsigned image fails the build rather than reaching a customer.
+- Private Azure Container Registry pulls through a service principal in your own tenant.
+
+### App branches
+
+- Open a pull request against a tracked branch and Nuon posts a plan-only preview of the config diff
+  on the pull request itself.
+- Tag and label based triggers control how branch updates roll out.
+- A new config diffing engine, with clearer pull request comments.
+- Branch configs can use a public repo without a version control connection.
+
+### Azure install parity
+
+- Deploy to Azure links collect your customer-facing inputs as ARM template parameters, defaulting to
+  the install's current value so a reprovision does not revert something set in the dashboard.
+- Stacks can deploy at subscription scope, so network, application, and security resources can be
+  split across resource groups.
+- The phone home authenticates with a managed identity token.
+- `runner.instance_type` is honored on Azure, and the platform default moves to `Standard_D2s_v5`.
+- Clusters using Azure role-based access control can grant the runner access through its identity
+  principal ID, now exposed as a stack output.
+
+<Warning>
+  Existing Azure installs with no `instance_type` set move from Dsv3 to Dsv5 on their next reprovision.
+  Azure vCPU quota is per-family, so a subscription with headroom in Dsv3 but none in Dsv5 needs a
+  quota increase or `instance_type` pinned in `runner.toml`.
+</Warning>
+
+### Access and identity
+
+- An org can run more than one identity provider of the same type, each labeled on the sign-in page.
+- API tokens can be tied to your own account and carry your roles, alongside service-account tokens.
+- A GitHub Actions preset on the trust policy modal lists every repo across your connections and fills
+  in the issuer, audience, and subject claim.
+- HCP Terraform workload identity tokens are picked up automatically, so Terraform runs can exchange
+  them without a stored Nuon API token.
+- Amazon Web Services IAM policies can be defined as standalone named policies and attached to roles,
+  so tightly-scoped apps no longer hit the inline policy size limit. They support templating, so a
+  policy can be scoped per install.
+
+### Errors and reliability
+
+- Runner jobs, action preparation, runbook steps, and sandbox builds all surface a specific underlying
+  reason, including failures outside a job's own execution such as an offline runner.
+- Invalid references in app config are caught before they reach a workflow, with the error surfaced.
+- Helm releases stuck mid-operation are recovered automatically.
+
+### Also improved
+
+- `nuon actions adhoc` runs a one-time action against an install.
+- Install config syncing points an app at a Git repo of per-install config files and keeps every
+  install in sync with it. Behind the `app-install-syncing` org feature.
+- Custom nested CloudFormation stacks are supported in the stack SDK.
+- Install labels can be generated from Nuon templates.
+- Workflows and branch runs can be filtered by type and status.
+- Plans wrap long lines, and installs can be filtered by branch.
