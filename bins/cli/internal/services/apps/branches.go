@@ -259,3 +259,11 @@ func (s *Service) resolveInstallID(ctx context.Context, installID string) (strin
 
 	return lookup.InstallID(ctx, s.api, installID)
 }
+
+func (s *Service) resolveBranchID(ctx context.Context, appID, branchID string) (string, error) {
+	if branchID == "" {
+		return "", nil
+	}
+
+	return lookup.AppBranchID(ctx, s.api, appID, branchID)
+}
