@@ -10,7 +10,6 @@ const noop = () => {}
 export const Default = () => (
   <ModalStory>
     <ReprovisionStackModal
-      installId="install-1"
       installName="acme-prod"
       isPending={false}
       error={null}
@@ -23,7 +22,6 @@ export const Default = () => (
 export const Loading = () => (
   <ModalStory>
     <ReprovisionStackModal
-      installId="install-1"
       installName="acme-prod"
       isPending={true}
       error={null}
@@ -36,7 +34,6 @@ export const Loading = () => (
 export const WithError = () => (
   <ModalStory>
     <ReprovisionStackModal
-      installId="install-1"
       installName="acme-prod"
       isPending={false}
       error={{ error: 'Reprovision failed: stack version run timed out' }}
