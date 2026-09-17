@@ -411,9 +411,18 @@ func applyLogFilters(db *gorm.DB, f logFilters) *gorm.DB {
 	db = applyMapKVs(db, "scope_attributes", f.scopeAttrs)
 
 	if f.bodyContains != "" {
-		db = db.Where("body ILIKE ?", "%"+f.bodyContains+"%")
+		db = db.Where("body ILIKE ?", "%"+escapeILIKE(f.bodyContains)+"%")
 	}
 	return db
+}
+
+// escapeILIKE neutralizes ILIKE wildcards (%, _, \) so the body search is a
+// literal substring match, matching its documented behavior.
+func escapeILIKE(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `%`, `\%`)
+	s = strings.ReplaceAll(s, `_`, `\_`)
+	return s
 }
 
 // applyMapKVs is the generic counterpart to addAttrEq: it pushes one
@@ -466,9 +475,9 @@ func applyMapKVs(db *gorm.DB, col string, kvs []kvFilter) *gorm.DB {
 // @Param					k8s_namespace		query	string		false	"filter by log_attributes['k8s.namespace']"
 // @Param					k8s_name			query	string		false	"filter by log_attributes['k8s.name']"
 // @Param					k8s_operation		query	string		false	"filter by log_attributes['k8s.operation']"
-// @Param					attr				query	[]string	false	"generic log_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)"
-// @Param					resource_attr		query	[]string	false	"generic resource_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)"
-// @Param					scope_attr			query	[]string	false	"generic scope_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)"
+// @Param					attr				query	[]string	false	"generic log_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi)"
+// @Param					resource_attr		query	[]string	false	"generic resource_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi)"
+// @Param					scope_attr			query	[]string	false	"generic scope_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi)"
 // @Param					q					query	string		false	"case-insensitive substring filter on log body"
 // @Tags					runners
 // @Accept					json

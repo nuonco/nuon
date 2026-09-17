@@ -464,11 +464,12 @@ func (h *LogStreamsHandler) DownloadLogs(c *gin.Context) {
 	jobOutputOnly := c.Query("job_output") == "true"
 	filters := parseLogFiltersFromQuery(c)
 	if jobOutputOnly {
-		// Legacy sugar from before scope_name was a server-side param.
+		// job_output means user-visible job output only, so it overrides any
+		// caller-supplied scope rather than adding to it.
 		if filters == nil {
 			filters = &nuon.LogStreamLogFilters{}
 		}
-		filters.ScopeNames = append(filters.ScopeNames, "oteljob")
+		filters.ScopeNames = []string{"oteljob"}
 	}
 
 	for {

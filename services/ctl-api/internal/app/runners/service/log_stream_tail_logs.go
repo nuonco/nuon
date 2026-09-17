@@ -158,9 +158,9 @@ type LogStreamTailLogsResponse struct {
 // @Param					k8s_namespace		query	string		false	"filter by log_attributes['k8s.namespace']"
 // @Param					k8s_name			query	string		false	"filter by log_attributes['k8s.name']"
 // @Param					k8s_operation		query	string		false	"filter by log_attributes['k8s.operation']"
-// @Param					attr				query	[]string	false	"generic log_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)"
-// @Param					resource_attr		query	[]string	false	"generic resource_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)"
-// @Param					scope_attr			query	[]string	false	"generic scope_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)"
+// @Param					attr				query	[]string	false	"generic log_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi)"
+// @Param					resource_attr		query	[]string	false	"generic resource_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi)"
+// @Param					scope_attr			query	[]string	false	"generic scope_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi)"
 // @Param					q					query	string		false	"case-insensitive substring filter on log body"
 // @Tags					runners
 // @Accept					json
