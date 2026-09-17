@@ -57,6 +57,7 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 		"Queue",
 		wkflowReq,
 	)
+	e.metrics.recordDispatch(ctx, source, enqueueStart, err)
 
 	enqueueFinishedAt := time.Now().UTC().Format(time.RFC3339)
 
@@ -68,17 +69,21 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 	if err != nil {
 		metadata["enqueue_error"] = err.Error()
 	} else {
-		if res := e.db.WithContext(ctx).
+		res := e.db.WithContext(ctx).
 			Model(&app.QueueSignal{}).
-			Where("id = ?", queueSignalID).
-			Update("enqueued", true); res.Error != nil {
+			Where(&app.QueueSignal{ID: queueSignalID}).
+			Update("enqueued", true)
+		e.metrics.recordOperation(ctx, source, enqueueOperationMarkEnqueued, res.Error)
+		if res.Error != nil {
 			e.l.Warn("unable to mark signal as enqueued",
 				zap.String("queue-signal-id", queueSignalID),
 				zap.Error(res.Error))
 		}
 	}
 
-	if mergeErr := generics.MergeJSONBMetadata(e.db.WithContext(ctx), &app.QueueSignal{}, queueSignalID, "status", metadata); mergeErr != nil {
+	mergeErr := generics.MergeJSONBMetadata(e.db.WithContext(ctx), &app.QueueSignal{}, queueSignalID, "status", metadata)
+	e.metrics.recordOperation(ctx, source, enqueueOperationUpdateMetadata, mergeErr)
+	if mergeErr != nil {
 		e.l.Warn("unable to update queue signal metadata",
 			zap.String("queue-signal-id", queueSignalID),
 			zap.Error(mergeErr))
@@ -109,6 +114,9 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 // processOne looks up the queue signal and its parent queue, performs the
 // SignalWithStart call, and marks the signal as enqueued.
 func (e *Enqueuer) processOne(queueSignalID string) {
+	e.metrics.processingStarted()
+	defer e.metrics.processingFinished()
+
 	ctx, cancel := context.WithTimeout(e.ctx, processOneTimeout)
 	defer cancel()
 
