@@ -169,7 +169,7 @@ func (s *Service) streamRawAdHocLogs(ctx context.Context, logStreamID string, wr
 	cursor := ""
 	closedEmptyPolls := 0
 	for {
-		response, err := s.api.LogStreamTailLogs(ctx, logStreamID, cursor, "2s")
+		response, err := s.api.LogStreamTailLogs(ctx, logStreamID, cursor, "2s", nil)
 		if err != nil {
 			return fmt.Errorf("read ad-hoc action logs: %w", err)
 		}
