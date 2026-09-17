@@ -65,8 +65,8 @@ func (s *InstallStackVersionRunSignalTestSuite) TestInstallStackVersionRunSignal
 	//    var updatedRunner app.Runner
 	//    err = s.service.DB.First(&updatedRunner, "id = ?", runner.ID).Error
 	//    require.NoError(s.T(), err)
-	//    require.Equal(s.T(), app.RunnerStatusError, updatedRunner.Status)
-	//    require.Contains(s.T(), updatedRunner.StatusDescription, "waiting for health check")
+	//    require.Equal(s.T(), app.RunnerStatusAwaitingHeartbeat, updatedRunner.Status)
+	//    require.Contains(s.T(), updatedRunner.StatusDescription, "waiting for the runner to report in")
 	require.True(s.T(), true, "placeholder test")
 }
 

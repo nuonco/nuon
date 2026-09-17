@@ -73,19 +73,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Update runner status to Error state
-	// This indicates the install stack was run and is waiting for health check
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          s.RunnerID,
-		Status:            app.RunnerStatusError,
-		StatusDescription: "runner install stack was run, waiting for health check to mark healthy",
+		Status:            app.RunnerStatusAwaitingHeartbeat,
+		StatusDescription: "runner install stack was run, waiting for the runner to report in",
 	}); err != nil {
 		return err
 	}
 	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
 		RunnerID:          s.RunnerID,
-		Status:            app.RunnerStatusError,
-		StatusDescription: "runner install stack was run, waiting for health check to mark healthy",
+		Status:            app.RunnerStatusAwaitingHeartbeat,
+		StatusDescription: "runner install stack was run, waiting for the runner to report in",
 	})
 
 	return nil

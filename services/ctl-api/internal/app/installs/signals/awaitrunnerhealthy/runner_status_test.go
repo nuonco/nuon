@@ -13,6 +13,9 @@ func TestRunnerCannotBecomeHealthy(t *testing.T) {
 		app.RunnerStatusActive:   false,
 		app.RunnerStatusPending:  false,
 		app.RunnerStatusDisabled: false,
+
+		app.RunnerStatusAwaitingInstallStackRun: false,
+		app.RunnerStatusAwaitingHeartbeat:       false,
 	}
 
 	for status, expected := range tests {
