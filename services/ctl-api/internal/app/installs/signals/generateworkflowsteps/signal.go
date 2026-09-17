@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -32,6 +33,11 @@ func RegisterGenerators(ownerType string, factory func() map[app.WorkflowType]fl
 type Signal struct {
 	WorkflowID string `json:"workflow_id"`
 	OwnerType  string `json:"owner_type"`
+
+	OrgID     string `json:"org_id,omitempty"`
+	OrgName   string `json:"org_name,omitempty"`
+	OwnerID   string `json:"owner_id,omitempty"`
+	OwnerName string `json:"owner_name,omitempty"`
 
 	// result is populated by Execute and read by the FetchSteps handler.
 	result *app.GenerateStepsResult
@@ -60,12 +66,27 @@ func (s *Signal) SetWorkflowID(id string) {
 	s.WorkflowID = id
 }
 
+func (s *Signal) SetLifecycleIdentity(orgID, orgName, ownerID, ownerName string) {
+	s.OrgID = orgID
+	s.OrgName = orgName
+	s.OwnerID = ownerID
+	s.OwnerName = ownerName
+}
+
 func (s *Signal) LifecycleContext() qsignal.SignalLifecycleContext {
-	return qsignal.SignalLifecycleContext{
+	lc := qsignal.SignalLifecycleContext{
 		Operation:  "generate-workflow-steps",
 		WorkflowID: s.WorkflowID,
+		OrgID:      s.OrgID,
+		OrgName:    s.OrgName,
+		OwnerID:    s.OwnerID,
 		OwnerType:  s.OwnerType,
+		OwnerName:  s.OwnerName,
 	}
+	if s.OwnerType == "installs" && s.OwnerID != "" {
+		lc.InstallID = &s.OwnerID
+	}
+	return lc
 }
 
 func (s *Signal) Type() qsignal.SignalType {
@@ -94,6 +115,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.err = errors.Wrap(err, "unable to get workflow")
 		s.done = true
 		return s.err
+	}
+	ctx = cctx.SetWorkflowTypeWorkflowContext(ctx, string(flw.Type))
+	ctx = cctx.SetOrgNameWorkflowContext(ctx, flw.Org.Name)
+	if flw.OwnerType == "installs" {
+		ctx = cctx.SetInstallNameWorkflowContext(ctx, flw.OwnerName)
 	}
 
 	defer func() {

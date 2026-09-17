@@ -10,30 +10,33 @@ import (
 // that needs information from the context can not rely on that package directly, otherwise a circular dependency will
 // be created.
 const (
-	AccountCtxKey         string = "account"
-	AccountIDCtxKey       string = "account_id"
-	BlobServiceCtxKey     string = "blob_service"
-	CfgCtxKey             string = "config"
-	IsGlobalKey           string = "is_global"
-	InstallWorkflowCtxKey string = "workflow"
-	FlowCtxKey            string = "flow"
-	IsEmployeeCtxKey      string = "is_employee"
-	LoggerFieldsCtxKey    string = "logger_fields"
-	LogStreamCtxKey       string = "log_stream"
-	MetricsKey            string = "metrics"
-	OrgCtxKey             string = "org"
-	OrgIDCtxKey           string = "org_id"
-	OffPaginationCtxKey   string = "offset_pagination"
-	IsPublicKey           string = "is_public"
-	RunnerCtxKey          string = "runner"
-	RunnerIDCtxKey        string = "runner_id"
-	DisableViewCtxKey     string = "disable_view"
-	PatcherCtxKey         string = "patcher"
-	TraceIDCtxKey         string = "trace_id"
-	FlowWorkflowIDCtxKey  string = "flow_workflow_id"
-	FlowInstallIDCtxKey   string = "flow_install_id"
-	OrgSelectorCtxKey     string = "mcp_org_selector"
-	TokenRoleCtxKey       string = "token_role"
+	AccountCtxKey          string = "account"
+	AccountIDCtxKey        string = "account_id"
+	BlobServiceCtxKey      string = "blob_service"
+	CfgCtxKey              string = "config"
+	IsGlobalKey            string = "is_global"
+	InstallWorkflowCtxKey  string = "workflow"
+	FlowCtxKey             string = "flow"
+	IsEmployeeCtxKey       string = "is_employee"
+	LoggerFieldsCtxKey     string = "logger_fields"
+	LogStreamCtxKey        string = "log_stream"
+	MetricsKey             string = "metrics"
+	OrgCtxKey              string = "org"
+	OrgIDCtxKey            string = "org_id"
+	OffPaginationCtxKey    string = "offset_pagination"
+	IsPublicKey            string = "is_public"
+	RunnerCtxKey           string = "runner"
+	RunnerIDCtxKey         string = "runner_id"
+	DisableViewCtxKey      string = "disable_view"
+	PatcherCtxKey          string = "patcher"
+	TraceIDCtxKey          string = "trace_id"
+	FlowWorkflowIDCtxKey   string = "flow_workflow_id"
+	FlowInstallIDCtxKey    string = "flow_install_id"
+	FlowWorkflowTypeCtxKey string = "flow_workflow_type"
+	FlowOrgNameCtxKey      string = "flow_org_name"
+	FlowInstallNameCtxKey  string = "flow_install_name"
+	OrgSelectorCtxKey      string = "mcp_org_selector"
+	TokenRoleCtxKey        string = "token_role"
 )
 
 // OrgSelectFunc persists the selected org for the authenticated MCP token. It is
@@ -96,5 +99,10 @@ func FlowWorkflowIDFromContext(ctx context.Context) string {
 
 func FlowInstallIDFromContext(ctx context.Context) string {
 	s, _ := ctx.Value(FlowInstallIDCtxKey).(string)
+	return s
+}
+
+func FlowWorkflowTypeFromContext(ctx context.Context) string {
+	s, _ := ctx.Value(FlowWorkflowTypeCtxKey).(string)
 	return s
 }

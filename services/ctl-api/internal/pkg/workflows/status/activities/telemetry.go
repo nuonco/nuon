@@ -27,8 +27,9 @@ func (a *Activities) logStepStatus(ctx context.Context, step app.WorkflowStep, p
 	fields := []zap.Field{
 		zap.String("flow_event", flowEvent),
 		zap.String("org_id", step.OrgID),
+		zap.String("org_name", cctx.OrgNameFromContext(ctx)),
 		zap.String("workflow_id", step.InstallWorkflowID),
-		zap.String("workflow_type", a.lookupWorkflowType(ctx, step.InstallWorkflowID)),
+		zap.String("workflow_type", cctx.WorkflowTypeFromContext(ctx)),
 		zap.String("step_id", step.ID),
 		zap.String("step_name", step.Name),
 		zap.String("owner_id", step.OwnerID),
@@ -41,7 +42,10 @@ func (a *Activities) logStepStatus(ctx context.Context, step app.WorkflowStep, p
 		zap.Any("status_metadata", status.Metadata),
 	}
 	if step.OwnerType == "installs" {
-		fields = append(fields, zap.String("install_id", step.OwnerID))
+		fields = append(fields,
+			zap.String("install_id", step.OwnerID),
+			zap.String("install_name", cctx.InstallNameFromContext(ctx)),
+		)
 	}
 	if status.StatusHumanDescription != "" {
 		fields = append(fields, zap.String("status_description", status.StatusHumanDescription))
@@ -62,6 +66,7 @@ func (a *Activities) logWorkflowError(ctx context.Context, wf app.Workflow, prev
 	fields := []zap.Field{
 		zap.String("flow_event", "workflow.failed"),
 		zap.String("org_id", wf.OrgID),
+		zap.String("org_name", cctx.OrgNameFromContext(ctx)),
 		zap.String("workflow_id", wf.ID),
 		zap.String("workflow_type", string(wf.Type)),
 		zap.String("owner_id", wf.OwnerID),
@@ -70,18 +75,19 @@ func (a *Activities) logWorkflowError(ctx context.Context, wf app.Workflow, prev
 		zap.String("error", status.StatusHumanDescription),
 	}
 	if wf.OwnerType == "installs" {
-		fields = append(fields, zap.String("install_id", wf.OwnerID))
+		fields = append(fields,
+			zap.String("install_id", wf.OwnerID),
+			zap.String("install_name", cctx.InstallNameFromContext(ctx)),
+		)
 	}
 	cctx.GetLogger(ctx, a.l).Error("flow telemetry", fields...)
 }
 
 func (a *Activities) logRunnerJob(ctx context.Context, job app.RunnerJob, status app.RunnerJobStatus, description string) {
-	workflowID := job.FlowWorkflowID()
 	fields := []zap.Field{
 		zap.String("flow_event", "runner_job."+string(status)),
 		zap.String("runner_job_id", job.ID),
-		zap.String("workflow_id", workflowID),
-		zap.String("workflow_type", a.lookupWorkflowType(ctx, workflowID)),
+		zap.String("workflow_id", job.FlowWorkflowID()),
 		zap.String("install_id", job.FlowInstallID()),
 		zap.String("owner_id", job.OwnerID),
 		zap.String("owner_type", job.OwnerType),
@@ -107,15 +113,4 @@ func (a *Activities) logRunnerJob(ctx context.Context, job app.RunnerJob, status
 		return
 	}
 	l.Info("flow telemetry", fields...)
-}
-
-func (a *Activities) lookupWorkflowType(ctx context.Context, workflowID string) string {
-	if a.db == nil || workflowID == "" {
-		return ""
-	}
-	var wf app.Workflow
-	if err := a.db.WithContext(ctx).Select("type").Where(app.Workflow{ID: workflowID}).Take(&wf).Error; err != nil {
-		return ""
-	}
-	return string(wf.Type)
 }

@@ -131,6 +131,7 @@ func (h *TelemetrySignalLifecycleHook) emit(ctx context.Context, flowEvent strin
 		zap.String("queue_signal_id", event.QueueSignalID),
 		zap.String("queue_id", event.QueueID),
 		zap.String("org_id", event.OrgID),
+		zap.String("org_name", event.OrgName),
 		zap.String("install_id", eventInstallID(event)),
 		zap.String("workflow_id", event.WorkflowID),
 		zap.String("workflow_type", event.WorkflowType),
@@ -140,6 +141,9 @@ func (h *TelemetrySignalLifecycleHook) emit(ctx context.Context, flowEvent strin
 		zap.String("stage", event.Stage),
 		zap.String("signal_type", string(event.SignalType)),
 		zap.String("phase", string(event.Phase)),
+	}
+	if event.OwnerType == "installs" {
+		fields = append(fields, zap.String("install_name", event.OwnerName))
 	}
 	if event.ComponentID != nil {
 		fields = append(fields, zap.String("component_id", *event.ComponentID))

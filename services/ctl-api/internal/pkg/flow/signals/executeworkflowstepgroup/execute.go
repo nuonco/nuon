@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -21,6 +22,12 @@ import (
 // Execute runs all steps in this group, either sequentially or in parallel.
 func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	defer func() { s.finished = true }()
+
+	ctx = cctx.SetWorkflowTypeWorkflowContext(ctx, s.WorkflowType)
+	ctx = cctx.SetOrgNameWorkflowContext(ctx, s.OrgName)
+	if s.OwnerType == "installs" {
+		ctx = cctx.SetInstallNameWorkflowContext(ctx, s.OwnerName)
+	}
 
 	start := workflow.Now(ctx)
 	defer func() {

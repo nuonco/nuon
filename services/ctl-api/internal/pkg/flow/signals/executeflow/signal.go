@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -198,6 +199,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.WorkflowType == "" {
 		s.WorkflowType = string(flw.Type)
 	}
+	ctx = cctx.SetWorkflowTypeWorkflowContext(ctx, s.WorkflowType)
 	if s.OrgID == "" {
 		s.OrgID = flw.OrgID
 	}
@@ -211,6 +213,10 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	// it here removes the per-event lookupInstallName query in the webhook hook.
 	if s.OwnerName == "" {
 		s.OwnerName = flw.OwnerName
+	}
+	ctx = cctx.SetOrgNameWorkflowContext(ctx, s.OrgName)
+	if s.OwnerType == "installs" {
+		ctx = cctx.SetInstallNameWorkflowContext(ctx, s.OwnerName)
 	}
 
 	// Resolve queue names from owner type if not explicitly set.
@@ -281,6 +287,12 @@ func (s *Signal) failWorkflow(ctx workflow.Context, err error) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
+	ctx = cctx.SetWorkflowTypeWorkflowContext(ctx, s.WorkflowType)
+	ctx = cctx.SetOrgNameWorkflowContext(ctx, s.OrgName)
+	if s.OwnerType == "installs" {
+		ctx = cctx.SetInstallNameWorkflowContext(ctx, s.OwnerName)
+	}
+
 	return s.executeFlow(ctx)
 }
 

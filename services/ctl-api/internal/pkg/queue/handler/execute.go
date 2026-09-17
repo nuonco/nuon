@@ -173,6 +173,14 @@ func (h *handler) signalContext(ctx workflow.Context, refreshLogStream bool) (wo
 
 	signalCtx := h.queueSignal.SignalContext
 	ctx = queuecctx.ApplyWorkflow(ctx, signalCtx)
+	if lc, ok := h.sig.(signal.SignalWithLifecycleContext); ok {
+		lifecycleCtx := lc.LifecycleContext()
+		ctx = cctx.SetWorkflowTypeWorkflowContext(ctx, lifecycleCtx.WorkflowType)
+		ctx = cctx.SetOrgNameWorkflowContext(ctx, lifecycleCtx.OrgName)
+		if lifecycleCtx.OwnerType == "installs" {
+			ctx = cctx.SetInstallNameWorkflowContext(ctx, lifecycleCtx.OwnerName)
+		}
+	}
 	if signalCtx.LogStreamID == "" {
 		return ctx, nil
 	}
