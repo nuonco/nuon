@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
@@ -31,6 +32,7 @@ type Activities struct {
 	autoLinkHelper *autolink.Helper
 	blobSvc        blobstore.Service
 	queueClient    *queueclient.Client
+	flowsClient    *flowclient.Client
 }
 
 type Params struct {
@@ -46,6 +48,7 @@ type Params struct {
 	SlackClient    *slackclient.Client
 	AutoLinkHelper *autolink.Helper
 	BlobSvc        blobstore.Service
+	FlowsClient    *flowclient.Client
 }
 
 func New(params Params) (*Activities, error) {
@@ -67,5 +70,6 @@ func New(params Params) (*Activities, error) {
 		autoLinkHelper: params.AutoLinkHelper,
 		blobSvc:        params.BlobSvc,
 		queueClient:    params.QueueClient,
+		flowsClient:    params.FlowsClient,
 	}, nil
 }
