@@ -2,14 +2,17 @@ import {
   createContext,
   useCallback,
   useEffect,
+  useMemo,
   useState,
   useRef,
   type ReactNode,
 } from 'react'
 import { useSearchParams } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
+import { buildServerFilters } from '@/hooks/use-log-filters'
 import { LogsPageSkeleton } from '@/components/log-stream/SSELogs'
-import { getLogStreamLogs } from '@/lib'
+import { getLogStreamLogs, logFiltersToQuery } from '@/lib'
+import type { TLogStreamFilters } from '@/lib/ctl-api/log-streams/get-log-stream-logs'
 import type { TOTELLog, TAPIError } from '@/types'
 
 type ConnectionState =
@@ -47,6 +50,22 @@ export function LogStreamProvider({
   const [searchParams] = useSearchParams()
   const isNewestFirst = searchParams.get('sort') !== 'asc'
 
+  // Effective filter set from the URL, applied server-side by the ctl-api
+  // read/tail endpoints. Compared via its serialized form so unrelated URL
+  // changes don't reconnect the stream.
+  const serverFiltersRef = useRef<TLogStreamFilters>({})
+  const sseQuery = useMemo(() => {
+    const filters = buildServerFilters(searchParams)
+    if (runnerJobId) filters.runner_job_id = runnerJobId
+    serverFiltersRef.current = filters
+    // q stays client-side for the live stream — sending it here would
+    // reconnect the SSE and re-drain the tail on every keystroke. The
+    // seed read and download keep it as one-shot server-side filters.
+    const sseFilters = { ...filters }
+    delete sseFilters.q
+    return logFiltersToQuery(sseFilters)
+  }, [searchParams, runnerJobId])
+
   const [logs, setLogs] = useState<TOTELLog[]>([])
   const [connectionState, setConnectionState] =
     useState<ConnectionState>('disconnected')
@@ -83,19 +102,20 @@ export function LogStreamProvider({
   // lines on a running job. Instead fetch the newest page once, so newest-first
   // has a correct top immediately and the ASC stream backfills below it.
   const seedNewestPage = useCallback(
-    (streamId: string, orgId: string, jobId?: string) => {
+    (streamId: string, orgId: string) => {
       if (seedRequestedRef.current || !isNewestFirstRef.current) return
       seedRequestedRef.current = true
 
-      getLogStreamLogs({ logStreamId: streamId, orgId, order: 'desc' })
+      getLogStreamLogs({
+        logStreamId: streamId,
+        orgId,
+        order: 'desc',
+        filters: serverFiltersRef.current,
+      })
         .then((newest) => {
           if (streamId !== logStreamIdRef.current) return
           if (!Array.isArray(newest)) return
-          appendLogs(
-            jobId
-              ? newest.filter((log) => log?.runner_job_id === jobId)
-              : newest
-          )
+          appendLogs(newest)
         })
         .catch(() => {})
     },
@@ -138,10 +158,7 @@ export function LogStreamProvider({
       setConnState('connecting')
       setError(null)
 
-      const params = new URLSearchParams()
-      if (runnerJobId) params.set('runner_job_id', runnerJobId)
-      const query = params.toString()
-      const url = `/api/orgs/${org.id}/log-streams/${logStreamId}/logs/sse${query ? `?${query}` : ''}`
+      const url = `/api/orgs/${org.id}/log-streams/${logStreamId}/logs/sse${sseQuery ? `?${sseQuery}` : ''}`
       const eventSource = new EventSource(url)
       eventSourceRef.current = eventSource
 
@@ -164,7 +181,7 @@ export function LogStreamProvider({
       eventSource.addEventListener('status', (event: MessageEvent) => {
         if (event.data === 'catching-up') {
           setIsCatchingUp(true)
-          seedNewestPage(logStreamId, org.id, runnerJobId)
+          seedNewestPage(logStreamId, org.id)
         } else if (event.data === 'live') {
           setIsCatchingUp(false)
         } else if (event.data === 'complete') {
@@ -226,21 +243,14 @@ export function LogStreamProvider({
     return () => {
       disconnect()
     }
-  }, [logStreamId, org?.id, runnerJobId])
+  }, [logStreamId, org?.id, runnerJobId, sseQuery])
 
   // Switching to newest-first while a long catch-up is still draining needs the
   // same seed; the `catching-up` event has already come and gone by then.
   useEffect(() => {
     if (!logStreamId || !org?.id || !isNewestFirst || !isCatchingUp) return
-    seedNewestPage(logStreamId, org.id, runnerJobId)
-  }, [
-    logStreamId,
-    org?.id,
-    runnerJobId,
-    isNewestFirst,
-    isCatchingUp,
-    seedNewestPage,
-  ])
+    seedNewestPage(logStreamId, org.id)
+  }, [logStreamId, org?.id, isNewestFirst, isCatchingUp, seedNewestPage])
 
   if (!logStreamId) {
     if (!renderWhilePending) return <LogsPageSkeleton />
