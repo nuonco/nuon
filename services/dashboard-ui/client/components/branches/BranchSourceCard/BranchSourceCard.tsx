@@ -61,10 +61,13 @@ export const BranchSourceCard = ({
   const publicVCS = config?.public_git_vcs_config
   const vcs = connectedVCS ?? publicVCS
   const repoHref = vcs?.repo
-    ? vcs.repo.startsWith('http')
-      ? vcs.repo
-      : `https://github.com/${vcs.repo}`
+    ? (vcs.repo.startsWith('http')
+        ? vcs.repo
+        : `https://github.com/${vcs.repo}`
+      ).replace(/\.git\/?$/, '')
     : undefined
+  const sourceHref =
+    repoHref && vcs?.branch ? `${repoHref}/tree/${vcs.branch}` : repoHref
   const cadence = runCadence(config)
 
   return (
@@ -84,8 +87,8 @@ export const BranchSourceCard = ({
           </Text>
         </div>
         <div className="flex items-center gap-3">
-          {repoHref ? (
-            <Link href={repoHref} isExternal>
+          {sourceHref ? (
+            <Link href={sourceHref} isExternal>
               View on GitHub
             </Link>
           ) : null}
