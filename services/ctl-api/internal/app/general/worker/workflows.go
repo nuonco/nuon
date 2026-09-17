@@ -32,7 +32,6 @@ func (w Workflows) All() []any {
 		w.VerifyBlobs,
 		w.VerifyBlobsDay,
 		w.ComponentHealthSweep,
-		w.BackfillDefaultAppBranches,
 		w.BulkCancelWorkflows,
 	}
 	return wkflows
@@ -49,7 +48,6 @@ func (w *Workflows) ListWorkflowFns() []any {
 		w.VerifyBlobs,
 		w.VerifyBlobsDay,
 		w.ComponentHealthSweep,
-		w.BackfillDefaultAppBranches,
 		w.BulkCancelWorkflows,
 	}
 }

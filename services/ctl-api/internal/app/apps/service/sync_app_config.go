@@ -37,6 +37,20 @@ func (s *service) SyncAppConfig(ctx *gin.Context) {
 		return
 	}
 
+	disabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureDisableAppsSync)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to check feature: %w", err))
+		return
+	}
+	if disabled {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("apps sync is disabled"),
+			Description: "App config sync is disabled for this org. Use app branches (`nuon branches sync`) instead.",
+			Code:        "apps_sync_disabled",
+		})
+		return
+	}
+
 	appID := ctx.Param("app_id")
 	configID := ctx.Param("config_id")
 

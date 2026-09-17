@@ -11,15 +11,15 @@ The flag name may be passed as an argument: $ARGUMENTS
 
 ## Step 1: Resolve and validate the flag
 
-1. If no flag name was given, list the flags currently defaulted to `false` in the `defaultFeatures` map in
-   `Org.BeforeCreate` (`services/ctl-api/internal/app/org.go`) and ask the user which one to promote, in plain
+1. If no flag name was given, list the flags currently defaulted to `false` in `featureCatalog()`
+   (`services/ctl-api/internal/app/org_features.go`) and ask the user which one to promote, in plain
    prose (never AskUserQuestion).
 2. Verify the flag exists as an `OrgFeature` constant and appears in `GetFeatures()`. If it doesn't exist, stop
    and tell the user — this skill never creates flags.
 3. Verify its current default is `false`. If it is already `true`, say so and skip to Step 3 (the bulk-enable
    body may still be what the user wants).
 4. Check for special cases and surface them before editing:
-   - Is the flag in `adminOnlyFeatures` in `org.go`? Promotion is still valid, but note that users cannot toggle
+   - Is the flag `AdminOnly` in `featureCatalog()`? Promotion is still valid, but note that users cannot toggle
      it themselves.
    - Grep `services/ctl-api/internal/pkg/features/` and `Org.BeforeCreate` for logic naming the flag
      (mutual-exclusion rules, config-driven overrides). If any exists, describe it and confirm with the user
@@ -27,10 +27,10 @@ The flag name may be passed as an argument: $ARGUMENTS
 
 ## Step 2: Flip the default
 
-In the `defaultFeatures` map in `Org.BeforeCreate`:
+In `featureCatalog()` in `org_features.go`:
 
-1. Move the flag's entry from the `// Disabled by default` section to the `// Enabled by default` section and set
-   it to `true`. Do not touch any other entry, the constants block, `GetFeatures()`, or `GetFeatureDescriptions()`.
+1. Set `Default: true` on that flag's `OrgFeatureDef`. Do not touch any other entry, the constants block, or
+   derived helpers (`GetFeatures()`, `DefaultFeatures()`, descriptions).
 2. Format and verify:
    ```bash
    gofmt -w ./services/ctl-api/internal/app/ && goimports -w ./services/ctl-api/internal/app/

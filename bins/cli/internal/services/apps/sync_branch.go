@@ -22,78 +22,7 @@ const (
 	buildsStepName = "building components and sandbox"
 
 	defaultBranchRunPoll = time.Second * 5
-
-	defaultAppBranchesFeature = "default-app-branches"
-	defaultAppBranchName      = "default"
-	defaultInstallGroupName   = "all installs"
 )
-
-// resolveDefaultBranchID returns the app's default branch when the org has
-// default-app-branches enabled, creating it if this is the first sync, or "" to leave
-// the sync on the standalone path.
-//
-// The branch is created here rather than as a side effect of POST /configs so an
-// older CLI never ends up with a branch-linked config it will not run: the sync
-// endpoint skips the install rollout for branch-linked configs on the assumption a
-// branch run owns it.
-func (s *Service) resolveDefaultBranchID(ctx context.Context, appID string) (string, error) {
-	org, err := s.api.GetOrg(ctx)
-	if err != nil {
-		return "", fmt.Errorf("unable to read org features: %w", err)
-	}
-	if !org.Features[defaultAppBranchesFeature] {
-		return "", nil
-	}
-
-	branchID, err := s.findBranchIDByName(ctx, appID, defaultAppBranchName)
-	if err != nil {
-		return "", err
-	}
-	if branchID != "" {
-		return branchID, nil
-	}
-
-	ui.PrintLn("creating " + defaultAppBranchName + " app branch")
-	branch, err := s.api.CreateAppBranch(ctx, appID, &models.ServiceCreateAppBranchRequest{
-		Name: ptr(defaultAppBranchName),
-	})
-	if err != nil {
-		// A concurrent sync may have won the race; the branch name is unique per app.
-		branchID, lookupErr := s.findBranchIDByName(ctx, appID, defaultAppBranchName)
-		if lookupErr == nil && branchID != "" {
-			return branchID, nil
-		}
-		return "", fmt.Errorf("unable to create default app branch: %w", err)
-	}
-
-	if _, err := s.api.CreateAppBranchConfig(ctx, appID, branch.ID, &models.ServiceCreateAppBranchConfigRequest{
-		InstallGroups: []*models.ServiceInstallGroupRequest{{
-			Name:        ptr(defaultInstallGroupName),
-			Order:       ptr(int64(0)),
-			AllInstalls: true,
-		}},
-		PostDeployRunbookIds: []string{},
-	}); err != nil {
-		return "", fmt.Errorf("unable to configure default app branch: %w", err)
-	}
-
-	return branch.ID, nil
-}
-
-func (s *Service) findBranchIDByName(ctx context.Context, appID, name string) (string, error) {
-	branches, err := s.api.GetAppBranches(ctx, appID)
-	if err != nil {
-		return "", fmt.Errorf("unable to list app branches: %w", err)
-	}
-	for _, branch := range branches {
-		if branch.Name == name {
-			return branch.ID, nil
-		}
-	}
-	return "", nil
-}
-
-func ptr[T any](v T) *T { return &v }
 
 // syncViaBranchRun hands an already-uploaded config to a branch run, which syncs
 // it, builds the changed components, and rolls it out to the branch's install
