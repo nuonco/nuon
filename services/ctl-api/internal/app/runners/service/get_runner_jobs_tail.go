@@ -103,6 +103,7 @@ func (s *service) TailRunnerJobs(ctx *gin.Context) {
 	for {
 		probeStart := time.Now()
 		job, qerr := s.tailJobProbe(ctx.Request.Context(), runnerID, grp)
+		s.tailMetrics.probe(ctx.Request.Context(), job, qerr)
 		if qerr != nil {
 			s.mw.Count(metricJobTailProbeError, 1, nil)
 			if ctx.Request.Context().Err() != nil {
@@ -182,6 +183,7 @@ func (s *service) TailRunnerJobs(ctx *gin.Context) {
 			return
 		case <-wakeCh:
 			s.mw.Count(metricJobTailNotifyWake, 1, nil)
+			s.tailMetrics.wake(ctx.Request.Context())
 		case <-time.After(sleep):
 		}
 	}
@@ -189,6 +191,7 @@ func (s *service) TailRunnerJobs(ctx *gin.Context) {
 
 func (s *service) emitJobTailExit(result string) {
 	s.mw.Count(metricJobTailOutcome, 1, []string{"result:" + result})
+	s.tailMetrics.session(result)
 }
 
 // tailJobProbe runs a single bounded Postgres query for the next available
