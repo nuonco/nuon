@@ -278,6 +278,43 @@ record `success` or `error` on return.
 Retries count as separate service calls; idle series are absent. No entity IDs or
 object paths are dimensions. Instrumentation adds no storage requests.
 
+### Notification delivery
+
+Lifecycle notifications emit metrics around outbound webhook and Slack calls:
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.notification.delivery.attempts` | Counter | attempts | channel, operation, outcome |
+| `nuon.notification.delivery.duration` | Histogram | seconds | Same as attempts |
+
+Dimension keys use the `nuon.notification.` prefix: channel is `webhook` or `slack`,
+operation is `post` or `update`, and outcome is `success` or `failure`. No destinations,
+entity IDs, or error messages are dimensions. Calls skipped by subscription filters
+are not attempts; retries and fan-out count separately. Success reflects the client
+call's result, not downstream processing of the notification.
+
+### Lifecycle hooks
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.event.hook.invocations` | Counter | invocations | name, phase, invocation, outcome |
+
+Dimension keys use the `nuon.event.hook.` prefix. Names are `flow_lifecycle_telemetry`,
+`workflow_lifecycle_webhook`, `workflow_lifecycle_slack`, or `other`. Phases are
+`validate`, `execute`, `cancel`, or `other`; invocation is `before` or `after`;
+outcome is `success`, `error`, or `blocked` (before-phase only). Only supported hooks
+that return are counted. Hook success does not establish notification delivery.
+
+Structured process logs also expose `flow_event` diagnostics for retries, drift,
+config updates, and component/install health notifications, independently of
+subscriptions and without database enrichment. Install config updates emit
+`install.config_updated` on execution success or `install.config_update_failed`
+at error level on execution failure, with the error message when available; dry runs
+are excluded. Install-health changes may appear
+as metadata on component events rather than standalone install events. These logs
+can repeat on retries and do not constitute a complete transition history.
+This package does not configure OTLP log export.
+
 ## Failure behavior
 
 Requests update in-memory aggregations; network export runs periodically outside
