@@ -31,62 +31,54 @@ export const BranchCard = ({ card }: { card: TBranchCardData }) => {
   const { action, href, latestRun, name, planGroups, repo, repoBranch } = card
 
   return (
-    <Card className="gap-4 p-4 min-w-0">
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-start justify-between gap-2">
-          <span className="flex items-center gap-2 min-w-0 flex-wrap">
+    <Card className="gap-3 p-4 min-w-0 md:grid md:grid-cols-[minmax(12rem,1fr)_minmax(18rem,2fr)_minmax(12rem,1fr)] md:items-center">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <span className="flex min-w-0 items-center gap-2">
             <Link href={href} className="font-strong truncate max-w-56">
               {name}
             </Link>
-            {latestRun?.awaitingApproval ? (
-              <Badge size="sm" theme="warn">
-                Awaiting approval
-              </Badge>
-            ) : null}
           </span>
-          <span className="flex items-center shrink-0 ml-auto">{action}</span>
+          {repo || repoBranch ? (
+            <span className="flex items-center gap-2 min-w-0 flex-wrap">
+              <BranchVcsBadges repo={repo} branch={repoBranch} />
+            </span>
+          ) : null}
         </div>
-
-        {repo || repoBranch ? (
-          <span className="flex items-center gap-2 min-w-0 flex-wrap">
-            <BranchVcsBadges repo={repo} branch={repoBranch} />
-          </span>
-        ) : null}
+        <span className="flex shrink-0 items-center gap-2">
+          {latestRun?.awaitingApproval ? (
+            <Badge size="sm" theme="warn">
+              Awaiting approval
+            </Badge>
+          ) : null}
+          {action}
+        </span>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Text variant="label" theme="neutral" weight="strong">
-          Latest run
+      {latestRun ? (
+        <BranchRunCommit
+          status={latestRun.status}
+          href={latestRun.href}
+          message={latestRun.commitMessage}
+          author={latestRun.author}
+          avatarUrl={latestRun.avatarUrl}
+          sha={latestRun.sha}
+          createdAt={latestRun.createdAt}
+          className="border-l py-1 pl-4"
+        />
+      ) : (
+        <Text variant="subtext" theme="neutral">
+          No runs yet
         </Text>
-        {latestRun ? (
-          <BranchRunCommit
-            status={latestRun.status}
-            href={latestRun.href}
-            message={latestRun.commitMessage}
-            author={latestRun.author}
-            avatarUrl={latestRun.avatarUrl}
-            sha={latestRun.sha}
-            createdAt={latestRun.createdAt}
-          />
-        ) : (
-          <Text variant="subtext" theme="neutral">
-            No runs yet
-          </Text>
-        )}
-      </div>
+      )}
 
-      <div className="flex flex-col gap-1.5">
-        <Text variant="label" theme="neutral" weight="strong">
-          Deployment plan
+      {planGroups && planGroups.length > 0 ? (
+        <BranchPlanDots groups={planGroups} />
+      ) : (
+        <Text variant="subtext" theme="neutral">
+          No deployment plan yet
         </Text>
-        {planGroups && planGroups.length > 0 ? (
-          <BranchPlanDots groups={planGroups} />
-        ) : (
-          <Text variant="subtext" theme="neutral">
-            No deployment plan yet
-          </Text>
-        )}
-      </div>
+      )}
     </Card>
   )
 }

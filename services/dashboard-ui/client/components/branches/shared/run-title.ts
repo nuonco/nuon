@@ -29,13 +29,29 @@ export const getRunTitle = (run?: TInstallWorkflow): string => {
   const prNumber = metadata?.pr_number ?? branchRun?.pr_number
   const trigger = getRunTrigger(branchRun)
   if (trigger === 'tag' && metadata?.tag) {
-    return `Tag ${metadata.tag}`
+    return `Tag ${metadata.tag} Pushed`
+  }
+  if (trigger === 'github_label' && prNumber != null) {
+    return `PR #${prNumber} Merged`
   }
   if (prNumber != null) {
     return `PR #${prNumber}`
   }
   if (trigger === 'github_label' && metadata?.github_label) {
     return `Label ${metadata.github_label}`
+  }
+  if (
+    branchRun?.preview ||
+    branchRun?.plan_only ||
+    branchRun?.run_type === 'git-preview-run'
+  ) {
+    return 'Preview run'
+  }
+  if (trigger === 'manual') {
+    return 'Manual run'
+  }
+  if (trigger === 'push') {
+    return 'Commit pushed'
   }
 
   const commitMessage = branchRun?.vcs_connection_commit?.message

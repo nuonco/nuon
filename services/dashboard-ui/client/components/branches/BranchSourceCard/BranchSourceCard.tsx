@@ -1,10 +1,11 @@
 import { Card } from '@/components/common/Card'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { LabelBadge } from '@/components/common/LabelBadge'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import {
   BranchRunCommit,
   type IBranchRunCommit,
@@ -103,28 +104,45 @@ export const BranchSourceCard = ({
       </div>
       {vcs ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <SourceField label="Repository" value={vcs.repo} />
+          <LabeledValue label="Repository">
+            {repoHref ? (
+              <Link href={repoHref} isExternal>
+                {vcs.repo}
+              </Link>
+            ) : (
+              <Text variant="subtext">{vcs.repo}</Text>
+            )}
+          </LabeledValue>
           <SourceField label="Branch" value={vcs.branch} />
           <SourceField label="Directory" value={vcs.directory} />
           <LabeledValue label="Run cadence">
-            <span className="flex items-center gap-2 min-w-0">
-              <Text variant="subtext" className="truncate">
-                {cadence.description}
-              </Text>
-              <LabelBadge
-                labelKey="mode"
-                labelValue={cadence.mode}
-                size="xs"
-                theme={cadence.mode === 'push' ? 'default' : 'brand'}
-              />
-            </span>
+            <Text variant="subtext" theme="neutral">
+              {cadence.description}
+            </Text>
           </LabeledValue>
         </div>
       ) : null}
       {latestRun ? (
-        <LabeledValue label="Latest run" className="border-t pt-4">
-          <BranchRunCommit {...latestRun} />
-        </LabeledValue>
+        <div className="grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-4">
+          <LabeledValue label="Status">
+            <Status status={latestRun.status ?? 'pending'} />
+          </LabeledValue>
+          <LabeledValue label="Created">
+            <Time
+              time={latestRun.createdAt}
+              format="relative"
+              variant="subtext"
+            />
+          </LabeledValue>
+          <LabeledValue label="Source" className="md:col-span-2">
+            <BranchRunCommit
+              {...latestRun}
+              showStatus={false}
+              createdAt={undefined}
+              className="border-l py-1 pl-4"
+            />
+          </LabeledValue>
+        </div>
       ) : null}
     </Card>
   )

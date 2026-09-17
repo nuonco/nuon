@@ -147,8 +147,6 @@ export const Sandbox = () => {
               />
             }
             title="Sandbox"
-            description="Test builds in an isolated environment before deploying to installs."
-            id={sandboxConfig?.id}
             status={
               latestBuild ? (
                 <StatusWithDescription

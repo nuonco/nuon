@@ -3,7 +3,7 @@ import type { TInstallWorkflow } from '@/types'
 import { getRunTitle, getRunTrigger } from './run-title'
 
 describe('getRunTitle', () => {
-  test('uses the commit message for manual preview runs', () => {
+  test('uses the preview title for manual preview runs with a commit', () => {
     const workflow = {
       type: 'app_branches_manual_update',
       app_branch_runs: [
@@ -15,10 +15,10 @@ describe('getRunTitle', () => {
       ],
     } as TInstallWorkflow
 
-    expect(getRunTitle(workflow)).toBe('Change app config')
+    expect(getRunTitle(workflow)).toBe('Preview run')
   })
 
-  test('uses run.name for manual preview runs without a commit message', () => {
+  test('uses the preview title instead of the generic run name', () => {
     const workflow = {
       type: 'app_branches_manual_update',
       name: 'Run',
@@ -30,7 +30,7 @@ describe('getRunTitle', () => {
       ],
     } as TInstallWorkflow
 
-    expect(getRunTitle(workflow)).toBe('Run')
+    expect(getRunTitle(workflow)).toBe('Preview run')
   })
 
   test('normalizes the legacy manual workflow name', () => {
@@ -41,10 +41,10 @@ describe('getRunTitle', () => {
       ],
     } as TInstallWorkflow
 
-    expect(getRunTitle(workflow)).toBe('Run')
+    expect(getRunTitle(workflow)).toBe('Preview run')
   })
 
-  test('falls back to type label when run.name is also absent', () => {
+  test('uses the preview title when run.name is absent', () => {
     const workflow = {
       type: 'app_branches_manual_update',
       app_branch_runs: [
@@ -55,7 +55,7 @@ describe('getRunTitle', () => {
       ],
     } as TInstallWorkflow
 
-    expect(getRunTitle(workflow)).toBe('Manual app config update')
+    expect(getRunTitle(workflow)).toBe('Preview run')
   })
 
   test('keeps the manual app config title for non-preview runs', () => {
@@ -65,6 +65,23 @@ describe('getRunTitle', () => {
     } as TInstallWorkflow
 
     expect(getRunTitle(workflow)).toBe('Manual app config update')
+  })
+
+  test('uses trigger titles for manual and push runs', () => {
+    const manual = {
+      app_branch_runs: [{ metadata: { trigger: 'manual' } }],
+    } as TInstallWorkflow
+    const push = {
+      app_branch_runs: [
+        {
+          metadata: { trigger: 'push' },
+          vcs_connection_commit: { message: 'Update app' },
+        },
+      ],
+    } as TInstallWorkflow
+
+    expect(getRunTitle(manual)).toBe('Manual run')
+    expect(getRunTitle(push)).toBe('Commit pushed')
   })
 
   test('uses the PR number for automated previews', () => {
@@ -102,7 +119,7 @@ describe('getRunTitle', () => {
       ],
     } as TInstallWorkflow
 
-    expect(getRunTitle(workflow)).toBe('Tag v2.4.0')
+    expect(getRunTitle(workflow)).toBe('Tag v2.4.0 Pushed')
   })
 
   test('uses the PR number for label-triggered runs', () => {
@@ -118,6 +135,6 @@ describe('getRunTitle', () => {
       ],
     } as TInstallWorkflow
 
-    expect(getRunTitle(workflow)).toBe('PR #142')
+    expect(getRunTitle(workflow)).toBe('PR #142 Merged')
   })
 })

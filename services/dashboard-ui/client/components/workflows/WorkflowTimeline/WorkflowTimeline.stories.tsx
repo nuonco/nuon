@@ -5,7 +5,7 @@ export default {
 import type { ReactNode } from 'react'
 import { WorkflowApprovalsContext } from '@/providers/workflow-approvals-provider'
 import { WorkflowTimeline } from './WorkflowTimeline'
-import type { TWorkflow } from '@/types'
+import type { TInstall, TInstallGroupRun, TWorkflow } from '@/types'
 
 const ApprovalsProvider = ({ children }: { children: ReactNode }) => (
   <WorkflowApprovalsContext.Provider
@@ -166,6 +166,55 @@ const labelBranchRunWorkflow: TWorkflow = {
   ],
 } as unknown as TWorkflow
 
+const triggerGraphInstalls: Record<string, TInstall> = {
+  'inst-canary': {
+    id: 'inst-canary',
+    name: 'acme-canary',
+  } as TInstall,
+  'inst-production': {
+    id: 'inst-production',
+    name: 'acme-production',
+  } as TInstall,
+}
+
+const triggerGraphRuns = [
+  {
+    id: 'igr-canary',
+    install_group_id: 'group-canary',
+    install_group_name: 'Canary',
+    status: { status: 'success' },
+    completed_installs: 1,
+    total_installs: 1,
+    installs: [
+      {
+        install_id: 'inst-canary',
+        workflow_id: 'inw-canary',
+        status: 'success',
+      },
+    ],
+  },
+  {
+    id: 'igr-production',
+    install_group_id: 'group-production',
+    install_group_name: 'Production',
+    status: { status: 'in-progress' },
+    completed_installs: 0,
+    total_installs: 1,
+    installs: [
+      {
+        install_id: 'inst-production',
+        workflow_id: 'inw-production',
+        status: 'in-progress',
+      },
+    ],
+  },
+] as TInstallGroupRun[]
+
+const triggerGraph = {
+  installGroupRuns: triggerGraphRuns,
+  installsById: triggerGraphInstalls,
+}
+
 const serviceAccountBranchRunWorkflow: TWorkflow = {
   ...previewBranchRunWorkflow,
   id: 'inwm6oxsvulflygj3z77xo55l',
@@ -229,6 +278,14 @@ export const BranchRunTriggers = () => (
         ]}
         pagination={{ hasNext: false, offset: 0, limit: 10 }}
         orgId="org-123"
+        branchRunGraphs={{
+          [manualBranchRunWorkflow.id!]: triggerGraph,
+          [manualPreviewBranchRunWorkflow.id!]: triggerGraph,
+          [previewBranchRunWorkflow.id!]: triggerGraph,
+          [tagBranchRunWorkflow.id!]: triggerGraph,
+          [branchRunWorkflow.id!]: triggerGraph,
+          [labelBranchRunWorkflow.id!]: triggerGraph,
+        }}
         getWorkflowHref={(wf) =>
           `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`
         }

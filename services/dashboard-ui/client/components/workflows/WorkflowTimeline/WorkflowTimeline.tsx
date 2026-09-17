@@ -12,6 +12,7 @@ import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { Tooltip } from '@/components/common/Tooltip'
 import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
+import { RunDeploymentGraph } from '@/components/branches/RunDeploymentGraph'
 import {
   getRunTitle,
   getRunTrigger,
@@ -19,10 +20,8 @@ import {
 import {
   getBranchRunFromWorkflow,
   isPreviewWorkflow,
-  previewModeLabel,
-  previewSourceLabel,
 } from '@/components/branches/shared/preview-run-utils'
-import type { TInstall, TWorkflow } from '@/types'
+import type { TInstall, TInstallGroupRun, TWorkflow } from '@/types'
 import {
   getWorkflowBadge,
   getWorkflowPendingApprovals,
@@ -38,6 +37,13 @@ export interface IWorkflowTimeline {
   orgId: string
   installId?: string
   install?: TInstall
+  branchRunGraphs?: Record<
+    string,
+    {
+      installGroupRuns: TInstallGroupRun[]
+      installsById?: Record<string, TInstall>
+    }
+  >
   isLoading?: boolean
   isFiltered?: boolean
   getWorkflowHref?: (workflow: TWorkflow) => string
@@ -49,6 +55,7 @@ export const WorkflowTimeline = ({
   orgId,
   installId,
   install,
+  branchRunGraphs,
   isLoading,
   isFiltered = false,
   getWorkflowHref,
@@ -66,6 +73,9 @@ export const WorkflowTimeline = ({
         const branchRun = getBranchRunFromWorkflow(workflow)
         const trigger = getRunTrigger(branchRun)
         const commit = branchRun?.vcs_connection_commit
+        const runGraph = workflow.id
+          ? branchRunGraphs?.[workflow.id]
+          : undefined
         const workflowHref = getWorkflowHref
           ? getWorkflowHref(workflow)
           : `/${orgId}/installs/${installId}/workflows/${workflow.id}`
@@ -130,41 +140,15 @@ export const WorkflowTimeline = ({
                     <Badge variant="code" size="sm">
                       preview
                     </Badge>
-                    {(() => {
-                      const mode =
-                        previewModeLabel(branchRun?.preview) ??
-                        (branchRun?.plan_only ? 'Plan only' : undefined)
-                      const source = previewSourceLabel(branchRun)
-                      const install = branchRun?.preview?.install_name
-                      return (
-                        <>
-                          {mode ? (
-                            <Badge variant="code" size="sm">
-                              {mode}
-                            </Badge>
-                          ) : null}
-                          {source ? (
-                            <Badge variant="code" size="sm">
-                              {source}
-                            </Badge>
-                          ) : null}
-                          {trigger === 'manual' ? (
-                            <Badge variant="code" size="sm">
-                              manual
-                            </Badge>
-                          ) : branchRun?.preview?.source === 'commit' ? (
-                            <Badge variant="code" size="sm">
-                              commit
-                            </Badge>
-                          ) : null}
-                          {install ? (
-                            <Badge variant="code" size="sm">
-                              install: {install}
-                            </Badge>
-                          ) : null}
-                        </>
-                      )
-                    })()}
+                    {trigger === 'manual' ? (
+                      <Badge variant="code" size="sm">
+                        manual
+                      </Badge>
+                    ) : branchRun?.preview?.source === 'commit' ? (
+                      <Badge variant="code" size="sm">
+                        commit
+                      </Badge>
+                    ) : null}
                   </>
                 ) : workflow.plan_only ? (
                   isBranchRun ? (
@@ -196,21 +180,6 @@ export const WorkflowTimeline = ({
                 ) : null}
                 {isBranchRun &&
                 !isPreviewWorkflow(workflow) &&
-                trigger === 'push' ? (
-                  <Badge variant="code" size="sm">
-                    push
-                  </Badge>
-                ) : null}
-                {isBranchRun &&
-                !isPreviewWorkflow(workflow) &&
-                trigger === 'tag' &&
-                branchRun?.metadata?.tag ? (
-                  <Badge variant="code" size="sm">
-                    tag: {branchRun.metadata.tag}
-                  </Badge>
-                ) : null}
-                {isBranchRun &&
-                !isPreviewWorkflow(workflow) &&
                 trigger === 'github_label' &&
                 branchRun?.metadata?.github_label ? (
                   <LabelBadge
@@ -238,38 +207,44 @@ export const WorkflowTimeline = ({
               </span>
             }
             badge={getWorkflowBadge(workflow)}
-            caption={<ID>{workflow?.id}</ID>}
+            caption={isBranchRun ? undefined : <ID>{workflow?.id}</ID>}
             underline={
-              <span className="flex flex-col gap-3 mt-1">
-                {isBranchRun && commit ? (
-                  <BranchRunCommit
-                    status={branchRun?.status ?? workflow?.status?.status}
-                    href={workflowHref}
-                    message={commit.message?.split('\n')[0]}
-                    author={commit.author_name}
-                    avatarUrl={commit.author_avatar_url}
-                    sha={commit.sha}
-                    createdAt={commit.created_at ?? workflow.created_at}
-                  />
-                ) : null}
-                <span className="flex items-center gap-6">
-                  {!commit &&
-                  (branchRun?.head_sha ||
-                    branchRun?.vcs_connection_commit?.sha) ? (
+              isBranchRun ? (
+                <span className="flex flex-col gap-4 mt-2">
+                  {commit ? (
+                    <BranchRunCommit
+                      status={branchRun?.status ?? workflow?.status?.status}
+                      href={workflowHref}
+                      message={commit.message?.split('\n')[0]}
+                      author={commit.author_name}
+                      avatarUrl={commit.author_avatar_url}
+                      sha={commit.sha}
+                      createdAt={commit.created_at ?? workflow.created_at}
+                      className="ml-2 border-l pl-4 py-1"
+                      showStatus={false}
+                    />
+                  ) : branchRun?.head_sha ? (
                     <Text
-                      flex
-                      className="gap-1"
+                      family="mono"
                       variant="subtext"
                       theme="neutral"
+                      className="ml-2 border-l pl-4 py-1"
                     >
-                      <Icon variant="GitCommitIcon" size={12} />
-                      {(
-                        branchRun?.head_sha ||
-                        branchRun?.vcs_connection_commit?.sha ||
-                        ''
-                      ).substring(0, 7)}
+                      {branchRun.head_sha.slice(0, 7)}
                     </Text>
                   ) : null}
+                  {runGraph ? (
+                    <span className="pl-6 pt-1">
+                      <RunDeploymentGraph
+                        installGroupRuns={runGraph.installGroupRuns}
+                        installsById={runGraph.installsById}
+                        orgId={orgId}
+                      />
+                    </span>
+                  ) : null}
+                </span>
+              ) : (
+                <span className="flex items-center gap-6 mt-1">
                   <Text
                     flex
                     className="gap-1"
@@ -314,10 +289,12 @@ export const WorkflowTimeline = ({
                     </Text>
                   ) : null}
                 </span>
-              </span>
+              )
             }
             createdAt={workflow?.created_at}
-            createdBy={createdBy}
+            createdBy={
+              isBranchRun && trigger !== 'manual' ? undefined : createdBy
+            }
             status={workflow?.status?.status}
             title={workflowTitle}
           />
