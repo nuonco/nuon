@@ -8,6 +8,7 @@ export default {
 const mockRepos = [
   {
     id: 1,
+    owner_id: 1,
     name: 'app-configs',
     full_name: 'acme/app-configs',
     private: true,
@@ -18,6 +19,7 @@ const mockRepos = [
   },
   {
     id: 2,
+    owner_id: 1,
     name: 'infra',
     full_name: 'acme/infra',
     private: true,
