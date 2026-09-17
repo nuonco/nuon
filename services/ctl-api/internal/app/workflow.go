@@ -63,6 +63,36 @@ const (
 	WorkflowTypeRecoverHelmRelease WorkflowType = "recover_helm_release"
 )
 
+func AllWorkflowTypes() []WorkflowType {
+	return []WorkflowType{
+		WorkflowTypeProvision,
+		WorkflowTypeDeprovision,
+		WorkflowTypeDeprovisionSandbox,
+		WorkflowTypeManualDeploy,
+		WorkflowTypeInputUpdate,
+		WorkflowTypeDeployComponents,
+		WorkflowTypeTeardownComponent,
+		WorkflowTypeTeardownComponents,
+		WorkflowTypeReprovisionSandbox,
+		WorkflowTypeDriftRunReprovisionSandbox,
+		WorkflowTypeActionWorkflowRun,
+		WorkflowTypeSyncSecrets,
+		WorkflowTypeDriftRun,
+		WorkflowTypeAppBranchesRun,
+		WorkflowTypeAppBranchesConfigRepoUpdate,
+		WorkflowTypeAppBranchesComponentRepoUpdate,
+		WorkflowTypeAppBranchConfigUpdate,
+		WorkflowTypeAppInstallSync,
+		WorkflowTypeReprovision,
+		WorkflowTypeReprovisionStack,
+		WorkflowTypeAppConfigBuild,
+		WorkflowTypeRunbookRun,
+		WorkflowTypeComponentEnabled,
+		WorkflowTypeComponentDisabled,
+		WorkflowTypeRecoverHelmRelease,
+	}
+}
+
 func (i WorkflowType) RequiresLiveInstallRunner() bool {
 	switch i {
 	case WorkflowTypeDeprovision,
@@ -418,6 +448,14 @@ func (i *Workflow) Indexes(db *gorm.DB) []migrations.Index {
 			Name: "idx_install_workflows_org_created_at",
 			Columns: []string{
 				"org_id",
+				"created_at DESC",
+			},
+		},
+		{
+			// admin fleet-wide sweeps for workflows stuck in a given status
+			Name: "idx_install_workflows_status_created_at",
+			Columns: []string{
+				"(status->>'status')",
 				"created_at DESC",
 			},
 		},
