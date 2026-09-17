@@ -13,7 +13,7 @@ linters:
     # - gochecknoinits
     # - gocyclo
     # - goprintffuncname
-    # - govet
+    - govet
     # - ineffassign
     # - nakedret
     # - nolintlint
@@ -57,9 +57,18 @@ linters:
     #       ignored-numbers: 0,1,2,3
     #       ignored-functions: strings.SplitN
     govet:
-      # https://golangci-lint.run/usage/linters/#govet
+      disable-all: true
       enable:
-        - shadow
+        - atomic
+        - bools
+        - buildtag
+        - directive
+        - errorsas
+        - ifaceassert
+        - nilfunc
+        - printf
+        - stringintconv
+        - tests
     lll:
       line-length: 140
     misspell:
