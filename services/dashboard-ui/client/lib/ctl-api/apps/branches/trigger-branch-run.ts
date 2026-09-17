@@ -1,5 +1,5 @@
 import { api } from '@/lib/api'
-import type { TInstallWorkflow, TPreviewRunRequest } from '@/types'
+import type { TAppBranchRun, TPreviewRunRequest } from '@/types'
 
 export type TTriggerBranchRunRequest = {
   config_id?: string
@@ -19,7 +19,7 @@ export const triggerBranchRun = ({
   orgId: string
   request?: TTriggerBranchRunRequest
 }) =>
-  api<TInstallWorkflow>({
+  api<TAppBranchRun>({
     path: `apps/${appId}/branches/${branchId}/runs`,
     orgId,
     method: 'POST',
