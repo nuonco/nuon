@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm, useStore } from '@tanstack/react-form'
 import type { FormValidateOrFn } from '@tanstack/form-core'
 import { Banner } from '@/components/common/Banner'
@@ -23,6 +23,7 @@ import {
   githubSubClaim,
   hasSubCondition,
   type ClaimCondition,
+  type GithubRepoSubjectIds,
   type OIDCFormValues,
   type OIDCPreset,
   type OIDCTrustPolicyMode,
@@ -215,7 +216,11 @@ export const OIDCTrustPolicyFormModal = ({
 
   // Shared by both repo modes: a picked repo and a typed one derive the policy name
   // and the sub claim identically.
-  const applyRepo = (nextRepoFullName: string, branch?: string) => {
+  const applyRepo = (
+    nextRepoFullName: string,
+    branch?: string,
+    subjectIds?: GithubRepoSubjectIds
+  ) => {
     setRepoFullName(nextRepoFullName)
     if (!isNameDirty && !defaultName) {
       form.setFieldValue(
@@ -224,15 +229,39 @@ export const OIDCTrustPolicyFormModal = ({
       )
     }
     if (!isSubDirty && nextRepoFullName && branch) {
-      setSubCondition(githubSubClaim(nextRepoFullName, branch))
+      setSubCondition(githubSubClaim(nextRepoFullName, branch, subjectIds))
     }
   }
 
-  const selectRepo = (nextRepoFullName: string) =>
-    applyRepo(
-      nextRepoFullName,
-      repos.find((repo) => repo.full_name === nextRepoFullName)?.default_branch
-    )
+  const subjectIdsForRepo = (
+    fullName: string
+  ): GithubRepoSubjectIds | undefined => {
+    const match = repos.find((repo) => repo.full_name === fullName)
+    return match ? { ownerId: match.owner_id, repoId: match.id } : undefined
+  }
+
+  const selectRepo = (nextRepoFullName: string) => {
+    const branch = repos.find(
+      (repo) => repo.full_name === nextRepoFullName
+    )?.default_branch
+    applyRepo(nextRepoFullName, branch, subjectIdsForRepo(nextRepoFullName))
+  }
+
+  const hasAppliedInitialSubjectIds = useRef(false)
+
+  useEffect(() => {
+    if (
+      repoSource !== 'connections' ||
+      !initialRepoFullName ||
+      hasAppliedInitialSubjectIds.current
+    ) {
+      return
+    }
+    const subjectIds = subjectIdsForRepo(initialRepoFullName)
+    if (!subjectIds) return
+    hasAppliedInitialSubjectIds.current = true
+    applyRepo(initialRepoFullName, initialRepoDefaultBranch, subjectIds)
+  }, [repos])
 
   return (
     <Modal
