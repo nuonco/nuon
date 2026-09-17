@@ -24,6 +24,7 @@ import (
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					runner_id				query	string	false	"filter by runner ID"
 // @Param					branches				query	string	false	"filter installs by branch name (comma-separated; use __none__ for installs with no branch)"
+// @Param					cloud_platform				query	string	false	"filter installs by cloud platform (comma-separated: aws, azure, gcp, unknown)"
 // @Param					include_components	query	bool	false	"include install components"	Default(true)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -50,9 +51,10 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	runnerID := ctx.Query("runner_id")
 	branches := ctx.Query("branches")
+	cloudPlatforms := parseCloudPlatformsFilter(ctx.Query("cloud_platform"))
 	includeComponents := ctx.Query("include_components") != "false"
 
-	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branches, includeComponents)
+	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branches, includeComponents, cloudPlatforms)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs for org %s: %w", org.ID, err))
 		return
@@ -81,7 +83,7 @@ func parseBranchesFilter(raw string) (names []string, none bool) {
 	return names, none
 }
 
-func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branches string, includeComponents bool) ([]app.Install, error) {
+func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branches string, includeComponents bool, cloudPlatforms []app.CloudPlatform) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -146,6 +148,9 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 	case branchNone:
 		tx = tx.Where("(" + branchCol + " IS NULL OR " + branchCol + " = '')")
 	}
+
+	tx = applyCloudPlatformFilter(tx, s.db, cloudPlatforms)
+
 	res := tx.Find(&installs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get org installs: %w", res.Error)
