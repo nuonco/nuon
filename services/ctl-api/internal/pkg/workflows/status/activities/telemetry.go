@@ -7,38 +7,81 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
-// logStepError is the authoritative step-error surface: a step can fail and park
-// (awaiting retry) without its signal returning, so the lifecycle hook never sees
-// a terminal outcome — the error only exists on the step's status.
-func (a *Activities) logStepError(ctx context.Context, step app.WorkflowStep, status app.CompositeStatus) {
-	if status.Status != app.StatusError {
+func (a *Activities) logStepStatus(ctx context.Context, step app.WorkflowStep, previous, status app.CompositeStatus) {
+	if previous.Status == status.Status {
 		return
 	}
-	cctx.GetLogger(ctx, a.l).Error("flow telemetry",
-		zap.String("flow_event", "step.errored"),
+
+	var flowEvent string
+	switch status.Status {
+	case app.StatusError:
+		flowEvent = "step.errored"
+	case app.StatusSuccess:
+		flowEvent = "step.completed"
+	default:
+		return
+	}
+
+	telemetry := cctx.WorkflowTelemetryFromContext(ctx)
+	fields := []zap.Field{
+		zap.String("flow_event", flowEvent),
+		zap.String("org_id", step.OrgID),
+		zap.String("org_name", telemetry.OrgName),
 		zap.String("workflow_id", step.InstallWorkflowID),
+		zap.String("workflow_type", telemetry.WorkflowType),
 		zap.String("step_id", step.ID),
 		zap.String("step_name", step.Name),
+		zap.String("owner_id", step.OwnerID),
+		zap.String("owner_type", step.OwnerType),
+		zap.Int("step_idx", step.Idx),
+		zap.Int("group_idx", step.GroupIdx),
+		zap.Int("group_retry_idx", step.GroupRetryIdx),
+		zap.Int("retry_index", step.RetryIndex),
 		zap.String("status", string(status.Status)),
-		zap.String("error", status.StatusHumanDescription),
-	)
-}
+		zap.Any("status_metadata", status.Metadata),
+	}
+	if step.OwnerType == plugins.TableNameOf[app.Install]() {
+		fields = append(fields,
+			zap.String("install_id", step.OwnerID),
+			zap.String("install_name", telemetry.InstallName),
+		)
+	}
+	if status.StatusHumanDescription != "" {
+		fields = append(fields, zap.String("status_description", status.StatusHumanDescription))
+	}
 
-func (a *Activities) logWorkflowError(ctx context.Context, wf app.Workflow, status app.CompositeStatus) {
-	if status.Status != app.StatusError {
+	l := cctx.GetLogger(ctx, a.l)
+	if status.Status == app.StatusError {
+		l.Error("flow telemetry", append(fields, zap.String("error", status.StatusHumanDescription))...)
 		return
 	}
+	l.Info("flow telemetry", fields...)
+}
+
+func (a *Activities) logWorkflowError(ctx context.Context, wf app.Workflow, previous, status app.CompositeStatus) {
+	if status.Status != app.StatusError || previous.Status == status.Status {
+		return
+	}
+	telemetry := cctx.WorkflowTelemetryFromContext(ctx)
 	fields := []zap.Field{
 		zap.String("flow_event", "workflow.failed"),
+		zap.String("org_id", wf.OrgID),
+		zap.String("org_name", telemetry.OrgName),
 		zap.String("workflow_id", wf.ID),
 		zap.String("workflow_type", string(wf.Type)),
+		zap.String("owner_id", wf.OwnerID),
+		zap.String("owner_type", wf.OwnerType),
 		zap.String("status", string(status.Status)),
 		zap.String("error", status.StatusHumanDescription),
 	}
-	if wf.OwnerType == "installs" {
-		fields = append(fields, zap.String("install_id", wf.OwnerID))
+	if wf.OwnerType == plugins.TableNameOf[app.Install]() {
+		fields = append(fields,
+			zap.String("install_id", wf.OwnerID),
+			zap.String("install_name", telemetry.InstallName),
+		)
 	}
 	cctx.GetLogger(ctx, a.l).Error("flow telemetry", fields...)
 }
