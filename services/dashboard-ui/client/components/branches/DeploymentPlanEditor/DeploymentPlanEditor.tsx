@@ -261,9 +261,10 @@ export const DeploymentPlanEditor = ({
 
           {availableInstalls.length === 0 && (
             <Banner theme="info">
-              This app has no installs yet. Groups that match on labels or take
-              all installs pick them up as they are created — a group with a
-              hand-picked list needs installs to exist first.
+              No installs belong to this branch yet. Groups that match on labels
+              or take all installs pick them up as installs join the branch — a
+              group with a hand-picked list needs installs here first. To bring
+              an install from another branch, use Change branch on the install.
             </Banner>
           )}
 
