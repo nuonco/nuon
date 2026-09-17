@@ -4,6 +4,7 @@ import type { TLogFiltersProps, ViewMode } from '@/hooks/use-log-filters'
 import { LogFiltersDropdown } from './LogFiltersDropdown'
 import { LogSearch } from './LogSearch'
 import { LogSeverityDropdown } from './LogSeverityDropdown'
+import { LogSortButton } from './LogSortButton'
 import { DownloadLogsButton } from '../DownloadLogs'
 
 const viewModeOptions: { value: ViewMode; label: React.ReactNode; ariaLabel: string; title: string }[] = [
@@ -41,6 +42,7 @@ export const LogFilters = ({ filters }: LogFiltersProps) => {
       <LogSearch filters={filters} />
 
       <div className="flex items-center gap-2">
+        <LogSortButton filters={filters} />
         <LogSeverityDropdown filters={filters} />
         <LogFiltersDropdown filters={filters} />
         <ToggleButton
