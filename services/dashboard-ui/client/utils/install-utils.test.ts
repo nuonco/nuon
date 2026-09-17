@@ -124,6 +124,9 @@ describe('install-utils', () => {
       expect(getInstallRunnerStatusTitle('awaiting-install-stack-run')).toBe(
         'Runner is awaiting install stack run'
       )
+      expect(getInstallRunnerStatusTitle('awaiting-heartbeat')).toBe(
+        'Runner is awaiting its first heartbeat'
+      )
     })
 
     test('should return unknown status for unrecognized runner statuses', () => {
