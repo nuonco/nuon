@@ -45,6 +45,10 @@ type AppBranch struct {
 	LatestRun *AppBranchRun `json:"latest_run,omitempty" gorm:"-" temporaljson:"latest_run,omitzero,omitempty"`
 }
 
+func (a *AppBranch) TableName() string {
+	return "app_branches"
+}
+
 func (a *AppBranch) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{

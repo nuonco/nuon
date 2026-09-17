@@ -63,6 +63,37 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 		}
 	}
 
+	if h.queueSignal != nil {
+		signalCtx := h.queueSignal.SignalContext
+		telemetry := signalCtx.WorkflowTelemetry
+		if telemetry.OrgID != "" {
+			event.OrgID = telemetry.OrgID
+		}
+		if telemetry.OrgName != "" {
+			event.OrgName = telemetry.OrgName
+		}
+		if telemetry.WorkflowID != "" {
+			event.WorkflowID = telemetry.WorkflowID
+		}
+		if telemetry.WorkflowType != "" {
+			event.WorkflowType = telemetry.WorkflowType
+		}
+		if telemetry.OwnerID != "" {
+			event.OwnerID = telemetry.OwnerID
+		}
+		if telemetry.OwnerType != "" {
+			event.OwnerType = telemetry.OwnerType
+		}
+		if telemetry.OwnerName != "" {
+			event.OwnerName = telemetry.OwnerName
+		} else if telemetry.InstallName != "" {
+			event.OwnerName = telemetry.InstallName
+		}
+		if event.InstallID == nil && telemetry.InstallID != "" {
+			event.InstallID = &telemetry.InstallID
+		}
+	}
+
 	return event
 }
 
