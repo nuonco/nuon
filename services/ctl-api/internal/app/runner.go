@@ -24,6 +24,9 @@ const (
 	RunnerStatusReprovisioning          RunnerStatus = "reprovisioning"
 	RunnerStatusOffline                 RunnerStatus = "offline"
 	RunnerStatusAwaitingInstallStackRun RunnerStatus = "awaiting-install-stack-run"
+	// RunnerStatusAwaitingHeartbeat is set once the install stack has been applied
+	// and the control plane is waiting for the runner process to report in.
+	RunnerStatusAwaitingHeartbeat RunnerStatus = "awaiting-heartbeat"
 
 	// RunnerStatusDisabled is set when the install stack was applied with
 	// runner_enabled = false. The runner does not exist, so it sends no
@@ -49,6 +52,10 @@ func (r RunnerStatus) Code() int {
 		return 201
 	case RunnerStatusDisabled:
 		return 202
+	case RunnerStatusAwaitingInstallStackRun:
+		return 203
+	case RunnerStatusAwaitingHeartbeat:
+		return 204
 
 		// 3xx statuses are for tear downs
 	case RunnerStatusDeprovisioning:

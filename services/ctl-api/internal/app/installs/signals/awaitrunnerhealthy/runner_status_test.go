@@ -9,10 +9,13 @@ import (
 func TestRunnerCannotBecomeHealthy(t *testing.T) {
 	tests := map[app.RunnerStatus]bool{
 		app.RunnerStatusOffline:  true,
-		app.RunnerStatusError:    false,
+		app.RunnerStatusError:    true,
 		app.RunnerStatusActive:   false,
 		app.RunnerStatusPending:  false,
 		app.RunnerStatusDisabled: false,
+
+		app.RunnerStatusAwaitingInstallStackRun: false,
+		app.RunnerStatusAwaitingHeartbeat:       false,
 	}
 
 	for status, expected := range tests {
