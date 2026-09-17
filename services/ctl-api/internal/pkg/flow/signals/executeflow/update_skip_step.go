@@ -26,10 +26,10 @@ type SkipStepResponse struct {
 // conductor to reach its settled park after a terminal error.
 const skipConductorParkWait = 30 * time.Second
 
-// skipParkWaitVersion gates the wait-for-parked-conductor behavior so
-// in-flight workflows replaying pre-change history keep the old command
-// sequence (the wait issues a timer command).
-const skipParkWaitVersion = "skip-step-park-wait"
+// skipStepFlowOwnedVersion gates the flow-owned skip path (flow lookup, park
+// wait, direct status update) so an update handler that was in flight when
+// the worker rolled keeps replaying the group-forwarded command sequence.
+const skipStepFlowOwnedVersion = "skip-step-flow-owned"
 
 // skipStepHandler skips an errored step.
 //
@@ -58,6 +58,10 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
 	}
 
+	if workflow.GetVersion(ctx, skipStepFlowOwnedVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return s.skipStepLegacy(ctx, req, step)
+	}
+
 	if s.cancelRequested {
 		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
 	}
@@ -67,6 +71,7 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		return nil, fmt.Errorf("unable to get workflow %s: %w", s.WorkflowID, err)
 	}
 	if flw.Status.Status == app.StatusCancelled {
+		s.cancelRequested = true
 		return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
 	}
 
@@ -100,19 +105,22 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 	// by then checkRetryable() has already read the errored step, so flipping
 	// it to user-skipped cannot race the park-vs-terminal decision.
 	if !s.awaitingResume {
-		if workflow.GetVersion(ctx, skipParkWaitVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-			woke, err := workflow.AwaitWithTimeout(ctx, skipConductorParkWait, func() bool {
-				return s.awaitingResume || s.cancelRequested
-			})
-			if err != nil {
-				return nil, fmt.Errorf("unable to wait for workflow %s to settle: %w", s.WorkflowID, err)
-			}
-			if !woke && !s.awaitingResume {
-				return nil, fmt.Errorf("workflow %s is not awaiting a skip", s.WorkflowID)
-			}
-			if s.cancelRequested {
-				return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
-			}
+		// A fresh handler run on a terminal queue signal never re-drives the
+		// conductor unless the host is resident, so there is nothing to wait for.
+		if !s.Resident && !s.executeStarted {
+			return nil, fmt.Errorf("workflow %s is no longer running and cannot be skipped", s.WorkflowID)
+		}
+		woke, err := workflow.AwaitWithTimeout(ctx, skipConductorParkWait, func() bool {
+			return s.awaitingResume || s.cancelRequested
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to wait for workflow %s to settle: %w", s.WorkflowID, err)
+		}
+		if !woke && !s.awaitingResume {
+			return nil, fmt.Errorf("workflow %s is not awaiting a skip", s.WorkflowID)
+		}
+		if s.cancelRequested {
+			return nil, fmt.Errorf("workflow %s is cancelled", s.WorkflowID)
 		}
 	}
 
@@ -143,5 +151,22 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 	return &SkipStepResponse{
 		WorkflowID: s.WorkflowID,
 		Skippable:  true,
+	}, nil
+}
+
+// skipStepLegacy is the pre-skipStepFlowOwnedVersion command sequence, kept
+// only so in-flight histories replay deterministically.
+func (s *Signal) skipStepLegacy(ctx workflow.Context, req SkipStepRequest, step *app.WorkflowStep) (*SkipStepResponse, error) {
+	resp, err := workflowactivities.AwaitForwardSkipStepToGroup(ctx, workflowactivities.ForwardSkipStepToGroupRequest{
+		StepID:      req.StepID,
+		StepGroupID: step.WorkflowStepGroupID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to forward skip-step to group: %w", err)
+	}
+
+	return &SkipStepResponse{
+		WorkflowID: s.WorkflowID,
+		Skippable:  resp.Skippable,
 	}, nil
 }

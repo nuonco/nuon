@@ -24,6 +24,15 @@ type ForwardCreateStepRetryResponse struct {
 	Directive string `json:"directive"`
 }
 
+const (
+	// createStepRetryBudget leaves headroom under the 30s start-to-close so the
+	// activity returns its own error instead of being timed out by Temporal.
+	createStepRetryBudget = 25 * time.Second
+	// createStepRetryMinRemaining stops issuing a new attempt that could not
+	// plausibly finish before the budget expires.
+	createStepRetryMinRemaining = time.Second
+)
+
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *Activities) ForwardCreateStepRetry(ctx context.Context, req ForwardCreateStepRetryRequest) (*ForwardCreateStepRetryResponse, error) {
@@ -47,15 +56,20 @@ func (a *Activities) ForwardCreateStepRetry(ctx context.Context, req ForwardCrea
 	// and that run accepts updates before run() registers its handlers — under
 	// load the first workflow task can complete inside that window and the
 	// update is rejected with "unknown update". The run registers handlers
-	// moments later, so retry the send until it lands. Stay inside the 30s
-	// start-to-close budget.
-	deadline := time.Now().Add(20 * time.Second)
+	// moments later, so retry the send until it lands.
+	//
+	// Every attempt shares one deadline inside the 30s start-to-close budget so
+	// a blocked send fails here with a concrete error instead of Temporal
+	// timing out and re-running the whole activity.
+	deadline := time.Now().Add(createStepRetryBudget)
+	ctx, cancel := context.WithDeadline(ctx, deadline)
+	defer cancel()
 	for {
 		retryable, err := a.sendCreateStepRetryUpdate(ctx, &qs, req.StepID, &result)
 		if err == nil {
 			break
 		}
-		if !retryable || time.Now().After(deadline) || ctx.Err() != nil {
+		if !retryable || ctx.Err() != nil || time.Until(deadline) < createStepRetryMinRemaining {
 			return nil, err
 		}
 		select {
