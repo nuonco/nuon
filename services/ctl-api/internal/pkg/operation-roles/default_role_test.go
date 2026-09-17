@@ -30,7 +30,7 @@ func TestDefaultRoleForWorkflowType(t *testing.T) {
 		{app.WorkflowTypeDeprovisionSandbox, "deprovision"},
 		{app.WorkflowTypeManualDeploy, "maintenance"},
 		{app.WorkflowTypeInputUpdate, "maintenance"},
-		{app.WorkflowTypeDeployComponents, "maintenance"},
+		{app.WorkflowTypeDeployComponents, "provision"},
 		{app.WorkflowTypeTeardownComponent, "maintenance"},
 		{app.WorkflowTypeTeardownComponents, "deprovision"},
 		{app.WorkflowTypeActionWorkflowRun, "maintenance"},
