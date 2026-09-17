@@ -3,6 +3,7 @@ import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import {
   InstallForm,
   useInstallForm,
+  type InstallFormApi,
   type InstallFormValues,
 } from '@/components/installs/forms/InstallForm'
 import { ResumeDraftModal } from '@/components/installs/forms/shared/ResumeDraftModal'
@@ -17,6 +18,7 @@ import type {
 export interface ICreateFormTriggerState {
   canSubmit: boolean
   submit: () => void
+  form?: InstallFormApi
 }
 
 interface ICreateInstallFormFields {
@@ -84,6 +86,7 @@ export const CreateInstallFormFields = ({
     onStateChange({
       canSubmit: canSubmit && !isValidating,
       submit: () => form.handleSubmit(),
+      form,
     })
   }, [canSubmit, isValidating, form, onStateChange])
 

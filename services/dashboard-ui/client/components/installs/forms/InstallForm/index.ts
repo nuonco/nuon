@@ -1,4 +1,5 @@
 export { InstallForm, type IInstallForm } from './InstallForm'
+export { StackOnlyCheckbox } from './StackOnlyCheckbox'
 export { useInstallForm, type InstallFormApi } from './useInstallForm'
 export {
   buildInstallSchema,
