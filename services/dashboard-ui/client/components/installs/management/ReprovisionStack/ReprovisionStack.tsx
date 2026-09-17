@@ -1,21 +1,17 @@
-import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
-import { RoleSelector } from '@/components/roles/RoleSelector'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 
 interface IReprovisionStackModal extends Omit<IModal, 'onSubmit'> {
-  installId: string
   installName: string
   isPending: boolean
   error: any
-  onSubmit: (params: { selectedRole: string }) => void
+  onSubmit: () => void
   onClose: () => void
 }
 
 export const ReprovisionStackModal = ({
-  installId,
   installName,
   isPending,
   error,
@@ -23,8 +19,6 @@ export const ReprovisionStackModal = ({
   onClose,
   ...props
 }: IReprovisionStackModal) => {
-  const [selectedRole, setSelectedRole] = useState<string>('')
-
   return (
     <Modal
       heading="Reprovision stack?"
@@ -41,7 +35,7 @@ export const ReprovisionStackModal = ({
           </span>
         ),
         disabled: isPending,
-        onClick: () => onSubmit({ selectedRole }),
+        onClick: onSubmit,
         variant: 'primary' as const,
       }}
       onClose={onClose}
@@ -64,14 +58,6 @@ export const ReprovisionStackModal = ({
             while the runner is recreated.
           </Text>
         </Banner>
-
-        <RoleSelector
-          installId={installId}
-          operationType="reprovision"
-          value={selectedRole}
-          onChange={setSelectedRole}
-          name="role"
-        />
       </div>
     </Modal>
   )
