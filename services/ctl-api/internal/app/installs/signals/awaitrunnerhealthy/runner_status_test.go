@@ -9,7 +9,7 @@ import (
 func TestRunnerCannotBecomeHealthy(t *testing.T) {
 	tests := map[app.RunnerStatus]bool{
 		app.RunnerStatusOffline:  true,
-		app.RunnerStatusError:    true,
+		app.RunnerStatusError:    false,
 		app.RunnerStatusActive:   false,
 		app.RunnerStatusPending:  false,
 		app.RunnerStatusDisabled: false,

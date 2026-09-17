@@ -23,7 +23,8 @@ const SignalType signal.SignalType = "await-runner-healthy"
 // activities, so the disabled-runner short circuit must not apply on replay.
 const skipDisabledRunnerVersion = "await-runner-healthy-skip-disabled-runner-v1"
 
-// Offline or error runners will never become healthy during the poll window.
+// Offline runners will never become healthy during the poll window. "error" is
+// excluded because install-stack-run writes it as a placeholder before the first heartbeat.
 // Old histories that already started the poll loop must not be interrupted.
 const failFastUnhealthyRunnerVersion = "await-runner-healthy-failfast-unhealthy-v1"
 
@@ -171,5 +172,5 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func runnerCannotBecomeHealthy(status app.RunnerStatus) bool {
-	return status == app.RunnerStatusOffline || status == app.RunnerStatusError
+	return status == app.RunnerStatusOffline
 }
