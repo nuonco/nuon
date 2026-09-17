@@ -15,6 +15,7 @@ const navGroups = [
       { path: '/orgs', label: 'Orgs' },
       { path: '/accounts', label: 'Accounts' },
       { path: '/installs', label: 'Installs' },
+      { path: '/app-branches', label: 'App branches' },
       { path: '/runners/all', label: 'Runners' },
       { path: '/runner-uptime', label: 'Runner uptime' },
     ],

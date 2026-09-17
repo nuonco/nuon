@@ -5,6 +5,7 @@ import { getLogStreams } from '@/lib/admin-api'
 import { SearchInput } from '@/components/common/SearchInput'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { OwnerLink } from '@/components/common/OwnerLink'
 import { formatDate, truncateId } from '@/utils/format'
 
 export const LogStreams = () => {
@@ -52,8 +53,7 @@ export const LogStreams = () => {
                   </Link>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                  <span className="font-mono text-xs">{truncateId(ls.owner_id)}</span>
-                  <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">({ls.owner_type})</span>
+                  <OwnerLink ownerId={ls.owner_id} ownerType={ls.owner_type} />
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(ls.created_at)}</td>
               </tr>
