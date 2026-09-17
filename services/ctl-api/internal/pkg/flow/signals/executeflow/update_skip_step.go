@@ -5,8 +5,11 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
@@ -134,6 +137,12 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		return nil, fmt.Errorf("unable to mark step %s as skipped: %w", req.StepID, err)
 	}
 
+	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
+		if sg, ok := step.QueueSignal.Signal.(signal.SignalWithSkipGroup); ok && sg.SkipGroup() {
+			s.discardRemainingGroupSteps(ctx, step)
+		}
+	}
+
 	// resumeRequested must be set last. The paused Execute loop acts on this
 	// flag the instant it flips, and reads the fields written just above it.
 	// The DB lookup above pauses this handler long enough for Execute to run,
@@ -152,6 +161,45 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		WorkflowID: s.WorkflowID,
 		Skippable:  true,
 	}, nil
+}
+
+// discardRemainingGroupSteps is the flow-owned counterpart of the group's
+// StepSkipGroup handling. The group loop that would have consumed that
+// directive has already exited on a failed run, so the steps after the skipped
+// one are discarded here and the resumed group finds nothing left to run.
+func (s *Signal) discardRemainingGroupSteps(ctx workflow.Context, skipped *app.WorkflowStep) {
+	l, _ := log.WorkflowLogger(ctx)
+
+	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+		FlowID: s.WorkflowID,
+	})
+	if err != nil {
+		if l != nil {
+			l.Warn("skip-group: unable to get flow steps", zap.String("step_id", skipped.ID), zap.Error(err))
+		}
+		return
+	}
+
+	for _, st := range steps {
+		sameGroup := st.GroupIdx == skipped.GroupIdx
+		if skipped.WorkflowStepGroupID != "" {
+			sameGroup = st.WorkflowStepGroupID == skipped.WorkflowStepGroupID
+		}
+		if !sameGroup || st.Idx <= skipped.Idx || isStepTerminal(st.Status.Status) {
+			continue
+		}
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: st.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusDiscarded,
+				Metadata: map[string]any{
+					"reason": fmt.Sprintf("group step %s triggered stop", skipped.ID),
+				},
+			},
+		}); err != nil && l != nil {
+			l.Warn("skip-group: failed to discard remaining step", zap.String("step_id", st.ID), zap.Error(err))
+		}
+	}
 }
 
 // skipStepLegacy is the pre-skipStepFlowOwnedVersion command sequence, kept
