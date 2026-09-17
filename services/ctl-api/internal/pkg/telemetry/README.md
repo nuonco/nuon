@@ -188,6 +188,16 @@ shutdown. The default set has 9–10 scalar series and no histograms. GC pauses/
 process CPU and RSS are not included. `OTEL_GO_X_DEPRECATED_RUNTIME_METRICS=true`
 additionally enables the library's deprecated metrics; leave it unset for this set.
 
+### Policy evaluations
+
+Workers export `nuon.policy.evaluation.count` (counter) and
+`nuon.policy.evaluation.duration` (histogram, seconds) per policy/input activity
+attempt. Successful evaluations have `outcome=success` and `decision=pass|warn|deny`
+(deny takes precedence); evaluator failures have `outcome=error` and bounded
+`error.type=policy_validation|input_validation|deny_evaluation|warn_evaluation`.
+Retries count separately; series are absent until observed. No policy or entity
+IDs, policy contents, or error messages are dimensions. Recording adds no queries.
+
 ## Failure behavior
 
 Requests update in-memory aggregations; network export runs periodically outside
@@ -209,6 +219,15 @@ failure while the process lives, but intermediate timing resolution is lost;
 process loss can lose unexported data. Collector buffering and destination routing
 are configured separately. Use missing-data alerts and independent availability
 probes; an API cannot report its own total outage through this export path.
+
+## Runner-api polling
+
+Runner-api polling exports `nuon.runner.job_tail.sessions` and `.probes` by bounded
+`outcome`, `.notification.wakes`, and `.listener.connected`, `.listener.failures`,
+and `.listener.notifications`. Sessions begin after validation; empty timeouts
+are healthy idle results. Probe retries count separately. Listener state is
+observed continuously, including idle periods; routine rotation and shutdown do
+not count as failures. These metrics describe attempts, not unique jobs or claims.
 
 ## Testing
 
