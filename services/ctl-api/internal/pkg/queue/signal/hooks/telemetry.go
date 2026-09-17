@@ -6,7 +6,9 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -142,7 +144,7 @@ func (h *TelemetrySignalLifecycleHook) emit(ctx context.Context, flowEvent strin
 		zap.String("signal_type", string(event.SignalType)),
 		zap.String("phase", string(event.Phase)),
 	}
-	if event.OwnerType == "installs" {
+	if event.OwnerType == plugins.TableNameOf[app.Install]() {
 		fields = append(fields, zap.String("install_name", event.OwnerName))
 	}
 	if event.ComponentID != nil {

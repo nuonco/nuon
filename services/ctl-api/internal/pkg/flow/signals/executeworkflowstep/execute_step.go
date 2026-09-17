@@ -26,11 +26,8 @@ import (
 func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	defer func() { s.finished = true }()
 
-	ctx = cctx.SetWorkflowTypeWorkflowContext(ctx, s.WorkflowType)
-	ctx = cctx.SetOrgNameWorkflowContext(ctx, s.OrgName)
-	if s.OwnerType == "installs" {
-		ctx = cctx.SetInstallNameWorkflowContext(ctx, s.OwnerName)
-	}
+	ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, s.workflowTelemetry())
+	workflowType := cctx.WorkflowTelemetryFromContext(ctx).WorkflowType
 
 	if s.mw != nil && s.v != nil {
 		tmw, metricsErr := tmetrics.New(s.v, tmetrics.WithMetricsWriter(s.mw))
@@ -46,7 +43,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 			return
 		}
 		tags := metrics.ToTags(map[string]string{
-			"workflow_type":  s.WorkflowType,
+			"workflow_type":  workflowType,
 			"owner_type":     s.OwnerType,
 			"step_name":      stepName,
 			"execution_type": executionType,

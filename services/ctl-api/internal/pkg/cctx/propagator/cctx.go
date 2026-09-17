@@ -53,13 +53,11 @@ func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.He
 	logStream, _ := cctx.GetLogStreamWorkflow(ctx)
 
 	payload, err := s.dataConverter.ToPayload(Payload{
-		OrgID:        orgID,
-		AccountID:    acctID,
-		TraceID:      traceID,
-		WorkflowType: cctx.WorkflowTypeFromContext(ctx),
-		OrgName:      cctx.OrgNameFromContext(ctx),
-		InstallName:  cctx.InstallNameFromContext(ctx),
-		LogStream:    logStream,
+		OrgID:             orgID,
+		AccountID:         acctID,
+		TraceID:           traceID,
+		WorkflowTelemetry: cctx.WorkflowTelemetryFromContext(ctx),
+		LogStream:         logStream,
 	})
 	if err != nil {
 		return err
@@ -97,9 +95,7 @@ func (s *propagator) Extract(ctx context.Context, reader workflow.HeaderReader) 
 	ctx = cctx.SetAccountIDContext(ctx, payload.AccountID)
 	ctx = cctx.SetOrgIDContext(ctx, payload.OrgID)
 	ctx = cctx.SetTraceIDContext(ctx, payload.TraceID)
-	ctx = cctx.SetWorkflowTypeContext(ctx, payload.WorkflowType)
-	ctx = cctx.SetOrgNameContext(ctx, payload.OrgName)
-	ctx = cctx.SetInstallNameContext(ctx, payload.InstallName)
+	ctx = cctx.SetWorkflowTelemetryContext(ctx, payload.WorkflowTelemetry)
 
 	if payload.LogStream != nil {
 		ctx = cctx.SetLogStreamContext(ctx, payload.LogStream)
@@ -118,9 +114,7 @@ func (s *propagator) ExtractToWorkflow(ctx workflow.Context, reader workflow.Hea
 	ctx = cctx.SetAccountIDWorkflowContext(ctx, payload.AccountID)
 	ctx = cctx.SetOrgIDWorkflowContext(ctx, payload.OrgID)
 	ctx = cctx.SetTraceIDWorkflowContext(ctx, payload.TraceID)
-	ctx = cctx.SetWorkflowTypeWorkflowContext(ctx, payload.WorkflowType)
-	ctx = cctx.SetOrgNameWorkflowContext(ctx, payload.OrgName)
-	ctx = cctx.SetInstallNameWorkflowContext(ctx, payload.InstallName)
+	ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, payload.WorkflowTelemetry)
 
 	if payload.LogStream != nil {
 		ctx = cctx.SetLogStreamWorkflowContext(ctx, payload.LogStream)

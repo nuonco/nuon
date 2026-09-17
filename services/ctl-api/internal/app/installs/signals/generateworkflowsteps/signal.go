@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -83,7 +84,7 @@ func (s *Signal) LifecycleContext() qsignal.SignalLifecycleContext {
 		OwnerType:  s.OwnerType,
 		OwnerName:  s.OwnerName,
 	}
-	if s.OwnerType == "installs" && s.OwnerID != "" {
+	if s.OwnerType == plugins.TableNameOf[app.Install]() && s.OwnerID != "" {
 		lc.InstallID = &s.OwnerID
 	}
 	return lc
@@ -116,11 +117,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.done = true
 		return s.err
 	}
-	ctx = cctx.SetWorkflowTypeWorkflowContext(ctx, string(flw.Type))
-	ctx = cctx.SetOrgNameWorkflowContext(ctx, flw.Org.Name)
-	if flw.OwnerType == "installs" {
-		ctx = cctx.SetInstallNameWorkflowContext(ctx, flw.OwnerName)
+	telemetry := cctx.WorkflowTelemetry{
+		OrgID:        flw.OrgID,
+		OrgName:      flw.Org.Name,
+		WorkflowID:   flw.ID,
+		WorkflowType: string(flw.Type),
+		OwnerID:      s.OwnerID,
+		OwnerType:    flw.OwnerType,
+		OwnerName:    flw.OwnerName,
 	}
+	if flw.OwnerType == plugins.TableNameOf[app.Install]() {
+		telemetry.InstallID = s.OwnerID
+		telemetry.InstallName = flw.OwnerName
+	}
+	ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, telemetry)
 
 	defer func() {
 		if ctx.Err() == nil {

@@ -90,6 +90,10 @@ type App struct {
 	// VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`
 }
 
+func (a *App) TableName() string {
+	return "apps"
+}
+
 func (a *App) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
