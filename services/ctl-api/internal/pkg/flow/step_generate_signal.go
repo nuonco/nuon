@@ -156,6 +156,13 @@ func enqueueGenerateStepsSignal(ctx workflow.Context, cfg StepConfig, flw *app.W
 		setter.SetWorkflowID(flw.ID)
 	}
 
+	type lifecycleIdentitySetter interface {
+		SetLifecycleIdentity(orgID, orgName, ownerID, ownerName string)
+	}
+	if setter, ok := flw.GenerateStepsSignal.Signal.(lifecycleIdentitySetter); ok {
+		setter.SetLifecycleIdentity(flw.OrgID, flw.Org.Name, cfg.OwnerID, flw.OwnerName)
+	}
+
 	// Use the dedicated generate-steps queue if configured, otherwise fall back
 	// to the target queue for backward compatibility with existing installs.
 	queueName := cfg.GenerateStepsQueueName
