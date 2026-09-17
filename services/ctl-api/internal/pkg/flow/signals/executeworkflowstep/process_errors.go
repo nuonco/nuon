@@ -200,13 +200,16 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			return err
 		}
 		if !parked {
+			abandonedDesc := abandonedHumanDescription(stepErr)
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: step.ID,
 				Status: app.CompositeStatus{
 					Status:                 app.StatusError,
-					StatusHumanDescription: "step abandoned: no retry or skip received",
+					StatusHumanDescription: abandonedDesc,
+					CompositeError:         stepCE,
 					Metadata: map[string]any{
-						"abandoned": true,
+						"abandoned":      true,
+						"original_error": stepErr.Error(),
 					},
 				},
 			}); err != nil {
@@ -215,7 +218,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
 				StepID:            step.ID,
 				Status:            app.StatusError,
-				StatusDescription: "step abandoned: no retry or skip received",
+				StatusDescription: abandonedDesc,
 			}); err != nil {
 				return errors.Wrap(err, "unable to update step target status for abandoned step")
 			}
