@@ -7,6 +7,7 @@ import { JsonViewer } from '@/components/common/JsonViewer'
 import { StatusHistory } from '@/components/common/StatusHistory'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { OwnerLink } from '@/components/common/OwnerLink'
 import { formatDate, formatDuration, truncateId } from '@/utils/format'
 
 function getStatus(s: any): string {
@@ -376,8 +377,7 @@ export const WorkflowDetail = () => {
 
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
           <span>
-            Owner: <Link to={`/installs/${wf?.owner_id}`} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">{truncateId(wf?.owner_id)}</Link>
-            <span className="text-gray-400 dark:text-gray-500 ml-1">({wf?.owner_type})</span>
+            Owner: <OwnerLink ownerId={wf?.owner_id} ownerType={wf?.owner_type} />
           </span>
           {wf?.created_by?.email && (
             <span>
