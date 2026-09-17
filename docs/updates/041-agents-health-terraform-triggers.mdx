@@ -29,8 +29,8 @@ Find out a customer's install is broken before they tell you.
 nuon installs health --labels tier:canary
 ```
 
-Live status for every resource each component manages, [debounced alerts](/guides/component-health#alerting)
-to Slack and webhooks, and 90 days of uptime history per install.
+Live status for every resource each component manages, [alerts to Slack](/guides/component-health#alerting),
+and 90 days of uptime history per install.
 
 <div style={{
   backgroundImage: 'url(/images/screenshot-backdrop.png)',
@@ -71,8 +71,7 @@ module "aws_stack" {
 ```
 
 [Published modules for AWS, Azure, and GCP](/guides/provision-stacks-with-terraform-module), each
-authenticated with a service account scoped to that one install — reviewed and applied by their
-platform team like any other Terraform.
+authenticated with a service account scoped to that one install.
 
 Read more at [Provision stacks with a Terraform module](/guides/provision-stacks-with-terraform-module).
 
