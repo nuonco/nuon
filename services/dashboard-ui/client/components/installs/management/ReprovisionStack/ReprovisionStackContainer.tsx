@@ -74,15 +74,13 @@ export const ReprovisionStackModalContainer = ({
 
   return (
     <ReprovisionStackModal
-      installId={install?.id}
       installName={install?.name}
       isPending={isPending}
       error={error}
-      onSubmit={({ selectedRole }) => {
+      onSubmit={() => {
         execute({
           body: {
             plan_only: false,
-            ...(selectedRole && { role: selectedRole }),
           },
         })
       }}
