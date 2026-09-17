@@ -6,7 +6,9 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -109,11 +111,7 @@ func (h *TelemetrySignalLifecycleHook) AfterPhase(ctx context.Context, event sig
 	case telemetryKindStepGroup:
 		h.emit(ctx, terminalEvent("step_group", errored), event, &outcome)
 	case telemetryKindStep:
-		// Terminal error comes from the status-update activity: a failed step
-		// can park (awaiting retry) without its signal returning.
-		if !errored {
-			h.emit(ctx, "step.completed", event, &outcome)
-		}
+		return nil
 	case telemetryKindApproval:
 		if errored {
 			return nil
@@ -132,12 +130,28 @@ func (h *TelemetrySignalLifecycleHook) AfterPhase(ctx context.Context, event sig
 func (h *TelemetrySignalLifecycleHook) emit(ctx context.Context, flowEvent string, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) {
 	fields := []zap.Field{
 		zap.String("flow_event", flowEvent),
+		zap.String("queue_signal_id", event.QueueSignalID),
+		zap.String("queue_id", event.QueueID),
+		zap.String("org_id", event.OrgID),
+		zap.String("org_name", event.OrgName),
 		zap.String("install_id", eventInstallID(event)),
 		zap.String("workflow_id", event.WorkflowID),
 		zap.String("workflow_type", event.WorkflowType),
+		zap.String("owner_id", event.OwnerID),
+		zap.String("owner_type", event.OwnerType),
 		zap.String("operation", event.Operation),
+		zap.String("stage", event.Stage),
 		zap.String("signal_type", string(event.SignalType)),
 		zap.String("phase", string(event.Phase)),
+	}
+	if event.OwnerType == plugins.TableNameOf[app.Install]() {
+		fields = append(fields, zap.String("install_name", event.OwnerName))
+	}
+	if event.ComponentID != nil {
+		fields = append(fields, zap.String("component_id", *event.ComponentID))
+	}
+	if event.SandboxID != nil {
+		fields = append(fields, zap.String("sandbox_id", *event.SandboxID))
 	}
 	if event.StepID != "" {
 		fields = append(fields, zap.String("step_id", event.StepID))
@@ -145,8 +159,10 @@ func (h *TelemetrySignalLifecycleHook) emit(ctx context.Context, flowEvent strin
 	if event.StepName != "" {
 		fields = append(fields, zap.String("step_name", event.StepName))
 	}
-	if v, ok := event.Metadata["step_group_id"]; ok {
-		fields = append(fields, zap.Any("step_group_id", v), zap.Any("group_idx", event.Metadata["group_idx"]))
+	for _, key := range []string{"step_group_id", "step_idx", "group_idx", "group_retry_idx", "retry_index"} {
+		if value, ok := event.Metadata[key]; ok {
+			fields = append(fields, zap.Any(key, value))
+		}
 	}
 
 	failed := false
@@ -172,9 +188,6 @@ func (h *TelemetrySignalLifecycleHook) emit(ctx context.Context, flowEvent strin
 
 func terminalEvent(kind string, errored bool) string {
 	if errored {
-		if kind == "step" {
-			return "step.errored"
-		}
 		return kind + ".failed"
 	}
 	return kind + ".completed"
