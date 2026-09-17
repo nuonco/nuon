@@ -10,6 +10,7 @@ import { SignalTreeView } from '@/components/common/SignalTreeView'
 import { TemporalWorkflowCard } from '@/components/common/TemporalWorkflowCard'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { ownerPath } from '@/utils/owner'
 import { formatDate, truncateId, formatDuration } from '@/utils/format'
 
 function getStatus(s: any): string {
@@ -74,6 +75,7 @@ export const QueueSignalDetail = () => {
   if (!data) return null
 
   const { signal, queue, workflow_info: wfInfo, signal_attrs: attrs, signals_ahead: signalsAhead = [], temporal_ui_url: temporalUIUrl } = data
+  const ownerLink = ownerPath(signal?.owner_type, signal?.owner_id)
   const status = getStatus(signal?.status)
   const statusHistory = signal?.status?.history || []
   const enqueuedAt = signal?.created_at
@@ -483,6 +485,11 @@ export const QueueSignalDetail = () => {
             <Link to={`/queue-signals?search=${signal?.owner_id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
               Owner signals &rarr;
             </Link>
+            {ownerLink && (
+              <Link to={ownerLink} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
+                Owner page &rarr;
+              </Link>
+            )}
             {signal?.owner_type === 'install_workflow_steps' && (
               <Link to={`/workflows?search=${signal?.owner_id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">Step's workflow &rarr;</Link>
             )}

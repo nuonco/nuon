@@ -7,6 +7,7 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { ConfirmModal } from '@/components/common/ConfirmModal'
+import { OwnerLink } from '@/components/common/OwnerLink'
 import { formatDate, truncateId } from '@/utils/format'
 
 export const QueuesList = () => {
@@ -139,8 +140,7 @@ export const QueuesList = () => {
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{queue.name}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                  <span className="font-mono text-xs">{truncateId(queue.owner_id)}</span>
-                  <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">({queue.owner_type})</span>
+                  <OwnerLink ownerId={queue.owner_id} ownerType={queue.owner_type} />
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{queue.emitters?.length ?? 0}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(queue.created_at)}</td>
