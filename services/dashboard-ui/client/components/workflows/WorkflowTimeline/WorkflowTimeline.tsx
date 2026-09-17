@@ -3,6 +3,7 @@ import { Duration } from '@/components/common/Duration'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -10,7 +11,11 @@ import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { Tooltip } from '@/components/common/Tooltip'
-import { getRunTitle } from '@/components/branches/shared/run-title'
+import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
+import {
+  getRunTitle,
+  getRunTrigger,
+} from '@/components/branches/shared/run-title'
 import {
   getBranchRunFromWorkflow,
   isPreviewWorkflow,
@@ -58,6 +63,12 @@ export const WorkflowTimeline = ({
       pagination={pagination}
       renderEvent={(workflow) => {
         const isBranchRun = isBranchRunWorkflow(workflow)
+        const branchRun = getBranchRunFromWorkflow(workflow)
+        const trigger = getRunTrigger(branchRun)
+        const commit = branchRun?.vcs_connection_commit
+        const workflowHref = getWorkflowHref
+          ? getWorkflowHref(workflow)
+          : `/${orgId}/installs/${installId}/workflows/${workflow.id}`
         const createdByAccount = workflow?.created_by
         const createdBy = createdByAccount?.email ? (
           isServiceAccount(createdByAccount) ? (
@@ -81,11 +92,7 @@ export const WorkflowTimeline = ({
             <Link
               variant="inline"
               className="inline-flex gap-2 items-center"
-              href={
-                getWorkflowHref
-                  ? getWorkflowHref(workflow)
-                  : `/${orgId}/installs/${installId}/workflows/${workflow.id}`
-              }
+              href={workflowHref}
             >
               {isBranchRun
                 ? getRunTitle(workflow)
@@ -124,7 +131,6 @@ export const WorkflowTimeline = ({
                       preview
                     </Badge>
                     {(() => {
-                      const branchRun = getBranchRunFromWorkflow(workflow)
                       const mode =
                         previewModeLabel(branchRun?.preview) ??
                         (branchRun?.plan_only ? 'Plan only' : undefined)
@@ -140,6 +146,15 @@ export const WorkflowTimeline = ({
                           {source ? (
                             <Badge variant="code" size="sm">
                               {source}
+                            </Badge>
+                          ) : null}
+                          {trigger === 'manual' ? (
+                            <Badge variant="code" size="sm">
+                              manual
+                            </Badge>
+                          ) : branchRun?.preview?.source === 'commit' ? (
+                            <Badge variant="code" size="sm">
+                              commit
                             </Badge>
                           ) : null}
                           {install ? (
@@ -173,10 +188,36 @@ export const WorkflowTimeline = ({
                   )
                 ) : null}
                 {isBranchRun &&
-                getBranchRunFromWorkflow(workflow)?.event_type === 'manual' ? (
+                !isPreviewWorkflow(workflow) &&
+                trigger === 'manual' ? (
                   <Badge variant="code" size="sm">
                     manual
                   </Badge>
+                ) : null}
+                {isBranchRun &&
+                !isPreviewWorkflow(workflow) &&
+                trigger === 'push' ? (
+                  <Badge variant="code" size="sm">
+                    push
+                  </Badge>
+                ) : null}
+                {isBranchRun &&
+                !isPreviewWorkflow(workflow) &&
+                trigger === 'tag' &&
+                branchRun?.metadata?.tag ? (
+                  <Badge variant="code" size="sm">
+                    tag: {branchRun.metadata.tag}
+                  </Badge>
+                ) : null}
+                {isBranchRun &&
+                !isPreviewWorkflow(workflow) &&
+                trigger === 'github_label' &&
+                branchRun?.metadata?.github_label ? (
+                  <LabelBadge
+                    labelKey="label"
+                    labelValue={branchRun.metadata.github_label}
+                    size="sm"
+                  />
                 ) : null}
                 {workflow?.type === 'drift_run_reprovision_sandbox' ||
                 workflow.type === 'drift_run' ? (
@@ -199,66 +240,80 @@ export const WorkflowTimeline = ({
             badge={getWorkflowBadge(workflow)}
             caption={<ID>{workflow?.id}</ID>}
             underline={
-              <span className="flex items-center gap-6 mt-1">
-                {workflow.app_branch_runs?.[0]?.head_sha ||
-                workflow.app_branch_runs?.[0]?.vcs_connection_commit?.sha ? (
-                  <Text
-                    flex
-                    className="gap-1"
-                    variant="subtext"
-                    theme="neutral"
-                  >
-                    <Icon variant="GitCommitIcon" size={12} />
-                    {(
-                      workflow.app_branch_runs[0].head_sha ||
-                      workflow.app_branch_runs[0].vcs_connection_commit?.sha ||
-                      ''
-                    ).substring(0, 7)}
-                  </Text>
-                ) : null}
-                <Text
-                  flex
-                  className="gap-1"
-                  variant="subtext"
-                  theme="neutral"
-                  title="Created"
-                >
-                  <Icon variant="CalendarBlankIcon" />{' '}
-                  <Time time={workflow?.created_at} variant="subtext" />
-                </Text>
-                <Text
-                  flex
-                  className="gap-1"
-                  variant="subtext"
-                  theme="neutral"
-                  title={workflow?.finished ? 'Finished' : 'Last updated'}
-                >
-                  <Icon variant="ClockClockwiseIcon" />{' '}
-                  <Time
-                    time={
-                      workflow?.finished && workflow?.finished_at
-                        ? workflow.finished_at
-                        : workflow?.updated_at
-                    }
-                    variant="subtext"
-                    format="relative"
+              <span className="flex flex-col gap-3 mt-1">
+                {isBranchRun && commit ? (
+                  <BranchRunCommit
+                    status={branchRun?.status ?? workflow?.status?.status}
+                    href={workflowHref}
+                    message={commit.message?.split('\n')[0]}
+                    author={commit.author_name}
+                    avatarUrl={commit.author_avatar_url}
+                    sha={commit.sha}
+                    createdAt={commit.created_at ?? workflow.created_at}
                   />
-                </Text>
-                {workflow?.finished && workflow?.execution_time ? (
+                ) : null}
+                <span className="flex items-center gap-6">
+                  {!commit &&
+                  (branchRun?.head_sha ||
+                    branchRun?.vcs_connection_commit?.sha) ? (
+                    <Text
+                      flex
+                      className="gap-1"
+                      variant="subtext"
+                      theme="neutral"
+                    >
+                      <Icon variant="GitCommitIcon" size={12} />
+                      {(
+                        branchRun?.head_sha ||
+                        branchRun?.vcs_connection_commit?.sha ||
+                        ''
+                      ).substring(0, 7)}
+                    </Text>
+                  ) : null}
                   <Text
                     flex
                     className="gap-1"
                     variant="subtext"
                     theme="neutral"
-                    title="Duration"
+                    title="Created"
                   >
-                    <Icon variant="TimerIcon" />{' '}
-                    <Duration
-                      nanoseconds={workflow?.execution_time}
+                    <Icon variant="CalendarBlankIcon" />{' '}
+                    <Time time={workflow?.created_at} variant="subtext" />
+                  </Text>
+                  <Text
+                    flex
+                    className="gap-1"
+                    variant="subtext"
+                    theme="neutral"
+                    title={workflow?.finished ? 'Finished' : 'Last updated'}
+                  >
+                    <Icon variant="ClockClockwiseIcon" />{' '}
+                    <Time
+                      time={
+                        workflow?.finished && workflow?.finished_at
+                          ? workflow.finished_at
+                          : workflow?.updated_at
+                      }
                       variant="subtext"
+                      format="relative"
                     />
                   </Text>
-                ) : null}
+                  {workflow?.finished && workflow?.execution_time ? (
+                    <Text
+                      flex
+                      className="gap-1"
+                      variant="subtext"
+                      theme="neutral"
+                      title="Duration"
+                    >
+                      <Icon variant="TimerIcon" />{' '}
+                      <Duration
+                        nanoseconds={workflow?.execution_time}
+                        variant="subtext"
+                      />
+                    </Text>
+                  ) : null}
+                </span>
               </span>
             }
             createdAt={workflow?.created_at}

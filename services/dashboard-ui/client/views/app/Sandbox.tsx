@@ -6,6 +6,7 @@ import { CurrentSandboxBuild } from '@/components/sandbox/builds/CurrentSandboxB
 import { SandboxBuildTimeline } from '@/components/sandbox/builds/SandboxBuildTimeline'
 import { SandboxConfigCard } from '@/components/sandbox/SandboxConfigCard'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
+import { StatusWithDescription } from '@/components/common/StatusWithDescription'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
 import {
@@ -105,9 +106,6 @@ export const Sandbox = () => {
   })
 
   const sandboxConfig = appConfig?.sandbox as TSandboxConfig | undefined
-  const sourceRepo =
-    sandboxConfig?.connected_github_vcs_config?.repo ??
-    sandboxConfig?.public_git_vcs_config?.repo
   const sandboxBasePath = branchId
     ? `/${org?.id}/apps/${app?.id}/branches/${branchId}/sandbox`
     : `/${org?.id}/apps/${app?.id}/sandbox`
@@ -151,6 +149,20 @@ export const Sandbox = () => {
             title="Sandbox"
             description="Test builds in an isolated environment before deploying to installs."
             id={sandboxConfig?.id}
+            status={
+              latestBuild ? (
+                <StatusWithDescription
+                  statusProps={{
+                    status: latestBuild.status_v2?.status ?? latestBuild.status,
+                  }}
+                  tooltipProps={{
+                    tipContent:
+                      latestBuild.status_v2?.status_human_description ??
+                      latestBuild.status_description,
+                  }}
+                />
+              ) : null
+            }
             actions={
               <>
                 <HistoryPanelButton title="Previous builds" history={history} />
@@ -171,7 +183,6 @@ export const Sandbox = () => {
                   orgId={org?.id}
                   build={latestBuild}
                   buildHref={`${sandboxBasePath}/builds/${latestBuild.id}`}
-                  sourceRepo={sourceRepo}
                 />
               ) : null}
               <SandboxConfigCard config={sandboxConfig} />

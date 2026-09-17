@@ -56,31 +56,112 @@ const branchRunWorkflow: TWorkflow = {
   owner_type: 'app_branches',
   finished: true,
   status: { status: 'success' },
-  created_by: { email: 'nat@nuon.co' },
-  app_branch_runs: [{ head_sha: '83061cbabc123' }],
+  created_by: { email: 'developer@example.com' },
+  app_branch_runs: [
+    {
+      head_sha: '83061cbabc123',
+      metadata: { trigger: 'push' },
+      vcs_connection_commit: {
+        sha: '83061cbabc123',
+        message: 'feat: add regional deployment controls',
+        author_name: 'Example Developer',
+        created_at: '2024-01-01T00:00:00Z',
+      },
+    },
+  ],
 } as unknown as TWorkflow
 
 const manualBranchRunWorkflow: TWorkflow = {
   ...branchRunWorkflow,
   id: 'inwmanual1234567890abcdef',
-  app_branch_runs: [{ head_sha: '83061cbabc123', event_type: 'manual' }],
+  name: 'Manual run',
+  created_by: { email: 'operator@example.com' },
+  app_branch_runs: [
+    {
+      event_type: 'manual',
+      metadata: { trigger: 'manual' },
+      vcs_connection_commit: {
+        sha: '5aeca0565df689db877c5aad7c0535e81264801d',
+        message: 'chore: update branch configuration',
+        author_name: 'Example Developer',
+        created_at: '2024-01-01T00:00:00Z',
+      },
+    },
+  ],
 } as unknown as TWorkflow
 
 const previewBranchRunWorkflow: TWorkflow = {
   ...branchRunWorkflow,
   id: 'inw5lhpdxb26o9qdrgp3zpq0zq',
   plan_only: true,
-} as TWorkflow
+  app_branch_runs: [
+    {
+      plan_only: true,
+      metadata: { trigger: 'pull_request' },
+      preview: { mode: 'plan-only', source: 'commit' },
+      vcs_connection_commit: {
+        sha: '6987a43568abc8222c96d100284e50c045964258',
+        message: 'feat: preview sandbox networking changes',
+        author_name: 'Example Developer',
+        created_at: '2024-01-01T00:00:00Z',
+      },
+    },
+  ],
+} as unknown as TWorkflow
 
 const manualPreviewBranchRunWorkflow: TWorkflow = {
   ...previewBranchRunWorkflow,
   id: 'inwmanualpreview1234567890',
+  created_by: { email: 'reviewer@example.com' },
   app_branch_runs: [
     {
-      head_sha: '83061cbabc123',
       event_type: 'manual',
-      preview: { mode: 'plan-only' },
+      metadata: { trigger: 'manual' },
+      preview: { mode: 'plan-only', source: 'branch' },
       plan_only: true,
+      vcs_connection_commit: {
+        sha: 'b17c91f0643cadfe2834bc2409e975cc530e3611',
+        message: 'fix: validate preview install inputs',
+        author_name: 'Example Reviewer',
+        created_at: '2024-01-01T00:00:00Z',
+      },
+    },
+  ],
+} as unknown as TWorkflow
+
+const tagBranchRunWorkflow: TWorkflow = {
+  ...branchRunWorkflow,
+  id: 'inwtag1234567890abcdefghij',
+  app_branch_runs: [
+    {
+      metadata: { trigger: 'tag', tag: 'v2.4.0' },
+      vcs_connection_commit: {
+        sha: '25abff839c9c640f49ea5dfa323f05de8980d5b1',
+        message: 'release: v2.4.0',
+        author_name: 'Example Developer',
+        created_at: '2024-01-01T00:00:00Z',
+      },
+    },
+  ],
+} as unknown as TWorkflow
+
+const labelBranchRunWorkflow: TWorkflow = {
+  ...branchRunWorkflow,
+  id: 'inwlabel1234567890abcdefgh',
+  app_branch_runs: [
+    {
+      pr_number: 142,
+      metadata: {
+        trigger: 'github_label',
+        pr_number: 142,
+        github_label: 'deploy-preview',
+      },
+      vcs_connection_commit: {
+        sha: 'd9c00a9a5344333c11658e6cef5d2a0a92d202b',
+        message: 'feat: add checkout flow',
+        author_name: 'Example Contributor',
+        created_at: '2024-01-01T00:00:00Z',
+      },
     },
   ],
 } as unknown as TWorkflow
@@ -132,6 +213,28 @@ export const BranchRuns = () => (
       }
     />
   </ApprovalsProvider>
+)
+
+export const BranchRunTriggers = () => (
+  <div className="max-w-4xl">
+    <ApprovalsProvider>
+      <WorkflowTimeline
+        workflows={[
+          manualBranchRunWorkflow,
+          manualPreviewBranchRunWorkflow,
+          previewBranchRunWorkflow,
+          tagBranchRunWorkflow,
+          branchRunWorkflow,
+          labelBranchRunWorkflow,
+        ]}
+        pagination={{ hasNext: false, offset: 0, limit: 10 }}
+        orgId="org-123"
+        getWorkflowHref={(wf) =>
+          `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`
+        }
+      />
+    </ApprovalsProvider>
+  </div>
 )
 
 export const BranchRunPreview = () => (

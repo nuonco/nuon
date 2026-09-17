@@ -18,34 +18,44 @@ const run = {
   },
 }
 
-export const DifferentRepository = () => (
+const sourceCommit = {
+  sha: '6987a43568abc8222c96d100284e50c045964258',
+  message: 'feat: update sandbox networking',
+  author_name: 'Example Developer',
+  created_at: '2026-09-16T19:58:00Z',
+}
+
+export const Default = () => (
   <div className="max-w-3xl">
     <AppBranchRunCard
       appId="app123"
       orgId="org123"
       buildStatus="active"
-      sourceRepo="acme/sandbox"
       sourceHref="#"
-      sourceCommit={{
-        sha: '6987a43568abc8222c96d100284e50c045964258',
-        message: 'feat: update sandbox networking',
-        author_name: 'Example Developer',
-        created_at: '2026-09-16T19:58:00Z',
-      }}
+      sourceCommit={sourceCommit}
       run={run}
     />
   </div>
 )
 
-export const SameRepository = () => (
+export const WithoutRun = () => (
   <div className="max-w-3xl">
     <AppBranchRunCard
       appId="app123"
       orgId="org123"
       buildStatus="active"
-      sourceRepo="acme/app"
       sourceHref="#"
-      sourceCommit={run.vcs_connection_commit}
+      sourceCommit={sourceCommit}
+    />
+  </div>
+)
+
+export const WithoutSourceCommit = () => (
+  <div className="max-w-3xl">
+    <AppBranchRunCard
+      appId="app123"
+      orgId="org123"
+      buildStatus="pending"
       run={run}
     />
   </div>

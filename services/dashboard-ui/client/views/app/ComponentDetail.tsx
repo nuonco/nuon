@@ -30,8 +30,6 @@ import {
   getComponentBuilds,
 } from '@/lib'
 import { isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
-import { getComponentConfigDisplayData } from '@/utils/component-config-display'
-
 export const ComponentDetail = () => {
   const { componentId, branchId } = useParams()
   const { org } = useOrg()
@@ -129,9 +127,6 @@ export const ComponentDetail = () => {
     },
   })
 
-  const sourceRepo = config
-    ? getComponentConfigDisplayData(config).vcsInfo?.repo
-    : undefined
   const appBase = branchId
     ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
     : `/${org?.id}/apps/${app?.id}`
@@ -236,7 +231,6 @@ export const ComponentDetail = () => {
                   orgId={org?.id}
                   build={latestBuild}
                   buildHref={`${componentBasePath}/builds/${latestBuild.id}`}
-                  sourceRepo={sourceRepo}
                 />
               ) : null}
               <ComponentConfigCard

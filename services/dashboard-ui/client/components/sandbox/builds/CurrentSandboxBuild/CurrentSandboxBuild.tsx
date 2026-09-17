@@ -1,10 +1,8 @@
 import { AppBranchRunCard } from '@/components/branches/AppBranchRunCard'
 import { CompositeError } from '@/components/common/CompositeError'
-import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
-import { Text } from '@/components/common/Text'
 import { LogsPanel } from '@/components/log-stream/LogsPanel'
-import { RunSummary } from '@/components/runs/RunSummary'
+import { RunFailureBanner } from '@/components/runs/RunFailureBanner'
 import type { TAppSandboxBuild } from '@/types'
 
 export interface ICurrentSandboxBuild {
@@ -12,7 +10,6 @@ export interface ICurrentSandboxBuild {
   orgId?: string
   build: TAppSandboxBuild
   buildHref?: string
-  sourceRepo?: string
 }
 
 export const CurrentSandboxBuild = ({
@@ -20,9 +17,7 @@ export const CurrentSandboxBuild = ({
   orgId,
   build,
   buildHref,
-  sourceRepo,
 }: ICurrentSandboxBuild) => {
-  const jobs = build.runner_job ? [build.runner_job] : []
   const status = build.status_v2?.status
     ? build.status_v2
     : { status: build.status }
@@ -35,7 +30,6 @@ export const CurrentSandboxBuild = ({
         buildStatus={status.status}
         sourceCommit={build.vcs_connection_commit}
         sourceHref={buildHref}
-        sourceRepo={sourceRepo}
         run={build.app_branch_run}
       />
 
@@ -43,25 +37,10 @@ export const CurrentSandboxBuild = ({
         <CompositeError error={build.composite_error} />
       ) : null}
 
-      <RunSummary
+      <RunFailureBanner
+        jobs={build.runner_job ? [build.runner_job] : []}
         status={status}
         statusDescription={build.status_description}
-        timings={[
-          { label: 'Created', time: build.created_at },
-          { label: 'Updated', time: build.updated_at },
-        ]}
-        duration={{ beginTime: build.created_at, endTime: build.updated_at }}
-        jobs={jobs}
-        jobHref={(job) =>
-          orgId ? `/${orgId}/runner/jobs/${job?.id}` : undefined
-        }
-        triggeredBy={
-          build.created_by?.email ? (
-            <Text variant="subtext">{build.created_by.email}</Text>
-          ) : build.created_by_id ? (
-            <ID>{build.created_by_id}</ID>
-          ) : null
-        }
       />
 
       <LogsPanel logStream={build.log_stream} />

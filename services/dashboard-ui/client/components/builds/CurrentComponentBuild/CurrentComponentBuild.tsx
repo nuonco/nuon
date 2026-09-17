@@ -14,7 +14,6 @@ export interface ICurrentComponentBuild {
   orgId?: string
   build: TBuild
   buildHref?: string
-  sourceRepo?: string
 }
 
 export const CurrentComponentBuild = ({
@@ -22,7 +21,6 @@ export const CurrentComponentBuild = ({
   orgId,
   build,
   buildHref,
-  sourceRepo,
 }: ICurrentComponentBuild) => {
   const jobs = build.runner_job ? [build.runner_job] : []
 
@@ -34,7 +32,6 @@ export const CurrentComponentBuild = ({
         buildStatus={build.status_v2?.status}
         sourceCommit={build.vcs_connection_commit}
         sourceHref={buildHref}
-        sourceRepo={sourceRepo}
         run={build.app_branch_run}
       />
 
