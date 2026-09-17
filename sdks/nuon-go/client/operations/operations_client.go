@@ -19011,7 +19011,7 @@ func (a *Client) LogStreamReadSpans(params *LogStreamReadSpansParams, authInfo r
 /*
 LogStreamTailLogs longs poll tail a log stream
 
-Returns rows after the supplied composite cursor, long-polling up to ~30s for new rows on an idle stream. Behind the `log-tail-long-poll` org feature flag.
+Returns rows after the supplied composite cursor, long-polling up to ~30s for new rows on an idle stream.
 */
 func (a *Client) LogStreamTailLogs(params *LogStreamTailLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamTailLogsOK, error) {
 	// NOTE: parameters are not validated before sending
