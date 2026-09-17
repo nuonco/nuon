@@ -3,6 +3,7 @@ package activities
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -23,7 +24,9 @@ type SaveStateRequest struct {
 }
 
 // @temporal-gen-v2 activity
-func (a *Activities) SaveState(ctx context.Context, req *SaveStateRequest) (*app.InstallState, error) {
+func (a *Activities) SaveState(ctx context.Context, req *SaveStateRequest) (result *app.InstallState, err error) {
+	started := time.Now()
+	defer func() { a.stateMetrics.Record(ctx, "save", started, err) }()
 	// the blob upload in InstallState's BeforeCreate hook requires org_id on the context
 	if keys.OrgIDFromContext(ctx) == "" {
 		var install app.Install
