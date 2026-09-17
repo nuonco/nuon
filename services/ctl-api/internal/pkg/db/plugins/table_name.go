@@ -10,6 +10,16 @@ type Tabler interface {
 	TableName() string
 }
 
+// TableNameOf returns a model's table name from its Tabler implementation, for
+// callers without a db handle such as temporal workflow code. Usage:
+// TableNameOf[app.Install]().
+func TableNameOf[T any, PT interface {
+	*T
+	Tabler
+}]() string {
+	return PT(new(T)).TableName()
+}
+
 func TableName(db *gorm.DB, obj any) string {
 	value := reflect.ValueOf(obj)
 	if value.Kind() == reflect.Ptr && value.IsNil() {
