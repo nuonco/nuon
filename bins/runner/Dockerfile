@@ -155,7 +155,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
 FROM code AS test
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
-    CGO_ENABLED=0 go test ./... && \
+    CGO_ENABLED=0 go test -vet=off ./... && \
     touch /go/pkg/build-cache/.nuon-dirty
 
 FROM code AS lint
@@ -249,7 +249,8 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     GOARCH=arm64 \
     go build \
     -ldflags="-X 'github.com/nuonco/nuon/pkg/runner/version.Version=${tag}'" \
-    -o /out/${BIN_NAME}_darwin_arm64 .
+    -o /out/${BIN_NAME}_darwin_arm64 . && \
+    touch /go/pkg/build-cache/.nuon-dirty
 
 FROM code AS build-darwin-amd64
 ARG BIN_NAME=runner
@@ -318,7 +319,8 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     GOARCH=amd64 \
     go build \
     -ldflags="-X 'github.com/nuonco/nuon/pkg/runner/version.Version=${tag}'" \
-    -o /out/${BIN_NAME}_linux_amd64 .
+    -o /out/${BIN_NAME}_linux_amd64 . && \
+    touch /go/pkg/build-cache/.nuon-dirty
 
 # END
 

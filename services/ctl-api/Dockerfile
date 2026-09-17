@@ -126,7 +126,7 @@ COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/
 
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
-    CGO_ENABLED=0 go test ./... && \
+    CGO_ENABLED=0 go test -vet=off ./... && \
     touch /go/pkg/build-cache/.nuon-dirty
 
 FROM code AS lint
