@@ -15,6 +15,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-playground/validator/v10"
+	"go.opentelemetry.io/otel/metric"
+	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/pkg/aws/s3downloader"
 	"github.com/nuonco/nuon/pkg/aws/s3uploader"
@@ -106,6 +108,22 @@ func NewService(cfg *internal.Config, mw metrics.Writer) (Service, error) {
 		s3Client:   s3Client,
 		mw:         mw,
 	}, nil
+}
+
+type Params struct {
+	fx.In
+
+	Cfg           *internal.Config
+	MW            metrics.Writer
+	MeterProvider metric.MeterProvider `optional:"true"`
+}
+
+func NewInstrumentedService(params Params) (Service, error) {
+	svc, err := NewService(params.Cfg, params.MW)
+	if err != nil {
+		return nil, err
+	}
+	return instrumentService(svc, params.MeterProvider), nil
 }
 
 func (s *service) Upload(ctx context.Context, s3Key string, data []byte) error {
