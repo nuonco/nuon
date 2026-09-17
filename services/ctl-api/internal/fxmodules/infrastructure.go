@@ -117,7 +117,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 	}),
 
 	// Blob storage service
-	fx.Provide(blobstore.NewService),
+	fx.Provide(blobstore.NewInstrumentedService),
 
 	// File cache for blob codec
 	fx.Provide(func(cfg *internal.Config, l *zap.Logger) *filecache.FileCache {
