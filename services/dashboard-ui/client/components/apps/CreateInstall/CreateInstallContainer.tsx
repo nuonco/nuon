@@ -7,6 +7,7 @@ import {
   CreateInstallFromAppContainer,
   type ICreateFromAppState,
 } from '@/components/installs/CreateInstall/CreateInstallFromAppContainer'
+import { StackOnlyCheckbox } from '@/components/installs/forms/InstallForm'
 import { useApp } from '@/hooks/use-app'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { CreateInstallButton as CreateInstallButtonComponent } from './CreateInstall'
@@ -72,6 +73,11 @@ const CreateInstallModalContainer = ({ ...props }: IModal) => {
         onClick: () => state.submit(),
         variant: 'primary',
       }}
+      footerActions={
+        !pickingBranch && !pickingGroup && state.form ? (
+          <StackOnlyCheckbox form={state.form} />
+        ) : undefined
+      }
     >
       <CreateInstallFromAppContainer
         app={app}

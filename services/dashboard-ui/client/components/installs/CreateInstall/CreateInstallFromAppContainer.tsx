@@ -411,6 +411,7 @@ export const CreateInstallFromAppContainer = ({
         submit: fields.submit,
         isSubmitting: false,
         phase,
+        form: formReady ? fields.form : undefined,
       })
       return
     }
@@ -420,6 +421,7 @@ export const CreateInstallFromAppContainer = ({
       submit: fields.submit,
       isSubmitting,
       phase,
+      form: formReady ? fields.form : undefined,
     })
   }, [
     formReady,
