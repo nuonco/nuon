@@ -65,6 +65,7 @@ export const BuildTimelineContainer = ({
       appId={app?.id}
       componentId={componentId}
       componentName={componentName}
+      isEmpty={builds.length === 0 && offset === 0}
       branchId={branchId}
       excludeBuildId={excludeBuildId}
     />

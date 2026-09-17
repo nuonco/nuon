@@ -39,7 +39,7 @@ export const SandboxBuildTimeline = ({
     return (
       <EmptyState
         emptyTitle="No previous builds"
-        emptyMessage="Previous sandbox builds will appear here once triggered."
+        emptyMessage="Previous builds will appear here after the next sandbox build."
         variant="history"
       />
     )
