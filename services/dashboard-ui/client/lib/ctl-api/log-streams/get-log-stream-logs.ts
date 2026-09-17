@@ -14,11 +14,30 @@ export type TLogStreamFilters = {
   k8s_namespace?: string
   k8s_name?: string
   q?: string
+  runner_job_id?: string
   // Phase 2 — span/trace filtering. The runner emits otelzap log records
   // whose trace context populates these columns directly, so the API can
   // narrow log results to a single span / trace.
   span_id?: string
   trace_id?: string
+}
+
+export const logFiltersToQuery = (
+  filters?: TLogStreamFilters
+): string => {
+  if (!filters) return ''
+  const sp = new URLSearchParams()
+  for (const [key, raw] of Object.entries(filters)) {
+    if (raw == null) continue
+    if (Array.isArray(raw)) {
+      for (const v of raw) {
+        if (v != null && v !== '') sp.append(key, String(v))
+      }
+    } else if (raw !== '') {
+      sp.append(key, String(raw))
+    }
+  }
+  return sp.toString()
 }
 
 const buildLogQueryString = ({
@@ -28,22 +47,9 @@ const buildLogQueryString = ({
   order: 'asc' | 'desc'
   filters?: TLogStreamFilters
 }): string => {
-  const sp = new URLSearchParams()
-  sp.set('order', order)
-  if (filters) {
-    for (const [key, raw] of Object.entries(filters)) {
-      if (raw == null) continue
-      if (Array.isArray(raw)) {
-        for (const v of raw) {
-          if (v != null && v !== '') sp.append(key, String(v))
-        }
-      } else if (raw !== '') {
-        sp.append(key, String(raw))
-      }
-    }
-  }
-  const s = sp.toString()
-  return s ? `?${s}` : ''
+  const filtersQuery = logFiltersToQuery(filters)
+  const query = `order=${order}${filtersQuery ? `&${filtersQuery}` : ''}`
+  return `?${query}`
 }
 
 export const getLogStreamLogs = ({
