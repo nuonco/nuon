@@ -9,6 +9,8 @@ import { AccountsList } from '@/views/accounts/AccountsList'
 import { AccountDetail } from '@/views/accounts/AccountDetail'
 import { InstallsList } from '@/views/installs/InstallsList'
 import { InstallDetail } from '@/views/installs/InstallDetail'
+import { AppBranchesList } from '@/views/app-branches/AppBranchesList'
+import { AppBranchDetail } from '@/views/app-branches/AppBranchDetail'
 import { AllRunners } from '@/views/runners/AllRunners'
 import { RunnerDetail } from '@/views/runners/RunnerDetail'
 import { QueuesList } from '@/views/queues/QueuesList'
@@ -57,6 +59,8 @@ const router = createBrowserRouter([
       { path: 'accounts/:id', element: <AccountDetail /> },
       { path: 'installs', element: <InstallsList /> },
       { path: 'installs/:id', element: <InstallDetail /> },
+      { path: 'app-branches', element: <AppBranchesList /> },
+      { path: 'app-branches/:id', element: <AppBranchDetail /> },
       { path: 'runners/all', element: <AllRunners /> },
       { path: 'runners/:id', element: <RunnerDetail /> },
       { path: 'queues', element: <QueuesList /> },
