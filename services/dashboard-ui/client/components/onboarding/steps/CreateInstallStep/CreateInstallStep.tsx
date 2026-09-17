@@ -8,6 +8,7 @@ import { Text } from '@/components/common/Text'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import {
   InstallForm,
+  StackOnlyCheckbox,
   useInstallForm,
   type InstallFormValues,
 } from '@/components/installs/forms/InstallForm'
@@ -92,7 +93,8 @@ const OnboardingInstallForm = ({
         inputConfig={app.input_config}
         autoApproveDescription={AUTO_APPROVE_DESCRIPTION}
       />
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-4">
+        <StackOnlyCheckbox form={form} />
         <Button
           variant="primary"
           disabled={!canSubmit || isPending}
