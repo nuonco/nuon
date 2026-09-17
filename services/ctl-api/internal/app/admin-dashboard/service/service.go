@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	generalhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/general/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -44,6 +45,7 @@ type Params struct {
 	AppsHelpers    *appshelpers.Helpers
 	AcctClient     *account.Client
 	AuthzClient    *authz.Client
+	GeneralHelpers *generalhelpers.Helpers
 	OrgsHelpers    *orgshelpers.Helpers
 	RunnersHelpers *runnershelpers.Helpers
 	TemporalClient temporalclient.Client
@@ -69,6 +71,7 @@ type Service struct {
 	appsHelpers    *appshelpers.Helpers
 	acctClient     *account.Client
 	authzClient    *authz.Client
+	generalHelpers *generalhelpers.Helpers
 	orgsHelpers    *orgshelpers.Helpers
 	runnersHelpers *runnershelpers.Helpers
 	temporalClient temporalclient.Client
@@ -258,6 +261,8 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		// Workflows
 		api.GET("/workflows", s.Workflows)
 		api.GET("/workflows/table", s.WorkflowsTable)
+		api.GET("/workflows/filter-options", s.WorkflowFilterOptions)
+		api.POST("/workflows/bulk-cancel", s.BulkCancelWorkflows)
 		api.GET("/workflows/:workflow_id", s.WorkflowDetail)
 
 		// Log streams
@@ -358,6 +363,7 @@ func New(params Params) (*service, error) {
 		appsHelpers:    params.AppsHelpers,
 		acctClient:     params.AcctClient,
 		authzClient:    params.AuthzClient,
+		generalHelpers: params.GeneralHelpers,
 		orgsHelpers:    params.OrgsHelpers,
 		runnersHelpers: params.RunnersHelpers,
 		temporalClient: params.TemporalClient,
