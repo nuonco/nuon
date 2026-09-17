@@ -28,6 +28,7 @@ func (a *Activities) logStepStatus(ctx context.Context, step app.WorkflowStep, p
 		zap.String("flow_event", flowEvent),
 		zap.String("org_id", step.OrgID),
 		zap.String("workflow_id", step.InstallWorkflowID),
+		zap.String("workflow_type", a.lookupWorkflowType(ctx, step.InstallWorkflowID)),
 		zap.String("step_id", step.ID),
 		zap.String("step_name", step.Name),
 		zap.String("owner_id", step.OwnerID),
@@ -75,10 +76,12 @@ func (a *Activities) logWorkflowError(ctx context.Context, wf app.Workflow, prev
 }
 
 func (a *Activities) logRunnerJob(ctx context.Context, job app.RunnerJob, status app.RunnerJobStatus, description string) {
+	workflowID := job.FlowWorkflowID()
 	fields := []zap.Field{
 		zap.String("flow_event", "runner_job."+string(status)),
 		zap.String("runner_job_id", job.ID),
-		zap.String("workflow_id", job.FlowWorkflowID()),
+		zap.String("workflow_id", workflowID),
+		zap.String("workflow_type", a.lookupWorkflowType(ctx, workflowID)),
 		zap.String("install_id", job.FlowInstallID()),
 		zap.String("owner_id", job.OwnerID),
 		zap.String("owner_type", job.OwnerType),
@@ -104,4 +107,15 @@ func (a *Activities) logRunnerJob(ctx context.Context, job app.RunnerJob, status
 		return
 	}
 	l.Info("flow telemetry", fields...)
+}
+
+func (a *Activities) lookupWorkflowType(ctx context.Context, workflowID string) string {
+	if a.db == nil || workflowID == "" {
+		return ""
+	}
+	var wf app.Workflow
+	if err := a.db.WithContext(ctx).Select("type").Where(app.Workflow{ID: workflowID}).Take(&wf).Error; err != nil {
+		return ""
+	}
+	return string(wf.Type)
 }
