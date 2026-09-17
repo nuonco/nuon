@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import type { TLogStreamFilters } from '@/lib/ctl-api/log-streams/get-log-stream-logs'
 import type { TOTELLog, TSpan } from '@/types'
@@ -25,10 +25,53 @@ const PARAM_BODY = 'q'
 const PARAM_SYSTEM_LOGS = 'system_logs'
 const PARAM_SORT = 'sort'
 const PARAM_VIEW = 'view'
-// Span / trace cross-link from the trace tab. SSE delivers every log on the
-// stream, so we apply these filters client-side.
+// Span / trace cross-link from the trace tab. trace_id is an exact server-side
+// match; span_id stays client-side because the UI expands a parent span into
+// its descendants before filtering, which the server can't do.
 const PARAM_SPAN_ID = 'span_id'
 const PARAM_TRACE_ID = 'trace_id'
+
+// URL filter state mapped onto the ctl-api log read/tail query params, so
+// filtering happens server-side instead of only in the browser. span_id is
+// deliberately excluded — the server can only exact-match it, while the UI
+// expands a parent span into its descendants before filtering.
+export const buildServerFilters = (
+  searchParams: URLSearchParams
+): TLogStreamFilters => {
+  const filters: TLogStreamFilters = {}
+
+  // Empty selection == show everything; otherwise the user's set, or the
+  // default set when they haven't touched severity at all.
+  const severities = searchParams.getAll(PARAM_SEVERITY)
+  if (severities.length === 0 && DEFAULT_SEVERITIES.length > 0) {
+    filters.severity_text = [...DEFAULT_SEVERITIES]
+  } else if (severities.length > 0) {
+    filters.severity_text = severities
+  }
+
+  if (searchParams.get(PARAM_SYSTEM_LOGS) === 'false') {
+    filters.scope_name = ['oteljob']
+  }
+
+  const single = (urlKey: string, apiKey: keyof TLogStreamFilters) => {
+    const v = searchParams.get(urlKey)
+    if (v) (filters[apiKey] as string) = v
+  }
+  single(PARAM_TOOL, 'tool')
+  single(PARAM_HELM_RELEASE, 'helm_release_name')
+  single(PARAM_HELM_OPERATION, 'helm_operation')
+  single(PARAM_TF_WORKSPACE, 'tf_workspace_id')
+  single(PARAM_TF_OPERATION, 'tf_operation')
+  single(PARAM_K8S_KIND, 'k8s_kind')
+  single(PARAM_K8S_NAMESPACE, 'k8s_namespace')
+  single(PARAM_K8S_NAME, 'k8s_name')
+  single(PARAM_TRACE_ID, 'trace_id')
+
+  const q = searchParams.get(PARAM_BODY)
+  if (q && q.trim()) filters.q = q.trim()
+
+  return filters
+}
 
 const ALL_FILTER_PARAMS = [
   PARAM_SEVERITY,
@@ -62,7 +105,12 @@ export const useLogFilters = <T extends TOTELLog>(
   // When omitted (most callers), span_id behaves as an exact-match filter
   // — preserving the original behavior for surfaces that don't render the
   // trace tab.
-  spans?: TSpan[]
+  spans?: TSpan[],
+  // Log stream identity for facet accumulation. When provided, the
+  // available-tool facet resets when the stream changes rather than when
+  // logs are cleared (a server-side tool filter clears logs on reconnect,
+  // which must not collapse the facet to the selection).
+  streamId?: string
 ) => {
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -125,17 +173,51 @@ export const useLogFilters = <T extends TOTELLog>(
     [updateParams]
   )
 
-  // Available values are derived from the currently loaded logs; useful for
-  // populating dropdowns that haven't been pre-seeded with a fixed list.
-  const availableTools = useMemo(() => {
-    const out = new Set<string>()
-    if (!logs) return out
-    for (const log of logs) {
-      const t = log.log_attributes?.['nuon.tool']
-      if (t) out.add(t)
-    }
-    return out
-  }, [logs])
+  // Available values are derived from the logs loaded so far for this
+  // stream — not just the current page. Once `tool` filters server-side,
+  // newly loaded rows only ever contain the selected tool, so deriving
+  // the facet from the live set alone would collapse the dropdown to the
+  // selection and force the user to clear the filter to switch.
+  //
+  // The accumulation resets on stream identity, NOT on logs being empty:
+  // applying a server-side filter reconnects the stream and clears logs,
+  // which must not wipe facets seen earlier on the same stream. When the
+  // stream id changes, the logs in that first render may still belong to
+  // the old stream, so the new stream starts with an empty set and
+  // accumulates from its own rows only.
+  const [toolFacets, setToolFacets] = useState<{
+    streamId?: string
+    tools: Set<string>
+  }>({ tools: new Set() })
+  useEffect(() => {
+    setToolFacets((prev) => {
+      if (
+        streamId !== undefined &&
+        prev.streamId !== undefined &&
+        prev.streamId !== streamId
+      ) {
+        // Stream changed: this render's logs may still belong to the old
+        // stream, so start empty without accumulating. Recording the new id
+        // here (even when logs are empty) matters — the render that carries
+        // the id change can only hold old-stream logs or [], so dropping
+        // them is safe, and the reset can never fire on real new-stream
+        // data.
+        return { streamId, tools: new Set<string>() }
+      }
+      let changed = prev.streamId !== streamId
+      const tools = new Set(prev.tools)
+      for (const log of logs ?? []) {
+        const t = log.log_attributes?.['nuon.tool']
+        if (t && !tools.has(t)) {
+          tools.add(t)
+          changed = true
+        }
+      }
+      return changed ? { streamId, tools } : prev
+    })
+  }, [logs, streamId])
+
+  const availableTools = toolFacets.tools
 
   const availableSeverities = useMemo(() => {
     const out = new Set<string>(KNOWN_SEVERITIES)
@@ -334,33 +416,10 @@ export const useLogFilters = <T extends TOTELLog>(
 
   // serverFilters mirrors the URL state in the shape the ctl-api endpoint
   // expects, so callers can pass it straight to getLogStreamLogs[WithMeta].
-  const serverFilters: TLogStreamFilters = useMemo(() => {
-    const f: TLogStreamFilters = {}
-    if (!includeSystemLogs) f.scope_name = ['oteljob']
-    if (selectedSeverities.size > 0) f.severity_text = Array.from(selectedSeverities)
-    if (tool) f.tool = tool
-    if (helmReleaseName) f.helm_release_name = helmReleaseName
-    if (helmOperation) f.helm_operation = helmOperation
-    if (tfWorkspaceID) f.tf_workspace_id = tfWorkspaceID
-    if (tfOperation) f.tf_operation = tfOperation
-    if (k8sKind) f.k8s_kind = k8sKind
-    if (k8sNamespace) f.k8s_namespace = k8sNamespace
-    if (k8sName) f.k8s_name = k8sName
-    if (searchQuery.trim()) f.q = searchQuery.trim()
-    return f
-  }, [
-    includeSystemLogs,
-    selectedSeverities,
-    tool,
-    helmReleaseName,
-    helmOperation,
-    tfWorkspaceID,
-    tfOperation,
-    k8sKind,
-    k8sNamespace,
-    k8sName,
-    searchQuery,
-  ])
+  const serverFilters: TLogStreamFilters = useMemo(
+    () => buildServerFilters(searchParams),
+    [searchParams]
+  )
 
   return {
     selectedSeverities,
