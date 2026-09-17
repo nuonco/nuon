@@ -34,6 +34,11 @@ func (s *Service) PreviewBranchRun(ctx context.Context, appID, branchID string, 
 		return view.Error(err)
 	}
 
+	opts.InstallID, err = s.resolveInstallID(ctx, opts.InstallID)
+	if err != nil {
+		return view.Error(err)
+	}
+
 	if s.cfg.Interactive && !asJSON {
 		return s.previewBranchRunInteractive(ctx, appID, branchID, opts)
 	}

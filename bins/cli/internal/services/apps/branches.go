@@ -251,3 +251,11 @@ func (s *Service) resolveAppID(ctx context.Context, appID string) (string, error
 
 	return lookup.AppID(ctx, s.api, appID)
 }
+
+func (s *Service) resolveInstallID(ctx context.Context, installID string) (string, error) {
+	if installID == "" {
+		return "", nil
+	}
+
+	return lookup.InstallID(ctx, s.api, installID)
+}

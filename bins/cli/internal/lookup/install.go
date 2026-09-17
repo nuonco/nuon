@@ -2,6 +2,7 @@ package lookup
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/sdks/nuon-go"
@@ -15,6 +16,11 @@ func InstallID(ctx context.Context, apiClient nuon.Client, installIDOrName strin
 	}
 
 	install, err := apiClient.GetInstall(ctx, installIDOrName)
+	if nuon.IsNotFound(err) {
+		return "", &ui.CLIUserError{
+			Msg: fmt.Sprintf("install \"%s\" not found", installIDOrName),
+		}
+	}
 	if err != nil {
 		return "", err
 	}
