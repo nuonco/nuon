@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 func TestAzureTelemetryContract(t *testing.T) {
