@@ -785,6 +785,7 @@ export type TVCSConnectionStatus = {
 }
 export type TVCSConnectionRepo = {
   id: number
+  owner_id: number
   name: string
   full_name: string
   description?: string
