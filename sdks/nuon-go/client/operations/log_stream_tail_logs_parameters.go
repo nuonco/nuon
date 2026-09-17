@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewLogStreamTailLogsParams creates a new LogStreamTailLogsParams object,
@@ -61,17 +62,221 @@ LogStreamTailLogsParams contains all the parameters to send to the API endpoint
 */
 type LogStreamTailLogsParams struct {
 
+	/* Attr.
+
+	   generic log_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)
+	*/
+	Attr []string
+
+	/* EndTime.
+
+	   only return records with timestamp <= end_time (RFC3339)
+	*/
+	EndTime *string
+
+	/* HelmChartID.
+
+	   filter by log_attributes['helm.chart_id']
+	*/
+	HelmChartID *string
+
+	/* HelmChartName.
+
+	   filter by log_attributes['helm.chart_name']
+	*/
+	HelmChartName *string
+
+	/* HelmNamespace.
+
+	   filter by log_attributes['helm.namespace']
+	*/
+	HelmNamespace *string
+
+	/* HelmOperation.
+
+	   filter by log_attributes['helm.operation']
+	*/
+	HelmOperation *string
+
+	/* HelmReleaseName.
+
+	   filter by log_attributes['helm.release_name']
+	*/
+	HelmReleaseName *string
+
+	/* K8sKind.
+
+	   filter by log_attributes['k8s.kind']
+	*/
+	K8sKind *string
+
+	/* K8sName.
+
+	   filter by log_attributes['k8s.name']
+	*/
+	K8sName *string
+
+	/* K8sNamespace.
+
+	   filter by log_attributes['k8s.namespace']
+	*/
+	K8sNamespace *string
+
+	/* K8sOperation.
+
+	   filter by log_attributes['k8s.operation']
+	*/
+	K8sOperation *string
+
 	/* LogStreamID.
 
 	   log stream ID
 	*/
 	LogStreamID string
 
+	/* Q.
+
+	   case-insensitive substring filter on log body
+	*/
+	Q *string
+
+	/* ResourceAttr.
+
+	   generic resource_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)
+	*/
+	ResourceAttr []string
+
+	/* ResourceSchemaURL.
+
+	   filter by resource_schema_url (repeatable) collectionFormat(multi)
+	*/
+	ResourceSchemaURL []string
+
+	/* RunnerGroupID.
+
+	   filter by runner_group_id
+	*/
+	RunnerGroupID *string
+
+	/* RunnerID.
+
+	   filter by runner_id
+	*/
+	RunnerID *string
+
+	/* RunnerJobExecutionID.
+
+	   filter by runner_job_execution_id
+	*/
+	RunnerJobExecutionID *string
+
+	/* RunnerJobExecutionStep.
+
+	   filter by runner_job_execution_step
+	*/
+	RunnerJobExecutionStep *string
+
+	/* RunnerJobID.
+
+	   filter by runner_job_id (part of CH ORDER BY — efficient)
+	*/
+	RunnerJobID *string
+
+	/* ScopeAttr.
+
+	   generic scope_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)
+	*/
+	ScopeAttr []string
+
+	/* ScopeName.
+
+	   filter by scope_name (repeatable; e.g. oteljob, system) collectionFormat(multi)
+	*/
+	ScopeName []string
+
+	/* ScopeSchemaURL.
+
+	   filter by scope_schema_url (repeatable) collectionFormat(multi)
+	*/
+	ScopeSchemaURL []string
+
+	/* ScopeVersion.
+
+	   filter by scope_version (repeatable) collectionFormat(multi)
+	*/
+	ScopeVersion []string
+
+	/* ServiceName.
+
+	   filter by service_name (repeatable) collectionFormat(multi)
+	*/
+	ServiceName []string
+
+	/* SeverityNumberMax.
+
+	   filter by severity_number <= N (OTEL: TRACE=1..FATAL=24)
+	*/
+	SeverityNumberMax *int64
+
+	/* SeverityNumberMin.
+
+	   filter by severity_number >= N (OTEL: TRACE=1..FATAL=24)
+	*/
+	SeverityNumberMin *int64
+
+	/* SeverityText.
+
+	   filter by severity_text (repeatable; INFO/WARN/ERROR/...) collectionFormat(multi)
+	*/
+	SeverityText []string
+
 	/* Since.
 
 	   composite cursor in the form `<unix_nano>:<id>`; empty starts from the oldest row
 	*/
 	Since *string
+
+	/* SpanID.
+
+	   filter by exact span_id (dedicated CH column)
+	*/
+	SpanID *string
+
+	/* StartTime.
+
+	   only return records with timestamp >= start_time (RFC3339)
+	*/
+	StartTime *string
+
+	/* TfOperation.
+
+	   filter by log_attributes['tf.operation']
+	*/
+	TfOperation *string
+
+	/* TfWorkspaceID.
+
+	   filter by log_attributes['tf.workspace_id']
+	*/
+	TfWorkspaceID *string
+
+	/* Tool.
+
+	   filter by log_attributes['nuon.tool'] (repeatable; e.g. helm, terraform, kubernetes_manifest, runner) collectionFormat(multi)
+	*/
+	Tool []string
+
+	/* TraceFlags.
+
+	   filter by exact trace_flags (UInt8)
+	*/
+	TraceFlags *int64
+
+	/* TraceID.
+
+	   filter by exact trace_id (dedicated CH column)
+	*/
+	TraceID *string
 
 	/* Wait.
 
@@ -132,6 +337,127 @@ func (o *LogStreamTailLogsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithAttr adds the attr to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithAttr(attr []string) *LogStreamTailLogsParams {
+	o.SetAttr(attr)
+	return o
+}
+
+// SetAttr adds the attr to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetAttr(attr []string) {
+	o.Attr = attr
+}
+
+// WithEndTime adds the endTime to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithEndTime(endTime *string) *LogStreamTailLogsParams {
+	o.SetEndTime(endTime)
+	return o
+}
+
+// SetEndTime adds the endTime to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetEndTime(endTime *string) {
+	o.EndTime = endTime
+}
+
+// WithHelmChartID adds the helmChartID to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithHelmChartID(helmChartID *string) *LogStreamTailLogsParams {
+	o.SetHelmChartID(helmChartID)
+	return o
+}
+
+// SetHelmChartID adds the helmChartId to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetHelmChartID(helmChartID *string) {
+	o.HelmChartID = helmChartID
+}
+
+// WithHelmChartName adds the helmChartName to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithHelmChartName(helmChartName *string) *LogStreamTailLogsParams {
+	o.SetHelmChartName(helmChartName)
+	return o
+}
+
+// SetHelmChartName adds the helmChartName to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetHelmChartName(helmChartName *string) {
+	o.HelmChartName = helmChartName
+}
+
+// WithHelmNamespace adds the helmNamespace to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithHelmNamespace(helmNamespace *string) *LogStreamTailLogsParams {
+	o.SetHelmNamespace(helmNamespace)
+	return o
+}
+
+// SetHelmNamespace adds the helmNamespace to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetHelmNamespace(helmNamespace *string) {
+	o.HelmNamespace = helmNamespace
+}
+
+// WithHelmOperation adds the helmOperation to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithHelmOperation(helmOperation *string) *LogStreamTailLogsParams {
+	o.SetHelmOperation(helmOperation)
+	return o
+}
+
+// SetHelmOperation adds the helmOperation to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetHelmOperation(helmOperation *string) {
+	o.HelmOperation = helmOperation
+}
+
+// WithHelmReleaseName adds the helmReleaseName to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithHelmReleaseName(helmReleaseName *string) *LogStreamTailLogsParams {
+	o.SetHelmReleaseName(helmReleaseName)
+	return o
+}
+
+// SetHelmReleaseName adds the helmReleaseName to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetHelmReleaseName(helmReleaseName *string) {
+	o.HelmReleaseName = helmReleaseName
+}
+
+// WithK8sKind adds the k8sKind to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithK8sKind(k8sKind *string) *LogStreamTailLogsParams {
+	o.SetK8sKind(k8sKind)
+	return o
+}
+
+// SetK8sKind adds the k8sKind to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetK8sKind(k8sKind *string) {
+	o.K8sKind = k8sKind
+}
+
+// WithK8sName adds the k8sName to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithK8sName(k8sName *string) *LogStreamTailLogsParams {
+	o.SetK8sName(k8sName)
+	return o
+}
+
+// SetK8sName adds the k8sName to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetK8sName(k8sName *string) {
+	o.K8sName = k8sName
+}
+
+// WithK8sNamespace adds the k8sNamespace to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithK8sNamespace(k8sNamespace *string) *LogStreamTailLogsParams {
+	o.SetK8sNamespace(k8sNamespace)
+	return o
+}
+
+// SetK8sNamespace adds the k8sNamespace to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetK8sNamespace(k8sNamespace *string) {
+	o.K8sNamespace = k8sNamespace
+}
+
+// WithK8sOperation adds the k8sOperation to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithK8sOperation(k8sOperation *string) *LogStreamTailLogsParams {
+	o.SetK8sOperation(k8sOperation)
+	return o
+}
+
+// SetK8sOperation adds the k8sOperation to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetK8sOperation(k8sOperation *string) {
+	o.K8sOperation = k8sOperation
+}
+
 // WithLogStreamID adds the logStreamID to the log stream tail logs params
 func (o *LogStreamTailLogsParams) WithLogStreamID(logStreamID string) *LogStreamTailLogsParams {
 	o.SetLogStreamID(logStreamID)
@@ -143,6 +469,182 @@ func (o *LogStreamTailLogsParams) SetLogStreamID(logStreamID string) {
 	o.LogStreamID = logStreamID
 }
 
+// WithQ adds the q to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithQ(q *string) *LogStreamTailLogsParams {
+	o.SetQ(q)
+	return o
+}
+
+// SetQ adds the q to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetQ(q *string) {
+	o.Q = q
+}
+
+// WithResourceAttr adds the resourceAttr to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithResourceAttr(resourceAttr []string) *LogStreamTailLogsParams {
+	o.SetResourceAttr(resourceAttr)
+	return o
+}
+
+// SetResourceAttr adds the resourceAttr to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetResourceAttr(resourceAttr []string) {
+	o.ResourceAttr = resourceAttr
+}
+
+// WithResourceSchemaURL adds the resourceSchemaURL to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithResourceSchemaURL(resourceSchemaURL []string) *LogStreamTailLogsParams {
+	o.SetResourceSchemaURL(resourceSchemaURL)
+	return o
+}
+
+// SetResourceSchemaURL adds the resourceSchemaUrl to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetResourceSchemaURL(resourceSchemaURL []string) {
+	o.ResourceSchemaURL = resourceSchemaURL
+}
+
+// WithRunnerGroupID adds the runnerGroupID to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithRunnerGroupID(runnerGroupID *string) *LogStreamTailLogsParams {
+	o.SetRunnerGroupID(runnerGroupID)
+	return o
+}
+
+// SetRunnerGroupID adds the runnerGroupId to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetRunnerGroupID(runnerGroupID *string) {
+	o.RunnerGroupID = runnerGroupID
+}
+
+// WithRunnerID adds the runnerID to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithRunnerID(runnerID *string) *LogStreamTailLogsParams {
+	o.SetRunnerID(runnerID)
+	return o
+}
+
+// SetRunnerID adds the runnerId to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetRunnerID(runnerID *string) {
+	o.RunnerID = runnerID
+}
+
+// WithRunnerJobExecutionID adds the runnerJobExecutionID to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithRunnerJobExecutionID(runnerJobExecutionID *string) *LogStreamTailLogsParams {
+	o.SetRunnerJobExecutionID(runnerJobExecutionID)
+	return o
+}
+
+// SetRunnerJobExecutionID adds the runnerJobExecutionId to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetRunnerJobExecutionID(runnerJobExecutionID *string) {
+	o.RunnerJobExecutionID = runnerJobExecutionID
+}
+
+// WithRunnerJobExecutionStep adds the runnerJobExecutionStep to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithRunnerJobExecutionStep(runnerJobExecutionStep *string) *LogStreamTailLogsParams {
+	o.SetRunnerJobExecutionStep(runnerJobExecutionStep)
+	return o
+}
+
+// SetRunnerJobExecutionStep adds the runnerJobExecutionStep to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetRunnerJobExecutionStep(runnerJobExecutionStep *string) {
+	o.RunnerJobExecutionStep = runnerJobExecutionStep
+}
+
+// WithRunnerJobID adds the runnerJobID to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithRunnerJobID(runnerJobID *string) *LogStreamTailLogsParams {
+	o.SetRunnerJobID(runnerJobID)
+	return o
+}
+
+// SetRunnerJobID adds the runnerJobId to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetRunnerJobID(runnerJobID *string) {
+	o.RunnerJobID = runnerJobID
+}
+
+// WithScopeAttr adds the scopeAttr to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithScopeAttr(scopeAttr []string) *LogStreamTailLogsParams {
+	o.SetScopeAttr(scopeAttr)
+	return o
+}
+
+// SetScopeAttr adds the scopeAttr to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetScopeAttr(scopeAttr []string) {
+	o.ScopeAttr = scopeAttr
+}
+
+// WithScopeName adds the scopeName to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithScopeName(scopeName []string) *LogStreamTailLogsParams {
+	o.SetScopeName(scopeName)
+	return o
+}
+
+// SetScopeName adds the scopeName to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetScopeName(scopeName []string) {
+	o.ScopeName = scopeName
+}
+
+// WithScopeSchemaURL adds the scopeSchemaURL to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithScopeSchemaURL(scopeSchemaURL []string) *LogStreamTailLogsParams {
+	o.SetScopeSchemaURL(scopeSchemaURL)
+	return o
+}
+
+// SetScopeSchemaURL adds the scopeSchemaUrl to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetScopeSchemaURL(scopeSchemaURL []string) {
+	o.ScopeSchemaURL = scopeSchemaURL
+}
+
+// WithScopeVersion adds the scopeVersion to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithScopeVersion(scopeVersion []string) *LogStreamTailLogsParams {
+	o.SetScopeVersion(scopeVersion)
+	return o
+}
+
+// SetScopeVersion adds the scopeVersion to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetScopeVersion(scopeVersion []string) {
+	o.ScopeVersion = scopeVersion
+}
+
+// WithServiceName adds the serviceName to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithServiceName(serviceName []string) *LogStreamTailLogsParams {
+	o.SetServiceName(serviceName)
+	return o
+}
+
+// SetServiceName adds the serviceName to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetServiceName(serviceName []string) {
+	o.ServiceName = serviceName
+}
+
+// WithSeverityNumberMax adds the severityNumberMax to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithSeverityNumberMax(severityNumberMax *int64) *LogStreamTailLogsParams {
+	o.SetSeverityNumberMax(severityNumberMax)
+	return o
+}
+
+// SetSeverityNumberMax adds the severityNumberMax to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetSeverityNumberMax(severityNumberMax *int64) {
+	o.SeverityNumberMax = severityNumberMax
+}
+
+// WithSeverityNumberMin adds the severityNumberMin to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithSeverityNumberMin(severityNumberMin *int64) *LogStreamTailLogsParams {
+	o.SetSeverityNumberMin(severityNumberMin)
+	return o
+}
+
+// SetSeverityNumberMin adds the severityNumberMin to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetSeverityNumberMin(severityNumberMin *int64) {
+	o.SeverityNumberMin = severityNumberMin
+}
+
+// WithSeverityText adds the severityText to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithSeverityText(severityText []string) *LogStreamTailLogsParams {
+	o.SetSeverityText(severityText)
+	return o
+}
+
+// SetSeverityText adds the severityText to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetSeverityText(severityText []string) {
+	o.SeverityText = severityText
+}
+
 // WithSince adds the since to the log stream tail logs params
 func (o *LogStreamTailLogsParams) WithSince(since *string) *LogStreamTailLogsParams {
 	o.SetSince(since)
@@ -152,6 +654,83 @@ func (o *LogStreamTailLogsParams) WithSince(since *string) *LogStreamTailLogsPar
 // SetSince adds the since to the log stream tail logs params
 func (o *LogStreamTailLogsParams) SetSince(since *string) {
 	o.Since = since
+}
+
+// WithSpanID adds the spanID to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithSpanID(spanID *string) *LogStreamTailLogsParams {
+	o.SetSpanID(spanID)
+	return o
+}
+
+// SetSpanID adds the spanId to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetSpanID(spanID *string) {
+	o.SpanID = spanID
+}
+
+// WithStartTime adds the startTime to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithStartTime(startTime *string) *LogStreamTailLogsParams {
+	o.SetStartTime(startTime)
+	return o
+}
+
+// SetStartTime adds the startTime to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetStartTime(startTime *string) {
+	o.StartTime = startTime
+}
+
+// WithTfOperation adds the tfOperation to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithTfOperation(tfOperation *string) *LogStreamTailLogsParams {
+	o.SetTfOperation(tfOperation)
+	return o
+}
+
+// SetTfOperation adds the tfOperation to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetTfOperation(tfOperation *string) {
+	o.TfOperation = tfOperation
+}
+
+// WithTfWorkspaceID adds the tfWorkspaceID to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithTfWorkspaceID(tfWorkspaceID *string) *LogStreamTailLogsParams {
+	o.SetTfWorkspaceID(tfWorkspaceID)
+	return o
+}
+
+// SetTfWorkspaceID adds the tfWorkspaceId to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetTfWorkspaceID(tfWorkspaceID *string) {
+	o.TfWorkspaceID = tfWorkspaceID
+}
+
+// WithTool adds the tool to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithTool(tool []string) *LogStreamTailLogsParams {
+	o.SetTool(tool)
+	return o
+}
+
+// SetTool adds the tool to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetTool(tool []string) {
+	o.Tool = tool
+}
+
+// WithTraceFlags adds the traceFlags to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithTraceFlags(traceFlags *int64) *LogStreamTailLogsParams {
+	o.SetTraceFlags(traceFlags)
+	return o
+}
+
+// SetTraceFlags adds the traceFlags to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetTraceFlags(traceFlags *int64) {
+	o.TraceFlags = traceFlags
+}
+
+// WithTraceID adds the traceID to the log stream tail logs params
+func (o *LogStreamTailLogsParams) WithTraceID(traceID *string) *LogStreamTailLogsParams {
+	o.SetTraceID(traceID)
+	return o
+}
+
+// SetTraceID adds the traceId to the log stream tail logs params
+func (o *LogStreamTailLogsParams) SetTraceID(traceID *string) {
+	o.TraceID = traceID
 }
 
 // WithWait adds the wait to the log stream tail logs params
@@ -173,9 +752,414 @@ func (o *LogStreamTailLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 	}
 	var res []error
 
+	if o.Attr != nil {
+
+		// binding items for attr
+		joinedAttr := o.bindParamAttr(reg)
+
+		// query array param attr
+		if err := r.SetQueryParam("attr", joinedAttr...); err != nil {
+			return err
+		}
+	}
+
+	if o.EndTime != nil {
+
+		// query param end_time
+		var qrEndTime string
+
+		if o.EndTime != nil {
+			qrEndTime = *o.EndTime
+		}
+		qEndTime := qrEndTime
+		if qEndTime != "" {
+
+			if err := r.SetQueryParam("end_time", qEndTime); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.HelmChartID != nil {
+
+		// query param helm_chart_id
+		var qrHelmChartID string
+
+		if o.HelmChartID != nil {
+			qrHelmChartID = *o.HelmChartID
+		}
+		qHelmChartID := qrHelmChartID
+		if qHelmChartID != "" {
+
+			if err := r.SetQueryParam("helm_chart_id", qHelmChartID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.HelmChartName != nil {
+
+		// query param helm_chart_name
+		var qrHelmChartName string
+
+		if o.HelmChartName != nil {
+			qrHelmChartName = *o.HelmChartName
+		}
+		qHelmChartName := qrHelmChartName
+		if qHelmChartName != "" {
+
+			if err := r.SetQueryParam("helm_chart_name", qHelmChartName); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.HelmNamespace != nil {
+
+		// query param helm_namespace
+		var qrHelmNamespace string
+
+		if o.HelmNamespace != nil {
+			qrHelmNamespace = *o.HelmNamespace
+		}
+		qHelmNamespace := qrHelmNamespace
+		if qHelmNamespace != "" {
+
+			if err := r.SetQueryParam("helm_namespace", qHelmNamespace); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.HelmOperation != nil {
+
+		// query param helm_operation
+		var qrHelmOperation string
+
+		if o.HelmOperation != nil {
+			qrHelmOperation = *o.HelmOperation
+		}
+		qHelmOperation := qrHelmOperation
+		if qHelmOperation != "" {
+
+			if err := r.SetQueryParam("helm_operation", qHelmOperation); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.HelmReleaseName != nil {
+
+		// query param helm_release_name
+		var qrHelmReleaseName string
+
+		if o.HelmReleaseName != nil {
+			qrHelmReleaseName = *o.HelmReleaseName
+		}
+		qHelmReleaseName := qrHelmReleaseName
+		if qHelmReleaseName != "" {
+
+			if err := r.SetQueryParam("helm_release_name", qHelmReleaseName); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.K8sKind != nil {
+
+		// query param k8s_kind
+		var qrK8sKind string
+
+		if o.K8sKind != nil {
+			qrK8sKind = *o.K8sKind
+		}
+		qK8sKind := qrK8sKind
+		if qK8sKind != "" {
+
+			if err := r.SetQueryParam("k8s_kind", qK8sKind); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.K8sName != nil {
+
+		// query param k8s_name
+		var qrK8sName string
+
+		if o.K8sName != nil {
+			qrK8sName = *o.K8sName
+		}
+		qK8sName := qrK8sName
+		if qK8sName != "" {
+
+			if err := r.SetQueryParam("k8s_name", qK8sName); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.K8sNamespace != nil {
+
+		// query param k8s_namespace
+		var qrK8sNamespace string
+
+		if o.K8sNamespace != nil {
+			qrK8sNamespace = *o.K8sNamespace
+		}
+		qK8sNamespace := qrK8sNamespace
+		if qK8sNamespace != "" {
+
+			if err := r.SetQueryParam("k8s_namespace", qK8sNamespace); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.K8sOperation != nil {
+
+		// query param k8s_operation
+		var qrK8sOperation string
+
+		if o.K8sOperation != nil {
+			qrK8sOperation = *o.K8sOperation
+		}
+		qK8sOperation := qrK8sOperation
+		if qK8sOperation != "" {
+
+			if err := r.SetQueryParam("k8s_operation", qK8sOperation); err != nil {
+				return err
+			}
+		}
+	}
+
 	// path param log_stream_id
 	if err := r.SetPathParam("log_stream_id", o.LogStreamID); err != nil {
 		return err
+	}
+
+	if o.Q != nil {
+
+		// query param q
+		var qrQ string
+
+		if o.Q != nil {
+			qrQ = *o.Q
+		}
+		qQ := qrQ
+		if qQ != "" {
+
+			if err := r.SetQueryParam("q", qQ); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.ResourceAttr != nil {
+
+		// binding items for resource_attr
+		joinedResourceAttr := o.bindParamResourceAttr(reg)
+
+		// query array param resource_attr
+		if err := r.SetQueryParam("resource_attr", joinedResourceAttr...); err != nil {
+			return err
+		}
+	}
+
+	if o.ResourceSchemaURL != nil {
+
+		// binding items for resource_schema_url
+		joinedResourceSchemaURL := o.bindParamResourceSchemaURL(reg)
+
+		// query array param resource_schema_url
+		if err := r.SetQueryParam("resource_schema_url", joinedResourceSchemaURL...); err != nil {
+			return err
+		}
+	}
+
+	if o.RunnerGroupID != nil {
+
+		// query param runner_group_id
+		var qrRunnerGroupID string
+
+		if o.RunnerGroupID != nil {
+			qrRunnerGroupID = *o.RunnerGroupID
+		}
+		qRunnerGroupID := qrRunnerGroupID
+		if qRunnerGroupID != "" {
+
+			if err := r.SetQueryParam("runner_group_id", qRunnerGroupID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.RunnerID != nil {
+
+		// query param runner_id
+		var qrRunnerID string
+
+		if o.RunnerID != nil {
+			qrRunnerID = *o.RunnerID
+		}
+		qRunnerID := qrRunnerID
+		if qRunnerID != "" {
+
+			if err := r.SetQueryParam("runner_id", qRunnerID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.RunnerJobExecutionID != nil {
+
+		// query param runner_job_execution_id
+		var qrRunnerJobExecutionID string
+
+		if o.RunnerJobExecutionID != nil {
+			qrRunnerJobExecutionID = *o.RunnerJobExecutionID
+		}
+		qRunnerJobExecutionID := qrRunnerJobExecutionID
+		if qRunnerJobExecutionID != "" {
+
+			if err := r.SetQueryParam("runner_job_execution_id", qRunnerJobExecutionID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.RunnerJobExecutionStep != nil {
+
+		// query param runner_job_execution_step
+		var qrRunnerJobExecutionStep string
+
+		if o.RunnerJobExecutionStep != nil {
+			qrRunnerJobExecutionStep = *o.RunnerJobExecutionStep
+		}
+		qRunnerJobExecutionStep := qrRunnerJobExecutionStep
+		if qRunnerJobExecutionStep != "" {
+
+			if err := r.SetQueryParam("runner_job_execution_step", qRunnerJobExecutionStep); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.RunnerJobID != nil {
+
+		// query param runner_job_id
+		var qrRunnerJobID string
+
+		if o.RunnerJobID != nil {
+			qrRunnerJobID = *o.RunnerJobID
+		}
+		qRunnerJobID := qrRunnerJobID
+		if qRunnerJobID != "" {
+
+			if err := r.SetQueryParam("runner_job_id", qRunnerJobID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.ScopeAttr != nil {
+
+		// binding items for scope_attr
+		joinedScopeAttr := o.bindParamScopeAttr(reg)
+
+		// query array param scope_attr
+		if err := r.SetQueryParam("scope_attr", joinedScopeAttr...); err != nil {
+			return err
+		}
+	}
+
+	if o.ScopeName != nil {
+
+		// binding items for scope_name
+		joinedScopeName := o.bindParamScopeName(reg)
+
+		// query array param scope_name
+		if err := r.SetQueryParam("scope_name", joinedScopeName...); err != nil {
+			return err
+		}
+	}
+
+	if o.ScopeSchemaURL != nil {
+
+		// binding items for scope_schema_url
+		joinedScopeSchemaURL := o.bindParamScopeSchemaURL(reg)
+
+		// query array param scope_schema_url
+		if err := r.SetQueryParam("scope_schema_url", joinedScopeSchemaURL...); err != nil {
+			return err
+		}
+	}
+
+	if o.ScopeVersion != nil {
+
+		// binding items for scope_version
+		joinedScopeVersion := o.bindParamScopeVersion(reg)
+
+		// query array param scope_version
+		if err := r.SetQueryParam("scope_version", joinedScopeVersion...); err != nil {
+			return err
+		}
+	}
+
+	if o.ServiceName != nil {
+
+		// binding items for service_name
+		joinedServiceName := o.bindParamServiceName(reg)
+
+		// query array param service_name
+		if err := r.SetQueryParam("service_name", joinedServiceName...); err != nil {
+			return err
+		}
+	}
+
+	if o.SeverityNumberMax != nil {
+
+		// query param severity_number_max
+		var qrSeverityNumberMax int64
+
+		if o.SeverityNumberMax != nil {
+			qrSeverityNumberMax = *o.SeverityNumberMax
+		}
+		qSeverityNumberMax := swag.FormatInt64(qrSeverityNumberMax)
+		if qSeverityNumberMax != "" {
+
+			if err := r.SetQueryParam("severity_number_max", qSeverityNumberMax); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.SeverityNumberMin != nil {
+
+		// query param severity_number_min
+		var qrSeverityNumberMin int64
+
+		if o.SeverityNumberMin != nil {
+			qrSeverityNumberMin = *o.SeverityNumberMin
+		}
+		qSeverityNumberMin := swag.FormatInt64(qrSeverityNumberMin)
+		if qSeverityNumberMin != "" {
+
+			if err := r.SetQueryParam("severity_number_min", qSeverityNumberMin); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.SeverityText != nil {
+
+		// binding items for severity_text
+		joinedSeverityText := o.bindParamSeverityText(reg)
+
+		// query array param severity_text
+		if err := r.SetQueryParam("severity_text", joinedSeverityText...); err != nil {
+			return err
+		}
 	}
 
 	if o.Since != nil {
@@ -190,6 +1174,119 @@ func (o *LogStreamTailLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		if qSince != "" {
 
 			if err := r.SetQueryParam("since", qSince); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.SpanID != nil {
+
+		// query param span_id
+		var qrSpanID string
+
+		if o.SpanID != nil {
+			qrSpanID = *o.SpanID
+		}
+		qSpanID := qrSpanID
+		if qSpanID != "" {
+
+			if err := r.SetQueryParam("span_id", qSpanID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.StartTime != nil {
+
+		// query param start_time
+		var qrStartTime string
+
+		if o.StartTime != nil {
+			qrStartTime = *o.StartTime
+		}
+		qStartTime := qrStartTime
+		if qStartTime != "" {
+
+			if err := r.SetQueryParam("start_time", qStartTime); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.TfOperation != nil {
+
+		// query param tf_operation
+		var qrTfOperation string
+
+		if o.TfOperation != nil {
+			qrTfOperation = *o.TfOperation
+		}
+		qTfOperation := qrTfOperation
+		if qTfOperation != "" {
+
+			if err := r.SetQueryParam("tf_operation", qTfOperation); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.TfWorkspaceID != nil {
+
+		// query param tf_workspace_id
+		var qrTfWorkspaceID string
+
+		if o.TfWorkspaceID != nil {
+			qrTfWorkspaceID = *o.TfWorkspaceID
+		}
+		qTfWorkspaceID := qrTfWorkspaceID
+		if qTfWorkspaceID != "" {
+
+			if err := r.SetQueryParam("tf_workspace_id", qTfWorkspaceID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Tool != nil {
+
+		// binding items for tool
+		joinedTool := o.bindParamTool(reg)
+
+		// query array param tool
+		if err := r.SetQueryParam("tool", joinedTool...); err != nil {
+			return err
+		}
+	}
+
+	if o.TraceFlags != nil {
+
+		// query param trace_flags
+		var qrTraceFlags int64
+
+		if o.TraceFlags != nil {
+			qrTraceFlags = *o.TraceFlags
+		}
+		qTraceFlags := swag.FormatInt64(qrTraceFlags)
+		if qTraceFlags != "" {
+
+			if err := r.SetQueryParam("trace_flags", qTraceFlags); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.TraceID != nil {
+
+		// query param trace_id
+		var qrTraceID string
+
+		if o.TraceID != nil {
+			qrTraceID = *o.TraceID
+		}
+		qTraceID := qrTraceID
+		if qTraceID != "" {
+
+			if err := r.SetQueryParam("trace_id", qTraceID); err != nil {
 				return err
 			}
 		}
@@ -216,4 +1313,174 @@ func (o *LogStreamTailLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return errors.CompositeValidationError(res...)
 	}
 	return nil
+}
+
+// bindParamLogStreamTailLogs binds the parameter attr
+func (o *LogStreamTailLogsParams) bindParamAttr(formats strfmt.Registry) []string {
+	attrIR := o.Attr
+
+	var attrIC []string
+	for _, attrIIR := range attrIR { // explode []string
+
+		attrIIV := attrIIR // string as string
+		attrIC = append(attrIC, attrIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	attrIS := swag.JoinByFormat(attrIC, "multi")
+
+	return attrIS
+}
+
+// bindParamLogStreamTailLogs binds the parameter resource_attr
+func (o *LogStreamTailLogsParams) bindParamResourceAttr(formats strfmt.Registry) []string {
+	resourceAttrIR := o.ResourceAttr
+
+	var resourceAttrIC []string
+	for _, resourceAttrIIR := range resourceAttrIR { // explode []string
+
+		resourceAttrIIV := resourceAttrIIR // string as string
+		resourceAttrIC = append(resourceAttrIC, resourceAttrIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	resourceAttrIS := swag.JoinByFormat(resourceAttrIC, "multi")
+
+	return resourceAttrIS
+}
+
+// bindParamLogStreamTailLogs binds the parameter resource_schema_url
+func (o *LogStreamTailLogsParams) bindParamResourceSchemaURL(formats strfmt.Registry) []string {
+	resourceSchemaURLIR := o.ResourceSchemaURL
+
+	var resourceSchemaURLIC []string
+	for _, resourceSchemaURLIIR := range resourceSchemaURLIR { // explode []string
+
+		resourceSchemaURLIIV := resourceSchemaURLIIR // string as string
+		resourceSchemaURLIC = append(resourceSchemaURLIC, resourceSchemaURLIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	resourceSchemaURLIS := swag.JoinByFormat(resourceSchemaURLIC, "multi")
+
+	return resourceSchemaURLIS
+}
+
+// bindParamLogStreamTailLogs binds the parameter scope_attr
+func (o *LogStreamTailLogsParams) bindParamScopeAttr(formats strfmt.Registry) []string {
+	scopeAttrIR := o.ScopeAttr
+
+	var scopeAttrIC []string
+	for _, scopeAttrIIR := range scopeAttrIR { // explode []string
+
+		scopeAttrIIV := scopeAttrIIR // string as string
+		scopeAttrIC = append(scopeAttrIC, scopeAttrIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	scopeAttrIS := swag.JoinByFormat(scopeAttrIC, "multi")
+
+	return scopeAttrIS
+}
+
+// bindParamLogStreamTailLogs binds the parameter scope_name
+func (o *LogStreamTailLogsParams) bindParamScopeName(formats strfmt.Registry) []string {
+	scopeNameIR := o.ScopeName
+
+	var scopeNameIC []string
+	for _, scopeNameIIR := range scopeNameIR { // explode []string
+
+		scopeNameIIV := scopeNameIIR // string as string
+		scopeNameIC = append(scopeNameIC, scopeNameIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	scopeNameIS := swag.JoinByFormat(scopeNameIC, "multi")
+
+	return scopeNameIS
+}
+
+// bindParamLogStreamTailLogs binds the parameter scope_schema_url
+func (o *LogStreamTailLogsParams) bindParamScopeSchemaURL(formats strfmt.Registry) []string {
+	scopeSchemaURLIR := o.ScopeSchemaURL
+
+	var scopeSchemaURLIC []string
+	for _, scopeSchemaURLIIR := range scopeSchemaURLIR { // explode []string
+
+		scopeSchemaURLIIV := scopeSchemaURLIIR // string as string
+		scopeSchemaURLIC = append(scopeSchemaURLIC, scopeSchemaURLIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	scopeSchemaURLIS := swag.JoinByFormat(scopeSchemaURLIC, "multi")
+
+	return scopeSchemaURLIS
+}
+
+// bindParamLogStreamTailLogs binds the parameter scope_version
+func (o *LogStreamTailLogsParams) bindParamScopeVersion(formats strfmt.Registry) []string {
+	scopeVersionIR := o.ScopeVersion
+
+	var scopeVersionIC []string
+	for _, scopeVersionIIR := range scopeVersionIR { // explode []string
+
+		scopeVersionIIV := scopeVersionIIR // string as string
+		scopeVersionIC = append(scopeVersionIC, scopeVersionIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	scopeVersionIS := swag.JoinByFormat(scopeVersionIC, "multi")
+
+	return scopeVersionIS
+}
+
+// bindParamLogStreamTailLogs binds the parameter service_name
+func (o *LogStreamTailLogsParams) bindParamServiceName(formats strfmt.Registry) []string {
+	serviceNameIR := o.ServiceName
+
+	var serviceNameIC []string
+	for _, serviceNameIIR := range serviceNameIR { // explode []string
+
+		serviceNameIIV := serviceNameIIR // string as string
+		serviceNameIC = append(serviceNameIC, serviceNameIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	serviceNameIS := swag.JoinByFormat(serviceNameIC, "multi")
+
+	return serviceNameIS
+}
+
+// bindParamLogStreamTailLogs binds the parameter severity_text
+func (o *LogStreamTailLogsParams) bindParamSeverityText(formats strfmt.Registry) []string {
+	severityTextIR := o.SeverityText
+
+	var severityTextIC []string
+	for _, severityTextIIR := range severityTextIR { // explode []string
+
+		severityTextIIV := severityTextIIR // string as string
+		severityTextIC = append(severityTextIC, severityTextIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	severityTextIS := swag.JoinByFormat(severityTextIC, "multi")
+
+	return severityTextIS
+}
+
+// bindParamLogStreamTailLogs binds the parameter tool
+func (o *LogStreamTailLogsParams) bindParamTool(formats strfmt.Registry) []string {
+	toolIR := o.Tool
+
+	var toolIC []string
+	for _, toolIIR := range toolIR { // explode []string
+
+		toolIIV := toolIIR // string as string
+		toolIC = append(toolIC, toolIIV)
+	}
+
+	// items.CollectionFormat: "multi"
+	toolIS := swag.JoinByFormat(toolIC, "multi")
+
+	return toolIS
 }

@@ -68,7 +68,11 @@ const log = (id: string, runnerJobId?: string) => ({
   runner_job_id: runnerJobId,
 })
 
-const Probe = () => {
+const Probe = ({
+  nextSearch,
+}: {
+  nextSearch?: string
+}) => {
   const ctx = useContext(LogStreamContext)
   const [, setSearchParams] = useSearchParams()
   return (
@@ -76,6 +80,12 @@ const Probe = () => {
       <div data-testid="ids">
         {(ctx?.logs ?? []).map((l) => l.id).join(',')}
       </div>
+      {nextSearch !== undefined && (
+        <button
+          data-testid="set-search"
+          onClick={() => setSearchParams(nextSearch)}
+        />
+      )}
       <button
         data-testid="to-newest-first"
         onClick={() => setSearchParams({ sort: 'desc' })}
@@ -87,12 +97,17 @@ const Probe = () => {
 const renderProvider = ({
   search = '',
   runnerJobId,
-}: { search?: string; runnerJobId?: string } = {}) => {
+  nextSearch,
+}: {
+  search?: string
+  runnerJobId?: string
+  nextSearch?: string
+} = {}) => {
   const { getByTestId } = render(
     <MemoryRouter initialEntries={[`/logs${search}`]}>
       <OrgContext.Provider value={{ org: { id: 'org1' }, refresh: () => {} }}>
         <LogStreamProvider logStreamId="ls1" runnerJobId={runnerJobId}>
-          <Probe />
+          <Probe nextSearch={nextSearch} />
         </LogStreamProvider>
       </OrgContext.Provider>
     </MemoryRouter>
@@ -102,6 +117,7 @@ const renderProvider = ({
   return {
     stream,
     ids: () => getByTestId('ids').textContent,
+    setSearch: () => fireEvent.click(getByTestId('set-search')),
     switchToNewestFirst: () => fireEvent.click(getByTestId('to-newest-first')),
   }
 }
@@ -195,7 +211,7 @@ test('seeds at most once per stream', async () => {
   await waitFor(() => expect(getLogStreamLogs).toHaveBeenCalledTimes(1))
 })
 
-test('drops seeded logs that belong to another runner job', async () => {
+test('seeds with a runner job filter for another runner job', async () => {
   getLogStreamLogs.mockImplementation(async () => [
     log('9', 'job1'),
     log('8', 'job2'),
@@ -204,5 +220,39 @@ test('drops seeded logs that belong to another runner job', async () => {
   const { stream, ids } = renderProvider({ runnerJobId: 'job1' })
   stream.emitStatus('catching-up')
 
-  await waitFor(() => expect(ids()).toBe('9'))
+  await waitFor(() => expect(getLogStreamLogs).toHaveBeenCalledTimes(1))
+  expect(getLogStreamLogs.mock.calls[0]?.[0]).toMatchObject({
+    filters: { runner_job_id: 'job1' },
+  })
+  await waitFor(() => expect(ids()).toBe('9,8'))
+})
+
+test('search keystrokes do not reconnect the stream', () => {
+  const { stream, setSearch } = renderProvider({
+    search: '?q=a',
+    nextSearch: 'q=ab',
+  })
+  expect(FakeEventSource.instances.length).toBe(1)
+  expect(stream.url).not.toContain('q=')
+
+  setSearch()
+
+  expect(FakeEventSource.instances.length).toBe(1)
+  expect(stream.url).not.toContain('q=')
+})
+
+test('severity change reconnects exactly once with the new filter and resets logs', () => {
+  const { stream, ids, setSearch } = renderProvider({
+    search: '',
+    nextSearch: 'severity=Error',
+  })
+  stream.emitLogs([log('1')])
+  expect(ids()).toBe('1')
+
+  setSearch()
+
+  expect(FakeEventSource.instances.length).toBe(2)
+  expect(FakeEventSource.instances[1].url).toContain('severity_text=Error')
+  expect(FakeEventSource.instances[1].url).not.toContain('severity_text=Info')
+  expect(ids()).toBe('')
 })
