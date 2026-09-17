@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/open-policy-agent/opa/v1/rego"
 	"github.com/pkg/errors"
@@ -31,18 +32,25 @@ type EvaluateSinglePolicyResult struct {
 // @schedule-to-close-timeout 2m
 // @start-to-close-timeout 1m30s
 func (a *Activities) EvaluateSinglePolicy(ctx context.Context, req *EvaluateSinglePolicyRequest) (*EvaluateSinglePolicyResult, error) {
+	started := time.Now()
+	decision := "pass"
+	errorStage := ""
+	defer func() { a.policyEvaluationMetrics.record(ctx, started, decision, errorStage) }()
+
 	l := temporalzap.GetActivityLogger(ctx)
 	l = l.With(zap.String("policy_id", req.PolicyID))
 
 	l.Info("evaluating policy")
 
 	if err := configvalidate.ValidateOPAPolicy(req.Contents); err != nil {
+		errorStage = "policy_validation"
 		l.Error("invalid OPA policy", zap.Error(err))
 		return nil, errors.Wrap(err, "invalid OPA policy")
 	}
 
 	var input any
 	if err := json.Unmarshal(req.InputJSON, &input); err != nil {
+		errorStage = "input_validation"
 		l.Error("unable to parse input JSON", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to parse input JSON")
 	}
@@ -53,15 +61,22 @@ func (a *Activities) EvaluateSinglePolicy(ctx context.Context, req *EvaluateSing
 
 	denyViolations, err := a.evaluateRule(ctx, l, req.Contents, input, "data.nuon.deny", "deny")
 	if err != nil {
+		errorStage = "deny_evaluation"
 		return nil, errors.Wrap(err, "unable to evaluate deny rules")
 	}
 	violations = append(violations, denyViolations...)
 
 	warnViolations, err := a.evaluateRule(ctx, l, req.Contents, input, "data.nuon.warn", "warn")
 	if err != nil {
+		errorStage = "warn_evaluation"
 		return nil, errors.Wrap(err, "unable to evaluate warn rules")
 	}
 	violations = append(violations, warnViolations...)
+	if len(denyViolations) > 0 {
+		decision = "deny"
+	} else if len(warnViolations) > 0 {
+		decision = "warn"
+	}
 
 	for i := range violations {
 		violations[i].PolicyID = req.PolicyID
