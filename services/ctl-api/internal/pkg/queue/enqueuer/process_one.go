@@ -114,8 +114,8 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 // processOne looks up the queue signal and its parent queue, performs the
 // SignalWithStart call, and marks the signal as enqueued.
 func (e *Enqueuer) processOne(queueSignalID string) {
-	e.metrics.workerStarted()
-	defer e.metrics.workerFinished()
+	e.metrics.processingStarted()
+	defer e.metrics.processingFinished()
 
 	ctx, cancel := context.WithTimeout(e.ctx, processOneTimeout)
 	defer cancel()

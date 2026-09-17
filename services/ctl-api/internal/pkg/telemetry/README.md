@@ -209,7 +209,7 @@ The enqueuer emits metrics for dispatching signals to Temporal:
 | `nuon.queue.enqueuer.operations` | Counter | operations | source, operation, outcome |
 | `nuon.queue.enqueuer.channel.dropped` | Counter | signals | None |
 | `nuon.queue.enqueuer.local.backlog` | Gauge | signals | None |
-| `nuon.queue.enqueuer.local.workers.active` | Gauge | workers | None |
+| `nuon.queue.enqueuer.local.processing` | Gauge | signals | None |
 
 Dimension keys use the `nuon.queue.enqueuer.` prefix. Sources are `channel`,
 `await`, `sweep`, or `other`; outcomes are `success` or `failure`. Persistence
@@ -220,8 +220,9 @@ lookup failures and already-enqueued signals do not record a dispatch attempt.
 Persistence failures are counted separately. Retries count as separate calls;
 counters are absent until observed.
 
-Backlog and active workers describe only the local channel and its workers, not
-the durable queue or inline/sweep calls. Channel drops indicate local overflow,
+Backlog counts signals waiting in the local channel; processing counts enqueue
+attempts currently being handled from it. Neither covers the durable queue or
+inline/sweep calls. Channel drops indicate local overflow,
 not deletion of persisted signals; inline enqueue and sweep recovery still apply.
 Gauges include idle zeros. No entity IDs are dimensions, and collection adds no queries.
 

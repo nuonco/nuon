@@ -23,9 +23,9 @@ type enqueuerMetrics struct {
 	operations       metric.Int64Counter
 	dropped          metric.Int64Counter
 	backlog          metric.Int64ObservableGauge
-	activeWorkers    metric.Int64ObservableGauge
+	processing       metric.Int64ObservableGauge
 	registration     metric.Registration
-	active           atomic.Int64
+	processingCount  atomic.Int64
 }
 
 func newEnqueuerMetrics(provider metric.MeterProvider, backlog func() int) *enqueuerMetrics {
@@ -58,7 +58,7 @@ func newEnqueuerMetrics(provider metric.MeterProvider, backlog func() int) *enqu
 	if err != nil {
 		return nil
 	}
-	activeWorkers, err := meter.Int64ObservableGauge("nuon.queue.enqueuer.local.workers.active", metric.WithUnit("{worker}"))
+	processing, err := meter.Int64ObservableGauge("nuon.queue.enqueuer.local.processing", metric.WithUnit("{signal}"))
 	if err != nil {
 		return nil
 	}
@@ -69,13 +69,13 @@ func newEnqueuerMetrics(provider metric.MeterProvider, backlog func() int) *enqu
 		operations:       operations,
 		dropped:          dropped,
 		backlog:          backlogGauge,
-		activeWorkers:    activeWorkers,
+		processing:       processing,
 	}
 	m.registration, err = meter.RegisterCallback(func(_ context.Context, observer metric.Observer) error {
 		observer.ObserveInt64(m.backlog, int64(backlog()))
-		observer.ObserveInt64(m.activeWorkers, m.active.Load())
+		observer.ObserveInt64(m.processing, m.processingCount.Load())
 		return nil
-	}, m.backlog, m.activeWorkers)
+	}, m.backlog, m.processing)
 	if err != nil {
 		return nil
 	}
@@ -131,15 +131,15 @@ func (m *enqueuerMetrics) recordOperation(ctx context.Context, source, operation
 	))
 }
 
-func (m *enqueuerMetrics) workerStarted() {
+func (m *enqueuerMetrics) processingStarted() {
 	if m != nil {
-		m.active.Add(1)
+		m.processingCount.Add(1)
 	}
 }
 
-func (m *enqueuerMetrics) workerFinished() {
+func (m *enqueuerMetrics) processingFinished() {
 	if m != nil {
-		m.active.Add(-1)
+		m.processingCount.Add(-1)
 	}
 }
 
