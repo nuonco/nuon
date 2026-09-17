@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"github.com/go-playground/validator/v10"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -16,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 const (
@@ -79,6 +81,7 @@ type Params struct {
 	EmitterClient    *emitterclient.Client
 	FeaturesClient   *features.Features
 	MW               metrics.Writer
+	MeterProvider    metric.MeterProvider `optional:"true"`
 }
 
 type Helpers struct {
@@ -94,6 +97,7 @@ type Helpers struct {
 	emitterClient    *emitterclient.Client
 	featuresClient   *features.Features
 	mw               metrics.Writer
+	stateMetrics     *state.Metrics
 }
 
 func New(params Params) *Helpers {
@@ -110,5 +114,6 @@ func New(params Params) *Helpers {
 		emitterClient:    params.EmitterClient,
 		featuresClient:   params.FeaturesClient,
 		mw:               params.MW,
+		stateMetrics:     state.NewMetrics(params.MeterProvider),
 	}
 }
