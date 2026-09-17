@@ -64,7 +64,7 @@ func (a *adHocAPI) GetInstallActionWorkflowRun(_ context.Context, _, _ string) (
 	return run, nil
 }
 
-func (a *adHocAPI) LogStreamTailLogs(_ context.Context, _ string, cursor string, _ string) (*models.ServiceLogStreamTailLogsResponse, error) {
+func (a *adHocAPI) LogStreamTailLogs(_ context.Context, _ string, cursor string, _ string, _ *nuon.LogStreamLogFilters) (*models.ServiceLogStreamTailLogsResponse, error) {
 	a.logCursors = append(a.logCursors, cursor)
 	page := a.logPages[a.logPageIndex]
 	if a.logPageIndex < len(a.logPages)-1 {
