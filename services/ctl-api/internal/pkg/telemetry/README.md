@@ -226,6 +226,37 @@ inline/sweep calls. Channel drops indicate local overflow,
 not deletion of persisted signals; inline enqueue and sweep recovery still apply.
 Gauges include idle zeros. No entity IDs are dimensions, and collection adds no queries.
 
+### Install state
+
+State reads through `GetInstallState` and saves through `SaveState` emit:
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.install.state.operations` | Counter | operations | `operation=get\|save`, `outcome=success\|error` |
+| `nuon.install.state.operation.duration` | Explicit-bucket histogram | seconds | Same as operations |
+
+Outcomes describe the returned result, including successful database fallback after
+a blob-read failure. Retries count as separate calls; idle series are absent.
+No entity IDs are dimensions. Instrumentation adds no queries.
+
+### Blob storage
+
+The shared blob service emits metrics for both S3 and GCS:
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.blobstore.operations` | Counter | operations | `operation`, `outcome=success\|error\|closed_early` |
+| `nuon.blobstore.operation.duration` | Explicit-bucket histogram | seconds | Same as operations |
+
+Operations are `read`, `write`, `write_stream`, `metadata`, `read_stream_open`, and
+`read_stream_body`. Stream bodies record once at EOF (`success`), read error, or
+close before EOF (`closed_early`, or `error` if close fails). Body duration includes
+consumer time; closing after EOF does not change the outcome. Other operations
+record `success` or `error` on return.
+
+Retries count as separate service calls; idle series are absent. No entity IDs or
+object paths are dimensions. Instrumentation adds no storage requests.
+
 ## Failure behavior
 
 Requests update in-memory aggregations; network export runs periodically outside
