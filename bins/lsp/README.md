@@ -339,16 +339,16 @@ commonlog.Configure(2, nil)  // 0=verbose, 2=minimal
 
 ### Supported File Types
 
-The LSP activates for `.toml` files. For the LSP to provide completions, your TOML file should include a schema type declaration as a comment at the top (usually added automatically by `nuon apps sync`):
+The LSP activates for `.toml` files. For the LSP to provide completions, your TOML file should declare its schema in the leading comment block (`nuon apps init` adds this automatically):
 
 ```toml
-# helm
+#:schema https://api.nuon.co/v1/general/config-schema/helm
 
 [public_repo]
 # ... configuration ...
 ```
 
-The schema type is specified as a comment with `# <type>`. Supported types: `helm`, `docker_build`, `terraform_module`, `job`, and others.
+The type is taken from the last path segment of the `#:schema` URL. This is the same directive Taplo / Even Better TOML read, so both tools resolve the same schema. A bare `# <type>` comment (e.g. `# helm`) is still accepted when it names a known type; other comments are ignored. Supported types: `helm`, `docker-build`, `terraform`, `job`, and others.
 
 ### How It Works
 

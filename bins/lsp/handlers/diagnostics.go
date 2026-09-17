@@ -17,9 +17,8 @@ import (
 func PublishDiagnostics(ctx *glsp.Context, uri protocol.DocumentUri, text string) {
 	var diagnostics []protocol.Diagnostic
 
-	// Detect schema type
-	schemaType := models.DetectSchemaType(text)
-	if schemaType == "" {
+	decl := models.DetectSchema(text)
+	if decl == nil {
 		// Clear diagnostics if no schema detected
 		ctx.Notify(protocol.ServerTextDocumentPublishDiagnostics, protocol.PublishDiagnosticsParams{
 			URI:         uri,
@@ -27,30 +26,19 @@ func PublishDiagnostics(ctx *glsp.Context, uri protocol.DocumentUri, text string
 		})
 		return
 	}
+	schemaType := decl.Type
 
-	// Check if the schema type is valid
 	if !models.IsValidSchemaType(schemaType) {
-		// Find the position of the schema type on the first line
-		lines := strings.Split(text, "\n")
-		if len(lines) > 0 {
-			firstLine := lines[0]
-			startChar := strings.Index(firstLine, schemaType)
-			if startChar == -1 {
-				startChar = 0
-			}
-			endChar := startChar + len(schemaType)
-
-			validTypes := models.GetValidSchemaTypes()
-			diagnostics = append(diagnostics, protocol.Diagnostic{
-				Severity: ptrSeverity(protocol.DiagnosticSeverityError),
-				Message:  fmt.Sprintf("Unknown schema type '%s'. Valid types: %s", schemaType, strings.Join(validTypes, ", ")),
-				Range: protocol.Range{
-					Start: protocol.Position{Line: 0, Character: uint32(startChar)},
-					End:   protocol.Position{Line: 0, Character: uint32(endChar)},
-				},
-				Source: ptr("Nuon LSP"),
-			})
-		}
+		validTypes := models.GetValidSchemaTypes()
+		diagnostics = append(diagnostics, protocol.Diagnostic{
+			Severity: ptrSeverity(protocol.DiagnosticSeverityError),
+			Message:  fmt.Sprintf("Unknown schema type '%s'. Valid types: %s", schemaType, strings.Join(validTypes, ", ")),
+			Range: protocol.Range{
+				Start: protocol.Position{Line: uint32(decl.Line), Character: uint32(decl.Start)},
+				End:   protocol.Position{Line: uint32(decl.Line), Character: uint32(decl.End)},
+			},
+			Source: ptr("Nuon LSP"),
+		})
 
 		ctx.Notify(protocol.ServerTextDocumentPublishDiagnostics, protocol.PublishDiagnosticsParams{
 			URI:         uri,
