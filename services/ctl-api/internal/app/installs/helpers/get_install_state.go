@@ -21,7 +21,9 @@ import (
 )
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
-func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool) (*state.State, error) {
+func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool) (result *state.State, err error) {
+	started := time.Now()
+	defer func() { h.stateMetrics.Record(ctx, "get", started, err) }()
 	cctx.GetLogger(ctx, h.l).Info("getting install state", zap.String("install_id", installID))
 
 	latestState, err := h.getLatestInstallStateRow(ctx, installID)
