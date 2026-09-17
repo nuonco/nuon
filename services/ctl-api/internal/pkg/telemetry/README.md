@@ -198,6 +198,34 @@ attempt. Successful evaluations have `outcome=success` and `decision=pass|warn|d
 Retries count separately; series are absent until observed. No policy or entity
 IDs, policy contents, or error messages are dimensions. Recording adds no queries.
 
+### Queue dispatch
+
+The enqueuer emits metrics for dispatching signals to Temporal:
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.queue.enqueuer.dispatch.attempts` | Counter | attempts | source, outcome |
+| `nuon.queue.enqueuer.dispatch.duration` | Histogram | seconds | source, outcome |
+| `nuon.queue.enqueuer.operations` | Counter | operations | source, operation, outcome |
+| `nuon.queue.enqueuer.channel.dropped` | Counter | signals | None |
+| `nuon.queue.enqueuer.local.backlog` | Gauge | signals | None |
+| `nuon.queue.enqueuer.local.processing` | Gauge | signals | None |
+
+Dimension keys use the `nuon.queue.enqueuer.` prefix. Sources are `channel`,
+`await`, `sweep`, or `other`; outcomes are `success` or `failure`. Persistence
+operations are `mark_enqueued` and `update_metadata`, with `other` as a fallback.
+
+Dispatch metrics measure the Temporal RPC, not workflow completion. Pre-dispatch
+lookup failures and already-enqueued signals do not record a dispatch attempt.
+Persistence failures are counted separately. Retries count as separate calls;
+counters are absent until observed.
+
+Backlog counts signals waiting in the local channel; processing counts enqueue
+attempts currently being handled from it. Neither covers the durable queue or
+inline/sweep calls. Channel drops indicate local overflow,
+not deletion of persisted signals; inline enqueue and sweep recovery still apply.
+Gauges include idle zeros. No entity IDs are dimensions, and collection adds no queries.
+
 ### Install state
 
 State reads through `GetInstallState` and saves through `SaveState` emit:
