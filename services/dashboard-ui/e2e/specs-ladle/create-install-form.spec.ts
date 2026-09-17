@@ -33,4 +33,20 @@ test.describe("InstallForm create behavior", () => {
     await name.fill("my-install");
     await expect(dialog.getByText("Install name is required")).toBeHidden();
   });
+
+  test("stack and runner only lives in the footer, not the form body", async ({
+    page,
+  }) => {
+    const dialog = page.getByRole("dialog");
+    const stackOnly = dialog.locator('input[name="stackOnly"]');
+    const cancel = dialog.getByRole("button", { name: "Cancel" });
+
+    await expect(dialog.getByText("Provisioning scope")).toHaveCount(0);
+    await expect(stackOnly).toBeVisible();
+
+    const stackBox = await stackOnly.boundingBox();
+    const cancelBox = await cancel.boundingBox();
+    expect(stackBox && cancelBox).toBeTruthy();
+    expect(Math.abs(stackBox!.y - cancelBox!.y)).toBeLessThan(80);
+  });
 });
