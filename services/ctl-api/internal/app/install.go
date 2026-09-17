@@ -177,6 +177,10 @@ type Install struct {
 	WorkflowID *string `json:"workflow_id,omitempty" gorm:"-"`
 }
 
+func (i *Install) TableName() string {
+	return "installs"
+}
+
 func (i *Install) UseView() bool {
 	return true
 }

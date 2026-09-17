@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
@@ -173,6 +174,23 @@ func (h *handler) signalContext(ctx workflow.Context, refreshLogStream bool) (wo
 
 	signalCtx := h.queueSignal.SignalContext
 	ctx = queuecctx.ApplyWorkflow(ctx, signalCtx)
+	if lc, ok := h.sig.(signal.SignalWithLifecycleContext); ok {
+		lifecycleCtx := lc.LifecycleContext()
+		telemetry := cctx.WorkflowTelemetry{
+			OrgID:        lifecycleCtx.OrgID,
+			OrgName:      lifecycleCtx.OrgName,
+			WorkflowID:   lifecycleCtx.WorkflowID,
+			WorkflowType: lifecycleCtx.WorkflowType,
+			OwnerID:      lifecycleCtx.OwnerID,
+			OwnerType:    lifecycleCtx.OwnerType,
+			OwnerName:    lifecycleCtx.OwnerName,
+		}
+		if lifecycleCtx.OwnerType == plugins.TableNameOf[app.Install]() {
+			telemetry.InstallID = lifecycleCtx.OwnerID
+			telemetry.InstallName = lifecycleCtx.OwnerName
+		}
+		ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, telemetry)
+	}
 	if signalCtx.LogStreamID == "" {
 		return ctx, nil
 	}
