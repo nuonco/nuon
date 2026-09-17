@@ -59,6 +59,7 @@ export const ManageInstallsConfigContainer = ({
     const parts = currentConfig.repo.split('/')
     vcsBrowser.setSelectedRepo({
       id: 0,
+      owner_id: 0,
       name: parts.length > 1 ? parts.slice(1).join('/') : currentConfig.repo,
       full_name: currentConfig.repo,
       private: currentConfig.vcs_type === 'connected',
