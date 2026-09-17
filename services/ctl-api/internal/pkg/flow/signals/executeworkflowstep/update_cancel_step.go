@@ -28,13 +28,16 @@ func (s *Signal) cancelStepHandler(ctx workflow.Context, req CancelStepRequest) 
 // The inner signal's Cancel() method is responsible for updating the underlying
 // resource (e.g. stack run) status to cancelled.
 func (s *Signal) Cancel(ctx workflow.Context) error {
+	// Flag first: the cancelled-execution path in Execute checks s.canceled
+	// after any yield, so it must already be set when the directive write
+	// below yields — otherwise the fallback writes a competing directive.
+	s.canceled = true
+
 	// NOTE(jm): we have to set the directive first, because if the workflow step returns, we don't want the group
 	// to continue.
 	// however, if we set the status before setting canceled to true, it does mean that the workflow could overwrite
 	// it.
 	setResultDirective(ctx, s.StepID, DirectiveStop)
-
-	s.canceled = true
 
 	cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
 	defer cancelCtxCancel()
