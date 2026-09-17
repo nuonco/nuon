@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -10,7 +11,11 @@ interface ITeardownAllComponentsModal extends Omit<IModal, 'onSubmit'> {
   isPending: boolean
   isKickedOff: boolean
   error?: { error?: string } | null
-  onSubmit: () => void
+  onSubmit: (params: { role: string }) => void
+  roleSelector: (props: {
+    value: string
+    onChange: (value: string) => void
+  }) => ReactNode
 }
 
 export const TeardownAllComponentsModal = ({
@@ -19,9 +24,11 @@ export const TeardownAllComponentsModal = ({
   isKickedOff,
   error,
   onSubmit,
+  roleSelector,
   ...props
 }: ITeardownAllComponentsModal) => {
   const [confirmName, setConfirmName] = useState('')
+  const [selectedRole, setSelectedRole] = useState('')
   const isConfirmValid = confirmName === installName
 
   return (
@@ -47,7 +54,7 @@ export const TeardownAllComponentsModal = ({
           'Teardown all components'
         ),
         disabled: !isConfirmValid || isKickedOff || isPending,
-        onClick: onSubmit,
+        onClick: () => onSubmit({ role: selectedRole }),
         variant: 'danger',
       }}
       {...props}
@@ -84,6 +91,11 @@ export const TeardownAllComponentsModal = ({
             }
           />
         </div>
+
+        {roleSelector({
+          value: selectedRole,
+          onChange: setSelectedRole,
+        })}
       </div>
     </Modal>
   )
