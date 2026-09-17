@@ -11,6 +11,7 @@ import (
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -24,6 +25,9 @@ import (
 // its own state from the database.
 func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	defer func() { s.finished = true }()
+
+	ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, s.workflowTelemetry())
+	workflowType := cctx.WorkflowTelemetryFromContext(ctx).WorkflowType
 
 	if s.mw != nil && s.v != nil {
 		tmw, metricsErr := tmetrics.New(s.v, tmetrics.WithMetricsWriter(s.mw))
@@ -39,7 +43,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 			return
 		}
 		tags := metrics.ToTags(map[string]string{
-			"workflow_type":  s.WorkflowType,
+			"workflow_type":  workflowType,
 			"owner_type":     s.OwnerType,
 			"step_name":      stepName,
 			"execution_type": executionType,

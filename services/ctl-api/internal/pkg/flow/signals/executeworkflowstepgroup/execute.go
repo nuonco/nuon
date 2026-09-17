@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -22,13 +23,16 @@ import (
 func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	defer func() { s.finished = true }()
 
+	ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, s.workflowTelemetry())
+	workflowType := cctx.WorkflowTelemetryFromContext(ctx).WorkflowType
+
 	start := workflow.Now(ctx)
 	defer func() {
 		if s.mw == nil {
 			return
 		}
 		tags := metrics.ToTags(map[string]string{
-			"workflow_type": s.WorkflowType,
+			"workflow_type": workflowType,
 			"owner_type":    s.OwnerType,
 		})
 
@@ -167,18 +171,17 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb c
 	sig := &executeworkflowstep.Signal{
 		StepID:          step.ID,
 		StepName:        step.Name,
+		StepIdx:         step.Idx,
+		StepGroupID:     step.WorkflowStepGroupID,
+		GroupIdx:        step.GroupIdx,
+		GroupRetryIdx:   step.GroupRetryIdx,
+		RetryIndex:      step.RetryIndex,
 		WorkflowID:      s.WorkflowID,
-		WorkflowType:    s.WorkflowType,
 		OwnerID:         s.OwnerID,
 		OwnerType:       s.OwnerType,
 		TargetQueueName: s.TargetQueueName,
 		TargetQueueID:   step.TargetQueueID,
 		DerivedTimeout:  step.Timeout,
-		// Forward stamped names so workflow_step lifecycle webhook events
-		// carry human-readable identifiers without a per-event DB lookup.
-		OrgID:     s.OrgID,
-		OrgName:   s.OrgName,
-		OwnerName: s.OwnerName,
 	}
 
 	// Mark step as queued
