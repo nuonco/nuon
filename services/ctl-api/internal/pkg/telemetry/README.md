@@ -210,6 +210,15 @@ process loss can lose unexported data. Collector buffering and destination routi
 are configured separately. Use missing-data alerts and independent availability
 probes; an API cannot report its own total outage through this export path.
 
+## Runner-api polling
+
+Runner-api polling exports `nuon.runner.job_tail.sessions` and `.probes` by bounded
+`outcome`, `.notification.wakes`, and `.listener.connected`, `.listener.failures`,
+and `.listener.notifications`. Sessions begin after validation; empty timeouts
+are healthy idle results. Probe retries count separately. Listener state is
+observed continuously, including idle periods; routine rotation and shutdown do
+not count as failures. These metrics describe attempts, not unique jobs or claims.
+
 ## Testing
 
 Run the tests and request-recording benchmark from the repository root:
