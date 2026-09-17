@@ -32,30 +32,6 @@ func parseCloudPlatformsFilter(raw string) []app.CloudPlatform {
 	return platforms
 }
 
-func runnerTypesForCloudPlatform(platform app.CloudPlatform) []string {
-	switch platform {
-	case app.CloudPlatformAWS:
-		return []string{
-			string(app.AppRunnerTypeAWS),
-			string(app.AppRunnerTypeAWSECS),
-			string(app.AppRunnerTypeAWSEKS),
-		}
-	case app.CloudPlatformAzure:
-		return []string{
-			string(app.AppRunnerTypeAzure),
-			string(app.AppRunnerTypeAzureAKS),
-			string(app.AppRunnerTypeAzureACS),
-		}
-	case app.CloudPlatformGCP:
-		return []string{
-			string(app.AppRunnerTypeGCP),
-			string(app.AppRunnerTypeGCPGKE),
-		}
-	default:
-		return nil
-	}
-}
-
 func applyCloudPlatformFilter(tx *gorm.DB, db *gorm.DB, platforms []app.CloudPlatform) *gorm.DB {
 	if len(platforms) == 0 {
 		return tx
@@ -71,7 +47,7 @@ func applyCloudPlatformFilter(tx *gorm.DB, db *gorm.DB, platforms []app.CloudPla
 			includeUnknown = true
 			continue
 		}
-		selectedTypes = append(selectedTypes, runnerTypesForCloudPlatform(platform)...)
+		selectedTypes = append(selectedTypes, app.RunnerTypesForCloudPlatform(platform)...)
 	}
 
 	if !includeUnknown && len(selectedTypes) == 0 {
@@ -86,8 +62,8 @@ func applyCloudPlatformFilter(tx *gorm.DB, db *gorm.DB, platforms []app.CloudPla
 	)`, installTable)
 
 	knownTypes := append(
-		append(runnerTypesForCloudPlatform(app.CloudPlatformAWS), runnerTypesForCloudPlatform(app.CloudPlatformAzure)...),
-		runnerTypesForCloudPlatform(app.CloudPlatformGCP)...,
+		append(app.RunnerTypesForCloudPlatform(app.CloudPlatformAWS), app.RunnerTypesForCloudPlatform(app.CloudPlatformAzure)...),
+		app.RunnerTypesForCloudPlatform(app.CloudPlatformGCP)...,
 	)
 
 	switch {
