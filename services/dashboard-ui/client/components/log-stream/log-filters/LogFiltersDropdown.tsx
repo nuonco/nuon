@@ -19,8 +19,6 @@ export const LogFiltersDropdown = ({ filters }: ILogFiltersDropdown) => {
   const {
     includeSystemLogs,
     handleSystemLogsToggle,
-    sortStats,
-    handleSortToggle,
     tool,
     setTool,
     availableTools,
@@ -55,29 +53,8 @@ export const LogFiltersDropdown = ({ filters }: ILogFiltersDropdown) => {
       closeOnBlur={false}
     >
       <Menu className="!w-72">
-        <SectionHeading>Sort</SectionHeading>
-        <RadioInput
-          name="log-sort"
-          checked={sortStats.isNewestFirst}
-          onChange={handleSortToggle}
-          labelProps={{
-            labelText: 'Latest first',
-            labelTextProps: LABEL_PROPS,
-          }}
-        />
-        <RadioInput
-          name="log-sort"
-          checked={sortStats.isOldestFirst}
-          onChange={handleSortToggle}
-          labelProps={{
-            labelText: 'Oldest first',
-            labelTextProps: LABEL_PROPS,
-          }}
-        />
-
         {toolOptions.length > 0 && (
           <>
-            <hr />
             <SectionHeading>Tool</SectionHeading>
             <RadioInput
               name="log-tool"
