@@ -2,6 +2,7 @@ import { ModalStory } from '@/components/__stories__/helpers'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAppInputConfig } from '@/types'
 import { InstallForm } from './InstallForm'
+import { StackOnlyCheckbox } from './StackOnlyCheckbox'
 import { useInstallForm } from './useInstallForm'
 import type { InstallPlatform } from './schema'
 
@@ -68,13 +69,14 @@ const CreateStory = ({
   })
 
   return (
-    <div className="p-6">
+    <div className="p-6 flex flex-col gap-6">
       <InstallForm
         form={form}
         mode="create"
         platform={platform}
         inputConfig={withInputs ? inputConfig : undefined}
       />
+      <StackOnlyCheckbox form={form} />
     </div>
   )
 }
@@ -105,6 +107,7 @@ const CreateModalHarness = (props: IModal) => {
         onClick: () => form.handleSubmit(),
         variant: 'primary',
       }}
+      footerActions={<StackOnlyCheckbox form={form} />}
       {...props}
     >
       <InstallForm form={form} mode="create" platform="gcp" />
