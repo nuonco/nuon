@@ -131,12 +131,11 @@ export const DeploymentPlanEditor = ({
   const hasErrors =
     groups.some((g) => !g.name.trim() || !!groupContentError(g)) ||
     overlappingInstalls.length > 0
-  const canSave = !isSaving && !loadingInstalls && groups.length > 0 && !hasErrors
+  const canSave = !isSaving && !loadingInstalls && !hasErrors
   const isDisabled = isSaving || loadingInstalls
 
   const saveDisabledReason = (() => {
     if (canSave || isSaving || loadingInstalls) return undefined
-    if (groups.length === 0) return 'Add at least one install group.'
     if (overlappingInstalls.length > 0)
       return 'Each install must match exactly one install group.'
     const needsName = groups.some((g) => !g.name.trim())
@@ -207,7 +206,7 @@ export const DeploymentPlanEditor = ({
   }
 
   const handleSave = () => {
-    if (hasErrors || groups.length === 0) {
+    if (hasErrors) {
       setShowValidation(true)
       return
     }
