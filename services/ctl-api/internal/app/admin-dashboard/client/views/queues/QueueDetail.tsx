@@ -18,6 +18,7 @@ import { StatusHistory } from '@/components/common/StatusHistory';
 import { TemporalWorkflowCard } from '@/components/common/TemporalWorkflowCard';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
+import { OwnerLink } from '@/components/common/OwnerLink';
 import { formatDate, formatRelativeDate, truncateId } from '@/utils/format';
 
 function getStatus(s: any): string {
@@ -130,7 +131,7 @@ export const QueueDetail = () => {
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-mono">{queue.id}</p>
           <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span>Owner:</span>
-            <span className="font-mono text-xs">{truncateId(queue.owner_id)}</span>
+            <OwnerLink ownerId={queue.owner_id} ownerType={queue.owner_type} showType={false} />
             <Badge variant="default">{queue.owner_type}</Badge>
           </div>
         </div>
@@ -452,8 +453,8 @@ export const QueueDetail = () => {
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <Badge variant="default">{signal.owner_type}</Badge>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
-                    {truncateId(signal.owner_id)}
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                    <OwnerLink ownerId={signal.owner_id} ownerType={signal.owner_type} showType={false} />
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                     {formatDate(signal.created_at)}
@@ -543,8 +544,8 @@ export const QueueDetail = () => {
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
                       <Badge variant="default">{signal.owner_type}</Badge>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
-                      {truncateId(signal.owner_id)}
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      <OwnerLink ownerId={signal.owner_id} ownerType={signal.owner_type} showType={false} />
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                       {formatRelativeDate(signal.updated_at)}

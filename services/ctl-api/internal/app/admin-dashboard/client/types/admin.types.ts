@@ -100,6 +100,47 @@ export type TApp = {
   org?: TOrg
 }
 
+export type TAppBranch = {
+  id: string
+  name: string
+  org_id: string
+  app_id: string
+  managed_by: string
+  created_at: string
+  updated_at: string
+  created_by_id: string
+  workflow_count?: number
+  latest_run?: TAppBranchRun | null
+}
+
+export type TAppBranchView = {
+  app_branch: TAppBranch
+  org_name: string
+  app_name: string
+}
+
+export type TAppBranchRun = {
+  id: string
+  app_branch_id: string
+  app_branch_config_id: string
+  workflow_id?: string
+  status: string
+  run_type: string
+  event_type?: string
+  force?: boolean
+  plan_only?: boolean
+  pr_number?: number
+  head_sha?: string
+  base_branch?: string
+  error_message?: string
+  log_stream_id?: string
+  started_at?: string
+  completed_at?: string
+  created_at: string
+  created_by_id: string
+  created_by?: TAccount
+}
+
 export type TAppConfig = {
   id: string
   app_id: string
@@ -433,6 +474,37 @@ export type TAccountsResponse = {
 
 export type TInstallsResponse = {
   installs: TInstall[]
+  page: number
+  total_pages: number
+}
+
+export type TAppBranchesResponse = {
+  app_branches: TAppBranchView[]
+  page: number
+  total_pages: number
+}
+
+export type TAppBranchDetailResponse = {
+  app_branch: TAppBranch
+  org_name: string
+  app_name: string
+  created_by?: TAccount
+  queues: TQueue[]
+  runs: TAppBranchRun[]
+  runs_total_pages: number
+  app_url: string
+}
+
+export type TAppBranchRunsResponse = {
+  app_branch_id: string
+  runs: TAppBranchRun[]
+  page: number
+  total_pages: number
+}
+
+export type TAppBranchWorkflowsResponse = {
+  app_branch_id: string
+  workflows: TWorkflow[]
   page: number
   total_pages: number
 }

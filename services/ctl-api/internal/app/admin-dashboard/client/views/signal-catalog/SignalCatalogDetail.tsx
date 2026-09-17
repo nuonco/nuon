@@ -4,6 +4,7 @@ import { getSignalCatalogDetail } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { OwnerLink } from '@/components/common/OwnerLink'
 import { formatDate, truncateId } from '@/utils/format'
 
 export const SignalCatalogDetail = () => {
@@ -51,8 +52,7 @@ export const SignalCatalogDetail = () => {
                 <tr key={signal.id}>
                   <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">{truncateId(signal.id)}</td>
                   <td className="text-gray-500 dark:text-gray-400">
-                    <span className="font-mono text-xs">{truncateId(signal.owner_id)}</span>
-                    <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">({signal.owner_type})</span>
+                    <OwnerLink ownerId={signal.owner_id} ownerType={signal.owner_type} />
                   </td>
                   <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">{truncateId(signal.queue_id)}</td>
                   <td>

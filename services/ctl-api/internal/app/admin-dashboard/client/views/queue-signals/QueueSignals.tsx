@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { getQueueSignalsGlobal } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { SignalLink } from '@/components/common/SignalLink'
@@ -8,6 +8,7 @@ import { Pagination } from '@/components/common/Pagination'
 import { SearchInput } from '@/components/common/SearchInput'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { OwnerLink } from '@/components/common/OwnerLink'
 import { formatDate, truncateId } from '@/utils/format'
 import { DateTime } from 'luxon'
 
@@ -167,8 +168,7 @@ export const QueueSignals = () => {
                 </td>
                 <td><Badge>{signal.type}</Badge></td>
                 <td className="text-gray-500 dark:text-gray-400">
-                  <span className="font-mono text-xs">{truncateId(signal.owner_id)}</span>
-                  <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">({signal.owner_type})</span>
+                  <OwnerLink ownerId={signal.owner_id} ownerType={signal.owner_type} />
                 </td>
                 <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">{truncateId(signal.queue_id)}</td>
                 <td>
