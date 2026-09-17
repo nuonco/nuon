@@ -167,6 +167,11 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb c
 	sig := &executeworkflowstep.Signal{
 		StepID:          step.ID,
 		StepName:        step.Name,
+		StepIdx:         step.Idx,
+		StepGroupID:     step.WorkflowStepGroupID,
+		GroupIdx:        step.GroupIdx,
+		GroupRetryIdx:   step.GroupRetryIdx,
+		RetryIndex:      step.RetryIndex,
 		WorkflowID:      s.WorkflowID,
 		WorkflowType:    s.WorkflowType,
 		OwnerID:         s.OwnerID,

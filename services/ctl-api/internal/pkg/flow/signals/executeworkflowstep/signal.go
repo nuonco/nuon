@@ -38,9 +38,14 @@ func stepSignal(step *app.WorkflowStep) signal.Signal {
 // status updates, inner signal dispatch, approval handling, policy checks, and
 // noop plan detection.
 type Signal struct {
-	StepID     string `json:"step_id"`
-	StepName   string `json:"step_name,omitempty"`
-	WorkflowID string `json:"workflow_id"`
+	StepID        string `json:"step_id"`
+	StepName      string `json:"step_name,omitempty"`
+	StepIdx       int    `json:"step_idx"`
+	StepGroupID   string `json:"step_group_id,omitempty"`
+	GroupIdx      int    `json:"group_idx"`
+	GroupRetryIdx int    `json:"group_retry_idx"`
+	RetryIndex    int    `json:"retry_index"`
+	WorkflowID    string `json:"workflow_id"`
 
 	// WorkflowType identifies the kind of workflow that owns this step. Set at
 	// dispatch time from the in-scope *app.Workflow so the lifecycle hook can
@@ -145,6 +150,13 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 		OwnerID:      s.OwnerID,
 		OwnerType:    s.OwnerType,
 		OwnerName:    s.OwnerName,
+		Metadata: map[string]any{
+			"step_group_id":   s.StepGroupID,
+			"step_idx":        s.StepIdx,
+			"group_idx":       s.GroupIdx,
+			"group_retry_idx": s.GroupRetryIdx,
+			"retry_index":     s.RetryIndex,
+		},
 	}
 }
 
