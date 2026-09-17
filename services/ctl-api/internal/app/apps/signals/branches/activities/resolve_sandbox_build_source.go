@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"go.temporal.io/sdk/temporal"
 	"gorm.io/gorm"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -37,8 +38,10 @@ func (a *Activities) GetSandboxBuildConfig(ctx context.Context, input *GetSandbo
 
 type ResolveSandboxBuildSourceInput struct {
 	AppConfigID string `json:"app_config_id" validate:"required"`
-	RunID       string `json:"run_id" validate:"required"`
-	BuildID     string `json:"build_id" validate:"required"`
+	// Empty for a directly triggered build, which has no run to pin to and
+	// resolves the sandbox repo's own ref instead.
+	RunID   string `json:"run_id,omitempty"`
+	BuildID string `json:"build_id" validate:"required"`
 }
 
 type ResolveSandboxBuildSourceOutput struct {
@@ -68,34 +71,36 @@ func (a *Activities) ResolveSandboxBuildSource(ctx context.Context, input *Resol
 		return nil, fmt.Errorf("unable to get sandbox build git source: %w", err)
 	}
 
-	run, err := a.getAppBranchRunByID(ctx, input.RunID)
-	if err != nil {
-		return nil, err
-	}
-
-	branchRepo := ""
-	if run.AppBranchConfig.ConnectedGithubVCSConfig != nil {
-		branchRepo = run.AppBranchConfig.ConnectedGithubVCSConfig.Repo
-	} else if run.AppBranchConfig.PublicGitVCSConfig != nil {
-		branchRepo = run.AppBranchConfig.PublicGitVCSConfig.Repo
-	}
-
 	out := &ResolveSandboxBuildSourceOutput{
 		SandboxConfig: sandboxConfig,
 		GitSource:     gitSource,
 	}
 
-	if repoURLsEqual(sandboxRepo, branchRepo) {
-		if run.VCSConnectionCommit != nil && run.VCSConnectionCommit.SHA != "" {
-			gitSource.Ref = run.VCSConnectionCommit.SHA
-			out.VCSConnectionCommitID = &run.VCSConnectionCommit.ID
-		} else if run.HeadSHA != "" {
-			gitSource.Ref = run.HeadSHA
-			if run.VCSConnectionCommitID != nil {
-				out.VCSConnectionCommitID = run.VCSConnectionCommitID
-			}
+	if input.RunID != "" {
+		run, err := a.getAppBranchRunByID(ctx, input.RunID)
+		if err != nil {
+			return nil, err
 		}
-		return out, a.attachSandboxBuildCommit(ctx, input.BuildID, out.VCSConnectionCommitID)
+
+		branchRepo := ""
+		if run.AppBranchConfig.ConnectedGithubVCSConfig != nil {
+			branchRepo = run.AppBranchConfig.ConnectedGithubVCSConfig.Repo
+		} else if run.AppBranchConfig.PublicGitVCSConfig != nil {
+			branchRepo = run.AppBranchConfig.PublicGitVCSConfig.Repo
+		}
+
+		if repoURLsEqual(sandboxRepo, branchRepo) {
+			if run.VCSConnectionCommit != nil && run.VCSConnectionCommit.SHA != "" {
+				gitSource.Ref = run.VCSConnectionCommit.SHA
+				out.VCSConnectionCommitID = &run.VCSConnectionCommit.ID
+			} else if run.HeadSHA != "" {
+				gitSource.Ref = run.HeadSHA
+				if run.VCSConnectionCommitID != nil {
+					out.VCSConnectionCommitID = run.VCSConnectionCommitID
+				}
+			}
+			return out, a.attachSandboxBuildCommit(ctx, input.BuildID, out.VCSConnectionCommitID)
+		}
 	}
 
 	if sandboxVCSID == "" || gitSource.Ref == "" {
@@ -120,6 +125,16 @@ func (a *Activities) ResolveSandboxBuildSource(ctx context.Context, input *Resol
 	return out, a.attachSandboxBuildCommit(ctx, input.BuildID, out.VCSConnectionCommitID)
 }
 
+func SandboxSourceFailureDescription(err error) string {
+	if vcserrors.IsGitRefNotFound(err) {
+		var appErr *temporal.ApplicationError
+		if errors.As(err, &appErr) && appErr.Message() != "" {
+			return appErr.Message()
+		}
+	}
+	return "unable to resolve sandbox source"
+}
+
 func (a *Activities) failSandboxBuildSource(ctx context.Context, buildID, repo, ref string, cause error) error {
 	data, buildErr := compositeerrors.New(
 		&vcserrors.GitRefNotFoundError{Repo: repo, Ref: ref},
@@ -140,7 +155,7 @@ func (a *Activities) failSandboxBuildSource(ctx context.Context, buildID, repo, 
 }
 
 func (a *Activities) attachSandboxBuildCommit(ctx context.Context, buildID string, commitID *string) error {
-	if commitID == nil || *commitID == "" {
+	if buildID == "" || commitID == nil || *commitID == "" {
 		return nil
 	}
 	if res := a.db.WithContext(ctx).

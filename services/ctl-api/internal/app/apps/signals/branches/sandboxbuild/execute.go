@@ -2,16 +2,13 @@ package sandboxbuild
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/vcserrors"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	jobpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
@@ -112,7 +109,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			BuildID:     build.ID,
 		})
 		if err != nil {
-			s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, sourceFailureDescription(err))
+			s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, activities.SandboxSourceFailureDescription(err))
 			return fmt.Errorf("unable to resolve sandbox build source: %w", err)
 		}
 	}
@@ -236,16 +233,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusActive, "sandbox build completed")
 	l.Info("sandbox build completed successfully", "build_id", build.ID)
 	return nil
-}
-
-func sourceFailureDescription(err error) string {
-	if vcserrors.IsGitRefNotFound(err) {
-		var appErr *temporal.ApplicationError
-		if errors.As(err, &appErr) && appErr.Message() != "" {
-			return appErr.Message()
-		}
-	}
-	return "unable to resolve sandbox source"
 }
 
 func (s *Signal) updateStatus(ctx workflow.Context, buildID string, status app.AppSandboxBuildStatus, description string) {

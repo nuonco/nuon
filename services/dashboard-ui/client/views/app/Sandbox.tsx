@@ -1,18 +1,17 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
-import { AppSandbox as SandboxConfig } from '@/components/apps/config/AppSandbox'
+import { ComponentType } from '@/components/components/ComponentType'
 import { BuildSandboxButton } from '@/components/sandbox/management/BuildSandbox'
 import { CurrentSandboxBuild } from '@/components/sandbox/builds/CurrentSandboxBuild'
 import { SandboxBuildTimeline } from '@/components/sandbox/builds/SandboxBuildTimeline'
-import { Card } from '@/components/common/Card'
+import { SandboxConfigCard } from '@/components/sandbox/SandboxConfigCard'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
-import { Text } from '@/components/common/Text'
+import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
 import {
   HistoryPanelButton,
   HistoryRail,
 } from '@/components/layout/HistoryRail'
-import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -25,6 +24,7 @@ import {
   getSandboxBuilds,
 } from '@/lib'
 import { isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
+import type { TSandboxConfig } from '@/types'
 
 export const Sandbox = () => {
   const { org } = useOrg()
@@ -74,13 +74,12 @@ export const Sandbox = () => {
         appId: app!.id,
         limit: 50,
       }),
-    enabled: !!org?.id && !!app?.id && !!branchId,
+    enabled: !!org?.id && !!app?.id,
   })
 
   const latestBuildSummary = sandboxBuilds?.data?.find(
     (build) =>
-      build.app_branch_id === branchId &&
-      (!appConfigId || build.app_config_id === appConfigId)
+      !branchId || !build.app_branch_id || build.app_branch_id === branchId
   )
 
   const { data: latestBuild } = useQuery({
@@ -105,9 +104,10 @@ export const Sandbox = () => {
     },
   })
 
+  const sandboxConfig = appConfig?.sandbox as TSandboxConfig | undefined
   const sourceRepo =
-    appConfig?.sandbox?.connected_github_vcs_config?.repo ??
-    appConfig?.sandbox?.public_git_vcs_config?.repo
+    sandboxConfig?.connected_github_vcs_config?.repo ??
+    sandboxConfig?.public_git_vcs_config?.repo
   const sandboxBasePath = branchId
     ? `/${org?.id}/apps/${app?.id}/branches/${branchId}/sandbox`
     : `/${org?.id}/apps/${app?.id}/sandbox`
@@ -134,9 +134,23 @@ export const Sandbox = () => {
 
       <DetailPage
         header={
-          <SectionHeader
+          <DetailHeader
+            backLink={false}
+            icon={
+              <ComponentType
+                type={
+                  sandboxConfig?.type === 'pulumi'
+                    ? 'pulumi'
+                    : 'terraform_module'
+                }
+                displayVariant="icon-only"
+                colorVariant="color"
+                iconSize="24"
+              />
+            }
             title="Sandbox"
             description="Test builds in an isolated environment before deploying to installs."
+            id={sandboxConfig?.id}
             actions={
               <>
                 <HistoryPanelButton title="Previous builds" history={history} />
@@ -148,12 +162,10 @@ export const Sandbox = () => {
       >
         <HistoryRail title="Previous builds" history={history}>
           {isLoading ? (
-            <Card>
-              <Text>Loading...</Text>
-            </Card>
-          ) : appConfig?.sandbox ? (
+            <SandboxConfigCard loading />
+          ) : sandboxConfig ? (
             <div className="flex flex-col gap-4">
-              {branchId && latestBuild ? (
+              {latestBuild ? (
                 <CurrentSandboxBuild
                   appId={app?.id}
                   orgId={org?.id}
@@ -162,10 +174,7 @@ export const Sandbox = () => {
                   sourceRepo={sourceRepo}
                 />
               ) : null}
-              <Card className="flex flex-col gap-4">
-                <Text weight="strong">Sandbox config</Text>
-                <SandboxConfig appConfig={appConfig} />
-              </Card>
+              <SandboxConfigCard config={sandboxConfig} />
             </div>
           ) : (
             <EmptyState
