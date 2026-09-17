@@ -287,9 +287,22 @@ func TestSwaggerRoutesRegisteredInGin(t *testing.T) {
 			for path, pathItem := range swaggerSpec.Paths {
 				ginPath := swaggerPathToGinPath(path)
 				for _, method := range getPathMethods(pathItem) {
-					key := method + " " + ginPath
-					if _, ok := ginRoutes[key]; !ok {
-						missing = append(missing, key)
+					keys := []string{method + " " + ginPath}
+					// A trailing spec param may be registered as a gin
+					// catch-all (*path), which is required for params that
+					// contain slashes.
+					if i := strings.LastIndex(ginPath, "/:"); i >= 0 {
+						keys = append(keys, method+" "+ginPath[:i+1]+"*"+ginPath[i+2:])
+					}
+					registered := false
+					for _, key := range keys {
+						if _, ok := ginRoutes[key]; ok {
+							registered = true
+							break
+						}
+					}
+					if !registered {
+						missing = append(missing, keys[0])
 					}
 				}
 			}
