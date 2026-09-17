@@ -11,6 +11,7 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { RoleSelector } from '@/components/roles/RoleSelector'
 import { teardownComponents } from '@/lib'
 import { trackEvent } from '@/lib/posthog-analytics'
 import { TeardownAllComponentsModal } from './TeardownAllComponents'
@@ -84,7 +85,18 @@ export const TeardownAllComponentsModalContainer = ({
       isPending={isPending}
       isKickedOff={isKickedOff}
       error={error as any}
-      onSubmit={() => execute({ body: { plan_only: false } })}
+      onSubmit={({ role }) =>
+        execute({ body: { plan_only: false, ...(role && { role }) } })
+      }
+      roleSelector={({ value, onChange }) => (
+        <RoleSelector
+          installId={install?.id}
+          operationType="teardown"
+          value={value}
+          onChange={onChange}
+          name="role"
+        />
+      )}
       {...props}
     />
   )
