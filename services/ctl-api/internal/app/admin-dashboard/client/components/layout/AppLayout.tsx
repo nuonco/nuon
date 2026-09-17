@@ -25,6 +25,7 @@ const navGroups = [
     items: [
       { path: '/queues', label: 'Queues' },
       { path: '/workflows', label: 'Workflows' },
+      { path: '/bulk-cancel-workflows', label: 'Bulk cancel workflows' },
       { path: '/queue-signals', label: 'Queue signals' },
       { path: '/in-flight-signals', label: 'In-flight' },
       { path: '/signal-catalog', label: 'Signal catalog' },
