@@ -77,6 +77,37 @@ func (s *service) respondWorkflows(c *gin.Context) {
 	})
 }
 
+type workflowTypeStat struct {
+	Type  string `json:"type"`
+	Count int64  `json:"count"`
+}
+
+func (s *service) WorkflowTypeStats(c *gin.Context) {
+	filter, err := workflowFilterFromQuery(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	filter.Type = ""
+
+	var rows []workflowTypeStat
+	if err := s.workflowQuery(c.Request.Context(), filter).
+		Select("type, COUNT(*) as count").
+		Group("type").
+		Order("count DESC, type ASC").
+		Scan(&rows).Error; err != nil {
+		s.l.Error("failed to fetch workflow type stats", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch workflow type stats"})
+		return
+	}
+
+	if rows == nil {
+		rows = []workflowTypeStat{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"stats": rows})
+}
+
 func workflowFilterFromQuery(c *gin.Context) (workflowFilter, error) {
 	filter := workflowFilter{
 		Search: strings.TrimSpace(c.Query("search")),
