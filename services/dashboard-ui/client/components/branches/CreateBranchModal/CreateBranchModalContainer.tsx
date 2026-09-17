@@ -70,6 +70,7 @@ function extractRepoFromConfig(config: TAppBranchConfig): {
     return {
       repo: {
         id: 0,
+        owner_id: 0,
         name: parts.length > 1 ? parts.slice(1).join('/') : fullName,
         full_name: fullName,
         private: true,
@@ -89,6 +90,7 @@ function extractRepoFromConfig(config: TAppBranchConfig): {
     return {
       repo: {
         id: 0,
+        owner_id: 0,
         name: parts.length > 1 ? parts.slice(1).join('/') : fullName,
         full_name: fullName,
         private: false,
