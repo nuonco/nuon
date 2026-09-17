@@ -7019,6 +7019,7 @@ export interface components {
       log_stream_id?: string;
       org_id?: string;
       trace_id?: string;
+      workflow_telemetry?: components["schemas"]["keys.WorkflowTelemetry"];
     };
     "client.Conversation": {
       id?: string;
@@ -7312,6 +7313,17 @@ export interface components {
       src_iam_role_arn?: string;
       /** @description Root Credentials */
       src_static_credentials?: components["schemas"]["iam.StaticCredentials"];
+    };
+    "keys.WorkflowTelemetry": {
+      install_id?: string;
+      install_name?: string;
+      org_id?: string;
+      org_name?: string;
+      owner_id?: string;
+      owner_name?: string;
+      owner_type?: string;
+      workflow_id?: string;
+      workflow_type?: string;
     };
     "kube.ClusterInfo": {
       aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
@@ -27002,11 +27014,11 @@ export interface operations {
         k8s_name?: string;
         /** @description filter by log_attributes['k8s.operation'] */
         k8s_operation?: string;
-        /** @description generic log_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi) */
+        /** @description generic log_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
         attr?: string[];
-        /** @description generic resource_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi) */
+        /** @description generic resource_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
         resource_attr?: string[];
-        /** @description generic scope_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi) */
+        /** @description generic scope_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
         scope_attr?: string[];
         /** @description case-insensitive substring filter on log body */
         q?: string;
@@ -27130,11 +27142,11 @@ export interface operations {
         k8s_name?: string;
         /** @description filter by log_attributes['k8s.operation'] */
         k8s_operation?: string;
-        /** @description generic log_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi) */
+        /** @description generic log_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
         attr?: string[];
-        /** @description generic resource_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi) */
+        /** @description generic resource_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
         resource_attr?: string[];
-        /** @description generic scope_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi) */
+        /** @description generic scope_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
         scope_attr?: string[];
         /** @description case-insensitive substring filter on log body */
         q?: string;
