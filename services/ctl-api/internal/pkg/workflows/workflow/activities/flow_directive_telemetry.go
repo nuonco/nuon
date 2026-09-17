@@ -13,9 +13,13 @@ func (a *Activities) logDirective(ctx context.Context, flowEvent, directiveValue
 		return
 	}
 
+	telemetry := cctx.WorkflowTelemetryFromContext(ctx)
 	fields := append([]zap.Field{
 		zap.String("flow_event", flowEvent),
 		zap.String("directive", directiveValue),
+		zap.String("workflow_type", telemetry.WorkflowType),
+		zap.String("org_name", telemetry.OrgName),
+		zap.String("install_name", telemetry.InstallName),
 	}, extra...)
 
 	cctx.GetLogger(ctx, a.l).Info("flow telemetry", fields...)
