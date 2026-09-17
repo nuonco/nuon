@@ -9,6 +9,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -107,6 +109,23 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 			"group_idx":     s.GroupIdx,
 		},
 	}
+}
+
+func (s *Signal) workflowTelemetry() cctx.WorkflowTelemetry {
+	telemetry := cctx.WorkflowTelemetry{
+		OrgID:        s.OrgID,
+		OrgName:      s.OrgName,
+		WorkflowID:   s.WorkflowID,
+		WorkflowType: s.WorkflowType,
+		OwnerID:      s.OwnerID,
+		OwnerType:    s.OwnerType,
+		OwnerName:    s.OwnerName,
+	}
+	if s.OwnerType == plugins.TableNameOf[app.Install]() {
+		telemetry.InstallID = s.OwnerID
+		telemetry.InstallName = s.OwnerName
+	}
+	return telemetry
 }
 
 func (s *Signal) WithParams(params *signal.Params) {

@@ -3,6 +3,8 @@ package cctx
 import (
 	"database/sql/driver"
 	"encoding/json"
+
+	cctxkeys "github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 // SignalContext captures the request-scoped context values that must survive
@@ -10,10 +12,11 @@ import (
 // the background enqueuer can restore the full context when processing the
 // signal outside the original request goroutine.
 type SignalContext struct {
-	AccountID   string `json:"account_id,omitempty"`
-	OrgID       string `json:"org_id,omitempty"`
-	TraceID     string `json:"trace_id,omitempty"`
-	LogStreamID string `json:"log_stream_id,omitempty"`
+	AccountID         string                     `json:"account_id,omitempty"`
+	OrgID             string                     `json:"org_id,omitempty"`
+	TraceID           string                     `json:"trace_id,omitempty"`
+	WorkflowTelemetry cctxkeys.WorkflowTelemetry `json:"workflow_telemetry,omitempty"`
+	LogStreamID       string                     `json:"log_stream_id,omitempty"`
 }
 
 // Scan implements database/sql.Scanner for reading JSONB from PostgreSQL.
