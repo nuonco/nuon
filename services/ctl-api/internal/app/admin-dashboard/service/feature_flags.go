@@ -16,7 +16,7 @@ import (
 type featureFlagRow struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	// Default is the value a new org gets from the code default, before the
+	// Default is the value a new org gets from the code catalog, before the
 	// deployment's forced_enabled_features override.
 	Default          bool `json:"default"`
 	Forced           bool `json:"forced"`

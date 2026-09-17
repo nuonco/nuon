@@ -115,16 +115,12 @@ All config-to-database conversion lives server-side in `services/ctl-api/interna
 config knowledge to the CLI beyond parsing and validation** — a client-side syncer (`pkg/config/sync/apisyncer`) is
 exactly what this replaced, after it silently drifted from the server's conversion for months.
 
-#### The app branch path (`default-app-branches`)
+#### The explicit app branch path
 
-When the org has the `default-app-branches` feature flag on, or the user passes `--branch` / `--app-branch`, the sync
-routes through an app branch run instead (`internal/services/apps/sync_branch.go`). This path adds **no** endpoints of
-its own:
+When the user passes `--branch` / `--app-branch`, sync routes through an existing app branch run instead
+(`internal/services/apps/sync_branch.go`). This path adds **no** endpoints of its own:
 
-1. `GET /v1/orgs/current` for the flag, then `GET /v1/apps/:app_id/branches` for a branch named `default`. On the first
-   sync it does not exist yet, so `POST /v1/apps/:app_id/branches` creates it and
-   `POST /v1/apps/:app_id/branches/:branch_id/configs` gives it a single `all_installs` install group. A name collision
-   on create means a concurrent sync won the race, so re-list and use theirs.
+1. Resolve the branch selected by `--branch` / `--app-branch`.
 2. `POST /v1/apps/:app_id/configs` with `intermediate_config_json` and `app_branch_id`. The config is left unsynced.
    **Resolving the branch here as a side effect of an empty `app_branch_id` does not work**: an older CLI would get a
    branch-linked config and then call `/configs/:id/sync`, whose `finalizeAppConfigSync` skips the install rollout for

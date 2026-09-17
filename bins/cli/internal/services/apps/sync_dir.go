@@ -154,12 +154,6 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		if branchErr != nil {
 			return ui.PrintError(branchErr)
 		}
-	default:
-		var branchErr error
-		branchID, branchErr = s.resolveDefaultBranchID(ctx, appID)
-		if branchErr != nil {
-			return ui.PrintError(branchErr)
-		}
 	}
 
 	appConfig, err := s.createConfig(ctx, appID, version, cfg, branchID, opts.Preview)

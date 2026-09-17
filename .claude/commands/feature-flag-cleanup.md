@@ -10,11 +10,11 @@ removal deploys.
 
 ## Background: how the flag system works
 
-- **Source of truth**: `services/ctl-api/internal/app/org.go`
+- **Source of truth**: `services/ctl-api/internal/app/org_features.go`
   - `OrgFeature` string constants (e.g. `OrgFeatureRunbookStudio OrgFeature = "runbook-studio"`)
-  - `GetFeatures()` — the active flag list (chronological, oldest first)
-  - `GetFeatureDescriptions()` — flag → description map
-  - `Org.BeforeCreate` — the `defaultFeatures` map where defaults are set; this is where a flag gets "defaulted to true"
+  - `featureCatalog()` — the active flag list (chronological, oldest first) with Default, Description, AdminOnly
+  - `GetFeatures()` / `DefaultFeatures()` / descriptions are derived from that catalog
+  - `Org.BeforeCreate` — writes catalog defaults (plus `forced_enabled_features`)
   - `Org.AfterQuery` — auto-prunes keys not in `GetFeatures()` from `org.Features` at read time, so **no DB
     migration is needed** when a flag is removed
 - **Gating patterns**:
@@ -34,8 +34,7 @@ removal deploys.
 
 ## Step 1: Identify candidates
 
-1. Read the `defaultFeatures` map in `Org.BeforeCreate` in `org.go`. Collect every flag currently defaulted to
-   `true`.
+1. Read `featureCatalog()` in `org_features.go`. Collect every flag currently defaulted to `true`.
 2. Drop any flag listed in the **Keep-list** at the bottom of this file.
 3. Find the latest release tag and its date (tags mark promotion to prod):
    ```bash

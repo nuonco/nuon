@@ -115,7 +115,7 @@ operation (log and continue).
 | Entry point | Flow |
 |-------------|------|
 | CLI `nuon apps sync` | `POST /configs` → `POST /configs/:id/sync` → `appconfigsync` signal |
-| CLI with default app branches | `POST /configs` + `app_branch_id` → branch run `sync_app_config` step |
+| CLI with an explicit app branch | `POST /configs` + `app_branch_id` → branch run `sync_app_config` step |
 | VCS branch sync | branch run fetch step → `branches/activities.syncAppConfig` |
 
 The CLI does not walk per-resource `Create*Config` endpoints. Those remain public API but are not the sync path.
@@ -163,8 +163,9 @@ Never use `fmt.Println`. See [conventions/logging.md](/conventions/logging.md).
 
 - Never use `step.Idx` in user-facing status strings; use `step.Name`.
 - Update `CompositeStatus.Metadata` separately from status transitions (use `generics.MergeJSONBMetadata`).
-- Feature flags (`internal/app/org.go`): add constant, **append** to bottom of `GetFeatures()`, add description, set
-  default in `BeforeCreate`.
+- Feature flags (`internal/app/org_features.go`): add an `OrgFeature` constant and **append** a `OrgFeatureDef` to
+  `featureCatalog()` (name, default, description, `AdminOnly` if needed). `GetFeatures()` / `DefaultFeatures()` are
+  derived from that list.
 
 ## MCP Server
 
