@@ -147,6 +147,13 @@ func (a *AppRunnerConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &AppRunnerConfig{}, "app_config_id_deleted_at"),
+			Columns: []string{
+				"app_config_id",
+				"deleted_at",
+			},
+		},
 	}
 }
 
