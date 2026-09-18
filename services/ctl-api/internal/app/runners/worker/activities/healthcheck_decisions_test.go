@@ -14,8 +14,9 @@ func corpusRunner(tc runnerHealthCase) *app.Runner {
 		ID:     "rnrtest",
 		Status: tc.status,
 		StatusV2: app.CompositeStatus{
-			Status:   app.Status(tc.v2Status),
-			Metadata: tc.metadata,
+			Status:      app.Status(tc.v2Status),
+			Metadata:    tc.metadata,
+			CreatedAtTS: tc.v2CreatedAt,
 		},
 		RunnerGroup: app.RunnerGroup{Type: tc.groupType},
 	}
