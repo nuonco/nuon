@@ -6,11 +6,12 @@ import (
 )
 
 type Payload struct {
-	OrgID             string                 `json:"org_id"`
-	AccountID         string                 `json:"account_id"`
-	TraceID           string                 `json:"trace_id"`
-	WorkflowTelemetry cctx.WorkflowTelemetry `json:"workflow_telemetry,omitempty"`
-	LogStream         *app.LogStream         `json:"log_stream,omitempty"`
+	OrgID             string                 `json:"org_id" temporaljson:"org_id"`
+	AccountID         string                 `json:"account_id" temporaljson:"account_id"`
+	TraceID           string                 `json:"trace_id" temporaljson:"trace_id"`
+	WorkflowTelemetry cctx.WorkflowTelemetry `json:"workflow_telemetry,omitempty" temporaljson:"workflow_telemetry,omitempty"`
+	LogStream         *app.LogStream         `json:"log_stream,omitempty" temporaljson:"log_stream,omitempty"`
+	QueueID           string                 `json:"queue_id,omitempty" temporaljson:"queue_id,omitempty"`
 }
 
 func FetchPayload(ctx cctx.ValueContext) (*Payload, error) {
@@ -25,5 +26,6 @@ func FetchPayload(ctx cctx.ValueContext) (*Payload, error) {
 		TraceID:           traceID,
 		WorkflowTelemetry: cctx.WorkflowTelemetryFromContext(ctx),
 		LogStream:         logStream,
+		QueueID:           cctx.QueueIDFromContext(ctx),
 	}, nil
 }

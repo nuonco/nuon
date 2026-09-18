@@ -32,7 +32,7 @@ func (s *service) AdminReprovisionApp(ctx *gin.Context) {
 		return
 	}
 
-	q, err := s.queueClient.GetQueueByOwner(ctx, appID, "apps")
+	q, err := s.queueClient.GetQueueByOwnerAndName(ctx, appID, "apps", "app-signals")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app queue: %w", err))
 		return

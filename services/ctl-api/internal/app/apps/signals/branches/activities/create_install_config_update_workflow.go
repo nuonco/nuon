@@ -93,7 +93,7 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 		return nil, fmt.Errorf("unable to link workflow to install config update: %w", err)
 	}
 
-	queue, err := a.queueClient.GetQueueByOwner(ctx, input.InstallID, "installs")
+	queue, err := a.queueClient.GetQueueByOwnerAndName(ctx, input.InstallID, "installs", "install-workflows")
 	if err != nil {
 		return nil, fmt.Errorf("unable to find queue for install %s: %w", input.InstallID, err)
 	}

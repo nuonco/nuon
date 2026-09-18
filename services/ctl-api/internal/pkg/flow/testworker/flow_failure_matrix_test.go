@@ -2,6 +2,7 @@ package testworker
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -16,14 +17,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
 func (e *FlowTestSuite) setupLifecycleTest(ctx context.Context, ownerID, ownerType string, steps []app.WorkflowStep) (*app.Workflow, string) {
-	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
-	e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-step-groups")
-	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
-	e.createTestQueue(ctx, ownerID, ownerType, "install-generate-steps")
+	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallWorkflowStepsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallWorkflowStepGroupsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallSignalsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallGenerateStepsQueueName)
 
 	flw := app.Workflow{
 		OwnerID:   ownerID,
@@ -44,10 +46,10 @@ func (e *FlowTestSuite) enqueueLifecycleFlow(ctx context.Context, queueID string
 		QueueID: queueID,
 		Signal: &executeflow.Signal{
 			WorkflowID:             flw.ID,
-			StepGroupQueueName:     "install-workflow-step-groups",
-			StepQueueName:          "install-workflow-steps",
-			StepTargetQueueName:    "install-signals",
-			GenerateStepsQueueName: "install-generate-steps",
+			StepGroupQueueName:     queuenames.InstallWorkflowStepGroupsQueueName,
+			StepQueueName:          queuenames.InstallWorkflowStepsQueueName,
+			StepTargetQueueName:    queuenames.InstallSignalsQueueName,
+			GenerateStepsQueueName: queuenames.InstallGenerateStepsQueueName,
 			OwnerID:                ownerID,
 			OwnerType:              ownerType,
 		},
@@ -208,6 +210,32 @@ func (e *FlowTestSuite) TestGeneratedStepsStartPending() {
 	_, err := e.service.FlowClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{InstallWorkflowID: flw.ID})
 	require.NoError(e.T(), err)
 	e.waitForWorkflowTerminal(ctx, flw.ID)
+	e.assertTemporalDrained(ctx, flw.ID)
+}
+
+func (e *FlowTestSuite) TestGenerateStepsFailureDrains() {
+	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
+	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
+	ownerID, ownerType := fakeString(), "app_branches"
+	workflowType := app.WorkflowType("test_generate_steps_failure")
+
+	generateworkflowsteps.RegisterGenerators(ownerType, func() map[app.WorkflowType]flow.WorkflowStepGenerator {
+		return map[app.WorkflowType]flow.WorkflowStepGenerator{
+			workflowType: func(workflow.Context, *app.Workflow) (*app.GenerateStepsResult, error) {
+				return nil, errors.New("step generation failed")
+			},
+		}
+	})
+
+	workflowQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflows")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-step-groups")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-generate-steps")
+
+	flw := e.createTestWorkflow(ctx, ownerID, ownerType, workflowType, &generateworkflowsteps.Signal{})
+	e.enqueueLifecycleFlow(ctx, workflowQueue.ID, flw, ownerID, ownerType)
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
 	e.assertTemporalDrained(ctx, flw.ID)
 }
 

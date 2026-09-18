@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -44,7 +45,7 @@ func (h *Helpers) EnqueueAppBranchCreatedIfFirst(ctx context.Context, appBranchI
 		return nil
 	}
 
-	queue, err := h.queueClient.GetQueueByOwnerAndName(ctx, appBranchID, "app_branches", "app-branch-signals")
+	queue, err := h.queueClient.GetQueueByOwnerAndName(ctx, appBranchID, "app_branches", queuenames.AppBranchSignalsQueueName)
 	if err != nil {
 		return fmt.Errorf("unable to find app branch queue: %w", err)
 	}

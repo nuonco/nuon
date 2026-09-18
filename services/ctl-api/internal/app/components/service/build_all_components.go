@@ -87,7 +87,7 @@ func (s *service) BuildAllComponents(ctx *gin.Context) {
 			return
 		}
 
-		q, err := s.queueClient.GetQueueByOwner(ctx, c.ID, "components")
+		q, err := s.queueClient.GetDefaultQueueByOwner(ctx, c.ID, "components")
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to get component queue: %w", err))
 			return
