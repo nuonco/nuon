@@ -92,7 +92,7 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 					return
 				}
 
-				q, err := s.queueClient.GetQueueByOwner(ctx, comp.ID, "components")
+				q, err := s.queueClient.GetDefaultQueueByOwner(ctx, comp.ID, "components")
 				if err != nil {
 					ctx.Error(fmt.Errorf("unable to get component queue: %w", err))
 					return
@@ -115,7 +115,7 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 		return
 	}
 
-	q, err := s.queueClient.GetQueueByOwner(ctx, appID, "apps")
+	q, err := s.queueClient.GetQueueByOwnerAndName(ctx, appID, "apps", "app-signals")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app queue: %w", err))
 		return

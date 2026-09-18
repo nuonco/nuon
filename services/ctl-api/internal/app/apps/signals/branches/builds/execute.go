@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
 	queuebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/queuebuild"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -278,6 +279,7 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 				OwnerID:         componentID,
 				OwnerType:       "components",
+				QueueName:       queuenames.ComponentDefaultQueueName,
 				SignalOwnerID:   componentID,
 				SignalOwnerType: "components",
 				Signal: &queuebuild.Signal{
@@ -604,7 +606,7 @@ func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger) error {
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.AppBranchID,
 		OwnerType:       "app_branches",
-		QueueName:       "app-branch-sandbox-builds",
+		QueueName:       queuenames.AppBranchSandboxBuildsQueueName,
 		SignalOwnerID:   s.AppBranchID,
 		SignalOwnerType: "app_branches",
 		Signal: &sandboxbuild.Signal{

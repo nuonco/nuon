@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
 	runnerprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/provision"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -119,6 +120,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   runnerID,
 		OwnerType: "runners",
+		QueueName: queuenames.RunnerSignalsQueueName,
 		Signal: &runnerprovision.Signal{
 			RunnerID: runnerID,
 		},

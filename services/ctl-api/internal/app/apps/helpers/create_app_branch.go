@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 const (
@@ -65,44 +66,34 @@ func (h *Helpers) CreateAppBranchWithDB(
 	return &branch, nil
 }
 
-func (h *Helpers) EnsureAppBranchQueues(ctx context.Context, branchID string) error {
+type EnsureAppBranchQueuesOptions struct {
+	SkipRestartHint bool
+}
+
+func (h *Helpers) EnsureAppBranchQueues(ctx context.Context, branchID string, opts ...EnsureAppBranchQueuesOptions) error {
 	ownerType := plugins.TableName(h.db, app.AppBranch{})
-
-	existing, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     branchID,
-		OwnerType:   ownerType,
-		Namespace:   "apps",
-		MaxInFlight: AppBranchDefaultMaxInFlight,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return fmt.Errorf("unable to create queue: %w", err)
-	}
-	if existing.MaxInFlight != AppBranchDefaultMaxInFlight {
-		h.db.WithContext(ctx).Model(existing).Update("max_in_flight", AppBranchDefaultMaxInFlight)
+	var options EnsureAppBranchQueuesOptions
+	if len(opts) > 0 {
+		options = opts[0]
 	}
 
-	// Create named queues for workflow execution pipeline
-	namedQueues := []struct {
-		name        string
-		maxInFlight int
-	}{
-		{"app-branch-signals", 5},
-		{"app-branch-workflow-step-groups", 2},
-		{"app-branch-workflow-steps", 5},
-		{"app-branch-generate-steps", 2},
-		{AppBranchSandboxBuildsQueueName, 2},
+	specs, ok := queuenames.Specs(queuenames.OwnerAppBranches)
+	if !ok {
+		return fmt.Errorf("app branch queue specs are not registered")
 	}
-	for _, nq := range namedQueues {
-		if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-			OwnerID:     branchID,
-			OwnerType:   ownerType,
-			Namespace:   "apps",
-			Name:        nq.name,
-			MaxInFlight: nq.maxInFlight,
-			MaxDepth:    50,
-		}); err != nil {
-			return fmt.Errorf("unable to create %s queue: %w", nq.name, err)
+
+	for _, spec := range specs {
+		_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+			OwnerID:         branchID,
+			OwnerType:       ownerType,
+			Namespace:       "apps",
+			Name:            spec.Name,
+			MaxInFlight:     spec.MaxInFlight,
+			MaxDepth:        spec.MaxDepth,
+			SkipRestartHint: options.SkipRestartHint,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to create %s queue: %w", spec.Name, err)
 		}
 	}
 

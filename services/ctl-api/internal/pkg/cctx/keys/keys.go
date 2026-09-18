@@ -33,6 +33,7 @@ const (
 	FlowWorkflowIDCtxKey    string = "flow_workflow_id"
 	FlowInstallIDCtxKey     string = "flow_install_id"
 	WorkflowTelemetryCtxKey string = "workflow_telemetry"
+	QueueIDCtxKey           string = "queue_id"
 	OrgSelectorCtxKey       string = "mcp_org_selector"
 	TokenRoleCtxKey         string = "token_role"
 )
