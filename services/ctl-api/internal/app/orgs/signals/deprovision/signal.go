@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
 	runnerdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/deprovision"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -68,6 +69,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 				OwnerID:   a.ID,
 				OwnerType: "apps",
+				QueueName: queuenames.AppSignalsQueueName,
 				Signal: &appdeprovision.Signal{
 					AppID: a.ID,
 				},
@@ -115,6 +117,7 @@ func (s *Signal) deprovisionOrg(ctx workflow.Context) error {
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   org.RunnerGroup.Runners[0].ID,
 		OwnerType: "runners",
+		QueueName: queuenames.RunnerSignalsQueueName,
 		Signal: &runnerdeprovision.Signal{
 			RunnerID: org.RunnerGroup.Runners[0].ID,
 		},
