@@ -166,7 +166,7 @@ jobs:
           fi
 
       - name: Save Go build cache to S3
-        if: ${{ contains(fromJSON('["ctl-api","cli","lsp","runner"]'), inputs.service) && env.IS_FORK_PR != 'true' }}
+        if: ${{ !inputs.is_promotion && contains(fromJSON('["ctl-api","cli","lsp","runner"]'), inputs.service) && env.IS_FORK_PR != 'true' }}
         run: CI=true nuonctl builds gocache ${{inputs.service}} --tag=${{inputs.tag}}
         env:
           AWS_REGION: us-west-2
