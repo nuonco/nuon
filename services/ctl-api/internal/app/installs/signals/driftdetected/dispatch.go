@@ -5,6 +5,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
@@ -21,7 +22,7 @@ func Dispatch(ctx workflow.Context, sig *Signal) error {
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         sig.InstallID,
 		OwnerType:       "installs",
-		QueueName:       installSignalsQueueName,
+		QueueName:       queuenames.InstallSignalsQueueName,
 		Signal:          sig,
 		SignalOwnerID:   sig.WorkflowStepID,
 		SignalOwnerType: installWorkflowStepsOwnerType,

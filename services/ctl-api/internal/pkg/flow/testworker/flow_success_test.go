@@ -8,16 +8,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
 // setupFlowTest creates the queues, workflow, and steps needed for a flow test.
 // Returns the workflow and the step queue ID for enqueuing the execute-flow signal.
 func (e *FlowTestSuite) setupFlowTest(ctx context.Context, ownerID, ownerType string, steps []app.WorkflowStep) (*app.Workflow, string) {
-	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
-	e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-step-groups")
-	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
-	e.createTestQueue(ctx, ownerID, ownerType, "install-generate-steps")
+	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallWorkflowStepsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallWorkflowStepGroupsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallSignalsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallGenerateStepsQueueName)
 
 	flw := app.Workflow{
 		OwnerID:   ownerID,
@@ -39,10 +40,10 @@ func (e *FlowTestSuite) enqueueFlow(ctx context.Context, queueID string, flw *ap
 		QueueID: queueID,
 		Signal: &executeflow.Signal{
 			WorkflowID:             flw.ID,
-			StepGroupQueueName:     "install-workflow-step-groups",
-			StepQueueName:          "install-workflow-steps",
-			StepTargetQueueName:    "install-signals",
-			GenerateStepsQueueName: "install-generate-steps",
+			StepGroupQueueName:     queuenames.InstallWorkflowStepGroupsQueueName,
+			StepQueueName:          queuenames.InstallWorkflowStepsQueueName,
+			StepTargetQueueName:    queuenames.InstallSignalsQueueName,
+			GenerateStepsQueueName: queuenames.InstallGenerateStepsQueueName,
 			OwnerID:                ownerID,
 			OwnerType:              ownerType,
 		},

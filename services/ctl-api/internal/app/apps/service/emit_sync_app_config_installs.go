@@ -10,7 +10,7 @@ import (
 )
 
 func (s *service) emitSyncAppConfigInstallsSignal(ctx context.Context, appID, appConfigID string) {
-	q, err := s.queueClient.GetQueueByOwner(ctx, appID, "apps")
+	q, err := s.queueClient.GetQueueByOwnerAndName(ctx, appID, "apps", "app-signals")
 	if err != nil {
 		s.l.Warn("failed to get app queue for sync-app-config-installs signal",
 			zap.String("app_id", appID),
