@@ -17,7 +17,7 @@ import { NotificationContext } from '@/providers/notification-provider'
 import { SidebarContext } from '@/providers/sidebar-provider'
 import { DetailHeader } from './DetailHeader'
 import { DetailPage } from './DetailPage'
-import { HistoryPanelButton, HistoryRail } from './HistoryRail'
+import { HistoryPanelButton } from './HistoryPanelButton'
 
 const created = '2026-08-24T10:12:00Z'
 const updated = '2026-08-24T10:19:42Z'
@@ -129,7 +129,7 @@ export const RunWithBanner = () => (
   </DetailPage>
 )
 
-export const EntityWithHistoryRail = () => (
+export const EntityWithHistoryPanel = () => (
   <DetailPage
     header={
       <DetailHeader
@@ -145,20 +145,18 @@ export const EntityWithHistoryRail = () => (
       />
     }
   >
-    <HistoryRail title="Sandbox history" history={history}>
-      <Card>
-        <Text variant="base" weight="strong">
-          Configuration
-        </Text>
-        <Text theme="neutral">Section body</Text>
-      </Card>
-      <Card>
-        <Text variant="base" weight="strong">
-          Terraform workspace
-        </Text>
-        <Text theme="neutral">Section body</Text>
-      </Card>
-    </HistoryRail>
+    <Card>
+      <Text variant="base" weight="strong">
+        Configuration
+      </Text>
+      <Text theme="neutral">Section body</Text>
+    </Card>
+    <Card>
+      <Text variant="base" weight="strong">
+        Terraform workspace
+      </Text>
+      <Text theme="neutral">Section body</Text>
+    </Card>
   </DetailPage>
 )
 
