@@ -64,7 +64,7 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 		tomlCtx.CurrentTable, tomlCtx.KeyOnLine, tomlCtx.KeyPath)
 
 	// Detect schema type from document
-	schemaType := models.DetectSchemaType(text)
+	schemaType := models.DetectSchemaTypeForDocument(text, string(uri))
 	if schemaType == "" {
 		log.Warningf("⚠️  No schema type detected, returning no completions")
 		return nil, nil

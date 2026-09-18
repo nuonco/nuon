@@ -51,6 +51,18 @@ export const Empty = () => (
   />
 )
 
+export const PreviousEmpty = () => (
+  <SandboxBuildTimeline
+    builds={[mockBuild]}
+    pagination={{ hasNext: false, offset: 0, limit: 10 }}
+    orgId="org-1"
+    appId="app-1"
+    isEmpty={false}
+    branchId="branch-1"
+    excludeBuildId={mockBuild.id}
+  />
+)
+
 export const WithPagination = () => (
   <SandboxBuildTimeline
     builds={[mockBuild]}

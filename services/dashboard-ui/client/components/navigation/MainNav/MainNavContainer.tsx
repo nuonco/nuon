@@ -1,4 +1,5 @@
 import { useConfig } from '@/hooks/use-config'
+import { useDashboardPreferences } from '@/hooks/use-dashboard-preferences'
 import { useOrg } from '@/hooks/use-org'
 import { useSidebar } from '@/hooks/use-sidebar'
 import { MainNav } from './MainNav'
@@ -7,6 +8,7 @@ export const MainNavContainer = () => {
   const { org } = useOrg()
   const { datadogEnv } = useConfig()
   const { isSidebarOpen } = useSidebar()
+  const { isInstallsTabEnabled } = useDashboardPreferences()
 
   if (!org) return null
 
@@ -21,6 +23,7 @@ export const MainNavContainer = () => {
     <MainNav
       org={org}
       isSidebarOpen={isSidebarOpen}
+      showInstalls={isInstallsTabEnabled}
       hasCustomerPortal={false}
       customerPortalUrl={customerPortalUrl}
     />
