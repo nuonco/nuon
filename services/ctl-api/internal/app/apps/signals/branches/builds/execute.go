@@ -13,11 +13,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
 	queuebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/queuebuild"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
-<<<<<<< HEAD
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
-=======
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
->>>>>>> 6b3e11b9a (feat: app branches lsp + ui simplification)
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
