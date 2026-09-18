@@ -61,3 +61,46 @@ func TestDetectSchemaType(t *testing.T) {
 		})
 	}
 }
+
+func TestDetectSchemaTypeForDocument(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		uri      string
+		expected string
+	}{
+		{
+			name:     "branch filename selects branch schema",
+			input:    "name = \"main\"\n",
+			uri:      "file:///workspace/branch.toml",
+			expected: "branch",
+		},
+		{
+			name:     "branch filename match is case insensitive",
+			input:    "name = \"main\"\n",
+			uri:      "file:///workspace/BRANCH.TOML",
+			expected: "branch",
+		},
+		{
+			name:     "explicit schema comment wins",
+			input:    "#metadata\nname = \"main\"\n",
+			uri:      "file:///workspace/branch.toml",
+			expected: "metadata",
+		},
+		{
+			name:     "unrecognized filename has no fallback",
+			input:    "name = \"main\"\n",
+			uri:      "file:///workspace/custom.toml",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := DetectSchemaTypeForDocument(tt.input, tt.uri)
+			if result != tt.expected {
+				t.Errorf("DetectSchemaTypeForDocument() = %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}

@@ -16,13 +16,13 @@ const installs = [
 ] as any
 
 export const WithInstalls = () => (
-  <AddInstallPicker groupId="group-1" unassignedInstalls={installs.slice(0, 3)} onAdd={noop} />
+  <AddInstallPicker groupId="group-1" pickableInstalls={installs.slice(0, 3)} onAdd={noop} />
 )
 
 export const Searchable = () => (
-  <AddInstallPicker groupId="group-1" unassignedInstalls={installs} onAdd={noop} />
+  <AddInstallPicker groupId="group-1" pickableInstalls={installs} onAdd={noop} />
 )
 
 export const AllAssigned = () => (
-  <AddInstallPicker groupId="group-1" unassignedInstalls={[]} onAdd={noop} />
+  <AddInstallPicker groupId="group-1" pickableInstalls={[]} onAdd={noop} />
 )

@@ -43,6 +43,10 @@ func (s *service) GetAppSandboxBuilds(ctx *gin.Context) {
 		Preload("LogStream").
 		Preload("RunnerJob").
 		Preload("VCSConnectionCommit").
+		Preload("AppBranchRun").
+		Preload("AppBranchRun.VCSConnectionCommit").
+		Preload("AppBranchRun.AppBranch").
+		Preload("AppBranchRun.Preview").
 		Where("app_id = ?", appID).
 		Order("created_at DESC").
 		Find(&builds)

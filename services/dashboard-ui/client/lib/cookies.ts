@@ -25,3 +25,19 @@ export const setSidebarOpen = (isOpen: boolean) =>
 export const getPageSidebarOpen = () => getCookie('page_sidebar_open') === '1'
 export const setPageSidebarOpen = (isOpen: boolean) =>
   setCookie('page_sidebar_open', isOpen ? '1' : '0')
+
+export const getStatusBarEnabled = (): boolean | undefined => {
+  const value = getCookie('status_bar')
+  if (value === undefined) return undefined
+  return value === '1'
+}
+export const setStatusBarEnabled = (isEnabled: boolean) =>
+  setCookie('status_bar', isEnabled ? '1' : '0')
+
+export const getInstallsTabEnabled = (): boolean | undefined => {
+  const value = getCookie('installs_tab')
+  if (value === undefined) return undefined
+  return value === '1'
+}
+export const setInstallsTabEnabled = (isEnabled: boolean) =>
+  setCookie('installs_tab', isEnabled ? '1' : '0')

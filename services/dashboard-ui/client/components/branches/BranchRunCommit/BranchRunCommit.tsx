@@ -3,6 +3,7 @@ import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { cn } from '@/utils/classnames'
 
 export interface IBranchRunCommit {
   status?: string
@@ -13,6 +14,8 @@ export interface IBranchRunCommit {
   avatarUrl?: string
   sha?: string
   createdAt?: string
+  className?: string
+  showStatus?: boolean
 }
 
 export const BranchRunCommit = ({
@@ -24,17 +27,31 @@ export const BranchRunCommit = ({
   avatarUrl,
   sha,
   createdAt,
+  className,
+  showStatus = true,
 }: IBranchRunCommit) => {
-  const hasMeta = !!author || !!createdAt || !!sha
+  const hasMeta = !!author || !!createdAt
 
   return (
-    <div className="flex flex-col gap-1 min-w-0">
+    <div className={cn('flex flex-col gap-1 min-w-0', className)}>
       <div className="flex items-center gap-2 min-w-0">
-        <Status
-          status={status ?? 'pending'}
-          isWithoutText
-          className="shrink-0"
-        />
+        {showStatus ? (
+          <Status
+            status={status ?? 'pending'}
+            isWithoutText
+            className="shrink-0"
+          />
+        ) : null}
+        {sha ? (
+          <Text
+            variant="subtext"
+            theme="neutral"
+            family="mono"
+            className="shrink-0"
+          >
+            {sha.slice(0, 7)}
+          </Text>
+        ) : null}
         <div className="min-w-0 flex-1 text-[13px] leading-5">
           {href ? (
             <Link
@@ -65,7 +82,11 @@ export const BranchRunCommit = ({
             />
           ) : null}
           {author ? (
-            <Text variant="subtext" theme="neutral" className="truncate min-w-0">
+            <Text
+              variant="subtext"
+              theme="neutral"
+              className="truncate min-w-0"
+            >
               {author}
             </Text>
           ) : null}
@@ -82,21 +103,6 @@ export const BranchRunCommit = ({
               time={createdAt}
               format="relative"
             />
-          ) : null}
-          {sha ? (
-            <>
-              <Text variant="subtext" theme="neutral" className="shrink-0">
-                ·
-              </Text>
-              <Text
-                variant="subtext"
-                theme="neutral"
-                family="mono"
-                className="shrink-0"
-              >
-                {sha.slice(0, 7)}
-              </Text>
-            </>
           ) : null}
         </div>
       ) : null}

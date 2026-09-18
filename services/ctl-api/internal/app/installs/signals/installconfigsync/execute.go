@@ -6,7 +6,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appbranchchanged"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -106,6 +109,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			synced++
 			if result.Created {
 				created++
+			}
+		}
+		if result.AppBranchChanged {
+			if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+				OwnerID:   result.InstallID,
+				OwnerType: "installs",
+				QueueName: queuenames.InstallSignalsQueueName,
+				Signal: &appbranchchanged.Signal{
+					InstallID:   result.InstallID,
+					AppBranchID: result.AppBranchID,
+				},
+			}); err != nil {
+				logger.Warn("failed to enqueue app branch change",
+					"install_name", result.InstallName,
+					"error", err,
+				)
+				failed++
 			}
 		}
 	}

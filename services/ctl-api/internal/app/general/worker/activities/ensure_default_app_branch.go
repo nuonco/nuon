@@ -113,8 +113,8 @@ func (a *Activities) EnsureDefaultAppBranch(ctx context.Context, req EnsureDefau
 	if err != nil {
 		return nil, fmt.Errorf("unable to configure default branch %s: %w", defaultBranch.ID, err)
 	}
-	if err := a.appsHelpers.EnqueueAppBranchCreatedIfFirst(ctx, defaultBranch.ID, config.ID); err != nil {
-		return nil, fmt.Errorf("unable to enqueue app-branch-created for %s: %w", defaultBranch.ID, err)
+	if err := a.appsHelpers.EnqueueAppBranchConfigSignals(ctx, defaultBranch.ID, config.ID); err != nil {
+		return nil, fmt.Errorf("unable to enqueue app branch config signals for %s: %w", defaultBranch.ID, err)
 	}
 
 	resp.Outcome = DefaultAppBranchOutcomeCreated

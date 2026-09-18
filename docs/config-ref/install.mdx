@@ -12,6 +12,7 @@ title: 'Install'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`name`**<br/>string | name of the install Unique identifier for this install configuration | **✅ Required** | `"production"`, `"staging"`, `"customer-acme"` |
+| **`app_branch`**<br/>string | app branch name App branch this install belongs to. Changing it moves the install and applies the branch's latest run. | **Optional** | `"main"` |
 | **`approval_option`**<br/>string | approval option for the install Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation) | **Optional** | `"approve-all"`, `"prompt"` |
 | **`labels`**<br/>object | key/value labels for the install Tag installs with arbitrary metadata like environment, region, or version. Values can use the .nuon templating syntax to render from install state, and re-render as... | **Optional** | `{"env":"production","region":"{{ .nuon.cloud_account.aws.region }}"}` |
 | **`aws_account`**<br/>[AWSAccount](#aws_account) | AWS account configuration AWS-specific settings for this install, including region and other account details | **Optional** | - |
