@@ -28,6 +28,14 @@ export const getWorkflows = (params: TWorkflowFilters & { sort?: string; page?: 
 export const getWorkflowFilterOptions = () =>
   api<TWorkflowFilterOptions>({ path: 'workflows/filter-options' })
 
+export type TWorkflowTypeStat = {
+  type: string
+  count: number
+}
+
+export const getWorkflowTypeStats = (params: Omit<TWorkflowFilters, 'type'>) =>
+  api<{ stats: TWorkflowTypeStat[] }>({ path: 'workflows/type-stats', params })
+
 export const getWorkflowDetail = (workflowId: string) =>
   api<{ workflow: any; group_details: any[]; generate_steps_signal: any; workflow_signal: any; workflow_info?: any }>({ path: `workflows/${workflowId}` })
 
