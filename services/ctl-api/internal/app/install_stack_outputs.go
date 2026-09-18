@@ -66,6 +66,7 @@ type AWSStackOutputs struct {
 	RunnerIAMRoleARN      string            `json:"runner_iam_role_arn,omitzero" mapstructure:"runner_iam_role_arn" temporaljson:"runner_iam_role_arn,omitzero,omitempty"`
 	BreakGlassRoleARNs    map[string]string `json:"break_glass_role_arns,omitzero" mapstructure:"break_glass_role_arns" temporaljson:"break_glass_role_arns,omitzero,omitempty"`
 	CustomRoleARNs        map[string]string `json:"custom_role_arns,omitzero" mapstructure:"custom_role_arns" temporaljson:"custom_role_arns,omitzero,omitempty"`
+	NamedPolicyARNs       map[string]string `json:"named_policy_arns,omitzero" mapstructure:"named_policy_arns" temporaljson:"named_policy_arns,omitzero,omitempty"`
 	InstallInputs         map[string]string `json:"install_inputs,omitzero" mapstructure:"install_inputs" temporaljson:"install_inputs,omitzero,omitempty"`
 
 	// Nil when the stack predates the runner_enabled variable, which must read
