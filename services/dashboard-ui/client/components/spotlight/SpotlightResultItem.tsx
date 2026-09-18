@@ -24,7 +24,7 @@ export const SpotlightResultItem = ({
     className={cn(
       'transition duration-200 px-2 py-1 cursor-pointer select-none rounded text-sm text-left flex items-center gap-3',
       {
-        'text-white bg-primary-600': isActive,
+        'text-on-primary bg-primary-600': isActive,
         'hover:bg-black/5 dark:hover:bg-white/5': !isActive,
       }
     )}

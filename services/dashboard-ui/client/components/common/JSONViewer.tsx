@@ -1,6 +1,6 @@
 import React, { lazy, Suspense, useEffect, useRef } from 'react'
 import { Skeleton } from '@/components/common/Skeleton'
-import { useSystemTheme } from '@/hooks/use-system-theme'
+import { useColorScheme } from '@/hooks/use-theme'
 import { cn } from '@/utils/classnames'
 
 const JsonViewer = lazy(
@@ -30,7 +30,7 @@ export const JSONViewer = ({
   expandIconType = 'square',
   ...props
 }: IJSONViewer) => {
-  const colorScheme = useSystemTheme()
+  const colorScheme = useColorScheme()
   const containerRef = useRef<HTMLDivElement>(null)
 
   const customDarkTheme = {
