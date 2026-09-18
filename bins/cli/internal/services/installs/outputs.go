@@ -297,6 +297,9 @@ func flattenStackOutputs(o *models.AppInstallStackOutputs) map[string]any {
 		if len(aws.CustomRoleArns) > 0 {
 			flat["custom_role_arns"] = aws.CustomRoleArns
 		}
+		if len(aws.NamedPolicyArns) > 0 {
+			flat["named_policy_arns"] = aws.NamedPolicyArns
+		}
 	}
 	for k, v := range o.Data {
 		flat[k] = v
