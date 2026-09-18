@@ -14,7 +14,7 @@ import {
 } from '@xyflow/react'
 import dagre from '@dagrejs/dagre'
 import '@xyflow/react/dist/style.css'
-import { useSystemTheme } from '@/hooks/use-system-theme'
+import { useColorScheme } from '@/hooks/use-theme'
 import { parseMermaidFlowchart, type ParsedNode, type ParsedEdge, type ParsedSubgraph } from './parse-mermaid'
 
 const MIN_NODE_WIDTH = 120
@@ -244,7 +244,7 @@ const MermaidNode = memo(({ data }: NodeProps) => {
 MermaidNode.displayName = 'MermaidNode'
 
 const SubgraphLabel = memo(({ data }: NodeProps) => {
-  const theme = useSystemTheme()
+  const theme = useColorScheme()
   const colors = THEME[theme]
   const { label, width, height } = data as { label: string; width: number; height: number }
 
@@ -570,7 +570,7 @@ function buildLayout(
 }
 
 export const MermaidFlowGraph = ({ code }: { code: string }) => {
-  const theme = useSystemTheme()
+  const theme = useColorScheme()
   const colors = THEME[theme]
 
   const { nodes: layoutedNodes, edges: layoutedEdges } = useMemo(() => {
