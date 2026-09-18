@@ -57,7 +57,7 @@ type ComponentBuild struct {
 	Status            ComponentBuildStatus                `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                              `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 	StatusV2          CompositeStatus                     `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
-	CompositeError    *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"-" temporaljson:"-"`
+	CompositeError    *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb" temporaljson:"composite_error,omitzero,omitempty"`
 
 	GitRef *string `json:"git_ref,omitzero" temporaljson:"git_ref,omitzero,omitempty"`
 
@@ -114,7 +114,7 @@ type ComponentBuild struct {
 	NoOp bool `json:"no_op,omitzero" gorm:"default false" temporaljson:"no_op,omitzero,omitempty"`
 
 	AppBranchRunID *string       `json:"app_branch_run_id,omitempty" temporaljson:"app_branch_run_id,omitzero,omitempty"`
-	AppBranchRun   *AppBranchRun `faker:"-" json:"-" temporaljson:"app_branch_run,omitzero,omitempty"`
+	AppBranchRun   *AppBranchRun `faker:"-" json:"app_branch_run,omitempty" temporaljson:"app_branch_run,omitzero,omitempty"`
 
 	// QueueSignal is the signal enqueued when this build was created via the queue path
 	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
@@ -165,9 +165,6 @@ func (c *ComponentBuild) AfterQuery(tx *gorm.DB) error {
 	if c.AppBranchRun != nil {
 		c.AppBranchID = c.AppBranchRun.AppBranchID
 		c.IsPreview = c.AppBranchRun.IsPreview()
-		if c.VCSConnectionCommit == nil && c.AppBranchRun.VCSConnectionCommit != nil {
-			c.VCSConnectionCommit = c.AppBranchRun.VCSConnectionCommit
-		}
 	}
 
 	if c.StatusV2.Status != "" {

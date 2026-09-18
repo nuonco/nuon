@@ -162,6 +162,7 @@ func (s *InstallStackOverrides) HasOverrides() bool {
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
 	Name           string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
+	AppBranch      string                `mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty"`
 	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
 	Labels         map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
 	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
@@ -209,6 +210,9 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("production").
 		Example("staging").
 		Example("customer-acme").
+		Field("app_branch").Short("app branch name").
+		Long("App branch this install belongs to. Changing it moves the install and applies the branch's latest run.").
+		Example("main").
 		Field("approval_option").Short("approval option for the install").
 		Long("Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation)").
 		Example("approve-all").
@@ -328,6 +332,13 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 	diffs := make([]*diff.Diff, 0)
 	diffs = append(diffs,
 		diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(upstreamInstall.Name, i.Name)))
+
+	if i.AppBranch != "" {
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("app_branch"),
+			diff.WithStringDiff(upstreamInstall.AppBranch, i.AppBranch),
+		))
+	}
 
 	if i.ApprovalOption != InstallApprovalOptionUnknown {
 		diffs = append(diffs, diff.NewDiff(

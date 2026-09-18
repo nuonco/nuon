@@ -190,6 +190,16 @@ func (c *ConfigDir) getBranches() (*config.AppBranchConfig, []*config.AppBranchC
 			Err:         errors.New("Can not provide branches both with a branch.toml and branches/ directory"),
 		}
 	}
+	if c.Branch != nil {
+		if err := c.Branch.Validate(); err != nil {
+			return nil, nil, err
+		}
+	}
+	for _, branch := range c.Branches {
+		if err := branch.Validate(); err != nil {
+			return nil, nil, err
+		}
+	}
 	return c.Branch, c.Branches, nil
 }
 

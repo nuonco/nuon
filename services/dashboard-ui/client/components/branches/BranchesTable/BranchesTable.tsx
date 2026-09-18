@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Badge } from '@/components/common/Badge'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
@@ -12,7 +11,6 @@ import type { TAppBranch } from '@/types'
 type TBranchRow = {
   branchId: string
   branchName: string
-  managedBy: ReactNode
   workflowCount: number
   createdAt: string
   href: string
@@ -27,11 +25,6 @@ export function parseBranchesToTableData(
   return branches.map((branch) => ({
     branchId: branch.id || '',
     branchName: branch.name || '',
-    managedBy: branch.managed_by ? (
-      <Badge size="sm" theme={branch.managed_by === 'config' ? 'brand' : 'default'}>
-        {branch.managed_by}
-      </Badge>
-    ) : null,
     workflowCount: branch.workflow_count ?? 0,
     createdAt: branch.created_at || '',
     href: `/${orgId}/apps/${appId}/branches/${branch.id}`,
@@ -50,18 +43,14 @@ const columns: ColumnDef<TBranchRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body">
-          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
+          <Link href={info.row.original.href} variant="inline">
+            {info.getValue() as string}
+          </Link>
         </Text>
         <ID>{info.row.original.branchId}</ID>
       </span>
     ),
     enableSorting: true,
-  },
-  {
-    accessorKey: 'managedBy',
-    header: 'Managed by',
-    cell: (info) => info.getValue() as ReactNode,
-    enableSorting: false,
   },
   {
     accessorKey: 'workflowCount',
@@ -95,7 +84,11 @@ interface IBranchesTable {
   pagination?: { hasNext: boolean; offset: number; limit: number }
 }
 
-export const BranchesTable = ({ data, isLoading, pagination }: IBranchesTable) => {
+export const BranchesTable = ({
+  data,
+  isLoading,
+  pagination,
+}: IBranchesTable) => {
   return (
     <Table<TBranchRow>
       columns={columns}

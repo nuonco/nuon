@@ -29,12 +29,6 @@ export const SETTINGS_LINKS: TNavLink[] = [
     shortcut: 'g t',
   },
   {
-    iconVariant: 'HammerIcon',
-    path: `/runner`,
-    text: 'Builds',
-    shortcut: 'g r',
-  },
-  {
     iconVariant: 'GearIcon',
     path: `/settings`,
     text: 'Settings',

@@ -2,6 +2,8 @@ package models
 
 import (
 	"bufio"
+	"net/url"
+	"path"
 	"strings"
 
 	"github.com/invopop/jsonschema"
@@ -28,6 +30,21 @@ func DetectSchemaType(text string) string {
 		if !strings.HasPrefix(line, "#") {
 			break
 		}
+	}
+	return ""
+}
+
+func DetectSchemaTypeForDocument(text, uri string) string {
+	if schemaType := DetectSchemaType(text); schemaType != "" {
+		return schemaType
+	}
+
+	parsed, err := url.Parse(uri)
+	if err != nil {
+		return ""
+	}
+	if strings.EqualFold(path.Base(parsed.Path), "branch.toml") {
+		return "branch"
 	}
 	return ""
 }

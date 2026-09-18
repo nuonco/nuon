@@ -72,6 +72,12 @@ func Validate(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID str
 
 	var nameToID map[string]string
 	for _, branchCfg := range branches {
+		if err := branchCfg.Validate(); err != nil {
+			return sync.SyncErr{
+				Resource:    "app-branches",
+				Description: err.Error(),
+			}
+		}
 		for _, name := range branchCfg.PostDeployRunbooks {
 			if _, ok := declaredRunbooks[name]; !ok {
 				return sync.SyncErr{
@@ -235,7 +241,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		return err
 	}
 
-	if err := validateInstallGroupOwnership(ctx, db, branchID, branchCfg.Name, installGroups); err != nil {
+	if err := validateInstallGroups(ctx, db, branchID, branchCfg.Name, installGroups); err != nil {
 		return err
 	}
 
@@ -262,27 +268,32 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		runConfig.GithubLabel = branchCfg.Run.GithubLabel
 	}
 
-	if _, err := appsHelper.CreateAppBranchConfigWithDB(ctx, db, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs, ignoreChanges, previewConfig, runConfig); err != nil {
+	branchConfig, err := appsHelper.CreateAppBranchConfigWithDB(ctx, db, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs, ignoreChanges, previewConfig, runConfig)
+	if err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create config for branch %q", branchCfg.Name),
 			Err:         err,
 		}
 	}
+	if state != nil {
+		if state.Result == nil {
+			state.Result = &sync.Result{}
+		}
+		state.Result.AppBranchConfigsUpdated = append(state.Result.AppBranchConfigsUpdated, sync.AppBranchConfigState{
+			AppBranchID:       branchID,
+			AppBranchConfigID: branchConfig.ID,
+		})
+	}
 
 	return nil
 }
 
-// validateInstallGroupOwnership holds config-as-code to the same rule as the
-// API: a group selects among the installs its branch already owns. Naming an
-// install that lives on another branch — or on no branch yet — does not move it
-// here, so the sync fails instead of writing a config that resolves to nothing.
-func validateInstallGroupOwnership(ctx context.Context, db *gorm.DB, branchID, branchName string, groups []app.AppBranchInstallGroup) error {
+func validateInstallGroups(ctx context.Context, db *gorm.DB, branchID, branchName string, groups []app.AppBranchInstallGroup) error {
 	var installIDs []string
 	for _, group := range groups {
 		installIDs = append(installIDs, group.InstallIDs...)
 	}
-
-	if err := appshelpers.ValidateInstallIDsOwnedByBranchWithDB(ctx, db, branchID, installIDs); err != nil {
+	if err := appshelpers.ValidateInstallIDsBelongToBranchAppWithDB(ctx, db, branchID, installIDs); err != nil {
 		return sync.SyncErr{
 			Resource:    "app-branches",
 			Description: fmt.Sprintf("branch %q: %s", branchName, err.Error()),
