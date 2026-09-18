@@ -349,6 +349,18 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
         title: `Step ${step?.name} — plan superseded`,
       }
     }
+    if (metadata?.abandoned) {
+      const cause = (metadata.original_error ?? metadata.reason) as
+        | string
+        | undefined
+      return {
+        copy: cause
+          ? `This step failed and no retry or skip was received before it timed out. It failed with: ${cause}`
+          : 'This step failed and no retry or skip was received before it timed out.',
+        theme: 'error',
+        title: `Step ${step?.name} abandoned after failing`,
+      }
+    }
     if (metadata?.retries_exhausted) {
       return {
         copy: `This step has used all ${metadata.max_retries ?? ''} retry attempts. No further retries are possible. Rerun the workflow to start fresh.`,
@@ -383,8 +395,12 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     const retryInfo = metadata?.retry_type
       ? ` (${metadata.retry_type} retry ${metadata.retry_idx ?? ''}/${metadata.max_retries ?? ''})`
       : ''
+    const detail =
+      status_human_description || (metadata?.reason as string | undefined)
     return {
-      copy: `Step encountered an error: ${status_human_description}${retryInfo}`,
+      copy: detail
+        ? `Step encountered an error: ${detail}${retryInfo}`
+        : `Step encountered an error${retryInfo}`,
       theme: 'error',
       title: `Step ${step?.name} failed`,
     }
