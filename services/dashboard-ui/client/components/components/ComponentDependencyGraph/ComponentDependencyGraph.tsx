@@ -15,7 +15,7 @@ import '@xyflow/react/dist/style.css'
 import { useNavigate } from 'react-router'
 
 import { ComponentType } from '@/components/components/ComponentType'
-import { useSystemTheme } from '@/hooks/use-system-theme'
+import { useColorScheme } from '@/hooks/use-theme'
 import type { TComponentType } from '@/types'
 
 const NODE_WIDTH = 200
@@ -62,7 +62,7 @@ const EDGE_COLORS = {
 }
 
 const DependencyNode = memo(({ data }: NodeProps) => {
-  const theme = useSystemTheme()
+  const theme = useColorScheme()
   const role = data.role as NodeRole
   const colors = ROLE_STYLES[theme][role]
   const isLink = role !== 'current'
@@ -172,7 +172,7 @@ export const ComponentDependencyGraph = ({
   currentId,
   onNavigate,
 }: IComponentDependencyGraph) => {
-  const theme = useSystemTheme()
+  const theme = useColorScheme()
   const navigate = useNavigate()
 
   const { nodes, edges } = useMemo(
