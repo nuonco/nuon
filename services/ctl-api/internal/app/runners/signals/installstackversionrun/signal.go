@@ -50,10 +50,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
-	// Only update status if runner is in specific states
+	// Offline/error are included so a re-applied stack gets a fresh heartbeat window.
 	if !generics.SliceContains(runner.Status, []app.RunnerStatus{
 		app.RunnerStatusAwaitingInstallStackRun,
 		app.RunnerStatusPending,
+		app.RunnerStatusOffline,
+		app.RunnerStatusError,
 	}) {
 		return nil
 	}
