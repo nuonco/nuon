@@ -3,9 +3,11 @@ import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { CompositeError } from '@/components/common/CompositeError'
 import { Text } from '@/components/common/Text'
+import { useStepErrorLog } from '@/hooks/use-step-error-log'
 import type { TWorkflowStep } from '@/types'
 import { getPolicyViolationCounts, getStepBanner } from '@/utils/workflow-utils'
 import { StepButtons } from './StepButtons'
+import { StepErrorLog } from './StepErrorLog'
 import { PolicyViolations } from './PolicyViolations'
 
 export const StepBanner = ({
@@ -42,13 +44,16 @@ export const StepBanner = ({
   const compositeError = step?.status?.composite_error
   const showCompositeError =
     Boolean(compositeError) && bannerCfg?.theme === 'error'
+  const errorLog = useStepErrorLog(step, {
+    enabled: !showCompositeError && isTerminal && bannerCfg?.theme === 'error',
+  })
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       {hasApproval && !planOnly && !isTerminal ? (
         <ApprovalBanner step={step} />
       ) : bannerCfg ? (
-        <>
+        <div className="flex flex-col gap-2">
           <Banner theme={bannerCfg.theme} onDismiss={onDismiss}>
             <div className="flex items-end justify-between gap-4">
               <div className="flex flex-col min-w-0">
@@ -87,8 +92,10 @@ export const StepBanner = ({
           </Banner>
           {showCompositeError && compositeError ? (
             <CompositeError error={compositeError} />
+          ) : errorLog ? (
+            <StepErrorLog text={errorLog.detail ?? errorLog.message} />
           ) : null}
-        </>
+        </div>
       ) : null}
       {hasPolicyViolations ? (
         <PolicyViolations step={step} />
@@ -101,6 +108,6 @@ export const StepBanner = ({
           </Text>
         </Banner>
       ) : null}
-    </>
+    </div>
   )
 }
