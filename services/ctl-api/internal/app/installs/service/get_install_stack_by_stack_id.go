@@ -50,14 +50,15 @@ func (s *service) getInstallStackByStackID(ctx *gin.Context, installStackID, org
 		Preload("InstallStackVersions", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_stack_versions.created_at DESC").Limit(10)
 		}).
-		Preload("InstallStackVersions.Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_stack_version_runs.created_at DESC").Limit(10)
-		}).
 		Preload("InstallStackOutputs").
 		Where("id = ? and org_id = ?", installStackID, orgID).
 		First(&installStack, "id = ?", installStackID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install components: %w", res.Error)
+	}
+
+	if err := s.attachStackVersionRuns(ctx, installStack.InstallStackVersions, maxStackVersionRuns); err != nil {
+		return nil, err
 	}
 
 	return installStack, nil
