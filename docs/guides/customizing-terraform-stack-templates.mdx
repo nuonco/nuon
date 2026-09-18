@@ -108,6 +108,7 @@ The required keys (matching the CloudFormation phone-home Lambda payload exactly
 | `runner_asg_name`, `runner_log_group_name` | Used by the runner management UI. |
 | `provision_iam_role_arn`, `maintenance_iam_role_arn`, `deprovision_iam_role_arn` | Empty string when the corresponding role isn't declared. |
 | `break_glass_role_arns`, `custom_role_arns` | Maps of role-name → ARN. |
+| `named_policy_arns` | Map of permissions-config named policy → IAM managed policy ARN. |
 | `install_inputs` | Echo of the install inputs (`data.stack_config.this.install_inputs`). |
 | `<secret_name>_arn` | One key per secret declared in `stack.toml`, flattened into the top-level payload. |
 
