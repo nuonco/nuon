@@ -52,7 +52,7 @@ title: 'Branch'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`mode`**<br/>string | preview run mode: plan-only, apply, or build-only | **Optional** | - |
+| **`mode`**<br/>string | preview run mode: plan-only, apply, or build-only | **Optional**<br/>`"plan-only"`, `"apply"`, `"build-only"` | - |
 | **`install_id`**<br/>string | default install ID for preview runs | **Optional** | - |
 | **`install_name`**<br/>string | default install name for preview runs, resolved to an ID at sync time | **Optional** | - |
 | **`label_selector`**<br/>object | label key-value pairs to select the default preview install | **Optional** | - |
@@ -65,7 +65,7 @@ title: 'Branch'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`mode`**<br/>string | automatic run mode: push, on_tag_prefix, on_github_label, or manual_only | **Optional** | - |
-| **`tag_prefix`**<br/>string | case-sensitive git tag prefix required by on_tag_prefix | **Optional** | - |
+| **`mode`**<br/>string | automatic run mode: push, on_tag, on_github_label, or manual_only | **Optional**<br/>`"push"`, `"on_tag"`, `"on_github_label"`, `"manual_only"` | - |
+| **`tag_prefix`**<br/>string | case-sensitive git tag prefix required by on_tag | **Optional** | - |
 | **`github_label`**<br/>string | exact pull request label required by on_github_label | **Optional** | - |
 

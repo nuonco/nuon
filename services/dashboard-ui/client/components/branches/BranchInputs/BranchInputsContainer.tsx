@@ -50,13 +50,18 @@ export const BranchInputsContainer = () => {
         recurse: true,
       }),
     enabled: !!org?.id && !!app?.id && !!appConfigId,
+    retry: false,
   })
+
+  const isMissingConfig = !isLoadingConfigs && !isConfigsError && !appConfigId
+  const isLoadingAppConfig = !!appConfigId && isLoadingConfig
 
   return (
     <BranchInputs
       appConfig={appConfig}
-      isLoading={isLoadingConfigs || (!!appConfigId && isLoadingConfig)}
+      isLoading={isLoadingConfigs || isLoadingAppConfig}
       isError={isConfigsError || isConfigError}
+      isMissingConfig={isMissingConfig}
     />
   )
 }
