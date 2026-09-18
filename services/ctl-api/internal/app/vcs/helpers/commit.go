@@ -14,6 +14,10 @@ import (
 )
 
 func (h *Helpers) GetConnectedGithubVCSConfigLatestCommit(ctx context.Context, vcsCfg *app.ConnectedGithubVCSConfig) (*github.RepositoryCommit, error) {
+	return h.GetConnectedGithubVCSConfigCommit(ctx, vcsCfg, vcsCfg.Branch)
+}
+
+func (h *Helpers) GetConnectedGithubVCSConfigCommit(ctx context.Context, vcsCfg *app.ConnectedGithubVCSConfig, ref string) (*github.RepositoryCommit, error) {
 	client, err := h.GetVCSConnectionClient(ctx, &vcsCfg.VCSConnection)
 	if err != nil {
 		return nil, stderr.ErrUser{
@@ -22,7 +26,7 @@ func (h *Helpers) GetConnectedGithubVCSConfigLatestCommit(ctx context.Context, v
 		}
 	}
 
-	commitResp, _, err := client.Repositories.GetCommit(ctx, vcsCfg.RepoOwner, vcsCfg.RepoName, vcsCfg.Branch, &github.ListOptions{})
+	commitResp, _, err := client.Repositories.GetCommit(ctx, vcsCfg.RepoOwner, vcsCfg.RepoName, ref, &github.ListOptions{})
 	if err != nil {
 		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("unable to get latest commit: %w", err),
@@ -34,6 +38,10 @@ func (h *Helpers) GetConnectedGithubVCSConfigLatestCommit(ctx context.Context, v
 }
 
 func (h *Helpers) GetPublicGitVCSConfigLatestCommit(ctx context.Context, cfg *app.PublicGitVCSConfig) (*github.RepositoryCommit, error) {
+	return h.GetPublicGitVCSConfigCommit(ctx, cfg, cfg.Branch)
+}
+
+func (h *Helpers) GetPublicGitVCSConfigCommit(ctx context.Context, cfg *app.PublicGitVCSConfig, ref string) (*github.RepositoryCommit, error) {
 	owner, repo, err := parseOwnerRepo(cfg.Repo)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse repo %q: %w", cfg.Repo, err)
@@ -44,9 +52,9 @@ func (h *Helpers) GetPublicGitVCSConfigLatestCommit(ctx context.Context, cfg *ap
 		return nil, err
 	}
 
-	commitResp, _, err := client.Repositories.GetCommit(ctx, owner, repo, cfg.Branch, &github.ListOptions{})
+	commitResp, _, err := client.Repositories.GetCommit(ctx, owner, repo, ref, &github.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("unable to get latest commit for %s/%s@%s: %w", owner, repo, cfg.Branch, err)
+		return nil, fmt.Errorf("unable to get latest commit for %s/%s@%s: %w", owner, repo, ref, err)
 	}
 
 	return commitResp, nil

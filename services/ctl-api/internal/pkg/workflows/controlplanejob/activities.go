@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -182,7 +184,8 @@ type FinalizeOutcome struct {
 }
 
 type FinalizeResponse struct {
-	Status app.RunnerJobExecutionStatus `json:"status"`
+	Status  app.RunnerJobExecutionStatus `json:"status"`
+	Message string                       `json:"message,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -212,14 +215,13 @@ func (a *Activities) finalize(ctx context.Context, jobID, executionID string, ou
 	}
 
 	description := "finished"
+	failureMessage := ""
 	if execStatus != app.RunnerJobExecutionStatusFinished {
-		description = outcome.Error
-		if description == "" {
-			description = string(execStatus)
-		}
 		if err := a.ensureFailureResult(ctx, jobID, executionID, outcome.Error); err != nil {
 			return nil, err
 		}
+		failureMessage = a.failureMessage(ctx, executionID, outcome.Error, execStatus)
+		description = failureMessage
 	}
 	if _, err := a.UpdateJobExecution(ctx, jobID, executionID, &models.ServiceUpdateRunnerJobExecutionRequest{Status: models.AppRunnerJobExecutionStatus(execStatus), StatusDescription: description}); err != nil {
 		return nil, err
@@ -244,7 +246,34 @@ func (a *Activities) finalize(ctx context.Context, jobID, executionID string, ou
 		Update("finished_at", time.Now().UTC()).Error; err != nil {
 		return nil, fmt.Errorf("unable to update runner job finished_at: %w", err)
 	}
-	return &FinalizeResponse{Status: effectiveStatus}, nil
+	if effectiveStatus != app.RunnerJobExecutionStatusFinished && failureMessage == "" {
+		failureMessage = string(effectiveStatus)
+	}
+	return &FinalizeResponse{Status: effectiveStatus, Message: failureMessage}, nil
+}
+
+func (a *Activities) failureMessage(ctx context.Context, executionID, rawError string, status app.RunnerJobExecutionStatus) string {
+	var result app.RunnerJobExecutionResult
+	err := a.db.WithContext(ctx).
+		Select("id", "runner_job_execution_id", "composite_error").
+		Where(&app.RunnerJobExecutionResult{RunnerJobExecutionID: executionID}).
+		Order("created_at desc").
+		First(&result).Error
+	switch {
+	case err == nil:
+		if result.CompositeError != nil && result.CompositeError.Message != "" {
+			return truncateStatusDescription(result.CompositeError.Message)
+		}
+	case !errors.Is(err, gorm.ErrRecordNotFound):
+		a.l.Warn("unable to read control-plane failure result",
+			zap.String("runner_job_execution_id", executionID),
+			zap.Error(err))
+	}
+
+	if message := conciseFailureMessage(rawError); message != "" {
+		return message
+	}
+	return string(status)
 }
 
 func jobStatusForExecution(status app.RunnerJobExecutionStatus) app.RunnerJobStatus {
@@ -683,4 +712,35 @@ func truncateStatusDescription(s string) string {
 		return s
 	}
 	return s[:statusDescriptionMaxLen] + "…(truncated)"
+}
+
+const failureMessageMaxLen = 512
+
+var (
+	temporalErrorMetadataPattern = regexp.MustCompile(`\s*\((?:type|activityType|workflowType):[^()]*\)`)
+	temporalErrorPrefixPattern   = regexp.MustCompile(`(?i)^(?:activity|child workflow execution|workflow execution)\s+error\s*:?\s*`)
+)
+
+func conciseFailureMessage(raw string) string {
+	cleaned := temporalErrorMetadataPattern.ReplaceAllString(raw, "")
+	cleaned = compositeerrors.RedactDiagnosticSecrets(cleaned)
+	for _, line := range strings.Split(cleaned, "\n") {
+		line = strings.TrimSpace(temporalErrorPrefixPattern.ReplaceAllString(strings.TrimSpace(line), ""))
+		if line == "" {
+			continue
+		}
+		return truncateRunes(line, failureMessageMaxLen)
+	}
+	return ""
+}
+
+func truncateRunes(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	runes := []rune(s)
+	if len(runes) <= n {
+		return s
+	}
+	return string(runes[:n]) + "…"
 }

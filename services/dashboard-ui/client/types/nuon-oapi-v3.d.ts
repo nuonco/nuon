@@ -3795,7 +3795,7 @@ export interface components {
       trigger?: components["schemas"]["app.AppBranchRunTrigger"];
     };
     /** @enum {string} */
-    "app.AppBranchRunMode": "push" | "on_tag_prefix" | "on_github_label" | "manual_only";
+    "app.AppBranchRunMode": "push" | "on_tag" | "on_github_label" | "manual_only";
     "app.AppBranchRunPreview": {
       app_branch_run_id?: string;
       branch_preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
@@ -4104,6 +4104,9 @@ export interface components {
     /** @enum {string} */
     "app.AppRunnerType": "unknown" | "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs" | "gcp-gke" | "local" | "aws" | "azure" | "gcp";
     "app.AppSandboxBuild": {
+      app_branch_id?: string;
+      app_branch_run?: components["schemas"]["app.AppBranchRun"];
+      app_branch_run_id?: string;
       app_config_id?: string;
       app_id?: string;
       app_sandbox_config_id?: string;
@@ -4344,6 +4347,7 @@ export interface components {
     };
     "app.ComponentBuild": {
       app_branch_id?: string;
+      app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
       build_runner_job_id?: string;
       /** @description checksum of our intermediate component config */

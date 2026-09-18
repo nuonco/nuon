@@ -29,7 +29,7 @@ export const PublicRepo = () => (
         branch: 'main',
         directory: 'httpbin',
       },
-      run_config: { mode: 'on_tag_prefix', tag_prefix: 'customer/' },
+      run_config: { mode: 'on_tag', tag_prefix: 'customer/' },
     }}
   />
 )
@@ -40,7 +40,7 @@ export const WithLatestRun = () => (
   <BranchSourceCard
     config={{
       public_git_vcs_config: {
-        repo: 'nuonco/example-app-configs',
+        repo: 'acme/example-app-configs',
         branch: 'main',
         directory: 'httpbin',
       },
@@ -49,8 +49,7 @@ export const WithLatestRun = () => (
       status: 'success',
       href: '#',
       message: 'feat: add resources section to customer portal readme (#273)',
-      author: 'Nat Hamilton',
-      avatarUrl: 'https://github.com/nat.png',
+      author: 'Example Developer',
       sha: '85d067ecafe1234',
       createdAt: '2026-08-12T09:00:00Z',
     }}

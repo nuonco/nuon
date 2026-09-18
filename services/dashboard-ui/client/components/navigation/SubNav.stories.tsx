@@ -63,6 +63,13 @@ const linksWithSections: TNavItem[] = [
     text: 'Install runner',
     iconVariant: 'SneakerMoveIcon' as const,
   },
+  {
+    type: 'action',
+    key: 'settings',
+    iconVariant: 'GearIcon' as const,
+    text: 'Settings',
+    onClick: () => {},
+  },
 ]
 
 const mockPageSidebar = {

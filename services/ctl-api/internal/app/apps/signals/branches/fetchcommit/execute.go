@@ -7,8 +7,11 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/vcserrors"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
+
+const gitRefNotFoundCompositeErrorVersion = "app-branch-fetch-commit-git-ref-not-found-v1"
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
@@ -44,9 +47,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}
 
+	repo, configBranch := branchConfigRepoRef(cfg)
+
 	var vcsCommit *app.VCSConnectionCommit
 	previewRef := previewCommitRef(run)
+	requestedRef := configBranch
 	if previewRef != "" {
+		requestedRef = previewRef
 		vcsCommit, err = activities.AwaitFetchCommitBySHA(ctx, &activities.FetchCommitBySHAInput{
 			VcsConfigID: vcsConfigID,
 			SHA:         previewRef,
@@ -55,6 +62,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		vcsCommit, err = activities.AwaitFetchLatestCommitByVcsConfigID(ctx, vcsConfigID)
 	}
 	if err != nil {
+		if vcserrors.IsGitRefNotFound(err) &&
+			workflow.GetVersion(ctx, gitRefNotFoundCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			if setErr := activities.AwaitSetAppBranchRunGitRefNotFoundError(ctx, activities.SetAppBranchRunGitRefNotFoundErrorRequest{
+				RunID: s.RunID,
+				Repo:  repo,
+				Ref:   requestedRef,
+			}); setErr != nil {
+				logger.Warn("unable to set app branch run composite error", "error", setErr)
+			}
+			return vcserrors.NewGitRefNotFound(repo, requestedRef, nil)
+		}
 		return fmt.Errorf("unable to fetch commit: %w", err)
 	}
 
@@ -168,6 +186,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"commit_sha", vcsCommit.SHA)
 
 	return nil
+}
+
+func branchConfigRepoRef(cfg app.AppBranchConfig) (repo, branch string) {
+	switch {
+	case cfg.ConnectedGithubVCSConfig != nil:
+		return cfg.ConnectedGithubVCSConfig.Repo, cfg.ConnectedGithubVCSConfig.Branch
+	case cfg.PublicGitVCSConfig != nil:
+		return cfg.PublicGitVCSConfig.Repo, cfg.PublicGitVCSConfig.Branch
+	default:
+		return "", ""
+	}
 }
 
 func previewCommitRef(run *app.AppBranchRun) string {

@@ -74,7 +74,7 @@ Use sanctioned scaffolds — see [DESIGN.md](./DESIGN.md) §5.
 | Child list via `<Outlet />` | `ListPage` default `variant="section"` |
 | Non-list section | `PageSection` + `SectionHeader` |
 | Run page | `DetailPage` + `DetailHeader` + routed `TabNav` |
-| Entity page | `DetailPage` + `HistoryRail` |
+| Entity page | `DetailPage` + `HistoryPanelButton` |
 
 Resource identity header → `DetailHeader`. Section name only → `SectionHeader`. `PageTitle` / `Breadcrumbs` are
 headless setters rendered as siblings **before** the scaffold.

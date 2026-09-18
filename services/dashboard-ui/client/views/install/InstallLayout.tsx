@@ -19,6 +19,7 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { PageSection } from '@/components/layout/PageSection'
 import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
+import { ChangeAppBranchButton } from '@/components/installs/management/ChangeAppBranch'
 import {
   InstallSettingsPanel,
   useOpenInstallSettings,
@@ -75,9 +76,10 @@ const InstallContentError = () => (
 
 const InstallTemplate = () => {
   const { org } = useOrg()
-  const { install, labelColors } = useInstall()
+  const { install, labelColors, refresh } = useInstall()
   const { pathname } = useLocation()
   const hasNotebooks = !!org?.features?.notebooks
+  const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
   const hasSimpleIA = useSimpleIA()
   const openSettings = useOpenInstallSettings()
   const [searchParams] = useSearchParams()
@@ -292,16 +294,29 @@ const InstallTemplate = () => {
                       </Text>
                     </LabeledValue>
                   )}
-                  {install?.app_branch && (
+                  {hasAppBranchesUI && (
                     <LabeledValue label="Branch">
-                      <Link
-                        href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch?.id}`}
-                      >
-                        <span className="flex items-center gap-1">
-                          <Icon variant="GitBranchIcon" size={14} />
-                          {install.app_branch.name}
-                        </span>
-                      </Link>
+                      <span className="flex items-center gap-2">
+                        {install.app_branch ? (
+                          <Link
+                            href={`/${org?.id}/apps/${install?.app_id}/branches/${install.app_branch.id}`}
+                          >
+                            <span className="flex items-center gap-1">
+                              <Icon variant="GitBranchIcon" size={14} />
+                              {install.app_branch.name}
+                            </span>
+                          </Link>
+                        ) : (
+                          <Text variant="subtext" theme="neutral">
+                            None
+                          </Text>
+                        )}
+                        <ChangeAppBranchButton
+                          compact
+                          install={install}
+                          onSuccess={refresh}
+                        />
+                      </span>
                     </LabeledValue>
                   )}
                   <LabeledValue label="App">

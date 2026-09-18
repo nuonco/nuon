@@ -1,9 +1,6 @@
 import { useMemo } from 'react'
 import { Outlet, useMatch, useParams, useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Text } from '@/components/common/Text'
-import { Time } from '@/components/common/Time'
-import { LabelBadge } from '@/components/common/LabelBadge'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { PageContent } from '@/components/layout/PageContent'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -15,7 +12,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { BranchProvider } from '@/providers/branch-provider'
 import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
-import { BranchVcsBadges } from '@/components/branches/BranchVcsBadges'
+import { BranchTrackingCard } from '@/components/branches/BranchTrackingCard'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { BranchPendingApprovals } from '@/components/branches/BranchRunApproval'
 import {
@@ -32,9 +29,9 @@ const BranchTemplate = () => {
   const { app } = useApp()
   const { branch } = useBranch()
   const params = useParams()
-  const isDetailRoute = !!useMatch(
-    '/:orgId/apps/:appId/branches/:branchId/:section/:detail/*'
-  )
+  const isDetailRoute =
+    !!useMatch('/:orgId/apps/:appId/branches/:branchId/:section/:detail/*') &&
+    !params.runId
   const openSettings = useOpenBranchSettings()
   const [searchParams] = useSearchParams()
   const isSettingsOpen = searchParams.get('panel') === BRANCH_SETTINGS_PANEL_KEY
@@ -58,6 +55,8 @@ const BranchTemplate = () => {
   })
 
   const latestRun = latestRunsResult?.data?.[0]
+  const latestBranchRun = latestRun?.app_branch_runs?.at(0)
+  const latestCommit = latestBranchRun?.vcs_connection_commit
   const hasDeploymentPlan = (currentConfig?.install_groups?.length ?? 0) > 0
   const showTriggerNudge =
     hasDeploymentPlan && !isLoadingLatestRun && !latestRun
@@ -85,14 +84,22 @@ const BranchTemplate = () => {
           : []),
       ]
     : [
-        { path: `/`, iconVariant: 'HouseSimpleIcon', text: 'Overview' },
-        { path: `/runs`, iconVariant: 'PlayIcon', text: 'Updates' },
-        { type: 'section', label: 'Installs', defaultOpen: false },
+        {
+          path: `/`,
+          matchPaths: ['/runs'],
+          iconVariant: 'PlayIcon',
+          text: 'Runs',
+        },
+        {
+          type: 'section',
+          label: 'Install management',
+          defaultOpen: false,
+        },
         { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
         {
           path: `/plan`,
           iconVariant: 'TreeStructureIcon',
-          text: 'Install groups',
+          text: 'Deployment plan',
         },
         ...(hasInstallSyncing
           ? [
@@ -103,7 +110,7 @@ const BranchTemplate = () => {
               },
             ]
           : []),
-        { type: 'section', label: 'Template' },
+        { type: 'section', label: 'App template', defaultOpen: false },
         { path: `/inputs`, iconVariant: 'ListChecksIcon', text: 'Inputs' },
         { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },
         {
@@ -119,7 +126,6 @@ const BranchTemplate = () => {
         },
         { path: `/policies`, iconVariant: 'ShieldCheckIcon', text: 'Policies' },
         { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
-        { type: 'section', label: 'Configuration' },
         { path: `/labels`, iconVariant: 'TagIcon', text: 'Labels' },
         { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
         {
@@ -134,54 +140,51 @@ const BranchTemplate = () => {
 
   return (
     <>
+      {/* Detail routes set their own, more specific breadcrumbs */}
       {!isDetailRoute ? (
-        <>
-          <Breadcrumbs
-            breadcrumbs={[
-              { path: `/${orgId}`, text: org.name },
-              { path: `/${orgId}/apps`, text: 'Apps' },
-              { path: `/${orgId}/apps/${appId}`, text: app.name },
-              { path: basePath, text: branch.name },
-            ]}
-          />
-          <DetailHeader
-            variant="page"
-            backLink={false}
-            title={app.name}
-            status={<AppBranchSwitcher />}
-            identity={
-              <>
-                <BranchVcsBadges repo={vcs?.repo} branch={vcs?.branch} />
-                {branch.managed_by ? (
-                  <LabelBadge
-                    labelKey="managed by"
-                    labelValue={branch.managed_by}
-                    size="sm"
-                    theme={branch.managed_by === 'config' ? 'brand' : 'default'}
-                  />
-                ) : null}
-                <Text variant="subtext" theme="info">
-                  Last updated{' '}
-                  <Time
-                    variant="subtext"
-                    time={branch.updated_at}
-                    format="relative"
-                  />
-                </Text>
-              </>
-            }
-            actions={
-              <BranchDetailActions
-                branch={branch}
-                currentConfig={currentConfig}
-                appId={appId}
-                orgId={orgId}
-                showTriggerNudge={showTriggerNudge}
-              />
-            }
-          />
-        </>
+        <Breadcrumbs
+          breadcrumbs={[
+            { path: `/${orgId}`, text: org.name },
+            { path: `/${orgId}/apps`, text: 'Apps' },
+            { path: `/${orgId}/apps/${appId}`, text: app.name },
+            { path: basePath, text: branch.name },
+          ]}
+        />
       ) : null}
+      <DetailHeader
+        variant="page"
+        backLink={false}
+        title={app.name}
+        status={<AppBranchSwitcher />}
+        actions={
+          <BranchDetailActions
+            branch={branch}
+            currentConfig={currentConfig}
+            appId={appId}
+            orgId={orgId}
+            showTriggerNudge={showTriggerNudge}
+          />
+        }
+      >
+        <BranchTrackingCard
+          repo={vcs?.repo}
+          branch={vcs?.branch}
+          directory={vcs?.directory}
+          latestRun={
+            !hasSimpleIA && latestRun
+              ? {
+                  status: latestBranchRun?.status,
+                  href: `${basePath}/runs/${latestRun.id}`,
+                  message: latestCommit?.message?.split('\n')[0],
+                  author: latestCommit?.author_name,
+                  avatarUrl: latestCommit?.author_avatar_url,
+                  sha: latestCommit?.sha,
+                  createdAt: latestRun.created_at,
+                }
+              : undefined
+          }
+        />
+      </DetailHeader>
       <BranchSettingsPanel />
       <PageContent className="border-t" variant="row">
         <SubNav
