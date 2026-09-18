@@ -93,9 +93,9 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		delete(installLabels, key)
 	}
 
-	installCfg := config.Install{
-		Name:   install.Name,
-		Labels: installLabels,
+	installCfg := config.Install{Name: install.Name, Labels: installLabels}
+	if install.AppBranch != nil {
+		installCfg.AppBranch = install.AppBranch.Name
 	}
 
 	// The target identifiers must be echoed back, otherwise a config that legitimately

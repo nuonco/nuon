@@ -54,6 +54,9 @@ export const ChangeAppBranchContainer = ({
       )
       queryClient.invalidateQueries({ queryKey: ['install', org?.id, install.id] })
       queryClient.invalidateQueries({ queryKey: ['installs'] })
+      queryClient.invalidateQueries({
+        queryKey: ['install-current-app-branch-run', org?.id, install.id],
+      })
       removeModal(props.modalId)
       onSuccess?.()
     },
@@ -84,17 +87,20 @@ export const ChangeAppBranchContainer = ({
 interface IChangeAppBranchButton {
   install: TInstall
   onSuccess?: () => void
+  compact?: boolean
 }
 
 export const ChangeAppBranchButton = ({
   install,
   onSuccess,
+  compact = false,
 }: IChangeAppBranchButton) => {
   const { addModal } = useSurfaces()
 
   return (
     <Button
       variant="secondary"
+      size={compact ? 'sm' : 'md'}
       onClick={() =>
         addModal(
           <ChangeAppBranchContainer
@@ -104,8 +110,8 @@ export const ChangeAppBranchButton = ({
         )
       }
     >
-      <Icon variant="GitBranchIcon" size={16} />
-      Change branch
+      <Icon variant={compact ? 'PencilSimpleLineIcon' : 'GitBranchIcon'} size={16} />
+      {compact ? 'Edit' : 'Change branch'}
     </Button>
   )
 }

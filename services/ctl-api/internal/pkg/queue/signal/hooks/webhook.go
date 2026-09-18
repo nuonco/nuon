@@ -54,6 +54,7 @@ const (
 	cloudEventTypeInstallSync       = "com.nuon.app.install_sync.v1"
 	cloudEventTypeInstallConfigSync = "com.nuon.install.config_sync.v1"
 	cloudEventTypeLabelAdded        = "com.nuon.install.label_added.v1"
+	cloudEventTypeAppBranchChanged  = "com.nuon.install.app_branch_changed.v1"
 
 	kindWorkflow             = "workflow"
 	kindWorkflowStep         = "workflow_step"
@@ -69,6 +70,7 @@ const (
 	kindInstallSync          = "install_sync"
 	kindInstallConfigSync    = "install_config_sync"
 	kindLabelAdded           = "label_added"
+	kindAppBranchChanged     = "app_branch_changed"
 )
 
 // Status values surfaced to webhook consumers in the *.lifecycle events.
@@ -153,6 +155,7 @@ const (
 	signalTypeSyncInstalls      signal.SignalType = "sync-installs"
 	signalTypeInstallConfigSync signal.SignalType = "install-config-sync"
 	signalTypeLabelAdded        signal.SignalType = "label-added"
+	signalTypeAppBranchChanged  signal.SignalType = "app-branch-changed"
 )
 
 // approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
@@ -304,7 +307,8 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 		signalTypeRunnerUnhealthy,
 		signalTypeSyncInstalls,
 		signalTypeInstallConfigSync,
-		signalTypeLabelAdded:
+		signalTypeLabelAdded,
+		signalTypeAppBranchChanged:
 		return true
 	default:
 		return false
@@ -344,7 +348,7 @@ func isNotificationOnlySignalType(t signal.SignalType) bool {
 	case signalTypeDriftDetected, signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated, signalTypeAppConfigSynced, signalTypeUpdateAppConfig,
 		signalTypeRunnerUnhealthy,
 		signalTypeComponentUnhealthy, signalTypeComponentRecovered, signalTypeInstallDegraded,
-		signalTypeSyncInstalls, signalTypeInstallConfigSync, signalTypeLabelAdded:
+		signalTypeSyncInstalls, signalTypeInstallConfigSync, signalTypeLabelAdded, signalTypeAppBranchChanged:
 		return true
 	}
 	return false
@@ -595,6 +599,8 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		ceType = cloudEventTypeInstallConfigSync
 	case kindLabelAdded:
 		ceType = cloudEventTypeLabelAdded
+	case kindAppBranchChanged:
+		ceType = cloudEventTypeAppBranchChanged
 	}
 	// Awaiting-retry shares kind=workflow_step with the normal step
 	// lifecycle but gets its own CloudEvent type so consumers can route the
@@ -728,6 +734,10 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 		return h.buildInstallSyncEventData(event, outcome)
 	case signalTypeLabelAdded:
 		return h.buildLabelAddedEventData(event, outcome)
+	case signalTypeAppBranchChanged:
+		data, ok := h.buildLabelAddedEventData(event, outcome)
+		data.Kind = kindAppBranchChanged
+		return data, ok
 	}
 
 	if event.WorkflowID == "" {

@@ -3,6 +3,8 @@ package spa
 import (
 	"strings"
 	"testing"
+
+	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
 const shellHTML = `<head>
@@ -51,5 +53,19 @@ func TestSelectShellLinksHashedFilenames(t *testing.T) {
 	}
 	if strings.Contains(got, "/assets/styles-e5f6a7b8.css") {
 		t.Errorf("expected hashed default stylesheet to be stripped, got:\n%s", got)
+	}
+}
+
+func TestBuildClientConfigIncludesDashboardDefaults(t *testing.T) {
+	got := buildClientConfig(&internal.Config{
+		StatusBarAutoEnabled:   true,
+		InstallsTabAutoEnabled: true,
+	})
+
+	if !got.StatusBarAutoEnabled {
+		t.Error("expected status bar auto-enabled setting in client config")
+	}
+	if !got.InstallsTabAutoEnabled {
+		t.Error("expected installs tab auto-enabled setting in client config")
 	}
 }

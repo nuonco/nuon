@@ -41,19 +41,26 @@ func (s *service) GetAppSandboxBuild(ctx *gin.Context) {
 		Preload("LogStream").
 		Preload("RunnerJob").
 		Preload("VCSConnectionCommit").
+		Preload("AppBranchRun").
+		Preload("AppBranchRun.VCSConnectionCommit").
+		Preload("AppBranchRun.AppBranch").
+		Preload("AppBranchRun.Preview").
 		Where("app_id = ?", appID).
 		First(&build, "id = ?", buildID)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get sandbox build: %w", res.Error))
 		return
 	}
-	build.CompositeError, err = runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
+	jobCompositeError, err := runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
 		OwnerID:   build.ID,
 		OwnerType: "app_sandbox_builds",
 	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get sandbox build composite error: %w", err))
 		return
+	}
+	if jobCompositeError != nil || build.RunnerJob.ID != "" {
+		build.CompositeError = jobCompositeError
 	}
 
 	ctx.JSON(http.StatusOK, build)

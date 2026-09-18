@@ -15,6 +15,8 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
+const sourceAfterBuildVersion = "app-branch-sandbox-build-source-after-build-v1"
+
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
@@ -30,36 +32,56 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
 
-	source, err := activities.AwaitResolveSandboxBuildSource(ctx, &activities.ResolveSandboxBuildSourceInput{
-		AppConfigID: run.AppConfigID,
-		RunID:       s.RunID,
-	})
-	if err != nil {
-		return fmt.Errorf("unable to resolve sandbox build source: %w", err)
-	}
-	if source == nil || source.Skipped || source.SandboxConfig == nil {
-		l.Info("no sandbox config found for app config, skipping sandbox build", "app_config_id", run.AppConfigID)
-		return nil
-	}
+	sourceAfterBuild := workflow.GetVersion(ctx, sourceAfterBuildVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 
-	sandboxConfig := source.SandboxConfig
-	gitSource := source.GitSource
-	commitID := source.VCSConnectionCommitID
+	var (
+		sandboxConfig *app.AppSandboxConfig
+		source        *activities.ResolveSandboxBuildSourceOutput
+	)
+	if sourceAfterBuild {
+		sandbox, err := activities.AwaitGetSandboxBuildConfig(ctx, &activities.GetSandboxBuildConfigInput{
+			AppConfigID: run.AppConfigID,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to get sandbox build config: %w", err)
+		}
+		if sandbox == nil || sandbox.Skipped || sandbox.SandboxConfig == nil {
+			l.Info("no sandbox config found for app config, skipping sandbox build", "app_config_id", run.AppConfigID)
+			return nil
+		}
+		sandboxConfig = sandbox.SandboxConfig
+	} else {
+		source, err = activities.AwaitResolveSandboxBuildSource(ctx, &activities.ResolveSandboxBuildSourceInput{
+			AppConfigID: run.AppConfigID,
+			RunID:       s.RunID,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to resolve sandbox build source: %w", err)
+		}
+		if source == nil || source.Skipped || source.SandboxConfig == nil {
+			l.Info("no sandbox config found for app config, skipping sandbox build", "app_config_id", run.AppConfigID)
+			return nil
+		}
+		sandboxConfig = source.SandboxConfig
+	}
 
 	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
 	if err != nil {
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
 
-	// Create the sandbox build record
-	build, err := activities.AwaitCreateSandboxBuild(ctx, activities.CreateSandboxBuildRequest{
-		AppID:                 appConfig.AppID,
-		AppConfigID:           run.AppConfigID,
-		AppSandboxConfigID:    sandboxConfig.ID,
-		OrgID:                 run.OrgID,
-		CreatedByID:           run.CreatedByID,
-		VCSConnectionCommitID: commitID,
-	})
+	createReq := activities.CreateSandboxBuildRequest{
+		AppID:              appConfig.AppID,
+		AppConfigID:        run.AppConfigID,
+		AppSandboxConfigID: sandboxConfig.ID,
+		OrgID:              run.OrgID,
+		CreatedByID:        run.CreatedByID,
+		AppBranchRunID:     s.RunID,
+	}
+	if !sourceAfterBuild {
+		createReq.VCSConnectionCommitID = source.VCSConnectionCommitID
+	}
+	build, err := activities.AwaitCreateSandboxBuild(ctx, createReq)
 	if err != nil {
 		return fmt.Errorf("unable to create sandbox build: %w", err)
 	}
@@ -79,6 +101,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			l.Warn("unable to add sandbox build to step metadata", "error", err, "build_id", build.ID)
 		}
 	}
+
+	if sourceAfterBuild {
+		source, err = activities.AwaitResolveSandboxBuildSource(ctx, &activities.ResolveSandboxBuildSourceInput{
+			AppConfigID: run.AppConfigID,
+			RunID:       s.RunID,
+			BuildID:     build.ID,
+		})
+		if err != nil {
+			s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, activities.SandboxSourceFailureDescription(err))
+			return fmt.Errorf("unable to resolve sandbox build source: %w", err)
+		}
+	}
+	if source == nil || source.GitSource == nil {
+		s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to resolve sandbox source")
+		return fmt.Errorf("sandbox build source resolved to nothing for app config %s", run.AppConfigID)
+	}
+
+	gitSource := source.GitSource
 
 	// Create a log stream for the sandbox build
 	logStreamID := ""

@@ -21,6 +21,7 @@ import { getAppInstalls, getBranchWorkflowRuns } from '@/lib'
 import { latestBranchConfig } from '@/utils/branch-utils'
 import type { TInstall } from '@/types'
 import { BranchDetail } from '../BranchDetail'
+import { BranchRunsTab } from './BranchRunsTab'
 
 const RECENT_RUNS_LIMIT = 5
 
@@ -175,9 +176,7 @@ export const BranchOverviewTab = () => {
   const hasNewAppIA = useNewAppIA()
   const hasSimpleIA = useSimpleIA()
 
-  return hasSimpleIA || hasNewAppIA ? (
-    <BranchOverviewContent />
-  ) : (
-    <BranchDetail />
-  )
+  if (hasSimpleIA) return <BranchOverviewContent />
+  if (hasNewAppIA) return <BranchRunsTab />
+  return <BranchDetail />
 }

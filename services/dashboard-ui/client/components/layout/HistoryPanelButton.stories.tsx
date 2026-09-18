@@ -1,10 +1,10 @@
 export default {
-  title: 'Layout/HistoryRail',
+  title: 'Layout/HistoryPanelButton',
 }
 
 import { Card } from '@/components/common/Card'
 import { Text } from '@/components/common/Text'
-import { HistoryPanelButton, HistoryRail } from './HistoryRail'
+import { HistoryPanelButton } from './HistoryPanelButton'
 import { PageSection } from './PageSection'
 
 const history = (
@@ -36,21 +36,9 @@ const sections = (
 
 export const Default = () => (
   <PageSection className="@container">
-    <HistoryRail title="Run history" history={history}>
-      {sections}
-    </HistoryRail>
+    <div className="flex justify-end">
+      <HistoryPanelButton title="Run history" history={history} />
+    </div>
+    {sections}
   </PageSection>
-)
-
-export const Narrow = () => (
-  <div className="@container max-w-2xl">
-    <PageSection>
-      <div className="flex justify-end">
-        <HistoryPanelButton title="Run history" history={history} />
-      </div>
-      <HistoryRail title="Run history" history={history}>
-        {sections}
-      </HistoryRail>
-    </PageSection>
-  </div>
 )

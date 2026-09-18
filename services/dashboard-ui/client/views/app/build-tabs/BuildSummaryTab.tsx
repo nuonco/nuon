@@ -1,5 +1,6 @@
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
+import { AppBranchRunCard } from '@/components/branches/AppBranchRunCard'
 import { BuildImageSource } from '@/components/builds/BuildImageSource'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { RunSummary } from '@/components/runs/RunSummary'
@@ -18,6 +19,13 @@ export const BuildSummaryTab = () => {
   return (
     <>
       <PageTitle segments={['Build', app?.name]} />
+      <AppBranchRunCard
+        appId={app?.id}
+        orgId={org?.id}
+        buildStatus={build?.status_v2?.status}
+        sourceCommit={build?.vcs_connection_commit}
+        run={build?.app_branch_run}
+      />
       <RunSummary
         isLoading={!build}
         status={build?.status_v2}
@@ -40,7 +48,9 @@ export const BuildSummaryTab = () => {
           ) : null
         }
       >
-        {build && isImageBuild(build) ? <BuildImageSource build={build} /> : null}
+        {build && isImageBuild(build) ? (
+          <BuildImageSource build={build} />
+        ) : null}
       </RunSummary>
     </>
   )
