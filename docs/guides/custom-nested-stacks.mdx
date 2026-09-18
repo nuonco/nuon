@@ -122,7 +122,7 @@ versioning = "{{.nuon.install.inputs.bucket_versioning}}"
 ```
 
 For a fork, replace the repository prefix but preserve `//gcp/modules/<name>`. The module must exist in that fork's GCP
-install stack. The built-in collection supports `bucket`, `kms`, `service_account`, and `dns`.
+install stack. The built-in collection supports `bucket`, `cloudsql`, `kms`, `service_account`, and `dns`.
 
 ### Properties
 
@@ -185,9 +185,11 @@ output-name normalization does not drop values.
 | `kms` | `location`, `rotation_period` | `id`, `key_ring`, `name` |
 | `service_account` | `display_name`, `description` | `email`, `unique_id`, `name` |
 | `dns` | `dns_name`, `visibility`, `description`, `force_destroy` | `name`, `name_servers`, `managed_zone_id` |
+| `cloudsql` | `tier`, `database_version`, `disk_size`, `db_name`, `db_user`, `db_password`, `deletion_protection`, `availability_type` | `DBEndpoint`, `DBPort`, `DBUser`, `DBName`, `connection_name`, `instance_name` |
 
 Booleans are the strings `"true"` or `"false"`. Destructive options default to `"false"`. Each module names resources from
-the install ID and stack `name`.
+the install ID and stack `name`. The `cloudsql` module requires `db_password`; it does not include the password in its
+outputs.
 
 <Warning>
 GCP does not support deleting Cloud KMS key rings or keys. Destroy removes the `kms` module from Terraform state, but
@@ -450,7 +452,8 @@ Azure templates must be valid compiled ARM JSON with a resource-group or subscri
 their `parameters`, `resources`, and `outputs`; it does not compile Bicep source.
 
 GCP custom stacks are Terraform child modules maintained under `gcp/modules` in the install-stack repository. Each
-curated module defines its own accepted parameters and returns a single `outputs` object.
+curated module defines its own accepted parameters and returns a single `outputs` object. The built-in modules cover
+storage, databases, encryption keys, service accounts, and DNS zones.
 
 ### Naming Conventions
 
@@ -472,6 +475,7 @@ The following conditions will cause a sync error:
 - Duplicate `name` values
 - Duplicate `index` values across custom stacks
 - An invalid GCP curated module path
+- A GCP `cloudsql` module without `parameters.db_password`
 - An `azure-bicep` template whose `template_url` ends in `.bicep`, or whose contents are not ARM JSON
 - A parameter template that references state unavailable before the install stack is applied
 

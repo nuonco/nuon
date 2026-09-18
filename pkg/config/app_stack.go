@@ -107,6 +107,10 @@ func ValidateGCPCustomNestedStacks(stackType string, stacks []CustomNestedStack)
 			msg := fmt.Sprintf("custom_nested_stacks[%d] (%s): parameters.dns_name is required for the GCP dns module", i, stack.Name)
 			return ErrConfig{Description: msg, Err: fmt.Errorf("%s", msg)}
 		}
+		if moduleName == "cloudsql" && strings.TrimSpace(stack.Parameters["db_password"]) == "" {
+			msg := fmt.Sprintf("custom_nested_stacks[%d] (%s): parameters.db_password is required for the GCP cloudsql module", i, stack.Name)
+			return ErrConfig{Description: msg, Err: fmt.Errorf("%s", msg)}
+		}
 	}
 
 	return nil

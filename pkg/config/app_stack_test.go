@@ -411,6 +411,26 @@ func TestStackConfigParseRequiresGCPDNSName(t *testing.T) {
 	require.NoError(t, cfg.parse())
 }
 
+func TestStackConfigParseRequiresGCPCloudSQLPassword(t *testing.T) {
+	cfg := &StackConfig{
+		Type:        "gcp-terraform",
+		Name:        "my-stack",
+		Description: "test stack",
+		CustomNestedStacks: []CustomNestedStack{
+			{
+				Name:        "database",
+				TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/cloudsql",
+				Index:       0,
+				Parameters:  map[string]string{"password": "example-password"},
+			},
+		},
+	}
+
+	require.EqualError(t, cfg.parse(), "custom_nested_stacks[0] (database): parameters.db_password is required for the GCP cloudsql module")
+	cfg.CustomNestedStacks[0].Parameters = map[string]string{"db_password": "example-password"}
+	require.NoError(t, cfg.parse())
+}
+
 func TestStackConfig_ParseRejectsDuplicateCustomStackNames(t *testing.T) {
 	cfg := &StackConfig{
 		Type:        "gcp-terraform",
