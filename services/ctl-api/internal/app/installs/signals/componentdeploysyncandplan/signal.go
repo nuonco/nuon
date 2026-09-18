@@ -27,6 +27,8 @@ import (
 
 const SignalType signal.SignalType = "component-deploy-sync-and-plan"
 
+const planCompositeErrorVersion = "deploy-sync-and-plan-composite-error-v1"
+
 type Signal struct {
 	signal.LifecycleBase
 
@@ -582,6 +584,13 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	}
 	s.runnerJobID = runnerJob.ID
 
+	planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if planCompositeErrorsEnabled {
+		_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
+			InstallDeployID: installDeploy.ID,
+		})
+	}
+
 	deployPlan, err := plan.AwaitCreateDeployPlan(ctx, &plan.CreateDeployPlanRequest{
 		InstallDeployID: installDeploy.ID,
 		InstallID:       install.ID,
@@ -590,6 +599,14 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	})
 	if err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
+		if planCompositeErrorsEnabled && deployerrors.IsDeployPlanRenderFailed(err) {
+			_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
+				InstallDeployID: installDeploy.ID,
+				ComponentName:   installDeploy.ComponentName,
+				Stage:           deployerrors.PlanRenderStage(err),
+				Detail:          deployerrors.PlanRenderDetail(err),
+			})
+		}
 		return errors.Wrap(err, "unable to create deploy plan")
 	}
 
