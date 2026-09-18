@@ -10,6 +10,7 @@ import (
 
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	flowdirective "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -129,6 +130,12 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 				if stoppedErr.RetriesExhausted {
 					metadata["retries_exhausted"] = true
 				}
+				if stoppedErr.StepID != "" {
+					metadata["step_name"] = stoppedErr.StepID
+				}
+				if stoppedErr.Reason != "" {
+					metadata["stop_reason"] = stoppedErr.Reason
+				}
 				humanDesc := stoppedErr.StatusHumanDescription
 				if humanDesc == "" {
 					humanDesc = "workflow stopped"
@@ -138,6 +145,7 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 					Status: app.CompositeStatus{
 						Status:                 app.StatusError,
 						StatusHumanDescription: humanDesc,
+						CompositeError:         stoppedErr.CompositeError,
 						Metadata:               metadata,
 					},
 				})
@@ -543,8 +551,9 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		case flowdirective.GroupStop:
 			// Derive the reason before the sweeps overwrite step statuses.
 			stepName, reason := "", ""
+			var stepCE *compositeerrors.CompositeErrorData
 			if workflow.GetVersion(ctx, groupStopReasonVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-				stepName, reason = s.groupStopReason(ctx, group)
+				stepName, reason, stepCE = s.groupStopReason(ctx, group)
 			}
 
 			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
@@ -553,6 +562,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				l.Error("unable to update finished at", zap.Error(err))
 			}
 			stoppedErr := flow.NewFlowStoppedErr(stepName, reason)
+			stoppedErr.CompositeError = stepCE
 			if reason != "" {
 				stoppedErr.StatusHumanDescription = "workflow stopped: " + reason
 			}
@@ -1037,21 +1047,28 @@ func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 // groupStopReason returns the name and status text of the step that caused
 // the group to stop. The step that writes the StepStop directive owns the
 // user-facing phrasing; this is only a lookup.
-func (s *Signal) groupStopReason(ctx workflow.Context, group *app.WorkflowStepGroup) (string, string) {
+func (s *Signal) groupStopReason(ctx workflow.Context, group *app.WorkflowStepGroup) (string, string, *compositeerrors.CompositeErrorData) {
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
 	})
 	if err != nil {
-		return "", ""
+		return "", "", nil
 	}
 	for i := range steps {
 		step := &steps[i]
 		if step.GroupIdx != group.GroupIdx || flowdirective.Step(step.ResultDirective) != flowdirective.StepStop {
 			continue
 		}
-		return step.Name, step.Status.StatusHumanDescription
+		return step.Name, stepStopReason(step), step.Status.CompositeError
 	}
-	return "", ""
+	return "", "", nil
+}
+
+func stepStopReason(step *app.WorkflowStep) string {
+	if original, ok := step.Status.Metadata["original_error"].(string); ok && original != "" {
+		return original
+	}
+	return step.Status.StatusHumanDescription
 }
 
 // checkGroupRetriesExhausted checks if any step in the group has retries_exhausted

@@ -14,6 +14,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/deployerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalrequest"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
@@ -26,6 +27,8 @@ import (
 )
 
 const SignalType signal.SignalType = "component-teardown-sync-and-plan"
+
+const planCompositeErrorVersion = "teardown-sync-and-plan-composite-error-v1"
 
 type Signal struct {
 	signal.LifecycleBase
@@ -516,6 +519,13 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	}
 	s.runnerJobID = runnerJob.ID
 
+	planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if planCompositeErrorsEnabled {
+		_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
+			InstallDeployID: installDeploy.ID,
+		})
+	}
+
 	deployPlan, err := plan.AwaitCreateDeployPlan(ctx, &plan.CreateDeployPlanRequest{
 		InstallDeployID: installDeploy.ID,
 		InstallID:       install.ID,
@@ -524,6 +534,14 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 	})
 	if err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
+		if planCompositeErrorsEnabled && deployerrors.IsDeployPlanRenderFailed(err) {
+			_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
+				InstallDeployID: installDeploy.ID,
+				ComponentName:   installDeploy.ComponentName,
+				Stage:           deployerrors.PlanRenderStage(err),
+				Detail:          deployerrors.PlanRenderDetail(err),
+			})
+		}
 		return errors.Wrap(err, "unable to create deploy plan")
 	}
 
