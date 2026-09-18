@@ -83,6 +83,8 @@ type Syncer interface {
 	// This should only be called after a successful Sync() operation.
 	OrphanedRunbooks() map[string]string
 
+	GetAppBranchConfigsUpdated() []AppBranchConfigState
+
 	// SyncInstall syncs a single install config to the database.
 	// If the install does not exist, it is created. If it exists and has
 	// changed, it is updated (inputs, labels, config, component toggles).
@@ -90,11 +92,13 @@ type Syncer interface {
 }
 
 type InstallSyncResult struct {
-	InstallID   string     `json:"install_id"`
-	InstallName string     `json:"install_name"`
-	Created     bool       `json:"created"`
-	Changed     bool       `json:"changed"`
-	Diff        *diff.Diff `json:"diff,omitempty"`
+	InstallID        string     `json:"install_id"`
+	InstallName      string     `json:"install_name"`
+	Created          bool       `json:"created"`
+	Changed          bool       `json:"changed"`
+	Diff             *diff.Diff `json:"diff,omitempty"`
+	AppBranchChanged bool       `json:"app_branch_changed,omitempty"`
+	AppBranchID      string     `json:"app_branch_id,omitempty"`
 }
 
 // ComponentState represents the synchronized state of a component.

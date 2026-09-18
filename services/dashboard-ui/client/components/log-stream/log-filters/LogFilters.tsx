@@ -47,6 +47,7 @@ export const LogFilters = ({ filters }: LogFiltersProps) => {
         <LogFiltersDropdown filters={filters} />
         <ToggleButton
           size="md"
+          label="Log view"
           options={viewModeOptions}
           value={filters.viewMode}
           onChange={filters.handleViewModeChange}
