@@ -123,29 +123,26 @@
   --color-dark-grey-900: var(--dark-grey-900);
   --color-dark-grey-950: var(--dark-grey-950);
 
+  --color-gray-50: var(--gray-50);
+  --color-gray-100: var(--gray-100);
+  --color-gray-200: var(--gray-200);
+  --color-gray-300: var(--gray-300);
+  --color-gray-400: var(--gray-400);
+  --color-gray-500: var(--gray-500);
+  --color-gray-600: var(--gray-600);
+  --color-gray-700: var(--gray-700);
+  --color-gray-800: var(--gray-800);
+  --color-gray-900: var(--gray-900);
+  --color-gray-950: var(--gray-950);
 
-   --text-gradient-light: linear-gradient(
-    88.14deg,
-    #f9519d 7.25%,
-    #6133ff 62.82%
-  );
-  --text-gradient-dark: linear-gradient(
-    88.14deg,
-    #f72585 7.25%,
-    #3a00ff 62.82%
-  );
-
-  --bg-gradient-light: linear-gradient(172deg,  #FFF 0%,  #FAFAFA 99.36%), #FFF;  
-  --bg-gradient-dark: linear-gradient(172deg, #0D0416 0%,#050109 99.36%),  #141217;
 
   --background-image-btn-gradient-light: linear-gradient(0deg, #FCFAFF 0%, #FCFAFF 100%);
   --background-image-btn-gradient-dark: linear-gradient(0deg, rgba(128, 64, 191, 0.16) 0%, rgba(128, 64, 191, 0.16) 100%);
-  --color-btn-bg-light: #FFF;
-  --color-btn-bg-dark: #141217;
+  --color-btn-bg-light: var(--btn-bg-light);
+  --color-btn-bg-dark: var(--btn-bg-dark);
 
   --color-code: var(--bg-code);
-  --color-back-to-top: var(--bg-back-to-top);
-  
+
   /* text tokens */
   --font-weight-normal: 400;
   --font-weight-strong: 500;
@@ -160,8 +157,6 @@
 
 :root,
 :root[data-theme='classic'] {
-  --border-light: #dee3e7;
-  --border-dark: #27252a;
   --white: #ffffff;
   --black: #000000;
 
@@ -225,6 +220,69 @@
   --red-900: #7f1d1d;
   --red-950: #450a0a;
 
+}
+
+:root {
+  --border-light: #e0e0e0;
+  --border-dark: #1f1f20;
+
+  --btn-bg-light: #ffffff;
+  --btn-bg-dark: #0a0a0b;
+
+  --bg-gradient-light: linear-gradient(172deg, #ffffff 0%, #fafafa 99.36%),
+    #ffffff;
+  --bg-gradient-dark: linear-gradient(172deg, #0d0d0e 0%, #070708 99.36%),
+    #0a0a0b;
+
+  --cool-grey-50: #fafafa;
+  --cool-grey-100: #f7f7f7;
+  --cool-grey-200: #f0f0f0;
+  --cool-grey-300: #e3e3e3;
+  --cool-grey-400: #bababa;
+  --cool-grey-500: #828282;
+  --cool-grey-600: #5a5a5a;
+  --cool-grey-700: #464646;
+  --cool-grey-800: #2a2a2b;
+  --cool-grey-900: #1d1d1d;
+  --cool-grey-950: #0a0a0b;
+
+  --dark-grey-50: #4d4d4e;
+  --dark-grey-100: #464647;
+  --dark-grey-200: #3f3f40;
+  --dark-grey-300: #383839;
+  --dark-grey-400: #2a2a2b;
+  --dark-grey-500: #232324;
+  --dark-grey-600: #1d1d1d;
+  --dark-grey-700: #161617;
+  --dark-grey-800: #111112;
+  --dark-grey-900: #0a0a0b;
+  --dark-grey-950: #070708;
+
+  --gray-50: #fafafa;
+  --gray-100: #f7f7f7;
+  --gray-200: #f0f0f0;
+  --gray-300: #e3e3e3;
+  --gray-400: #bababa;
+  --gray-500: #828282;
+  --gray-600: #5a5a5a;
+  --gray-700: #464646;
+  --gray-800: #2a2a2b;
+  --gray-900: #1d1d1d;
+  --gray-950: #0a0a0b;
+}
+
+:root[data-theme='classic'] {
+  --border-light: #dee3e7;
+  --border-dark: #27252a;
+
+  --btn-bg-light: #ffffff;
+  --btn-bg-dark: #141217;
+
+  --bg-gradient-light: linear-gradient(172deg, #ffffff 0%, #fafafa 99.36%),
+    #ffffff;
+  --bg-gradient-dark: linear-gradient(172deg, #0d0416 0%, #050109 99.36%),
+    #141217;
+
   --cool-grey-50: #fafafa;
   --cool-grey-100: #f0f3f5;
   --cool-grey-200: #eaedf0;
@@ -248,6 +306,18 @@
   --dark-grey-800: #19171c;
   --dark-grey-900: #141217;
   --dark-grey-950: #121212;
+
+  --gray-50: oklch(98.5% 0.002 247.839);
+  --gray-100: oklch(96.7% 0.003 264.542);
+  --gray-200: oklch(92.8% 0.006 264.531);
+  --gray-300: oklch(87.2% 0.01 258.338);
+  --gray-400: oklch(70.7% 0.022 261.325);
+  --gray-500: oklch(55.1% 0.027 264.364);
+  --gray-600: oklch(44.6% 0.03 256.802);
+  --gray-700: oklch(37.3% 0.034 259.733);
+  --gray-800: oklch(27.8% 0.033 256.848);
+  --gray-900: oklch(21% 0.034 264.665);
+  --gray-950: oklch(13% 0.028 261.692);
 }
 
 :root {
@@ -271,7 +341,6 @@
     var(--color-dark-grey-800)
   );
 
-  --text-gradient: var(--text-gradient-light);
   --bg-gradient: var(--bg-gradient-light);
   --landing-graphic: url('../../public/login-graphics/landing-graphic-light.svg');
 }
@@ -288,7 +357,6 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --text-gradient: var(--text-gradient-dark);
     --bg-gradient: var(--bg-gradient-dark);
     --landing-graphic: url('../../public/login-graphics/landing-graphic.svg');
   }
@@ -297,7 +365,6 @@
 :root[data-theme='dark'],
 :root[data-theme='classic'],
 :root[data-theme='high-contrast'] {
-  --text-gradient: var(--text-gradient-dark);
   --bg-gradient: var(--bg-gradient-dark);
   --landing-graphic: url('../../public/login-graphics/landing-graphic.svg');
 }
@@ -323,13 +390,6 @@ body {
   font-variant-ligatures: no-contextual !important;
 }
 
-.text-gradient {
-  background: var(--text-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
 @media (min-width: 1020px) {
   .landing-gradient {
     background-image: url('../../public/login-graphics/dashboard-bg.svg');
@@ -345,11 +405,6 @@ body {
     background-attachment: local;
   }
 
-  .landing-toml {
-    background-image: url('../../public/login-graphics/landing-actions-toml.svg');
-    background-repeat: no-repeat;
-    background-position: top right;
-  }
 }
 
 @media (min-width: 1200px) {
