@@ -5,7 +5,7 @@ import {
   oneLight,
 } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import createElement from 'react-syntax-highlighter/dist/esm/create-element'
-import { useSystemTheme } from '@/hooks/use-system-theme'
+import { useColorScheme } from '@/hooks/use-theme'
 import { cn } from '@/utils/classnames'
 import { Expand } from './Expand'
 
@@ -51,11 +51,11 @@ function colorFirstChar(node: any, colorClass: string, state: { done: boolean })
 
 const DIFF_CLASSES = {
   added:
-    'bg-[#F4FBF7] text-green-800 !border-green-400 dark:bg-[#0C1B14] dark:!border-green-500/40 dark:text-green-500 block w-full',
+    'bg-green-50 text-green-800 !border-green-400 dark:bg-green-950 dark:!border-green-500/40 dark:text-green-500 block w-full',
   removed:
-    'bg-[#FEF2F2] text-red-800 !border-red-300 dark:bg-[#290C0D] dark:!border-red-500/40 dark:text-red-500 block w-full',
+    'bg-red-50 text-red-800 !border-red-300 dark:bg-red-950 dark:!border-red-500/40 dark:text-red-500 block w-full',
   changed:
-    'bg-[#FFF8F0] text-orange-800 !border-orange-300 dark:bg-[#1A1408] dark:!border-orange-500/40 dark:text-orange-400 block w-full',
+    'bg-orange-50 text-orange-800 !border-orange-300 dark:bg-orange-950 dark:!border-orange-500/40 dark:text-orange-400 block w-full',
   afterApply: '!italic opacity-70',
 }
 
@@ -226,7 +226,7 @@ export function PrismCodeBlock({
   collapseUnchanged = true,
   wrapLongLines = false,
 }: IPrismCodeBlock) {
-  const colorScheme = useSystemTheme()
+  const colorScheme = useColorScheme()
   const bgCode = colorScheme === 'dark' ? 'var(--color-dark-grey-800)' : 'var(--color-cool-grey-100)'
   const baseTheme = colorScheme === 'dark' ? oneDark : oneLight
   const theme = {

@@ -160,7 +160,8 @@ export const ComponentsGraphRenderer = ({
 }
 
 const CustomComponentNode = memo(({ data, id }: NodeProps) => {
-  const backgroundColor = data.color === 'blue' ? '#1e50c0' : '#991B1B'
+  const backgroundColor =
+    data.color === 'blue' ? 'var(--blue-800)' : 'var(--red-800)'
 
   return (
     <>
@@ -229,7 +230,8 @@ export const ComponentsGraphInline = ({
     }))
 
     const edges: Edge[] = parsed.edges.map((e) => {
-      const edgeColor = e.color === 'red' ? '#991B1B' : '#1e50c0'
+      const edgeColor =
+        e.color === 'red' ? 'var(--red-800)' : 'var(--blue-800)'
       return {
         id: `${e.source}-${e.target}`,
         source: e.source,
