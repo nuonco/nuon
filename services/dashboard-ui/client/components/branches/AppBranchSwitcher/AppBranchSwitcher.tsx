@@ -50,7 +50,7 @@ export const AppBranchSwitcher = ({
         <Badge
           size="sm"
           theme="brand"
-          className="cursor-pointer transition-colors hover:!border-primary-300 dark:hover:!border-[#4A2D69]"
+          className="cursor-pointer transition-colors hover:!border-primary-300 dark:hover:!border-primary-600/60"
         >
           <Icon variant="GitBranchIcon" size={13} />
           {currentBranch.name}

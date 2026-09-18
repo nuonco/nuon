@@ -5,10 +5,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      var nuonTheme = 'classic'
+      try {
+        nuonTheme = localStorage.getItem('nuon-theme') || nuonTheme
+      } catch (e) {}
+      if (nuonTheme !== 'system') {
+        document.documentElement.setAttribute('data-theme', nuonTheme)
+      }
+    </script>
     <title>Nuon</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#8040BF" />
+    <meta name="theme-color" content="#4cc9f0" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Nuon" />
