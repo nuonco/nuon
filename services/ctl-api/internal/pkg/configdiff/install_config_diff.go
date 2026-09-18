@@ -25,6 +25,7 @@ func preload(db *gorm.DB) *gorm.DB {
 		Preload("PermissionsConfig").
 		Preload("PermissionsConfig.Roles").
 		Preload("PermissionsConfig.Roles.Policies").
+		Preload("PermissionsConfig.NamedPolicies").
 		Preload("BreakGlassConfig").
 		Preload("BreakGlassConfig.Roles").
 		Preload("BreakGlassConfig.Roles.Policies").
@@ -223,6 +224,8 @@ func graphStackImpacts(stack *pkgdiff.Diff, oldCfg, newCfg *app.AppConfig) []app
 			impacts = appendUniqueImpact(impacts, app.InstallConfigImpactRunnerConfig)
 		case strings.HasPrefix(from, "secret."):
 			impacts = appendUniqueImpact(impacts, app.InstallConfigImpactSecrets)
+		case strings.HasPrefix(from, "named_policy."):
+			impacts = appendUniqueImpact(impacts, app.InstallConfigImpactPermissions)
 		case strings.HasPrefix(from, "role."):
 			impact := app.InstallConfigImpactPermissions
 			if appConfigHasBreakGlassRole(oldCfg, strings.TrimPrefix(from, "role.")) ||
@@ -473,6 +476,27 @@ func roleContents(roles []app.AppAWSIAMRoleConfig) []iamRoleContent {
 	return out
 }
 
+type namedPolicyContent struct {
+	Name        string `json:"name"`
+	PolicyName  string `json:"policy_name"`
+	Description string `json:"description"`
+	Contents    []byte `json:"contents"`
+}
+
+func namedPolicyContents(policies []app.AppNamedIAMPolicyConfig) []namedPolicyContent {
+	out := make([]namedPolicyContent, 0, len(policies))
+	for _, policy := range policies {
+		out = append(out, namedPolicyContent{
+			Name:        policy.Name,
+			PolicyName:  policy.PolicyName,
+			Description: policy.Description,
+			Contents:    policy.Contents,
+		})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out
+}
+
 type secretSyncTargetContent struct {
 	Namespaces []string `json:"namespaces"`
 	Name       string   `json:"name"`
@@ -563,6 +587,7 @@ func stackImpactChanges(oldCfg, newCfg *app.AppConfig) []app.InstallConfigImpact
 	}{
 		{app.InstallConfigImpactStackConfig, stackConfigContent(old.StackConfig), stackConfigContent(newCfg.StackConfig)},
 		{app.InstallConfigImpactPermissions, roleContents(old.PermissionsConfig.Roles), roleContents(newCfg.PermissionsConfig.Roles)},
+		{app.InstallConfigImpactPermissions, namedPolicyContents(old.PermissionsConfig.NamedPolicies), namedPolicyContents(newCfg.PermissionsConfig.NamedPolicies)},
 		{app.InstallConfigImpactBreakGlass, roleContents(old.BreakGlassConfig.Roles), roleContents(newCfg.BreakGlassConfig.Roles)},
 		{app.InstallConfigImpactSecrets, secretContents(old.SecretsConfig.Secrets), secretContents(newCfg.SecretsConfig.Secrets)},
 		{app.InstallConfigImpactRunnerConfig, runnerConfigContent(old.RunnerConfig), runnerConfigContent(newCfg.RunnerConfig)},
@@ -571,7 +596,7 @@ func stackImpactChanges(oldCfg, newCfg *app.AppConfig) []app.InstallConfigImpact
 	impacts := make([]app.InstallConfigImpact, 0, len(checks))
 	for _, check := range checks {
 		if !contentHashEqual(check.old, check.new) {
-			impacts = append(impacts, check.impact)
+			impacts = appendUniqueImpact(impacts, check.impact)
 		}
 	}
 	return impacts
