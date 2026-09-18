@@ -22,6 +22,7 @@ import (
 // @Param					q							query	string	false	"search query to filter installs by name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					app_branch_id				query	string	false	"filter installs connected to an app branch"
+// @Param					cloud_platform				query	string	false	"filter installs by cloud platform (comma-separated: aws, azure, gcp, unknown)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -48,6 +49,7 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 	q := ctx.Query("q")
 	appBranchID := ctx.Query("app_branch_id")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
+	cloudPlatforms := parseCloudPlatformsFilter(ctx.Query("cloud_platform"))
 
 	// Validate app belongs to org before fetching installs
 	currentApp, err := s.findAppByNameOrID(ctx, org.ID, appID)
@@ -56,7 +58,7 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 		return
 	}
 
-	installs, err := s.getAppInstalls(ctx, org.ID, currentApp.ID, q, appBranchID, lbls)
+	installs, err := s.getAppInstalls(ctx, org.ID, currentApp.ID, q, appBranchID, lbls, cloudPlatforms)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
@@ -78,7 +80,7 @@ func (s *service) findAppByNameOrID(ctx *gin.Context, orgID, appID string) (*app
 	return &currentApp, nil
 }
 
-func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBranchID string, lbls labels.Labels) ([]app.Install, error) {
+func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBranchID string, lbls labels.Labels, cloudPlatforms []app.CloudPlatform) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -94,6 +96,8 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBr
 	if appBranchID != "" {
 		tx = tx.Where(views.TableOrViewName(s.db, &app.Install{}, ".app_branch_id")+" = ?", appBranchID)
 	}
+
+	tx = applyCloudPlatformFilter(tx, s.db, cloudPlatforms)
 
 	tx = tx.Where("app_id = ? AND org_id = ?", appID, orgID).
 		Preload("AppSandboxConfig").

@@ -13,6 +13,7 @@ import {
 } from '@/lib'
 import { CreateInstallButton } from '../CreateInstall'
 import { InstallBranchFilter } from '../InstallBranchFilter'
+import { InstallPlatformFilter } from '../InstallPlatformFilter'
 import {
   InstallsTable,
   parseInstallsToTableData,
@@ -42,6 +43,7 @@ export const InstallsTableContainer = ({
   const { org } = useOrg()
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
+  const cloudPlatform = searchParams.get('cloud_platform') || undefined
 
   const scope: TInstallsTableScope = branchId
     ? 'branch'
@@ -59,6 +61,7 @@ export const InstallsTableContainer = ({
       q,
       searchParams.get('labels'),
       searchParams.get('branches'),
+      cloudPlatform,
     ],
     queryFn: () =>
       appId
@@ -69,6 +72,7 @@ export const InstallsTableContainer = ({
             limit: LIMIT,
             q,
             app_branch_id: branchId,
+            cloud_platform: cloudPlatform,
           })
         : getInstalls({
             orgId: org.id,
@@ -77,6 +81,7 @@ export const InstallsTableContainer = ({
             q,
             labels: searchParams.get('labels') || undefined,
             branches: searchParams.get('branches') || undefined,
+            cloud_platform: cloudPlatform,
           }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -108,21 +113,24 @@ export const InstallsTableContainer = ({
       emptyTitle={emptyTitle}
       emptyMessage={emptyMessage}
       filterActions={
-        scope === 'org' ? (
-          <div className="flex items-center gap-3">
-            <LabelFilterDropdown
-              queryKey={['install-label-keys', org.id]}
-              queryFn={() => getInstallLabelKeys({ orgId: org.id })}
-            />
-            <InstallBranchFilter
-              queryKey={['org-branch-names', org.id]}
-              queryFn={async () => {
-                const { data } = await getBranches({ orgId: org.id, limit: 100 })
-                return [...new Set(data.map((b) => b.name).filter(Boolean))].sort()
-              }}
-            />
-          </div>
-        ) : undefined
+        <div className="flex items-center gap-3">
+          {scope === 'org' ? (
+            <>
+              <LabelFilterDropdown
+                queryKey={['install-label-keys', org.id]}
+                queryFn={() => getInstallLabelKeys({ orgId: org.id })}
+              />
+              <InstallBranchFilter
+                queryKey={['org-branch-names', org.id]}
+                queryFn={async () => {
+                  const { data } = await getBranches({ orgId: org.id, limit: 100 })
+                  return [...new Set(data.map((b) => b.name).filter(Boolean))].sort()
+                }}
+              />
+            </>
+          ) : null}
+          <InstallPlatformFilter />
+        </div>
       }
       pagination={{
         hasNext: result?.pagination?.hasNext ?? false,

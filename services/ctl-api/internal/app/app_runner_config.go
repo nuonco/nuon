@@ -47,17 +47,37 @@ func (a AppRunnerType) JobType() RunnerJobType {
 	return RunnerJobTypeUnknown
 }
 
+var runnerTypePlatforms = []struct {
+	Type     AppRunnerType
+	Platform CloudPlatform
+}{
+	{AppRunnerTypeAWSECS, CloudPlatformAWS},
+	{AppRunnerTypeAWSEKS, CloudPlatformAWS},
+	{AppRunnerTypeAWS, CloudPlatformAWS},
+	{AppRunnerTypeAzureAKS, CloudPlatformAzure},
+	{AppRunnerTypeAzureACS, CloudPlatformAzure},
+	{AppRunnerTypeAzure, CloudPlatformAzure},
+	{AppRunnerTypeGCP, CloudPlatformGCP},
+	{AppRunnerTypeGCPGKE, CloudPlatformGCP},
+}
+
 func (a AppRunnerType) CloudPlatform() CloudPlatform {
-	switch a {
-	case AppRunnerTypeAWSECS, AppRunnerTypeAWSEKS, AppRunnerTypeAWS:
-		return CloudPlatformAWS
-	case AppRunnerTypeAzureAKS, AppRunnerTypeAzureACS, AppRunnerTypeAzure:
-		return CloudPlatformAzure
-	case AppRunnerTypeGCP, AppRunnerTypeGCPGKE:
-		return CloudPlatformGCP
-	default:
-		return CloudPlatformUnknown
+	for _, row := range runnerTypePlatforms {
+		if row.Type == a {
+			return row.Platform
+		}
 	}
+	return CloudPlatformUnknown
+}
+
+func RunnerTypesForCloudPlatform(platform CloudPlatform) []string {
+	var types []string
+	for _, row := range runnerTypePlatforms {
+		if row.Platform == platform {
+			types = append(types, string(row.Type))
+		}
+	}
+	return types
 }
 
 type AppRunnerConfigHelmDriverType string
@@ -125,6 +145,13 @@ func (a *AppRunnerConfig) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &AppRunnerConfig{}, "org_id"),
 			Columns: []string{
 				"org_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &AppRunnerConfig{}, "app_config_id_deleted_at"),
+			Columns: []string{
+				"app_config_id",
+				"deleted_at",
 			},
 		},
 	}
