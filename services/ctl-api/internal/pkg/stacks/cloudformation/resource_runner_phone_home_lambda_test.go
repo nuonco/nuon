@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -233,4 +234,25 @@ func TestGetRunnerPhoneHomeProps_DoesNotEchoRoleName(t *testing.T) {
 				"property %q echoes the phone-home role name", key)
 		}
 	}
+}
+
+func TestGetRunnerPhoneHomeProps_NamedPolicyARNs(t *testing.T) {
+	tpl := &Templates{cfg: &internal.Config{}}
+	inp := phoneHomeTestInput("instabcdefghijklmnopqrstuv")
+	inp.AppCfg.PermissionsConfig.NamedPolicies = []app.AppNamedIAMPolicyConfig{
+		{
+			Name:                    "grafana-lgtm-cloudwatch",
+			CloudFormationStackName: "NamedPolicyGrafanaLgtmCloudwatch",
+		},
+	}
+
+	props := tpl.getRunnerPhoneHomeProps(inp, nil)
+
+	namedPolicyARNs, ok := props.Properties["named_policy_arns"].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(
+		t,
+		cloudformation.Ref("NamedPolicyGrafanaLgtmCloudwatch"),
+		namedPolicyARNs["grafana-lgtm-cloudwatch"],
+	)
 }
