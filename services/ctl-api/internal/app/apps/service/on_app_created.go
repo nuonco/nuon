@@ -13,7 +13,7 @@ import (
 // onAppCreated enqueues the created, provision and poll-dependencies signals on
 // the app queue so a newly created app gets provisioned.
 func (s *service) onAppCreated(ctx context.Context, appID string) error {
-	q, err := s.queueClient.GetQueueByOwner(ctx, appID, "apps")
+	q, err := s.queueClient.GetQueueByOwnerAndName(ctx, appID, "apps", "app-signals")
 	if err != nil {
 		return fmt.Errorf("unable to get app queue: %w", err)
 	}

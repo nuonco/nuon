@@ -18,11 +18,6 @@ import (
 // (not for clean drift scans).
 const SignalType signal.SignalType = "drift-detected"
 
-// installSignalsQueueName mirrors the constant in
-// services/ctl-api/internal/app/installs/helpers. Duplicated here as a
-// literal to avoid an import cycle (helpers imports signals via fx wiring).
-const installSignalsQueueName = "install-signals"
-
 // installWorkflowStepsOwnerType matches the polymorphic type used by
 // QueueSignal records that originate from a workflow step.
 const installWorkflowStepsOwnerType = "install_workflow_steps"

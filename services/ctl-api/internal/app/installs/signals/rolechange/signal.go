@@ -14,8 +14,6 @@ import (
 
 const SignalType signal.SignalType = "role-change"
 
-const installSignalsQueueName = "install-signals"
-
 type Signal struct {
 	InstallID      string `json:"install_id"`
 	RoleName       string `json:"role_name"`

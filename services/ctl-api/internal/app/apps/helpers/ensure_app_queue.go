@@ -6,112 +6,57 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 const (
-	AppWorkflowsQueueName          = "app-workflows"
-	AppSignalsQueueName            = "app-signals"
-	AppWorkflowStepGroupsQueueName = "app-workflow-step-groups"
-	AppWorkflowStepsQueueName      = "app-workflow-steps"
-	AppGenerateStepsQueueName      = "app-generate-steps"
-	AppInstallSyncsQueueName       = "app-install-syncs"
+	AppWorkflowsQueueName          = queuenames.AppWorkflowsQueueName
+	AppSignalsQueueName            = queuenames.AppSignalsQueueName
+	AppWorkflowStepGroupsQueueName = queuenames.AppWorkflowStepGroupsQueueName
+	AppWorkflowStepsQueueName      = queuenames.AppWorkflowStepsQueueName
+	AppGenerateStepsQueueName      = queuenames.AppGenerateStepsQueueName
+	AppInstallSyncsQueueName       = queuenames.AppInstallSyncsQueueName
 )
 
-func (h *Helpers) EnsureAppTriggerQueue(ctx context.Context, appID string) (*app.Queue, error) {
+// ensureAppQueueByName creates the named app queue at its registered capacity.
+// Safe to call multiple times — queueClient.Create is idempotent and reconciles
+// capacity drift against the registry.
+func (h *Helpers) ensureAppQueueByName(ctx context.Context, appID, name string, skipRestartHint bool) (*app.Queue, error) {
+	spec, ok := queuenames.SpecByName(queuenames.OwnerApps, name)
+	if !ok {
+		return nil, fmt.Errorf("app queue %q is not registered", name)
+	}
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     appID,
-		OwnerType:   plugins.TableName(h.db, app.App{}),
-		Namespace:   "apps",
-		Name:        queue.AppTriggersQueueName,
-		MaxInFlight: 10,
-		MaxDepth:    50,
+		OwnerID:         appID,
+		OwnerType:       plugins.TableName(h.db, app.App{}),
+		Namespace:       "apps",
+		Name:            spec.Name,
+		MaxInFlight:     spec.MaxInFlight,
+		MaxDepth:        spec.MaxDepth,
+		SkipRestartHint: skipRestartHint,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("unable to ensure app-triggers queue for app %s: %w", appID, err)
+		return nil, fmt.Errorf("unable to ensure %s queue for app %s: %w", spec.Name, appID, err)
 	}
 	return q, nil
 }
 
+func (h *Helpers) EnsureAppTriggerQueue(ctx context.Context, appID string) (*app.Queue, error) {
+	return h.ensureAppQueueByName(ctx, appID, queuenames.AppTriggersQueueName, true)
+}
+
 // EnsureAppQueue creates all Temporal queue workflows needed for an app to
 // execute workflows through the shared flow infrastructure.
-// Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureAppQueue(ctx context.Context, appID string) error {
-	ownerType := plugins.TableName(h.db, app.App{})
-	if _, err := h.EnsureAppTriggerQueue(ctx, appID); err != nil {
-		return err
+	specs, ok := queuenames.Specs(queuenames.OwnerApps)
+	if !ok {
+		return fmt.Errorf("app queue specs are not registered")
 	}
-
-	// app-workflows queue — orchestrates workflow execution (executeflow.Signal)
-	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     appID,
-		OwnerType:   ownerType,
-		Namespace:   "apps",
-		Name:        AppWorkflowsQueueName,
-		MaxInFlight: 2,
-		MaxDepth:    50,
-	}); err != nil {
-		return fmt.Errorf("unable to ensure app-workflows queue for app %s: %w", appID, err)
-	}
-
-	// app-signals queue — handles individual signal execution (generate-workflow-steps, component builds)
-	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     appID,
-		OwnerType:   ownerType,
-		Namespace:   "apps",
-		Name:        AppSignalsQueueName,
-		MaxInFlight: 20,
-		MaxDepth:    50,
-	}); err != nil {
-		return fmt.Errorf("unable to ensure app-signals queue for app %s: %w", appID, err)
-	}
-
-	// app-workflow-step-groups queue — executes step groups
-	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     appID,
-		OwnerType:   ownerType,
-		Namespace:   "apps",
-		Name:        AppWorkflowStepGroupsQueueName,
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	}); err != nil {
-		return fmt.Errorf("unable to ensure app-workflow-step-groups queue for app %s: %w", appID, err)
-	}
-
-	// app-workflow-steps queue — executes individual workflow steps
-	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     appID,
-		OwnerType:   ownerType,
-		Namespace:   "apps",
-		Name:        AppWorkflowStepsQueueName,
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	}); err != nil {
-		return fmt.Errorf("unable to ensure app-workflow-steps queue for app %s: %w", appID, err)
-	}
-
-	// app-generate-steps queue — handles generate-steps signals
-	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     appID,
-		OwnerType:   ownerType,
-		Namespace:   "apps",
-		Name:        AppGenerateStepsQueueName,
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	}); err != nil {
-		return fmt.Errorf("unable to ensure app-generate-steps queue for app %s: %w", appID, err)
-	}
-
-	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     appID,
-		OwnerType:   ownerType,
-		Namespace:   "apps",
-		Name:        AppInstallSyncsQueueName,
-		MaxInFlight: 5,
-		MaxDepth:    5,
-	}); err != nil {
-		return fmt.Errorf("unable to ensure app-install-syncs queue for app %s: %w", appID, err)
+	for _, spec := range specs {
+		if _, err := h.ensureAppQueueByName(ctx, appID, spec.Name, false); err != nil {
+			return err
+		}
 	}
 
 	return nil
