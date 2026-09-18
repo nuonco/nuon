@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { LabelBadge } from '@/components/common/LabelBadge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
@@ -103,16 +102,6 @@ const BranchDetailContent = () => {
         header={
           <DetailHeader
             title={branch.name}
-            status={
-              branch?.managed_by ? (
-                <LabelBadge
-                  labelKey="managed by"
-                  labelValue={branch.managed_by}
-                  size="sm"
-                  theme={branch.managed_by === 'config' ? 'brand' : 'default'}
-                />
-              ) : null
-            }
             id={branch.id}
             identity={
               <Text variant="subtext" theme="info">

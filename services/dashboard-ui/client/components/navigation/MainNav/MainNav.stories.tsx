@@ -15,6 +15,7 @@ export const Default = () => (
     <MainNav
       org={mockOrg}
       isSidebarOpen
+      showInstalls
       hasCustomerPortal={false}
       customerPortalUrl="https://customers.nuon.co"
     />
@@ -26,6 +27,19 @@ export const Collapsed = () => (
     <MainNav
       org={mockOrg}
       isSidebarOpen={false}
+      showInstalls
+      hasCustomerPortal={false}
+      customerPortalUrl="https://customers.nuon.co"
+    />
+  </div>
+)
+
+export const WithoutInstalls = () => (
+  <div className="w-[248px] p-4">
+    <MainNav
+      org={mockOrg}
+      isSidebarOpen
+      showInstalls={false}
       hasCustomerPortal={false}
       customerPortalUrl="https://customers.nuon.co"
     />

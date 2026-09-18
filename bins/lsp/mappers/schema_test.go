@@ -1,10 +1,35 @@
 package mappers
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/nuonco/nuon/pkg/config/schema"
 )
+
+func TestBuildPropertyMap_BranchModeEnums(t *testing.T) {
+	branchSchema, err := schema.LookupSchemaType("branch")
+	if err != nil {
+		t.Fatalf("failed to load branch schema: %v", err)
+	}
+
+	hierarchicalMap, _ := BuildPropertyMap(branchSchema)
+	tests := map[string][]any{
+		"run":     {"push", "on_tag", "on_github_label", "manual_only"},
+		"preview": {"plan-only", "apply", "build-only"},
+	}
+	for table, expected := range tests {
+		mode, ok := hierarchicalMap[table]["mode"]
+		if !ok {
+			t.Fatalf("%s.mode not found", table)
+		}
+		for _, value := range expected {
+			if !slices.Contains(mode.Enum, value) {
+				t.Errorf("%s.mode enum missing %q: %v", table, value, mode.Enum)
+			}
+		}
+	}
+}
 
 func TestBuildPropertyMap(t *testing.T) {
 	// Use the real helm schema from the project
