@@ -38,6 +38,23 @@ const (
 
 const RunnerOfflineTSMetadataKey = "offline_ts"
 
+// Boot window after a stack apply before a missing process counts as offline.
+const RunnerAwaitingHeartbeatGrace = 30 * time.Minute
+
+// HealthcheckPending is true while a missing process is expected (stack not applied yet, or still booting).
+func (r *Runner) HealthcheckPending(now time.Time) bool {
+	switch r.Status {
+	case RunnerStatusAwaitingInstallStackRun:
+		return true
+	case RunnerStatusAwaitingHeartbeat:
+		if r.StatusV2.CreatedAtTS == 0 {
+			return true
+		}
+		return now.Sub(time.Unix(r.StatusV2.CreatedAtTS, 0)) < RunnerAwaitingHeartbeatGrace
+	}
+	return false
+}
+
 func (r RunnerStatus) String() string {
 	return string(r)
 }
