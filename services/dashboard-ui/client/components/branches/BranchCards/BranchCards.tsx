@@ -20,7 +20,7 @@ export const BranchCards = ({
 }: IBranchCards) => {
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i} className="gap-3 p-4">
             <Skeleton lines={3} width={['40%', '70%', '55%']} />
@@ -45,7 +45,7 @@ export const BranchCards = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {cards.map((card) => (
           <BranchCard key={card.branchId} card={card} />
         ))}

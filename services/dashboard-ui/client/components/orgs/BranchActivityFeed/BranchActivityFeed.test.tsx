@@ -1,6 +1,8 @@
-import { expect, test } from 'bun:test'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { afterEach, expect, test } from 'bun:test'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { BranchActivityFeed, type TBranchActivityItem } from './BranchActivityFeed'
+
+afterEach(cleanup)
 
 const baseItem = (overrides: Partial<TBranchActivityItem> = {}): TBranchActivityItem => ({
   appId: 'app-1',
