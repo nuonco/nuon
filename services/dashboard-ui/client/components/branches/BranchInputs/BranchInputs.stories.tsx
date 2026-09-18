@@ -62,6 +62,8 @@ export const Default = () => <BranchInputs appConfig={appConfig} />
 
 export const Loading = () => <BranchInputs isLoading />
 
+export const MissingConfig = () => <BranchInputs isMissingConfig />
+
 export const Empty = () => <BranchInputs />
 
 export const Error = () => <BranchInputs isError />

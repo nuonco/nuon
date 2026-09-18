@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/addinstall"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -253,37 +252,20 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Collect explicit install IDs for ownership validation.
-	var explicitInstallIDs []string
-	for _, g := range req.InstallGroups {
-		explicitInstallIDs = append(explicitInstallIDs, g.InstallIDs...)
-	}
+	installGroups := installGroupsFromRequest(req.InstallGroups)
 
-	// Naming an install in a group selects which of this branch's groups deploys
-	// it; it does not take it from another branch. The install has to already be
-	// here, via creation or an explicit move.
-	if err := s.helpers.ValidateInstallIDsOwnedByBranch(ctx, appBranchID, explicitInstallIDs); err != nil {
+	var explicitInstallIDs []string
+	for _, group := range installGroups {
+		explicitInstallIDs = append(explicitInstallIDs, group.InstallIDs...)
+	}
+	if err := s.helpers.ValidateInstallIDsBelongToBranchApp(ctx, appBranchID, explicitInstallIDs); err != nil {
 		ctx.Error(err)
 		return
 	}
-
-	installGroups := installGroupsFromRequest(req.InstallGroups)
 
 	if err := s.helpers.ValidateBranchInstallsSingleGroup(ctx, appBranchID, installGroups); err != nil {
 		ctx.Error(err)
 		return
-	}
-
-	previousGroups, err := s.helpers.LatestConfigInstallGroups(ctx, appBranchID)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	previousInstallIDs := make(map[string]struct{})
-	for _, group := range previousGroups {
-		for _, installID := range group.InstallIDs {
-			previousInstallIDs[installID] = struct{}{}
-		}
 	}
 
 	config, err := s.helpers.CreateAppBranchConfig(
@@ -305,24 +287,9 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.helpers.EnqueueAppBranchCreatedIfFirst(ctx, appBranchID, config.ID); err != nil {
-		ctx.Error(fmt.Errorf("unable to enqueue app-branch-created: %w", err))
+	if err := s.helpers.EnqueueAppBranchConfigSignals(ctx, appBranchID, config.ID); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue app branch config signals: %w", err))
 		return
-	}
-
-	// Installs newly named by a group are brought up to the branch's app config.
-	// Nothing here changes which branch owns an install, so a group that drops an
-	// install leaves it on this branch, in whichever group still matches it.
-	for _, group := range config.InstallGroups {
-		for _, installID := range group.InstallIDs {
-			if _, existed := previousInstallIDs[installID]; existed {
-				continue
-			}
-			if err := addinstall.Enqueue(ctx, s.queueClient, appBranchID, installID, group.ID); err != nil {
-				ctx.Error(fmt.Errorf("unable to enqueue branch config update for install %s: %w", installID, err))
-				return
-			}
-		}
 	}
 
 	ctx.JSON(http.StatusCreated, config)

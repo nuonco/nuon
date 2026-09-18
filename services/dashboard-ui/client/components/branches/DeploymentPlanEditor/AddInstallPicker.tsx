@@ -9,7 +9,7 @@ import type { TInstall } from '@/types'
 
 interface IAddInstallPicker {
   groupId: string
-  unassignedInstalls: TInstall[]
+  pickableInstalls: TInstall[]
   disabled?: boolean
   onAdd: (installIds: string[]) => void
 }
@@ -18,7 +18,7 @@ const SEARCH_THRESHOLD = 5
 
 export const AddInstallPicker = ({
   groupId,
-  unassignedInstalls,
+  pickableInstalls,
   disabled,
   onAdd,
 }: IAddInstallPicker) => {
@@ -26,13 +26,13 @@ export const AddInstallPicker = ({
   const [query, setQuery] = useState('')
 
   const filtered = useMemo(() => {
-    if (!query) return unassignedInstalls
+    if (!query) return pickableInstalls
     const q = query.trim().toLowerCase()
-    return unassignedInstalls.filter(
+    return pickableInstalls.filter(
       (i) =>
         i.name?.toLowerCase().includes(q) || i.id?.toLowerCase().includes(q)
     )
-  }, [unassignedInstalls, query])
+  }, [pickableInstalls, query])
 
   const toggle = (id: string) => {
     setPicked((curr) => {
@@ -50,7 +50,7 @@ export const AddInstallPicker = ({
     setQuery('')
   }
 
-  const isEmpty = unassignedInstalls.length === 0
+  const isEmpty = pickableInstalls.length === 0
 
   return (
     <Dropdown
@@ -69,7 +69,7 @@ export const AddInstallPicker = ({
       }
     >
       <div className="flex flex-col w-[320px]">
-        {unassignedInstalls.length > SEARCH_THRESHOLD && (
+        {pickableInstalls.length > SEARCH_THRESHOLD && (
           <div className="p-3 border-b border-cool-grey-200 dark:border-dark-grey-700">
             <Input
               autoFocus

@@ -55,51 +55,55 @@ func selectShellLinks(html []byte, shell string) []byte {
 }
 
 type clientConfig struct {
-	APIUrl                string `json:"apiUrl"`
-	RunnerAPIUrl          string `json:"runnerApiUrl,omitempty"`
-	TemporalUIUrl         string `json:"temporalUiUrl,omitempty"`
-	AuthServiceUrl        string `json:"authServiceUrl,omitempty"`
-	AppUrl                string `json:"appUrl"`
-	GithubAppName         string `json:"githubAppName"`
-	PylonAppID            string `json:"pylonAppId,omitempty"`
-	DatadogEnv            string `json:"datadogEnv,omitempty"`
-	DatadogAPIKey         string `json:"datadogApiKey,omitempty"`
-	DatadogApplicationKey string `json:"datadogApplicationKey,omitempty"`
-	DatadogTraceDebug     bool   `json:"datadogTraceDebug,omitempty"`
-	DatadogAPIUrl         string `json:"datadogApiUrl,omitempty"`
-	Version               string `json:"version,omitempty"`
-	GitRef                string `json:"gitRef,omitempty"`
-	IsBYOC                bool   `json:"isByoc"`
-	BYOCName              string `json:"byocName,omitempty"`
-	BYOCColor             string `json:"byocColor,omitempty"`
-	BYOCTextColor         string `json:"byocTextColor,omitempty"`
-	OnboardingV2          bool   `json:"onboardingV2,omitempty"`
-	DashboardLite         bool   `json:"dashboardLite,omitempty"`
-	AdminDashboardUrl     string `json:"adminDashboardUrl,omitempty"`
-	PostHogKey            string `json:"posthogKey,omitempty"`
-	PostHogHost           string `json:"posthogHost,omitempty"`
+	APIUrl                 string `json:"apiUrl"`
+	RunnerAPIUrl           string `json:"runnerApiUrl,omitempty"`
+	TemporalUIUrl          string `json:"temporalUiUrl,omitempty"`
+	AuthServiceUrl         string `json:"authServiceUrl,omitempty"`
+	AppUrl                 string `json:"appUrl"`
+	GithubAppName          string `json:"githubAppName"`
+	PylonAppID             string `json:"pylonAppId,omitempty"`
+	DatadogEnv             string `json:"datadogEnv,omitempty"`
+	DatadogAPIKey          string `json:"datadogApiKey,omitempty"`
+	DatadogApplicationKey  string `json:"datadogApplicationKey,omitempty"`
+	DatadogTraceDebug      bool   `json:"datadogTraceDebug,omitempty"`
+	DatadogAPIUrl          string `json:"datadogApiUrl,omitempty"`
+	Version                string `json:"version,omitempty"`
+	GitRef                 string `json:"gitRef,omitempty"`
+	IsBYOC                 bool   `json:"isByoc"`
+	BYOCName               string `json:"byocName,omitempty"`
+	BYOCColor              string `json:"byocColor,omitempty"`
+	BYOCTextColor          string `json:"byocTextColor,omitempty"`
+	OnboardingV2           bool   `json:"onboardingV2,omitempty"`
+	DashboardLite          bool   `json:"dashboardLite,omitempty"`
+	StatusBarAutoEnabled   bool   `json:"statusBarAutoEnabled,omitempty"`
+	InstallsTabAutoEnabled bool   `json:"installsTabAutoEnabled,omitempty"`
+	AdminDashboardUrl      string `json:"adminDashboardUrl,omitempty"`
+	PostHogKey             string `json:"posthogKey,omitempty"`
+	PostHogHost            string `json:"posthogHost,omitempty"`
 }
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
 	cc := clientConfig{
-		APIUrl:                cfg.APIUrl,
-		RunnerAPIUrl:          cfg.RunnerAPIUrl,
-		TemporalUIUrl:         cfg.TemporalUIUrl,
-		AuthServiceUrl:        cfg.AuthServiceUrl,
-		AppUrl:                cfg.AppUrl,
-		GithubAppName:         cfg.GithubAppName,
-		PylonAppID:            cfg.PylonAppID,
-		DatadogEnv:            cfg.DatadogEnv,
-		DatadogAPIKey:         cfg.DatadogAPIKey,
-		DatadogApplicationKey: cfg.DatadogApplicationKey,
-		DatadogTraceDebug:     cfg.DatadogTraceDebug,
-		DatadogAPIUrl:         cfg.DatadogAPIUrl,
-		Version:               cfg.Version,
-		GitRef:                cfg.GitRef,
-		IsBYOC:                cfg.IsBYOC,
-		OnboardingV2:          cfg.OnboardingV2,
-		DashboardLite:         cfg.DashboardLite,
-		AdminDashboardUrl:     cfg.AdminDashboardUrl,
+		APIUrl:                 cfg.APIUrl,
+		RunnerAPIUrl:           cfg.RunnerAPIUrl,
+		TemporalUIUrl:          cfg.TemporalUIUrl,
+		AuthServiceUrl:         cfg.AuthServiceUrl,
+		AppUrl:                 cfg.AppUrl,
+		GithubAppName:          cfg.GithubAppName,
+		PylonAppID:             cfg.PylonAppID,
+		DatadogEnv:             cfg.DatadogEnv,
+		DatadogAPIKey:          cfg.DatadogAPIKey,
+		DatadogApplicationKey:  cfg.DatadogApplicationKey,
+		DatadogTraceDebug:      cfg.DatadogTraceDebug,
+		DatadogAPIUrl:          cfg.DatadogAPIUrl,
+		Version:                cfg.Version,
+		GitRef:                 cfg.GitRef,
+		IsBYOC:                 cfg.IsBYOC,
+		OnboardingV2:           cfg.OnboardingV2,
+		DashboardLite:          cfg.DashboardLite,
+		StatusBarAutoEnabled:   cfg.StatusBarAutoEnabled,
+		InstallsTabAutoEnabled: cfg.InstallsTabAutoEnabled,
+		AdminDashboardUrl:      cfg.AdminDashboardUrl,
 	}
 
 	if cfg.PostHogKey != "" && !cfg.IsBYOC {

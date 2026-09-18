@@ -42,6 +42,54 @@ auto_approve_on_policies_passing = true
 	}
 }
 
+func TestParseAppBranchConfig_InvalidRunModeListsValidModes(t *testing.T) {
+	_, err := ParseAppBranchConfig(strings.NewReader(`
+name = "staging"
+
+[run]
+mode = "sometimes"
+`))
+	if err == nil {
+		t.Fatal("expected invalid run mode error")
+	}
+	for _, want := range []string{"sometimes", "push", "on_tag", "on_github_label", "manual_only"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("expected error to contain %q, got %v", want, err)
+		}
+	}
+}
+
+func TestParseAppBranchConfig_AcceptsLegacyTagMode(t *testing.T) {
+	_, err := ParseAppBranchConfig(strings.NewReader(`
+name = "staging"
+
+[run]
+mode = "on_tag_prefix"
+tag_prefix = "release/"
+`))
+	if err != nil {
+		t.Fatalf("expected legacy run mode to remain valid, got %v", err)
+	}
+}
+
+func TestParseAppBranchConfig_InvalidPreviewModeListsValidModes(t *testing.T) {
+	_, err := ParseAppBranchConfig(strings.NewReader(`
+name = "staging"
+
+[preview]
+mode = "sometimes"
+install_name = "example"
+`))
+	if err == nil {
+		t.Fatal("expected invalid preview mode error")
+	}
+	for _, want := range []string{"sometimes", "plan-only", "apply", "build-only"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("expected error to contain %q, got %v", want, err)
+		}
+	}
+}
+
 func TestParseAppBranchConfigDir_RejectsDuplicateNames(t *testing.T) {
 	dir := t.TempDir()
 	mustWrite(t, filepath.Join(dir, "a.toml"), "name = \"main\"\n")

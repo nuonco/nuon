@@ -46,13 +46,18 @@ type AppSandboxBuild struct {
 	VCSConnectionCommitID *string              `json:"vcs_connection_commit_id,omitempty" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitzero" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
 
+	AppBranchRunID *string       `json:"app_branch_run_id,omitempty" temporaljson:"app_branch_run_id,omitzero,omitempty"`
+	AppBranchRun   *AppBranchRun `json:"app_branch_run,omitempty" faker:"-" temporaljson:"app_branch_run,omitzero,omitempty"`
+
 	RunnerJob RunnerJob `json:"runner_job,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
 	LogStream LogStream `json:"log_stream,omitzero" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
 
 	Status            AppSandboxBuildStatus               `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                              `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 	StatusV2          CompositeStatus                     `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
-	CompositeError    *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"-" temporaljson:"-"`
+	CompositeError    *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb" temporaljson:"composite_error,omitzero,omitempty"`
+
+	AppBranchID string `gorm:"-" json:"app_branch_id,omitzero" temporaljson:"app_branch_id,omitzero,omitempty"`
 }
 
 func (a *AppSandboxBuild) Indexes(db *gorm.DB) []migrations.Index {
@@ -75,6 +80,12 @@ func (a *AppSandboxBuild) Indexes(db *gorm.DB) []migrations.Index {
 				"app_config_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &AppSandboxBuild{}, "app_branch_run_id"),
+			Columns: []string{
+				"app_branch_run_id",
+			},
+		},
 	}
 }
 
@@ -92,6 +103,10 @@ func (a *AppSandboxBuild) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *AppSandboxBuild) AfterQuery(tx *gorm.DB) error {
+	if a.AppBranchRun != nil {
+		a.AppBranchID = a.AppBranchRun.AppBranchID
+	}
+
 	if a.StatusV2.Status != "" {
 		a.Status = AppSandboxBuildStatus(a.StatusV2.Status)
 		a.StatusDescription = a.StatusV2.StatusHumanDescription
