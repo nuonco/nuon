@@ -35,6 +35,9 @@ type AppAWSStackOutputs struct {
 	// maintenance iam role arn
 	MaintenanceIamRoleArn string `json:"maintenance_iam_role_arn,omitempty"`
 
+	// named policy arns
+	NamedPolicyArns map[string]string `json:"named_policy_arns,omitempty"`
+
 	// private subnets
 	PrivateSubnets []string `json:"private_subnets"`
 
