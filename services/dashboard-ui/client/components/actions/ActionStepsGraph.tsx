@@ -103,7 +103,7 @@ export const ActionStepGraph = ({
         target: curId,
         type: 'straight',
         animated: false,
-        style: { stroke: '#3062D4', strokeWidth: 2 },
+        style: { stroke: 'var(--blue-600)', strokeWidth: 2 },
       }
     })
 

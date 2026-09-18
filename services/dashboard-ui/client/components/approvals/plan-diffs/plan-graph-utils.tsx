@@ -13,14 +13,14 @@ export const STRUCTURAL_COLOR = '#374151'
 export const DRIFT_STRUCTURAL_COLOR = '#92400e'
 
 export const ACTION_COLORS: Record<string, string> = {
-  create: '#16a34a',
-  delete: '#dc2626',
-  update: '#ea580c',
+  create: 'var(--green-600)',
+  delete: 'var(--red-600)',
+  update: 'var(--orange-600)',
   replace: 'var(--primary-600)',
   'create-replacement': 'var(--primary-600)',
   'delete-replaced': 'var(--primary-600)',
-  read: '#2563eb',
-  refresh: '#2563eb',
+  read: 'var(--blue-600)',
+  refresh: 'var(--blue-600)',
   'no-op': '#6b7280',
   same: '#6b7280',
 }
