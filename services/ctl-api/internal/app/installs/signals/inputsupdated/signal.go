@@ -9,8 +9,6 @@ import (
 
 const SignalType signal.SignalType = "inputs-updated"
 
-const installSignalsQueueName = "install-signals"
-
 type Signal struct {
 	InstallID   string   `json:"install_id"`
 	ChangedKeys []string `json:"changed_keys,omitempty"`

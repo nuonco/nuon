@@ -6,6 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -66,7 +67,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:   installID,
 			OwnerType: "installs",
-			QueueName: "install-signals",
+			QueueName: queuenames.InstallSignalsQueueName,
 			Signal: &updateappconfig.Signal{
 				InstallID:      installID,
 				NewAppConfigID: s.NewAppConfigID,

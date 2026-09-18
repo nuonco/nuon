@@ -20,6 +20,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -27,9 +28,6 @@ import (
 )
 
 const SignalType signal.SignalType = "stack-run"
-
-const installSignalsQueueName = "install-signals"
-const installWorkflowsQueueName = "install-workflows"
 
 type Signal struct {
 	InstallStackID        string `json:"install_stack_id"`
@@ -240,6 +238,7 @@ func (s *Signal) handleProvisionComplete(ctx workflow.Context, install *app.Inst
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   install.RunnerID,
 		OwnerType: "runners",
+		QueueName: queuenames.RunnerSignalsQueueName,
 		Signal: &runnersignalsv2.Signal{
 			RunnerID:                 install.RunnerID,
 			InstallStackVersionRunID: s.RunID,
@@ -441,7 +440,7 @@ func (s *Signal) processOutputs(ctx workflow.Context, install *app.Install, vers
 			if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 				OwnerID:   install.ID,
 				OwnerType: "installs",
-				QueueName: installWorkflowsQueueName,
+				QueueName: queuenames.InstallWorkflowsQueueName,
 				Signal: &executeflow.Signal{
 					WorkflowID: inputResp.WorkflowID,
 				},
@@ -545,7 +544,7 @@ func enqueueRoleChange(ctx workflow.Context, installID string, role roleSnapshot
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   installID,
 		OwnerType: "installs",
-		QueueName: installSignalsQueueName,
+		QueueName: queuenames.InstallSignalsQueueName,
 		Signal: &rolechange.Signal{
 			InstallID:  installID,
 			RoleName:   renderedName,
