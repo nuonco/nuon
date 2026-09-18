@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -79,7 +80,7 @@ func (n *Notifier) FlowStatusUpdated(ctx context.Context, req statusactivities.U
 		return
 	}
 
-	q, err := n.queueClient.GetQueueByOwnerAndName(ctx, wf.OwnerID, wf.OwnerType, installSignalsQueueName)
+	q, err := n.queueClient.GetQueueByOwnerAndName(ctx, wf.OwnerID, wf.OwnerType, queuenames.InstallSignalsQueueName)
 	if err != nil {
 		l.Warn("awaiting-retry notification: unable to find install signals queue", zap.Error(err))
 		return

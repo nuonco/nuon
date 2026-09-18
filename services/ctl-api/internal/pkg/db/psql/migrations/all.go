@@ -204,5 +204,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "132-backfill-app-branch-run-config",
 			Fn:   m.Migration132BackfillAppBranchRunConfig,
 		},
+		{
+			Name: "133-dedupe-queues",
+			Fn:   m.Migration133DedupeQueues,
+		},
 	}
 }
