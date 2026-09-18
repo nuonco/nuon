@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -99,6 +100,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   s.ComponentID,
 		OwnerType: "components",
+		QueueName: queuenames.ComponentDefaultQueueName,
 		Signal: &buildsignal.Signal{
 			ComponentID: s.ComponentID,
 			BuildID:     buildID,

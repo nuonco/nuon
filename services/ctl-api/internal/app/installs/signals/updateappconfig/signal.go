@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -142,7 +143,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   s.InstallID,
 		OwnerType: "installs",
-		QueueName: "install-signals",
+		QueueName: queuenames.InstallSignalsQueueName,
 		Signal: &appconfigupdated.Signal{
 			InstallID:      s.InstallID,
 			OldAppConfigID: install.AppConfigID,

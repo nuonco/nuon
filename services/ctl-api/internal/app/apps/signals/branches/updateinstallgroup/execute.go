@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/installgroups"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -311,7 +312,7 @@ func (s *Signal) recordAppConfigVersions(
 		if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:   e.installID,
 			OwnerType: "installs",
-			QueueName: "install-signals",
+			QueueName: queuenames.InstallSignalsQueueName,
 			Signal: &updateappconfig.Signal{
 				InstallID:      e.installID,
 				NewAppConfigID: run.AppConfigID,
