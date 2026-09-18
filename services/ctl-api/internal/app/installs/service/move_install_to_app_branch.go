@@ -11,7 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/addinstall"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appbranchchanged"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -124,9 +124,6 @@ func (s *service) MoveInstallToAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	// Reconciliation is the same path a config change takes, so the install picks
-	// up the destination branch's app config through its normal workflow rather
-	// than a second mechanism that only moves use.
 	var groupID string
 	for i := range groups {
 		if appshelpers.InstallMatchesGroup(&groups[i], &install) {
@@ -134,7 +131,7 @@ func (s *service) MoveInstallToAppBranch(ctx *gin.Context) {
 			break
 		}
 	}
-	if err := addinstall.Enqueue(ctx, s.queueClient, branch.ID, install.ID, groupID); err != nil {
+	if err := appbranchchanged.Enqueue(ctx, s.queueClient, install.ID, branch.ID, groupID); err != nil {
 		ctx.Error(fmt.Errorf("unable to enqueue app branch install update: %w", err))
 		return
 	}

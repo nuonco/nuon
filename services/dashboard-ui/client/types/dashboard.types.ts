@@ -84,6 +84,7 @@ export type TNavSectionHeader = {
   type: 'section'
   label: string
   defaultOpen?: boolean
+  collapsible?: boolean
 }
 
 export type TNavAction = {

@@ -29,6 +29,8 @@ type GetStepErrorHintsResponse struct {
 //     (set by infrastructure failures during apply).
 //   - install_deploys: checks the row-level CompositeError first (set by plan
 //     render failures), then falls through to the latest runner job error.
+//   - no target (app branch run steps): falls back to the error already
+//     recorded on the step's own status by the step's signal.
 //
 // It is best-effort: a target with no composite error yields empty hints.
 //
@@ -60,7 +62,7 @@ func (a *Activities) GetStepErrorHints(ctx context.Context, req GetStepErrorHint
 // follow the same order.
 func (a *Activities) stepTargetCompositeError(ctx context.Context, step *app.WorkflowStep) (*compositeerrors.CompositeErrorData, error) {
 	if step.StepTargetID == "" {
-		return nil, nil
+		return step.Status.CompositeError, nil
 	}
 
 	switch app.WorkflowStepTargetType(step.StepTargetType) {

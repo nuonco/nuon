@@ -33,47 +33,46 @@ const BranchPlanContent = () => {
 
   const installsById = useMemo(
     () =>
-      (appInstallsResult?.data ?? [])
-        .reduce<Record<string, TInstall>>(
-          (acc, install) => {
-            acc[install.id] = install
-            return acc
-          },
-          {}
-        ),
+      (appInstallsResult?.data ?? []).reduce<Record<string, TInstall>>(
+        (acc, install) => {
+          acc[install.id] = install
+          return acc
+        },
+        {}
+      ),
     [appInstallsResult]
   )
 
   return (
     <BranchTabPage
-      tab="Install groups"
+      tab="Deployment plan"
       tabPath="plan"
-      heading="Install groups"
+      heading="Deployment plan"
       subheading="Group installs and control the rollout order for this branch."
     >
       <DeploymentPlanSection
-      config={currentConfig}
-      installsById={installsById}
-      orgId={orgId}
-      labelColors={labelColors}
-      createAction={
-        <EditDeploymentPlanButton
-          branch={branch}
-          currentConfig={currentConfig}
-          variant="secondary"
-          label="Create deployment plan"
-          onSuccess={refresh}
-        />
-      }
-      editAction={
-        <EditDeploymentPlanButton
-          branch={branch}
-          currentConfig={currentConfig}
-          variant="ghost"
-          label="Edit plan"
-          onSuccess={refresh}
-        />
-      }
+        config={currentConfig}
+        installsById={installsById}
+        orgId={orgId}
+        labelColors={labelColors}
+        createAction={
+          <EditDeploymentPlanButton
+            branch={branch}
+            currentConfig={currentConfig}
+            variant="secondary"
+            label="Create deployment plan"
+            onSuccess={refresh}
+          />
+        }
+        editAction={
+          <EditDeploymentPlanButton
+            branch={branch}
+            currentConfig={currentConfig}
+            variant="ghost"
+            label="Edit plan"
+            onSuccess={refresh}
+          />
+        }
       />
     </BranchTabPage>
   )

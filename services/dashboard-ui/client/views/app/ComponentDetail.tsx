@@ -3,8 +3,8 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
-import { Text } from '@/components/common/Text'
 import { BuildTimeline } from '@/components/builds/BuildTimeline'
+import { CurrentComponentBuild } from '@/components/builds/CurrentComponentBuild'
 import { ComponentConfigCard } from '@/components/components/ComponentConfigCard'
 import { ComponentDependencies } from '@/components/components/ComponentDependencies'
 import { ComponentDependencyGraphButton } from '@/components/components/ComponentDependencyGraph'
@@ -12,26 +12,28 @@ import { ComponentType } from '@/components/components/ComponentType'
 import { BuildComponentButton } from '@/components/components/management/BuildComponent'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
-import {
-  HistoryPanelButton,
-  HistoryRail,
-} from '@/components/layout/HistoryRail'
+import { HistoryPanelButton } from '@/components/layout/HistoryPanelButton'
+import { StatusWithDescription } from '@/components/common/StatusWithDescription'
+import { Text } from '@/components/common/Text'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
+import { useOptionalBranch } from '@/hooks/use-branch'
 import { useOrg } from '@/hooks/use-org'
 import {
   getAppConfig,
   getAppConfigs,
   getBranchWorkflowRuns,
   getComponent,
+  getComponentBuild,
   getComponentBuilds,
 } from '@/lib'
-
+import { isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
 export const ComponentDetail = () => {
   const { componentId, branchId } = useParams()
   const { org } = useOrg()
   const { app, labelColors } = useApp()
+  const branch = useOptionalBranch()?.branch
 
   const { data: component, isLoading: isLoadingComponent } = useQuery({
     placeholderData: keepPreviousData,
@@ -104,33 +106,39 @@ export const ComponentDetail = () => {
   })
   const latestResolvedBuild = latestBuilds?.data?.find((b) => !!b.source_digest)
 
-  const latestBuildWithCommit = latestBuilds?.data?.find(
-    (b) =>
-      !!b.vcs_connection_commit && (!branchId || b.app_branch_id === branchId)
+  const latestBuildSummary = latestBuilds?.data?.find(
+    (b) => !branchId || b.app_branch_id === branchId
   )
-  const buildCommit = latestBuildWithCommit?.vcs_connection_commit
+
+  const { data: latestBuild } = useQuery({
+    placeholderData: latestBuildSummary,
+    queryKey: ['component-build', org?.id, componentId, latestBuildSummary?.id],
+    queryFn: () =>
+      getComponentBuild({
+        orgId: org!.id,
+        componentId: componentId!,
+        buildId: latestBuildSummary!.id,
+      }),
+    enabled:
+      !!org?.id && !!componentId && !!branchId && !!latestBuildSummary?.id,
+    refetchInterval: (query) => {
+      if (isTerminalStatusV2(query.state.data)) return false
+      return 5000
+    },
+  })
+
   const appBase = branchId
     ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
     : `/${org?.id}/apps/${app?.id}`
   const componentBasePath = `${appBase}/components/${componentId}`
-  const latestCommit = buildCommit
-    ? {
-        status: latestBuildWithCommit?.status_v2?.status,
-        href: `${componentBasePath}/builds/${latestBuildWithCommit?.id}`,
-        message: buildCommit.message?.split('\n')[0],
-        author: buildCommit.author_name,
-        avatarUrl: buildCommit.author_avatar_url,
-        sha: buildCommit.sha,
-        createdAt: buildCommit.created_at,
-      }
-    : undefined
-
   const labelKeys = Object.keys(component?.labels ?? {}).sort()
   const history = (
     <BuildTimeline
       componentId={componentId!}
       componentName={component?.name ?? ''}
       shouldPoll
+      branchId={branchId}
+      excludeBuildId={latestBuild?.id}
     />
   )
 
@@ -142,6 +150,9 @@ export const ComponentDetail = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
+          ...(branchId && branch?.name
+            ? [{ path: appBase, text: branch.name }]
+            : []),
           {
             path: `${appBase}/components`,
             text: 'Components',
@@ -168,21 +179,39 @@ export const ComponentDetail = () => {
             loading={isLoadingComponent}
             loadingWidth={20}
             status={
-              config?.toggleable ? (
+              latestBuild || config?.toggleable ? (
                 <>
-                  <Badge size="sm" theme="info">
-                    Toggleable
-                  </Badge>
-                  <Badge
-                    size="sm"
-                    theme={config?.default_enabled ? 'success' : 'neutral'}
-                  >
-                    {config?.default_enabled ? 'Default: on' : 'Default: off'}
-                  </Badge>
+                  {latestBuild ? (
+                    <StatusWithDescription
+                      statusProps={{
+                        status:
+                          latestBuild.status_v2?.status ?? latestBuild.status,
+                      }}
+                      tooltipProps={{
+                        tipContent:
+                          latestBuild.status_v2?.status_human_description ??
+                          latestBuild.status_description,
+                      }}
+                    />
+                  ) : null}
+                  {config?.toggleable ? (
+                    <>
+                      <Badge size="sm" theme="info">
+                        Toggleable
+                      </Badge>
+                      <Badge
+                        size="sm"
+                        theme={config?.default_enabled ? 'success' : 'neutral'}
+                      >
+                        {config?.default_enabled
+                          ? 'Default: on'
+                          : 'Default: off'}
+                      </Badge>
+                    </>
+                  ) : null}
                 </>
               ) : null
             }
-            id={component?.id}
             identity={
               labelKeys.length ? (
                 <span className="flex flex-wrap gap-1">
@@ -200,7 +229,7 @@ export const ComponentDetail = () => {
             }
             actions={
               <>
-                <HistoryPanelButton title="Build history" history={history} />
+                <HistoryPanelButton title="Previous builds" history={history} />
                 {component ? (
                   <BuildComponentButton
                     component={component}
@@ -212,14 +241,21 @@ export const ComponentDetail = () => {
           />
         }
       >
-        <HistoryRail title="Build history" history={history}>
-          {isLoadingConfig ? (
-            <ComponentConfigCard loading />
-          ) : config ? (
+        {isLoadingConfig ? (
+          <ComponentConfigCard loading />
+        ) : config ? (
+          <div className="flex flex-col gap-4">
+            {branchId && latestBuild ? (
+              <CurrentComponentBuild
+                appId={app?.id}
+                orgId={org?.id}
+                build={latestBuild}
+                buildHref={`${componentBasePath}/builds/${latestBuild.id}`}
+              />
+            ) : null}
             <ComponentConfigCard
               config={config}
               latestBuild={latestResolvedBuild}
-              latestCommit={latestCommit}
               headerActions={
                 appConfig && componentId && component?.name ? (
                   <ComponentDependencyGraphButton
@@ -263,14 +299,14 @@ export const ComponentDetail = () => {
                 ) : undefined
               }
             />
-          ) : (
-            <EmptyState
-              variant="table"
-              emptyTitle="No configuration"
-              emptyMessage="This component has no configuration yet."
-            />
-          )}
-        </HistoryRail>
+          </div>
+        ) : (
+          <EmptyState
+            variant="table"
+            emptyTitle="No configuration"
+            emptyMessage="This component has no configuration yet."
+          />
+        )}
       </DetailPage>
     </>
   )
