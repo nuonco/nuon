@@ -10,5 +10,7 @@ export const previewModeDisplayLabel = (
       return 'Build and validate'
     case 'plan-only':
       return 'Plan only'
+    case 'disabled':
+      return 'Disabled'
   }
 }

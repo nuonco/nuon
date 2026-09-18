@@ -32,7 +32,7 @@ export type TCreateBranchConfigRequest = {
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean
   preview_config?: {
-    mode?: 'plan-only' | 'apply' | 'build-only'
+    mode?: 'plan-only' | 'apply' | 'build-only' | 'disabled'
     install_id?: string
     install_name?: string
     label_selector?: { match_labels?: Record<string, string> } | null

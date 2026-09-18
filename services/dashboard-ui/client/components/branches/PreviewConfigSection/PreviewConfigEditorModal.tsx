@@ -134,12 +134,16 @@ export const PreviewConfigEditorModal = ({
                   label: previewModeDisplayLabel('plan-only'),
                 },
                 { value: 'apply', label: previewModeDisplayLabel('apply') },
+                {
+                  value: 'disabled',
+                  label: previewModeDisplayLabel('disabled'),
+                },
               ]}
             />
           )}
         </form.Field>
 
-        {values.mode !== 'build-only' ? (
+        {values.mode !== 'build-only' && values.mode !== 'disabled' ? (
           <form.Field name="installId">
             {(field) => (
               <FormSelect
@@ -163,7 +167,7 @@ export const PreviewConfigEditorModal = ({
           </form.Field>
         ) : null}
 
-        {hasGithubVCS ? (
+        {hasGithubVCS && values.mode !== 'disabled' ? (
           <div className="flex flex-col gap-3">
             <form.Field name="setStatuses">
               {(field) => (

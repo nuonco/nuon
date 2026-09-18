@@ -13,11 +13,12 @@ const (
 	AppBranchRunPreviewModePlanOnly  AppBranchRunPreviewMode = "plan-only"
 	AppBranchRunPreviewModeApply     AppBranchRunPreviewMode = "apply"
 	AppBranchRunPreviewModeBuildOnly AppBranchRunPreviewMode = "build-only"
+	AppBranchRunPreviewModeDisabled  AppBranchRunPreviewMode = "disabled"
 )
 
 func (m AppBranchRunPreviewMode) Valid() bool {
 	switch m {
-	case AppBranchRunPreviewModePlanOnly, AppBranchRunPreviewModeApply, AppBranchRunPreviewModeBuildOnly, "":
+	case AppBranchRunPreviewModePlanOnly, AppBranchRunPreviewModeApply, AppBranchRunPreviewModeBuildOnly, AppBranchRunPreviewModeDisabled, "":
 		return true
 	default:
 		return false
@@ -32,6 +33,8 @@ func (m AppBranchRunPreviewMode) Label() string {
 		return "plan-only"
 	case AppBranchRunPreviewModeApply:
 		return "apply"
+	case AppBranchRunPreviewModeDisabled:
+		return "disabled"
 	default:
 		return ""
 	}
@@ -137,7 +140,7 @@ func (c *AppBranchPreviewConfig) Validate() error {
 	if hasInstallID && hasInstallName {
 		return fmt.Errorf("preview config: install_id is mutually exclusive with install_name")
 	}
-	if c.Mode != AppBranchRunPreviewModeBuildOnly && !hasInstallID && !hasInstallName && !hasLabels {
+	if c.Mode != AppBranchRunPreviewModeBuildOnly && c.Mode != AppBranchRunPreviewModeDisabled && !hasInstallID && !hasInstallName && !hasLabels {
 		return fmt.Errorf("preview config: install_id, install_name, or label_selector is required for mode %q", c.Mode)
 	}
 	return nil

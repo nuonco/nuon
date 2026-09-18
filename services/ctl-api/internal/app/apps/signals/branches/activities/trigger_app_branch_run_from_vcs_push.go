@@ -80,6 +80,13 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		)
 		return &TriggerAppBranchRunFromVCSPushResponse{}, nil
 	}
+	if req.PRNumber != nil && previewDefaults.Mode == app.AppBranchRunPreviewModeDisabled {
+		a.l.Info("skipping pull request preview: preview mode disabled",
+			zap.String("app_branch_id", appBranchID),
+			zap.String("app_branch_config_id", appBranchConfigID),
+		)
+		return &TriggerAppBranchRunFromVCSPushResponse{}, nil
+	}
 
 	gitRef := req.HeadRef
 	if gitRef == "" {
