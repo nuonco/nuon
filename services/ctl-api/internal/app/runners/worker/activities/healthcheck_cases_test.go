@@ -27,6 +27,7 @@ type runnerHealthCase struct {
 	status        app.RunnerStatus
 	v2Status      app.RunnerStatus
 	metadata      map[string]any
+	v2CreatedAt   int64
 	activeBuild   bool
 	activeInstall bool
 	activeMng     bool
@@ -206,6 +207,52 @@ func runnerHealthCases() []runnerHealthCase {
 			want:        runnerHealthWant{result: "skipped"},
 		})
 	}
+
+	heartbeatFresh := corpusNow.Add(-app.RunnerAwaitingHeartbeatGrace + time.Second).Unix()
+	heartbeatStale := corpusNow.Add(-app.RunnerAwaitingHeartbeatGrace).Unix()
+	cases = append(cases,
+		runnerHealthCase{
+			name:      "awaiting stack run with no processes is skipped",
+			groupType: app.RunnerGroupTypeInstall,
+			status:    app.RunnerStatusAwaitingInstallStackRun, v2Status: app.RunnerStatusAwaitingInstallStackRun,
+			v2CreatedAt: offlineStale, mngChecked: true,
+			want: runnerHealthWant{result: "skipped"},
+		},
+		runnerHealthCase{
+			name:      "awaiting heartbeat within grace with no processes is skipped",
+			groupType: app.RunnerGroupTypeInstall,
+			status:    app.RunnerStatusAwaitingHeartbeat, v2Status: app.RunnerStatusAwaitingHeartbeat,
+			v2CreatedAt: heartbeatFresh, mngChecked: true,
+			want: runnerHealthWant{result: "skipped"},
+		},
+		runnerHealthCase{
+			name:      "awaiting heartbeat without v2 timestamp is skipped",
+			groupType: app.RunnerGroupTypeInstall,
+			status:    app.RunnerStatusAwaitingHeartbeat, v2Status: app.RunnerStatusAwaitingHeartbeat,
+			mngChecked: true,
+			want:       runnerHealthWant{result: "skipped"},
+		},
+		runnerHealthCase{
+			name:      "awaiting heartbeat past grace goes offline",
+			groupType: app.RunnerGroupTypeInstall,
+			status:    app.RunnerStatusAwaitingHeartbeat, v2Status: app.RunnerStatusAwaitingHeartbeat,
+			v2CreatedAt: heartbeatStale,
+			want: runnerHealthWant{
+				result: "unhealthy", reason: unhealthyInstallReason, armOfflineTS: true,
+				legacyStatus: runnerStatusPtr(app.RunnerStatusOffline), v2Status: runnerStatusPtr(app.RunnerStatusOffline),
+			},
+		},
+		runnerHealthCase{
+			name:      "awaiting heartbeat with active install process goes active",
+			groupType: app.RunnerGroupTypeInstall,
+			status:    app.RunnerStatusAwaitingHeartbeat, v2Status: app.RunnerStatusAwaitingHeartbeat,
+			v2CreatedAt: heartbeatFresh, activeInstall: true, activeMng: true, mngChecked: true,
+			want: runnerHealthWant{
+				result: "healthy", reason: "runner healthy", setMissingMng: generics.ToPtr(false),
+				legacyStatus: runnerStatusPtr(app.RunnerStatusActive), v2Status: runnerStatusPtr(app.RunnerStatusActive),
+			},
+		},
+	)
 
 	return cases
 }

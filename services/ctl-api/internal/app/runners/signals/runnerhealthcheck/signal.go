@@ -152,6 +152,10 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 	tags["missing_install_process"] = "false"
 	if err != nil {
 		if isNotFound(err) {
+			if runner.HealthcheckPending(workflow.Now(ctx)) {
+				tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "skipped"))...)
+				return nil
+			}
 			l.Warn("install runner has no active install process",
 				zap.String("runner_id", s.RunnerID),
 			)
