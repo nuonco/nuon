@@ -32,7 +32,14 @@ function groupItems(links: Array<TNavItem>): TNavGroup[] {
 
   links.forEach((item, i) => {
     if (isSection(item)) {
-      current = { key: `${item.label}-${i}`, header: i === 0 ? null : item, items: [] }
+      current = {
+        key: `${item.label}-${i}`,
+        header: i === 0 ? null : item,
+        items: [],
+      }
+      groups.push(current)
+    } else if (isAction(item) && current?.header) {
+      current = { key: `group-${i}`, header: null, items: [item] }
       groups.push(current)
     } else {
       if (!current) {
@@ -52,7 +59,11 @@ interface ISubNav {
   storageKey?: string
 }
 
-export const SubNav = ({ basePath, links, storageKey = 'subnav-sections' }: ISubNav) => {
+export const SubNav = ({
+  basePath,
+  links,
+  storageKey = 'subnav-sections',
+}: ISubNav) => {
   const {
     isPageSidebarOpen,
     closePageSidebar,
@@ -129,6 +140,7 @@ export const SubNav = ({ basePath, links, storageKey = 'subnav-sections' }: ISub
           }
 
           const label = group.header.label
+          const isCollapsible = group.header.collapsible ?? true
           const userOpen =
             sectionState[label] ?? group.header.defaultOpen ?? true
           const hasActiveItem = group.items.some((item) =>
@@ -136,21 +148,25 @@ export const SubNav = ({ basePath, links, storageKey = 'subnav-sections' }: ISub
               ? item.isActive
               : isNavLinkActive(basePath, item.path, pathname, item.matchPaths)
           )
-          const isOpen = !isPageSidebarOpen || userOpen || hasActiveItem
+          const isOpen =
+            !isCollapsible || !isPageSidebarOpen || userOpen || hasActiveItem
 
           return (
             <div key={group.key} className="contents md:block">
               <button
                 type="button"
+                disabled={!isCollapsible}
                 onClick={() => {
                   if (isPageSidebarOpen) setSectionOpen(label, !userOpen)
                 }}
-                aria-expanded={isOpen}
+                aria-expanded={isCollapsible ? isOpen : undefined}
                 className={cn(
                   'group/section hidden md:flex items-center w-full text-left rounded-md transition-all duration-fast ease-cubic',
                   {
                     'px-3 py-1 mt-1.5 mb-0.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5':
-                      isPageSidebarOpen,
+                      isCollapsible && isPageSidebarOpen,
+                    'px-3 py-1 mt-1.5 mb-0.5 cursor-default':
+                      !isCollapsible && isPageSidebarOpen,
                     'px-2 mt-1 mb-1 pointer-events-none': !isPageSidebarOpen,
                   }
                 )}
@@ -162,8 +178,10 @@ export const SubNav = ({ basePath, links, storageKey = 'subnav-sections' }: ISub
                   className={cn(
                     'uppercase tracking-wider text-[10px] !grid duration-fast transition-all ease-cubic',
                     {
-                      'md:grid-cols-[1fr] md:opacity-100 mr-2': isPageSidebarOpen,
-                      'md:grid-cols-[0fr] md:opacity-0 mr-0': !isPageSidebarOpen,
+                      'md:grid-cols-[1fr] md:opacity-100 mr-2':
+                        isPageSidebarOpen,
+                      'md:grid-cols-[0fr] md:opacity-0 mr-0':
+                        !isPageSidebarOpen,
                     }
                   )}
                 >
@@ -172,19 +190,21 @@ export const SubNav = ({ basePath, links, storageKey = 'subnav-sections' }: ISub
 
                 <div className="h-px flex-1 bg-cool-grey-200 dark:bg-white/10" />
 
-                <Icon
-                  variant="CaretDownIcon"
-                  size={12}
-                  className={cn(
-                    'shrink-0 text-cool-grey-400 transition-all duration-fast ease-cubic',
-                    'group-hover/section:text-cool-grey-600 dark:group-hover/section:text-cool-grey-300',
-                    {
-                      'md:opacity-100 ml-2': isPageSidebarOpen,
-                      'md:opacity-0 md:w-0 ml-0': !isPageSidebarOpen,
-                      '-rotate-90': !isOpen,
-                    }
-                  )}
-                />
+                {isCollapsible ? (
+                  <Icon
+                    variant="CaretDownIcon"
+                    size={12}
+                    className={cn(
+                      'shrink-0 text-cool-grey-400 transition-all duration-fast ease-cubic',
+                      'group-hover/section:text-cool-grey-600 dark:group-hover/section:text-cool-grey-300',
+                      {
+                        'md:opacity-100 ml-2': isPageSidebarOpen,
+                        'md:opacity-0 md:w-0 ml-0': !isPageSidebarOpen,
+                        '-rotate-90': !isOpen,
+                      }
+                    )}
+                  />
+                ) : null}
               </button>
 
               <div

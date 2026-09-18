@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/log"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -12,12 +13,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
 	queuebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/queuebuild"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const buildBatchSize = 5
+
+// buildsCompositeErrorVersion gates attaching the canonical build composite
+// error to the step status: histories written before it have no such payload.
+const buildsCompositeErrorVersion = "app-branch-builds-composite-error-v1"
 
 // buildEntry tracks a single component build for metadata updates.
 type buildEntry struct {
@@ -66,7 +72,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	if len(appConfig.ComponentIDs) == 0 {
 		l.Info("no components to build")
-		s.markBuildsCompleted(ctx, l, true)
+		_ = s.markBuildsCompleted(ctx, l, true)
 		return nil
 	}
 
@@ -83,12 +89,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	builds, err := s.buildComponents(ctx, l, appConfig, run.AppConfigID, previousAppConfigID, run.Force)
 	if err != nil {
-		s.markBuildsCompleted(ctx, l, false)
-		s.finalizeBuildMetadata(ctx, builds, false)
+		buildsErr := s.markBuildsCompleted(ctx, l, false)
+		s.finalizeBuildMetadata(ctx, builds, false, buildsErr)
 		if isPreview && run.PRNumber != nil {
 			s.finalizePreview(ctx, l, run, builds, err)
 		}
-		return fmt.Errorf("component builds failed: %w", err)
+		return buildsFailure("component builds failed", buildsErr, err)
 	}
 
 	ociArtifacts, err := activities.AwaitOrgHasFeature(ctx, activities.OrgHasFeatureRequest{
@@ -112,12 +118,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 		if err := s.buildSandbox(ctx, l); err != nil {
 			s.setBuildStatus(builds, activities.SandboxComponentID, "error")
-			s.markBuildsCompleted(ctx, l, false)
-			s.finalizeBuildMetadata(ctx, builds, false)
+			buildsErr := s.markBuildsCompleted(ctx, l, false)
+			s.finalizeBuildMetadata(ctx, builds, false, buildsErr)
 			if isPreview && run.PRNumber != nil {
 				s.finalizePreview(ctx, l, run, builds, err)
 			}
-			return fmt.Errorf("sandbox build failed: %w", err)
+			return buildsFailure("sandbox build failed", buildsErr, err)
 		}
 		s.setBuildStatus(builds, activities.SandboxComponentID, "success")
 		s.updateBuildMetadata(ctx, builds)
@@ -129,10 +135,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.finalizePreview(ctx, l, run, builds, nil)
 	}
 
-	s.markBuildsCompleted(ctx, l, true)
-	s.finalizeBuildMetadata(ctx, builds, true)
+	_ = s.markBuildsCompleted(ctx, l, true)
+	s.finalizeBuildMetadata(ctx, builds, true, nil)
 	l.Info("all builds completed successfully")
 	return nil
+}
+
+// buildsFailure returns the step error for a failed builds step, preferring the
+// canonical composite error message so the step description names the actual
+// cause instead of the generic wrapper.
+func buildsFailure(wrapper string, ce *compositeerrors.CompositeErrorData, cause error) error {
+	if ce != nil && ce.Message != "" {
+		return temporal.NewNonRetryableApplicationError(ce.Message, string(ce.Type), nil)
+	}
+	return fmt.Errorf("%s: %w", wrapper, cause)
 }
 
 // buildComponents enqueues queuebuild signals directly to component queues
@@ -377,10 +393,10 @@ func (s *Signal) setBuildID(builds []buildEntry, componentID, buildID string) {
 // updateBuildMetadata writes the current builds list to the parent step's
 // status metadata so the UI can display real-time build progress.
 func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) {
-	s.updateBuildMetadataWithCompleted(ctx, builds, nil)
+	s.updateBuildMetadataWithCompleted(ctx, builds, nil, nil)
 }
 
-func (s *Signal) updateBuildMetadataWithCompleted(ctx workflow.Context, builds []buildEntry, buildsCompleted *bool) {
+func (s *Signal) updateBuildMetadataWithCompleted(ctx workflow.Context, builds []buildEntry, buildsCompleted *bool, ce *compositeerrors.CompositeErrorData) {
 	if s.StepID == "" {
 		return
 	}
@@ -424,12 +440,16 @@ func (s *Signal) updateBuildMetadataWithCompleted(ctx workflow.Context, builds [
 		} else {
 			statusVal = app.StatusError
 			desc = "builds failed"
+			if ce != nil && ce.Message != "" {
+				desc = ce.Message
+			}
 		}
 	}
 
 	status := app.CompositeStatus{
 		Status:                 statusVal,
 		StatusHumanDescription: desc,
+		CompositeError:         ce,
 		Metadata:               meta,
 	}
 
@@ -439,17 +459,26 @@ func (s *Signal) updateBuildMetadataWithCompleted(ctx workflow.Context, builds [
 	})
 }
 
-func (s *Signal) markBuildsCompleted(ctx workflow.Context, l log.Logger, completed bool) {
-	if err := activities.AwaitUpdateAppBranchRunBuildsCompleted(ctx, &activities.UpdateAppBranchRunBuildsCompletedInput{
+func (s *Signal) markBuildsCompleted(ctx workflow.Context, l log.Logger, completed bool) *compositeerrors.CompositeErrorData {
+	out, err := activities.AwaitUpdateAppBranchRunBuildsCompleted(ctx, &activities.UpdateAppBranchRunBuildsCompletedInput{
 		RunID:           s.RunID,
 		BuildsCompleted: completed,
-	}); err != nil {
+	})
+	if err != nil {
 		l.Warn("unable to update builds_completed label", "error", err, "builds_completed", completed)
+		return nil
 	}
+	if completed || out == nil {
+		return nil
+	}
+	if workflow.GetVersion(ctx, buildsCompositeErrorVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return nil
+	}
+	return out.CompositeError
 }
 
-func (s *Signal) finalizeBuildMetadata(ctx workflow.Context, builds []buildEntry, completed bool) {
-	s.updateBuildMetadataWithCompleted(ctx, builds, &completed)
+func (s *Signal) finalizeBuildMetadata(ctx workflow.Context, builds []buildEntry, completed bool, ce *compositeerrors.CompositeErrorData) {
+	s.updateBuildMetadataWithCompleted(ctx, builds, &completed, ce)
 }
 
 func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.AppBranchRun, builds []buildEntry, buildErr error) {

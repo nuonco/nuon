@@ -96,5 +96,16 @@ func Parse(parseCfg ParseConfig) (*config.AppConfig, error) {
 		}
 	}
 
+	if cfg.Branch != nil {
+		if err := cfg.Branch.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	for _, branch := range cfg.Branches {
+		if err := branch.Validate(); err != nil {
+			return nil, err
+		}
+	}
+
 	return &cfg, nil
 }
