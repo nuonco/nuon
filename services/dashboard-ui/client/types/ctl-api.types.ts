@@ -61,7 +61,11 @@ export type TAppBranchRunMetadata = {
   tag_prefix?: string
 }
 
-export type TAppBranchRunPreviewMode = 'plan-only' | 'apply' | 'build-only'
+export type TAppBranchRunPreviewMode =
+  | 'plan-only'
+  | 'apply'
+  | 'build-only'
+  | 'disabled'
 export type TAppBranchRunPreviewSource = 'pr' | 'commit' | 'branch' | 'local'
 
 export type TAppBranchPreviewConfig = {

@@ -57,7 +57,7 @@ func (h *Helpers) ResolvePreviewInstallID(
 	cfg app.AppBranchPreviewConfig,
 	overrideInstallID *string,
 ) (installID, installName string, err error) {
-	if cfg.Mode == app.AppBranchRunPreviewModeBuildOnly {
+	if cfg.Mode == app.AppBranchRunPreviewModeBuildOnly || cfg.Mode == app.AppBranchRunPreviewModeDisabled {
 		return "", "", nil
 	}
 
