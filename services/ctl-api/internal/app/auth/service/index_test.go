@@ -93,6 +93,9 @@ func TestIndexTemplatesRender(t *testing.T) {
 			require.NoError(t, err)
 			assert.Contains(t, b.String(), "Continue with Google")
 			assert.NotContains(t, b.String(), "posthog.init", "no PostHogKey must mean no analytics snippet")
+			if name == "auth/index_nuon.tmpl" {
+				assert.Contains(t, b.String(), "Marketing and customer outreach consent")
+			}
 		})
 
 		t.Run(name+" signed in", func(t *testing.T) {
