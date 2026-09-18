@@ -38,6 +38,7 @@ const hoistFixture = `{
     "location":        {"type": "string"},
     "commonTags":      {"type": "object"},
     "addressSpace":    {"type": "string", "defaultValue": "10.100.0.0/22",
+                        "allowedValues": ["10.100.0.0/22", "10.200.0.0/22"],
                         "metadata": {"description": "VNet address space."}},
     "peeringEnabled":  {"type": "bool", "defaultValue": false},
     "requiredByOwner": {"type": "string"},
@@ -86,6 +87,8 @@ func TestVNetLinkedDeployment_HoistsNonReservedParams(t *testing.T) {
 		t.Errorf("default not carried up: %v", got.DefaultValue)
 	} else if got.Metadata == nil || got.Metadata.Description != "VNet address space." {
 		t.Errorf("description not carried up: %+v", got.Metadata)
+	} else if len(got.AllowedValues) != 2 || got.AllowedValues[0] != "10.100.0.0/22" || got.AllowedValues[1] != "10.200.0.0/22" {
+		t.Errorf("allowed values not carried up: %#v", got.AllowedValues)
 	}
 
 	// A non-string default has to survive as its own type.
@@ -150,6 +153,16 @@ func TestVNetLinkedDeployment_HoistedParamsReachTheRoot(t *testing.T) {
 	var root map[string]any
 	if err := json.Unmarshal(raw, &root); err != nil {
 		t.Fatal(err)
+	}
+	addressSpace := root["parameters"].(map[string]any)["addressSpace"].(map[string]any)
+	if got := addressSpace["allowedValues"].([]any); len(got) != 2 || got[0] != "10.100.0.0/22" || got[1] != "10.200.0.0/22" {
+		t.Errorf("root allowedValues = %#v", got)
+	}
+
+	wrapper := renderWrapper(t, inp)
+	wrapperAddressSpace := wrapper["parameters"].(map[string]any)["addressSpace"].(map[string]any)
+	if got := wrapperAddressSpace["allowedValues"].([]any); len(got) != 2 || got[0] != "10.100.0.0/22" || got[1] != "10.200.0.0/22" {
+		t.Errorf("wrapper allowedValues = %#v", got)
 	}
 	for _, p := range unresolvedScopedRefs(root) {
 		t.Error(p)
