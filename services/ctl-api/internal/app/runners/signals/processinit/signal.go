@@ -65,7 +65,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if err := statusactivities.AwaitUpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
 			RunnerID: s.RunnerID,
 			Metadata: map[string]any{
-				app.RunnerOfflineTSMetadataKey: nil,
+				app.RunnerOfflineTSMetadataKey:         nil,
+				app.RunnerOfflineFromStatusMetadataKey: nil,
 			},
 		}); err != nil {
 			return errors.Wrap(err, "unable to clear runner offline metadata")

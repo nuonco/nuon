@@ -216,7 +216,8 @@ func (s *Signal) handleRunnerActive(ctx workflow.Context, runner *app.Runner) er
 		if err := statusactivities.LocalAwaitUpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
 			RunnerID: s.RunnerID,
 			Metadata: map[string]any{
-				app.RunnerOfflineTSMetadataKey: nil,
+				app.RunnerOfflineTSMetadataKey:         nil,
+				app.RunnerOfflineFromStatusMetadataKey: nil,
 			},
 		}); err != nil {
 			return errors.Wrap(err, "unable to clear runner offline metadata")
@@ -234,7 +235,8 @@ func (s *Signal) handleRunnerOffline(ctx workflow.Context, tmw tmetrics.Writer, 
 		if err := statusactivities.LocalAwaitUpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
 			RunnerID: s.RunnerID,
 			Metadata: map[string]any{
-				app.RunnerOfflineTSMetadataKey: now.Unix(),
+				app.RunnerOfflineTSMetadataKey:         now.Unix(),
+				app.RunnerOfflineFromStatusMetadataKey: app.RunnerOfflineFromStatus(runner.Status),
 			},
 		}); err != nil {
 			return errors.Wrap(err, "unable to set runner offline metadata")
@@ -257,7 +259,7 @@ func (s *Signal) handleRunnerOffline(ctx workflow.Context, tmw tmetrics.Writer, 
 	return nil
 }
 
-func (s *Signal) runnerOfflineEvent(ctx workflow.Context, runner *app.Runner, reason string) (*statsd.Event, string) {
+func (s *Signal) runnerOfflineEvent(ctx workflow.Context, runner *app.Runner, fromStatus app.RunnerStatus, reason string) (*statsd.Event, string) {
 	eventTags := []string{
 		metrics.ToTag("runner_id", s.RunnerID),
 		metrics.ToTag("runner_type", string(runner.RunnerGroup.Type)),
@@ -267,8 +269,8 @@ func (s *Signal) runnerOfflineEvent(ctx workflow.Context, runner *app.Runner, re
 
 	title := fmt.Sprintf("Runner went offline (type: %s)", string(runner.RunnerGroup.Type))
 	text := fmt.Sprintf(
-		"Runner %s (org: %s) transitioned from active to offline.\nReason: %s",
-		s.RunnerID, runner.Org.Name, reason,
+		"Runner %s (org: %s) transitioned from %s to offline.\nReason: %s",
+		s.RunnerID, runner.Org.Name, fromStatus, reason,
 	)
 	ownerName := ""
 	if runner.RunnerGroup.OwnerType == "orgs" {
@@ -289,8 +291,8 @@ func (s *Signal) runnerOfflineEvent(ctx workflow.Context, runner *app.Runner, re
 				metrics.ToTag("created_by", install.CreatedBy.Email),
 			)
 			text = fmt.Sprintf(
-				"Runner %s (org: %s, app: %s, install: %s) transitioned from active to offline.\nReason: %s\nInstall created by: %s",
-				s.RunnerID, runner.Org.Name, install.App.Name, install.Name, reason, install.CreatedBy.Email,
+				"Runner %s (org: %s, app: %s, install: %s) transitioned from %s to offline.\nReason: %s\nInstall created by: %s",
+				s.RunnerID, runner.Org.Name, install.App.Name, install.Name, fromStatus, reason, install.CreatedBy.Email,
 			)
 		}
 	}
@@ -307,7 +309,12 @@ func (s *Signal) runnerOfflineEvent(ctx workflow.Context, runner *app.Runner, re
 }
 
 func (s *Signal) notifyRunnerUnhealthy(ctx workflow.Context, tmw tmetrics.Writer, runner *app.Runner, reason string, offlineAt time.Time) error {
-	event, ownerName := s.runnerOfflineEvent(ctx, runner, reason)
+	fromStatus := app.RunnerStatusUnknown
+	if raw, ok := runner.StatusV2.Metadata[app.RunnerOfflineFromStatusMetadataKey].(string); ok && raw != "" {
+		fromStatus = app.RunnerStatus(raw)
+	}
+
+	event, ownerName := s.runnerOfflineEvent(ctx, runner, fromStatus, reason)
 	resp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         runner.OrgID,
 		OwnerType:       "orgs",
@@ -320,7 +327,7 @@ func (s *Signal) notifyRunnerUnhealthy(ctx workflow.Context, tmw tmetrics.Writer
 			RunnerName:           runner.DisplayName,
 			OrgID:                runner.OrgID,
 			OrgName:              runner.Org.Name,
-			FromStatus:           app.RunnerStatusActive,
+			FromStatus:           fromStatus,
 			ToStatus:             app.RunnerStatusOffline,
 			Reason:               reason,
 			RunnerGroupID:        runner.RunnerGroupID,
@@ -379,7 +386,8 @@ func isSkippableStatus(status app.RunnerStatus) bool {
 		app.RunnerStatusReprovisioning,
 		app.RunnerStatusDeprovisioned,
 		app.RunnerStatusPending,
-		app.RunnerStatusDisabled:
+		app.RunnerStatusDisabled,
+		app.RunnerStatusAwaitingInstallStackRun:
 		return true
 	}
 	return false
