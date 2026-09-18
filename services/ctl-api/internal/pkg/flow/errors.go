@@ -1,6 +1,10 @@
 package flow
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
+)
 
 // ContinueAsNewErr signals that the workflow should continue-as-new from
 // the given group/step index.
@@ -40,6 +44,7 @@ type FlowStoppedErr struct {
 	Reason                 string
 	RetriesExhausted       bool
 	StatusHumanDescription string
+	CompositeError         *compositeerrors.CompositeErrorData
 }
 
 func (e *FlowStoppedErr) Error() string {
