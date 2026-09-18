@@ -85,7 +85,7 @@ func (s *service) fanOutToVCSConnections(ctx context.Context, event *app.GithubE
 			continue
 		}
 
-		queue, err := s.queueClient.GetQueueByOwner(connCtx, conn.ID, "vcs_connections")
+		queue, err := s.queueClient.GetOnlyQueueByOwner(connCtx, conn.ID, "vcs_connections")
 		if err != nil {
 			s.l.Warn("failed to get queue for vcs connection",
 				zap.String("vcs_connection_id", conn.ID),

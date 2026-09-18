@@ -41,7 +41,7 @@ func (s *service) RestartComponent(ctx *gin.Context) {
 		return
 	}
 
-	q, err := s.queueClient.GetQueueByOwner(ctx, component.ID, "components")
+	q, err := s.queueClient.GetDefaultQueueByOwner(ctx, component.ID, "components")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get component queue: %w", err))
 		return

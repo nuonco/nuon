@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
@@ -33,6 +34,8 @@ const (
 	// run closes.
 	terminalDrainGrace = 3 * time.Second
 )
+
+var DrainTimeout = callback.QuickTimeout
 
 // isTerminalQueueStatus reports whether the queue signal's DB status means the
 // signal has finished processing and no handler run should execute it again.
@@ -104,7 +107,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 			// so the update can land and be served, then drain. Bounded,
 			// unlike the pre-drain zombie runs that parked forever.
 			_, _ = workflow.AwaitWithTimeout(ctx, terminalDrainGrace, func() bool { return false })
-			_ = workflow.Await(ctx, func() bool { return workflow.AllHandlersFinished(ctx) })
+			_, _ = workflow.AwaitWithTimeout(ctx, DrainTimeout, func() bool { return workflow.AllHandlersFinished(ctx) })
 			return true, nil
 		}
 	}
@@ -244,7 +247,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	// Drain update handlers still running (e.g. a cancel that landed during
 	// the cache window) so the workflow doesn't close mid-propagation and drop
 	// the status writes the cancel semantics depend on.
-	_ = workflow.Await(ctx, func() bool { return workflow.AllHandlersFinished(ctx) })
+	_, _ = workflow.AwaitWithTimeout(ctx, DrainTimeout, func() bool { return workflow.AllHandlersFinished(ctx) })
 
 	return true, nil
 }
