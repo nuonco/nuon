@@ -64,6 +64,16 @@ Three things to get right:
 
 Every field is documented in the [branch config reference](/config-ref/branch).
 
+An install config can also assign its branch by name:
+
+```toml
+name = "customer-acme"
+app_branch = "main"
+```
+
+Changing `app_branch` moves the install and applies the branch's latest non-preview run. Omitting it leaves the
+install's current branch unchanged.
+
 ### Control when the branch runs
 
 Omit `[run]` to use the default `push` mode, which runs on every push and previews pull requests. To give a customer
@@ -71,7 +81,7 @@ its own release cadence while still tracking `main`, gate the branch with a tag 
 
 ```toml
 [run]
-mode       = "on_tag_prefix"
+mode       = "on_tag"
 tag_prefix = "foobar/"
 ```
 
@@ -86,7 +96,7 @@ github_label = "deploy-cadence-daily"
 ```
 
 When the PR lands, Nuon looks up the PR associated with the new commit and runs if the label matches.
-`on_github_label` requires `[connected_repo]`. The other modes are `all` and `manual_only`; manual triggers remain
+`on_github_label` requires `[connected_repo]`. The other modes are `push` and `manual_only`; manual triggers remain
 available in every mode.
 
 ### Selecting installs for a group

@@ -17,6 +17,11 @@ type RunbookState struct {
 	ID   string `json:"id"`
 }
 
+type AppBranchConfigState struct {
+	AppBranchID       string `json:"app_branch_id"`
+	AppBranchConfigID string `json:"app_branch_config_id"`
+}
+
 // State represents the synchronized state of an app config.
 // This is stored as JSON in the app_configs.state column to track
 // what was synced in each config version.
@@ -46,6 +51,8 @@ type Result struct {
 
 	// Queue provisioning is deferred to the caller so no Temporal workflow starts pre-commit.
 	AppBranchesCreated []string `json:"app_branches_created,omitempty"`
+
+	AppBranchConfigsUpdated []AppBranchConfigState `json:"app_branch_configs_updated,omitempty"`
 
 	// Orphaned* map name to ID for resources dropped since the previous config.
 	OrphanedComponents map[string]string `json:"orphaned_components,omitempty"`

@@ -284,7 +284,7 @@ Never hand-assemble a page shell or a heading row. Four scaffolds own it. Full d
 | **`ListPage`** | A page or section listing one resource | `SectionHeader` + `createAction` slot + body. `variant="page"` owns `PageLayout → PageContent → PageSection`; `variant="section"` renders a bare `PageSection`. |
 | **`DetailHeader`** | The identity header of one resource: `SectionHeader`'s row plus `{ backLink?, icon?, id?, identity?, metadata? }` | `BackLink` → heading row → ID/identity line → metadata `Card` → `children`. `variant="page"` supplies its own page padding (for a layout's header slot, directly under `PageLayout`); `variant="section"` (default) is padding-free, for use inside a `PageSection`. |
 | **`DetailPage`** | The shell for a detail/run/document page | `PageSection` (a container-query root) + `header` + `banners` + optional routed `TabNav` + body. Same `variant` shell rule as `ListPage`. |
-| **`HistoryRail`** | An entity page's related-history rail | Main column + a history column at `@5xl`. Pair it with `HistoryPanelButton` in the header's `actions` for narrow widths. |
+| **`HistoryPanelButton`** | An entity page's related history | A header `actions` button that opens the history in a `Panel`. The page body stays full width at every breakpoint — history never takes a column. |
 
 **`SectionHeader` or `DetailHeader`?** One question: *does the header identify a resource?* A
 resource ID, `BackLink`, label badges, a status chip, timestamps, or a metadata block → it is an
@@ -311,13 +311,14 @@ resource ID, `BackLink`, label badges, a status chip, timestamps, or a metadata 
   Summary · Logs · Trace · component-type tabs. Summary is `RunSummary` — the failure reason,
   timing milestones, and the runner-job breakdown. Unrouted `Tabs` is a segmented control for
   facets of one dataset inside a section, never page structure.
-- **Entity pages start as sections + `HistoryRail`** and graduate to routed `TabNav` at a third
-  independent concern (the rail then folds into a history tab).
+- **Entity pages start as full-width sections + a `HistoryPanelButton`** and graduate to routed
+  `TabNav` at a third independent concern (history then folds into a history tab).
 - **Review smells:** a hand-rolled `PageHeader` + `HeadingGroup` + actions `div`; a raw
   `HeadingGroup` or `BackLink` + heading `Text` as a detail-page header; a heading `Text` with no
   `HeadingGroup`; an Outlet child rendering `PageLayout`; a create button living in the table's
-  `filterActions` or only in the empty state; a hand-rolled `@container` + `grid-cols-12` history
-  rail; a resource's metadata rendered as a second header column.
+  `filterActions` or only in the empty state; any hand-rolled history rail column (a
+  `grid-cols-12` split reserving space for a timeline); a resource's metadata rendered as a second
+  header column.
 
 ```tsx
 // Top-of-tree list page
@@ -357,14 +358,12 @@ resource ID, `BackLink`, label badges, a status chip, timestamps, or a metadata 
   metadata={<><LabeledStatus label="Status" … /><LabeledValue label="Duration">…</LabeledValue></>}
 />
 
-// Entity page — sections in the main column, related history in the rail
+// Entity page — full-width sections, related history behind a header button
 <DetailPage
   header={<DetailHeader backLink={false} title="Sandbox details" id={install?.sandbox?.id}
     actions={<><HistoryPanelButton title="Sandbox history" history={history} /><ManagementDropdown /></>} />}
 >
-  <HistoryRail title="Sandbox history" history={history}>
-    <SandboxConfigCard config={sandboxConfig} />
-  </HistoryRail>
+  <SandboxConfigCard config={sandboxConfig} />
 </DetailPage>
 ```
 
