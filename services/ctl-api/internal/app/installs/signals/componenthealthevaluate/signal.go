@@ -9,15 +9,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componenthealthnotify"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "component-health-evaluate"
-
-// installSignalsQueueName mirrors the constant in installs/helpers,
-// duplicated as a literal to avoid an import cycle (helpers imports signals via fx wiring).
-const installSignalsQueueName = "install-signals"
 
 // Signal evaluates an install's component health verdicts from the runner's
 // observations; the heavy lifting runs in one activity to keep handler history small.
@@ -134,7 +131,7 @@ func (s *Signal) enqueue(ctx workflow.Context, sig signal.Signal) error {
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   s.InstallID,
 		OwnerType: "installs",
-		QueueName: installSignalsQueueName,
+		QueueName: queuenames.InstallSignalsQueueName,
 		Signal:    sig,
 	})
 	return err

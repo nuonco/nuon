@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/vcspush"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
@@ -143,6 +144,7 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 		_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:   match.AppBranchID,
 			OwnerType: "app_branches",
+			QueueName: queuenames.AppBranchDefaultQueueName,
 			Signal: &vcspush.Signal{
 				AppBranchID:         match.AppBranchID,
 				AppBranchConfigID:   match.AppBranchConfigID,

@@ -174,6 +174,7 @@ func (h *handler) signalContext(ctx workflow.Context, refreshLogStream bool) (wo
 
 	signalCtx := h.queueSignal.SignalContext
 	ctx = queuecctx.ApplyWorkflow(ctx, signalCtx)
+	ctx = cctx.SetQueueIDWorkflowContext(ctx, h.queueID)
 	if lc, ok := h.sig.(signal.SignalWithLifecycleContext); ok {
 		lifecycleCtx := lc.LifecycleContext()
 		telemetry := cctx.WorkflowTelemetry{
