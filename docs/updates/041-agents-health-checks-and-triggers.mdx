@@ -1,6 +1,6 @@
 ---
-title: 041 - Agents, component health, Terraform modules, and triggers
-description: Manage your fleet with an agent, find out an install is broken before your customer tells you, hand customers a versioned Terraform module, and let an alert fix the install it fired on.
+title: 041 - Using Nuon with your Agent, Health Checks, and Triggers
+description: Making your BYOC deployments actionable whether directed by your agent, or an automatic action triggered by an alert.
 boost: 0.3
 ---
 
@@ -58,26 +58,6 @@ Read more at [Component health](/guides/component-health).
 
 ---
 
-## Terraform stack modules
-
-Make installing and upgrading your app an ordinary pull request in the Terraform pipeline
-your customer's platform team already reviews.
-
-```hcl
-module "aws_stack" {
-  source     = "nuonco/stack/aws"
-  version    = "~> 1.0"
-  install_id = "<install-id>"
-}
-```
-
-[Published modules for AWS, Azure, and GCP](/guides/provision-stacks-with-terraform-module), each
-authenticated with a service account scoped to that one install.
-
-Read more at [Provision stacks with a Terraform module](/guides/provision-stacks-with-terraform-module).
-
----
-
 ## Triggers
 
 Let an alert fix the install it fired on.
@@ -113,3 +93,35 @@ early diagnostics when you're paged.
 </div>
 
 Read more at [Triggers](/guides/triggers).
+
+---
+
+## Other updates in this release
+
+### Terraform stack modules
+
+Make installing and upgrading your app an ordinary pull request in the Terraform pipeline your
+customer's platform team already reviews.
+
+```hcl
+module "aws_stack" {
+  source     = "nuonco/stack/aws"
+  version    = "~> 1.0"
+  install_id = "<install-id>"
+}
+```
+
+[Published modules for AWS, Azure, and GCP](/guides/provision-stacks-with-terraform-module), each
+authenticated with a service account scoped to that one install.
+
+### Verify container image signatures
+
+A `container_image` component can require a valid signature before Nuon copies the image into its
+registry. Verification runs at build time, after the tag resolves to an immutable digest, so an
+unsigned image fails the build instead of reaching a customer. Sigstore keyless identities and Cosign
+key pairs are both supported. See [Verify container image signatures](/guides/image-signature-verification).
+
+### Pull request previews for app branches
+
+Open a pull request against a tracked branch and Nuon builds the config diff and reports it on the
+pull request itself. Plan only — it never touches an install. See [App branches](/guides/app-branches).

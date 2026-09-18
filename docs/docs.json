@@ -324,7 +324,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
-          "updates/041-agents-health-terraform-triggers",
+          "updates/041-agents-health-checks-and-triggers",
           "updates/040-app-branches",
           "updates/039-oidc-federation",
           "updates/038-spacelift-and-cli-automation",
