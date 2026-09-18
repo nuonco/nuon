@@ -73,6 +73,11 @@ func GetFakeSandboxStackData(appCfg *app.AppConfig, region string, stateMap map[
 		}
 
 		fakeAccountID := fmt.Sprintf("%012d", 100000000000+len(generics.GetFakeObj[string]()))
+		namedPolicyARNs := make(map[string]string)
+		for _, policy := range appCfg.PermissionsConfig.NamedPolicies {
+			name := renderName(policy.Name, stateMap)
+			namedPolicyARNs[name] = fmt.Sprintf("arn:aws:iam::%s:policy/%s-fake-%s", fakeAccountID, name, generics.GetFakeObj[string]())
+		}
 		data = map[string]any{
 			"account":                  fakeAccountID,
 			"account_id":               fakeAccountID,
@@ -86,6 +91,7 @@ func GetFakeSandboxStackData(appCfg *app.AppConfig, region string, stateMap map[
 			"break_glass_role_arns":    breakGlassRoleARNs,
 			"install_inputs":           installInputs,
 			"custom_role_arns":         customRoleARNs,
+			"named_policy_arns":        namedPolicyARNs,
 			"vpc_id":                   fmt.Sprintf("vpc-%s", generics.GetFakeObj[string]()),
 			"public_subnets":           fmt.Sprintf("subnet-%s,subnet-%s", generics.GetFakeObj[string](), generics.GetFakeObj[string]()),
 			"private_subnets":          fmt.Sprintf("subnet-%s,subnet-%s", generics.GetFakeObj[string](), generics.GetFakeObj[string]()),
