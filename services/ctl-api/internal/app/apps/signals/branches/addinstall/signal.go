@@ -8,13 +8,11 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const (
-	SignalType signal.SignalType = "app-branch-add-install"
-	queueName                    = "app-branch-signals"
-)
+const SignalType signal.SignalType = "app-branch-add-install"
 
 type Signal struct {
 	AppBranchID    string `json:"app_branch_id"`
@@ -60,7 +58,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func Enqueue(ctx context.Context, client *queueclient.Client, appBranchID, installID, installGroupID string) error {
-	queue, err := client.GetQueueByOwnerAndName(ctx, appBranchID, "app_branches", queueName)
+	queue, err := client.GetQueueByOwnerAndName(ctx, appBranchID, "app_branches", queuenames.AppBranchSignalsQueueName)
 	if err != nil {
 		return fmt.Errorf("unable to find app branch queue: %w", err)
 	}

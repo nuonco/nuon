@@ -10,11 +10,6 @@ import (
 // SignalType identifies a workflow step parked awaiting manual retry.
 const SignalType signal.SignalType = "workflow-step-awaiting-retry"
 
-// installSignalsQueueName mirrors the constant in
-// services/ctl-api/internal/app/installs/helpers. Duplicated here as a
-// literal to avoid an import cycle (helpers imports signals via fx wiring).
-const installSignalsQueueName = "install-signals"
-
 type Signal struct {
 	OrgID        string `json:"org_id"`
 	InstallID    string `json:"install_id"`

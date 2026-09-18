@@ -17,13 +17,6 @@ type EnsureSubscriptionQueueResponse struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) EnsureSubscriptionQueue(ctx context.Context, req EnsureSubscriptionQueueRequest) (*EnsureSubscriptionQueueResponse, error) {
-	// Check if queue already exists.
-	existing, err := a.queueClient.GetQueueByOwner(ctx, req.SubscriptionID, "vcs_webhook_subscriptions")
-	if err == nil {
-		return &EnsureSubscriptionQueueResponse{QueueID: existing.ID}, nil
-	}
-
-	// Create the queue.
 	q, err := a.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     req.SubscriptionID,
 		OwnerType:   "vcs_webhook_subscriptions",

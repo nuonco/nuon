@@ -27,6 +27,10 @@ const (
 // locking is needed and unrelated cases never wait on each other's readiness
 // polling.
 func (e *FlowTestSuite) createTestQueue(ctx context.Context, ownerID, ownerType, queueName string) *app.Queue {
+	return e.createTestQueueWithLimits(ctx, ownerID, ownerType, queueName, 20, 500)
+}
+
+func (e *FlowTestSuite) createTestQueueWithLimits(ctx context.Context, ownerID, ownerType, queueName string, maxInFlight, maxDepth int) *app.Queue {
 	key := ownerID + "/" + ownerType + "/" + queueName
 	if q, ok := e.queueCache[key]; ok {
 		return q
@@ -37,8 +41,8 @@ func (e *FlowTestSuite) createTestQueue(ctx context.Context, ownerID, ownerType,
 		OwnerType:   ownerType,
 		Namespace:   defaultNamespace,
 		Name:        queueName,
-		MaxInFlight: 20,
-		MaxDepth:    500,
+		MaxInFlight: maxInFlight,
+		MaxDepth:    maxDepth,
 	})
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), q)

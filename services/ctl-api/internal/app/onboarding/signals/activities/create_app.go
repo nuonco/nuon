@@ -36,9 +36,15 @@ func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName str
 		}
 		if createBranch && len(existingApp.AppBranches) > 0 {
 			resp.AppBranchID = existingApp.AppBranches[0].ID
-			if err := a.appsHelpers.EnsureAppBranchQueue(ctx, resp.AppBranchID); err != nil {
+			if err := a.appsHelpers.EnsureAppBranchQueues(ctx, resp.AppBranchID); err != nil {
 				return nil, fmt.Errorf("unable to ensure app branch queue: %w", err)
 			}
+		}
+		if err := a.appsHelpers.CreateAppSandboxQueue(ctx, existingApp.ID); err != nil {
+			return nil, fmt.Errorf("unable to ensure app sandbox queue: %w", err)
+		}
+		if err := a.appsHelpers.EnsureAppQueue(ctx, existingApp.ID); err != nil {
+			return nil, fmt.Errorf("unable to ensure app queues: %w", err)
 		}
 		return resp, nil
 	}
@@ -63,6 +69,9 @@ func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName str
 	// Create sandbox queue for the app
 	if err := a.appsHelpers.CreateAppSandboxQueue(ctx, newApp.ID); err != nil {
 		return nil, fmt.Errorf("unable to create app sandbox queue: %w", err)
+	}
+	if err := a.appsHelpers.EnsureAppQueue(ctx, newApp.ID); err != nil {
+		return nil, fmt.Errorf("unable to create app queues: %w", err)
 	}
 
 	resp := &CreateOnboardingAppResponse{
