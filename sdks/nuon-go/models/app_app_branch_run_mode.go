@@ -33,8 +33,8 @@ const (
 	// AppAppBranchRunModePush captures enum value "push"
 	AppAppBranchRunModePush AppAppBranchRunMode = "push"
 
-	// AppAppBranchRunModeOnTagPrefix captures enum value "on_tag_prefix"
-	AppAppBranchRunModeOnTagPrefix AppAppBranchRunMode = "on_tag_prefix"
+	// AppAppBranchRunModeOnTag captures enum value "on_tag"
+	AppAppBranchRunModeOnTag AppAppBranchRunMode = "on_tag"
 
 	// AppAppBranchRunModeOnGithubLabel captures enum value "on_github_label"
 	AppAppBranchRunModeOnGithubLabel AppAppBranchRunMode = "on_github_label"
@@ -48,7 +48,7 @@ var appAppBranchRunModeEnum []any
 
 func init() {
 	var res []AppAppBranchRunMode
-	if err := json.Unmarshal([]byte(`["push","on_tag_prefix","on_github_label","manual_only"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["push","on_tag","on_github_label","manual_only"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

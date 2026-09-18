@@ -6,7 +6,7 @@ type AppBranchRunMode string
 
 const (
 	AppBranchRunModePush        AppBranchRunMode = "push"
-	AppBranchRunModeTagPrefix   AppBranchRunMode = "on_tag_prefix"
+	AppBranchRunModeTagPrefix   AppBranchRunMode = "on_tag"
 	AppBranchRunModeGithubLabel AppBranchRunMode = "on_github_label"
 	AppBranchRunModeManualOnly  AppBranchRunMode = "manual_only"
 )
@@ -18,8 +18,13 @@ type AppBranchRunConfig struct {
 }
 
 func (c *AppBranchRunConfig) Normalize() {
-	if c != nil && (c.Mode == "" || c.Mode == "all") {
+	if c == nil {
+		return
+	}
+	if c.Mode == "" || c.Mode == "all" {
 		c.Mode = AppBranchRunModePush
+	} else if c.Mode == "on_tag_prefix" {
+		c.Mode = AppBranchRunModeTagPrefix
 	}
 }
 
@@ -45,7 +50,7 @@ func (c AppBranchRunConfig) Validate() error {
 			return fmt.Errorf("run mode %q cannot set tag_prefix", c.Mode)
 		}
 	default:
-		return fmt.Errorf("unknown app branch run mode %q", c.Mode)
+		return fmt.Errorf("unknown app branch run mode %q (valid modes: push, on_tag, on_github_label, manual_only)", c.Mode)
 	}
 	return nil
 }

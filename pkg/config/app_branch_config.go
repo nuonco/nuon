@@ -19,7 +19,7 @@ type AppBranchInstallGroupConfig struct {
 }
 
 type AppBranchPreviewConfig struct {
-	Mode          string            `mapstructure:"mode,omitempty" toml:"mode,omitempty"`
+	Mode          string            `mapstructure:"mode,omitempty" toml:"mode,omitempty" jsonschema:"enum=plan-only,enum=apply,enum=build-only"`
 	InstallID     string            `mapstructure:"install_id,omitempty" toml:"install_id,omitempty"`
 	InstallName   string            `mapstructure:"install_name,omitempty" toml:"install_name,omitempty"`
 	LabelSelector map[string]string `mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
@@ -30,14 +30,14 @@ type AppBranchPreviewConfig struct {
 }
 
 type AppBranchRunConfig struct {
-	Mode        string `mapstructure:"mode,omitempty" toml:"mode,omitempty"`
+	Mode        string `mapstructure:"mode,omitempty" toml:"mode,omitempty" jsonschema:"enum=push,enum=on_tag,enum=on_github_label,enum=manual_only"`
 	TagPrefix   string `mapstructure:"tag_prefix,omitempty" toml:"tag_prefix,omitempty"`
 	GithubLabel string `mapstructure:"github_label,omitempty" toml:"github_label,omitempty"`
 }
 
 func (c AppBranchRunConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "mode", "automatic run mode: push, on_tag_prefix, on_github_label, or manual_only")
-	addDescription(schema, "tag_prefix", "case-sensitive git tag prefix required by on_tag_prefix")
+	addDescription(schema, "mode", "automatic run mode: push, on_tag, on_github_label, or manual_only")
+	addDescription(schema, "tag_prefix", "case-sensitive git tag prefix required by on_tag")
 	addDescription(schema, "github_label", "exact pull request label required by on_github_label")
 }
 
@@ -95,18 +95,20 @@ func (c *AppBranchConfig) Validate() error {
 		mode := c.Run.Mode
 		if mode == "" || mode == "all" {
 			mode = "push"
+		} else if mode == "on_tag_prefix" {
+			mode = "on_tag"
 		}
 		switch mode {
 		case "push", "manual_only":
 			if c.Run.TagPrefix != "" || c.Run.GithubLabel != "" {
 				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode %q cannot set tag_prefix or github_label", c.Name, mode)}
 			}
-		case "on_tag_prefix":
+		case "on_tag":
 			if c.Run.TagPrefix == "" {
-				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode on_tag_prefix requires tag_prefix", c.Name)}
+				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode on_tag requires tag_prefix", c.Name)}
 			}
 			if c.Run.GithubLabel != "" {
-				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode on_tag_prefix cannot set github_label", c.Name)}
+				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode on_tag cannot set github_label", c.Name)}
 			}
 		case "on_github_label":
 			if c.Run.GithubLabel == "" {
@@ -119,7 +121,7 @@ func (c *AppBranchConfig) Validate() error {
 				return ErrConfig{Description: fmt.Sprintf("branch %q: run mode on_github_label requires connected_repo", c.Name)}
 			}
 		default:
-			return ErrConfig{Description: fmt.Sprintf("branch %q: unknown run mode %q", c.Name, mode)}
+			return ErrConfig{Description: fmt.Sprintf("branch %q: unknown run mode %q (valid modes: push, on_tag, on_github_label, manual_only)", c.Name, mode)}
 		}
 	}
 
@@ -170,6 +172,11 @@ func (c *AppBranchConfig) Validate() error {
 		mode := c.Preview.Mode
 		if mode == "" {
 			mode = "plan-only"
+		}
+		switch mode {
+		case "plan-only", "apply", "build-only":
+		default:
+			return ErrConfig{Description: fmt.Sprintf("branch %q: unknown preview mode %q (valid modes: plan-only, apply, build-only)", c.Name, mode)}
 		}
 		if mode != "build-only" && !hasInstallID && !hasInstallName && !hasLabels {
 			return ErrConfig{
