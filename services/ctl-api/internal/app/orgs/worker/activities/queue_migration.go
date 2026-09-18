@@ -57,7 +57,7 @@ type EnsureAppBranchQueueRequest struct {
 // @temporal-gen-v2 activity
 // @by-field BranchID
 func (a *Activities) EnsureAppBranchQueue(ctx context.Context, req EnsureAppBranchQueueRequest) error {
-	return a.appsHelpers.EnsureAppBranchQueue(ctx, req.BranchID)
+	return a.appsHelpers.EnsureAppBranchQueues(ctx, req.BranchID)
 }
 
 type EnsureComponentQueueRequest struct {

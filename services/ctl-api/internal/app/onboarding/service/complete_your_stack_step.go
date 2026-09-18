@@ -109,7 +109,7 @@ func (s *service) CompleteYourStackStep(ctx *gin.Context) {
 	}
 
 	// Get queue and enqueue signal
-	queue, err := s.queueClient.GetQueueByOwner(ctx, onboarding.ID, plugins.TableName(s.db, app.Onboarding{}))
+	queue, err := s.queueClient.GetDefaultQueueByOwner(ctx, onboarding.ID, plugins.TableName(s.db, app.Onboarding{}))
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get onboarding queue: %w", err))
 		return

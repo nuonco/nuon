@@ -107,7 +107,7 @@ func (s *service) createAppStackConfig(ctx context.Context, appID string, req *C
 	// activity sets each stack's ContentsHash and marks it ready; consumers gate
 	// on Status before generating a stack from these templates.
 	if len(appCloudFormationStackConfig.CustomNestedStacks) > 0 {
-		q, err := s.queueClient.GetQueueByOwner(ctx, appID, "apps")
+		q, err := s.queueClient.GetDefaultQueueByOwner(ctx, appID, "apps")
 		if err != nil {
 			return nil, fmt.Errorf("unable to get apps queue for app %s: %w", appID, err)
 		}

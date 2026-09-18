@@ -13,7 +13,7 @@ import (
 
 // onConfigCreated handles the component config creation signal dispatch.
 func (s *service) onConfigCreated(ctx *gin.Context, cmpID string, componentType app.ComponentType) error {
-	q, err := s.queueClient.GetQueueByOwner(ctx, cmpID, "components")
+	q, err := s.queueClient.GetDefaultQueueByOwner(ctx, cmpID, "components")
 	if err != nil {
 		return fmt.Errorf("unable to get component queue: %w", err)
 	}

@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/runnerunhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -317,7 +318,7 @@ func (s *Signal) notifyRunnerUnhealthy(ctx workflow.Context, tmw tmetrics.Writer
 	resp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         runner.OrgID,
 		OwnerType:       "orgs",
-		QueueName:       "org-signals",
+		QueueName:       queuenames.OrgSignalsQueueName,
 		SignalOwnerID:   runner.ID,
 		SignalOwnerType: "runners",
 		IdempotencyKey:  fmt.Sprintf("runner-unhealthy:%s:%d", runner.ID, offlineAt.Unix()),

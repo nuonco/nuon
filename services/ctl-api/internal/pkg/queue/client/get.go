@@ -5,10 +5,12 @@ import (
 
 	"github.com/pkg/errors"
 	tclient "go.temporal.io/sdk/client"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 // @temporal-gen-v2 activity
@@ -31,20 +33,59 @@ func (c *Client) getQueue(ctx context.Context, id string) (*app.Queue, error) {
 	return &q, nil
 }
 
+// ResolveQueueByOwner picks an owner's queue without a name: its declared
+// default, or its single queue for owner types that only ever have one. It is
+// deliberately not an activity — callers name their queue. The one caller is
+// EnqueueSignalToOwner, which still sees requests with no QueueName from
+// workflows that were already in flight when this rolled out.
+func (c *Client) ResolveQueueByOwner(ctx context.Context, ownerID, ownerType string) (*app.Queue, error) {
+	if _, ok := queuenames.Default(ownerType); ok {
+		return c.GetDefaultQueueByOwner(ctx, ownerID, ownerType)
+	}
+	if queuenames.Sole(ownerType) {
+		return c.GetOnlyQueueByOwner(ctx, ownerID, ownerType)
+	}
+	return nil, errors.Errorf("owner type %s has no default or sole queue", ownerType)
+}
+
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
-func (c *Client) GetQueueByOwner(ctx context.Context, ownerID, ownerType string) (*app.Queue, error) {
+func (c *Client) GetDefaultQueueByOwner(ctx context.Context, ownerID, ownerType string) (*app.Queue, error) {
+	name, ok := queuenames.Default(ownerType)
+	if !ok {
+		return nil, errors.Errorf("owner type %s has no default queue", ownerType)
+	}
+
 	var q app.Queue
-	if res := c.db.WithContext(ctx).
-		Where(&app.Queue{
-			OwnerID:   ownerID,
-			OwnerType: ownerType,
-		}).
-		First(&q); res.Error != nil {
-		return nil, generics.TemporalGormError(res.Error, "unable to get queue by owner")
+	if res := c.defaultQueueByOwnerQuery(ctx, ownerID, ownerType, name).First(&q); res.Error != nil {
+		return nil, generics.TemporalGormError(res.Error, "unable to get default queue by owner")
 	}
 
 	return &q, nil
+}
+
+func (c *Client) defaultQueueByOwnerQuery(ctx context.Context, ownerID, ownerType, name string) *gorm.DB {
+	return c.db.WithContext(ctx).
+		Where(&app.Queue{OwnerID: ownerID, OwnerType: ownerType, Name: name}, "owner_id", "owner_type", "name")
+}
+
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
+func (c *Client) GetOnlyQueueByOwner(ctx context.Context, ownerID, ownerType string) (*app.Queue, error) {
+	var queues []app.Queue
+	if res := c.db.WithContext(ctx).
+		Where(&app.Queue{OwnerID: ownerID, OwnerType: ownerType}).
+		Limit(2).
+		Find(&queues); res.Error != nil {
+		return nil, generics.TemporalGormError(res.Error, "unable to get only queue by owner")
+	}
+	if len(queues) == 0 {
+		return nil, generics.TemporalGormError(gorm.ErrRecordNotFound, "unable to get only queue by owner")
+	}
+	if len(queues) != 1 {
+		return nil, errors.Errorf("owner %s of type %s has %d queues, expected exactly one", ownerID, ownerType, len(queues))
+	}
+	return &queues[0], nil
 }
 
 // @temporal-gen-v2 activity
@@ -56,7 +97,7 @@ func (c *Client) GetQueueByOwnerAndName(ctx context.Context, ownerID, ownerType,
 			OwnerID:   ownerID,
 			OwnerType: ownerType,
 			Name:      name,
-		}).
+		}, "owner_id", "owner_type", "name").
 		First(&q); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to get queue by owner and name")
 	}
