@@ -18,6 +18,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/previewimpact"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/run"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/vcspush"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/created"
@@ -54,6 +55,7 @@ import (
 
 	// installs signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appbranchchanged"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitcomponenthealthy"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitinstallstackversionrun"

@@ -50,6 +50,7 @@ export const Default = () => (
     appId="app-1"
     componentId="comp-1"
     componentName="API server"
+    isEmpty={false}
   />
 )
 
@@ -61,6 +62,21 @@ export const Empty = () => (
     appId="app-1"
     componentId="comp-1"
     componentName="API server"
+    isEmpty
+  />
+)
+
+export const PreviousEmpty = () => (
+  <BuildTimeline
+    builds={[mockBuild]}
+    pagination={{ hasNext: false, offset: 0, limit: 10 }}
+    orgId="org-1"
+    appId="app-1"
+    componentId="comp-1"
+    componentName="API server"
+    isEmpty={false}
+    branchId="branch-1"
+    excludeBuildId={mockBuild.id}
   />
 )
 
@@ -72,5 +88,6 @@ export const WithPagination = () => (
     appId="app-1"
     componentId="comp-1"
     componentName="API server"
+    isEmpty={false}
   />
 )
