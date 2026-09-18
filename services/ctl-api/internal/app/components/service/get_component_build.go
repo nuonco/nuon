@@ -102,6 +102,8 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 		Preload("QueueSignal").
 		Preload("AppBranchRun").
 		Preload("AppBranchRun.Preview").
+		Preload("AppBranchRun.VCSConnectionCommit").
+		Preload("AppBranchRun.AppBranch").
 		First(&bld, "id = ? AND org_id = ?", bldID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component build: %w", res.Error)
@@ -109,12 +111,15 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 	if err := s.hydrateBuildRunnerJobs(ctx, &bld); err != nil {
 		return nil, err
 	}
-	bld.CompositeError, err = runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
+	jobCompositeError, err := runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
 		OwnerID:   bld.ID,
 		OwnerType: "component_builds",
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component build composite error: %w", err)
+	}
+	if jobCompositeError != nil || bld.RunnerJob.ID != "" {
+		bld.CompositeError = jobCompositeError
 	}
 
 	return &bld, nil

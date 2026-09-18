@@ -13,6 +13,8 @@ interface IBuildTimelineContainer {
   componentId: string
   pollInterval?: number
   shouldPoll?: boolean
+  branchId?: string
+  excludeBuildId?: string
 }
 
 export const BuildTimelineContainer = ({
@@ -20,6 +22,8 @@ export const BuildTimelineContainer = ({
   componentId,
   pollInterval = 10000,
   shouldPoll = false,
+  branchId,
+  excludeBuildId,
 }: IBuildTimelineContainer) => {
   const { app } = useApp()
   const { org } = useOrg()
@@ -61,6 +65,9 @@ export const BuildTimelineContainer = ({
       appId={app?.id}
       componentId={componentId}
       componentName={componentName}
+      isEmpty={builds.length === 0 && offset === 0}
+      branchId={branchId}
+      excludeBuildId={excludeBuildId}
     />
   )
 }

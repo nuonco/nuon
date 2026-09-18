@@ -232,7 +232,7 @@ func TextDocumentHover(ctx *glsp.Context, params *protocol.HoverParams) (*protoc
 	log.Debugf("✅ Found document, length: %d chars", len(text))
 
 	// Detect schema type from document
-	schemaType := models.DetectSchemaType(text)
+	schemaType := models.DetectSchemaTypeForDocument(text, string(uri))
 	if schemaType == "" {
 		log.Warningf("⚠️  No schema type detected")
 		return nil, nil
