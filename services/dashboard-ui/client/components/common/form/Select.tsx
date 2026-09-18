@@ -516,13 +516,13 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
                         className={cn(
                           'w-full transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm font-sans text-left flex items-center justify-between gap-2',
                           {
-                            'text-white bg-primary-600':
+                            'text-on-primary bg-primary-600':
                               currentValue?.value === option.value &&
                               highlightedIndex !== idx,
                             'bg-primary-100 dark:bg-primary-900/40':
                               highlightedIndex === idx &&
                               currentValue?.value !== option.value,
-                            'text-white bg-primary-700':
+                            'text-on-primary bg-primary-700':
                               highlightedIndex === idx &&
                               currentValue?.value === option.value,
                             'hover:bg-black/5 dark:hover:bg-white/5':

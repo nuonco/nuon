@@ -1,17 +1,18 @@
-@media (prefers-color-scheme: light) {
-  .tooltip-content {
-    --background: var(--color-cool-grey-100);
-  }
+.tooltip-content {
+  --background: var(--color-cool-grey-100);
+  z-index: 9999;
 }
 
 @media (prefers-color-scheme: dark) {
-  .tooltip-content {
+  html:not([data-theme]) .tooltip-content {
     --background: var(--color-dark-grey-600);
   }
 }
 
-.tooltip-content {
-  z-index: 9999;
+[data-theme='dark'] .tooltip-content,
+[data-theme='classic'] .tooltip-content,
+[data-theme='high-contrast'] .tooltip-content {
+  --background: var(--color-dark-grey-600);
 }
 
 /* tooltip enter / exit animations */
