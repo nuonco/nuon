@@ -178,13 +178,13 @@ func (s *service) getInstallUpdates(ctx *gin.Context, orgID, installID string, p
 
 	var stackVersions []app.InstallStackVersion
 	if err := s.db.WithContext(ctx).
-		Preload("Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("created_at DESC").Limit(1)
-		}).
 		Where(app.InstallStackVersion{OrgID: orgID, InstallID: installID}).
 		Order("created_at DESC").
 		Limit(fetchLimit).
 		Find(&stackVersions).Error; err != nil {
+		return nil, err
+	}
+	if err := s.attachStackVersionRuns(ctx, stackVersions, 1); err != nil {
 		return nil, err
 	}
 	for i := range stackVersions {
