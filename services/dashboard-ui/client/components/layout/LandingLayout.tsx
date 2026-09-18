@@ -31,7 +31,7 @@ export const LandingLayout = ({ children }: { children: ReactNode }) => {
 
           {children}
         </div>
-        <footer className="bg-[#1D0B2F] text-cool-grey-50">
+        <footer className="bg-dark-grey-900 text-cool-grey-50">
           <div className="flex flex-col md:flex-row gap-8 md:justify-between px-6 py-12 xl:px-24 max-w-6xl mx-auto">
             <div className="flex flex-col gap-3">
               <Logo id="dark-logo" variant="dark" />

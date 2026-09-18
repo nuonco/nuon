@@ -161,7 +161,7 @@ export const ChannelSelect = ({
                       className={cn(
                         'transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm font-sans text-left flex items-center gap-2',
                         {
-                          'text-white bg-primary-600': isSelected,
+                          'text-on-primary bg-primary-600': isSelected,
                           'hover:bg-black/5 dark:hover:bg-white/5': !isSelected,
                         }
                       )}
