@@ -97,6 +97,8 @@ func (s *service) getComponentLatestBuild(ctx *gin.Context, cmpID string) (*app.
 				Limit(1)
 		}).
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
+		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.VCSConnectionCommit").
+		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.AppBranch").
 		Preload("ComponentConfigs.ComponentBuilds.AppBranchRun.Preview").
 		First(&cmp, "id = ? AND org_id = ?", cmpID, orgID)
 	if res.Error != nil {

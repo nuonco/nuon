@@ -17,10 +17,9 @@ import (
 
 // An install can be unbranched or belong to exactly one app branch. Ownership
 // is recorded on Install.AppBranchID and mirrored by an active
-// InstallAppBranchConnection. It only changes when the install is created
-// against a branch or explicitly moved to another one. Labels, install group
-// selectors and branch config saves only decide group membership within the
-// owning branch.
+// InstallAppBranchConnection. Explicit install IDs in branch config can claim
+// an install for that branch. Labels and selectors only decide group membership
+// within the owning branch.
 
 // SetInstallAppBranch makes branchID the install's owner, deactivating any
 // other active connection. Both halves of the record move in one transaction so
@@ -161,8 +160,33 @@ func (h *Helpers) ValidateBranchInstallsSingleGroup(ctx context.Context, branchI
 
 // Callers inside a transaction must use this so they see their own writes.
 func ValidateBranchInstallsSingleGroupWithDB(ctx context.Context, db *gorm.DB, branchID string, groups []app.AppBranchInstallGroup) error {
+	if err := ValidateExplicitInstallSingleGroup(groups); err != nil {
+		return err
+	}
 	if len(groups) < 2 {
 		return nil
+	}
+
+	explicitIDs := make(map[string]struct{})
+	for _, group := range groups {
+		for _, installID := range group.InstallIDs {
+			explicitIDs[installID] = struct{}{}
+		}
+	}
+	if len(explicitIDs) > 0 {
+		ids := make([]string, 0, len(explicitIDs))
+		for installID := range explicitIDs {
+			ids = append(ids, installID)
+		}
+		var explicitInstalls []app.Install
+		if err := db.WithContext(ctx).Where("id IN ?", ids).Find(&explicitInstalls).Error; err != nil {
+			return fmt.Errorf("unable to load explicitly listed installs: %w", err)
+		}
+		for i := range explicitInstalls {
+			if err := ValidateInstallSingleGroup(groups, &explicitInstalls[i]); err != nil {
+				return err
+			}
+		}
 	}
 
 	installs, err := BranchInstallsWithDB(ctx, db, branchID)
@@ -176,6 +200,25 @@ func ValidateBranchInstallsSingleGroupWithDB(ctx context.Context, db *gorm.DB, b
 		}
 	}
 
+	return nil
+}
+
+func ValidateExplicitInstallSingleGroup(groups []app.AppBranchInstallGroup) error {
+	groupByInstallID := make(map[string]string)
+	for _, group := range groups {
+		for _, installID := range group.InstallIDs {
+			if previousGroup, ok := groupByInstallID[installID]; ok && previousGroup != group.Name {
+				return stderr.ErrUser{
+					Err: fmt.Errorf("install %s is explicitly listed in install groups %s and %s", installID, previousGroup, group.Name),
+					Description: fmt.Sprintf(
+						"Install %q is listed in more than one install group (%s, %s). An install can only belong to one install group on a branch.",
+						installID, previousGroup, group.Name,
+					),
+				}
+			}
+			groupByInstallID[installID] = group.Name
+		}
+	}
 	return nil
 }
 
@@ -199,18 +242,19 @@ func (h *Helpers) ValidateInstallLabelsSingleGroup(ctx context.Context, install 
 	return ValidateInstallSingleGroup(groups, &candidate)
 }
 
-// ValidateInstallIDsOwnedByBranch rejects a config that names installs the
-// branch does not own. Listing an install by ID selects it for a group; it no
-// longer claims it, so the install has to be created on the branch or moved
-// there first.
-func (h *Helpers) ValidateInstallIDsOwnedByBranch(ctx context.Context, branchID string, installIDs []string) error {
-	return ValidateInstallIDsOwnedByBranchWithDB(ctx, h.db, branchID, installIDs)
+func (h *Helpers) ValidateInstallIDsBelongToBranchApp(ctx context.Context, branchID string, installIDs []string) error {
+	return ValidateInstallIDsBelongToBranchAppWithDB(ctx, h.db, branchID, installIDs)
 }
 
 // Callers inside a transaction must use this so they see their own writes.
-func ValidateInstallIDsOwnedByBranchWithDB(ctx context.Context, db *gorm.DB, branchID string, installIDs []string) error {
+func ValidateInstallIDsBelongToBranchAppWithDB(ctx context.Context, db *gorm.DB, branchID string, installIDs []string) error {
 	if len(installIDs) == 0 {
 		return nil
+	}
+
+	var branch app.AppBranch
+	if err := db.WithContext(ctx).Where(app.AppBranch{ID: branchID}).First(&branch).Error; err != nil {
+		return fmt.Errorf("unable to get app branch: %w", err)
 	}
 
 	var installs []app.Install
@@ -233,23 +277,13 @@ func ValidateInstallIDsOwnedByBranchWithDB(ctx context.Context, db *gorm.DB, bra
 				Description: fmt.Sprintf("Install %q does not exist.", id),
 			}
 		}
-		if install.AppBranchID.Valid && install.AppBranchID.String == branchID {
+		if install.AppID == branch.AppID {
 			continue
 		}
 
-		if !install.AppBranchID.Valid || install.AppBranchID.String == "" {
-			return stderr.ErrUser{
-				Err:         fmt.Errorf("install %q (%s) is not on branch %s", install.Name, install.ID, branchID),
-				Description: fmt.Sprintf("Install %q is not on this branch. Move it to this branch before adding it to an install group.", install.Name),
-			}
-		}
-
 		return stderr.ErrUser{
-			Err: fmt.Errorf("install %q (%s) is on branch %s", install.Name, install.ID, install.AppBranchID.String),
-			Description: fmt.Sprintf(
-				"Install %q belongs to another app branch. Move it to this branch before adding it to an install group.",
-				install.Name,
-			),
+			Err:         fmt.Errorf("install %q (%s) belongs to app %s, not app %s", install.Name, install.ID, install.AppID, branch.AppID),
+			Description: fmt.Sprintf("Install %q belongs to a different app.", install.Name),
 		}
 	}
 

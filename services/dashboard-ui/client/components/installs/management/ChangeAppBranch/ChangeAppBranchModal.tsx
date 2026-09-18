@@ -8,14 +8,15 @@ import type { TAppBranch, TInstall } from '@/types'
 
 const branchHasMatchingGroup = (
   branch: TAppBranch,
-  installLabels: Record<string, string>
+  install: TInstall
 ): boolean => {
   const groups = branch.configs?.at(0)?.install_groups ?? []
   return groups.some((g) => {
     if (g.all_installs) return true
+    if (g.install_ids?.includes(install.id)) return true
     const matchLabels = g.label_selector?.match_labels ?? {}
     if (Object.keys(matchLabels).length > 0) {
-      return matchesSelector(installLabels, g.label_selector)
+      return matchesSelector(install.labels ?? {}, g.label_selector)
     }
     return false
   })
@@ -42,7 +43,7 @@ export const ChangeAppBranchModal = ({
   const installLabels = install.labels ?? {}
   const noMatchingGroup =
     targetBranch !== null &&
-    !branchHasMatchingGroup(targetBranch, installLabels)
+    !branchHasMatchingGroup(targetBranch, install)
 
   const confirmLabel = isPending ? (
     <span className="flex items-center gap-2">

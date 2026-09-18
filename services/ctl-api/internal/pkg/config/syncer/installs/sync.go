@@ -31,23 +31,35 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 	var existing app.Install
 	err := db.WithContext(ctx).
 		Preload("InstallConfig").
+		Preload("AppBranch").
 		Preload("AWSAccount").
 		Preload("GCPAccount").
 		Preload("AzureAccount").
 		Where(app.Install{AppID: appID, Name: install.Name}).
 		First(&existing).Error
 
+	var appBranchID string
+	if install.AppBranch != "" {
+		var branch app.AppBranch
+		if err := db.WithContext(ctx).
+			Where(app.AppBranch{AppID: appID, Name: install.AppBranch}).
+			First(&branch).Error; err != nil {
+			return nil, fmt.Errorf("unable to resolve app branch %q: %w", install.AppBranch, err)
+		}
+		appBranchID = branch.ID
+	}
+
 	if err == gorm.ErrRecordNotFound {
-		return createInstall(ctx, db, installHelpers, appID, install)
+		return createInstall(ctx, db, installHelpers, appID, install, appBranchID)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to look up install %s: %w", install.Name, err)
 	}
 
-	return updateInstall(ctx, db, installHelpers, &existing, install)
+	return updateInstall(ctx, db, installHelpers, &existing, install, appBranchID)
 }
 
-func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, appID string, installCfg *config.Install) (*sync.InstallSyncResult, error) {
+func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, appID string, installCfg *config.Install, appBranchID string) (*sync.InstallSyncResult, error) {
 	inputs := make(map[string]*string)
 	for k, v := range installCfg.FlattenedInputs() {
 		val := v
@@ -61,6 +73,7 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		Metadata: installhelpers.InstallMetadata{
 			ManagedBy: ManagedByGitInstallConfig,
 		},
+		AppBranchID: appBranchID,
 	}
 
 	if installCfg.AWSAccount != nil {
@@ -121,7 +134,7 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	}, nil
 }
 
-func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, installCfg *config.Install) (*sync.InstallSyncResult, error) {
+func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, installCfg *config.Install, appBranchID string) (*sync.InstallSyncResult, error) {
 	upstream := existingToConfig(existing)
 
 	// Refused rather than ignored: nothing below writes the account, so without this
@@ -203,16 +216,25 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		}
 	}
 
+	appBranchChanged := appBranchID != "" && (!existing.AppBranchID.Valid || existing.AppBranchID.String != appBranchID)
+	if appBranchChanged {
+		if _, err := installHelpers.LatestActiveBranchAppConfig(ctx, existing.AppID, appBranchID); err != nil {
+			return nil, err
+		}
+	}
+
 	db.WithContext(ctx).Model(&app.Install{}).Where("id = ?", existing.ID).Updates(map[string]any{
 		"metadata": map[string]string{"managed_by": ManagedByGitInstallConfig},
 	})
 
 	return &sync.InstallSyncResult{
-		InstallID:   existing.ID,
-		InstallName: existing.Name,
-		Created:     false,
-		Changed:     true,
-		Diff:        d,
+		InstallID:        existing.ID,
+		InstallName:      existing.Name,
+		Created:          false,
+		Changed:          true,
+		Diff:             d,
+		AppBranchChanged: appBranchChanged,
+		AppBranchID:      appBranchID,
 	}, nil
 }
 
@@ -292,9 +314,14 @@ func syncLabels(ctx context.Context, db *gorm.DB, installHelpers *installhelpers
 }
 
 func existingToConfig(install *app.Install) *config.Install {
+	var appBranchName string
+	if install.AppBranch != nil {
+		appBranchName = install.AppBranch.Name
+	}
 	cfg := &config.Install{
-		Name:   install.Name,
-		Labels: upstreamLabels(install),
+		Name:      install.Name,
+		AppBranch: appBranchName,
+		Labels:    upstreamLabels(install),
 	}
 
 	// The target identifiers must be echoed back, otherwise a config that legitimately

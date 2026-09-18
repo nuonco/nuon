@@ -13,6 +13,7 @@ import (
 )
 
 const appBranchCreatedSignalType signal.SignalType = "app-branch-created"
+const appBranchUpdatedSignalType signal.SignalType = "app-branch-updated"
 
 type appBranchCreatedSignal struct {
 	AppBranchID       string `json:"app_branch_id"`
@@ -22,6 +23,45 @@ type appBranchCreatedSignal struct {
 func (s *appBranchCreatedSignal) Type() signal.SignalType           { return appBranchCreatedSignalType }
 func (s *appBranchCreatedSignal) Validate(_ workflow.Context) error { return nil }
 func (s *appBranchCreatedSignal) Execute(_ workflow.Context) error  { return nil }
+
+type appBranchUpdatedSignal struct {
+	AppBranchID       string `json:"app_branch_id"`
+	AppBranchConfigID string `json:"app_branch_config_id"`
+}
+
+func (s *appBranchUpdatedSignal) Type() signal.SignalType           { return appBranchUpdatedSignalType }
+func (s *appBranchUpdatedSignal) Validate(_ workflow.Context) error { return nil }
+func (s *appBranchUpdatedSignal) Execute(_ workflow.Context) error  { return nil }
+
+func (h *Helpers) EnqueueAppBranchConfigSignals(ctx context.Context, appBranchID, appBranchConfigID string) error {
+	if appBranchID == "" {
+		return fmt.Errorf("app_branch_id is required")
+	}
+	if appBranchConfigID == "" {
+		return fmt.Errorf("app_branch_config_id is required")
+	}
+
+	queue, err := h.queueClient.GetQueueByOwnerAndName(ctx, appBranchID, "app_branches", "app-branch-signals")
+	if err != nil {
+		return fmt.Errorf("unable to find app branch queue: %w", err)
+	}
+
+	updatedDedupeKey := fmt.Sprintf("app-branch-updated:%s", appBranchConfigID)
+	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID:   queue.ID,
+		OwnerID:   appBranchID,
+		OwnerType: "app_branches",
+		DedupeKey: &updatedDedupeKey,
+		Signal: &appBranchUpdatedSignal{
+			AppBranchID:       appBranchID,
+			AppBranchConfigID: appBranchConfigID,
+		},
+	}); err != nil {
+		return fmt.Errorf("unable to enqueue app-branch-updated: %w", err)
+	}
+
+	return h.EnqueueAppBranchCreatedIfFirst(ctx, appBranchID, appBranchConfigID)
+}
 
 // EnqueueAppBranchCreatedIfFirst enqueues app-branch-created when configID is
 // the branch's first AppBranchConfig. Later configs are ignored. DedupeKey
