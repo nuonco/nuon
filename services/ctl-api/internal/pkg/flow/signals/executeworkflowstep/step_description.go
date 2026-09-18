@@ -15,3 +15,11 @@ func stepHumanDescription(err error) string {
 	}
 	return "Step failed"
 }
+
+func abandonedHumanDescription(err error) string {
+	desc := stepHumanDescription(err)
+	if desc == "" || desc == "Step failed" {
+		return "step abandoned after failure: no retry or skip received"
+	}
+	return "step abandoned after failure: " + desc
+}
