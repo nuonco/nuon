@@ -7,6 +7,7 @@ import { APIHealthProvider } from '@/providers/api-health-provider'
 import { AuthProvider } from '@/providers/auth-provider'
 import { ConfigProvider } from '@/providers/config-provider'
 import { PageTitleProvider } from '@/providers/page-title-provider'
+import { ThemeProvider } from '@/providers/theme-provider'
 import { Error } from '@/views/Error'
 import { NotFound } from '@/views/NotFound'
 import { RouteError } from '@/views/RouteError'
@@ -58,17 +59,19 @@ const router = createBrowserRouter([
 
 export const App = () => {
   return (
-    <ConfigProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <APIHealthProvider shouldPoll>
-            <PageTitleProvider>
-              <RouterProvider router={router} />
-            </PageTitleProvider>
-          </APIHealthProvider>
-        </AuthProvider>
-        <ReactQueryDevtools />
-      </QueryClientProvider>
-    </ConfigProvider>
+    <ThemeProvider>
+      <ConfigProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <APIHealthProvider shouldPoll>
+              <PageTitleProvider>
+                <RouterProvider router={router} />
+              </PageTitleProvider>
+            </APIHealthProvider>
+          </AuthProvider>
+          <ReactQueryDevtools />
+        </QueryClientProvider>
+      </ConfigProvider>
+    </ThemeProvider>
   )
 }

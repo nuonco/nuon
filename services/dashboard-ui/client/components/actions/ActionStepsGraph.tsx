@@ -14,7 +14,7 @@ import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { useSystemTheme } from '@/hooks/use-system-theme'
+import { useColorScheme } from '@/hooks/use-theme'
 import { sortByIdx, type THydratedActionRunSteps } from '@/utils/action-utils'
 
 const NODE_WIDTH = 250
@@ -37,7 +37,7 @@ export const ActionStepGraph = ({
   steps: THydratedActionRunSteps
   onNodeClick?: (data) => void
 }) => {
-  const theme = useSystemTheme()
+  const theme = useColorScheme()
   const [colors, setColors] = useState(getTheme(theme))
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export const ActionStepGraph = ({
         target: curId,
         type: 'straight',
         animated: false,
-        style: { stroke: '#3062D4', strokeWidth: 2 },
+        style: { stroke: 'var(--blue-600)', strokeWidth: 2 },
       }
     })
 
