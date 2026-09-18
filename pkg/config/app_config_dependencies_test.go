@@ -63,6 +63,35 @@ func TestAppConfigDiffPropagatesTransitiveComponentChanges(t *testing.T) {
 	})
 }
 
+func TestAppConfigDiffPropagatesNamedPolicyChanges(t *testing.T) {
+	oldCfg := appConfigWithNamedPolicy(nil)
+	newCfg := appConfigWithNamedPolicy([]NamedIAMPolicy{{
+		Name:     "sample-logs",
+		Contents: `{"Statement":[{"Action":"logs:GetLogEvents"}]}`,
+	}})
+
+	result := newCfg.Diff(oldCfg)
+
+	policy := findResourceDiff(result, NamedPolicyResourceID("sample-logs"))
+	require.NotNil(t, policy)
+	require.True(t, policy.DirectSummary().HasChanged)
+
+	stack := findResourceDiff(result, StackResourceID)
+	require.NotNil(t, stack)
+	require.False(t, stack.DirectSummary().HasChanged)
+	require.True(t, stack.Impacted)
+	require.Contains(t, stack.ImpactReasons, configdiff.ImpactReason{
+		From: NamedPolicyResourceID("sample-logs"),
+		Edge: configdiff.EdgeReasonStackRender,
+	})
+}
+
+func appConfigWithNamedPolicy(named []NamedIAMPolicy) *AppConfig {
+	cfg := appConfigWithRoleDependency(`{"Statement":[{"Action":"s3:GetObject"}]}`)
+	cfg.Permissions.NamedPolicies = named
+	return cfg
+}
+
 func appConfigWithRoleDependency(policyContents string) *AppConfig {
 	return &AppConfig{
 		Runner: &AppRunnerConfig{},
