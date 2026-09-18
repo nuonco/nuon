@@ -9,6 +9,7 @@ import (
 	branchactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -89,6 +90,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.AppID,
 		OwnerType:       "apps",
+		QueueName:       queuenames.AppWorkflowsQueueName,
 		SignalOwnerID:   wfResult.WorkflowID,
 		SignalOwnerType: "install_workflows",
 		Signal: &executeflow.Signal{

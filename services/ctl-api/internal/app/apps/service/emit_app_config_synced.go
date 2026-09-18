@@ -31,7 +31,7 @@ func (s *service) emitAppConfigSyncedSignal(ctx context.Context, orgID, appID, a
 		}
 	}
 
-	q, err := s.queueClient.GetQueueByOwner(ctx, appID, "apps")
+	q, err := s.queueClient.GetQueueByOwnerAndName(ctx, appID, "apps", "app-signals")
 	if err != nil {
 		s.l.Warn("failed to get app queue for config synced signal", zap.Error(err))
 		return

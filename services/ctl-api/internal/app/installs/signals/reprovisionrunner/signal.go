@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/reprovisionserviceaccount"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -68,6 +69,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   install.RunnerID,
 		OwnerType: "runners",
+		QueueName: queuenames.RunnerSignalsQueueName,
 		Signal: &runnersignals.Signal{
 			RunnerID: install.RunnerID,
 		},
