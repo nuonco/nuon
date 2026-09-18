@@ -18,6 +18,10 @@ import (
 // so replaying them with AwaitWithTimeout is nondeterministic.
 const parkedWaitCeilingVersion = "parked-step-wait-ceiling-v1"
 
+// targetlessStepCompositeErrorVersion gates the hints lookup for steps with no
+// step target: histories written before it have no such activity command.
+const targetlessStepCompositeErrorVersion = "targetless-step-composite-error-v1"
+
 // handleStepError marks the step as errored and checks for auto-retry.
 // If the inner signal implements SignalWithAutoRetry and the retry budget
 // hasn't been exhausted, it writes a directive ("retry" or "retry-group")
@@ -28,7 +32,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	// Check auto-retry on inner signal.
 	ar, isAutoRetry := sig.(signal.SignalWithAutoRetry)
 	if !isAutoRetry || !ar.AutoRetry() {
-		return s.markStepFailed(ctx, step, stepErr, nil, nil)
+		return s.markStepFailed(ctx, step, stepErr, nil, s.targetlessStepCompositeError(ctx, l, step))
 	}
 
 	// Consult the composite-error hint recorded for this step's target. The
@@ -295,6 +299,32 @@ func (s *Signal) markStepFailed(ctx workflow.Context, step *app.WorkflowStep, st
 		return errors.Wrap(err, "unable to mark step as error")
 	}
 	return stepErr
+}
+
+// targetlessStepCompositeError reads back the composite error a targetless step
+// (e.g. an app branch run step) recorded on its own status, so marking the step
+// failed does not clear it.
+func (s *Signal) targetlessStepCompositeError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep) *compositeerrors.CompositeErrorData {
+	if step.StepTargetID != "" || step.StepTargetType != "" {
+		return nil
+	}
+	if workflow.GetVersion(ctx, targetlessStepCompositeErrorVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return nil
+	}
+
+	hintsResp, err := activities.AwaitGetStepErrorHints(ctx, activities.GetStepErrorHintsRequest{
+		StepID: step.ID,
+	})
+	if err != nil {
+		l.Warn("unable to get step error hints",
+			zap.String("step_id", step.ID),
+			zap.Error(err))
+		return nil
+	}
+	if hintsResp == nil {
+		return nil
+	}
+	return hintsResp.Error
 }
 
 func targetSupportsCompositeErrorHints(targetType string) bool {

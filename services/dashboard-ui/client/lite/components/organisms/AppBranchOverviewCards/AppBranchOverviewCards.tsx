@@ -20,6 +20,7 @@ const runCadence = (
   githubLabel?: string
 ) => {
   switch (mode) {
+    case 'on_tag':
     case 'on_tag_prefix':
       return `Tags matching ${tagPrefix ?? 'the configured prefix'}`
     case 'on_github_label':

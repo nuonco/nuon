@@ -12,7 +12,6 @@ import { Time } from '@/components/common/Time'
 import { Toast } from '@/components/surfaces/Toast'
 import { ComponentType } from '@/components/components/ComponentType'
 import { ComponentConfigContextTooltip } from '@/components/components/ComponentConfigContextTooltip'
-import { CommitDetails } from '@/components/common/CommitDetails'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { RunnerJobPlanButton } from '@/components/runners/RunnerJobPlan'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
@@ -52,14 +51,14 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
       addToast(
         <Toast heading="Build cancelled." theme="success">
           <Text>Successfully cancelled the build.</Text>
-        </Toast>,
+        </Toast>
       )
     },
     onError: (err: { error?: string }) => {
       addToast(
         <Toast heading="Cancel build failed." theme="error">
           <Text>{err?.error || 'Unknown error occurred.'}</Text>
-        </Toast>,
+        </Toast>
       )
     },
   })
@@ -179,24 +178,6 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
               </Link>
             </ComponentConfigContextTooltip>
           </LabeledValue>
-          {build?.vcs_connection_commit ? (
-            <LabeledValue label="Commit">
-              <CommitDetails commit={build?.vcs_connection_commit} />
-            </LabeledValue>
-          ) : null}
-          {build?.app_branch_id && build?.app_branch_run_id ? (
-            <LabeledValue label="Branch run">
-              <Text variant="subtext" flex className="gap-1 items-center">
-                <Icon variant="GitBranchIcon" size={14} />
-                <Link
-                  href={`/${app?.org_id}/apps/${app?.id}/branches/${build.app_branch_id}/runs/${build.app_branch_run_id}`}
-                  variant="inline"
-                >
-                  View run
-                </Link>
-              </Text>
-            </LabeledValue>
-          ) : null}
         </>
       }
     />

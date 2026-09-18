@@ -1,5 +1,4 @@
-import { ID } from '@/components/common/ID'
-import { Text } from '@/components/common/Text'
+import { AppBranchRunCard } from '@/components/branches/AppBranchRunCard'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { RunSummary } from '@/components/runs/RunSummary'
 import { useApp } from '@/hooks/use-app'
@@ -16,24 +15,20 @@ export const SandboxBuildSummaryTab = () => {
   return (
     <>
       <PageTitle segments={['Sandbox build', app?.name]} />
+      <AppBranchRunCard
+        appId={app?.id}
+        orgId={org?.id}
+        buildStatus={build?.status_v2?.status}
+        sourceCommit={build?.vcs_connection_commit}
+        run={build?.app_branch_run}
+      />
       <RunSummary
         isLoading={!build}
         status={build?.status_v2}
         statusDescription={build?.status_description}
-        timings={[
-          { label: 'Created', time: build?.created_at },
-          { label: 'Updated', time: build?.updated_at },
-        ]}
-        duration={{ beginTime: build?.created_at, endTime: build?.updated_at }}
+        showTiming={false}
         jobs={jobs}
         jobHref={(job) => `/${org?.id}/runner/jobs/${job?.id}`}
-        triggeredBy={
-          build?.created_by?.email ? (
-            <Text variant="subtext">{build.created_by.email}</Text>
-          ) : build?.created_by_id ? (
-            <ID>{build.created_by_id}</ID>
-          ) : null
-        }
       />
     </>
   )

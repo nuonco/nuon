@@ -68,10 +68,14 @@ const BranchRunsContent = () => {
 
   return (
     <BranchTabPage
-      tab={hasSimpleIA ? 'Activity' : 'Updates'}
+      tab={hasSimpleIA ? 'Activity' : 'Runs'}
       tabPath={hasSimpleIA ? 'activity' : 'runs'}
-      heading={hasSimpleIA ? 'Activity' : 'Updates'}
-      subheading="Every update rolled out from this branch, newest first."
+      heading={hasSimpleIA ? 'Activity' : 'Runs'}
+      subheading={
+        hasSimpleIA
+          ? 'Every update rolled out from this branch, newest first.'
+          : 'Every run from this branch, newest first.'
+      }
     >
       <WorkflowFilters owner="app" />
       <WorkflowTimelineComponent

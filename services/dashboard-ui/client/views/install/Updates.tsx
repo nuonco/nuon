@@ -2,6 +2,7 @@ import { Badge } from '@/components/common/Badge'
 import { Link } from '@/components/common/Link'
 import { CurrentAppBranchRun } from '@/components/install-updates/CurrentAppBranchRun'
 import { InstallUpdatesTimeline } from '@/components/install-updates/InstallUpdatesTimeline'
+import { ChangeAppBranchButton } from '@/components/installs/management/ChangeAppBranch'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -12,8 +13,9 @@ import { useOrg } from '@/hooks/use-org'
 
 export const Updates = () => {
   const { org } = useOrg()
-  const { install } = useInstall()
+  const { install, refresh } = useInstall()
   const { run: currentAppBranchRun } = useCurrentAppBranchRun()
+  const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
 
   return (
     <PageSection>
@@ -40,12 +42,21 @@ export const Updates = () => {
           ) : null
         }
         actions={
-          install?.app_branch_id ? (
-            <Link
-              href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch_id}`}
-            >
-              View branch
-            </Link>
+          install && hasAppBranchesUI ? (
+            <div className="flex items-center gap-2">
+              {install.app_branch_id ? (
+                <Link
+                  href={`/${org?.id}/apps/${install.app_id}/branches/${install.app_branch_id}`}
+                >
+                  View branch
+                </Link>
+              ) : null}
+              <ChangeAppBranchButton
+                compact
+                install={install}
+                onSuccess={refresh}
+              />
+            </div>
           ) : null
         }
       />
