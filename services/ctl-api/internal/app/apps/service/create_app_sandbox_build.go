@@ -67,7 +67,7 @@ func (s *service) CreateAppSandboxBuild(ctx *gin.Context) {
 	}
 
 	// Get the app's sandbox queue
-	q, err := s.queueClient.GetQueueByOwner(ctx, currentApp.ID, "apps")
+	q, err := s.queueClient.GetDefaultQueueByOwner(ctx, currentApp.ID, "apps")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get sandbox queue for app %s: %w", appID, err))
 		return

@@ -11,6 +11,7 @@ import (
 	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/provision"
 	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/reprovision"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -56,6 +57,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   s.ComponentID,
 		OwnerType: "components",
+		QueueName: queuenames.ComponentDefaultQueueName,
 		Signal: &buildsignal.Signal{
 			ComponentID: s.ComponentID,
 			BuildID:     build.ID,

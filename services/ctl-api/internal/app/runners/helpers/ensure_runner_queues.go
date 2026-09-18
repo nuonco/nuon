@@ -8,16 +8,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 const (
-	runnerSignalsQueueName = "runner-signals"
+	runnerSignalsQueueName = queuenames.RunnerSignalsQueueName
 
 	// RunnerHealthcheckCronsQueueName hosts the per-runner healthcheck cron
 	// emitter for orgs without the org-healthcheck-sweeps feature. Sweep-enabled
 	// orgs neither create it nor keep it (the migration terminates it).
-	RunnerHealthcheckCronsQueueName = "runner-healthcheck-crons"
+	RunnerHealthcheckCronsQueueName = queuenames.RunnerHealthcheckCronsQueueName
 
 	RunnerHealthcheckEmitterName = "runner-healthcheck"
 )
@@ -31,14 +32,19 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 		return fmt.Errorf("unable to get runner: %w", res.Error)
 	}
 
-	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+	spec, ok := queuenames.SpecByName(queuenames.OwnerRunners, queuenames.RunnerSignalsQueueName)
+	if !ok {
+		return fmt.Errorf("runner signals queue is not registered")
+	}
+	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
 		OwnerType:   "runners",
 		Namespace:   "runners",
-		Name:        runnerSignalsQueueName,
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	}); err != nil {
+		Name:        spec.Name,
+		MaxInFlight: spec.MaxInFlight,
+		MaxDepth:    spec.MaxDepth,
+	})
+	if err != nil {
 		return fmt.Errorf("unable to ensure runner-signals queue: %w", err)
 	}
 
@@ -65,13 +71,17 @@ func (h *Helpers) EnsureRunnerHealthcheckEmitter(ctx context.Context, runner *ap
 		healthcheckNamespace = pkgworkflows.RunnerHealthcheckCronsNamespace
 	}
 
+	spec, ok := queuenames.SpecByName(queuenames.OwnerRunners, queuenames.RunnerHealthcheckCronsQueueName)
+	if !ok {
+		return fmt.Errorf("runner healthcheck queue is not registered")
+	}
 	healthcheckQueue, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runner.ID,
 		OwnerType:   "runners",
 		Namespace:   healthcheckNamespace,
-		Name:        RunnerHealthcheckCronsQueueName,
-		MaxInFlight: 5,
-		MaxDepth:    50,
+		Name:        spec.Name,
+		MaxInFlight: spec.MaxInFlight,
+		MaxDepth:    spec.MaxDepth,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to ensure runner-healthcheck-crons queue: %w", err)
@@ -103,15 +113,18 @@ func (h *Helpers) EnsureRunnerHealthcheckEmitter(ctx context.Context, runner *ap
 // EnsureRunnerJobGroupQueues creates one queue per job group for the runner.
 // Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureRunnerJobGroupQueues(ctx context.Context, runner *app.Runner, settings *app.RunnerGroupSettings) error {
-	for _, group := range allRunnerJobGroups {
-		if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+	for _, spec := range queuenames.RunnerJobGroupSpecs() {
+		group := app.RunnerJobGroup(spec.Name)
+		maxInFlight := settings.MaxInFlightForGroup(group)
+		_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 			OwnerID:     runner.ID,
 			OwnerType:   "runners",
 			Namespace:   "runners",
-			Name:        string(group),
-			MaxInFlight: settings.MaxInFlightForGroup(group),
-			MaxDepth:    100,
-		}); err != nil {
+			Name:        spec.Name,
+			MaxInFlight: maxInFlight,
+			MaxDepth:    spec.MaxDepth,
+		})
+		if err != nil {
 			return fmt.Errorf("unable to ensure queue for job group %s: %w", group, err)
 		}
 	}

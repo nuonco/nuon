@@ -49,6 +49,10 @@ func (a *AppBranch) TableName() string {
 	return "app_branches"
 }
 
+func DefaultQueueScope(db *gorm.DB) *gorm.DB {
+	return db.Where(map[string]any{"name": ""})
+}
+
 func (a *AppBranch) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
