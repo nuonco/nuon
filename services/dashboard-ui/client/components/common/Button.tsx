@@ -64,14 +64,14 @@ const VARIANT_CLASSES: Record<TButtonVariant, string> = {
   ghost: `
     border border-transparent rounded-lg bg-inherit
     hover:bg-cool-grey-500/8 dark:hover:bg-cool-grey-500/8
-    focus:outline-none focus:shadow-[0_0_0_1px_white,0_0_0_3px_rgba(128,64,191,0.64)] dark:focus:shadow-[0_0_0_1px_#141217,0_0_0_3px_rgba(128,64,191,0.64)]
+    focus:outline-none focus:shadow-[0_0_0_1px_var(--background),0_0_0_3px_var(--focus-ring)]
     active:bg-cool-grey-500/16 dark:active:bg-cool-grey-500/16
     disabled:opacity-50 disabled:hover:bg-inherit disabled:hover:dark:bg-inherit
   `,
   icon: `
     border border-transparent rounded-md bg-inherit aspect-square !p-0 justify-center
     hover:bg-cool-grey-500/8 dark:hover:bg-cool-grey-500/8
-    focus:outline-none focus:shadow-[0_0_0_1px_white,0_0_0_3px_rgba(128,64,191,0.64)] dark:focus:shadow-[0_0_0_1px_#141217,0_0_0_3px_rgba(128,64,191,0.64)]
+    focus:outline-none focus:shadow-[0_0_0_1px_var(--background),0_0_0_3px_var(--focus-ring)]
     active:bg-cool-grey-500/16 dark:active:bg-cool-grey-500/16
     disabled:opacity-50 disabled:hover:bg-inherit disabled:hover:dark:bg-inherit
   `,
@@ -79,7 +79,7 @@ const VARIANT_CLASSES: Record<TButtonVariant, string> = {
     border rounded-lg bg-white dark:bg-dark-grey-700 text-primary-600 dark:text-primary-400
     shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)]
     hover:bg-cool-grey-50 dark:hover:bg-dark-grey-500
-    focus:outline-none focus:shadow-[0_0_0_1px_white,0_0_0_3px_rgba(128,64,191,0.64)] dark:focus:shadow-[0_0_0_1px_#141217,0_0_0_3px_rgba(128,64,191,0.64)]
+    focus:outline-none focus:shadow-[0_0_0_1px_var(--background),0_0_0_3px_var(--focus-ring)]
     focus:bg-white dark:focus:bg-dark-grey-700
     active:bg-cool-grey-100 dark:active:bg-dark-grey-400
     disabled:opacity-50 disabled:hover:bg-white disabled:hover:dark:bg-dark-grey-700
