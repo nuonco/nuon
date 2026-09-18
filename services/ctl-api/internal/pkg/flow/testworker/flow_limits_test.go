@@ -1,6 +1,8 @@
 package testworker
 
 import (
+	"strings"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -157,12 +159,13 @@ func (e *FlowTestSuite) TestParkedRetryExpiresStopsWorkflow() {
 	require.Eventually(e.T(), func() bool {
 		step := e.getStep(ctx, steps[0].ID)
 		return step.Status.Status == app.StatusError &&
-			step.Status.StatusHumanDescription == "step abandoned: no retry or skip received" &&
+			strings.HasPrefix(step.Status.StatusHumanDescription, "step abandoned after failure") &&
 			directive.Step(step.ResultDirective) == directive.StepStop
 	}, ceilingWait, pollInterval, "parked step was not abandoned at the wait ceiling")
 
 	step := e.getStep(ctx, steps[0].ID)
 	require.Equal(e.T(), true, step.Status.Metadata["abandoned"])
+	require.NotEmpty(e.T(), step.Status.Metadata["original_error"])
 	require.Equal(e.T(), directive.StepStop, directive.Step(step.ResultDirective))
 
 	require.Eventually(e.T(), func() bool {
