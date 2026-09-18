@@ -45,9 +45,9 @@ func (c *cli) populateDeps() error {
 			runbooks.New,
 			secrets.New,
 			serviceaccounts.New,
+			triggers.New,
 			variables.New,
 			version.New,
-			func(api nuon.Client) *triggers.Service { return triggers.New(api) },
 		),
 		fx.Populate(
 			&c.apiClient,
