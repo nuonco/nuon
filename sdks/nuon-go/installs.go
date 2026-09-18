@@ -122,24 +122,12 @@ func (c *client) ForgetInstall(ctx context.Context, installID string) (bool, err
 	return true, nil
 }
 
-func (c *client) ReprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
+func (c *client) ReprovisionInstall(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.ReprovisionInstall(&operations.ReprovisionInstallParams{
 		InstallID: installID,
 		Context:   ctx,
-	}, c.getOrgIDAuthInfo())
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Payload, nil
-}
-
-func (c *client) ReprovisionInstallStack(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
-	resp, err := c.genClient.Operations.ReprovisionInstallStack(&operations.ReprovisionInstallStackParams{
-		InstallID: installID,
-		Context:   ctx,
-		Req: &models.ServiceReprovisionInstallStackRequest{
-			PlanOnly: false,
+		Req: &models.ServiceReprovisionInstallRequest{
+			Role: role,
 		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
@@ -149,10 +137,26 @@ func (c *client) ReprovisionInstallStack(ctx context.Context, installID string) 
 	return resp.Payload, nil
 }
 
-func (c *client) DeprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
+func (c *client) ReprovisionInstallStack(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error) {
+	resp, err := c.genClient.Operations.ReprovisionInstallStack(&operations.ReprovisionInstallStackParams{
+		InstallID: installID,
+		Context:   ctx,
+		Req: &models.ServiceReprovisionInstallStackRequest{
+			PlanOnly: false,
+			Role:     role,
+		},
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) DeprovisionInstall(ctx context.Context, installID string, role string) (*models.AppWorkflowResponse, error) {
 	var result models.AppWorkflowResponse
 	path := fmt.Sprintf("%s/v1/installs/%s/deprovision", c.APIURL, url.PathEscape(installID))
-	err := c.triggerRequest(ctx, http.MethodPost, path, &models.ServiceDeprovisionInstallRequest{}, http.StatusCreated, &result)
+	err := c.triggerRequest(ctx, http.MethodPost, path, &models.ServiceDeprovisionInstallRequest{Role: role}, http.StatusCreated, &result)
 	if err != nil {
 		return nil, err
 	}
