@@ -28,13 +28,13 @@ export const THEME_CLASSES = {
   neutral:
     'bg-cool-grey-100 text-cool-grey-800 !border-cool-grey-400 dark:bg-dark-grey-600 dark:!border-cool-grey-600/40 dark:text-cool-grey-400',
   success:
-    'bg-[#F4FBF7] text-green-800 !border-green-400 dark:bg-[#0C1B14] dark:!border-green-500/40 dark:text-green-500',
-  warn: 'bg-[#FFF5EB] text-orange-800 !border-orange-400 dark:bg-[#2E1E10] dark:!border-orange-500/40 dark:text-orange-500',
+    'bg-green-50 text-green-800 !border-green-400 dark:bg-green-950 dark:!border-green-500/40 dark:text-green-500',
+  warn: 'bg-orange-50 text-orange-800 !border-orange-400 dark:bg-orange-950 dark:!border-orange-500/40 dark:text-orange-500',
   error:
-    'bg-[#FEF2F2] text-red-800 !border-red-300 dark:bg-[#290C0D] dark:!border-red-500/40 dark:text-red-500',
-  info: 'bg-[#FAFBFF] text-blue-800 !border-blue-400 dark:bg-[#0F172A] dark:!border-blue-500/40 dark:text-blue-500',
+    'bg-red-50 text-red-800 !border-red-300 dark:bg-red-950 dark:!border-red-500/40 dark:text-red-500',
+  info: 'bg-blue-50 text-blue-800 !border-blue-400 dark:bg-blue-950 dark:!border-blue-500/40 dark:text-blue-500',
   brand:
-    'bg-[#FCFAFF] text-primary-800 !border-primary-400 dark:bg-[#251932] dark:!border-primary-600/40 dark:text-primary-500',
+    'bg-primary-50 text-primary-800 !border-primary-400 dark:bg-primary-950 dark:!border-primary-600/40 dark:text-primary-500',
 }
 
 const getToastAccessibilityProps = (theme: TToastTheme) => {

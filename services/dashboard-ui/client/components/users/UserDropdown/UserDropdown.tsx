@@ -4,6 +4,7 @@ import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
+import { ThemeSwitcher } from '@/components/common/ThemeSwitcher'
 import { Toast } from '@/components/surfaces/Toast'
 import { InviteUserButton } from '@/components/team/InviteUser'
 import { cn } from '@/utils/classnames'
@@ -126,6 +127,9 @@ export const UserDropdown = ({
             User settings
           </Text>
         )}
+        <div className="px-1.5 py-1">
+          <ThemeSwitcher />
+        </div>
         {notificationsSupported && notificationPermission === 'granted' ? (
           <Button onClick={() => {
             onToggleMute()
