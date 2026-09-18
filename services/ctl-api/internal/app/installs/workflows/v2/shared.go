@@ -201,7 +201,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 			Signal: sig,
 		},
 		Retryable: meta.retryable,
-		Skippable: true,
+		Skippable: signal.IsSkippable(sig),
 	}
 
 	step.Timeout = signal.DeriveTimeout(sig)
