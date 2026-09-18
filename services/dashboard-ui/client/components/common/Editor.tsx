@@ -4,7 +4,7 @@ import { json } from '@codemirror/lang-json'
 import { StreamLanguage } from '@codemirror/language'
 import { shell } from '@codemirror/legacy-modes/mode/shell'
 import { EditorView } from '@codemirror/view'
-import { useSystemTheme } from '@/hooks/use-system-theme'
+import { useColorScheme } from '@/hooks/use-theme'
 import { cn } from '@/utils/classnames'
 
 export type TEditorLanguage = 'bash' | 'json' | 'sh' | 'shell'
@@ -54,7 +54,7 @@ export const Editor = ({
   minHeight = 200,
   maxHeight = 600,
 }: IEditor) => {
-  const colorScheme = useSystemTheme()
+  const colorScheme = useColorScheme()
 
   const extensions = useMemo(() => {
     const lang = getLanguageExtension(language)
