@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 // @ID						CreateOnboarding
@@ -54,13 +55,18 @@ func (s *service) CreateOnboarding(ctx *gin.Context) {
 		return
 	}
 
-	// Create a queue for this onboarding session
+	spec, ok := queuenames.SpecByName(queuenames.OwnerOnboardings, queuenames.OnboardingDefaultQueueName)
+	if !ok {
+		ctx.Error(fmt.Errorf("onboarding default queue is not registered"))
+		return
+	}
 	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     onboarding.ID,
 		OwnerType:   plugins.TableName(s.db, app.Onboarding{}),
 		Namespace:   "onboardings",
-		MaxInFlight: 1,
-		MaxDepth:    10,
+		Name:        spec.Name,
+		MaxInFlight: spec.MaxInFlight,
+		MaxDepth:    spec.MaxDepth,
 	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create onboarding queue: %w", err))
