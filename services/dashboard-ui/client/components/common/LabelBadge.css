@@ -21,8 +21,7 @@
 }
 
 [data-theme='dark'] .label-badge-value,
-[data-theme='classic'] .label-badge-value,
-[data-theme='high-contrast'] .label-badge-value {
+[data-theme='classic'] .label-badge-value {
   background-color: color-mix(
     in srgb,
     var(--label-color) 25%,
@@ -34,4 +33,12 @@
     var(--label-color) 45%,
     var(--color-dark-grey-700)
   ) !important;
+}
+
+/* Label colours arrive from the API as arbitrary user-chosen values, so they
+   cannot be guaranteed readable on the high-contrast blue. Ignore them there. */
+[data-theme='high-contrast'] .label-badge-value {
+  background-color: var(--dark-grey-950);
+  color: #ffffff;
+  border-color: #ffffff !important;
 }

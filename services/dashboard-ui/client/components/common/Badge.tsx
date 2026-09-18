@@ -29,7 +29,7 @@ const VARIANT_CLASSES: Record<NonNullable<IBadge['variant']>, string> = {
 const THEME_CLASSES: Record<NonNullable<IBadge['theme']>, string> = {
   none: '',
   brand:
-    'bg-primary-50 !border-primary-200 text-primary-600 dark:bg-[#1B1026] dark:!border-[#351F4D] dark:text-primary-400',
+    'bg-primary-50 !border-primary-200 text-primary-600 dark:bg-primary-950 dark:!border-primary-600/40 dark:text-primary-400',
   default:
     'bg-cool-grey-50 text-dark-grey-950 dark:bg-dark-grey-800 dark:text-cool-grey-100 !border-cool-grey-400 dark:!border-dark-grey-500',
   neutral:

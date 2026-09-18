@@ -33,7 +33,7 @@ const THEME_CLASSES: Record<TBannerTheme, string> = {
   success:
     'bg-green-50 text-green-800 !border-green-300 dark:bg-green-950 dark:!border-green-600/40 dark:text-green-500',
   brand:
-    'bg-primary-50 text-primary-800 !border-primary-300 dark:bg-[#251932] dark:!border-primary-600/40 dark:text-primary-500',
+    'bg-primary-50 text-primary-800 !border-primary-300 dark:bg-primary-950 dark:!border-primary-600/40 dark:text-primary-500',
 }
 
 export const Banner = ({

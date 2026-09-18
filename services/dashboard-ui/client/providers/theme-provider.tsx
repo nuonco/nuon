@@ -18,6 +18,10 @@ export type TColorScheme = 'light' | 'dark'
 
 export const THEME_STORAGE_KEY = 'nuon-theme'
 
+/* Kept in sync with the first-paint script in client/index.html, which cannot
+   import from here. Changing one without the other causes a theme flash. */
+export const DEFAULT_THEME_PREFERENCE: TThemePreference = 'classic'
+
 export const THEME_PREFERENCES: readonly TThemePreference[] = [
   'system',
   'light',
@@ -52,7 +56,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [preference, setStoredPreference] = useStoredViewMode<TThemePreference>(
     THEME_STORAGE_KEY,
     THEME_PREFERENCES,
-    'system'
+    DEFAULT_THEME_PREFERENCE
   )
   const [systemTheme, setSystemTheme] = useState<TColorScheme>(systemColorScheme)
 

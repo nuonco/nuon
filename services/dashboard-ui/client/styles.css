@@ -141,6 +141,7 @@
   --background-image-btn-gradient-dark: var(--btn-gradient-dark);
   --color-btn-bg-light: var(--btn-bg-light);
   --color-btn-bg-dark: var(--btn-bg-dark);
+  --color-on-primary: var(--on-primary);
 
   --color-code: var(--bg-code);
 
@@ -160,6 +161,7 @@
 :root[data-theme='classic'] {
   --white: #ffffff;
   --black: #000000;
+  --on-primary: #ffffff;
 }
 
 :root {
@@ -398,6 +400,132 @@
   --gray-950: oklch(13% 0.028 261.692);
 }
 
+/* High contrast collapses each hue to a single AAA-on-blue value: the page is
+   always blue here, so a light-mode utility with no dark: counterpart still
+   lands on a readable pairing. Only -950 stays a dark fill, which is what the
+   status badge/banner surfaces use. */
+:root[data-theme='high-contrast'] {
+  --hc-blue: #0000aa;
+  --hc-blue-deep: #000088;
+  --hc-yellow: #ffff00;
+
+  --white: #ffffff;
+  --black: #000000;
+  --on-primary: var(--hc-blue);
+
+  --border-light: #ffffff;
+  --border-dark: #ffffff;
+
+  --btn-bg-light: var(--hc-blue-deep);
+  --btn-bg-dark: var(--hc-blue-deep);
+  --btn-gradient-light: linear-gradient(
+    0deg,
+    rgba(255, 255, 0, 0.16) 0%,
+    rgba(255, 255, 0, 0.16) 100%
+  );
+  --btn-gradient-dark: var(--btn-gradient-light);
+  --bg-gradient-light: var(--hc-blue);
+  --bg-gradient-dark: var(--hc-blue);
+
+  --focus-ring: var(--hc-yellow);
+
+  --dark-grey-50: #5c5cd6;
+  --dark-grey-100: #4a4ad0;
+  --dark-grey-200: #3838c9;
+  --dark-grey-300: #2626c2;
+  --dark-grey-400: #1a1abd;
+  --dark-grey-500: #1010b8;
+  --dark-grey-600: #0808b4;
+  --dark-grey-700: #0404b0;
+  --dark-grey-800: #0202ad;
+  --dark-grey-900: var(--hc-blue);
+  --dark-grey-950: var(--hc-blue-deep);
+
+  --cool-grey-50: #ffffff;
+  --cool-grey-100: #ffffff;
+  --cool-grey-200: #ffffff;
+  --cool-grey-300: #ffffff;
+  --cool-grey-400: #ffffff;
+  --cool-grey-500: #ffffff;
+  --cool-grey-600: #ffffff;
+  --cool-grey-700: #ffffff;
+  --cool-grey-800: #ffffff;
+  --cool-grey-900: #ffffff;
+  --cool-grey-950: #ffffff;
+
+  --gray-50: #ffffff;
+  --gray-100: #ffffff;
+  --gray-200: #ffffff;
+  --gray-300: #ffffff;
+  --gray-400: #ffffff;
+  --gray-500: #ffffff;
+  --gray-600: #ffffff;
+  --gray-700: #ffffff;
+  --gray-800: #ffffff;
+  --gray-900: #ffffff;
+  --gray-950: #ffffff;
+
+  --primary-50: var(--hc-yellow);
+  --primary-100: var(--hc-yellow);
+  --primary-200: var(--hc-yellow);
+  --primary-300: var(--hc-yellow);
+  --primary-400: var(--hc-yellow);
+  --primary-500: var(--hc-yellow);
+  --primary-600: var(--hc-yellow);
+  --primary-700: var(--hc-yellow);
+  --primary-800: var(--hc-yellow);
+  --primary-900: var(--hc-yellow);
+  --primary-950: var(--hc-blue-deep);
+
+  --red-50: #ffb3b3;
+  --red-100: #ffb3b3;
+  --red-200: #ffb3b3;
+  --red-300: #ffb3b3;
+  --red-400: #ffb3b3;
+  --red-500: #ffb3b3;
+  --red-600: #ffb3b3;
+  --red-700: #ffb3b3;
+  --red-800: #ffb3b3;
+  --red-900: #ffb3b3;
+  --red-950: var(--hc-blue-deep);
+
+  --green-50: #a0ffa0;
+  --green-100: #a0ffa0;
+  --green-200: #a0ffa0;
+  --green-300: #a0ffa0;
+  --green-400: #a0ffa0;
+  --green-500: #a0ffa0;
+  --green-600: #a0ffa0;
+  --green-700: #a0ffa0;
+  --green-800: #a0ffa0;
+  --green-900: #a0ffa0;
+  --green-950: var(--hc-blue-deep);
+
+  --orange-50: #ffb86c;
+  --orange-100: #ffb86c;
+  --orange-200: #ffb86c;
+  --orange-300: #ffb86c;
+  --orange-400: #ffb86c;
+  --orange-500: #ffb86c;
+  --orange-600: #ffb86c;
+  --orange-700: #ffb86c;
+  --orange-800: #ffb86c;
+  --orange-900: #ffb86c;
+  --orange-950: var(--hc-blue-deep);
+
+  --blue-50: #00ffff;
+  --blue-100: #00ffff;
+  --blue-200: #00ffff;
+  --blue-300: #00ffff;
+  --blue-400: #00ffff;
+  --blue-500: #00ffff;
+  --blue-600: #00ffff;
+  --blue-700: #00ffff;
+  --blue-800: #00ffff;
+  --blue-900: #00ffff;
+  --blue-950: var(--hc-blue-deep);
+}
+
 :root {
   color-scheme: light dark;
 
@@ -466,6 +594,16 @@ body {
 
 .disable-ligatures {
   font-variant-ligatures: no-contextual !important;
+}
+
+/* Keyed off which logo renders, not the resolved mode: the landing footer
+   forces variant="dark" on a dark background even in light mode. */
+:root:not([data-theme='classic']) .logo-glyph-light {
+  fill: var(--cool-grey-950);
+}
+
+:root:not([data-theme='classic']) .logo-glyph-dark {
+  fill: var(--white);
 }
 
 @media (min-width: 1020px) {

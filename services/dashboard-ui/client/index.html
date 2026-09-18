@@ -6,12 +6,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
+      var nuonTheme = 'classic'
       try {
-        var nuonTheme = localStorage.getItem('nuon-theme')
-        if (nuonTheme && nuonTheme !== 'system') {
-          document.documentElement.setAttribute('data-theme', nuonTheme)
-        }
+        nuonTheme = localStorage.getItem('nuon-theme') || nuonTheme
       } catch (e) {}
+      if (nuonTheme !== 'system') {
+        document.documentElement.setAttribute('data-theme', nuonTheme)
+      }
     </script>
     <title>Nuon</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
