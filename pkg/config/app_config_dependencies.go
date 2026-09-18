@@ -34,6 +34,10 @@ func RoleResourceID(name string) diff.NodeID {
 	return diff.NodeID("role." + strings.ReplaceAll(strings.TrimSpace(name), " ", ""))
 }
 
+func NamedPolicyResourceID(name string) diff.NodeID {
+	return diff.NodeID("named_policy." + strings.ReplaceAll(strings.TrimSpace(name), " ", ""))
+}
+
 func roleNodeID(old, new *AppAWSIAMRole) diff.NodeID {
 	if new != nil && new.Name != "" {
 		return RoleResourceID(new.Name)
@@ -78,6 +82,12 @@ func addAppConfigDependencyEdges(graph *diff.Graph, cfg *AppConfig) {
 	graph.AddDependency(StackResourceID, RunnerResourceID, diff.EdgeReasonStackRender)
 	for _, role := range appConfigRoles(cfg) {
 		graph.AddDependency(StackResourceID, RoleResourceID(role.Name), diff.EdgeReasonStackRender)
+	}
+	if cfg.Permissions != nil {
+		// Named policies render into the stack even when every role is disabled.
+		for _, policy := range cfg.Permissions.NamedPolicies {
+			graph.AddDependency(StackResourceID, NamedPolicyResourceID(policy.Name), diff.EdgeReasonStackRender)
+		}
 	}
 	if cfg.Secrets != nil {
 		for _, secret := range cfg.Secrets.Secrets {
