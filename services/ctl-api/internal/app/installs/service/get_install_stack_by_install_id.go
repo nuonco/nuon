@@ -61,14 +61,17 @@ func (s *service) getInstallStack(ctx context.Context, installID, orgID string) 
 		Preload("InstallStack.InstallStackVersions", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_stack_versions.created_at DESC").Limit(10)
 		}).
-		Preload("InstallStack.InstallStackVersions.Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_stack_version_runs.created_at DESC").Limit(10)
-		}).
 		Preload("InstallStack.InstallStackOutputs").
 		Where("id = ? and org_id = ?", installID, orgID).
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install stack: %w", res.Error)
+	}
+
+	if install.InstallStack != nil {
+		if err := s.attachStackVersionRuns(ctx, install.InstallStack.InstallStackVersions, maxStackVersionRuns); err != nil {
+			return nil, err
+		}
 	}
 
 	return install.InstallStack, nil
