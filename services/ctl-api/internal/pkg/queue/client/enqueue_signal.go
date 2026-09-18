@@ -9,12 +9,15 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -63,6 +66,21 @@ func (c *Client) enqueueSignal(ctx context.Context, db *gorm.DB, req *EnqueueSig
 	var q app.Queue
 	if err := db.WithContext(ctx).Where(app.Queue{ID: req.QueueID}).First(&q).Error; err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get queue")
+	}
+	if (req.Callback.IsSet() || len(req.Callbacks) > 0) && cctx.QueueIDFromContext(ctx) == q.ID {
+		err := temporal.NewNonRetryableApplicationError(
+			fmt.Sprintf("queue: self-await into %s would deadlock", q.Name),
+			"queue-self-await",
+			nil,
+		)
+		c.l.Error("refusing queue self-await",
+			zap.String("queue-id", q.ID),
+			zap.String("queue-name", q.Name),
+			zap.String("signal-type", string(req.Signal.Type())),
+			zap.String("owner-id", req.OwnerID),
+			zap.String("owner-type", req.OwnerType),
+			zap.Error(err))
+		return nil, nil, err
 	}
 
 	// Create the QueueSignal record in the DB directly so we can return the

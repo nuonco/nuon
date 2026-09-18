@@ -59,7 +59,7 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 		if req.QueueName != "" {
 			queue, err = a.queueClient.GetQueueByOwnerAndName(ctx, req.OwnerID, req.OwnerType, req.QueueName)
 		} else {
-			queue, err = a.queueClient.GetQueueByOwner(ctx, req.OwnerID, req.OwnerType)
+			queue, err = a.queueClient.ResolveQueueByOwner(ctx, req.OwnerID, req.OwnerType)
 		}
 		if err != nil {
 			return nil, generics.TemporalGormError(err, "unable to find queue for owner")
