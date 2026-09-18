@@ -27,7 +27,8 @@ type GetStepErrorHintsResponse struct {
 //   - install_sandbox_runs: checks the row-level CompositeError first (set by
 //     plan render failures), then falls through to the latest runner job error
 //     (set by infrastructure failures during apply).
-//   - install_deploys: reads the latest runner job's composite error.
+//   - install_deploys: checks the row-level CompositeError first (set by plan
+//     render failures), then falls through to the latest runner job error.
 //
 // It is best-effort: a target with no composite error yields empty hints.
 //
@@ -56,7 +57,7 @@ func (a *Activities) GetStepErrorHints(ctx context.Context, req GetStepErrorHint
 // target. Stack versions carry a row-level error set directly by the generator
 // signal. Sandbox runs check the row-level error first (plan render failures),
 // then fall back to the latest runner job (infrastructure failures). Deploys
-// use only the runner job path.
+// follow the same order.
 func (a *Activities) stepTargetCompositeError(ctx context.Context, step *app.WorkflowStep) (*compositeerrors.CompositeErrorData, error) {
 	if step.StepTargetID == "" {
 		return nil, nil
@@ -84,6 +85,13 @@ func (a *Activities) stepTargetCompositeError(ctx context.Context, step *app.Wor
 		return jobCE, nil
 
 	case app.WorkflowStepTargetTypeInstallDeploy, app.WorkflowStepTargetTypeInstallDeploys:
+		rowCE, err := a.deployRowCompositeError(ctx, step.StepTargetID)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get install deploy composite error")
+		}
+		if rowCE != nil {
+			return rowCE, nil
+		}
 		jobCE, err := runnershelpers.GetLatestJobCompositeError(ctx, a.db, runnershelpers.GetLatestJobCompositeErrorRequest{
 			OwnerID:   step.StepTargetID,
 			OwnerType: "install_deploys",
@@ -109,6 +117,17 @@ func (a *Activities) stackVersionCompositeError(ctx context.Context, stackVersio
 		return nil, errors.Wrap(err, "unable to get stack version")
 	}
 	return sv.CompositeError, nil
+}
+
+func (a *Activities) deployRowCompositeError(ctx context.Context, installDeployID string) (*compositeerrors.CompositeErrorData, error) {
+	var deploy app.InstallDeploy
+	if err := a.db.WithContext(ctx).
+		Select("id", "composite_error").
+		Where(app.InstallDeploy{ID: installDeployID}).
+		First(&deploy).Error; err != nil {
+		return nil, errors.Wrap(err, "unable to get install deploy")
+	}
+	return deploy.CompositeError, nil
 }
 
 // sandboxRunRowCompositeError reads the row-level composite error from an
