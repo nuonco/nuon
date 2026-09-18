@@ -2301,7 +2301,7 @@ export interface paths {
   "/v1/log-streams/{log_stream_id}/logs/tail": {
     /**
      * long-poll tail a log stream
-     * @description Returns rows after the supplied composite cursor, long-polling up to ~30s for new rows on an idle stream.
+     * @description Returns rows after the supplied composite cursor, long-polling up to ~30s for new rows on an idle stream. Behind the `log-tail-long-poll` org feature flag.
      */
     get: operations["LogStreamTailLogs"];
   };
@@ -3792,7 +3792,7 @@ export interface components {
       trigger?: components["schemas"]["app.AppBranchRunTrigger"];
     };
     /** @enum {string} */
-    "app.AppBranchRunMode": "push" | "on_tag_prefix" | "on_github_label" | "manual_only";
+    "app.AppBranchRunMode": "push" | "on_tag" | "on_github_label" | "manual_only";
     "app.AppBranchRunPreview": {
       app_branch_run_id?: string;
       branch_preview_config?: components["schemas"]["app.AppBranchPreviewConfig"];
@@ -4101,6 +4101,9 @@ export interface components {
     /** @enum {string} */
     "app.AppRunnerType": "unknown" | "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs" | "gcp-gke" | "local" | "aws" | "azure" | "gcp";
     "app.AppSandboxBuild": {
+      app_branch_id?: string;
+      app_branch_run?: components["schemas"]["app.AppBranchRun"];
+      app_branch_run_id?: string;
       app_config_id?: string;
       app_id?: string;
       app_sandbox_config_id?: string;
@@ -4341,6 +4344,7 @@ export interface components {
     };
     "app.ComponentBuild": {
       app_branch_id?: string;
+      app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
       build_runner_job_id?: string;
       /** @description checksum of our intermediate component config */
@@ -6463,7 +6467,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerProcessType": "mng" | "install" | "build" | "org" | "";
     /** @enum {string} */
-    "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "awaiting-heartbeat" | "disabled" | "unknown";
+    "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "disabled" | "unknown";
     /** @enum {string} */
     "app.SandboxRunType": "provision" | "reprovision" | "deprovision";
     "app.SlackChannelSubscription": {
@@ -7016,7 +7020,6 @@ export interface components {
       log_stream_id?: string;
       org_id?: string;
       trace_id?: string;
-      workflow_telemetry?: components["schemas"]["keys.WorkflowTelemetry"];
     };
     "client.Conversation": {
       id?: string;
@@ -7310,17 +7313,6 @@ export interface components {
       src_iam_role_arn?: string;
       /** @description Root Credentials */
       src_static_credentials?: components["schemas"]["iam.StaticCredentials"];
-    };
-    "keys.WorkflowTelemetry": {
-      install_id?: string;
-      install_name?: string;
-      org_id?: string;
-      org_name?: string;
-      owner_id?: string;
-      owner_name?: string;
-      owner_type?: string;
-      workflow_id?: string;
-      workflow_type?: string;
     };
     "kube.ClusterInfo": {
       aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
@@ -26951,52 +26943,16 @@ export interface operations {
       query?: {
         /** @description sort direction */
         order?: string;
-        /** @description only return records with timestamp >= start_time (RFC3339) */
-        start_time?: string;
-        /** @description only return records with timestamp <= end_time (RFC3339) */
-        end_time?: string;
-        /** @description filter by service_name (repeatable) collectionFormat(multi) */
+        /** @description filter by service_name (repeatable) */
         service_name?: string[];
-        /** @description filter by scope_name (repeatable; e.g. oteljob, system) collectionFormat(multi) */
+        /** @description filter by scope_name (repeatable) */
         scope_name?: string[];
-        /** @description filter by scope_version (repeatable) collectionFormat(multi) */
-        scope_version?: string[];
-        /** @description filter by resource_schema_url (repeatable) collectionFormat(multi) */
-        resource_schema_url?: string[];
-        /** @description filter by scope_schema_url (repeatable) collectionFormat(multi) */
-        scope_schema_url?: string[];
-        /** @description filter by severity_text (repeatable; INFO/WARN/ERROR/...) collectionFormat(multi) */
+        /** @description filter by severity_text (repeatable) */
         severity_text?: string[];
-        /** @description filter by severity_number >= N (OTEL: TRACE=1..FATAL=24) */
-        severity_number_min?: number;
-        /** @description filter by severity_number <= N (OTEL: TRACE=1..FATAL=24) */
-        severity_number_max?: number;
-        /** @description filter by exact trace_id (dedicated CH column) */
-        trace_id?: string;
-        /** @description filter by exact span_id (dedicated CH column) */
-        span_id?: string;
-        /** @description filter by exact trace_flags (UInt8) */
-        trace_flags?: number;
-        /** @description filter by runner_id */
-        runner_id?: string;
-        /** @description filter by runner_job_id (part of CH ORDER BY — efficient) */
-        runner_job_id?: string;
-        /** @description filter by runner_group_id */
-        runner_group_id?: string;
-        /** @description filter by runner_job_execution_id */
-        runner_job_execution_id?: string;
-        /** @description filter by runner_job_execution_step */
-        runner_job_execution_step?: string;
-        /** @description filter by log_attributes['nuon.tool'] (repeatable; e.g. helm, terraform, kubernetes_manifest, runner) collectionFormat(multi) */
-        tool?: string[];
+        /** @description filter by log_attributes['nuon.tool'] */
+        tool?: string;
         /** @description filter by log_attributes['helm.release_name'] */
         helm_release_name?: string;
-        /** @description filter by log_attributes['helm.chart_name'] */
-        helm_chart_name?: string;
-        /** @description filter by log_attributes['helm.chart_id'] */
-        helm_chart_id?: string;
-        /** @description filter by log_attributes['helm.namespace'] */
-        helm_namespace?: string;
         /** @description filter by log_attributes['helm.operation'] */
         helm_operation?: string;
         /** @description filter by log_attributes['tf.workspace_id'] */
@@ -27009,14 +26965,10 @@ export interface operations {
         k8s_namespace?: string;
         /** @description filter by log_attributes['k8s.name'] */
         k8s_name?: string;
-        /** @description filter by log_attributes['k8s.operation'] */
-        k8s_operation?: string;
-        /** @description generic log_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
-        attr?: string[];
-        /** @description generic resource_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
-        resource_attr?: string[];
-        /** @description generic scope_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
-        scope_attr?: string[];
+        /** @description filter by exact trace_id (dedicated CH column) */
+        trace_id?: string;
+        /** @description filter by exact span_id (dedicated CH column) */
+        span_id?: string;
         /** @description case-insensitive substring filter on log body */
         q?: string;
       };
@@ -27070,7 +27022,7 @@ export interface operations {
   };
   /**
    * long-poll tail a log stream
-   * @description Returns rows after the supplied composite cursor, long-polling up to ~30s for new rows on an idle stream.
+   * @description Returns rows after the supplied composite cursor, long-polling up to ~30s for new rows on an idle stream. Behind the `log-tail-long-poll` org feature flag.
    */
   LogStreamTailLogs: {
     parameters: {
@@ -27079,74 +27031,6 @@ export interface operations {
         since?: string;
         /** @description max wait for new rows (Go duration, capped server-side at 30s) */
         wait?: string;
-        /** @description only return records with timestamp >= start_time (RFC3339) */
-        start_time?: string;
-        /** @description only return records with timestamp <= end_time (RFC3339) */
-        end_time?: string;
-        /** @description filter by service_name (repeatable) collectionFormat(multi) */
-        service_name?: string[];
-        /** @description filter by scope_name (repeatable; e.g. oteljob, system) collectionFormat(multi) */
-        scope_name?: string[];
-        /** @description filter by scope_version (repeatable) collectionFormat(multi) */
-        scope_version?: string[];
-        /** @description filter by resource_schema_url (repeatable) collectionFormat(multi) */
-        resource_schema_url?: string[];
-        /** @description filter by scope_schema_url (repeatable) collectionFormat(multi) */
-        scope_schema_url?: string[];
-        /** @description filter by severity_text (repeatable; INFO/WARN/ERROR/...) collectionFormat(multi) */
-        severity_text?: string[];
-        /** @description filter by severity_number >= N (OTEL: TRACE=1..FATAL=24) */
-        severity_number_min?: number;
-        /** @description filter by severity_number <= N (OTEL: TRACE=1..FATAL=24) */
-        severity_number_max?: number;
-        /** @description filter by exact trace_id (dedicated CH column) */
-        trace_id?: string;
-        /** @description filter by exact span_id (dedicated CH column) */
-        span_id?: string;
-        /** @description filter by exact trace_flags (UInt8) */
-        trace_flags?: number;
-        /** @description filter by runner_id */
-        runner_id?: string;
-        /** @description filter by runner_job_id (part of CH ORDER BY — efficient) */
-        runner_job_id?: string;
-        /** @description filter by runner_group_id */
-        runner_group_id?: string;
-        /** @description filter by runner_job_execution_id */
-        runner_job_execution_id?: string;
-        /** @description filter by runner_job_execution_step */
-        runner_job_execution_step?: string;
-        /** @description filter by log_attributes['nuon.tool'] (repeatable; e.g. helm, terraform, kubernetes_manifest, runner) collectionFormat(multi) */
-        tool?: string[];
-        /** @description filter by log_attributes['helm.release_name'] */
-        helm_release_name?: string;
-        /** @description filter by log_attributes['helm.chart_name'] */
-        helm_chart_name?: string;
-        /** @description filter by log_attributes['helm.chart_id'] */
-        helm_chart_id?: string;
-        /** @description filter by log_attributes['helm.namespace'] */
-        helm_namespace?: string;
-        /** @description filter by log_attributes['helm.operation'] */
-        helm_operation?: string;
-        /** @description filter by log_attributes['tf.workspace_id'] */
-        tf_workspace_id?: string;
-        /** @description filter by log_attributes['tf.operation'] */
-        tf_operation?: string;
-        /** @description filter by log_attributes['k8s.kind'] */
-        k8s_kind?: string;
-        /** @description filter by log_attributes['k8s.namespace'] */
-        k8s_namespace?: string;
-        /** @description filter by log_attributes['k8s.name'] */
-        k8s_name?: string;
-        /** @description filter by log_attributes['k8s.operation'] */
-        k8s_operation?: string;
-        /** @description generic log_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
-        attr?: string[];
-        /** @description generic resource_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
-        resource_attr?: string[];
-        /** @description generic scope_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi) */
-        scope_attr?: string[];
-        /** @description case-insensitive substring filter on log body */
-        q?: string;
       };
       path: {
         /** @description log stream ID */

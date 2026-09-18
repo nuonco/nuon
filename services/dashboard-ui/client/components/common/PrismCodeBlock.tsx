@@ -5,7 +5,7 @@ import {
   oneLight,
 } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import createElement from 'react-syntax-highlighter/dist/esm/create-element'
-import { useSystemTheme } from '@/hooks/use-system-theme'
+import { useColorScheme } from '@/hooks/use-theme'
 import { cn } from '@/utils/classnames'
 import { Expand } from './Expand'
 
@@ -226,7 +226,7 @@ export function PrismCodeBlock({
   collapseUnchanged = true,
   wrapLongLines = false,
 }: IPrismCodeBlock) {
-  const colorScheme = useSystemTheme()
+  const colorScheme = useColorScheme()
   const bgCode = colorScheme === 'dark' ? 'var(--color-dark-grey-800)' : 'var(--color-cool-grey-100)'
   const baseTheme = colorScheme === 'dark' ? oneDark : oneLight
   const theme = {

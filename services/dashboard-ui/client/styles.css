@@ -3,6 +3,22 @@
 
 @plugin "@tailwindcss/typography";
 
+@custom-variant dark {
+  &:where(
+    [data-theme='dark'] *,
+    [data-theme='classic'] *,
+    [data-theme='high-contrast'] *
+  ) {
+    @slot;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    &:where(html:not([data-theme]) *) {
+      @slot;
+    }
+  }
+}
+
 @font-face {
   font-family: 'Hack';
   src: url('/fonts/hack-regular.woff2') format('woff2'),
@@ -142,30 +158,55 @@
 }
 
 :root {
+  color-scheme: light dark;
+
   --font-inter: 'Inter', sans-serif;
   --font-hack: 'Hack', monospace;
 
-  --background: var(--color-white);
-  --background-neutral: var(--color-cool-grey-100);
-  --foreground: var(--color-dark-grey-900);
-  --border-color: var(--border-color-light);
+  --background: light-dark(var(--color-white), var(--color-dark-grey-900));
+  --background-neutral: light-dark(
+    var(--color-cool-grey-100),
+    var(--color-dark-grey-950)
+  );
+  --foreground: light-dark(var(--color-dark-grey-900), var(--color-white));
+  --border-color: light-dark(
+    var(--border-color-light),
+    var(--border-color-dark)
+  );
+  --bg-code: light-dark(
+    var(--color-cool-grey-100),
+    var(--color-dark-grey-800)
+  );
+
   --text-gradient: var(--text-gradient-light);
   --bg-gradient: var(--bg-gradient-light);
-  --bg-code: var(--color-cool-grey-100);
   --landing-graphic: url('../../public/login-graphics/landing-graphic-light.svg');
 }
 
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'],
+:root[data-theme='classic'],
+:root[data-theme='high-contrast'] {
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: var(--color-dark-grey-900);
-    --background-neutral: var(--color-dark-grey-950);
-    --foreground: var(--color-white);
-    --border-color: var(--border-color-dark);
+  :root:not([data-theme]) {
     --text-gradient: var(--text-gradient-dark);
     --bg-gradient: var(--bg-gradient-dark);
-    --bg-code: var(--color-dark-grey-800);
     --landing-graphic: url('../../public/login-graphics/landing-graphic.svg');
   }
+}
+
+:root[data-theme='dark'],
+:root[data-theme='classic'],
+:root[data-theme='high-contrast'] {
+  --text-gradient: var(--text-gradient-dark);
+  --bg-gradient: var(--bg-gradient-dark);
+  --landing-graphic: url('../../public/login-graphics/landing-graphic.svg');
 }
 
 hr,
