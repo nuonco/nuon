@@ -30,8 +30,9 @@ type CreateQueueRequest struct {
 	OwnerType string `validate:"required"`
 	Namespace string `validate:"required"`
 
-	Name     string
-	Metadata pgtype.Hstore
+	Name            string
+	Metadata        pgtype.Hstore
+	SkipRestartHint bool `temporaljson:"skip_restart_hint,omitempty"`
 
 	MaxInFlight int
 	MaxDepth    int
@@ -40,13 +41,16 @@ type CreateQueueRequest struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queue, error) {
-	// Idempotent: if a queue with the same owner + name already exists,
-	// restart its workflow and return the existing record.
+	// Capacity must be persisted before the restart hint so the next workflow
+	// run cannot reload stale limits.
 	var existing app.Queue
 	res := c.db.WithContext(ctx).
-		Where(app.Queue{OwnerID: req.OwnerID, OwnerType: req.OwnerType, Name: req.Name}).
+		Where(&app.Queue{OwnerID: req.OwnerID, OwnerType: req.OwnerType, Name: req.Name}, "owner_id", "owner_type", "name").
 		First(&existing)
 	if res.Error == nil {
+		if err := c.reconcileQueueCapacity(ctx, &existing, req); err != nil {
+			return nil, err
+		}
 		if existing.Workflow.Namespace != req.Namespace {
 			if err := c.migrateQueueNamespace(
 				ctx,
@@ -59,9 +63,11 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 
 			return &existing, nil
 		}
-		if err := c.HintRestartSingle(ctx, existing.ID); err != nil {
-			c.l.Warn("unable to hint restart existing queue during idempotent create",
-				zap.String("queue-id", existing.ID), zap.Error(err))
+		if !req.SkipRestartHint {
+			if err := c.HintRestartSingle(ctx, existing.ID); err != nil {
+				c.l.Warn("unable to hint restart existing queue during idempotent create",
+					zap.String("queue-id", existing.ID), zap.Error(err))
+			}
 		}
 		return &existing, nil
 	}
@@ -83,34 +89,24 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 			TaskQueue:  taskqueue.For(req.Namespace, req.Name),
 		},
 	}
-	create := c.db.WithContext(ctx)
-	conflictPredicate := ""
-	switch req.Name {
-	case queue.AppTriggersQueueName:
-		conflictPredicate = "deleted_at = 0 AND name = 'app-triggers'"
-	case queue.OrgSignalsQueueName:
-		conflictPredicate = "deleted_at = 0 AND name = 'org-signals'"
-	}
-	if conflictPredicate != "" {
-		create = create.Clauses(clause.OnConflict{
-			Columns: []clause.Column{{Name: "owner_id"}, {Name: "owner_type"}, {Name: "name"}},
-			TargetWhere: clause.Where{Exprs: []clause.Expression{
-				clause.Expr{SQL: conflictPredicate},
-			}},
-			DoNothing: true,
-		})
-	}
-	res = create.Create(&q)
+	res = c.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&q)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create queue")
 	}
-	if res.RowsAffected == 0 && conflictPredicate != "" {
-		if err := c.db.WithContext(ctx).Where(app.Queue{OwnerID: req.OwnerID, OwnerType: req.OwnerType, Name: req.Name}).First(&existing).Error; err != nil {
+	if res.RowsAffected == 0 {
+		if err := c.db.WithContext(ctx).
+			Where(&app.Queue{OwnerID: req.OwnerID, OwnerType: req.OwnerType, Name: req.Name}, "owner_id", "owner_type", "name").
+			First(&existing).Error; err != nil {
 			return nil, errors.Wrap(err, "unable to get concurrently created queue")
 		}
-		if err := c.HintRestartSingle(ctx, existing.ID); err != nil {
-			c.l.Warn("unable to hint restart concurrently created queue",
-				zap.String("queue-id", existing.ID), zap.Error(err))
+		if err := c.reconcileQueueCapacity(ctx, &existing, req); err != nil {
+			return nil, err
+		}
+		if !req.SkipRestartHint {
+			if err := c.HintRestartSingle(ctx, existing.ID); err != nil {
+				c.l.Warn("unable to hint restart concurrently created queue",
+					zap.String("queue-id", existing.ID), zap.Error(err))
+			}
 		}
 		return &existing, nil
 	}
@@ -148,4 +144,23 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 	)
 
 	return &q, nil
+}
+
+func (c *Client) reconcileQueueCapacity(ctx context.Context, existing *app.Queue, req *CreateQueueRequest) error {
+	updates := make(map[string]any, 2)
+	if existing.MaxInFlight != req.MaxInFlight {
+		updates["max_in_flight"] = req.MaxInFlight
+	}
+	if existing.MaxDepth != req.MaxDepth {
+		updates["max_depth"] = req.MaxDepth
+	}
+	if len(updates) == 0 {
+		return nil
+	}
+	if err := c.db.WithContext(ctx).Model(existing).Updates(updates).Error; err != nil {
+		return errors.Wrap(err, "unable to reconcile queue capacity")
+	}
+	existing.MaxInFlight = req.MaxInFlight
+	existing.MaxDepth = req.MaxDepth
+	return nil
 }

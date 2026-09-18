@@ -138,6 +138,7 @@ func startFlowApp(t *testing.T) TestService {
 	// test time instead of 3 days. Read at workflow runtime, so setting it
 	// before the worker boots covers every flow the suite starts.
 	callback.MaxWaitCeiling = 5 * time.Second
+	handler.DrainTimeout = 500 * time.Millisecond
 
 	// Shrink the step-handler cache window: assertTemporalDrained waits for
 	// handlers to close, so the production 5s window is a flat 5s tax on every
