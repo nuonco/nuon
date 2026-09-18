@@ -91,6 +91,10 @@ func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProces
 		return d
 	}
 
+	if !healthy && runner.HealthcheckPending(now) {
+		return runnerHealthDecision{Result: "skipped"}
+	}
+
 	if healthy {
 		d.Result = "healthy"
 		d.TargetStatus = app.RunnerStatusActive
