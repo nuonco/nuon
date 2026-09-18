@@ -10,11 +10,12 @@ import (
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 const (
-	AppTriggersQueueName = "app-triggers"
-	OrgSignalsQueueName  = "org-signals"
+	AppTriggersQueueName = queuenames.AppTriggersQueueName
+	OrgSignalsQueueName  = queuenames.OrgSignalsQueueName
 )
 
 type QueueWorkflowRequest struct {

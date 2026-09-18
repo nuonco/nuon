@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -22,11 +23,6 @@ import (
 // webhook lifecycle events. Together with the workflow-step-approval-response
 // signal it gives both sides of the approval handshake a uniform shape.
 const SignalType signal.SignalType = "workflow-step-approval-request"
-
-// installSignalsQueueName mirrors the constant in
-// services/ctl-api/internal/app/installs/helpers. Duplicated here as a
-// literal to avoid an import cycle (helpers imports signals via fx wiring).
-const installSignalsQueueName = "install-signals"
 
 // installWorkflowStepsOwnerType matches the polymorphic type used by
 // QueueSignal records that originate from a workflow step.
@@ -129,14 +125,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 // Dispatch enqueues a workflow-step-approval-request signal onto the
-// install-signals queue and waits for it to reach a terminal phase. Calling
+// install-approvals queue and waits for it to reach a terminal phase. Calling
 // this from inside a running workflow replaces the direct
 // activities.AwaitCreateStepApproval call so approval row creation flows
 // through the same queue/lifecycle/webhook plumbing as the approval response.
 //
 // The caller is responsible for populating InstallID, InstallWorkflowID,
 // WorkflowStepID, OwnerID, OwnerType, and Type on sig before calling. The
-// signal is enqueued onto the install-signals queue with the workflow step
+// signal is enqueued onto the install-approvals queue with the workflow step
 // as its owner so it shows up in the same place in the dashboard as other
 // step-scoped signals.
 func Dispatch(ctx workflow.Context, sig *Signal) error {
@@ -144,7 +140,7 @@ func Dispatch(ctx workflow.Context, sig *Signal) error {
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         sig.InstallID,
 		OwnerType:       "installs",
-		QueueName:       installSignalsQueueName,
+		QueueName:       queuenames.InstallApprovalsQueueName,
 		Signal:          sig,
 		SignalOwnerID:   sig.WorkflowStepID,
 		SignalOwnerType: installWorkflowStepsOwnerType,

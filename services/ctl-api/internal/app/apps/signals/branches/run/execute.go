@@ -8,7 +8,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -17,6 +19,7 @@ import (
 const (
 	previewCommitStatusesVersion      = "app-branch-preview-commit-statuses-v1"
 	previewCommentRunFinalizerVersion = "app-branch-preview-comment-run-finalizer-v1"
+	queueBackfillVersion              = "app-branch-workflow-queue-backfill-v1"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -54,16 +57,32 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Enqueue the shared execute-workflow signal to the branch's queue
 	cb := callback.New(ctx, run.ID)
-	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-		OwnerID:         branch.ID,
-		OwnerType:       "app_branches",
-		SignalOwnerID:   *run.WorkflowID,
-		SignalOwnerType: "install_workflows",
-		Signal: &executeflow.Signal{
-			WorkflowID: *run.WorkflowID,
-		},
-		Callback: cb,
-	})
+	enqueue := func() (*sharedactivities.EnqueueSignalToOwnerResponse, error) {
+		return sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:         branch.ID,
+			OwnerType:       queuenames.OwnerAppBranches,
+			QueueName:       queuenames.AppBranchWorkflowsQueueName,
+			SignalOwnerID:   *run.WorkflowID,
+			SignalOwnerType: "install_workflows",
+			Signal: &executeflow.Signal{
+				WorkflowID: *run.WorkflowID,
+			},
+			Callback: cb,
+		})
+	}
+	enqueueResp, err := enqueue()
+	if err != nil &&
+		dbgenerics.IsGormErrRecordNotFound(err) &&
+		workflow.GetVersion(ctx, queueBackfillVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if ensureErr := activities.AwaitEnsureAppBranchQueues(ctx, &activities.EnsureAppBranchQueuesRequest{
+			AppBranchID:     branch.ID,
+			SkipRestartHint: true,
+		}); ensureErr != nil {
+			err = ensureErr
+		} else {
+			enqueueResp, err = enqueue()
+		}
+	}
 	if err != nil {
 		logger.Error("unable to enqueue execute-workflow signal", "error", err)
 		if previewStatusesEnabled {

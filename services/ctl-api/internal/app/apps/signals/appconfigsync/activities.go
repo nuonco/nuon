@@ -167,7 +167,7 @@ func (a *Activities) finalizeAppConfigSync(ctx context.Context, req *FinalizeApp
 		return nil
 	}
 
-	q, err := a.queueClient.GetQueueByOwner(ctx, req.AppID, "apps")
+	q, err := a.queueClient.GetQueueByOwnerAndName(ctx, req.AppID, "apps", "app-signals")
 	if err != nil {
 		return fmt.Errorf("unable to get app queue: %w", err)
 	}
@@ -200,7 +200,7 @@ type DispatchComponentBuildsInput struct {
 // @as-wrapper
 func (a *Activities) dispatchComponentBuilds(ctx context.Context, req *DispatchComponentBuildsInput) error {
 	for _, cmp := range req.Components {
-		q, err := a.queueClient.GetQueueByOwner(ctx, cmp.ComponentID, "components")
+		q, err := a.queueClient.GetDefaultQueueByOwner(ctx, cmp.ComponentID, "components")
 		if err != nil {
 			return fmt.Errorf("unable to get queue for component %s: %w", cmp.ComponentID, err)
 		}

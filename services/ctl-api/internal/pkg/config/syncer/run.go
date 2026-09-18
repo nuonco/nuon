@@ -186,7 +186,7 @@ func provisionDeferredQueues(ctx context.Context, deps RunDeps, appID string, re
 			return fmt.Errorf("unable to create queues for component %s: %w", componentID, err)
 		}
 
-		q, err := queueClient.GetQueueByOwner(ctx, componentID, "components")
+		q, err := queueClient.GetDefaultQueueByOwner(ctx, componentID, "components")
 		if err != nil {
 			return fmt.Errorf("unable to get queue for component %s: %w", componentID, err)
 		}

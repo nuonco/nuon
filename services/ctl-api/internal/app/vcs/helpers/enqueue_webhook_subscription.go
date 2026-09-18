@@ -20,7 +20,7 @@ func (s *webhookSubscriptionSignal) Validate(_ workflow.Context) error { return 
 func (s *webhookSubscriptionSignal) Execute(_ workflow.Context) error  { return nil }
 
 func (h *Helpers) EnqueueWebhookSubscriptionSignal(ctx context.Context, vcsConn *app.VCSConnection) error {
-	queue, err := h.queueClient.GetQueueByOwner(ctx, vcsConn.ID, "vcs_connections")
+	queue, err := h.queueClient.GetOnlyQueueByOwner(ctx, vcsConn.ID, "vcs_connections")
 	if err != nil {
 		return fmt.Errorf("unable to find queue for vcs connection: %w", err)
 	}
