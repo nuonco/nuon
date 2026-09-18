@@ -24,7 +24,7 @@ export const Menu = ({ className, children, ...props }: IMenu) => {
         const menuLinkItem =
           '!bg-transparent !text-cool-grey-800 dark:!text-white/70 hover:!bg-cool-grey-500/8 dark:hover:!bg-cool-grey-500/8 focus:!bg-cool-grey-500/8 dark:focus:!bg-cool-grey-500/8 active:!bg-cool-grey-500/16 dark:active:!bg-cool-grey-500/16'
         const menuLinkDanger =
-          '!bg-transparent !text-red-800 dark:!text-red-500 hover:!bg-red-50 dark:hover:!bg-[#1D0D10] focus:!bg-red-50 dark:focus:!bg-[#1D0D10] active:!bg-red-100 dark:active:!bg-[#2E1013]'
+          '!bg-transparent !text-red-800 dark:!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-950 focus:!bg-red-50 dark:focus:!bg-red-950 active:!bg-red-100 dark:active:!bg-red-900/40'
 
         if (c.type === Button || c.type === Link || childProps.isMenuButton) {
           const isDanger = childProps.variant === 'danger'
