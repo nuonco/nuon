@@ -11,9 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
-	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
-	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 const (
@@ -205,38 +202,8 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 		return nil, res.Error
 	}
 
-	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     runnerGroup.Runners[0].ID,
-		OwnerType:   "runners",
-		Namespace:   "runners",
-		Name:        "runner-signals",
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create runner queue: %w", err)
-	}
-
-	sweeps, err := h.featuresClient.OrgHealthcheckSweepsEnabled(ctx, org.ID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to evaluate org healthcheck sweeps flag: %w", err)
-	}
-	if !sweeps {
-		if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-			QueueID:         q.ID,
-			Name:            RunnerHealthcheckEmitterName,
-			Description:     "Periodic runner-level health check",
-			Mode:            app.QueueEmitterModeCron,
-			CronSchedule:    RunnerHealthcheckSchedule(h.cfg.Env),
-			JitterWindow:    runnerHealthcheckJitterWindow,
-			SignalType:      "runner_healthcheck",
-			SignalExpiresIn: runnerHealthcheckSignalExpiry,
-			SignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{
-				"runner_id": runnerGroup.Runners[0].ID,
-			}),
-		}); err != nil {
-			return nil, fmt.Errorf("unable to create runner healthcheck emitter: %w", err)
-		}
+	if err := h.EnsureRunnerSignalsQueue(ctx, runnerGroup.Runners[0].ID); err != nil {
+		return nil, fmt.Errorf("unable to create runner signals queue: %w", err)
 	}
 
 	if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {

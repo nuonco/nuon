@@ -8,13 +8,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 const componentHealthEvaluateEmitterName = "component-health-evaluate"
 
 // EnsureInstallQueues creates the install queues if they don't already exist.
 // Safe to call multiple times — queueClient.Create is idempotent.
-// Also updates MaxInFlight on existing queues if it has changed.
+// Also updates existing queue capacities if they have changed.
 func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) error {
 	var install app.Install
 	if res := s.db.WithContext(ctx).Where(app.Install{ID: installID}).First(&install); res.Error != nil {
@@ -31,46 +32,36 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 		cronsNamespace = pkgworkflows.InstallCronsNamespace
 	}
 
-	queues := []struct {
-		Name        string
-		Namespace   string
-		MaxInFlight int
-	}{
-		{InstallWorkflowsQueueName, installsNamespace, 25},
-		{InstallSignalsQueueName, installsNamespace, 20},
-		{InstallWorkflowStepGroupsQueueName, installsNamespace, 40},
-		{InstallWorkflowStepsQueueName, installsNamespace, 40},
-		{InstallStateManagerQueueName, installsNamespace, 5},
-		{InstallGenerateStepsQueueName, installsNamespace, 10},
-		{InstallActionWorkflowsQueueName, cronsNamespace, 10},
-		{InstallDriftWorkflowsQueueName, cronsNamespace, 5},
-		{InstallActionCronSignalsQueueName, cronsNamespace, 10},
-		{InstallDriftCronSignalsQueueName, cronsNamespace, 5},
-	}
-
 	ownerType := plugins.TableName(s.db, app.Install{})
-
-	for _, q := range queues {
+	specs, ok := queuenames.Specs(queuenames.OwnerInstalls)
+	if !ok {
+		return fmt.Errorf("install queue specs are not registered")
+	}
+	for _, q := range specs {
+		if q.Name == InstallComponentHealthQueueName {
+			continue
+		}
+		namespace := installsNamespace
+		switch q.Name {
+		case InstallActionWorkflowsQueueName, InstallDriftWorkflowsQueueName,
+			InstallActionCronSignalsQueueName, InstallDriftCronSignalsQueueName:
+			namespace = cronsNamespace
+		}
 		existing, err := s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 			OwnerID:     installID,
 			OwnerType:   ownerType,
-			Namespace:   q.Namespace,
+			Namespace:   namespace,
 			Name:        q.Name,
 			MaxInFlight: q.MaxInFlight,
-			MaxDepth:    50,
+			MaxDepth:    q.MaxDepth,
 		})
 		if err != nil {
 			return fmt.Errorf("unable to ensure %s queue: %w", q.Name, err)
 		}
 
-		// Update MaxInFlight if it has drifted from the desired value.
-		if existing.MaxInFlight != q.MaxInFlight {
-			s.db.WithContext(ctx).Model(existing).Update("max_in_flight", q.MaxInFlight)
-		}
-
 		// queueClient.Create migrates the queue workflow when its namespace
 		// changed; migrate the queue's emitters to match (no-op if unchanged).
-		if err := s.emitterClient.MigrateQueueEmitters(ctx, existing.ID, q.Namespace); err != nil {
+		if err := s.emitterClient.MigrateQueueEmitters(ctx, existing.ID, namespace); err != nil {
 			return fmt.Errorf("unable to migrate %s queue emitters: %w", q.Name, err)
 		}
 	}
@@ -90,13 +81,17 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 // per install cost a workflow execution a minute forever and grew 1:1 with the
 // fleet. Any emitter left over from that design is removed here.
 func (s *Helpers) ensureComponentHealthQueue(ctx context.Context, installID, ownerType, namespace string) error {
+	spec, ok := queuenames.SpecByName(queuenames.OwnerInstalls, queuenames.InstallComponentHealthQueueName)
+	if !ok {
+		return fmt.Errorf("install component health queue is not registered")
+	}
 	q, err := s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     installID,
 		OwnerType:   ownerType,
 		Namespace:   namespace,
-		Name:        InstallComponentHealthQueueName,
-		MaxInFlight: 1,
-		MaxDepth:    10,
+		Name:        spec.Name,
+		MaxInFlight: spec.MaxInFlight,
+		MaxDepth:    spec.MaxDepth,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to ensure %s queue: %w", InstallComponentHealthQueueName, err)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	runnershutdown "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/gracefulshutdown"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -42,6 +43,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:   runner.ID,
 			OwnerType: "runners",
+			QueueName: queuenames.RunnerSignalsQueueName,
 			Signal: &runnershutdown.Signal{
 				RunnerID: runner.ID,
 			},

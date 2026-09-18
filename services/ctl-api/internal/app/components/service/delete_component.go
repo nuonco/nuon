@@ -106,7 +106,7 @@ func (s *service) DeleteComponent(ctx *gin.Context) {
 }
 
 func (s *service) dispatchComponentDelete(ctx context.Context, componentID string) error {
-	q, err := s.queueClient.GetQueueByOwner(ctx, componentID, "components")
+	q, err := s.queueClient.GetDefaultQueueByOwner(ctx, componentID, "components")
 	if err != nil {
 		return fmt.Errorf("unable to get component queue: %w", err)
 	}
