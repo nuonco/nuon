@@ -222,3 +222,116 @@ export const StoppedWithFailedSteps = () => {
     </Wrapper>
   )
 }
+
+const planRenderCompositeError = {
+  version: 1,
+  type: 'deploy.plan_render_failed',
+  severity: 'fatal',
+  message: 'Unable to render the deploy config for certificate',
+  hints: { terminal: 'true' },
+  sections: [
+    {
+      heading: 'Why',
+      kind: 'markdown',
+      body: 'The terraform variables for certificate referenced a value that could not be resolved, so no plan could be built. Nothing was applied to your cloud account.',
+    },
+    {
+      heading: 'Error detail',
+      kind: 'code',
+      body: [
+        'unable to render terraform variables: unable to render interface string map value:',
+        'unable to execute template: template: input:1:11: executing "input" at',
+        '<.nuon.actions.workflows.dns_delegation.outputs.delegated>: map has no entry for key "delegated"',
+      ].join('\n'),
+    },
+    {
+      heading: 'How to fix',
+      kind: 'markdown',
+      body: 'Check the referenced value exists in your app config — a missing sandbox output, action workflow output, or input is the usual cause. Fix the reference, re-run `nuon apps sync`, then retry the deploy.',
+    },
+  ],
+}
+
+const abandonedStep = {
+  id: 'step-abandoned',
+  name: 'sync and plan certificate',
+  execution_type: 'system',
+  status: {
+    status: 'error',
+    status_human_description:
+      'step abandoned after failure: unable to render terraform variables',
+    history: [],
+    metadata: {
+      abandoned: true,
+      original_error:
+        'unable to create deploy plan: unable to render terraform variables',
+    },
+    composite_error: planRenderCompositeError,
+  },
+} as TWorkflowStep
+
+export const StoppedWithCompositeError = () => {
+  const workflow = {
+    ...baseWorkflow,
+    status: {
+      status: 'error',
+      status_human_description:
+        'workflow stopped: unable to create deploy plan: unable to render terraform variables',
+      metadata: {
+        stopped: true,
+        step_name: 'sync and plan certificate',
+        stop_reason:
+          'unable to create deploy plan: unable to render terraform variables',
+        error_message:
+          'workflow stopped at step sync and plan certificate: unable to create deploy plan: unable to render terraform variables',
+      },
+      composite_error: planRenderCompositeError,
+    },
+    steps: [abandonedStep],
+  } as TWorkflow
+
+  return (
+    <Wrapper workflow={workflow}>
+      <WorkflowDetails workflow={workflow} failedSteps={[abandonedStep]} />
+    </Wrapper>
+  )
+}
+
+export const StoppedAtAbandonedStep = () => {
+  const workflow = {
+    ...baseWorkflow,
+    status: {
+      status: 'error',
+      status_human_description:
+        'workflow stopped: step abandoned after failure: no retry or skip received',
+      metadata: {
+        stopped: true,
+        step_name: 'sync and plan certificate',
+        stop_reason: 'step abandoned after failure: no retry or skip received',
+        error_message:
+          'workflow stopped at step sync and plan certificate: step abandoned after failure: no retry or skip received',
+      },
+    },
+    steps: [],
+  } as TWorkflow
+
+  const step = {
+    ...abandonedStep,
+    status: {
+      status: 'error',
+      status_human_description:
+        'step abandoned after failure: no retry or skip received',
+      history: [],
+      metadata: {
+        abandoned: true,
+        reason: 'unable to create deploy plan: context deadline exceeded',
+      },
+    },
+  } as TWorkflowStep
+
+  return (
+    <Wrapper workflow={workflow}>
+      <WorkflowDetails workflow={workflow} failedSteps={[step]} />
+    </Wrapper>
+  )
+}
