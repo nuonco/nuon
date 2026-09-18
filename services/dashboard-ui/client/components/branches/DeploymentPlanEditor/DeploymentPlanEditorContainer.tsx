@@ -54,20 +54,24 @@ export const DeploymentPlanEditorContainer = ({
 
   const { data: installsResult, isLoading: loadingInstalls } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['app-installs', org.id, app.id, branch.id],
+    queryKey: ['app-installs', org.id, app.id],
     queryFn: () =>
       getAppInstalls({
         appId: app.id!,
         orgId: org.id!,
-        app_branch_id: branch.id,
         limit: 100,
       }),
-    enabled: !!org.id && !!app.id && !!branch.id,
+    enabled: !!org.id && !!app.id,
   })
 
-  const availableInstalls = useMemo(
+  const appInstalls = useMemo(
     () => installsResult?.data ?? [],
     [installsResult]
+  )
+
+  const branchInstalls = useMemo(
+    () => appInstalls.filter((install) => install.app_branch_id === branch.id),
+    [appInstalls, branch.id]
   )
 
   const { data: runbooksResult, isLoading: loadingRunbooks } = useQuery({
@@ -126,6 +130,7 @@ export const DeploymentPlanEditorContainer = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['app-branch', org.id, app.id, branch.id] })
       queryClient.invalidateQueries({ queryKey: ['branch-configs', org.id, app.id, branch.id] })
+      queryClient.invalidateQueries({ queryKey: ['app-installs', org.id, app.id] })
       addToast(
         <Toast heading="Deployment plan saved" theme="success">
           <Text>A new config version has been created.</Text>
@@ -146,7 +151,8 @@ export const DeploymentPlanEditorContainer = ({
   return (
     <DeploymentPlanEditor
       initialGroups={initialGroups}
-      availableInstalls={availableInstalls}
+      availableInstalls={branchInstalls}
+      appInstalls={appInstalls}
       loadingInstalls={loadingInstalls}
       isSaving={isSaving}
       labelColors={labelColors}

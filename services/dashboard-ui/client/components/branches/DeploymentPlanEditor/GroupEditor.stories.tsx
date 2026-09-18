@@ -57,7 +57,7 @@ export const ManualSelection = () => (
       index={0}
       totalGroups={2}
       availableInstalls={installs}
-      unassignedInstalls={[installs[2]]}
+      pickableInstalls={[installs[2]]}
       onUpdate={noop}
       onAddInstalls={noop}
       onRemoveInstall={noop}
@@ -75,7 +75,7 @@ export const LabelSelector = () => (
       index={1}
       totalGroups={2}
       availableInstalls={installs}
-      unassignedInstalls={installs}
+      pickableInstalls={installs}
       onUpdate={noop}
       onAddInstalls={noop}
       onRemoveInstall={noop}
@@ -93,7 +93,7 @@ export const EmptyManual = () => (
       index={0}
       totalGroups={1}
       availableInstalls={installs}
-      unassignedInstalls={installs}
+      pickableInstalls={installs}
       onUpdate={noop}
       onAddInstalls={noop}
       onRemoveInstall={noop}
@@ -111,7 +111,7 @@ export const AllInstalls = () => (
       index={0}
       totalGroups={1}
       availableInstalls={installs}
-      unassignedInstalls={[]}
+      pickableInstalls={[]}
       onUpdate={noop}
       onAddInstalls={noop}
       onRemoveInstall={noop}
@@ -129,7 +129,7 @@ export const AllInstallsWithNoInstalls = () => (
       index={0}
       totalGroups={1}
       availableInstalls={[]}
-      unassignedInstalls={[]}
+      pickableInstalls={[]}
       onUpdate={noop}
       onAddInstalls={noop}
       onRemoveInstall={noop}
@@ -147,7 +147,7 @@ export const WithNameError = () => (
       index={0}
       totalGroups={1}
       availableInstalls={installs}
-      unassignedInstalls={[installs[2]]}
+      pickableInstalls={[installs[2]]}
       nameError="Group name is required"
       onUpdate={noop}
       onAddInstalls={noop}

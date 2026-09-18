@@ -7,6 +7,7 @@ import { BuildHeader } from '@/components/builds/BuildHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useApp } from '@/hooks/use-app'
+import { useOptionalBranch } from '@/hooks/use-branch'
 import { useBuild } from '@/hooks/use-build'
 import { useOrg } from '@/hooks/use-org'
 import { getComponent } from '@/lib'
@@ -73,6 +74,7 @@ export const BuildLayout = () => {
   const { branchId, componentId, buildId } = useParams()
   const { org } = useOrg()
   const { app } = useApp()
+  const branch = useOptionalBranch()?.branch
 
   const appBase = branchId
     ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
@@ -92,6 +94,9 @@ export const BuildLayout = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
+          ...(branchId && branch?.name
+            ? [{ path: appBase, text: branch.name }]
+            : []),
           {
             path: `${appBase}/components`,
             text: 'Components',

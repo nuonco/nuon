@@ -29,6 +29,8 @@ type SyncInstallConfigOutput struct {
 	InstallName            string `json:"install_name"`
 	Created                bool   `json:"created"`
 	Changed                bool   `json:"changed"`
+	AppBranchChanged       bool   `json:"app_branch_changed,omitempty"`
+	AppBranchID            string `json:"app_branch_id,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -72,6 +74,8 @@ func (a *Activities) SyncInstallConfig(ctx context.Context, input *SyncInstallCo
 		InstallName:            result.InstallName,
 		Created:                result.Created,
 		Changed:                true,
+		AppBranchChanged:       result.AppBranchChanged,
+		AppBranchID:            result.AppBranchID,
 	}, nil
 }
 

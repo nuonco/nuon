@@ -7,12 +7,14 @@ export interface IBranchInputs {
   appConfig?: TAppConfig
   isLoading?: boolean
   isError?: boolean
+  isMissingConfig?: boolean
 }
 
 export const BranchInputs = ({
   appConfig,
   isLoading = false,
   isError = false,
+  isMissingConfig = false,
 }: IBranchInputs) => {
   if (isLoading) {
     return (
@@ -28,6 +30,16 @@ export const BranchInputs = ({
         variant="diagram"
         emptyTitle="Inputs failed"
         emptyMessage="Unable to load the inputs for this branch."
+      />
+    )
+  }
+
+  if (isMissingConfig) {
+    return (
+      <EmptyState
+        variant="diagram"
+        emptyTitle="No app config yet"
+        emptyMessage="The latest branch update did not produce an app config. Trigger a new run from Updates to try again."
       />
     )
   }

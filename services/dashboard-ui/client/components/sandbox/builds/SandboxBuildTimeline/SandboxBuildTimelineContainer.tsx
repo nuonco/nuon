@@ -11,11 +11,15 @@ const LIMIT = 10
 interface ISandboxBuildTimelineContainer {
   pollInterval?: number
   shouldPoll?: boolean
+  branchId?: string
+  excludeBuildId?: string
 }
 
 export const SandboxBuildTimelineContainer = ({
   pollInterval = 10000,
   shouldPoll = false,
+  branchId,
+  excludeBuildId,
 }: ISandboxBuildTimelineContainer) => {
   const { app } = useApp()
   const { org } = useOrg()
@@ -56,6 +60,8 @@ export const SandboxBuildTimelineContainer = ({
       orgId={org?.id}
       appId={app?.id}
       isEmpty={builds.length === 0 && offset === 0}
+      branchId={branchId}
+      excludeBuildId={excludeBuildId}
     />
   )
 }
