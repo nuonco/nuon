@@ -2,18 +2,22 @@ import { useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { CodeBlock } from '@/components/common/CodeBlock'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
+import { Markdown } from '@/components/common/Markdown'
 import { Menu } from '@/components/common/Menu'
+import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
+import { HealthTimelineComponent } from '@/components/install-health/HealthTimeline'
 import { cn } from '@/utils/classnames'
 import { humanize } from '@/utils/string-utils'
 import type {
@@ -22,7 +26,6 @@ import type {
   TActivityEventType,
   TAppBranchSource,
   TBranchCommitRef,
-  TBranchTracking,
   TBranchTrackingStatus,
   TLagItem,
   TDriftedObject,
@@ -33,18 +36,26 @@ import type {
   TImageEntry,
   TActionEntry,
   TRunbookEntry,
+  TInputEntry,
+  TConfigFileInfo,
+  TOverrideEntry,
 } from './types'
 
 // ─── Top-level navigation ────────────────────────────────────────────────────
 
-type TTopTab = 'overview' | 'activity' | 'runbooks' | 'resources' | 'operations'
+type TTopTab =
+  | 'overview'
+  | 'resources'
+  | 'operations'
+  | 'configuration'
+  | 'activity'
 
 const TOP_TAB_LABELS: Record<TTopTab, string> = {
   overview: 'Overview',
-  activity: 'Activity',
-  runbooks: 'Runbooks',
   resources: 'Resources',
   operations: 'Operations',
+  configuration: 'Configuration',
+  activity: 'Activity',
 }
 
 // ─── Activity filter state ────────────────────────────────────────────────────
@@ -69,19 +80,104 @@ const DEFAULT_ACTIVITY_FILTER: TActivityFilter = {
 
 interface IInstallPlaygroundHeader {
   install: TPlaygroundInstall
+  onNavigate: (
+    tab: TTopTab,
+    opts?: {
+      activityType?: string
+      resourcesTab?: string
+      configurationTab?: string
+    }
+  ) => void
 }
 
-const InstallPlaygroundHeader = ({ install }: IInstallPlaygroundHeader) => (
-  <header className="flex items-start justify-between gap-4 flex-wrap p-4 md:p-6 border-b shrink-0">
-    <div className="flex flex-col gap-1.5 min-w-0">
-      <div className="flex items-center gap-2 flex-wrap">
-        <Text variant="h3" weight="stronger" level={1}>
-          {install.name}
-        </Text>
-        {Object.entries(install.labels).map(([k, v]) => (
-          <LabelBadge key={k} size="sm" labelKey={k} labelValue={v} />
-        ))}
+const ConfigurationSummaryRow = ({
+  install,
+  onNavigate,
+}: IInstallPlaygroundHeader) => {
+  const branchHref = `/${install.orgId}/apps/${install.appId}/branches/${install.branchTracking.branchId}`
+
+  return (
+    <Card className="!p-2 !px-3 !gap-0 !shadow-none w-full">
+      <div className="flex items-center gap-x-6 gap-y-1 flex-wrap">
+        <span className="flex items-center gap-1.5">
+          <Text as="span" variant="subtext" theme="neutral">
+            Managed by
+          </Text>
+          {install.isManagedByConfig ? (
+            <>
+              <Icon
+                variant="FileCodeIcon"
+                size={13}
+                className="text-cool-grey-400"
+              />
+              <Text as="span" variant="subtext">
+                Install config
+              </Text>
+              {install.configFilePath && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="!px-1"
+                  onClick={() =>
+                    onNavigate('configuration', {
+                      configurationTab: 'configFile',
+                    })
+                  }
+                >
+                  <Badge size="sm" variant="code" theme="neutral">
+                    {install.configFilePath}
+                  </Badge>
+                </Button>
+              )}
+            </>
+          ) : (
+            <Text as="span" variant="subtext">
+              Dashboard
+            </Text>
+          )}
+        </span>
+
+        <span className="flex items-center gap-1.5">
+          <Text as="span" variant="subtext" theme="neutral">
+            App
+          </Text>
+          <Link
+            href={`/${install.orgId}/apps/${install.appId}`}
+            textVariant="subtext"
+          >
+            {install.appName}
+          </Link>
+        </span>
+
+        <span className="flex items-center gap-1.5">
+          <Text as="span" variant="subtext" theme="neutral">
+            App branch
+          </Text>
+          <Icon
+            variant="GitBranchIcon"
+            size={13}
+            className="text-cool-grey-400"
+          />
+          <Link href={branchHref} textVariant="subtext">
+            <Text as="span" variant="subtext" family="mono">
+              {install.branchTracking.targetBranch}
+            </Text>
+          </Link>
+        </span>
       </div>
+    </Card>
+  )
+}
+
+const InstallPlaygroundHeader = ({
+  install,
+  onNavigate,
+}: IInstallPlaygroundHeader) => (
+  <header className="flex flex-col gap-4 px-4 pt-8 pb-6 md:px-6 md:pt-10 border-b shrink-0">
+    <div className="flex flex-col gap-1.5 min-w-0">
+      <Text variant="h3" weight="stronger" level={1}>
+        {install.name}
+      </Text>
       <div className="flex items-center gap-3 flex-wrap">
         <Text variant="subtext" theme="neutral" family="mono">
           {install.id}
@@ -93,50 +189,41 @@ const InstallPlaygroundHeader = ({ install }: IInstallPlaygroundHeader) => (
       </div>
     </div>
 
-    <div className="flex items-start gap-6 flex-wrap shrink-0">
-      {install.isManagedByConfig && (
-        <LabeledValue label="Managed by">
-          <span className="flex items-center gap-1.5">
-            <Icon
-              variant="FileCodeIcon"
-              size={14}
-              className="text-cool-grey-400"
-            />
-            <Text variant="subtext">Install config</Text>
-            {install.configFilePath && (
-              <Badge size="sm" variant="code" theme="neutral">
-                {install.configFilePath}
-              </Badge>
-            )}
-          </span>
-        </LabeledValue>
-      )}
-      <LabeledValue label="App">
-        <Link
-          href={`/${install.orgId}/apps/${install.appId}`}
-          textVariant="subtext"
-        >
-          {install.appName}
-        </Link>
-      </LabeledValue>
+    <ConfigurationSummaryRow install={install} onNavigate={onNavigate} />
+
+    {/* Status sits on the labels row so it starts below the identity stack. */}
+    <div className="flex items-start justify-between gap-6 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+        {Object.entries(install.labels).map(([k, v]) => (
+          <LabelBadge key={k} size="sm" labelKey={k} labelValue={v} />
+        ))}
+      </div>
+
+      <div className="w-full md:w-auto md:min-w-64 shrink-0">
+        <InstallStatusCard install={install} onNavigate={onNavigate} />
+      </div>
     </div>
   </header>
 )
 
-// ─── Global status strip ──────────────────────────────────────────────────────
+// ─── Header status card ───────────────────────────────────────────────────────
 
-interface IGlobalStatusStrip {
+interface IInstallStatusCard {
   install: TPlaygroundInstall
   onNavigate: (
     tab: TTopTab,
-    opts?: { activityType?: string; resourcesTab?: string }
+    opts?: {
+      activityType?: string
+      resourcesTab?: string
+      configurationTab?: string
+    }
   ) => void
 }
 
-const GlobalStatusStrip = ({ install, onNavigate }: IGlobalStatusStrip) => {
+const InstallStatusCard = ({ install, onNavigate }: IInstallStatusCard) => {
   const { activity, resources, componentStatus } = install
 
-  // Updates: in-flight app_branch_run and deploy workflows
+  // Deployments: in-flight app_branch_run and deploy workflows
   const runningUpdates = activity.filter(
     (e) =>
       (e.type === 'app_branch_run' || e.type === 'deploy') &&
@@ -192,83 +279,68 @@ const GlobalStatusStrip = ({ install, onNavigate }: IGlobalStatusStrip) => {
           : 'Checking'
 
   return (
-    <div
-      className="flex items-center flex-wrap gap-px px-2 py-1 border-b bg-cool-grey-50 dark:bg-dark-grey-800 shrink-0"
-      aria-label="Install status summary"
-    >
+    <Card className="!p-4 !gap-2" aria-label="Install status summary">
+      <Text variant="body" weight="strong">
+        Status
+      </Text>
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => onNavigate('activity', { activityType: 'updates' })}
-        aria-label={`Updates: ${updatesLabel}. Navigate to activity.`}
+        className="!px-0 w-full justify-between"
+        onClick={() => onNavigate('activity', { activityType: 'deployments' })}
+        aria-label={`Deployments: ${updatesLabel}. Navigate to activity.`}
       >
-        <Icon
-          variant="ArrowsClockwiseIcon"
-          size={13}
-          className="text-cool-grey-400 mr-1"
-        />
-        <Text as="span" variant="subtext" weight="strong" theme="neutral">
-          Updates
-        </Text>
-        <span className="ml-1.5">
-          <Status status={updatesStatus} variant="badge">
-            {updatesLabel}
-          </Status>
+        <span className="flex items-center gap-1.5">
+          <Icon
+            variant="ArrowsClockwiseIcon"
+            size={13}
+            className="text-cool-grey-400"
+          />
+          <Text as="span" variant="subtext" weight="strong" theme="neutral">
+            Deployments
+          </Text>
         </span>
+        <Status status={updatesStatus} variant="badge">
+          {updatesLabel}
+        </Status>
       </Button>
 
-      <span
-        className="mx-2 h-3.5 w-px bg-cool-grey-200 dark:bg-dark-grey-600"
-        aria-hidden="true"
-      />
-
       <Button
         variant="ghost"
         size="sm"
+        className="!px-0 w-full justify-between"
         onClick={() => onNavigate('resources', { resourcesTab: 'components' })}
         aria-label={`Resources: ${resourcesLabel}. Navigate to resources.`}
       >
-        <Icon
-          variant="CardsIcon"
-          size={13}
-          className="text-cool-grey-400 mr-1"
-        />
-        <Text as="span" variant="subtext" weight="strong" theme="neutral">
-          Resources
-        </Text>
-        <span className="ml-1.5">
-          <Status status={resourcesStatus} variant="badge">
-            {resourcesLabel}
-          </Status>
+        <span className="flex items-center gap-1.5">
+          <Icon variant="CardsIcon" size={13} className="text-cool-grey-400" />
+          <Text as="span" variant="subtext" weight="strong" theme="neutral">
+            Resources
+          </Text>
         </span>
+        <Status status={resourcesStatus} variant="badge">
+          {resourcesLabel}
+        </Status>
       </Button>
-
-      <span
-        className="mx-2 h-3.5 w-px bg-cool-grey-200 dark:bg-dark-grey-600"
-        aria-hidden="true"
-      />
 
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => onNavigate('resources', { resourcesTab: 'components' })}
+        className="!px-0 w-full justify-between"
+        onClick={() => onNavigate('resources', { resourcesTab: 'health' })}
         aria-label={`Health checks: ${healthLabel}. Navigate to resources.`}
       >
-        <Icon
-          variant="PulseIcon"
-          size={13}
-          className="text-cool-grey-400 mr-1"
-        />
-        <Text as="span" variant="subtext" weight="strong" theme="neutral">
-          Health checks
-        </Text>
-        <span className="ml-1.5">
-          <Status status={healthStatus} variant="badge">
-            {healthLabel}
-          </Status>
+        <span className="flex items-center gap-1.5">
+          <Icon variant="PulseIcon" size={13} className="text-cool-grey-400" />
+          <Text as="span" variant="subtext" weight="strong" theme="neutral">
+            Health checks
+          </Text>
         </span>
+        <Status status={healthStatus} variant="badge">
+          {healthLabel}
+        </Status>
       </Button>
-    </div>
+    </Card>
   )
 }
 
@@ -341,10 +413,11 @@ const CommitRef = ({
 )
 
 const InstallBranchTrackingCard = ({
-  tracking,
+  install,
 }: {
-  tracking: TBranchTracking
+  install: TPlaygroundInstall
 }) => {
+  const tracking = install.branchTracking
   const { statusValue, label } = TRACKING_STATUS_MAP[tracking.status]
   const repoHref =
     tracking.repo && !tracking.repo.startsWith('http')
@@ -354,6 +427,7 @@ const InstallBranchTrackingCard = ({
     tracking.directory &&
     tracking.directory !== '.' &&
     tracking.directory !== '/'
+  const branchHref = `/${install.orgId}/apps/${install.appId}/branches/${tracking.branchId}`
 
   return (
     <Card className="!p-4 !gap-4">
@@ -375,16 +449,18 @@ const InstallBranchTrackingCard = ({
 
       <div className="flex flex-wrap gap-x-8 gap-y-3">
         <LabeledValue label="Target branch">
-          <span className="flex items-center gap-1.5">
-            <Icon
-              variant="GitBranchIcon"
-              size={13}
-              className="text-cool-grey-400 shrink-0"
-            />
-            <Text variant="subtext" family="mono">
-              {tracking.targetBranch}
-            </Text>
-          </span>
+          <Link href={branchHref} textVariant="subtext">
+            <span className="flex items-center gap-1.5">
+              <Icon
+                variant="GitBranchIcon"
+                size={13}
+                className="text-cool-grey-400 shrink-0"
+              />
+              <Text as="span" variant="subtext" family="mono">
+                {tracking.targetBranch}
+              </Text>
+            </span>
+          </Link>
         </LabeledValue>
         {tracking.repo && repoHref && (
           <LabeledValue label="Repository">
@@ -557,12 +633,51 @@ const ConfigLagCard = ({ install }: { install: TPlaygroundInstall }) => {
   )
 }
 
-const OverviewTab = ({ install }: { install: TPlaygroundInstall }) => {
+interface IOverviewTab {
+  install: TPlaygroundInstall
+  onNavigate: IInstallPlaygroundHeader['onNavigate']
+}
+
+const OverviewTab = ({ install, onNavigate }: IOverviewTab) => {
   const hasDrift = install.driftedObjects.length > 0
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <InstallBranchTrackingCard tracking={install.branchTracking} />
+      {/* Per-component health lives in Resources -> Health, not here. */}
+      <Card className="!p-4 !gap-4">
+        <HealthTimelineComponent
+          scope="install"
+          days={install.health.days}
+          daily={install.health.daily}
+          uptimePercent={install.health.uptime_percent}
+          observedSeconds={install.health.observed_seconds}
+          currentHealth={install.health.current_health}
+          headerAction={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="!px-0"
+              onClick={() =>
+                onNavigate('resources', { resourcesTab: 'health' })
+              }
+            >
+              <span className="flex items-center gap-1.5">
+                <Text as="span" variant="subtext" theme="info">
+                  View health
+                </Text>
+                <Icon variant="ArrowRightIcon" size={13} />
+              </span>
+            </Button>
+          }
+        />
+      </Card>
+
+      {install.readme && (
+        <Card className="!p-4 !gap-4">
+          <Markdown content={install.readme} mode="install" />
+        </Card>
+      )}
+
       <ConfigLagCard install={install} />
 
       {/* Infrastructure drift — kept distinct from config lag */}
@@ -676,15 +791,16 @@ const filterActivity = (
         return false
     }
     if (filter.status !== 'all' && e.status !== filter.status) return false
+    // 'deployments' is a grouped filter set by the status strip
     if (
-      filter.type === 'updates' &&
+      filter.type === 'deployments' &&
       e.type !== 'app_branch_run' &&
       e.type !== 'deploy'
     )
       return false
     if (
       filter.type !== 'all' &&
-      filter.type !== 'updates' &&
+      filter.type !== 'deployments' &&
       e.type !== filter.type
     )
       return false
@@ -762,8 +878,10 @@ const ActivityTab = ({ install, filter, onFilterChange }: IActivityTab) => {
           buttonText={
             filter.type === 'all'
               ? 'Type'
-              : (ACTIVITY_TYPE_LABELS[filter.type as TActivityEventType] ??
-                humanize(filter.type))
+              : filter.type === 'deployments'
+                ? 'Deployments'
+                : (ACTIVITY_TYPE_LABELS[filter.type as TActivityEventType] ??
+                  humanize(filter.type))
           }
           isActive={filter.type !== 'all'}
         >
@@ -1069,34 +1187,57 @@ const ImagesTab = ({ images }: { images: TImageEntry[] }) => (
   </div>
 )
 
+const ResourcesHealthTab = ({ install }: { install: TPlaygroundInstall }) => (
+  <div className="flex flex-col gap-4 p-4">
+    <Card className="!p-4 !gap-4">
+      <HealthTimelineComponent
+        scope="install"
+        days={install.health.days}
+        daily={install.health.daily}
+        uptimePercent={install.health.uptime_percent}
+        observedSeconds={install.health.observed_seconds}
+        currentHealth={install.health.current_health}
+        components={install.health.components}
+        componentBasePath={`/${install.orgId}/installs/${install.id}/components`}
+      />
+    </Card>
+  </div>
+)
+
 interface IResourcesTabPanel {
-  resources: TPlaygroundInstall['resources']
+  install: TPlaygroundInstall
   initTab?: string
 }
 
-const ResourcesTabPanel = ({ resources, initTab }: IResourcesTabPanel) => (
-  <Tabs
-    tabs={{
-      stack: <StackTab versions={resources.stackVersions} />,
-      roles: <RolesTab roles={resources.roles} />,
-      sandbox: <SandboxTab sandbox={resources.sandbox} />,
-      components: <ComponentsTab components={resources.components} />,
-      images: <ImagesTab images={resources.images} />,
-    }}
-    tabLabels={{
-      stack: 'Stack',
-      roles: 'Roles',
-      sandbox: 'Sandbox',
-      components: 'Components',
-      images: 'Images',
-    }}
-    initActiveTab={initTab}
-    className="gap-0"
-    tabControlsClassName="px-4"
-  />
-)
+const ResourcesTabPanel = ({ install, initTab }: IResourcesTabPanel) => {
+  const { resources } = install
 
-// ─── Runbooks tab (top-level) ─────────────────────────────────────────────────
+  return (
+    <Tabs
+      tabs={{
+        health: <ResourcesHealthTab install={install} />,
+        stack: <StackTab versions={resources.stackVersions} />,
+        roles: <RolesTab roles={resources.roles} />,
+        sandbox: <SandboxTab sandbox={resources.sandbox} />,
+        components: <ComponentsTab components={resources.components} />,
+        images: <ImagesTab images={resources.images} />,
+      }}
+      tabLabels={{
+        health: 'Health',
+        stack: 'Stack',
+        roles: 'Roles',
+        sandbox: 'Sandbox',
+        components: 'Components',
+        images: 'Images',
+      }}
+      initActiveTab={initTab}
+      className="gap-0"
+      tabControlsClassName="px-4"
+    />
+  )
+}
+
+// ─── Runbooks (Operations subtab) ─────────────────────────────────────────────
 
 const RunbooksTab = ({ runbooks }: { runbooks: TRunbookEntry[] }) => (
   <div className="flex flex-col gap-2 p-4">
@@ -1144,7 +1285,7 @@ const RunbooksTab = ({ runbooks }: { runbooks: TRunbookEntry[] }) => (
   </div>
 )
 
-// ─── Operations tab (Actions only) ────────────────────────────────────────────
+// ─── Operations tab (Actions + Runbooks) ──────────────────────────────────────
 
 const ActionsTab = ({ actions }: { actions: TActionEntry[] }) => (
   <div className="flex flex-col gap-2 p-4">
@@ -1187,7 +1328,215 @@ const OperationsTab = ({
   operations,
 }: {
   operations: TPlaygroundInstall['operations']
-}) => <ActionsTab actions={operations.actions} />
+}) => (
+  <Tabs
+    tabs={{
+      actions: <ActionsTab actions={operations.actions} />,
+      runbooks: <RunbooksTab runbooks={operations.runbooks} />,
+    }}
+    tabLabels={{
+      actions: 'Actions',
+      runbooks: 'Runbooks',
+    }}
+    className="gap-0"
+    tabControlsClassName="px-4"
+  />
+)
+
+// ─── Configuration sub-tabs ───────────────────────────────────────────────────
+
+const InputsTab = ({ inputs }: { inputs: TInputEntry[] }) => {
+  const groups = Array.from(new Set(inputs.map((input) => input.group)))
+
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      {groups.map((group) => (
+        <Card key={group} className="!p-4 !gap-4">
+          <Text variant="body" weight="strong">
+            {group}
+          </Text>
+          <PropertyGrid
+            values={inputs.filter((input) => input.group === group)}
+            align="start"
+            columns={[
+              {
+                key: 'displayName',
+                header: 'Input',
+                render: (_value, input) => (
+                  <div className="flex flex-col min-w-0">
+                    <Text variant="subtext">{input.displayName}</Text>
+                    <Text variant="subtext" theme="neutral" family="mono">
+                      {input.name}
+                    </Text>
+                  </div>
+                ),
+              },
+              {
+                key: 'value',
+                header: 'Value',
+                render: (_value, input) =>
+                  input.isRedacted ? (
+                    <Badge size="sm" theme="neutral">
+                      Redacted
+                    </Badge>
+                  ) : (
+                    <Text variant="subtext" family="mono" className="break-all">
+                      {input.value}
+                    </Text>
+                  ),
+              },
+            ]}
+          />
+        </Card>
+      ))}
+    </div>
+  )
+}
+
+const ConfigFileTab = ({ configFile }: { configFile?: TConfigFileInfo }) => {
+  if (!configFile) {
+    return (
+      <div className="p-4">
+        <Text variant="subtext" theme="neutral">
+          This install is managed from the dashboard, so it has no config file.
+        </Text>
+      </div>
+    )
+  }
+
+  const repoHref =
+    configFile.repo && !configFile.repo.startsWith('http')
+      ? `https://github.com/${configFile.repo}`
+      : configFile.repo
+
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      <Card className="!p-4 !gap-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Icon
+              variant="FileCodeIcon"
+              size={14}
+              className="text-cool-grey-400 shrink-0"
+            />
+            <Text variant="body" family="mono" className="truncate">
+              {configFile.path}
+            </Text>
+          </div>
+          <Badge size="sm" variant="code" theme="neutral">
+            {configFile.version}
+          </Badge>
+        </div>
+
+        <div className="flex flex-wrap gap-x-8 gap-y-3">
+          {configFile.repo && repoHref && (
+            <LabeledValue label="Repository">
+              <Link href={repoHref} isExternal textVariant="subtext">
+                {configFile.repo}
+              </Link>
+            </LabeledValue>
+          )}
+          {configFile.gitBranch && (
+            <LabeledValue label="Git branch">
+              <Text variant="subtext" family="mono">
+                {configFile.gitBranch}
+              </Text>
+            </LabeledValue>
+          )}
+          <LabeledValue label="Last synced">
+            <Time
+              time={configFile.syncedAt}
+              format="relative"
+              variant="subtext"
+            />
+          </LabeledValue>
+        </div>
+
+        <CodeBlock language="toml" showCopy>
+          {configFile.contents}
+        </CodeBlock>
+      </Card>
+    </div>
+  )
+}
+
+const OverridesTab = ({ overrides }: { overrides: TOverrideEntry[] }) => {
+  if (overrides.length === 0) {
+    return (
+      <div className="p-4">
+        <Text variant="subtext" theme="neutral">
+          No overrides set. Component overrides let you change one component
+          without editing app config.
+        </Text>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-2 p-4">
+      {overrides.map((override) => (
+        <Card key={override.id} className="!p-4 !gap-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Icon
+                variant="FadersIcon"
+                size={14}
+                className="text-cool-grey-400 shrink-0"
+              />
+              <Text variant="body" className="truncate">
+                {override.componentName}
+              </Text>
+              <Text variant="subtext" theme="neutral" family="mono">
+                {override.inputName}
+              </Text>
+              <Badge size="sm" variant="code" theme="neutral">
+                {override.value}
+              </Badge>
+            </div>
+            <Time
+              time={override.updatedAt}
+              format="relative"
+              variant="subtext"
+              theme="neutral"
+            />
+          </div>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
+const ConfigurationTabPanel = ({
+  install,
+  initTab,
+}: {
+  install: TPlaygroundInstall
+  initTab?: string
+}) => (
+  <Tabs
+    tabs={{
+      appBranch: (
+        <div className="p-4">
+          <InstallBranchTrackingCard install={install} />
+        </div>
+      ),
+      inputs: <InputsTab inputs={install.configuration.inputs} />,
+      configFile: (
+        <ConfigFileTab configFile={install.configuration.configFile} />
+      ),
+      overrides: <OverridesTab overrides={install.configuration.overrides} />,
+    }}
+    tabLabels={{
+      appBranch: 'App branch',
+      inputs: 'Inputs',
+      configFile: 'Config file',
+      overrides: 'Overrides',
+    }}
+    initActiveTab={initTab}
+    className="gap-0"
+    tabControlsClassName="px-4"
+  />
+)
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -1204,8 +1553,12 @@ export const InstallDetailPlayground = ({
   const [activityFilter, setActivityFilter] = useState<TActivityFilter>(
     DEFAULT_ACTIVITY_FILTER
   )
-  // Key increments force ResourcesTabPanel to remount (resets Tabs internal state) when navigating from strip
+  // Incrementing keys remount Tabs so header cards can select a nested tab.
   const [resourcesNav, setResourcesNav] = useState<{
+    tab?: string
+    key: number
+  }>({ key: 0 })
+  const [configurationNav, setConfigurationNav] = useState<{
     tab?: string
     key: number
   }>({ key: 0 })
@@ -1214,7 +1567,11 @@ export const InstallDetailPlayground = ({
 
   const handleStripNavigate = (
     tab: TTopTab,
-    opts?: { activityType?: string; resourcesTab?: string }
+    opts?: {
+      activityType?: string
+      resourcesTab?: string
+      configurationTab?: string
+    }
   ) => {
     setActiveTab(tab)
     if (tab === 'activity' && opts?.activityType) {
@@ -1222,6 +1579,12 @@ export const InstallDetailPlayground = ({
     }
     if (tab === 'resources' && opts?.resourcesTab) {
       setResourcesNav((prev) => ({ tab: opts.resourcesTab, key: prev.key + 1 }))
+    }
+    if (tab === 'configuration' && opts?.configurationTab) {
+      setConfigurationNav((prev) => ({
+        tab: opts.configurationTab,
+        key: prev.key + 1,
+      }))
     }
   }
 
@@ -1232,9 +1595,10 @@ export const InstallDetailPlayground = ({
         className
       )}
     >
-      <InstallPlaygroundHeader install={install} />
-
-      <GlobalStatusStrip install={install} onNavigate={handleStripNavigate} />
+      <InstallPlaygroundHeader
+        install={install}
+        onNavigate={handleStripNavigate}
+      />
 
       {/* Top tab bar */}
       <div
@@ -1271,7 +1635,12 @@ export const InstallDetailPlayground = ({
           >
             {activeTab === key && (
               <>
-                {key === 'overview' && <OverviewTab install={install} />}
+                {key === 'overview' && (
+                  <OverviewTab
+                    install={install}
+                    onNavigate={handleStripNavigate}
+                  />
+                )}
                 {key === 'activity' && (
                   <ActivityTab
                     install={install}
@@ -1279,18 +1648,22 @@ export const InstallDetailPlayground = ({
                     onFilterChange={setActivityFilter}
                   />
                 )}
-                {key === 'runbooks' && (
-                  <RunbooksTab runbooks={install.operations.runbooks} />
-                )}
                 {key === 'resources' && (
                   <ResourcesTabPanel
                     key={resourcesNav.key}
-                    resources={install.resources}
+                    install={install}
                     initTab={resourcesNav.tab}
                   />
                 )}
                 {key === 'operations' && (
                   <OperationsTab operations={install.operations} />
+                )}
+                {key === 'configuration' && (
+                  <ConfigurationTabPanel
+                    key={configurationNav.key}
+                    install={install}
+                    initTab={configurationNav.tab}
+                  />
                 )}
               </>
             )}
