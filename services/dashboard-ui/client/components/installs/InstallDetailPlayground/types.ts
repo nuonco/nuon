@@ -1,3 +1,5 @@
+import type { TInstallHealthTimeline } from '@/types'
+
 export type TResourceStatus =
   | 'active'
   | 'pending'
@@ -98,6 +100,39 @@ export type TPlaygroundOperations = {
   runbooks: TRunbookEntry[]
 }
 
+// ─── Configuration ────────────────────────────────────────────────────────────
+
+export type TInputEntry = {
+  name: string
+  displayName: string
+  value: string
+  group: string
+  isRedacted?: boolean
+}
+
+export type TConfigFileInfo = {
+  path: string
+  repo?: string
+  gitBranch?: string
+  version: string
+  syncedAt: string
+  contents: string
+}
+
+export type TOverrideEntry = {
+  id: string
+  componentName: string
+  inputName: string
+  value: string
+  updatedAt: string
+}
+
+export type TPlaygroundConfiguration = {
+  inputs: TInputEntry[]
+  configFile?: TConfigFileInfo
+  overrides: TOverrideEntry[]
+}
+
 // ─── Activity event types ─────────────────────────────────────────────────────
 
 export type TAppBranchSourceType = 'push' | 'pr' | 'tag' | 'commit' | 'manual'
@@ -146,6 +181,7 @@ export type TBranchTrackingStatus = 'current' | 'pending' | 'updating'
 
 export type TBranchTracking = {
   targetBranch: string
+  branchId: string
   repo?: string
   gitBranch?: string
   directory?: string
@@ -180,4 +216,7 @@ export type TPlaygroundInstall = {
 
   resources: TPlaygroundResources
   operations: TPlaygroundOperations
+  configuration: TPlaygroundConfiguration
+  health: TInstallHealthTimeline
+  readme?: string
 }

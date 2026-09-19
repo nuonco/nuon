@@ -2,10 +2,206 @@ import type {
   TPlaygroundInstall,
   TActivityEvent,
   TBranchTracking,
+  TPlaygroundConfiguration,
 } from './types'
+import type {
+  THealthTimelineDay,
+  TInstallHealthTimeline,
+  TInstallHealthTimelineComponent,
+} from '@/types'
 
 const NOW = new Date('2026-09-18T18:00:00Z').getTime()
 const h = (hours: number) => new Date(NOW - hours * 3600_000).toISOString()
+const DAY_SECONDS = 86_400
+const HEALTH_WINDOW_DAYS = 30
+
+const isoDateDaysAgo = (daysAgo: number) =>
+  new Date(NOW - daysAgo * DAY_SECONDS * 1000).toISOString().slice(0, 10)
+
+const buildHealthDaily = (
+  days: number,
+  patches: Record<number, Partial<THealthTimelineDay>> = {}
+): THealthTimelineDay[] =>
+  Array.from({ length: days }, (_, i) => {
+    const daysAgo = days - 1 - i
+    const observedSeconds = daysAgo === 0 ? 18 * 3600 : DAY_SECONDS
+    return {
+      date: isoDateDaysAgo(daysAgo),
+      health: 'healthy',
+      unhealthy_seconds: 0,
+      degraded_seconds: 0,
+      unknown_seconds: 0,
+      observed_seconds: observedSeconds,
+      ...patches[daysAgo],
+    }
+  })
+
+const healthFromDaily = (
+  daily: THealthTimelineDay[],
+  currentHealth: string,
+  components: TInstallHealthTimelineComponent[]
+): TInstallHealthTimeline => {
+  const observed_seconds = daily.reduce(
+    (sum, day) => sum + day.observed_seconds,
+    0
+  )
+  const bad = daily.reduce(
+    (sum, day) => sum + day.unhealthy_seconds + day.degraded_seconds,
+    0
+  )
+  return {
+    days: daily.length,
+    uptime_percent: observed_seconds
+      ? Math.round(((observed_seconds - bad) / observed_seconds) * 10000) / 100
+      : 0,
+    observed_seconds,
+    current_health: currentHealth,
+    daily,
+    components,
+  }
+}
+
+const HEALTH_COMPONENTS_CURRENT: TInstallHealthTimelineComponent[] = [
+  {
+    install_component_id: 'icmp-api',
+    component_id: 'cmp-1',
+    component_name: 'api',
+    current_health: 'healthy',
+    uptime_percent: 99.98,
+    observed_seconds: 30 * DAY_SECONDS,
+  },
+  {
+    install_component_id: 'icmp-worker',
+    component_id: 'cmp-2',
+    component_name: 'worker',
+    current_health: 'healthy',
+    uptime_percent: 99.94,
+    observed_seconds: 30 * DAY_SECONDS,
+  },
+  {
+    install_component_id: 'icmp-frontend',
+    component_id: 'cmp-3',
+    component_name: 'frontend',
+    current_health: 'healthy',
+    uptime_percent: 100,
+    observed_seconds: 30 * DAY_SECONDS,
+  },
+  {
+    install_component_id: 'icmp-cache',
+    component_id: 'cmp-4',
+    component_name: 'cache',
+    current_health: 'not-applicable',
+    uptime_percent: 0,
+    observed_seconds: 0,
+  },
+]
+
+const HEALTH_CURRENT = healthFromDaily(
+  buildHealthDaily(HEALTH_WINDOW_DAYS, {
+    12: {
+      health: 'degraded',
+      degraded_seconds: 900,
+      observed_seconds: DAY_SECONDS,
+    },
+  }),
+  'healthy',
+  HEALTH_COMPONENTS_CURRENT
+)
+
+const HEALTH_RESOURCE_LAG = healthFromDaily(
+  buildHealthDaily(HEALTH_WINDOW_DAYS, {
+    0: {
+      health: 'degraded',
+      degraded_seconds: 2400,
+      observed_seconds: 18 * 3600,
+    },
+    1: {
+      health: 'unhealthy',
+      unhealthy_seconds: 1800,
+      observed_seconds: DAY_SECONDS,
+    },
+  }),
+  'degraded',
+  [
+    {
+      install_component_id: 'icmp-api',
+      component_id: 'cmp-1',
+      component_name: 'api',
+      current_health: 'degraded',
+      uptime_percent: 98.4,
+      observed_seconds: 30 * DAY_SECONDS,
+    },
+    {
+      install_component_id: 'icmp-worker',
+      component_id: 'cmp-2',
+      component_name: 'worker',
+      current_health: 'unhealthy',
+      uptime_percent: 97.1,
+      observed_seconds: 30 * DAY_SECONDS,
+    },
+    {
+      install_component_id: 'icmp-frontend',
+      component_id: 'cmp-3',
+      component_name: 'frontend',
+      current_health: 'healthy',
+      uptime_percent: 100,
+      observed_seconds: 30 * DAY_SECONDS,
+    },
+    {
+      install_component_id: 'icmp-cache',
+      component_id: 'cmp-4',
+      component_name: 'cache',
+      current_health: 'not-applicable',
+      uptime_percent: 0,
+      observed_seconds: 0,
+    },
+  ]
+)
+
+const HEALTH_BRANCH_MOVED = healthFromDaily(
+  buildHealthDaily(HEALTH_WINDOW_DAYS, {
+    0: {
+      health: 'degraded',
+      degraded_seconds: 1200,
+      observed_seconds: 18 * 3600,
+    },
+  }),
+  'degraded',
+  [
+    {
+      install_component_id: 'icmp-api',
+      component_id: 'cmp-1',
+      component_name: 'api',
+      current_health: 'degraded',
+      uptime_percent: 99.2,
+      observed_seconds: 30 * DAY_SECONDS,
+    },
+    {
+      install_component_id: 'icmp-worker',
+      component_id: 'cmp-2',
+      component_name: 'worker',
+      current_health: 'degraded',
+      uptime_percent: 99.1,
+      observed_seconds: 30 * DAY_SECONDS,
+    },
+    {
+      install_component_id: 'icmp-frontend',
+      component_id: 'cmp-3',
+      component_name: 'frontend',
+      current_health: 'healthy',
+      uptime_percent: 100,
+      observed_seconds: 30 * DAY_SECONDS,
+    },
+    {
+      install_component_id: 'icmp-cache',
+      component_id: 'cmp-4',
+      component_name: 'cache',
+      current_health: 'not-applicable',
+      uptime_percent: 0,
+      observed_seconds: 0,
+    },
+  ]
+)
 
 // ─── Shared resource fixtures ─────────────────────────────────────────────────
 
@@ -135,10 +331,128 @@ const COMMON_RESOURCES = {
   ],
 }
 
+// ─── Readme fixture ───────────────────────────────────────────────────────────
+
+const COMMON_README = `# acme-prod
+
+This install runs Acme in the customer's AWS account \`111122223333\` in
+\`us-east-1\`. It is managed from \`installs/acme-prod.toml\` on the \`main\`
+app branch.
+
+## Access
+
+- Dashboard: [https://acme-prod.example.com](https://acme-prod.example.com)
+- API: [https://api.acme-prod.example.com](https://api.acme-prod.example.com)
+
+Log in with your Acme SSO account. If SSO is unavailable, use the break-glass
+role \`acme-prod-admin\` and note the reason in the incident channel.
+
+## Components
+
+| Component | Purpose |
+| --- | --- |
+| \`api\` | Public REST API and webhook receiver |
+| \`worker\` | Async jobs, retries, and scheduled syncs |
+| \`frontend\` | Customer-facing web app |
+| \`cache\` | Redis used by the API for sessions and rate limits |
+
+## Operations
+
+1. Check the 30-day health bar above before making changes.
+2. Use the **Scale API pods** action to change replica counts.
+3. Follow the **Incident response** runbook for production incidents.
+
+> Updates are applied automatically when the tracked app branch changes. If a
+> component is lagging, open the Activity tab and inspect the latest deploy.
+`
+
+// ─── Configuration fixtures ───────────────────────────────────────────────────
+
+const CONFIG_FILE_CONTENTS = `[install]
+name = "acme-prod"
+app = "acme-byoc"
+
+[install.inputs]
+region = "us-east-1"
+cluster_size = "large"
+enable_backups = "true"
+retention_days = "30"
+
+[install.aws]
+iam_role_arn = "arn:aws:iam::111122223333:role/nuon-acme-prod"
+`
+
+const COMMON_CONFIGURATION: TPlaygroundConfiguration = {
+  inputs: [
+    {
+      name: 'region',
+      displayName: 'AWS region',
+      value: 'us-east-1',
+      group: 'Cloud',
+    },
+    {
+      name: 'iam_role_arn',
+      displayName: 'IAM role ARN',
+      value: 'arn:aws:iam::111122223333:role/nuon-acme-prod',
+      group: 'Cloud',
+    },
+    {
+      name: 'cluster_size',
+      displayName: 'Cluster size',
+      value: 'large',
+      group: 'Platform',
+    },
+    {
+      name: 'enable_backups',
+      displayName: 'Enable backups',
+      value: 'true',
+      group: 'Platform',
+    },
+    {
+      name: 'retention_days',
+      displayName: 'Backup retention (days)',
+      value: '30',
+      group: 'Platform',
+    },
+    {
+      name: 'api_token',
+      displayName: 'API token',
+      value: '••••••••',
+      group: 'Secrets',
+      isRedacted: true,
+    },
+  ],
+  configFile: {
+    path: 'installs/acme-prod.toml',
+    repo: 'acme/platform-configs',
+    gitBranch: 'main',
+    version: 'v14',
+    syncedAt: h(4),
+    contents: CONFIG_FILE_CONTENTS,
+  },
+  overrides: [
+    {
+      id: 'ovr-1',
+      componentName: 'api',
+      inputName: 'replica_count',
+      value: '6',
+      updatedAt: h(30),
+    },
+    {
+      id: 'ovr-2',
+      componentName: 'cache',
+      inputName: 'instance_type',
+      value: 'cache.r6g.large',
+      updatedAt: h(96),
+    },
+  ],
+}
+
 // ─── Branch tracking fixtures ─────────────────────────────────────────────────
 
 const BRANCH_TRACKING_CURRENT: TBranchTracking = {
   targetBranch: 'main',
+  branchId: 'br-acme-main',
   repo: 'acme/platform-configs',
   gitBranch: 'main',
   directory: 'apps/acme',
@@ -161,6 +475,7 @@ const BRANCH_TRACKING_CURRENT: TBranchTracking = {
 
 const BRANCH_TRACKING_MOVED: TBranchTracking = {
   targetBranch: 'feat/multi-region',
+  branchId: 'br-acme-feat-multi-region',
   repo: 'acme/platform-configs',
   gitBranch: 'feat/multi-region',
   directory: 'apps/acme',
@@ -368,6 +683,9 @@ export const configCurrentFixture: TPlaygroundInstall = {
     actions: COMMON_RESOURCES.actions,
     runbooks: COMMON_RESOURCES.runbooks,
   },
+  configuration: COMMON_CONFIGURATION,
+  health: HEALTH_CURRENT,
+  readme: COMMON_README,
 }
 
 // ─── Scenario 2: Branch target moved to feat/multi-region ────────────────────
@@ -377,6 +695,18 @@ export const branchMovedFixture: TPlaygroundInstall = {
   updatedAt: h(1),
 
   branchTracking: BRANCH_TRACKING_MOVED,
+
+  configuration: {
+    ...COMMON_CONFIGURATION,
+    configFile: COMMON_CONFIGURATION.configFile && {
+      ...COMMON_CONFIGURATION.configFile,
+      gitBranch: 'feat/multi-region',
+      version: 'v15',
+      syncedAt: h(1),
+    },
+  },
+
+  health: HEALTH_BRANCH_MOVED,
 
   runnerStatus: 'active',
   sandboxStatus: 'active',
@@ -464,6 +794,8 @@ export const resourceLagFixture: TPlaygroundInstall = {
   updatedAt: h(0.5),
 
   branchTracking: BRANCH_TRACKING_CURRENT,
+
+  health: HEALTH_RESOURCE_LAG,
 
   runnerStatus: 'active',
   sandboxStatus: 'active',
