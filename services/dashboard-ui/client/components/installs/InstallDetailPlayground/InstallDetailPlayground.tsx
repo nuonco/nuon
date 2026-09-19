@@ -16,16 +16,19 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { HealthTimelineComponent } from '@/components/install-health/HealthTimeline'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { cn } from '@/utils/classnames'
 import { humanize } from '@/utils/string-utils'
+import { ConfigurationChangeRows } from './ConfigurationChangeRows'
+import { DeploymentAffectedResourceBadges } from './DeploymentAffectedResourceBadges'
+import {
+  DEPLOYMENT_TYPE_LABELS,
+  DeploymentChangeDetails,
+} from './DeploymentChangeDetails'
 import { SectionNav, type TSectionNavSection } from './SectionNav'
 import type {
   TPlaygroundInstall,
-  TActivityEvent,
-  TActivityEventType,
-  TAppBranchSource,
   TBranchCommitRef,
   TBranchTrackingStatus,
   TLagItem,
@@ -38,11 +41,12 @@ import type {
   TRunbookEntry,
   TInputEntry,
   TConfigFileInfo,
-  TConfigurationChange,
   TConfigurationVersion,
   TOverrideEntry,
   TPolicyReportEntry,
   TRunnerInfo,
+  TDeploymentRecord,
+  TDeploymentRecordType,
 } from './types'
 
 // ─── Top-level navigation ────────────────────────────────────────────────────
@@ -66,12 +70,10 @@ const TOP_TAB_LABELS: Record<TTopTab, string> = {
 
 // ─── Deployments filter state ─────────────────────────────────────────────────
 
-type TDeploymentCategory = 'app-branch' | 'install-config' | 'deployment'
-
 type TDeploymentFilter = {
   search: string
   status: string
-  category: 'all' | TDeploymentCategory
+  type: 'all' | TDeploymentRecordType
   component: string
   date: string
 }
@@ -79,7 +81,7 @@ type TDeploymentFilter = {
 const DEFAULT_DEPLOYMENT_FILTER: TDeploymentFilter = {
   search: '',
   status: 'all',
-  category: 'all',
+  type: 'all',
   component: 'all',
   date: 'all',
 }
@@ -261,16 +263,14 @@ interface IInstallStatusCard {
 }
 
 const InstallStatusCard = ({ install, onNavigate }: IInstallStatusCard) => {
-  const { activity, resources } = install
+  const { deployments, resources } = install
 
-  // Deployment status includes every deploy/config change, but not drift scans.
-  const runningUpdates = activity.filter(
-    (e) =>
-      e.type !== 'drift_scan' &&
-      (e.status === 'in-progress' || e.status === 'pending')
+  const runningUpdates = deployments.filter(
+    (deployment) =>
+      deployment.status === 'in-progress' || deployment.status === 'pending'
   )
-  const failedUpdates = activity.filter(
-    (e) => e.type !== 'drift_scan' && e.status === 'error'
+  const failedUpdates = deployments.filter(
+    (deployment) => deployment.status === 'error'
   )
   const updatesStatus =
     failedUpdates.length > 0
@@ -722,12 +722,6 @@ const OverviewTab = ({ install }: { install: TPlaygroundInstall }) => {
 
 // ─── Deployments tab ──────────────────────────────────────────────────────────
 
-const DEPLOYMENT_CATEGORY_LABELS: Record<TDeploymentCategory, string> = {
-  'app-branch': 'App branch updates',
-  'install-config': 'Install config updates',
-  deployment: 'Deployments',
-}
-
 const DATE_FILTER_LABELS: Record<string, string> = {
   '24h': 'Last 24 hours',
   '7d': 'Last 7 days',
@@ -740,86 +734,179 @@ const DATE_FILTER_MS: Record<string, number> = {
   '30d': 2_592_000_000,
 }
 
-const sourceCaption = (source?: TAppBranchSource): string | undefined => {
-  if (!source) return undefined
-  switch (source.type) {
-    case 'push':
-      return [
-        source.branch,
-        source.sha && source.sha.slice(0, 8),
-        source.author && `by ${source.author}`,
-      ]
-        .filter(Boolean)
-        .join(' · ')
-    case 'pr':
-      return [
-        source.branch,
-        source.prNumber && `PR #${source.prNumber}`,
-        source.author && `by ${source.author}`,
-      ]
-        .filter(Boolean)
-        .join(' · ')
-    case 'tag':
-      return [`tag ${source.tag}`, source.author && `by ${source.author}`]
-        .filter(Boolean)
-        .join(' · ')
-    case 'commit':
-      return [
-        source.sha && source.sha.slice(0, 8),
-        source.author && `by ${source.author}`,
-      ]
-        .filter(Boolean)
-        .join(' · ')
-    case 'manual':
-      return ['manual trigger', source.author && `by ${source.author}`]
-        .filter(Boolean)
-        .join(' · ')
-  }
-}
-
-const deploymentCategory = (
-  type: TActivityEventType
-): TDeploymentCategory | undefined => {
-  switch (type) {
-    case 'app_branch_run':
-      return 'app-branch'
-    case 'config_update':
-    case 'inputs_update':
-      return 'install-config'
-    case 'deploy':
-    case 'stack_update':
-      return 'deployment'
-    case 'drift_scan':
-      return undefined
-  }
-}
+const deploymentResources = (deployment: TDeploymentRecord): string[] => [
+  ...(deployment.affectedResources.stack ? ['stack'] : []),
+  ...(deployment.affectedResources.sandbox ? ['sandbox'] : []),
+  ...deployment.affectedResources.components,
+  ...deployment.affectedResources.images,
+]
 
 const filterDeployments = (
-  events: TActivityEvent[],
-  filter: TDeploymentFilter
-): TActivityEvent[] =>
-  events.filter((e) => {
-    const category = deploymentCategory(e.type)
-    if (!category) return false
+  deployments: TDeploymentRecord[],
+  filter: TDeploymentFilter,
+  now = Date.now()
+): TDeploymentRecord[] =>
+  deployments.filter((deployment) => {
     if (filter.search) {
       const q = filter.search.toLowerCase()
-      if (
-        !e.title.toLowerCase().includes(q) &&
-        !e.details?.toLowerCase().includes(q) &&
-        !e.componentName?.toLowerCase().includes(q)
-      )
-        return false
+      const searchable = [
+        deployment.title,
+        deployment.summary,
+        deployment.appBranch.name,
+        deployment.appBranch.sha,
+        deployment.workflow?.name,
+        deployment.workflow?.type,
+        ...deploymentResources(deployment),
+        ...deployment.changeGroups.flatMap((group) => [
+          group.label,
+          group.summary,
+          group.resourceName,
+          ...group.changes.map((change) => change.path),
+        ]),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      if (!searchable.includes(q)) return false
     }
-    if (filter.status !== 'all' && e.status !== filter.status) return false
-    if (filter.category !== 'all' && category !== filter.category) return false
-    if (filter.component !== 'all' && e.componentName !== filter.component)
+    if (filter.status !== 'all' && deployment.status !== filter.status)
+      return false
+    if (filter.type !== 'all' && deployment.type !== filter.type) return false
+    if (
+      filter.component !== 'all' &&
+      !deploymentResources(deployment).includes(filter.component)
+    )
       return false
     if (filter.date !== 'all') {
       const maxMs = DATE_FILTER_MS[filter.date] ?? 0
-      if (Date.now() - new Date(e.createdAt).getTime() > maxMs) return false
+      if (now - new Date(deployment.createdAt).getTime() > maxMs) return false
     }
     return true
   })
+
+const DeploymentTypeIcon = ({ type }: { type: TDeploymentRecordType }) => {
+  switch (type) {
+    case 'provision':
+    case 'reprovision':
+      return <Icon variant="CardsIcon" size={16} />
+    case 'sandbox_reprovision':
+      return <Icon variant="ShippingContainerIcon" size={16} />
+    case 'app_branch_update':
+      return <Icon variant="GitBranchIcon" size={16} />
+    case 'component_deploy':
+      return <Icon variant="CardsIcon" size={16} />
+    case 'image_update':
+      return <Icon variant="PackageIcon" size={16} />
+    case 'stack_update':
+      return <Icon variant="StackIcon" size={16} />
+    case 'install_config_update':
+      return <Icon variant="FileCodeIcon" size={16} />
+  }
+}
+
+const DeploymentCard = ({
+  deployment,
+  install,
+  onViewDetails,
+}: {
+  deployment: TDeploymentRecord
+  install: TPlaygroundInstall
+  onViewDetails: () => void
+}) => {
+  const branchHref = `/${install.orgId}/apps/${install.appId}/branches/${deployment.appBranch.id}`
+  const workflowHref = deployment.workflow
+    ? `/${install.orgId}/installs/${install.id}/history/${deployment.workflow.id}`
+    : undefined
+
+  return (
+    <Card className="!p-4 !gap-3 !shadow-none">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="mt-0.5 text-cool-grey-400 shrink-0">
+            <DeploymentTypeIcon type={deployment.type} />
+          </span>
+          <div className="flex flex-col gap-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Text variant="body" weight="strong">
+                {deployment.title}
+              </Text>
+              <Status status={deployment.status} variant="badge" />
+              <Badge size="sm" theme="neutral">
+                {DEPLOYMENT_TYPE_LABELS[deployment.type]}
+              </Badge>
+            </div>
+            <Text variant="subtext" theme="neutral">
+              {deployment.summary}
+            </Text>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <Time
+            time={deployment.createdAt}
+            format="relative"
+            variant="subtext"
+            theme="neutral"
+          />
+          <Button variant="secondary" size="sm" onClick={onViewDetails}>
+            View details
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
+        <span className="flex items-center gap-2">
+          <Text as="span" variant="subtext" theme="neutral">
+            {deployment.type === 'provision'
+              ? 'Originally configured with'
+              : 'App branch'}
+          </Text>
+          <Link href={branchHref}>{deployment.appBranch.name}</Link>
+          {deployment.appBranch.sha && (
+            <Badge size="sm" variant="code" theme="neutral">
+              {deployment.appBranch.sha.slice(0, 8)}
+            </Badge>
+          )}
+        </span>
+        {deployment.workflow && workflowHref && (
+          <span className="flex items-center gap-2">
+            <Text as="span" variant="subtext" theme="neutral">
+              Workflow
+            </Text>
+            <Link href={workflowHref}>{deployment.workflow.name}</Link>
+          </span>
+        )}
+      </div>
+
+      {deployment.image && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <Text variant="subtext" family="mono">
+            {deployment.image.repository}
+          </Text>
+          {deployment.image.previousTag && (
+            <>
+              <Badge size="sm" variant="code" theme="neutral">
+                {deployment.image.previousTag}
+              </Badge>
+              <Icon
+                variant="ArrowRightIcon"
+                size={12}
+                className="text-cool-grey-400"
+              />
+            </>
+          )}
+          <Badge size="sm" variant="code" theme="neutral">
+            {deployment.image.nextTag}
+          </Badge>
+        </div>
+      )}
+
+      <DeploymentAffectedResourceBadges
+        affectedResources={deployment.affectedResources}
+        className="items-center"
+      />
+    </Card>
+  )
+}
 
 interface IDeploymentsTab {
   install: TPlaygroundInstall
@@ -832,24 +919,24 @@ const DeploymentsTab = ({
   filter,
   onFilterChange,
 }: IDeploymentsTab) => {
+  const { addPanel } = useSurfaces()
   const set = (patch: Partial<TDeploymentFilter>) =>
     onFilterChange({ ...filter, ...patch })
 
-  const deploymentEvents = install.activity.filter((event) =>
-    deploymentCategory(event.type)
-  )
   const allComponents = Array.from(
-    new Set(deploymentEvents.map((e) => e.componentName).filter(Boolean))
-  ) as string[]
+    new Set(install.deployments.flatMap(deploymentResources))
+  )
 
-  const allStatuses = Array.from(new Set(deploymentEvents.map((e) => e.status)))
+  const allStatuses = Array.from(
+    new Set(install.deployments.map((deployment) => deployment.status))
+  )
 
-  const filtered = filterDeployments(install.activity, filter)
+  const filtered = filterDeployments(install.deployments, filter)
 
   const hasActiveFilters =
     filter.search !== '' ||
     filter.status !== 'all' ||
-    filter.category !== 'all' ||
+    filter.type !== 'all' ||
     filter.component !== 'all' ||
     filter.date !== 'all'
 
@@ -887,29 +974,23 @@ const DeploymentsTab = ({
         </Dropdown>
 
         <Dropdown
-          id="deployments-filter-category"
+          id="deployments-filter-type"
           variant="secondary"
           size="sm"
           buttonText={
-            filter.category === 'all'
-              ? 'Category'
-              : DEPLOYMENT_CATEGORY_LABELS[filter.category]
+            filter.type === 'all' ? 'Type' : DEPLOYMENT_TYPE_LABELS[filter.type]
           }
-          isActive={filter.category !== 'all'}
+          isActive={filter.type !== 'all'}
         >
           <Menu>
-            <Button isMenuButton onClick={() => set({ category: 'all' })}>
-              All categories
+            <Button isMenuButton onClick={() => set({ type: 'all' })}>
+              All types
             </Button>
             {(
-              Object.keys(DEPLOYMENT_CATEGORY_LABELS) as TDeploymentCategory[]
-            ).map((category) => (
-              <Button
-                isMenuButton
-                key={category}
-                onClick={() => set({ category })}
-              >
-                {DEPLOYMENT_CATEGORY_LABELS[category]}
+              Object.keys(DEPLOYMENT_TYPE_LABELS) as TDeploymentRecordType[]
+            ).map((type) => (
+              <Button isMenuButton key={type} onClick={() => set({ type })}>
+                {DEPLOYMENT_TYPE_LABELS[type]}
               </Button>
             ))}
           </Menu>
@@ -976,8 +1057,7 @@ const DeploymentsTab = ({
         )}
       </div>
 
-      {/* Event list */}
-      <div className="flex flex-col px-4 py-2 overflow-y-auto">
+      <div className="flex flex-col gap-3 p-4 overflow-y-auto">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-12">
             <Text theme="neutral">No deployments found</Text>
@@ -986,31 +1066,21 @@ const DeploymentsTab = ({
             </Text>
           </div>
         ) : (
-          filtered.map((event) => {
-            const caption = sourceCaption(event.source) ?? event.details
-            const category = deploymentCategory(event.type)
-            const badgeLabel = category
-              ? DEPLOYMENT_CATEGORY_LABELS[category]
-              : humanize(event.type)
-
-            return (
-              <TimelineEvent
-                key={event.id}
-                createdAt={event.createdAt}
-                status={event.status}
-                title={event.title}
-                badge={{ children: badgeLabel, theme: 'neutral', size: 'sm' }}
-                caption={caption}
-                additionalCaption={
-                  event.componentName ? (
-                    <Badge size="sm" variant="code" theme="neutral">
-                      {event.componentName}
-                    </Badge>
-                  ) : undefined
-                }
-              />
-            )
-          })
+          filtered.map((deployment) => (
+            <DeploymentCard
+              key={deployment.id}
+              deployment={deployment}
+              install={install}
+              onViewDetails={() =>
+                addPanel(
+                  <DeploymentChangeDetails
+                    deployment={deployment}
+                    install={install}
+                  />
+                )
+              }
+            />
+          ))
         )}
       </div>
     </div>
@@ -1655,78 +1725,6 @@ const OperationsTab = ({
 }
 
 // ─── Configuration sub-tabs ───────────────────────────────────────────────────
-
-const CHANGE_THEME = {
-  add: 'success',
-  remove: 'error',
-  change: 'warn',
-} as const
-
-const CHANGE_PREFIX = {
-  add: '+',
-  remove: '-',
-  change: '~',
-} as const
-
-const ConfigurationChangeRows = ({
-  changes,
-}: {
-  changes: TConfigurationChange[]
-}) => (
-  <div className="flex flex-col divide-y border rounded-md overflow-hidden">
-    {changes.map((change) => (
-      <div
-        key={`${change.path}-${change.operation}`}
-        className="grid grid-cols-[1rem_minmax(0,1fr)] md:grid-cols-[1rem_minmax(10rem,1fr)_minmax(0,2fr)] items-center gap-3 px-3 py-2"
-      >
-        <Text
-          variant="subtext"
-          family="mono"
-          weight="strong"
-          theme={CHANGE_THEME[change.operation]}
-        >
-          {CHANGE_PREFIX[change.operation]}
-        </Text>
-        <Text variant="subtext" family="mono" weight="strong">
-          {change.path}
-        </Text>
-        <div className="col-start-2 md:col-start-auto flex items-center gap-2 min-w-0">
-          {change.isRedacted ? (
-            <Badge size="sm" theme="neutral">
-              Redacted
-            </Badge>
-          ) : (
-            <>
-              {change.previousValue !== undefined && (
-                <Text
-                  variant="subtext"
-                  family="mono"
-                  theme="neutral"
-                  className="truncate"
-                >
-                  {change.previousValue}
-                </Text>
-              )}
-              {change.previousValue !== undefined &&
-                change.nextValue !== undefined && (
-                  <Icon
-                    variant="ArrowRightIcon"
-                    size={12}
-                    className="shrink-0 text-cool-grey-400"
-                  />
-                )}
-              {change.nextValue !== undefined && (
-                <Text variant="subtext" family="mono" className="truncate">
-                  {change.nextValue}
-                </Text>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    ))}
-  </div>
-)
 
 const ConfigurationVersionFeed = ({
   versions,
