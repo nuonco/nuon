@@ -1,7 +1,13 @@
-import type { TPlaygroundInstall } from './types'
+import type {
+  TPlaygroundInstall,
+  TActivityEvent,
+  TBranchTracking,
+} from './types'
 
 const NOW = new Date('2026-09-18T18:00:00Z').getTime()
 const h = (hours: number) => new Date(NOW - hours * 3600_000).toISOString()
+
+// ─── Shared resource fixtures ─────────────────────────────────────────────────
 
 const COMMON_RESOURCES = {
   roles: [
@@ -129,93 +135,185 @@ const COMMON_RESOURCES = {
   ],
 }
 
-const APPLIED_BRANCH: TPlaygroundInstall['appliedBranch'] = {
-  id: 'branch-main',
-  name: 'main',
-  sha: 'a1b2c3d4',
+// ─── Branch tracking fixtures ─────────────────────────────────────────────────
+
+const BRANCH_TRACKING_CURRENT: TBranchTracking = {
+  targetBranch: 'main',
   repo: 'acme/platform-configs',
-  repoBranch: 'main',
+  gitBranch: 'main',
   directory: 'apps/acme',
-  commitMessage: 'Add Redis cache component',
-  author: 'alice',
-  createdAt: h(4),
+  expectedCommit: {
+    sha: 'a1b2c3d4',
+    message: 'feat: add Redis cache component',
+    author: 'alice',
+    createdAt: h(4),
+    runStatus: 'active',
+  },
+  appliedCommit: {
+    sha: 'a1b2c3d4',
+    message: 'feat: add Redis cache component',
+    author: 'alice',
+    createdAt: h(4),
+    runStatus: 'active',
+  },
+  status: 'current',
 }
 
-const EXPECTED_BRANCH_MAIN = { ...APPLIED_BRANCH }
-
-const EXPECTED_BRANCH_FEAT: TPlaygroundInstall['expectedBranch'] = {
-  id: 'branch-feat',
-  name: 'feat/multi-region',
-  sha: 'ff001234',
+const BRANCH_TRACKING_MOVED: TBranchTracking = {
+  targetBranch: 'feat/multi-region',
   repo: 'acme/platform-configs',
-  repoBranch: 'feat/multi-region',
+  gitBranch: 'feat/multi-region',
   directory: 'apps/acme',
-  commitMessage: 'Add secondary region support',
-  author: 'carol',
-  createdAt: h(1),
+  expectedCommit: {
+    sha: 'ff001234',
+    message: 'feat: add secondary region support',
+    author: 'carol',
+    createdAt: h(1),
+    runStatus: 'in-progress',
+  },
+  appliedCommit: {
+    sha: 'a1b2c3d4',
+    message: 'feat: add Redis cache component',
+    author: 'alice',
+    createdAt: h(4),
+    runStatus: 'active',
+  },
+  status: 'updating',
 }
 
-const COMMON_UPDATES: TPlaygroundInstall['updates'] = [
+// ─── Shared activity events ───────────────────────────────────────────────────
+
+// Newest first. One record per workflow — no duplicates.
+const COMMON_ACTIVITY: TActivityEvent[] = [
   {
-    id: 'upd-5',
+    id: 'ev-deploy-5',
     type: 'deploy',
     status: 'active',
     createdAt: h(4),
     title: 'feat: add Redis cache component',
-    trigger: {
-      source: 'pr',
+    source: {
+      type: 'pr',
       prNumber: 218,
       branch: 'feat/cache',
       sha: 'a1b2c3d4',
       author: 'alice',
     },
+    componentName: 'cache',
   },
   {
-    id: 'upd-4',
-    type: 'branch_update',
+    id: 'ev-branch-4',
+    type: 'app_branch_run',
     status: 'active',
     createdAt: h(10),
-    title: 'Branch updated to main',
-    trigger: { source: 'push', branch: 'main', sha: 'e5f6a7b8', author: 'bob' },
+    title: 'App branch run: main',
+    source: { type: 'push', branch: 'main', sha: 'e5f6a7b8', author: 'bob' },
   },
   {
-    id: 'upd-3',
+    id: 'ev-config-3',
     type: 'config_update',
     status: 'active',
     createdAt: h(24),
     title: 'fix: bump frontend image tag to 1.14.0',
-    trigger: {
-      source: 'push',
-      branch: 'main',
-      sha: 'c9d0e1f2',
-      author: 'alice',
-    },
+    source: { type: 'push', branch: 'main', sha: 'c9d0e1f2', author: 'alice' },
   },
   {
-    id: 'upd-2',
+    id: 'ev-inputs-2',
     type: 'inputs_update',
     status: 'active',
     createdAt: h(48),
     title: 'Inputs updated',
-    details: 'license, region',
+    details: 'Fields changed: license, region',
   },
   {
-    id: 'upd-1',
+    id: 'ev-stack-1',
     type: 'stack_update',
     status: 'active',
     createdAt: h(96),
     title: 'Stack version generated',
-    trigger: {
-      source: 'pr',
+    source: {
+      type: 'pr',
       prNumber: 201,
       branch: 'feat/permissions-refactor',
       sha: 'b3c4d5e6',
       author: 'carol',
     },
   },
+  {
+    id: 'ev-drift-scan-0',
+    type: 'drift_scan',
+    status: 'active',
+    createdAt: h(120),
+    title: 'Drift scan: no drift detected',
+  },
+  {
+    id: 'ev-branch-tag',
+    type: 'app_branch_run',
+    status: 'active',
+    createdAt: h(144),
+    title: 'App branch run: v1.14.0',
+    source: { type: 'tag', tag: 'v1.14.0', author: 'carol' },
+  },
 ]
 
-// Scenario 1: Config-file-managed, everything current, no drift
+// ─── Config lag — current ─────────────────────────────────────────────────────
+
+const CONFIG_LAG_CURRENT = {
+  stack: {
+    name: 'stack',
+    appliedVersion: 'stkv-8a3f',
+    expectedVersion: 'stkv-8a3f',
+    isCurrent: true,
+  },
+  sandbox: {
+    name: 'sandbox',
+    appliedVersion: 'sbxv-3c19',
+    expectedVersion: 'sbxv-3c19',
+    isCurrent: true,
+  },
+  components: [
+    {
+      name: 'api',
+      appliedVersion: 'a1b2c3d4',
+      expectedVersion: 'a1b2c3d4',
+      isCurrent: true,
+    },
+    {
+      name: 'worker',
+      appliedVersion: 'a1b2c3d4',
+      expectedVersion: 'a1b2c3d4',
+      isCurrent: true,
+    },
+    {
+      name: 'frontend',
+      appliedVersion: 'e5f6a7b8',
+      expectedVersion: 'e5f6a7b8',
+      isCurrent: true,
+    },
+  ],
+  images: [
+    {
+      name: 'acme/api',
+      appliedVersion: '1.14.2',
+      expectedVersion: '1.14.2',
+      isCurrent: true,
+    },
+    {
+      name: 'acme/worker',
+      appliedVersion: '1.14.2',
+      expectedVersion: '1.14.2',
+      isCurrent: true,
+    },
+    {
+      name: 'acme/frontend',
+      appliedVersion: '1.14.0',
+      expectedVersion: '1.14.0',
+      isCurrent: true,
+    },
+  ],
+}
+
+// ─── Scenario 1: Everything in sync ──────────────────────────────────────────
+
 export const configCurrentFixture: TPlaygroundInstall = {
   id: 'inst-01hzacmeprod',
   name: 'acme-prod',
@@ -228,72 +326,16 @@ export const configCurrentFixture: TPlaygroundInstall = {
   createdAt: h(720),
   updatedAt: h(4),
 
-  appliedBranch: APPLIED_BRANCH,
-  expectedBranch: EXPECTED_BRANCH_MAIN,
-  branchIsCurrent: true,
+  branchTracking: BRANCH_TRACKING_CURRENT,
 
   runnerStatus: 'active',
   sandboxStatus: 'active',
   componentStatus: 'active',
 
-  configLag: {
-    stack: {
-      name: 'stack',
-      appliedVersion: 'stkv-8a3f',
-      expectedVersion: 'stkv-8a3f',
-      isCurrent: true,
-    },
-    sandbox: {
-      name: 'sandbox',
-      appliedVersion: 'sbxv-3c19',
-      expectedVersion: 'sbxv-3c19',
-      isCurrent: true,
-    },
-    components: [
-      {
-        name: 'api',
-        appliedVersion: 'a1b2c3d4',
-        expectedVersion: 'a1b2c3d4',
-        isCurrent: true,
-      },
-      {
-        name: 'worker',
-        appliedVersion: 'a1b2c3d4',
-        expectedVersion: 'a1b2c3d4',
-        isCurrent: true,
-      },
-      {
-        name: 'frontend',
-        appliedVersion: 'e5f6a7b8',
-        expectedVersion: 'e5f6a7b8',
-        isCurrent: true,
-      },
-    ],
-    images: [
-      {
-        name: 'acme/api',
-        appliedVersion: '1.14.2',
-        expectedVersion: '1.14.2',
-        isCurrent: true,
-      },
-      {
-        name: 'acme/worker',
-        appliedVersion: '1.14.2',
-        expectedVersion: '1.14.2',
-        isCurrent: true,
-      },
-      {
-        name: 'acme/frontend',
-        appliedVersion: '1.14.0',
-        expectedVersion: '1.14.0',
-        isCurrent: true,
-      },
-    ],
-  },
-
+  configLag: CONFIG_LAG_CURRENT,
   driftedObjects: [],
 
-  updates: COMMON_UPDATES,
+  activity: COMMON_ACTIVITY,
 
   resources: {
     stackVersions: [
@@ -328,16 +370,13 @@ export const configCurrentFixture: TPlaygroundInstall = {
   },
 }
 
-// Scenario 2: Expected branch has moved (new branch target, old applied branch still running)
+// ─── Scenario 2: Branch target moved to feat/multi-region ────────────────────
+
 export const branchMovedFixture: TPlaygroundInstall = {
   ...configCurrentFixture,
-  id: 'inst-01hzacmeprod',
-  name: 'acme-prod',
   updatedAt: h(1),
 
-  appliedBranch: APPLIED_BRANCH,
-  expectedBranch: EXPECTED_BRANCH_FEAT,
-  branchIsCurrent: false,
+  branchTracking: BRANCH_TRACKING_MOVED,
 
   runnerStatus: 'active',
   sandboxStatus: 'active',
@@ -400,34 +439,31 @@ export const branchMovedFixture: TPlaygroundInstall = {
 
   driftedObjects: [],
 
-  updates: [
+  activity: [
     {
-      id: 'upd-6',
-      type: 'branch_update',
+      id: 'ev-branch-6',
+      type: 'app_branch_run',
       status: 'in-progress',
       createdAt: h(1),
-      title: 'Branch target changed to feat/multi-region',
-      trigger: {
-        source: 'manual',
+      title: 'App branch run: feat/multi-region',
+      source: {
+        type: 'manual',
         branch: 'feat/multi-region',
         sha: 'ff001234',
         author: 'carol',
       },
     },
-    ...COMMON_UPDATES,
+    ...COMMON_ACTIVITY,
   ],
 }
 
-// Scenario 3: Config is current but resources are lagging (some components/images pending apply)
+// ─── Scenario 3: Branch current, api/worker components mid-deploy ─────────────
+
 export const resourceLagFixture: TPlaygroundInstall = {
   ...configCurrentFixture,
-  id: 'inst-01hzacmeprod',
-  name: 'acme-prod',
   updatedAt: h(0.5),
 
-  appliedBranch: APPLIED_BRANCH,
-  expectedBranch: EXPECTED_BRANCH_MAIN,
-  branchIsCurrent: true,
+  branchTracking: BRANCH_TRACKING_CURRENT,
 
   runnerStatus: 'active',
   sandboxStatus: 'active',
@@ -490,21 +526,22 @@ export const resourceLagFixture: TPlaygroundInstall = {
 
   driftedObjects: [],
 
-  updates: [
+  activity: [
     {
-      id: 'upd-6',
+      id: 'ev-deploy-6',
       type: 'deploy',
       status: 'in-progress',
       createdAt: h(0.5),
       title: 'fix: patch CVE in base image',
-      trigger: {
-        source: 'push',
+      source: {
+        type: 'push',
         branch: 'main',
         sha: 'dd112233',
         author: 'alice',
       },
+      componentName: 'api',
     },
-    ...COMMON_UPDATES,
+    ...COMMON_ACTIVITY,
   ],
 
   resources: {
@@ -572,40 +609,35 @@ export const resourceLagFixture: TPlaygroundInstall = {
   },
 }
 
-// Scenario 4: Infrastructure drift detected while config is current
+// ─── Scenario 4: Config current, infra drift on sandbox + cache ───────────────
+
 export const infraDriftFixture: TPlaygroundInstall = {
   ...configCurrentFixture,
-  id: 'inst-01hzacmeprod',
-  name: 'acme-prod',
   updatedAt: h(2),
 
-  appliedBranch: APPLIED_BRANCH,
-  expectedBranch: EXPECTED_BRANCH_MAIN,
-  branchIsCurrent: true,
+  branchTracking: BRANCH_TRACKING_CURRENT,
 
   runnerStatus: 'active',
   sandboxStatus: 'warn',
   componentStatus: 'active',
 
-  // Config is fully applied — lag is zero
-  configLag: configCurrentFixture.configLag,
+  configLag: CONFIG_LAG_CURRENT,
 
-  // Drift: someone changed sandbox Terraform state manually
   driftedObjects: [
     { id: 'dft-1', targetType: 'sandbox', componentName: undefined },
     { id: 'dft-2', targetType: 'install_deploy', componentName: 'cache' },
   ],
 
-  updates: [
+  activity: [
     {
-      id: 'upd-7',
-      type: 'deploy',
+      id: 'ev-drift-7',
+      type: 'drift_scan',
       status: 'warn',
       createdAt: h(2),
-      title: 'Drift detected — sandbox and cache component',
-      details: 'Drift scan found 2 objects with unexpected changes.',
+      title: 'Drift detected: sandbox, cache',
+      details: 'Drift scan found 2 objects with unexpected state.',
     },
-    ...COMMON_UPDATES,
+    ...COMMON_ACTIVITY,
   ],
 
   resources: {

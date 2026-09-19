@@ -1,15 +1,3 @@
-export type TBranchRef = {
-  id: string
-  name: string
-  sha: string
-  repo?: string
-  repoBranch?: string
-  directory?: string
-  commitMessage?: string
-  author?: string
-  createdAt?: string
-}
-
 export type TResourceStatus =
   | 'active'
   | 'pending'
@@ -37,33 +25,6 @@ export type TDriftedObject = {
   id: string
   targetType: 'install_deploy' | 'sandbox'
   componentName?: string
-}
-
-export type TUpdateTriggerSource = 'push' | 'pr' | 'manual'
-
-export type TUpdateTrigger = {
-  source: TUpdateTriggerSource
-  prNumber?: number
-  author?: string
-  branch?: string
-  sha?: string
-}
-
-export type TUpdateEventType =
-  | 'deploy'
-  | 'branch_update'
-  | 'config_update'
-  | 'inputs_update'
-  | 'stack_update'
-
-export type TUpdateEvent = {
-  id: string
-  type: TUpdateEventType
-  status: string
-  createdAt: string
-  title: string
-  details?: string
-  trigger?: TUpdateTrigger
 }
 
 export type TStackVersion = {
@@ -137,6 +98,64 @@ export type TPlaygroundOperations = {
   runbooks: TRunbookEntry[]
 }
 
+// ─── Activity event types ─────────────────────────────────────────────────────
+
+export type TAppBranchSourceType = 'push' | 'pr' | 'tag' | 'commit' | 'manual'
+
+export type TAppBranchSource = {
+  type: TAppBranchSourceType
+  branch?: string
+  sha?: string
+  author?: string
+  prNumber?: number
+  tag?: string
+}
+
+export type TActivityEventType =
+  | 'app_branch_run'
+  | 'deploy'
+  | 'config_update'
+  | 'inputs_update'
+  | 'stack_update'
+  | 'drift_scan'
+
+export type TActivityEvent = {
+  id: string
+  type: TActivityEventType
+  status: string
+  createdAt: string
+  title: string
+  details?: string
+  /** Present on app_branch_run and deploy events */
+  source?: TAppBranchSource
+  /** Name of the affected component, for deploy and drift_scan events */
+  componentName?: string
+}
+
+// ─── Branch tracking ──────────────────────────────────────────────────────────
+
+export type TBranchCommitRef = {
+  sha: string
+  message?: string
+  author?: string
+  createdAt?: string
+  runStatus?: string
+}
+
+export type TBranchTrackingStatus = 'current' | 'pending' | 'updating'
+
+export type TBranchTracking = {
+  targetBranch: string
+  repo?: string
+  gitBranch?: string
+  directory?: string
+  expectedCommit?: TBranchCommitRef
+  appliedCommit?: TBranchCommitRef
+  status: TBranchTrackingStatus
+}
+
+// ─── Install ──────────────────────────────────────────────────────────────────
+
 export type TPlaygroundInstall = {
   id: string
   name: string
@@ -149,24 +168,15 @@ export type TPlaygroundInstall = {
   createdAt: string
   updatedAt: string
 
-  // Branch state — applied is what's running, expected is what config targets
-  appliedBranch?: TBranchRef
-  expectedBranch?: TBranchRef
-  branchIsCurrent: boolean
+  branchTracking: TBranchTracking
 
-  // Aggregate health statuses
   runnerStatus: TResourceStatus
   sandboxStatus: TResourceStatus
   componentStatus: TResourceStatus
 
-  // Config lag: version drift between applied and expected for each resource class
   configLag: TConfigLag
-
-  // Infrastructure drift: terraform/cloud state diverged from expected
   driftedObjects: TDriftedObject[]
-
-  // Updates rail data
-  updates: TUpdateEvent[]
+  activity: TActivityEvent[]
 
   resources: TPlaygroundResources
   operations: TPlaygroundOperations
