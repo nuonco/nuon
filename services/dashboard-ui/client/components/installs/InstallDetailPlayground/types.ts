@@ -254,6 +254,7 @@ export type TPlaygroundInstall = {
   id: string
   name: string
   orgId: string
+  orgName: string
   appId: string
   appName: string
   labels: Record<string, string>

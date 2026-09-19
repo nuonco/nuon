@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -14,13 +14,13 @@ import { Menu } from '@/components/common/Menu'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
-import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { HealthTimelineComponent } from '@/components/install-health/HealthTimeline'
 import { cn } from '@/utils/classnames'
 import { humanize } from '@/utils/string-utils'
+import { SectionNav, type TSectionNavSection } from './SectionNav'
 import type {
   TPlaygroundInstall,
   TActivityEvent,
@@ -184,6 +184,36 @@ const InstallPlaygroundHeader = ({
   onNavigate,
 }: IInstallPlaygroundHeader) => (
   <header className="flex flex-col gap-4 px-4 pt-8 pb-6 md:px-6 md:pt-10 border-b shrink-0">
+    <nav aria-label="Breadcrumb" className="flex items-center gap-2 min-w-0">
+      <Link
+        href={`/${install.orgId}`}
+        variant="breadcrumb"
+        textVariant="subtext"
+      >
+        {install.orgName}
+      </Link>
+      <Icon
+        variant="CaretRightIcon"
+        size={12}
+        className="text-cool-grey-400 shrink-0"
+      />
+      <Link
+        href={`/${install.orgId}/installs`}
+        variant="breadcrumb"
+        textVariant="subtext"
+      >
+        Installs
+      </Link>
+      <Icon
+        variant="CaretRightIcon"
+        size={12}
+        className="text-cool-grey-400 shrink-0"
+      />
+      <Text variant="subtext" weight="strong" className="truncate">
+        {install.name}
+      </Text>
+    </nav>
+
     <div className="flex flex-col gap-1.5 min-w-0">
       <Text variant="h3" weight="stronger" level={1}>
         {install.name}
@@ -1086,70 +1116,8 @@ const SandboxTab = ({ sandbox }: { sandbox?: TSandboxInfo }) => {
   )
 }
 
-interface ISplitDetail<T extends { id: string }> {
-  items: T[]
-  initialSelectedId?: string
-  getLabel: (item: T) => ReactNode
-  renderDetail: (item: T) => ReactNode
-  emptyMessage: string
-  ariaLabel: string
-}
-
-const SplitDetail = <T extends { id: string }>({
-  items,
-  initialSelectedId,
-  getLabel,
-  renderDetail,
-  emptyMessage,
-  ariaLabel,
-}: ISplitDetail<T>) => {
-  const [selectedId, setSelectedId] = useState(
-    initialSelectedId ?? items.at(0)?.id
-  )
-  const selected = items.find((item) => item.id === selectedId) ?? items.at(0)
-
-  if (!selected) {
-    return (
-      <div className="p-4">
-        <Text variant="subtext" theme="neutral">
-          {emptyMessage}
-        </Text>
-      </div>
-    )
-  }
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-[14rem_minmax(0,1fr)] min-h-0">
-      <div
-        className="flex flex-col gap-1 p-3 border-b md:border-b-0 md:border-r"
-        aria-label={ariaLabel}
-        role="tablist"
-        aria-orientation="vertical"
-      >
-        {items.map((item) => (
-          <Button
-            key={item.id}
-            variant="ghost"
-            size="sm"
-            isActive={item.id === selected.id}
-            className="justify-start shrink-0 md:w-full"
-            onClick={() => setSelectedId(item.id)}
-            role="tab"
-            aria-selected={item.id === selected.id}
-          >
-            {getLabel(item)}
-          </Button>
-        ))}
-      </div>
-      <div className="min-w-0 p-4" role="tabpanel">
-        {renderDetail(selected)}
-      </div>
-    </div>
-  )
-}
-
 const ComponentDetail = ({ component }: { component: TComponentEntry }) => (
-  <div className="flex flex-col gap-4">
+  <div className="flex flex-col gap-4 p-4">
     <div className="flex items-start justify-between gap-4 flex-wrap">
       <div className="flex flex-col gap-2 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -1217,85 +1185,40 @@ const ComponentDetail = ({ component }: { component: TComponentEntry }) => (
   </div>
 )
 
-const ComponentsTab = ({
-  components,
-  initialSelectedId,
-}: {
-  components: TComponentEntry[]
-  initialSelectedId?: string
-}) => (
-  <SplitDetail
-    items={components}
-    initialSelectedId={initialSelectedId}
-    getLabel={(component) => (
-      <span className="flex items-center justify-between gap-2 w-full min-w-0">
-        <Text as="span" variant="subtext" className="truncate">
-          {component.name}
+const ImageDetail = ({ image }: { image: TImageEntry }) => (
+  <div className="flex flex-col gap-4 p-4">
+    <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap min-w-0">
+        <Icon variant="PackageIcon" size={16} className="text-cool-grey-400" />
+        <Text variant="h3" weight="strong" family="mono">
+          {image.repository}
         </Text>
-        <Status
-          status={component.health.current_health || 'unknown'}
-          variant="timeline"
-          isWithoutText
-          iconSize={12}
-        />
-      </span>
-    )}
-    renderDetail={(component) => <ComponentDetail component={component} />}
-    emptyMessage="No components configured."
-    ariaLabel="Components"
-  />
-)
-
-const ImagesTab = ({ images }: { images: TImageEntry[] }) => (
-  <SplitDetail
-    items={images}
-    getLabel={(image) => (
-      <Text as="span" variant="subtext" family="mono" className="truncate">
-        {image.repository}
-      </Text>
-    )}
-    renderDetail={(image) => (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <Icon
-              variant="PackageIcon"
-              size={16}
-              className="text-cool-grey-400"
-            />
-            <Text variant="h3" weight="strong" family="mono">
-              {image.repository}
-            </Text>
-            <Status status={image.status} variant="badge" />
-          </div>
-          <Button variant="secondary" size="sm">
-            Build image
-          </Button>
-        </div>
-        <Card className="!p-4 !gap-4">
-          <div className="flex flex-wrap gap-x-8 gap-y-3">
-            <LabeledValue label="Tag">
-              <Badge size="sm" variant="code" theme="neutral">
-                {image.tag}
-              </Badge>
-            </LabeledValue>
-            {image.sha && (
-              <LabeledValue label="Digest">
-                <Text variant="subtext" family="mono">
-                  {image.sha}
-                </Text>
-              </LabeledValue>
-            )}
-            <LabeledValue label="Built">
-              <Time time={image.builtAt} format="relative" variant="subtext" />
-            </LabeledValue>
-          </div>
-        </Card>
+        <Status status={image.status} variant="badge" />
       </div>
-    )}
-    emptyMessage="No images configured."
-    ariaLabel="Images"
-  />
+      <Button variant="secondary" size="sm">
+        Build image
+      </Button>
+    </div>
+    <Card className="!p-4 !gap-4">
+      <div className="flex flex-wrap gap-x-8 gap-y-3">
+        <LabeledValue label="Tag">
+          <Badge size="sm" variant="code" theme="neutral">
+            {image.tag}
+          </Badge>
+        </LabeledValue>
+        {image.sha && (
+          <LabeledValue label="Digest">
+            <Text variant="subtext" family="mono">
+              {image.sha}
+            </Text>
+          </LabeledValue>
+        )}
+        <LabeledValue label="Built">
+          <Time time={image.builtAt} format="relative" variant="subtext" />
+        </LabeledValue>
+      </div>
+    </Card>
+  </div>
 )
 
 const formatHealthUptime = (
@@ -1379,142 +1302,172 @@ const ResourcesTabPanel = ({
   initialComponentId,
 }: IResourcesTabPanel) => {
   const { resources } = install
+  const sections: TSectionNavSection[] = [
+    {
+      id: 'stack',
+      label: 'Stack',
+      render: () => <StackTab versions={resources.stackVersions} />,
+    },
+    {
+      id: 'sandbox',
+      label: 'Sandbox',
+      render: () => <SandboxTab sandbox={resources.sandbox} />,
+    },
+    {
+      id: 'components',
+      label: 'Components',
+      items: resources.components.map((component) => ({
+        id: component.id,
+        label: (
+          <span className="flex items-center justify-between gap-2 w-full min-w-0">
+            <Text as="span" variant="subtext" className="truncate">
+              {component.name}
+            </Text>
+            <Status
+              status={component.health.current_health || 'unknown'}
+              variant="timeline"
+              isWithoutText
+              iconSize={12}
+            />
+          </span>
+        ),
+      })),
+      render: (componentId) => {
+        const component = resources.components.find(
+          (entry) => entry.id === componentId
+        )
+        return component ? (
+          <ComponentDetail component={component} />
+        ) : (
+          <div className="p-4">
+            <Text variant="subtext" theme="neutral">
+              No components configured.
+            </Text>
+          </div>
+        )
+      },
+    },
+    {
+      id: 'images',
+      label: 'Images',
+      items: resources.images.map((image) => ({
+        id: image.id,
+        label: (
+          <Text as="span" variant="subtext" family="mono" className="truncate">
+            {image.repository}
+          </Text>
+        ),
+      })),
+      render: (imageId) => {
+        const image = resources.images.find((entry) => entry.id === imageId)
+        return image ? (
+          <ImageDetail image={image} />
+        ) : (
+          <div className="p-4">
+            <Text variant="subtext" theme="neutral">
+              No images configured.
+            </Text>
+          </div>
+        )
+      },
+    },
+  ]
 
   return (
-    <Tabs
-      tabs={{
-        stack: <StackTab versions={resources.stackVersions} />,
-        sandbox: <SandboxTab sandbox={resources.sandbox} />,
-        components: (
-          <ComponentsTab
-            components={resources.components}
-            initialSelectedId={initialComponentId}
-          />
-        ),
-        images: <ImagesTab images={resources.images} />,
-      }}
-      tabLabels={{
-        stack: 'Stack',
-        sandbox: 'Sandbox',
-        components: 'Components',
-        images: 'Images',
-      }}
-      initActiveTab={initTab}
-      className="gap-0"
-      tabControlsClassName="px-4"
+    <SectionNav
+      sections={sections}
+      initSectionId={initTab}
+      initItemId={initialComponentId}
+      ariaLabel="Resources"
     />
   )
 }
 
 // ─── Runbooks (Operations subtab) ─────────────────────────────────────────────
 
-const RunbooksTab = ({ runbooks }: { runbooks: TRunbookEntry[] }) => (
-  <SplitDetail
-    items={runbooks}
-    getLabel={(runbook) => (
-      <Text as="span" variant="subtext" className="truncate">
-        {runbook.name}
-      </Text>
-    )}
-    renderDetail={(runbook) => (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2 min-w-0">
-            <Icon
-              variant="BookIcon"
-              size={16}
-              className="text-cool-grey-400 shrink-0"
-            />
-            <Text variant="h3" weight="strong">
-              {runbook.name}
-            </Text>
-            <Badge size="sm" theme="neutral">
-              {runbook.stepCount} {runbook.stepCount === 1 ? 'step' : 'steps'}
-            </Badge>
-          </div>
-          <Button variant="secondary" size="sm">
-            Run runbook
-          </Button>
-        </div>
-        <Card className="!p-4 !gap-4">
-          <Text variant="subtext" theme="neutral">
-            {runbook.description}
-          </Text>
-          {(runbook.lastRunStatus || runbook.lastRunAt) && (
-            <div className="flex items-center gap-3">
-              {runbook.lastRunStatus && (
-                <Status status={runbook.lastRunStatus} variant="badge" />
-              )}
-              {runbook.lastRunAt && (
-                <Time
-                  time={runbook.lastRunAt}
-                  format="relative"
-                  variant="subtext"
-                  theme="neutral"
-                />
-              )}
-            </div>
-          )}
-        </Card>
+const RunbookDetail = ({ runbook }: { runbook: TRunbookEntry }) => (
+  <div className="flex flex-col gap-4 p-4">
+    <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex items-center gap-2 min-w-0">
+        <Icon
+          variant="BookIcon"
+          size={16}
+          className="text-cool-grey-400 shrink-0"
+        />
+        <Text variant="h3" weight="strong">
+          {runbook.name}
+        </Text>
+        <Badge size="sm" theme="neutral">
+          {runbook.stepCount} {runbook.stepCount === 1 ? 'step' : 'steps'}
+        </Badge>
       </div>
-    )}
-    emptyMessage="No runbooks yet. Runbooks will appear here once they are added to this app."
-    ariaLabel="Runbooks"
-  />
+      <Button variant="secondary" size="sm">
+        Run runbook
+      </Button>
+    </div>
+    <Card className="!p-4 !gap-4">
+      <Text variant="subtext" theme="neutral">
+        {runbook.description}
+      </Text>
+      {(runbook.lastRunStatus || runbook.lastRunAt) && (
+        <div className="flex items-center gap-3">
+          {runbook.lastRunStatus && (
+            <Status status={runbook.lastRunStatus} variant="badge" />
+          )}
+          {runbook.lastRunAt && (
+            <Time
+              time={runbook.lastRunAt}
+              format="relative"
+              variant="subtext"
+              theme="neutral"
+            />
+          )}
+        </div>
+      )}
+    </Card>
+  </div>
 )
 
 // ─── Operations tab (Actions + Runbooks) ──────────────────────────────────────
 
-const ActionsTab = ({ actions }: { actions: TActionEntry[] }) => (
-  <SplitDetail
-    items={actions}
-    getLabel={(action) => (
-      <Text as="span" variant="subtext" className="truncate">
-        {action.name}
-      </Text>
-    )}
-    renderDetail={(action) => (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2 min-w-0">
-            <Icon
-              variant="TerminalWindowIcon"
-              size={16}
-              className="text-cool-grey-400 shrink-0"
-            />
-            <Text variant="h3" weight="strong">
-              {action.name}
-            </Text>
-          </div>
-          <Button variant="secondary" size="sm">
-            Run action
-          </Button>
-        </div>
-        <Card className="!p-4 !gap-4">
-          <Text variant="subtext" theme="neutral">
-            {action.description}
-          </Text>
-          {(action.lastRunStatus || action.lastRunAt) && (
-            <div className="flex items-center gap-3">
-              {action.lastRunStatus && (
-                <Status status={action.lastRunStatus} variant="badge" />
-              )}
-              {action.lastRunAt && (
-                <Time
-                  time={action.lastRunAt}
-                  format="relative"
-                  variant="subtext"
-                  theme="neutral"
-                />
-              )}
-            </div>
-          )}
-        </Card>
+const ActionDetail = ({ action }: { action: TActionEntry }) => (
+  <div className="flex flex-col gap-4 p-4">
+    <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex items-center gap-2 min-w-0">
+        <Icon
+          variant="TerminalWindowIcon"
+          size={16}
+          className="text-cool-grey-400 shrink-0"
+        />
+        <Text variant="h3" weight="strong">
+          {action.name}
+        </Text>
       </div>
-    )}
-    emptyMessage="No actions configured."
-    ariaLabel="Actions"
-  />
+      <Button variant="secondary" size="sm">
+        Run action
+      </Button>
+    </div>
+    <Card className="!p-4 !gap-4">
+      <Text variant="subtext" theme="neutral">
+        {action.description}
+      </Text>
+      {(action.lastRunStatus || action.lastRunAt) && (
+        <div className="flex items-center gap-3">
+          {action.lastRunStatus && (
+            <Status status={action.lastRunStatus} variant="badge" />
+          )}
+          {action.lastRunAt && (
+            <Time
+              time={action.lastRunAt}
+              format="relative"
+              variant="subtext"
+              theme="neutral"
+            />
+          )}
+        </div>
+      )}
+    </Card>
+  </div>
 )
 
 const PoliciesTab = ({ policies }: { policies: TPolicyReportEntry[] }) => (
@@ -1627,24 +1580,79 @@ const OperationsTab = ({
   operations,
 }: {
   operations: TPlaygroundInstall['operations']
-}) => (
-  <Tabs
-    tabs={{
-      actions: <ActionsTab actions={operations.actions} />,
-      runbooks: <RunbooksTab runbooks={operations.runbooks} />,
-      policies: <PoliciesTab policies={operations.policies} />,
-      runner: <RunnerTab runner={operations.runner} />,
-    }}
-    tabLabels={{
-      actions: 'Actions',
-      runbooks: 'Runbooks',
-      policies: 'Policies',
-      runner: 'Runner',
-    }}
-    className="gap-0"
-    tabControlsClassName="px-4"
-  />
-)
+}) => {
+  const sections: TSectionNavSection[] = [
+    {
+      id: 'actions',
+      label: 'Actions',
+      items: operations.actions.map((action) => ({
+        id: action.id,
+        label: (
+          <Text as="span" variant="subtext" className="truncate">
+            {action.name}
+          </Text>
+        ),
+      })),
+      render: (actionId) => {
+        const action = operations.actions.find((entry) => entry.id === actionId)
+        return action ? (
+          <ActionDetail action={action} />
+        ) : (
+          <div className="p-4">
+            <Text variant="subtext" theme="neutral">
+              No actions configured.
+            </Text>
+          </div>
+        )
+      },
+    },
+    {
+      id: 'runbooks',
+      label: 'Runbooks',
+      items: operations.runbooks.map((runbook) => ({
+        id: runbook.id,
+        label: (
+          <Text as="span" variant="subtext" className="truncate">
+            {runbook.name}
+          </Text>
+        ),
+      })),
+      render: (runbookId) => {
+        const runbook = operations.runbooks.find(
+          (entry) => entry.id === runbookId
+        )
+        return runbook ? (
+          <RunbookDetail runbook={runbook} />
+        ) : (
+          <div className="p-4">
+            <Text variant="subtext" theme="neutral">
+              No runbooks yet. Runbooks will appear here once they are added to
+              this app.
+            </Text>
+          </div>
+        )
+      },
+    },
+    {
+      id: 'policies',
+      label: 'Policies',
+      render: () => <PoliciesTab policies={operations.policies} />,
+    },
+    {
+      id: 'runner',
+      label: 'Runner',
+      render: () => <RunnerTab runner={operations.runner} />,
+    },
+  ]
+
+  return (
+    <SectionNav
+      sections={sections}
+      initSectionId="actions"
+      ariaLabel="Operations"
+    />
+  )
+}
 
 // ─── Configuration sub-tabs ───────────────────────────────────────────────────
 
@@ -1978,10 +1986,12 @@ const ConfigurationTabPanel = ({
 }: {
   install: TPlaygroundInstall
   initTab?: string
-}) => (
-  <Tabs
-    tabs={{
-      appBranch: (
+}) => {
+  const sections: TSectionNavSection[] = [
+    {
+      id: 'appBranch',
+      label: 'App branch',
+      render: () => (
         <div className="flex flex-col gap-4 p-4">
           <InstallBranchTrackingCard install={install} />
           <ConfigurationVersionFeed
@@ -1990,31 +2000,44 @@ const ConfigurationTabPanel = ({
           />
         </div>
       ),
-      inputs: (
+    },
+    {
+      id: 'inputs',
+      label: 'Inputs',
+      render: () => (
         <InputsTab
           inputs={install.configuration.inputs}
           versions={install.configuration.inputVersions}
         />
       ),
-      configFile: (
+    },
+    {
+      id: 'configFile',
+      label: 'Config file',
+      render: () => (
         <ConfigFileTab
           configFile={install.configuration.configFile}
           versions={install.configuration.configFileVersions}
         />
       ),
-      overrides: <OverridesTab overrides={install.configuration.overrides} />,
-    }}
-    tabLabels={{
-      appBranch: 'App branch',
-      inputs: 'Inputs',
-      configFile: 'Config file',
-      overrides: 'Overrides',
-    }}
-    initActiveTab={initTab}
-    className="gap-0"
-    tabControlsClassName="px-4"
-  />
-)
+    },
+    {
+      id: 'overrides',
+      label: 'Overrides',
+      render: () => (
+        <OverridesTab overrides={install.configuration.overrides} />
+      ),
+    },
+  ]
+
+  return (
+    <SectionNav
+      sections={sections}
+      initSectionId={initTab}
+      ariaLabel="Configuration"
+    />
+  )
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -2031,7 +2054,7 @@ export const InstallDetailPlayground = ({
   const [deploymentFilter, setDeploymentFilter] = useState<TDeploymentFilter>(
     DEFAULT_DEPLOYMENT_FILTER
   )
-  // Incrementing keys remount Tabs so header cards can select a nested tab.
+  // Incrementing keys remount contextual navigation so header cards can select a section.
   const [resourcesNav, setResourcesNav] = useState<{
     tab?: string
     componentId?: string
