@@ -1,4 +1,7 @@
-import type { TInstallHealthTimeline } from '@/types'
+import type {
+  TInstallComponentHealthTimeline,
+  TInstallHealthTimeline,
+} from '@/types'
 
 export type TResourceStatus =
   | 'active'
@@ -59,6 +62,7 @@ export type TComponentEntry = {
   status: TResourceStatus
   deployedAt: string
   sha?: string
+  health: TInstallComponentHealthTimeline
 }
 
 export type TImageEntry = {

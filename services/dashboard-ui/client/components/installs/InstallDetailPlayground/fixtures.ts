@@ -6,6 +6,7 @@ import type {
 } from './types'
 import type {
   THealthTimelineDay,
+  TInstallComponentHealthTimeline,
   TInstallHealthTimeline,
   TInstallHealthTimelineComponent,
 } from '@/types'
@@ -59,6 +60,160 @@ const healthFromDaily = (
     daily,
     components,
   }
+}
+
+const componentHealth = ({
+  currentHealth,
+  uptimePercent,
+  patches = {},
+  transitions = [],
+}: {
+  currentHealth: string
+  uptimePercent: number
+  patches?: Record<number, Partial<THealthTimelineDay>>
+  transitions?: TInstallComponentHealthTimeline['transitions']
+}): TInstallComponentHealthTimeline => {
+  const hasSignal = currentHealth !== 'not-applicable'
+  const daily = hasSignal ? buildHealthDaily(HEALTH_WINDOW_DAYS, patches) : []
+
+  return {
+    days: HEALTH_WINDOW_DAYS,
+    uptime_percent: hasSignal ? uptimePercent : 0,
+    observed_seconds: hasSignal ? HEALTH_WINDOW_DAYS * DAY_SECONDS : 0,
+    current_health: currentHealth,
+    daily,
+    transitions,
+  }
+}
+
+const COMPONENT_HEALTH_CURRENT = {
+  api: componentHealth({
+    currentHealth: 'healthy',
+    uptimePercent: 99.98,
+    transitions: [
+      {
+        from_health: 'degraded',
+        to_health: 'healthy',
+        message: 'API readiness checks recovered',
+        correlated_deploy_id: 'deploy-api-14',
+        observed_at: h(4),
+      },
+    ],
+  }),
+  worker: componentHealth({
+    currentHealth: 'healthy',
+    uptimePercent: 99.94,
+    transitions: [
+      {
+        from_health: 'unknown',
+        to_health: 'healthy',
+        message: 'Worker health signal restored',
+        observed_at: h(18),
+      },
+    ],
+  }),
+  frontend: componentHealth({
+    currentHealth: 'healthy',
+    uptimePercent: 100,
+  }),
+  cache: componentHealth({
+    currentHealth: 'not-applicable',
+    uptimePercent: 0,
+  }),
+}
+
+const COMPONENT_HEALTH_BRANCH_MOVED = {
+  api: componentHealth({
+    currentHealth: 'degraded',
+    uptimePercent: 99.2,
+    patches: {
+      0: {
+        health: 'degraded',
+        degraded_seconds: 1200,
+        observed_seconds: 18 * 3600,
+      },
+    },
+    transitions: [
+      {
+        from_health: 'healthy',
+        to_health: 'degraded',
+        message: 'Readiness checks degraded while the branch update applies',
+        correlated_deploy_id: 'deploy-api-15',
+        observed_at: h(1),
+      },
+    ],
+  }),
+  worker: componentHealth({
+    currentHealth: 'degraded',
+    uptimePercent: 99.1,
+    patches: {
+      0: {
+        health: 'degraded',
+        degraded_seconds: 1500,
+        observed_seconds: 18 * 3600,
+      },
+    },
+    transitions: [
+      {
+        from_health: 'healthy',
+        to_health: 'degraded',
+        message: 'Worker queue latency exceeded the threshold',
+        observed_at: h(1),
+      },
+    ],
+  }),
+  frontend: COMPONENT_HEALTH_CURRENT.frontend,
+  cache: COMPONENT_HEALTH_CURRENT.cache,
+}
+
+const COMPONENT_HEALTH_RESOURCE_LAG = {
+  api: componentHealth({
+    currentHealth: 'degraded',
+    uptimePercent: 98.4,
+    patches: {
+      0: {
+        health: 'degraded',
+        degraded_seconds: 2400,
+        observed_seconds: 18 * 3600,
+      },
+    },
+    transitions: [
+      {
+        from_health: 'healthy',
+        to_health: 'degraded',
+        message: 'New API pods are not ready',
+        correlated_deploy_id: 'deploy-api-16',
+        observed_at: h(0.5),
+      },
+    ],
+  }),
+  worker: componentHealth({
+    currentHealth: 'unhealthy',
+    uptimePercent: 97.1,
+    patches: {
+      0: {
+        health: 'unhealthy',
+        unhealthy_seconds: 3600,
+        observed_seconds: 18 * 3600,
+      },
+      1: {
+        health: 'unhealthy',
+        unhealthy_seconds: 1800,
+        observed_seconds: DAY_SECONDS,
+      },
+    },
+    transitions: [
+      {
+        from_health: 'degraded',
+        to_health: 'unhealthy',
+        message: 'Worker pods are failing readiness checks',
+        correlated_deploy_id: 'deploy-worker-16',
+        observed_at: h(0.5),
+      },
+    ],
+  }),
+  frontend: COMPONENT_HEALTH_CURRENT.frontend,
+  cache: COMPONENT_HEALTH_CURRENT.cache,
 }
 
 const HEALTH_COMPONENTS_CURRENT: TInstallHealthTimelineComponent[] = [
@@ -234,6 +389,7 @@ const COMMON_RESOURCES = {
       status: 'active' as const,
       deployedAt: h(4),
       sha: 'a1b2c3d4',
+      health: COMPONENT_HEALTH_CURRENT.api,
     },
     {
       id: 'cmp-2',
@@ -242,6 +398,7 @@ const COMMON_RESOURCES = {
       status: 'active' as const,
       deployedAt: h(4),
       sha: 'a1b2c3d4',
+      health: COMPONENT_HEALTH_CURRENT.worker,
     },
     {
       id: 'cmp-3',
@@ -250,6 +407,7 @@ const COMMON_RESOURCES = {
       status: 'active' as const,
       deployedAt: h(6),
       sha: 'e5f6a7b8',
+      health: COMPONENT_HEALTH_CURRENT.frontend,
     },
     {
       id: 'cmp-4',
@@ -258,6 +416,7 @@ const COMMON_RESOURCES = {
       status: 'active' as const,
       deployedAt: h(24),
       sha: 'c9d0e1f2',
+      health: COMPONENT_HEALTH_CURRENT.cache,
     },
   ],
   images: [
@@ -980,6 +1139,16 @@ export const branchMovedFixture: TPlaygroundInstall = {
   configuration: BRANCH_MOVED_CONFIGURATION,
 
   health: HEALTH_BRANCH_MOVED,
+  resources: {
+    ...configCurrentFixture.resources,
+    components: configCurrentFixture.resources.components.map((component) => ({
+      ...component,
+      health:
+        COMPONENT_HEALTH_BRANCH_MOVED[
+          component.name as keyof typeof COMPONENT_HEALTH_BRANCH_MOVED
+        ],
+    })),
+  },
 
   runnerStatus: 'active',
   sandboxStatus: 'active',
@@ -1159,6 +1328,7 @@ export const resourceLagFixture: TPlaygroundInstall = {
         status: 'pending',
         deployedAt: h(0.5),
         sha: 'dd112233',
+        health: COMPONENT_HEALTH_RESOURCE_LAG.api,
       },
       {
         id: 'cmp-2',
@@ -1167,6 +1337,7 @@ export const resourceLagFixture: TPlaygroundInstall = {
         status: 'pending',
         deployedAt: h(0.5),
         sha: 'dd112233',
+        health: COMPONENT_HEALTH_RESOURCE_LAG.worker,
       },
       {
         id: 'cmp-3',
@@ -1175,6 +1346,7 @@ export const resourceLagFixture: TPlaygroundInstall = {
         status: 'active',
         deployedAt: h(6),
         sha: 'e5f6a7b8',
+        health: COMPONENT_HEALTH_RESOURCE_LAG.frontend,
       },
       {
         id: 'cmp-4',
@@ -1183,6 +1355,7 @@ export const resourceLagFixture: TPlaygroundInstall = {
         status: 'active',
         deployedAt: h(24),
         sha: 'c9d0e1f2',
+        health: COMPONENT_HEALTH_RESOURCE_LAG.cache,
       },
     ],
     images: [
@@ -1263,6 +1436,7 @@ export const infraDriftFixture: TPlaygroundInstall = {
         status: 'active',
         deployedAt: h(4),
         sha: 'a1b2c3d4',
+        health: COMPONENT_HEALTH_CURRENT.api,
       },
       {
         id: 'cmp-2',
@@ -1271,6 +1445,7 @@ export const infraDriftFixture: TPlaygroundInstall = {
         status: 'active',
         deployedAt: h(4),
         sha: 'a1b2c3d4',
+        health: COMPONENT_HEALTH_CURRENT.worker,
       },
       {
         id: 'cmp-3',
@@ -1279,6 +1454,7 @@ export const infraDriftFixture: TPlaygroundInstall = {
         status: 'active',
         deployedAt: h(6),
         sha: 'e5f6a7b8',
+        health: COMPONENT_HEALTH_CURRENT.frontend,
       },
       {
         id: 'cmp-4',
@@ -1287,6 +1463,7 @@ export const infraDriftFixture: TPlaygroundInstall = {
         status: 'warn',
         deployedAt: h(4),
         sha: 'c9d0e1f2',
+        health: COMPONENT_HEALTH_CURRENT.cache,
       },
     ],
   },

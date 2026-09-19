@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -31,7 +31,6 @@ import type {
   TLagItem,
   TDriftedObject,
   TStackVersion,
-  TRoleEntry,
   TSandboxInfo,
   TComponentEntry,
   TImageEntry,
@@ -51,32 +50,36 @@ import type {
 type TTopTab =
   | 'overview'
   | 'resources'
+  | 'deployments'
+  | 'health'
   | 'operations'
   | 'configuration'
-  | 'activity'
 
 const TOP_TAB_LABELS: Record<TTopTab, string> = {
   overview: 'Overview',
   resources: 'Resources',
+  deployments: 'Deployments',
+  health: 'Health checks',
   operations: 'Operations',
   configuration: 'Configuration',
-  activity: 'Activity',
 }
 
-// ─── Activity filter state ────────────────────────────────────────────────────
+// ─── Deployments filter state ─────────────────────────────────────────────────
 
-type TActivityFilter = {
+type TDeploymentCategory = 'app-branch' | 'install-config' | 'deployment'
+
+type TDeploymentFilter = {
   search: string
   status: string
-  type: string
+  category: 'all' | TDeploymentCategory
   component: string
   date: string
 }
 
-const DEFAULT_ACTIVITY_FILTER: TActivityFilter = {
+const DEFAULT_DEPLOYMENT_FILTER: TDeploymentFilter = {
   search: '',
   status: 'all',
-  type: 'all',
+  category: 'all',
   component: 'all',
   date: 'all',
 }
@@ -88,8 +91,8 @@ interface IInstallPlaygroundHeader {
   onNavigate: (
     tab: TTopTab,
     opts?: {
-      activityType?: string
       resourcesTab?: string
+      componentId?: string
       configurationTab?: string
     }
   ) => void
@@ -220,26 +223,24 @@ interface IInstallStatusCard {
   onNavigate: (
     tab: TTopTab,
     opts?: {
-      activityType?: string
       resourcesTab?: string
+      componentId?: string
       configurationTab?: string
     }
   ) => void
 }
 
 const InstallStatusCard = ({ install, onNavigate }: IInstallStatusCard) => {
-  const { activity, resources, componentStatus } = install
+  const { activity, resources } = install
 
-  // Deployments: in-flight app_branch_run and deploy workflows
+  // Deployment status includes every deploy/config change, but not drift scans.
   const runningUpdates = activity.filter(
     (e) =>
-      (e.type === 'app_branch_run' || e.type === 'deploy') &&
+      e.type !== 'drift_scan' &&
       (e.status === 'in-progress' || e.status === 'pending')
   )
   const failedUpdates = activity.filter(
-    (e) =>
-      (e.type === 'app_branch_run' || e.type === 'deploy') &&
-      e.status === 'error'
+    (e) => e.type !== 'drift_scan' && e.status === 'error'
   )
   const updatesStatus =
     failedUpdates.length > 0
@@ -275,13 +276,13 @@ const InstallStatusCard = ({ install, onNavigate }: IInstallStatusCard) => {
         : 'All deployed'
 
   // Health checks reflect component health, separate from deploy state.
-  const healthStatus = componentStatus
+  const healthStatus = install.health.current_health || 'unknown'
   const healthLabel =
-    healthStatus === 'active'
+    healthStatus === 'active' || healthStatus === 'healthy'
       ? 'Healthy'
-      : healthStatus === 'warn'
+      : healthStatus === 'warn' || healthStatus === 'degraded'
         ? 'Degraded'
-        : healthStatus === 'error'
+        : healthStatus === 'error' || healthStatus === 'unhealthy'
           ? 'Unhealthy'
           : 'Checking'
 
@@ -294,8 +295,8 @@ const InstallStatusCard = ({ install, onNavigate }: IInstallStatusCard) => {
         variant="ghost"
         size="sm"
         className="!px-0 w-full justify-between"
-        onClick={() => onNavigate('activity', { activityType: 'deployments' })}
-        aria-label={`Deployments: ${updatesLabel}. Navigate to activity.`}
+        onClick={() => onNavigate('deployments')}
+        aria-label={`Deployments: ${updatesLabel}. Navigate to deployments.`}
       >
         <span className="flex items-center gap-1.5">
           <Icon
@@ -334,8 +335,8 @@ const InstallStatusCard = ({ install, onNavigate }: IInstallStatusCard) => {
         variant="ghost"
         size="sm"
         className="!px-0 w-full justify-between"
-        onClick={() => onNavigate('resources', { resourcesTab: 'health' })}
-        aria-label={`Health checks: ${healthLabel}. Navigate to resources.`}
+        onClick={() => onNavigate('health')}
+        aria-label={`Health checks: ${healthLabel}. Navigate to health checks.`}
       >
         <span className="flex items-center gap-1.5">
           <Icon variant="PulseIcon" size={13} className="text-cool-grey-400" />
@@ -640,51 +641,11 @@ const ConfigLagCard = ({ install }: { install: TPlaygroundInstall }) => {
   )
 }
 
-interface IOverviewTab {
-  install: TPlaygroundInstall
-  onNavigate: IInstallPlaygroundHeader['onNavigate']
-}
-
-const OverviewTab = ({ install, onNavigate }: IOverviewTab) => {
+const OverviewTab = ({ install }: { install: TPlaygroundInstall }) => {
   const hasDrift = install.driftedObjects.length > 0
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      {/* Per-component health lives in Resources -> Health, not here. */}
-      <Card className="!p-4 !gap-4">
-        <HealthTimelineComponent
-          scope="install"
-          days={install.health.days}
-          daily={install.health.daily}
-          uptimePercent={install.health.uptime_percent}
-          observedSeconds={install.health.observed_seconds}
-          currentHealth={install.health.current_health}
-          headerAction={
-            <Button
-              variant="ghost"
-              size="sm"
-              className="!px-0"
-              onClick={() =>
-                onNavigate('resources', { resourcesTab: 'health' })
-              }
-            >
-              <span className="flex items-center gap-1.5">
-                <Text as="span" variant="subtext" theme="info">
-                  View health
-                </Text>
-                <Icon variant="ArrowRightIcon" size={13} />
-              </span>
-            </Button>
-          }
-        />
-      </Card>
-
-      {install.readme && (
-        <Card className="!p-4 !gap-4">
-          <Markdown content={install.readme} mode="install" />
-        </Card>
-      )}
-
       <ConfigLagCard install={install} />
 
       {/* Infrastructure drift — kept distinct from config lag */}
@@ -719,19 +680,22 @@ const OverviewTab = ({ install, onNavigate }: IOverviewTab) => {
           </div>
         )}
       </Card>
+
+      {install.readme && (
+        <Card className="!p-4 !gap-4">
+          <Markdown content={install.readme} mode="install" />
+        </Card>
+      )}
     </div>
   )
 }
 
-// ─── Activity tab ─────────────────────────────────────────────────────────────
+// ─── Deployments tab ──────────────────────────────────────────────────────────
 
-const ACTIVITY_TYPE_LABELS: Record<TActivityEventType, string> = {
-  app_branch_run: 'App branch run',
-  deploy: 'Deploy',
-  config_update: 'Config',
-  inputs_update: 'Inputs',
-  stack_update: 'Stack',
-  drift_scan: 'Drift scan',
+const DEPLOYMENT_CATEGORY_LABELS: Record<TDeploymentCategory, string> = {
+  'app-branch': 'App branch updates',
+  'install-config': 'Install config updates',
+  deployment: 'Deployments',
 }
 
 const DATE_FILTER_LABELS: Record<string, string> = {
@@ -783,11 +747,30 @@ const sourceCaption = (source?: TAppBranchSource): string | undefined => {
   }
 }
 
-const filterActivity = (
+const deploymentCategory = (
+  type: TActivityEventType
+): TDeploymentCategory | undefined => {
+  switch (type) {
+    case 'app_branch_run':
+      return 'app-branch'
+    case 'config_update':
+    case 'inputs_update':
+      return 'install-config'
+    case 'deploy':
+    case 'stack_update':
+      return 'deployment'
+    case 'drift_scan':
+      return undefined
+  }
+}
+
+const filterDeployments = (
   events: TActivityEvent[],
-  filter: TActivityFilter
+  filter: TDeploymentFilter
 ): TActivityEvent[] =>
   events.filter((e) => {
+    const category = deploymentCategory(e.type)
+    if (!category) return false
     if (filter.search) {
       const q = filter.search.toLowerCase()
       if (
@@ -798,19 +781,7 @@ const filterActivity = (
         return false
     }
     if (filter.status !== 'all' && e.status !== filter.status) return false
-    // 'deployments' is a grouped filter set by the status strip
-    if (
-      filter.type === 'deployments' &&
-      e.type !== 'app_branch_run' &&
-      e.type !== 'deploy'
-    )
-      return false
-    if (
-      filter.type !== 'all' &&
-      filter.type !== 'deployments' &&
-      e.type !== filter.type
-    )
-      return false
+    if (filter.category !== 'all' && category !== filter.category) return false
     if (filter.component !== 'all' && e.componentName !== filter.component)
       return false
     if (filter.date !== 'all') {
@@ -820,28 +791,35 @@ const filterActivity = (
     return true
   })
 
-interface IActivityTab {
+interface IDeploymentsTab {
   install: TPlaygroundInstall
-  filter: TActivityFilter
-  onFilterChange: (f: TActivityFilter) => void
+  filter: TDeploymentFilter
+  onFilterChange: (f: TDeploymentFilter) => void
 }
 
-const ActivityTab = ({ install, filter, onFilterChange }: IActivityTab) => {
-  const set = (patch: Partial<TActivityFilter>) =>
+const DeploymentsTab = ({
+  install,
+  filter,
+  onFilterChange,
+}: IDeploymentsTab) => {
+  const set = (patch: Partial<TDeploymentFilter>) =>
     onFilterChange({ ...filter, ...patch })
 
+  const deploymentEvents = install.activity.filter((event) =>
+    deploymentCategory(event.type)
+  )
   const allComponents = Array.from(
-    new Set(install.activity.map((e) => e.componentName).filter(Boolean))
+    new Set(deploymentEvents.map((e) => e.componentName).filter(Boolean))
   ) as string[]
 
-  const allStatuses = Array.from(new Set(install.activity.map((e) => e.status)))
+  const allStatuses = Array.from(new Set(deploymentEvents.map((e) => e.status)))
 
-  const filtered = filterActivity(install.activity, filter)
+  const filtered = filterDeployments(install.activity, filter)
 
   const hasActiveFilters =
     filter.search !== '' ||
     filter.status !== 'all' ||
-    filter.type !== 'all' ||
+    filter.category !== 'all' ||
     filter.component !== 'all' ||
     filter.date !== 'all'
 
@@ -850,15 +828,15 @@ const ActivityTab = ({ install, filter, onFilterChange }: IActivityTab) => {
       {/* Filter bar */}
       <div className="flex items-center flex-wrap gap-2 px-4 py-3 border-b bg-cool-grey-50 dark:bg-dark-grey-800 shrink-0">
         <SearchInput
-          aria-label="Search activity"
+          aria-label="Search deployments"
           value={filter.search}
           onChange={(v) => set({ search: v })}
-          placeholder="Search activity…"
+          placeholder="Search deployments…"
           labelClassName="flex-1 min-w-44"
         />
 
         <Dropdown
-          id="act-filter-status"
+          id="deployments-filter-status"
           variant="secondary"
           size="sm"
           buttonText={
@@ -879,36 +857,37 @@ const ActivityTab = ({ install, filter, onFilterChange }: IActivityTab) => {
         </Dropdown>
 
         <Dropdown
-          id="act-filter-type"
+          id="deployments-filter-category"
           variant="secondary"
           size="sm"
           buttonText={
-            filter.type === 'all'
-              ? 'Type'
-              : filter.type === 'deployments'
-                ? 'Deployments'
-                : (ACTIVITY_TYPE_LABELS[filter.type as TActivityEventType] ??
-                  humanize(filter.type))
+            filter.category === 'all'
+              ? 'Category'
+              : DEPLOYMENT_CATEGORY_LABELS[filter.category]
           }
-          isActive={filter.type !== 'all'}
+          isActive={filter.category !== 'all'}
         >
           <Menu>
-            <Button isMenuButton onClick={() => set({ type: 'all' })}>
-              All types
+            <Button isMenuButton onClick={() => set({ category: 'all' })}>
+              All categories
             </Button>
-            {(Object.keys(ACTIVITY_TYPE_LABELS) as TActivityEventType[]).map(
-              (t) => (
-                <Button isMenuButton key={t} onClick={() => set({ type: t })}>
-                  {ACTIVITY_TYPE_LABELS[t]}
-                </Button>
-              )
-            )}
+            {(
+              Object.keys(DEPLOYMENT_CATEGORY_LABELS) as TDeploymentCategory[]
+            ).map((category) => (
+              <Button
+                isMenuButton
+                key={category}
+                onClick={() => set({ category })}
+              >
+                {DEPLOYMENT_CATEGORY_LABELS[category]}
+              </Button>
+            ))}
           </Menu>
         </Dropdown>
 
         {allComponents.length > 0 && (
           <Dropdown
-            id="act-filter-component"
+            id="deployments-filter-component"
             variant="secondary"
             size="sm"
             buttonText={
@@ -934,7 +913,7 @@ const ActivityTab = ({ install, filter, onFilterChange }: IActivityTab) => {
         )}
 
         <Dropdown
-          id="act-filter-date"
+          id="deployments-filter-date"
           variant="secondary"
           size="sm"
           buttonText={
@@ -960,7 +939,7 @@ const ActivityTab = ({ install, filter, onFilterChange }: IActivityTab) => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onFilterChange(DEFAULT_ACTIVITY_FILTER)}
+            onClick={() => onFilterChange(DEFAULT_DEPLOYMENT_FILTER)}
           >
             Clear filters
           </Button>
@@ -971,7 +950,7 @@ const ActivityTab = ({ install, filter, onFilterChange }: IActivityTab) => {
       <div className="flex flex-col px-4 py-2 overflow-y-auto">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-12">
-            <Text theme="neutral">No activity found</Text>
+            <Text theme="neutral">No deployments found</Text>
             <Text variant="subtext" theme="neutral">
               Try adjusting your filters.
             </Text>
@@ -979,9 +958,10 @@ const ActivityTab = ({ install, filter, onFilterChange }: IActivityTab) => {
         ) : (
           filtered.map((event) => {
             const caption = sourceCaption(event.source) ?? event.details
-            const badgeLabel =
-              ACTIVITY_TYPE_LABELS[event.type as TActivityEventType] ??
-              humanize(event.type)
+            const category = deploymentCategory(event.type)
+            const badgeLabel = category
+              ? DEPLOYMENT_CATEGORY_LABELS[category]
+              : humanize(event.type)
 
             return (
               <TimelineEvent
@@ -1039,31 +1019,6 @@ const StackTab = ({ versions }: { versions: TStackVersion[] }) => (
               {index === 0 ? 'Reprovision' : 'Deploy'}
             </Button>
           </div>
-        </div>
-      </Card>
-    ))}
-  </div>
-)
-
-const RolesTab = ({ roles }: { roles: TRoleEntry[] }) => (
-  <div className="flex flex-col gap-2 p-4">
-    {roles.map((role) => (
-      <Card key={role.id} className="!p-4 !gap-0">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <Icon
-              variant="FileLockIcon"
-              size={14}
-              className="text-cool-grey-400 shrink-0"
-            />
-            <Text variant="body" family="mono" className="truncate">
-              {role.name}
-            </Text>
-            <Badge size="sm" theme="neutral">
-              {humanize(role.type)}
-            </Badge>
-          </div>
-          <Status status={role.status} variant="badge" />
         </div>
       </Card>
     ))}
@@ -1131,81 +1086,233 @@ const SandboxTab = ({ sandbox }: { sandbox?: TSandboxInfo }) => {
   )
 }
 
-const ComponentsTab = ({ components }: { components: TComponentEntry[] }) => (
-  <div className="flex flex-col gap-2 p-4">
-    {components.map((cmp) => (
-      <Card key={cmp.id} className="!p-4 !gap-0">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <Icon
-              variant="CardsIcon"
-              size={14}
-              className="text-cool-grey-400 shrink-0"
-            />
-            <Text variant="body" className="truncate">
-              {cmp.name}
-            </Text>
-            <Badge size="sm" theme="neutral">
-              {humanize(cmp.type)}
-            </Badge>
-            {cmp.sha && (
+interface ISplitDetail<T extends { id: string }> {
+  items: T[]
+  initialSelectedId?: string
+  getLabel: (item: T) => ReactNode
+  renderDetail: (item: T) => ReactNode
+  emptyMessage: string
+  ariaLabel: string
+}
+
+const SplitDetail = <T extends { id: string }>({
+  items,
+  initialSelectedId,
+  getLabel,
+  renderDetail,
+  emptyMessage,
+  ariaLabel,
+}: ISplitDetail<T>) => {
+  const [selectedId, setSelectedId] = useState(
+    initialSelectedId ?? items.at(0)?.id
+  )
+  const selected = items.find((item) => item.id === selectedId) ?? items.at(0)
+
+  if (!selected) {
+    return (
+      <div className="p-4">
+        <Text variant="subtext" theme="neutral">
+          {emptyMessage}
+        </Text>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-[14rem_minmax(0,1fr)] min-h-0">
+      <div
+        className="flex flex-col gap-1 p-3 border-b md:border-b-0 md:border-r"
+        aria-label={ariaLabel}
+        role="tablist"
+        aria-orientation="vertical"
+      >
+        {items.map((item) => (
+          <Button
+            key={item.id}
+            variant="ghost"
+            size="sm"
+            isActive={item.id === selected.id}
+            className="justify-start shrink-0 md:w-full"
+            onClick={() => setSelectedId(item.id)}
+            role="tab"
+            aria-selected={item.id === selected.id}
+          >
+            {getLabel(item)}
+          </Button>
+        ))}
+      </div>
+      <div className="min-w-0 p-4" role="tabpanel">
+        {renderDetail(selected)}
+      </div>
+    </div>
+  )
+}
+
+const ComponentDetail = ({ component }: { component: TComponentEntry }) => (
+  <div className="flex flex-col gap-4">
+    <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex flex-col gap-2 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Icon variant="CardsIcon" size={16} className="text-cool-grey-400" />
+          <Text variant="h3" weight="strong">
+            {component.name}
+          </Text>
+          <Badge size="sm" theme="neutral">
+            {humanize(component.type)}
+          </Badge>
+          <Status status={component.status} variant="badge" />
+        </div>
+        {component.sha && (
+          <Badge size="sm" variant="code" theme="neutral">
+            {component.sha.slice(0, 8)}
+          </Badge>
+        )}
+      </div>
+      <Button variant="secondary" size="sm">
+        Deploy
+      </Button>
+    </div>
+
+    <div className="flex flex-col gap-2">
+      <Text variant="body" weight="strong">
+        Latest deploy
+      </Text>
+      <Card className="!p-4 !gap-0">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Status status={component.status} variant="badge" />
+            {component.sha && (
               <Badge size="sm" variant="code" theme="neutral">
-                {cmp.sha.slice(0, 8)}
+                {component.sha.slice(0, 8)}
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
-            <Status status={cmp.status} variant="badge" />
-            <Time
-              time={cmp.deployedAt}
-              format="relative"
-              variant="subtext"
-              theme="neutral"
-            />
-            <Button variant="secondary" size="sm">
-              Deploy
-            </Button>
-          </div>
+          <Time
+            time={component.deployedAt}
+            format="relative"
+            variant="subtext"
+            theme="neutral"
+          />
         </div>
       </Card>
-    ))}
+    </div>
+
+    <div className="flex flex-col gap-2">
+      <Text variant="body" weight="strong">
+        Health
+      </Text>
+      <Card className="!p-4 !gap-4">
+        <HealthTimelineComponent
+          scope="component"
+          days={component.health.days}
+          daily={component.health.daily}
+          uptimePercent={component.health.uptime_percent}
+          observedSeconds={component.health.observed_seconds}
+          currentHealth={component.health.current_health}
+          transitions={component.health.transitions}
+          deployBasePath={`/components/${component.id}/deploys`}
+        />
+      </Card>
+    </div>
   </div>
+)
+
+const ComponentsTab = ({
+  components,
+  initialSelectedId,
+}: {
+  components: TComponentEntry[]
+  initialSelectedId?: string
+}) => (
+  <SplitDetail
+    items={components}
+    initialSelectedId={initialSelectedId}
+    getLabel={(component) => (
+      <span className="flex items-center justify-between gap-2 w-full min-w-0">
+        <Text as="span" variant="subtext" className="truncate">
+          {component.name}
+        </Text>
+        <Status
+          status={component.health.current_health || 'unknown'}
+          variant="timeline"
+          isWithoutText
+          iconSize={12}
+        />
+      </span>
+    )}
+    renderDetail={(component) => <ComponentDetail component={component} />}
+    emptyMessage="No components configured."
+    ariaLabel="Components"
+  />
 )
 
 const ImagesTab = ({ images }: { images: TImageEntry[] }) => (
-  <div className="flex flex-col gap-2 p-4">
-    {images.map((img) => (
-      <Card key={img.id} className="!p-4 !gap-0">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
+  <SplitDetail
+    items={images}
+    getLabel={(image) => (
+      <Text as="span" variant="subtext" family="mono" className="truncate">
+        {image.repository}
+      </Text>
+    )}
+    renderDetail={(image) => (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
             <Icon
               variant="PackageIcon"
-              size={14}
-              className="text-cool-grey-400 shrink-0"
+              size={16}
+              className="text-cool-grey-400"
             />
-            <Text variant="body" family="mono" className="truncate">
-              {img.repository}
+            <Text variant="h3" weight="strong" family="mono">
+              {image.repository}
             </Text>
-            <Badge size="sm" variant="code" theme="neutral">
-              {img.tag}
-            </Badge>
+            <Status status={image.status} variant="badge" />
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <Status status={img.status} variant="badge" />
-            <Time
-              time={img.builtAt}
-              format="relative"
-              variant="subtext"
-              theme="neutral"
-            />
-          </div>
+          <Button variant="secondary" size="sm">
+            Build image
+          </Button>
         </div>
-      </Card>
-    ))}
-  </div>
+        <Card className="!p-4 !gap-4">
+          <div className="flex flex-wrap gap-x-8 gap-y-3">
+            <LabeledValue label="Tag">
+              <Badge size="sm" variant="code" theme="neutral">
+                {image.tag}
+              </Badge>
+            </LabeledValue>
+            {image.sha && (
+              <LabeledValue label="Digest">
+                <Text variant="subtext" family="mono">
+                  {image.sha}
+                </Text>
+              </LabeledValue>
+            )}
+            <LabeledValue label="Built">
+              <Time time={image.builtAt} format="relative" variant="subtext" />
+            </LabeledValue>
+          </div>
+        </Card>
+      </div>
+    )}
+    emptyMessage="No images configured."
+    ariaLabel="Images"
+  />
 )
 
-const ResourcesHealthTab = ({ install }: { install: TPlaygroundInstall }) => (
+const formatHealthUptime = (
+  uptimePercent?: number,
+  observedSeconds?: number
+) =>
+  (observedSeconds ?? 0) > 0 && uptimePercent !== undefined
+    ? `${uptimePercent.toFixed(2)}%`
+    : 'No signal'
+
+const HealthChecksTab = ({
+  install,
+  onSelectComponent,
+}: {
+  install: TPlaygroundInstall
+  onSelectComponent: (componentId: string) => void
+}) => (
   <div className="flex flex-col gap-4 p-4">
     <Card className="!p-4 !gap-4">
       <HealthTimelineComponent
@@ -1215,9 +1322,47 @@ const ResourcesHealthTab = ({ install }: { install: TPlaygroundInstall }) => (
         uptimePercent={install.health.uptime_percent}
         observedSeconds={install.health.observed_seconds}
         currentHealth={install.health.current_health}
-        components={install.health.components}
-        componentBasePath={`/${install.orgId}/installs/${install.id}/components`}
       />
+    </Card>
+    <Card className="!p-4 !gap-3">
+      <Text variant="body" weight="strong">
+        Component health
+      </Text>
+      <div className="flex flex-col divide-y">
+        {install.health.components?.map((component) => (
+          <Button
+            key={component.install_component_id}
+            variant="ghost"
+            size="sm"
+            className="!px-0 w-full justify-between"
+            onClick={() =>
+              component.component_id &&
+              onSelectComponent(component.component_id)
+            }
+          >
+            <Text as="span" variant="subtext">
+              {component.component_name}
+            </Text>
+            <span className="flex items-center gap-3">
+              <Status
+                status={component.current_health || 'unknown'}
+                variant="badge"
+              />
+              <Text
+                as="span"
+                variant="subtext"
+                theme="neutral"
+                className="w-16 text-right"
+              >
+                {formatHealthUptime(
+                  component.uptime_percent,
+                  component.observed_seconds
+                )}
+              </Text>
+            </span>
+          </Button>
+        ))}
+      </div>
     </Card>
   </div>
 )
@@ -1225,25 +1370,31 @@ const ResourcesHealthTab = ({ install }: { install: TPlaygroundInstall }) => (
 interface IResourcesTabPanel {
   install: TPlaygroundInstall
   initTab?: string
+  initialComponentId?: string
 }
 
-const ResourcesTabPanel = ({ install, initTab }: IResourcesTabPanel) => {
+const ResourcesTabPanel = ({
+  install,
+  initTab,
+  initialComponentId,
+}: IResourcesTabPanel) => {
   const { resources } = install
 
   return (
     <Tabs
       tabs={{
-        health: <ResourcesHealthTab install={install} />,
         stack: <StackTab versions={resources.stackVersions} />,
-        roles: <RolesTab roles={resources.roles} />,
         sandbox: <SandboxTab sandbox={resources.sandbox} />,
-        components: <ComponentsTab components={resources.components} />,
+        components: (
+          <ComponentsTab
+            components={resources.components}
+            initialSelectedId={initialComponentId}
+          />
+        ),
         images: <ImagesTab images={resources.images} />,
       }}
       tabLabels={{
-        health: 'Health',
         stack: 'Stack',
-        roles: 'Roles',
         sandbox: 'Sandbox',
         components: 'Components',
         images: 'Images',
@@ -1258,88 +1409,112 @@ const ResourcesTabPanel = ({ install, initTab }: IResourcesTabPanel) => {
 // ─── Runbooks (Operations subtab) ─────────────────────────────────────────────
 
 const RunbooksTab = ({ runbooks }: { runbooks: TRunbookEntry[] }) => (
-  <div className="flex flex-col gap-2 p-4">
-    {runbooks.length === 0 && (
-      <Text variant="subtext" theme="neutral">
-        No runbooks yet. Runbooks will appear here once they are added to this
-        app.
+  <SplitDetail
+    items={runbooks}
+    getLabel={(runbook) => (
+      <Text as="span" variant="subtext" className="truncate">
+        {runbook.name}
       </Text>
     )}
-    {runbooks.map((rb) => (
-      <Card key={rb.id} className="!p-4 !gap-4">
-        <div className="flex items-center justify-between gap-3">
+    renderDetail={(runbook) => (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2 min-w-0">
             <Icon
               variant="BookIcon"
-              size={14}
+              size={16}
               className="text-cool-grey-400 shrink-0"
             />
-            <Text variant="body" weight="strong" className="truncate">
-              {rb.name}
+            <Text variant="h3" weight="strong">
+              {runbook.name}
             </Text>
             <Badge size="sm" theme="neutral">
-              {rb.stepCount} {rb.stepCount === 1 ? 'step' : 'steps'}
+              {runbook.stepCount} {runbook.stepCount === 1 ? 'step' : 'steps'}
             </Badge>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            {rb.lastRunStatus && (
-              <Status status={rb.lastRunStatus} variant="badge" />
-            )}
-            {rb.lastRunAt && (
-              <Time
-                time={rb.lastRunAt}
-                format="relative"
-                variant="subtext"
-                theme="neutral"
-              />
-            )}
-          </div>
+          <Button variant="secondary" size="sm">
+            Run runbook
+          </Button>
         </div>
-        <Text variant="subtext" theme="neutral">
-          {rb.description}
-        </Text>
-      </Card>
-    ))}
-  </div>
+        <Card className="!p-4 !gap-4">
+          <Text variant="subtext" theme="neutral">
+            {runbook.description}
+          </Text>
+          {(runbook.lastRunStatus || runbook.lastRunAt) && (
+            <div className="flex items-center gap-3">
+              {runbook.lastRunStatus && (
+                <Status status={runbook.lastRunStatus} variant="badge" />
+              )}
+              {runbook.lastRunAt && (
+                <Time
+                  time={runbook.lastRunAt}
+                  format="relative"
+                  variant="subtext"
+                  theme="neutral"
+                />
+              )}
+            </div>
+          )}
+        </Card>
+      </div>
+    )}
+    emptyMessage="No runbooks yet. Runbooks will appear here once they are added to this app."
+    ariaLabel="Runbooks"
+  />
 )
 
 // ─── Operations tab (Actions + Runbooks) ──────────────────────────────────────
 
 const ActionsTab = ({ actions }: { actions: TActionEntry[] }) => (
-  <div className="flex flex-col gap-2 p-4">
-    {actions.map((action) => (
-      <Card key={action.id} className="!p-4 !gap-4">
-        <div className="flex items-center justify-between gap-3">
+  <SplitDetail
+    items={actions}
+    getLabel={(action) => (
+      <Text as="span" variant="subtext" className="truncate">
+        {action.name}
+      </Text>
+    )}
+    renderDetail={(action) => (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2 min-w-0">
             <Icon
               variant="TerminalWindowIcon"
-              size={14}
+              size={16}
               className="text-cool-grey-400 shrink-0"
             />
-            <Text variant="body" weight="strong" className="truncate">
+            <Text variant="h3" weight="strong">
               {action.name}
             </Text>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            {action.lastRunStatus && (
-              <Status status={action.lastRunStatus} variant="badge" />
-            )}
-            {action.lastRunAt && (
-              <Time
-                time={action.lastRunAt}
-                format="relative"
-                variant="subtext"
-                theme="neutral"
-              />
-            )}
-          </div>
+          <Button variant="secondary" size="sm">
+            Run action
+          </Button>
         </div>
-        <Text variant="subtext" theme="neutral">
-          {action.description}
-        </Text>
-      </Card>
-    ))}
-  </div>
+        <Card className="!p-4 !gap-4">
+          <Text variant="subtext" theme="neutral">
+            {action.description}
+          </Text>
+          {(action.lastRunStatus || action.lastRunAt) && (
+            <div className="flex items-center gap-3">
+              {action.lastRunStatus && (
+                <Status status={action.lastRunStatus} variant="badge" />
+              )}
+              {action.lastRunAt && (
+                <Time
+                  time={action.lastRunAt}
+                  format="relative"
+                  variant="subtext"
+                  theme="neutral"
+                />
+              )}
+            </div>
+          )}
+        </Card>
+      </div>
+    )}
+    emptyMessage="No actions configured."
+    ariaLabel="Actions"
+  />
 )
 
 const PoliciesTab = ({ policies }: { policies: TPolicyReportEntry[] }) => (
@@ -1853,12 +2028,13 @@ export const InstallDetailPlayground = ({
   className,
 }: IInstallDetailPlayground) => {
   const [activeTab, setActiveTab] = useState<TTopTab>('overview')
-  const [activityFilter, setActivityFilter] = useState<TActivityFilter>(
-    DEFAULT_ACTIVITY_FILTER
+  const [deploymentFilter, setDeploymentFilter] = useState<TDeploymentFilter>(
+    DEFAULT_DEPLOYMENT_FILTER
   )
   // Incrementing keys remount Tabs so header cards can select a nested tab.
   const [resourcesNav, setResourcesNav] = useState<{
     tab?: string
+    componentId?: string
     key: number
   }>({ key: 0 })
   const [configurationNav, setConfigurationNav] = useState<{
@@ -1871,17 +2047,18 @@ export const InstallDetailPlayground = ({
   const handleStripNavigate = (
     tab: TTopTab,
     opts?: {
-      activityType?: string
       resourcesTab?: string
+      componentId?: string
       configurationTab?: string
     }
   ) => {
     setActiveTab(tab)
-    if (tab === 'activity' && opts?.activityType) {
-      setActivityFilter({ ...DEFAULT_ACTIVITY_FILTER, type: opts.activityType })
-    }
     if (tab === 'resources' && opts?.resourcesTab) {
-      setResourcesNav((prev) => ({ tab: opts.resourcesTab, key: prev.key + 1 }))
+      setResourcesNav((prev) => ({
+        tab: opts.resourcesTab,
+        componentId: opts.componentId,
+        key: prev.key + 1,
+      }))
     }
     if (tab === 'configuration' && opts?.configurationTab) {
       setConfigurationNav((prev) => ({
@@ -1938,17 +2115,23 @@ export const InstallDetailPlayground = ({
           >
             {activeTab === key && (
               <>
-                {key === 'overview' && (
-                  <OverviewTab
+                {key === 'overview' && <OverviewTab install={install} />}
+                {key === 'deployments' && (
+                  <DeploymentsTab
                     install={install}
-                    onNavigate={handleStripNavigate}
+                    filter={deploymentFilter}
+                    onFilterChange={setDeploymentFilter}
                   />
                 )}
-                {key === 'activity' && (
-                  <ActivityTab
+                {key === 'health' && (
+                  <HealthChecksTab
                     install={install}
-                    filter={activityFilter}
-                    onFilterChange={setActivityFilter}
+                    onSelectComponent={(componentId) =>
+                      handleStripNavigate('resources', {
+                        resourcesTab: 'components',
+                        componentId,
+                      })
+                    }
                   />
                 )}
                 {key === 'resources' && (
@@ -1956,6 +2139,7 @@ export const InstallDetailPlayground = ({
                     key={resourcesNav.key}
                     install={install}
                     initTab={resourcesNav.tab}
+                    initialComponentId={resourcesNav.componentId}
                   />
                 )}
                 {key === 'operations' && (
