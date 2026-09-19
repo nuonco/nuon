@@ -191,6 +191,79 @@ export type TPlaygroundConfiguration = {
   overrides: TOverrideEntry[]
 }
 
+// ─── Deployment changes ───────────────────────────────────────────────────────
+
+export type TDeploymentRecordType =
+  | 'provision'
+  | 'reprovision'
+  | 'sandbox_reprovision'
+  | 'app_branch_update'
+  | 'component_deploy'
+  | 'image_update'
+  | 'stack_update'
+  | 'install_config_update'
+
+export type TDeploymentStatus = TResourceStatus | 'success'
+
+export type TDeploymentChangeScope =
+  | 'stack'
+  | 'sandbox'
+  | 'component'
+  | 'image'
+  | 'app_branch'
+  | 'install_config'
+  | 'workflow'
+
+export type TDeploymentWorkflowRef = {
+  id: string
+  name: string
+  type: string
+}
+
+export type TDeploymentAppBranchRef = {
+  id: string
+  name: string
+  runId?: string
+  sha?: string
+}
+
+export type TDeploymentChangeGroup = {
+  id: string
+  scope: TDeploymentChangeScope
+  label: string
+  resourceName?: string
+  summary: string
+  changes: TConfigurationChange[]
+  fileDiff?: string
+  diffLanguage?: 'toml' | 'yaml' | 'json' | 'diff'
+}
+
+export type TDeploymentAffectedResources = {
+  stack?: boolean
+  sandbox?: boolean
+  components: string[]
+  images: string[]
+}
+
+export type TDeploymentRecord = {
+  id: string
+  type: TDeploymentRecordType
+  status: TDeploymentStatus
+  createdAt: string
+  title: string
+  summary: string
+  workflow?: TDeploymentWorkflowRef
+  appBranch: TDeploymentAppBranchRef
+  componentName?: string
+  image?: {
+    repository: string
+    previousTag?: string
+    nextTag: string
+  }
+  affectedResources: TDeploymentAffectedResources
+  changeGroups: TDeploymentChangeGroup[]
+}
+
 // ─── Activity event types ─────────────────────────────────────────────────────
 
 export type TAppBranchSourceType = 'push' | 'pr' | 'tag' | 'commit' | 'manual'
@@ -272,6 +345,7 @@ export type TPlaygroundInstall = {
   configLag: TConfigLag
   driftedObjects: TDriftedObject[]
   activity: TActivityEvent[]
+  deployments: TDeploymentRecord[]
 
   resources: TPlaygroundResources
   operations: TPlaygroundOperations

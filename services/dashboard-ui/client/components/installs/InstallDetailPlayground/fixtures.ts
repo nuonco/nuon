@@ -2,6 +2,7 @@ import type {
   TPlaygroundInstall,
   TActivityEvent,
   TBranchTracking,
+  TDeploymentRecord,
   TPlaygroundConfiguration,
 } from './types'
 import type {
@@ -934,6 +935,472 @@ const BRANCH_TRACKING_MOVED: TBranchTracking = {
   status: 'updating',
 }
 
+// ─── Deployment change prototypes ─────────────────────────────────────────────
+
+const COMMON_DEPLOYMENTS: TDeploymentRecord[] = [
+  {
+    id: 'dep-install-config-8',
+    type: 'install_config_update',
+    status: 'active',
+    createdAt: h(2),
+    title: 'Install config updated',
+    summary: 'Updated production inputs and triggered an install update.',
+    workflow: {
+      id: 'wf-install-update-8',
+      name: 'Install update',
+      type: 'install_update',
+    },
+    appBranch: {
+      id: 'br-acme-main',
+      name: 'main',
+      runId: 'abr-8',
+      sha: 'a1b2c3d4',
+    },
+    affectedResources: {
+      components: ['api', 'worker'],
+      images: [],
+    },
+    changeGroups: [
+      {
+        id: 'install-config-inputs',
+        scope: 'install_config',
+        label: 'Install config',
+        summary: 'Two production inputs changed.',
+        changes: [
+          {
+            path: 'inputs.replicas',
+            operation: 'change',
+            previousValue: '3',
+            nextValue: '5',
+          },
+          {
+            path: 'inputs.log_level',
+            operation: 'change',
+            previousValue: 'info',
+            nextValue: 'warn',
+          },
+        ],
+        fileDiff:
+          '- replicas = 3\n+ replicas = 5\n- log_level = "info"\n+ log_level = "warn"',
+        diffLanguage: 'toml',
+      },
+      {
+        id: 'install-config-workflow',
+        scope: 'workflow',
+        label: 'Triggered workflow',
+        summary: 'The install update workflow redeployed api and worker.',
+        changes: [
+          {
+            path: 'steps.deploy_components.targets',
+            operation: 'change',
+            previousValue: 'api',
+            nextValue: 'api, worker',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'dep-stack-7',
+    type: 'stack_update',
+    status: 'active',
+    createdAt: h(8),
+    title: 'Stack changed',
+    summary: 'Added a cache dependency and regenerated the stack workflow.',
+    workflow: {
+      id: 'wf-stack-update-7',
+      name: 'Stack update',
+      type: 'stack_update',
+    },
+    appBranch: {
+      id: 'br-acme-main',
+      name: 'main',
+      runId: 'abr-7',
+      sha: 'c9d0e1f2',
+    },
+    affectedResources: {
+      stack: true,
+      components: ['cache'],
+      images: [],
+    },
+    changeGroups: [
+      {
+        id: 'stack-plan',
+        scope: 'stack',
+        label: 'Stack plan',
+        summary: 'The shared Redis security group was added.',
+        changes: [
+          {
+            path: 'resources.aws_security_group.redis',
+            operation: 'add',
+            nextValue: 'planned',
+          },
+          {
+            path: 'outputs.redis_security_group_id',
+            operation: 'add',
+            nextValue: 'known after apply',
+          },
+        ],
+      },
+      {
+        id: 'stack-workflow',
+        scope: 'workflow',
+        label: 'Workflow definition',
+        summary: 'A cache deploy step was inserted after the stack apply.',
+        changes: [
+          {
+            path: 'steps.deploy_cache',
+            operation: 'add',
+            nextValue: 'after: apply_stack',
+          },
+        ],
+        fileDiff:
+          '+ - id: deploy_cache\n+   after: apply_stack\n+   component: cache',
+        diffLanguage: 'yaml',
+      },
+    ],
+  },
+  {
+    id: 'dep-image-6',
+    type: 'image_update',
+    status: 'active',
+    createdAt: h(18),
+    title: 'API image updated',
+    summary: 'Updated the API image to the latest patch release.',
+    appBranch: {
+      id: 'br-acme-main',
+      name: 'main',
+      runId: 'abr-6',
+      sha: 'dd112233',
+    },
+    componentName: 'api',
+    image: {
+      repository: 'acme/api',
+      previousTag: '1.14.2',
+      nextTag: '1.14.3',
+    },
+    affectedResources: {
+      components: ['api'],
+      images: ['acme/api'],
+    },
+    changeGroups: [
+      {
+        id: 'api-image',
+        scope: 'image',
+        label: 'acme/api',
+        resourceName: 'acme/api',
+        summary: 'Image tag changed from 1.14.2 to 1.14.3.',
+        changes: [
+          {
+            path: 'image.tag',
+            operation: 'change',
+            previousValue: '1.14.2',
+            nextValue: '1.14.3',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'dep-component-5',
+    type: 'component_deploy',
+    status: 'active',
+    createdAt: h(30),
+    title: 'Frontend deployed',
+    summary: 'Deployed the latest frontend build.',
+    workflow: {
+      id: 'wf-component-deploy-5',
+      name: 'Component deploy',
+      type: 'component_deploy',
+    },
+    appBranch: {
+      id: 'br-acme-main',
+      name: 'main',
+      runId: 'abr-5',
+      sha: 'e5f6a7b8',
+    },
+    componentName: 'frontend',
+    affectedResources: {
+      components: ['frontend'],
+      images: [],
+    },
+    changeGroups: [
+      {
+        id: 'frontend-deploy',
+        scope: 'component',
+        label: 'frontend',
+        resourceName: 'frontend',
+        summary: 'The frontend build and Helm values changed.',
+        changes: [
+          {
+            path: 'build.sha',
+            operation: 'change',
+            previousValue: '8b7c6d5e',
+            nextValue: 'e5f6a7b8',
+          },
+          {
+            path: 'helm.values.featureFlags.checkout',
+            operation: 'change',
+            previousValue: 'false',
+            nextValue: 'true',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'dep-app-branch-4',
+    type: 'app_branch_update',
+    status: 'active',
+    createdAt: h(48),
+    title: 'App branch updated',
+    summary: 'Moved the install from release/1.13 to main.',
+    workflow: {
+      id: 'wf-app-branch-update-4',
+      name: 'App branch update',
+      type: 'app_branch_update',
+    },
+    appBranch: {
+      id: 'br-acme-main',
+      name: 'main',
+      runId: 'abr-4',
+      sha: 'a1b2c3d4',
+    },
+    affectedResources: {
+      stack: true,
+      sandbox: true,
+      components: ['api', 'worker', 'frontend'],
+      images: [],
+    },
+    changeGroups: [
+      {
+        id: 'app-branch-target',
+        scope: 'app_branch',
+        label: 'App branch',
+        summary: 'The tracked app branch and commit changed.',
+        changes: [
+          {
+            path: 'app_branch.name',
+            operation: 'change',
+            previousValue: 'release/1.13',
+            nextValue: 'main',
+          },
+          {
+            path: 'app_branch.commit',
+            operation: 'change',
+            previousValue: '77aa8899',
+            nextValue: 'a1b2c3d4',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'dep-sandbox-3',
+    type: 'sandbox_reprovision',
+    status: 'active',
+    createdAt: h(96),
+    title: 'Sandbox reprovisioned',
+    summary: 'Recreated the sandbox with the current network configuration.',
+    workflow: {
+      id: 'wf-sandbox-reprovision-3',
+      name: 'Sandbox reprovision',
+      type: 'sandbox_reprovision',
+    },
+    appBranch: {
+      id: 'br-acme-main',
+      name: 'main',
+      runId: 'abr-3',
+      sha: 'b3c4d5e6',
+    },
+    affectedResources: {
+      sandbox: true,
+      components: [],
+      images: [],
+    },
+    changeGroups: [
+      {
+        id: 'sandbox-plan',
+        scope: 'sandbox',
+        label: 'Sandbox',
+        summary:
+          'Replaced the runner node group and updated its instance type.',
+        changes: [
+          {
+            path: 'runner_node_group.instance_type',
+            operation: 'change',
+            previousValue: 'm6i.large',
+            nextValue: 'm6i.xlarge',
+          },
+          {
+            path: 'runner_node_group',
+            operation: 'change',
+            previousValue: 'existing',
+            nextValue: 'replaced',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'dep-reprovision-2',
+    type: 'reprovision',
+    status: 'success',
+    createdAt: h(240),
+    title: 'Install reprovisioned',
+    summary: 'Rebuilt the stack, sandbox, and all install components.',
+    workflow: {
+      id: 'wf-reprovision-2',
+      name: 'Install reprovision',
+      type: 'reprovision',
+    },
+    appBranch: {
+      id: 'br-acme-main',
+      name: 'main',
+      runId: 'abr-2',
+      sha: '90ab12cd',
+    },
+    affectedResources: {
+      stack: true,
+      sandbox: true,
+      components: ['api', 'worker', 'frontend'],
+      images: [],
+    },
+    changeGroups: [
+      {
+        id: 'reprovision-stack',
+        scope: 'stack',
+        label: 'Stack',
+        summary: 'Re-applied shared IAM and networking resources.',
+        changes: [
+          {
+            path: 'stack.version',
+            operation: 'change',
+            previousValue: 'stkv-7b2e',
+            nextValue: 'stkv-8a3f',
+          },
+        ],
+      },
+      {
+        id: 'reprovision-sandbox',
+        scope: 'sandbox',
+        label: 'Sandbox',
+        summary: 'Recreated the sandbox workspace.',
+        changes: [
+          {
+            path: 'sandbox.generation',
+            operation: 'change',
+            previousValue: '18',
+            nextValue: '19',
+          },
+        ],
+      },
+      {
+        id: 'reprovision-components',
+        scope: 'component',
+        label: 'Components',
+        summary: 'Redeployed api, worker, and frontend in dependency order.',
+        changes: [
+          {
+            path: 'components.api',
+            operation: 'change',
+            previousValue: 'generation 41',
+            nextValue: 'generation 42',
+          },
+          {
+            path: 'components.worker',
+            operation: 'change',
+            previousValue: 'generation 27',
+            nextValue: 'generation 28',
+          },
+          {
+            path: 'components.frontend',
+            operation: 'change',
+            previousValue: 'generation 16',
+            nextValue: 'generation 17',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'dep-provision-1',
+    type: 'provision',
+    status: 'success',
+    createdAt: h(700),
+    title: 'Install provisioned',
+    summary: 'Created the stack, sandbox, and initial install components.',
+    workflow: {
+      id: 'wf-provision-1',
+      name: 'Install provision',
+      type: 'provision',
+    },
+    appBranch: {
+      id: 'br-acme-main',
+      name: 'main',
+      runId: 'abr-1',
+      sha: '1234abcd',
+    },
+    affectedResources: {
+      stack: true,
+      sandbox: true,
+      components: ['api', 'worker', 'frontend'],
+      images: [],
+    },
+    changeGroups: [
+      {
+        id: 'provision-stack',
+        scope: 'stack',
+        label: 'Stack',
+        summary: 'Created shared IAM and network resources.',
+        changes: [
+          {
+            path: 'stack',
+            operation: 'add',
+            nextValue: 'stkv-1a2b',
+          },
+        ],
+      },
+      {
+        id: 'provision-sandbox',
+        scope: 'sandbox',
+        label: 'Sandbox',
+        summary: 'Created the initial sandbox and runner.',
+        changes: [
+          {
+            path: 'sandbox',
+            operation: 'add',
+            nextValue: 'sbx-01hzacmeprod',
+          },
+        ],
+      },
+      {
+        id: 'provision-components',
+        scope: 'component',
+        label: 'Components',
+        summary: 'Deployed api, worker, and frontend.',
+        changes: [
+          {
+            path: 'components.api',
+            operation: 'add',
+            nextValue: 'deployed',
+          },
+          {
+            path: 'components.worker',
+            operation: 'add',
+            nextValue: 'deployed',
+          },
+          {
+            path: 'components.frontend',
+            operation: 'add',
+            nextValue: 'deployed',
+          },
+        ],
+      },
+    ],
+  },
+]
+
 // ─── Shared activity events ───────────────────────────────────────────────────
 
 // Newest first. One record per workflow — no duplicates.
@@ -1090,6 +1557,7 @@ export const configCurrentFixture: TPlaygroundInstall = {
   driftedObjects: [],
 
   activity: COMMON_ACTIVITY,
+  deployments: COMMON_DEPLOYMENTS,
 
   resources: {
     stackVersions: [
