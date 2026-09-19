@@ -87,6 +87,36 @@ export type TRunbookEntry = {
   lastRunStatus?: TResourceStatus
 }
 
+export type TPolicyReportEntry = {
+  id: string
+  name: string
+  componentName: string
+  status: TResourceStatus
+  evaluatedAt: string
+}
+
+export type TRunnerProcessEntry = {
+  id: string
+  name: string
+  status: TResourceStatus
+  startedAt: string
+}
+
+export type TRunnerJobEntry = {
+  id: string
+  name: string
+  status: TResourceStatus
+  createdAt: string
+}
+
+export type TRunnerInfo = {
+  id: string
+  version: string
+  status: TResourceStatus
+  processes: TRunnerProcessEntry[]
+  recentJobs: TRunnerJobEntry[]
+}
+
 export type TPlaygroundResources = {
   stackVersions: TStackVersion[]
   roles: TRoleEntry[]
@@ -98,6 +128,8 @@ export type TPlaygroundResources = {
 export type TPlaygroundOperations = {
   actions: TActionEntry[]
   runbooks: TRunbookEntry[]
+  policies: TPolicyReportEntry[]
+  runner: TRunnerInfo
 }
 
 // ─── Configuration ────────────────────────────────────────────────────────────
@@ -127,9 +159,31 @@ export type TOverrideEntry = {
   updatedAt: string
 }
 
+export type TConfigurationChange = {
+  path: string
+  operation: 'add' | 'remove' | 'change'
+  previousValue?: string
+  nextValue?: string
+  isRedacted?: boolean
+}
+
+export type TConfigurationVersion = {
+  id: string
+  version: string
+  title: string
+  createdAt: string
+  actor?: string
+  source?: string
+  changes: TConfigurationChange[]
+  fileDiff?: string
+}
+
 export type TPlaygroundConfiguration = {
   inputs: TInputEntry[]
+  inputVersions: TConfigurationVersion[]
   configFile?: TConfigFileInfo
+  configFileVersions: TConfigurationVersion[]
+  appBranchVersions: TConfigurationVersion[]
   overrides: TOverrideEntry[]
 }
 

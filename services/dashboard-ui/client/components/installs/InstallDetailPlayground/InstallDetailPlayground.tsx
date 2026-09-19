@@ -4,6 +4,7 @@ import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Dropdown } from '@/components/common/Dropdown'
+import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -38,7 +39,11 @@ import type {
   TRunbookEntry,
   TInputEntry,
   TConfigFileInfo,
+  TConfigurationChange,
+  TConfigurationVersion,
   TOverrideEntry,
+  TPolicyReportEntry,
+  TRunnerInfo,
 } from './types'
 
 // ─── Top-level navigation ────────────────────────────────────────────────────
@@ -97,7 +102,37 @@ const ConfigurationSummaryRow = ({
   const branchHref = `/${install.orgId}/apps/${install.appId}/branches/${install.branchTracking.branchId}`
 
   return (
-    <Card className="!p-2 !px-3 !gap-0 !shadow-none w-full">
+    <Card className="!p-3 !gap-2 !shadow-none w-full">
+      <div className="flex items-center gap-x-6 gap-y-1 flex-wrap">
+        <span className="flex items-center gap-1.5">
+          <Text as="span" variant="subtext" theme="neutral">
+            App
+          </Text>
+          <Link
+            href={`/${install.orgId}/apps/${install.appId}`}
+            textVariant="subtext"
+          >
+            {install.appName}
+          </Link>
+        </span>
+
+        <span className="flex items-center gap-1.5">
+          <Text as="span" variant="subtext" theme="neutral">
+            App branch
+          </Text>
+          <Icon
+            variant="GitBranchIcon"
+            size={13}
+            className="text-cool-grey-400"
+          />
+          <Link href={branchHref} textVariant="subtext">
+            <Text as="span" variant="subtext" family="mono">
+              {install.branchTracking.targetBranch}
+            </Text>
+          </Link>
+        </span>
+      </div>
+
       <div className="flex items-center gap-x-6 gap-y-1 flex-wrap">
         <span className="flex items-center gap-1.5">
           <Text as="span" variant="subtext" theme="neutral">
@@ -135,34 +170,6 @@ const ConfigurationSummaryRow = ({
               Dashboard
             </Text>
           )}
-        </span>
-
-        <span className="flex items-center gap-1.5">
-          <Text as="span" variant="subtext" theme="neutral">
-            App
-          </Text>
-          <Link
-            href={`/${install.orgId}/apps/${install.appId}`}
-            textVariant="subtext"
-          >
-            {install.appName}
-          </Link>
-        </span>
-
-        <span className="flex items-center gap-1.5">
-          <Text as="span" variant="subtext" theme="neutral">
-            App branch
-          </Text>
-          <Icon
-            variant="GitBranchIcon"
-            size={13}
-            className="text-cool-grey-400"
-          />
-          <Link href={branchHref} textVariant="subtext">
-            <Text as="span" variant="subtext" family="mono">
-              {install.branchTracking.targetBranch}
-            </Text>
-          </Link>
         </span>
       </div>
     </Card>
@@ -1004,7 +1011,7 @@ const ActivityTab = ({ install, filter, onFilterChange }: IActivityTab) => {
 
 const StackTab = ({ versions }: { versions: TStackVersion[] }) => (
   <div className="flex flex-col gap-2 p-4">
-    {versions.map((v) => (
+    {versions.map((v, index) => (
       <Card key={v.id} className="!p-4 !gap-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -1020,7 +1027,7 @@ const StackTab = ({ versions }: { versions: TStackVersion[] }) => (
               {humanize(v.planType)}
             </Badge>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap justify-end">
             <Status status={v.status} variant="badge" />
             <Time
               time={v.createdAt}
@@ -1028,6 +1035,9 @@ const StackTab = ({ versions }: { versions: TStackVersion[] }) => (
               variant="subtext"
               theme="neutral"
             />
+            <Button variant="secondary" size="sm">
+              {index === 0 ? 'Reprovision' : 'Deploy'}
+            </Button>
           </div>
         </div>
       </Card>
@@ -1084,7 +1094,12 @@ const SandboxTab = ({ sandbox }: { sandbox?: TSandboxInfo }) => {
               Sandbox
             </Text>
           </div>
-          <Status status={sandbox.status} variant="badge" />
+          <div className="flex items-center gap-3">
+            <Status status={sandbox.status} variant="badge" />
+            <Button variant="secondary" size="sm">
+              Reprovision
+            </Button>
+          </div>
         </div>
         <div className="flex flex-wrap gap-x-8 gap-y-3">
           <LabeledValue label="Run type">
@@ -1139,7 +1154,7 @@ const ComponentsTab = ({ components }: { components: TComponentEntry[] }) => (
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
             <Status status={cmp.status} variant="badge" />
             <Time
               time={cmp.deployedAt}
@@ -1147,6 +1162,9 @@ const ComponentsTab = ({ components }: { components: TComponentEntry[] }) => (
               variant="subtext"
               theme="neutral"
             />
+            <Button variant="secondary" size="sm">
+              Deploy
+            </Button>
           </div>
         </div>
       </Card>
@@ -1324,6 +1342,112 @@ const ActionsTab = ({ actions }: { actions: TActionEntry[] }) => (
   </div>
 )
 
+const PoliciesTab = ({ policies }: { policies: TPolicyReportEntry[] }) => (
+  <div className="flex flex-col gap-2 p-4">
+    {policies.map((policy) => (
+      <Card key={policy.id} className="!p-4 !gap-0">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0">
+            <Icon
+              variant="ShieldCheckIcon"
+              size={14}
+              className="text-cool-grey-400 shrink-0"
+            />
+            <Text variant="body" className="truncate">
+              {policy.name}
+            </Text>
+            <Badge size="sm" variant="code" theme="neutral">
+              {policy.componentName}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <Status status={policy.status} variant="badge" />
+            <Time
+              time={policy.evaluatedAt}
+              format="relative"
+              variant="subtext"
+              theme="neutral"
+            />
+          </div>
+        </div>
+      </Card>
+    ))}
+  </div>
+)
+
+const RunnerTab = ({ runner }: { runner: TRunnerInfo }) => (
+  <div className="flex flex-col gap-4 p-4">
+    <Card className="!p-4 !gap-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Icon variant="CpuIcon" size={14} className="text-cool-grey-400" />
+          <Text variant="body" weight="strong">
+            Install runner
+          </Text>
+          <Badge size="sm" variant="code" theme="neutral">
+            {runner.version}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-3">
+          <Status status={runner.status} variant="badge" />
+          <Button variant="secondary" size="sm">
+            Restart runner
+          </Button>
+        </div>
+      </div>
+      <Text variant="subtext" family="mono" theme="neutral">
+        {runner.id}
+      </Text>
+    </Card>
+
+    <div className="flex flex-col gap-2">
+      <Text variant="body" weight="strong">
+        Processes
+      </Text>
+      {runner.processes.map((process) => (
+        <Card key={process.id} className="!p-4 !gap-0">
+          <div className="flex items-center justify-between gap-3">
+            <Text variant="subtext" family="mono">
+              {process.name}
+            </Text>
+            <div className="flex items-center gap-3">
+              <Status status={process.status} variant="badge" />
+              <Time
+                time={process.startedAt}
+                format="relative"
+                variant="subtext"
+                theme="neutral"
+              />
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+
+    <div className="flex flex-col gap-2">
+      <Text variant="body" weight="strong">
+        Recent jobs
+      </Text>
+      {runner.recentJobs.map((job) => (
+        <Card key={job.id} className="!p-4 !gap-0">
+          <div className="flex items-center justify-between gap-3">
+            <Text variant="subtext">{job.name}</Text>
+            <div className="flex items-center gap-3">
+              <Status status={job.status} variant="badge" />
+              <Time
+                time={job.createdAt}
+                format="relative"
+                variant="subtext"
+                theme="neutral"
+              />
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  </div>
+)
+
 const OperationsTab = ({
   operations,
 }: {
@@ -1333,10 +1457,14 @@ const OperationsTab = ({
     tabs={{
       actions: <ActionsTab actions={operations.actions} />,
       runbooks: <RunbooksTab runbooks={operations.runbooks} />,
+      policies: <PoliciesTab policies={operations.policies} />,
+      runner: <RunnerTab runner={operations.runner} />,
     }}
     tabLabels={{
       actions: 'Actions',
       runbooks: 'Runbooks',
+      policies: 'Policies',
+      runner: 'Runner',
     }}
     className="gap-0"
     tabControlsClassName="px-4"
@@ -1345,7 +1473,162 @@ const OperationsTab = ({
 
 // ─── Configuration sub-tabs ───────────────────────────────────────────────────
 
-const InputsTab = ({ inputs }: { inputs: TInputEntry[] }) => {
+const CHANGE_THEME = {
+  add: 'success',
+  remove: 'error',
+  change: 'warn',
+} as const
+
+const CHANGE_PREFIX = {
+  add: '+',
+  remove: '-',
+  change: '~',
+} as const
+
+const ConfigurationChangeRows = ({
+  changes,
+}: {
+  changes: TConfigurationChange[]
+}) => (
+  <div className="flex flex-col divide-y border rounded-md overflow-hidden">
+    {changes.map((change) => (
+      <div
+        key={`${change.path}-${change.operation}`}
+        className="grid grid-cols-[1rem_minmax(0,1fr)] md:grid-cols-[1rem_minmax(10rem,1fr)_minmax(0,2fr)] items-center gap-3 px-3 py-2"
+      >
+        <Text
+          variant="subtext"
+          family="mono"
+          weight="strong"
+          theme={CHANGE_THEME[change.operation]}
+        >
+          {CHANGE_PREFIX[change.operation]}
+        </Text>
+        <Text variant="subtext" family="mono" weight="strong">
+          {change.path}
+        </Text>
+        <div className="col-start-2 md:col-start-auto flex items-center gap-2 min-w-0">
+          {change.isRedacted ? (
+            <Badge size="sm" theme="neutral">
+              Redacted
+            </Badge>
+          ) : (
+            <>
+              {change.previousValue !== undefined && (
+                <Text
+                  variant="subtext"
+                  family="mono"
+                  theme="neutral"
+                  className="truncate"
+                >
+                  {change.previousValue}
+                </Text>
+              )}
+              {change.previousValue !== undefined &&
+                change.nextValue !== undefined && (
+                  <Icon
+                    variant="ArrowRightIcon"
+                    size={12}
+                    className="shrink-0 text-cool-grey-400"
+                  />
+                )}
+              {change.nextValue !== undefined && (
+                <Text variant="subtext" family="mono" className="truncate">
+                  {change.nextValue}
+                </Text>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
+const ConfigurationVersionFeed = ({
+  versions,
+  idPrefix,
+}: {
+  versions: TConfigurationVersion[]
+  idPrefix: string
+}) => (
+  <div className="flex flex-col gap-2">
+    <div className="flex items-center justify-between gap-3">
+      <Text variant="body" weight="strong">
+        Version history
+      </Text>
+      <Text variant="subtext" theme="neutral">
+        Compared with the previous version
+      </Text>
+    </div>
+    {versions.map((version, index) => (
+      <Expand
+        key={version.id}
+        id={`${idPrefix}-${version.id}`}
+        isOpen={index === 0}
+        className="border rounded-md overflow-hidden"
+        headerClassName="px-4 py-3"
+        heading={
+          <div className="flex items-center justify-between gap-3 w-full min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <Badge size="sm" variant="code" theme="neutral">
+                {version.version}
+              </Badge>
+              <Text variant="subtext" weight="strong" className="truncate">
+                {version.title}
+              </Text>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <Badge size="sm" theme="neutral">
+                {version.changes.length}{' '}
+                {version.changes.length === 1 ? 'change' : 'changes'}
+              </Badge>
+              <Time
+                time={version.createdAt}
+                format="relative"
+                variant="subtext"
+                theme="neutral"
+              />
+            </div>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-3 px-4 pb-4 border-t pt-3">
+          {(version.actor || version.source) && (
+            <div className="flex items-center gap-4 flex-wrap">
+              {version.actor && (
+                <LabeledValue label="Changed by">
+                  <Text variant="subtext">{version.actor}</Text>
+                </LabeledValue>
+              )}
+              {version.source && (
+                <LabeledValue label="Source">
+                  <Text variant="subtext" family="mono">
+                    {version.source}
+                  </Text>
+                </LabeledValue>
+              )}
+            </div>
+          )}
+          <ConfigurationChangeRows changes={version.changes} />
+          {version.fileDiff && (
+            <CodeBlock language="toml" showCopy>
+              {version.fileDiff}
+            </CodeBlock>
+          )}
+        </div>
+      </Expand>
+    ))}
+  </div>
+)
+
+const InputsTab = ({
+  inputs,
+  versions,
+}: {
+  inputs: TInputEntry[]
+  versions: TConfigurationVersion[]
+}) => {
   const groups = Array.from(new Set(inputs.map((input) => input.group)))
 
   return (
@@ -1389,11 +1672,18 @@ const InputsTab = ({ inputs }: { inputs: TInputEntry[] }) => {
           />
         </Card>
       ))}
+      <ConfigurationVersionFeed versions={versions} idPrefix="inputs" />
     </div>
   )
 }
 
-const ConfigFileTab = ({ configFile }: { configFile?: TConfigFileInfo }) => {
+const ConfigFileTab = ({
+  configFile,
+  versions,
+}: {
+  configFile?: TConfigFileInfo
+  versions: TConfigurationVersion[]
+}) => {
   if (!configFile) {
     return (
       <div className="p-4">
@@ -1456,6 +1746,7 @@ const ConfigFileTab = ({ configFile }: { configFile?: TConfigFileInfo }) => {
           {configFile.contents}
         </CodeBlock>
       </Card>
+      <ConfigurationVersionFeed versions={versions} idPrefix="config-file" />
     </div>
   )
 }
@@ -1516,13 +1807,25 @@ const ConfigurationTabPanel = ({
   <Tabs
     tabs={{
       appBranch: (
-        <div className="p-4">
+        <div className="flex flex-col gap-4 p-4">
           <InstallBranchTrackingCard install={install} />
+          <ConfigurationVersionFeed
+            versions={install.configuration.appBranchVersions}
+            idPrefix="app-branch"
+          />
         </div>
       ),
-      inputs: <InputsTab inputs={install.configuration.inputs} />,
+      inputs: (
+        <InputsTab
+          inputs={install.configuration.inputs}
+          versions={install.configuration.inputVersions}
+        />
+      ),
       configFile: (
-        <ConfigFileTab configFile={install.configuration.configFile} />
+        <ConfigFileTab
+          configFile={install.configuration.configFile}
+          versions={install.configuration.configFileVersions}
+        />
       ),
       overrides: <OverridesTab overrides={install.configuration.overrides} />,
     }}
