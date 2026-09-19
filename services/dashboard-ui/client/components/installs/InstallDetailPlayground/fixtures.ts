@@ -1071,6 +1071,7 @@ export const configCurrentFixture: TPlaygroundInstall = {
   id: 'inst-01hzacmeprod',
   name: 'acme-prod',
   orgId: 'org-acme',
+  orgName: 'acme',
   appId: 'app-acme-byoc',
   appName: 'acme-byoc',
   labels: { env: 'prod', region: 'us-east-1', tier: 'enterprise' },
