@@ -331,6 +331,70 @@ const COMMON_RESOURCES = {
   ],
 }
 
+const COMMON_POLICIES = [
+  {
+    id: 'policy-1',
+    name: 'Images must use immutable tags',
+    componentName: 'api',
+    status: 'active' as const,
+    evaluatedAt: h(3),
+  },
+  {
+    id: 'policy-2',
+    name: 'Production workloads require limits',
+    componentName: 'worker',
+    status: 'active' as const,
+    evaluatedAt: h(3),
+  },
+  {
+    id: 'policy-3',
+    name: 'Public services require TLS',
+    componentName: 'frontend',
+    status: 'warn' as const,
+    evaluatedAt: h(3),
+  },
+]
+
+const COMMON_RUNNER = {
+  id: 'runner-01hzacmeprod',
+  version: 'v0.22.4',
+  status: 'active' as const,
+  processes: [
+    {
+      id: 'proc-1',
+      name: 'runner-primary',
+      status: 'active' as const,
+      startedAt: h(26),
+    },
+    {
+      id: 'proc-2',
+      name: 'runner-secondary',
+      status: 'active' as const,
+      startedAt: h(18),
+    },
+  ],
+  recentJobs: [
+    {
+      id: 'job-1',
+      name: 'Deploy cache',
+      status: 'active' as const,
+      createdAt: h(4),
+    },
+    {
+      id: 'job-2',
+      name: 'Apply sandbox',
+      status: 'active' as const,
+      createdAt: h(10),
+    },
+    {
+      id: 'job-3',
+      name: 'Scan infrastructure drift',
+      status: 'active' as const,
+      createdAt: h(24),
+    },
+  ],
+}
+
 // ─── Readme fixture ───────────────────────────────────────────────────────────
 
 const COMMON_README = `# acme-prod
@@ -422,6 +486,45 @@ const COMMON_CONFIGURATION: TPlaygroundConfiguration = {
       isRedacted: true,
     },
   ],
+  inputVersions: [
+    {
+      id: 'inputs-v14',
+      version: 'v14',
+      title: 'Increase backup retention',
+      createdAt: h(4),
+      actor: 'alice',
+      source: 'Install config',
+      changes: [
+        {
+          path: 'Platform.cluster_size',
+          operation: 'change',
+          previousValue: 'medium',
+          nextValue: 'large',
+        },
+        {
+          path: 'Platform.retention_days',
+          operation: 'change',
+          previousValue: '14',
+          nextValue: '30',
+        },
+      ],
+    },
+    {
+      id: 'inputs-v13',
+      version: 'v13',
+      title: 'Rotate API credentials',
+      createdAt: h(72),
+      actor: 'bob',
+      source: 'Dashboard',
+      changes: [
+        {
+          path: 'Secrets.api_token',
+          operation: 'change',
+          isRedacted: true,
+        },
+      ],
+    },
+  ],
   configFile: {
     path: 'installs/acme-prod.toml',
     repo: 'acme/platform-configs',
@@ -430,6 +533,101 @@ const COMMON_CONFIGURATION: TPlaygroundConfiguration = {
     syncedAt: h(4),
     contents: CONFIG_FILE_CONTENTS,
   },
+  configFileVersions: [
+    {
+      id: 'config-v14',
+      version: 'v14',
+      title: 'Increase production capacity',
+      createdAt: h(4),
+      actor: 'alice',
+      source: 'a1b2c3d4',
+      changes: [
+        {
+          path: 'install.inputs.cluster_size',
+          operation: 'change',
+          previousValue: 'medium',
+          nextValue: 'large',
+        },
+        {
+          path: 'install.inputs.retention_days',
+          operation: 'change',
+          previousValue: '14',
+          nextValue: '30',
+        },
+        {
+          path: 'install.aws.iam_role_arn',
+          operation: 'add',
+          nextValue: 'arn:aws:iam::111122223333:role/nuon-acme-prod',
+        },
+      ],
+      fileDiff: `-[install.inputs]
+-cluster_size = "medium"
+-retention_days = "14"
++[install.inputs]
++cluster_size = "large"
++retention_days = "30"
++
++[install.aws]
++iam_role_arn = "arn:aws:iam::111122223333:role/nuon-acme-prod"`,
+    },
+    {
+      id: 'config-v13',
+      version: 'v13',
+      title: 'Enable production backups',
+      createdAt: h(96),
+      actor: 'carol',
+      source: 'b3c4d5e6',
+      changes: [
+        {
+          path: 'install.inputs.enable_backups',
+          operation: 'add',
+          nextValue: 'true',
+        },
+      ],
+      fileDiff: `+[install.inputs]
++enable_backups = "true"
++retention_days = "14"`,
+    },
+  ],
+  appBranchVersions: [
+    {
+      id: 'branch-run-v14',
+      version: 'a1b2c3d4',
+      title: 'Add Redis cache component',
+      createdAt: h(4),
+      actor: 'alice',
+      source: 'main',
+      changes: [
+        {
+          path: 'components.cache',
+          operation: 'add',
+          nextValue: 'terraform_module',
+        },
+        {
+          path: 'inputs.cluster_size.default',
+          operation: 'change',
+          previousValue: 'medium',
+          nextValue: 'large',
+        },
+      ],
+    },
+    {
+      id: 'branch-run-v13',
+      version: 'e5f6a7b8',
+      title: 'Update frontend image',
+      createdAt: h(48),
+      actor: 'bob',
+      source: 'main',
+      changes: [
+        {
+          path: 'components.frontend.image.tag',
+          operation: 'change',
+          previousValue: '1.13.8',
+          nextValue: '1.14.0',
+        },
+      ],
+    },
+  ],
   overrides: [
     {
       id: 'ovr-1',
@@ -445,6 +643,87 @@ const COMMON_CONFIGURATION: TPlaygroundConfiguration = {
       value: 'cache.r6g.large',
       updatedAt: h(96),
     },
+  ],
+}
+
+const BRANCH_MOVED_CONFIGURATION: TPlaygroundConfiguration = {
+  ...COMMON_CONFIGURATION,
+  inputs: COMMON_CONFIGURATION.inputs.map((input) =>
+    input.name === 'region' ? { ...input, value: 'us-east-1,us-west-2' } : input
+  ),
+  configFile: COMMON_CONFIGURATION.configFile && {
+    ...COMMON_CONFIGURATION.configFile,
+    gitBranch: 'feat/multi-region',
+    version: 'v15',
+    syncedAt: h(1),
+    contents: CONFIG_FILE_CONTENTS.replace(
+      'region = "us-east-1"',
+      'region = "us-east-1,us-west-2"'
+    ),
+  },
+  inputVersions: [
+    {
+      id: 'inputs-v15',
+      version: 'v15',
+      title: 'Add secondary region',
+      createdAt: h(1),
+      actor: 'carol',
+      source: 'Install config',
+      changes: [
+        {
+          path: 'Cloud.region',
+          operation: 'change',
+          previousValue: 'us-east-1',
+          nextValue: 'us-east-1,us-west-2',
+        },
+      ],
+    },
+    ...COMMON_CONFIGURATION.inputVersions,
+  ],
+  configFileVersions: [
+    {
+      id: 'config-v15',
+      version: 'v15',
+      title: 'Add secondary region',
+      createdAt: h(1),
+      actor: 'carol',
+      source: 'ff001234',
+      changes: [
+        {
+          path: 'install.inputs.region',
+          operation: 'change',
+          previousValue: 'us-east-1',
+          nextValue: 'us-east-1,us-west-2',
+        },
+      ],
+      fileDiff: `-region = "us-east-1"
++region = "us-east-1,us-west-2"`,
+    },
+    ...COMMON_CONFIGURATION.configFileVersions,
+  ],
+  appBranchVersions: [
+    {
+      id: 'branch-run-v15',
+      version: 'ff001234',
+      title: 'Add secondary region support',
+      createdAt: h(1),
+      actor: 'carol',
+      source: 'feat/multi-region',
+      changes: [
+        {
+          path: 'install_inputs.region',
+          operation: 'change',
+          previousValue: 'us-east-1',
+          nextValue: 'us-east-1,us-west-2',
+        },
+        {
+          path: 'components.worker.env.AWS_REGION',
+          operation: 'add',
+          nextValue: 'us-west-2',
+        },
+      ],
+    },
+    ...COMMON_CONFIGURATION.appBranchVersions,
   ],
 }
 
@@ -682,6 +961,8 @@ export const configCurrentFixture: TPlaygroundInstall = {
   operations: {
     actions: COMMON_RESOURCES.actions,
     runbooks: COMMON_RESOURCES.runbooks,
+    policies: COMMON_POLICIES,
+    runner: COMMON_RUNNER,
   },
   configuration: COMMON_CONFIGURATION,
   health: HEALTH_CURRENT,
@@ -696,15 +977,7 @@ export const branchMovedFixture: TPlaygroundInstall = {
 
   branchTracking: BRANCH_TRACKING_MOVED,
 
-  configuration: {
-    ...COMMON_CONFIGURATION,
-    configFile: COMMON_CONFIGURATION.configFile && {
-      ...COMMON_CONFIGURATION.configFile,
-      gitBranch: 'feat/multi-region',
-      version: 'v15',
-      syncedAt: h(1),
-    },
-  },
+  configuration: BRANCH_MOVED_CONFIGURATION,
 
   health: HEALTH_BRANCH_MOVED,
 
