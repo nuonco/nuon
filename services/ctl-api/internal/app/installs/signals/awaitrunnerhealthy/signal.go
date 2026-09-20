@@ -27,6 +27,13 @@ const skipDisabledRunnerVersion = "await-runner-healthy-skip-disabled-runner-v1"
 // Old histories that already started the poll loop must not be interrupted.
 const failFastUnhealthyRunnerVersion = "await-runner-healthy-failfast-unhealthy-v1"
 
+// Debounce a single offline/error reading before failing fast. Old histories
+// must not start re-checking mid-replay.
+const debounceUnhealthyRunnerVersion = "await-runner-healthy-debounce-unhealthy-v1"
+
+// How long an offline/error reading must persist before giving up.
+const unhealthyRunnerDebounce = 3 * time.Minute
+
 type Signal struct {
 	InstallID      string `json:"install_id"`
 	WorkflowStepID string `json:"workflow_step_id"`
@@ -112,7 +119,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	failFast := workflow.GetVersion(ctx, failFastUnhealthyRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if failFast && runnerCannotBecomeHealthy(runner.Status) {
+	debounce := workflow.GetVersion(ctx, debounceUnhealthyRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if failFast && !debounce && runnerCannotBecomeHealthy(runner.Status) {
 		return errors.Errorf("runner is %s and cannot process jobs; check the runner status and try again", runner.Status)
 	}
 
@@ -138,12 +146,33 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		RunnerID:    runner.ID,
 		ProcessType: processType,
 	}
+	var unhealthySince time.Time
 	if err := poll.Poll(ctx, s.v, poll.PollOpts{
 		MaxTS:           workflow.Now(ctx).Add(time.Hour),
 		InitialInterval: time.Second * 15,
 		MaxInterval:     time.Minute * 1,
 		BackoffFactor:   1.1,
 		Fn: func(ctx workflow.Context) error {
+			if failFast && debounce {
+				r, err := activities.AwaitGetRunnerByID(ctx, install.RunnerID)
+				if err != nil {
+					return err
+				}
+				runner = r
+
+				if !runnerCannotBecomeHealthy(runner.Status) {
+					unhealthySince = time.Time{}
+				} else {
+					now := workflow.Now(ctx)
+					if unhealthySince.IsZero() {
+						unhealthySince = now
+					} else if now.Sub(unhealthySince) >= unhealthyRunnerDebounce {
+						return errors.Wrapf(poll.NonRetryableError, "runner is %s and cannot process jobs; check the runner status and try again", runner.Status)
+					}
+					return errors.Errorf("runner is %s", runner.Status)
+				}
+			}
+
 			process, err := activities.AwaitGetCurrentRunnerProcess(ctx, processReq)
 			if err != nil {
 				return err
