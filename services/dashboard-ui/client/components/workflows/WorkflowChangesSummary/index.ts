@@ -4,6 +4,8 @@ export type {
   IWorkflowChangesSummaryLoadingStep,
 } from './WorkflowChangesSummary'
 export { ChangesAggregate } from './ChangesAggregate'
+export { WorkflowChangesSummaryContainer } from './WorkflowChangesSummaryContainer'
+export { WorkflowChangesLink } from './WorkflowChangesLink'
 export {
   PLAN_TYPE_META,
   STATUS_META,
