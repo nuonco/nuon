@@ -11,7 +11,6 @@ import {
   getStepPanelSize,
   getStepPanelDetails,
 } from '../step-details/StepDetailPanel'
-import { WorkflowChangesLink } from '../WorkflowChangesSummary'
 import { WorkflowHeaderContainer } from '../workflow-details/WorkflowHeader'
 import { WorkflowMetricsContainer } from '../workflow-details/WorkflowMetrics'
 import { WorkflowStatusSectionContainer } from '../workflow-details/WorkflowStatusSection'
@@ -80,8 +79,6 @@ export const WorkflowDetails = ({
       {failedSteps?.length > 0 && <FailedStepBanners steps={failedSteps} />}
 
       <WorkflowHeaderContainer />
-
-      <WorkflowChangesLink />
 
       <WorkflowMetricsContainer />
 
