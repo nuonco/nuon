@@ -67,7 +67,7 @@ type runnerHealthDecision struct {
 func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProcessPresence) runnerHealthDecision {
 	var d runnerHealthDecision
 
-	if isSkippableRunnerStatus(runner.Status) {
+	if isSkippableRunnerStatus(runner.Status) || isSkippableRunnerStatus(app.RunnerStatus(runner.StatusV2.Status)) {
 		d.Result = "skipped"
 		return d
 	}
