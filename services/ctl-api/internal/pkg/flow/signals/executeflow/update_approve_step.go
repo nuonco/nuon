@@ -59,9 +59,6 @@ func (s *Signal) approveStepHandler(ctx workflow.Context, req ApproveStepRequest
 	}
 
 	// Wake up the parent execute loop to continue after approval.
-	s.resumeRequested = true
-	s.resumeRunType = app.WorkflowRunTypeResume
-	s.resumeStepID = req.StepID
-	s.resumeStartIdx = s.findGroupPositionForStep(ctx, req.StepID)
+	s.markResumeRequested(ctx, app.WorkflowRunTypeResume, req.StepID)
 	return &ApproveStepResponse{WorkflowID: s.WorkflowID}, nil
 }
