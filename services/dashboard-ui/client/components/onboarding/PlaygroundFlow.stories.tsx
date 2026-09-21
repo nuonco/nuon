@@ -1692,8 +1692,8 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
             </Text>
           </div>
           <Text variant="body" theme="neutral">
-            Pre-wired with Terraform, Helm, images, and manifests, and deploys exactly the way a
-            customer would deploy yours.
+            Pre-wired with Terraform, Helm, images, and manifests. Deploy it to your cloud account
+            just like your customers would deploy your app.
           </Text>
         </div>
         <div className="flex flex-wrap items-center gap-3">
