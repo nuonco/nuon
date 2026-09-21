@@ -593,6 +593,40 @@ const DriftRow = ({ obj }: { obj: TDriftedObject }) => (
   </div>
 )
 
+const InfrastructureDriftCard = ({
+  install,
+}: {
+  install: TPlaygroundInstall
+}) => (
+  <Card className="!p-4 !gap-4">
+    <div className="flex items-center gap-2">
+      <Icon variant="FileDashedIcon" size={14} className="text-cool-grey-400" />
+      <Text variant="body" weight="strong">
+        Infrastructure drift
+      </Text>
+    </div>
+    {install.driftedObjects.length > 0 ? (
+      <div className="flex flex-col divide-y">
+        {install.driftedObjects.map((obj) => (
+          <DriftRow key={obj.id} obj={obj} />
+        ))}
+      </div>
+    ) : (
+      <div className="flex items-center gap-1.5">
+        <Status
+          status="active"
+          isWithoutText
+          variant="timeline"
+          iconSize={14}
+        />
+        <Text variant="subtext" theme="neutral">
+          No drift detected
+        </Text>
+      </div>
+    )}
+  </Card>
+)
+
 const ConfigLagCard = ({ install }: { install: TPlaygroundInstall }) => {
   const { configLag } = install
   const isBranchMoving = install.branchTracking.status !== 'current'
@@ -681,54 +715,17 @@ const ConfigLagCard = ({ install }: { install: TPlaygroundInstall }) => {
   )
 }
 
-export const OverviewTab = ({ install }: { install: TPlaygroundInstall }) => {
-  const hasDrift = install.driftedObjects.length > 0
+export const OverviewTab = ({ install }: { install: TPlaygroundInstall }) => (
+  <div className="flex flex-col gap-4 p-4">
+    <ConfigLagCard install={install} />
 
-  return (
-    <div className="flex flex-col gap-4 p-4">
-      <ConfigLagCard install={install} />
-
-      {/* Infrastructure drift — kept distinct from config lag */}
+    {install.readme && (
       <Card className="!p-4 !gap-4">
-        <div className="flex items-center gap-2">
-          <Icon
-            variant="FileDashedIcon"
-            size={14}
-            className="text-cool-grey-400"
-          />
-          <Text variant="body" weight="strong">
-            Infrastructure drift
-          </Text>
-        </div>
-        {hasDrift ? (
-          <div className="flex flex-col divide-y">
-            {install.driftedObjects.map((obj) => (
-              <DriftRow key={obj.id} obj={obj} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <Status
-              status="active"
-              isWithoutText
-              variant="timeline"
-              iconSize={14}
-            />
-            <Text variant="subtext" theme="neutral">
-              No drift detected
-            </Text>
-          </div>
-        )}
+        <Markdown content={install.readme} mode="install" />
       </Card>
-
-      {install.readme && (
-        <Card className="!p-4 !gap-4">
-          <Markdown content={install.readme} mode="install" />
-        </Card>
-      )}
-    </div>
-  )
-}
+    )}
+  </div>
+)
 
 // ─── Deployments tab ──────────────────────────────────────────────────────────
 
@@ -1371,6 +1368,7 @@ export const HealthChecksTab = ({
         ))}
       </div>
     </Card>
+    <InfrastructureDriftCard install={install} />
   </div>
 )
 
