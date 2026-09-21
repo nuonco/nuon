@@ -244,6 +244,22 @@ are healthy idle results. Probe retries count separately. Listener state is
 observed continuously, including idle periods; routine rotation and shutdown do
 not count as failures. These metrics describe attempts, not unique jobs or claims.
 
+### Runner execution results
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.runner.job.execution.results` | Counter | results | `nuon.runner.job.type`, `nuon.runner.job.operation`, `outcome` |
+
+Runner-api records newly persisted results from compressed and uncompressed reports.
+`outcome=success|failure` reflects the reported result, not workflow completion or
+application health. Job type and operation are bounded; unrecognized values use `other`.
+Duplicate reports do not count again; retries with new execution IDs count separately.
+
+Includes planning, applying and action executions, but does not distinguish drift plans
+from deployment previews or health-check actions from other actions. Missing reports,
+control-plane-generated results and rejected/failed writes are excluded. Process loss
+after persistence can lose the observation; this is not durable completion accounting.
+
 ## Export reliability
 
 Metrics are aggregated in memory and exported periodically. There is no persistent
