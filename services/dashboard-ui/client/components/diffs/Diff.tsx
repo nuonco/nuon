@@ -7,22 +7,14 @@ import {
 } from '@pierre/diffs/react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
-import { useUserPreferences } from '../../providers/user-preferences-provider'
-import {
-  MATCH_NAV_TOOLTIP,
-  diffMatches,
-  matchNavKeyDown,
-} from '../../utils/code-search'
-import {
-  LITE_SYNTAX_THEME,
-  registerSyntax,
-  resolveLanguage,
-} from '../../utils/syntax'
-import { endWithNewline } from '../../utils/diffs'
-import { Button } from '../atoms/Button'
-import { Icon } from '../atoms/Icon'
-import { Text } from '../atoms/Text'
-import { SearchInput } from './SearchInput'
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
+import { SearchInput } from '@/components/common/SearchInput'
+import { Text } from '@/components/common/Text'
+import { useDashboardPreferences } from '@/hooks/use-dashboard-preferences'
+import { SYNTAX_THEME, registerSyntax, resolveLanguage } from '@/lib/syntax'
+import { endWithNewline } from '@/lib/diffs'
+import { MATCH_NAV_TOOLTIP, diffMatches, matchNavKeyDown } from './code-search'
 import { CodeBlock } from './CodeBlock'
 
 registerSyntax()
@@ -79,17 +71,17 @@ export const Diff = ({
   maxHeight = 640,
   className,
 }: IDiff) => {
-  const { preferences } = useUserPreferences()
+  const { diffWrap } = useDashboardPreferences()
   const id = useId()
   const viewer = useRef<CodeViewHandle<undefined>>(null)
   const [query, setQuery] = useState('')
   const [matchIndex, setMatchIndex] = useState(0)
-  const [wrap, setWrap] = useState(defaultWrap ?? preferences.diffWrap)
+  const [wrap, setWrap] = useState(defaultWrap ?? diffWrap === 'wrap')
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    if (defaultWrap === undefined) setWrap(preferences.diffWrap)
-  }, [defaultWrap, preferences.diffWrap])
+    if (defaultWrap === undefined) setWrap(diffWrap === 'wrap')
+  }, [defaultWrap, diffWrap])
 
   const lang = resolveLanguage(language)
   const name = filename ?? `change.${lang === 'terraform' ? 'tf' : 'txt'}`
@@ -149,7 +141,7 @@ export const Diff = ({
 
   const options = useMemo(
     () => ({
-      theme: LITE_SYNTAX_THEME,
+      theme: SYNTAX_THEME,
       disableFileHeader: true,
       disableLineNumbers: !lineNumbers,
       overflow: (wrap ? 'wrap' : 'scroll') as 'wrap' | 'scroll',
@@ -199,25 +191,22 @@ export const Diff = ({
   return (
     <div
       data-diff-view={view}
-      className={cn(
-        'overflow-hidden rounded-lg border border-divider bg-code-bg',
-        className
-      )}
+      className={cn('overflow-hidden rounded-lg border bg-code-bg', className)}
     >
       {search || filename ? (
-        <div className="flex items-center gap-2 border-b border-divider px-2 py-1.5">
+        <div className="flex items-center gap-2 border-b px-2 py-1.5">
           {filename ? (
             <span className="flex min-w-0 items-center gap-1.5">
               <Icon
-                variant="FileIcon"
+                variant="FileTextIcon"
                 size={14}
                 aria-hidden
-                className="text-tertiary"
+                theme="neutral"
               />
               <Text
-                variant="caption"
+                variant="subtext"
                 family="mono"
-                color="secondary"
+                theme="neutral"
                 className="truncate"
               >
                 {filename}
@@ -225,22 +214,22 @@ export const Diff = ({
             </span>
           ) : null}
           {filename && search ? (
-            <span aria-hidden className="mx-0.5 h-4 w-px bg-divider" />
+            <span aria-hidden className="mx-0.5 h-4 border-l" />
           ) : null}
           {search ? (
             <>
               <SearchInput
-                size="sm"
                 value={query}
                 placeholder="Find in diff"
                 aria-label="Find in diff"
-                onValueChange={setQuery}
+                onChange={setQuery}
                 onKeyDown={matchNavKeyDown(matchIndex, goTo)}
-                className="w-full max-w-xl flex-1"
+                labelClassName="w-full max-w-xl flex-1"
+                className="!h-8 md:min-w-0 w-full"
               />
               <Text
-                variant="caption"
-                color="tertiary"
+                variant="subtext"
+                theme="neutral"
                 className="w-20 shrink-0 text-right tabular-nums"
               >
                 {query
@@ -249,10 +238,9 @@ export const Diff = ({
               </Text>
               <Button
                 size="sm"
-                variant="ghost"
-                iconOnly
+                variant="icon"
                 aria-label="Previous match"
-                tooltip={MATCH_NAV_TOOLTIP.previous}
+                tooltipProps={{ tipContent: MATCH_NAV_TOOLTIP.previous }}
                 disabled={!matches.length}
                 onClick={() => goTo(matchIndex - 1)}
               >
@@ -260,16 +248,15 @@ export const Diff = ({
               </Button>
               <Button
                 size="sm"
-                variant="ghost"
-                iconOnly
+                variant="icon"
                 aria-label="Next match"
-                tooltip={MATCH_NAV_TOOLTIP.next}
+                tooltipProps={{ tipContent: MATCH_NAV_TOOLTIP.next }}
                 disabled={!matches.length}
                 onClick={() => goTo(matchIndex + 1)}
               >
                 <Icon variant="CaretDownIcon" size={14} />
               </Button>
-              <span aria-hidden className="mx-0.5 h-4 w-px bg-divider" />
+              <span aria-hidden className="mx-0.5 h-4 border-l" />
             </>
           ) : (
             <span className="flex-1" />
@@ -277,11 +264,12 @@ export const Diff = ({
 
           <Button
             size="sm"
-            variant="ghost"
-            iconOnly
+            variant="icon"
             aria-pressed={wrap}
             aria-label={wrap ? 'Stop wrapping lines' : 'Wrap lines'}
-            tooltip={wrap ? 'Stop wrapping lines' : 'Wrap lines'}
+            tooltipProps={{
+              tipContent: wrap ? 'Stop wrapping lines' : 'Wrap lines',
+            }}
             onClick={() => setWrap((current) => !current)}
           >
             <Icon
@@ -291,10 +279,9 @@ export const Diff = ({
           </Button>
           <Button
             size="sm"
-            variant="ghost"
-            iconOnly
+            variant="icon"
             aria-label="Back to top"
-            tooltip="Back to top"
+            tooltipProps={{ tipContent: 'Back to top' }}
             disabled={!scrolled}
             onClick={() => {
               viewer.current?.scrollTo({
