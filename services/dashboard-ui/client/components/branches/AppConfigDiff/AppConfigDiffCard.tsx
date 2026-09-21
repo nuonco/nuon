@@ -3,10 +3,10 @@ import { Text } from '@/components/common/Text'
 import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
 import type { TConfigDiffFocus } from '@/components/approvals/plan-diffs/config-diff-focus'
 import {
-  AppConfigDiff,
   type DiffSectionData,
   type TAppConfigDiffPresentation,
 } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import { AppConfigDiff } from '@/components/diffs/plan-diff-switch'
 import { cn } from '@/utils/classnames'
 import type { ReactNode } from 'react'
 

@@ -1,6 +1,6 @@
 import { Text } from '@/components/common/Text'
-import { AppConfigDiff } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import { AppConfigDiff } from '@/components/diffs/plan-diff-switch'
 import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 
 interface IConfigStep {
