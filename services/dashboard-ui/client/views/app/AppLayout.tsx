@@ -7,7 +7,6 @@ import { PageContent } from '@/components/layout/PageContent'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useApp } from '@/hooks/use-app'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
-import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { useOrg } from '@/hooks/use-org'
 import { AppProvider } from '@/providers/app-provider'
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
@@ -64,11 +63,10 @@ const AppTemplate = () => {
   const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
   const hasNewAppIA = useNewAppIA()
-  const hasSimpleIA = useSimpleIA()
 
   if (!app) return null
 
-  if (hasSimpleIA || hasNewAppIA) {
+  if (hasNewAppIA) {
     return (
       <PageLayout>
         {!isChildRoute ? <AppHeader isBranchPicker /> : null}
