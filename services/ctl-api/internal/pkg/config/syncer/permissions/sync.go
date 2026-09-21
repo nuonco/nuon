@@ -35,6 +35,7 @@ func Sync(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpe
 		return sync.SyncErr{
 			Resource:    "permissions",
 			Description: err.Error(),
+			Err:         err,
 		}
 	}
 
