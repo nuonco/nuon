@@ -3,7 +3,6 @@ import { useConfig } from '@/hooks/use-config'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { useDashboardPreferences } from '@/hooks/use-dashboard-preferences'
 import { UserDropdown, type IUserDropdown } from './UserDropdown'
 
 type IUserDropdownContainerProps = Omit<
@@ -19,10 +18,6 @@ type IUserDropdownContainerProps = Omit<
   | 'notificationPermission'
   | 'muted'
   | 'onToggleMute'
-  | 'statusBarEnabled'
-  | 'onStatusBarEnabledChange'
-  | 'installsTabEnabled'
-  | 'onInstallsTabEnabledChange'
   | 'onRequestPermission'
   | 'onAddPanel'
   | 'onAddToast'
@@ -38,13 +33,6 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { addToast } = useToast()
   const { permission, requestPermission, isSupported, muted, toggleMute } =
     useNotifications()
-  const {
-    isInstallsTabEnabled,
-    isStatusBarEnabled,
-    setIsInstallsTabEnabled,
-    setIsStatusBarEnabled,
-  } = useDashboardPreferences()
-
   return (
     <UserDropdown
       isByoc={!!isByoc}
@@ -58,10 +46,6 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
       notificationPermission={permission ?? ''}
       muted={muted}
       onToggleMute={toggleMute}
-      statusBarEnabled={isStatusBarEnabled}
-      onStatusBarEnabledChange={setIsStatusBarEnabled}
-      installsTabEnabled={isInstallsTabEnabled}
-      onInstallsTabEnabledChange={setIsInstallsTabEnabled}
       onRequestPermission={requestPermission}
       onAddPanel={addPanel}
       onAddToast={addToast}
