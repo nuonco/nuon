@@ -5,7 +5,7 @@ import { usePlanDiffFilter } from '../../hooks/use-plan-diff-filter'
 import {
   KUBERNETES_DIFF_OPERATIONS,
   kubernetesPlanDiff,
-} from '../../utils/diffs/kubernetes'
+} from '@/lib/diffs/kubernetes'
 import { Card } from '../atoms/Card'
 import { Text } from '../atoms/Text'
 import { DiffSummary } from '../molecules/DiffSummary'

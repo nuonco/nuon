@@ -488,7 +488,7 @@ split and unified diffs, word-level intra-line highlighting, hunk collapsing,
 per-line virtualization, `scrollTo` by line, line annotations and a worker pool
 that moves tokenization off the main thread. `rego` is **not** in the grammars
 Shiki redistributes, so it is vendored from the OPA VS Code extension and
-registered in `utils/syntax/`.
+registered in `client/lib/syntax/`.
 
 **Virtualization is a hard requirement, not an optimisation.** Install state JSON
 and large Terraform plans are what crashed the previous Prism-based renderer.

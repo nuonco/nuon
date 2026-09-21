@@ -17,8 +17,8 @@ import {
   LITE_SYNTAX_THEME,
   registerSyntax,
   resolveLanguage,
-} from '../../utils/syntax'
-import { endWithNewline } from '../../utils/diffs'
+} from '@/lib/syntax'
+import { endWithNewline } from '@/lib/diffs'
 import { Button } from '../atoms/Button'
 import { Icon } from '../atoms/Icon'
 import { Text } from '../atoms/Text'

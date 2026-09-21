@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { IPlanDiffSection, TDiffOperation } from '../utils/diffs'
+import type { IPlanDiffSection, TDiffOperation } from '@/lib/diffs'
 import { useFilterSelection } from './use-filter-selection'
 
 export const usePlanDiffFilter = (

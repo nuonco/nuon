@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { TDiffOperation } from '../../utils/diffs'
+import type { TDiffOperation } from '@/lib/diffs'
 import { ComponentDocs } from '../__stories__/ComponentDocs'
 import { DiffFilter } from './DiffFilter'
 

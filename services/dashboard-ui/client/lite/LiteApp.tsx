@@ -7,8 +7,8 @@ import {
   LITE_SYNTAX_THEME,
   registerSyntax,
   SUPPORTED_LANGUAGES,
-} from './utils/syntax'
-import { workerFactory } from './utils/syntax/worker-pool'
+} from '@/lib/syntax'
+import { workerFactory } from '@/lib/syntax/worker-pool'
 import { ThemeProvider } from './providers/theme-provider'
 import { UserPreferencesProvider } from './providers/user-preferences-provider'
 import { liteRoutes } from './routes'

@@ -6,8 +6,8 @@ import {
   TERRAFORM_DEFAULT_DIFF_OPERATIONS,
   TERRAFORM_DIFF_OPERATIONS,
   terraformPlanDiff,
-} from '../../utils/diffs/terraform'
-import type { IPlanDiffGroup } from '../../utils/diffs'
+} from '@/lib/diffs/terraform'
+import type { IPlanDiffGroup } from '@/lib/diffs'
 import { Card } from '../atoms/Card'
 import { Text } from '../atoms/Text'
 import { DiffSummary } from '../molecules/DiffSummary'

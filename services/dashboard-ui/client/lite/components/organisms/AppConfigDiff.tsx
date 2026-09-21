@@ -6,7 +6,7 @@ import {
   APP_CONFIG_DIFF_OPERATIONS,
   appConfigPlanDiff,
   type IAppConfigDiffSummary,
-} from '../../utils/diffs/app-config'
+} from '@/lib/diffs/app-config'
 import { Card } from '../atoms/Card'
 import { Text } from '../atoms/Text'
 import { DiffSummary } from '../molecules/DiffSummary'

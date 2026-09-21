@@ -3,7 +3,7 @@ import {
   DIFF_OPERATIONS,
   type IPlanDiffSummary,
   type TDiffOperation,
-} from '../../utils/diffs'
+} from '@/lib/diffs'
 import { Text } from '../atoms/Text'
 
 const LABELS: Record<TDiffOperation, string> = {

@@ -17,7 +17,7 @@ import {
   registerSyntax,
   resolveLanguage,
   type TSyntaxLanguage,
-} from '../../utils/syntax'
+} from '@/lib/syntax'
 import { Button } from '../atoms/Button'
 import { CopyButton } from '../atoms/CopyButton'
 import { Icon } from '../atoms/Icon'
