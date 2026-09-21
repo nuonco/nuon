@@ -30,6 +30,7 @@ const NextButton = ({
   onClick,
   onBack,
   showNext = true,
+  secondary,
 }: {
   label?: string
   disabled?: boolean
@@ -37,6 +38,8 @@ const NextButton = ({
   onClick?: () => void
   onBack?: () => void
   showNext?: boolean
+  // Escape hatch rendered beside the primary while it is blocked (e.g. "Continue without waiting").
+  secondary?: ReactNode
 }) => (
   <div className={cn('flex gap-3', onBack ? 'justify-between' : 'justify-end')}>
     {onBack ? (
@@ -44,16 +47,19 @@ const NextButton = ({
         <Icon variant="CaretLeftIcon" weight="bold" /> Back
       </Button>
     ) : null}
-    {showNext ? (
-      <Button
-        variant="primary"
-        disabled={disabled}
-        onClick={onClick}
-        tooltipProps={disabled && disabledReason ? { tipContent: disabledReason } : undefined}
-      >
-        {label ?? 'Continue'} <Icon variant="CaretRightIcon" weight="bold" />
-      </Button>
-    ) : null}
+    <div className="flex items-center gap-3">
+      {secondary}
+      {showNext ? (
+        <Button
+          variant="primary"
+          disabled={disabled}
+          onClick={onClick}
+          tooltipProps={disabled && disabledReason ? { tipContent: disabledReason } : undefined}
+        >
+          {label ?? 'Continue'} <Icon variant="CaretRightIcon" weight="bold" />
+        </Button>
+      ) : null}
+    </div>
   </div>
 )
 
@@ -996,18 +1002,9 @@ const ManualSetup = ({ appName, repo }: { appName: string; repo: string }) => {
 // The step's live moment: Nuon watching the tracked branch. In the prototype the
 // review panel's "Simulate push" stands in for the push.
 // Never a hard block: if the GitHub app or the webhook misbehaves, the user can
-// carry on and Nuon keeps watching main. The next steps tolerate "no config yet".
-const PushListener = ({
-  repo,
-  detected,
-  skipped,
-  onSkip,
-}: {
-  repo: string
-  detected: boolean
-  skipped: boolean
-  onSkip: () => void
-}) => (
+// carry on via "Continue without waiting" beside the step's primary button and
+// Nuon keeps watching main. The next steps tolerate "no config yet".
+const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boolean; skipped: boolean }) => (
   <div
     className={cn(
       'flex flex-wrap items-center justify-between gap-3 rounded-md bg-background p-4 ring-1 transition-shadow',
@@ -1051,16 +1048,9 @@ const PushListener = ({
         </Text>
       </div>
     </div>
-    <div className="flex items-center gap-3">
-      {!detected && !skipped ? (
-        <Button variant="ghost" size="sm" onClick={onSkip}>
-          Continue without waiting
-        </Button>
-      ) : null}
-      <Badge size="sm" theme={detected ? 'success' : 'brand'}>
-        {detected ? 'Synced' : 'Watching'}
-      </Badge>
-    </div>
+    <Badge size="sm" theme={detected ? 'success' : 'brand'}>
+      {detected ? 'Synced' : 'Watching'}
+    </Badge>
   </div>
 )
 
@@ -1587,7 +1577,7 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
             {fill}
           </>
         )}
-        <PushListener repo={repo} detected={detected} skipped={skipped} onSkip={() => setSharedData('skippedPush', true)} />
+        <PushListener repo={repo} detected={detected} skipped={skipped} />
       </Card>
       <ExampleEscapeHatch onExit={exitToExample} />
       <NextButton
@@ -1596,6 +1586,13 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
         disabledReason="Cannot continue — waiting for your first push"
         onClick={onAdvance}
         onBack={onGoBack}
+        secondary={
+          !detected && !skipped ? (
+            <Button variant="ghost" onClick={() => setSharedData('skippedPush', true)}>
+              Continue without waiting
+            </Button>
+          ) : null
+        }
       />
     </div>
   )
