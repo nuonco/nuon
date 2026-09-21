@@ -41,6 +41,13 @@ type Client interface {
 	UpdateCurrentOrgWebhook(ctx context.Context, webhookID string, req *models.ServiceUpdateCurrentOrgWebhookRequest) (*models.ServiceCurrentOrgWebhookResponse, error)
 	DeleteCurrentOrgWebhook(ctx context.Context, webhookID string) error
 
+	// slack channel subscriptions
+	ListSlackOrgLinks(ctx context.Context) ([]*models.AppSlackOrgLink, error)
+	ListSlackChannelSubscriptions(ctx context.Context) ([]*models.AppSlackChannelSubscription, error)
+	CreateSlackChannelSubscription(ctx context.Context, req *models.ServiceCreateChannelSubscriptionRequest) (*models.AppSlackChannelSubscription, error)
+	UpdateSlackChannelSubscription(ctx context.Context, subID string, req *models.ServiceUpdateChannelSubscriptionRequest) (*models.AppSlackChannelSubscription, error)
+	DeleteSlackChannelSubscription(ctx context.Context, subID string) error
+
 	// static api tokens
 	CreateStaticToken(ctx context.Context, req *models.ServiceCreateStaticTokenRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppAccountsServiceStaticTokenResponse, error)
 	ListStaticTokens(ctx context.Context) ([]*models.AppToken, error)
