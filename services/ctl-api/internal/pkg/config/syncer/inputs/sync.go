@@ -29,6 +29,7 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		return sync.SyncErr{
 			Resource:    "app-inputs",
 			Description: err.Error(),
+			Err:         err,
 		}
 	}
 
