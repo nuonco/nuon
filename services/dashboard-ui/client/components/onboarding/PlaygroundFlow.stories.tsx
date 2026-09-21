@@ -1314,6 +1314,73 @@ const FileStubEditor = ({ appName }: { appName: string }) => {
 
 // The own path's escape hatch. Quiet and always in the same place, it lands back
 // on the fork with the example options showing, not deep in one cloud's deploy.
+// Collapsed drawer under the cloud buttons: what the example app is, before
+// anyone picks a cloud. Facts from github.com/nuonco/kitchen-sink README
+// (Helm chart with API, UI, worker on EKS; Pulumi S3 bucket; CI-built images;
+// actions, policies, runbooks, app branches). Grid-rows transition so the card
+// grows instead of jumping.
+const EXAMPLE_APP_FACTS = [
+  'Helm chart: API, UI, worker pods on EKS',
+  'Pulumi S3 bucket and CI-built images',
+  'Actions, policies, runbooks, app branches',
+]
+const ExampleAppDrawer = () => {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="flex flex-col rounded-md border border-dashed">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="example-app-drawer"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-900"
+      >
+        <span className="flex items-center gap-2">
+          <Icon variant="GithubLogoIcon" size={16} theme="neutral" />
+          <Text variant="subtext" weight="strong">
+            See the example app repo
+          </Text>
+          <Badge size="sm" variant="code">nuonco/kitchen-sink</Badge>
+        </span>
+        <span className={cn('flex transition-transform duration-300', open && 'rotate-180')} aria-hidden>
+          <Icon variant="CaretDownIcon" size={14} weight="bold" theme="neutral" />
+        </span>
+      </button>
+      <div
+        id="example-app-drawer"
+        className={cn(
+          'grid transition-[grid-template-rows,opacity,visibility] duration-300 ease-out',
+          open ? 'visible grid-rows-[1fr] opacity-100' : 'invisible grid-rows-[0fr] opacity-0'
+        )}
+        aria-hidden={!open}
+      >
+        <div className="overflow-hidden">
+          <div className="flex flex-col gap-3 border-t border-dashed px-4 py-3 md:flex-row md:items-start md:justify-between">
+            <div className="flex flex-col gap-1.5">
+              <Text variant="body" weight="strong">
+                Kitchen Sink
+              </Text>
+              <ul className="flex flex-col gap-1">
+                {EXAMPLE_APP_FACTS.map((fact) => (
+                  <li key={fact} className="flex items-start gap-2">
+                    <Icon variant="CheckCircleIcon" size={14} weight="fill" theme="success" className="mt-0.5 shrink-0" />
+                    <Text variant="subtext" theme="neutral">
+                      {fact}
+                    </Text>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Button variant="secondary" size="sm" href={KITCHEN_SINK_REPO} target="_blank" rel="noreferrer">
+              <Icon variant="GithubLogoIcon" size={14} /> View on GitHub
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const ExampleEscapeHatch = ({ onExit }: { onExit: () => void }) => (
   <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-dashed px-4 py-3">
     <div className="flex items-center gap-2">
@@ -1673,6 +1740,7 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
             </Button>
           ))}
         </div>
+        <ExampleAppDrawer />
       </Card>
         </>
       )}
