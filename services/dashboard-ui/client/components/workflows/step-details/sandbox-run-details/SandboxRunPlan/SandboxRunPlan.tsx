@@ -1,4 +1,4 @@
-import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
+import { TerraformDiff } from '@/components/diffs/plan-diff-switch'
 import { Loading } from '@/components/common/Loading'
 
 export interface ISandboxRunPlan {

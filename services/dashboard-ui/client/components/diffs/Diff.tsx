@@ -11,9 +11,11 @@ import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
+import { useDashboardPreferences } from '@/hooks/use-dashboard-preferences'
 import { SYNTAX_THEME, registerSyntax, resolveLanguage } from '@/lib/syntax'
 import { endWithNewline } from '@/lib/diffs'
 import { MATCH_NAV_TOOLTIP, diffMatches, matchNavKeyDown } from './code-search'
+import { CodeBlock } from './CodeBlock'
 
 registerSyntax()
 
@@ -63,30 +65,41 @@ export const Diff = ({
   language,
   filename,
   view = 'unified',
-  defaultWrap = false,
+  defaultWrap,
   lineNumbers = true,
   search = true,
   maxHeight = 640,
   className,
 }: IDiff) => {
+  const { diffWrap } = useDashboardPreferences()
   const id = useId()
   const viewer = useRef<CodeViewHandle<undefined>>(null)
   const [query, setQuery] = useState('')
   const [matchIndex, setMatchIndex] = useState(0)
-  const [wrap, setWrap] = useState(defaultWrap)
+  const [wrap, setWrap] = useState(defaultWrap ?? diffWrap === 'wrap')
   const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    if (defaultWrap === undefined) setWrap(diffWrap === 'wrap')
+  }, [defaultWrap, diffWrap])
 
   const lang = resolveLanguage(language)
   const name = filename ?? `change.${lang === 'terraform' ? 'tf' : 'txt'}`
 
+  const beforeText = endWithNewline(before)
+  const afterText = endWithNewline(after)
+  const oneSided =
+    (beforeText === '' && afterText !== '') ||
+    (afterText === '' && beforeText !== '')
+
   const fileDiff = useMemo(() => {
     const file = (contents: string): FileContents => ({
       name,
-      contents: endWithNewline(contents),
+      contents,
       lang: lang as FileContents['lang'],
     })
-    return parseDiffFromFile(file(before), file(after))
-  }, [after, before, lang, name])
+    return parseDiffFromFile(file(beforeText), file(afterText))
+  }, [afterText, beforeText, lang, name])
 
   const lineCount = useMemo(
     () =>
@@ -161,6 +174,18 @@ export const Diff = ({
       align: 'center',
       behavior: 'smooth-auto',
     })
+  }
+
+  if (oneSided) {
+    return (
+      <CodeBlock
+        value={beforeText === '' ? afterText : beforeText}
+        language={language}
+        filename={filename}
+        maxHeight={maxHeight}
+        className={className}
+      />
+    )
   }
 
   return (

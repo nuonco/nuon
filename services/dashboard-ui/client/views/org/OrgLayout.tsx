@@ -50,10 +50,10 @@ export const OrgLayout = () => {
                 <OrgStatusSSEProvider>
                   <ActiveWorkflowsProvider>
                     <WorkflowApprovalsProvider>
-                      <SurfacesProvider>
-                        <SpotlightListener />
-                        <VCSConnectionSuccess />
-                        <DashboardPreferencesProvider>
+                      <DashboardPreferencesProvider>
+                        <SurfacesProvider>
+                          <SpotlightListener />
+                          <VCSConnectionSuccess />
                           <MainLayout
                             versions={{
                               api: {
@@ -68,8 +68,8 @@ export const OrgLayout = () => {
                             <Outlet />
                             <PreferredOrgStatusBar />
                           </MainLayout>
-                        </DashboardPreferencesProvider>
-                      </SurfacesProvider>
+                        </SurfacesProvider>
+                      </DashboardPreferencesProvider>
                     </WorkflowApprovalsProvider>
                   </ActiveWorkflowsProvider>
                 </OrgStatusSSEProvider>
