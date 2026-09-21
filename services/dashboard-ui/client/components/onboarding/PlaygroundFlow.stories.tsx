@@ -808,10 +808,7 @@ const DOCS_MCP = 'https://docs.nuon.co/guides/agents/mcp-walkthrough'
 const CLI_SETUP = 'brew install nuonco/tap/nuon\nnuon auth login'
 const MCP_ADD_CLAUDE = 'claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes'
 const DOCS_CONFIG_FILES = 'https://docs.nuon.co/configuration-files'
-const DOCS_APP_BRANCHES = 'https://docs.nuon.co/guides/app-branches'
 const GIT_PUSH = (app: string) => `git add ${app}\ngit commit -m "Add Nuon app template"\ngit push origin main`
-const DOCS_CONFIG_REF = 'https://docs.nuon.co/config-ref'
-const DOCS_SANDBOXES = 'https://docs.nuon.co/concepts/sandboxes'
 const VSCODE_EXTENSION = 'https://marketplace.visualstudio.com/items?itemName=Nuon.nuon-lsp'
 // The one layout we show: config at the root of the connected repo, the way every
 // example-app-config does (kitchen-sink: metadata.toml at the top level, components/
@@ -933,59 +930,34 @@ const AgentSetup = () => (
 const ManualSetup = ({ appName, repo }: { appName: string; repo: string }) => {
   const steps: { title: string; body: ReactNode; detail?: ReactNode }[] = [
     {
-      title: 'Put the config at the root of the repo you connected',
+      title: 'Put the config at the root of the repo',
       body: (
         <>
-          <Badge size="sm" variant="code">{repo}</Badge> holds the files above at its top level —{' '}
-          <Badge size="sm" variant="code">metadata.toml</Badge> next to{' '}
-          <Badge size="sm" variant="code">components/</Badge>, the way nuonco/kitchen-sink does. The
-          directory name matches the app template name.
+          Top level of <Badge size="sm" variant="code">{repo}</Badge>, the same layout as{' '}
+          <Link href={KITCHEN_SINK_REPO} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+            nuonco/kitchen-sink
+          </Link>
         </>
-      ),
-      detail: (
-        <Link href={KITCHEN_SINK_REPO} isExternal textVariant="subtext">
-          Example — nuonco/kitchen-sink
-        </Link>
       ),
     },
     {
       title: 'Fill in the stubs',
       body: (
         <>
-          Point each <Badge size="sm" variant="code">components/*.toml</Badge> at a repo, directory, and
-          branch — a Terraform module, Helm chart, Kubernetes manifests, a container image, or a Pulumi
-          program — pick a sandbox in <Badge size="sm" variant="code">sandbox.toml</Badge>, and scope the
-          three roles in <Badge size="sm" variant="code">permissions.toml</Badge>.
+          Point each component at a repo and branch, pick a sandbox, scope the three roles.{' '}
+          <Link href={DOCS_CONFIG_FILES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+            Configuration files
+          </Link>
         </>
-      ),
-      detail: (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <Link href={DOCS_CONFIG_REF} isExternal textVariant="subtext">
-            Component reference
-          </Link>
-          <Link href={DOCS_SANDBOXES} isExternal textVariant="subtext">
-            Sandboxes — managed or your own
-          </Link>
-        </div>
       ),
     },
     {
       title: 'Commit and push',
-      body: (
-        <>
-          Your default app branch tracks <Badge size="sm" variant="code">{repo}</Badge> on{' '}
-          <Badge size="sm" variant="code">main</Badge>. Every push starts a run — no CLI step needed.
-        </>
-      ),
+      body: <>Every push to main starts a run.</>,
       detail: (
-        <div className="flex flex-col gap-2">
-          <CodeBlock language="bash" showCopy>
-            {GIT_PUSH(appName)}
-          </CodeBlock>
-          <Text variant="subtext" theme="neutral">
-            Optional: <Badge size="sm" variant="code">nuon apps validate</Badge> checks the config before you push.
-          </Text>
-        </div>
+        <CodeBlock language="bash" showCopy>
+          {GIT_PUSH(appName)}
+        </CodeBlock>
       ),
     },
   ]
@@ -998,7 +970,7 @@ const ManualSetup = ({ appName, repo }: { appName: string; repo: string }) => {
             <Badge size="sm" theme="brand" className="mt-0.5 shrink-0">
               {index + 1}
             </Badge>
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <Text variant="body" weight="strong">
                 {step.title}
               </Text>
@@ -1010,30 +982,32 @@ const ManualSetup = ({ appName, repo }: { appName: string; repo: string }) => {
           </li>
         ))}
       </ol>
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t pt-3">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <Link href={DOCS_APP_BRANCHES} isExternal textVariant="subtext">
-            How app branches track a repo
-          </Link>
-          <Link href={DOCS_CONFIG_FILES} isExternal textVariant="subtext">
-            Configuration files
-          </Link>
-        </div>
-        <Text variant="subtext" theme="neutral" flex>
-          Editing TOML by hand?
-          <Link href={VSCODE_EXTENSION} isExternal textVariant="subtext">
-            The Nuon VS Code extension
-          </Link>
-          adds autocomplete and inline validation.
-        </Text>
-      </div>
+      <Text variant="subtext" theme="neutral" flex className="border-t pt-3">
+        Editing TOML by hand?
+        <Link href={VSCODE_EXTENSION} isExternal textVariant="subtext">
+          The Nuon VS Code extension
+        </Link>
+        adds autocomplete and validation.
+      </Text>
     </div>
   )
 }
 
 // The step's live moment: Nuon watching the tracked branch. In the prototype the
 // review panel's "Simulate push" stands in for the push.
-const PushListener = ({ repo, detected }: { repo: string; detected: boolean }) => (
+// Never a hard block: if the GitHub app or the webhook misbehaves, the user can
+// carry on and Nuon keeps watching main. The next steps tolerate "no config yet".
+const PushListener = ({
+  repo,
+  detected,
+  skipped,
+  onSkip,
+}: {
+  repo: string
+  detected: boolean
+  skipped: boolean
+  onSkip: () => void
+}) => (
   <div
     className={cn(
       'flex flex-wrap items-center justify-between gap-3 rounded-md bg-background p-4 ring-1 transition-shadow',
@@ -1048,7 +1022,7 @@ const PushListener = ({ repo, detected }: { repo: string; detected: boolean }) =
       )}
       <div className="flex flex-col gap-0.5">
         <Text variant="body" weight="strong">
-          {detected ? 'Config detected on main' : 'Listening for a push'}
+          {detected ? 'Config detected on main' : skipped ? 'Still watching for your push' : 'Listening for a push'}
         </Text>
         <Text variant="subtext" theme="neutral" flex>
           {detected ? (
@@ -1059,6 +1033,8 @@ const PushListener = ({ repo, detected }: { repo: string; detected: boolean }) =
               </Badge>
               synced the default app branch — building your components.
             </>
+          ) : skipped ? (
+            <>Carry on. Your components build as soon as the first push lands.</>
           ) : (
             <>
               Push to
@@ -1075,9 +1051,16 @@ const PushListener = ({ repo, detected }: { repo: string; detected: boolean }) =
         </Text>
       </div>
     </div>
-    <Badge size="sm" theme={detected ? 'success' : 'brand'}>
-      {detected ? 'Synced' : 'Watching'}
-    </Badge>
+    <div className="flex items-center gap-3">
+      {!detected && !skipped ? (
+        <Button variant="ghost" size="sm" onClick={onSkip}>
+          Continue without waiting
+        </Button>
+      ) : null}
+      <Badge size="sm" theme={detected ? 'success' : 'brand'}>
+        {detected ? 'Synced' : 'Watching'}
+      </Badge>
+    </div>
   </div>
 )
 
@@ -1538,6 +1521,8 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
   // The connected account from Set up, and a repo named after the template.
   const repo = `jane-doe/${appName}`
   const detected = pushTick > 0
+  // Persisted so Back from the Deploy step does not re-block the user.
+  const skipped = Boolean(sharedData.skippedPush)
 
   // Back to the fork, collapsed, with the example path selected.
   const exitToExample = () => {
@@ -1602,12 +1587,12 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
             {fill}
           </>
         )}
-        <PushListener repo={repo} detected={detected} />
+        <PushListener repo={repo} detected={detected} skipped={skipped} onSkip={() => setSharedData('skippedPush', true)} />
       </Card>
       <ExampleEscapeHatch onExit={exitToExample} />
       <NextButton
         label="Set up your first install"
-        disabled={!detected}
+        disabled={!detected && !skipped}
         disabledReason="Cannot continue — waiting for your first push"
         onClick={onAdvance}
         onBack={onGoBack}
