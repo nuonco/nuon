@@ -260,6 +260,26 @@ func TestUpdateRunnerStatusStopsWhenLegacyUpdateFails(t *testing.T) {
 	env.AssertExpectations(t)
 }
 
+func TestUpdateRunnerStatusDefersIdempotencyCheckToActivity(t *testing.T) {
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+
+	runner := testRunner(app.RunnerStatusActive)
+	sig := &Signal{RunnerID: runner.ID}
+
+	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusActive, "runner healthy")
+	})
+
+	require.NoError(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
+}
+
 func TestExistingHistoryKeepsSplitStatusWrite(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()

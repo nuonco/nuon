@@ -369,10 +369,6 @@ func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, st
 		return nil
 	}
 
-	if runner.Status == status && runner.StatusV2.Status == app.Status(status) {
-		return nil
-	}
-
 	if err := activities.LocalAwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          s.RunnerID,
 		Status:            status,
