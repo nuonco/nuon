@@ -9,7 +9,6 @@ import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
-import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { BranchProvider } from '@/providers/branch-provider'
 import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
 import { BranchTrackingCard } from '@/components/branches/BranchTrackingCard'
@@ -62,81 +61,61 @@ const BranchTemplate = () => {
     hasDeploymentPlan && !isLoadingLatestRun && !latestRun
 
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
-  const hasSimpleIA = useSimpleIA()
 
-  const navLinks: TNavItem[] = hasSimpleIA
-    ? [
-        { path: `/`, iconVariant: 'HouseSimpleIcon', text: 'Overview' },
-        {
-          path: `/activity`,
-          iconVariant: 'ClockCounterClockwiseIcon',
-          text: 'Activity',
-        },
-        { path: `/config`, iconVariant: 'FadersIcon', text: 'Config' },
-        ...(hasInstallSyncing
-          ? [
-              {
-                path: `/install-configs`,
-                iconVariant: 'ArrowsClockwiseIcon' as const,
-                text: 'Install configs',
-              },
-            ]
-          : []),
-      ]
-    : [
-        {
-          path: `/`,
-          matchPaths: ['/runs'],
-          iconVariant: 'PlayIcon',
-          text: 'Runs',
-        },
-        {
-          type: 'section',
-          label: 'Install management',
-          defaultOpen: false,
-        },
-        { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
-        {
-          path: `/plan`,
-          iconVariant: 'TreeStructureIcon',
-          text: 'Deployment plan',
-        },
-        ...(hasInstallSyncing
-          ? [
-              {
-                path: `/install-configs`,
-                iconVariant: 'ArrowsClockwiseIcon' as const,
-                text: 'Install configs',
-              },
-            ]
-          : []),
-        { type: 'section', label: 'App template', defaultOpen: false },
-        { path: `/inputs`, iconVariant: 'ListChecksIcon', text: 'Inputs' },
-        { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },
-        {
-          path: `/actions`,
-          iconVariant: 'TerminalWindowIcon',
-          text: 'Actions',
-        },
-        { path: `/runbooks`, iconVariant: 'BookIcon', text: 'Runbooks' },
-        {
-          path: `/sandbox`,
-          iconVariant: 'ShippingContainerIcon',
-          text: 'Sandboxes',
-        },
-        { path: `/policies`, iconVariant: 'ShieldCheckIcon', text: 'Policies' },
-        { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
-        { path: `/labels`, iconVariant: 'TagIcon', text: 'Labels' },
-        { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
-        {
-          type: 'action',
-          key: 'settings',
-          iconVariant: 'GearIcon',
-          text: 'Settings',
-          onClick: openSettings,
-          isActive: isSettingsOpen,
-        },
-      ]
+  const navLinks: TNavItem[] = [
+    {
+      path: `/`,
+      matchPaths: ['/runs'],
+      iconVariant: 'PlayIcon',
+      text: 'Runs',
+    },
+    {
+      type: 'section',
+      label: 'Install management',
+      defaultOpen: false,
+    },
+    { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
+    {
+      path: `/plan`,
+      iconVariant: 'TreeStructureIcon',
+      text: 'Deployment plan',
+    },
+    ...(hasInstallSyncing
+      ? [
+          {
+            path: `/install-configs`,
+            iconVariant: 'ArrowsClockwiseIcon' as const,
+            text: 'Install configs',
+          },
+        ]
+      : []),
+    { type: 'section', label: 'App template', defaultOpen: false },
+    { path: `/inputs`, iconVariant: 'ListChecksIcon', text: 'Inputs' },
+    { path: `/components`, iconVariant: 'CardsIcon', text: 'Components' },
+    {
+      path: `/actions`,
+      iconVariant: 'TerminalWindowIcon',
+      text: 'Actions',
+    },
+    { path: `/runbooks`, iconVariant: 'BookIcon', text: 'Runbooks' },
+    {
+      path: `/sandbox`,
+      iconVariant: 'ShippingContainerIcon',
+      text: 'Sandboxes',
+    },
+    { path: `/policies`, iconVariant: 'ShieldCheckIcon', text: 'Policies' },
+    { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
+    { path: `/labels`, iconVariant: 'TagIcon', text: 'Labels' },
+    { path: `/readme`, iconVariant: 'BookOpenIcon', text: 'README' },
+    {
+      type: 'action',
+      key: 'settings',
+      iconVariant: 'GearIcon',
+      text: 'Settings',
+      onClick: openSettings,
+      isActive: isSettingsOpen,
+    },
+  ]
 
   return (
     <>
@@ -171,7 +150,7 @@ const BranchTemplate = () => {
           branch={vcs?.branch}
           directory={vcs?.directory}
           latestRun={
-            !hasSimpleIA && latestRun
+            latestRun
               ? {
                   status: latestBranchRun?.status,
                   href: `${basePath}/runs/${latestRun.id}`,
@@ -209,11 +188,10 @@ const BranchTemplate = () => {
 
 export const BranchLayout = () => {
   const hasNewAppIA = useNewAppIA()
-  const hasSimpleIA = useSimpleIA()
   const params = useParams()
   const branchId = params.branchId as string
 
-  if (!hasSimpleIA && !hasNewAppIA) return <Outlet />
+  if (!hasNewAppIA) return <Outlet />
 
   return (
     <BranchProvider branchId={branchId} shouldPoll>
