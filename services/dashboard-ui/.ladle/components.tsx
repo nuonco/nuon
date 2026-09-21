@@ -8,6 +8,8 @@ import { OrgContext } from "@/providers/org-provider"
 import { InstallContext } from "@/providers/install-provider"
 import { SurfacesProvider } from "@/providers/surfaces-provider"
 import { ToastProvider } from "@/providers/toast-provider"
+import { DashboardPreferencesProvider } from "@/providers/dashboard-preferences-provider"
+import { ThemeProvider } from "@/providers/theme-provider"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +75,8 @@ export const Provider: GlobalProvider = ({ children, storyMeta }) => {
               <InstallContext.Provider value={{ install: mockInstall, refresh: () => {} }}>
                 <ToastProvider>
                   <SurfacesProvider>
+                   <ThemeProvider>
+                    <DashboardPreferencesProvider>
                     {/* The app themes via prefers-color-scheme, but Ladle's canvas
                         follows its own toggle — paint the canvas with the app's
                         background/foreground vars so stories stay readable when
@@ -87,6 +91,8 @@ export const Provider: GlobalProvider = ({ children, storyMeta }) => {
                     >
                       {children}
                     </div>
+                    </DashboardPreferencesProvider>
+                   </ThemeProvider>
                   </SurfacesProvider>
                 </ToastProvider>
               </InstallContext.Provider>
