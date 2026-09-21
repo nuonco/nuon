@@ -31,6 +31,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	sg.nextGroupEager()
 	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
+		Mode:      awaitrunnerhealthy.ModeRequireActive,
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
