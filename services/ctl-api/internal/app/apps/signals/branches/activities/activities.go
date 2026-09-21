@@ -2,6 +2,7 @@ package activities
 
 import (
 	"github.com/go-playground/validator/v10"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -17,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -44,6 +46,7 @@ type Params struct {
 	FlowsClient      *flowclient.Client
 	TfClient         terraform.Client
 	Features         *features.Features
+	MeterProvider    metric.MeterProvider `optional:"true"`
 }
 
 type Activities struct {
@@ -65,6 +68,7 @@ type Activities struct {
 	flowsClient      *flowclient.Client
 	tfClient         terraform.Client
 	features         *features.Features
+	syncMetrics      *syncer.Metrics
 }
 
 func New(params Params) (*Activities, error) {
@@ -87,5 +91,6 @@ func New(params Params) (*Activities, error) {
 		flowsClient:      params.FlowsClient,
 		tfClient:         params.TfClient,
 		features:         params.Features,
+		syncMetrics:      syncer.NewMetrics(params.MeterProvider),
 	}, nil
 }
