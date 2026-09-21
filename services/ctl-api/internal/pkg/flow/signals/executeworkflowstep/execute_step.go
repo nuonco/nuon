@@ -42,13 +42,23 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		if s.mw == nil {
 			return
 		}
+		result := "success"
+		if err != nil {
+			result = "error"
+		}
 		tags := metrics.ToTags(map[string]string{
 			"workflow_type":  workflowType,
 			"owner_type":     s.OwnerType,
 			"step_name":      stepName,
 			"execution_type": executionType,
+			"result":         result,
 		})
 
+		if s.tmw != nil {
+			s.tmw.Timing(ctx, "workflow_step.latency", workflow.Now(ctx).Sub(start), tags...)
+			s.tmw.Incr(ctx, "workflow_step.executed", tags...)
+			return
+		}
 		s.mw.Timing("workflow_step.latency", workflow.Now(ctx).Sub(start), tags)
 		s.mw.Incr("workflow_step.executed", tags)
 	}()
