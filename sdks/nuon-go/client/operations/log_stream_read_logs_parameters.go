@@ -70,7 +70,7 @@ type LogStreamReadLogsParams struct {
 
 	/* Attr.
 
-	   generic log_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)
+	   generic log_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi)
 	*/
 	Attr []string
 
@@ -156,7 +156,7 @@ type LogStreamReadLogsParams struct {
 
 	/* ResourceAttr.
 
-	   generic resource_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)
+	   generic resource_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi)
 	*/
 	ResourceAttr []string
 
@@ -198,7 +198,7 @@ type LogStreamReadLogsParams struct {
 
 	/* ScopeAttr.
 
-	   generic scope_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)
+	   generic scope_attributes filter as 'key:value' (value must be non-empty; repeatable, max 16 across all attr params) collectionFormat(multi)
 	*/
 	ScopeAttr []string
 

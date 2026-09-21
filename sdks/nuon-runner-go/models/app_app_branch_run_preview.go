@@ -49,6 +49,9 @@ type AppAppBranchRunPreview struct {
 	// install name
 	InstallName string `json:"install_name,omitempty"`
 
+	// is draft mode
+	IsDraftMode bool `json:"is_draft_mode,omitempty"`
+
 	// mode
 	Mode AppAppBranchRunPreviewMode `json:"mode,omitempty"`
 
