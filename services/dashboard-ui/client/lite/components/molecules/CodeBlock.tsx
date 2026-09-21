@@ -13,11 +13,11 @@ import {
   matchNavKeyDown,
 } from '../../utils/code-search'
 import {
-  SYNTAX_THEME,
+  LITE_SYNTAX_THEME,
   registerSyntax,
   resolveLanguage,
   type TSyntaxLanguage,
-} from '@/lib/syntax'
+} from '../../utils/syntax'
 import { Button } from '../atoms/Button'
 import { CopyButton } from '../atoms/CopyButton'
 import { Icon } from '../atoms/Icon'
@@ -113,7 +113,7 @@ export const CodeBlock = ({
 
   const options = useMemo(
     () => ({
-      theme: SYNTAX_THEME,
+      theme: LITE_SYNTAX_THEME,
       disableFileHeader: !filename,
       disableLineNumbers: !showLineNumbers,
       overflow: (wrap ? 'wrap' : 'scroll') as 'wrap' | 'scroll',

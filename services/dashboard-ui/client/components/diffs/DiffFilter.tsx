@@ -1,9 +1,9 @@
 import type { HTMLAttributes } from 'react'
 import { cn } from '@/utils/classnames'
-import type { TDiffOperation } from '../../utils/diffs'
-import { Text } from '../atoms/Text'
-import { FilterDropdown } from '../molecules/FilterMenu'
-import { SearchInput } from '../molecules/SearchInput'
+import type { TDiffOperation } from '@/lib/diffs'
+import { SearchInput } from '@/components/common/SearchInput'
+import { Text } from '@/components/common/Text'
+import { FilterDropdown } from './FilterMenu'
 
 const LABELS: Record<TDiffOperation, string> = {
   create: 'Create',
@@ -17,10 +17,10 @@ const LABELS: Record<TDiffOperation, string> = {
 const RAIL_CLASSES: Record<TDiffOperation, string> = {
   create: 'bg-diff-add',
   update: 'bg-diff-change',
-  replace: 'bg-accent',
+  replace: 'bg-primary-500',
   delete: 'bg-diff-remove',
-  read: 'bg-secondary',
-  'no-op': 'bg-tertiary',
+  read: 'bg-diff-neutral',
+  'no-op': 'bg-diff-neutral',
 }
 
 export interface IDiffFilter
@@ -54,22 +54,19 @@ export const DiffFilter = ({
   ...props
 }: IDiffFilter) => (
   <div
-    className={cn(
-      'flex min-w-0 flex-1 flex-wrap items-center gap-2',
-      className
-    )}
+    className={cn('flex min-w-0 flex-1 flex-wrap items-center gap-2', className)}
     {...props}
   >
     <SearchInput
-      size="sm"
       value={searchValue}
       placeholder={searchPlaceholder}
       aria-label={searchPlaceholder}
-      onValueChange={onSearchChange}
-      className="min-w-56 flex-1"
+      onChange={onSearchChange}
+      labelClassName="min-w-56 flex-1"
+      className="!h-8 md:min-w-0 w-full"
     />
 
-    <Text variant="caption" color="tertiary" className="whitespace-nowrap">
+    <Text variant="subtext" theme="neutral" className="whitespace-nowrap">
       {selectedCount} of {totalCount} {title}
     </Text>
 

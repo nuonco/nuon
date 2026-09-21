@@ -1,16 +1,16 @@
 import { useMemo, type ReactNode } from 'react'
 import { cn } from '@/utils/classnames'
-import { changeCounts, type TDiffOperation } from '../../utils/diffs'
-import { Text } from '../atoms/Text'
-import { Diff, type IDiff, type TDiffView } from '../molecules/Diff'
-import { Disclosure, type IDisclosure } from '../molecules/Disclosure'
+import { changeCounts, type TDiffOperation } from '@/lib/diffs'
+import { Text } from '@/components/common/Text'
+import { Diff, type IDiff, type TDiffView } from './Diff'
+import { Disclosure, type IDisclosure } from './Disclosure'
 
-export type { TDiffOperation } from '../../utils/diffs'
+export type { TDiffOperation } from '@/lib/diffs'
 
 const RAIL_CLASSES: Record<TDiffOperation, string> = {
   create: 'border-l-diff-add',
   update: 'border-l-diff-change',
-  replace: 'border-l-divider-accent',
+  replace: 'border-l-primary-500',
   delete: 'border-l-diff-remove',
   read: 'border-l-diff-neutral',
   'no-op': 'border-l-diff-neutral',
@@ -19,7 +19,7 @@ const RAIL_CLASSES: Record<TDiffOperation, string> = {
 const TINT_CLASSES: Record<TDiffOperation, string> = {
   create: 'bg-diff-add-section',
   update: 'bg-diff-change-section',
-  replace: 'bg-surface-accent',
+  replace: 'bg-primary-50 dark:bg-primary-950',
   delete: 'bg-diff-remove-section',
   read: 'bg-diff-neutral-section',
   'no-op': 'bg-diff-neutral-section',
@@ -71,12 +71,12 @@ export const DiffSection = ({
           aria-label={`${counts.added} added, ${counts.removed} removed`}
         >
           {counts.added ? (
-            <Text variant="caption" family="mono" className="text-diff-add">
+            <Text variant="subtext" family="mono" className="text-diff-add">
               +{counts.added}
             </Text>
           ) : null}
           {counts.removed ? (
-            <Text variant="caption" family="mono" className="text-diff-remove">
+            <Text variant="subtext" family="mono" className="text-diff-remove">
               -{counts.removed}
             </Text>
           ) : null}
@@ -93,11 +93,19 @@ export const DiffSection = ({
         HOVER_CLASSES[operation],
         headerClassName
       )}
-      contentClassName={cn('bg-surface-01 p-2', contentClassName)}
+      contentClassName={cn(
+        'bg-white dark:bg-dark-grey-800 p-2',
+        contentClassName
+      )}
       {...props}
     >
       {note || error ? (
-        <Text as="div" variant="caption" color="tertiary" className="px-1 py-2">
+        <Text
+          as="div"
+          variant="subtext"
+          theme="neutral"
+          className="px-1 py-2"
+        >
           {note ?? error}
         </Text>
       ) : null}

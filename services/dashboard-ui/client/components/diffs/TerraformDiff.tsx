@@ -1,24 +1,30 @@
 import { useMemo, type HTMLAttributes } from 'react'
 import type { TTerraformPlan } from '@/types'
 import { cn } from '@/utils/classnames'
-import { usePlanDiffFilter } from '../../hooks/use-plan-diff-filter'
 import {
   TERRAFORM_DEFAULT_DIFF_OPERATIONS,
   TERRAFORM_DIFF_OPERATIONS,
   terraformPlanDiff,
-} from '../../utils/diffs/terraform'
-import type { IPlanDiffGroup } from '../../utils/diffs'
-import { Card } from '../atoms/Card'
-import { Text } from '../atoms/Text'
-import { DiffSummary } from '../molecules/DiffSummary'
+} from '@/lib/diffs/terraform'
+import type { IPlanDiffGroup } from '@/lib/diffs'
+import { Card } from '@/components/common/Card'
+import { Text } from '@/components/common/Text'
+import { usePlanDiffFilter } from './use-plan-diff-filter'
+import { DiffSummary } from './DiffSummary'
 import { DiffFilter } from './DiffFilter'
 import { DiffSection } from './DiffSection'
 import { DiffSections } from './DiffSections'
+import { DiffEmptyState } from './DiffEmptyState'
 
 export interface ITerraformDiff
   extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   plan?: TTerraformPlan
   defaultOpen?: boolean
+}
+
+const GROUP_TITLES: Record<string, string> = {
+  'terraform-drift': 'drift',
+  'terraform-outputs': 'outputs',
 }
 
 const TerraformDiffGroup = ({
@@ -37,9 +43,9 @@ const TerraformDiffGroup = ({
   if (!group.sections.length) return null
 
   return (
-    <Card as="section" padding="sm" className="flex flex-col gap-3">
+    <Card className="flex flex-col gap-3">
       <header className="flex flex-wrap items-start justify-between gap-3 px-1">
-        <Text as="h2" variant="heading">
+        <Text as="h2" variant="h3">
           {group.title}
         </Text>
         <DiffSummary
@@ -52,13 +58,7 @@ const TerraformDiffGroup = ({
         defaultOpen={defaultOpen}
         toolbar={
           <DiffFilter
-            title={
-              group.id === 'terraform-drift'
-                ? 'drift'
-                : group.id === 'terraform-outputs'
-                  ? 'outputs'
-                  : 'resources'
-            }
+            title={GROUP_TITLES[group.id] ?? 'resources'}
             operations={filter.operations}
             selectedOperations={filter.selectedOperations}
             selectedCount={filter.selectedCount}
@@ -88,14 +88,7 @@ const TerraformDiffGroup = ({
             />
           ))
         ) : (
-          <div className="rounded-lg bg-surface-02 px-4 py-8 text-center">
-            <Text as="p" variant="body" weight="medium">
-              No changes to show
-            </Text>
-            <Text as="p" variant="caption" color="tertiary">
-              Clear the search or reset the filters.
-            </Text>
-          </div>
+          <DiffEmptyState />
         )}
       </DiffSections>
     </Card>
@@ -113,13 +106,8 @@ export const TerraformDiff = ({
 
   if (!plan) {
     return (
-      <Card
-        as="section"
-        padding="sm"
-        className={cn('flex flex-col gap-3', className)}
-        {...props}
-      >
-        <Text as="p" variant="body" weight="medium">
+      <Card className={cn('flex flex-col gap-3', className)} {...props}>
+        <Text as="p" variant="body" weight="strong">
           No Terraform plan data available
         </Text>
       </Card>
@@ -128,20 +116,11 @@ export const TerraformDiff = ({
 
   if (!visible.some((group) => group.sections.length)) {
     return (
-      <Card
-        as="section"
-        padding="sm"
-        className={cn('flex flex-col gap-3', className)}
-        {...props}
-      >
-        <Text as="h2" variant="heading">
+      <Card className={cn('flex flex-col gap-3', className)} {...props}>
+        <Text as="h2" variant="h3">
           Terraform changes
         </Text>
-        <div className="rounded-lg bg-surface-02 px-4 py-8 text-center">
-          <Text as="p" variant="body" weight="medium">
-            No changes to show
-          </Text>
-        </div>
+        <DiffEmptyState />
       </Card>
     )
   }

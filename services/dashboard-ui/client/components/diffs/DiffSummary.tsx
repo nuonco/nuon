@@ -3,8 +3,8 @@ import {
   DIFF_OPERATIONS,
   type IPlanDiffSummary,
   type TDiffOperation,
-} from '../../utils/diffs'
-import { Text } from '../atoms/Text'
+} from '@/lib/diffs'
+import { Text } from '@/components/common/Text'
 
 const LABELS: Record<TDiffOperation, string> = {
   create: 'to create',
@@ -18,10 +18,10 @@ const LABELS: Record<TDiffOperation, string> = {
 const COUNT_CLASSES: Record<TDiffOperation, string> = {
   create: 'text-diff-add',
   update: 'text-diff-change',
-  replace: 'text-accent',
+  replace: 'text-primary-600 dark:text-primary-400',
   delete: 'text-diff-remove',
-  read: 'text-secondary',
-  'no-op': 'text-tertiary',
+  read: 'text-cool-grey-800 dark:text-white/70',
+  'no-op': 'text-cool-grey-600 dark:text-white/70',
 }
 
 export interface IDiffSummary {
@@ -40,12 +40,12 @@ export const DiffSummary = ({
       <span key={operation} className="flex items-baseline gap-1.5">
         <Text
           variant="body"
-          weight="semibold"
+          weight="stronger"
           className={COUNT_CLASSES[operation]}
         >
           {summary[operation]}
         </Text>
-        <Text variant="caption" color="tertiary">
+        <Text variant="subtext" theme="neutral">
           {LABELS[operation]}
         </Text>
       </span>
