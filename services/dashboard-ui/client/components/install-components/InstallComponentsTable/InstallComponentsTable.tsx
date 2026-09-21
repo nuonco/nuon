@@ -188,7 +188,7 @@ const healthColumn: ColumnDef<InstallComponentRow> = {
   },
 }
 
-const baseColumns: ColumnDef<InstallComponentRow>[] = [
+const columns: ColumnDef<InstallComponentRow>[] = [
   {
     accessorKey: 'componentName',
     header: 'Component name',
@@ -205,6 +205,7 @@ const baseColumns: ColumnDef<InstallComponentRow>[] = [
     ),
     enableSorting: true,
   },
+  healthColumn,
   {
     accessorKey: 'componentType',
     header: 'Type',
@@ -265,13 +266,6 @@ const baseColumns: ColumnDef<InstallComponentRow>[] = [
   },
 ]
 
-function buildColumns(showHealth: boolean): ColumnDef<InstallComponentRow>[] {
-  if (!showHealth) return baseColumns
-  const cols = [...baseColumns]
-  cols.splice(1, 0, healthColumn)
-  return cols
-}
-
 interface IInstallComponentsTable {
   data: InstallComponentRow[]
   filterActions: ReactNode
@@ -281,7 +275,6 @@ interface IInstallComponentsTable {
     limit: number
   }
   isLoading: boolean
-  showHealth?: boolean
 }
 
 export const InstallComponentsTable = ({
@@ -289,11 +282,10 @@ export const InstallComponentsTable = ({
   filterActions,
   pagination,
   isLoading,
-  showHealth = false,
 }: IInstallComponentsTable) => {
   return (
     <Table<InstallComponentRow>
-      columns={buildColumns(showHealth)}
+      columns={columns}
       data={data}
       isLoading={isLoading}
       filterActions={filterActions}

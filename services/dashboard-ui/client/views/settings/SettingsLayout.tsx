@@ -27,7 +27,6 @@ const SettingsTemplate = () => {
   const hasServiceAccountsAndTokens =
     !!org?.features?.['service-accounts-and-tokens']
   const hasSlack = !!org?.features?.['slack']
-  const hasTriggers = !!org?.features?.['triggers']
   const hasOIDCFederation = !!cliConfig?.oidc_federation_enabled
 
   const navLinks = [
@@ -46,7 +45,7 @@ const SettingsTemplate = () => {
       iconVariant: 'SlackLogoIcon' as const,
       text: 'Slack',
     },
-    hasTriggers && {
+    {
       path: `/triggers`,
       iconVariant: 'LightningIcon' as const,
       text: 'Triggers',

@@ -29,16 +29,7 @@ import { installRoutes } from '@/views/install/routes'
 import { AppSetup } from '@/views/app/AppSetup'
 import { InstallSetup } from '@/views/install/InstallSetup'
 import { SimpleIAGate } from '@/views/SimpleIAGate'
-import { useOrg } from '@/hooks/use-org'
 import { useCLIConfig } from '@/hooks/use-cli-config'
-
-const TriggersGate = () => {
-  const { org } = useOrg()
-
-  if (!org) return null
-  if (!org?.features?.['triggers']) return <NotFound />
-  return <Outlet />
-}
 
 const OIDCFederationGate = () => {
   const { data: cliConfig, isLoading } = useCLIConfig()
@@ -94,21 +85,16 @@ export const orgRoutes: RouteObject[] = [
               { path: ':orgId/settings/oidc', element: <OIDCTrustPolicies /> },
             ],
           },
+          { path: ':orgId/settings/triggers', element: <Triggers /> },
           {
-            element: <TriggersGate />,
+            path: ':orgId/settings/triggers/:triggerId',
+            element: <TriggerLayout />,
             children: [
-              { path: ':orgId/settings/triggers', element: <Triggers /> },
-              {
-                path: ':orgId/settings/triggers/:triggerId',
-                element: <TriggerLayout />,
-                children: [
-                  { index: true, element: <TriggerOverview /> },
-                  { path: 'rules', element: <TriggerRules /> },
-                  { path: 'rules/:ruleId', element: <TriggerRule /> },
-                  { path: 'events', element: <TriggerEvents /> },
-                  { path: 'events/:eventId', element: <TriggerEvent /> },
-                ],
-              },
+              { index: true, element: <TriggerOverview /> },
+              { path: 'rules', element: <TriggerRules /> },
+              { path: 'rules/:ruleId', element: <TriggerRule /> },
+              { path: 'events', element: <TriggerEvents /> },
+              { path: 'events/:eventId', element: <TriggerEvent /> },
             ],
           },
           { path: ':orgId/settings/slack', element: <Slack /> },
