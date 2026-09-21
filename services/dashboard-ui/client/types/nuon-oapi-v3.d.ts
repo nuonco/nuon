@@ -9562,6 +9562,7 @@ export interface components {
       html_url?: string;
       id?: number;
       name?: string;
+      owner_id?: number;
       private?: boolean;
       updated_at?: string;
     };
