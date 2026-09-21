@@ -5,7 +5,7 @@ import { Card } from '@/components/common/Card'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Expand } from '@/components/common/Expand'
-import { Icon } from '@/components/common/Icon'
+import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
@@ -51,7 +51,7 @@ import type {
 
 // ─── Top-level navigation ────────────────────────────────────────────────────
 
-type TTopTab =
+export type TTopTab =
   | 'overview'
   | 'resources'
   | 'deployments'
@@ -70,7 +70,7 @@ const TOP_TAB_LABELS: Record<TTopTab, string> = {
 
 // ─── Deployments filter state ─────────────────────────────────────────────────
 
-type TDeploymentFilter = {
+export type TDeploymentFilter = {
   search: string
   status: string
   type: 'all' | TDeploymentRecordType
@@ -78,7 +78,7 @@ type TDeploymentFilter = {
   date: string
 }
 
-const DEFAULT_DEPLOYMENT_FILTER: TDeploymentFilter = {
+export const DEFAULT_DEPLOYMENT_FILTER: TDeploymentFilter = {
   search: '',
   status: 'all',
   type: 'all',
@@ -100,7 +100,7 @@ interface IInstallPlaygroundHeader {
   ) => void
 }
 
-const ConfigurationSummaryRow = ({
+export const ConfigurationSummaryRow = ({
   install,
   onNavigate,
 }: IInstallPlaygroundHeader) => {
@@ -262,7 +262,19 @@ interface IInstallStatusCard {
   ) => void
 }
 
-const InstallStatusCard = ({ install, onNavigate }: IInstallStatusCard) => {
+export type TInstallStatusEntry = {
+  id: string
+  label: string
+  iconVariant: TIconVariant
+  status: string
+  statusLabel: string
+  tab: TTopTab
+  opts?: { resourcesTab?: string }
+}
+
+export const getInstallStatusEntries = (
+  install: TPlaygroundInstall
+): TInstallStatusEntry[] => {
   const { deployments, resources } = install
 
   const runningUpdates = deployments.filter(
@@ -316,71 +328,69 @@ const InstallStatusCard = ({ install, onNavigate }: IInstallStatusCard) => {
           ? 'Unhealthy'
           : 'Checking'
 
-  return (
-    <Card className="!p-4 !gap-2" aria-label="Install status summary">
-      <Text variant="body" weight="strong">
-        Status
-      </Text>
+  return [
+    {
+      id: 'deployments',
+      label: 'Deployments',
+      iconVariant: 'ArrowsClockwiseIcon',
+      status: updatesStatus,
+      statusLabel: updatesLabel,
+      tab: 'deployments',
+    },
+    {
+      id: 'resources',
+      label: 'Resources',
+      iconVariant: 'CardsIcon',
+      status: resourcesStatus,
+      statusLabel: resourcesLabel,
+      tab: 'resources',
+      opts: { resourcesTab: 'components' },
+    },
+    {
+      id: 'health',
+      label: 'Health checks',
+      iconVariant: 'PulseIcon',
+      status: healthStatus,
+      statusLabel: healthLabel,
+      tab: 'health',
+    },
+  ]
+}
+
+export const InstallStatusCard = ({
+  install,
+  onNavigate,
+}: IInstallStatusCard) => (
+  <Card className="!p-4 !gap-2" aria-label="Install status summary">
+    <Text variant="body" weight="strong">
+      Status
+    </Text>
+    {getInstallStatusEntries(install).map((entry) => (
       <Button
+        key={entry.id}
         variant="ghost"
         size="sm"
         className="!px-0 w-full justify-between"
-        onClick={() => onNavigate('deployments')}
-        aria-label={`Deployments: ${updatesLabel}. Navigate to deployments.`}
+        onClick={() => onNavigate(entry.tab, entry.opts)}
+        aria-label={`${entry.label}: ${entry.statusLabel}. Navigate to ${entry.label.toLowerCase()}.`}
       >
         <span className="flex items-center gap-1.5">
           <Icon
-            variant="ArrowsClockwiseIcon"
+            variant={entry.iconVariant}
             size={13}
             className="text-cool-grey-400"
           />
           <Text as="span" variant="subtext" weight="strong" theme="neutral">
-            Deployments
+            {entry.label}
           </Text>
         </span>
-        <Status status={updatesStatus} variant="badge">
-          {updatesLabel}
+        <Status status={entry.status} variant="badge">
+          {entry.statusLabel}
         </Status>
       </Button>
-
-      <Button
-        variant="ghost"
-        size="sm"
-        className="!px-0 w-full justify-between"
-        onClick={() => onNavigate('resources', { resourcesTab: 'components' })}
-        aria-label={`Resources: ${resourcesLabel}. Navigate to resources.`}
-      >
-        <span className="flex items-center gap-1.5">
-          <Icon variant="CardsIcon" size={13} className="text-cool-grey-400" />
-          <Text as="span" variant="subtext" weight="strong" theme="neutral">
-            Resources
-          </Text>
-        </span>
-        <Status status={resourcesStatus} variant="badge">
-          {resourcesLabel}
-        </Status>
-      </Button>
-
-      <Button
-        variant="ghost"
-        size="sm"
-        className="!px-0 w-full justify-between"
-        onClick={() => onNavigate('health')}
-        aria-label={`Health checks: ${healthLabel}. Navigate to health checks.`}
-      >
-        <span className="flex items-center gap-1.5">
-          <Icon variant="PulseIcon" size={13} className="text-cool-grey-400" />
-          <Text as="span" variant="subtext" weight="strong" theme="neutral">
-            Health checks
-          </Text>
-        </span>
-        <Status status={healthStatus} variant="badge">
-          {healthLabel}
-        </Status>
-      </Button>
-    </Card>
-  )
-}
+    ))}
+  </Card>
+)
 
 // ─── Install branch tracking card ─────────────────────────────────────────────
 
@@ -450,7 +460,7 @@ const CommitRef = ({
   </div>
 )
 
-const InstallBranchTrackingCard = ({
+export const InstallBranchTrackingCard = ({
   install,
 }: {
   install: TPlaygroundInstall
@@ -671,7 +681,7 @@ const ConfigLagCard = ({ install }: { install: TPlaygroundInstall }) => {
   )
 }
 
-const OverviewTab = ({ install }: { install: TPlaygroundInstall }) => {
+export const OverviewTab = ({ install }: { install: TPlaygroundInstall }) => {
   const hasDrift = install.driftedObjects.length > 0
 
   return (
@@ -914,7 +924,7 @@ interface IDeploymentsTab {
   onFilterChange: (f: TDeploymentFilter) => void
 }
 
-const DeploymentsTab = ({
+export const DeploymentsTab = ({
   install,
   filter,
   onFilterChange,
@@ -1089,7 +1099,7 @@ const DeploymentsTab = ({
 
 // ─── Resources sub-tabs ───────────────────────────────────────────────────────
 
-const StackTab = ({ versions }: { versions: TStackVersion[] }) => (
+export const StackTab = ({ versions }: { versions: TStackVersion[] }) => (
   <div className="flex flex-col gap-2 p-4">
     {versions.map((v, index) => (
       <Card key={v.id} className="!p-4 !gap-4">
@@ -1125,7 +1135,7 @@ const StackTab = ({ versions }: { versions: TStackVersion[] }) => (
   </div>
 )
 
-const SandboxTab = ({ sandbox }: { sandbox?: TSandboxInfo }) => {
+export const SandboxTab = ({ sandbox }: { sandbox?: TSandboxInfo }) => {
   if (!sandbox) {
     return (
       <div className="p-4">
@@ -1186,7 +1196,11 @@ const SandboxTab = ({ sandbox }: { sandbox?: TSandboxInfo }) => {
   )
 }
 
-const ComponentDetail = ({ component }: { component: TComponentEntry }) => (
+export const ComponentDetail = ({
+  component,
+}: {
+  component: TComponentEntry
+}) => (
   <div className="flex flex-col gap-4 p-4">
     <div className="flex items-start justify-between gap-4 flex-wrap">
       <div className="flex flex-col gap-2 min-w-0">
@@ -1255,7 +1269,7 @@ const ComponentDetail = ({ component }: { component: TComponentEntry }) => (
   </div>
 )
 
-const ImageDetail = ({ image }: { image: TImageEntry }) => (
+export const ImageDetail = ({ image }: { image: TImageEntry }) => (
   <div className="flex flex-col gap-4 p-4">
     <div className="flex items-start justify-between gap-4 flex-wrap">
       <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -1299,7 +1313,7 @@ const formatHealthUptime = (
     ? `${uptimePercent.toFixed(2)}%`
     : 'No signal'
 
-const HealthChecksTab = ({
+export const HealthChecksTab = ({
   install,
   onSelectComponent,
 }: {
@@ -1366,7 +1380,7 @@ interface IResourcesTabPanel {
   initialComponentId?: string
 }
 
-const ResourcesTabPanel = ({
+export const ResourcesTabPanel = ({
   install,
   initTab,
   initialComponentId,
@@ -1455,7 +1469,7 @@ const ResourcesTabPanel = ({
 
 // ─── Runbooks (Operations subtab) ─────────────────────────────────────────────
 
-const RunbookDetail = ({ runbook }: { runbook: TRunbookEntry }) => (
+export const RunbookDetail = ({ runbook }: { runbook: TRunbookEntry }) => (
   <div className="flex flex-col gap-4 p-4">
     <div className="flex items-start justify-between gap-4 flex-wrap">
       <div className="flex items-center gap-2 min-w-0">
@@ -1500,7 +1514,7 @@ const RunbookDetail = ({ runbook }: { runbook: TRunbookEntry }) => (
 
 // ─── Operations tab (Actions + Runbooks) ──────────────────────────────────────
 
-const ActionDetail = ({ action }: { action: TActionEntry }) => (
+export const ActionDetail = ({ action }: { action: TActionEntry }) => (
   <div className="flex flex-col gap-4 p-4">
     <div className="flex items-start justify-between gap-4 flex-wrap">
       <div className="flex items-center gap-2 min-w-0">
@@ -1540,7 +1554,11 @@ const ActionDetail = ({ action }: { action: TActionEntry }) => (
   </div>
 )
 
-const PoliciesTab = ({ policies }: { policies: TPolicyReportEntry[] }) => (
+export const PoliciesTab = ({
+  policies,
+}: {
+  policies: TPolicyReportEntry[]
+}) => (
   <div className="flex flex-col gap-2 p-4">
     {policies.map((policy) => (
       <Card key={policy.id} className="!p-4 !gap-0">
@@ -1573,7 +1591,7 @@ const PoliciesTab = ({ policies }: { policies: TPolicyReportEntry[] }) => (
   </div>
 )
 
-const RunnerTab = ({ runner }: { runner: TRunnerInfo }) => (
+export const RunnerTab = ({ runner }: { runner: TRunnerInfo }) => (
   <div className="flex flex-col gap-4 p-4">
     <Card className="!p-4 !gap-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -1646,7 +1664,7 @@ const RunnerTab = ({ runner }: { runner: TRunnerInfo }) => (
   </div>
 )
 
-const OperationsTab = ({
+export const OperationsTab = ({
   operations,
 }: {
   operations: TPlaygroundInstall['operations']
@@ -1726,7 +1744,7 @@ const OperationsTab = ({
 
 // ─── Configuration sub-tabs ───────────────────────────────────────────────────
 
-const ConfigurationVersionFeed = ({
+export const ConfigurationVersionFeed = ({
   versions,
   idPrefix,
 }: {
@@ -1803,7 +1821,7 @@ const ConfigurationVersionFeed = ({
   </div>
 )
 
-const InputsTab = ({
+export const InputsTab = ({
   inputs,
   versions,
 }: {
@@ -1858,7 +1876,7 @@ const InputsTab = ({
   )
 }
 
-const ConfigFileTab = ({
+export const ConfigFileTab = ({
   configFile,
   versions,
 }: {
@@ -1932,7 +1950,11 @@ const ConfigFileTab = ({
   )
 }
 
-const OverridesTab = ({ overrides }: { overrides: TOverrideEntry[] }) => {
+export const OverridesTab = ({
+  overrides,
+}: {
+  overrides: TOverrideEntry[]
+}) => {
   if (overrides.length === 0) {
     return (
       <div className="p-4">
@@ -1978,7 +2000,7 @@ const OverridesTab = ({ overrides }: { overrides: TOverrideEntry[] }) => {
   )
 }
 
-const ConfigurationTabPanel = ({
+export const ConfigurationTabPanel = ({
   install,
   initTab,
 }: {
