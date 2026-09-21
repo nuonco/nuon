@@ -753,6 +753,18 @@ func (s *Signal) findGroupPositionForStep(ctx workflow.Context, stepID string) i
 	return 0
 }
 
+// markResumeRequested arms the parked Execute loop to resume the run at the
+// group containing stepID. Call it last in an update handler: the paused loop
+// acts on the flag the instant it flips, and reads the fields written just
+// above it. The DB lookups in a handler pause it long enough for Execute to
+// run, so setting the flag first means resuming from a stale resumeStartIdx.
+func (s *Signal) markResumeRequested(ctx workflow.Context, runType app.WorkflowRunType, stepID string) {
+	s.resumeRunType = runType
+	s.resumeStepID = stepID
+	s.resumeStartIdx = s.findGroupPositionForStep(ctx, stepID)
+	s.resumeRequested = true
+}
+
 // firstPendingGroupPosition returns the position (index into the ordered group
 // slice) of the first group that still has a non-terminal step, and whether one
 // exists. Resident hosts use it to (a) start a rewarmed run at the first
