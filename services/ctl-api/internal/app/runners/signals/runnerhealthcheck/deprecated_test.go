@@ -262,14 +262,16 @@ func corpusRunnerForCase(tc runnerHealthCase) *app.Runner {
 		ownerID = "ins_1"
 	}
 	return &app.Runner{
-		ID:          "rnr_1",
-		DisplayName: "Corpus runner",
-		OrgID:       "org_1",
-		Org:         app.Org{Name: "Example org"},
-		Status:      tc.status,
+		ID:                "rnr_1",
+		DisplayName:       "Corpus runner",
+		OrgID:             "org_1",
+		Org:               app.Org{Name: "Example org"},
+		Status:            tc.status,
+		StatusDescription: tc.want.reason,
 		StatusV2: app.CompositeStatus{
-			Status:   app.Status(tc.v2Status),
-			Metadata: tc.metadata,
+			Status:                 app.Status(tc.v2Status),
+			StatusHumanDescription: tc.want.reason,
+			Metadata:               tc.metadata,
 		},
 		RunnerGroupID: "rng_1",
 		RunnerGroup: app.RunnerGroup{
@@ -348,15 +350,14 @@ func TestOldRunnerHealthcheckCorpus(t *testing.T) {
 				Run(func(args mock.Arguments) {
 					req, ok := argOf[runneractivities.UpdateStatusRequest](args)
 					require.True(t, ok)
+					if runner.Status == req.Status &&
+						runner.StatusDescription == req.StatusDescription &&
+						runner.StatusV2.Status == app.Status(req.Status) &&
+						runner.StatusV2.StatusHumanDescription == req.StatusDescription {
+						return
+					}
 					got.legacyStatus = runnerStatusPtr(req.Status)
 					got.legacyReason = req.StatusDescription
-				}).
-				Return(nil)
-
-			env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
-				Run(func(args mock.Arguments) {
-					req, ok := argOf[statusactivities.UpdateRunnerStatusV2Request](args)
-					require.True(t, ok)
 					got.v2Status = runnerStatusPtr(req.Status)
 					got.v2Reason = req.StatusDescription
 				}).
@@ -391,10 +392,14 @@ func TestOldRunnerHealthcheckCorpus(t *testing.T) {
 				v2Status:       tc.want.v2Status,
 				alert:          tc.want.alert,
 			}
-			if tc.want.legacyStatus != nil {
+			if tc.want.legacyStatus != nil || tc.want.v2Status != nil {
+				target := tc.want.legacyStatus
+				if target == nil {
+					target = tc.want.v2Status
+				}
+				want.legacyStatus = target
+				want.v2Status = target
 				want.legacyReason = tc.want.reason
-			}
-			if tc.want.v2Status != nil {
 				want.v2Reason = tc.want.reason
 			}
 			if tc.want.alert {
