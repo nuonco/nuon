@@ -689,139 +689,24 @@ const MiniArch = ({ live = false }: { live?: boolean }) => (
   </div>
 )
 
-// What Nuon BYOC puts in the vendor's account (docs/guides/byoc.mdx and
-// self-hosted.mdx — same software: dashboard-ui, ctl-api, build runner;
-// Temporal/Postgres/ClickHouse behind them).
-const NUON_PARTS: { icon: TIconVariant; label: string }[] = [
-  { icon: 'CpuIcon', label: 'Control plane' },
-  { icon: 'GlobeIcon', label: 'Dashboard' },
-  { icon: 'PackageIcon', label: 'Build runner' },
-]
-
-const DEMO_REQUEST = 'https://nuon.co/demo-request'
-
-// Collapses to zero height when closed so the layout above and below slides
-// instead of jumping. grid-rows is the only height transition that needs no
-// measured pixel value.
-const Reveal = ({ open, children, className }: { open: boolean; children: ReactNode; className?: string }) => (
-  <div
-    className={cn(
-      'grid transition-[grid-template-rows,opacity,transform,visibility] duration-500 ease-out',
-      open ? 'visible grid-rows-[1fr] opacity-100 translate-y-0' : 'invisible grid-rows-[0fr] opacity-0 translate-y-3',
-      className
-    )}
-    aria-hidden={!open}
-  >
-    <div className="overflow-hidden">{children}</div>
-  </div>
-)
-
-// Levels. Hosted: your app template → Nuon (the mark on the connector) → the
-// customer's account. BYOC: "Your cloud environment" grows around everything, and
-// inside it a "Nuon BYOC" frame grows around the template — Nuon takes the template
-// and deploys it, so the template sits inside Nuon, which sits inside your account.
-const IntroDiagram = ({ selfHosted = false }: { selfHosted?: boolean }) => (
+// Your app template → Nuon (the mark on the connector) → the customer's account.
+// Static: the "Operating Nuon on your cloud" toggle and its BYOC view were
+// removed 2026-09-21; that positioning moves to nuon.co.
+const IntroDiagram = () => (
   <div className="flex flex-col gap-3">
-    <div
-      className={cn(
-        'flex flex-col rounded-xl transition-all duration-500 ease-out',
-        selfHosted
-          ? 'gap-3 p-4 bg-neutral-50 dark:bg-neutral-900/60 ring-2 ring-neutral-400 dark:ring-neutral-500'
-          : 'gap-0 p-0 bg-transparent ring-0 ring-transparent'
-      )}
-    >
-      <Reveal open={selfHosted}>
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pb-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Icon variant="BuildingsIcon" size={20} weight="fill" theme="neutral" />
-            <Text variant="body" weight="strong">
-              Your cloud environment
-            </Text>
-          </div>
-          <div className="flex items-center gap-2">
-            <Icon variant="AWSColor" size={18} />
-            <Icon variant="GCPColor" size={16} />
-            <Icon variant="AzureColor" size={16} />
-          </div>
-        </div>
-      </Reveal>
-
-      {/* Nuon BYOC frame: nothing in the hosted view, a bordered box around the
-          template in BYOC. Ring, not border — the global border-color rule would
-          paint a transparent border grey. */}
-      <div
-        className={cn(
-          'flex flex-col rounded-lg transition-all duration-500 ease-out',
-          selfHosted
-            ? 'gap-3 p-4 bg-background ring-1 ring-neutral-200 dark:ring-neutral-700 shadow-sm'
-            : 'gap-0 p-0 bg-transparent ring-1 ring-transparent shadow-none'
-        )}
-      >
-        <Reveal open={selfHosted}>
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <div className="flex items-center gap-2">
-                <NuonMark className="h-5 w-auto text-neutral-900 dark:text-white" />
-                <Text variant="base" weight="strong">
-                  Nuon BYOC
-                </Text>
-              </div>
-              <Text variant="subtext" theme="neutral">
-                List no subprocessors on your BYOC deals
-              </Text>
-            </div>
-            <div className="flex flex-wrap items-center gap-y-2">
-              {NUON_PARTS.map((part, index) => (
-                <div key={part.label} className="flex items-center">
-                  {index > 0 ? <span className="h-px w-4 bg-neutral-200 dark:bg-neutral-600" aria-hidden /> : null}
-                  <div className="flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1.5">
-                    <Icon variant={part.icon} size={14} theme="neutral" />
-                    <Text variant="subtext" weight="strong">
-                      {part.label}
-                    </Text>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-
-        <div className="flex flex-col gap-3 rounded-lg border bg-background p-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Icon variant="GitBranchIcon" size={18} theme="neutral" />
-            <Text variant="base" weight="strong">
-              Your app template
-            </Text>
-          </div>
-          <MiniArch />
-        </div>
+    <div className="flex flex-col gap-3 rounded-lg border bg-background p-4 shadow-sm">
+      <div className="flex items-center gap-2">
+        <Icon variant="GitBranchIcon" size={18} theme="neutral" />
+        <Text variant="base" weight="strong">
+          Your app template
+        </Text>
       </div>
+      <MiniArch />
     </div>
 
-    {/* The mark leaves the connector as the Nuon box above grows in: one thing moving, not two things swapping. */}
     <div className="flex items-center justify-center gap-3 py-1">
-      <span
-        data-intro-mark="connector"
-        className={cn(
-          'flex overflow-hidden transition-all duration-500 ease-out',
-          selfHosted ? 'invisible w-0 -translate-y-8 scale-50 opacity-0' : 'visible w-7 translate-y-0 scale-100 opacity-100'
-        )}
-        aria-hidden={selfHosted}
-      >
-        <NuonMark className="h-7 w-auto text-neutral-900 dark:text-white" />
-      </span>
+      <NuonMark className="h-7 w-auto text-neutral-900 dark:text-white" />
       <Icon variant="ArrowDownIcon" size={24} weight="bold" theme="neutral" />
-      <span
-        className={cn(
-          'transition-all duration-500 ease-out',
-          selfHosted ? 'visible max-w-xs opacity-100' : 'invisible max-w-0 opacity-0 overflow-hidden'
-        )}
-        aria-hidden={!selfHosted}
-      >
-        <Text variant="subtext" theme="neutral" className="whitespace-nowrap">
-          Deployed from your account
-        </Text>
-      </span>
     </div>
 
     {/* Offset rings behind the account stand in for "every customer". The
@@ -870,12 +755,7 @@ const IntroDiagram = ({ selfHosted = false }: { selfHosted?: boolean }) => (
   </div>
 )
 
-const IntroScreen = ({ onStart }: { onStart: () => void }) => {
-  // A press button, not a link: pressed shows the BYOC picture, pressing again
-  // plays the transition in reverse. The sales link lives in the panel it opens.
-  const [selfHosted, setSelfHosted] = useState(false)
-
-  return (
+const IntroScreen = ({ onStart }: { onStart: () => void }) => (
   <div className="h-screen flex flex-col bg-background overflow-y-auto">
     <div className="flex justify-between w-full px-6 pt-4">
       <Logo />
@@ -898,57 +778,17 @@ const IntroScreen = ({ onStart }: { onStart: () => void }) => {
           <Text variant="body" theme="neutral">
             Deploys into your customers' AWS, GCP, and Azure accounts.
           </Text>
-          <div className="flex flex-col items-start gap-3">
+          <div>
             <Button variant="primary" size="lg" onClick={onStart}>
               Create your first app template <Icon variant="CaretRightIcon" weight="bold" />
             </Button>
-            {/* Pressed = punched in: inset shadow, tint, a 1px drop. Same secondary
-                variant the segmented controls use, so it reads as one family. */}
-            <Button
-              variant="secondary"
-              size="md"
-              aria-pressed={selfHosted}
-              onClick={() => setSelfHosted((prev) => !prev)}
-              className={cn(
-                'transition-all duration-200',
-                selfHosted &&
-                  '!bg-primary-50 dark:!bg-primary-950/40 !shadow-[inset_0_2px_3px_rgba(0,0,0,0.14)] translate-y-px'
-              )}
-            >
-              <Icon variant="BuildingsIcon" size={14} />
-              Operating Nuon on your cloud
-              <span
-                className={cn('flex transition-transform duration-300', selfHosted && 'rotate-90')}
-                aria-hidden
-              >
-                <Icon variant="CaretRightIcon" size={14} weight="bold" />
-              </span>
-            </Button>
           </div>
-          <Reveal open={selfHosted}>
-            <div className="flex flex-col gap-2 rounded-md border p-4">
-              <div className="flex items-center gap-2">
-                <NuonMark className="h-4 w-auto text-neutral-900 dark:text-white" />
-                <Text variant="body" weight="strong">
-                  Nuon BYOC
-                </Text>
-              </div>
-              <Text variant="subtext" theme="neutral">
-                The same Nuon account you are creating here, but hosted by you, managed and supported
-                by us.
-              </Text>
-              <Link href={DEMO_REQUEST} isExternal textVariant="subtext">
-                Contact sales for more
-              </Link>
-            </div>
-          </Reveal>
         </div>
-        <IntroDiagram selfHosted={selfHosted} />
+        <IntroDiagram />
       </div>
     </div>
   </div>
-  )
-}
+)
 
 // --- Step 1: the fork --------------------------------------------------------
 //
