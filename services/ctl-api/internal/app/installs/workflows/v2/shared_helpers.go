@@ -642,6 +642,7 @@ func deployAllComponents(ctx workflow.Context, dg *genCtx, gateRunnerHealthy boo
 
 		step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 			InstallID: dg.installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
 		}, dg.flw.PlanOnly)
 		if err != nil {
 			return nil, err
