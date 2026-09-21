@@ -110,20 +110,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			l.Warn("unable to update runner status v2", "error", err)
 		}
 	} else {
-		runner, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
-		if err != nil {
-			return errors.Wrap(err, "unable to get runner")
-		}
-		if runner.Status == app.RunnerStatusAwaitingInstallStackRun {
-			if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
-				RunnerID:          s.RunnerID,
-				Status:            app.RunnerStatusAwaitingHeartbeat,
-				StatusDescription: "runner install stack was run, waiting for the runner to report in",
-			}); err != nil {
-				return errors.Wrap(err, "unable to update runner status")
-			}
-		}
-
 		var metadata map[string]any
 		if resetRunnerHealth {
 			metadata = map[string]any{app.RunnerOfflineTSMetadataKey: nil}

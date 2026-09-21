@@ -18,7 +18,9 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-func TestProcessInitPreservesStackStartupTransition(t *testing.T) {
+// A process reporting in is itself the heartbeat, so writing "waiting for the
+// runner to report in" first would record a state that was never true.
+func TestProcessInitGoesStraightToActive(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
 	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
@@ -31,22 +33,11 @@ func TestProcessInitPreservesStackStartupTransition(t *testing.T) {
 			Status: app.StatusPending,
 		},
 	}
-	runner := &app.Runner{
-		ID:     sig.RunnerID,
-		Status: app.RunnerStatusAwaitingInstallStackRun,
-		StatusV2: app.CompositeStatus{
-			Status: app.Status(app.RunnerStatusAwaitingInstallStackRun),
-		},
-	}
-
 	env.OnActivity((*activities.Activities).GetRunnerProcess, mock.Anything, mock.Anything, mock.Anything).
 		Return(process, nil).
 		Once()
 	env.OnActivity((*activities.Activities).UpdateRunnerProcessStatus, mock.Anything, mock.Anything, mock.Anything).
 		Return(process, nil).
-		Once()
-	env.OnActivity((*activities.Activities).Get, mock.Anything, mock.Anything, mock.Anything).
-		Return(runner, nil).
 		Once()
 	var transitions []activities.UpdateStatusRequest
 	env.SetOnActivityStartedListener(func(info *activity.Info, _ context.Context, args converter.EncodedValues) {
@@ -59,7 +50,7 @@ func TestProcessInitPreservesStackStartupTransition(t *testing.T) {
 	})
 	env.OnActivity((*activities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil).
-		Twice()
+		Once()
 	env.OnActivity((*activities.Activities).GetStaleRunnerProcesses, mock.Anything, mock.Anything, mock.Anything).
 		Return([]app.RunnerProcess{}, nil).
 		Once()
@@ -70,11 +61,6 @@ func TestProcessInitPreservesStackStartupTransition(t *testing.T) {
 
 	require.NoError(t, env.GetWorkflowError())
 	require.Equal(t, []activities.UpdateStatusRequest{
-		{
-			RunnerID:          sig.RunnerID,
-			Status:            app.RunnerStatusAwaitingHeartbeat,
-			StatusDescription: "runner install stack was run, waiting for the runner to report in",
-		},
 		{
 			RunnerID:          sig.RunnerID,
 			Status:            app.RunnerStatusActive,
