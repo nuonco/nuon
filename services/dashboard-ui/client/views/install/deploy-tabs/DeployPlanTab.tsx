@@ -1,10 +1,12 @@
 import { useOutletContext } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Plan } from '@/components/approvals/Plan'
-import { HelmDiff } from '@/components/approvals/plan-diffs/helm/HelmDiff'
-import { KubernetesDiff } from '@/components/approvals/plan-diffs/kubernetes/KubernetesDiff'
-import { PulumiDiff } from '@/components/approvals/plan-diffs/pulumi/PulumiDiff'
-import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
+import {
+  HelmDiff,
+  KubernetesDiff,
+  PulumiDiff,
+  TerraformDiff,
+} from '@/components/diffs/plan-diff-switch'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Skeleton } from '@/components/common/Skeleton'
 import { PageTitle } from '@/components/navigation/PageTitle'

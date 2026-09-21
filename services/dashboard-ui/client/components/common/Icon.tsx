@@ -1,4 +1,4 @@
-import { ComponentProps, ElementType } from 'react'
+import { ElementType } from 'react'
 import { FaAws, FaGithub } from 'react-icons/fa'
 import {
   SiAwslambda,
@@ -194,8 +194,11 @@ import {
   XCircleIcon,
   XLogoIcon,
   ArrowElbowDownLeftIcon,
+  ArrowsHorizontalIcon,
   ArrowsInLineVerticalIcon,
   ArrowsOutLineVerticalIcon,
+  SquareSplitHorizontalIcon,
+  SquareSplitVerticalIcon,
   BellSlashIcon,
   ClockCountdownIcon,
   CornersInIcon,
@@ -412,8 +415,11 @@ const phosphorIcons = {
   XCircleIcon,
   XLogoIcon,
   ArrowElbowDownLeftIcon,
+  ArrowsHorizontalIcon,
   ArrowsInLineVerticalIcon,
   ArrowsOutLineVerticalIcon,
+  SquareSplitHorizontalIcon,
+  SquareSplitVerticalIcon,
   BellSlashIcon,
   ClockCountdownIcon,
   CornersInIcon,
