@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownsyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -35,15 +36,27 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 
 	sg := newStepGroup(flw)
 	dg := newGenCtx(sg, flw, installID, appCfg, awData)
-	steps, err := teardownComponents(ctx, dg, install)
+	steps, err := teardownComponents(ctx, dg, install, true)
 	if err != nil {
 		return nil, err
 	}
 	return sg.Result(steps), nil
 }
 
-func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install) ([]*app.WorkflowStep, error) {
+func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install, gateRunnerHealthy bool) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
+
+	if gateRunnerHealthy {
+		dg.sg.nextGroupEager()
+		step, err := dg.sg.installSignalStep(ctx, install.ID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: install.ID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, dg.flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	}
 
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreTeardownAllComponents)
 	if err != nil {
