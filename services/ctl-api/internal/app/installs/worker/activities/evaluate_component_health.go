@@ -65,27 +65,34 @@ type EvaluateComponentHealthResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 60s
 // @by-field InstallID
-func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateComponentHealthRequest) (*EvaluateComponentHealthResponse, error) {
+func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateComponentHealthRequest) (result *EvaluateComponentHealthResponse, err error) {
+	started := time.Now()
+	reason := "load_install"
+	defer func() { a.healthMetrics.record(ctx, started, reason, result, err) }()
 	resp := &EvaluateComponentHealthResponse{}
 
 	var install app.Install
 	if err := a.db.WithContext(ctx).Where(app.Install{ID: req.InstallID}).First(&install).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			reason = "install_missing"
 			resp.Skipped = true
 			return resp, nil
 		}
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
+	reason = "feature_check"
 	enabled, err := a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureComponentHealth)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check component-health feature")
 	}
 	if !enabled {
+		reason = "feature_disabled"
 		resp.Skipped = true
 		return resp, nil
 	}
 
+	reason = "load_components"
 	var installComponents []app.InstallComponent
 	if err := a.db.WithContext(ctx).
 		Preload("Component").
@@ -97,6 +104,7 @@ func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateC
 		return resp, nil
 	}
 
+	reason = "load_observations"
 	now := time.Now()
 	reportsByComponent, err := a.recentComponentHealthReports(ctx, install.OrgID, install.ID, now)
 	if err != nil {
@@ -135,6 +143,7 @@ func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateC
 	priorVerdicts := make([]app.InstallComponentHealthStatus, 0, len(evals))
 	newVerdicts := make([]app.InstallComponentHealthStatus, 0, len(evals))
 
+	reason = "persist_verdicts"
 	for i := range evals {
 		e := &evals[i]
 		priorVerdicts = append(priorVerdicts, e.prior)
