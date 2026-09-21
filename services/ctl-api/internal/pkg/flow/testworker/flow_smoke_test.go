@@ -59,4 +59,9 @@ func (e *FlowTestSuite) TestNoStepsNoSignalErrors() {
 
 	// Should error because there are no steps and no way to generate them
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+
+	// The error is non-retryable, so the handler must exit and leave nothing
+	// pending; a leak here would mean the queue handler never observed the
+	// terminal status.
+	e.assertTemporalDrained(ctx, flw.ID)
 }
