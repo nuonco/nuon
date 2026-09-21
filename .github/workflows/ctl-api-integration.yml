@@ -54,18 +54,18 @@ jobs:
       # trigger step is gated. Keep this true when promoting the check to required,
       # otherwise docs-only PRs would soft-lock on a never-arriving status.
       - name: Skip when draft, bot-merge, or ctl-api is unchanged
-        if: github.event_name != 'workflow_dispatch' && (github.event.pull_request.draft == true || github.triggering_actor.login == 'nuonbot' || steps.filter.outputs['ctl-api'] != 'true')
+        if: github.event_name != 'workflow_dispatch' && (github.event.pull_request.draft == true || github.triggering_actor == 'nuonbot' || steps.filter.outputs['ctl-api'] != 'true')
         run: |
           if [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
             echo "draft PR; skipping integration run until marked ready for review"
-          elif [[ "${{ github.triggering_actor.login }}" == "nuonbot" ]]; then
-            echo "auto-merge-of-main update from ${{ github.triggering_actor.login }}; the merged result is tested by the main-push run"
+          elif [[ "${{ github.triggering_actor }}" == "nuonbot" ]]; then
+            echo "auto-merge-of-main update from ${{ github.triggering_actor }}; the merged result is tested by the main-push run"
           else
             echo "no ctl-api changes in this diff; skipping integration run"
           fi
 
       - name: Trigger the mono integration workflow
-        if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft != true && github.triggering_actor.login != 'nuonbot' && steps.filter.outputs['ctl-api'] == 'true')
+        if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft != true && github.triggering_actor != 'nuonbot' && steps.filter.outputs['ctl-api'] == 'true')
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
         run: |
