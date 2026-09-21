@@ -25,10 +25,10 @@ export const DashboardPreferencesProvider = ({
 }) => {
   const { installsTabAutoEnabled, statusBarAutoEnabled } = useConfig()
   const [isStatusBarEnabled, setIsStatusBarEnabledState] = useState(
-    () => getStatusBarEnabled() ?? !!statusBarAutoEnabled
+    () => getStatusBarEnabled() ?? statusBarAutoEnabled ?? true
   )
   const [isInstallsTabEnabled, setIsInstallsTabEnabledState] = useState(
-    () => getInstallsTabEnabled() ?? !!installsTabAutoEnabled
+    () => getInstallsTabEnabled() ?? installsTabAutoEnabled ?? true
   )
 
   const value = useMemo(
