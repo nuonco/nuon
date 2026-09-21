@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
-import { HelmDiff } from '@/components/approvals/plan-diffs/helm/HelmDiff'
-import { KubernetesDiff } from '@/components/approvals/plan-diffs/kubernetes/KubernetesDiff'
-import { PulumiDiff } from '@/components/approvals/plan-diffs/pulumi/PulumiDiff'
-import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
+import {
+  HelmDiff,
+  KubernetesDiff,
+  PulumiDiff,
+  TerraformDiff,
+} from '@/components/diffs/plan-diff-switch'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Loading } from '@/components/common/Loading'
 import type { TWorkflowStep, TWorkflowStepApprovalType } from '@/types'
