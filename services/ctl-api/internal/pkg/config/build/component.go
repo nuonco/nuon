@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/hasher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
@@ -186,7 +187,7 @@ func ComponentConnectionInputFromConfig(comp *config.Component, componentID, app
 		in.BuildTimeout = comp.Job.BuildTimeout
 		in.DeployTimeout = comp.Job.DeployTimeout
 	default:
-		return ComponentConnectionInput{}, fmt.Errorf("component %q has no type configuration", comp.Name)
+		return ComponentConnectionInput{}, stderr.ErrInvalidRequest{Err: fmt.Errorf("component %q has no type configuration", comp.Name)}
 	}
 
 	return in, nil
