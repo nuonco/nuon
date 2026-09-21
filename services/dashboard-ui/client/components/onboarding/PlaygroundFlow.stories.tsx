@@ -614,34 +614,31 @@ const CLOUD_CONNECT: Record<
   },
 }
 
-const CLOUD_REGIONS: Record<TCloud, { label: string; options: { value: string; label: string }[] }> = {
+// Slugs only. The physical location is what the cloud console shows beside them,
+// and spelled out in a picker it read like prose.
+const CLOUD_REGIONS: Record<TCloud, { label: string; options: string[] }> = {
   aws: {
     label: 'AWS region',
-    options: [
-      { value: 'us-east-1', label: 'us-east-1 — US East (N. Virginia)' },
-      { value: 'us-west-2', label: 'us-west-2 — US West (Oregon)' },
-      { value: 'eu-west-1', label: 'eu-west-1 — Europe (Ireland)' },
-      { value: 'ap-southeast-1', label: 'ap-southeast-1 — Asia Pacific (Singapore)' },
-    ],
+    options: ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1'],
   },
   gcp: {
     label: 'GCP region',
-    options: [
-      { value: 'us-central1', label: 'us-central1 — Iowa' },
-      { value: 'us-east1', label: 'us-east1 — South Carolina' },
-      { value: 'europe-west1', label: 'europe-west1 — Belgium' },
-      { value: 'asia-southeast1', label: 'asia-southeast1 — Singapore' },
-    ],
+    options: ['us-central1', 'us-east1', 'europe-west1', 'asia-southeast1'],
   },
   azure: {
     label: 'Azure location',
-    options: [
-      { value: 'eastus', label: 'eastus — East US' },
-      { value: 'westus2', label: 'westus2 — West US 2' },
-      { value: 'westeurope', label: 'westeurope — West Europe' },
-      { value: 'southeastasia', label: 'southeastasia — Southeast Asia' },
-    ],
+    options: ['eastus', 'westus2', 'westeurope', 'southeastasia'],
   },
+}
+
+const regionOptions = (cloud: TCloud) =>
+  CLOUD_REGIONS[cloud].options.map((value) => ({ value, label: value }))
+
+// The sandbox each cloud lands on, and the repo that provisions it.
+const CLOUD_SANDBOX: Record<TCloud, string> = {
+  aws: 'nuonco/aws-eks-sandbox',
+  gcp: 'nuonco/gcp-gke-sandbox',
+  azure: 'nuonco/azure-aks-sandbox',
 }
 
 const KITCHEN_SINK_REPO = 'https://github.com/nuonco/kitchen-sink'
@@ -1271,11 +1268,11 @@ const FileStubEditor = ({ appName }: { appName: string }) => {
 // on the fork with the example options showing, not deep in one cloud's deploy.
 // Collapsed drawer under the cloud buttons: what the example app is, before
 // anyone picks a cloud. Facts from github.com/nuonco/kitchen-sink README
-// (Helm chart with API, UI, worker on EKS; Pulumi S3 bucket; CI-built images;
+// (Helm chart with API, UI, worker pods; Pulumi S3 bucket; CI-built images;
 // actions, policies, runbooks, app branches). Grid-rows transition so the card
 // grows instead of jumping.
 const EXAMPLE_APP_FACTS = [
-  'Helm chart: API, UI, worker pods on EKS',
+  'Helm chart: API, UI, and worker pods',
   'Pulumi S3 bucket and CI-built images',
   'Actions, policies, runbooks, app branches',
 ]
@@ -1751,7 +1748,25 @@ const STACK_METHODS: Record<TCloud, { name: string; how: string }[]> = {
 // What this install will contain, as a card worth reading: source, sandbox, and
 // components, plus the same three tiers the intro drew. Framing-agnostic — the
 // example and own paths differ only in the facts.
-const InstallSummaryCard = ({ path, appName }: { path: TPath; appName: string }) => {
+// Both repo facts are chips that open the repo; the header link that used to do
+// that job is gone.
+const RepoChip = ({ repo }: { repo: string }) => (
+  <Link href={`https://github.com/${repo}`} isExternal textVariant="subtext">
+    <Badge size="sm" variant="code">
+      {repo}
+    </Badge>
+  </Link>
+)
+
+const InstallSummaryCard = ({
+  path,
+  appName,
+  cloud,
+}: {
+  path: TPath
+  appName: string
+  cloud: TCloud
+}) => {
   const own = path === 'own'
   const facts: { label: string; value: ReactNode }[] = own
     ? [
@@ -1772,39 +1787,25 @@ const InstallSummaryCard = ({ path, appName }: { path: TPath; appName: string })
         { label: 'Components', value: 'api — Helm chart, from components/api.toml' },
       ]
     : [
-        {
-          label: 'Source',
-          value: (
-            <Badge size="sm" variant="code">
-              nuonco/kitchen-sink
-            </Badge>
-          ),
-        },
-        { label: 'Sandbox', value: 'Nuon-managed EKS sandbox' },
+        { label: 'Source', value: <RepoChip repo="nuonco/kitchen-sink" /> },
+        { label: 'Sandbox', value: <RepoChip repo={CLOUD_SANDBOX[cloud]} /> },
         { label: 'Components', value: 'Terraform modules, Helm charts, container images' },
       ]
 
   return (
     <Card className="!gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Icon variant={own ? 'GitBranchIcon' : 'PackageIcon'} size={24} theme="brand" />
-          <div className="flex flex-col">
-            <Text variant="base" weight="strong">
-              {own ? appName : 'Nuon Kitchen Sink app'}
-            </Text>
-            <Text variant="subtext" theme="neutral">
-              {own
-                ? 'Your app template. This is what every install of it will contain.'
-                : 'Everything you can do with Nuon, in one example app.'}
-            </Text>
-          </div>
+      <div className="flex items-center gap-3">
+        <Icon variant={own ? 'GitBranchIcon' : 'PackageIcon'} size={24} theme="brand" />
+        <div className="flex flex-col">
+          <Text variant="base" weight="strong">
+            {own ? appName : 'Nuon Kitchen Sink app'}
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            {own
+              ? 'Your app template. This is what every install of it will contain.'
+              : 'Everything you can do with Nuon, in one example app.'}
+          </Text>
         </div>
-        {own ? null : (
-          <Link href={KITCHEN_SINK_REPO} isExternal textVariant="subtext">
-            View app config
-          </Link>
-        )}
       </div>
       <dl className="grid gap-4 sm:grid-cols-3">
         {facts.map((fact) => (
@@ -1845,7 +1846,7 @@ const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardS
   const cloud = readCloud(sharedData)
   const regions = CLOUD_REGIONS[cloud]
   const appName = path === 'own' ? readAppName(sharedData) : 'Kitchen Sink'
-  const region = (sharedData.region as string | undefined) ?? regions.options[0].value
+  const region = (sharedData.region as string | undefined) ?? regions.options[0]
   const [autoApprove, setAutoApprove] = useState(true)
 
   return (
@@ -1869,7 +1870,7 @@ const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardS
               value={cloud}
               onChange={(value) => {
                 setSharedData('cloud', value)
-                setSharedData('region', CLOUD_REGIONS[value].options[0].value)
+                setSharedData('region', CLOUD_REGIONS[value].options[0])
               }}
               size="md"
               className="self-start"
@@ -1878,7 +1879,7 @@ const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardS
         ) : null}
         <Select
           id="fork-region"
-          options={regions.options}
+          options={regionOptions(cloud)}
           labelProps={{ labelText: regions.label }}
           value={region}
           onChange={(value) => setSharedData('region', value)}
@@ -1891,7 +1892,7 @@ const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardS
         />
       </Card>
 
-      <InstallSummaryCard path={path} appName={appName} />
+      <InstallSummaryCard path={path} appName={appName} cloud={cloud} />
 
       <NextButton label="Create install" onClick={onAdvance} onBack={onGoBack} />
     </div>
@@ -1911,8 +1912,7 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
   const connect = CLOUD_CONNECT[cloud]
   const regions = CLOUD_REGIONS[cloud]
   const appName = path === 'own' ? readAppName(sharedData) : 'Kitchen Sink'
-  const region = (sharedData.region as string | undefined) ?? regions.options[0].value
-  const regionLabel = regions.options.find((option) => option.value === region)?.label ?? region
+  const region = (sharedData.region as string | undefined) ?? regions.options[0]
   const methods = STACK_METHODS[cloud]
 
   const [phase, setPhase] = useState<TStackPhase>('generating')
@@ -1947,7 +1947,7 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
           : `${connect.stackLabel} created`
 
   const status = generating
-    ? `Generating the ${connect.stackLabel} link for ${regionLabel}. About 30 seconds.`
+    ? `Generating the ${connect.stackLabel} link for ${region}. About 30 seconds.`
     : ready
       ? `${connect.stackLabel} link ready for ${region}. From launch to a healthy runner is about 11 minutes — this page updates on its own.`
       : phase === 'waiting'
