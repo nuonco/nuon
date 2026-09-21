@@ -2,11 +2,14 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"gorm.io/gorm"
 
+	"github.com/google/go-github/v50/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
@@ -33,10 +36,7 @@ func (h *Helpers) LookupVCSConnection(ctx context.Context,
 	}
 
 	if err := h.repoAccess(ctx, conn, owner, name); err != nil {
-		return "", stderr.ErrUser{
-			Err:         fmt.Errorf("vcs connection %s cannot access %s/%s: %w", conn.ID, owner, name, err),
-			Description: fmt.Sprintf("please make sure the %s GitHub connection has access to %s/%s", owner, owner, name),
-		}
+		return "", fmt.Errorf("vcs connection %s cannot access %s/%s: %w", conn.ID, owner, name, err)
 	}
 
 	return conn.ID, nil
@@ -54,10 +54,21 @@ func connectionForRepoOwner(owner string, vcsConnections []app.VCSConnection) *a
 func (h *Helpers) repoAccess(ctx context.Context, conn *app.VCSConnection, owner, name string) error {
 	client, err := h.GetVCSConnectionClient(ctx, conn)
 	if err != nil {
+		var notFound stderr.ErrNotFound
+		if errors.As(err, &notFound) {
+			return stderr.ErrUser{Err: err, Description: notFound.Description}
+		}
 		return fmt.Errorf("unable to get client: %w", err)
 	}
 
 	if _, _, err := client.Repositories.Get(ctx, owner, name); err != nil {
+		var ghErr *github.ErrorResponse
+		if errors.As(err, &ghErr) && ghErr.Response != nil && ghErr.Response.StatusCode == http.StatusNotFound {
+			return stderr.ErrUser{
+				Err:         err,
+				Description: fmt.Sprintf("please make sure the %s GitHub connection has access to %s/%s", owner, owner, name),
+			}
+		}
 		return err
 	}
 	return nil

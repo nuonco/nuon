@@ -2,6 +2,7 @@ package syncer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/syncerr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
@@ -28,7 +30,7 @@ func (s *syncer) ensureAction(ctx context.Context, action *config.ActionConfig) 
 		return nil
 	}
 
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to check if action %s exists", action.Name),
 			Err:         err,
@@ -97,6 +99,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 			return sync.SyncErr{
 				Resource:    fmt.Sprintf("action-%s", action.Name),
 				Description: "invalid timeout duration",
+				Err:         err,
 			}
 		}
 		timeout = parsedTimeout
@@ -122,6 +125,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 			return sync.SyncErr{
 				Resource:    fmt.Sprintf("action-%s", action.Name),
 				Description: err.Error(),
+				Err:         err,
 			}
 		}
 
@@ -143,6 +147,8 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 					Where("app_id = ? AND name = ? AND deleted_at = 0", s.appID, trigger.ComponentName).
 					First(&comp).Error; err == nil {
 					componentID = generics.NewNullString(comp.ID)
+				} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+					return sync.SyncInternalErr{Description: fmt.Sprintf("unable to resolve trigger component %q", trigger.ComponentName), Err: err}
 				}
 				// If not found, leave null — the component may not exist
 			}
@@ -174,10 +180,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 				Directory: step.ConnectedRepo.Directory,
 			}, parentApp.Org)
 			if err != nil {
-				return sync.SyncInternalErr{
-					Description: fmt.Sprintf("unable to create connected github vcs config for action %s step %s", action.Name, step.Name),
-					Err:         err,
-				}
+				return syncerr.From(fmt.Sprintf("action-%s", action.Name), fmt.Sprintf("unable to create connected github vcs config for step %s", step.Name), err)
 			}
 		}
 
@@ -188,10 +191,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 				Directory: step.PublicRepo.Directory,
 			})
 			if err != nil {
-				return sync.SyncInternalErr{
-					Description: fmt.Sprintf("unable to create public git vcs config for action %s step %s", action.Name, step.Name),
-					Err:         err,
-				}
+				return syncerr.From(fmt.Sprintf("action-%s", action.Name), fmt.Sprintf("unable to create public git vcs config for step %s", step.Name), err)
 			}
 		}
 
@@ -232,10 +232,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 	if len(action.Dependencies) > 0 {
 		depIDs, err = s.componentHelpers.GetComponentIDsWithDB(ctx, s.db, s.appID, action.Dependencies)
 		if err != nil {
-			return sync.SyncInternalErr{
-				Description: fmt.Sprintf("unable to resolve dependencies for action %s", action.Name),
-				Err:         err,
-			}
+			return syncerr.From(fmt.Sprintf("action-%s", action.Name), "unable to resolve dependencies", err)
 		}
 	}
 
@@ -264,6 +261,8 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		First(&existing).Error; err == nil {
 		// Already exists from a previous attempt — use the existing record
 		awc = existing
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return sync.SyncInternalErr{Description: fmt.Sprintf("unable to look up action workflow config for %s", action.Name), Err: err}
 	} else {
 		res = s.db.WithContext(ctx).Create(&awc)
 		if res.Error != nil {

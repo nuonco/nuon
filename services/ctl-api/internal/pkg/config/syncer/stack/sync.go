@@ -26,6 +26,7 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelpers *appshelpers.Helpers, cf
 		return sync.SyncErr{
 			Resource:    "app-cloudformation-stack",
 			Description: err.Error(),
+			Err:         err,
 		}
 	}
 

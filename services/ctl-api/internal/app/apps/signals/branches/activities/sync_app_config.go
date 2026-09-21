@@ -73,6 +73,8 @@ func (a *Activities) syncRunDeps() syncer.RunDeps {
 		InstallHelpers:   a.installHelpers,
 		VCSHelpers:       a.vcsHelpers,
 		TFClient:         a.tfClient,
+		Metrics:          a.syncMetrics,
+		Logger:           a.l,
 	}
 }
 

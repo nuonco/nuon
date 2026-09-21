@@ -20,14 +20,19 @@ func (s SyncInternalErr) Error() string {
 	return msg
 }
 
+func (s SyncInternalErr) Unwrap() error { return s.Err }
+
 type SyncErr struct {
 	Resource    string
 	Description string
+	Err         error
 }
 
 func (s SyncErr) Error() string {
 	return fmt.Sprintf("unable to sync %s - %s", s.Resource, s.Description)
 }
+
+func (s SyncErr) Unwrap() error { return s.Err }
 
 type SyncAPIErr struct {
 	Resource string
@@ -37,6 +42,8 @@ type SyncAPIErr struct {
 func (s SyncAPIErr) Error() string {
 	return fmt.Sprintf("unable to sync %s - %s", s.Resource, s.Err.Error())
 }
+
+func (s SyncAPIErr) Unwrap() error { return s.Err }
 
 func RejectDockerBuildComponentsForFeature(cfg *config.AppConfig) error {
 	if cfg == nil {
