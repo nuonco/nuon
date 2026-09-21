@@ -32,16 +32,7 @@ func (s *Signal) retryGroupHandler(ctx workflow.Context, req RetryGroupRequest) 
 		return nil, fmt.Errorf("unable to clone group for retry: %w", err)
 	}
 
-	// resumeRequested must be set last. The paused Execute loop acts on this
-	// flag the instant it flips, and reads the fields written just above it.
-	// The DB lookup above pauses this handler long enough for Execute to run,
-	// so setting the flag first means starting the retry from a stale
-	// resumeStartIdx.
-	s.resumeRunType = app.WorkflowRunTypeRetry
-	s.resumeStepID = req.StepID
-	s.resumeStartIdx = s.findGroupPositionForStep(ctx, req.StepID)
-
-	s.resumeRequested = true
+	s.markResumeRequested(ctx, app.WorkflowRunTypeRetry, req.StepID)
 
 	return &RetryGroupResponse{WorkflowID: s.WorkflowID, Retryable: true}, nil
 }

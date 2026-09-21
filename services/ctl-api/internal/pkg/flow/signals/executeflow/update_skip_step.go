@@ -143,15 +143,7 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		}
 	}
 
-	// resumeRequested must be set last. The paused Execute loop acts on this
-	// flag the instant it flips, and reads the fields written just above it.
-	// The DB lookup above pauses this handler long enough for Execute to run,
-	// so setting the flag first means starting the skip from a stale
-	// resumeStartIdx.
-	s.resumeRunType = app.WorkflowRunTypeSkip
-	s.resumeStepID = req.StepID
-	s.resumeStartIdx = s.findGroupPositionForStep(ctx, req.StepID)
-	s.resumeRequested = true
+	s.markResumeRequested(ctx, app.WorkflowRunTypeSkip, req.StepID)
 
 	// Skippable is unconditionally true here: the flow owns this path, so
 	// there is no group response to relay. Non-skippable steps already
