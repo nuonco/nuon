@@ -171,6 +171,7 @@ func (s *appBranchConfigUpdateSuite) SetupTest() {
 		"GetInstallAppConfigVersionDiff":       a.GetInstallAppConfigVersionDiff,
 		"GetActionWorkflows":                   a.GetActionWorkflows,
 		"GetInstallComponentsBatch":            a.GetInstallComponentsBatch,
+		"GetInstallStack":                      a.GetInstallStack,
 	} {
 		s.env.RegisterActivityWithOptions(fn, activity.RegisterOptions{Name: name})
 	}
@@ -212,6 +213,9 @@ func (s *appBranchConfigUpdateSuite) mockActivities(diff *app.InstallConfigDiff,
 		[]*app.InstallActionWorkflow{}, nil)
 	s.env.OnActivity("GetInstallComponentsBatch", mock.Anything, mock.Anything).Return(
 		map[string]*app.InstallComponent{}, nil)
+
+	s.env.OnActivity("GetInstallStack", mock.Anything, mock.Anything).Return(
+		&app.InstallStack{ID: "stk-1"}, nil).Maybe()
 
 	s.env.OnActivity("GetAppGraph", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
@@ -285,6 +289,63 @@ func (s *appBranchConfigUpdateSuite) TestSkipsUnchangedComponents() {
 	)
 
 	s.Equal([]string{"added"}, deployedComponents(result.Steps))
+}
+
+// The stack apply is what brings a replacement runner up, so gating it on the
+// outgoing runner would make an offline runner unrecoverable through this path.
+func (s *appBranchConfigUpdateSuite) TestStackChangeWaitsOnlyAfterTheStackApply() {
+	result := s.run(
+		&app.InstallConfigDiff{
+			StackChanged: true,
+			Changed:      []app.ComponentDiffEntry{{ComponentID: existingCompID}},
+		},
+		[]string{existingCompID},
+	)
+
+	names := stepNames(result.Steps)
+	s.Require().Equal([]int{indexOf(names, runnerHealthyStepName)}, gateIndexes(names))
+	s.Greater(indexOf(names, runnerHealthyStepName), indexOf(names, "await install stack"))
+}
+
+func (s *appBranchConfigUpdateSuite) TestWithoutStackChangeGatesUpFront() {
+	result := s.run(
+		&app.InstallConfigDiff{
+			Changed: []app.ComponentDiffEntry{{ComponentID: existingCompID}},
+		},
+		[]string{existingCompID},
+	)
+
+	names := stepNames(result.Steps)
+	s.Require().Len(gateIndexes(names), 1)
+	s.Equal(-1, indexOf(names, "await install stack"))
+	s.Less(indexOf(names, runnerHealthyStepName), indexOf(names, "sync and plan existing"))
+}
+
+func stepNames(steps []*app.WorkflowStep) []string {
+	names := make([]string, 0, len(steps))
+	for _, step := range steps {
+		names = append(names, step.Name)
+	}
+	return names
+}
+
+func gateIndexes(names []string) []int {
+	var idxs []int
+	for i, name := range names {
+		if name == runnerHealthyStepName {
+			idxs = append(idxs, i)
+		}
+	}
+	return idxs
+}
+
+func indexOf(names []string, want string) int {
+	for i, name := range names {
+		if name == want {
+			return i
+		}
+	}
+	return -1
 }
 
 func deployedComponents(steps []*app.WorkflowStep) []string {

@@ -59,6 +59,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, dg *genCtx, install *app.I
 
 		step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 			InstallID: dg.installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
 		}, dg.flw.PlanOnly)
 		if err != nil {
 			return nil, err

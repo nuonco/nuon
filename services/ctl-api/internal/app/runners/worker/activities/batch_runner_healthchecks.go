@@ -181,64 +181,37 @@ func (a *Activities) activeProcessPresence(ctx context.Context, runnerIDs []stri
 	return presence, nil
 }
 
-// applyRunnerHealthDecision performs the decision's writes in the signal's
-// order: mng metadata, offline_ts arm/clear, legacy status (fail-fast), then
-// status v2.
 func (a *Activities) applyRunnerHealthDecision(ectx context.Context, r *app.Runner, d runnerHealthDecision, now time.Time) error {
+	metadata := make(map[string]any)
 	if d.SetMissingMng != nil {
-		if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ectx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
-			RunnerID: r.ID,
-			Metadata: map[string]any{"missing_mng_process": *d.SetMissingMng},
-		}); err != nil {
-			return fmt.Errorf("unable to update management process status metadata: %w", err)
-		}
+		metadata["missing_mng_process"] = *d.SetMissingMng
 	}
-
 	if d.SetOfflineTS {
-		if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ectx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
-			RunnerID: r.ID,
-			Metadata: map[string]any{app.RunnerOfflineTSMetadataKey: now.Unix()},
-		}); err != nil {
-			return fmt.Errorf("unable to set runner offline metadata: %w", err)
-		}
+		metadata[app.RunnerOfflineTSMetadataKey] = now.Unix()
 	}
 	if d.ClearOfflineTS {
-		if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ectx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
-			RunnerID: r.ID,
-			Metadata: map[string]any{app.RunnerOfflineTSMetadataKey: nil},
-		}); err != nil {
-			return fmt.Errorf("unable to clear runner offline metadata: %w", err)
-		}
+		metadata[app.RunnerOfflineTSMetadataKey] = nil
 	}
 
-	if d.UpdateLegacy {
-		// Guarded write: the decision was computed from a read that may predate
-		// a reconcile marking this runner disabled. Overwriting that would pin
-		// an intentionally-disabled runner to offline, and since the skip
-		// conditions match on status it would never recover.
-		res := a.db.WithContext(ectx).
-			Model(&app.Runner{ID: r.ID}).
-			Where("status <> ?", app.RunnerStatusDisabled).
-			Updates(app.Runner{
-				Status:            d.TargetStatus,
-				StatusDescription: d.Reason,
-			})
-		if res.Error != nil {
-			return fmt.Errorf("unable to update runner status: %w", res.Error)
-		}
-		if res.RowsAffected < 1 {
-			// Runner went disabled under us; leave its status v2 alone too so
-			// the two columns cannot disagree.
-			return nil
-		}
-	}
-	if d.UpdateV2 {
-		if err := a.statusActivities.UpdateRunnerStatusV2(ectx, statusactivities.UpdateRunnerStatusV2Request{
+	if d.TargetStatus != "" {
+		if _, err := a.statusActivities.TransitionRunnerStatus(ectx, statusactivities.TransitionRunnerStatusRequest{
 			RunnerID:          r.ID,
 			Status:            d.TargetStatus,
 			StatusDescription: d.Reason,
+			SkipIfDisabled:    true,
+			Metadata:          metadata,
 		}); err != nil {
-			return fmt.Errorf("unable to update runner status v2: %w", err)
+			return fmt.Errorf("unable to transition runner status: %w", err)
+		}
+		return nil
+	}
+
+	if len(metadata) > 0 {
+		if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ectx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
+			RunnerID: r.ID,
+			Metadata: metadata,
+		}); err != nil {
+			return fmt.Errorf("unable to update runner status metadata: %w", err)
 		}
 	}
 
