@@ -260,6 +260,20 @@ from deployment previews or health-check actions from other actions. Missing rep
 control-plane-generated results and rejected/failed writes are excluded. Process loss
 after persistence can lose the observation; this is not durable completion accounting.
 
+### Runner job lifecycle failures
+
+Workers emit `nuon.runner.job.lifecycle.failures` (counter, failures) after the lifecycle
+error activity persists a job failure reason. Dimensions are `nuon.runner.job.type` and
+`error.type`; unknown values use `other`. Reasons are `no_active_runner`, `runner_disabled`,
+`runner_unhealthy`, `queue_timeout`, `pickup_timeout`, `overall_timeout`,
+`execution_timeout`, `attempts_exhausted`, and `execution_result_missing`.
+
+Counts are successful failure recordings, not unique failed jobs or every retry attempt.
+Repeat activity invocations count again. Missing-result checks that find a result and
+failed persistence produce no observation. Legacy workflows without the lifecycle-error
+activity are excluded. These observations can overlap runner-reported results; do not
+sum the two counters as a total failure count or use their ratio as a failure rate.
+
 ## Export reliability
 
 Metrics are aggregated in memory and exported periodically. There is no persistent
