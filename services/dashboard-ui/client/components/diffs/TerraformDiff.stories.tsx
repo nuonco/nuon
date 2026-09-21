@@ -1,58 +1,64 @@
+import {
+  azureNoOpWithCosmeticDriftPlan,
+  driftDetectedPlan,
+  driftWithChangesAndOutputsPlan,
+  eksClusterCreatePlan,
+  iamRoleWithNestedPolicyPlan,
+  kubectlManifestDeploymentPlan,
+  mixedWithNoOpPlan,
+  noOpAndReadResourcesPlan,
+  rbacArrayNoisePlan,
+  rdsReplacePlan,
+  replaceResourcesPlan,
+  securityGroupUpdatePlan,
+  withPlan,
+} from '@/lib/fixtures/plan-diffs/terraform'
+import { TerraformDiff } from './TerraformDiff'
+
 export default {
   title: 'Diffs/TerraformDiff',
 }
 
-import type { TTerraformPlan } from '@/types'
-import { TerraformDiff } from './TerraformDiff'
-import {
-  driftDetectedPlan,
-  eksClusterCreatePlan,
-  iamRoleWithNestedPolicyPlan,
-  mixedWithNoOpPlan,
-  rdsReplacePlan,
-  securityGroupUpdatePlan,
-} from '@/lib/fixtures/plan-diffs/terraform'
+export const NoPlan = () => <TerraformDiff plan={undefined} />
 
-const plan = (fixture: unknown) => fixture as TTerraformPlan
+export const WithPlan = () => <TerraformDiff plan={withPlan} />
 
-export const NestedIAMPolicy = () => (
-  <div className="p-4">
-    <TerraformDiff plan={plan(iamRoleWithNestedPolicyPlan)} defaultOpen />
-  </div>
+export const IAMRoleWithNestedPolicy = () => (
+  <TerraformDiff plan={iamRoleWithNestedPolicyPlan} />
 )
 
-export const ClusterCreate = () => (
-  <div className="p-4">
-    <TerraformDiff plan={plan(eksClusterCreatePlan)} />
-  </div>
+export const EKSClusterCreate = () => (
+  <TerraformDiff plan={eksClusterCreatePlan} />
 )
 
 export const SecurityGroupUpdate = () => (
-  <div className="p-4">
-    <TerraformDiff plan={plan(securityGroupUpdatePlan)} defaultOpen />
-  </div>
+  <TerraformDiff plan={securityGroupUpdatePlan} />
 )
 
-export const Replace = () => (
-  <div className="p-4">
-    <TerraformDiff plan={plan(rdsReplacePlan)} defaultOpen />
-  </div>
+export const RDSReplace = () => <TerraformDiff plan={rdsReplacePlan} />
+
+export const NoOpAndReadResources = () => (
+  <TerraformDiff plan={noOpAndReadResourcesPlan} />
 )
 
-export const MixedWithNoOp = () => (
-  <div className="p-4">
-    <TerraformDiff plan={plan(mixedWithNoOpPlan)} />
-  </div>
+export const ReplaceResources = () => (
+  <TerraformDiff plan={replaceResourcesPlan} />
 )
 
-export const DriftDetected = () => (
-  <div className="p-4">
-    <TerraformDiff plan={plan(driftDetectedPlan)} />
-  </div>
+export const MixedWithNoOp = () => <TerraformDiff plan={mixedWithNoOpPlan} />
+
+export const RBACArrayNoise = () => <TerraformDiff plan={rbacArrayNoisePlan} />
+
+export const AzureNoOpWithCosmeticDrift = () => (
+  <TerraformDiff plan={azureNoOpWithCosmeticDriftPlan} />
 )
 
-export const NoPlan = () => (
-  <div className="p-4">
-    <TerraformDiff />
-  </div>
+export const DriftDetected = () => <TerraformDiff plan={driftDetectedPlan} />
+
+export const KubectlManifestDeployment = () => (
+  <TerraformDiff plan={kubectlManifestDeploymentPlan} />
+)
+
+export const DriftWithChangesAndOutputs = () => (
+  <TerraformDiff plan={driftWithChangesAndOutputsPlan} />
 )

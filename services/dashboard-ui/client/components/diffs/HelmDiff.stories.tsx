@@ -1,65 +1,60 @@
-export default {
-  title: 'Diffs/HelmDiff',
-}
-
-import type { THelmPlan } from '@/types'
-import { HelmDiff } from './HelmDiff'
 import {
   certManagerInstallPlan,
+  largeDeploymentScatteredChangesPlan,
   largeDeploymentSingleChangePlan,
   longAnnotationsAndEnvVarsPlan,
   mixedHelmPlan,
   nginxIngressUpgradePlan,
+  postgresOperatorUpgradePlan,
+  prometheusStackChangePlan,
+  redisClusterRollbackPlan,
   singleImageTagChangePlan,
   vmagentSingleRemovalPlan,
 } from '@/lib/fixtures/plan-diffs/helm'
+import { HelmDiff } from './HelmDiff'
 
-const plan = (fixture: unknown) => fixture as THelmPlan
+export default {
+  title: 'Diffs/HelmDiff',
+}
 
-export const Mixed = () => (
-  <div className="p-4">
-    <HelmDiff plan={plan(mixedHelmPlan)} defaultOpen />
-  </div>
+export const Default = () => <HelmDiff plan={mixedHelmPlan} />
+
+export const NginxIngressUpgrade = () => (
+  <HelmDiff plan={nginxIngressUpgradePlan} />
 )
 
-export const IngressUpgrade = () => (
-  <div className="p-4">
-    <HelmDiff plan={plan(nginxIngressUpgradePlan)} />
-  </div>
+export const CertManagerInstall = () => (
+  <HelmDiff plan={certManagerInstallPlan} />
 )
 
-export const FreshInstall = () => (
-  <div className="p-4">
-    <HelmDiff plan={plan(certManagerInstallPlan)} />
-  </div>
+export const PostgresOperatorUpgrade = () => (
+  <HelmDiff plan={postgresOperatorUpgradePlan} />
 )
 
-export const SingleImageTagChange = () => (
-  <div className="p-4">
-    <HelmDiff plan={plan(singleImageTagChangePlan)} defaultOpen />
-  </div>
+export const PrometheusStackChange = () => (
+  <HelmDiff plan={prometheusStackChangePlan} />
+)
+
+export const RedisClusterRollback = () => (
+  <HelmDiff plan={redisClusterRollbackPlan} />
+)
+
+export const VmagentSingleRemoval = () => (
+  <HelmDiff plan={vmagentSingleRemovalPlan} />
 )
 
 export const LongAnnotationsAndEnvVars = () => (
-  <div className="p-4">
-    <HelmDiff plan={plan(longAnnotationsAndEnvVarsPlan)} defaultOpen />
-  </div>
+  <HelmDiff plan={longAnnotationsAndEnvVarsPlan} />
 )
 
-export const LargeManifestSingleChange = () => (
-  <div className="p-4">
-    <HelmDiff plan={plan(largeDeploymentSingleChangePlan)} defaultOpen />
-  </div>
+export const SingleImageTagChange = () => (
+  <HelmDiff plan={singleImageTagChangePlan} />
 )
 
-export const SingleRemoval = () => (
-  <div className="p-4">
-    <HelmDiff plan={plan(vmagentSingleRemovalPlan)} defaultOpen />
-  </div>
+export const LargeDeploymentSingleChange = () => (
+  <HelmDiff plan={largeDeploymentSingleChangePlan} />
 )
 
-export const NoPlan = () => (
-  <div className="p-4">
-    <HelmDiff />
-  </div>
+export const LargeDeploymentScatteredChanges = () => (
+  <HelmDiff plan={largeDeploymentScatteredChangesPlan} />
 )

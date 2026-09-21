@@ -7,6 +7,7 @@ import {
   deploymentAfter,
   deploymentBefore,
   longManifest,
+  scatteredManifest,
   terraformAfter,
   terraformBefore,
 } from './__fixtures__/diffs'
@@ -52,6 +53,31 @@ export const LongWithCollapsedContext = () => (
       after={longManifest(6)}
       language="yaml"
       filename="settings.yaml"
+    />
+  </div>
+)
+
+export const Chunking = () => (
+  <div className="p-4">
+    <Diff
+      before={scatteredManifest(false)}
+      after={scatteredManifest(true)}
+      language="yaml"
+      filename="settings.yaml"
+      maxHeight={900}
+    />
+  </div>
+)
+
+export const ChunkingSplit = () => (
+  <div className="p-4">
+    <Diff
+      before={scatteredManifest(false)}
+      after={scatteredManifest(true)}
+      language="yaml"
+      filename="settings.yaml"
+      view="split"
+      maxHeight={900}
     />
   </div>
 )

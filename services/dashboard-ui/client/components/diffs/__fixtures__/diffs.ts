@@ -74,6 +74,22 @@ export const terraformAfter = `resource "aws_iam_role" "service" {
 }
 `
 
+const CHUNK_EDITS = [12, 96, 184, 272] as const
+
+export const scatteredManifest = (edited: boolean) =>
+  [
+    'apiVersion: v1',
+    'kind: ConfigMap',
+    'metadata:',
+    '  name: acme-settings',
+    'data:',
+    ...Array.from({ length: 300 }, (_, index) =>
+      edited && CHUNK_EDITS.includes(index as (typeof CHUNK_EDITS)[number])
+        ? `  key_${index}: "CHANGED-${index}"`
+        : `  key_${index}: "value-${index}"`
+    ),
+  ].join('\n')
+
 export const longManifest = (replicas: number) =>
   [
     'apiVersion: v1',
