@@ -147,7 +147,7 @@ func newSignalStep(ctx workflow.Context, ownerID, ownerType, name string, metada
 			Signal: sig,
 		},
 		Retryable: true,
-		Skippable: true,
+		Skippable: signal.IsSkippable(sig),
 	}
 
 	for _, o := range opts {
