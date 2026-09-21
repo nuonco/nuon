@@ -40,10 +40,12 @@ var (
 	_ signal.Signal                     = (*Signal)(nil)
 	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
 	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
+	_ signal.SignalWithSkippable        = (*Signal)(nil)
 )
 
 func (s *Signal) Type() signal.SignalType { return SignalType }
 func (s *Signal) AutoRetry() bool         { return true }
+func (s *Signal) Skippable() bool         { return false }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
