@@ -4,11 +4,17 @@ import type {
   TPulumiPlan,
   TTerraformPlan,
 } from '@/types'
+import type { TAppConfigDiffSection } from '@/types'
 import { useDashboardPreferences } from '@/hooks/use-dashboard-preferences'
+import {
+  AppConfigDiff as LegacyAppConfigDiff,
+  type IAppConfigDiff,
+} from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import { HelmDiff as LegacyHelmDiff } from '@/components/approvals/plan-diffs/helm/HelmDiff'
 import { KubernetesDiff as LegacyKubernetesDiff } from '@/components/approvals/plan-diffs/kubernetes/KubernetesDiff'
 import { PulumiDiff as LegacyPulumiDiff } from '@/components/approvals/plan-diffs/pulumi/PulumiDiff'
 import { TerraformDiff as LegacyTerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
+import { AppConfigDiff as AppConfigDiffV2 } from './AppConfigDiff'
 import { HelmDiff as HelmDiffV2 } from './HelmDiff'
 import { KubernetesDiff as KubernetesDiffV2 } from './KubernetesDiff'
 import { PulumiDiff as PulumiDiffV2 } from './PulumiDiff'
@@ -45,6 +51,44 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
     <KubernetesDiffV2 plan={plan} />
   ) : (
     <LegacyKubernetesDiff plan={plan} />
+  )
+}
+
+export const AppConfigDiff = ({
+  sections,
+  summary,
+  isLoading,
+  defaultSectionsOpen,
+  focus,
+  presentation,
+  embedded,
+}: IAppConfigDiff) => {
+  const { diffViewer } = useDashboardPreferences()
+
+  const legacyOnly =
+    !!focus || !!embedded || (presentation && presentation !== 'diff')
+
+  if (diffViewer === 'v2' && !legacyOnly) {
+    return (
+      <AppConfigDiffV2
+        sections={sections as TAppConfigDiffSection[]}
+        summary={summary}
+        loading={isLoading}
+        defaultSectionsOpen={defaultSectionsOpen}
+      />
+    )
+  }
+
+  return (
+    <LegacyAppConfigDiff
+      sections={sections}
+      summary={summary}
+      isLoading={isLoading}
+      defaultSectionsOpen={defaultSectionsOpen}
+      focus={focus}
+      presentation={presentation}
+      embedded={embedded}
+    />
   )
 }
 
