@@ -811,6 +811,11 @@ const DOCS_MCP = 'https://docs.nuon.co/guides/agents/mcp-walkthrough'
 const CLI_SETUP = 'brew install nuonco/tap/nuon\nnuon auth login'
 const MCP_ADD_CLAUDE = 'claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes'
 const DOCS_CONFIG_FILES = 'https://docs.nuon.co/configuration-files'
+const AWS_QUICK_CREATE_DOCS =
+  'https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stacks-quick-create-links.html'
+const AZURE_DEPLOY_BUTTON_DOCS =
+  'https://learn.microsoft.com/en-us/azure/azure-resource-manager/templates/deploy-to-azure-button'
+const GCP_INFRA_MANAGER_DOCS = 'https://cloud.google.com/infrastructure-manager/docs'
 const GIT_PUSH = (app: string) => `git add ${app}\ngit commit -m "Add Nuon app template"\ngit push origin main`
 const VSCODE_EXTENSION = 'https://marketplace.visualstudio.com/items?itemName=Nuon.nuon-lsp'
 // The one layout we show: config at the root of the connected repo, the way every
@@ -1682,8 +1687,8 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
             </Text>
           </div>
           <Text variant="body" theme="neutral">
-            Pre-wired with Terraform, Helm, images, and manifests. Deploy it to your cloud account
-            just like your customers would deploy your app.
+            Pre-wired with Terraform, Helm, images, manifests. Deploy it to your cloud account just
+            like your customers would deploy your app.
           </Text>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -1842,6 +1847,7 @@ const InstallSummaryCard = ({
 // Settings and the app, nothing else. "Create install" is the moment the install
 // exists; the stack link starts generating on the next step.
 const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
+  const { choose } = useForkChoice()
   const path = readPath(sharedData)
   const cloud = readCloud(sharedData)
   const regions = CLOUD_REGIONS[cloud]
@@ -1871,6 +1877,7 @@ const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardS
               onChange={(value) => {
                 setSharedData('cloud', value)
                 setSharedData('region', CLOUD_REGIONS[value].options[0])
+                choose({ path, cloud: value })
               }}
               size="md"
               className="self-start"
@@ -1981,9 +1988,11 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
             How your customers create this install
           </Text>
           <Text variant="body" theme="neutral">
-            Nuon renders the install stack in Terraform and in {CLOUD_LABEL[cloud]}'s native format —
-            same resources either way. Your customer creates it with their own credentials; that is how
-            access is granted. You are about to do it the way they would.
+            {cloud === 'gcp'
+              ? 'Nuon renders the install stack in Terraform. Google Cloud has no second format to render it in.'
+              : `Nuon renders the install stack in Terraform and in ${CLOUD_LABEL[cloud]}'s native format — same resources either way.`}{' '}
+            Your customer creates it with their own credentials; that is how access is granted. You are
+            about to do it the way they would.
           </Text>
         </div>
         <ul className="flex flex-col divide-y rounded-md border">
@@ -2476,12 +2485,47 @@ const DEPLOY_STEP: IWizardStepDef = {
   component: DeployStep,
 }
 
+// One console link per cloud, except GCP, which has none. Verified in ctl-api:
+// `stackTemplateLocations` (create_install_stack_version.go) builds a
+// CloudFormation quick-create URL on AWS and a portal custom-deployment URL on
+// Azure, and `InstallStackVersion.QuickLinkURL` is documented as empty on GCP
+// and on Azure installs scoped to a resource group.
+const STACK_STEP_INTRO: Record<TCloud, ReactNode> = {
+  aws: (
+    <>
+      Nuon is generating a{' '}
+      <Link href={AWS_QUICK_CREATE_DOCS} isExternal textVariant="body" className="!inline-flex align-baseline">
+        CloudFormation quick-create link
+      </Link>
+      . This is a common install method for BYOC customers on AWS.
+    </>
+  ),
+  gcp: (
+    <>
+      Nuon is generating the Terraform for your stack. Google Cloud has no one-click console install,
+      so BYOC customers apply it themselves or through{' '}
+      <Link href={GCP_INFRA_MANAGER_DOCS} isExternal textVariant="body" className="!inline-flex align-baseline">
+        Infrastructure Manager
+      </Link>
+      .
+    </>
+  ),
+  azure: (
+    <>
+      Nuon is generating a{' '}
+      <Link href={AZURE_DEPLOY_BUTTON_DOCS} isExternal textVariant="body" className="!inline-flex align-baseline">
+        Deploy to Azure link
+      </Link>
+      . This is a common install method for BYOC customers on Azure.
+    </>
+  ),
+}
+
 const INSTALL_STACK_STEP: IWizardStepDef = {
   id: 'install-stack',
   title: 'Create the install stack',
   navLabel: 'Stack',
-  description:
-    'Nuon is generating your stack link — about 30 seconds. While it does, here is how a customer would create the stack.',
+  description: STACK_STEP_INTRO.aws,
   component: StackStep,
 }
 
@@ -2513,11 +2557,12 @@ const PARKED_INSTALL_STEP: IWizardStepDef = {
 }
 
 const buildForkFlow = (path: TPath, cloud: TCloud): IWizardStepDef[] => {
-  if (path === 'own') return [FORK_STEP, TEMPLATE_STEP, DEPLOY_STEP, INSTALL_STACK_STEP, PROVISION_STEP.own]
+  const stackStep = { ...INSTALL_STACK_STEP, description: STACK_STEP_INTRO[cloud] }
+  if (path === 'own') return [FORK_STEP, TEMPLATE_STEP, DEPLOY_STEP, stackStep, PROVISION_STEP.own]
   return [
     FORK_STEP,
     { ...DEPLOY_STEP, id: `deploy-${cloud}` },
-    { ...INSTALL_STACK_STEP, id: `install-stack-${cloud}` },
+    { ...stackStep, id: `install-stack-${cloud}` },
     { ...PROVISION_STEP.example, id: `example-provision-${cloud}` },
   ]
 }
