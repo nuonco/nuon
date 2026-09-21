@@ -513,10 +513,11 @@ export const Minimal = () => <Playground steps={MINIMAL_FLOW} />
 Minimal.meta = { fullBleed: true }
 
 // ---------------------------------------------------------------------------
-// Fork flow: post-login screen that splits into three paths.
+// Fork flow: post-login screen that splits into two paths.
 //   example → deploy Kitchen Sink into the user's own cloud (stack link, pre-filled inputs)
-//   hosted  → deploy Kitchen Sink into an AWS account Nuon runs (no stack step at all)
 //   own     → connect GitHub, set the app up from the terminal or an MCP agent
+// A third path (Kitchen Sink into an AWS account Nuon runs, no stack step) was
+// removed 2026-09-21 as out of scope; see git history before that date.
 // The steps array is swapped when the fork picks a path; the provider reads
 // `steps` from props on every render so the stepper follows the chosen path.
 // Sep 16 direction (Matt): an intro page sits BEFORE the stepper (one sentence,
@@ -526,7 +527,7 @@ Minimal.meta = { fullBleed: true }
 // ---------------------------------------------------------------------------
 
 type TCloud = 'aws' | 'gcp' | 'azure'
-type TPath = 'example' | 'hosted' | 'own'
+type TPath = 'example' | 'own'
 
 interface IForkChoice {
   path: TPath
@@ -1113,7 +1114,8 @@ const ManualSetup = ({ appName, repo }: { appName: string; repo: string }) => {
         <>
           Point each <Badge size="sm" variant="code">components/*.toml</Badge> at a repo, directory, and
           branch — a Terraform module, Helm chart, Kubernetes manifests, a container image, or a Pulumi
-          program — and pick a sandbox in <Badge size="sm" variant="code">sandbox.toml</Badge>.
+          program — pick a sandbox in <Badge size="sm" variant="code">sandbox.toml</Badge>, and scope the
+          three roles in <Badge size="sm" variant="code">permissions.toml</Badge>.
         </>
       ),
       detail: (
@@ -1246,8 +1248,13 @@ const SETUP_MODES: { value: TSetupMode; label: string }[] = [
 
 // The files Nuon stubs out when the app is named. Which ones are required comes
 // from the `jsonschema:"required"` tags on AppConfig (pkg/config/config.go):
-// version (metadata.toml), runner, sandbox. branch.toml is the app branch Nuon
-// creates behind the scenes, tracking the connected repo (docs/guides/app-branches).
+// version (metadata.toml), runner, sandbox — plus permissions, which has no tag
+// but is enforced by PermissionsConfig.Validate (pkg/config/app_permissions.go:
+// "permissions config is required", then provision/maintenance/deprovision roles).
+// The parser accepts either permissions.toml or a permissions/ directory
+// (pkg/config/parse/dir.go getPermissions); the stub uses the single file.
+// branch.toml is the app branch Nuon creates behind the scenes, tracking the
+// connected repo (docs/guides/app-branches).
 // Components are where the app lives. Contents are placeholders, not a working config.
 interface IAppFileStub {
   name: string
@@ -1280,6 +1287,32 @@ const APP_FILE_STUBS: IAppFileStub[] = [
     required: true,
     snippet: () =>
       'terraform_version = "1.11.3"\n\n[public_repo]\nrepo      = "nuonco/aws-eks-sandbox"\ndirectory = "."\nbranch    = "main"',
+  },
+  {
+    name: 'permissions.toml',
+    purpose: 'The IAM roles Nuon assumes in the customer account — provision, maintenance, deprovision.',
+    badge: 'Required',
+    required: true,
+    snippet: () =>
+      [
+        '[provision_role]',
+        'name        = "{{.nuon.install.id}}-provision"',
+        'description = "Provision the sandbox and components."',
+        '[[provision_role.policies]]',
+        'managed_policy_name = "AdministratorAccess"',
+        '',
+        '[maintenance_role]',
+        'name        = "{{.nuon.install.id}}-maintenance"',
+        'description = "Operate and update components."',
+        '[[maintenance_role.policies]]',
+        'managed_policy_name = "AdministratorAccess"',
+        '',
+        '[deprovision_role]',
+        'name        = "{{.nuon.install.id}}-deprovision"',
+        'description = "Tear the install down."',
+        '[[deprovision_role.policies]]',
+        'managed_policy_name = "AdministratorAccess"',
+      ].join('\n'),
   },
   {
     name: 'branch.toml',
@@ -1617,7 +1650,7 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
           Stubbed by Nuon
         </Badge>
         <Text variant="subtext" theme="neutral">
-          Three required files, the branch that tracks your repo, and components/.
+          Four required files, the branch that tracks your repo, and components/.
         </Text>
       </div>
       {beside ? <FileStubRows appName={appName} /> : <FileStubEditor appName={appName} />}
@@ -1799,18 +1832,7 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
               Deploy to {CLOUD_LABEL[cloud]}
             </Button>
           ))}
-          <Button variant="secondary" size="md" onClick={() => go({ path: 'hosted', cloud: 'aws' })}>
-            <Icon variant="FlaskIcon" size={16} />
-            Use a Nuon-hosted account
-            <Badge size="sm" theme="brand">
-              Fastest
-            </Badge>
-          </Button>
         </div>
-        <Text variant="subtext" theme="neutral">
-          Nuon-hosted. Great way to test out the CLI and product on a real example app — without
-          incurring your own POC cloud costs.
-        </Text>
       </Card>
         </>
       )}
@@ -2202,8 +2224,7 @@ interface IBuildStage {
   duration: string
 }
 
-const accountLabel = (path: TPath, cloud: TCloud) =>
-  path === 'hosted' ? 'an AWS account Nuon runs' : `your ${CLOUD_CONNECT[cloud].accountNoun}`
+const accountLabel = (_path: TPath, cloud: TCloud) => `your ${CLOUD_CONNECT[cloud].accountNoun}`
 
 // Strict linear order; the chain is the explanation for the duration. Copy is
 // cloud-generic on purpose. Facts: the stack owns the network (the sandbox only
@@ -2217,10 +2238,7 @@ const buildStages = (path: TPath, cloud: TCloud, appName: string): IBuildStage[]
     id: 'stack',
     icon: 'ShieldCheckIcon',
     label: 'Install stack',
-    text:
-      path === 'hosted'
-        ? 'Network, runner machine, four roles — provision, deprovision, maintenance, break-glass. Nuon runs it in its own account; nothing for you to do.'
-        : 'Network, runner machine, four roles — provision, deprovision, maintenance, break-glass. The one step you run yourself.',
+    text: 'Network, runner machine, four roles — provision, deprovision, maintenance, break-glass. The one step you run yourself.',
     duration: 'about 10 min',
   },
   {
@@ -2331,11 +2349,7 @@ const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponent
     <div className="flex flex-col gap-6">
       <Card className="!gap-0 !p-4 !flex-row items-center justify-between">
         <div className="flex items-center gap-3">
-          {path === 'hosted' ? (
-            <Icon variant="FlaskIcon" size={24} theme="brand" />
-          ) : (
-            <Icon variant={CLOUD_ICON[cloud]} size={24} />
-          )}
+          <Icon variant={CLOUD_ICON[cloud]} size={24} />
           <div className="flex flex-col">
             <Text variant="base" weight="strong">
               {appName}
@@ -2345,8 +2359,8 @@ const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponent
             </Text>
           </div>
         </div>
-        <Badge size="sm" theme={path === 'hosted' ? 'brand' : 'neutral'}>
-          {path === 'hosted' ? 'Nuon-hosted account' : CLOUD_CONNECT[cloud].accountNoun}
+        <Badge size="sm" theme="neutral">
+          {CLOUD_CONNECT[cloud].accountNoun}
         </Badge>
       </Card>
 
@@ -2356,9 +2370,7 @@ const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponent
             The Nuon install workflow
           </Text>
           <Text variant="body" theme="neutral">
-            {path === 'hosted'
-              ? 'Nuon created the stack in its own account. '
-              : 'Your stack is creating. When it reports back, the runner boots and the workflow takes over. '}
+            Your stack is creating. When it reports back, the runner boots and the workflow takes over.
             This creates all the cloud resources needed (network, VM, cluster) in {where}.
           </Text>
         </div>
@@ -2403,18 +2415,14 @@ const InstallStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentPr
   const liveHeading = isDone
     ? path === 'own'
       ? `${appName} is live`
-      : path === 'hosted'
-        ? 'Kitchen Sink is live in a Nuon-hosted account'
-        : `Kitchen Sink is live in your ${CLOUD_CONNECT[cloud].accountNoun}`
+      : `Kitchen Sink is live in your ${CLOUD_CONNECT[cloud].accountNoun}`
     : `${activeRow.label} — ${activeRow.copy.active}`
 
   return (
     <div className="flex flex-col gap-6">
       <Card className="!gap-0 !p-4 !flex-row items-center justify-between">
         <div className="flex items-center gap-3">
-          {path === 'hosted' ? (
-            <Icon variant="FlaskIcon" size={24} theme="brand" />
-          ) : path === 'own' ? (
+          {path === 'own' ? (
             <Icon variant="CloudIcon" size={24} theme="neutral" />
           ) : (
             <Icon variant={CLOUD_ICON[cloud]} size={24} />
@@ -2438,15 +2446,9 @@ const InstallStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentPr
               <Icon variant="Loading" size={12} /> Provisioning
             </Badge>
           )}
-          {path === 'hosted' ? (
-            <Badge size="sm" theme="brand">
-              Nuon-hosted account
-            </Badge>
-          ) : (
-            <Badge size="sm" theme="neutral">
-              {path === 'own' ? 'Your cloud account' : CLOUD_CONNECT[cloud].accountNoun}
-            </Badge>
-          )}
+          <Badge size="sm" theme="neutral">
+            {path === 'own' ? 'Your cloud account' : CLOUD_CONNECT[cloud].accountNoun}
+          </Badge>
         </div>
       </Card>
 
@@ -2515,16 +2517,12 @@ const DoneStep = ({ sharedData, onAdvance }: IWizardStepComponentProps) => {
   const heading =
     path === 'own'
       ? `${appName} is live`
-      : path === 'hosted'
-        ? 'Kitchen Sink is live in a Nuon-hosted account'
-        : `Kitchen Sink is live in your ${CLOUD_CONNECT[cloud].accountNoun}`
+      : `Kitchen Sink is live in your ${CLOUD_CONNECT[cloud].accountNoun}`
 
   const body =
     path === 'own'
       ? 'Everything is provisioned and ready to go.'
-      : path === 'hosted'
-        ? "Everything is provisioned. Point the CLI at it, or connect your own cloud whenever you're ready."
-        : 'Everything is provisioned. This is the install your customer would be looking at right now.'
+      : 'Everything is provisioned. This is the install your customer would be looking at right now.'
 
   const links: IChoice[] =
     path === 'own'
@@ -2625,13 +2623,6 @@ const PROVISION_STEP: Record<TPath, IWizardStepDef> = {
     description: 'The Nuon install workflow, under the hood.',
     component: ProvisionStep,
   },
-  hosted: {
-    id: 'hosted-provision',
-    title: 'Your install is being created',
-    navLabel: 'Provision',
-    description: 'The Nuon install workflow, under the hood — in an account Nuon runs.',
-    component: ProvisionStep,
-  },
   own: {
     id: 'own-provision',
     title: 'Your install is being created',
@@ -2652,7 +2643,6 @@ const PARKED_INSTALL_STEP: IWizardStepDef = {
 }
 
 const buildForkFlow = (path: TPath, cloud: TCloud): IWizardStepDef[] => {
-  if (path === 'hosted') return [FORK_STEP, PROVISION_STEP.hosted]
   if (path === 'own') return [FORK_STEP, TEMPLATE_STEP, DEPLOY_STEP, INSTALL_STACK_STEP, PROVISION_STEP.own]
   return [
     FORK_STEP,
@@ -3020,8 +3010,6 @@ export const ForkDeployAws = () => (
 )
 ForkDeployAws.meta = { fullBleed: true }
 
-export const ForkNuonSandbox = () => <BranchingPlayground initialPath="hosted" initialStepIndex={1} />
-ForkNuonSandbox.meta = { fullBleed: true }
 
 export const ForkOwnApp = () => <BranchingPlayground initialPath="own" skipIntro expandOwnApp />
 ForkOwnApp.meta = { fullBleed: true }
