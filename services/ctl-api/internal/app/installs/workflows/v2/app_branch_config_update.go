@@ -59,17 +59,23 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 	steps = append(steps, configStep)
 
-	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-		Mode:      awaitrunnerhealthy.ModeRequireActive,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
+	stackChanged := diff != nil && diff.StackChanged
 
-	if diff != nil && diff.StackChanged {
+	// A stack change recycles the runner, so gating on the outgoing one would
+	// block the apply that brings its replacement up.
+	if !stackChanged {
+		sg.nextGroupEager()
+		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	}
+
+	if stackChanged {
 		stackSteps, err := getStackVersionSteps(ctx, sg, installID, flw.PlanOnly)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to generate stack version steps")
