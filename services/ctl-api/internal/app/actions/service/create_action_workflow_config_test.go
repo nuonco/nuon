@@ -414,7 +414,7 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigImageBackedAction
 		validateFunc func(*app.ActionWorkflowConfig)
 	}{
 		{
-			name:       "image set with inline_contents steps and feature enabled succeeds",
+			name:       "image set with inline_contents steps succeeds",
 			actionName: "image-action-enabled",
 			requestFunc: func(appConfigID string) CreateActionWorkflowConfigRequest {
 				return CreateActionWorkflowConfigRequest{
@@ -436,7 +436,7 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigImageBackedAction
 			},
 		},
 		{
-			name:       "image set with command steps and feature enabled succeeds",
+			name:       "image set with command steps succeeds",
 			actionName: "image-action-command",
 			requestFunc: func(appConfigID string) CreateActionWorkflowConfigRequest {
 				return CreateActionWorkflowConfigRequest{
@@ -460,7 +460,7 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigImageBackedAction
 			},
 		},
 		{
-			name:       "image set with a public repo step and feature enabled succeeds",
+			name:       "image set with a public repo step succeeds",
 			actionName: "image-action-repo",
 			requestFunc: func(appConfigID string) CreateActionWorkflowConfigRequest {
 				return CreateActionWorkflowConfigRequest{
