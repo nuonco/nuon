@@ -22,6 +22,7 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		return sync.SyncErr{
 			Resource:    "app-secrets",
 			Description: err.Error(),
+			Err:         err,
 		}
 	}
 
