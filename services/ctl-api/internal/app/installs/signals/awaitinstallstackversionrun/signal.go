@@ -32,8 +32,10 @@ var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
 var _ signal.SignalWithTimeout = (*Signal)(nil)
+var _ signal.SignalWithSkippable = (*Signal)(nil)
 
 func (s *Signal) AutoRetry() bool { return true }
+func (s *Signal) Skippable() bool { return false }
 
 func (s *Signal) Timeout() time.Duration { return maxTimeout }
 
