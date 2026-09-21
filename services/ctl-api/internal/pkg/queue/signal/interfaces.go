@@ -217,6 +217,25 @@ type SignalWithSkipGroup interface {
 	SkipGroup() bool
 }
 
+// SignalWithSkippable is implemented by signals that decide whether a user may
+// skip their step after it fails. Steps are skippable unless the signal says
+// otherwise. Return false for prerequisites the rest of the workflow cannot
+// run without (a runner that never became healthy, a stack that failed to
+// apply); the failure then has to be fixed outside the workflow and the API
+// rejects skip requests instead of resuming past it.
+type SignalWithSkippable interface {
+	Skippable() bool
+}
+
+// IsSkippable reports whether a step created for sig may be skipped by the
+// user once it fails.
+func IsSkippable(sig Signal) bool {
+	if s, ok := sig.(SignalWithSkippable); ok {
+		return s.Skippable()
+	}
+	return true
+}
+
 // ---------------------------------------------------------------------------
 // Step Generation
 // ---------------------------------------------------------------------------
