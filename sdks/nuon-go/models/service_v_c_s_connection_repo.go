@@ -38,6 +38,9 @@ type ServiceVCSConnectionRepo struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// owner id
+	OwnerID int64 `json:"owner_id,omitempty"`
+
 	// private
 	Private bool `json:"private,omitempty"`
 
