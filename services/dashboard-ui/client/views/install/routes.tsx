@@ -54,7 +54,6 @@ import { RunnerJobDetail } from './RunnerJobDetail'
 import { Notebooks } from './Notebooks'
 import { NotebookDetail } from './NotebookDetail'
 import { InstallConfigs } from './InstallConfigs'
-import { SimpleIAGate } from '../SimpleIAGate'
 
 // Legacy install paths redirect to the Updates/History IA. Carry the query string and
 // hash across so deep links like ?panel=<stepId> survive the hop.
@@ -76,15 +75,6 @@ export const installRoutes: RouteObject[] = [
     element: <InstallLayout />,
     children: [
       { path: ':orgId/installs/:installId', element: <Overview /> },
-      {
-        element: <SimpleIAGate />,
-        children: [
-          {
-            path: ':orgId/installs/:installId/activity',
-            element: <History />,
-          },
-        ],
-      },
       {
         path: ':orgId/installs/:installId/components',
         element: <Components />,
