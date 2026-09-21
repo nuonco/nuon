@@ -4,6 +4,7 @@ export default {
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { CodeBlock } from '@/components/common/CodeBlock'
@@ -998,12 +999,14 @@ const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boo
     <div className="flex items-center gap-3">
       {detected ? (
         <Icon variant="CheckCircleIcon" size={20} weight="fill" theme="success" />
+      ) : skipped ? (
+        <Icon variant="WarningIcon" size={20} theme="warn" />
       ) : (
         <Icon variant="Loading" size={20} />
       )}
       <div className="flex flex-col gap-0.5">
         <Text variant="body" weight="strong">
-          {detected ? 'Config detected on main' : skipped ? 'Still watching for your push' : 'Listening for a push'}
+          {detected ? 'Config detected on main' : skipped ? 'Waiting on your first push' : 'Listening for a push'}
         </Text>
         <Text variant="subtext" theme="neutral" flex>
           {detected ? (
@@ -1015,7 +1018,7 @@ const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boo
               synced the default app branch — building your components.
             </>
           ) : skipped ? (
-            <>Carry on. Your components build as soon as the first push lands.</>
+            <>Your components have nothing to deploy until it lands. Nuon keeps watching main.</>
           ) : (
             <>
               Push to
@@ -1032,8 +1035,8 @@ const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boo
         </Text>
       </div>
     </div>
-    <Badge size="sm" theme={detected ? 'success' : 'brand'}>
-      {detected ? 'Synced' : 'Watching'}
+    <Badge size="sm" theme={detected ? 'success' : skipped ? 'warn' : 'brand'}>
+      {detected ? 'Synced' : skipped ? 'Not synced' : 'Watching'}
     </Badge>
   </div>
 )
@@ -1470,7 +1473,6 @@ const OwnAppSetup = ({
             value={appName}
             onChange={(e) => onAppName(e.currentTarget.value)}
             labelProps={{ labelText: 'App template name' }}
-            helperText="Also the name of the directory that holds its config."
             error={showErrors && !named}
             errorMessage="Name your app template to continue."
             autoComplete="off"
@@ -1497,6 +1499,10 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
   const detected = pushTick > 0
   // Persisted so Back from the Deploy step does not re-block the user.
   const skipped = Boolean(sharedData.skippedPush)
+  // Skipping is reversible and not destructive, so COPY_STYLE's modal tiers do
+  // not apply. The cost is stated inline, next to the action, before it is taken.
+  const [confirmSkip, setConfirmSkip] = useState(false)
+  const waitingOnPush = !detected && !skipped
 
   // Back to the fork, collapsed, with the example path selected.
   const exitToExample = () => {
@@ -1564,6 +1570,32 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
         <PushListener repo={repo} detected={detected} skipped={skipped} />
       </Card>
       <ExampleEscapeHatch onExit={exitToExample} />
+      {waitingOnPush && confirmSkip ? (
+        <Banner theme="warn">
+          <div className="flex flex-col gap-2">
+            <Text weight="strong">Nothing deploys until your first push</Text>
+            <Text variant="subtext">
+              Nuon creates the install and provisions the sandbox, but your components have nothing to
+              deploy until a push lands on main.
+            </Text>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setSharedData('skippedPush', true)
+                  setConfirmSkip(false)
+                }}
+              >
+                Continue anyway
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfirmSkip(false)}>
+                Keep waiting
+              </Button>
+            </div>
+          </div>
+        </Banner>
+      ) : null}
       <NextButton
         label="Set up your first install"
         disabled={!detected && !skipped}
@@ -1571,8 +1603,8 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
         onClick={onAdvance}
         onBack={onGoBack}
         secondary={
-          !detected && !skipped ? (
-            <Button variant="ghost" onClick={() => setSharedData('skippedPush', true)}>
+          waitingOnPush && !confirmSkip ? (
+            <Button variant="ghost" onClick={() => setConfirmSkip(true)}>
               Continue without waiting
             </Button>
           ) : null
@@ -2479,9 +2511,10 @@ const TEMPLATE_STEP: IWizardStepDef = {
 
 const DEPLOY_STEP: IWizardStepDef = {
   id: 'deploy',
-  title: 'Set up your first install',
+  title: 'Your app is ready for BYOC',
   navLabel: 'Deploy',
-  description: 'Nothing has touched your account yet. Choose where the install goes.',
+  description:
+    'Now you can test the flow your customer will see. Pick a cloud account you want to test with.',
   component: DeployStep,
 }
 
