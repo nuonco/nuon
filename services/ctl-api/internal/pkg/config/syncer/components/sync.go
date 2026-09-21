@@ -14,6 +14,7 @@ import (
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/syncerr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
 
@@ -25,7 +26,7 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 		return nil
 	}
 
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to check if component %s exists", comp.Name),
 			Err:         err,
@@ -114,10 +115,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 	if len(comp.Dependencies) > 0 {
 		depIDs, err = helpers.GetComponentIDsWithDB(ctx, db, appID, comp.Dependencies)
 		if err != nil {
-			return sync.SyncInternalErr{
-				Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
-				Err:         err,
-			}
+			return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to resolve dependencies", err)
 		}
 	}
 
@@ -147,10 +145,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 		depIDs,
 	)
 	if err != nil {
-		return sync.SyncErr{
-			Resource:    fmt.Sprintf("component-%s", comp.Name),
-			Description: err.Error(),
-		}
+		return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to build component connection input", err)
 	}
 
 	ccc, err := build.ComponentConnection(in)
@@ -158,6 +153,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 		return sync.SyncErr{
 			Resource:    fmt.Sprintf("component-%s", comp.Name),
 			Description: err.Error(),
+			Err:         err,
 		}
 	}
 
@@ -165,6 +161,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 		return sync.SyncErr{
 			Resource:    fmt.Sprintf("component-%s", comp.Name),
 			Description: err.Error(),
+			Err:         err,
 		}
 	}
 
@@ -396,10 +393,7 @@ func resolveVCS(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers,
 			Directory: connected.Directory,
 		}, parentApp.Org)
 		if err != nil {
-			return build.VCS{}, sync.SyncInternalErr{
-				Description: fmt.Sprintf("unable to create connected github vcs config for component %s", comp.Name),
-				Err:         err,
-			}
+			return build.VCS{}, syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to create connected github vcs config", err)
 		}
 		vcs.Github = cfg
 	}
@@ -411,10 +405,7 @@ func resolveVCS(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers,
 			Directory: public.Directory,
 		})
 		if err != nil {
-			return build.VCS{}, sync.SyncInternalErr{
-				Description: fmt.Sprintf("unable to create public git vcs config for component %s", comp.Name),
-				Err:         err,
-			}
+			return build.VCS{}, syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to create public git vcs config", err)
 		}
 		vcs.Public = cfg
 	}
@@ -440,10 +431,7 @@ func EnsureComponentDependencies(ctx context.Context, db *gorm.DB, helpers *comp
 
 	depIDs, err := helpers.GetComponentIDsWithDB(ctx, db, appID, comp.Dependencies)
 	if err != nil {
-		return sync.SyncInternalErr{
-			Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
-			Err:         err,
-		}
+		return syncerr.From(fmt.Sprintf("component-%s", comp.Name), "unable to resolve dependencies", err)
 	}
 
 	if err := helpers.ClearComponentDependenciesWithDB(ctx, db, apiComp.ID); err != nil {
