@@ -124,6 +124,25 @@ func (s *transitionRunnerStatusSuite) TestLegacyDisabledGuardReconcilesNothing()
 	require.False(s.T(), updated)
 }
 
+func (s *transitionRunnerStatusSuite) TestCurrentStatusGuardIsCheckedUnderLock() {
+	runner := s.seedRunner(app.RunnerStatusActive, app.RunnerStatusActive)
+	disabled := app.RunnerStatusDisabled
+
+	updated, err := s.deps.Activities.TransitionRunnerStatus(s.ctx, statusactivities.TransitionRunnerStatusRequest{
+		RunnerID:          runner.ID,
+		Status:            app.RunnerStatusPending,
+		StatusDescription: "runner was re-enabled",
+		OnlyIfStatus:      &disabled,
+	})
+	require.NoError(s.T(), err)
+	require.False(s.T(), updated)
+
+	var got app.Runner
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).First(&got, "id = ?", runner.ID).Error)
+	require.Equal(s.T(), app.RunnerStatusActive, got.Status)
+	require.Equal(s.T(), app.Status(app.RunnerStatusActive), got.StatusV2.Status)
+}
+
 func (s *transitionRunnerStatusSuite) TestMatchingStatusDoesNotGrowHistory() {
 	runner := s.seedRunner(app.RunnerStatusActive, app.RunnerStatusActive)
 

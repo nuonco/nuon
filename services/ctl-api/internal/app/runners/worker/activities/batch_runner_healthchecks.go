@@ -193,7 +193,7 @@ func (a *Activities) applyRunnerHealthDecision(ectx context.Context, r *app.Runn
 		metadata[app.RunnerOfflineTSMetadataKey] = nil
 	}
 
-	if d.UpdateLegacy || d.UpdateV2 {
+	if d.TargetStatus != "" {
 		if _, err := a.statusActivities.TransitionRunnerStatus(ectx, statusactivities.TransitionRunnerStatusRequest{
 			RunnerID:          r.ID,
 			Status:            d.TargetStatus,

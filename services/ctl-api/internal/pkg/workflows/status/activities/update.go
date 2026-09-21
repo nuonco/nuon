@@ -530,6 +530,7 @@ type TransitionRunnerStatusRequest struct {
 	StatusDescription string
 	SkipIfDisabled    bool
 	Metadata          map[string]any
+	OnlyIfStatus      *app.RunnerStatus
 }
 
 func (a *Activities) TransitionRunnerStatus(ctx context.Context, req TransitionRunnerStatusRequest) (bool, error) {
@@ -543,6 +544,9 @@ func (a *Activities) TransitionRunnerStatus(ctx context.Context, req TransitionR
 			return generics.TemporalGormError(err, fmt.Sprintf("unable to get runner %s", req.RunnerID))
 		}
 		if req.SkipIfDisabled && (runner.Status == app.RunnerStatusDisabled || runner.StatusV2.Status == app.Status(app.RunnerStatusDisabled)) {
+			return nil
+		}
+		if req.OnlyIfStatus != nil && runner.Status != *req.OnlyIfStatus {
 			return nil
 		}
 
