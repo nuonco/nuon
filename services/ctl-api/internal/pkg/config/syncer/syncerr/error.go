@@ -12,9 +12,13 @@ func From(resource, description string, err error) error {
 	var userErr stderr.ErrUser
 	var invalidErr stderr.ErrInvalidRequest
 	if errors.As(err, &userErr) || errors.As(err, &invalidErr) {
+		detail := userErr.Description
+		if detail == "" {
+			detail = err.Error()
+		}
 		return sync.SyncErr{
 			Resource:    resource,
-			Description: fmt.Sprintf("%s: %s", description, err),
+			Description: fmt.Sprintf("%s: %s", description, detail),
 			Err:         err,
 		}
 	}
