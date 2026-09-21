@@ -19,12 +19,12 @@ func NewMetrics(provider metric.MeterProvider) *Metrics {
 	if provider == nil {
 		return nil
 	}
-	meter := provider.Meter("github.com/nuonco/nuon/ctl-api/config-sync")
-	attempts, err := meter.Int64Counter("nuon.config.sync.attempts", metric.WithUnit("{attempt}"), metric.WithDescription("Completed stored-config sync invocations, including deferred queue provisioning."))
+	meter := provider.Meter("github.com/nuonco/nuon/ctl-api/app-config-sync")
+	attempts, err := meter.Int64Counter("nuon.app.config.sync.attempts", metric.WithUnit("{attempt}"), metric.WithDescription("Completed stored app-config sync invocations, including deferred queue provisioning."))
 	if err != nil {
 		return nil
 	}
-	duration, err := meter.Float64Histogram("nuon.config.sync.duration", metric.WithUnit("s"), metric.WithDescription("Elapsed time for a stored-config sync invocation."), metric.WithExplicitBucketBoundaries(.1, .5, 1, 5, 15, 30, 60, 120, 300, 600))
+	duration, err := meter.Float64Histogram("nuon.app.config.sync.duration", metric.WithUnit("s"), metric.WithDescription("Elapsed time for a stored app-config sync invocation."), metric.WithExplicitBucketBoundaries(.1, .5, 1, 5, 15, 30, 60, 120, 300, 600))
 	if err != nil {
 		return nil
 	}
@@ -34,7 +34,7 @@ func NewMetrics(provider metric.MeterProvider) *Metrics {
 func (m *Metrics) record(ctx context.Context, start time.Time, stage string, err error) string {
 	outcome := "success"
 	if err != nil {
-		var rejected rejectedSyncError
+		var rejected configsync.SyncErr
 		switch {
 		case ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded):
 			outcome = "cancelled"
@@ -51,17 +51,4 @@ func (m *Metrics) record(ctx context.Context, start time.Time, stage string, err
 		m.duration.Record(ctx, time.Since(start).Seconds(), metric.WithAttributes(attribute.String("outcome", outcome)))
 	}
 	return outcome
-}
-
-type rejectedSyncError struct{ err error }
-
-func (e rejectedSyncError) Error() string { return e.err.Error() }
-func (e rejectedSyncError) Unwrap() error { return e.err }
-
-func verifiedSyncRejection(err error) error {
-	var rejection configsync.SyncErr
-	if errors.As(err, &rejection) {
-		return rejectedSyncError{err: err}
-	}
-	return err
 }

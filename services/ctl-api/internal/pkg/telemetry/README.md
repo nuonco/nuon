@@ -198,19 +198,20 @@ attempt. Successful evaluations have `outcome=success` and `decision=pass|warn|d
 Retries count separately; series are absent until observed. No policy or entity
 IDs, policy contents, or error messages are dimensions. Recording adds no queries.
 
-### Config sync
+### App config sync
 
-Standalone and branch config sync emit metrics when the shared `syncer.Run` returns:
+Standalone and branch app-config sync emit metrics when the shared `syncer.Run` returns:
 
 | Metric | Type | Unit | Dimensions |
 | --- | --- | --- | --- |
-| `nuon.config.sync.attempts` | Counter | attempts | outcome, stage |
-| `nuon.config.sync.duration` | Histogram | seconds | outcome |
+| `nuon.app.config.sync.attempts` | Counter | attempts | outcome, stage |
+| `nuon.app.config.sync.duration` | Histogram | seconds | outcome |
 
 Outcomes are `success`, `rejected`, `error`, or `cancelled` (including deadlines).
 Stages are `load`, `intermediate`, `decode`, `sync_transaction`, or `deferred_queues`;
-success uses `none`. Rejections cover known feature-compatibility and early branch
-validation failures; other failures remain errors.
+success uses `none`. A `sync.SyncErr` from any app-config resource counts as
+`rejected` (invalid configuration, missing references, or unavailable features).
+Operational failures count as `error`; cancellation takes precedence.
 
 Duration includes deferred queue provisioning. Success does not imply downstream
 build or install success. Failure logs include `config_committed` to distinguish

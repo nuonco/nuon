@@ -121,7 +121,7 @@ func (s *syncer) Sync(ctx context.Context) error {
 	}
 	s.orgID = orgID
 	if err := s.validateFeatureCompatibility(ctx); err != nil {
-		return verifiedSyncRejection(err)
+		return err
 	}
 
 	// Initialize state
@@ -200,7 +200,7 @@ func (s *syncer) syncSteps() []syncStep {
 		steps = append(steps, syncStep{
 			Resource: "app-branches",
 			Method: func(ctx context.Context) error {
-				return verifiedSyncRejection(branches.Validate(ctx, s.db, s.cfg, s.appID))
+				return branches.Validate(ctx, s.db, s.cfg, s.appID)
 			},
 		})
 	}
