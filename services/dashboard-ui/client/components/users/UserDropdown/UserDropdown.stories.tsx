@@ -19,10 +19,6 @@ export const Default = () => (
         notificationPermission="default"
         muted={false}
         onToggleMute={() => {}}
-        statusBarEnabled={false}
-        onStatusBarEnabledChange={() => {}}
-        installsTabEnabled={false}
-        onInstallsTabEnabledChange={() => {}}
         onRequestPermission={async () => 'denied'}
         onAddPanel={() => ''}
         onAddToast={() => ''}
@@ -48,10 +44,6 @@ export const Admin = () => (
         notificationPermission="granted"
         muted={false}
         onToggleMute={() => {}}
-        statusBarEnabled
-        onStatusBarEnabledChange={() => {}}
-        installsTabEnabled
-        onInstallsTabEnabledChange={() => {}}
         onRequestPermission={async () => 'granted'}
         onAddPanel={() => ''}
         onAddToast={() => ''}
