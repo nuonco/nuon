@@ -40,7 +40,7 @@ type InstallsHealthResponse struct {
 
 // @ID						GetInstallsHealth
 // @Summary				fleet health summary
-// @Description			Returns the health rollup for every install the caller can see, optionally narrowed by app and by an install label selector. This is the primitive a canary or bake-period rollout polls to decide whether to continue: all_healthy is only true when every counted install is healthy, and installs whose health has never been evaluated are counted separately in unset rather than treated as a pass. Requires the component-health feature.
+// @Description			Returns the health rollup for every install the caller can see, optionally narrowed by app and by an install label selector. This is the primitive a canary or bake-period rollout polls to decide whether to continue: all_healthy is only true when every counted install is healthy, and installs whose health has never been evaluated are counted separately in unset rather than treated as a pass.
 // @Param					app_id	query	string	false	"filter by app ID"
 // @Param					labels	query	string	false	"label filter (key:value,key:value)"
 // @Tags					installs
@@ -58,10 +58,6 @@ type InstallsHealthResponse struct {
 func (s *service) GetInstallsHealth(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := s.requireComponentHealthFeature(ctx, org); err != nil {
 		ctx.Error(err)
 		return
 	}
