@@ -6,10 +6,8 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Expand } from '@/components/common/Expand'
 import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
-import {
-  AppConfigDiff,
-  type DiffSectionData,
-} from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import { type DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import { AppConfigDiff } from '@/components/diffs/plan-diff-switch'
 import { STEP_GUTTER, StepBlock, StepRowList } from '../../shared/StepLayout'
 import { cn } from '@/utils/classnames'
 

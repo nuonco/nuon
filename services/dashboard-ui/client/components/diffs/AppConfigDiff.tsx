@@ -1,0 +1,136 @@
+import { useMemo, type HTMLAttributes } from 'react'
+import type { TAppConfigDiffSection } from '@/types'
+import { cn } from '@/utils/classnames'
+import {
+  APP_CONFIG_DIFF_OPERATIONS,
+  appConfigPlanDiff,
+  type IAppConfigDiffSummary,
+} from '@/lib/diffs/app-config'
+import { Card } from '@/components/common/Card'
+import { Text } from '@/components/common/Text'
+import { usePlanDiffFilter } from './use-plan-diff-filter'
+import { DiffSummary } from './DiffSummary'
+import { DiffFilter } from './DiffFilter'
+import { DiffSection } from './DiffSection'
+import { DiffSections } from './DiffSections'
+import { DiffEmptyState } from './DiffEmptyState'
+
+export interface IAppConfigDiff
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+  sections: TAppConfigDiffSection[]
+  summary: IAppConfigDiffSummary | null
+  loading?: boolean
+  defaultSectionsOpen?: boolean
+}
+
+export const AppConfigDiff = ({
+  sections,
+  summary,
+  loading = false,
+  defaultSectionsOpen,
+  className,
+  ...props
+}: IAppConfigDiff) => {
+  const group = useMemo(
+    () => appConfigPlanDiff(sections, summary),
+    [sections, summary]
+  )
+  const filter = usePlanDiffFilter(group.sections, APP_CONFIG_DIFF_OPERATIONS)
+
+  if (loading) {
+    return (
+      <Card className={cn('flex flex-col gap-3', className)} {...props}>
+        <Text as="h2" variant="h3" loading loadingWidth={18}>
+          App config changes
+        </Text>
+        <Text as="p" variant="body" loading loadingWidth={28}>
+          Loading configuration changes
+        </Text>
+      </Card>
+    )
+  }
+
+  if (!group.sections.length) {
+    return (
+      <Card className={cn('flex flex-col gap-3', className)} {...props}>
+        <Text as="h2" variant="h3">
+          App config changes
+        </Text>
+        <div className="rounded-lg bg-cool-grey-100 dark:bg-dark-grey-800 px-4 py-8 text-center">
+          <Text as="p" variant="body" weight="strong">
+            No config changes
+          </Text>
+          <Text as="p" variant="subtext" theme="neutral">
+            This config matches the previous version.
+          </Text>
+        </div>
+      </Card>
+    )
+  }
+
+  return (
+    <Card className={cn('flex flex-col gap-3', className)} {...props}>
+      <header className="flex flex-wrap items-start justify-between gap-3 px-1">
+        <Text as="h2" variant="h3">
+          {group.title}
+        </Text>
+        <DiffSummary
+          summary={group.summary}
+          operations={APP_CONFIG_DIFF_OPERATIONS}
+        />
+      </header>
+
+      <DiffSections
+        defaultOpen={defaultSectionsOpen}
+        toolbar={
+          <DiffFilter
+            title="config changes"
+            operations={filter.operations}
+            selectedOperations={filter.selectedOperations}
+            selectedCount={filter.selectedCount}
+            totalCount={filter.totalCount}
+            searchValue={filter.searchQuery}
+            searchPlaceholder={group.searchPlaceholder}
+            onSearchChange={filter.setSearchQuery}
+            onOperationToggle={filter.toggleOperation}
+            onOperationOnly={filter.onlyOperation}
+            onReset={filter.reset}
+          />
+        }
+      >
+        {filter.filteredSections.length ? (
+          [
+            ...new Set(filter.filteredSections.map(({ group }) => group)),
+          ].flatMap((sectionGroup) => [
+            <Text
+              key={`group-${sectionGroup}`}
+              as="h3"
+              variant="body"
+              weight="stronger"
+              className="px-1 pt-4 pb-1.5 first:pt-0"
+            >
+              {sectionGroup}
+            </Text>,
+            ...filter.filteredSections
+              .filter(({ group }) => group === sectionGroup)
+              .map((section) => (
+                <DiffSection
+                  key={section.id}
+                  title={section.title}
+                  description={section.description}
+                  operation={section.operation}
+                  before={section.before}
+                  after={section.after}
+                  language={section.language}
+                  filename={section.filename}
+                  error={section.error}
+                />
+              )),
+          ])
+        ) : (
+          <DiffEmptyState />
+        )}
+      </DiffSections>
+    </Card>
+  )
+}
