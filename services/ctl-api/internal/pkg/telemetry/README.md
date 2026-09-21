@@ -121,6 +121,23 @@ attempt. Successful evaluations have `outcome=success` and `decision=pass|warn|d
 (deny takes precedence); evaluator failures have `outcome=error` and bounded
 `error.type=policy_validation|input_validation|deny_evaluation|warn_evaluation`.
 
+### Drift plan evaluation
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.install.drift.plan.evaluation.attempts` | Counter | attempts | target, outcome, decision or error.type |
+
+`CheckNoopPlan` records returned interpretation attempts for component and sandbox
+drift workflows (`target=component|sandbox`). Successful interpretation uses
+`outcome=success` and `decision=drift|no_drift`; failures use `outcome=error|cancelled`
+and `error.type=load_plan|evaluate_plan`. Retries count again.
+
+This measures interpretation of existing plans, not plan generation, persisted drift
+state, or complete drift-check outcomes. Normal deployment previews and older activity
+requests without workflow type are excluded. Skipped checks and failures before plan
+interpretation produce no observation; successful interpretation does not imply that
+later status writes or notifications succeeded.
+
 ### App config sync
 
 Standalone and branch app-config sync emit metrics when the shared `syncer.Run` returns:
