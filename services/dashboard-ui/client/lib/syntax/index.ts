@@ -4,7 +4,7 @@ import {
   type LanguageRegistration,
 } from '@pierre/diffs'
 
-export const LITE_SYNTAX_THEME = 'lite'
+export const SYNTAX_THEME = 'nuon'
 
 const TOKEN_DEFAULTS: Record<string, string> = {
   foreground: 'var(--syntax-plain)',
@@ -64,8 +64,8 @@ export const resolveLanguage = (language?: string): TSyntaxLanguage => {
     if (process.env.NODE_ENV === 'development' && !warned.has(normalized)) {
       warned.add(normalized)
       console.warn(
-        `[lite] Unknown code language "${language}", rendering as plain text. ` +
-          `Add it to SUPPORTED_LANGUAGES in client/lite/syntax if it should highlight.`
+        `Unknown code language "${language}", rendering as plain text. ` +
+          `Add it to SUPPORTED_LANGUAGES in client/lib/syntax if it should highlight.`
       )
     }
     return 'text'
@@ -80,7 +80,7 @@ export const registerSyntax = () => {
   if (registered) return
   registered = true
 
-  registerCustomCSSVariableTheme(LITE_SYNTAX_THEME, TOKEN_DEFAULTS)
+  registerCustomCSSVariableTheme(SYNTAX_THEME, TOKEN_DEFAULTS)
   registerCustomLanguage(
     'rego',
     () =>

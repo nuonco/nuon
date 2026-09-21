@@ -4,7 +4,7 @@ import { WorkerPoolContextProvider } from '@pierre/diffs/react'
 import { ConfigProvider } from '@/providers/config-provider'
 import type { TAPIError } from '@/types'
 import {
-  LITE_SYNTAX_THEME,
+  SYNTAX_THEME,
   registerSyntax,
   SUPPORTED_LANGUAGES,
 } from '@/lib/syntax'
@@ -39,7 +39,7 @@ export const LiteApp = () => (
           <WorkerPoolContextProvider
             poolOptions={{ workerFactory }}
             highlighterOptions={{
-              theme: LITE_SYNTAX_THEME,
+              theme: SYNTAX_THEME,
               langs: [...SUPPORTED_LANGUAGES],
             }}
           >

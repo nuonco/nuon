@@ -14,7 +14,7 @@ import {
   matchNavKeyDown,
 } from '../../utils/code-search'
 import {
-  LITE_SYNTAX_THEME,
+  SYNTAX_THEME,
   registerSyntax,
   resolveLanguage,
 } from '@/lib/syntax'
@@ -142,7 +142,7 @@ export const Diff = ({
 
   const options = useMemo(
     () => ({
-      theme: LITE_SYNTAX_THEME,
+      theme: SYNTAX_THEME,
       disableFileHeader: true,
       disableLineNumbers: !lineNumbers,
       overflow: (wrap ? 'wrap' : 'scroll') as 'wrap' | 'scroll',
