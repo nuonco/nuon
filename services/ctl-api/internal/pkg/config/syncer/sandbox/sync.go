@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/syncerr"
 )
 
 // Sync creates the app sandbox configuration via the shared builder in
@@ -46,10 +47,7 @@ func Sync(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, cfg *
 			Directory: cfg.Sandbox.ConnectedRepo.Directory,
 		}, parentApp.Org)
 		if err != nil {
-			return sync.SyncInternalErr{
-				Description: "unable to create connected github vcs config",
-				Err:         fmt.Errorf("unable to create connected github vcs config: %w", err),
-			}
+			return syncerr.From("app-sandbox", "unable to create connected github vcs config", err)
 		}
 	}
 
@@ -60,10 +58,7 @@ func Sync(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, cfg *
 			Directory: cfg.Sandbox.PublicRepo.Directory,
 		})
 		if err != nil {
-			return sync.SyncInternalErr{
-				Description: "unable to get public git config",
-				Err:         fmt.Errorf("unable to get public git config: %w", err),
-			}
+			return syncerr.From("app-sandbox", "unable to get public git config", err)
 		}
 	}
 
@@ -76,6 +71,7 @@ func Sync(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, cfg *
 		return sync.SyncErr{
 			Resource:    "app-sandbox",
 			Description: err.Error(),
+			Err:         err,
 		}
 	}
 
