@@ -59,7 +59,8 @@ type EvaluateComponentHealthResponse struct {
 // EvaluateComponentHealth derives each install component's debounced health
 // verdict from the runner's recent resource observations in ClickHouse and
 // persists it on the component (health_status / health_status_v2), recording a
-// transition row on every verdict change. No-ops when the install is gone.
+// transition row on every verdict change. No-ops when the org doesn't have the
+// component-health feature or the install is gone.
 //
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 60s
@@ -74,6 +75,15 @@ func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateC
 			return resp, nil
 		}
 		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	enabled, err := a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureComponentHealth)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check component-health feature")
+	}
+	if !enabled {
+		resp.Skipped = true
+		return resp, nil
 	}
 
 	var installComponents []app.InstallComponent

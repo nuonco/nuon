@@ -9,8 +9,25 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
+
+// requireComponentHealthFeature gates the component-health read endpoints the
+// same way GetInstallResources does.
+func (s *service) requireComponentHealthFeature(ctx context.Context, org *app.Org) error {
+	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureComponentHealth)
+	if err != nil {
+		return fmt.Errorf("unable to check component-health feature: %w", err)
+	}
+	if !enabled {
+		return stderr.ErrAuthorization{
+			Err:         fmt.Errorf("component health is not enabled for org %s", org.ID),
+			Description: "The component health feature is not enabled for this organization.",
+		}
+	}
+	return nil
+}
 
 // findInstallComponent resolves :component_id to the install-component that
 // health rows are keyed by. Accepts a catalog component ID first, falling

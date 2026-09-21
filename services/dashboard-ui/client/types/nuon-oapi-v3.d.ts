@@ -1380,7 +1380,7 @@ export interface paths {
   "/v1/installs/health": {
     /**
      * fleet health summary
-     * @description Returns the health rollup for every install the caller can see, optionally narrowed by app and by an install label selector. This is the primitive a canary or bake-period rollout polls to decide whether to continue: all_healthy is only true when every counted install is healthy, and installs whose health has never been evaluated are counted separately in unset rather than treated as a pass.
+     * @description Returns the health rollup for every install the caller can see, optionally narrowed by app and by an install label selector. This is the primitive a canary or bake-period rollout polls to decide whether to continue: all_healthy is only true when every counted install is healthy, and installs whose health has never been evaluated are counted separately in unset rather than treated as a pass. Requires the component-health feature.
      */
     get: operations["GetInstallsHealth"];
   };
@@ -1786,28 +1786,28 @@ export interface paths {
   "/v1/installs/{install_id}/components/{component_id}/health/checks": {
     /**
      * list custom component health checks
-     * @description Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name.
+     * @description Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name. Requires the component-health feature.
      */
     get: operations["GetInstallComponentHealthChecks"];
   };
   "/v1/installs/{install_id}/components/{component_id}/health/checks/{check_name}": {
     /**
      * report a custom component health check
-     * @description Lets an external system (a vendor's CI, a Datadog monitor webhook, a custom action) report a named health signal for a component. The report is written as a resource observation with provider "custom", so it flows through the same live explorer, evaluator, alerting, and timeline as runner-reported resources.
+     * @description Lets an external system (a vendor's CI, a Datadog monitor webhook, a custom action) report a named health signal for a component. The report is written as a resource observation with provider "custom", so it flows through the same live explorer, evaluator, alerting, and timeline as runner-reported resources. Requires the component-health feature.
      */
     put: operations["PutInstallComponentHealthCheck"];
   };
   "/v1/installs/{install_id}/components/{component_id}/health/incident": {
     /**
      * component health incident bundle
-     * @description Returns the most recent degraded/unhealthy transition for the component (whether or not it has since recovered) along with its diagnosis, correlated deploy, and the component's currently non-healthy resources. Returns a null body when there's no incident in the retained history.
+     * @description Returns the most recent degraded/unhealthy transition for the component (whether or not it has since recovered) along with its diagnosis, correlated deploy, and the component's currently non-healthy resources. Returns a null body when there's no incident in the retained history. Requires the component-health feature.
      */
     get: operations["GetInstallComponentHealthIncident"];
   };
   "/v1/installs/{install_id}/components/{component_id}/health/timeline": {
     /**
      * component health timeline
-     * @description Returns a component's health history over a window: recorded verdict transitions (newest first), daily worst-verdict buckets covering every day in the window, and an uptime percentage that excludes unknown time from both the numerator and denominator.
+     * @description Returns a component's health history over a window: recorded verdict transitions (newest first), daily worst-verdict buckets covering every day in the window, and an uptime percentage that excludes unknown time from both the numerator and denominator. Requires the component-health feature.
      */
     get: operations["GetInstallComponentHealthTimeline"];
   };
@@ -1996,21 +1996,21 @@ export interface paths {
   "/v1/installs/{install_id}/health/baseline": {
     /**
      * reset the install's health window
-     * @description Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime.
+     * @description Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime. Requires the component-health feature.
      */
     post: operations["ResetInstallHealthBaseline"];
   };
   "/v1/installs/{install_id}/health/cluster-access": {
     /**
      * refresh the cluster access component health reads through
-     * @description Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute.
+     * @description Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since component health was enabled, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute. Requires the component-health feature.
      */
     post: operations["RefreshInstallHealthClusterAccess"];
   };
   "/v1/installs/{install_id}/health/timeline": {
     /**
      * install health timeline
-     * @description Returns the install's health history aggregated across its components: uptime_percent and observed_seconds are the worst component's, daily[].health is the worst verdict across components for that day, and components lists each component's own current health and uptime.
+     * @description Returns the install's health history aggregated across its components: uptime_percent and observed_seconds are the worst component's, daily[].health is the worst verdict across components for that day, and components lists each component's own current health and uptime. Requires the component-health feature.
      */
     get: operations["GetInstallHealthTimeline"];
   };
@@ -2137,7 +2137,7 @@ export interface paths {
   "/v1/installs/{install_id}/resources": {
     /**
      * live resource explorer for an install
-     * @description Returns the latest observed state of every resource the install's components manage, filterable by component, kind, namespace, health, and provider.
+     * @description Returns the latest observed state of every resource the install's components manage, filterable by component, kind, namespace, health, and provider. Requires the component-health feature.
      */
     get: operations["GetInstallResources"];
   };
@@ -20576,7 +20576,7 @@ export interface operations {
   };
   /**
    * fleet health summary
-   * @description Returns the health rollup for every install the caller can see, optionally narrowed by app and by an install label selector. This is the primitive a canary or bake-period rollout polls to decide whether to continue: all_healthy is only true when every counted install is healthy, and installs whose health has never been evaluated are counted separately in unset rather than treated as a pass.
+   * @description Returns the health rollup for every install the caller can see, optionally narrowed by app and by an install label selector. This is the primitive a canary or bake-period rollout polls to decide whether to continue: all_healthy is only true when every counted install is healthy, and installs whose health has never been evaluated are counted separately in unset rather than treated as a pass. Requires the component-health feature.
    */
   GetInstallsHealth: {
     parameters: {
@@ -23010,7 +23010,7 @@ export interface operations {
   };
   /**
    * list custom component health checks
-   * @description Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name.
+   * @description Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name. Requires the component-health feature.
    */
   GetInstallComponentHealthChecks: {
     parameters: {
@@ -23062,7 +23062,7 @@ export interface operations {
   };
   /**
    * report a custom component health check
-   * @description Lets an external system (a vendor's CI, a Datadog monitor webhook, a custom action) report a named health signal for a component. The report is written as a resource observation with provider "custom", so it flows through the same live explorer, evaluator, alerting, and timeline as runner-reported resources.
+   * @description Lets an external system (a vendor's CI, a Datadog monitor webhook, a custom action) report a named health signal for a component. The report is written as a resource observation with provider "custom", so it flows through the same live explorer, evaluator, alerting, and timeline as runner-reported resources. Requires the component-health feature.
    */
   PutInstallComponentHealthCheck: {
     parameters: {
@@ -23122,7 +23122,7 @@ export interface operations {
   };
   /**
    * component health incident bundle
-   * @description Returns the most recent degraded/unhealthy transition for the component (whether or not it has since recovered) along with its diagnosis, correlated deploy, and the component's currently non-healthy resources. Returns a null body when there's no incident in the retained history.
+   * @description Returns the most recent degraded/unhealthy transition for the component (whether or not it has since recovered) along with its diagnosis, correlated deploy, and the component's currently non-healthy resources. Returns a null body when there's no incident in the retained history. Requires the component-health feature.
    */
   GetInstallComponentHealthIncident: {
     parameters: {
@@ -23174,7 +23174,7 @@ export interface operations {
   };
   /**
    * component health timeline
-   * @description Returns a component's health history over a window: recorded verdict transitions (newest first), daily worst-verdict buckets covering every day in the window, and an uptime percentage that excludes unknown time from both the numerator and denominator.
+   * @description Returns a component's health history over a window: recorded verdict transitions (newest first), daily worst-verdict buckets covering every day in the window, and an uptime percentage that excludes unknown time from both the numerator and denominator. Requires the component-health feature.
    */
   GetInstallComponentHealthTimeline: {
     parameters: {
@@ -24462,7 +24462,7 @@ export interface operations {
   };
   /**
    * reset the install's health window
-   * @description Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime.
+   * @description Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime. Requires the component-health feature.
    */
   ResetInstallHealthBaseline: {
     parameters: {
@@ -24512,7 +24512,7 @@ export interface operations {
   };
   /**
    * refresh the cluster access component health reads through
-   * @description Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute.
+   * @description Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since component health was enabled, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute. Requires the component-health feature.
    */
   RefreshInstallHealthClusterAccess: {
     parameters: {
@@ -24568,7 +24568,7 @@ export interface operations {
   };
   /**
    * install health timeline
-   * @description Returns the install's health history aggregated across its components: uptime_percent and observed_seconds are the worst component's, daily[].health is the worst verdict across components for that day, and components lists each component's own current health and uptime.
+   * @description Returns the install's health history aggregated across its components: uptime_percent and observed_seconds are the worst component's, daily[].health is the worst verdict across components for that day, and components lists each component's own current health and uptime. Requires the component-health feature.
    */
   GetInstallHealthTimeline: {
     parameters: {
@@ -25533,7 +25533,7 @@ export interface operations {
   };
   /**
    * live resource explorer for an install
-   * @description Returns the latest observed state of every resource the install's components manage, filterable by component, kind, namespace, health, and provider.
+   * @description Returns the latest observed state of every resource the install's components manage, filterable by component, kind, namespace, health, and provider. Requires the component-health feature.
    */
   GetInstallResources: {
     parameters: {

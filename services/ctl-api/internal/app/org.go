@@ -69,8 +69,12 @@ const (
 	// (blueprint and administrative stack) on the install stack "await"
 	// step in the dashboard, letting customers provision the Terraform
 	// install stack through Spacelift instead of running Terraform locally.
-	OrgFeatureSpaceliftInstallStacks   OrgFeature = "spacelift-install-stacks"
-	OrgFeatureAWSAccountConnections    OrgFeature = "aws-account-connections"
+	OrgFeatureSpaceliftInstallStacks OrgFeature = "spacelift-install-stacks"
+	OrgFeatureAWSAccountConnections  OrgFeature = "aws-account-connections"
+	// OrgFeatureComponentHealth enables the live component resource explorer:
+	// the runner reports the resources each component manages with per-resource
+	// health, surfaced in the install "Resources" tab.
+	OrgFeatureComponentHealth          OrgFeature = "component-health"
 	OrgFeatureServiceAccountsAndTokens OrgFeature = "service-accounts-and-tokens"
 	// OrgFeaturePhoneHomeAuth requires install phone-home requests to carry an
 	// HMAC signature derived from a per-install secret, and requires a target
@@ -249,6 +253,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureSpaceliftInstallStacks:  false,
 		OrgFeatureOrgRunner:               false,
 		OrgFeatureAWSAccountConnections:   false,
+		OrgFeatureComponentHealth:         false,
 		OrgFeaturePhoneHomeAuth:           false,
 		OrgFeatureRunbookStudio:           false,
 		OrgFeatureCronNamespaceIsolation:  false,
@@ -284,6 +289,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureVersionsUI,
 		OrgFeatureSpaceliftInstallStacks,
 		OrgFeatureAWSAccountConnections,
+		OrgFeatureComponentHealth,
 		OrgFeatureServiceAccountsAndTokens,
 		OrgFeaturePhoneHomeAuth,
 		OrgFeatureRunbookStudio,
@@ -325,6 +331,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureVersionsUI:               "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
 		OrgFeatureSpaceliftInstallStacks:   "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
 		OrgFeatureAWSAccountConnections:    "Enable organization-owned cross-account AWS connections with external ID trust verification.",
+		OrgFeatureComponentHealth:          "Enable the live component resource explorer: the install runner reports the Kubernetes and cloud resources each component manages with per-resource health, surfaced in the install Resources tab.",
 		OrgFeatureServiceAccountsAndTokens: "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
 		OrgFeaturePhoneHomeAuth:            "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
 		OrgFeatureRunbookStudio:            "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",

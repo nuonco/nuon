@@ -75,5 +75,6 @@ export const WithHealth = () => (
     filterActions={<div />}
     pagination={mockPagination}
     isLoading={false}
+    showHealth
   />
 )

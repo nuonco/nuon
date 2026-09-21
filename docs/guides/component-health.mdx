@@ -31,14 +31,17 @@ It's a **separate axis**: Nuon never overwrites deploy status with health or the
   </Card>
 </CardGroup>
 
-## Get started
+## Turn it on
 
 <Steps>
+  <Step title="Ask Nuon to enable it">
+    Component health is behind the `component-health` org feature. Ask us to switch it on for your
+    organization — there's nothing to install and no agent runs in your customers' clusters.
+  </Step>
   <Step title="Deploy, or refresh cluster access">
-    Health reads your customers' clusters using the same access your deploys already use. There's
-    nothing to install and no agent runs in your customers' clusters. An install that hasn't
-    deployed recently needs one deploy — or click **Refresh cluster access** on the install's health
-    card to pick it up immediately.
+    Health reads your customers' clusters using the same access your deploys already use. An install
+    that hasn't deployed since the feature was enabled needs one deploy — or click **Refresh cluster
+    access** on the install's health card to pick it up immediately.
   </Step>
   <Step title="Open the install's Resources tab">
     Within a minute or two you'll see every resource each component manages, with per-resource

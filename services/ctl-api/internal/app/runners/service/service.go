@@ -22,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -45,6 +46,7 @@ type Params struct {
 	RunnerHeartbeatCache *RunnerHeartbeatCache
 	Heartbeater          *heartbeater.Heartbeater
 	Kafka                *kafka.Producer
+	FeaturesClient       *features.Features
 	TemporalClient       temporalclient.Client
 	RunnerJobWake        *RunnerJobWakeRegistry
 	BlobSvc              blobstore.Service
@@ -68,6 +70,7 @@ type service struct {
 	runnerHeartbeatCache   *RunnerHeartbeatCache
 	heartbeater            *heartbeater.Heartbeater
 	kafka                  *kafka.Producer
+	featuresClient         *features.Features
 	temporalClient         temporalclient.Client
 	runnerJobWake          *RunnerJobWakeRegistry
 	blobSvc                blobstore.Service
@@ -418,6 +421,7 @@ func New(params Params) (*service, error) {
 		runnerHeartbeatCache:   params.RunnerHeartbeatCache,
 		heartbeater:            params.Heartbeater,
 		kafka:                  params.Kafka,
+		featuresClient:         params.FeaturesClient,
 		temporalClient:         params.TemporalClient,
 		runnerJobWake:          params.RunnerJobWake,
 		blobSvc:                params.BlobSvc,

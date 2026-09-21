@@ -18,7 +18,7 @@ import (
 
 // @ID						GetInstallComponentHealthChecks
 // @Summary				list custom component health checks
-// @Description			Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name.
+// @Description			Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name. Requires the component-health feature.
 // @Param					install_id		path	string	true	"install ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					installs
@@ -39,6 +39,10 @@ func (s *service) GetInstallComponentHealthChecks(ctx *gin.Context) {
 
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	if err := s.requireComponentHealthFeature(ctx, org); err != nil {
 		ctx.Error(err)
 		return
 	}

@@ -196,6 +196,12 @@ func (s *service) createComponentHealth(ctx context.Context, orgID, runnerID str
 		observedAt = time.Now()
 	}
 
+	// Without the feature nothing reads these rows, so writing them bills the
+	// org storage for a product it does not have.
+	if enabled, _ := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureComponentHealth); !enabled {
+		return &CreateComponentHealthResponse{Ingested: 0}, nil
+	}
+
 	prior, err := s.priorResourceHealth(ctx, orgID, req.InstallID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load prior resource health: %w", err)

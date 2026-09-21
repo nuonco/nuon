@@ -45,6 +45,10 @@ func (s *service) mcpGetInstallHealth(ctx context.Context, _ *mcp.CallToolReques
 	if in.Install == "" {
 		return nil, nil, fmt.Errorf("install is required")
 	}
+	if err := s.requireComponentHealthFeature(ctx, &app.Org{ID: orgID}); err != nil {
+		return nil, nil, err
+	}
+
 	install, err := s.findInstall(ctx, orgID, in.Install)
 	if err != nil {
 		return nil, nil, err

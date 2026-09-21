@@ -105,7 +105,7 @@ func (r *PutInstallComponentHealthCheckRequest) staleAfter() (time.Duration, err
 
 // @ID						PutInstallComponentHealthCheck
 // @Summary				report a custom component health check
-// @Description			Lets an external system (a vendor's CI, a Datadog monitor webhook, a custom action) report a named health signal for a component. The report is written as a resource observation with provider "custom", so it flows through the same live explorer, evaluator, alerting, and timeline as runner-reported resources.
+// @Description			Lets an external system (a vendor's CI, a Datadog monitor webhook, a custom action) report a named health signal for a component. The report is written as a resource observation with provider "custom", so it flows through the same live explorer, evaluator, alerting, and timeline as runner-reported resources. Requires the component-health feature.
 // @Param					install_id		path	string									true	"install ID"
 // @Param					component_id	path	string									true	"component ID"
 // @Param					check_name		path	string									true	"check name"
@@ -143,6 +143,10 @@ func (s *service) PutInstallComponentHealthCheck(ctx *gin.Context) {
 
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	if err := s.requireComponentHealthFeature(ctx, org); err != nil {
 		ctx.Error(err)
 		return
 	}
