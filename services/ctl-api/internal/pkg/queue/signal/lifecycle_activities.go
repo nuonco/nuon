@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.temporal.io/sdk/activity"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -16,19 +18,59 @@ import (
 type SignalLifecycleActivitiesParams struct {
 	fx.In
 
-	Hooks []SignalLifecycleHook `group:"signal_lifecycle_hooks"`
-	MW    metrics.Writer        `optional:"true"`
+	Hooks         []SignalLifecycleHook `group:"signal_lifecycle_hooks"`
+	MW            metrics.Writer        `optional:"true"`
+	MeterProvider metric.MeterProvider  `optional:"true"`
 }
 
 type SignalLifecycleActivities struct {
-	hooks []SignalLifecycleHook
-	mw    metrics.Writer
+	hooks           []SignalLifecycleHook
+	mw              metrics.Writer
+	hookInvocations metric.Int64Counter
 }
 
 func NewSignalLifecycleActivities(params SignalLifecycleActivitiesParams) *SignalLifecycleActivities {
-	return &SignalLifecycleActivities{
+	a := &SignalLifecycleActivities{
 		hooks: params.Hooks,
 		mw:    params.MW,
+	}
+	if params.MeterProvider != nil {
+		a.hookInvocations, _ = params.MeterProvider.Meter("github.com/nuonco/nuon/services/ctl-api/event-hooks").Int64Counter(
+			"nuon.event.hook.invocations",
+			metric.WithUnit("{invocation}"),
+			metric.WithDescription("Returned signal lifecycle hook invocation outcomes."),
+		)
+	}
+	return a
+}
+
+func (a *SignalLifecycleActivities) recordHookInvocation(ctx context.Context, hook SignalLifecycleHook, event SignalPhaseEvent, invocation, outcome string) {
+	if a.hookInvocations == nil {
+		return
+	}
+	a.hookInvocations.Add(ctx, 1, metric.WithAttributes(
+		attribute.String("nuon.event.hook.name", boundedHookName(hook.Name())),
+		attribute.String("nuon.event.hook.phase", boundedHookPhase(event.Phase)),
+		attribute.String("nuon.event.hook.invocation", invocation),
+		attribute.String("nuon.event.hook.outcome", outcome),
+	))
+}
+
+func boundedHookName(name string) string {
+	switch name {
+	case "flow_lifecycle_telemetry", "workflow_lifecycle_webhook", "workflow_lifecycle_slack":
+		return name
+	default:
+		return "other"
+	}
+}
+
+func boundedHookPhase(phase SignalPhase) string {
+	switch phase {
+	case SignalPhaseValidate, SignalPhaseExecute, SignalPhaseCancel:
+		return string(phase)
+	default:
+		return "other"
 	}
 }
 
@@ -87,6 +129,7 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleBeforePhase(ctx context.Co
 		processedHooks++
 		decision, err := hook.BeforePhase(ctx, req.Event)
 		if err != nil {
+			a.recordHookInvocation(ctx, hook, req.Event, "before", "error")
 			l.Error("before-phase hook failed", zap.String("hook", hook.Name()), zap.Error(err))
 			return nil, fmt.Errorf("before-phase hook %q failed: %w", hook.Name(), err)
 		}
@@ -96,6 +139,7 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleBeforePhase(ctx context.Co
 		}
 
 		if !decision.Allow {
+			a.recordHookInvocation(ctx, hook, req.Event, "before", "blocked")
 			resp.Allow = false
 			resp.Reason = decision.Reason
 			l.Warn("signal lifecycle phase blocked by hook",
@@ -106,6 +150,7 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleBeforePhase(ctx context.Co
 				zap.Bool("allow", resp.Allow))
 			return resp, nil
 		}
+		a.recordHookInvocation(ctx, hook, req.Event, "before", "success")
 	}
 
 	l.Debug("completed signal lifecycle before-phase hooks",
@@ -149,10 +194,13 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleAfterPhase(ctx context.Con
 
 		processedHooks++
 		if err := hook.AfterPhase(ctx, req.Event, req.Outcome); err != nil {
+			a.recordHookInvocation(ctx, hook, req.Event, "after", "error")
 			failedHooks++
 			l.Error("after-phase hook failed",
 				zap.String("hook", hook.Name()),
 				zap.Error(err))
+		} else {
+			a.recordHookInvocation(ctx, hook, req.Event, "after", "success")
 		}
 	}
 
