@@ -59,21 +59,38 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 	steps = append(steps, configStep)
 
-	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
+	stackChanged := diff != nil && diff.StackChanged
 
-	if diff != nil && diff.StackChanged {
+	// A stack change recycles the runner, so gating on the outgoing one would
+	// block the apply that brings its replacement up.
+	if !stackChanged {
+		sg.nextGroupEager()
+		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	}
+
+	if stackChanged {
 		stackSteps, err := getStackVersionSteps(ctx, sg, installID, flw.PlanOnly)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to generate stack version steps")
 		}
 		steps = append(steps, stackSteps...)
+
+		sg.nextGroup()
+		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: installID,
+			Mode:      awaitrunnerhealthy.ModeStartup,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create post-stack runner health step")
+		}
+		steps = append(steps, step)
 	}
 
 	if diff != nil && (diff.SandboxChanged || diff.SandboxBuildChanged) {
@@ -92,7 +109,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		}
 
 		dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
-		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install, sandboxNeedsRunnerHealthyGate(diff))
+		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to generate sandbox reprovision steps")
 		}
@@ -132,15 +149,6 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	steps = append(steps, deploySteps...)
 
 	return sg.Result(steps), nil
-}
-
-// sandboxNeedsRunnerHealthyGate reports whether the sandbox reprovision phase has
-// to wait on the runner again. This flow already waited before the stack steps,
-// and only those steps can roll the runner out from under the sandbox — without
-// them a second wait can only re-confirm the first, and rendered as a duplicate
-// "runner healthy" step.
-func sandboxNeedsRunnerHealthyGate(diff *app.InstallConfigDiff) bool {
-	return diff != nil && diff.StackChanged
 }
 
 // filterComponentsByDiff narrows a dependency-ordered component list to the ones
