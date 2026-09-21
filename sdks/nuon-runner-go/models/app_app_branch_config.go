@@ -67,6 +67,9 @@ type AppAppBranchConfig struct {
 	// public git vcs config
 	PublicGitVcsConfig *AppPublicGitVCSConfig `json:"public_git_vcs_config,omitempty"`
 
+	// run config
+	RunConfig *AppAppBranchRunConfig `json:"run_config,omitempty"`
+
 	// runbook ids
 	RunbookIds []string `json:"runbook_ids"`
 
@@ -98,6 +101,10 @@ func (m *AppAppBranchConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validatePublicGitVcsConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRunConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -210,6 +217,29 @@ func (m *AppAppBranchConfig) validatePublicGitVcsConfig(formats strfmt.Registry)
 	return nil
 }
 
+func (m *AppAppBranchConfig) validateRunConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.RunConfig) { // not required
+		return nil
+	}
+
+	if m.RunConfig != nil {
+		if err := m.RunConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("run_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("run_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppAppBranchConfig) validateWorkflows(formats strfmt.Registry) error {
 	if swag.IsZero(m.Workflows) { // not required
 		return nil
@@ -257,6 +287,10 @@ func (m *AppAppBranchConfig) ContextValidate(ctx context.Context, formats strfmt
 	}
 
 	if err := m.contextValidatePublicGitVcsConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRunConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -365,6 +399,31 @@ func (m *AppAppBranchConfig) contextValidatePublicGitVcsConfig(ctx context.Conte
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("public_git_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchConfig) contextValidateRunConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.RunConfig != nil {
+
+		if swag.IsZero(m.RunConfig) { // not required
+			return nil
+		}
+
+		if err := m.RunConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("run_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("run_config")
 			}
 
 			return err

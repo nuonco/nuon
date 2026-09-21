@@ -23,6 +23,9 @@ type AppComponentBuild struct {
 	// app branch id
 	AppBranchID string `json:"app_branch_id,omitempty"`
 
+	// app branch run
+	AppBranchRun *AppAppBranchRun `json:"app_branch_run,omitempty"`
+
 	// app branch run id
 	AppBranchRunID string `json:"app_branch_run_id,omitempty"`
 
@@ -157,6 +160,10 @@ type AppComponentBuild struct {
 func (m *AppComponentBuild) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAppBranchRun(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateComponentConfigConnection(formats); err != nil {
 		res = append(res, err)
 	}
@@ -204,6 +211,29 @@ func (m *AppComponentBuild) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppComponentBuild) validateAppBranchRun(formats strfmt.Registry) error {
+	if swag.IsZero(m.AppBranchRun) { // not required
+		return nil
+	}
+
+	if m.AppBranchRun != nil {
+		if err := m.AppBranchRun.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_branch_run")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_branch_run")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -455,6 +485,10 @@ func (m *AppComponentBuild) validateVcsConnectionCommit(formats strfmt.Registry)
 func (m *AppComponentBuild) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAppBranchRun(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateComponentConfigConnection(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -502,6 +536,31 @@ func (m *AppComponentBuild) ContextValidate(ctx context.Context, formats strfmt.
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppComponentBuild) contextValidateAppBranchRun(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AppBranchRun != nil {
+
+		if swag.IsZero(m.AppBranchRun) { // not required
+			return nil
+		}
+
+		if err := m.AppBranchRun.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_branch_run")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_branch_run")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
