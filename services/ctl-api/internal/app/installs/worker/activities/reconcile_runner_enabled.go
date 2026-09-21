@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -44,30 +42,13 @@ func (a *Activities) ReconcileRunnerEnabled(ctx context.Context, req *ReconcileR
 		return nil
 	}
 
-	if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
-		RunnerID: req.RunnerID,
-		Metadata: map[string]any{app.RunnerOfflineTSMetadataKey: nil},
-	}); err != nil {
-		return fmt.Errorf("unable to clear runner offline metadata: %w", err)
-	}
-
-	res := a.db.WithContext(ctx).Model(&app.Runner{ID: req.RunnerID}).Updates(app.Runner{
-		Status:            target,
-		StatusDescription: description,
-	})
-	if res.Error != nil {
-		return fmt.Errorf("unable to update runner status: %w", res.Error)
-	}
-	if res.RowsAffected < 1 {
-		return generics.TemporalGormError(gorm.ErrRecordNotFound, fmt.Sprintf("no runner found: %s", req.RunnerID))
-	}
-
-	if err := a.statusActivities.UpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+	if _, err := a.statusActivities.TransitionRunnerStatus(ctx, statusactivities.TransitionRunnerStatusRequest{
 		RunnerID:          req.RunnerID,
 		Status:            target,
 		StatusDescription: description,
+		Metadata:          map[string]any{app.RunnerOfflineTSMetadataKey: nil},
 	}); err != nil {
-		return fmt.Errorf("unable to update runner status v2: %w", err)
+		return fmt.Errorf("unable to transition runner status: %w", err)
 	}
 
 	return nil

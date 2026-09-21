@@ -350,13 +350,6 @@ func TestOldRunnerHealthcheckCorpus(t *testing.T) {
 					require.True(t, ok)
 					got.legacyStatus = runnerStatusPtr(req.Status)
 					got.legacyReason = req.StatusDescription
-				}).
-				Return(nil)
-
-			env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
-				Run(func(args mock.Arguments) {
-					req, ok := argOf[statusactivities.UpdateRunnerStatusV2Request](args)
-					require.True(t, ok)
 					got.v2Status = runnerStatusPtr(req.Status)
 					got.v2Reason = req.StatusDescription
 				}).
@@ -391,10 +384,14 @@ func TestOldRunnerHealthcheckCorpus(t *testing.T) {
 				v2Status:       tc.want.v2Status,
 				alert:          tc.want.alert,
 			}
-			if tc.want.legacyStatus != nil {
+			if tc.want.legacyStatus != nil || tc.want.v2Status != nil {
+				target := tc.want.legacyStatus
+				if target == nil {
+					target = tc.want.v2Status
+				}
+				want.legacyStatus = target
+				want.v2Status = target
 				want.legacyReason = tc.want.reason
-			}
-			if tc.want.v2Status != nil {
 				want.v2Reason = tc.want.reason
 			}
 			if tc.want.alert {

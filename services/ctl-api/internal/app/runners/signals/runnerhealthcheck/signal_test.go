@@ -42,10 +42,6 @@ func TestFirstFailedHealthCheckMarksRunnerOfflineWithoutAlerting(t *testing.T) {
 		Run(func(mock.Arguments) { calls = append(calls, "status") }).
 		Return(nil).
 		Once()
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
-		Run(func(mock.Arguments) { calls = append(calls, "status-v2") }).
-		Return(nil).
-		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
 		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
@@ -53,7 +49,7 @@ func TestFirstFailedHealthCheckMarksRunnerOfflineWithoutAlerting(t *testing.T) {
 
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	require.Equal(t, []string{"offline-ts", "status", "status-v2"}, calls)
+	require.Equal(t, []string{"offline-ts", "status"}, calls)
 	env.AssertExpectations(t)
 }
 
@@ -179,9 +175,6 @@ func TestActiveRunnerWithOfflineTimestampDoesNotResetDelay(t *testing.T) {
 	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil).
 		Once()
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
-		Return(nil).
-		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
 		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
@@ -204,7 +197,7 @@ func TestOfflineCheckRepairsStaleStatusV2(t *testing.T) {
 	runner.StatusV2.Status = app.Status(app.RunnerStatusActive)
 	sig := &Signal{RunnerID: runner.ID}
 
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
+	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil).
 		Once()
 
@@ -234,10 +227,6 @@ func TestHealthyCheckClearsOfflineMetadataAndRestoresActive(t *testing.T) {
 		Run(func(mock.Arguments) { calls = append(calls, "status") }).
 		Return(nil).
 		Once()
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
-		Run(func(mock.Arguments) { calls = append(calls, "status-v2") }).
-		Return(nil).
-		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
 		return sig.handleRunnerActive(ctx, runner)
@@ -245,7 +234,7 @@ func TestHealthyCheckClearsOfflineMetadataAndRestoresActive(t *testing.T) {
 
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	require.Equal(t, []string{"clear", "status", "status-v2"}, calls)
+	require.Equal(t, []string{"clear", "status"}, calls)
 	env.AssertExpectations(t)
 }
 
@@ -268,6 +257,54 @@ func TestUpdateRunnerStatusStopsWhenLegacyUpdateFails(t *testing.T) {
 
 	require.True(t, env.IsWorkflowCompleted())
 	require.Error(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
+}
+
+func TestExistingHistoryKeepsSplitStatusWrite(t *testing.T) {
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env.OnGetVersion(atomicRunnerStatusVersion, workflow.DefaultVersion, 1).
+		Return(workflow.DefaultVersion).
+		Once()
+
+	runner := testRunner(app.RunnerStatusActive)
+	sig := &Signal{RunnerID: runner.ID}
+	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).
+		Once()
+	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active install process")
+	})
+
+	require.NoError(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
+}
+
+func TestExistingHistoryOnlyRepairsStaleStatusV2(t *testing.T) {
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env.OnGetVersion(atomicRunnerStatusVersion, workflow.DefaultVersion, 1).
+		Return(workflow.DefaultVersion).
+		Once()
+
+	runner := testRunner(app.RunnerStatusOffline)
+	runner.StatusV2.Status = app.Status(app.RunnerStatusActive)
+	sig := &Signal{RunnerID: runner.ID}
+	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active install process")
+	})
+
+	require.NoError(t, env.GetWorkflowError())
 	env.AssertExpectations(t)
 }
 
