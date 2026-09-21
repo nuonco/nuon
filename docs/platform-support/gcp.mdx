@@ -3,7 +3,7 @@ title: 'Google Cloud'
 description: "Deploy and manage BYOC apps on Google Cloud."
 icon: 'google'
 boost: 1.5
-keywords: ["GCP BYOC", "Google Cloud BYOC", "service account permissions GCP", "Workload Identity", "GCP project setup", "GKE"]
+keywords: ["GCP BYOC", "Google Cloud BYOC", "service account permissions GCP", "Workload Identity", "GCP project setup", "GKE", "install stack GCP", "Terraform install stack", "Infrastructure Manager", "Spacelift", "no console link", "gcloud auth application-default login"]
 ---
 
 ## Configuration
@@ -42,19 +42,27 @@ helm_driver = "configmap"
 
 ## Installation
 
-When you create a new install, Nuon will generate a Terraform install stack your customer can use to install the runner and base infrastructure. The customer applies it locally with the Google Cloud SDK and Terraform.
+There is no one-click console link on Google Cloud. Nuon generates the install stack as Terraform only, and your customer applies it with their own credentials using whichever Terraform workflow they already have. The **await install stack** step of the provision workflow offers up to three tabs:
+
+- **TF Module** (recommended, feature flag): a snippet that adds the published [`nuonco/stack/gcp`](https://registry.terraform.io/modules/nuonco/stack/gcp/latest) module to your customer's own Terraform project. See [Provision Stacks with a Terraform Module](/guides/provision-stacks-with-terraform-module).
+- **Terraform**: generated `inputs.auto.tfvars` and `secrets.auto.tfvars` files for the open-source [`install-stacks/gcp`](https://github.com/nuonco/install-stacks) module, applied with the Terraform command-line interface (CLI). The steps are below.
+- **Spacelift** (feature flag): a Spacelift blueprint and a `spacelift.tf` so the customer can run the stack inside their Spacelift account. See [Provision Stacks with Spacelift](/guides/provision-stacks-with-spacelift).
+
+Any other Terraform runner works too, including Google Cloud's Infrastructure Manager, which runs Terraform natively. Nuon does not generate an Infrastructure Manager configuration; the customer points it at the module and tfvars like any other Terraform pipeline.
+
+For a side-by-side view of what customers do on each cloud, see [Stacks](/concepts/stacks#what-your-customer-does-on-each-cloud).
 
 ### Create an Install
 
 Navigate to the Installs tab in the Nuon dashboard, and click on the "Create Install" button, and select the app you want to install.
 
-This will kick off a provision workflow. The stack will be generated and pre-configured `inputs.auto.tfvars` and `secrets.auto.tfvars` files will be provided for it. The tfvars files are templated with the install ID, runner ID, API token, and IAM permissions, and can be shared with your customer.
+This will kick off a provision workflow. The stack will be generated and pre-configured `inputs.auto.tfvars` and `secrets.auto.tfvars` files will be provided for it. The tfvars files are templated with the install ID, runner ID, API token, and IAM (Identity and Access Management) permissions, and can be shared with your customer.
 
 ### Install the Stack
 
 Your customer must be authenticated to the GCP project they want to install your app in (typically via `gcloud auth application-default login`) and have permissions to create the IAM bindings, service accounts, and resources defined in the stack module.
 
-The dashboard provides four steps the customer can follow:
+The **Terraform** tab provides four steps the customer can follow:
 
 1. **Clone the install stack module**
 
@@ -63,7 +71,7 @@ The dashboard provides four steps the customer can follow:
    cd install-stacks/gcp
    ```
 
-2. **Configure remote state (recommended)** — create a `backend.tf` pointing at a GCS bucket so the install state is durable.
+2. **Configure remote state (recommended)** — create a `backend.tf` pointing at a Google Cloud Storage (GCS) bucket so the install state is durable.
 
    ```hcl
    terraform {
@@ -85,6 +93,8 @@ The dashboard provides four steps the customer can follow:
    Both `.auto.tfvars` files are loaded automatically, so no `-var-file` flag is needed.
 
 The customer is prompted for `gcp_project_id` and `gcp_region` at apply time unless those are pre-populated in the install config (`gcp_account.project_id` / `gcp_account.region`), in which case they're injected into the tfvars and applied automatically.
+
+Once the runner phones home, the await install stack step completes and the install proceeds.
 
 ## Try it with a sample app
 

@@ -3,7 +3,7 @@ title: 'AWS'
 description: "Deploy and manage BYOC apps on AWS."
 icon: 'amazon'
 boost: 1.5
-keywords: ["AWS BYOC setup", "AWS account onboarding", "cross-account IAM roles", "assume role cross account", "CloudFormation stack", "AWS Organizations support", "multi-account strategy AWS", "GovCloud", "EKS"]
+keywords: ["AWS BYOC setup", "AWS account onboarding", "cross-account IAM roles", "assume role cross account", "CloudFormation stack", "quick create", "quick-create link", "one-click install", "AWS Organizations support", "multi-account strategy AWS", "GovCloud", "EKS"]
 ---
 
 ## Configuration
@@ -56,18 +56,20 @@ helm_driver = "configmap"
 
 ## Installation
 
-When you create a new install, Nuon generates the install stack your customer uses to provision the runner and base infrastructure in their AWS account. Two stack formats are produced for every AWS install, and your customer can use whichever fits their tooling:
+When you create a new install, Nuon generates the install stack your customer uses to provision the runner and base infrastructure in their AWS account. Every AWS install gets a one-click console link, and the same resources are also available as Terraform, so your customer can use whichever fits their tooling:
 
-- **CloudFormation** — a generated Cloudformation template, installable via a Quick-Create URL or the AWS CLI.
-- **Terraform** — generated `inputs.auto.tfvars` and `secrets.auto.tfvars` files for the [`install-stacks/aws`](https://github.com/nuonco/install-stacks) Terraform module, applied with the standard `terraform` CLI.
+- **CloudFormation** — a generated CloudFormation template with a [quick-create link](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stacks-quick-create-links.html) that opens the AWS console with the template and stack name prefilled, plus an AWS command-line interface (CLI) `create-stack` command.
+- **Terraform** — the published [`nuonco/stack/aws`](https://registry.terraform.io/modules/nuonco/stack/aws/latest) module (recommended, feature flag), or generated `inputs.auto.tfvars` and `secrets.auto.tfvars` files for the open-source [`install-stacks/aws`](https://github.com/nuonco/install-stacks) module.
 
 Both formats describe the same set of resources (IAM operation roles, secrets, and trust to the Nuon control plane), so installs end up in the same state regardless of which one your customer runs.
+
+For a side-by-side view of what customers do on each cloud, see [Stacks](/concepts/stacks#what-your-customer-does-on-each-cloud).
 
 ### Create an Install
 
 Navigate to the Installs tab in the Nuon dashboard, click "Create Install", and select the app you want to install.
 
-This kicks off a provision workflow. Both the CloudFormation stack and the Terraform tfvars are templated with the install ID, region, and other settings. The provision workflow's "await install stack" step exposes both via tabs ("CloudFormation" and "Terraform"), which can be shared with your customer.
+This kicks off a provision workflow. The CloudFormation template and the Terraform files are templated with the install ID, region, and other settings. The provision workflow's **await install stack** step exposes them as tabs (**CloudFormation**, **Terraform**, and **TF Module** where enabled), which can be shared with your customer.
 
 ### Install the Stack
 
@@ -77,18 +79,20 @@ Your customer must log into the AWS account they want to install your app in, an
 
 Either:
 
-- Open the **Quick-Create URL** in a browser and complete the web flow, or
+- Open the **Quick launch in AWS console** link in a browser and complete the web flow. If the install has no region pinned, the link opens in whichever region the console currently has selected, so switch to the intended region first. See [Provision Stacks with CloudFormation](/guides/provision-stacks-with-cloudformation).
 - Run the provided **AWS CLI** `create-stack` snippet ([install the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) first).
 
 #### Option 2: Terraform
 
-From the Terraform tab in the dashboard:
+From the **TF Module** tab, add the published module to an existing Terraform project and apply it with an API token. See [Provision Stacks with a Terraform Module](/guides/provision-stacks-with-terraform-module).
+
+Or, from the **Terraform** tab:
 
 1. Download the generated `inputs.auto.tfvars` and `secrets.auto.tfvars` files.
 2. Create a `backend.tf` to store Terraform state (an S3 snippet is provided in the dashboard).
 3. Run `terraform init && terraform apply` against the [`install-stacks/aws`](https://github.com/nuonco/install-stacks) module. Both `.auto.tfvars` files are loaded automatically.
 
-Custom resources from CloudFormation nested stacks are not translated automatically. If you extend the install stack with custom Cloudformation resources, fork [`install-stacks`](https://github.com/nuonco/install-stacks) and make the equivalent Terraform changes there.
+Custom resources from CloudFormation nested stacks are not translated automatically. If you extend the install stack with custom CloudFormation resources, fork [`install-stacks`](https://github.com/nuonco/install-stacks) and make the equivalent Terraform changes there.
 
 ## Updating
 

@@ -2,15 +2,16 @@
 title: "Stacks"
 icon: "layer-group"
 description: "Customers use Stacks to install an app in their account."
+keywords: ["install stack", "stack", "one-click install", "quick create", "CloudFormation quick-create link", "Deploy to Azure button", "Azure portal", "resource group scope", "subscription scope", "deployment_scope", "Infrastructure Manager", "Terraform", "Spacelift", "install a stack on AWS", "install a stack on Azure", "install a stack on Google Cloud", "what does my customer click"]
 ---
 
 A Stack is the first thing deployed in a customer's cloud account when an install is created. It provisions the foundational resources needed to deploy and operate the app.
 
-For each install, Nuon generates a Stack template in both Terraform and the platform's native IaC language. Both formats produce the same resources, so you or your customer can use whichever one fits into your tooling and processes the best.
+For each install, Nuon generates the Stack in Terraform and, where the cloud has one, in its native infrastructure-as-code (IaC) format. Every format creates the same resources, so your customer can use whichever fits their tooling.
 
-- On **AWS**, the native format is a CloudFormation stack.
-- On **Azure**, the native format is an Azure Resource Manager (Bicep) deployment.
-- On **GCP**, only Terraform is generated — Google Cloud's Infrastructure Manager runs Terraform natively.
+- On **AWS**, the native format is a CloudFormation template.
+- On **Azure**, the native format is an Azure Resource Manager (ARM) template, compiled from Bicep.
+- On **Google Cloud**, only Terraform is generated.
 
 ## What does a Stack create?
 
@@ -24,11 +25,85 @@ The network can either be **created** by the Stack or **selected** from resource
 
 ## How is a Stack deployed?
 
-When a vendor creates an install, Nuon generates Stack templates (Terraform and the platform's native IaC, where applicable) along with links and CLI snippets the vendor can share with the customer. The customer deploys whichever format fits their tooling, using their own credentials. This is how access is granted: the customer provisions the Stack themselves.
+Deploying the Stack is a hand-off between you and your customer:
 
-No cross-account access is required. The customer retains full ownership and visibility of all infrastructure created by the Stack.
+1. You create the install. The provision workflow pauses at the **await install stack** step.
+2. That step shows what to send your customer. Depending on the cloud, that is a console link, cloud CLI commands, Terraform code, or a Spacelift blueprint.
+3. Your customer signs in to their own cloud account and deploys the Stack with their own credentials.
+4. The Stack boots the Runner, which phones home to Nuon. The await step completes and the install proceeds.
+
+Because the customer provisions the Stack themselves, no cross-account access is required. The customer retains full ownership and visibility of all infrastructure created by the Stack.
 
 ![Install stack](../images/concepts/runner/install-stack.png)
+
+## What your customer does on each cloud
+
+The await install stack step looks different on each cloud. Use this table to find what your customer will click or run, and which guide to send them.
+
+| | AWS | Azure | Google Cloud |
+| --- | --- | --- | --- |
+| **One-click console link** | Always. A CloudFormation quick-create link. | Only at [subscription scope](#azure-at-subscription-scope). A **Deploy to Azure** button. | Never. |
+| **Cloud CLI command** | `aws cloudformation create-stack` | `az stack group create`, or `az stack sub create` at subscription scope | None. Terraform only. |
+| **Terraform** | Published module, or generated tfvars | Published module | Published module, or generated tfvars |
+| **Spacelift** | Not yet | Not yet | Blueprint or `spacelift.tf` (feature flag) |
+| **What the customer creates first** | Nothing | At [resource group scope](#azure-at-resource-group-scope-default): a resource group, a Key Vault, and any secrets. At subscription scope: nothing. | Nothing required. A state bucket is recommended. |
+| **Start here** | [CloudFormation guide](/guides/provision-stacks-with-cloudformation) | [Azure installation](/platform-support/azure#installation) | [Terraform module guide](/guides/provision-stacks-with-terraform-module) |
+
+The published Terraform modules and the Spacelift options are behind org feature flags. [Reach out to Nuon](https://nuon.co/demo-request) to enable them.
+
+### AWS
+
+Your customer receives a **CloudFormation quick-create link**. Opening it while signed in to the target AWS account loads the CloudFormation console with the template URL and stack name prefilled. The customer fills in inputs and secrets, acknowledges the IAM (Identity and Access Management) capabilities, and clicks **Create stack**.
+
+If the install pins a region, the link opens in that region. If it does not, the link opens in whichever region the console currently has selected, so the customer should switch to the intended region before creating the stack.
+
+The same step also provides an `aws cloudformation create-stack` command for the AWS command-line interface (CLI), and Terraform in two forms: the published `nuonco/stack/aws` module (recommended) and generated tfvars files for the open-source `install-stacks` module.
+
+- [Provision Stacks with CloudFormation](/guides/provision-stacks-with-cloudformation)
+- [Provision Stacks with a Terraform Module](/guides/provision-stacks-with-terraform-module)
+- [Provision Stacks with Terraform](/guides/provision-stacks-with-terraform) (generated tfvars)
+
+### Azure
+
+What your customer receives depends on the `deployment_scope` you set in the app's `stack.toml`. The default is `resource_group`. See the [stack config reference](/config-ref/stack) for the field.
+
+#### Azure at resource group scope (default)
+
+There is **no Deploy to Azure button** at this scope. The Stack deploys into a resource group that must already exist, and the Azure portal's custom deployment form cannot create it, so no console link is offered.
+
+Your customer uses the Azure CLI:
+
+1. Sign in with `az login` and select the target subscription.
+2. Create the resource group `<install-id>-rg`.
+3. Create a Key Vault in that resource group. If the app declares secrets, grant themselves the Key Vault Secrets Officer role and set each secret's value.
+4. Run the provided `az stack group create` command against the template URL, passing any required inputs as `--parameters`.
+
+The await install stack step renders each of these as a copyable command with the install's values filled in. If the published Terraform module is enabled for your org, the customer can instead apply `nuonco/stack/azure`, which handles the resource group and Key Vault itself.
+
+- [Azure installation, step by step](/platform-support/azure#installation)
+- [Provision Stacks with a Terraform Module](/guides/provision-stacks-with-terraform-module)
+
+#### Azure at subscription scope
+
+Set `deployment_scope = "subscription"` in `stack.toml` and the Stack creates its own resource group and Key Vault. Two things change for your customer:
+
+- A **Deploy to Azure** button appears on the await install stack step. It opens the Azure portal's custom deployment form with the template loaded. The customer picks a subscription and region, fills in inputs, and clicks **Create**.
+- There is no resource group or Key Vault to create first. Secret values are entered as parameters on the deployment form or the CLI command, and land in the Key Vault the Stack creates.
+
+The CLI equivalent is `az stack sub create`. See [Azure installation](/platform-support/azure#installation) for the command.
+
+Subscription scope is also what lets [custom nested stacks](/guides/custom-nested-stacks) create their own resource groups.
+
+### Google Cloud
+
+There is **no console link** on Google Cloud. Nuon generates Terraform only, and your customer applies it with whatever runs Terraform for them:
+
+- **The published `nuonco/stack/gcp` module** (recommended). Your customer adds one module block to their own Terraform project and applies it with an API token. See [Provision Stacks with a Terraform Module](/guides/provision-stacks-with-terraform-module).
+- **Generated tfvars with the open-source module.** Your customer clones `install-stacks/gcp`, saves the generated `inputs.auto.tfvars` and `secrets.auto.tfvars` next to it, and runs `terraform init && terraform apply`. See [Provision Stacks with Terraform](/guides/provision-stacks-with-terraform) or the [Google Cloud installation steps](/platform-support/gcp#installation).
+- **Spacelift.** Nuon generates a Spacelift blueprint and a `spacelift.tf` so the customer can run the Stack inside their Spacelift account. See [Provision Stacks with Spacelift](/guides/provision-stacks-with-spacelift).
+- **Any other Terraform runner**, including Google Cloud's Infrastructure Manager, which runs Terraform natively. Nuon does not generate an Infrastructure Manager configuration. The customer supplies the module and tfvars to it the same way they would to any Terraform pipeline.
+
+Your customer needs credentials for the target project, typically via `gcloud auth application-default login`, and permission to create IAM bindings, service accounts, and the resources in the stack module. The project ID and region are prompted for at apply time unless they are set on the install.
 
 ## Customer Control
 
@@ -45,6 +120,6 @@ This means the customer always has a killswitch. See [Customer-Controlled Runner
 
 Stacks accept customer-provided values at deploy time. They come in three forms:
 
-- **[Secrets](/concepts/app-secrets)** — entered by the customer as CloudFormation/Bicep parameters or Terraform variables, then stored in AWS Secrets Manager, Azure Key Vault, or GCP Secret Manager.
+- **[Secrets](/concepts/app-secrets)** — entered by the customer as CloudFormation or ARM template parameters, or as Terraform variables, then stored in AWS Secrets Manager, Azure Key Vault, or Google Cloud Secret Manager.
 - **[Customer-facing inputs](/concepts/app-inputs#customer-facing-inputs)** marked `user_configurable` — passed through the Stack at deploy time.
 - **VPC and cluster IDs** — required when the app uses the [Customer VPC](/concepts/stacks/customer-vpc) or [Customer Cluster](/concepts/stacks/customer-cluster) pattern. The customer enters them in the Stack's parameter form alongside any other inputs.

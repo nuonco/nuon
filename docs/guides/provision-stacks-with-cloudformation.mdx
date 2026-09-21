@@ -3,7 +3,7 @@ title: "Provision Stacks with CloudFormation"
 description: "Provision Nuon install stacks on AWS with CloudFormation."
 icon: "aws"
 boost: 10
-keywords: ["cloudformation", "install-stacks", "install stack", "stack", "aws", "create-stack", "template", "quick create", "aws cli"]
+keywords: ["cloudformation", "install-stacks", "install stack", "stack", "aws", "create-stack", "template", "quick create", "quick-create link", "one-click install", "AWS console", "aws cli"]
 ---
 
 Nuon supports provisioning install stacks to AWS using [CloudFormation](https://aws.amazon.com/cloudformation/). A CloudFormation stack template is generated for every install, along with a quick-create link and CLI commands. Which one you use will depend on whether your customer wants to use the AWS web console or the AWS CLI.
@@ -11,7 +11,7 @@ Nuon supports provisioning install stacks to AWS using [CloudFormation](https://
 - **[Quick-create](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stacks-quick-create-links.html)** — open the quick-create link and create the stack in the AWS web console.
 - **[AWS CLI](https://aws.amazon.com/cli/)** — run the generated `aws cloudformation create-stack` command.
 
-<Note>CloudFormation is AWS-only.</Note>
+<Note>CloudFormation is AWS-only. For what customers do on Azure and Google Cloud, see [What your customer does on each cloud](/concepts/stacks#what-your-customer-does-on-each-cloud).</Note>
 
 ## How it works
 
@@ -47,6 +47,9 @@ Follow these steps to provision a stack using a quick-create link.
   <Step title="Open the quick-create link">
     Open the link while signed in to the target AWS account. It opens CloudFormation's quick-create flow with the
     template URL and stack name prefilled.
+
+    If the install pins a region, the link opens in that region. Otherwise it opens in whichever region the console
+    currently has selected, so switch to the intended region before continuing.
   </Step>
   <Step title="Configure the install">
     Fill in the required inputs and secrets.

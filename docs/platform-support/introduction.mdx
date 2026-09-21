@@ -2,7 +2,7 @@
 title: "Introduction"
 description: "Overview of supported cloud platforms — AWS, Azure, and Google Cloud — and what's available on each."
 icon: "layer-group"
-keywords: ["supported clouds", "AWS Azure GCP support", "cloud platform compatibility", "Nuon cloud coverage"]
+keywords: ["supported clouds", "AWS Azure GCP support", "cloud platform compatibility", "Nuon cloud coverage", "one-click install", "quick create", "Deploy to Azure", "Infrastructure Manager"]
 ---
 
 The first and most obvious challenge of BYOC is supporting all the cloud platforms you want to deploy to. Leveraging our runner architecture, Nuon is able to provide first-class support for the major cloud platforms, while maintaining a constistent experience for day-2 operations.
@@ -13,21 +13,21 @@ To install the Nuon runner into your customer's cloud account, Nuon generates a 
 
 The Stack is meant to be provisioned by your customer in their cloud account, phoning home to the Nuon control plane after it has provisioned. This means no cross-account access is required to provision it — your customer stays in full control of the runner identity and the resources it manages.
 
-Nuon will generate links and CLI commands you can share with your customer to install the Stack. You can also download the template if your customer would like to inspect it. If the platform offers a simple, one-click installation method, such as AWS Cloudformation Quickcreate, will support that.
+Nuon generates links and command-line interface (CLI) commands you can share with your customer to install the Stack. You can also download the template if your customer would like to inspect it. Where the platform offers a one-click console flow, Nuon provides a link for it: a CloudFormation quick-create link on AWS, and a **Deploy to Azure** button on Azure when the stack is configured for [subscription scope](/concepts/stacks#azure-at-subscription-scope).
 
 <Note>
-Google Cloud's IaC solution, Infrastructure Manager, uses Terraform natively, so we do not generate a separate template for Google installs.
+Google Cloud has no equivalent console flow, and its native IaC service, Infrastructure Manager, runs Terraform, so Nuon generates Terraform only for Google installs. Customers apply it with the Terraform CLI, the published module, Spacelift, or any other Terraform runner.
 </Note>
 
 | | AWS | Azure | Google Cloud |
 | --- | --- | --- | --- |
 | __Terraform__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> |
 | __Native IaC__ | [Cloudformation](https://aws.amazon.com/cloudformation/) | [Bicep](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/) | N/A |
-| __GUI Installation__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="xmark" color="#e2e0e4" /> | <Icon icon="xmark" color="#e2e0e4" /> |
-| __CLI Installation__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> |
+| __One-click console install__ | <Icon icon="check" color="#8040bf" /> Quick-create link | [Subscription scope only](/concepts/stacks#azure-at-subscription-scope) | <Icon icon="xmark" color="#e2e0e4" /> |
+| __Cloud CLI Installation__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> | Terraform CLI |
 | __Download Template__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> |
 
-You can find more information about Stacks on the [Stacks Concept page](/concepts/stacks).
+For what your customer clicks or runs on each cloud, and which guide to send them, see [What your customer does on each cloud](/concepts/stacks#what-your-customer-does-on-each-cloud).
 
 ## Access Control
 
