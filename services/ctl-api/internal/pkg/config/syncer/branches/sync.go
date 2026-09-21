@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/syncerr"
 )
 
 func Sync(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, cfg *config.AppConfig, appID string, state *sync.State) error {
@@ -76,6 +77,7 @@ func Validate(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID str
 			return sync.SyncErr{
 				Resource:    "app-branches",
 				Description: err.Error(),
+				Err:         err,
 			}
 		}
 		for _, name := range branchCfg.PostDeployRunbooks {
@@ -123,6 +125,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 				return sync.SyncErr{
 					Resource:    "app-branches",
 					Description: fmt.Sprintf("app branch %q already exists (possibly soft-deleted)", branchCfg.Name),
+					Err:         err,
 				}
 			}
 			return sync.SyncInternalErr{
@@ -212,10 +215,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 			Directory: branchCfg.ConnectedRepo.Directory,
 		}, parentApp.Org)
 		if err != nil {
-			return sync.SyncInternalErr{
-				Description: fmt.Sprintf("unable to build connected VCS config for branch %q", branchCfg.Name),
-				Err:         err,
-			}
+			return syncerr.From("app-branches", fmt.Sprintf("unable to build connected VCS config for branch %q", branchCfg.Name), err)
 		}
 		connectedGithubVCSConfig = cfg
 	}
@@ -228,10 +228,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 			Directory: branchCfg.PublicRepo.Directory,
 		})
 		if err != nil {
-			return sync.SyncInternalErr{
-				Description: fmt.Sprintf("unable to build public VCS config for branch %q", branchCfg.Name),
-				Err:         err,
-			}
+			return syncerr.From("app-branches", fmt.Sprintf("unable to build public VCS config for branch %q", branchCfg.Name), err)
 		}
 		publicGitVCSConfig = cfg
 	}
@@ -294,17 +291,11 @@ func validateInstallGroups(ctx context.Context, db *gorm.DB, branchID, branchNam
 		installIDs = append(installIDs, group.InstallIDs...)
 	}
 	if err := appshelpers.ValidateInstallIDsBelongToBranchAppWithDB(ctx, db, branchID, installIDs); err != nil {
-		return sync.SyncErr{
-			Resource:    "app-branches",
-			Description: fmt.Sprintf("branch %q: %s", branchName, err.Error()),
-		}
+		return syncerr.From("app-branches", fmt.Sprintf("branch %q", branchName), err)
 	}
 
 	if err := appshelpers.ValidateBranchInstallsSingleGroupWithDB(ctx, db, branchID, groups); err != nil {
-		return sync.SyncErr{
-			Resource:    "app-branches",
-			Description: fmt.Sprintf("branch %q: %s", branchName, err.Error()),
-		}
+		return syncerr.From("app-branches", fmt.Sprintf("branch %q", branchName), err)
 	}
 
 	return nil
@@ -408,7 +399,7 @@ func buildPreviewConfig(branchCfg *config.AppBranchConfig, nameToID map[string]s
 		out.React = true
 	}
 	if err := out.Validate(); err != nil {
-		return nil, sync.SyncErr{Resource: "app-branches", Description: err.Error()}
+		return nil, sync.SyncErr{Resource: "app-branches", Description: err.Error(), Err: err}
 	}
 	return &out, nil
 }

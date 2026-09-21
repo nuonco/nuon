@@ -2,6 +2,7 @@ package syncer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -39,7 +40,7 @@ func (s *syncer) ensureRunbook(ctx context.Context, runbook *config.RunbookConfi
 		return nil
 	}
 
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to check if runbook %s exists", runbook.Name),
 			Err:         err,
@@ -80,11 +81,17 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 		var trigger app.Trigger
 		if step.Type == config.RunbookStepTypeWaitForEvent {
 			var org app.Org
-			if err := s.db.WithContext(ctx).Select("features").Where(app.Org{ID: s.orgID}).First(&org).Error; err != nil || !org.Features[string(app.OrgFeatureTriggers)] {
+			if err := s.db.WithContext(ctx).Select("features").Where(app.Org{ID: s.orgID}).First(&org).Error; err != nil {
+				return sync.SyncInternalErr{Description: "unable to check triggers feature", Err: err}
+			}
+			if !org.Features[string(app.OrgFeatureTriggers)] {
 				return sync.SyncErr{Resource: fmt.Sprintf("runbook-%s", runbook.Name), Description: "triggers feature is not enabled"}
 			}
 			if err := s.db.WithContext(ctx).Where(app.Trigger{OrgID: s.orgID, Name: step.Trigger}).First(&trigger).Error; err != nil {
-				return sync.SyncErr{Resource: fmt.Sprintf("runbook-%s", runbook.Name), Description: fmt.Sprintf("unable to find trigger %q", step.Trigger)}
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return sync.SyncErr{Resource: fmt.Sprintf("runbook-%s", runbook.Name), Description: fmt.Sprintf("unable to find trigger %q", step.Trigger), Err: err}
+				}
+				return sync.SyncInternalErr{Description: fmt.Sprintf("unable to find trigger %q", step.Trigger), Err: err}
 			}
 		}
 		timeout := time.Duration(0)
@@ -94,6 +101,7 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 				return sync.SyncErr{
 					Resource:    fmt.Sprintf("runbook-%s", runbook.Name),
 					Description: fmt.Sprintf("invalid timeout duration for step %s", step.Name),
+					Err:         err,
 				}
 			}
 			timeout = parsedTimeout
@@ -132,10 +140,14 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 			if err := s.db.WithContext(ctx).
 				Where(app.ActionWorkflow{AppID: s.appID, Name: step.ActionName}).
 				First(&aw).Error; err != nil {
-				return sync.SyncErr{
-					Resource:    fmt.Sprintf("runbook-%s", runbook.Name),
-					Description: fmt.Sprintf("unable to find action %q for step %s", step.ActionName, step.Name),
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return sync.SyncErr{
+						Resource:    fmt.Sprintf("runbook-%s", runbook.Name),
+						Description: fmt.Sprintf("unable to find action %q for step %s", step.ActionName, step.Name),
+						Err:         err,
+					}
 				}
+				return sync.SyncInternalErr{Description: fmt.Sprintf("unable to find action %q for step %s", step.ActionName, step.Name), Err: err}
 			}
 			stepCfg.ActionWorkflowID = generics.NewNullString(aw.ID)
 		}
