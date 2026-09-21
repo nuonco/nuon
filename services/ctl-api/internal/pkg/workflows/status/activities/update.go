@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -115,18 +116,51 @@ func (a *Activities) updateStatusV2(ctx context.Context, obj any, status app.Com
 }
 
 func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app.CompositeStatus, statusGetter func(ctx context.Context) (app.CompositeStatus, error), statusField string) error {
-	createdBy, err := cctx.AccountIDFromContext(ctx)
-	if err != nil {
-		return errors.Wrap(err, "unable to get created by")
-	}
-
-	status.CreatedByID = createdBy
-	status.CreatedAtTS = time.Now().Unix()
-
 	existingStatus, err := statusGetter(ctx)
 	if err != nil {
 		return err
 	}
+	status, err = nextCompositeStatus(ctx, existingStatus, status)
+	if err != nil {
+		return err
+	}
+
+	res := a.db.WithContext(ctx).Model(obj).Updates(
+		map[string]any{
+			statusField: status,
+		})
+	if res.Error != nil {
+		return errors.Wrap(res.Error, "unable to update")
+	}
+	if res.RowsAffected < 1 {
+		return errors.New("no object found to update")
+	}
+
+	// Also atomically merge new metadata keys via jsonb_set so that any
+	// metadata written concurrently (e.g. by the background enqueuer)
+	// between our read and this write is not lost.
+	if len(status.Metadata) > 0 {
+		id := reflectID(obj)
+		if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), obj, id, statusField, status.Metadata); err != nil {
+			return errors.Wrap(err, "unable to merge metadata")
+		}
+	}
+
+	return nil
+}
+
+func nextCompositeStatus(ctx context.Context, existingStatus, status app.CompositeStatus) (app.CompositeStatus, error) {
+	createdBy, err := cctx.AccountIDFromContext(ctx)
+	if err != nil {
+		return app.CompositeStatus{}, errors.Wrap(err, "unable to get created by")
+	}
+
+	status.CreatedByID = createdBy
+	status.CreatedAtTS = time.Now().Unix()
+	return prepareCompositeStatus(existingStatus, status), nil
+}
+
+func prepareCompositeStatus(existingStatus, status app.CompositeStatus) app.CompositeStatus {
 	history := existingStatus.History
 	existingStatus.History = nil
 	// A composite error carries the full diagnostic output, so keeping one per
@@ -153,28 +187,7 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	}
 	status.Metadata = newMetadata
 
-	res := a.db.WithContext(ctx).Model(obj).Updates(
-		map[string]any{
-			statusField: status,
-		})
-	if res.Error != nil {
-		return errors.Wrap(res.Error, "unable to update")
-	}
-	if res.RowsAffected < 1 {
-		return errors.New("no object found to update")
-	}
-
-	// Also atomically merge new metadata keys via jsonb_set so that any
-	// metadata written concurrently (e.g. by the background enqueuer)
-	// between our read and this write is not lost.
-	if len(status.Metadata) > 0 {
-		id := reflectID(obj)
-		if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), obj, id, statusField, status.Metadata); err != nil {
-			return errors.Wrap(err, "unable to merge metadata")
-		}
-	}
-
-	return nil
+	return status
 }
 
 // reflectID extracts the ID field from a model pointer via reflection.
@@ -511,6 +524,92 @@ type UpdateRunnerStatusV2Request struct {
 	StatusDescription string           `validate:"required"`
 }
 
+type TransitionRunnerStatusRequest struct {
+	RunnerID          string
+	Status            app.RunnerStatus
+	StatusDescription string
+	SkipIfDisabled    bool
+	Metadata          map[string]any
+	OnlyIfStatus      *app.RunnerStatus
+}
+
+func (a *Activities) TransitionRunnerStatus(ctx context.Context, req TransitionRunnerStatusRequest) (bool, error) {
+	updated := false
+	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var runner app.Runner
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Select("id", "status", "status_description", "status_v2").
+			Where(&app.Runner{ID: req.RunnerID}).
+			First(&runner).Error; err != nil {
+			return generics.TemporalGormError(err, fmt.Sprintf("unable to get runner %s", req.RunnerID))
+		}
+		if req.SkipIfDisabled && (runner.Status == app.RunnerStatusDisabled || runner.StatusV2.Status == app.Status(app.RunnerStatusDisabled)) {
+			return nil
+		}
+		if req.OnlyIfStatus != nil && runner.Status != *req.OnlyIfStatus {
+			return nil
+		}
+
+		statusMatches := runner.Status == req.Status &&
+			runner.StatusDescription == req.StatusDescription
+		statusV2Matches := runner.StatusV2.Status == app.Status(req.Status) &&
+			runner.StatusV2.StatusHumanDescription == req.StatusDescription
+		if statusMatches && statusV2Matches && len(req.Metadata) == 0 {
+			return nil
+		}
+
+		next := runner.StatusV2
+		if !statusV2Matches {
+			next = app.NewCompositeStatus(ctx, app.Status(req.Status))
+			next.StatusHumanDescription = req.StatusDescription
+			if next.CreatedByID == "" {
+				next.CreatedByID = runner.StatusV2.CreatedByID
+			}
+			next.Metadata = make(map[string]any)
+			for key, value := range req.Metadata {
+				if value != nil {
+					next.Metadata[key] = value
+				}
+			}
+			next = prepareCompositeStatus(runner.StatusV2, next)
+			for key, value := range req.Metadata {
+				if value == nil {
+					delete(next.Metadata, key)
+				}
+			}
+		} else if len(req.Metadata) > 0 {
+			if next.Metadata == nil {
+				next.Metadata = make(map[string]any)
+			}
+			for key, value := range req.Metadata {
+				if value == nil {
+					delete(next.Metadata, key)
+				} else {
+					next.Metadata[key] = value
+				}
+			}
+		}
+
+		res := tx.Model(&app.Runner{ID: req.RunnerID}).Updates(map[string]any{
+			"status":             req.Status,
+			"status_description": req.StatusDescription,
+			"status_v2":          next,
+		})
+		if res.Error != nil {
+			return errors.Wrap(res.Error, "unable to update runner status")
+		}
+		if res.RowsAffected < 1 {
+			return errors.New("no runner found to update")
+		}
+		updated = true
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return updated, nil
+}
+
 // @temporal-gen-v2 activity
 // @local
 func (a *Activities) UpdateRunnerStatusV2(ctx context.Context, req UpdateRunnerStatusV2Request) error {
@@ -522,6 +621,14 @@ func (a *Activities) UpdateRunnerStatusV2(ctx context.Context, req UpdateRunnerS
 			return app.CompositeStatus{}, err
 		}
 		return obj.StatusV2, nil
+	}
+
+	existing, err := getter(ctx)
+	if err != nil {
+		return err
+	}
+	if existing.Status == app.Status(req.Status) && existing.StatusHumanDescription == req.StatusDescription {
+		return nil
 	}
 
 	status := app.NewCompositeStatus(ctx, app.Status(req.Status))

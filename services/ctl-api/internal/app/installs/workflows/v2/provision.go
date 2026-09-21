@@ -83,6 +83,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 
 	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
+		Mode:      awaitrunnerhealthy.ModeStartup,
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
