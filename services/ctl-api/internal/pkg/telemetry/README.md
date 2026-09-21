@@ -198,6 +198,27 @@ attempt. Successful evaluations have `outcome=success` and `decision=pass|warn|d
 Retries count separately; series are absent until observed. No policy or entity
 IDs, policy contents, or error messages are dimensions. Recording adds no queries.
 
+### App config sync
+
+Standalone and branch app-config sync emit metrics when the shared `syncer.Run` returns:
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.app.config.sync.attempts` | Counter | attempts | outcome, stage |
+| `nuon.app.config.sync.duration` | Histogram | seconds | outcome |
+
+Outcomes are `success`, `rejected`, `error`, or `cancelled` (including deadlines).
+Stages are `load`, `intermediate`, `decode`, `sync_transaction`, or `deferred_queues`;
+success uses `none`. A `sync.SyncErr` from any app-config resource counts as
+`rejected` (invalid configuration, missing references, or unavailable features).
+Operational failures count as `error`; cancellation takes precedence.
+
+Duration includes deferred queue provisioning. Success does not imply downstream
+build or install success. Failure logs include `config_committed` to distinguish
+queue-setup failures after commit. Retries count separately; idle series are absent.
+Panics and process loss do not record a returned attempt. No entity IDs are dimensions,
+and instrumentation adds no queries.
+
 ### Queue dispatch
 
 The enqueuer emits metrics for dispatching signals to Temporal:
