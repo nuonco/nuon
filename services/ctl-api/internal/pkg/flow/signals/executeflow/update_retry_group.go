@@ -32,10 +32,7 @@ func (s *Signal) retryGroupHandler(ctx workflow.Context, req RetryGroupRequest) 
 		return nil, fmt.Errorf("unable to clone group for retry: %w", err)
 	}
 
-	s.resumeRequested = true
-	s.resumeRunType = app.WorkflowRunTypeRetry
-	s.resumeStepID = req.StepID
-	s.resumeStartIdx = s.findGroupPositionForStep(ctx, req.StepID)
+	s.markResumeRequested(ctx, app.WorkflowRunTypeRetry, req.StepID)
 
 	return &RetryGroupResponse{WorkflowID: s.WorkflowID, Retryable: true}, nil
 }
