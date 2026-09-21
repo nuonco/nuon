@@ -23,6 +23,7 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 	planSignal := &SuccessSignal{}
 	applySignal := &PlanApplyFailSignal{}
 	finalizeSignal := &SuccessSignal{}
+	e.phase("seed")
 
 	flw, queueID := e.setupFlowTest(ctx, ownerID, ownerType, []app.WorkflowStep{
 		{Name: "g1-plan", Idx: 100, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
@@ -33,12 +34,15 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 		{Name: "g2-finalize", Idx: 300, GroupIdx: 2, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: finalizeSignal}},
 	})
+	e.phase("fixtures")
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
+	e.phase("enqueue")
 
 	// PlanApplyFailSignal has MaxRetries=2 and always fails.
 	// The group will be cloned, then max retries exhausted → workflow errors.
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+	e.phase("db-success")
 
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 
@@ -54,11 +58,16 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 	require.GreaterOrEqual(e.T(), len(groupRetryIdxs), 2,
 		"expected multiple group retry generations, got %d: %v", len(groupRetryIdxs), groupRetryIdxs)
 
-	// Original group 1 steps should be discarded
+	// Successful steps retain their result; failed attempts are discarded as
+	// newer group generations replace them.
 	for _, step := range steps {
 		if step.GroupIdx == 1 && step.GroupRetryIdx == 0 {
-			require.Equal(e.T(), app.StatusDiscarded, step.Status.Status,
-				"original step %s should be discarded, got %s", step.Name, step.Status.Status)
+			if step.Name == "g1-plan" {
+				require.Equal(e.T(), app.StatusSuccess, step.Status.Status)
+			} else {
+				require.Equal(e.T(), app.StatusError, step.Status.Status)
+				require.True(e.T(), step.Retried)
+			}
 		}
 	}
 
@@ -69,7 +78,10 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 				"group 2 step should not have succeeded since group 1 never passed")
 		}
 	}
+	e.phase("assertions")
+
 	e.assertTemporalDrained(ctx, flw.ID)
+	e.phase("drain")
 }
 
 // TestRetryGroupRetryOfRetryDiscardsAllPreviousGroups verifies that when a
