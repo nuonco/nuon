@@ -903,18 +903,11 @@ const AgentSetup = () => (
       <CodeBlock language="bash" showCopy wrapLongLines className="!pr-14">
         {MCP_ADD_CLAUDE}
       </CodeBlock>
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <Link href={DOCS_MCP} isExternal textVariant="subtext">
-          docs.nuon.co/guides/agents/mcp-walkthrough
-        </Link>
-        <Text variant="subtext" theme="neutral">
-          Cursor, Amp, and other clients take the same server as JSON. Run{' '}
-          <Badge size="sm" variant="code">
-            nuon agents help
-          </Badge>{' '}
-          for each client's file.
-        </Text>
-      </div>
+      {/* The walkthrough carries the rest: Cursor and Amp config, per-client file
+          paths, and `nuon agents help`. No need to restate it here. */}
+      <Link href={DOCS_MCP} isExternal textVariant="subtext">
+        docs.nuon.co/guides/agents/mcp-walkthrough
+      </Link>
     </div>
   </div>
 )
