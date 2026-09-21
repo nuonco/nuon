@@ -859,23 +859,12 @@ const CopyTextButton = ({
   )
 }
 
-// Collapsed preview of what "Start with your app" expands into.
-const OWN_APP_STEPS: { icon: TIconVariant; title: string; body: string }[] = [
-  {
-    icon: 'GitHub',
-    title: 'Connect GitHub',
-    body: 'Needed for private repos. Nuon builds components from the repos you pick.',
-  },
-  {
-    icon: 'RobotIcon',
-    title: 'Create your app template',
-    body: 'One paste into your coding agent, or write a few config files.',
-  },
-  {
-    icon: 'CloudIcon',
-    title: 'Create the first install',
-    body: "Into your own cloud account first, then a customer's.",
-  },
+// Collapsed preview of what "Start with your app" expands into: titles only.
+// The detail lives inside the expanded setup, so this row stays a glance.
+const OWN_APP_STEPS: { icon: TIconVariant; title: string }[] = [
+  { icon: 'GitHub', title: 'Connect GitHub' },
+  { icon: 'RobotIcon', title: 'Create your app template' },
+  { icon: 'CloudIcon', title: 'Create the first install' },
 ]
 
 const AgentSetup = () => (
@@ -1674,19 +1663,17 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
           {heading}
           <ol className="grid gap-3 sm:grid-cols-3">
               {OWN_APP_STEPS.map((step, index) => (
-                <li key={step.title} className="flex flex-col gap-2 rounded-md border p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <Icon variant={step.icon} size={20} theme="brand" />
-                    <Badge size="sm" theme="brand">
-                      {index + 1}
-                    </Badge>
-                  </div>
-                  <Text variant="body" weight="strong">
+                <li
+                  key={step.title}
+                  className="flex items-center gap-2.5 rounded-md border px-3.5 py-3"
+                >
+                  <Icon variant={step.icon} size={18} theme="brand" />
+                  <Text variant="body" weight="strong" className="min-w-0 flex-1">
                     {step.title}
                   </Text>
-                  <Text variant="subtext" theme="neutral">
-                    {step.body}
-                  </Text>
+                  <Badge size="sm" theme="brand">
+                    {index + 1}
+                  </Badge>
                 </li>
               ))}
             </ol>
