@@ -6,16 +6,11 @@ import { ProviderLoading } from '@/components/layout/ProviderLoading'
 import { useApp } from '@/hooks/use-app'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
-import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { getAppBranches } from '@/lib'
 import { Overview } from './Overview'
 import { Branches } from './branches/Branches'
 
-const BranchPicker = ({
-  resolveFirstBranch = false,
-}: {
-  resolveFirstBranch?: boolean
-}) => {
+const BranchPicker = () => {
   const { org } = useOrg()
   const { app } = useApp()
   const navigate = useNavigate()
@@ -35,28 +30,15 @@ const BranchPicker = ({
 
   const branches = result?.data ?? []
   const singleBranchId = branches.length === 1 ? branches[0].id : undefined
-  const targetBranchId = resolveFirstBranch ? branches[0]?.id : singleBranchId
 
   useEffect(() => {
-    if (isLoading || !resolveFirstBranch || targetBranchId) return
-    navigate(`/${org?.id}/apps/setup?appId=${app?.id}`, { replace: true })
-  }, [
-    isLoading,
-    resolveFirstBranch,
-    targetBranchId,
-    navigate,
-    org?.id,
-    app?.id,
-  ])
-
-  useEffect(() => {
-    if (isLoading || !targetBranchId) return
-    navigate(`/${org?.id}/apps/${app?.id}/branches/${targetBranchId}`, {
+    if (isLoading || !singleBranchId) return
+    navigate(`/${org?.id}/apps/${app?.id}/branches/${singleBranchId}`, {
       replace: true,
     })
-  }, [isLoading, targetBranchId, navigate, org?.id, app?.id])
+  }, [isLoading, singleBranchId, navigate, org?.id, app?.id])
 
-  if (isLoading || resolveFirstBranch || singleBranchId) {
+  if (isLoading || singleBranchId) {
     return (
       <PageContent className="border-t">
         <ProviderLoading />
@@ -73,8 +55,6 @@ const BranchPicker = ({
 
 export const AppIndex = () => {
   const hasNewAppIA = useNewAppIA()
-  const hasSimpleIA = useSimpleIA()
 
-  if (hasSimpleIA) return <BranchPicker resolveFirstBranch />
   return hasNewAppIA ? <BranchPicker /> : <Overview />
 }
