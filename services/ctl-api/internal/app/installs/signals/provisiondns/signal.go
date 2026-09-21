@@ -59,6 +59,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install state")
 	}
 
+	if state == nil || state.Sandbox == nil {
+		l.Info("sandbox state not populated, skipping dns", "install_id", s.InstallID)
+		return nil
+	}
+
 	var outputs nuonDNSSandboxOutputs
 	if err := mapstructure.Decode(state.Sandbox.Outputs, &outputs); err != nil {
 		return errors.Wrap(err, "unable to parse nuon dns outputs")
