@@ -8,6 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -31,6 +32,15 @@ func (s *Signal) createStepRetryHandler(ctx workflow.Context) (*CreateStepRetryR
 	}
 	if !step.Retryable {
 		return nil, temporal.NewNonRetryableApplicationError("step is not retryable", "STEP_NOT_RETRYABLE", nil)
+	}
+
+	// The directive is the last write below, so its presence alongside Retried
+	// means an earlier landing of this update already finished; a re-delivery
+	// (activity retry, double-click) must not re-run OnRetry or re-discard.
+	if prior := directive.Step(step.ResultDirective); step.Retried &&
+		(prior == DirectiveRetry || prior == DirectiveRetryGroup) {
+		s.retried = true
+		return &CreateStepRetryResponse{Directive: string(prior)}, nil
 	}
 
 	sig := stepSignal(step)

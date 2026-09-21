@@ -52,9 +52,11 @@ var (
 	_ signal.SignalWithStepContext    = (*Signal)(nil)
 	_ signal.SignalWithAutoRetry      = (*Signal)(nil)
 	_ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
+	_ signal.SignalWithSkippable      = (*Signal)(nil)
 )
 
 func (s *Signal) AutoRetry() bool { return true }
+func (s *Signal) Skippable() bool { return false }
 
 // Manual retry remains available if the runner is repaired, but another
 // automatic one-hour poll cannot repair it.
