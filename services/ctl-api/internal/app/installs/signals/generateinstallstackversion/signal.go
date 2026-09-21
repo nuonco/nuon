@@ -52,8 +52,10 @@ func (s *Signal) WithParams(params *signal.Params) {
 var _ signal.SignalWithParams = (*Signal)(nil)
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithSkippable = (*Signal)(nil)
 
 func (s *Signal) AutoRetry() bool { return true }
+func (s *Signal) Skippable() bool { return false }
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
