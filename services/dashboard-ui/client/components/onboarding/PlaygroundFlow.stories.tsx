@@ -2137,26 +2137,19 @@ interface IBuildStage {
 
 const accountLabel = (_path: TPath, cloud: TCloud) => `your ${CLOUD_CONNECT[cloud].accountNoun}`
 
+// What is left AFTER the stack, which the user created on the previous step:
+// the stack is what boots the runner, so it is not a stage to watch here.
 // Strict linear order; the chain is the explanation for the duration. Copy is
-// cloud-generic on purpose. Facts: the stack owns the network (the sandbox only
-// tags its subnets), Nuon assumes four roles (provision, deprovision, maintenance,
-// break-glass), and nuonco/aws-eks-sandbox provisions a cluster + node group,
-// registry, storage and policy add-ons, DNS/ingress, namespaces, and RBAC.
-// Durations from docs/get-started: network + machine + healthy runner ≈ 11 min;
-// eks-simple end to end ≈ 35 min.
+// cloud-generic on purpose. Facts: nuonco/<cloud>-sandbox provisions a cluster +
+// node group, registry, storage and policy add-ons, DNS/ingress, namespaces, RBAC.
+// Durations from docs/get-started: a healthy runner ≈ 1 min after the stack
+// reports home; eks-simple end to end ≈ 35 min.
 const buildStages = (path: TPath, cloud: TCloud, appName: string): IBuildStage[] => [
-  {
-    id: 'stack',
-    icon: 'ShieldCheckIcon',
-    label: 'Install stack',
-    text: 'Network, runner machine, four roles — provision, deprovision, maintenance, break-glass. The one step you run yourself.',
-    duration: 'about 10 min',
-  },
   {
     id: 'runner',
     icon: 'CpuIcon',
     label: 'Runner',
-    text: "Boots on the stack's machine and runs everything after this.",
+    text: 'Boots on the machine your stack created, then runs everything after this.',
     duration: 'about 1 min',
   },
   {
@@ -2178,8 +2171,15 @@ const buildStages = (path: TPath, cloud: TCloud, appName: string): IBuildStage[]
 // The workflow, live. Stages before activeIndex are done, activeIndex is in
 // progress, the rest show their typical duration — so the chain still answers
 // "why is this slow" while it runs.
+// Tailwind needs the class whole, so the track count is a lookup, not a template.
+const STAGE_COLUMNS: Record<number, string> = {
+  2: 'md:grid-cols-2',
+  3: 'md:grid-cols-3',
+  4: 'md:grid-cols-4',
+}
+
 const BuildStages = ({ stages, activeIndex }: { stages: IBuildStage[]; activeIndex: number }) => (
-  <ol className="grid gap-5 md:grid-cols-4 md:gap-0">
+  <ol className={cn('grid gap-5 md:gap-0', STAGE_COLUMNS[stages.length] ?? 'md:grid-cols-3')}>
     {stages.map((stage, index) => {
       const state = index < activeIndex ? 'done' : index === activeIndex ? 'active' : 'next'
       return (
@@ -2266,7 +2266,7 @@ const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponent
               {appName}
             </Text>
             <Text variant="body" theme="neutral">
-              Building the install in {where} — {stages[activeIndex].label.toLowerCase()} in progress
+              Building the install in {where}
             </Text>
           </div>
         </div>
@@ -2276,15 +2276,9 @@ const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponent
       </Card>
 
       <Card className="!gap-6">
-        <div className="flex flex-col gap-1">
-          <Text variant="h3" role="heading" level={3}>
-            The Nuon install workflow
-          </Text>
-          <Text variant="body" theme="neutral">
-            Your stack is creating. When it reports back, the runner boots and the workflow takes over.
-            This creates all the cloud resources needed (network, VM, cluster) in {where}.
-          </Text>
-        </div>
+        <Text variant="h3" role="heading" level={3}>
+          The Nuon install workflow
+        </Text>
         <BuildStages stages={stages} activeIndex={activeIndex} />
       </Card>
 
@@ -2565,16 +2559,14 @@ const INSTALL_STACK_STEP: IWizardStepDef = {
 const PROVISION_STEP: Record<TPath, IWizardStepDef> = {
   example: {
     id: 'example-provision',
-    title: 'Your install is being created',
+    title: 'Your first BYOC install is deploying',
     navLabel: 'Provision',
-    description: 'The Nuon install workflow, under the hood.',
     component: ProvisionStep,
   },
   own: {
     id: 'own-provision',
-    title: 'Your install is being created',
+    title: 'Your first BYOC install is deploying',
     navLabel: 'Provision',
-    description: 'The Nuon install workflow, under the hood.',
     component: ProvisionStep,
   },
 }
