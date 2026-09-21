@@ -231,6 +231,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 	orgsCmd.AddCommand(listInvitesCmd)
 
 	orgsCmd.AddCommand(c.orgWebhooksCmd())
+	orgsCmd.AddCommand(c.orgSlackCmd())
 
 	return orgsCmd
 }
@@ -452,14 +453,12 @@ Example (GitHub Actions, main branch of acme/app only):
 const subscriptionJSONHelp = `SUBSCRIPTION JSON SHAPE
 
   Top-level keys (both optional):
-    interests  events filter — which events fire for this webhook
+    interests  events filter — which events fire for this subscription
     match      scope predicate — which entities are in scope (omit for
                org-wide / every entity)
 
-  Omitting --subscription-json / --subscription-file entirely is equivalent
-  to {"interests": {"all_events": true}} — every event in the org, no
-  scoping. On update both fields are replaced wholesale; pass the existing
-  shape alongside any edits to preserve it.
+  The create/update semantics of omitted flags differ per command — see the
+  command's own help above this section.
 
 INTERESTS
 
@@ -513,8 +512,15 @@ MATCH
   Per-kind TargetMatch fields (all optional; an empty {} means "any entity
   of this kind"):
     ids       list of entity IDs (OR within the list)
-    selector  label selector with match_labels: {key: value} (AND across keys;
-              value "*" means "key must exist")
+    selector  label selector with:
+                match_labels     {key: value} (AND across keys; value "*"
+                                 means "key must exist")
+                not_match_labels {key: value} exclusions — rejects entities
+                                 where the key is present with that value
+                                 ("*" = key exists at all). Installs without
+                                 the key still match, so
+                                 {"not_match_labels": {"monitor": "false"}}
+                                 means "everything except monitor=false".
 
   Composition: the match matches an event when ANY populated kind matches.
   Within a kind, the entity matches when its ID is in ids OR the selector
@@ -676,4 +682,115 @@ to preserve it.
 	webhooksCmd.AddCommand(deleteCmd)
 
 	return webhooksCmd
+}
+
+func (c *cli) orgSlackCmd() *cobra.Command {
+	var (
+		subID       string
+		channelID   string
+		channelName string
+		orgLinkID   string
+
+		createSubscription orgs.SubscriptionFlags
+		updateSubscription orgs.SubscriptionFlags
+	)
+
+	slackCmd := &cobra.Command{
+		Use:               "slack",
+		Short:             "Manage Slack notifications for the current org",
+		Long:              "Manage Slack channel subscriptions for the current org — the per-channel rules that decide which org events post into which Slack channel",
+		PersistentPreRunE: c.persistentPreRunE,
+	}
+
+	channelSubsCmd := &cobra.Command{
+		Use:               "channel-subscriptions",
+		Short:             "Manage Slack channel subscriptions for the current org",
+		Long:              "Manage Slack channel subscriptions for the current org. Subscriptions combine a scope (which resources match) with an events filter (which of those events post).",
+		PersistentPreRunE: c.persistentPreRunE,
+	}
+
+	listCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List Slack channel subscriptions for the current org",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.orgs
+			return svc.ListChannelSubscriptions(cmd.Context(), PrintJSON)
+		}),
+	}
+	channelSubsCmd.AddCommand(listCmd)
+
+	createCmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a Slack channel subscription for the current org",
+		Long: `Create a Slack channel subscription for the current org.
+
+Requires --channel-id (the Slack channel ID, e.g. C0123ABCDEF). When
+--org-link-id is omitted, the org's single linked Slack workspace is used;
+with multiple linked workspaces, pass --org-link-id explicitly (see
+` + "`nuon orgs slack channel-subscriptions list`" + `).
+
+When neither --subscription-json nor --subscription-file is passed in an
+interactive terminal, the CLI drops into a picker that walks you through
+events and scope. In non-interactive sessions the default is every event
+in the org, unscoped.
+
+` + subscriptionJSONHelp,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.orgs
+			return svc.CreateChannelSubscription(cmd.Context(), channelID, channelName, orgLinkID, createSubscription, PrintJSON)
+		}),
+	}
+	createCmd.Flags().StringVar(&channelID, "channel-id", "", "Slack channel ID (e.g. C0123ABCDEF)")
+	createCmd.MarkFlagRequired("channel-id")
+	createCmd.Flags().StringVar(&channelName, "channel-name", "", "Slack channel name (display only)")
+	createCmd.Flags().StringVar(&orgLinkID, "org-link-id", "", "Org link ID (omit when this org has exactly one linked Slack workspace)")
+	createCmd.Flags().StringVar(&createSubscription.JSON, "subscription-json", "", "Inline JSON subscription describing interests + match (mutually exclusive with --subscription-file)")
+	createCmd.Flags().StringVar(&createSubscription.File, "subscription-file", "", "Path to a JSON file containing the subscription describing interests + match (mutually exclusive with --subscription-json)")
+	channelSubsCmd.AddCommand(createCmd)
+
+	updateCmd := &cobra.Command{
+		Use:   "update",
+		Short: "Update a Slack channel subscription for the current org",
+		Long: `Update a Slack channel subscription for the current org.
+
+Updates are partial: keys omitted from the JSON leave the stored value
+untouched (the events filter and scope are NOT replaced wholesale).
+Pass "match": null to reset the scope to org-wide.
+
+Unlike webhooks, there is no interactive picker here — the picker writes
+one resource kind at a time and would destroy multi-kind matches. JSON is
+the only lossless way to express a scope like "every event except installs
+labeled monitor=false":
+
+  --subscription-json '{"match": {"installs": {"selector":
+    {"not_match_labels": {"monitor": "false"}}}, "components": {}, "actions": {}}}'
+
+` + subscriptionJSONHelp,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.orgs
+			return svc.UpdateChannelSubscription(cmd.Context(), subID, updateSubscription, PrintJSON)
+		}),
+	}
+	updateCmd.Flags().StringVar(&subID, "sub-id", "", "The ID of the channel subscription to update")
+	updateCmd.MarkFlagRequired("sub-id")
+	updateCmd.Flags().StringVar(&updateSubscription.JSON, "subscription-json", "", "Inline JSON subscription patch describing interests + match (mutually exclusive with --subscription-file)")
+	updateCmd.Flags().StringVar(&updateSubscription.File, "subscription-file", "", "Path to a JSON file containing the subscription patch (mutually exclusive with --subscription-json)")
+	channelSubsCmd.AddCommand(updateCmd)
+
+	deleteCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete a Slack channel subscription for the current org",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.orgs
+			return svc.DeleteChannelSubscription(cmd.Context(), subID, PrintJSON)
+		}),
+	}
+	deleteCmd.Flags().StringVar(&subID, "sub-id", "", "The ID of the channel subscription to delete")
+	deleteCmd.MarkFlagRequired("sub-id")
+	channelSubsCmd.AddCommand(deleteCmd)
+
+	slackCmd.AddCommand(channelSubsCmd)
+
+	return slackCmd
 }
