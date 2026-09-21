@@ -5,7 +5,6 @@ import { SectionHeader } from '@/components/layout/SectionHeader'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useOrg } from '@/hooks/use-org'
 import { useCLIConfig } from '@/hooks/use-cli-config'
-import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
 import type { TNavItem } from '@/types/dashboard.types'
 
@@ -20,7 +19,6 @@ export const SettingsLayout = () => {
 const SettingsTemplate = () => {
   const { org } = useOrg()
   const { data: cliConfig } = useCLIConfig()
-  const hasSimpleIA = useSimpleIA()
 
   if (!org) return null
 
@@ -34,7 +32,7 @@ const SettingsTemplate = () => {
     {
       path: `/vcs`,
       iconVariant: 'GitHub' as const,
-      text: hasSimpleIA ? 'Connections' : 'VCS connections',
+      text: 'VCS connections',
     },
     {
       path: `/webhooks`,
