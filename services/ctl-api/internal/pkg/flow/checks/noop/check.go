@@ -59,6 +59,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	isNoop, err := activities.AwaitCheckNoopPlan(ctx, &activities.CheckNoopPlanRequest{
 		StepTargetID: step.StepTargetID,
+		WorkflowType: flw.Type,
 	})
 	if err != nil {
 		return directive.Pass(), errors.Wrap(err, "failed to check for noop plan")
