@@ -80,13 +80,6 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 	for idx, step := range runbook.Steps {
 		var trigger app.Trigger
 		if step.Type == config.RunbookStepTypeWaitForEvent {
-			var org app.Org
-			if err := s.db.WithContext(ctx).Select("features").Where(app.Org{ID: s.orgID}).First(&org).Error; err != nil {
-				return sync.SyncInternalErr{Description: "unable to check triggers feature", Err: err}
-			}
-			if !org.Features[string(app.OrgFeatureTriggers)] {
-				return sync.SyncErr{Resource: fmt.Sprintf("runbook-%s", runbook.Name), Description: "triggers feature is not enabled"}
-			}
 			if err := s.db.WithContext(ctx).Where(app.Trigger{OrgID: s.orgID, Name: step.Trigger}).First(&trigger).Error; err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					return sync.SyncErr{Resource: fmt.Sprintf("runbook-%s", runbook.Name), Description: fmt.Sprintf("unable to find trigger %q", step.Trigger), Err: err}
