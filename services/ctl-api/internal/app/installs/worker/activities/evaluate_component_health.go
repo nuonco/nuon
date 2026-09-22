@@ -68,7 +68,7 @@ type EvaluateComponentHealthResponse struct {
 func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateComponentHealthRequest) (result *EvaluateComponentHealthResponse, err error) {
 	started := time.Now()
 	reason := "load_install"
-	defer func() { a.healthMetrics.record(ctx, started, reason, result, err) }()
+	defer func() { a.healthMetrics.recordForInstall(ctx, started, req.InstallID, reason, result, err) }()
 	resp := &EvaluateComponentHealthResponse{}
 
 	var install app.Install

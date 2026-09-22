@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-func (a *Activities) recordDriftPlanEvaluation(ctx context.Context, workflowType app.WorkflowType, isNoop bool, stage string, err error) {
+func (a *Activities) recordDriftPlanEvaluationForTarget(ctx context.Context, workflowType app.WorkflowType, installID, componentID string, isNoop bool, stage string, err error) {
 	if a.driftPlanEvaluations == nil {
 		return
 	}
@@ -23,6 +23,12 @@ func (a *Activities) recordDriftPlanEvaluation(ctx context.Context, workflowType
 		return
 	}
 	attrs := []attribute.KeyValue{attribute.String("target", target)}
+	if installID != "" {
+		attrs = append(attrs, attribute.String("nuon.install.id", installID))
+	}
+	if target == "component" && componentID != "" {
+		attrs = append(attrs, attribute.String("nuon.component.id", componentID))
+	}
 	if err != nil {
 		outcome := "error"
 		if ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
