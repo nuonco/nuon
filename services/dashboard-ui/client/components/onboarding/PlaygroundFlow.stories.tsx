@@ -2098,10 +2098,6 @@ const stageState = (index: number, activeIndex: number): TStageState =>
 // Placeholder in Nuon's install-ID shape; the product passes the real one.
 const EXAMPLE_INSTALL_ID = 'inlk3x9q2m7v4w8p1z6r5t0y2c'
 
-// A 1-2-3 rail beside the customer's account,
-// drawn the way the intro drew it, filling in as stages finish. Hovering or
-// focusing a step previews it, clicking pins it; unpinned, focus follows the
-// running stage. Rings, not borders (the global border-color rule).
 const ProvisionAccountView = ({
   stages,
   activeIndex,
