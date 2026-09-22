@@ -7,6 +7,7 @@ import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { CodeBlock } from '@/components/diffs/CodeBlock'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { CustomStackTemplateURL } from '@/components/stacks/CustomStackTemplateURL'
 import {
@@ -30,6 +31,7 @@ export interface IInstallStack {
   configVersion?: number
   latestVersionAction?: ReactNode
   nestedStacks: TInstallNestedStack[]
+  outputs?: string
   stackName?: string
   stackType?: string
   versions: TInstallStackVersion[]
@@ -49,6 +51,7 @@ export const InstallStack = ({
   configVersion,
   latestVersionAction,
   nestedStacks,
+  outputs,
   stackName,
   stackType,
   versions,
@@ -128,6 +131,30 @@ export const InstallStack = ({
         )}
       </div>
     ) : null}
+
+    <div className="flex flex-col gap-4">
+      <SectionHeader
+        title="Outputs"
+        description="Values from the last applied stack run."
+      />
+      {versionsLoading && !outputs ? (
+        <Skeleton height="12rem" width="100%" />
+      ) : outputs ? (
+        <CodeBlock
+          value={outputs}
+          language="json"
+          filename="stack-outputs.json"
+          copy
+          maxHeight={480}
+        />
+      ) : (
+        <EmptyState
+          variant="table"
+          emptyTitle="No outputs yet"
+          emptyMessage="Outputs appear here once the stack has been applied in the cloud account."
+        />
+      )}
+    </div>
 
     <div className="flex flex-col gap-4">
       <SectionHeader

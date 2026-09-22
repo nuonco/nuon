@@ -33,6 +33,11 @@ const baseProps: IInstallStack = {
   stackType: 'aws-cloudformation',
   nestedStacks: [],
   versions,
+  outputs: `{
+  "vpc_id": "vpc-000000000000",
+  "cluster_name": "acme-production",
+  "region": "us-east-1"
+}`,
   configAction: <Button variant="secondary">Edit overrides</Button>,
   latestVersionAction: (
     <Button variant="secondary" size="sm">
@@ -103,11 +108,20 @@ export const InstallOverrides = () => (
   />
 )
 
+export const NoOutputs = () => (
+  <InstallStack
+    {...baseProps}
+    nestedStacks={multipleNestedStacks}
+    outputs={undefined}
+  />
+)
+
 export const NoVersions = () => (
   <InstallStack
     {...baseProps}
     nestedStacks={multipleNestedStacks}
     versions={[]}
+    outputs={undefined}
     latestVersionAction={undefined}
   />
 )

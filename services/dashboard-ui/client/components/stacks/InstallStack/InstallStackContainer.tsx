@@ -116,6 +116,13 @@ export const InstallStackContainer = () => {
   })
 
   const versions = [...(stack?.versions ?? [])].sort(byCreatedAtDesc)
+  const outputData =
+    stack?.install_stack_outputs?.data_contents ??
+    stack?.install_stack_outputs?.data
+  const outputs =
+    outputData && Object.keys(outputData).length
+      ? JSON.stringify(outputData, null, 2)
+      : undefined
   const appStack = appConfig?.stack
   const installConfig = install?.install_config
   const nestedStacks = resolveNestedStacks(
@@ -133,6 +140,7 @@ export const InstallStackContainer = () => {
       stackName={appStack?.name}
       stackType={appStack?.type}
       nestedStacks={nestedStacks}
+      outputs={outputs}
       configLoading={configLoading}
       configError={
         configError
