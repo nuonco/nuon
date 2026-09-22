@@ -98,15 +98,6 @@ func (s *service) IngestEvent(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	enabled, err := s.features.OrgHasFeature(ctx, trigger.OrgID, app.OrgFeatureTriggers)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if !enabled {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "trigger not found"})
-		return
-	}
 	now := time.Now()
 	if authUsesSecret(trigger.AuthType) {
 		if err := s.scrubInactiveTriggerSecrets(ctx, s.db, trigger.ID, now); err != nil {

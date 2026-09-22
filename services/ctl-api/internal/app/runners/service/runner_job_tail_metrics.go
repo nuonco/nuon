@@ -4,9 +4,10 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type runnerJobTailMetrics struct {
