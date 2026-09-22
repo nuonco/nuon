@@ -77,6 +77,12 @@ func (s *propagator) getPayload(reader workflow.HeaderReader) (*Payload, error) 
 	if err := s.dataConverter.FromPayload(value, &payload); err != nil {
 		return nil, errors.Wrap(err, "unable to convert payload")
 	}
+	if payload.OrgID == "" && payload.AccountID == "" {
+		var legacy legacyPayload
+		if err := s.dataConverter.FromPayload(value, &legacy); err == nil {
+			payload.fillFromLegacy(legacy)
+		}
+	}
 
 	if payload.TraceID == "" {
 		u7 := uuid.Must(uuid.NewV7())
