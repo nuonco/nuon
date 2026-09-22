@@ -2275,12 +2275,6 @@ const ProvisionAccountView = ({
   )
 }
 
-// --- Step: the install workflow (the real multi-minute wait) --------------------
-//
-// The stack is creating; when it reports back the runner boots and the workflow
-// takes over. In the product this is driven by install status; here a timer
-// walks the chain. "See your install" ends the flow: the product opens the
-// install's live workflow page.
 const STAGE_DWELL_MS = [3000, 6000, 3000]
 
 const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
