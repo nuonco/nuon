@@ -15,6 +15,8 @@ import {
   NewInstallOperationsLayout,
   NewInstallResourcesLayout,
 } from './NewInstallSectionLayout'
+import { NewInstallState } from './NewInstallState'
+import { NewInstallStack } from './NewInstallStack'
 import { Actions } from './Actions'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
@@ -112,7 +114,7 @@ const InstallResourcesRoute = () => {
 const NewInstallResourcesIndex = () => {
   const hasNewInstallIA = useNewInstallIA()
   if (!hasNewInstallIA) return null
-  return <NewInstallPlaceholderBody title="Stack" />
+  return <NewInstallStack />
 }
 
 export const installRoutes: RouteObject[] = [
@@ -149,7 +151,7 @@ export const installRoutes: RouteObject[] = [
               },
               {
                 path: 'state',
-                element: <NewInstallPlaceholderBody title="State" />,
+                element: <NewInstallState />,
               },
             ],
           },
