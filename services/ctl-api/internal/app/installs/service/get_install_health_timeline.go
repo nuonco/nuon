@@ -44,7 +44,7 @@ type InstallHealthTimelineResponse struct {
 
 // @ID						GetInstallHealthTimeline
 // @Summary				install health timeline
-// @Description			Returns the install's health history aggregated across its components: uptime_percent and observed_seconds are the worst component's, daily[].health is the worst verdict across components for that day, and components lists each component's own current health and uptime. Requires the component-health feature.
+// @Description			Returns the install's health history aggregated across its components: uptime_percent and observed_seconds are the worst component's, daily[].health is the worst verdict across components for that day, and components lists each component's own current health and uptime.
 // @Param					install_id	path	string	true	"install ID"
 // @Param					days		query	int		false	"size of the window in days, clamped to 1-90"	Default(90)
 // @Tags					installs
@@ -74,10 +74,6 @@ func (s *service) GetInstallHealthTimeline(ctx *gin.Context) {
 
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := s.requireComponentHealthFeature(ctx, org); err != nil {
 		ctx.Error(err)
 		return
 	}
