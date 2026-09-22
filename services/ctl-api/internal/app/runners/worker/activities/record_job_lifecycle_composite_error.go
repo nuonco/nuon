@@ -31,7 +31,7 @@ func (a *Activities) RecordJobLifecycleCompositeError(ctx context.Context, req R
 	var job app.RunnerJob
 	res := a.db.WithContext(ctx).
 		Scopes(scopes.WithDisableViews).
-		Select("id", "owner_id", "owner_type", "type").
+		Select("id", "owner_id", "owner_type", "type", "metadata").
 		Where(app.RunnerJob{ID: req.JobID}).
 		Take(&job)
 	if res.Error != nil {
@@ -84,7 +84,7 @@ func (a *Activities) RecordJobLifecycleCompositeError(ctx context.Context, req R
 		return fmt.Errorf("no runner job found for id %s: %w", req.JobID, gorm.ErrRecordNotFound)
 	}
 
-	a.recordRunnerJobLifecycleFailure(ctx, job.Type, req.Reason)
+	a.recordRunnerJobLifecycleFailureForInstall(ctx, job.Type, req.Reason, job.FlowInstallID())
 
 	if job.OwnerType != "install_deploys" && job.OwnerType != "install_sandbox_runs" {
 		l.Info("recorded runner job lifecycle composite error")
