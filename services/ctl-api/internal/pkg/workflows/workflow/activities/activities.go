@@ -37,6 +37,7 @@ type Activities struct {
 	l           *zap.Logger
 
 	policyEvaluationMetrics
+	driftPlanEvaluations metric.Int64Counter
 }
 
 func New(params Params) *Activities {
@@ -58,5 +59,9 @@ func New(params Params) *Activities {
 		l:           l,
 	}
 	a.policyEvaluationMetrics = newPolicyEvaluationMetrics(provider)
+	a.driftPlanEvaluations, _ = provider.Meter("github.com/nuonco/nuon/ctl-api/drift-plan").Int64Counter(
+		"nuon.install.drift.plan.evaluation.attempts",
+		metric.WithUnit("{attempt}"),
+		metric.WithDescription("Returned drift plan interpretation attempts, not end-to-end drift checks."))
 	return a
 }

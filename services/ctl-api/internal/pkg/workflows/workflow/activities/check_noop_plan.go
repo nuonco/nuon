@@ -11,7 +11,8 @@ import (
 )
 
 type CheckNoopPlanRequest struct {
-	StepTargetID string `validate:"required"`
+	StepTargetID string           `validate:"required"`
+	WorkflowType app.WorkflowType `json:",omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -19,10 +20,13 @@ type CheckNoopPlanRequest struct {
 func (a *Activities) CheckNoopPlan(ctx context.Context, req *CheckNoopPlanRequest) (bool, error) {
 	plan, err := a.getApprovalPlan(ctx, req.StepTargetID)
 	if err != nil {
+		a.recordDriftPlanEvaluation(ctx, req.WorkflowType, false, "load_plan", err)
 		return false, errors.Wrap(err, "unable to get approval plan")
 	}
 
-	return plan.IsNoopPlan()
+	isNoop, err := plan.IsNoopPlan()
+	a.recordDriftPlanEvaluation(ctx, req.WorkflowType, isNoop, "evaluate_plan", err)
+	return isNoop, err
 }
 
 func (a *Activities) getApprovalPlan(ctx context.Context, stepTargetID string) (*ApprovalPlan, error) {

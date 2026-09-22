@@ -1,6 +1,7 @@
 package activities
 
 import (
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -27,6 +28,7 @@ type Params struct {
 	L                *zap.Logger
 	QueueClient      *queueclient.Client
 	StatusActivities *statusactivities.Activities
+	MeterProvider    metric.MeterProvider `optional:"true"`
 }
 
 type Activities struct {
@@ -40,6 +42,7 @@ type Activities struct {
 	l                *zap.Logger
 	queueClient      *queueclient.Client
 	statusActivities *statusactivities.Activities
+	jobFailures      metric.Int64Counter
 }
 
 func New(params Params) *Activities {
@@ -54,5 +57,6 @@ func New(params Params) *Activities {
 		l:                params.L,
 		queueClient:      params.QueueClient,
 		statusActivities: params.StatusActivities,
+		jobFailures:      newRunnerJobLifecycleFailures(params.MeterProvider),
 	}
 }
