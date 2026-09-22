@@ -22,6 +22,9 @@ type AppAppBranchPreviewConfig struct {
 	// comment
 	Comment bool `json:"comment,omitempty"`
 
+	// ignore drafts
+	IgnoreDrafts bool `json:"ignore_drafts,omitempty"`
+
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 
@@ -34,14 +37,11 @@ type AppAppBranchPreviewConfig struct {
 	// mode
 	Mode AppAppBranchRunPreviewMode `json:"mode,omitempty"`
 
-	// set statuses
-	SetStatuses bool `json:"set_statuses,omitempty"`
-
-	// ignore drafts
-	IgnoreDrafts bool `json:"ignore_drafts,omitempty"`
-
 	// react
 	React bool `json:"react,omitempty"`
+
+	// set statuses
+	SetStatuses bool `json:"set_statuses,omitempty"`
 }
 
 // Validate validates this app app branch preview config

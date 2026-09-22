@@ -174,7 +174,6 @@ export const TerraformProvider = () => (
         step={mockStep}
         orgId="org-1"
         installId="install-1"
-        tfProvider
       />
     </div>
   </InstallAppConfigContext.Provider>

@@ -138,6 +138,26 @@ requests without workflow type are excluded. Skipped checks and failures before 
 interpretation produce no observation; successful interpretation does not imply that
 later status writes or notifications succeeded.
 
+### Component-health evaluation
+
+`EvaluateComponentHealth` emits one observation per returned install-level activity invocation:
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.install.component.health.evaluation.attempts` | Counter | attempts | outcome, reason |
+| `nuon.install.component.health.evaluation.duration` | Histogram | seconds | outcome |
+
+Outcomes are `success`, `error`, `cancelled` (including deadlines), or `skipped`.
+Error/cancellation reasons identify `load_install`, `feature_check`, `load_components`,
+`load_observations`, or `persist_verdicts`. Skips use `install_missing` or
+`feature_disabled`; success uses `none`. Skips have no duration observation.
+
+Success includes empty installs and unhealthy component verdicts. Partial verdict
+writes followed by a returned error count as an error; best-effort dependency,
+diagnostic enrichment and transition-history failures do not change the outcome.
+Duration includes that best-effort work. Retries count again. These metrics describe
+evaluator operation, not current component health or whether every install was checked.
+
 ### App config sync
 
 Standalone and branch app-config sync emit metrics when the shared `syncer.Run` returns:

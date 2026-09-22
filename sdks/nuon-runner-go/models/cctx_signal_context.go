@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -28,15 +30,84 @@ type CctxSignalContext struct {
 
 	// trace id
 	TraceID string `json:"trace_id,omitempty"`
+
+	// workflow telemetry
+	WorkflowTelemetry *KeysWorkflowTelemetry `json:"workflow_telemetry,omitempty"`
 }
 
 // Validate validates this cctx signal context
 func (m *CctxSignalContext) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateWorkflowTelemetry(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this cctx signal context based on context it is used
+func (m *CctxSignalContext) validateWorkflowTelemetry(formats strfmt.Registry) error {
+	if swag.IsZero(m.WorkflowTelemetry) { // not required
+		return nil
+	}
+
+	if m.WorkflowTelemetry != nil {
+		if err := m.WorkflowTelemetry.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("workflow_telemetry")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("workflow_telemetry")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this cctx signal context based on the context it is used
 func (m *CctxSignalContext) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateWorkflowTelemetry(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *CctxSignalContext) contextValidateWorkflowTelemetry(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.WorkflowTelemetry != nil {
+
+		if swag.IsZero(m.WorkflowTelemetry) { // not required
+			return nil
+		}
+
+		if err := m.WorkflowTelemetry.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("workflow_telemetry")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("workflow_telemetry")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

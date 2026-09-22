@@ -76,6 +76,7 @@ type Activities struct {
 	secretsSvc        secretsmanager.Service
 	statusActivities  *statusactivities.Activities
 	stateMetrics      *state.Metrics
+	healthMetrics     *componentHealthEvaluationMetrics
 }
 
 func New(params Params) *Activities {
@@ -102,5 +103,6 @@ func New(params Params) *Activities {
 		secretsSvc:        params.SecretsService,
 		statusActivities:  params.StatusActivities,
 		stateMetrics:      state.NewMetrics(params.MeterProvider),
+		healthMetrics:     newComponentHealthEvaluationMetrics(params.MeterProvider),
 	}
 }
