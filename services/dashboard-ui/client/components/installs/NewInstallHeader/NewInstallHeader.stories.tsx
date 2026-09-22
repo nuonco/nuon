@@ -16,7 +16,10 @@ const mockInstall = {
   app: { id: 'app-1', name: 'payments' },
   app_branch: { id: 'brnch-1', name: 'main' },
   name: 'acme-production',
+  created_at: '2026-06-01T12:00:00Z',
   updated_at: '2026-09-20T18:04:00Z',
+  cloud_platform: 'aws',
+  aws_account: { region: 'us-west-2' },
   labels: { env: 'production', team: 'platform' },
   metadata: { managed_by: 'nuon/cli/install-config' },
   runner_id: 'runner-1',
@@ -31,9 +34,8 @@ const mockInstall = {
 } as any
 
 const branchAction = (
-  <Button variant="secondary" size="sm">
-    <Icon variant="PencilSimpleLineIcon" size={16} />
-    Edit
+  <Button variant="ghost" size="sm" aria-label="Change app branch">
+    <Icon variant="PencilSimpleLineIcon" size={14} />
   </Button>
 )
 

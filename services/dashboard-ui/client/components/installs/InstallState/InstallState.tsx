@@ -38,22 +38,25 @@ export const InstallState = ({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      {onDownload ? (
-        <div className="flex justify-end">
-          <Button variant="secondary" onClick={onDownload}>
-            <Icon variant="DownloadSimpleIcon" size={16} />
-            Download
+    <CodeBlock
+      value={value}
+      language="json"
+      filename={filename}
+      copy
+      maxHeight={640}
+      actions={
+        onDownload ? (
+          <Button
+            size="sm"
+            variant="icon"
+            aria-label="Download"
+            tooltipProps={{ tipContent: 'Download' }}
+            onClick={onDownload}
+          >
+            <Icon variant="DownloadSimpleIcon" size={14} />
           </Button>
-        </div>
-      ) : null}
-      <CodeBlock
-        value={value}
-        language="json"
-        filename={filename}
-        copy
-        maxHeight={640}
-      />
-    </div>
+        ) : null
+      }
+    />
   )
 }

@@ -3,7 +3,6 @@ import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
-import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
@@ -108,11 +107,6 @@ export const InstallStack = ({
               <Card key={nestedStack.id} className="!p-4 !gap-3">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2 min-w-0">
-                    <Icon
-                      variant="StackIcon"
-                      size={14}
-                      className="text-cool-grey-400 shrink-0"
-                    />
                     <Text weight="strong" family="mono">
                       {nestedStack.name}
                     </Text>

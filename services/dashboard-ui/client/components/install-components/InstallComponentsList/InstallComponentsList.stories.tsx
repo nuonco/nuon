@@ -83,6 +83,7 @@ export const Default = () => (
       />
     }
     filterActions={<Button variant="secondary">Filter (5)</Button>}
+    pagination={{ hasNext: true, offset: 0, limit: 10 }}
   />
 )
 

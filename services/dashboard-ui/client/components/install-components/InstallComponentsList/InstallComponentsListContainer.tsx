@@ -33,12 +33,15 @@ const FILTER_TYPES: TComponentConfigTypeText[] = [
   'pulumi',
 ]
 
+const LIMIT = 10
+
 export const InstallComponentsListContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const [searchParams] = useSearchParams()
   const showHealth = !!org?.features?.['component-health']
 
+  const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
   const selectedTypes = (searchParams.get('types')?.split(',') ?? []).filter(
     (type): type is TComponentConfigTypeText =>
@@ -50,13 +53,20 @@ export const InstallComponentsListContainer = () => {
 
   const { data: result, isLoading } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['install-resource-components', org?.id, install?.id, q, types],
+    queryKey: [
+      'install-resource-components',
+      org?.id,
+      install?.id,
+      offset,
+      q,
+      types,
+    ],
     queryFn: () =>
       getInstallComponents({
         orgId: org.id,
         installId: install.id,
-        limit: 100,
-        offset: 0,
+        limit: LIMIT,
+        offset,
         q,
         types,
       }),
@@ -99,6 +109,11 @@ export const InstallComponentsListContainer = () => {
       components={(result?.data ?? []).map(toListItem)}
       loading={isLoading}
       filtered={!!q || !!selectedTypes.length}
+      pagination={{
+        hasNext: result?.pagination?.hasNext ?? false,
+        offset,
+        limit: LIMIT,
+      }}
       actions={<ManageAllDropdown />}
       search={
         <DebouncedSearchInput

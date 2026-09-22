@@ -14,6 +14,7 @@ import {
 } from './InstallImagesList'
 
 const IMAGE_TYPES = 'external_image,docker_build'
+const LIMIT = 10
 
 export const InstallImagesListContainer = () => {
   const { org } = useOrg()
@@ -21,17 +22,18 @@ export const InstallImagesListContainer = () => {
   const { appConfig } = useInstallAppConfig()
   const [searchParams] = useSearchParams()
 
+  const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
 
   const { data: result, isLoading } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['install-resource-images', org?.id, install?.id, q],
+    queryKey: ['install-resource-images', org?.id, install?.id, offset, q],
     queryFn: () =>
       getInstallComponents({
         orgId: org.id,
         installId: install.id,
-        limit: 100,
-        offset: 0,
+        limit: LIMIT,
+        offset,
         q,
         types: IMAGE_TYPES,
       }),
@@ -77,6 +79,11 @@ export const InstallImagesListContainer = () => {
       images={(result?.data ?? []).map(toListItem)}
       loading={isLoading}
       filtered={!!q}
+      pagination={{
+        hasNext: result?.pagination?.hasNext ?? false,
+        offset,
+        limit: LIMIT,
+      }}
       search={
         <DebouncedSearchInput
           className="w-full md:w-fit"

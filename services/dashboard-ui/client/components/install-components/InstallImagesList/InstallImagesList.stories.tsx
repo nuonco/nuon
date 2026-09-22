@@ -87,6 +87,7 @@ export const Default = () => (
         onChange={() => {}}
       />
     }
+    pagination={{ hasNext: true, offset: 0, limit: 10 }}
   />
 )
 

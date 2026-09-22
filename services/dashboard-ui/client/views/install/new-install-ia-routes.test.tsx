@@ -21,8 +21,8 @@ test('registers the new install IA navigation and placeholder routes', () => {
     NEW_INSTALL_NAV_LINKS.map((link) => ('text' in link ? link.text : null))
   ).toEqual([
     'Overview',
-    'Resources',
     'Deployments',
+    'Resources',
     'Health',
     'Operations',
     'Configuration',

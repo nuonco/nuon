@@ -20,7 +20,7 @@ export const NewInstallHeaderContainer = () => {
       labelColors={labelColors}
       orgId={org?.id}
       branchAction={
-        <ChangeAppBranchButton compact install={install} onSuccess={refresh} />
+        <ChangeAppBranchButton iconOnly install={install} onSuccess={refresh} />
       }
       settingsAction={
         <Button
