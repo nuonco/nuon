@@ -100,6 +100,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		Metadata: map[string]string{
 			app.WorkflowMetadataKeyWorkflowNameSuffix: installComponent.Component.Name,
 			"install_deploy_id":                       deploy.ID,
+			"component_id":                            s.ComponentID,
 			"deploy_dependents":                       "false",
 		},
 	})

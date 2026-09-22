@@ -21,7 +21,7 @@ func newRunnerJobLifecycleFailures(provider metric.MeterProvider) metric.Int64Co
 	return counter
 }
 
-func (a *Activities) recordRunnerJobLifecycleFailure(ctx context.Context, jobType app.RunnerJobType, reason joberrors.LifecycleFailureReason) {
+func (a *Activities) recordRunnerJobLifecycleFailureForInstall(ctx context.Context, jobType app.RunnerJobType, reason joberrors.LifecycleFailureReason, installID string) {
 	if a.jobFailures == nil {
 		return
 	}
@@ -42,8 +42,12 @@ func (a *Activities) recordRunnerJobLifecycleFailure(ctx context.Context, jobTyp
 		joberrors.LifecycleFailureReasonRunnerDisabled:
 		errorType = string(reason)
 	}
-	a.jobFailures.Add(ctx, 1, metric.WithAttributes(
+	attrs := []attribute.KeyValue{
 		attribute.String("nuon.runner.job.type", kind),
 		attribute.String("error.type", errorType),
-	))
+	}
+	if installID != "" {
+		attrs = append(attrs, attribute.String("nuon.install.id", installID))
+	}
+	a.jobFailures.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
