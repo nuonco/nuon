@@ -1,8 +1,9 @@
 # Control-plane operational telemetry
 
 This package provides the control plane's resource identity, meter provider, and
-OTLP metric exporter. Export is enabled when an endpoint is configured; otherwise
-the meter provider is a no-op. Log and trace providers are configured separately.
+OTLP exporters for metrics and selected operational lifecycle logs. Export is enabled
+when an endpoint is configured; otherwise both are no-ops. Audit, product log streams,
+and trace providers remain separate.
 
 ## Enable export
 
@@ -18,11 +19,13 @@ OTEL_RESOURCE_ATTRIBUTES=nuon.control_plane.id=cp-example,deployment.environment
 The example uses a local Collector. Use HTTPS for remote backends and store
 authentication headers and client keys in deployment secrets.
 
-- Metrics append `/v1/metrics` to the base endpoint, preserving its path.
+- Metrics append `/v1/metrics` and lifecycle logs append `/v1/logs` to the base
+  endpoint, preserving its path.
 - Endpoint and protocol can also be set as `otel_exporter_otlp_endpoint` and
   `otel_exporter_otlp_protocol` in service configuration; environment values take precedence.
 - Use generic `OTEL_EXPORTER_OTLP_*` transport settings. Nonempty
-  `OTEL_EXPORTER_OTLP_METRICS_*` transport overrides are rejected when export is enabled.
+  `OTEL_EXPORTER_OTLP_METRICS_*` and `OTEL_EXPORTER_OTLP_LOGS_*` transport overrides
+  are rejected when export is enabled.
 - Authentication and TLS use `OTEL_EXPORTER_OTLP_HEADERS`,
   `OTEL_EXPORTER_OTLP_CERTIFICATE`, `OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE`, and
   `OTEL_EXPORTER_OTLP_CLIENT_KEY`. Certificates require HTTPS.
@@ -48,6 +51,30 @@ are exported as configured; do not include secrets.
 Counters are cumulative; apply rates per instance before aggregating replicas.
 Retries count as separate attempts. Request and operation metrics appear when
 observed; they do not provide an idle heartbeat.
+
+### Entity correlation
+
+The following counters carry IDs when available; their duration histograms stay aggregate:
+
+| Counter | Additional dimensions |
+| --- | --- |
+| `nuon.install.component.health.evaluation.attempts` | `nuon.install.id` |
+| `nuon.install.drift.plan.evaluation.attempts` | `nuon.install.id`, `nuon.component.id` for component checks |
+| `nuon.runner.job.execution.results` | `nuon.install.id` from job flow metadata |
+| `nuon.runner.job.lifecycle.failures` | `nuon.install.id` from job flow metadata |
+| `nuon.app.config.sync.attempts` | `nuon.app.id` |
+
+Install IDs identify the affected downstream install, not the control plane's hosting
+install. Older activity requests or jobs without flow metadata omit unavailable IDs;
+no extra lookup is performed. Component drift IDs are propagated with new drift workflows.
+Match with downstream application telemetry using the install ID and retain
+`nuon.control_plane.id` for control-plane scope. Workflow, job, deploy and build IDs
+remain log fields, not metric labels.
+
+Each metric stream is capped at 2,000 attribute sets per process. Excess combinations
+aggregate into `otel.metric.overflow=true` without entity identity. Monitor overflow;
+install-filtered queries cannot account for that population. Entity churn consumes
+the cumulative counter budget until process restart. Histograms do not multiply by IDs.
 
 ### HTTP
 
@@ -293,6 +320,26 @@ Repeat activity invocations count again. Missing-result checks that find a resul
 failed persistence produce no observation. Legacy workflows without the lifecycle-error
 activity are excluded. These observations can overlap runner-reported results; do not
 sum the two counters as a total failure count or use their ratio as a failure rate.
+
+## Operational lifecycle logs
+
+The process logger tees allowlisted `flow telemetry` events to an asynchronous OTLP
+exporter using the same resource as metrics, without changing stderr logging or its
+sampling. The OTLP copy is not sampled. JSON bodies retain event, entity and attempt
+identifiers, bounded names, status/health fields and numeric retry/timing fields.
+Raw errors, status descriptions, arbitrary metadata, account emails, stack traces,
+and non-lifecycle process logs are excluded. Strings longer than 512 bytes are omitted.
+IDs remain JSON fields rather than indexed Loki stream labels.
+
+Records are diagnostic observations, not an exactly-once transition ledger. Retries
+can repeat them; workflow/step completion is not proof of application recovery.
+Use the body's `install_id` for the affected install and the resource's
+`nuon.control_plane.id` for the emitting control plane.
+
+The Collector must enable a logs pipeline as well as metrics. Logs use a bounded
+in-memory SDK batch queue: saturation, export failures and process loss can drop data.
+Shutdown flush is bounded to five seconds. Collector persistence protects only data
+already accepted by the Collector; audit and product log-stream destinations are unchanged.
 
 ## Export reliability
 
