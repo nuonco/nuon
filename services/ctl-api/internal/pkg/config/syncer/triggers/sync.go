@@ -29,14 +29,6 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, orgID, appID,
 	if cfg.Triggers == nil || len(cfg.Triggers.Rules) == 0 {
 		return nil
 	}
-	var org app.Org
-	if err := db.WithContext(ctx).Select("id", "features").Where(app.Org{ID: orgID}).First(&org).Error; err != nil {
-		return sync.SyncInternalErr{Description: "unable to check triggers feature", Err: err}
-	}
-	if !org.Features[string(app.OrgFeatureTriggers)] {
-		return sync.SyncErr{Resource: "triggers", Description: "the triggers feature is not enabled for this organization"}
-	}
-
 	validFrom := time.Now().UTC()
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		triggerNames := referencedTriggerNames(cfg.Triggers.Rules)

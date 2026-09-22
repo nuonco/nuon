@@ -1,5 +1,6 @@
 import { Badge } from '@/components/common/Badge'
 import { Card, type ICard } from '@/components/common/Card'
+import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
@@ -11,12 +12,16 @@ export interface ICurrentAppBranchRun extends ICard {
   run?: TAppBranchRun
   orgId?: string
   appId?: string
+  branchName?: string
+  isLoading?: boolean
 }
 
 export const CurrentAppBranchRun = ({
   run,
   orgId,
   appId,
+  branchName,
+  isLoading,
   ...props
 }: ICurrentAppBranchRun) => {
   const commit = run?.vcs_connection_commit
@@ -26,15 +31,22 @@ export const CurrentAppBranchRun = ({
     <Card {...props}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <Text variant="h3">Applied app branch</Text>
-          <Text variant="subtext" theme="neutral">
-            The latest app branch run successfully applied to this install.
-          </Text>
+          <Text variant="h3">App branch</Text>
+          {run ? (
+            <Text variant="subtext" theme="neutral">
+              The latest branch run applied to this install.
+            </Text>
+          ) : null}
         </div>
         {run?.status ? <Status variant="badge" status={run.status} /> : null}
       </div>
 
-      {run ? (
+      {isLoading && !run ? (
+        <div className="flex flex-col gap-3">
+          <Text variant="subtext" loading loadingWidth={24} />
+          <Text variant="subtext" loading loadingWidth={40} />
+        </div>
+      ) : run ? (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             {run.app_branch?.name ? (
@@ -65,10 +77,20 @@ export const CurrentAppBranchRun = ({
             </Link>
           ) : null}
         </div>
+      ) : branchName ? (
+        <EmptyState
+          variant="history"
+          size="sm"
+          emptyTitle="No branch run applied yet"
+          emptyMessage={`Runs on ${branchName} appear here once one applies to this install.`}
+        />
       ) : (
-        <Text variant="subtext" theme="neutral">
-          No app branch run has been applied.
-        </Text>
+        <EmptyState
+          variant="history"
+          size="sm"
+          emptyTitle="No app branch connected"
+          emptyMessage="Connect this install to an app branch to track branch runs here."
+        />
       )}
     </Card>
   )

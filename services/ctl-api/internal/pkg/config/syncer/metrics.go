@@ -5,9 +5,10 @@ import (
 	"errors"
 	"time"
 
-	configsync "github.com/nuonco/nuon/pkg/config/sync"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	configsync "github.com/nuonco/nuon/pkg/config/sync"
 )
 
 type Metrics struct {
@@ -31,7 +32,7 @@ func NewMetrics(provider metric.MeterProvider) *Metrics {
 	return &Metrics{attempts: attempts, duration: duration}
 }
 
-func (m *Metrics) record(ctx context.Context, start time.Time, stage string, err error) string {
+func (m *Metrics) recordForApp(ctx context.Context, start time.Time, appID, stage string, err error) string {
 	outcome := "success"
 	if err != nil {
 		var rejected configsync.SyncErr
@@ -47,7 +48,11 @@ func (m *Metrics) record(ctx context.Context, start time.Time, stage string, err
 		stage = "none"
 	}
 	if m != nil {
-		m.attempts.Add(ctx, 1, metric.WithAttributes(attribute.String("outcome", outcome), attribute.String("stage", stage)))
+		attrs := []attribute.KeyValue{attribute.String("outcome", outcome), attribute.String("stage", stage)}
+		if appID != "" {
+			attrs = append(attrs, attribute.String("nuon.app.id", appID))
+		}
+		m.attempts.Add(ctx, 1, metric.WithAttributes(attrs...))
 		m.duration.Record(ctx, time.Since(start).Seconds(), metric.WithAttributes(attribute.String("outcome", outcome)))
 	}
 	return outcome

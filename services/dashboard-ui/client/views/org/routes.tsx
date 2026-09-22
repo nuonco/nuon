@@ -26,19 +26,7 @@ import { VCSConnections } from '@/views/settings/VCSConnections'
 import { NotFound } from '@/views/NotFound'
 import { appRoutes } from '@/views/app/routes'
 import { installRoutes } from '@/views/install/routes'
-import { AppSetup } from '@/views/app/AppSetup'
-import { InstallSetup } from '@/views/install/InstallSetup'
-import { SimpleIAGate } from '@/views/SimpleIAGate'
-import { useOrg } from '@/hooks/use-org'
 import { useCLIConfig } from '@/hooks/use-cli-config'
-
-const TriggersGate = () => {
-  const { org } = useOrg()
-
-  if (!org) return null
-  if (!org?.features?.['triggers']) return <NotFound />
-  return <Outlet />
-}
 
 const OIDCFederationGate = () => {
   const { data: cliConfig, isLoading } = useCLIConfig()
@@ -55,13 +43,6 @@ export const orgRoutes: RouteObject[] = [
       { path: ':orgId', element: <Dashboard /> },
       { path: ':orgId/apps', element: <Apps /> },
       { path: ':orgId/installs', element: <Installs /> },
-      {
-        element: <SimpleIAGate />,
-        children: [
-          { path: ':orgId/apps/setup', element: <AppSetup /> },
-          { path: ':orgId/installs/setup', element: <InstallSetup /> },
-        ],
-      },
       { path: ':orgId/runner', element: <BuildRunner /> },
       { path: ':orgId/runner/jobs/:jobId', element: <RunnerJobDetail /> },
       { path: ':orgId/runner/processes', element: <RunnerProcesses /> },
@@ -94,21 +75,16 @@ export const orgRoutes: RouteObject[] = [
               { path: ':orgId/settings/oidc', element: <OIDCTrustPolicies /> },
             ],
           },
+          { path: ':orgId/settings/triggers', element: <Triggers /> },
           {
-            element: <TriggersGate />,
+            path: ':orgId/settings/triggers/:triggerId',
+            element: <TriggerLayout />,
             children: [
-              { path: ':orgId/settings/triggers', element: <Triggers /> },
-              {
-                path: ':orgId/settings/triggers/:triggerId',
-                element: <TriggerLayout />,
-                children: [
-                  { index: true, element: <TriggerOverview /> },
-                  { path: 'rules', element: <TriggerRules /> },
-                  { path: 'rules/:ruleId', element: <TriggerRule /> },
-                  { path: 'events', element: <TriggerEvents /> },
-                  { path: 'events/:eventId', element: <TriggerEvent /> },
-                ],
-              },
+              { index: true, element: <TriggerOverview /> },
+              { path: 'rules', element: <TriggerRules /> },
+              { path: 'rules/:ruleId', element: <TriggerRule /> },
+              { path: 'events', element: <TriggerEvents /> },
+              { path: 'events/:eventId', element: <TriggerEvent /> },
             ],
           },
           { path: ':orgId/settings/slack', element: <Slack /> },
