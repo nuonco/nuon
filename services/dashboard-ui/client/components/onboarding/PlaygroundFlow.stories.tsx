@@ -541,14 +541,9 @@ interface IForkChoice {
   cloud?: TCloud
 }
 
-// Review-only: where the template step puts the stubbed files — above the
-// agent/manual tabs (editor view) or beside them (compact rows).
-type TTemplateLayout = 'top' | 'beside'
-
 interface IForkActions {
   choose: (choice: IForkChoice) => void
   backToIntro: () => void
-  templateLayout: TTemplateLayout
   // Review-only: bumps each time "Simulate push" is pressed; the product's trigger is the push itself.
   pushTick: number
 }
@@ -556,7 +551,6 @@ interface IForkActions {
 const ForkContext = createContext<IForkActions>({
   choose: () => {},
   backToIntro: () => {},
-  templateLayout: 'top',
   pushTick: 0,
 })
 const useForkChoice = () => useContext(ForkContext)
@@ -594,7 +588,7 @@ const CLOUD_CONNECT: Record<
     launch: 'Open the CloudFormation stack',
     opening: 'Opening the AWS console...',
     helper:
-      'Opens a pre-filled CloudFormation stack in your AWS console. Create it there, then come back — this page updates on its own.',
+      'Opens a pre-filled CloudFormation stack in your AWS console. Create it there, then come back. This page updates on its own.',
     waitingHint: 'Create the CloudFormation stack in the AWS console tab, then come back.',
   },
   gcp: {
@@ -605,7 +599,7 @@ const CLOUD_CONNECT: Record<
     launch: 'Get the Terraform stack',
     opening: 'Preparing the Terraform stack...',
     helper:
-      'Nuon generates a Terraform stack for your test GCP project. Apply it from your terminal, then come back — this page updates on its own.',
+      'Nuon generates a Terraform stack for your test GCP project. Apply it from your terminal, then come back. This page updates on its own.',
     waitingHint: 'Apply the Terraform stack from your terminal, then come back.',
   },
   azure: {
@@ -616,7 +610,7 @@ const CLOUD_CONNECT: Record<
     launch: 'Get the Azure commands',
     opening: 'Preparing the commands...',
     helper:
-      'Nuon generates the Bicep template and the az commands that deploy it. Create the resource group and Key Vault, run the commands, then come back — this page updates on its own.',
+      'Nuon generates the Bicep template and the az commands that deploy it. Create the resource group and Key Vault, run the commands, then come back. This page updates on its own.',
     waitingHint: 'Run the az commands from your terminal, then come back.',
   },
 }
@@ -757,7 +751,7 @@ const IntroDiagram = () => (
         <div className="flex items-center gap-2">
           <Icon variant="CpuIcon" size={14} theme="brand" />
           <Text variant="subtext" theme="neutral">
-            Nuon runner — you operate it from here, inside their account
+            Nuon runner: you operate it from here, inside their account
           </Text>
         </div>
       </div>
@@ -1019,10 +1013,10 @@ const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boo
               <Badge size="sm" variant="code">
                 a1b2c3d
               </Badge>
-              synced the default app branch — building your components.
+              synced the default app branch. Building your components now.
             </>
           ) : skipped ? (
-            <>Your components have nothing to deploy until it lands. Nuon keeps watching main.</>
+            <>Your components deploy once it lands. Nuon keeps watching main.</>
           ) : (
             <>
               Push to
@@ -1065,8 +1059,35 @@ interface IAppFileStub {
   purpose: string
   badge: string
   required: boolean
-  snippet: (app: string) => string
+  snippet: (app: string, cloud: TCloud) => string
 }
+
+// Policy shapes per cloud, from nuonco/example-app-configs: kitchen-sink (AWS managed
+// policy), gke-simple (gcp_predefined_role), aks-simple (azure_built_in_roles).
+const ROLE_POLICY: Record<TCloud, string[]> = {
+  aws: ['managed_policy_name = "AdministratorAccess"'],
+  gcp: ['name                = "owner"', 'gcp_predefined_role = "roles/owner"'],
+  azure: ['name                 = "contributor"', 'azure_built_in_roles = ["Contributor"]'],
+}
+const PERMISSIONS_STUB = (cloud: TCloud) =>
+  (
+    [
+      ['provision', 'Provision the sandbox and components.'],
+      ['maintenance', 'Operate and update components.'],
+      ['deprovision', 'Tear the install down.'],
+    ] as const
+  )
+    .map(([role, description]) =>
+      [
+        `[${role}_role]`,
+        `name        = "{{.nuon.install.id}}-${role}"`,
+        `description = "${description}"`,
+        ...(cloud === 'aws' ? [] : [`cloud_platform = "${cloud}"`]),
+        `[[${role}_role.policies]]`,
+        ...ROLE_POLICY[cloud],
+      ].join('\n')
+    )
+    .join('\n\n')
 
 const APP_FILE_STUBS: IAppFileStub[] = [
   {
@@ -1082,45 +1103,26 @@ const APP_FILE_STUBS: IAppFileStub[] = [
     purpose: 'Which cloud the Nuon runner operates in.',
     badge: 'Required',
     required: true,
-    snippet: () => '# aws, azure, or gcp\nrunner_type = "aws"',
+    snippet: (_app, cloud) => `# aws, azure, or gcp\nrunner_type = "${cloud}"`,
   },
   {
     name: 'sandbox.toml',
-    purpose: 'The base infrastructure the app lands on — EKS, AKS, GKE, ECS.',
+    purpose: 'The base infrastructure the app lands on: the Nuon sandbox for your test cloud.',
     badge: 'Required',
     required: true,
-    snippet: () =>
-      'terraform_version = "1.11.3"\n\n[public_repo]\nrepo      = "nuonco/aws-eks-sandbox"\ndirectory = "."\nbranch    = "main"',
+    snippet: (_app, cloud) =>
+      `terraform_version = "1.11.3"\n\n[public_repo]\nrepo      = "${CLOUD_SANDBOX[cloud]}"\ndirectory = "."\nbranch    = "main"`,
   },
   {
     name: 'permissions.toml',
-    purpose: 'The IAM roles Nuon assumes in the customer account — provision, maintenance, deprovision.',
+    purpose: 'The roles Nuon assumes in the customer account: provision, maintenance and deprovision.',
     badge: 'Required',
     required: true,
-    snippet: () =>
-      [
-        '[provision_role]',
-        'name        = "{{.nuon.install.id}}-provision"',
-        'description = "Provision the sandbox and components."',
-        '[[provision_role.policies]]',
-        'managed_policy_name = "AdministratorAccess"',
-        '',
-        '[maintenance_role]',
-        'name        = "{{.nuon.install.id}}-maintenance"',
-        'description = "Operate and update components."',
-        '[[maintenance_role.policies]]',
-        'managed_policy_name = "AdministratorAccess"',
-        '',
-        '[deprovision_role]',
-        'name        = "{{.nuon.install.id}}-deprovision"',
-        'description = "Tear the install down."',
-        '[[deprovision_role.policies]]',
-        'managed_policy_name = "AdministratorAccess"',
-      ].join('\n'),
+    snippet: (_app, cloud) => PERMISSIONS_STUB(cloud),
   },
   {
     name: 'branch.toml',
-    purpose: 'Tracks the repo you connected — every push to main syncs the default app branch.',
+    purpose: 'Tracks the repo you connected. Every push to main syncs the default app branch.',
     badge: 'Created for you',
     required: false,
     snippet: (app) =>
@@ -1150,7 +1152,7 @@ const staggerClass = (shown: boolean) =>
 const staggerDelay = (order: number) => ({ transitionDelay: `${order * 90}ms` })
 
 // Option A: one expandable row per file. First file open so the list reads as content, not a menu.
-const FileStubRows = ({ appName }: { appName: string }) => {
+const FileStubRows = ({ appName, cloud }: { appName: string; cloud: TCloud }) => {
   const shown = useMountedReveal()
   const [open, setOpen] = useState<string[]>([APP_FILE_STUBS[0].name])
   const toggle = (name: string) =>
@@ -1186,7 +1188,7 @@ const FileStubRows = ({ appName }: { appName: string }) => {
             {isOpen ? (
               <div className="border-t p-3">
                 <CodeBlock language="toml" wrapLongLines>
-                  {file.snippet(appName)}
+                  {file.snippet(appName, cloud)}
                 </CodeBlock>
               </div>
             ) : null}
@@ -1197,84 +1199,6 @@ const FileStubRows = ({ appName }: { appName: string }) => {
   )
 }
 
-// Option B: a read-only editor — file tree on the left, the selected file on the right.
-const FileStubEditor = ({ appName }: { appName: string }) => {
-  const shown = useMountedReveal()
-  const [selected, setSelected] = useState(APP_FILE_STUBS[0].name)
-  const file = APP_FILE_STUBS.find((f) => f.name === selected) ?? APP_FILE_STUBS[0]
-
-  const treeButton = (stub: IAppFileStub, label: string, depth: 1 | 2, order: number) => (
-    <button
-      key={stub.name}
-      type="button"
-      aria-pressed={stub.name === selected}
-      onClick={() => setSelected(stub.name)}
-      style={staggerDelay(order)}
-      className={cn(
-        'flex items-center gap-2 rounded-md px-2 py-1 text-left cursor-pointer hover:bg-cool-grey-500/8',
-        staggerClass(shown),
-        depth === 1 ? 'ml-5' : 'ml-10',
-        stub.name === selected && 'bg-primary-50 dark:bg-primary-950/40'
-      )}
-    >
-      <Icon variant="FileCodeIcon" size={14} theme={stub.name === selected ? 'brand' : 'neutral'} />
-      <Text
-        as="span"
-        variant="subtext"
-        family="mono"
-        theme={stub.name === selected ? 'brand' : 'default'}
-        weight={stub.name === selected ? 'strong' : undefined}
-      >
-        {label}
-      </Text>
-    </button>
-  )
-
-  const rootFiles = APP_FILE_STUBS.filter((f) => !f.name.includes('/'))
-  const componentFiles = APP_FILE_STUBS.filter((f) => f.name.startsWith('components/'))
-
-  return (
-    <div className="grid rounded-md border overflow-hidden md:grid-cols-[220px_1fr]">
-      <div className="flex flex-col gap-0.5 p-2 border-b md:border-b-0 md:border-r">
-        <div className={cn('flex items-center gap-2 px-2 py-1', staggerClass(shown))} style={staggerDelay(0)}>
-          <Icon variant="FolderOpenIcon" size={14} theme="neutral" weight="fill" />
-          <Text as="span" variant="subtext" family="mono" theme="neutral">
-            {appName}/
-          </Text>
-        </div>
-        {rootFiles.map((stub, index) => treeButton(stub, stub.name, 1, index + 1))}
-        <div
-          className={cn('ml-5 flex items-center gap-2 px-2 py-1', staggerClass(shown))}
-          style={staggerDelay(rootFiles.length + 1)}
-        >
-          <Icon variant="FolderOpenIcon" size={14} theme="neutral" weight="fill" />
-          <Text as="span" variant="subtext" family="mono" theme="neutral">
-            components/
-          </Text>
-        </div>
-        {componentFiles.map((stub, index) =>
-          treeButton(stub, stub.name.replace('components/', ''), 2, rootFiles.length + 2 + index)
-        )}
-      </div>
-      <div className={cn('flex min-w-0 flex-col', staggerClass(shown))} style={staggerDelay(APP_FILE_STUBS.length + 2)}>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2">
-          <Text as="span" variant="body" family="mono" weight="strong">
-            {file.name}
-          </Text>
-          <Badge size="sm" theme={file.required ? 'brand' : 'neutral'}>
-            {file.badge}
-          </Badge>
-          <Text as="span" variant="subtext" theme="neutral">
-            {file.purpose}
-          </Text>
-        </div>
-        <CodeBlock language="toml" showLineNumbers wrapLongLines className="!rounded-none !shadow-none">
-          {file.snippet(appName)}
-        </CodeBlock>
-      </div>
-    </div>
-  )
-}
 
 // The own path's escape hatch. Quiet and always in the same place, it lands back
 // on the fork with the example options showing, not deep in one cloud's deploy.
@@ -1350,7 +1274,7 @@ const ExampleEscapeHatch = ({ onExit }: { onExit: () => void }) => (
     <div className="flex items-center gap-2">
       <Icon variant="PackageIcon" size={16} theme="neutral" />
       <Text variant="subtext" theme="neutral">
-        Not ready to package your own app? Kick the tires with our example app instead.
+        Want to see it work first? Kick the tires with our example app.
       </Text>
     </div>
     <Button variant="ghost" size="sm" onClick={onExit}>
@@ -1366,6 +1290,8 @@ const OwnAppSetup = ({
   githubDone,
   onGithubDone,
   showErrors,
+  cloud,
+  onCloud,
 }: {
   heading: ReactNode
   appName: string
@@ -1373,6 +1299,8 @@ const OwnAppSetup = ({
   githubDone: boolean
   onGithubDone: () => void
   showErrors: boolean
+  cloud: TCloud
+  onCloud: (cloud: TCloud) => void
 }) => {
   const [connecting, setConnecting] = useState(false)
   const named = appName.trim().length > 0
@@ -1394,7 +1322,7 @@ const OwnAppSetup = ({
       <Badge size="sm" variant="code">
         jane-doe
       </Badge>
-      — 3 repos
+      · 3 repos
     </Text>
   ) : (
     <Button variant="secondary" size="lg" disabled={connecting} onClick={() => setConnecting(true)}>
@@ -1483,6 +1411,23 @@ const OwnAppSetup = ({
             spellCheck={false}
           />
         </div>
+        {/* Asked here, before the template step, so the stubbed runner, sandbox and
+            permissions match the cloud the install will use. */}
+        <div className="flex flex-col gap-2">
+          <Text variant="body" weight="strong">
+            Test cloud
+          </Text>
+          <ToggleButton<TCloud>
+            options={CLOUD_OPTIONS}
+            value={cloud}
+            onChange={onCloud}
+            size="md"
+            className="self-start"
+          />
+          <Text variant="subtext" theme="neutral">
+            Nuon stubs the runner, sandbox and permissions for this cloud.
+          </Text>
+        </div>
       </Card>
     </>
   )
@@ -1494,10 +1439,10 @@ const OwnAppSetup = ({
 // two ways to fill them in. Where the stubs sit is a review toggle: above the
 // tabs as a read-only editor, or beside them as compact rows.
 const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
-  const { templateLayout, choose, pushTick } = useForkChoice()
+  const { choose, pushTick } = useForkChoice()
   const appName = readAppName(sharedData)
+  const cloud = readCloud(sharedData)
   const [mode, setMode] = useState<TSetupMode>('agent')
-  const beside = templateLayout === 'beside'
   // The connected account from Set up, and a repo named after the template.
   const repo = `jane-doe/${appName}`
   const detected = pushTick > 0
@@ -1533,7 +1478,7 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
           </Link>
         </Text>
       </div>
-      {beside ? <FileStubRows appName={appName} /> : <FileStubEditor appName={appName} />}
+      <FileStubRows appName={appName} cloud={cloud} />
     </div>
   )
 
@@ -1564,27 +1509,20 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
             {appName}
           </Badge>
         </Text>
-        {beside ? (
-          <div className="grid gap-5 items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-            {stubs}
-            {fill}
-          </div>
-        ) : (
-          <>
-            {stubs}
-            {fill}
-          </>
-        )}
+        <div className="grid gap-5 items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+          {stubs}
+          {fill}
+        </div>
         <PushListener repo={repo} detected={detected} skipped={skipped} />
       </Card>
       <ExampleEscapeHatch onExit={exitToExample} />
       {waitingOnPush && confirmSkip ? (
         <Banner theme="warn">
           <div className="flex flex-col gap-2">
-            <Text weight="strong">Nothing deploys until your first push</Text>
+            <Text weight="strong">Components wait for your first push</Text>
             <Text variant="subtext">
-              Nuon creates the install and provisions the sandbox, but your components have nothing to
-              deploy until a push lands on main.
+              Nuon creates the install and provisions the sandbox now, then deploys your components once a
+              push lands on main.
             </Text>
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <Button
@@ -1607,7 +1545,7 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
       <NextButton
         label="Set up your first install"
         disabled={!detected && !skipped}
-        disabledReason="Cannot continue — waiting for your first push"
+        disabledReason="Cannot continue until your first push lands"
         onClick={onAdvance}
         onBack={onGoBack}
         secondary={
@@ -1637,7 +1575,7 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
       setupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
-    go({ path: 'own' })
+    go({ path: 'own', cloud: readCloud(sharedData) })
   }
 
   const go = (choice: IForkChoice) => {
@@ -1649,7 +1587,7 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
 
   // Expanding commits to the own-app path so the stepper stops showing the example path's "Deploy" dot.
   const expand = () => {
-    choose({ path: 'own' })
+    choose({ path: 'own', cloud: readCloud(sharedData) })
     setSharedData('path', 'own')
     // Persisted so Back from the template step remounts this step still expanded.
     setSharedData('expandOwn', true)
@@ -1689,6 +1627,12 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
             githubDone={githubDone}
             onGithubDone={() => setSharedData('githubDone', true)}
             showErrors={showErrors}
+            cloud={readCloud(sharedData)}
+            onCloud={(value) => {
+              setSharedData('cloud', value)
+              setSharedData('region', CLOUD_REGIONS[value].options[0])
+              choose({ path: 'own', cloud: value })
+            }}
           />
           <ExampleEscapeHatch onExit={exitToExample} />
         </div>
@@ -1840,7 +1784,7 @@ const InstallSummaryCard = ({
             </>
           ),
         },
-        { label: 'Components', value: 'api — Helm chart, from components/api.toml' },
+        { label: 'Components', value: 'api: Helm chart, from components/api.toml' },
       ]
     : [
         { label: 'Source', value: <RepoChip repo="nuonco/kitchen-sink" /> },
@@ -1898,7 +1842,6 @@ const InstallSummaryCard = ({
 // Settings and the app, nothing else. "Create install" is the moment the install
 // exists; the stack link starts generating on the next step.
 const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
-  const { choose } = useForkChoice()
   const path = readPath(sharedData)
   const cloud = readCloud(sharedData)
   const regions = CLOUD_REGIONS[cloud]
@@ -1917,24 +1860,6 @@ const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardS
             Pre-selected for a quick first run. Change anything you like.
           </Text>
         </div>
-        {path === 'own' ? (
-          <div className="flex flex-col gap-2">
-            <Text variant="body" weight="strong">
-              Cloud
-            </Text>
-            <ToggleButton<TCloud>
-              options={CLOUD_OPTIONS}
-              value={cloud}
-              onChange={(value) => {
-                setSharedData('cloud', value)
-                setSharedData('region', CLOUD_REGIONS[value].options[0])
-                choose({ path, cloud: value })
-              }}
-              size="md"
-              className="self-start"
-            />
-          </div>
-        ) : null}
         <Select
           id="fork-region"
           options={regionOptions(cloud)}
@@ -1946,7 +1871,7 @@ const DeployStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardS
           checked={autoApprove}
           onChange={setAutoApprove}
           label="Auto-approve"
-          description="Applies changes without waiting for you to approve each plan. On by default for a faster first run."
+          description="Applies each plan as soon as it is ready. On by default for a faster first run."
         />
       </Card>
 
@@ -2007,11 +1932,11 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
   const status = generating
     ? `Generating the ${connect.artifactNoun} for ${region}. About 30 seconds.`
     : ready
-      ? `${connect.artifactNoun} ready for ${region}. From launch to a healthy runner is about 11 minutes — this page updates on its own.`
+      ? `${connect.artifactNoun} ready for ${region}. From launch to a healthy runner is about 11 minutes. This page updates on its own.`
       : phase === 'waiting'
         ? `${connect.waitingHint} This page updates on its own.`
         : phase === 'done'
-          ? `${connect.stackLabel} created — test ${connect.accountNoun} connected.`
+          ? `${connect.stackLabel} created. Test ${connect.accountNoun} connected.`
           : connect.opening
 
   return (
@@ -2040,8 +1965,8 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
           </Text>
           <Text variant="body" theme="neutral">
             {cloud === 'gcp'
-              ? 'Nuon renders the install stack in Terraform. Google Cloud has no second format to render it in.'
-              : `Nuon renders the install stack in Terraform and in ${CLOUD_LABEL[cloud]}'s native format — same resources either way.`}{' '}
+              ? 'On Google Cloud, Nuon renders the install stack in Terraform.'
+              : `Nuon renders the install stack in Terraform and in ${CLOUD_LABEL[cloud]}'s native format.`}{' '}
             Your customer creates it with their own credentials; that is how access is granted. You are
             about to do it the way they would.
           </Text>
@@ -2094,7 +2019,7 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
           disabled={!ready}
           onClick={() => setPhase('opening')}
           tooltipProps={
-            generating ? { tipContent: `Cannot launch yet — Nuon is still generating the ${connect.artifactNoun}` } : undefined
+            generating ? { tipContent: `Cannot launch until Nuon finishes generating the ${connect.artifactNoun}` } : undefined
           }
         >
           {generating || phase === 'opening' || phase === 'waiting' ? <Icon variant="Loading" size={16} /> : null}
@@ -2437,7 +2362,7 @@ const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponent
         </div>
       </Card>
 
-      <NextButton label="See your install" onClick={onAdvance} onBack={onGoBack} />
+      <NextButton label="Go to deploy workflow" onClick={onAdvance} onBack={onGoBack} />
     </div>
   )
 }
@@ -2464,7 +2389,7 @@ const InstallStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentPr
     ? path === 'own'
       ? `${appName} is live`
       : `Kitchen Sink is live in your test ${CLOUD_CONNECT[cloud].accountNoun}`
-    : `${activeRow.label} — ${activeRow.copy.active}`
+    : `${activeRow.label}: ${activeRow.copy.active}`
 
   return (
     <div className="flex flex-col gap-6">
@@ -2672,8 +2597,8 @@ const STACK_STEP_INTRO: Record<TCloud, ReactNode> = {
   ),
   gcp: (
     <>
-      Nuon is generating the Terraform for your stack. Google Cloud has no one-click console install,
-      so BYOC customers apply it themselves or through{' '}
+      Nuon is generating the Terraform for your stack. On Google Cloud, BYOC customers apply it
+      themselves or through{' '}
       <Link href={GCP_INFRA_MANAGER_DOCS} isExternal textVariant="body" className="!inline-flex align-baseline">
         Infrastructure Manager
       </Link>
@@ -2685,9 +2610,8 @@ const STACK_STEP_INTRO: Record<TCloud, ReactNode> = {
       Nuon is generating the Bicep template and the commands that deploy it. At the default{' '}
       <Link href={DOCS_STACKS} isExternal textVariant="body" className="!inline-flex align-baseline">
         resource group scope
-      </Link>{' '}
-      there is no one-click console install, so BYOC customers create a resource group and Key Vault
-      first, then run the commands.
+      </Link>
+      , BYOC customers create a resource group and Key Vault first, then run the commands.
     </>
   ),
 }
@@ -3004,11 +2928,6 @@ const CopyEditor = ({ children, tools }: { children: ReactNode; tools?: ReactNod
 
 // --- Harness ------------------------------------------------------------------
 
-const TEMPLATE_LAYOUTS: { value: TTemplateLayout; label: string }[] = [
-  { value: 'top', label: 'Top' },
-  { value: 'beside', label: 'Beside' },
-]
-
 const BranchingPlayground = ({
   initialPath = 'example',
   initialCloud = 'aws',
@@ -3028,8 +2947,6 @@ const BranchingPlayground = ({
   const [startIndex, setStartIndex] = useState(initialStepIndex)
   const [finished, setFinished] = useState(false)
   const [choice, setChoice] = useState<IForkChoice>({ path: initialPath, cloud: initialCloud })
-  // Review-only: where the template step puts the stubbed files.
-  const [templateLayout, setTemplateLayout] = useState<TTemplateLayout>('top')
   // Review-only: stands in for a git push to the tracked branch.
   const [pushes, setPushes] = useState(0)
 
@@ -3047,7 +2964,7 @@ const BranchingPlayground = ({
     setRunId((prev) => prev + 1)
   }
 
-  const fork: IForkActions = { choose: setChoice, backToIntro: () => reset(true), templateLayout, pushTick: pushes }
+  const fork: IForkActions = { choose: setChoice, backToIntro: () => reset(true), pushTick: pushes }
 
   if (finished) {
     return <FlowComplete onRestart={() => reset(initialStepIndex > 0 || skipIntro)} />
@@ -3057,10 +2974,6 @@ const BranchingPlayground = ({
     <CopyEditor
       tools={
         <div className="flex items-center gap-2">
-          <Text variant="subtext" theme="neutral">
-            Files
-          </Text>
-          <ToggleButton<TTemplateLayout> options={TEMPLATE_LAYOUTS} value={templateLayout} onChange={setTemplateLayout} size="sm" />
           <Button variant="ghost" size="sm" onClick={() => setPushes((prev) => prev + 1)}>
             <Icon variant="GitBranchIcon" size={14} /> Simulate push
           </Button>
