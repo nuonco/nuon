@@ -23,7 +23,7 @@ type ResetInstallHealthBaselineResponse struct {
 
 // @ID						ResetInstallHealthBaseline
 // @Summary				reset the install's health window
-// @Description			Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime. Requires the component-health feature.
+// @Description			Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime.
 // @Param					install_id	path	string	true	"install ID"
 // @Tags					installs
 // @Accept					json
@@ -42,10 +42,6 @@ func (s *service) ResetInstallHealthBaseline(ctx *gin.Context) {
 
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := s.requireComponentHealthFeature(ctx, org); err != nil {
 		ctx.Error(err)
 		return
 	}
