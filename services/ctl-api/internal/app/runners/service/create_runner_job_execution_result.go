@@ -345,6 +345,7 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		return nil, false, err
 	}
 	if created {
+		s.recordRunnerJobExecutionResult(ctx, runnerJob, persisted)
 		s.recordCompositeErrorParse(req, runnerJob, compositeError)
 		s.refreshOwnerCompositeError(ctx, runnerJob, compositeError)
 	}
@@ -384,6 +385,7 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 	}
 
 	if created {
+		s.recordRunnerJobExecutionResult(ctx, runnerJob, persisted)
 		s.recordCompositeErrorParse(req, runnerJob, compositeError)
 		s.refreshOwnerCompositeError(ctx, runnerJob, compositeError)
 	}

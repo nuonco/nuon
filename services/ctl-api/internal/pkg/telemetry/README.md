@@ -121,6 +121,23 @@ attempt. Successful evaluations have `outcome=success` and `decision=pass|warn|d
 (deny takes precedence); evaluator failures have `outcome=error` and bounded
 `error.type=policy_validation|input_validation|deny_evaluation|warn_evaluation`.
 
+### Drift plan evaluation
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.install.drift.plan.evaluation.attempts` | Counter | attempts | target, outcome, decision or error.type |
+
+`CheckNoopPlan` records returned interpretation attempts for component and sandbox
+drift workflows (`target=component|sandbox`). Successful interpretation uses
+`outcome=success` and `decision=drift|no_drift`; failures use `outcome=error|cancelled`
+and `error.type=load_plan|evaluate_plan`. Retries count again.
+
+This measures interpretation of existing plans, not plan generation, persisted drift
+state, or complete drift-check outcomes. Normal deployment previews and older activity
+requests without workflow type are excluded. Skipped checks and failures before plan
+interpretation produce no observation; successful interpretation does not imply that
+later status writes or notifications succeeded.
+
 ### Component-health evaluation
 
 `EvaluateComponentHealth` emits one observation per returned install-level activity invocation:
@@ -246,6 +263,36 @@ and `.listener.notifications`. Sessions begin after validation; empty timeouts
 are healthy idle results. Probe retries count separately. Listener state is
 observed continuously, including idle periods; routine rotation and shutdown do
 not count as failures. These metrics describe attempts, not unique jobs or claims.
+
+### Runner execution results
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.runner.job.execution.results` | Counter | results | `nuon.runner.job.type`, `nuon.runner.job.operation`, `outcome` |
+
+Runner-api records newly persisted results from compressed and uncompressed reports.
+`outcome=success|failure` reflects the reported result, not workflow completion or
+application health. Job type and operation are bounded; unrecognized values use `other`.
+Duplicate reports do not count again; retries with new execution IDs count separately.
+
+Includes planning, applying and action executions, but does not distinguish drift plans
+from deployment previews or health-check actions from other actions. Missing reports,
+control-plane-generated results and rejected/failed writes are excluded. Process loss
+after persistence can lose the observation; this is not durable completion accounting.
+
+### Runner job lifecycle failures
+
+Workers emit `nuon.runner.job.lifecycle.failures` (counter, failures) after the lifecycle
+error activity persists a job failure reason. Dimensions are `nuon.runner.job.type` and
+`error.type`; unknown values use `other`. Reasons are `no_active_runner`, `runner_disabled`,
+`runner_unhealthy`, `queue_timeout`, `pickup_timeout`, `overall_timeout`,
+`execution_timeout`, `attempts_exhausted`, and `execution_result_missing`.
+
+Counts are successful failure recordings, not unique failed jobs or every retry attempt.
+Repeat activity invocations count again. Missing-result checks that find a result and
+failed persistence produce no observation. Legacy workflows without the lifecycle-error
+activity are excluded. These observations can overlap runner-reported results; do not
+sum the two counters as a total failure count or use their ratio as a failure rate.
 
 ## Export reliability
 
