@@ -12,8 +12,7 @@ import { PaginationProvider } from '@/providers/pagination-provider'
 import type { TComponentType } from '@/types'
 
 export type TInstallComponentListItem = {
-  deployAction?: ReactNode
-  health?: ReactNode
+  actions?: ReactNode
   id: string
   latestDeploy: ReactNode
   name: string
@@ -64,15 +63,20 @@ const InstallComponentsListBase = ({
           <Skeleton height="14rem" width="100%" />
         </div>
       ) : components.length ? (
-        <div className="flex flex-col divide-y">
+        <div className="flex flex-col gap-4">
           {components.map((component) => (
-            <div
-              key={component.id}
-              className="flex flex-col gap-4 py-6 first:pt-0 last:pb-0"
-            >
+            <Card key={component.id} className="!p-4 !gap-4">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex flex-col gap-1.5 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
+                    {component.type ? (
+                      <ComponentType
+                        type={component.type}
+                        displayVariant="icon-only"
+                        iconSize="16"
+                        colorVariant="color"
+                      />
+                    ) : null}
                     <Text
                       variant="body"
                       weight="stronger"
@@ -81,36 +85,17 @@ const InstallComponentsListBase = ({
                     >
                       {component.name}
                     </Text>
-                    {component.type ? (
-                      <ComponentType
-                        type={component.type}
-                        variant="subtext"
-                        colorVariant="color"
-                      />
-                    ) : null}
                     <Status status={component.status} variant="badge" />
                   </div>
                   <ID>{component.id}</ID>
                 </div>
-                {component.deployAction}
+                {component.actions}
               </div>
 
-              <div className="flex flex-col gap-2">
-                <Text variant="subtext" weight="strong" theme="neutral">
-                  Latest deploy
-                </Text>
+              <div className="flex flex-col gap-4 border-t pt-4">
                 {component.latestDeploy}
               </div>
-
-              {component.health ? (
-                <div className="flex flex-col gap-2">
-                  <Text variant="subtext" weight="strong" theme="neutral">
-                    Health
-                  </Text>
-                  <Card className="!p-4">{component.health}</Card>
-                </div>
-              ) : null}
-            </div>
+            </Card>
           ))}
         </div>
       ) : filtered ? (

@@ -5,9 +5,8 @@ import {
   ComponentTypeFilterDropdown,
   type TComponentConfigTypeText,
 } from '@/components/components/ComponentTypeFilter'
-import { HealthTimeline } from '@/components/install-health/HealthTimeline'
-import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
 import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
+import { ResourceComponentActions } from '@/components/install-components/ResourceComponentActions'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallComponents } from '@/lib'
@@ -79,28 +78,28 @@ export const InstallComponentsListContainer = () => {
   ): TInstallComponentListItem => {
     const component = installComponent.component
     const componentId = component?.id ?? installComponent.component_id ?? ''
+    const latestDeploy = installComponent.install_deploys?.[0]
 
     return {
       id: componentId || (installComponent.id ?? ''),
       name: component?.name ?? 'Component',
       type: component?.type,
       status: installComponent.status_v2?.status ?? installComponent.status,
-      deployAction: component ? (
-        <DeployComponentButton
+      actions: component ? (
+        <ResourceComponentActions
           component={component}
-          size="sm"
-          variant="secondary"
-        >
-          Deploy
-        </DeployComponentButton>
+          currentBuildId={latestDeploy?.build_id}
+          currentDeployStatus={
+            latestDeploy?.status_v2?.status ?? latestDeploy?.status
+          }
+        />
       ) : null,
       latestDeploy: componentId ? (
-        <InstallComponentLatestDeploy componentId={componentId} />
+        <InstallComponentLatestDeploy
+          componentId={componentId}
+          showHealth={showHealth}
+        />
       ) : null,
-      health:
-        showHealth && installComponent.id ? (
-          <HealthTimeline installComponentId={installComponent.id} />
-        ) : undefined,
     }
   }
 

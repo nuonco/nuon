@@ -4,9 +4,10 @@ export default {
 
 import { Button } from '@/components/common/Button'
 import { SearchInput } from '@/components/common/SearchInput'
+import { Text } from '@/components/common/Text'
 import { LatestDeployCard } from '@/components/install-components/LatestDeployCard'
 import { HealthTimelineComponent } from '@/components/install-health/HealthTimeline'
-import type { TDeploy, THealthTimelineDay } from '@/types'
+import type { TComponentBuild, TDeploy, THealthTimelineDay } from '@/types'
 import {
   InstallComponentsList,
   type TInstallComponentListItem,
@@ -19,6 +20,17 @@ const deploy = {
   updated_at: '2026-09-22T14:04:00Z',
   install_deploy_type: 'apply',
 } as TDeploy
+
+const build = {
+  id: 'bld-1',
+  status_v2: { status: 'active' },
+  created_at: '2026-09-22T13:41:00Z',
+  vcs_connection_commit: {
+    sha: '9c2f7a1b4d8e6350af19c4b7d2e058f36a1b9c4d',
+    message: 'Pin acme-api chart to 2.4.0',
+    author_name: 'Ada Lovelace',
+  },
+} as TComponentBuild
 
 const daily: THealthTimelineDay[] = Array.from({ length: 30 }, (_, index) => ({
   date: `2026-08-${String(index + 1).padStart(2, '0')}`,
@@ -40,9 +52,34 @@ const health = (
   />
 )
 
-const deployAction = (
+const details = (showHealth = true, latestDeploy: TDeploy | null = deploy) => (
+  <>
+    <div className="flex flex-col gap-2">
+      <Text variant="subtext" weight="strong" theme="neutral">
+        Latest deploy
+      </Text>
+      <LatestDeployCard
+        flush
+        deploy={latestDeploy ?? undefined}
+        build={latestDeploy ? build : undefined}
+        buildHref={latestDeploy ? '#' : undefined}
+        href={latestDeploy ? '#' : undefined}
+      />
+    </div>
+    {showHealth && latestDeploy ? (
+      <div className="flex flex-col gap-2 border-t pt-4">
+        <Text variant="subtext" weight="strong" theme="neutral">
+          Health
+        </Text>
+        {health}
+      </div>
+    ) : null}
+  </>
+)
+
+const actions = (
   <Button variant="secondary" size="sm">
-    Deploy
+    More
   </Button>
 )
 
@@ -53,9 +90,8 @@ const component = (
   name: 'api',
   type: 'helm_chart',
   status: 'active',
-  deployAction,
-  latestDeploy: <LatestDeployCard deploy={deploy} href="#" />,
-  health,
+  actions,
+  latestDeploy: details(),
   ...overrides,
 })
 
@@ -67,7 +103,7 @@ const components: TInstallComponentListItem[] = [
     name: 'cache',
     type: 'terraform_module',
     status: 'in-progress',
-    health: undefined,
+    latestDeploy: details(false),
   }),
 ]
 
@@ -104,7 +140,10 @@ export const NoResults = () => (
 
 export const WithoutHealth = () => (
   <InstallComponentsList
-    components={components.map((entry) => ({ ...entry, health: undefined }))}
+    components={components.map((entry) => ({
+      ...entry,
+      latestDeploy: details(false),
+    }))}
   />
 )
 
@@ -112,8 +151,7 @@ export const NeverDeployed = () => (
   <InstallComponentsList
     components={[
       component({
-        latestDeploy: <LatestDeployCard />,
-        health: undefined,
+        latestDeploy: details(false, null),
       }),
     ]}
   />

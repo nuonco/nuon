@@ -18,6 +18,9 @@ export interface INewInstallHeader {
   branchAction?: ReactNode
   install: TInstall
   labelColors?: Record<string, string>
+  latestCommit?: ReactNode
+  latestCommitLabel?: string
+  latestCommitLoading?: boolean
   orgId?: string
   settingsAction?: ReactNode
   statuses?: ReactNode
@@ -27,6 +30,9 @@ export const NewInstallHeader = ({
   branchAction,
   install,
   labelColors,
+  latestCommit,
+  latestCommitLabel = 'Applied commit',
+  latestCommitLoading,
   orgId,
   settingsAction,
   statuses,
@@ -76,14 +82,6 @@ export const NewInstallHeader = ({
                   format="relative"
                 />
               </Text>
-              <Text variant="subtext" theme="info">
-                Last updated{' '}
-                <Time
-                  variant="subtext"
-                  time={install?.updated_at}
-                  format="relative"
-                />
-              </Text>
               <AdminDashboardLink
                 path={`/queues?owner_id=${install.id}`}
                 label="Admin panel"
@@ -120,7 +118,7 @@ export const NewInstallHeader = ({
               </LabeledValue>
 
               <LabeledValue label="App branch">
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5 h-[17px]">
                   {install.app_branch ? (
                     <Link
                       href={`/${orgId}/apps/${install.app_id}/branches/${install.app_branch.id}`}
@@ -160,6 +158,16 @@ export const NewInstallHeader = ({
                   </Text>
                 )}
               </LabeledValue>
+
+              {latestCommit || latestCommitLoading ? (
+                <LabeledValue
+                  className="min-w-0 max-w-full"
+                  label={latestCommitLabel}
+                  loading={latestCommitLoading}
+                >
+                  {latestCommit}
+                </LabeledValue>
+              ) : null}
             </div>
           </Card>
 

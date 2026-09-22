@@ -33,7 +33,6 @@ test('registers the new install IA navigation and placeholder routes', () => {
     'Sandbox',
     'Components',
     'Images',
-    'State',
   ])
   expect(tabLabels(NEW_INSTALL_OPERATIONS_TABS)).toEqual([
     'Activity',
@@ -47,6 +46,7 @@ test('registers the new install IA navigation and placeholder routes', () => {
     'Inputs',
     'Config file',
     'Overrides',
+    'State',
   ])
 
   expect(paths(installRoutes)).toEqual(

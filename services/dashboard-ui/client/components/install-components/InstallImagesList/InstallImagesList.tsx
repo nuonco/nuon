@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
 import { Pagination, type IPagination } from '@/components/common/Pagination'
@@ -11,7 +12,7 @@ import { PaginationProvider } from '@/providers/pagination-provider'
 import type { TComponentType } from '@/types'
 
 export type TInstallImageListItem = {
-  buildAction?: ReactNode
+  actions?: ReactNode
   id: string
   image: ReactNode
   name: string
@@ -59,15 +60,20 @@ const InstallImagesListBase = ({
           <Skeleton height="12rem" width="100%" />
         </div>
       ) : images.length ? (
-        <div className="flex flex-col divide-y">
+        <div className="flex flex-col gap-4">
           {images.map((image) => (
-            <div
-              key={image.id}
-              className="flex flex-col gap-4 py-6 first:pt-0 last:pb-0"
-            >
+            <Card key={image.id} className="!p-4 !gap-4">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex flex-col gap-1.5 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
+                    {image.type ? (
+                      <ComponentType
+                        type={image.type}
+                        displayVariant="icon-only"
+                        iconSize="16"
+                        colorVariant="color"
+                      />
+                    ) : null}
                     <Text
                       variant="body"
                       weight="stronger"
@@ -76,27 +82,17 @@ const InstallImagesListBase = ({
                     >
                       {image.name}
                     </Text>
-                    {image.type ? (
-                      <ComponentType
-                        type={image.type}
-                        variant="subtext"
-                        colorVariant="color"
-                      />
-                    ) : null}
                     <Status status={image.status} variant="badge" />
                   </div>
                   <ID>{image.id}</ID>
                 </div>
-                {image.buildAction}
+                {image.actions}
               </div>
 
-              <div className="flex flex-col gap-2">
-                <Text variant="subtext" weight="strong" theme="neutral">
-                  Current build
-                </Text>
+              <div className="flex flex-col gap-4 border-t pt-4">
                 {image.image}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       ) : filtered ? (

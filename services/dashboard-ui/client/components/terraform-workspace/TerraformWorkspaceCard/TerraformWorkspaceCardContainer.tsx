@@ -31,7 +31,7 @@ export const TerraformWorkspaceCardContainer = ({
 
   const isPulumi = componentType === 'pulumi'
 
-  const { data: states } = useQuery({
+  const { data: states, isLoading: statesLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['workspace-states', org?.id, workspaceId],
     queryFn: () =>
@@ -45,9 +45,15 @@ export const TerraformWorkspaceCardContainer = ({
   const latestStateId = states?.[0]?.id
 
   // Pulumi state isn't terraform JSON, so it can't go through the parsed endpoint.
-  const { data: currentRevision } = useQuery({
+  const { data: currentRevision, isLoading: revisionLoading } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['workspace-state', org?.id, workspaceId, latestStateId, isPulumi],
+    queryKey: [
+      'workspace-state',
+      org?.id,
+      workspaceId,
+      latestStateId,
+      isPulumi,
+    ],
     queryFn: () =>
       isPulumi
         ? getWorkspaceStateRaw({
@@ -81,6 +87,7 @@ export const TerraformWorkspaceCardContainer = ({
       currentRevision={currentRevision}
       componentType={componentType}
       hideHeading={hideHeading}
+      loading={statesLoading || (!!latestStateId && revisionLoading)}
       status={lock ? <TerraformWorkspaceLockBadge lock={lock} /> : undefined}
       actions={
         isPulumi ? undefined : (

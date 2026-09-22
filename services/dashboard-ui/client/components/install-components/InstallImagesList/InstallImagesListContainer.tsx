@@ -1,13 +1,13 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { DebouncedSearchInput } from '@/components/common/DeboundedSearch'
-import { BuildComponentButton } from '@/components/components/management/BuildComponent'
+import { ResourceComponentActions } from '@/components/install-components/ResourceComponentActions'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallComponents } from '@/lib'
 import type { TInstallComponent } from '@/types'
-import { InstallImageSummary } from './InstallImageSummary'
+import { InstallImageSummaryContainer } from './InstallImageSummary'
 import {
   InstallImagesList,
   type TInstallImageListItem,
@@ -49,28 +49,29 @@ export const InstallImagesListContainer = () => {
     const config = appConfig?.component_config_connections?.find(
       (connection) => connection.component_id === componentId
     )
+    const latestDeploy = installComponent.install_deploys?.[0]
 
     return {
       id: componentId || (installComponent.id ?? ''),
       name: component?.name ?? 'Image',
       type: component?.type,
       status: installComponent.status_v2?.status ?? installComponent.status,
-      buildAction: component ? (
-        <BuildComponentButton
+      actions: component ? (
+        <ResourceComponentActions
           component={component}
-          size="sm"
-          variant="secondary"
-          redirectOnSuccess={false}
-        >
-          Build image
-        </BuildComponentButton>
+          currentBuildId={latestDeploy?.build_id}
+          currentDeployStatus={
+            latestDeploy?.status_v2?.status ?? latestDeploy?.status
+          }
+          variant="image"
+        />
       ) : null,
-      image: (
-        <InstallImageSummary
+      image: componentId ? (
+        <InstallImageSummaryContainer
           componentId={componentId}
           sourceRef={config?.external_image?.image_url}
         />
-      ),
+      ) : null,
     }
   }
 

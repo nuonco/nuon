@@ -162,7 +162,7 @@ export const InstallStackContainer = () => {
       outputsLoading={stackLoading}
       versionsAction={
         <HistoryPanelButton
-          title="Stack versions"
+          title="Stack history"
           history={<InstallStackVersions />}
         />
       }

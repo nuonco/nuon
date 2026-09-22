@@ -29,7 +29,7 @@ const baseProps: IInstallStack = {
   versionsAction: (
     <Button variant="secondary">
       <Icon variant="ClockCounterClockwiseIcon" size={16} />
-      Stack versions
+      Stack history
     </Button>
   ),
 }

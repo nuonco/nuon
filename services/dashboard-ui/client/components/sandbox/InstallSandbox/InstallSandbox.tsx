@@ -1,19 +1,25 @@
 import type { ReactNode } from 'react'
+import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
+import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
+import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Time } from '@/components/common/Time'
 import { SectionHeader } from '@/components/layout/SectionHeader'
-import type { TInstallSandbox, TSandboxRun } from '@/types'
+import type { TAppSandboxBuild, TInstallSandbox, TSandboxRun } from '@/types'
 import { humanize } from '@/utils/string-utils'
 
 type TSandboxRunSummary = Pick<TSandboxRun, 'created_at' | 'run_type'>
 
 export interface IInstallSandbox {
   actions?: ReactNode
+  build?: TAppSandboxBuild
+  buildHref?: string
+  buildLoading?: boolean
   config: ReactNode
   driftBanner?: ReactNode
   latestRun?: TSandboxRunSummary
@@ -21,8 +27,67 @@ export interface IInstallSandbox {
   sandbox?: TInstallSandbox
 }
 
+const SandboxBuildInfo = ({
+  build,
+  buildHref,
+  loading,
+}: {
+  build?: TAppSandboxBuild
+  buildHref?: string
+  loading?: boolean
+}) => {
+  if (!loading && !build) return null
+
+  const commit = build?.vcs_connection_commit
+
+  return (
+    <div className="flex flex-col gap-4 border-t pt-4">
+      <div className="flex flex-wrap gap-x-8 gap-y-3 items-start">
+        <LabeledStatus
+          label="Build"
+          loading={loading}
+          statusProps={{
+            status: build?.status_v2?.status ?? build?.status,
+          }}
+          tooltipProps={{
+            tipContent:
+              build?.status_v2?.status_human_description ??
+              build?.status_description,
+            position: 'bottom',
+          }}
+        />
+        <LabeledValue label="Built" loading={loading}>
+          <Time variant="subtext" time={build?.created_at} format="relative" />
+        </LabeledValue>
+        <LabeledValue label="Build ID" loading={loading}>
+          {buildHref && build?.id ? (
+            <Link href={buildHref} className="font-mono">
+              {build.id}
+            </Link>
+          ) : (
+            <ID>{build?.id}</ID>
+          )}
+        </LabeledValue>
+      </div>
+      {commit ? (
+        <BranchRunCommit
+          showStatus={false}
+          href={buildHref}
+          sha={commit.sha}
+          message={commit.message?.split('\n')[0]}
+          author={commit.author_name}
+          avatarUrl={commit.author_avatar_url}
+        />
+      ) : null}
+    </div>
+  )
+}
+
 export const InstallSandbox = ({
   actions,
+  build,
+  buildHref,
+  buildLoading = false,
   config,
   driftBanner,
   latestRun,
@@ -81,6 +146,11 @@ export const InstallSandbox = ({
               </LabeledValue>
             ) : null}
           </div>
+          <SandboxBuildInfo
+            build={build}
+            buildHref={buildHref}
+            loading={buildLoading}
+          />
         </Card>
       ) : (
         <EmptyState

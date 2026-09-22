@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
-import { PulumiState, type TPulumiState } from '@/components/terraform-workspace/PulumiState'
+import {
+  PulumiState,
+  type TPulumiState,
+} from '@/components/terraform-workspace/PulumiState'
 import { TerraformState } from '@/components/terraform-workspace/TerraformState'
 import type { TComponentType, TTerraformState } from '@/types'
 import { cn } from '@/utils/classnames'
@@ -10,6 +14,7 @@ export interface ITerraformWorkspaceCard {
   currentRevision?: TTerraformState | TPulumiState | null
   actions?: ReactNode
   hideHeading?: boolean
+  loading?: boolean
   status?: ReactNode
   componentType?: TComponentType
 }
@@ -18,6 +23,7 @@ export const TerraformWorkspaceCard = ({
   currentRevision,
   actions,
   hideHeading = false,
+  loading = false,
   status,
   componentType,
 }: ITerraformWorkspaceCard) => {
@@ -43,7 +49,9 @@ export const TerraformWorkspaceCard = ({
         {status}
       </div>
 
-      {!currentRevision ? (
+      {loading ? (
+        <Skeleton height="24rem" width="100%" />
+      ) : !currentRevision ? (
         <EmptyState
           variant="diagram"
           emptyTitle="No revisions yet"

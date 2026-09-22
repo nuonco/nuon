@@ -4,6 +4,7 @@ export default {
 
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { NewInstallHeader } from './NewInstallHeader'
 
@@ -34,8 +35,13 @@ const mockInstall = {
 } as any
 
 const branchAction = (
-  <Button variant="ghost" size="sm" aria-label="Change app branch">
-    <Icon variant="PencilSimpleLineIcon" size={14} />
+  <Button
+    variant="icon"
+    size="xs"
+    aria-label="Change app branch"
+    tooltipProps={{ tipContent: 'Change app branch' }}
+  >
+    <Icon variant="PencilSimpleLineIcon" size={12} />
   </Button>
 )
 
@@ -50,6 +56,50 @@ export const Default = () => (
     install={mockInstall}
     orgId={orgId}
     branchAction={branchAction}
+    latestCommit={
+      <BranchRunCommit
+        displayVariant="inline"
+        href="#"
+        message="Update production configuration"
+        author="developer"
+        sha="a1b2c3d4e5f6"
+        createdAt="2026-09-20T18:04:00Z"
+        showStatus={false}
+      />
+    }
+    settingsAction={settingsAction}
+    statuses={<InstallStatuses install={mockInstall} />}
+  />
+)
+
+export const UnappliedBranchRun = () => (
+  <NewInstallHeader
+    install={mockInstall}
+    orgId={orgId}
+    branchAction={branchAction}
+    latestCommit={
+      <BranchRunCommit
+        displayVariant="inline"
+        href="#"
+        message="Add retry budget to the checkout worker"
+        author="developer"
+        sha="f6e5d4c3b2a1"
+        createdAt="2026-09-22T09:12:00Z"
+        showStatus={false}
+      />
+    }
+    latestCommitLabel="Latest branch run"
+    settingsAction={settingsAction}
+    statuses={<InstallStatuses install={mockInstall} />}
+  />
+)
+
+export const CommitLoading = () => (
+  <NewInstallHeader
+    install={mockInstall}
+    orgId={orgId}
+    branchAction={branchAction}
+    latestCommitLoading
     settingsAction={settingsAction}
     statuses={<InstallStatuses install={mockInstall} />}
   />

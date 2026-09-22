@@ -150,10 +150,6 @@ export const installRoutes: RouteObject[] = [
                 path: 'images',
                 element: <NewInstallImages />,
               },
-              {
-                path: 'state',
-                element: <NewInstallState />,
-              },
             ],
           },
         ],
@@ -216,6 +212,10 @@ export const installRoutes: RouteObject[] = [
               {
                 path: 'overrides',
                 element: <NewInstallPlaceholderBody title="Overrides" />,
+              },
+              {
+                path: 'state',
+                element: <NewInstallState />,
               },
             ],
           },

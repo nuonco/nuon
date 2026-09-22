@@ -110,9 +110,10 @@ export const ChangeAppBranchButton = ({
 
   return (
     <Button
-      variant={iconOnly ? 'ghost' : 'secondary'}
-      size={compact || iconOnly ? 'sm' : 'md'}
+      variant={iconOnly ? 'icon' : 'secondary'}
+      size={iconOnly ? 'xs' : compact ? 'sm' : 'md'}
       aria-label={iconOnly ? 'Change app branch' : undefined}
+      tooltipProps={iconOnly ? { tipContent: 'Change app branch' } : undefined}
       onClick={() =>
         addModal(
           <ChangeAppBranchContainer install={install} onSuccess={onSuccess} />
@@ -121,7 +122,7 @@ export const ChangeAppBranchButton = ({
     >
       <Icon
         variant={compact || iconOnly ? 'PencilSimpleLineIcon' : 'GitBranchIcon'}
-        size={iconOnly ? 14 : 16}
+        size={iconOnly ? 12 : 16}
       />
       {iconOnly ? null : compact ? 'Edit' : 'Change branch'}
     </Button>

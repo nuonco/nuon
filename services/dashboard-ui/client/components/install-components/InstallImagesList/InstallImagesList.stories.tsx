@@ -2,61 +2,52 @@ export default {
   title: 'Install Components/InstallImagesList',
 }
 
-import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
-import { Card } from '@/components/common/Card'
-import { ClickToCopy } from '@/components/common/ClickToCopy'
-import { EmptyState } from '@/components/common/EmptyState'
-import { LabeledValue } from '@/components/common/LabeledValue'
-import { Link } from '@/components/common/Link'
 import { SearchInput } from '@/components/common/SearchInput'
-import { Status } from '@/components/common/Status'
-import { Text } from '@/components/common/Text'
-import { Time } from '@/components/common/Time'
+import type { TComponentBuild, TDeploy } from '@/types'
+import { InstallImageSummary } from './InstallImageSummary'
 import {
   InstallImagesList,
   type TInstallImageListItem,
 } from './InstallImagesList'
 
-const buildSummary = (
-  <Card className="!p-4 !gap-4">
-    <div className="grid gap-4 md:grid-cols-2">
-      <LabeledValue label="Status">
-        <Status status="active" />
-      </LabeledValue>
-      <LabeledValue label="Built">
-        <Time time="2026-09-22T11:00:00Z" format="relative" variant="subtext" />
-      </LabeledValue>
-      <LabeledValue label="Source ref">
-        <Text variant="subtext" family="mono">
-          registry.example.com/acme/api:1.14.2
-        </Text>
-      </LabeledValue>
-      <LabeledValue label="Resolved tag">
-        <Text variant="subtext" family="mono">
-          1.14.2
-        </Text>
-      </LabeledValue>
-      <LabeledValue label="Digest" className="md:col-span-2">
-        <ClickToCopy>
-          <Text variant="subtext" family="mono" className="break-all">
-            sha256:0000000000000000000000000000000000000000000000000000000000000000
-          </Text>
-        </ClickToCopy>
-      </LabeledValue>
-      <LabeledValue label="Rebuild">
-        <Badge size="sm" variant="code" theme="neutral">
-          no-op
-        </Badge>
-      </LabeledValue>
-    </div>
-    <Link href="#">View build</Link>
-  </Card>
+const sync = {
+  id: 'dpl-img-1',
+  status_v2: { status: 'active' },
+  created_at: '2026-09-22T14:00:00Z',
+  updated_at: '2026-09-22T14:04:00Z',
+  install_deploy_type: 'apply',
+} as TDeploy
+
+const build = {
+  id: 'bld-img-1',
+  status_v2: { status: 'active' },
+  created_at: '2026-09-22T11:00:00Z',
+  resolved_at: '2026-09-22T11:02:00Z',
+  source_ref: 'registry.example.com/acme/api:1.14.2',
+  resolved_tag: '1.14.2',
+  source_digest:
+    'sha256:0000000000000000000000000000000000000000000000000000000000000000',
+  no_op: true,
+  vcs_connection_commit: {
+    sha: '7a3c91e4b2d8f056c19a4e7b3d2058f46a1c9b2e',
+    message: 'Pin acme-api image to 1.14.2',
+    author_name: 'Ada Lovelace',
+  },
+} as TComponentBuild
+
+const summary = (
+  <InstallImageSummary
+    deploy={sync}
+    syncHref="#"
+    build={build}
+    buildHref="#"
+  />
 )
 
-const buildAction = (
+const actions = (
   <Button variant="secondary" size="sm">
-    Build image
+    More
   </Button>
 )
 
@@ -67,8 +58,8 @@ const image = (
   name: 'api',
   type: 'external_image',
   status: 'active',
-  buildAction,
-  image: buildSummary,
+  actions,
+  image: summary,
   ...overrides,
 })
 
@@ -95,14 +86,7 @@ export const NeverBuilt = () => (
   <InstallImagesList
     images={[
       image({
-        image: (
-          <EmptyState
-            variant="table"
-            size="sm"
-            emptyTitle="No builds yet"
-            emptyMessage="Build this component to publish an image."
-          />
-        ),
+        image: <InstallImageSummary />,
       }),
     ]}
   />
