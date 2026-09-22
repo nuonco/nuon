@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router'
 import posthog from 'posthog-js'
 import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { useInstall } from '@/hooks/use-install'
@@ -22,7 +23,9 @@ const adaptProps = (props: Record<string, unknown>) =>
 
 export const InitPostHog = ({ apiKey }: { apiKey: string }) => {
   const { user, isLoading } = useAuth()
+  const { isByoc, byocName, version, posthogReplayEnabled } = useConfig()
   const { pathname } = useLocation()
+  const identifiedSubRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!apiKey || initialized) return
@@ -31,13 +34,31 @@ export const InitPostHog = ({ apiKey }: { apiKey: string }) => {
       ui_host: 'https://us.posthog.com',
       autocapture: true,
       capture_pageview: false,
+      disable_session_recording: !posthogReplayEnabled,
+    })
+    posthog.register({
+      deployment: isByoc ? 'byoc' : 'cloud',
+      ...(byocName ? { byoc_name: byocName } : {}),
+      ...(version ? { nuon_version: version } : {}),
     })
     initialized = true
-  }, [apiKey])
+  }, [apiKey, isByoc, byocName, version, posthogReplayEnabled])
 
   useEffect(() => {
-    if (!initialized || isLoading || !user?.sub) return
-    posthog.identify(user.sub, { email: user.email, name: user.name })
+    if (!initialized || isLoading) return
+    if (!user?.sub) {
+      if (identifiedSubRef.current) {
+        posthog.reset()
+        identifiedSubRef.current = null
+      }
+      return
+    }
+    posthog.identify(user.email || user.sub, {
+      email: user.email,
+      name: user.name,
+      account_id: user.sub,
+    })
+    identifiedSubRef.current = user.sub
   }, [user, isLoading])
 
   useEffect(() => {
