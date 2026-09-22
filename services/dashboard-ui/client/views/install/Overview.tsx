@@ -25,7 +25,8 @@ export const Overview = () => {
     queryFn: () => getInstallReadme({ orgId: org.id, installId: install.id }),
     enabled: !!org?.id && !!install?.id,
   })
-  const { run: currentAppBranchRun } = useCurrentAppBranchRun()
+  const { run: currentAppBranchRun, isLoading: isAppBranchRunLoading } =
+    useCurrentAppBranchRun()
 
   return (
     <PageSection>
@@ -57,6 +58,8 @@ export const Overview = () => {
           run={currentAppBranchRun}
           orgId={org?.id}
           appId={install?.app_id}
+          branchName={install?.app_branch?.name}
+          isLoading={isAppBranchRunLoading}
         />
       </div>
 
