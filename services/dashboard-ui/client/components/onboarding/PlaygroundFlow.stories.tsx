@@ -2005,44 +2005,6 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
 }
 
 // --- Step 4 (all paths): how the install gets built ---------------------------
-//
-// Provisioning is slow, so this step explains the workflow instead of pretending
-// to render it live. The live view is the next step: the install page.
-
-interface IProvisionRow {
-  id: string
-  label: string
-  copy: { pending: string; active: string; done: string }
-}
-
-// Status copy matches the live ProvisioningStep so the prototype reads like production.
-const provisionRows = (path: TPath, cloud: TCloud): IProvisionRow[] => {
-  const stackLabel = path === 'example' ? CLOUD_CONNECT[cloud].stackLabel : 'Install stack'
-  const components = path === 'own' ? ['api', 'web', 'database'] : ['certificate', 'application_load_balancer', 'api', 'ui']
-
-  return [
-    {
-      id: 'stack',
-      label: stackLabel,
-      copy: { pending: 'Waiting to provision...', active: 'Provisioning stack...', done: 'Stack provisioned' },
-    },
-    {
-      id: 'runner',
-      label: 'Runner',
-      copy: { pending: 'Waiting to start...', active: 'Awaiting health check...', done: 'Healthy' },
-    },
-    {
-      id: 'sandbox',
-      label: 'Sandbox',
-      copy: { pending: 'Waiting to configure...', active: 'Setting up your sandbox...', done: 'Sandbox ready' },
-    },
-    ...components.map((name) => ({
-      id: `component-${name}`,
-      label: name,
-      copy: { pending: 'Waiting to deploy...', active: `Deploying ${name}...`, done: 'Deployed' },
-    })),
-  ]
-}
 
 type TStageId = 'runner' | 'sandbox' | 'components'
 type TStageState = 'done' | 'active' | 'next'
@@ -2326,116 +2288,6 @@ const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponent
   )
 }
 
-// --- Step 5 (all paths): the install page, live ---------------------------------
-
-const InstallStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
-  const path = readPath(sharedData)
-  const cloud = readCloud(sharedData)
-  const rows = useMemo(() => provisionRows(path, cloud), [path, cloud])
-
-  const [completed, setCompleted] = useState(0)
-  const isDone = completed >= rows.length
-  const activeRow = rows[completed]
-  const appName = path === 'own' ? readAppName(sharedData) : 'kitchen-sink'
-
-  useEffect(() => {
-    if (isDone) return
-    const timer = setTimeout(() => setCompleted((prev) => prev + 1), 950)
-    return () => clearTimeout(timer)
-  }, [completed, isDone])
-
-  const liveHeading = isDone
-    ? path === 'own'
-      ? `${appName} is live`
-      : `Kitchen Sink is live in your test ${CLOUD_CONNECT[cloud].accountNoun}`
-    : `${activeRow.label}: ${activeRow.copy.active}`
-
-  return (
-    <div className="flex flex-col gap-6">
-      <Card className="!gap-0 !p-4 !flex-row items-center justify-between">
-        <div className="flex items-center gap-3">
-          {path === 'own' ? (
-            <Icon variant="CloudIcon" size={24} theme="neutral" />
-          ) : (
-            <Icon variant={CLOUD_ICON[cloud]} size={24} />
-          )}
-          <div className="flex flex-col">
-            <Text variant="base" weight="strong">
-              {appName}
-            </Text>
-            <Text variant="body" theme={isDone ? 'success' : 'neutral'}>
-              {liveHeading}
-            </Text>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {isDone ? (
-            <Badge size="sm" theme="success">
-              Active
-            </Badge>
-          ) : (
-            <Badge size="sm" theme="brand">
-              <Icon variant="Loading" size={12} /> Provisioning
-            </Badge>
-          )}
-          <Badge size="sm" theme="neutral">
-            {path === 'own' ? 'Your cloud account' : CLOUD_CONNECT[cloud].accountNoun}
-          </Badge>
-        </div>
-      </Card>
-
-      <div className="flex items-center justify-between">
-        <Text variant="base" weight="strong">
-          Resources
-        </Text>
-        <Text variant="body" theme="neutral">
-          {isDone ? 'All resources provisioned' : `${completed} of ${rows.length} ready`}
-        </Text>
-      </div>
-
-      <Card className="!gap-0 !p-0 overflow-hidden">
-        {rows.map((row, index) => {
-          const rowDone = index < completed
-          const rowActive = index === completed
-          const status = rowDone ? row.copy.done : rowActive ? row.copy.active : row.copy.pending
-
-          return (
-            <div key={row.id} className={cn('flex items-center gap-3 px-5 py-3', index > 0 && 'border-t')}>
-              {rowDone ? (
-                <Icon variant="CheckCircleIcon" size={18} theme="success" weight="fill" />
-              ) : rowActive ? (
-                <Icon variant="Loading" size={18} />
-              ) : (
-                <Icon variant="ClockCountdownIcon" size={18} theme="neutral" />
-              )}
-              <div className="flex flex-col">
-                <Text
-                  variant="body"
-                  weight="strong"
-                  family={row.id.startsWith('component-') ? 'mono' : 'sans'}
-                  theme={rowDone || rowActive ? 'default' : 'neutral'}
-                >
-                  {row.label}
-                </Text>
-                <Text variant="subtext" theme={rowDone || rowActive ? 'success' : 'neutral'}>
-                  {status}
-                </Text>
-              </div>
-            </div>
-          )
-        })}
-      </Card>
-
-      <Text variant="subtext" theme="neutral">
-        {isDone
-          ? 'Everything is up. This is the page your customer sees for their install.'
-          : 'This page updates on its own. You can leave and come back.'}
-      </Text>
-      <NextButton label="Go to dashboard" onClick={onAdvance} onBack={onGoBack} />
-    </div>
-  )
-}
-
 // --- Step definitions ---------------------------------------------------------
 
 // The step renders its own, larger title (no subhead) instead of the wizard's default h2.
@@ -2516,16 +2368,6 @@ const PROVISION_STEP: Record<TPath, IWizardStepDef> = {
     navLabel: 'Provision',
     component: ProvisionStep,
   },
-}
-
-// Parked: the live install page. Not in any flow; "Go to deploy workflow" opens
-// the install's workflow page instead.
-const PARKED_INSTALL_STEP: IWizardStepDef = {
-  id: 'parked-install',
-  title: 'Your install',
-  navLabel: 'Install',
-  description: 'Live from the runner. This is the page your customer sees for their install.',
-  component: InstallStep,
 }
 
 const buildForkFlow = (path: TPath, cloud: TCloud): IWizardStepDef[] => {
@@ -2889,14 +2731,3 @@ ForkDeployAws.meta = { fullBleed: true }
 
 export const ForkOwnApp = () => <BranchingPlayground initialPath="own" skipIntro expandOwnApp />
 ForkOwnApp.meta = { fullBleed: true }
-
-export const ParkedInstall = () => (
-  <OnboardingWizardProvider
-    steps={[PARKED_INSTALL_STEP]}
-    initialSharedData={{ path: 'own', cloud: 'aws' }}
-    onComplete={() => {}}
-  >
-    <OnboardingWizardLayout skipHref={null} />
-  </OnboardingWizardProvider>
-)
-ParkedInstall.meta = { fullBleed: true }
