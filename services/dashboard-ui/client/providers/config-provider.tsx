@@ -30,6 +30,7 @@ export type TRuntimeConfig = {
   adminDashboardUrl?: string
   posthogKey?: string
   posthogHost?: string
+  posthogReplayEnabled?: boolean
   isDev?: boolean
 }
 
