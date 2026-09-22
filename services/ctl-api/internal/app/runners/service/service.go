@@ -62,6 +62,7 @@ type service struct {
 	chDB                   *gorm.DB
 	mw                     metrics.Writer
 	tailMetrics            *runnerJobTailMetrics
+	executionResults       metric.Int64Counter
 	meterProvider          metric.MeterProvider
 	cfg                    *internal.Config
 	acctClient             *account.Client
@@ -298,6 +299,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	s.tailMetrics = newRunnerJobTailMetrics(s.meterProvider)
+	s.executionResults = newRunnerJobExecutionResults(s.meterProvider)
 	api.POST("/v1/telemetry/access-token", s.CreateTelemetryAccessToken)
 
 	runners := api.Group("/v1/runners/:runner_id")
