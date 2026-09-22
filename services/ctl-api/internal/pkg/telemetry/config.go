@@ -57,10 +57,12 @@ func NewConfig(cfg *internal.Config) (*Config, error) {
 }
 
 func validateTransportEnv(scheme string) error {
-	for _, suffix := range []string{"ENDPOINT", "PROTOCOL", "HEADERS", "CERTIFICATE", "CLIENT_CERTIFICATE", "CLIENT_KEY", "TIMEOUT", "COMPRESSION", "INSECURE"} {
-		key := "OTEL_EXPORTER_OTLP_METRICS_" + suffix
-		if os.Getenv(key) != "" {
-			return fmt.Errorf("%s is unsupported; use OTEL_EXPORTER_OTLP_%s", key, suffix)
+	for _, signal := range []string{"METRICS", "LOGS"} {
+		for _, suffix := range []string{"ENDPOINT", "PROTOCOL", "HEADERS", "CERTIFICATE", "CLIENT_CERTIFICATE", "CLIENT_KEY", "TIMEOUT", "COMPRESSION", "INSECURE"} {
+			key := "OTEL_EXPORTER_OTLP_" + signal + "_" + suffix
+			if os.Getenv(key) != "" {
+				return fmt.Errorf("%s is unsupported; use OTEL_EXPORTER_OTLP_%s", key, suffix)
+			}
 		}
 	}
 	if value := os.Getenv("OTEL_EXPORTER_OTLP_TIMEOUT"); value != "" {
