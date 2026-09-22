@@ -1270,7 +1270,7 @@ const OwnAppSetup = ({
   githubDone: boolean
   onGithubDone: () => void
   showErrors: boolean
-  cloud: TCloud
+  cloud?: TCloud
   onCloud: (cloud: TCloud) => void
 }) => {
   const [connecting, setConnecting] = useState(false)
@@ -1384,21 +1384,7 @@ const OwnAppSetup = ({
         </div>
         {/* Asked here, before the template step, so the stubbed runner, sandbox and
             permissions match the cloud the install will use. */}
-        <div className="flex flex-col gap-2">
-          <Text variant="body" weight="strong">
-            Test cloud
-          </Text>
-          <ToggleButton<TCloud>
-            options={CLOUD_OPTIONS}
-            value={cloud}
-            onChange={onCloud}
-            size="md"
-            className="self-start"
-          />
-          <Text variant="subtext" theme="neutral">
-            Nuon stubs the runner, sandbox and permissions for this cloud.
-          </Text>
-        </div>
+        <TestCloudPicker value={cloud} onChange={onCloud} error={showErrors && !cloud} />
       </Card>
     </>
   )
@@ -1538,16 +1524,17 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
   const setupRef = useRef<HTMLDivElement>(null)
   const named = ((sharedData.appName as string | undefined) ?? '').trim().length > 0
   const githubDone = Boolean(sharedData.githubDone)
+  const testCloud = sharedData.testCloud as TCloud | undefined
   // Errors show only after a failed attempt to continue, on whichever field is missing.
   const [showErrors, setShowErrors] = useState(false)
 
   const tryContinue = () => {
-    if (!named || !githubDone) {
+    if (!named || !githubDone || !testCloud) {
       setShowErrors(true)
       setupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
-    go({ path: 'own', cloud: readCloud(sharedData) })
+    go({ path: 'own', cloud: testCloud })
   }
 
   const go = (choice: IForkChoice) => {
@@ -1601,8 +1588,9 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
             githubDone={githubDone}
             onGithubDone={() => setSharedData('githubDone', true)}
             showErrors={showErrors}
-            cloud={readCloud(sharedData)}
+            cloud={testCloud}
             onCloud={(value) => {
+              setSharedData('testCloud', value)
               setSharedData('cloud', value)
               setSharedData('region', CLOUD_REGIONS[value].options[0])
               choose({ path: 'own', cloud: value })
@@ -1683,14 +1671,73 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
 // the customer launches it, the stack reports back.
 type TStackPhase = 'generating' | 'ready' | 'opening' | 'waiting' | 'done'
 
-const CLOUD_OPTIONS: { value: TCloud; label: ReactNode; ariaLabel: string; title: string }[] = (
-  ['aws', 'gcp', 'azure'] as const
-).map((cloud) => ({
-  value: cloud,
-  label: <Icon variant={CLOUD_ICON[cloud]} size={cloud === 'aws' ? 22 : 18} />,
-  ariaLabel: CLOUD_LABEL[cloud],
-  title: CLOUD_LABEL[cloud],
-}))
+const TEST_CLOUDS: TCloud[] = ['aws', 'gcp', 'azure']
+
+// No default: the test cloud is the user's own account, so nothing is preselected.
+const TestCloudPicker = ({
+  value,
+  onChange,
+  error,
+}: {
+  value?: TCloud
+  onChange: (cloud: TCloud) => void
+  error: boolean
+}) => (
+  <fieldset aria-describedby={error ? 'test-cloud-error' : 'test-cloud-hint'}>
+    <legend className="mb-2">
+      <Text variant="body" weight="strong">
+        Test cloud
+      </Text>
+    </legend>
+    <div className="flex flex-col gap-2">
+      <div className="grid max-w-md grid-cols-3 gap-3">
+        {TEST_CLOUDS.map((cloud) => {
+          const checked = value === cloud
+          return (
+            <label
+              key={cloud}
+              title={CLOUD_LABEL[cloud]}
+              className={cn(
+                'flex h-14 cursor-pointer items-center gap-3 rounded-md px-4 ring-1 transition-shadow',
+                'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary-500',
+                checked
+                  ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
+                  : error
+                    ? 'ring-red-500 dark:ring-red-400 hover:bg-neutral-50 dark:hover:bg-neutral-900'
+                    : 'ring-neutral-200 dark:ring-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-900'
+              )}
+            >
+              <input
+                type="radio"
+                name="test-cloud"
+                value={cloud}
+                checked={checked}
+                onChange={() => onChange(cloud)}
+                required
+                aria-invalid={error || undefined}
+                className="accent-primary-600 focus-visible:outline-none"
+              />
+              <span className="flex flex-1 justify-center">
+                <Icon variant={CLOUD_ICON[cloud]} size={cloud === 'aws' ? 26 : 22} />
+              </span>
+              <span className="sr-only">{CLOUD_LABEL[cloud]}</span>
+            </label>
+          )
+        })}
+      </div>
+      {error ? (
+        <Text id="test-cloud-error" variant="subtext" theme="error" flex>
+          <Icon variant="WarningCircleIcon" size={14} weight="fill" />
+          Select a test cloud to continue.
+        </Text>
+      ) : (
+        <Text id="test-cloud-hint" variant="subtext" theme="neutral">
+          Nuon stubs the runner, sandbox and permissions for this cloud.
+        </Text>
+      )}
+    </div>
+  </fieldset>
+)
 
 // How a customer creates the install stack, per cloud (docs/concepts/stacks.mdx and
 // docs/platform-support/*): Terraform plus the platform's native format, except GCP,
