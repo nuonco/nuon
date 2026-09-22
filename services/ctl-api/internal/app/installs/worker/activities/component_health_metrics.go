@@ -35,7 +35,7 @@ func newComponentHealthEvaluationMetrics(provider metric.MeterProvider) *compone
 	return &componentHealthEvaluationMetrics{attempts: attempts, duration: duration}
 }
 
-func (m *componentHealthEvaluationMetrics) record(ctx context.Context, started time.Time, reason string, result *EvaluateComponentHealthResponse, err error) {
+func (m *componentHealthEvaluationMetrics) recordForInstall(ctx context.Context, started time.Time, installID, reason string, result *EvaluateComponentHealthResponse, err error) {
 	if m == nil || (result == nil && err == nil) {
 		return
 	}
@@ -51,7 +51,11 @@ func (m *componentHealthEvaluationMetrics) record(ctx context.Context, started t
 	default:
 		reason = "none"
 	}
-	m.attempts.Add(ctx, 1, metric.WithAttributes(attribute.String("outcome", outcome), attribute.String("reason", reason)))
+	attrs := []attribute.KeyValue{attribute.String("outcome", outcome), attribute.String("reason", reason)}
+	if installID != "" {
+		attrs = append(attrs, attribute.String("nuon.install.id", installID))
+	}
+	m.attempts.Add(ctx, 1, metric.WithAttributes(attrs...))
 	if outcome != "skipped" {
 		m.duration.Record(ctx, time.Since(started).Seconds(), metric.WithAttributes(attribute.String("outcome", outcome)))
 	}
