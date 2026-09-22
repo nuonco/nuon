@@ -250,7 +250,6 @@ func previewConfigRequest(ctx context.Context, resolver *branchNameResolver, cfg
 			return nil, fmt.Errorf("branch %q preview: %w", cfg.Name, err)
 		}
 		out.InstallID = id
-		out.InstallName = p.InstallName
 	}
 	if len(p.LabelSelector) > 0 {
 		out.LabelSelector = &models.GithubComNuoncoNuonPkgLabelsSelector{
