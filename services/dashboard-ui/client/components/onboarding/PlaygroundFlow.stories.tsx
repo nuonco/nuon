@@ -605,7 +605,7 @@ const CLOUD_CONNECT: Record<
     launch: 'Get the Terraform stack',
     opening: 'Preparing the Terraform stack...',
     helper:
-      'Nuon generates a Terraform stack for your GCP project. Apply it from your terminal, then come back — this page updates on its own.',
+      'Nuon generates a Terraform stack for your test GCP project. Apply it from your terminal, then come back — this page updates on its own.',
     waitingHint: 'Apply the Terraform stack from your terminal, then come back.',
   },
   azure: {
@@ -2001,7 +2001,7 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
       : phase === 'waiting'
         ? `${connect.waitingHint} This page updates on its own.`
         : phase === 'done'
-          ? `${connect.stackLabel} created — ${connect.accountNoun} connected.`
+          ? `${connect.stackLabel} created — test ${connect.accountNoun} connected.`
           : connect.opening
 
   return (
@@ -2014,7 +2014,7 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
               {connect.stackLabel} for {appName}
             </Text>
             <Text variant="body" theme="neutral">
-              {connect.accountNoun} · {region}
+              Test {connect.accountNoun} · {region}
             </Text>
           </div>
         </div>
@@ -2136,114 +2136,244 @@ const provisionRows = (path: TPath, cloud: TCloud): IProvisionRow[] => {
   ]
 }
 
+type TStageId = 'runner' | 'sandbox' | 'components'
+type TStageState = 'done' | 'active' | 'next'
+
 interface IBuildStage {
-  id: string
-  icon: TIconVariant
+  id: TStageId
   label: string
-  text: string
   duration: string
+  activeStatus: string
+  blurb: string
 }
 
-const accountLabel = (_path: TPath, cloud: TCloud) => `your ${CLOUD_CONNECT[cloud].accountNoun}`
+// Onboarding is a proof of concept, so the account is always framed as a test one.
+const accountLabel = (_path: TPath, cloud: TCloud) => `your test ${CLOUD_CONNECT[cloud].accountNoun}`
 
-// What is left AFTER the stack, which the user created on the previous step:
-// the stack is what boots the runner, so it is not a stage to watch here.
-// Strict linear order; the chain is the explanation for the duration. Copy is
-// cloud-generic on purpose. Facts: nuonco/<cloud>-sandbox provisions a cluster +
-// node group, registry, storage and policy add-ons, DNS/ingress, namespaces, RBAC.
+// The cluster each cloud's default sandbox creates. Repo descriptions (gh api):
+// nuonco/aws-eks-sandbox "AWS EKS sandbox", nuonco/gcp-gke-sandbox "GKE Autopilot
+// sandbox", nuonco/azure-aks-sandbox "Azure AKS sandbox". The network is NOT listed:
+// on AWS the stack owns it and the sandbox only tags its subnets.
+const SANDBOX_CLUSTER: Record<TCloud, string> = {
+  aws: 'An EKS cluster and node group',
+  gcp: 'A GKE Autopilot cluster',
+  azure: 'An AKS cluster',
+}
+const SANDBOX_PARTS = ['cluster', 'registry', 'ingress', 'namespaces']
+
+// What is left AFTER the stack, which the user created on the previous step.
 // Durations from docs/get-started: a healthy runner ≈ 1 min after the stack
 // reports home; eks-simple end to end ≈ 35 min.
 const buildStages = (path: TPath, cloud: TCloud, appName: string): IBuildStage[] => [
   {
     id: 'runner',
-    icon: 'CpuIcon',
-    label: 'Runner',
-    text: 'Boots on the machine your stack created, then runs everything after this.',
+    label: 'Nuon runner',
     duration: 'about 1 min',
+    activeStatus: 'Starting',
+    blurb: `Runs in ${accountLabel(path, cloud)} and builds everything else, using the roles your stack granted.`,
   },
   {
     id: 'sandbox',
-    icon: 'StackIcon',
-    label: 'Sandbox',
-    text: 'Where components run: a cluster and nodes, registry, storage and policy add-ons, DNS and ingress, namespaces. Not always Kubernetes. The long one.',
+    label: 'Nuon sandbox',
     duration: 'about 15–20 min',
+    activeStatus: 'Creating',
+    blurb: `${SANDBOX_CLUSTER[cloud]}, a container registry, ingress and namespaces. Takes about 15–20 minutes.`,
   },
   {
     id: 'components',
-    icon: 'PackageIcon',
     label: 'Components',
-    text: `${appName}'s Terraform, Helm, and images, deployed into the sandbox.`,
     duration: 'a few min',
+    activeStatus: 'Deploying',
+    blurb: `${appName}'s Terraform, Helm charts and images, deployed into the sandbox. A few minutes.`,
   },
 ]
 
-// The workflow, live. Stages before activeIndex are done, activeIndex is in
-// progress, the rest show their typical duration — so the chain still answers
-// "why is this slow" while it runs.
-// Tailwind needs the class whole, so the track count is a lookup, not a template.
-const STAGE_COLUMNS: Record<number, string> = {
-  2: 'md:grid-cols-2',
-  3: 'md:grid-cols-3',
-  4: 'md:grid-cols-4',
-}
+const stageState = (index: number, activeIndex: number): TStageState =>
+  index < activeIndex ? 'done' : index === activeIndex ? 'active' : 'next'
 
-const BuildStages = ({ stages, activeIndex }: { stages: IBuildStage[]; activeIndex: number }) => (
-  <ol className={cn('grid gap-5 md:gap-0', STAGE_COLUMNS[stages.length] ?? 'md:grid-cols-3')}>
-    {stages.map((stage, index) => {
-      const state = index < activeIndex ? 'done' : index === activeIndex ? 'active' : 'next'
-      return (
-        <li key={stage.id} className="relative flex gap-4 md:flex-col md:items-center md:px-3 md:text-center">
-          {index < stages.length - 1 ? (
-            <span
-              aria-hidden
-              className={cn(
-                'absolute left-1/2 top-6 hidden h-px w-full md:block',
-                state === 'done' ? 'bg-green-500 dark:bg-green-400' : 'bg-neutral-200 dark:bg-neutral-600'
-              )}
-            />
-          ) : null}
-          <span
-            className={cn(
-              'relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background',
-              state === 'active'
-                ? 'ring-2 ring-primary-500'
-                : state === 'done'
-                  ? 'ring-2 ring-green-500 dark:ring-green-400'
-                  : 'ring-1 ring-neutral-200 dark:ring-neutral-600'
-            )}
-          >
-            {state === 'done' ? (
-              <Icon variant="CheckIcon" size={22} weight="bold" theme="success" />
-            ) : (
-              <Icon variant={stage.icon} size={22} theme={state === 'active' ? 'brand' : 'neutral'} />
-            )}
-          </span>
-          <div className="flex flex-col gap-1.5 md:items-center">
-            <Text variant="body" weight="strong">
-              {index + 1}. {stage.label}
-            </Text>
-            {state === 'active' ? (
-              <Badge size="sm" theme="brand">
-                <Icon variant="Loading" size={12} /> In progress
-              </Badge>
-            ) : state === 'done' ? (
-              <Badge size="sm" theme="success">
-                Done
-              </Badge>
-            ) : (
-              <Badge size="sm" theme="neutral">
-                Up next · {stage.duration}
-              </Badge>
-            )}
-            <Text variant="subtext" theme="neutral">
-              {stage.text}
+// Placeholder in Nuon's install-ID shape; the product passes the real one.
+const EXAMPLE_INSTALL_ID = 'inlk3x9q2m7v4w8p1z6r5t0y2c'
+
+// Option C from the design canvas: a 1-2-3 rail beside the customer's account,
+// drawn the way the intro drew it, filling in as stages finish. Hovering or
+// focusing a step previews it, clicking pins it; unpinned, focus follows the
+// running stage. Rings, not borders (the global border-color rule).
+const ProvisionAccountView = ({
+  stages,
+  activeIndex,
+  cloud,
+  region,
+}: {
+  stages: IBuildStage[]
+  activeIndex: number
+  cloud: TCloud
+  region: string
+}) => {
+  const [picked, setPicked] = useState<TStageId | null>(null)
+  const [hovered, setHovered] = useState<TStageId | null>(null)
+  const running = stages[Math.min(activeIndex, stages.length - 1)].id
+  const focus = hovered ?? picked ?? running
+  const stateOf = (id: TStageId) => stageState(stages.findIndex((stage) => stage.id === id), activeIndex)
+  const region_ = (id: TStageId) =>
+    focus === id
+      ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
+      : 'ring-1 ring-neutral-200 dark:ring-neutral-700 bg-background'
+  const runner = stateOf('runner')
+  const sandbox = stateOf('sandbox')
+  const components = stateOf('components')
+
+  return (
+    <div className="flex flex-col gap-5 md:flex-row">
+      <ol className="flex shrink-0 flex-col gap-2 md:w-60" aria-label="Install stages">
+        {stages.map((stage, index) => {
+          const state = stageState(index, activeIndex)
+          const on = focus === stage.id
+          return (
+            <li key={stage.id}>
+              <button
+                type="button"
+                aria-pressed={on}
+                onClick={() => setPicked(stage.id)}
+                onMouseEnter={() => setHovered(stage.id)}
+                onMouseLeave={() => setHovered(null)}
+                onFocus={() => setHovered(stage.id)}
+                onBlur={() => setHovered(null)}
+                className={cn(
+                  'flex w-full flex-col gap-1.5 rounded-lg px-3 py-2.5 text-left transition-colors',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500',
+                  on
+                    ? 'ring-1 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
+                    : 'ring-1 ring-neutral-200 dark:ring-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-900'
+                )}
+              >
+                <span className="flex items-center gap-2.5">
+                  <span
+                    className={cn(
+                      'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold',
+                      state === 'done'
+                        ? 'bg-green-600 text-white'
+                        : state === 'active'
+                          ? 'bg-primary-50 text-primary-800 ring-2 ring-primary-500 dark:bg-primary-950'
+                          : 'bg-background text-neutral-500 ring-2 ring-neutral-200 dark:ring-neutral-700'
+                    )}
+                  >
+                    {state === 'done' ? <Icon variant="CheckIcon" size={12} weight="bold" /> : index + 1}
+                  </span>
+                  <Text variant="body" weight="strong" className="min-w-0 flex-1">
+                    {stage.label}
+                  </Text>
+                  <Text
+                    variant="label"
+                    weight="strong"
+                    theme={state === 'done' ? 'success' : state === 'active' ? 'brand' : 'neutral'}
+                  >
+                    {state === 'done' ? 'Done' : state === 'active' ? stage.activeStatus : 'Up next'}
+                  </Text>
+                </span>
+                {on ? (
+                  <Text variant="subtext" theme="neutral" className="pl-8">
+                    {stage.blurb}
+                  </Text>
+                ) : null}
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-xl p-4 ring-2 ring-primary-500 bg-primary-50/40 dark:bg-primary-950/20">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Icon variant={CLOUD_ICON[cloud]} size={18} />
+            <Text variant="base" weight="strong">
+              Your test {CLOUD_CONNECT[cloud].accountNoun}
             </Text>
           </div>
-        </li>
-      )
-    })}
-  </ol>
-)
+          <Badge size="sm" variant="code">
+            {region}
+          </Badge>
+        </div>
+
+        <div className={cn('flex items-center gap-3 rounded-lg px-3.5 py-3 transition-colors', region_('runner'))}>
+          {runner === 'done' ? (
+            <Icon variant="CheckCircleIcon" size={22} weight="fill" theme="success" />
+          ) : (
+            <Icon variant="Loading" size={20} />
+          )}
+          <div className="flex min-w-0 flex-col">
+            <Text variant="body" weight="strong">
+              Nuon runner
+            </Text>
+            <Text variant="subtext" theme="neutral">
+              {runner === 'done'
+                ? 'Running. Everything below is built by it, from inside your account.'
+                : 'Starting on the machine your stack created.'}
+            </Text>
+          </div>
+        </div>
+
+        <div className={cn('flex flex-col gap-3 rounded-lg p-3.5 transition-colors', region_('sandbox'))}>
+          <div className="flex items-center justify-between gap-3">
+            <Text variant="body" weight="strong">
+              Nuon sandbox
+            </Text>
+            <Text variant="subtext" weight="strong" theme={sandbox === 'done' ? 'success' : sandbox === 'active' ? 'brand' : 'neutral'}>
+              {sandbox === 'done' ? 'Ready' : sandbox === 'active' ? 'Creating · 15–20 min' : 'Up next · 15–20 min'}
+            </Text>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {SANDBOX_PARTS.map((part, index) => {
+              const built = sandbox === 'done'
+              const building = sandbox === 'active' && index === 0
+              return (
+                <span
+                  key={part}
+                  className={cn(
+                    'rounded-md px-2 py-1 font-mono text-xs',
+                    built
+                      ? 'ring-1 ring-neutral-300 dark:ring-neutral-600 bg-background'
+                      : building
+                        ? 'ring-1 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
+                        : 'outline-1 outline-dashed outline-neutral-300 dark:outline-neutral-600 text-neutral-500'
+                  )}
+                >
+                  {part}
+                </span>
+              )
+            })}
+          </div>
+          <div
+            className={cn(
+              'flex items-center justify-between gap-3 rounded-lg px-3.5 py-3 transition-colors',
+              focus === 'components'
+                ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950/40'
+                : components === 'next'
+                  ? 'outline-1 outline-dashed outline-neutral-300 dark:outline-neutral-600 bg-background'
+                  : 'ring-1 ring-neutral-200 dark:ring-neutral-700 bg-background'
+            )}
+          >
+            <div className="flex min-w-0 flex-col">
+              <Text variant="body" weight="strong">
+                Your components
+              </Text>
+              <Text variant="subtext" theme="neutral">
+                Terraform, Helm charts and images land here once the sandbox is up.
+              </Text>
+            </div>
+            <Text
+              variant="subtext"
+              weight="strong"
+              theme={components === 'done' ? 'success' : components === 'active' ? 'brand' : 'neutral'}
+              className="whitespace-nowrap"
+            >
+              {components === 'done' ? 'Deployed' : components === 'active' ? 'Deploying' : 'Up next'}
+            </Text>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // --- Step: the install workflow (the real multi-minute wait) --------------------
 //
@@ -2251,57 +2381,54 @@ const BuildStages = ({ stages, activeIndex }: { stages: IBuildStage[]; activeInd
 // takes over. In the product this is driven by install status; here a timer
 // walks the chain. "See your install" ends the flow: the product opens the
 // install's live workflow page.
+const STAGE_DWELL_MS = [3000, 6000, 3000]
+
 const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const path = readPath(sharedData)
   const cloud = readCloud(sharedData)
   const appName = path === 'own' ? readAppName(sharedData) : 'Kitchen Sink'
   const stages = buildStages(path, cloud, appName)
-  const where = accountLabel(path, cloud)
+  const region = (sharedData.region as string | undefined) ?? CLOUD_REGIONS[cloud].options[0]
   const [activeIndex, setActiveIndex] = useState(0)
+  const watchCommand = `nuon installs workflows watch -i ${EXAMPLE_INSTALL_ID}`
 
   useEffect(() => {
-    if (activeIndex >= stages.length - 1) return
-    const timer = setTimeout(() => setActiveIndex((prev) => prev + 1), activeIndex === 0 ? 3000 : 2600)
+    if (activeIndex >= stages.length) return
+    const timer = setTimeout(() => setActiveIndex((prev) => prev + 1), STAGE_DWELL_MS[activeIndex] ?? 3000)
     return () => clearTimeout(timer)
   }, [activeIndex, stages.length])
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="!gap-0 !p-4 !flex-row items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Icon variant={CLOUD_ICON[cloud]} size={24} />
-          <div className="flex flex-col">
-            <Text variant="base" weight="strong">
-              {appName}
+      <Card className="!gap-5">
+        <Text variant="h3" role="heading" level={3}>
+          The picture from the start, filling in
+        </Text>
+        <ProvisionAccountView stages={stages} activeIndex={activeIndex} cloud={cloud} region={region} />
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-4">
+          <div className="flex flex-col gap-0.5">
+            <Text variant="body" weight="strong">
+              See it in action in the CLI
             </Text>
-            <Text variant="body" theme="neutral">
-              Building the install in {where}
+            <Text variant="subtext" theme="neutral" flex>
+              Needs the Nuon CLI:
+              <Badge size="sm" variant="code">
+                brew install nuonco/tap/nuon
+              </Badge>
+              then
+              <Badge size="sm" variant="code">
+                nuon auth login
+              </Badge>
             </Text>
           </div>
+          <div className="flex items-center gap-2">
+            <Badge size="sm" variant="code">
+              {watchCommand}
+            </Badge>
+            <CopyTextButton text={watchCommand} label="Copy" size="sm" />
+          </div>
         </div>
-        <Badge size="sm" theme="neutral">
-          {CLOUD_CONNECT[cloud].accountNoun}
-        </Badge>
       </Card>
-
-      <Card className="!gap-6">
-        <Text variant="h3" role="heading" level={3}>
-          The Nuon install workflow
-        </Text>
-        <BuildStages stages={stages} activeIndex={activeIndex} />
-      </Card>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border px-4 py-3">
-        <Text variant="body" theme="neutral">
-          You can leave and come back — the install page shows live progress.
-        </Text>
-        <Text variant="subtext" theme="neutral" flex>
-          Or watch from your terminal:
-          <Badge size="sm" variant="code">
-            nuon installs list
-          </Badge>
-        </Text>
-      </div>
 
       <NextButton label="See your install" onClick={onAdvance} onBack={onGoBack} />
     </div>
@@ -2329,7 +2456,7 @@ const InstallStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentPr
   const liveHeading = isDone
     ? path === 'own'
       ? `${appName} is live`
-      : `Kitchen Sink is live in your ${CLOUD_CONNECT[cloud].accountNoun}`
+      : `Kitchen Sink is live in your test ${CLOUD_CONNECT[cloud].accountNoun}`
     : `${activeRow.label} — ${activeRow.copy.active}`
 
   return (
@@ -2431,7 +2558,7 @@ const DoneStep = ({ sharedData, onAdvance }: IWizardStepComponentProps) => {
   const heading =
     path === 'own'
       ? `${appName} is live`
-      : `Kitchen Sink is live in your ${CLOUD_CONNECT[cloud].accountNoun}`
+      : `Kitchen Sink is live in your test ${CLOUD_CONNECT[cloud].accountNoun}`
 
   const body =
     path === 'own'
