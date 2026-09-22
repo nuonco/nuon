@@ -104,7 +104,7 @@ const (
 	// git — the path every install used before artifacts existed.
 	OrgFeatureSandboxOCIArtifacts OrgFeature = "sandbox-oci-artifacts"
 	OrgFeatureDefaultAppBranches  OrgFeature = "default-app-branches"
-	OrgFeatureSimpleIA            OrgFeature = "simple-ia"
+	OrgFeatureNewInstallIA        OrgFeature = "new-install-ia"
 )
 
 type Org struct {
@@ -262,7 +262,7 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureAppInstallSyncing:       false,
 		OrgFeatureSandboxOCIArtifacts:     false,
 		OrgFeatureDefaultAppBranches:      false,
-		OrgFeatureSimpleIA:                false,
+		OrgFeatureNewInstallIA:            false,
 
 		// Enabled by default
 		OrgFeatureAppBranches:   true,
@@ -299,7 +299,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureAppInstallSyncing,
 		OrgFeatureSandboxOCIArtifacts,
 		OrgFeatureDefaultAppBranches,
-		OrgFeatureSimpleIA,
+		OrgFeatureNewInstallIA,
 	}
 }
 
@@ -340,8 +340,8 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureOrgHealthcheckSweeps:     "Replace per-runner and per-process healthcheck cron emitters with two per-org sweep emitters that check all runners/processes in paginated batches. Toggle via POST /v1/orgs/{org_id}/migrate-healthcheck-sweeps, which also migrates the emitters.",
 		OrgFeatureAppInstallSyncing:        "Enable app install config syncing: point an app at a git repo of per-install configs so pushes to that repo sync every install's config and create missing installs behind an approval step. Gates the install syncs API, the VCS push fan-out, and the dashboard install syncs tab.",
 		OrgFeatureSandboxOCIArtifacts:      "Build the app sandbox into an OCI artifact during branch runs and resolve sandbox runs against that artifact instead of cloning the sandbox git source. With it off, sandbox runs always clone git.",
-		OrgFeatureSimpleIA:                 "Enable the simplified dashboard information architecture.",
 		OrgFeatureDefaultAppBranches:       "Route `nuon apps sync` through an app branch run: every app gets a `default` branch covering all of its installs, and the sync hands its config to a run on that branch instead of the standalone config sync plus install rollout. Requires app-branches.",
+		OrgFeatureNewInstallIA:             "Enable the new install information architecture in the dashboard. Requires app-branches-ui.",
 	}
 }
 

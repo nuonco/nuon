@@ -3,7 +3,6 @@ import { useParams, useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
-import { useSimpleIA } from '@/hooks/use-simple-ia'
 import { useOrg } from '@/hooks/use-org'
 import { WorkflowTimelineComponent } from '@/components/workflows/WorkflowTimeline'
 import { WorkflowFilters } from '@/components/workflows/filters/WorkflowFilters'
@@ -29,7 +28,6 @@ const BranchRunsContent = () => {
   const filters = readWorkflowFilters(searchParams, 'app')
   const since = searchParams.get('since')
   const createdAtGte = useMemo(() => datePresetQueryParameter(since), [since])
-  const hasSimpleIA = useSimpleIA()
   const basePath = `/${orgId}/apps/${appId}/branches/${branchId}`
 
   const { data: runsResult, isLoading } = useQuery({
@@ -68,14 +66,10 @@ const BranchRunsContent = () => {
 
   return (
     <BranchTabPage
-      tab={hasSimpleIA ? 'Activity' : 'Runs'}
-      tabPath={hasSimpleIA ? 'activity' : 'runs'}
-      heading={hasSimpleIA ? 'Activity' : 'Runs'}
-      subheading={
-        hasSimpleIA
-          ? 'Every update rolled out from this branch, newest first.'
-          : 'Every run from this branch, newest first.'
-      }
+      tab="Runs"
+      tabPath="runs"
+      heading="Runs"
+      subheading="Every run from this branch, newest first."
     >
       <WorkflowFilters owner="app" />
       <WorkflowTimelineComponent
@@ -96,7 +90,6 @@ const BranchRunsContent = () => {
 
 export const BranchRunsTab = () => {
   const hasNewAppIA = useNewAppIA()
-  const hasSimpleIA = useSimpleIA()
 
-  return hasSimpleIA || hasNewAppIA ? <BranchRunsContent /> : <BranchDetail />
+  return hasNewAppIA ? <BranchRunsContent /> : <BranchDetail />
 }

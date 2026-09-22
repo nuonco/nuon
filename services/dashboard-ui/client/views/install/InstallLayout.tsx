@@ -31,8 +31,8 @@ import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useInstall } from '@/hooks/use-install'
+import { useNewInstallIA } from '@/hooks/use-new-install-ia'
 import { useOrg } from '@/hooks/use-org'
-import { useSimpleIA } from '@/hooks/use-simple-ia'
 import type { TNavItem } from '@/types'
 
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
@@ -74,49 +74,55 @@ const InstallContentError = () => (
   </PageSection>
 )
 
+export const NEW_INSTALL_NAV_LINKS: TNavItem[] = [
+  {
+    path: `/`,
+    iconVariant: 'HouseSimpleIcon',
+    text: 'Overview',
+  },
+  {
+    path: `/resources`,
+    iconVariant: 'CardsIcon',
+    text: 'Resources',
+  },
+  {
+    path: `/deployments`,
+    iconVariant: 'ArrowsClockwiseIcon',
+    text: 'Deployments',
+  },
+  {
+    path: `/health`,
+    iconVariant: 'PulseIcon',
+    text: 'Health',
+  },
+  {
+    path: `/operations`,
+    iconVariant: 'TerminalWindowIcon',
+    text: 'Operations',
+  },
+  {
+    path: `/configuration`,
+    iconVariant: 'FadersIcon',
+    text: 'Configuration',
+  },
+]
+
+const NEW_INSTALL_TAB_SECTIONS = ['resources', 'operations', 'configuration']
+
 const InstallTemplate = () => {
   const { org } = useOrg()
   const { install, labelColors, refresh } = useInstall()
   const { pathname } = useLocation()
   const hasNotebooks = !!org?.features?.notebooks
   const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
-  const hasSimpleIA = useSimpleIA()
+  const hasNewInstallIA = useNewInstallIA()
   const openSettings = useOpenInstallSettings()
   const [searchParams] = useSearchParams()
   const isSettingsOpen =
     searchParams.get('panel') === INSTALL_SETTINGS_PANEL_KEY
 
-  const navLinks: TNavItem[] = hasSimpleIA
-    ? [
-        {
-          path: `/`,
-          iconVariant: 'HouseSimpleIcon',
-          text: 'Overview',
-        },
-        {
-          path: `/activity`,
-          iconVariant: 'ClockCounterClockwiseIcon',
-          text: 'Activity',
-        },
-        ...(org?.features?.['component-health']
-          ? [
-              {
-                path: `/resources`,
-                iconVariant: 'PulseIcon' as const,
-                text: 'Resources',
-              },
-            ]
-          : []),
-        ...(hasNotebooks
-          ? [
-              {
-                path: `/notebooks`,
-                iconVariant: 'NotebookIcon' as const,
-                text: 'Notebooks',
-              },
-            ]
-          : []),
-      ]
+  const navLinks: TNavItem[] = hasNewInstallIA
+    ? NEW_INSTALL_NAV_LINKS
     : [
         { type: 'section', label: 'Overview' },
         {
@@ -220,9 +226,13 @@ const InstallTemplate = () => {
         },
       ]
 
-  const isChildRoute = !!useMatch(
-    '/:orgId/installs/:installId/:section/:rest/*'
-  )
+  const sectionTabMatch = useMatch('/:orgId/installs/:installId/:section/:tab')
+  const isNewIASectionTab =
+    hasNewInstallIA &&
+    NEW_INSTALL_TAB_SECTIONS.includes(sectionTabMatch?.params?.section ?? '')
+  const isChildRoute =
+    !!useMatch('/:orgId/installs/:installId/:section/:rest/*') &&
+    !isNewIASectionTab
 
   if (!install) return null
 
