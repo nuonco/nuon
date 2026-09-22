@@ -52,6 +52,9 @@ func (w *Workflows) Emitter(ctx workflow.Context, req EmitterWorkflowRequest) er
 	}
 	if !finished {
 		req.State = e.state
+		if e.ctx != nil {
+			ctx = e.ctx
+		}
 		return workflow.NewContinueAsNewError(ctx, w.Emitter, req)
 	}
 
@@ -78,6 +81,8 @@ type emitterWorkflow struct {
 
 	emitterID string
 	queueID   string
+	// ctx is the run context after repairWorkflowContext, used for continue-as-new.
+	ctx workflow.Context
 
 	stopped   bool
 	restarted bool
