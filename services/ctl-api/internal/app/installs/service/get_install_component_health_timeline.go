@@ -41,7 +41,7 @@ type InstallComponentHealthTimelineResponse struct {
 
 // @ID						GetInstallComponentHealthTimeline
 // @Summary				component health timeline
-// @Description			Returns a component's health history over a window: recorded verdict transitions (newest first), daily worst-verdict buckets covering every day in the window, and an uptime percentage that excludes unknown time from both the numerator and denominator. Requires the component-health feature.
+// @Description			Returns a component's health history over a window: recorded verdict transitions (newest first), daily worst-verdict buckets covering every day in the window, and an uptime percentage that excludes unknown time from both the numerator and denominator.
 // @Param					install_id				path	string	true	"install ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Param					days					query	int		false	"size of the window in days, clamped to 1-90"	Default(90)
@@ -73,10 +73,6 @@ func (s *service) GetInstallComponentHealthTimeline(ctx *gin.Context) {
 
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := s.requireComponentHealthFeature(ctx, org); err != nil {
 		ctx.Error(err)
 		return
 	}
