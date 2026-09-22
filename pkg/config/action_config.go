@@ -89,7 +89,7 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("true").
 		Example("false").
 		Field("image").Short("container image the action's steps run inside").
-		Long("Requires the image-backed-actions org feature, which is off by default. Optional container image supplying the tools the action needs. Each step's command, inline_contents, or repo-backed script runs inside it via the mounted actions-supervisor. A public ref (e.g. ghcr.io/acme/kubernetes-tools:v1) is mirrored into the install registry first. Templating the digest-pinned image.ref output of a container_image component instead pulls it straight from the install's own registry, which allows a private image and skips the mirror. Supported on AWS, Azure, and GCP VM-based runners").
+		Long("Optional container image supplying the tools the action needs. Each step's command, inline_contents, or repo-backed script runs inside it via the mounted actions-supervisor. A public ref (e.g. ghcr.io/acme/kubernetes-tools:v1) is mirrored into the install registry first. Templating the digest-pinned image.ref output of a container_image component instead pulls it straight from the install's own registry, which allows a private image and skips the mirror. Supported on AWS, Azure, and GCP VM-based runners").
 		Example("ghcr.io/acme/kubernetes-tools:v1").
 		Example("{{.nuon.components.runbook-tools.outputs.image.ref}}").
 		Field("kubernetes_context").Short("kubernetes context this action targets").

@@ -189,7 +189,6 @@ export const TFModuleFirstApply = () => (
       stack={mockStack}
       step={mockStep}
       installId="install-1"
-      tfProvider
     />
   </div>
 )
@@ -203,7 +202,6 @@ export const TFModule = () => (
       installId="install-1"
       gcpProjectId="my-gcp-project"
       gcpRegion="us-central1"
-      tfProvider
     />
   </div>
 )
