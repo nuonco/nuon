@@ -41,9 +41,13 @@ func (s *service) recordRunnerJobExecutionResult(ctx context.Context, job *app.R
 	if result.Success {
 		outcome = "success"
 	}
-	s.executionResults.Add(ctx, 1, metric.WithAttributes(
+	attrs := []attribute.KeyValue{
 		attribute.String("nuon.runner.job.type", jobType),
 		attribute.String("nuon.runner.job.operation", operation),
 		attribute.String("outcome", outcome),
-	))
+	}
+	if installID := job.FlowInstallID(); installID != "" {
+		attrs = append(attrs, attribute.String("nuon.install.id", installID))
+	}
+	s.executionResults.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
