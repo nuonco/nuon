@@ -1829,12 +1829,22 @@ const InstallSummaryCard = ({
             </>
           ),
         },
-        { label: 'Sandbox', value: 'Nuon-managed, from sandbox.toml' },
+        {
+          label: 'Nuon sandbox',
+          value: (
+            <>
+              <RepoChip repo={CLOUD_SANDBOX[cloud]} />
+              <Text variant="subtext" theme="neutral">
+                from sandbox.toml
+              </Text>
+            </>
+          ),
+        },
         { label: 'Components', value: 'api — Helm chart, from components/api.toml' },
       ]
     : [
         { label: 'Source', value: <RepoChip repo="nuonco/kitchen-sink" /> },
-        { label: 'Sandbox', value: <RepoChip repo={CLOUD_SANDBOX[cloud]} /> },
+        { label: 'Nuon sandbox', value: <RepoChip repo={CLOUD_SANDBOX[cloud]} /> },
         { label: 'Components', value: 'Terraform modules, Helm charts, container images' },
       ]
 
@@ -2401,12 +2411,9 @@ const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponent
   return (
     <div className="flex flex-col gap-6">
       <Card className="!gap-5">
-        <Text variant="h3" role="heading" level={3}>
-          The picture from the start, filling in
-        </Text>
         <ProvisionAccountView stages={stages} activeIndex={activeIndex} cloud={cloud} region={region} />
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-4">
-          <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-3 border-t pt-5">
+          <div className="flex flex-col gap-1">
             <Text variant="body" weight="strong">
               See it in action in the CLI
             </Text>
@@ -2421,7 +2428,7 @@ const ProvisionStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponent
               </Badge>
             </Text>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge size="sm" variant="code">
               {watchCommand}
             </Badge>
