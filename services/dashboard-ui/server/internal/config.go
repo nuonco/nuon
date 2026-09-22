@@ -25,6 +25,7 @@ func init() {
 	config.RegisterDefault("service_deployment", "local")
 	config.RegisterDefault("nuon_admin_dashboard_url", "http://localhost:8087")
 	config.RegisterDefault("posthog_host", "https://us.i.posthog.com")
+	config.RegisterDefault("posthog_replay_enabled", true)
 	// docker-compose's kafka-ui, which serves under the same /admin/kafka context
 	// path it does in the cluster
 	config.RegisterDefault("nuon_kafka_ui_url", "http://localhost:8092")
@@ -69,6 +70,7 @@ type Config struct {
 	AdminDashboardUrl      string `config:"nuon_admin_dashboard_url"`
 	PostHogKey             string `config:"posthog_key"`
 	PostHogHost            string `config:"posthog_host"`
+	PostHogReplayEnabled   bool   `config:"posthog_replay_enabled"`
 }
 
 func NewConfig() (*Config, error) {
