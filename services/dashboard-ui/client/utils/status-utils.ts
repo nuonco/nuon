@@ -76,6 +76,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   progressing: 'info',
 
   noop: 'neutral',
+  abandoned: 'neutral',
   'shut-down': 'neutral',
   unknown: 'neutral',
   inactive: 'neutral',
@@ -143,6 +144,7 @@ const STATUS_ICON_MAP: Record<string, TStatusIconVariant> = {
   progressing: 'Loading',
 
   noop: 'ClockCountdownIcon',
+  abandoned: 'MinusCircleIcon',
   inactive: 'WarningIcon',
   disabled: 'ProhibitIcon',
   pending: 'ClockCountdownIcon',

@@ -51,7 +51,8 @@ export const Workflows = () => {
     (w) =>
       w.status?.status &&
       w.status.status !== 'pending' &&
-      w.status.status !== 'queued'
+      w.status.status !== 'queued' &&
+      w.status.status !== 'failed-pending-retry'
   )
 
   return (

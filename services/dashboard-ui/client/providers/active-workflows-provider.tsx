@@ -46,6 +46,8 @@ export function ActiveWorkflowsProvider({
       w.status?.status &&
       w.status.status !== 'pending' &&
       w.status.status !== 'queued' &&
+      w.status.status !== 'failed-pending-retry' &&
+      w.status.status !== 'abandoned' &&
       w.status.status !== 'cancelled' &&
       w.status.status !== 'error' &&
       w.status.status !== 'success'

@@ -6543,7 +6543,7 @@ export interface components {
     /** @enum {string} */
     "app.StackVersionRunType": "workflow-run" | "out-of-band-update";
     /** @enum {string} */
-    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.Status": "error" | "abandoned" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     "app.TerraformLock": {
       created?: string;
       id?: string;

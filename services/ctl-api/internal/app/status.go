@@ -18,6 +18,7 @@ type Status string
 // define standard statuses
 const (
 	StatusError              Status = "error"
+	StatusAbandoned          Status = "abandoned"
 	StatusPending            Status = "pending"
 	StatusInProgress         Status = "in-progress"
 	StatusCheckPlan          Status = "checking-plan"

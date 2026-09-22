@@ -49,6 +49,7 @@ export const WORKFLOW_BADGE_MAP: Record<
   'approval-denied': { children: 'Plan denied', theme: 'warn' },
   'approval-retry': { children: 'Plan retried', theme: 'info' },
   error: { children: 'Failed', theme: 'error' },
+  abandoned: { children: 'Abandoned', theme: 'neutral' },
   'failed-pending-retry': {
     children: 'Failed — awaiting retry',
     theme: 'error',

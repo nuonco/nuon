@@ -119,8 +119,35 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 				return nil
 			}
 
-			// FlowStoppedErr is a terminal state — not retryable
-			if stoppedErr, ok := runErr.(*flow.FlowStoppedErr); ok {
+			if abandonedErr, ok := runErr.(*flow.FlowAbandonedErr); ok {
+				s.updateRunStatus(ctx, run.ID, app.StatusAbandoned)
+				metadata := map[string]any{
+					"error_message": runErr.Error(),
+					"abandoned":     true,
+				}
+				if abandonedErr.StepID != "" {
+					metadata["step_name"] = abandonedErr.StepID
+				}
+				if abandonedErr.Reason != "" {
+					metadata["stop_reason"] = abandonedErr.Reason
+				}
+				humanDesc := abandonedErr.StatusHumanDescription
+				if humanDesc == "" {
+					humanDesc = "workflow abandoned"
+				}
+				_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: s.WorkflowID,
+					Status: app.CompositeStatus{
+						Status:                 app.StatusAbandoned,
+						StatusHumanDescription: humanDesc,
+						Metadata:               metadata,
+					},
+				})
+				if !s.Resident {
+					return runErr
+				}
+			} else if stoppedErr, ok := runErr.(*flow.FlowStoppedErr); ok {
+				// FlowStoppedErr is a terminal state — not retryable
 				s.updateRunStatus(ctx, run.ID, app.StatusError)
 				metadata := map[string]any{
 					"error_message": runErr.Error(),
@@ -249,6 +276,9 @@ func (s *Signal) executeRun(ctx workflow.Context, run *app.WorkflowRun) error {
 
 		// FlowStoppedErr means the workflow was stopped (denied/skipped) — not a retryable error
 		if _, ok := err.(*flow.FlowStoppedErr); ok {
+			return err
+		}
+		if _, ok := err.(*flow.FlowAbandonedErr); ok {
 			return err
 		}
 
@@ -543,14 +573,22 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		case flowdirective.GroupStop:
 			// Derive the reason before the sweeps overwrite step statuses.
 			stepName, reason := "", ""
+			abandoned := false
 			if workflow.GetVersion(ctx, groupStopReasonVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-				stepName, reason = s.groupStopReason(ctx, group)
+				stepName, reason, abandoned = s.groupStopReason(ctx, group)
 			}
 
 			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
 			s.markRemainingStepsNotAttempted(ctx, l)
 			if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
 				l.Error("unable to update finished at", zap.Error(err))
+			}
+			if abandoned && workflow.GetVersion(ctx, abandonedFlowStatusVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+				abandonedErr := flow.NewFlowAbandonedErr(stepName, reason)
+				if reason != "" {
+					abandonedErr.StatusHumanDescription = "workflow abandoned: " + reason
+				}
+				return abandonedErr
 			}
 			stoppedErr := flow.NewFlowStoppedErr(stepName, reason)
 			if reason != "" {
@@ -1037,21 +1075,23 @@ func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 // groupStopReason returns the name and status text of the step that caused
 // the group to stop. The step that writes the StepStop directive owns the
 // user-facing phrasing; this is only a lookup.
-func (s *Signal) groupStopReason(ctx workflow.Context, group *app.WorkflowStepGroup) (string, string) {
+func (s *Signal) groupStopReason(ctx workflow.Context, group *app.WorkflowStepGroup) (string, string, bool) {
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
 	})
 	if err != nil {
-		return "", ""
+		return "", "", false
 	}
 	for i := range steps {
 		step := &steps[i]
 		if step.GroupIdx != group.GroupIdx || flowdirective.Step(step.ResultDirective) != flowdirective.StepStop {
 			continue
 		}
-		return step.Name, step.Status.StatusHumanDescription
+		abandoned, _ := step.Status.Metadata["abandoned"].(bool)
+		abandoned = abandoned || step.Status.Status == app.WorkflowStepApprovalStatusApprovalExpired
+		return step.Name, step.Status.StatusHumanDescription, abandoned
 	}
-	return "", ""
+	return "", "", false
 }
 
 // checkGroupRetriesExhausted checks if any step in the group has retries_exhausted
@@ -1086,6 +1126,7 @@ const flowCancelStatusVersion = "execute-flow-cancel-status-v1"
 // groupStopReasonVersion gates the GetFlowSteps lookup that derives the stop
 // reason; in-flight histories never scheduled it before the sweeps.
 const groupStopReasonVersion = "execute-flow-group-stop-reason-v1"
+const abandonedFlowStatusVersion = "execute-flow-abandoned-status-v1"
 
 // workflowCompleteTerminalErrorVersion gates terminal errored steps counting as
 // complete because in-flight histories previously parked after every error.

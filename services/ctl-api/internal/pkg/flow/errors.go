@@ -58,3 +58,26 @@ func (e *FlowStoppedErr) Error() string {
 func NewFlowStoppedErr(stepID, reason string) *FlowStoppedErr {
 	return &FlowStoppedErr{StepID: stepID, Reason: reason}
 }
+
+type FlowAbandonedErr struct {
+	StepID                 string
+	Reason                 string
+	StatusHumanDescription string
+}
+
+func (e *FlowAbandonedErr) Error() string {
+	switch {
+	case e.StepID == "" && e.Reason == "":
+		return "workflow abandoned"
+	case e.StepID == "":
+		return fmt.Sprintf("workflow abandoned: %s", e.Reason)
+	case e.Reason == "":
+		return fmt.Sprintf("workflow abandoned at step %s", e.StepID)
+	default:
+		return fmt.Sprintf("workflow abandoned at step %s: %s", e.StepID, e.Reason)
+	}
+}
+
+func NewFlowAbandonedErr(stepID, reason string) *FlowAbandonedErr {
+	return &FlowAbandonedErr{StepID: stepID, Reason: reason}
+}
