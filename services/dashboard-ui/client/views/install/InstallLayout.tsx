@@ -19,6 +19,7 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { PageSection } from '@/components/layout/PageSection'
 import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
+import { NewInstallHeader } from '@/components/installs/NewInstallHeader'
 import { ChangeAppBranchButton } from '@/components/installs/management/ChangeAppBranch'
 import {
   InstallSettingsPanel,
@@ -258,94 +259,98 @@ const InstallTemplate = () => {
           </PageContent>
         ) : (
           <>
-            <PageHeader>
-              <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
-                <HeadingGroup className="gap-1.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Text variant="h3" weight="stronger" level={1}>
-                      {install.name}
-                    </Text>
-
-                    {install.labels &&
-                      Object.entries(install.labels).map(([key, value]) => (
-                        <LabelBadge
-                          key={key}
-                          size="sm"
-                          labelKey={key}
-                          labelValue={value}
-                          customColor={labelColors?.[key]}
-                        />
-                      ))}
-                  </div>
-                  <ID>{install.id}</ID>
-                  <div className="flex items-center gap-3">
-                    <Text variant="subtext" theme="info">
-                      Last updated{' '}
-                      <Time
-                        variant="subtext"
-                        time={install?.updated_at}
-                        format="relative"
-                      />
-                    </Text>
-                    <AdminDashboardLink
-                      path={`/queues?owner_id=${install.id}`}
-                      label="Admin panel"
-                    />
-                  </div>
-                </HeadingGroup>
-
-                <div className="flex items-start flex-wrap gap-4 md:gap-8">
-                  {isManagedByConfig && (
-                    <LabeledValue label="Managed by">
-                      <Text variant="subtext">
-                        <span className="flex items-center gap-1">
-                          <Icon variant="FileCodeIcon" /> Install config
-                        </span>
+            {hasNewInstallIA ? (
+              <NewInstallHeader />
+            ) : (
+              <PageHeader>
+                <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
+                  <HeadingGroup className="gap-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Text variant="h3" weight="stronger" level={1}>
+                        {install.name}
                       </Text>
-                    </LabeledValue>
-                  )}
-                  {hasAppBranchesUI && (
-                    <LabeledValue label="Branch">
-                      <span className="flex items-center gap-2">
-                        {install.app_branch ? (
-                          <Link
-                            href={`/${org?.id}/apps/${install?.app_id}/branches/${install.app_branch.id}`}
-                          >
-                            <span className="flex items-center gap-1">
-                              <Icon variant="GitBranchIcon" size={14} />
-                              {install.app_branch.name}
-                            </span>
-                          </Link>
-                        ) : (
-                          <Text variant="subtext" theme="neutral">
-                            None
-                          </Text>
-                        )}
-                        <ChangeAppBranchButton
-                          compact
-                          install={install}
-                          onSuccess={refresh}
+
+                      {install.labels &&
+                        Object.entries(install.labels).map(([key, value]) => (
+                          <LabelBadge
+                            key={key}
+                            size="sm"
+                            labelKey={key}
+                            labelValue={value}
+                            customColor={labelColors?.[key]}
+                          />
+                        ))}
+                    </div>
+                    <ID>{install.id}</ID>
+                    <div className="flex items-center gap-3">
+                      <Text variant="subtext" theme="info">
+                        Last updated{' '}
+                        <Time
+                          variant="subtext"
+                          time={install?.updated_at}
+                          format="relative"
                         />
-                      </span>
+                      </Text>
+                      <AdminDashboardLink
+                        path={`/queues?owner_id=${install.id}`}
+                        label="Admin panel"
+                      />
+                    </div>
+                  </HeadingGroup>
+
+                  <div className="flex items-start flex-wrap gap-4 md:gap-8">
+                    {isManagedByConfig && (
+                      <LabeledValue label="Managed by">
+                        <Text variant="subtext">
+                          <span className="flex items-center gap-1">
+                            <Icon variant="FileCodeIcon" /> Install config
+                          </span>
+                        </Text>
+                      </LabeledValue>
+                    )}
+                    {hasAppBranchesUI && (
+                      <LabeledValue label="Branch">
+                        <span className="flex items-center gap-2">
+                          {install.app_branch ? (
+                            <Link
+                              href={`/${org?.id}/apps/${install?.app_id}/branches/${install.app_branch.id}`}
+                            >
+                              <span className="flex items-center gap-1">
+                                <Icon variant="GitBranchIcon" size={14} />
+                                {install.app_branch.name}
+                              </span>
+                            </Link>
+                          ) : (
+                            <Text variant="subtext" theme="neutral">
+                              None
+                            </Text>
+                          )}
+                          <ChangeAppBranchButton
+                            compact
+                            install={install}
+                            onSuccess={refresh}
+                          />
+                        </span>
+                      </LabeledValue>
+                    )}
+                    <LabeledValue label="App">
+                      <Link href={`/${org.id}/apps/${install.app_id}`}>
+                        {install?.app?.name}
+                      </Link>
                     </LabeledValue>
-                  )}
-                  <LabeledValue label="App">
-                    <Link href={`/${org.id}/apps/${install.app_id}`}>
-                      {install?.app?.name}
-                    </Link>
-                  </LabeledValue>
-                  <InstallStatusesContainer collapsible />
+                    <InstallStatusesContainer collapsible />
+                  </div>
                 </div>
-              </div>
-              {install?.drifted_objects?.length ? (
-                <DriftedSummary
-                  className="mt-4"
-                  orgId={org.id}
-                  installId={install.id}
-                  driftedObjects={install.drifted_objects}
-                />
-              ) : null}
-            </PageHeader>
+                {install?.drifted_objects?.length ? (
+                  <DriftedSummary
+                    className="mt-4"
+                    orgId={org.id}
+                    installId={install.id}
+                    driftedObjects={install.drifted_objects}
+                  />
+                ) : null}
+              </PageHeader>
+            )}
             <PageContent className="border-t" variant="row">
               <SubNav
                 basePath={`/${org?.id}/installs/${install?.id}`}
