@@ -56,9 +56,16 @@ func groupHadFailedAttempt(step *app.WorkflowStep, flw *app.Workflow) bool {
 
 func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, error) {
 	l, _ := log.WorkflowLogger(ctx)
+	componentID := ""
+	if value := flw.Metadata["component_id"]; value != nil {
+		componentID = *value
+	}
 
 	isNoop, err := activities.AwaitCheckNoopPlan(ctx, &activities.CheckNoopPlanRequest{
 		StepTargetID: step.StepTargetID,
+		WorkflowType: flw.Type,
+		InstallID:    flw.OwnerID,
+		ComponentID:  componentID,
 	})
 	if err != nil {
 		return directive.Pass(), errors.Wrap(err, "failed to check for noop plan")

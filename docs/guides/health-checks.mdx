@@ -1,20 +1,11 @@
 ---
-title: 'Component Health'
-description: "Know whether every component on every install is running right now — not whether its last deploy worked. Alerts, deploy gates, and uptime history included."
+title: 'Health Checks'
+description: "Health checks tell you whether every component on every install is running right now."
 icon: "heart-pulse"
-keywords: ["component health", "health checks", "uptime", "verified deploys", "canary", "bake period", "custom health check", "required checks", "probes", "resource explorer"]
+keywords: ["health checks", "health check", "healthcheck", "healthchecks", "health-check", "health checking", "component health", "component health check", "kubernetes health check", "helm health check", "terraform health check", "install health", "liveness", "readiness", "probe", "probes", "http probe", "tcp probe", "exec probe", "custom health check", "required checks", "verified deploys", "deploy gate", "block_deploy", "stabilization window", "uptime", "uptime monitoring", "canary", "bake period", "degraded", "unhealthy", "monitoring", "alerting", "resource explorer"]
 ---
 
-Your deploy succeeded. Is your app actually serving?
-
-Those are different questions, and only one of them is what your customer asks you. Deploy status
-tells you the last apply worked — `helm upgrade` can exit 0 while the release sits in
-`pending-install` and nothing serves traffic. Terraform and Helm skip when state already matches, so
-a component reports Active while its pods are stuck. Something fixed by hand out of band keeps
-showing yesterday's error.
-
-Component health answers the live question instead — continuously, per component, on every install.
-It's a **separate axis**: Nuon never overwrites deploy status with health or the other way round.
+Nuon checks the components running on each install regularly, so you can see their live status.
 
 <CardGroup cols={2}>
   <Card title="See what's actually running" icon="eyes">
@@ -35,7 +26,7 @@ It's a **separate axis**: Nuon never overwrites deploy status with health or the
 
 <Steps>
   <Step title="Deploy, or refresh cluster access">
-    Component health is on for every organization — there's nothing to install and no agent runs in
+    Health checks are on for every organization — there's nothing to install and no agent runs in
     your customers' clusters. Health reads your customers' clusters using the same access your deploys
     already use. An install that hasn't deployed recently needs one deploy — or click **Refresh cluster
     access** on the install's health card to pick it up immediately.
@@ -318,7 +309,7 @@ moved the install rollup, the headline says `install degraded` and an **Install 
 `healthy → degraded` — rather than a second, separate install message arriving alongside it.
 
 <Frame caption="A component degrading and recovering, delivered to Slack.">
-  <img src="/images/guides/component-health/slack-alert.png" alt="Two Slack messages from Nuon Cloud. The first is titled Component degraded, install degraded, ctl_api, and shows the component, its previous healthy verdict, the failing Deployment and a readiness probe connection-refused error. The second is titled Component recovered, install recovered, and shows all 52 resources healthy." />
+  <img src="/images/guides/health-checks/slack-alert.png" alt="Two Slack messages from Nuon Cloud. The first is titled Component degraded, install degraded, ctl_api, and shows the component, its previous healthy verdict, the failing Deployment and a readiness probe connection-refused error. The second is titled Component recovered, install recovered, and shows all 52 resources healthy." />
 </Frame>
 
 Three things are deliberately quiet:
@@ -408,7 +399,7 @@ a bad spell earlier — and because an install is degraded whenever any of its c
 component is what sets the install's number.
 
 <Frame caption="90-day health for an install, with per-component uptime.">
-  <img src="/images/guides/component-health/90-day-health.png" alt="A 90-day health card showing 97.57% uptime, a row of daily status bars, and a list of components each with a Healthy badge and its own uptime percentage. One component, nginx_gateway, reads 97.57% while the rest read 100%." />
+  <img src="/images/guides/health-checks/90-day-health.png" alt="A 90-day health card showing 97.57% uptime, a row of daily status bars, and a list of components each with a Healthy badge and its own uptime percentage. One component, nginx_gateway, reads 97.57% while the rest read 100%." />
 </Frame>
 
 **Time in `unknown` is excluded from uptime** rather than counted as up or down — Nuon won't claim

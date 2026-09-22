@@ -13,10 +13,8 @@ import (
 
 	eventsns "github.com/nuonco/nuon/pkg/events/sns"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -28,7 +26,6 @@ type Params struct {
 	L           *zap.Logger
 	AppsHelpers *appshelpers.Helpers
 	QueueClient *queueclient.Client
-	Features    *features.Features
 }
 
 type service struct {
@@ -37,7 +34,6 @@ type service struct {
 	l            *zap.Logger
 	appsHelpers  *appshelpers.Helpers
 	queueClient  *queueclient.Client
-	features     *features.Features
 	httpClient   *http.Client
 	snsVerifier  *eventsns.Verifier
 	jwtMu        sync.Mutex
@@ -48,28 +44,13 @@ var _ api.Service = (*service)(nil)
 
 func New(p Params) *service {
 	httpClient := &http.Client{Timeout: 10 * time.Second}
-	return &service{db: p.DB, cfg: p.Cfg, l: p.L, appsHelpers: p.AppsHelpers, queueClient: p.QueueClient, features: p.Features, httpClient: httpClient, snsVerifier: eventsns.NewVerifier(httpClient), jwtProviders: make(map[string]*jwks.CachingProvider)}
-}
-
-func (s *service) requireTriggers(ctx *gin.Context) {
-	enabled, err := s.features.FeatureEnabled(ctx, app.OrgFeatureTriggers)
-	if err != nil {
-		ctx.Error(err)
-		ctx.Abort()
-		return
-	}
-	if !enabled {
-		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "triggers feature is not enabled"})
-		return
-	}
-	ctx.Next()
+	return &service{db: p.DB, cfg: p.Cfg, l: p.L, appsHelpers: p.AppsHelpers, queueClient: p.QueueClient, httpClient: httpClient, snsVerifier: eventsns.NewVerifier(httpClient), jwtProviders: make(map[string]*jwks.CachingProvider)}
 }
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/event-ingress/:ingress_key", s.IngestEvent)
 
 	triggers := api.Group("/v1/triggers")
-	triggers.Use(s.requireTriggers)
 	triggers.POST("", s.CreateTrigger)
 	triggers.GET("", s.ListTriggers)
 	triggers.GET("/:trigger_id", s.GetTrigger)
@@ -87,7 +68,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	triggers.PATCH("/:trigger_id/secrets/:secret_id/reveal", s.RevealSecret)
 
 	triggerRoutes := api.Group("/v1/triggers")
-	triggerRoutes.Use(s.requireTriggers)
 	triggerRoutes.GET("/events/:event_id", s.GetEvent)
 	triggerRoutes.GET("/events/:event_id/raw", s.GetEventRaw)
 	triggerRoutes.POST("/events/:event_id/replay", s.ReplayEvent)

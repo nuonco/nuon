@@ -1,8 +1,9 @@
 # Control-plane operational telemetry
 
 This package provides the control plane's resource identity, meter provider, and
-OTLP metric exporter. Export is enabled when an endpoint is configured; otherwise
-the meter provider is a no-op. Log and trace providers are configured separately.
+OTLP exporters for metrics and selected operational lifecycle logs. Export is enabled
+when an endpoint is configured; otherwise both are no-ops. Audit, product log streams,
+and trace providers remain separate.
 
 ## Enable export
 
@@ -18,11 +19,13 @@ OTEL_RESOURCE_ATTRIBUTES=nuon.control_plane.id=cp-example,deployment.environment
 The example uses a local Collector. Use HTTPS for remote backends and store
 authentication headers and client keys in deployment secrets.
 
-- Metrics append `/v1/metrics` to the base endpoint, preserving its path.
+- Metrics append `/v1/metrics` and lifecycle logs append `/v1/logs` to the base
+  endpoint, preserving its path.
 - Endpoint and protocol can also be set as `otel_exporter_otlp_endpoint` and
   `otel_exporter_otlp_protocol` in service configuration; environment values take precedence.
 - Use generic `OTEL_EXPORTER_OTLP_*` transport settings. Nonempty
-  `OTEL_EXPORTER_OTLP_METRICS_*` transport overrides are rejected when export is enabled.
+  `OTEL_EXPORTER_OTLP_METRICS_*` and `OTEL_EXPORTER_OTLP_LOGS_*` transport overrides
+  are rejected when export is enabled.
 - Authentication and TLS use `OTEL_EXPORTER_OTLP_HEADERS`,
   `OTEL_EXPORTER_OTLP_CERTIFICATE`, `OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE`, and
   `OTEL_EXPORTER_OTLP_CLIENT_KEY`. Certificates require HTTPS.
@@ -48,6 +51,30 @@ are exported as configured; do not include secrets.
 Counters are cumulative; apply rates per instance before aggregating replicas.
 Retries count as separate attempts. Request and operation metrics appear when
 observed; they do not provide an idle heartbeat.
+
+### Entity correlation
+
+The following counters carry IDs when available; their duration histograms stay aggregate:
+
+| Counter | Additional dimensions |
+| --- | --- |
+| `nuon.install.component.health.evaluation.attempts` | `nuon.install.id` |
+| `nuon.install.drift.plan.evaluation.attempts` | `nuon.install.id`, `nuon.component.id` for component checks |
+| `nuon.runner.job.execution.results` | `nuon.install.id` from job flow metadata |
+| `nuon.runner.job.lifecycle.failures` | `nuon.install.id` from job flow metadata |
+| `nuon.app.config.sync.attempts` | `nuon.app.id` |
+
+Install IDs identify the affected downstream install, not the control plane's hosting
+install. Older activity requests or jobs without flow metadata omit unavailable IDs;
+no extra lookup is performed. Component drift IDs are propagated with new drift workflows.
+Match with downstream application telemetry using the install ID and retain
+`nuon.control_plane.id` for control-plane scope. Workflow, job, deploy and build IDs
+remain log fields, not metric labels.
+
+Each metric stream is capped at 2,000 attribute sets per process. Excess combinations
+aggregate into `otel.metric.overflow=true` without entity identity. Monitor overflow;
+install-filtered queries cannot account for that population. Entity churn consumes
+the cumulative counter budget until process restart. Histograms do not multiply by IDs.
 
 ### HTTP
 
@@ -120,6 +147,43 @@ Workers export `nuon.policy.evaluation.count` (counter) and
 attempt. Successful evaluations have `outcome=success` and `decision=pass|warn|deny`
 (deny takes precedence); evaluator failures have `outcome=error` and bounded
 `error.type=policy_validation|input_validation|deny_evaluation|warn_evaluation`.
+
+### Drift plan evaluation
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.install.drift.plan.evaluation.attempts` | Counter | attempts | target, outcome, decision or error.type |
+
+`CheckNoopPlan` records returned interpretation attempts for component and sandbox
+drift workflows (`target=component|sandbox`). Successful interpretation uses
+`outcome=success` and `decision=drift|no_drift`; failures use `outcome=error|cancelled`
+and `error.type=load_plan|evaluate_plan`. Retries count again.
+
+This measures interpretation of existing plans, not plan generation, persisted drift
+state, or complete drift-check outcomes. Normal deployment previews and older activity
+requests without workflow type are excluded. Skipped checks and failures before plan
+interpretation produce no observation; successful interpretation does not imply that
+later status writes or notifications succeeded.
+
+### Component-health evaluation
+
+`EvaluateComponentHealth` emits one observation per returned install-level activity invocation:
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.install.component.health.evaluation.attempts` | Counter | attempts | outcome, reason |
+| `nuon.install.component.health.evaluation.duration` | Histogram | seconds | outcome |
+
+Outcomes are `success`, `error`, `cancelled` (including deadlines), or `skipped`.
+Error/cancellation reasons identify `load_install`, `feature_check`, `load_components`,
+`load_observations`, or `persist_verdicts`. Skips use `install_missing` or
+`feature_disabled`; success uses `none`. Skips have no duration observation.
+
+Success includes empty installs and unhealthy component verdicts. Partial verdict
+writes followed by a returned error count as an error; best-effort dependency,
+diagnostic enrichment and transition-history failures do not change the outcome.
+Duration includes that best-effort work. Retries count again. These metrics describe
+evaluator operation, not current component health or whether every install was checked.
 
 ### App config sync
 
@@ -226,6 +290,56 @@ and `.listener.notifications`. Sessions begin after validation; empty timeouts
 are healthy idle results. Probe retries count separately. Listener state is
 observed continuously, including idle periods; routine rotation and shutdown do
 not count as failures. These metrics describe attempts, not unique jobs or claims.
+
+### Runner execution results
+
+| Metric | Type | Unit | Dimensions |
+| --- | --- | --- | --- |
+| `nuon.runner.job.execution.results` | Counter | results | `nuon.runner.job.type`, `nuon.runner.job.operation`, `outcome` |
+
+Runner-api records newly persisted results from compressed and uncompressed reports.
+`outcome=success|failure` reflects the reported result, not workflow completion or
+application health. Job type and operation are bounded; unrecognized values use `other`.
+Duplicate reports do not count again; retries with new execution IDs count separately.
+
+Includes planning, applying and action executions, but does not distinguish drift plans
+from deployment previews or health-check actions from other actions. Missing reports,
+control-plane-generated results and rejected/failed writes are excluded. Process loss
+after persistence can lose the observation; this is not durable completion accounting.
+
+### Runner job lifecycle failures
+
+Workers emit `nuon.runner.job.lifecycle.failures` (counter, failures) after the lifecycle
+error activity persists a job failure reason. Dimensions are `nuon.runner.job.type` and
+`error.type`; unknown values use `other`. Reasons are `no_active_runner`, `runner_disabled`,
+`runner_unhealthy`, `queue_timeout`, `pickup_timeout`, `overall_timeout`,
+`execution_timeout`, `attempts_exhausted`, and `execution_result_missing`.
+
+Counts are successful failure recordings, not unique failed jobs or every retry attempt.
+Repeat activity invocations count again. Missing-result checks that find a result and
+failed persistence produce no observation. Legacy workflows without the lifecycle-error
+activity are excluded. These observations can overlap runner-reported results; do not
+sum the two counters as a total failure count or use their ratio as a failure rate.
+
+## Operational lifecycle logs
+
+The process logger tees allowlisted `flow telemetry` events to an asynchronous OTLP
+exporter using the same resource as metrics, without changing stderr logging or its
+sampling. The OTLP copy is not sampled. JSON bodies retain event, entity and attempt
+identifiers, bounded names, status/health fields and numeric retry/timing fields.
+Raw errors, status descriptions, arbitrary metadata, account emails, stack traces,
+and non-lifecycle process logs are excluded. Strings longer than 512 bytes are omitted.
+IDs remain JSON fields rather than indexed Loki stream labels.
+
+Records are diagnostic observations, not an exactly-once transition ledger. Retries
+can repeat them; workflow/step completion is not proof of application recovery.
+Use the body's `install_id` for the affected install and the resource's
+`nuon.control_plane.id` for the emitting control plane.
+
+The Collector must enable a logs pipeline as well as metrics. Logs use a bounded
+in-memory SDK batch queue: saturation, export failures and process loss can drop data.
+Shutdown flush is bounded to five seconds. Collector persistence protects only data
+already accepted by the Collector; audit and product log-stream destinations are unchanged.
 
 ## Export reliability
 
