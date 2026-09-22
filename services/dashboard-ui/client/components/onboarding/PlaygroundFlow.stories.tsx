@@ -1131,7 +1131,7 @@ const APP_FILE_STUBS: IAppFileStub[] = [
     badge: 'Created for you',
     required: false,
     snippet: (app) =>
-      `name = "main"\n\n[connected_repo]\nrepo      = "jane-doe/${app}"\ndirectory = "."\nbranch    = "main"`,
+      `name = "default"\n\n[connected_repo]\nrepo      = "jane-doe/${app}"\ndirectory = "."\nbranch    = "main"`,
   },
   {
     name: 'components/api.toml',
