@@ -407,17 +407,15 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 
 func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigImageBackedActions() {
 	testCases := []struct {
-		name          string
-		actionName    string
-		enableFeature bool
-		requestFunc   func(appConfigID string) CreateActionWorkflowConfigRequest
-		expectedCode  int
-		validateFunc  func(*app.ActionWorkflowConfig)
+		name         string
+		actionName   string
+		requestFunc  func(appConfigID string) CreateActionWorkflowConfigRequest
+		expectedCode int
+		validateFunc func(*app.ActionWorkflowConfig)
 	}{
 		{
-			name:          "image set with inline_contents steps and feature enabled succeeds",
-			actionName:    "image-action-enabled",
-			enableFeature: true,
+			name:       "image set with inline_contents steps succeeds",
+			actionName: "image-action-enabled",
 			requestFunc: func(appConfigID string) CreateActionWorkflowConfigRequest {
 				return CreateActionWorkflowConfigRequest{
 					AppConfigID: appConfigID,
@@ -438,9 +436,8 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigImageBackedAction
 			},
 		},
 		{
-			name:          "image set with command steps and feature enabled succeeds",
-			actionName:    "image-action-command",
-			enableFeature: true,
+			name:       "image set with command steps succeeds",
+			actionName: "image-action-command",
 			requestFunc: func(appConfigID string) CreateActionWorkflowConfigRequest {
 				return CreateActionWorkflowConfigRequest{
 					AppConfigID: appConfigID,
@@ -463,9 +460,8 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigImageBackedAction
 			},
 		},
 		{
-			name:          "image set with a public repo step and feature enabled succeeds",
-			actionName:    "image-action-repo",
-			enableFeature: true,
+			name:       "image set with a public repo step succeeds",
+			actionName: "image-action-repo",
 			requestFunc: func(appConfigID string) CreateActionWorkflowConfigRequest {
 				return CreateActionWorkflowConfigRequest{
 					AppConfigID: appConfigID,
@@ -496,27 +492,8 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigImageBackedAction
 			},
 		},
 		{
-			name:          "image set but org feature disabled is rejected",
-			actionName:    "image-action-disabled",
-			enableFeature: false,
-			requestFunc: func(appConfigID string) CreateActionWorkflowConfigRequest {
-				return CreateActionWorkflowConfigRequest{
-					AppConfigID: appConfigID,
-					Image:       "ghcr.io/nuonco/actions-runner:latest",
-					Triggers: []CreateActionWorkflowConfigTriggerRequest{
-						{Type: app.ActionWorkflowTriggerTypeManual},
-					},
-					Steps: []CreateActionWorkflowConfigStepRequest{
-						{Name: "step1", InlineContents: "echo 'one'"},
-					},
-				}
-			},
-			expectedCode: http.StatusBadRequest,
-		},
-		{
-			name:          "no image set succeeds regardless of feature flag",
-			actionName:    "image-action-no-image",
-			enableFeature: false,
+			name:       "no image set succeeds",
+			actionName: "image-action-no-image",
 			requestFunc: func(appConfigID string) CreateActionWorkflowConfigRequest {
 				return CreateActionWorkflowConfigRequest{
 					AppConfigID: appConfigID,
@@ -537,12 +514,6 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigImageBackedAction
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			if tc.enableFeature {
-				s.enableOrgFeature(app.OrgFeatureImageBackedActions)
-			} else {
-				s.disableOrgFeature(app.OrgFeatureImageBackedActions)
-			}
-
 			action := s.createActionWorkflow(s.testApp.ID, tc.actionName)
 			appConfig := s.createAppConfig(s.testApp.ID)
 
@@ -554,18 +525,6 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigImageBackedAction
 				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
-
-			if tc.expectedCode != http.StatusCreated {
-				// verify no config was persisted for the rejected request
-				var count int64
-				res := s.service.DB.WithContext(s.ctx).
-					Model(&app.ActionWorkflowConfig{}).
-					Where("action_workflow_id = ?", action.ID).
-					Count(&count)
-				require.NoError(s.T(), res.Error)
-				assert.Equal(s.T(), int64(0), count)
-				return
-			}
 
 			var config app.ActionWorkflowConfig
 			err := json.Unmarshal(rr.Body.Bytes(), &config)
@@ -844,26 +803,6 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigCrossOrgIsolation
 }
 
 // Helper methods
-
-func (s *CreateAppActionConfigTestSuite) enableOrgFeature(feature app.OrgFeature) {
-	s.setOrgFeature(feature, true)
-}
-
-func (s *CreateAppActionConfigTestSuite) disableOrgFeature(feature app.OrgFeature) {
-	s.setOrgFeature(feature, false)
-}
-
-func (s *CreateAppActionConfigTestSuite) setOrgFeature(feature app.OrgFeature, enabled bool) {
-	features := s.testOrg.Features
-	if features == nil {
-		features = make(map[string]bool)
-	}
-	features[string(feature)] = enabled
-	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).
-		Model(&app.Org{ID: s.testOrg.ID}).
-		Update("features", features).Error)
-	s.testOrg.Features = features
-}
 
 func (s *CreateAppActionConfigTestSuite) createActionWorkflow(appID, name string) *app.ActionWorkflow {
 	action := &app.ActionWorkflow{

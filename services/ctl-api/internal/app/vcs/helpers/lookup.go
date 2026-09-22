@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/google/go-github/v50/github"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )

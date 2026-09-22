@@ -273,19 +273,6 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 }
 
 func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app.App, orgID string, awID string, req *CreateActionWorkflowConfigRequest) (*app.ActionWorkflowConfig, error) {
-	if req.Image != "" {
-		enabled, err := s.featuresClient.OrgHasFeature(ctx, orgID, app.OrgFeatureImageBackedActions)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to check image-backed-actions feature")
-		}
-		if !enabled {
-			return nil, stderr.ErrUser{
-				Err:         errors.New("image-backed actions are not enabled for this org"),
-				Description: "image-backed actions are not enabled for this organization; contact Nuon to enable the image-backed-actions feature",
-			}
-		}
-	}
-
 	timeout := req.Timeout
 	if timeout == 0 {
 		timeout = defaultTimeout
