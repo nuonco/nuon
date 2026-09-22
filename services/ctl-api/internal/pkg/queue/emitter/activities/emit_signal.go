@@ -35,6 +35,7 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		First(&emitter); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to get emitter")
 	}
+	ctx = repairActivityContext(ctx, &emitter)
 
 	if emitter.SignalTemplate.Signal == nil {
 		return nil, temporal.NewNonRetryableApplicationError(
