@@ -17,7 +17,6 @@ import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { PageSection } from '@/components/layout/PageSection'
-import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { NewInstallHeader } from '@/components/installs/NewInstallHeader'
 import { ChangeAppBranchButton } from '@/components/installs/management/ChangeAppBranch'
@@ -341,14 +340,6 @@ const InstallTemplate = () => {
                     <InstallStatusesContainer collapsible />
                   </div>
                 </div>
-                {install?.drifted_objects?.length ? (
-                  <DriftedSummary
-                    className="mt-4"
-                    orgId={org.id}
-                    installId={install.id}
-                    driftedObjects={install.drifted_objects}
-                  />
-                ) : null}
               </PageHeader>
             )}
             <PageContent className="border-t" variant="row">
