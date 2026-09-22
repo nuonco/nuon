@@ -19,9 +19,13 @@ type PostHogProxyHandler struct {
 }
 
 func NewPostHogProxyHandler(cfg *internal.Config, l *zap.Logger) *PostHogProxyHandler {
+	var host string
+	if cfg.PostHogKey != "" {
+		host = strings.TrimSuffix(cfg.PostHogHost, "/")
+	}
 	return &PostHogProxyHandler{
 		l:    l,
-		host: strings.TrimSuffix(cfg.PostHogHost, "/"),
+		host: host,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -29,7 +33,8 @@ func NewPostHogProxyHandler(cfg *internal.Config, l *zap.Logger) *PostHogProxyHa
 }
 
 func (h *PostHogProxyHandler) RegisterRoutes(e *gin.Engine) error {
-	e.Any("/ingest/*proxyPath", h.Handle)
+	e.POST("/ingest/*proxyPath", h.Handle)
+	e.GET("/ingest/*proxyPath", h.Handle)
 	return nil
 }
 
@@ -52,7 +57,7 @@ func (h *PostHogProxyHandler) Handle(c *gin.Context) {
 	}
 
 	for key, values := range c.Request.Header {
-		if _, skip := hopByHopRequestHeaders[strings.ToLower(key)]; skip {
+		if _, ok := analyticsForwardedRequestHeaders[strings.ToLower(key)]; !ok {
 			continue
 		}
 		for _, v := range values {
@@ -76,7 +81,7 @@ func (h *PostHogProxyHandler) Handle(c *gin.Context) {
 	defer resp.Body.Close()
 
 	for key, values := range resp.Header {
-		if _, skip := hopByHopResponseHeaders[strings.ToLower(key)]; skip {
+		if _, ok := analyticsForwardedResponseHeaders[strings.ToLower(key)]; !ok {
 			continue
 		}
 		for _, v := range values {
