@@ -15,6 +15,7 @@ import {
   NewInstallOperationsLayout,
   NewInstallResourcesLayout,
 } from './NewInstallSectionLayout'
+import { NewInstallSandbox } from './NewInstallSandbox'
 import { NewInstallState } from './NewInstallState'
 import { NewInstallStack } from './NewInstallStack'
 import { Actions } from './Actions'
@@ -69,8 +70,6 @@ import { Notebooks } from './Notebooks'
 import { NotebookDetail } from './NotebookDetail'
 import { InstallConfigs } from './InstallConfigs'
 
-// Legacy install paths redirect to the Updates/History IA. Carry the query string and
-// hash across so deep links like ?panel=<stepId> survive the hop.
 const legacyRedirect =
   (to: (params: Record<string, string | undefined>) => string) =>
   ({
@@ -139,7 +138,7 @@ export const installRoutes: RouteObject[] = [
             children: [
               {
                 path: 'sandbox',
-                element: <NewInstallPlaceholderBody title="Sandbox" />,
+                element: <NewInstallSandbox />,
               },
               {
                 path: 'components',
