@@ -22,4 +22,10 @@ export const Applied = () => (
   <CurrentAppBranchRun run={run} orgId="org-1" appId="app-1" />
 )
 
-export const Empty = () => <CurrentAppBranchRun />
+export const NoRunOnBranch = () => (
+  <CurrentAppBranchRun branchName="feat/add-cache" />
+)
+
+export const NoBranchConnected = () => <CurrentAppBranchRun />
+
+export const Loading = () => <CurrentAppBranchRun isLoading />
