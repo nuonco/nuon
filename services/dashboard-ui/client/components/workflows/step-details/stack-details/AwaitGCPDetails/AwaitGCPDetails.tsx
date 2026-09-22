@@ -80,7 +80,6 @@ interface IAwaitGCPDetails extends IStackDetails {
   gcpProjectId?: string
   gcpRegion?: string
   spaceliftEnabled?: boolean
-  tfProvider?: boolean
 }
 
 const telemetryExportConfigFilename = 'telemetry-export-config.yaml'
@@ -104,7 +103,6 @@ export const AwaitGCPDetails = ({
   gcpProjectId,
   gcpRegion,
   spaceliftEnabled,
-  tfProvider = false,
   loading,
 }: IAwaitGCPDetails) => {
   const version = stack?.versions?.at(0)
@@ -173,56 +171,41 @@ export const AwaitGCPDetails = ({
         Setup your install stack
       </Text>
 
-      {hasSpacelift || tfProvider ? (
-        <Tabs
-          // The published module is the recommended path, so it opens first
-          // wherever it is available.
-          initActiveTab={tfProvider ? 'tfmodule' : 'terraform'}
-          tabLabels={{ tfmodule: 'TF Module' }}
-          tabs={{
-            // Gated on the org feature until the module release it depends on
-            // is published.
-            ...(tfProvider
-              ? {
-                  tfmodule: (
-                    <GCPTFModuleTab
-                      orgId={orgId}
-                      installId={installId}
-                      gcpProjectId={gcpProjectId}
-                      gcpRegion={gcpRegion}
-                    />
-                  ),
-                }
-              : {}),
-            terraform: (
-              <TerraformTab
-                inputsTfvars={envelope.inputs}
-                secretsTfvars={envelope.secrets}
-                installId={installId}
-              />
-            ),
-            ...(hasSpacelift
-              ? {
-                  spacelift: (
-                    <SpaceliftTab
-                      adminTf={envelope.spaceliftAdminTf}
-                      blueprintYaml={envelope.spaceliftBlueprintYaml}
-                      inputsTfvars={envelope.inputs}
-                      secretsTfvars={envelope.secrets}
-                      installId={installId}
-                    />
-                  ),
-                }
-              : {}),
-          }}
-        />
-      ) : (
-        <TerraformTab
-          inputsTfvars={envelope.inputs}
-          secretsTfvars={envelope.secrets}
-          installId={installId}
-        />
-      )}
+      <Tabs
+        // The published module is the recommended path, so it opens first.
+        initActiveTab="tfmodule"
+        tabLabels={{ tfmodule: 'TF Module' }}
+        tabs={{
+          tfmodule: (
+            <GCPTFModuleTab
+              orgId={orgId}
+              installId={installId}
+              gcpProjectId={gcpProjectId}
+              gcpRegion={gcpRegion}
+            />
+          ),
+          terraform: (
+            <TerraformTab
+              inputsTfvars={envelope.inputs}
+              secretsTfvars={envelope.secrets}
+              installId={installId}
+            />
+          ),
+          ...(hasSpacelift
+            ? {
+                spacelift: (
+                  <SpaceliftTab
+                    adminTf={envelope.spaceliftAdminTf}
+                    blueprintYaml={envelope.spaceliftBlueprintYaml}
+                    inputsTfvars={envelope.inputs}
+                    secretsTfvars={envelope.secrets}
+                    installId={installId}
+                  />
+                ),
+              }
+            : {}),
+        }}
+      />
 
       <Expand
         id="telemetry-export"
