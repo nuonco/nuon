@@ -25,7 +25,6 @@ export const AwaitGCPDetailsContainer = ({
       gcpProjectId={install?.gcp_account?.project_id}
       gcpRegion={install?.gcp_account?.region}
       spaceliftEnabled={spaceliftEnabled}
-      tfProvider={!!org?.features?.['stack-tf-provider']}
     />
   )
 }
