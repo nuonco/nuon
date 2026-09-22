@@ -67,11 +67,6 @@ func componentGateEnabled(ctx workflow.Context, installID string, componentID st
 	if componentType != app.ComponentTypeHelmChart && componentType != app.ComponentTypeKubernetesManifest {
 		return false
 	}
-	// Without the feature the gate signal no-ops, so inserting the step would
-	// show a phantom "verify health" step that verifies nothing.
-	if enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureComponentHealth)); err != nil || !enabled {
-		return false
-	}
 	ccc, err := activities.AwaitGetCurrentComponentConfig(ctx, &activities.GetCurrentComponentConfigRequest{
 		InstallID:   installID,
 		ComponentID: componentID,

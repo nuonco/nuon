@@ -27,7 +27,7 @@ type RefreshInstallHealthClusterAccessResponse struct {
 
 // @ID						RefreshInstallHealthClusterAccess
 // @Summary				refresh the cluster access component health reads through
-// @Description			Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since component health was enabled, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute. Requires the component-health feature.
+// @Description			Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed recently, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute.
 // @Param					req			body	RefreshInstallHealthClusterAccessRequest	false	"Input"
 // @Param					install_id	path	string										true	"install ID"
 // @Tags					installs
@@ -47,10 +47,6 @@ func (s *service) RefreshInstallHealthClusterAccess(ctx *gin.Context) {
 
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := s.requireComponentHealthFeature(ctx, org); err != nil {
 		ctx.Error(err)
 		return
 	}
