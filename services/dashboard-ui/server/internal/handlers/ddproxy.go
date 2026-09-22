@@ -12,25 +12,14 @@ import (
 
 const ddIntakeURL = "https://browser-intake-us5-datadoghq.com"
 
-var hopByHopRequestHeaders = map[string]struct{}{
-	"host":                {},
-	"content-length":      {},
-	"transfer-encoding":   {},
-	"connection":          {},
-	"keep-alive":          {},
-	"proxy-authorization": {},
-	"te":                  {},
-	"upgrade":             {},
-	"expect":              {},
+var analyticsForwardedRequestHeaders = map[string]struct{}{
+	"accept":       {},
+	"content-type": {},
+	"user-agent":   {},
 }
 
-var hopByHopResponseHeaders = map[string]struct{}{
-	"connection":         {},
-	"keep-alive":         {},
-	"proxy-authenticate": {},
-	"transfer-encoding":  {},
-	"upgrade":            {},
-	"trailer":            {},
+var analyticsForwardedResponseHeaders = map[string]struct{}{
+	"content-type": {},
 }
 
 type DDProxyHandler struct {
@@ -69,7 +58,7 @@ func (h *DDProxyHandler) Handle(c *gin.Context) {
 	}
 
 	for key, values := range c.Request.Header {
-		if _, skip := hopByHopRequestHeaders[strings.ToLower(key)]; skip {
+		if _, ok := analyticsForwardedRequestHeaders[strings.ToLower(key)]; !ok {
 			continue
 		}
 		for _, v := range values {
@@ -93,7 +82,7 @@ func (h *DDProxyHandler) Handle(c *gin.Context) {
 	defer resp.Body.Close()
 
 	for key, values := range resp.Header {
-		if _, skip := hopByHopResponseHeaders[strings.ToLower(key)]; skip {
+		if _, ok := analyticsForwardedResponseHeaders[strings.ToLower(key)]; !ok {
 			continue
 		}
 		for _, v := range values {
