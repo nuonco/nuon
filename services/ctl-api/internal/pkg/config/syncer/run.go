@@ -82,7 +82,7 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (res *RunResult, ret
 		if res == nil && retErr == nil {
 			return
 		}
-		outcome := deps.Metrics.record(ctx, started, stage, retErr)
+		outcome := deps.Metrics.recordForApp(ctx, started, req.AppID, stage, retErr)
 		if retErr != nil && deps.Logger != nil {
 			cctx.GetLogger(ctx, deps.Logger).Warn("config sync failed",
 				zap.String("app_id", req.AppID), zap.String("app_config_id", req.AppConfigID),
