@@ -27,15 +27,6 @@ func TestTriggerConstants(t *testing.T) {
 	})
 }
 
-func TestTriggersFeatureIsDisabledByDefault(t *testing.T) {
-	require.Contains(t, GetFeatures(), OrgFeatureTriggers)
-
-	org := Org{}
-	tx := &gorm.DB{Statement: &gorm.Statement{Context: context.Background()}}
-	require.NoError(t, org.BeforeCreate(tx))
-	require.False(t, org.Features[string(OrgFeatureTriggers)])
-}
-
 func TestTriggerFilterPreservesJSONNumberPrecision(t *testing.T) {
 	var filters []TriggerFilter
 	require.NoError(t, json.Unmarshal([]byte(`[{"op":"eq","path":"/id","value":9007199254740993}]`), &filters))

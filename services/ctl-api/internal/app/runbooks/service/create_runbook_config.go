@@ -151,9 +151,8 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 				return
 			}
 			waitStepNames[stepReq.Name] = struct{}{}
-			eventEnabled, featureErr := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureTriggers)
-			if featureErr != nil || !eventEnabled || stepReq.Trigger == "" || len(stepReq.EventTypes) == 0 {
-				ctx.Error(fmt.Errorf("wait_for_event requires triggers, trigger, and event_types"))
+			if stepReq.Trigger == "" || len(stepReq.EventTypes) == 0 {
+				ctx.Error(fmt.Errorf("wait_for_event requires trigger and event_types"))
 				return
 			}
 			var trigger app.Trigger

@@ -106,9 +106,6 @@ func (s *AppConfigsTestSuite) setupTestData() {
 		ID:          orgID,
 		Name:        fmt.Sprintf("test-org-%s", orgID),
 		SandboxMode: true,
-		Features: map[string]bool{
-			string(app.OrgFeatureTriggers): true,
-		},
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
 		},
