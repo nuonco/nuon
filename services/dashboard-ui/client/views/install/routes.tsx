@@ -16,6 +16,7 @@ import {
   NewInstallResourcesLayout,
 } from './NewInstallSectionLayout'
 import { NewInstallComponents } from './NewInstallComponents'
+import { NewInstallImages } from './NewInstallImages'
 import { NewInstallSandbox } from './NewInstallSandbox'
 import { NewInstallState } from './NewInstallState'
 import { NewInstallStack } from './NewInstallStack'
@@ -147,7 +148,7 @@ export const installRoutes: RouteObject[] = [
               },
               {
                 path: 'images',
-                element: <NewInstallPlaceholderBody title="Images" />,
+                element: <NewInstallImages />,
               },
               {
                 path: 'state',
