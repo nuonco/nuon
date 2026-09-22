@@ -1178,13 +1178,6 @@ const FileStubRows = ({ appName, cloud }: { appName: string; cloud: TCloud }) =>
 }
 
 
-// The own path's escape hatch. Quiet and always in the same place, it lands back
-// on the fork with the example options showing, not deep in one cloud's deploy.
-// Collapsed drawer under the cloud buttons: what the example app is, before
-// anyone picks a cloud. Facts from github.com/nuonco/kitchen-sink README
-// (Helm chart with API, UI, worker pods; Pulumi S3 bucket; CI-built images;
-// actions, policies, runbooks, app branches). Grid-rows transition so the card
-// grows instead of jumping.
 const EXAMPLE_APP_FACTS = [
   'Helm chart: API, UI, and worker pods',
   'Pulumi S3 bucket and CI-built images',
