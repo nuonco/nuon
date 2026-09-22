@@ -108,6 +108,7 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 			SignalType:  "trigger_shutdown",
 			SignalTemplate: queuesignal.NewRaw("trigger_shutdown", map[string]any{
 				"runner_id":    runnerID,
+				"process_id":   process.ID,
 				"process_type": string(process.Type),
 			}),
 		})
