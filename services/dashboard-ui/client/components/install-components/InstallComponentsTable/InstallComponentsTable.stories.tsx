@@ -68,13 +68,3 @@ export const Empty = () => (
     isLoading={false}
   />
 )
-
-export const WithHealth = () => (
-  <InstallComponentsTable
-    data={mockRows}
-    filterActions={<div />}
-    pagination={mockPagination}
-    isLoading={false}
-    showHealth
-  />
-)

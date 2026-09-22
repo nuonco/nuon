@@ -12400,7 +12400,7 @@ func (a *Client) GetInstallComponentDeploys(params *GetInstallComponentDeploysPa
 /*
 GetInstallComponentHealthChecks lists custom component health checks
 
-Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name. Requires the component-health feature.
+Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name.
 */
 func (a *Client) GetInstallComponentHealthChecks(params *GetInstallComponentHealthChecksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentHealthChecksOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12446,7 +12446,7 @@ func (a *Client) GetInstallComponentHealthChecks(params *GetInstallComponentHeal
 /*
 GetInstallComponentHealthIncident components health incident bundle
 
-Returns the most recent degraded/unhealthy transition for the component (whether or not it has since recovered) along with its diagnosis, correlated deploy, and the component's currently non-healthy resources. Returns a null body when there's no incident in the retained history. Requires the component-health feature.
+Returns the most recent degraded/unhealthy transition for the component (whether or not it has since recovered) along with its diagnosis, correlated deploy, and the component's currently non-healthy resources. Returns a null body when there's no incident in the retained history.
 */
 func (a *Client) GetInstallComponentHealthIncident(params *GetInstallComponentHealthIncidentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentHealthIncidentOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -12492,7 +12492,7 @@ func (a *Client) GetInstallComponentHealthIncident(params *GetInstallComponentHe
 /*
 GetInstallComponentHealthTimeline components health timeline
 
-Returns a component's health history over a window: recorded verdict transitions (newest first), daily worst-verdict buckets covering every day in the window, and an uptime percentage that excludes unknown time from both the numerator and denominator. Requires the component-health feature.
+Returns a component's health history over a window: recorded verdict transitions (newest first), daily worst-verdict buckets covering every day in the window, and an uptime percentage that excludes unknown time from both the numerator and denominator.
 */
 func (a *Client) GetInstallComponentHealthTimeline(params *GetInstallComponentHealthTimelineParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentHealthTimelineOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -13140,7 +13140,7 @@ func (a *Client) GetInstallGroupRuns(params *GetInstallGroupRunsParams, authInfo
 /*
 GetInstallHealthTimeline installs health timeline
 
-Returns the install's health history aggregated across its components: uptime_percent and observed_seconds are the worst component's, daily[].health is the worst verdict across components for that day, and components lists each component's own current health and uptime. Requires the component-health feature.
+Returns the install's health history aggregated across its components: uptime_percent and observed_seconds are the worst component's, daily[].health is the worst verdict across components for that day, and components lists each component's own current health and uptime.
 */
 func (a *Client) GetInstallHealthTimeline(params *GetInstallHealthTimelineParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallHealthTimelineOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -13372,7 +13372,7 @@ func (a *Client) GetInstallReadme(params *GetInstallReadmeParams, authInfo runti
 /*
 GetInstallResources lives resource explorer for an install
 
-Returns the latest observed state of every resource the install's components manage, filterable by component, kind, namespace, health, and provider. Requires the component-health feature.
+Returns the latest observed state of every resource the install's components manage, filterable by component, kind, namespace, health, and provider.
 */
 func (a *Client) GetInstallResources(params *GetInstallResourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallResourcesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -14374,7 +14374,7 @@ func (a *Client) GetInstallWorkflowSteps(params *GetInstallWorkflowStepsParams, 
 /*
 GetInstallsHealth fleets health summary
 
-Returns the health rollup for every install the caller can see, optionally narrowed by app and by an install label selector. This is the primitive a canary or bake-period rollout polls to decide whether to continue: all_healthy is only true when every counted install is healthy, and installs whose health has never been evaluated are counted separately in unset rather than treated as a pass. Requires the component-health feature.
+Returns the health rollup for every install the caller can see, optionally narrowed by app and by an install label selector. This is the primitive a canary or bake-period rollout polls to decide whether to continue: all_healthy is only true when every counted install is healthy, and installs whose health has never been evaluated are counted separately in unset rather than treated as a pass.
 */
 func (a *Client) GetInstallsHealth(params *GetInstallsHealthParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallsHealthOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -19244,7 +19244,7 @@ func (a *Client) PruneTokens(params *PruneTokensParams, authInfo runtime.ClientA
 /*
 PutInstallComponentHealthCheck reports a custom component health check
 
-Lets an external system (a vendor's CI, a Datadog monitor webhook, a custom action) report a named health signal for a component. The report is written as a resource observation with provider "custom", so it flows through the same live explorer, evaluator, alerting, and timeline as runner-reported resources. Requires the component-health feature.
+Lets an external system (a vendor's CI, a Datadog monitor webhook, a custom action) report a named health signal for a component. The report is written as a resource observation with provider "custom", so it flows through the same live explorer, evaluator, alerting, and timeline as runner-reported resources.
 */
 func (a *Client) PutInstallComponentHealthCheck(params *PutInstallComponentHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutInstallComponentHealthCheckOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -19357,7 +19357,7 @@ func (a *Client) RecoverInstallComponentHelmRelease(params *RecoverInstallCompon
 /*
 RefreshInstallHealthClusterAccess refreshes the cluster access component health reads through
 
-Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since component health was enabled, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute. Requires the component-health feature.
+Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed recently, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute.
 */
 func (a *Client) RefreshInstallHealthClusterAccess(params *RefreshInstallHealthClusterAccessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RefreshInstallHealthClusterAccessOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -19819,7 +19819,7 @@ func (a *Client) ResendOrgInvite(params *ResendOrgInviteParams, authInfo runtime
 /*
 ResetInstallHealthBaseline resets the install s health window
 
-Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime. Requires the component-health feature.
+Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime.
 */
 func (a *Client) ResetInstallHealthBaseline(params *ResetInstallHealthBaselineParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetInstallHealthBaselineOK, error) {
 	// NOTE: parameters are not validated before sending

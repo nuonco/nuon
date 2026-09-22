@@ -149,15 +149,11 @@ const InstallTemplate = () => {
           isActive: isSettingsOpen,
         },
         { type: 'section', label: 'App' },
-        ...(org?.features?.['component-health']
-          ? [
-              {
-                path: `/resources`,
-                iconVariant: 'PulseIcon' as const,
-                text: 'Resources',
-              },
-            ]
-          : []),
+        {
+          path: `/resources`,
+          iconVariant: 'PulseIcon' as const,
+          text: 'Resources',
+        },
         {
           path: `/components`,
           iconVariant: 'CardsIcon' as const,
