@@ -262,7 +262,7 @@ const toRows = (installs: TOperatorInstall[]): TOperatorRow[] =>
         >
           {install.name}
         </Link>
-        <Text variant="caption" theme="neutral" className="whitespace-nowrap">
+        <Text variant="subtext" theme="neutral" className="whitespace-nowrap">
           {install.app?.name}
           {install.app_branch?.name ? ` · ${install.app_branch.name}` : ''}
         </Text>
@@ -299,7 +299,7 @@ const toRows = (installs: TOperatorInstall[]): TOperatorRow[] =>
           displayVariant="icon-only"
           iconSize="18"
         />
-        <Text variant="caption" family="mono" theme="neutral">
+        <Text variant="subtext" family="mono" theme="neutral">
           {regionOf(install)}
         </Text>
       </span>
