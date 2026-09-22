@@ -2538,11 +2538,6 @@ const DEPLOY_STEP: IWizardStepDef = {
   component: DeployStep,
 }
 
-// One console link per cloud, except GCP, which has none. Verified in ctl-api:
-// `stackTemplateLocations` (create_install_stack_version.go) builds a
-// CloudFormation quick-create URL on AWS and a portal custom-deployment URL on
-// Azure, and `InstallStackVersion.QuickLinkURL` is documented as empty on GCP
-// and on Azure installs scoped to a resource group.
 const STACK_STEP_INTRO: Record<TCloud, ReactNode> = {
   aws: (
     <>
