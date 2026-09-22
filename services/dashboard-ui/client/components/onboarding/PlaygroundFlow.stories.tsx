@@ -1032,16 +1032,6 @@ const SETUP_MODES: { value: TSetupMode; label: string }[] = [
   { value: 'manual', label: 'Manual setup' },
 ]
 
-// The files Nuon stubs out when the app is named. Which ones are required comes
-// from the `jsonschema:"required"` tags on AppConfig (pkg/config/config.go):
-// version (metadata.toml), runner, sandbox — plus permissions, which has no tag
-// but is enforced by PermissionsConfig.Validate (pkg/config/app_permissions.go:
-// "permissions config is required", then provision/maintenance/deprovision roles).
-// The parser accepts either permissions.toml or a permissions/ directory
-// (pkg/config/parse/dir.go getPermissions); the stub uses the single file.
-// branch.toml is the app branch Nuon creates behind the scenes, tracking the
-// connected repo (docs/guides/app-branches).
-// Components are where the app lives. Contents are placeholders, not a working config.
 interface IAppFileStub {
   name: string
   purpose: string
