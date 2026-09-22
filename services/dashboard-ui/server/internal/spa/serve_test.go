@@ -69,3 +69,31 @@ func TestBuildClientConfigIncludesDashboardDefaults(t *testing.T) {
 		t.Error("expected installs tab auto-enabled setting in client config")
 	}
 }
+
+func TestBuildClientConfigPostHog(t *testing.T) {
+	withKey := buildClientConfig(&internal.Config{
+		PostHogKey:  "phc_test",
+		PostHogHost: "https://us.i.posthog.com",
+	})
+	if withKey.PostHogKey != "phc_test" || withKey.PostHogHost != "https://us.i.posthog.com" {
+		t.Errorf("expected posthog key and host in client config when configured, got %+v", withKey)
+	}
+
+	byocWithKey := buildClientConfig(&internal.Config{
+		IsBYOC:     true,
+		PostHogKey: "phc_test",
+	})
+	if byocWithKey.PostHogKey != "phc_test" {
+		t.Errorf("expected posthog enabled on BYOC when key is configured, got %+v", byocWithKey)
+	}
+
+	for _, cfg := range []*internal.Config{
+		{},
+		{IsBYOC: true},
+	} {
+		got := buildClientConfig(cfg)
+		if got.PostHogKey != "" || got.PostHogHost != "" {
+			t.Errorf("expected posthog omitted from client config when no key is configured, got %+v", got)
+		}
+	}
+}

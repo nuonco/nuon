@@ -80,6 +80,7 @@ type clientConfig struct {
 	AdminDashboardUrl      string `json:"adminDashboardUrl,omitempty"`
 	PostHogKey             string `json:"posthogKey,omitempty"`
 	PostHogHost            string `json:"posthogHost,omitempty"`
+	PostHogReplayEnabled   bool   `json:"posthogReplayEnabled,omitempty"`
 }
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
@@ -106,9 +107,10 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		AdminDashboardUrl:      cfg.AdminDashboardUrl,
 	}
 
-	if cfg.PostHogKey != "" && !cfg.IsBYOC {
+	if cfg.PostHogKey != "" {
 		cc.PostHogKey = cfg.PostHogKey
 		cc.PostHogHost = cfg.PostHogHost
+		cc.PostHogReplayEnabled = cfg.PostHogReplayEnabled
 	}
 
 	if cfg.IsBYOC {
