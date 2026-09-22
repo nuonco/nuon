@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -136,9 +138,10 @@ func (s *service) getInstallUpdates(ctx *gin.Context, orgID, installID string, p
 		Find(&appVersions).Error; err != nil {
 		return nil, err
 	}
+	blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
 	for i := range appVersions {
 		version := &appVersions[i]
-		diff, err := loadInstallConfigDiff(ctx, version)
+		diff, err := loadInstallConfigDiff(blobCtx, version)
 		if err != nil {
 			return nil, err
 		}
@@ -252,13 +255,16 @@ func (s *service) getInstallUpdates(ctx *gin.Context, orgID, installID string, p
 	}, nil
 }
 
-func loadInstallConfigDiff(ctx *gin.Context, version *app.InstallAppConfigVersion) (*app.InstallConfigDiff, error) {
-	if version == nil || version.Diff == nil {
+func loadInstallConfigDiff(ctx context.Context, version *app.InstallAppConfigVersion) (*app.InstallConfigDiff, error) {
+	if version == nil || version.Diff == nil || !version.Diff.IsSet() {
 		return nil, nil
 	}
 	raw, err := version.Diff.Get(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if raw == "" {
+		return nil, nil
 	}
 	var diff app.InstallConfigDiff
 	if err := json.Unmarshal([]byte(raw), &diff); err != nil {
