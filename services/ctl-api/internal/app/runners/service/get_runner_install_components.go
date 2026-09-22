@@ -84,11 +84,6 @@ func (s *service) getRunnerInstallComponents(ctx context.Context, runnerID strin
 		return &RunnerInstallComponentsResponse{Components: []RunnerInstallComponent{}}, nil
 	}
 
-	// Probes are vendor-declared commands and requests. Without the feature the
-	// runner must not be asked to execute them.
-	if enabled, _ := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureComponentHealth); !enabled {
-		return &RunnerInstallComponentsResponse{Components: []RunnerInstallComponent{}}, nil
-	}
 	installID := runner.RunnerGroup.OwnerID
 
 	var installComponents []app.InstallComponent

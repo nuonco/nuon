@@ -115,14 +115,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureComponentHealth))
-	if err != nil {
-		return errors.Wrap(err, "unable to check component-health feature")
-	}
-	if !enabled {
-		return nil
-	}
-
 	ccc, err := s.componentConfig(ctx, installComponent.ComponentID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get component config")

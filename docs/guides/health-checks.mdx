@@ -25,13 +25,10 @@ Nuon checks the components running on each install regularly, so you can see the
 ## Turn it on
 
 <Steps>
-  <Step title="Ask Nuon to enable it">
-    Health checks are behind the `component-health` org feature. Ask us to switch them on for your
-    organization — there's nothing to install and no agent runs in your customers' clusters.
-  </Step>
   <Step title="Deploy, or refresh cluster access">
-    Health reads your customers' clusters using the same access your deploys already use. An install
-    that hasn't deployed since the feature was enabled needs one deploy — or click **Refresh cluster
+    Health checks are on for every organization — there's nothing to install and no agent runs in
+    your customers' clusters. Health reads your customers' clusters using the same access your deploys
+    already use. An install that hasn't deployed recently needs one deploy — or click **Refresh cluster
     access** on the install's health card to pick it up immediately.
   </Step>
   <Step title="Open the install's Resources tab">
@@ -417,9 +414,9 @@ followed — useful as input to a runbook or an agent.
 
 <AccordionGroup>
   <Accordion title="Everything shows unknown or no resources at all">
-    Nuon can't reach the cluster. This is almost always an install that hasn't deployed since
-    health checks were enabled. Click **Refresh cluster access** on the install's health card, or
-    run any deploy. Resources should appear within a minute or two.
+    Nuon can't reach the cluster. This is almost always an install that hasn't deployed recently.
+    Click **Refresh cluster access** on the install's health card, or run any deploy. Resources
+    should appear within a minute or two.
   </Accordion>
   <Accordion title="A component shows a dash instead of a verdict">
     That's `not-applicable` — either the component has no observable runtime footprint (a Terraform
