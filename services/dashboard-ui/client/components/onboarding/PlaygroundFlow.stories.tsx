@@ -1129,10 +1129,10 @@ const staggerClass = (shown: boolean) =>
   cn('transition-all duration-500 ease-out', shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1')
 const staggerDelay = (order: number) => ({ transitionDelay: `${order * 90}ms` })
 
-// One expandable row per file. First file open so the list reads as content, not a menu.
+// One expandable row per file.
 const FileStubRows = ({ appName, cloud }: { appName: string; cloud: TCloud }) => {
   const shown = useMountedReveal()
-  const [open, setOpen] = useState<string[]>([APP_FILE_STUBS[0].name])
+  const [open, setOpen] = useState<string[]>([])
   const toggle = (name: string) =>
     setOpen((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]))
 
@@ -1683,11 +1683,14 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
 // the customer launches it, the stack reports back.
 type TStackPhase = 'generating' | 'ready' | 'opening' | 'waiting' | 'done'
 
-const CLOUD_OPTIONS: { value: TCloud; label: string }[] = [
-  { value: 'aws', label: 'AWS' },
-  { value: 'gcp', label: 'GCP' },
-  { value: 'azure', label: 'Azure' },
-]
+const CLOUD_OPTIONS: { value: TCloud; label: ReactNode; ariaLabel: string; title: string }[] = (
+  ['aws', 'gcp', 'azure'] as const
+).map((cloud) => ({
+  value: cloud,
+  label: <Icon variant={CLOUD_ICON[cloud]} size={cloud === 'aws' ? 22 : 18} />,
+  ariaLabel: CLOUD_LABEL[cloud],
+  title: CLOUD_LABEL[cloud],
+}))
 
 // How a customer creates the install stack, per cloud (docs/concepts/stacks.mdx and
 // docs/platform-support/*): Terraform plus the platform's native format, except GCP,
