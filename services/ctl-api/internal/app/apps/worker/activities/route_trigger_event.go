@@ -103,14 +103,6 @@ func (a *Activities) RouteTriggerEvent(ctx context.Context, req RouteTriggerEven
 		if event.Trigger.ID == "" {
 			return markEventRejected(tx, &event, req.RoutingGenerationToken, "trigger was deleted")
 		}
-		var org app.Org
-		if err := tx.Select("id", "features").Where(app.Org{ID: event.OrgID}).First(&org).Error; err != nil {
-			return fmt.Errorf("unable to check triggers feature: %w", err)
-		}
-		if !org.Features[string(app.OrgFeatureTriggers)] {
-			return markEventRejected(tx, &event, req.RoutingGenerationToken, "triggers feature is not enabled")
-		}
-
 		if err := eventGeneration(tx, &event, req.RoutingGenerationToken).Updates(map[string]any{
 			"routing_status":       app.EventRoutingStatusRouting,
 			"routing_error":        "",
@@ -238,13 +230,6 @@ func (a *Activities) routeTriggerEventReplay(ctx context.Context, req RouteTrigg
 		}
 		if event.Trigger.ID == "" {
 			return errors.New("trigger was deleted")
-		}
-		var org app.Org
-		if err := tx.Select("id", "features").Where(app.Org{ID: event.OrgID}).First(&org).Error; err != nil {
-			return fmt.Errorf("unable to check triggers feature: %w", err)
-		}
-		if !org.Features[string(app.OrgFeatureTriggers)] {
-			return errors.New("triggers feature is not enabled")
 		}
 
 		var activeConfigs []app.AppConfig

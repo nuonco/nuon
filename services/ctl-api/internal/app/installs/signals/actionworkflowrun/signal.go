@@ -428,18 +428,10 @@ func (s *Signal) recordPreparationCompositeError(ctx workflow.Context, runID str
 	}
 }
 
-// checkImageActionSupported gates image-backed actions on the org feature and
-// the install's runner platform. It runs for every image-backed action,
-// including ones that skip mirroring, so neither path can bypass the gate.
+// checkImageActionSupported gates image-backed actions on the install's
+// runner platform. It runs for every image-backed action, including ones
+// that skip mirroring, so neither path can bypass the gate.
 func (s *Signal) checkImageActionSupported(ctx workflow.Context, run *app.InstallActionWorkflowRun) error {
-	enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureImageBackedActions))
-	if err != nil {
-		return errors.Wrap(err, "unable to check image-backed-actions feature")
-	}
-	if !enabled {
-		return errors.New("image-backed actions are not enabled for this organization")
-	}
-
 	platform := run.Install.RunnerGroup.Platform
 	if !supportedImageActionPlatform(platform) {
 		return fmt.Errorf("image-backed actions are only supported on AWS, Azure, and GCP VM runners; runner platform %q is not supported", platform)
