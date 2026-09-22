@@ -69,6 +69,8 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 		l.Info("emitter not found, stopping")
 		return true, nil
 	}
+	ctx = repairWorkflowContext(ctx, emitter)
+	e.ctx = ctx
 
 	// Check if the queue still exists before proceeding.
 	if err := e.ensureQueueActive(ctx); err != nil {
