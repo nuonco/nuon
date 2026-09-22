@@ -14,6 +14,33 @@ type Payload struct {
 	QueueID           string                 `json:"queue_id,omitempty" temporaljson:"queue_id,omitempty"`
 }
 
+// legacyPayload matches headers written before Payload carried temporaljson
+// tags, when the converter keyed fields by Go name. Long-running workflows
+// (cron emitters) still carry those headers.
+type legacyPayload struct {
+	OrgID             string                 `temporaljson:"OrgID"`
+	AccountID         string                 `temporaljson:"AccountID"`
+	TraceID           string                 `temporaljson:"TraceID"`
+	WorkflowTelemetry cctx.WorkflowTelemetry `temporaljson:"WorkflowTelemetry"`
+	LogStream         *app.LogStream         `temporaljson:"LogStream"`
+}
+
+func (p *Payload) fillFromLegacy(l legacyPayload) {
+	if p.OrgID == "" {
+		p.OrgID = l.OrgID
+	}
+	if p.AccountID == "" {
+		p.AccountID = l.AccountID
+	}
+	if p.TraceID == "" {
+		p.TraceID = l.TraceID
+	}
+	if p.LogStream == nil {
+		p.LogStream = l.LogStream
+	}
+	p.WorkflowTelemetry = l.WorkflowTelemetry.Merge(p.WorkflowTelemetry)
+}
+
 func FetchPayload(ctx cctx.ValueContext) (*Payload, error) {
 	acctID, _ := cctx.AccountIDFromContext(ctx)
 	orgID, _ := cctx.OrgIDFromContext(ctx)
