@@ -2436,80 +2436,6 @@ const InstallStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentPr
   )
 }
 
-
-// --- Parked: the "is live" summary page ------------------------------------------
-// Not in any flow; the ParkedDone story renders it.
-
-const DoneStep = ({ sharedData, onAdvance }: IWizardStepComponentProps) => {
-  const path = readPath(sharedData)
-  const cloud = readCloud(sharedData)
-  const appName = readAppName(sharedData)
-
-  const heading =
-    path === 'own'
-      ? `${appName} is live`
-      : `Kitchen Sink is live in your test ${CLOUD_CONNECT[cloud].accountNoun}`
-
-  const body =
-    path === 'own'
-      ? 'Everything is provisioned and ready to go.'
-      : 'Everything is provisioned. This is the install your customer would be looking at right now.'
-
-  const links: IChoice[] =
-    path === 'own'
-      ? [
-          { id: 'invite', title: 'Invite your team', description: 'Add teammates and give them access to this org.', icon: 'UsersIcon' },
-          { id: 'cicd', title: 'Connect CI/CD', description: 'Trigger deploys from GitHub Actions.', icon: 'GitBranchIcon' },
-        ]
-      : [
-          { id: 'action', title: 'Run an action', description: 'Try a runbook or action on the live install.', icon: 'PlayIcon' },
-          { id: 'own', title: 'Swap in your app', description: 'Connect GitHub and deploy your own app the same way.', icon: 'GitBranchIcon' },
-        ]
-
-  return (
-    <div className="flex flex-col gap-8 py-6">
-      <div className="flex flex-col gap-3 items-center text-center">
-        <Icon variant="CheckCircleIcon" size={40} theme="success" weight="fill" />
-        <Text variant="h2" role="heading" level={2}>
-          {heading}
-        </Text>
-        <Badge theme="success">Active</Badge>
-        <Text variant="base" theme="neutral" className="max-w-xl">
-          {body}
-        </Text>
-      </div>
-      <div className="grid sm:grid-cols-2 gap-4">
-        {links.map((link) => (
-          <Card key={link.id} className="!gap-2 !p-4">
-            <div className="flex items-center gap-2">
-              <Icon variant={link.icon} size={18} theme="brand" />
-              <Text variant="base" weight="strong">
-                {link.title}
-              </Text>
-            </div>
-            <Text variant="body" theme="neutral">
-              {link.description}
-            </Text>
-          </Card>
-        ))}
-      </div>
-      <div className="flex justify-center">
-        <Button variant="primary" size="lg" onClick={onAdvance}>
-          View install
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-const PARKED_DONE_STEP: IWizardStepDef = {
-  id: 'parked-done',
-  title: "You're all set",
-  navLabel: 'Done',
-  hideTitle: true,
-  component: DoneStep,
-}
-
 // --- Step definitions ---------------------------------------------------------
 
 // The step renders its own, larger title (no subhead) instead of the wizard's default h2.
@@ -2963,18 +2889,6 @@ ForkDeployAws.meta = { fullBleed: true }
 
 export const ForkOwnApp = () => <BranchingPlayground initialPath="own" skipIntro expandOwnApp />
 ForkOwnApp.meta = { fullBleed: true }
-
-// Not part of any flow.
-export const ParkedDone = () => (
-  <OnboardingWizardProvider
-    steps={[PARKED_DONE_STEP]}
-    initialSharedData={{ path: 'own', cloud: 'aws' }}
-    onComplete={() => {}}
-  >
-    <OnboardingWizardLayout skipHref={null} />
-  </OnboardingWizardProvider>
-)
-ParkedDone.meta = { fullBleed: true }
 
 export const ParkedInstall = () => (
   <OnboardingWizardProvider
