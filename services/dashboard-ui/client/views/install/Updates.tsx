@@ -14,7 +14,8 @@ import { useOrg } from '@/hooks/use-org'
 export const Updates = () => {
   const { org } = useOrg()
   const { install, refresh } = useInstall()
-  const { run: currentAppBranchRun } = useCurrentAppBranchRun()
+  const { run: currentAppBranchRun, isLoading: isAppBranchRunLoading } =
+    useCurrentAppBranchRun()
   const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
 
   return (
@@ -65,6 +66,8 @@ export const Updates = () => {
         run={currentAppBranchRun}
         orgId={org?.id}
         appId={install?.app_id}
+        branchName={install?.app_branch?.name}
+        isLoading={isAppBranchRunLoading}
       />
 
       <InstallUpdatesTimeline shouldPoll />
