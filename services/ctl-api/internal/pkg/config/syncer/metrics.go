@@ -5,9 +5,10 @@ import (
 	"errors"
 	"time"
 
-	configsync "github.com/nuonco/nuon/pkg/config/sync"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	configsync "github.com/nuonco/nuon/pkg/config/sync"
 )
 
 type Metrics struct {

@@ -17,7 +17,6 @@ interface IAwaitAWSDetails extends IStackDetails {
   orgId: string
   installId?: string
   installAwsRegion?: string
-  tfProvider?: boolean
 }
 
 const telemetryExportConfigFilename = 'telemetry-export-config.yaml'
@@ -80,7 +79,6 @@ export const AwaitAWSDetails = ({
   orgId,
   installId,
   installAwsRegion,
-  tfProvider = false,
   loading,
 }: IAwaitAWSDetails) => {
   const version = stack?.versions?.at(0)
@@ -151,19 +149,13 @@ export const AwaitAWSDetails = ({
                 installId={installId}
               />
             ),
-            // Gated on the org feature until the module and provider releases it
-            // depends on are published.
-            ...(tfProvider
-              ? {
-                  tfmodule: (
-                    <TFModuleTab
-                      orgId={orgId}
-                      installId={installId}
-                      installAwsRegion={installAwsRegion}
-                    />
-                  ),
-                }
-              : {}),
+            tfmodule: (
+              <TFModuleTab
+                orgId={orgId}
+                installId={installId}
+                installAwsRegion={installAwsRegion}
+              />
+            ),
           }}
         />
       ) : (
