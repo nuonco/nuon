@@ -29,12 +29,8 @@ func (a *Activities) RegisterEventRunbookWaiter(ctx context.Context, req Registe
 	if err := a.db.WithContext(ctx).Where(app.Install{ID: req.InstallID}).First(&install).Error; err != nil {
 		return nil, err
 	}
-	enabled, err := a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureTriggers)
-	if err != nil || !enabled {
-		return nil, fmt.Errorf("triggers feature is not enabled")
-	}
 	var w app.EventRunbookWaiter
-	err = a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var trigger app.Trigger
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.Trigger{ID: req.TriggerID, OrgID: install.OrgID}).First(&trigger).Error; err != nil {
 			return err
