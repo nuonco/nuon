@@ -25,7 +25,6 @@ export const InstallComponentOverviewTab = () => {
   } = useOutletContext<TInstallComponentOutletContext>()
 
   const component = installComponent?.component
-  const showHealth = !!org?.features?.['component-health']
 
   return (
     <>
@@ -66,7 +65,7 @@ export const InstallComponentOverviewTab = () => {
         />
       </div>
 
-      {showHealth && component ? (
+      {component ? (
         <div className="flex flex-col gap-4">
           <SectionHeader title="Health" />
           <Card>

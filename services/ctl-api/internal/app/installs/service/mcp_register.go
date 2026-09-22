@@ -34,7 +34,7 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 	mcp.AddTool(server, apiPkg.MCPReadTool(
 		"get_install_health",
 		"Get install health",
-		"Get the current health rollup for an install and each component, including health descriptions, last report time, and cluster access errors. Requires the component-health feature.",
+		"Get the current health rollup for an install and each component, including health descriptions, last report time, and cluster access errors.",
 	), s.mcpGetInstallHealth)
 
 	mcp.AddTool(server, apiPkg.MCPReadTool(
