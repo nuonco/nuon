@@ -523,14 +523,10 @@ Minimal.meta = { fullBleed: true }
 // Fork flow: post-login screen that splits into two paths.
 //   example → deploy Kitchen Sink into the user's own cloud (stack link, pre-filled inputs)
 //   own     → connect GitHub, set the app up from the terminal or an MCP agent
-// A third path (Kitchen Sink into an AWS account Nuon runs, no stack step) was
-// removed 2026-09-21 as out of scope; see git history before that date.
 // The steps array is swapped when the fork picks a path; the provider reads
 // `steps` from props on every render so the stepper follows the chosen path.
-// Sep 16 direction (Matt): an intro page sits BEFORE the stepper (one sentence,
-// one button, a glanceable diagram), and the fork screen leads with the user's
-// own app as the single primary. The example app is the secondary "kick the
-// tires" path.
+// An intro page sits before the stepper. The fork leads with the user's own app
+// as the single primary; the example app is the secondary path.
 // ---------------------------------------------------------------------------
 
 type TCloud = 'aws' | 'gcp' | 'azure'
@@ -555,9 +551,8 @@ const ForkContext = createContext<IForkActions>({
 })
 const useForkChoice = () => useContext(ForkContext)
 
-// Clouds the example app (Kitchen Sink) can be deployed to from the fork. AWS only
-// for launch; the own-app path still offers all three. The three-cloud version of
-// this flow is kept on ms/onboarding-wizard-plan-all-clouds.
+// Clouds the example app (Kitchen Sink) can be deployed to from the fork. The
+// own-app path offers all three.
 const EXAMPLE_CLOUDS: TCloud[] = ['aws']
 
 const CLOUD_LABEL: Record<TCloud, string> = { aws: 'AWS', gcp: 'GCP', azure: 'Azure' }
@@ -698,9 +693,6 @@ const MiniArch = ({ live = false }: { live?: boolean }) => (
   </div>
 )
 
-// Your app template → Nuon (the mark on the connector) → the customer's account.
-// Static: the "Operating Nuon on your cloud" toggle and its BYOC view were
-// removed 2026-09-21; that positioning moves to nuon.co.
 const IntroDiagram = () => (
   <div className="flex flex-col gap-3">
     <div className="flex flex-col gap-3 rounded-lg border bg-background p-4 shadow-sm">
@@ -865,8 +857,6 @@ const CopyTextButton = ({
   )
 }
 
-// Collapsed preview of what "Start with your app" expands into: titles only.
-// The detail lives inside the expanded setup, so this row stays a glance.
 const OWN_APP_STEPS: { icon: TIconVariant; title: string }[] = [
   { icon: 'GitHub', title: 'Connect GitHub' },
   { icon: 'RobotIcon', title: 'Create your app template' },
@@ -909,8 +899,6 @@ const AgentSetup = () => (
       <CodeBlock language="bash" showCopy wrapLongLines className="!pr-14">
         {MCP_ADD_CLAUDE}
       </CodeBlock>
-      {/* The walkthrough carries the rest: Cursor and Amp config, per-client file
-          paths, and `nuon agents help`. No need to restate it here. */}
       <Link href={DOCS_MCP} isExternal textVariant="subtext">
         docs.nuon.co/guides/agents/mcp-walkthrough
       </Link>
@@ -989,9 +977,6 @@ const ManualSetup = ({ appName, repo }: { appName: string; repo: string }) => {
 
 // The step's live moment: Nuon watching the tracked branch. In the prototype the
 // review panel's "Simulate push" stands in for the push.
-// Never a hard block: if the GitHub app or the webhook misbehaves, the user can
-// carry on via "Continue without waiting" beside the step's primary button and
-// Nuon keeps watching main. The next steps tolerate "no config yet".
 const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boolean; skipped: boolean }) => (
   <div
     className={cn(
@@ -1156,7 +1141,7 @@ const staggerClass = (shown: boolean) =>
   cn('transition-all duration-500 ease-out', shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1')
 const staggerDelay = (order: number) => ({ transitionDelay: `${order * 90}ms` })
 
-// Option A: one expandable row per file. First file open so the list reads as content, not a menu.
+// One expandable row per file. First file open so the list reads as content, not a menu.
 const FileStubRows = ({ appName, cloud }: { appName: string; cloud: TCloud }) => {
   const shown = useMountedReveal()
   const [open, setOpen] = useState<string[]>([APP_FILE_STUBS[0].name])
@@ -1441,8 +1426,7 @@ const OwnAppSetup = ({
 // --- Step 1b: the template (own path only) ------------------------------------
 //
 // The app exists and its config is stubbed. This step shows the stubs and the
-// two ways to fill them in. Where the stubs sit is a review toggle: above the
-// tabs as a read-only editor, or beside them as compact rows.
+// two ways to fill them in.
 const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const { choose, pushTick } = useForkChoice()
   const appName = readAppName(sharedData)
@@ -1747,8 +1731,7 @@ const STACK_METHODS: Record<TCloud, { name: string; how: string }[]> = {
 // What this install will contain, as a card worth reading: source, sandbox, and
 // components, plus the same three tiers the intro drew. Framing-agnostic — the
 // example and own paths differ only in the facts.
-// Both repo facts are chips that open the repo; the header link that used to do
-// that job is gone.
+// Both repo facts are chips that open the repo.
 const RepoChip = ({ repo }: { repo: string }) => (
   <Link href={`https://github.com/${repo}`} isExternal textVariant="subtext">
     <Badge size="sm" variant="code">
@@ -2138,7 +2121,7 @@ const stageState = (index: number, activeIndex: number): TStageState =>
 // Placeholder in Nuon's install-ID shape; the product passes the real one.
 const EXAMPLE_INSTALL_ID = 'inlk3x9q2m7v4w8p1z6r5t0y2c'
 
-// Option C from the design canvas: a 1-2-3 rail beside the customer's account,
+// A 1-2-3 rail beside the customer's account,
 // drawn the way the intro drew it, filling in as stages finish. Hovering or
 // focusing a step previews it, clicking pins it; unpinned, focus follows the
 // running stage. Rings, not borders (the global border-color rule).
@@ -2488,8 +2471,7 @@ const InstallStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentPr
 
 
 // --- Parked: the "is live" summary page ------------------------------------------
-// Matt likes this design but wants it out of the first critical path. It is not
-// in any flow; the ParkedDone story keeps it reviewable.
+// Not in any flow; the ParkedDone story renders it.
 
 const DoneStep = ({ sharedData, onAdvance }: IWizardStepComponentProps) => {
   const path = readPath(sharedData)
@@ -2648,8 +2630,8 @@ const PROVISION_STEP: Record<TPath, IWizardStepDef> = {
   },
 }
 
-// Parked: the live install page. "See your install" opens the install's workflow
-// page in the product, so this is no longer a step in the flow.
+// Parked: the live install page. Not in any flow; "Go to deploy workflow" opens
+// the install's workflow page instead.
 const PARKED_INSTALL_STEP: IWizardStepDef = {
   id: 'parked-install',
   title: 'Your install',
@@ -3020,7 +3002,7 @@ ForkDeployAws.meta = { fullBleed: true }
 export const ForkOwnApp = () => <BranchingPlayground initialPath="own" skipIntro expandOwnApp />
 ForkOwnApp.meta = { fullBleed: true }
 
-// Not part of any flow. Kept so the design is still reviewable.
+// Not part of any flow.
 export const ParkedDone = () => (
   <OnboardingWizardProvider
     steps={[PARKED_DONE_STEP]}
