@@ -74,6 +74,8 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 	}
 
 	// Check if emitter is paused (status is cancelled)
+	ctx = repairWorkflowContext(ctx, emitter)
+
 	if emitter.Status.Status == app.StatusCancelled {
 		l.Info("emitter is paused, skipping emit")
 		return nil
