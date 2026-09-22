@@ -23,8 +23,6 @@ interface IAwaitAzureDetails extends IStackDetails {
   installId: string
   azureLocation?: string
   azureSubscriptionId?: string
-  // Gates the TF Module tab on the org feature flag, matching AWS and GCP.
-  tfProvider?: boolean
   secrets?: TAppSecretConfig[]
   inputs?: TAppInput[]
   // Presence only, never the value: sensitive inputs come back redacted, and the
@@ -62,7 +60,6 @@ export const AwaitAzureDetails = ({
   installId,
   azureLocation,
   azureSubscriptionId,
-  tfProvider,
   secrets,
   inputs,
   setInputNames,
@@ -466,10 +463,6 @@ export const AwaitAzureDetails = ({
       </div>
     </>
   )
-
-  // Without the module there is only one way to install, so the tab strip would
-  // be a single tab.
-  if (!tfProvider) return armFlow
 
   return (
     <Tabs

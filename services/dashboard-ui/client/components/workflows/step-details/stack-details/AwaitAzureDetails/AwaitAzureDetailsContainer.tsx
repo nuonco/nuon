@@ -63,7 +63,6 @@ export const AwaitAzureDetailsContainer = ({
       installId={install?.id ?? ''}
       azureLocation={install?.azure_account?.location}
       azureSubscriptionId={install?.azure_account?.subscription_id}
-      tfProvider={!!org?.features?.['stack-tf-provider']}
       secrets={secretsConfig?.secrets}
       inputs={appConfig?.input?.inputs}
       setInputNames={setInputNames}
