@@ -2058,10 +2058,6 @@ interface IBuildStage {
 // Onboarding is a proof of concept, so the account is always framed as a test one.
 const accountLabel = (_path: TPath, cloud: TCloud) => `your test ${CLOUD_CONNECT[cloud].accountNoun}`
 
-// The cluster each cloud's default sandbox creates. Repo descriptions (gh api):
-// nuonco/aws-eks-sandbox "AWS EKS sandbox", nuonco/gcp-gke-sandbox "GKE Autopilot
-// sandbox", nuonco/azure-aks-sandbox "Azure AKS sandbox". The network is NOT listed:
-// on AWS the stack owns it and the sandbox only tags its subnets.
 const SANDBOX_CLUSTER: Record<TCloud, string> = {
   aws: 'An EKS cluster and node group',
   gcp: 'A GKE Autopilot cluster',
