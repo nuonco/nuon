@@ -615,8 +615,6 @@ const CLOUD_CONNECT: Record<
   },
 }
 
-// Slugs only. The physical location is what the cloud console shows beside them,
-// and spelled out in a picker it read like prose.
 const CLOUD_REGIONS: Record<TCloud, { label: string; options: string[] }> = {
   aws: {
     label: 'AWS region',
