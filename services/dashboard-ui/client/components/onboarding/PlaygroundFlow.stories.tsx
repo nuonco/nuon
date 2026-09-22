@@ -576,6 +576,9 @@ const CLOUD_CONNECT: Record<
   {
     accountNoun: string
     stackLabel: string
+    // What exists once generation finishes. AWS gets a console link; GCP and Azure (at its
+    // default scope) get a template and commands, so the status line must not say "link".
+    artifactNoun: string
     generating: string
     launch: string
     opening: string
@@ -586,6 +589,7 @@ const CLOUD_CONNECT: Record<
   aws: {
     accountNoun: 'AWS account',
     stackLabel: 'CloudFormation stack',
+    artifactNoun: 'CloudFormation stack link',
     generating: 'Generating your CloudFormation stack link...',
     launch: 'Open the CloudFormation stack',
     opening: 'Opening the AWS console...',
@@ -596,6 +600,7 @@ const CLOUD_CONNECT: Record<
   gcp: {
     accountNoun: 'GCP project',
     stackLabel: 'Terraform stack',
+    artifactNoun: 'Terraform stack',
     generating: 'Generating your Terraform stack...',
     launch: 'Get the Terraform stack',
     opening: 'Preparing the Terraform stack...',
@@ -605,13 +610,14 @@ const CLOUD_CONNECT: Record<
   },
   azure: {
     accountNoun: 'Azure subscription',
-    stackLabel: 'Azure stack',
-    generating: 'Generating your Azure stack link...',
-    launch: 'Open the Azure stack',
-    opening: 'Opening the Azure portal...',
+    stackLabel: 'Bicep stack',
+    artifactNoun: 'Bicep template',
+    generating: 'Generating your Bicep template...',
+    launch: 'Get the Azure commands',
+    opening: 'Preparing the commands...',
     helper:
-      'Opens Deploy to Azure in the Azure portal with the stack pre-filled. Deploy it there, then come back — this page updates on its own.',
-    waitingHint: 'Deploy the stack in the Azure portal tab, then come back.',
+      'Nuon generates the Bicep template and the az commands that deploy it. Create the resource group and Key Vault, run the commands, then come back — this page updates on its own.',
+    waitingHint: 'Run the az commands from your terminal, then come back.',
   },
 }
 
@@ -814,8 +820,6 @@ const MCP_ADD_CLAUDE = 'claude mcp add --transport stdio nuon -- nuon agents mcp
 const DOCS_CONFIG_FILES = 'https://docs.nuon.co/configuration-files'
 const AWS_QUICK_CREATE_DOCS =
   'https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stacks-quick-create-links.html'
-const AZURE_DEPLOY_BUTTON_DOCS =
-  'https://learn.microsoft.com/en-us/azure/azure-resource-manager/templates/deploy-to-azure-button'
 const GCP_INFRA_MANAGER_DOCS = 'https://cloud.google.com/infrastructure-manager/docs'
 const GIT_PUSH = (app: string) => `git add ${app}\ngit commit -m "Add Nuon app template"\ngit push origin main`
 const VSCODE_EXTENSION = 'https://marketplace.visualstudio.com/items?itemName=Nuon.nuon-lsp'
@@ -1522,7 +1526,11 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
           Stubbed by Nuon
         </Badge>
         <Text variant="subtext" theme="neutral">
-          Four required files, the branch that tracks your repo, and components/.
+          The minimum for a first install: four required files, the branch that tracks your repo, and
+          components/. Inputs, secrets, policies and more are optional.{' '}
+          <Link href={DOCS_CONFIG_FILES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+            Configuration files
+          </Link>
         </Text>
       </div>
       {beside ? <FileStubRows appName={appName} /> : <FileStubEditor appName={appName} />}
@@ -1777,8 +1785,9 @@ const STACK_METHODS: Record<TCloud, { name: string; how: string }[]> = {
     { name: 'Terraform', how: 'Generated tfvars for the install-stacks/gcp module. gcloud auth, then terraform apply. GCP is Terraform only.' },
   ],
   azure: [
-    { name: 'Deploy to Azure (Bicep)', how: 'One pre-filled link. Your customer deploys in the portal.' },
+    { name: 'Azure CLI (Bicep)', how: 'Create a resource group and Key Vault, then deploy the template with az. Nuon fills in the commands.' },
     { name: 'Terraform', how: 'Generated tfvars for the install-stacks/azure module, applied with terraform.' },
+    { name: 'Deploy to Azure', how: 'A pre-filled portal link. Only when stack.toml sets deployment_scope = "subscription".' },
   ],
 }
 
@@ -1986,9 +1995,9 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
           : `${connect.stackLabel} created`
 
   const status = generating
-    ? `Generating the ${connect.stackLabel} link for ${region}. About 30 seconds.`
+    ? `Generating the ${connect.artifactNoun} for ${region}. About 30 seconds.`
     : ready
-      ? `${connect.stackLabel} link ready for ${region}. From launch to a healthy runner is about 11 minutes — this page updates on its own.`
+      ? `${connect.artifactNoun} ready for ${region}. From launch to a healthy runner is about 11 minutes — this page updates on its own.`
       : phase === 'waiting'
         ? `${connect.waitingHint} This page updates on its own.`
         : phase === 'done'
@@ -2075,7 +2084,7 @@ const StackStep = ({ sharedData, onAdvance, onGoBack }: IWizardStepComponentProp
           disabled={!ready}
           onClick={() => setPhase('opening')}
           tooltipProps={
-            generating ? { tipContent: `Cannot launch yet — Nuon is still generating the ${connect.stackLabel} link` } : undefined
+            generating ? { tipContent: `Cannot launch yet — Nuon is still generating the ${connect.artifactNoun}` } : undefined
           }
         >
           {generating || phase === 'opening' || phase === 'waiting' ? <Icon variant="Loading" size={16} /> : null}
@@ -2539,11 +2548,12 @@ const STACK_STEP_INTRO: Record<TCloud, ReactNode> = {
   ),
   azure: (
     <>
-      Nuon is generating a{' '}
-      <Link href={AZURE_DEPLOY_BUTTON_DOCS} isExternal textVariant="body" className="!inline-flex align-baseline">
-        Deploy to Azure link
-      </Link>
-      . This is a common install method for BYOC customers on Azure.
+      Nuon is generating the Bicep template and the commands that deploy it. At the default{' '}
+      <Link href={DOCS_STACKS} isExternal textVariant="body" className="!inline-flex align-baseline">
+        resource group scope
+      </Link>{' '}
+      there is no one-click console install, so BYOC customers create a resource group and Key Vault
+      first, then run the commands.
     </>
   ),
 }
