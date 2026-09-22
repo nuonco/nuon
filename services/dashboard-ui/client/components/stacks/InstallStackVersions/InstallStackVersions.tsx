@@ -44,8 +44,8 @@ export const InstallStackVersions = ({
   return (
     <div className="flex flex-col gap-2">
       {versions.map((version, index) => (
-        <Card key={version.id} className="!p-4 !gap-4">
-          <div className="flex items-center justify-between gap-3">
+        <Card key={version.id} className="!p-4 !gap-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 min-w-0">
               <Icon
                 variant="StackIcon"
@@ -56,17 +56,16 @@ export const InstallStackVersions = ({
                 {version.id}
               </Badge>
             </div>
-            <div className="flex items-center gap-3 flex-wrap justify-end">
-              <Status
-                status={version.composite_status?.status}
-                variant="badge"
-              />
-              <Time
-                time={version.created_at}
-                format="relative"
-                variant="subtext"
-                theme="neutral"
-              />
+            <Status status={version.composite_status?.status} variant="badge" />
+          </div>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <Time
+              time={version.created_at}
+              format="relative"
+              variant="subtext"
+              theme="neutral"
+            />
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               <StackVersionDetails
                 version={version}
                 panelKey={`stack-version-${version.id}`}

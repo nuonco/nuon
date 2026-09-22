@@ -10,10 +10,6 @@ import { Text } from '@/components/common/Text'
 import { CodeBlock } from '@/components/diffs/CodeBlock'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { CustomStackTemplateURL } from '@/components/stacks/CustomStackTemplateURL'
-import {
-  InstallStackVersionsPresentation,
-  type TInstallStackVersion,
-} from '@/components/stacks/InstallStackVersions'
 import type { TCustomNestedStack } from '@/types'
 
 export type TInstallNestedStack = {
@@ -29,13 +25,13 @@ export interface IInstallStack {
   configError?: string
   configLoading?: boolean
   configVersion?: number
-  latestVersionAction?: ReactNode
   nestedStacks: TInstallNestedStack[]
   outputs?: string
+  outputsAction?: ReactNode
+  outputsLoading?: boolean
   stackName?: string
   stackType?: string
-  versions: TInstallStackVersion[]
-  versionsLoading?: boolean
+  versionsAction?: ReactNode
 }
 
 const sourceTheme = {
@@ -49,17 +45,25 @@ export const InstallStack = ({
   configError,
   configLoading = false,
   configVersion,
-  latestVersionAction,
   nestedStacks,
   outputs,
+  outputsAction,
+  outputsLoading = false,
   stackName,
   stackType,
-  versions,
-  versionsLoading = false,
+  versionsAction,
 }: IInstallStack) => (
   <div className="flex flex-col gap-6">
     <div className="flex flex-col gap-4">
-      <SectionHeader title="Current stack" actions={configAction} />
+      <SectionHeader
+        title="Current stack"
+        actions={
+          <>
+            {versionsAction}
+            {configAction}
+          </>
+        }
+      />
 
       {configLoading ? (
         <Skeleton height="7rem" width="100%" />
@@ -136,8 +140,9 @@ export const InstallStack = ({
       <SectionHeader
         title="Outputs"
         description="Values from the last applied stack run."
+        actions={outputsAction}
       />
-      {versionsLoading && !outputs ? (
+      {outputsLoading && !outputs ? (
         <Skeleton height="12rem" width="100%" />
       ) : outputs ? (
         <CodeBlock
@@ -154,18 +159,6 @@ export const InstallStack = ({
           emptyMessage="Outputs appear here once the stack has been applied in the cloud account."
         />
       )}
-    </div>
-
-    <div className="flex flex-col gap-4">
-      <SectionHeader
-        title="Stack versions"
-        description="Each version applied to this install."
-      />
-      <InstallStackVersionsPresentation
-        versions={versions}
-        loading={versionsLoading}
-        latestAction={latestVersionAction}
-      />
     </div>
   </div>
 )

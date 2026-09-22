@@ -3,45 +3,33 @@ export default {
 }
 
 import { Button } from '@/components/common/Button'
-import type { TInstallStackVersion } from '@/components/stacks/InstallStackVersions'
+import { Icon } from '@/components/common/Icon'
 import {
   InstallStack,
   type IInstallStack,
   type TInstallNestedStack,
 } from './InstallStack'
 
-const versions = [
-  {
-    id: 'stkv-1',
-    app_config_id: 'cfg-3',
-    created_at: '2026-09-20T18:04:00Z',
-    composite_status: { status: 'active' },
-    runs: [{ id: 'run-1' }],
-  },
-  {
-    id: 'stkv-2',
-    app_config_id: 'cfg-2',
-    created_at: '2026-09-18T12:00:00Z',
-    composite_status: { status: 'active' },
-    runs: [{ id: 'run-2' }],
-  },
-] as unknown as TInstallStackVersion[]
-
 const baseProps: IInstallStack = {
   configVersion: 12,
   stackName: 'aws-eks',
   stackType: 'aws-cloudformation',
   nestedStacks: [],
-  versions,
   outputs: `{
   "vpc_id": "vpc-000000000000",
   "cluster_name": "acme-production",
   "region": "us-east-1"
 }`,
-  configAction: <Button variant="secondary">Edit overrides</Button>,
-  latestVersionAction: (
+  outputsAction: (
     <Button variant="secondary" size="sm">
-      Reprovision stack
+      Trigger phone home
+    </Button>
+  ),
+  configAction: <Button variant="secondary">Edit overrides</Button>,
+  versionsAction: (
+    <Button variant="secondary">
+      <Icon variant="ClockCounterClockwiseIcon" size={16} />
+      Stack versions
     </Button>
   ),
 }
@@ -113,16 +101,7 @@ export const NoOutputs = () => (
     {...baseProps}
     nestedStacks={multipleNestedStacks}
     outputs={undefined}
-  />
-)
-
-export const NoVersions = () => (
-  <InstallStack
-    {...baseProps}
-    nestedStacks={multipleNestedStacks}
-    versions={[]}
-    outputs={undefined}
-    latestVersionAction={undefined}
+    outputsAction={undefined}
   />
 )
 
@@ -131,8 +110,8 @@ export const Loading = () => (
     {...baseProps}
     configLoading
     nestedStacks={[]}
-    versions={[]}
-    versionsLoading
+    outputs={undefined}
+    outputsLoading
   />
 )
 

@@ -1,6 +1,8 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { EditStackOverridesButton } from '@/components/installs/management/EditStackOverrides'
-import { ReprovisionStackButton } from '@/components/installs/management/ReprovisionStack'
+import { HistoryPanelButton } from '@/components/layout/HistoryPanelButton'
+import { InstallStackVersions } from '@/components/stacks/InstallStackVersions'
+import { TriggerPhoneHomeButton } from '@/components/stacks/SendStackOutputsModal'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
@@ -107,7 +109,7 @@ export const InstallStackContainer = () => {
     isLoading: configLoading,
   } = useInstallAppConfig()
 
-  const { data: stack, isLoading: versionsLoading } = useQuery({
+  const { data: stack, isLoading: stackLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['install-stack', org?.id, install?.id],
     queryFn: () => getInstallStack({ orgId: org.id, installId: install.id }),
@@ -141,6 +143,15 @@ export const InstallStackContainer = () => {
       stackType={appStack?.type}
       nestedStacks={nestedStacks}
       outputs={outputs}
+      outputsAction={
+        versions[0]?.phone_home_id && versions[0]?.id ? (
+          <TriggerPhoneHomeButton
+            size="sm"
+            phoneHomeId={versions[0].phone_home_id}
+            versionId={versions[0].id}
+          />
+        ) : null
+      }
       configLoading={configLoading}
       configError={
         configError
@@ -148,12 +159,12 @@ export const InstallStackContainer = () => {
           : undefined
       }
       configAction={<EditStackOverridesButton variant="secondary" />}
-      versions={versions}
-      versionsLoading={versionsLoading}
-      latestVersionAction={
-        versions.length ? (
-          <ReprovisionStackButton size="sm" variant="secondary" />
-        ) : null
+      outputsLoading={stackLoading}
+      versionsAction={
+        <HistoryPanelButton
+          title="Stack versions"
+          history={<InstallStackVersions />}
+        />
       }
     />
   )
