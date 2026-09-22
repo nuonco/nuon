@@ -555,6 +555,11 @@ const ForkContext = createContext<IForkActions>({
 })
 const useForkChoice = () => useContext(ForkContext)
 
+// Clouds the example app (Kitchen Sink) can be deployed to from the fork. AWS only
+// for launch; the own-app path still offers all three. The three-cloud version of
+// this flow is kept on ms/onboarding-wizard-plan-all-clouds.
+const EXAMPLE_CLOUDS: TCloud[] = ['aws']
+
 const CLOUD_LABEL: Record<TCloud, string> = { aws: 'AWS', gcp: 'GCP', azure: 'Azure' }
 
 const CLOUD_ICON: Record<TCloud, TIconVariant> = {
@@ -1457,7 +1462,9 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
   const exitToExample = () => {
     setSharedData('expandOwn', false)
     setSharedData('path', 'example')
-    choose({ path: 'example', cloud: readCloud(sharedData) })
+    setSharedData('cloud', EXAMPLE_CLOUDS[0])
+    setSharedData('region', CLOUD_REGIONS[EXAMPLE_CLOUDS[0]].options[0])
+    choose({ path: 'example', cloud: EXAMPLE_CLOUDS[0] })
     onGoBack?.()
   }
 
@@ -1598,7 +1605,9 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
   const exitToExample = () => {
     setSharedData('expandOwn', false)
     setSharedData('path', 'example')
-    choose({ path: 'example', cloud: readCloud(sharedData) })
+    setSharedData('cloud', EXAMPLE_CLOUDS[0])
+    setSharedData('region', CLOUD_REGIONS[EXAMPLE_CLOUDS[0]].options[0])
+    choose({ path: 'example', cloud: EXAMPLE_CLOUDS[0] })
     setExpanded(false)
   }
 
@@ -1676,7 +1685,7 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
           </Text>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {(['aws', 'gcp', 'azure'] as TCloud[]).map((cloud) => (
+          {EXAMPLE_CLOUDS.map((cloud) => (
             <Button
               key={cloud}
               variant="secondary"
