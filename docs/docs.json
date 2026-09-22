@@ -210,7 +210,7 @@
               "guides/webhooks",
               "guides/triggers",
               "guides/export-runner-audit-logs",
-              "guides/component-health",
+              "guides/health-checks",
               "guides/slack"
             ]
           },
@@ -418,6 +418,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/guides/component-health",
+      "destination": "/guides/health-checks"
+    },
     {
       "source": "/guides/app-init",
       "destination": "/configuration-files"
