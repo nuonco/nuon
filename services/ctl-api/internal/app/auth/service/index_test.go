@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
 func TestUseNuonBrandedLogin(t *testing.T) {
@@ -63,6 +65,65 @@ func TestUseNuonBrandedLogin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.want, useNuonBrandedLogin(tt.flagEnabled, tt.appURL))
+		})
+	}
+}
+
+func TestSignedInRedirectURL(t *testing.T) {
+	s := &service{
+		cfg: &internal.Config{
+			RootDomain: "nuon.co",
+			AppURL:     "https://app.stage.nuon.co",
+		},
+	}
+
+	tests := []struct {
+		name string
+		raw  string
+		want string
+		ok   bool
+	}{
+		{
+			name: "empty",
+			raw:  "",
+			ok:   false,
+		},
+		{
+			name: "dashboard deep link",
+			raw:  "https://app.stage.nuon.co/orgs/installs/history/wf1",
+			want: "https://app.stage.nuon.co/orgs/installs/history/wf1",
+			ok:   true,
+		},
+		{
+			name: "once-encoded query value",
+			raw:  "https%3A%2F%2Fapp.stage.nuon.co%2Fhistory",
+			want: "https://app.stage.nuon.co/history",
+			ok:   true,
+		},
+		{
+			name: "off domain ignored",
+			raw:  "https://evil.example.com/",
+			ok:   false,
+		},
+		{
+			name: "javascript ignored",
+			raw:  "javascript:alert(1)",
+			ok:   false,
+		},
+		{
+			name: "relative ignored",
+			raw:  "/orgs",
+			ok:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := s.signedInRedirectURL(tt.raw)
+			assert.Equal(t, tt.ok, ok)
+			if tt.ok {
+				assert.Equal(t, tt.want, got)
+			}
 		})
 	}
 }
