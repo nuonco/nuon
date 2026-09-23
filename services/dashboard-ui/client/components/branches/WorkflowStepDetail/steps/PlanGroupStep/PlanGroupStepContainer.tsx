@@ -91,7 +91,7 @@ export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContain
       labelColors={labelColors}
       orgId={orgId}
       hasResponse={hasResponse}
-      responseType={step.approval?.response?.response_type}
+      responseType={step.approval?.response?.type}
       showApproveBar={showApproveBar}
       isInProgress={step.status?.status === 'in-progress'}
       actions={
