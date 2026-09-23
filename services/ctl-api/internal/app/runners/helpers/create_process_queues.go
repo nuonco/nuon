@@ -17,11 +17,11 @@ import (
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// Fallback uptime thresholds when config values are not set
+// Default uptime thresholds when config values are not set
 const (
-	defaultMngUptimeThreshold     = 168 * time.Hour // 1 week
-	defaultInstallUptimeThreshold = 8 * time.Hour
-	defaultBuildUptimeThreshold   = 8 * time.Hour
+	DefaultMngUptimeThreshold     = 168 * time.Hour // 1 week
+	DefaultInstallUptimeThreshold = 8 * time.Hour
+	DefaultBuildUptimeThreshold   = 8 * time.Hour
 )
 
 var processTracer = otel.Tracer("github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers")
@@ -84,17 +84,17 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 	case app.RunnerProcessTypeMng:
 		threshold = h.cfg.ProcessMngUptimeThreshold
 		if threshold == 0 {
-			threshold = defaultMngUptimeThreshold
+			threshold = DefaultMngUptimeThreshold
 		}
 	case app.RunnerProcessTypeBuild:
 		threshold = h.cfg.ProcessBuildUptimeThreshold
 		if threshold == 0 {
-			threshold = defaultBuildUptimeThreshold
+			threshold = DefaultBuildUptimeThreshold
 		}
 	default:
 		threshold = h.cfg.ProcessInstallUptimeThreshold
 		if threshold == 0 {
-			threshold = defaultInstallUptimeThreshold
+			threshold = DefaultInstallUptimeThreshold
 		}
 	}
 
