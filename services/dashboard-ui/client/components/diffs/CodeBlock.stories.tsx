@@ -2,6 +2,8 @@ export default {
   title: 'Diffs/CodeBlock',
 }
 
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { CodeBlock } from './CodeBlock'
 
 const jsonCode = `{
@@ -134,6 +136,33 @@ export const VirtualizedWithSearch = () => (
       language="yaml"
       filename="settings.yaml"
       copy
+    />
+  </div>
+)
+
+export const WithActions = () => (
+  <div className="flex flex-col gap-4 p-4">
+    <CodeBlock
+      value={largeConfig}
+      language="yaml"
+      filename="settings.yaml"
+      copy
+      actions={
+        <Button size="sm" variant="icon" aria-label="Download">
+          <Icon variant="DownloadSimpleIcon" size={14} />
+        </Button>
+      }
+    />
+    <CodeBlock
+      value={yamlCode}
+      language="yaml"
+      filename="deployment.yaml"
+      copy
+      actions={
+        <Button size="sm" variant="icon" aria-label="Download">
+          <Icon variant="DownloadSimpleIcon" size={14} />
+        </Button>
+      }
     />
   </div>
 )

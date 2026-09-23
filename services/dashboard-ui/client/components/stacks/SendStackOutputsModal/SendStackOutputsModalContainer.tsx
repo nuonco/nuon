@@ -1,4 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { postPhoneHome } from '@/lib'
 import { Toast } from '@/components/surfaces/Toast'
@@ -61,5 +63,31 @@ export const SendStackOutputsModalContainer = ({
       error={error as TAPIError | undefined}
       {...props}
     />
+  )
+}
+
+export const TriggerPhoneHomeButton = ({
+  phoneHomeId,
+  versionId,
+  ...props
+}: IButtonAsButton & { phoneHomeId: string; versionId: string }) => {
+  const { addModal } = useSurfaces()
+
+  return (
+    <Button
+      variant="secondary"
+      onClick={() =>
+        addModal(
+          <SendStackOutputsModalContainer
+            phoneHomeId={phoneHomeId}
+            versionId={versionId}
+          />
+        )
+      }
+      {...props}
+    >
+      <Icon variant="PhoneTransferIcon" size={16} />
+      Trigger phone home
+    </Button>
   )
 }
