@@ -220,5 +220,17 @@ func (m *Migrations) All() []migrations.Migration {
 		// 	Name: "136-migrate-app-config-ref",
 		// 	Fn:   m.Migration136MigrateAppConfigRef,
 		// },
+		{
+			Name: "137-install-app-branch-connections",
+			Fn:   m.Migration137InstallAppBranchConnections,
+		},
+		{
+			Name: "138-migrate-install-group-ids-to-connections",
+			Fn:   m.Migration138MigrateInstallGroupIDsToConnections,
+		},
+		{
+			Name: "139-migrate-all-installs-to-default",
+			Fn:   m.Migration139MigrateAllInstallsToDefault,
+		},
 	}
 }

@@ -106,18 +106,11 @@ func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID
 		Find(&groups).Error; err != nil {
 		return nil, fmt.Errorf("unable to get install groups for app branch run: %w", err)
 	}
-	if err := appshelpers.ValidateInstallSingleGroup(groups, install); err != nil {
+	group, err := appshelpers.ResolveInstallGroup(groups, install)
+	if err != nil {
 		return nil, err
 	}
-
-	var installGroupID string
-	for i := range groups {
-		if appshelpers.InstallMatchesGroup(&groups[i], install) {
-			installGroupID = groups[i].ID
-			break
-		}
-	}
-	if installGroupID == "" {
+	if group == nil {
 		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("install %s on app branch %s: %w", install.ID, appBranchID, ErrNoMatchingInstallGroup),
 			Description: "The install does not match any install group on the selected app branch.",
@@ -132,7 +125,7 @@ func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID
 	return &AppBranchRunForInstall{
 		AppBranchRunID: run.ID,
 		AppConfigID:    run.AppConfigID,
-		InstallGroupID: installGroupID,
+		InstallGroupID: group.ID,
 		AlreadyCurrent: alreadyCurrent,
 	}, nil
 }

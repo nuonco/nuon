@@ -92,7 +92,6 @@ func (s *service) findInstall(ctx context.Context, orgID, installID string) (*ap
 				Limit(5)
 		}).
 		Preload("InstallSandboxRuns.AppSandboxConfig").
-		Preload("AppBranch").
 		Preload("InstallConfig").
 		Preload("InstallRoles").
 		Preload("InstallRoles.AppRoleConfig").

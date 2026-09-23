@@ -66,10 +66,11 @@ type Install struct {
 
 	AppConfigRef AppConfigRef `json:"app_config_ref,omitzero" gorm:"type:jsonb" temporaljson:"app_config_ref,omitzero,omitempty"`
 
-	AppBranchID generics.NullString `json:"app_branch_id,omitzero" gorm:"index" swaggertype:"string" temporaljson:"app_branch_id,omitzero,omitempty"`
-	AppBranch   *AppBranch          `json:"app_branch,omitempty" temporaljson:"app_branch,omitzero,omitempty"`
+	AppBranchID generics.NullString `json:"app_branch_id,omitzero" gorm:"-" swaggertype:"string" temporaljson:"app_branch_id,omitzero,omitempty"`
+	AppBranch   *AppBranch          `json:"app_branch,omitempty" gorm:"-" temporaljson:"app_branch,omitzero,omitempty"`
 
 	AppBranchConnections []InstallAppBranchConnection `json:"app_branch_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_branch_connections,omitzero,omitempty"`
+	AppBranchGroup       string                       `json:"app_branch_group,omitzero" gorm:"-" temporaljson:"app_branch_group,omitzero,omitempty"`
 
 	AppSandboxConfigID string           `json:"-" swaggerignore:"true" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
 	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config,omitzero" temporaljson:"app_sandbox_config,omitzero,omitempty"`
@@ -243,6 +244,24 @@ func (i *Install) BeforeCreate(tx *gorm.DB) error {
 // and then roll that up into a high-level status for the install overall.
 func (i *Install) AfterQuery(tx *gorm.DB) error {
 	i.Links = links.InstallLinks(tx.Statement.Context, i.ID)
+
+	var connection InstallAppBranchConnection
+	err := tx.Session(&gorm.Session{
+		NewDB:       true,
+		Initialized: true,
+		Context:     tx.Statement.Context,
+	}).
+		Preload("AppBranch").
+		Where(InstallAppBranchConnection{InstallID: i.ID, Active: true}).
+		Order("created_at DESC, id DESC").
+		First(&connection).Error
+	if err == nil {
+		i.AppBranchID = generics.NewNullString(connection.AppBranchID)
+		i.AppBranch = &connection.AppBranch
+		i.AppBranchGroup = connection.AppBranchGroup
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
 
 	// get the runner status
 	i.RunnerStatus = RunnerStatusDeprovisioned

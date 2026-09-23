@@ -92,7 +92,10 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBr
 	}
 
 	if appBranchID != "" {
-		tx = tx.Where(views.TableOrViewName(s.db, &app.Install{}, ".app_branch_id")+" = ?", appBranchID)
+		table := views.TableOrViewName(s.db, &app.Install{}, "")
+		tx = tx.
+			Joins("JOIN install_app_branch_connections ON install_app_branch_connections.install_id = "+table+".id AND install_app_branch_connections.active = ? AND install_app_branch_connections.deleted_at = 0", true).
+			Where("install_app_branch_connections.app_branch_id = ?", appBranchID)
 	}
 
 	tx = tx.Where("app_id = ? AND org_id = ?", appID, orgID).
@@ -103,7 +106,6 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBr
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
-		Preload("AppBranch").
 		Preload("AppRunnerConfig").
 		Preload("AppConfig", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id", "app_id", "app_branch_id")

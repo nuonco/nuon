@@ -71,7 +71,6 @@ func Validate(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID str
 		declaredRunbooks[rbk.Name] = struct{}{}
 	}
 
-	var nameToID map[string]string
 	for _, branchCfg := range branches {
 		if err := branchCfg.Validate(); err != nil {
 			return sync.SyncErr{
@@ -85,27 +84,6 @@ func Validate(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID str
 				return sync.SyncErr{
 					Resource:    "app-branches",
 					Description: fmt.Sprintf("branch %q: unknown post_deploy_runbooks runbook name: %s", branchCfg.Name, name),
-				}
-			}
-		}
-
-		for _, group := range branchCfg.InstallGroups {
-			if len(group.InstallNames) == 0 {
-				continue
-			}
-			if nameToID == nil {
-				var err error
-				nameToID, err = resolveInstallNames(ctx, db, appID)
-				if err != nil {
-					return sync.SyncInternalErr{Description: "unable to resolve install names", Err: err}
-				}
-			}
-			for _, name := range group.InstallNames {
-				if _, ok := nameToID[name]; !ok {
-					return sync.SyncErr{
-						Resource:    "app-branches",
-						Description: fmt.Sprintf("install group %q: unknown install name: %s", group.Name, name),
-					}
 				}
 			}
 		}
@@ -168,19 +146,6 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 	}
 
 	var nameToID map[string]string
-	for _, group := range branchCfg.InstallGroups {
-		if len(group.InstallNames) > 0 {
-			var err error
-			nameToID, err = resolveInstallNames(ctx, db, appID)
-			if err != nil {
-				return sync.SyncInternalErr{
-					Description: "unable to resolve install names",
-					Err:         err,
-				}
-			}
-			break
-		}
-	}
 	if branchCfg.Preview != nil && branchCfg.Preview.InstallName != "" {
 		if nameToID == nil {
 			var err error
@@ -233,10 +198,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		publicGitVCSConfig = cfg
 	}
 
-	installGroups, err := buildInstallGroups(branchCfg, nameToID)
-	if err != nil {
-		return err
-	}
+	installGroups := buildInstallGroups(branchCfg)
 
 	if err := validateInstallGroups(ctx, db, branchID, branchCfg.Name, installGroups); err != nil {
 		return err
@@ -286,14 +248,6 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 }
 
 func validateInstallGroups(ctx context.Context, db *gorm.DB, branchID, branchName string, groups []app.AppBranchInstallGroup) error {
-	var installIDs []string
-	for _, group := range groups {
-		installIDs = append(installIDs, group.InstallIDs...)
-	}
-	if err := appshelpers.ValidateInstallIDsBelongToBranchAppWithDB(ctx, db, branchID, installIDs); err != nil {
-		return syncerr.From("app-branches", fmt.Sprintf("branch %q", branchName), err)
-	}
-
 	if err := appshelpers.ValidateBranchInstallsSingleGroupWithDB(ctx, db, branchID, groups); err != nil {
 		return syncerr.From("app-branches", fmt.Sprintf("branch %q", branchName), err)
 	}
@@ -301,7 +255,7 @@ func validateInstallGroups(ctx context.Context, db *gorm.DB, branchID, branchNam
 	return nil
 }
 
-func buildInstallGroups(branchCfg *config.AppBranchConfig, nameToID map[string]string) ([]app.AppBranchInstallGroup, error) {
+func buildInstallGroups(branchCfg *config.AppBranchConfig) []app.AppBranchInstallGroup {
 	var installGroups []app.AppBranchInstallGroup
 	for i, group := range branchCfg.InstallGroups {
 		order := group.Order
@@ -309,31 +263,10 @@ func buildInstallGroups(branchCfg *config.AppBranchConfig, nameToID map[string]s
 			order = i
 		}
 
-		installIDs := group.InstallIDs
-		if len(group.InstallNames) > 0 {
-			seen := make(map[string]bool, len(installIDs))
-			for _, id := range installIDs {
-				seen[id] = true
-			}
-			for _, name := range group.InstallNames {
-				id, ok := nameToID[name]
-				if !ok {
-					return nil, sync.SyncErr{
-						Resource:    "app-branches",
-						Description: fmt.Sprintf("install group %q: unknown install name: %s", group.Name, name),
-					}
-				}
-				if !seen[id] {
-					installIDs = append(installIDs, id)
-					seen[id] = true
-				}
-			}
-		}
-
 		ig := app.AppBranchInstallGroup{
 			Name:                         group.Name,
 			Order:                        order,
-			InstallIDs:                   installIDs,
+			Default:                      group.Default,
 			AutoApproveOnPoliciesPassing: group.AutoApproveOnPoliciesPassing,
 		}
 
@@ -345,7 +278,7 @@ func buildInstallGroups(branchCfg *config.AppBranchConfig, nameToID map[string]s
 
 		installGroups = append(installGroups, ig)
 	}
-	return installGroups, nil
+	return installGroups
 }
 
 func buildPreviewConfig(branchCfg *config.AppBranchConfig, nameToID map[string]string) (*app.AppBranchPreviewConfig, error) {

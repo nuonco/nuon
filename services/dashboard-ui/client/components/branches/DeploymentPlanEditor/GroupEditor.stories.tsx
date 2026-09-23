@@ -8,40 +8,39 @@ import type { IInstallGroup } from './types'
 const noop = () => {}
 
 const installs = [
-  { id: 'i1', name: 'acme-prod', labels: { tier: 'prod', region: 'us-east-1' } },
-  { id: 'i2', name: 'globex-prod', labels: { tier: 'prod', region: 'us-west-2' } },
-  { id: 'i3', name: 'initech-staging', labels: { tier: 'staging', region: 'eu-west-1' } },
+  {
+    id: 'i1',
+    name: 'acme-prod',
+    labels: { tier: 'prod', region: 'us-east-1' },
+  },
+  {
+    id: 'i2',
+    name: 'globex-prod',
+    labels: { tier: 'prod', region: 'us-west-2' },
+  },
+  {
+    id: 'i3',
+    name: 'initech-staging',
+    labels: { tier: 'staging', region: 'eu-west-1' },
+  },
 ] as any
 
-const manualGroup: IInstallGroup = {
+const labelGroup: IInstallGroup = {
   id: 'group-1',
   name: 'Production',
-  install_ids: ['i1', 'i2'],
-  label_selector: null,
-  selection_mode: 'manual',
+  label_selector: { match_labels: { tier: 'prod' } },
+  selection_mode: 'labels',
   order: 0,
   max_parallel: 1,
   auto_approve_on_policies_passing: false,
 }
 
-const labelGroup: IInstallGroup = {
+const defaultGroup: IInstallGroup = {
   id: 'group-2',
-  name: 'Canary',
-  install_ids: [],
-  label_selector: { match_labels: { tier: 'staging' } },
-  selection_mode: 'labels',
-  order: 1,
-  max_parallel: 2,
-  auto_approve_on_policies_passing: true,
-}
-
-const allInstallsGroup: IInstallGroup = {
-  id: 'group-3',
   name: 'Everything',
-  install_ids: [],
   label_selector: null,
-  selection_mode: 'all',
-  order: 2,
+  selection_mode: 'default',
+  order: 1,
   max_parallel: 1,
   auto_approve_on_policies_passing: false,
 }
@@ -50,35 +49,44 @@ const Wrap = ({ children }: { children: React.ReactNode }) => (
   <div className="max-w-2xl">{children}</div>
 )
 
-export const ManualSelection = () => (
-  <Wrap>
-    <GroupEditor
-      group={manualGroup}
-      index={0}
-      totalGroups={2}
-      availableInstalls={installs}
-      pickableInstalls={[installs[2]]}
-      onUpdate={noop}
-      onAddInstalls={noop}
-      onRemoveInstall={noop}
-      onMoveUp={noop}
-      onMoveDown={noop}
-      onDelete={noop}
-    />
-  </Wrap>
-)
-
 export const LabelSelector = () => (
   <Wrap>
     <GroupEditor
       group={labelGroup}
+      index={0}
+      totalGroups={2}
+      availableInstalls={installs}
+      onUpdate={noop}
+      onMoveUp={noop}
+      onMoveDown={noop}
+      onDelete={noop}
+    />
+  </Wrap>
+)
+
+export const EmptyLabelSelector = () => (
+  <Wrap>
+    <GroupEditor
+      group={{ ...labelGroup, label_selector: null }}
+      index={0}
+      totalGroups={1}
+      availableInstalls={installs}
+      onUpdate={noop}
+      onMoveUp={noop}
+      onMoveDown={noop}
+      onDelete={noop}
+    />
+  </Wrap>
+)
+
+export const DefaultSelection = () => (
+  <Wrap>
+    <GroupEditor
+      group={defaultGroup}
       index={1}
       totalGroups={2}
       availableInstalls={installs}
-      pickableInstalls={installs}
       onUpdate={noop}
-      onAddInstalls={noop}
-      onRemoveInstall={noop}
       onMoveUp={noop}
       onMoveDown={noop}
       onDelete={noop}
@@ -86,53 +94,14 @@ export const LabelSelector = () => (
   </Wrap>
 )
 
-export const EmptyManual = () => (
+export const DefaultSelectionNoInstalls = () => (
   <Wrap>
     <GroupEditor
-      group={{ ...manualGroup, install_ids: [] }}
-      index={0}
-      totalGroups={1}
-      availableInstalls={installs}
-      pickableInstalls={installs}
-      onUpdate={noop}
-      onAddInstalls={noop}
-      onRemoveInstall={noop}
-      onMoveUp={noop}
-      onMoveDown={noop}
-      onDelete={noop}
-    />
-  </Wrap>
-)
-
-export const AllInstalls = () => (
-  <Wrap>
-    <GroupEditor
-      group={allInstallsGroup}
-      index={0}
-      totalGroups={1}
-      availableInstalls={installs}
-      pickableInstalls={[]}
-      onUpdate={noop}
-      onAddInstalls={noop}
-      onRemoveInstall={noop}
-      onMoveUp={noop}
-      onMoveDown={noop}
-      onDelete={noop}
-    />
-  </Wrap>
-)
-
-export const AllInstallsWithNoInstalls = () => (
-  <Wrap>
-    <GroupEditor
-      group={allInstallsGroup}
+      group={defaultGroup}
       index={0}
       totalGroups={1}
       availableInstalls={[]}
-      pickableInstalls={[]}
       onUpdate={noop}
-      onAddInstalls={noop}
-      onRemoveInstall={noop}
       onMoveUp={noop}
       onMoveDown={noop}
       onDelete={noop}
@@ -143,15 +112,27 @@ export const AllInstallsWithNoInstalls = () => (
 export const WithNameError = () => (
   <Wrap>
     <GroupEditor
-      group={{ ...manualGroup, name: '' }}
+      group={{ ...labelGroup, name: '' }}
       index={0}
       totalGroups={1}
       availableInstalls={installs}
-      pickableInstalls={[installs[2]]}
       nameError="Group name is required"
       onUpdate={noop}
-      onAddInstalls={noop}
-      onRemoveInstall={noop}
+      onMoveUp={noop}
+      onMoveDown={noop}
+      onDelete={noop}
+    />
+  </Wrap>
+)
+
+export const AutoApproveEnabled = () => (
+  <Wrap>
+    <GroupEditor
+      group={{ ...labelGroup, auto_approve_on_policies_passing: true }}
+      index={0}
+      totalGroups={1}
+      availableInstalls={installs}
+      onUpdate={noop}
       onMoveUp={noop}
       onMoveDown={noop}
       onDelete={noop}

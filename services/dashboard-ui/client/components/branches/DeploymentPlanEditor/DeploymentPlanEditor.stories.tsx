@@ -9,9 +9,21 @@ import type { IInstallGroup } from './types'
 const noop = () => {}
 
 const installs = [
-  { id: 'i1', name: 'acme-prod', labels: { tier: 'prod', region: 'us-east-1' } },
-  { id: 'i2', name: 'globex-prod', labels: { tier: 'prod', region: 'us-west-2' } },
-  { id: 'i3', name: 'initech-staging', labels: { tier: 'staging', region: 'eu-west-1' } },
+  {
+    id: 'i1',
+    name: 'acme-prod',
+    labels: { tier: 'prod', region: 'us-east-1' },
+  },
+  {
+    id: 'i2',
+    name: 'globex-prod',
+    labels: { tier: 'prod', region: 'us-west-2' },
+  },
+  {
+    id: 'i3',
+    name: 'initech-staging',
+    labels: { tier: 'staging', region: 'eu-west-1' },
+  },
   { id: 'i4', name: 'umbrella-dev', labels: { tier: 'dev' } },
 ] as any
 
@@ -25,9 +37,8 @@ const groups: IInstallGroup[] = [
   {
     id: 'group-1',
     name: 'Production',
-    install_ids: ['i1', 'i2'],
-    label_selector: null,
-    selection_mode: 'manual',
+    label_selector: { match_labels: { tier: 'prod' } },
+    selection_mode: 'labels',
     order: 0,
     max_parallel: 1,
     auto_approve_on_policies_passing: false,
@@ -52,9 +63,23 @@ export const WithGroups = () => (
   </ModalStory>
 )
 
-export const WithUnassigned = () => (
+export const MultipleGroups = () => (
   <ModalStory label="Open deployment plan">
-    <DeploymentPlanEditor initialGroups={groups} {...baseProps} />
+    <DeploymentPlanEditor
+      initialGroups={[
+        ...groups,
+        {
+          id: 'group-2',
+          name: 'Default',
+          label_selector: null,
+          selection_mode: 'default',
+          order: 1,
+          max_parallel: 2,
+          auto_approve_on_policies_passing: false,
+        },
+      ]}
+      {...baseProps}
+    />
   </ModalStory>
 )
 
@@ -98,16 +123,15 @@ export const NoInstalls = () => (
   </ModalStory>
 )
 
-export const NoInstallsWithAllInstallsGroup = () => (
+export const NoInstallsWithDefaultGroup = () => (
   <ModalStory label="Open deployment plan">
     <DeploymentPlanEditor
       initialGroups={[
         {
-          id: 'group-all',
+          id: 'group-default',
           name: 'Everything',
-          install_ids: [],
           label_selector: null,
-          selection_mode: 'all',
+          selection_mode: 'default',
           order: 0,
           max_parallel: 1,
           auto_approve_on_policies_passing: false,
@@ -126,16 +150,15 @@ export const NoInstallsWithAllInstallsGroup = () => (
   </ModalStory>
 )
 
-export const AllInstallsGroup = () => (
+export const DefaultGroup = () => (
   <ModalStory label="Open deployment plan">
     <DeploymentPlanEditor
       initialGroups={[
         {
-          id: 'group-all',
+          id: 'group-default',
           name: 'Everything',
-          install_ids: [],
           label_selector: null,
-          selection_mode: 'all',
+          selection_mode: 'default',
           order: 0,
           max_parallel: 2,
           auto_approve_on_policies_passing: false,

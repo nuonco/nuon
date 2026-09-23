@@ -14,7 +14,9 @@ const mixedConfig: TAppBranchConfig = {
     {
       id: 'g-prod',
       name: 'Production',
-      label_selector: { match_labels: { env: 'production', region: 'us-east-1' } },
+      label_selector: {
+        match_labels: { env: 'production', region: 'us-east-1' },
+      },
     },
     {
       id: 'g-staging',
@@ -27,14 +29,9 @@ const mixedConfig: TAppBranchConfig = {
       label_selector: { match_labels: { region: '*' } },
     },
     {
-      id: 'g-all',
-      name: 'Global rollout',
-      all_installs: true,
-    },
-    {
-      id: 'g-static',
-      name: 'VIP installs',
-      install_ids: ['install-abc', 'install-def'],
+      id: 'g-default',
+      name: 'Remaining installs',
+      default: true,
     },
   ],
 } as unknown as TAppBranchConfig
@@ -104,23 +101,25 @@ export const WithMatchingLabels = () => {
 
 export const EmptyConfig = () => (
   <div className="p-6 max-w-lg">
-    <GroupStep config={emptyConfig} installLabels={{}} selected={null} onSelect={noop} />
+    <GroupStep
+      config={emptyConfig}
+      installLabels={{}}
+      selected={null}
+      onSelect={noop}
+    />
   </div>
 )
 
 export const NoLabelGroups = () => {
-  const allOrStaticConfig: TAppBranchConfig = {
+  const defaultOnlyConfig: TAppBranchConfig = {
     id: 'cfg-no-labels',
-    install_groups: [
-      { id: 'g-all', name: 'Everyone', all_installs: true },
-      { id: 'g-ids', name: 'Hand-picked', install_ids: ['install-1'] },
-    ],
+    install_groups: [{ id: 'g-default', name: 'Everyone', default: true }],
   } as unknown as TAppBranchConfig
 
   return (
     <div className="p-6 max-w-lg">
       <GroupStep
-        config={allOrStaticConfig}
+        config={defaultOnlyConfig}
         installLabels={{}}
         selected={null}
         onSelect={noop}

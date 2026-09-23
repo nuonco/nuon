@@ -116,10 +116,7 @@ func (s *InstallsServiceTestSuite) TestGetOrgInstallsSearchByBranchName() {
 		Name:  "release-candidate",
 	}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
-		Model(&app.Install{}).
-		Where(app.Install{ID: connected.ID}).
-		Update("app_branch_id", branch.ID).Error)
+	s.connectInstallToBranch(connected, branch)
 
 	path := fmt.Sprintf("/v1/installs?q=%s", branch.Name)
 	rr := s.makeRequest(http.MethodGet, path, nil)
@@ -140,12 +137,8 @@ func (s *InstallsServiceTestSuite) TestGetOrgInstallsFiltersByBranchNames() {
 	release := &app.AppBranch{AppID: s.testApp.ID, OrgID: s.testOrg.ID, Name: "release"}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(main).Error)
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(release).Error)
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
-		Model(&app.Install{}).Where(app.Install{ID: onMain.ID}).
-		Update("app_branch_id", main.ID).Error)
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
-		Model(&app.Install{}).Where(app.Install{ID: onRelease.ID}).
-		Update("app_branch_id", release.ID).Error)
+	s.connectInstallToBranch(onMain, main)
+	s.connectInstallToBranch(onRelease, release)
 
 	var resp []app.Install
 

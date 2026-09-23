@@ -25,6 +25,8 @@ func (a *Activities) getInstallsForAppBranch(ctx context.Context, appBranchID st
 
 	var installs []app.Install
 	if err := a.db.WithContext(ctx).
+		Joins("JOIN install_app_branch_connections ON install_app_branch_connections.install_id = installs.id AND install_app_branch_connections.active = ? AND install_app_branch_connections.deleted_at = 0", true).
+		Where("install_app_branch_connections.app_branch_id = ?", branch.ID).
 		Where(app.Install{AppID: branch.AppID}).
 		Find(&installs).Error; err != nil {
 		return nil, fmt.Errorf("unable to get installs: %w", err)

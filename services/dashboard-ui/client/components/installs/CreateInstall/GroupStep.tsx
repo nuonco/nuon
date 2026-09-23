@@ -35,13 +35,12 @@ export const mergeGroupLabels = (
   return { ...existingLabels, ...concreteMatchLabels(group) }
 }
 
-type GroupKind = 'label' | 'all' | 'static'
+type GroupKind = 'label' | 'default'
 
 const resolveGroupKind = (group: TAppBranchInstallGroup): GroupKind => {
-  if (group.all_installs) return 'all'
   const labels = group.label_selector?.match_labels ?? {}
   if (Object.keys(labels).length > 0) return 'label'
-  return 'static'
+  return 'default'
 }
 
 const hasWildcard = (group: TAppBranchInstallGroup): boolean => {
@@ -78,12 +77,9 @@ const GroupRow = ({
   const isDisabled = kind !== 'label' || wildcard || conflict
 
   let disabledReason: string | null = null
-  if (kind === 'all') {
+  if (kind === 'default') {
     disabledReason =
-      'This group matches all installs automatically — it already includes this install.'
-  } else if (kind === 'static') {
-    disabledReason =
-      'This group uses explicit install IDs and cannot be joined via labels.'
+      'This group includes all remaining installs automatically — it already includes this install.'
   } else if (wildcard) {
     disabledReason =
       'This group uses a wildcard selector and cannot be joined by applying labels.'
@@ -113,15 +109,9 @@ const GroupRow = ({
           {labelEntries.map(([k, v]) => (
             <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" />
           ))}
-          {kind === 'all' && (
+          {kind === 'default' && (
             <Text variant="subtext" theme="neutral">
-              All installs
-            </Text>
-          )}
-          {kind === 'static' && (
-            <Text variant="subtext" theme="neutral">
-              {(group.install_ids?.length ?? 0)} install
-              {(group.install_ids?.length ?? 0) !== 1 ? 's' : ''} by ID
+              All remaining installs
             </Text>
           )}
         </div>
@@ -189,7 +179,7 @@ export const GroupStep = ({
         </Text>
         {otherGroups.map((group, idx) => (
           <GroupRow
-            key={group.id || idx}
+            key={group.id ?? idx}
             group={group}
             installLabels={installLabels}
             isSelected={false}

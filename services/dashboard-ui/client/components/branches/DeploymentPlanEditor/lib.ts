@@ -2,11 +2,10 @@ import type { IInstallGroup, InstallSelectionMode } from './types'
 
 export const newGroup = (
   existingCount: number,
-  selectionMode: InstallSelectionMode = 'manual'
+  selectionMode: InstallSelectionMode = 'labels'
 ): IInstallGroup => ({
   id: `group-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   name: '',
-  install_ids: [],
   label_selector: null,
   selection_mode: selectionMode,
   order: existingCount,

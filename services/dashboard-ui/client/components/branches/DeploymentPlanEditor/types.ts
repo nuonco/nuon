@@ -3,12 +3,11 @@ export interface ILabelSelector {
   not_match_labels?: Record<string, string>
 }
 
-export type InstallSelectionMode = 'manual' | 'labels' | 'all'
+export type InstallSelectionMode = 'labels' | 'default'
 
 export interface IInstallGroup {
   id: string
   name: string
-  install_ids: string[]
   label_selector?: ILabelSelector | null
   selection_mode: InstallSelectionMode
   order: number

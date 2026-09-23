@@ -40,7 +40,7 @@ describe('concreteMatchLabels', () => {
     const g: TAppBranchInstallGroup = {
       id: 'g1',
       name: 'No selector',
-      all_installs: true,
+      default: true,
     }
     expect(concreteMatchLabels(g)).toEqual({})
   })
@@ -56,18 +56,17 @@ describe('hasLabelConflict', () => {
   })
 
   test('returns false when install labels match group labels exactly', () => {
-    const conflict = hasLabelConflict(
-      group({ env: 'production' }),
-      { env: 'production', region: 'us-east-1' }
-    )
+    const conflict = hasLabelConflict(group({ env: 'production' }), {
+      env: 'production',
+      region: 'us-east-1',
+    })
     expect(conflict).toBe(false)
   })
 
   test('returns false when install has no overlap with group labels', () => {
-    const conflict = hasLabelConflict(
-      group({ env: 'production' }),
-      { region: 'us-east-1' }
-    )
+    const conflict = hasLabelConflict(group({ env: 'production' }), {
+      region: 'us-east-1',
+    })
     expect(conflict).toBe(false)
   })
 

@@ -19,11 +19,6 @@ import (
 // swagger:model app.AppBranchInstallGroup
 type AppAppBranchInstallGroup struct {
 
-	// AllInstalls targets every install owned by this group's app branch.
-	// A nil LabelSelector already means "use InstallIDs", so there is no
-	// selector shape that expresses "everything" — hence the explicit flag.
-	AllInstalls bool `json:"all_installs,omitempty"`
-
 	// app branch config id
 	AppBranchConfigID string `json:"app_branch_config_id,omitempty"`
 
@@ -36,11 +31,11 @@ type AppAppBranchInstallGroup struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// default
+	Default bool `json:"default,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
-
-	// install ids
-	InstallIds []string `json:"install_ids"`
 
 	// label selector
 	LabelSelector *GithubComNuoncoNuonPkgLabelsSelector `json:"label_selector,omitempty"`

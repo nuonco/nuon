@@ -2,7 +2,6 @@ package apps
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
@@ -11,21 +10,6 @@ import (
 
 func canonicalizeLocalBranch(ctx context.Context, resolver *branchNameResolver, in *config.AppBranchConfig) (*config.AppBranchConfig, error) {
 	out := cloneAppBranchConfig(in)
-	for i, group := range out.InstallGroups {
-		names := append([]string{}, group.InstallNames...)
-		for _, id := range group.InstallIDs {
-			name, err := resolver.installName(ctx, id)
-			if err != nil {
-				return nil, fmt.Errorf("install group %q: %w", group.Name, err)
-			}
-			if name == "" {
-				name = id
-			}
-			names = appendUnique(names, name)
-		}
-		out.InstallGroups[i].InstallIDs = nil
-		out.InstallGroups[i].InstallNames = names
-	}
 	if out.Preview != nil {
 		if out.Preview.InstallID != "" && out.Preview.InstallName == "" {
 			name, err := resolver.installName(ctx, out.Preview.InstallID)
@@ -79,17 +63,8 @@ func normalizeRemoteBranch(ctx context.Context, resolver *branchNameResolver, na
 		cfg := config.AppBranchInstallGroupConfig{
 			Name:                         group.Name,
 			Order:                        int(group.Order),
+			Default:                      group.Default,
 			AutoApproveOnPoliciesPassing: group.AutoApproveOnPoliciesPassing,
-		}
-		for _, id := range group.InstallIds {
-			name, err := resolver.installName(ctx, id)
-			if err != nil {
-				return nil, err
-			}
-			if name == "" {
-				name = id
-			}
-			cfg.InstallNames = append(cfg.InstallNames, name)
 		}
 		if group.LabelSelector != nil && len(group.LabelSelector.MatchLabels) > 0 {
 			cfg.LabelSelector = map[string]string(group.LabelSelector.MatchLabels)
@@ -206,8 +181,6 @@ func cloneAppBranchConfig(in *config.AppBranchConfig) *config.AppBranchConfig {
 		out.InstallGroups = make([]config.AppBranchInstallGroupConfig, len(in.InstallGroups))
 		for i, group := range in.InstallGroups {
 			g := group
-			g.InstallIDs = append([]string{}, group.InstallIDs...)
-			g.InstallNames = append([]string{}, group.InstallNames...)
 			g.LabelSelector = copyStringMap(group.LabelSelector)
 			if group.AutoApproveOnPoliciesPassing != nil {
 				g.AutoApproveOnPoliciesPassing = generics.ToPtr(*group.AutoApproveOnPoliciesPassing)

@@ -12,8 +12,7 @@ const branchHasMatchingGroup = (
 ): boolean => {
   const groups = branch.configs?.at(0)?.install_groups ?? []
   return groups.some((g) => {
-    if (g.all_installs) return true
-    if (g.install_ids?.includes(install.id)) return true
+    if (g.default) return true
     const matchLabels = g.label_selector?.match_labels ?? {}
     if (Object.keys(matchLabels).length > 0) {
       return matchesSelector(install.labels ?? {}, g.label_selector)
@@ -42,8 +41,7 @@ export const ChangeAppBranchModal = ({
 }: IChangeAppBranchModal) => {
   const installLabels = install.labels ?? {}
   const noMatchingGroup =
-    targetBranch !== null &&
-    !branchHasMatchingGroup(targetBranch, install)
+    targetBranch !== null && !branchHasMatchingGroup(targetBranch, install)
 
   const confirmLabel = isPending ? (
     <span className="flex items-center gap-2">
@@ -65,7 +63,7 @@ export const ChangeAppBranchModal = ({
       }
       primaryActionTrigger={{
         children: confirmLabel,
-        disabled: !targetBranch || isPending,
+        disabled: !targetBranch || isPending || noMatchingGroup,
         onClick: onConfirm,
         variant: 'primary',
       }}
@@ -152,8 +150,8 @@ export const ChangeAppBranchModal = ({
           <Banner theme="warn">
             <strong>Warning:</strong> The current labels on this install
             don&apos;t match any install group on{' '}
-            <strong>{targetBranch.name}</strong>. This install won&apos;t
-            receive deployments until it&apos;s added to a group.
+            <strong>{targetBranch.name}</strong>. Update its labels or add a
+            default group before moving it.
             {Object.keys(installLabels).length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {Object.entries(installLabels).map(([k, v]) => (

@@ -1,5 +1,10 @@
 import { useMemo } from 'react'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -17,17 +22,12 @@ import type { IInstallGroup } from './types'
 
 const toEditorGroups = (config?: TAppBranchConfig): IInstallGroup[] =>
   config?.install_groups?.map((g, idx) => {
-    const hasLabelSelector = !!g.label_selector?.match_labels && Object.keys(g.label_selector.match_labels).length > 0
+    const isDefault = !!g.default
     return {
       id: g.id || `group-${idx}`,
       name: g.name || '',
-      install_ids: g.install_ids || [],
       label_selector: g.label_selector || null,
-      selection_mode: g.all_installs
-        ? ('all' as const)
-        : hasLabelSelector
-          ? ('labels' as const)
-          : ('manual' as const),
+      selection_mode: isDefault ? ('default' as const) : ('labels' as const),
       order: g.order ?? idx,
       max_parallel: g.max_parallel || 1,
       auto_approve_on_policies_passing: !!g.auto_approve_on_policies_passing,
@@ -64,14 +64,12 @@ export const DeploymentPlanEditorContainer = ({
     enabled: !!org.id && !!app.id,
   })
 
-  const appInstalls = useMemo(
-    () => installsResult?.data ?? [],
-    [installsResult]
-  )
-
   const branchInstalls = useMemo(
-    () => appInstalls.filter((install) => install.app_branch_id === branch.id),
-    [appInstalls, branch.id]
+    () =>
+      (installsResult?.data ?? []).filter(
+        (install) => install.app_branch_id === branch.id
+      ),
+    [installsResult, branch.id]
   )
 
   const { data: runbooksResult, isLoading: loadingRunbooks } = useQuery({
@@ -101,15 +99,14 @@ export const DeploymentPlanEditorContainer = ({
     }) => {
       const installGroupsForApi = groups.map((group, index) => {
         const matchLabels = group.label_selector?.match_labels
-        const useAll = group.selection_mode === 'all'
+        const isDefault = group.selection_mode === 'default'
         const useLabels =
-          group.selection_mode === 'labels' && !!matchLabels && Object.keys(matchLabels).length > 0
+          !isDefault && !!matchLabels && Object.keys(matchLabels).length > 0
 
         return {
           name: group.name,
-          install_ids: useAll || useLabels ? [] : group.install_ids || [],
           label_selector: useLabels ? group.label_selector : undefined,
-          all_installs: useAll || undefined,
+          default: isDefault || undefined,
           order: index,
           max_parallel: group.max_parallel || 1,
           auto_approve_on_policies_passing:
@@ -128,9 +125,15 @@ export const DeploymentPlanEditorContainer = ({
       })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['app-branch', org.id, app.id, branch.id] })
-      queryClient.invalidateQueries({ queryKey: ['branch-configs', org.id, app.id, branch.id] })
-      queryClient.invalidateQueries({ queryKey: ['app-installs', org.id, app.id] })
+      queryClient.invalidateQueries({
+        queryKey: ['app-branch', org.id, app.id, branch.id],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['branch-configs', org.id, app.id, branch.id],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['app-installs', org.id, app.id],
+      })
       addToast(
         <Toast heading="Deployment plan saved" theme="success">
           <Text>A new config version has been created.</Text>
@@ -142,7 +145,11 @@ export const DeploymentPlanEditorContainer = ({
     onError: (error: TAPIError) => {
       addToast(
         <Toast heading="Deployment plan save failed" theme="error">
-          <Text>{error.description || error.error || 'Unable to save deployment plan.'}</Text>
+          <Text>
+            {error.description ||
+              error.error ||
+              'Unable to save deployment plan.'}
+          </Text>
         </Toast>
       )
     },
@@ -152,7 +159,6 @@ export const DeploymentPlanEditorContainer = ({
     <DeploymentPlanEditor
       initialGroups={initialGroups}
       availableInstalls={branchInstalls}
-      appInstalls={appInstalls}
       loadingInstalls={loadingInstalls}
       isSaving={isSaving}
       labelColors={labelColors}
@@ -190,14 +196,14 @@ export const EditDeploymentPlanButton = ({
     />
   )
   return (
-    <Button
-      variant="secondary"
-      onClick={() => addModal(modal)}
-      {...props}
-    >
-      {props?.isMenuButton ? null : <Icon variant="SlidersHorizontalIcon" size={16} />}
+    <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
+      {props?.isMenuButton ? null : (
+        <Icon variant="SlidersHorizontalIcon" size={16} />
+      )}
       {label}
-      {props?.isMenuButton ? <Icon variant="SlidersHorizontalIcon" size={16} /> : null}
+      {props?.isMenuButton ? (
+        <Icon variant="SlidersHorizontalIcon" size={16} />
+      ) : null}
     </Button>
   )
 }

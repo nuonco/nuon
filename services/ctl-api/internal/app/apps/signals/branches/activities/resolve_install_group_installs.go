@@ -3,6 +3,7 @@ package activities
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"go.uber.org/zap"
 
@@ -16,12 +17,9 @@ type ResolveInstallGroupInstallsInput struct {
 	GroupID  string           `json:"group_id"`
 	Selector *labels.Selector `json:"selector"`
 
-	// InstallIDs is the group's explicit membership list.
 	InstallIDs []string `json:"install_ids,omitempty"`
 
-	// AllInstalls resolves every install the branch owns, ignoring Selector and
-	// InstallIDs.
-	AllInstalls bool `json:"all_installs,omitempty"`
+	Default bool `json:"default,omitempty"`
 
 	// AppBranchID is the branch the group belongs to. Every mode resolves within
 	// the installs that branch owns.
@@ -50,9 +48,8 @@ func (a *Activities) ResolveInstallGroupInstalls(ctx context.Context, input *Res
 	}
 
 	group := &app.AppBranchInstallGroup{
-		InstallIDs:    input.InstallIDs,
 		LabelSelector: input.Selector,
-		AllInstalls:   input.AllInstalls,
+		Default:       input.Default,
 	}
 
 	// A config save already rejects an install two groups target, but a config
@@ -66,20 +63,28 @@ func (a *Activities) ResolveInstallGroupInstalls(ctx context.Context, input *Res
 	ids := make([]string, 0, len(owned))
 	for i := range owned {
 		install := &owned[i]
-		if !appshelpers.InstallMatchesGroup(group, install) {
-			continue
-		}
-		if err := appshelpers.ValidateInstallSingleGroup(siblings, install); err != nil {
-			return nil, err
+		if input.GroupID != "" {
+			resolved, err := appshelpers.ResolveInstallGroup(siblings, install)
+			if err != nil {
+				return nil, err
+			}
+			if resolved == nil || resolved.ID != input.GroupID {
+				continue
+			}
+		} else {
+			matchesID := slices.Contains(input.InstallIDs, install.ID)
+			if !matchesID && !appshelpers.InstallMatchesGroup(group, install) {
+				continue
+			}
 		}
 		ids = append(ids, install.ID)
 	}
 
-	resolvedVia := "install_ids"
-	switch {
-	case input.AllInstalls:
-		resolvedVia = "all_installs"
-	case input.Selector != nil:
+	resolvedVia := "deployment_group"
+	if input.GroupID == "" {
+		resolvedVia = "install_ids"
+	}
+	if input.GroupID == "" && input.Selector != nil {
 		resolvedVia = "label_selector"
 	}
 

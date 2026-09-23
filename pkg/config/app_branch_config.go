@@ -11,9 +11,8 @@ type AppBranchInstallGroupConfig struct {
 	Name  string `mapstructure:"name" toml:"name" jsonschema:"required"`
 	Order int    `mapstructure:"order" toml:"order"`
 
-	InstallIDs    []string          `mapstructure:"install_ids,omitempty" toml:"install_ids,omitempty"`
-	InstallNames  []string          `mapstructure:"install_names,omitempty" toml:"install_names,omitempty"`
 	LabelSelector map[string]string `mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
+	Default       bool              `mapstructure:"default,omitempty" toml:"default,omitempty"`
 
 	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty"`
 }
@@ -55,9 +54,8 @@ func (c AppBranchPreviewConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 func (c AppBranchInstallGroupConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "name", "name of the install group")
 	addDescription(schema, "order", "deployment order (lower runs first)")
-	addDescription(schema, "install_ids", "static list of install IDs")
-	addDescription(schema, "install_names", "static list of install names, resolved to IDs at sync time")
 	addDescription(schema, "label_selector", "label key-value pairs to dynamically match installs")
+	addDescription(schema, "default", "whether unmatched installs owned by this branch deploy in this group")
 	addDescription(schema, "auto_approve_on_policies_passing", "Auto-approve this group's plan when all policy checks pass. Defaults to false")
 }
 
@@ -141,13 +139,32 @@ func (c *AppBranchConfig) Validate() error {
 		}
 	}
 
+	defaultGroups := 0
+	groupNames := make(map[string]struct{}, len(c.InstallGroups))
 	for _, g := range c.InstallGroups {
-		hasStatic := len(g.InstallIDs) > 0 || len(g.InstallNames) > 0
-		hasLabels := len(g.LabelSelector) > 0
-		if hasStatic && hasLabels {
+		if _, ok := groupNames[g.Name]; ok {
 			return ErrConfig{
-				Description: fmt.Sprintf("install group %q: label_selector is mutually exclusive with install_ids and install_names", g.Name),
+				Description: fmt.Sprintf("branch %q: install group names must be unique; %q is duplicated", c.Name, g.Name),
 			}
+		}
+		groupNames[g.Name] = struct{}{}
+		if g.Default {
+			defaultGroups++
+		}
+		if g.Default && len(g.LabelSelector) > 0 {
+			return ErrConfig{
+				Description: fmt.Sprintf("install group %q: default is mutually exclusive with label_selector", g.Name),
+			}
+		}
+		if !g.Default && len(g.LabelSelector) == 0 {
+			return ErrConfig{
+				Description: fmt.Sprintf("install group %q: either default or label_selector is required", g.Name),
+			}
+		}
+	}
+	if defaultGroups > 1 {
+		return ErrConfig{
+			Description: fmt.Sprintf("branch %q: only one install group can be default", c.Name),
 		}
 	}
 	if c.Preview != nil {

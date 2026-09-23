@@ -19,7 +19,8 @@ import (
 type MoveInstallToAppBranchRequest struct {
 	// AppBranchID is the branch to move the install to. It must belong to the
 	// install's app and have an app config to deploy.
-	AppBranchID string `json:"app_branch_id" validate:"required"`
+	AppBranchID    string `json:"app_branch_id" validate:"required"`
+	AppBranchGroup string `json:"app_branch_group,omitempty"`
 }
 
 func (r *MoveInstallToAppBranchRequest) Validate(v *validator.Validate) error {
@@ -96,20 +97,22 @@ func (s *service) MoveInstallToAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	if install.AppBranchID.Valid && install.AppBranchID.String == branch.ID {
+	if install.AppBranchID.Valid && install.AppBranchID.String == branch.ID && install.AppBranchGroup == req.AppBranchGroup {
 		ctx.JSON(http.StatusOK, install)
 		return
 	}
 
 	// Refusing up front beats moving the install somewhere that has nothing to
 	// deploy and leaving it stranded there.
-	target, err := s.helpers.ResolveAppBranchRunForInstall(ctx, branch.ID, &install)
+	candidate := install
+	candidate.AppBranchGroup = req.AppBranchGroup
+	target, err := s.helpers.ResolveAppBranchRunForInstall(ctx, branch.ID, &candidate)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	if err := s.appsHelpers.SetInstallAppBranch(ctx, install.ID, branch.ID); err != nil {
+	if err := s.appsHelpers.SetInstallAppBranchGroup(ctx, install.ID, branch.ID, req.AppBranchGroup); err != nil {
 		ctx.Error(fmt.Errorf("unable to move install to app branch: %w", err))
 		return
 	}

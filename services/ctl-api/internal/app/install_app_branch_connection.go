@@ -28,6 +28,8 @@ type InstallAppBranchConnection struct {
 	AppBranchID string    `json:"app_branch_id,omitzero" gorm:"notnull" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   AppBranch `json:"app_branch,omitzero" faker:"-" temporaljson:"app_branch,omitzero,omitempty"`
 
+	AppBranchGroup string `json:"app_branch_group,omitzero" gorm:"notnull;default:''" temporaljson:"app_branch_group,omitzero,omitempty"`
+
 	Active        bool       `json:"active" gorm:"default:true" temporaljson:"active,omitempty"`
 	ActivatedAt   time.Time  `json:"activated_at,omitzero" gorm:"notnull" temporaljson:"activated_at,omitzero,omitempty"`
 	DeactivatedAt *time.Time `json:"deactivated_at,omitempty" gorm:"default:null" temporaljson:"deactivated_at,omitzero,omitempty"`

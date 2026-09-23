@@ -8,35 +8,30 @@ import { LabelBadge } from '@/components/common/LabelBadge'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { ToggleButton } from '@/components/common/ToggleButton'
-import { Tooltip } from '@/components/common/Tooltip'
 import { Input } from '@/components/common/form/Input'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import type { TInstall } from '@/types'
 import { cn } from '@/utils/classnames'
-import { matchesSelector } from '@/components/match/matches'
 import { parseLabelsQuery } from '@/components/match/parse'
-import { AddInstallPicker } from './AddInstallPicker'
 import { InstallRow } from './InstallRow'
-import type { IInstallGroup, ILabelSelector, InstallSelectionMode } from './types'
+import type {
+  IInstallGroup,
+  ILabelSelector,
+  InstallSelectionMode,
+} from './types'
 
 interface IGroupEditor {
   group: IInstallGroup
   index: number
   totalGroups: number
-  // installs that can still be added to a group
-  pickableInstalls: TInstall[]
-  // installs the branch owns, which is what `all installs` and label
-  // selectors resolve to
   availableInstalls: TInstall[]
-  installsById?: Record<string, TInstall>
+  resolvedInstalls?: TInstall[]
   labelColors?: Record<string, string>
   disabled?: boolean
   autoFocusName?: boolean
   nameError?: string
   contentError?: string
   onUpdate: (updates: Partial<IInstallGroup>) => void
-  onAddInstalls: (installIds: string[]) => void
-  onRemoveInstall: (installId: string) => void
   onMoveUp: () => void
   onMoveDown: () => void
   onDelete: () => void
@@ -46,27 +41,19 @@ export const GroupEditor = ({
   group,
   index,
   totalGroups,
-  pickableInstalls,
   availableInstalls,
-  installsById,
+  resolvedInstalls = availableInstalls,
   labelColors,
   disabled,
   autoFocusName,
   nameError,
   contentError,
   onUpdate,
-  onAddInstalls,
-  onRemoveInstall,
   onMoveUp,
   onMoveDown,
   onDelete,
 }: IGroupEditor) => {
   const nameRef = useRef<HTMLInputElement>(null)
-
-  const installs = useMemo(() => {
-    const byId = installsById ?? Object.fromEntries(availableInstalls.map((i) => [i.id, i]))
-    return group.install_ids.map((id) => byId[id]).filter((i): i is TInstall => !!i)
-  }, [group.install_ids, availableInstalls, installsById])
 
   useEffect(() => {
     if (!autoFocusName || disabled) return
@@ -97,9 +84,8 @@ export const GroupEditor = ({
         <div className="flex items-center gap-1">
           <ToggleButton<InstallSelectionMode>
             options={[
-              { value: 'manual', label: 'Manual' },
               { value: 'labels', label: 'Labels' },
-              { value: 'all', label: 'All installs' },
+              { value: 'default', label: 'Default' },
             ]}
             value={group.selection_mode}
             onChange={(mode) => onUpdate({ selection_mode: mode })}
@@ -121,7 +107,11 @@ export const GroupEditor = ({
                 Move up
                 <Icon variant="ArrowUpIcon" />
               </Button>
-              <Button isMenuButton onClick={onMoveDown} disabled={index === totalGroups - 1}>
+              <Button
+                isMenuButton
+                onClick={onMoveDown}
+                disabled={index === totalGroups - 1}
+              >
                 Move down
                 <Icon variant="ArrowDownIcon" />
               </Button>
@@ -136,64 +126,24 @@ export const GroupEditor = ({
       </div>
 
       <div className="flex flex-col gap-3 p-4">
-        {group.selection_mode === 'all' ? (
-          <AllInstallsSummary installCount={availableInstalls.length} />
-        ) : group.selection_mode === 'labels' ? (
+        {group.selection_mode === 'default' ? (
+          <DefaultGroupSummary installCount={resolvedInstalls.length} />
+        ) : (
           <LabelSelectorEditor
             groupId={group.id}
             labelSelector={group.label_selector}
             availableInstalls={availableInstalls}
+            resolvedInstalls={resolvedInstalls}
             labelColors={labelColors}
             disabled={disabled}
             onUpdate={(ls) => onUpdate({ label_selector: ls })}
           />
-        ) : (
-          <>
-            {installs.length > 0 ? (
-              <div className="flex flex-col gap-1.5">
-                {installs.map((install) => (
-                  <InstallRow
-                    key={install.id}
-                    install={install}
-                    labelColors={labelColors}
-                    onRemove={() => onRemoveInstall(install.id)}
-                    disabled={disabled}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                variant="table"
-                size="sm"
-                emptyTitle="No installs"
-                emptyMessage="Add an install below, or delete this group — a group can't be saved empty."
-                action={
-                  <Button variant="danger" onClick={onDelete} disabled={disabled}>
-                    <Icon variant="TrashIcon" size={16} />
-                    Delete group
-                  </Button>
-                }
-              />
-            )}
-
-            <Tooltip
-              isOpen={!!contentError}
-              disableHover
-              position="right"
-              tipContent={<Text variant="subtext">{contentError}</Text>}
-            >
-              <AddInstallPicker
-                groupId={group.id}
-                pickableInstalls={pickableInstalls}
-                disabled={disabled}
-                onAdd={onAddInstalls}
-              />
-            </Tooltip>
-          </>
         )}
 
         {group.selection_mode === 'labels' && contentError && (
-          <Text variant="subtext" theme="error">{contentError}</Text>
+          <Text variant="subtext" theme="error">
+            {contentError}
+          </Text>
         )}
 
         <div className="border-t border-cool-grey-200 dark:border-dark-grey-700 pt-2">
@@ -216,11 +166,11 @@ export const GroupEditor = ({
   )
 }
 
-const AllInstallsSummary = ({ installCount }: { installCount: number }) => (
+const DefaultGroupSummary = ({ installCount }: { installCount: number }) => (
   <div className="flex flex-col gap-1">
     <Text variant="subtext" theme="neutral">
-      Every install on this app that no other branch owns is included at deploy
-      time.
+      Every install on this branch that no other group matches is included at
+      deploy time.
     </Text>
     <Text variant="subtext" theme="neutral">
       {installCount === 0
@@ -234,6 +184,7 @@ const LabelSelectorEditor = ({
   groupId,
   labelSelector,
   availableInstalls,
+  resolvedInstalls,
   labelColors,
   disabled,
   onUpdate,
@@ -241,6 +192,7 @@ const LabelSelectorEditor = ({
   groupId: string
   labelSelector?: ILabelSelector | null
   availableInstalls: TInstall[]
+  resolvedInstalls: TInstall[]
   labelColors?: Record<string, string>
   disabled?: boolean
   onUpdate: (ls: ILabelSelector) => void
@@ -266,10 +218,7 @@ const LabelSelectorEditor = ({
     return result
   }, [availableInstalls])
 
-  const matchedInstalls = useMemo(
-    () => (hasSelector ? availableInstalls.filter((i) => matchesSelector(i.labels, labelSelector)) : []),
-    [hasSelector, availableInstalls, labelSelector]
-  )
+  const matchedInstalls = hasSelector ? resolvedInstalls : []
 
   const commitDraft = () => {
     const parsed = parseLabelsQuery(draft)
@@ -336,7 +285,9 @@ const LabelSelectorEditor = ({
 
       {suggestedLabels.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <Text variant="subtext" theme="neutral">Labels from your installs</Text>
+          <Text variant="subtext" theme="neutral">
+            Labels from your installs
+          </Text>
           <div className="flex flex-wrap gap-1.5">
             {suggestedLabels.map(({ key, value }) => {
               const isActive = labels[key] === value
@@ -366,14 +317,26 @@ const LabelSelectorEditor = ({
         matchedInstalls.length > 0 ? (
           <div className="flex flex-col gap-1.5">
             <Text variant="subtext" theme="neutral">
-              {matchedInstalls.length} {matchedInstalls.length === 1 ? 'install matches' : 'installs match'}
+              {matchedInstalls.length}{' '}
+              {matchedInstalls.length === 1
+                ? 'install matches'
+                : 'installs match'}
             </Text>
             {matchedInstalls.map((install) => (
-              <InstallRow key={install.id} install={install} labelColors={labelColors} />
+              <InstallRow
+                key={install.id}
+                install={install}
+                labelColors={labelColors}
+              />
             ))}
           </div>
         ) : (
-          <EmptyState variant="search" size="sm" emptyTitle="No matches" emptyMessage="No installs match this selector." />
+          <EmptyState
+            variant="search"
+            size="sm"
+            emptyTitle="No matches"
+            emptyMessage="No installs match this selector."
+          />
         )
       ) : (
         <EmptyState

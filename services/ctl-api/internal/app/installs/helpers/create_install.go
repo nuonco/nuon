@@ -78,7 +78,8 @@ type CreateInstallParams struct {
 	// the install starts on that branch's active app config and stays on the
 	// branch until explicitly moved. When empty, the install uses the latest
 	// unbranched config from apps sync.
-	AppBranchID string `json:"app_branch_id,omitempty"`
+	AppBranchID    string `json:"app_branch_id,omitempty"`
+	AppBranchGroup string `json:"app_branch_group,omitempty"`
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
@@ -372,6 +373,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	// branch's next run.
 	if pin.BranchID != "" {
 		install.AppBranchID = pkggenerics.NewNullString(pin.BranchID)
+		install.AppBranchGroup = req.AppBranchGroup
 		groups, err := s.appsHelpers.LatestConfigInstallGroups(ctx, pin.BranchID)
 		if err != nil {
 			return nil, err
@@ -390,7 +392,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 			if err := tx.WithContext(ctx).Create(&install).Error; err != nil {
 				return fmt.Errorf("unable to create install: %w", err)
 			}
-			if err := appshelpers.SetInstallAppBranchWithDB(ctx, tx, install.ID, pin.BranchID); err != nil {
+			if err := appshelpers.SetInstallAppBranchGroupWithDB(ctx, tx, install.ID, pin.BranchID, req.AppBranchGroup); err != nil {
 				return fmt.Errorf("unable to add install to app branch: %w", err)
 			}
 			return nil
