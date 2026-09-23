@@ -157,6 +157,44 @@ export const NeverDeployed = () => (
   />
 )
 
+export const WithDisabledComponent = () => (
+  <InstallComponentsList
+    components={[
+      component({ enabled: true }),
+      component({
+        id: 'cmp-2',
+        name: 'worker',
+        type: 'job',
+        enabled: false,
+        status: 'inactive',
+        latestDeploy: details(false),
+      }),
+      component({
+        id: 'cmp-3',
+        name: 'cache',
+        type: 'terraform_module',
+        latestDeploy: details(false),
+      }),
+    ]}
+  />
+)
+
+export const AllComponentsDisabled = () => (
+  <InstallComponentsList
+    components={[
+      component({ enabled: false, status: 'inactive' }),
+      component({
+        id: 'cmp-2',
+        name: 'worker',
+        type: 'job',
+        enabled: false,
+        status: 'inactive',
+        latestDeploy: details(false, null),
+      }),
+    ]}
+  />
+)
+
 export const Empty = () => <InstallComponentsList components={[]} />
 
 export const Loading = () => <InstallComponentsList components={[]} loading />
