@@ -13,11 +13,16 @@ import (
 // EnsureOrgQueue creates the org-signals queue if it doesn't already exist.
 // Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureOrgQueue(ctx context.Context, orgID string) error {
+	_, err := h.ensureOrgQueue(ctx, orgID)
+	return err
+}
+
+func (h *Helpers) ensureOrgQueue(ctx context.Context, orgID string) (*app.Queue, error) {
 	spec, ok := queuenames.SpecByName(queuenames.OwnerOrgs, queuenames.OrgSignalsQueueName)
 	if !ok {
-		return fmt.Errorf("org signals queue is not registered")
+		return nil, fmt.Errorf("org signals queue is not registered")
 	}
-	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OrgID:       &orgID,
 		OwnerID:     orgID,
 		OwnerType:   plugins.TableName(h.db, app.Org{}),
@@ -27,7 +32,7 @@ func (h *Helpers) EnsureOrgQueue(ctx context.Context, orgID string) error {
 		MaxDepth:    spec.MaxDepth,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to ensure org-signals queue: %w", err)
+		return nil, fmt.Errorf("unable to ensure org-signals queue: %w", err)
 	}
-	return nil
+	return q, nil
 }
