@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type UpdateStatusRequest struct {
@@ -25,10 +26,13 @@ func (a *Activities) UpdateStatus(ctx context.Context, req UpdateStatusRequest) 
 		StatusDescription: req.StatusDescription,
 	})
 	if res.Error != nil {
-		return fmt.Errorf("unable to update component: %w", res.Error)
+		return generics.TemporalGormError(res.Error, "unable to update component")
 	}
 	if res.RowsAffected < 1 {
-		return fmt.Errorf("no component found: %s %w", req.ComponentID, gorm.ErrRecordNotFound)
+		return generics.TemporalGormError(
+			gorm.ErrRecordNotFound,
+			fmt.Sprintf("no component found: %s", req.ComponentID),
+		)
 	}
 
 	return nil

@@ -2,9 +2,9 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GetComponentAppConfigRequest struct {
@@ -16,12 +16,12 @@ type GetComponentAppConfigRequest struct {
 func (a *Activities) GetComponentAppConfig(ctx context.Context, req *GetComponentAppConfigRequest) (*app.AppConfig, error) {
 	cmp, err := a.helpers.GetComponent(ctx, req.ComponentID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get component: %w", err)
+		return nil, generics.TemporalGormError(err, "unable to get component")
 	}
 
 	appCfg, err := a.appsHelpers.GetLatestActiveAppConfig(ctx, cmp.AppID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get app config for component: %w", err)
+		return nil, generics.TemporalGormError(err, "unable to get app config for component")
 	}
 
 	return appCfg, nil
