@@ -71,5 +71,10 @@ func (h *Helpers) RecordStackPhoneHome(
 		return nil, fmt.Errorf("unable to create install stack version run: %w", res.Error)
 	}
 
+	requestType, _ := req["request_type"].(string)
+	if err := h.RecordInstallStackVersionApplied(ctx, stackVersion, requestType); err != nil {
+		return nil, err
+	}
+
 	return &run, nil
 }

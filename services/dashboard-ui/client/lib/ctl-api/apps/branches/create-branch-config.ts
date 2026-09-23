@@ -31,13 +31,16 @@ export type TCreateBranchConfigRequest = {
   post_deploy_runbook_ids?: string[]
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean
+  clear_preview_config?: boolean
   preview_config?: {
-    mode?: 'plan-only' | 'apply' | 'build-only'
+    mode?: 'none' | 'plan-only' | 'apply' | 'build-only'
     install_id?: string
     install_name?: string
     label_selector?: { match_labels?: Record<string, string> } | null
     set_statuses?: boolean
     comment?: boolean
+    ignore_drafts?: boolean
+    react?: boolean
   }
 }
 
