@@ -84,6 +84,7 @@ export const InstallComponentsListContainer = () => {
       id: componentId || (installComponent.id ?? ''),
       name: component?.name ?? 'Component',
       type: component?.type,
+      enabled: installComponent.enabled,
       status: installComponent.status_v2?.status ?? installComponent.status,
       actions: component ? (
         <ResourceComponentActions
