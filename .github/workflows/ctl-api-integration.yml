@@ -21,6 +21,12 @@ concurrency:
   group: ctl-api-dispatch-${{ github.event.pull_request.number || github.ref_name }}
   cancel-in-progress: true
 
+# Explicit statuses:write — the skip/dispatch steps post commit statuses on the
+# head ref, and the org default is read-only.
+permissions:
+  contents: read
+  statuses: write
+
 defaults:
   run:
     shell: bash
@@ -55,20 +61,38 @@ jobs:
       # otherwise docs-only PRs would soft-lock on a never-arriving status.
       - name: Skip when draft, bot-merge, or ctl-api is unchanged
         if: github.event_name != 'workflow_dispatch' && (github.event.pull_request.draft == true || github.triggering_actor == 'nuonbot' || steps.filter.outputs['ctl-api'] != 'true')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
+            reason="draft PR; integration run skipped until marked ready for review"
             echo "draft PR; skipping integration run until marked ready for review"
           elif [[ "${{ github.triggering_actor }}" == "nuonbot" ]]; then
+            reason="bot merge; the merged result is tested by the main-push run"
             echo "auto-merge-of-main update from ${{ github.triggering_actor }}; the merged result is tested by the main-push run"
           else
+            reason="skipped; no ctl-api changes in this diff"
             echo "no ctl-api changes in this diff; skipping integration run"
           fi
+          gh api repos/nuonco/nuon/statuses/${{ github.event.pull_request.head.sha || github.sha }} \
+            -f state=success \
+            -f context="ctl-api integration (mono)" \
+            -f description="$reason" \
+            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Trigger the mono integration workflow
         if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.draft != true && github.triggering_actor != 'nuonbot' && steps.filter.outputs['ctl-api'] == 'true')
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
         run: |
+          # github.token posts the pending status (workflow has statuses:write);
+          # PRIVATE_REPO_DEPLOY_TOKEN only dispatches the mono workflow — it
+          # cannot write statuses here (403).
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${{ github.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/nuonco/nuon/statuses/${{ github.event.pull_request.head.sha || github.sha }}" \
+            -d '{"state":"pending","context":"ctl-api integration (mono)","description":"running in nuonco/mono","target_url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' || true
           run_url="$(gh workflow run ctl-api-integration.yml \
             --repo nuonco/mono \
             --field "nuon_ref=${{ github.event.pull_request.head.sha || github.sha }}" \
