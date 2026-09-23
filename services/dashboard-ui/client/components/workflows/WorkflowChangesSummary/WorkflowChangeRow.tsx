@@ -23,6 +23,21 @@ const RowCounts = ({ summary }: { summary: TStepChangeSummary }) => {
       </Text>
     )
   }
+  if (summary.countsState === 'unknown') {
+    return (
+      <Text variant="subtext" theme="neutral">
+        Couldn&apos;t summarize
+      </Text>
+    )
+  }
+  if (summary.countsState === 'unsupported') {
+    if (summary.hasDetail) return null
+    return (
+      <Text variant="subtext" theme="neutral">
+        No detail available
+      </Text>
+    )
+  }
   if (!summary.hasDetail && !hasChanges(summary.counts)) {
     return (
       <Text variant="subtext" theme="neutral">
