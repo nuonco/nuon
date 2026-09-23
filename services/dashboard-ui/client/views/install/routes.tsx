@@ -15,6 +15,11 @@ import {
   NewInstallOperationsLayout,
   NewInstallResourcesLayout,
 } from './NewInstallSectionLayout'
+import { NewInstallComponents } from './NewInstallComponents'
+import { NewInstallImages } from './NewInstallImages'
+import { NewInstallSandbox } from './NewInstallSandbox'
+import { NewInstallState } from './NewInstallState'
+import { NewInstallStack } from './NewInstallStack'
 import { Actions } from './Actions'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
@@ -67,8 +72,6 @@ import { Notebooks } from './Notebooks'
 import { NotebookDetail } from './NotebookDetail'
 import { InstallConfigs } from './InstallConfigs'
 
-// Legacy install paths redirect to the Updates/History IA. Carry the query string and
-// hash across so deep links like ?panel=<stepId> survive the hop.
 const legacyRedirect =
   (to: (params: Record<string, string | undefined>) => string) =>
   ({
@@ -112,7 +115,7 @@ const InstallResourcesRoute = () => {
 const NewInstallResourcesIndex = () => {
   const hasNewInstallIA = useNewInstallIA()
   if (!hasNewInstallIA) return null
-  return <NewInstallPlaceholderBody title="Stack" />
+  return <NewInstallStack />
 }
 
 export const installRoutes: RouteObject[] = [
@@ -137,19 +140,15 @@ export const installRoutes: RouteObject[] = [
             children: [
               {
                 path: 'sandbox',
-                element: <NewInstallPlaceholderBody title="Sandbox" />,
+                element: <NewInstallSandbox />,
               },
               {
                 path: 'components',
-                element: <NewInstallPlaceholderBody title="Components" />,
+                element: <NewInstallComponents />,
               },
               {
                 path: 'images',
-                element: <NewInstallPlaceholderBody title="Images" />,
-              },
-              {
-                path: 'state',
-                element: <NewInstallPlaceholderBody title="State" />,
+                element: <NewInstallImages />,
               },
             ],
           },
@@ -213,6 +212,10 @@ export const installRoutes: RouteObject[] = [
               {
                 path: 'overrides',
                 element: <NewInstallPlaceholderBody title="Overrides" />,
+              },
+              {
+                path: 'state',
+                element: <NewInstallState />,
               },
             ],
           },

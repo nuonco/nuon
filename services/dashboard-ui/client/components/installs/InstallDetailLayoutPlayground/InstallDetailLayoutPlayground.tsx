@@ -287,17 +287,6 @@ const PAGES: TPlaygroundPage[] = [
     render: ({ install }) => <OverviewTab install={install} />,
   },
   {
-    tab: 'resources',
-    path: '/resources',
-    text: 'Resources',
-    iconVariant: 'CardsIcon',
-    title: 'Resources',
-    description: 'Stack, sandbox, components, and images for this install.',
-    render: ({ install, sectionId }) => (
-      <ResourcesPages install={install} sectionId={sectionId} />
-    ),
-  },
-  {
     tab: 'deployments',
     path: '/deployments',
     text: 'Deployments',
@@ -310,6 +299,17 @@ const PAGES: TPlaygroundPage[] = [
         filter={deploymentFilter}
         onFilterChange={onDeploymentFilterChange}
       />
+    ),
+  },
+  {
+    tab: 'resources',
+    path: '/resources',
+    text: 'Resources',
+    iconVariant: 'CardsIcon',
+    title: 'Resources',
+    description: 'Stack, sandbox, components, and images for this install.',
+    render: ({ install, sectionId }) => (
+      <ResourcesPages install={install} sectionId={sectionId} />
     ),
   },
   {
