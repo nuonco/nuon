@@ -2,42 +2,39 @@ package client
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 
 	"github.com/pkg/errors"
-	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter"
 )
 
-type SetCronEmittersEnabledRequest struct {
+type ToggleCronEmittersForOwnerRequest struct {
 	OwnerID   string `validate:"required"`
 	OwnerType string `validate:"required"`
 
-	Enabled bool
-	Reason  string
+	FromStatus app.Status `validate:"required"`
+	ToStatus   app.Status `validate:"required"`
+	Reason     string
 }
 
-type SetCronEmittersEnabledResponse struct {
+type ToggleCronEmittersForOwnerResponse struct {
 	Changed    int      `json:"changed"`
 	Errors     int      `json:"errors"`
 	EmitterIDs []string `json:"emitter_ids"`
 }
 
-// SetCronEmittersEnabledForOwner updates every eligible live cron emitter on
-// the owner's queues and brings their Temporal executions in line.
-//
-// Disabling tears active workflows down; enabling restarts emitters previously
-// disabled by this path. Cancelled emitters remain paused.
-//
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 2m
-func (c *Client) SetCronEmittersEnabledForOwner(ctx context.Context, req *SetCronEmittersEnabledRequest) (*SetCronEmittersEnabledResponse, error) {
+func (c *Client) ToggleCronEmittersForOwner(ctx context.Context, req *ToggleCronEmittersForOwnerRequest) (*ToggleCronEmittersForOwnerResponse, error) {
+	switch req.ToStatus {
+	case app.StatusDisabled, app.StatusInProgress:
+	default:
+		return nil, errors.Errorf("unsupported target emitter status %q", req.ToStatus)
+	}
+
 	var queueIDs []string
 	if res := c.db.WithContext(ctx).
 		Model(&app.Queue{}).
@@ -46,84 +43,75 @@ func (c *Client) SetCronEmittersEnabledForOwner(ctx context.Context, req *SetCro
 		return nil, errors.Wrap(res.Error, "unable to list queues for owner")
 	}
 
-	resp := &SetCronEmittersEnabledResponse{}
+	resp := &ToggleCronEmittersForOwnerResponse{}
 	if len(queueIDs) == 0 {
 		return resp, nil
 	}
 
-	status := app.NewCompositeStatus(ctx, app.StatusDisabled)
-	status.StatusHumanDescription = req.Reason
-	statusFilter := "COALESCE(status->>'status', '') IN ?"
-	statuses := []string{string(app.StatusPending), string(app.StatusInProgress)}
-	if req.Enabled {
-		status = app.NewCompositeStatus(ctx, app.StatusInProgress)
-		statuses = []string{string(app.StatusDisabled)}
-	}
+	targetStatus := app.NewCompositeStatus(ctx, req.ToStatus)
+	targetStatus.StatusHumanDescription = req.Reason
 
-	var changed []app.QueueEmitter
+	var changedEmitters []app.QueueEmitter
 	if res := c.db.WithContext(ctx).
-		Model(&changed).
+		Model(&changedEmitters).
 		Clauses(clause.Returning{}).
 		Where("queue_id IN ? AND mode = ? AND deleted_at = 0", queueIDs, app.QueueEmitterModeCron).
-		Where(statusFilter, statuses).
+		Where("status->>'status' = ?", req.FromStatus).
 		Updates(map[string]any{
-			"status": status,
+			"status": targetStatus,
 		}); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to update emitter status")
 	}
 
-	if len(changed) == 0 {
+	if len(changedEmitters) == 0 {
 		return resp, nil
 	}
 
-	resp.Changed = len(changed)
-	for i := range changed {
-		em := &changed[i]
+	resp.Changed = len(changedEmitters)
+	var reconcileErr error
+	for i := range changedEmitters {
+		em := &changedEmitters[i]
 		resp.EmitterIDs = append(resp.EmitterIDs, em.ID)
 
 		var err error
-		if req.Enabled {
+		if req.ToStatus == app.StatusInProgress {
 			_, err = c.RestartEmitterWorkflow(ctx, em.ID)
 		} else {
 			err = c.stopEmitterWorkflow(ctx, em)
 		}
 		if err != nil {
 			resp.Errors++
-			c.l.Warn("unable to reconcile emitter workflow after enabled change",
+			previousStatus := app.NewCompositeStatus(ctx, req.FromStatus)
+			if rollbackErr := c.db.WithContext(ctx).Model(em).Update("status", previousStatus).Error; rollbackErr != nil {
+				c.l.Error("unable to roll back emitter status after reconciliation failure",
+					zap.String("id", em.ID),
+					zap.Error(rollbackErr))
+			}
+			if reconcileErr == nil {
+				reconcileErr = errors.Wrapf(err, "unable to reconcile emitter %s", em.ID)
+			}
+			c.l.Warn("unable to reconcile emitter workflow after status change",
 				zap.String("id", em.ID),
-				zap.Bool("enabled", req.Enabled),
+				zap.String("from-status", string(req.FromStatus)),
+				zap.String("to-status", string(req.ToStatus)),
 				zap.Error(err))
 		}
 	}
 
-	c.mw.Incr("queue.emitter.enabled_changed", metrics.ToTags(map[string]string{
-		"owner_type": req.OwnerType,
-		"enabled":    strconv.FormatBool(req.Enabled),
-		"reason":     req.Reason,
+	c.mw.Incr("queue.emitter.status_change", metrics.ToTags(map[string]string{
+		"owner_type":  req.OwnerType,
+		"from_status": string(req.FromStatus),
+		"to_status":   string(req.ToStatus),
 	}))
 
-	c.l.Info("cron emitters enabled state changed",
+	c.l.Info("cron emitter status changed",
 		zap.String("owner-id", req.OwnerID),
 		zap.String("owner-type", req.OwnerType),
-		zap.Bool("enabled", req.Enabled),
+		zap.String("from-status", string(req.FromStatus)),
+		zap.String("to-status", string(req.ToStatus)),
 		zap.String("reason", req.Reason),
 		zap.Int("changed", resp.Changed),
 	)
 
-	return resp, nil
-}
-
-// stopEmitterWorkflow asks the emitter's parent workflow to wind down. It is
-// deliberately not StopEmitter, which also marks the emitter cancelled and
-// would conflate a health-driven disable with a user pause.
-func (c *Client) stopEmitterWorkflow(ctx context.Context, em *app.QueueEmitter) error {
-	if _, err := c.tClient.UpdateWorkflowInNamespace(ctx, em.Workflow.Namespace, tclient.UpdateWorkflowOptions{
-		WorkflowID:   em.Workflow.ID,
-		UpdateName:   emitter.StopUpdateName,
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		Args:         []any{&emitter.StopRequest{}},
-	}); err != nil {
-		return fmt.Errorf("unable to stop emitter workflow %s: %w", em.Workflow.ID, err)
-	}
-	return nil
+	return resp, reconcileErr
 }

@@ -375,6 +375,8 @@ func TestOldRunnerHealthcheckCorpus(t *testing.T) {
 			if tc.groupType == app.RunnerGroupTypeInstall {
 				env.OnActivity((*runneractivities.Activities).GetInstall, mock.Anything, mock.Anything, mock.Anything).
 					Return(&app.Install{ID: "ins_1", Name: "install one"}, nil)
+				env.OnActivity((*runneractivities.Activities).ToggleInstallCronEmitter, mock.Anything, mock.Anything, mock.Anything).
+					Return(&runneractivities.ToggleInstallCronEmitterResponse{}, nil)
 			}
 
 			env.ExecuteWorkflow(func(ctx workflow.Context) error {

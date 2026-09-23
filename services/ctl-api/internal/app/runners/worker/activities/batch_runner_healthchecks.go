@@ -107,6 +107,18 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 		d := decideRunnerHealth(now, &r, presence[r.ID])
 		tags := runnerHealthTags(&r, presence[r.ID], d)
 
+		if r.RunnerGroup.OwnerType == installOwnerType && d.InstallCronToggleDecision != nil {
+			installID := r.RunnerGroup.OwnerID
+			candidate, ok := cronCandidates[installID]
+			if !ok {
+				candidate = &installCronCandidate{orgID: r.OrgID, accountID: r.CreatedByID}
+				cronCandidates[installID] = candidate
+			}
+			if candidate.state == "" || *d.InstallCronToggleDecision == InstallCronsEnabled {
+				candidate.state = *d.InstallCronToggleDecision
+			}
+		}
+
 		switch d.Result {
 		case "skipped":
 			resp.Skipped++
@@ -134,16 +146,6 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 			alerts = append(alerts, runnerAlert{runner: r, offlineAt: d.AlertOfflineAt, reason: d.Reason, tags: tags})
 		}
 
-		if r.RunnerGroup.OwnerType == installOwnerType {
-			installID := r.RunnerGroup.OwnerID
-			c, ok := cronCandidates[installID]
-			if !ok {
-				c = &installCronCandidate{orgID: r.OrgID, accountID: r.CreatedByID}
-				cronCandidates[installID] = c
-			}
-			c.disable = c.disable || d.DisableInstallCrons
-		}
-
 		a.mw.Incr(runnerHealthCheckCounter, metrics.ToTags(tags, metrics.ToTag("result", d.Result)))
 	}
 
@@ -152,7 +154,12 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 	}
 
 	if len(cronCandidates) > 0 {
-		a.applyInstallCronGating(ctx, cronCandidates, resp)
+		toggleResp, err := a.toggleInstallCronsState(ctx, cronCandidates)
+		if err != nil {
+			return nil, fmt.Errorf("unable to toggle install cron emitters: %w", err)
+		}
+		resp.CronsDisabled += toggleResp.Disabled
+		resp.CronsEnabled += toggleResp.Enabled
 	}
 
 	return resp, nil

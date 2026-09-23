@@ -60,13 +60,7 @@ type runnerHealthDecision struct {
 	Alert          bool
 	AlertOfflineAt time.Time
 
-	// DisableInstallCrons marks the runner's install as a candidate for having
-	// its cron emitters switched off. It rides the same offline delay as the
-	// alert; the caller still has to confirm no sibling runner in the group is
-	// healthy. Re-enabling needs no equivalent flag — the caller drives it off
-	// which emitters are actually disabled, which also covers an install whose
-	// offline runner was replaced rather than recovered.
-	DisableInstallCrons bool
+	InstallCronToggleDecision *InstallCronState
 }
 
 // decideRunnerHealth encodes runnerhealthcheck.Signal.Execute's branch logic:
@@ -74,6 +68,15 @@ type runnerHealthDecision struct {
 // transition once the delay has elapsed, guard every write on current state.
 func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProcessPresence) runnerHealthDecision {
 	var d runnerHealthDecision
+
+	if runner.Status == app.RunnerStatusDisabled {
+		d.Result = "skipped"
+		if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
+			state := InstallCronsDisabled
+			d.InstallCronToggleDecision = &state
+		}
+		return d
+	}
 
 	if isSkippableRunnerStatus(runner.Status) {
 		d.Result = "skipped"
@@ -111,6 +114,10 @@ func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProces
 		d.ClearOfflineTS = hasOfflineTS
 		d.UpdateLegacy = runner.Status != app.RunnerStatusActive
 		d.UpdateV2 = runner.StatusV2.Status != app.Status(app.RunnerStatusActive)
+		if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
+			state := InstallCronsEnabled
+			d.InstallCronToggleDecision = &state
+		}
 		return d
 	}
 
@@ -135,7 +142,10 @@ func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProces
 
 	d.Alert = true
 	d.AlertOfflineAt = offlineAt
-	d.DisableInstallCrons = runner.RunnerGroup.Type == app.RunnerGroupTypeInstall
+	if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
+		state := InstallCronsDisabled
+		d.InstallCronToggleDecision = &state
+	}
 	return d
 }
 

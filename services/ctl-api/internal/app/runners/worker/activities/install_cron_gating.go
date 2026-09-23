@@ -3,9 +3,6 @@ package activities
 import (
 	"context"
 	"fmt"
-	"sort"
-
-	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -18,144 +15,112 @@ const (
 	installCronEnableReason  = "runner healthy"
 )
 
-// installCronCandidate tracks what one page of runners implies for an install.
 type installCronCandidate struct {
 	orgID     string
 	accountID string
-	disable   bool
+	state     InstallCronState
 }
 
-type cronGateAction int
+type InstallCronState string
 
 const (
-	cronGateNoop cronGateAction = iota
-	cronGateDisable
-	cronGateEnable
+	InstallCronsEnabled  InstallCronState = "enabled"
+	InstallCronsDisabled InstallCronState = "disabled"
 )
 
-// decideCronGate resolves one install's cron state. It is edge-triggered on
-// what is actually persisted rather than on the health transition, so a
-// converged install costs nothing and an install whose offline runner was
-// replaced rather than recovered still gets its crons back.
-func decideCronGate(healthy, disableCandidate, currentlyDisabled bool) cronGateAction {
+func decideInstallCronToggle(healthy bool, requested, current InstallCronState) *InstallCronState {
+	target := InstallCronsDisabled
 	switch {
-	case healthy && currentlyDisabled:
-		return cronGateEnable
-	case !healthy && disableCandidate && !currentlyDisabled:
-		return cronGateDisable
-	default:
-		return cronGateNoop
+	case healthy:
+		target = InstallCronsEnabled
+	case requested != InstallCronsDisabled:
+		return nil
 	}
+	if current == target {
+		return nil
+	}
+	return &target
 }
 
-// applyInstallCronGating switches an install's cron emitters off once none of
-// its runners are healthy, and back on as soon as one is.
-//
-// The healthy-runner count is resolved against the whole runner group rather
-// than the current page, so a group split across pages cannot flap. Re-enabling
-// keys off which emitters are actually disabled instead of a recovery
-// transition, so an install whose offline runner was replaced rather than
-// recovered still gets its crons back.
-func (a *Activities) applyInstallCronGating(
+func (a *Activities) toggleInstallCronsState(
 	ctx context.Context,
 	candidates map[string]*installCronCandidate,
-	resp *BatchRunnerHealthchecksResponse,
-) {
+) (*ToggleInstallCronEmitterResponse, error) {
+	resp := &ToggleInstallCronEmitterResponse{}
 	installIDs := make([]string, 0, len(candidates))
 	for id := range candidates {
 		installIDs = append(installIDs, id)
 	}
-	sort.Strings(installIDs)
 
 	activeRunners, err := a.activeRunnerCountsByInstall(ctx, installIDs)
 	if err != nil {
-		resp.Errors += len(installIDs)
-		a.l.Warn("unable to count active runners for install cron gating", zap.Error(err))
-		return
+		return nil, err
 	}
 
-	disabled, err := a.installsWithDisabledCrons(ctx, installIDs)
+	currentStates, err := a.installCronStates(ctx, installIDs)
 	if err != nil {
-		resp.Errors += len(installIDs)
-		a.l.Warn("unable to resolve disabled install crons", zap.Error(err))
-		return
+		return nil, err
 	}
 
 	for _, installID := range installIDs {
-		c := candidates[installID]
-
-		action := decideCronGate(activeRunners[installID] > 0, c.disable, disabled[installID])
-		if action == cronGateNoop {
+		candidate := candidates[installID]
+		decision := decideInstallCronToggle(activeRunners[installID] > 0, candidate.state, currentStates[installID])
+		if decision == nil {
 			continue
 		}
 
-		enable := action == cronGateEnable
+		fromStatus := app.StatusDisabled
+		toStatus := app.StatusInProgress
+		enable := *decision == InstallCronsEnabled
 		reason := installCronDisableReason
 		if enable {
 			reason = installCronEnableReason
+		} else {
+			fromStatus = app.StatusInProgress
+			toStatus = app.StatusDisabled
 		}
 
-		ectx := cctx.SetOrgIDContext(ctx, c.orgID)
-		ectx = cctx.SetAccountIDContext(ectx, c.accountID)
+		ectx := cctx.SetOrgIDContext(ctx, candidate.orgID)
+		ectx = cctx.SetAccountIDContext(ectx, candidate.accountID)
 
-		setResp, err := a.emitterClient.SetCronEmittersEnabledForOwner(ectx, &emitterclient.SetCronEmittersEnabledRequest{
-			OwnerID:   installID,
-			OwnerType: installOwnerType,
-			Enabled:   enable,
-			Reason:    reason,
+		toggleResp, err := a.emitterClient.ToggleCronEmittersForOwner(ectx, &emitterclient.ToggleCronEmittersForOwnerRequest{
+			OwnerID:    installID,
+			OwnerType:  installOwnerType,
+			FromStatus: fromStatus,
+			ToStatus:   toStatus,
+			Reason:     reason,
 		})
 		if err != nil {
-			resp.Errors++
-			a.l.Warn("unable to gate install cron emitters",
-				zap.String("install_id", installID),
-				zap.Bool("enabled", enable),
-				zap.Error(err))
-			continue
+			return nil, fmt.Errorf("unable to toggle cron emitters for install %s: %w", installID, err)
 		}
 
-		resp.Errors += setResp.Errors
 		if enable {
-			resp.CronsEnabled += setResp.Changed
+			resp.Enabled += toggleResp.Changed
 		} else {
-			resp.CronsDisabled += setResp.Changed
+			resp.Disabled += toggleResp.Changed
 		}
 	}
+	return resp, nil
 }
 
-type GateInstallCronEmittersRequest struct {
+type ToggleInstallCronEmitterRequest struct {
 	InstallID string `validate:"required"`
 	OrgID     string `validate:"required"`
 	AccountID string
-
-	// Disable asks for the install's crons to be switched off. It is ignored
-	// when any runner in the install's group is still healthy.
-	Disable bool
+	State     InstallCronState `validate:"required"`
 }
 
-type GateInstallCronEmittersResponse struct {
+type ToggleInstallCronEmitterResponse struct {
 	Disabled int `json:"disabled"`
 	Enabled  int `json:"enabled"`
-	Errors   int `json:"errors"`
 }
 
-// GateInstallCronEmitters applies the same rule as applyInstallCronGating to a
-// single install, for the per-runner healthcheck signal that orgs without
-// org-healthcheck-sweeps still run.
-//
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 2m
-func (a *Activities) GateInstallCronEmitters(ctx context.Context, req GateInstallCronEmittersRequest) (*GateInstallCronEmittersResponse, error) {
-	resp := &GateInstallCronEmittersResponse{}
-	batch := &BatchRunnerHealthchecksResponse{}
-
-	a.applyInstallCronGating(ctx, map[string]*installCronCandidate{
-		req.InstallID: {orgID: req.OrgID, accountID: req.AccountID, disable: req.Disable},
-	}, batch)
-
-	resp.Disabled = batch.CronsDisabled
-	resp.Enabled = batch.CronsEnabled
-	resp.Errors = batch.Errors
-	return resp, nil
+func (a *Activities) ToggleInstallCronEmitter(ctx context.Context, req ToggleInstallCronEmitterRequest) (*ToggleInstallCronEmitterResponse, error) {
+	return a.toggleInstallCronsState(ctx, map[string]*installCronCandidate{
+		req.InstallID: {orgID: req.OrgID, accountID: req.AccountID, state: req.State},
+	})
 }
 
 func (a *Activities) activeRunnerCountsByInstall(ctx context.Context, installIDs []string) (map[string]int, error) {
@@ -183,7 +148,7 @@ func (a *Activities) activeRunnerCountsByInstall(ctx context.Context, installIDs
 	return counts, nil
 }
 
-func (a *Activities) installsWithDisabledCrons(ctx context.Context, installIDs []string) (map[string]bool, error) {
+func (a *Activities) installCronStates(ctx context.Context, installIDs []string) (map[string]InstallCronState, error) {
 	var ownerIDs []string
 	if res := a.db.WithContext(ctx).Raw(`
 		SELECT DISTINCT q.owner_id
@@ -196,12 +161,15 @@ func (a *Activities) installsWithDisabledCrons(ctx context.Context, installIDs [
 		string(app.QueueEmitterModeCron),
 		string(app.StatusDisabled),
 	).Scan(&ownerIDs); res.Error != nil {
-		return nil, fmt.Errorf("unable to list installs with disabled crons: %w", res.Error)
+		return nil, fmt.Errorf("unable to list install cron states: %w", res.Error)
 	}
 
-	disabled := make(map[string]bool, len(ownerIDs))
-	for _, id := range ownerIDs {
-		disabled[id] = true
+	states := make(map[string]InstallCronState, len(installIDs))
+	for _, id := range installIDs {
+		states[id] = InstallCronsEnabled
 	}
-	return disabled, nil
+	for _, id := range ownerIDs {
+		states[id] = InstallCronsDisabled
+	}
+	return states, nil
 }

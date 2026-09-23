@@ -55,7 +55,7 @@ func (e *EmitterTestSuite) emitter(emitterID string) *app.QueueEmitter {
 	return &em
 }
 
-func (e *EmitterTestSuite) TestSetCronEmittersEnabledForOwnerScope() {
+func (e *EmitterTestSuite) TestToggleCronEmittersForOwnerScope() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 
@@ -69,11 +69,13 @@ func (e *EmitterTestSuite) TestSetCronEmittersEnabledForOwnerScope() {
 	deletedCron := e.insertEmitter(ctx, queue.ID, app.QueueEmitterModeCron, true)
 	otherOwnerCron := e.insertEmitter(ctx, otherQueue.ID, app.QueueEmitterModeCron, false)
 
-	disable := func() *emitterclient.SetCronEmittersEnabledResponse {
-		resp, err := e.service.EmitterClient.SetCronEmittersEnabledForOwner(ctx, &emitterclient.SetCronEmittersEnabledRequest{
-			OwnerID:   ownerID,
-			OwnerType: testOwnerType,
-			Reason:    "no healthy runner",
+	disable := func() *emitterclient.ToggleCronEmittersForOwnerResponse {
+		resp, err := e.service.EmitterClient.ToggleCronEmittersForOwner(ctx, &emitterclient.ToggleCronEmittersForOwnerRequest{
+			OwnerID:    ownerID,
+			OwnerType:  testOwnerType,
+			FromStatus: app.StatusInProgress,
+			ToStatus:   app.StatusDisabled,
+			Reason:     "no healthy runner",
 		})
 		require.NoError(e.T(), err)
 		return resp
@@ -96,7 +98,7 @@ func (e *EmitterTestSuite) TestSetCronEmittersEnabledForOwnerScope() {
 	require.Equal(e.T(), 0, disable().Changed)
 }
 
-func (e *EmitterTestSuite) TestSetCronEmittersEnabledForOwnerReEnable() {
+func (e *EmitterTestSuite) TestToggleCronEmittersForOwnerReEnable() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 
@@ -104,19 +106,22 @@ func (e *EmitterTestSuite) TestSetCronEmittersEnabledForOwnerReEnable() {
 	queue := e.ensureOwnedQueue(ctx, ownerID)
 	cron := e.service.Seed.EnsureCronEmitter(ctx, e.T(), queue.ID, &example.ExampleSignal{})
 
-	_, err := e.service.EmitterClient.SetCronEmittersEnabledForOwner(ctx, &emitterclient.SetCronEmittersEnabledRequest{
-		OwnerID:   ownerID,
-		OwnerType: testOwnerType,
-		Reason:    "no healthy runner",
+	_, err := e.service.EmitterClient.ToggleCronEmittersForOwner(ctx, &emitterclient.ToggleCronEmittersForOwnerRequest{
+		OwnerID:    ownerID,
+		OwnerType:  testOwnerType,
+		FromStatus: app.StatusInProgress,
+		ToStatus:   app.StatusDisabled,
+		Reason:     "no healthy runner",
 	})
 	require.NoError(e.T(), err)
 	require.Equal(e.T(), app.StatusDisabled, e.emitter(cron.ID).Status.Status)
 
-	resp, err := e.service.EmitterClient.SetCronEmittersEnabledForOwner(ctx, &emitterclient.SetCronEmittersEnabledRequest{
-		OwnerID:   ownerID,
-		OwnerType: testOwnerType,
-		Enabled:   true,
-		Reason:    "runner healthy",
+	resp, err := e.service.EmitterClient.ToggleCronEmittersForOwner(ctx, &emitterclient.ToggleCronEmittersForOwnerRequest{
+		OwnerID:    ownerID,
+		OwnerType:  testOwnerType,
+		FromStatus: app.StatusDisabled,
+		ToStatus:   app.StatusInProgress,
+		Reason:     "runner healthy",
 	})
 	require.NoError(e.T(), err)
 	require.Equal(e.T(), 1, resp.Changed)
