@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	tea "charm.land/bubbletea/v2"
+
 	"charm.land/lipgloss/v2"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
 
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
@@ -149,7 +151,7 @@ func Confirm(prompt string, interactive bool) (bool, error) {
 
 	model := NewConfirmModel(prompt)
 
-	program := tea.NewProgram(model)
+	program := teaprogram.NewProgram(model)
 	finalModel, err := program.Run()
 	if err != nil {
 		return false, err
@@ -193,7 +195,7 @@ func ConfirmWithDefault(prompt string, defaultYes, interactive bool) (bool, erro
 		model.choice = 1 // Default to No
 	}
 
-	program := tea.NewProgram(model)
+	program := teaprogram.NewProgram(model)
 	finalModel, err := program.Run()
 	if err != nil {
 		return defaultYes, err
