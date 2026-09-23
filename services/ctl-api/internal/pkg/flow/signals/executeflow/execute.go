@@ -327,9 +327,6 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 	cfg := s.stepConfig()
 
-	// all_steps_loaded tracks whether generation is done, not whether the eager
-	// groups have executed: a single-group workflow (e.g. an action run) would
-	// otherwise report "more steps coming" for its entire execution.
 	publishAllStepsOnGeneration := workflow.GetVersion(
 		ctx, allStepsLoadedOnGenerationVersion, workflow.DefaultVersion, 1,
 	) != workflow.DefaultVersion
@@ -1137,13 +1134,8 @@ const groupStopReasonVersion = "execute-flow-group-stop-reason-v1"
 // complete because in-flight histories previously parked after every error.
 const workflowCompleteTerminalErrorVersion = "execute-flow-terminal-error-complete-v1"
 
-// allStepsLoadedOnGenerationVersion gates writing all_steps_loaded when
-// generation finishes rather than after the last eager group executes;
-// in-flight histories never scheduled that activity at those points.
 const allStepsLoadedOnGenerationVersion = "execute-flow-all-steps-loaded-on-generation-v1"
 
-// markAllStepsLoaded writes only the metadata flag: a status write here would
-// race the cancel handler and overwrite a cancelled workflow with in-progress.
 func (s *Signal) markAllStepsLoaded(ctx workflow.Context, l *zap.Logger) {
 	if err := statusactivities.AwaitUpdateFlowStatusMetadata(ctx, statusactivities.UpdateFlowStatusMetadataRequest{
 		WorkflowID: s.WorkflowID,
