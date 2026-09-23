@@ -11,7 +11,7 @@ type TUseCopyStateResult = {
   handleCopy: (text: string) => void
 }
 
-const useCopyState = (): TUseCopyStateResult => {
+export const useCopyState = (): TUseCopyStateResult => {
   const [isCopied, setIsCopied] = useState(false)
 
   useEffect(() => {
