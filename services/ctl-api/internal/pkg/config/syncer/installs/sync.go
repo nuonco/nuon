@@ -28,6 +28,17 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 		return nil, fmt.Errorf("install config name is required")
 	}
 
+	var application app.App
+	if err := db.WithContext(ctx).
+		Preload("Org").
+		Where(app.App{ID: appID}).
+		First(&application).Error; err != nil {
+		return nil, fmt.Errorf("unable to load app %s for install sync: %w", appID, err)
+	}
+	if application.Org.Features[string(app.OrgFeatureDisableAppSync)] && install.AppBranch == "" {
+		return nil, fmt.Errorf("install config %q must set app_branch when disable-app-sync is enabled", install.Name)
+	}
+
 	var existing app.Install
 	err := db.WithContext(ctx).
 		Preload("InstallConfig").
@@ -40,13 +51,12 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 
 	var appBranchID string
 	if install.AppBranch != "" {
-		var branch app.AppBranch
-		if err := db.WithContext(ctx).
-			Where(app.AppBranch{AppID: appID, Name: install.AppBranch}).
-			First(&branch).Error; err != nil {
-			return nil, fmt.Errorf("unable to resolve app branch %q: %w", install.AppBranch, err)
+		branch, err := resolveAppBranch(ctx, db, appID, install.AppBranch)
+		if err != nil {
+			return nil, err
 		}
 		appBranchID = branch.ID
+		install.AppBranch = branch.Name
 	}
 
 	if err == gorm.ErrRecordNotFound {
@@ -57,6 +67,30 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 	}
 
 	return updateInstall(ctx, db, installHelpers, &existing, install, appBranchID)
+}
+
+func resolveAppBranch(ctx context.Context, db *gorm.DB, appID, ref string) (*app.AppBranch, error) {
+	var branch app.AppBranch
+	err := db.WithContext(ctx).
+		Where(app.AppBranch{ID: ref, AppID: appID}).
+		First(&branch).Error
+	if err == nil {
+		return &branch, nil
+	}
+	if err != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("unable to resolve app branch %q by ID: %w", ref, err)
+	}
+
+	err = db.WithContext(ctx).
+		Where(app.AppBranch{AppID: appID, Name: ref}).
+		First(&branch).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("app branch %q was not found on app %s", ref, appID)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve app branch %q by name: %w", ref, err)
+	}
+	return &branch, nil
 }
 
 func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, appID string, installCfg *config.Install, appBranchID string) (*sync.InstallSyncResult, error) {
@@ -218,7 +252,7 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	appBranchChanged := appBranchID != "" && (!existing.AppBranchID.Valid || existing.AppBranchID.String != appBranchID)
 	if appBranchChanged {
-		if _, err := installHelpers.LatestActiveBranchAppConfig(ctx, existing.AppID, appBranchID); err != nil {
+		if _, err := installHelpers.LatestDeployableAppBranchRun(ctx, appBranchID); err != nil {
 			return nil, err
 		}
 	}

@@ -40,7 +40,7 @@ type GetLatestAppBranchRunForInstallOutput struct {
 func (a *Activities) GetLatestAppBranchRunForInstall(ctx context.Context, input *GetLatestAppBranchRunForInstallInput) (*GetLatestAppBranchRunForInstallOutput, error) {
 	latest, err := a.helpers.LatestAppBranchRunForInstall(ctx, input.AppBranchID, input.InstallID)
 	if err != nil {
-		return nil, err
+		return nil, helpers.AppBranchRunResolveActivityError(err)
 	}
 
 	return &GetLatestAppBranchRunForInstallOutput{

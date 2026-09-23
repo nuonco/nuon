@@ -18,9 +18,18 @@ func WithComponentBuildDispatch() Option {
 	}
 }
 
-// WithoutBranchSync prevents branch definitions in the app config from being
-// synced. Branch runs use this to avoid changing branch configuration while
-// applying the config fetched for that run.
+// WithBranchSync makes the syncer create and update app branches from the
+// branch definitions in the app config. It is off by default: branches are
+// owned by `nuon branches sync`, and this option only exists as a rollback to
+// the previous behaviour.
+func WithBranchSync() Option {
+	return func(s *syncer) {
+		s.syncBranches = true
+	}
+}
+
+// Deprecated: branch sync is off by default; WithoutBranchSync is a no-op
+// unless combined with WithBranchSync, in which case the last option wins.
 func WithoutBranchSync() Option {
 	return func(s *syncer) {
 		s.syncBranches = false

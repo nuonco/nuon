@@ -58,6 +58,15 @@ func (s *service) SyncAppConfig(ctx *gin.Context) {
 		return
 	}
 
+	if appConfig.AppBranchID.Valid && appConfig.AppBranchID.String != "" {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("app config %s belongs to app branch %s", configID, appConfig.AppBranchID.String),
+			Description: "this app config belongs to an app branch; trigger an app branch run to sync it",
+			Code:        "app_config_branch_managed",
+		})
+		return
+	}
+
 	if appConfig.IntermediateConfig == nil || !appConfig.IntermediateConfig.IsSet() {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("app config %s has no intermediate config", configID),
