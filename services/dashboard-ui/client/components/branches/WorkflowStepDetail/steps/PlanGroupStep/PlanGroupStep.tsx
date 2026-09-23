@@ -10,6 +10,10 @@ import { type DiffSectionData } from '@/components/approvals/plan-diffs/app-conf
 import { AppConfigDiff } from '@/components/diffs/plan-diff-switch'
 import { STEP_GUTTER, StepBlock, StepRowList } from '../../shared/StepLayout'
 import { cn } from '@/utils/classnames'
+import {
+  getApprovalResponseTheme,
+  getApprovalResponseType,
+} from '@/utils/approval-utils'
 
 export interface PlanInstallDiff {
   installId: string
@@ -48,9 +52,11 @@ export const PlanGroupStep = ({
       {(hasResponse || showApproveBar) && (
         <StepBlock>
           {hasResponse && (
-            <Banner theme="success">
+            <Banner theme={getApprovalResponseTheme(responseType)}>
               <Text weight="strong">
-                Plan {responseType === 'approve' ? 'approved' : responseType || 'responded'}
+                {getApprovalResponseType(responseType)
+                  ? `Plan was ${getApprovalResponseType(responseType)}`
+                  : 'Plan responded'}
               </Text>
             </Banner>
           )}

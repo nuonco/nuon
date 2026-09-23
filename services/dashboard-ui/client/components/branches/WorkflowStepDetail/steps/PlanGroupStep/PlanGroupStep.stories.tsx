@@ -218,7 +218,29 @@ export const Skipped = () => (
     installs={uatInstalls}
     groupName="uat"
     hasResponse
-    responseType="skip"
+    responseType="deny-skip-current"
+    showApproveBar={false}
+    isInProgress={false}
+  />
+)
+
+export const Denied = () => (
+  <StepInCard
+    installs={uatInstalls}
+    groupName="uat"
+    hasResponse
+    responseType="deny"
+    showApproveBar={false}
+    isInProgress={false}
+  />
+)
+
+export const AutoApproved = () => (
+  <StepInCard
+    installs={uatInstalls}
+    groupName="uat"
+    hasResponse
+    responseType="auto-approve"
     showApproveBar={false}
     isInProgress={false}
   />
