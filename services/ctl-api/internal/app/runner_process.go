@@ -68,6 +68,15 @@ type RunnerProcess struct {
 	// Labels are computed server-side and not persisted.
 	Labels []string `json:"labels,omitempty" gorm:"-"`
 
+	// NextScheduledRestartAt is the scheduled uptime TTL restart time for this
+	// process (install and mng only). Set on process creation and not persisted.
+	NextScheduledRestartAt *time.Time `json:"next_scheduled_restart_at,omitzero" gorm:"-"`
+
+	// PreviousScheduledRestartAt is the scheduled restart time of the previous
+	// process of the same type, if one exists. Set on process creation and not
+	// persisted.
+	PreviousScheduledRestartAt *time.Time `json:"previous_scheduled_restart_at,omitzero" gorm:"-"`
+
 	Shutdowns []RunnerProcessShutdown `json:"shutdowns,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
