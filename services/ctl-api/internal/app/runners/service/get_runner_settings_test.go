@@ -63,6 +63,7 @@ func (s *GetRunnerSettingsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
+		testDependencyOptions(),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -307,8 +308,9 @@ func (s *GetRunnerSettingsTestSuite) TestVendorTelemetryRequiresEligibleInstallR
 	testApp := s.service.Seeder.CreateApp(ctx, s.T())
 	s.service.Seeder.CreateAppConfig(ctx, s.T(), testApp.ID)
 	install := s.service.Seeder.CreateInstall(ctx, s.T(), testApp)
+	require.NoError(s.T(), s.service.DB.Model(s.testOrg).Update("telemetry_enabled", true).Error)
 	require.NoError(s.T(), s.service.DB.Model(testApp).Update("name", "current-app").Error)
-	require.NoError(s.T(), s.service.DB.Model(install).Updates(map[string]interface{}{
+	require.NoError(s.T(), s.service.DB.Model(&app.Install{ID: install.ID}).Updates(map[string]interface{}{
 		"name":               "current-install",
 		"labels":             `{"env":"production","literal.key":"literal-value"}`,
 		"label_templates":    `{"env":"{{.nuon.install.name}}"}`,
@@ -343,7 +345,7 @@ func (s *GetRunnerSettingsTestSuite) TestVendorTelemetryRequiresEligibleInstallR
 	assert.Equal(s.T(), 1, queryCounts["Install"])
 	assert.Zero(s.T(), queryCounts["App"], "app name should come from the join, not another query")
 	assert.Equal(s.T(), 1, queryCounts["Org"], "only getRunner should load the org; metadata must not run install hooks")
-	assert.Contains(s.T(), metadataSQL, `SELECT installs.name,installs.labels,"App"."name" AS "App__name" FROM "installs"`)
+	assert.Contains(s.T(), metadataSQL, `SELECT installs.name,installs.labels,"App"."name" AS "App__name"`)
 	assert.Contains(s.T(), metadataSQL, `LEFT JOIN "apps"`)
 	assert.NotContains(s.T(), metadataSQL, "installs_view_")
 	var settings app.RunnerGroupSettings
@@ -359,7 +361,7 @@ func (s *GetRunnerSettingsTestSuite) TestVendorTelemetryRequiresEligibleInstallR
 	}, settings.VendorTelemetryResourceAttributes)
 
 	require.NoError(s.T(), s.service.DB.Model(testApp).Update("name", "renamed-app").Error)
-	require.NoError(s.T(), s.service.DB.Model(install).Updates(map[string]interface{}{
+	require.NoError(s.T(), s.service.DB.Model(&app.Install{ID: install.ID}).Updates(map[string]interface{}{
 		"name":   "renamed-install",
 		"labels": `{"env":"staging"}`,
 	}).Error)
@@ -372,7 +374,7 @@ func (s *GetRunnerSettingsTestSuite) TestVendorTelemetryRequiresEligibleInstallR
 	assert.Equal(s.T(), "staging", settings.VendorTelemetryResourceAttributes["nuon.install.labels.env"])
 	assert.NotContains(s.T(), settings.VendorTelemetryResourceAttributes, "nuon.install.labels.literal.key")
 
-	require.NoError(s.T(), s.service.DB.Model(install).Update("labels", `{}`).Error)
+	require.NoError(s.T(), s.service.DB.Model(&app.Install{ID: install.ID}).Update("labels", `{}`).Error)
 	rr = s.makeRequest(http.MethodGet, "/v1/runners/"+s.testRunner.ID+"/settings")
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 	settings = app.RunnerGroupSettings{}
@@ -386,7 +388,7 @@ func (s *GetRunnerSettingsTestSuite) TestVendorTelemetryRequiresEligibleInstallR
 	s.service.RunnersService.l = zap.New(logCore)
 	defer func() { s.service.RunnersService.l = originalLogger }()
 	otherOrg := s.service.Seeder.CreateOrg(ctx, s.T())
-	require.NoError(s.T(), s.service.DB.Model(install).Update("org_id", otherOrg.ID).Error)
+	require.NoError(s.T(), s.service.DB.Model(&app.Install{ID: install.ID}).Update("org_id", otherOrg.ID).Error)
 	rr = s.makeRequest(http.MethodGet, "/v1/runners/"+s.testRunner.ID+"/settings")
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 	settings = app.RunnerGroupSettings{}
@@ -398,11 +400,9 @@ func (s *GetRunnerSettingsTestSuite) TestVendorTelemetryRequiresEligibleInstallR
 	assert.Equal(s.T(), map[string]interface{}{
 		"runner_id": s.testRunner.ID, "owner_id": install.ID, "org_id": s.testOrg.ID,
 	}, warnings[0].ContextMap())
-	require.NoError(s.T(), s.service.DB.Model(install).Update("org_id", s.testOrg.ID).Error)
+	require.NoError(s.T(), s.service.DB.Model(&app.Install{ID: install.ID}).Update("org_id", s.testOrg.ID).Error)
 
-	require.NoError(s.T(), s.service.DB.Model(&app.RunnerGroupSettings{}).
-		Where(app.RunnerGroupSettings{ID: s.testSettings.ID}).
-		Update("vendor_telemetry_enabled", false).Error)
+	require.NoError(s.T(), s.service.DB.Model(s.testOrg).Update("telemetry_enabled", false).Error)
 
 	rr = s.makeRequest(http.MethodGet, "/v1/runners/"+s.testRunner.ID+"/settings")
 	require.Equal(s.T(), http.StatusOK, rr.Code)
@@ -412,9 +412,7 @@ func (s *GetRunnerSettingsTestSuite) TestVendorTelemetryRequiresEligibleInstallR
 	assert.Empty(s.T(), settings.TelemetryRelayEndpoint)
 	assert.Empty(s.T(), settings.VendorTelemetryResourceAttributes)
 
-	require.NoError(s.T(), s.service.DB.Model(&app.RunnerGroupSettings{}).
-		Where(app.RunnerGroupSettings{ID: s.testSettings.ID}).
-		Update("vendor_telemetry_enabled", true).Error)
+	require.NoError(s.T(), s.service.DB.Model(s.testOrg).Update("telemetry_enabled", true).Error)
 	s.service.RunnersService.telemetryRelayEndpoint = ""
 
 	rr = s.makeRequest(http.MethodGet, "/v1/runners/"+s.testRunner.ID+"/settings")

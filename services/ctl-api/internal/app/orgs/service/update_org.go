@@ -16,7 +16,12 @@ import (
 )
 
 type UpdateOrgRequest struct {
-	Name string `json:"name" validate:"required"`
+	Name      string                     `json:"name" validate:"required_without=Telemetry"`
+	Telemetry *UpdateOrgTelemetryRequest `json:"telemetry,omitempty"`
+}
+
+type UpdateOrgTelemetryRequest struct {
+	Enabled *bool `json:"enabled" validate:"required"`
 }
 
 func (c *UpdateOrgRequest) Validate(v *validator.Validate) error {
@@ -62,6 +67,21 @@ func (s *service) UpdateOrg(ctx *gin.Context) {
 		return
 	}
 
+	if req.Telemetry != nil {
+		caller, err := cctx.AccountFromGinContext(ctx)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if !s.isOrgAdmin(caller, org.ID) {
+			ctx.Error(stderr.ErrAuthorization{
+				Err:         fmt.Errorf("only org admins can change the telemetry default"),
+				Description: "only org admins can change the telemetry default",
+			})
+			return
+		}
+	}
+
 	org, err = s.updateOrg(ctx, org.ID, &req)
 	if err != nil {
 		ctx.Error(err)
@@ -72,17 +92,24 @@ func (s *service) UpdateOrg(ctx *gin.Context) {
 }
 
 func (s *service) updateOrg(ctx context.Context, orgID string, req *UpdateOrgRequest) (*app.Org, error) {
-	org := app.Org{
-		ID: orgID,
+	updates := map[string]any{}
+	if req.Name != "" {
+		updates["name"] = req.Name
 	}
-	res := s.db.WithContext(ctx).Model(&org).Updates(app.Org{
-		Name: req.Name,
-	})
+	if req.Telemetry != nil {
+		updates["telemetry_enabled"] = *req.Telemetry.Enabled
+	}
+	filter := app.Org{ID: orgID}
+	res := s.db.WithContext(ctx).Model(&app.Org{}).Where(filter).Updates(updates)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update org: %w", res.Error)
 	}
 	if res.RowsAffected != 1 {
-		return nil, fmt.Errorf("org not found %w", gorm.ErrRecordNotFound)
+		return nil, fmt.Errorf("org not found: %w", gorm.ErrRecordNotFound)
+	}
+	var org app.Org
+	if err := s.db.WithContext(ctx).Where(filter).First(&org).Error; err != nil {
+		return nil, fmt.Errorf("unable to reload org: %w", err)
 	}
 
 	return &org, nil

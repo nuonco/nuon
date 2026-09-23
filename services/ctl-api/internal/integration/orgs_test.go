@@ -107,17 +107,18 @@ func (s *orgsIntegrationTestSuite) TestUpdateOrg() {
 
 	s.T().Run("success", func(t *testing.T) {
 		updateReq := generics.GetFakeObj[*models.ServiceUpdateOrgRequest]()
+		updateReq.Telemetry = nil
 		org, err := s.apiClient.UpdateOrg(s.ctx, updateReq)
 		require.NoError(t, err)
 		require.NotNil(t, org)
-		require.Equal(t, *(updateReq.Name), org.Name)
+		require.Equal(t, updateReq.Name, org.Name)
 		require.Equal(t, seedOrg.ID, org.ID)
 
 		// fetch org
 		fetchedOrg, err := s.apiClient.GetOrg(s.ctx)
 		require.NoError(t, err)
 		require.NotNil(t, fetchedOrg)
-		require.Equal(t, *(updateReq.Name), fetchedOrg.Name)
+		require.Equal(t, updateReq.Name, fetchedOrg.Name)
 	})
 	s.T().Run("error when invalid request", func(t *testing.T) {
 		org, err := s.apiClient.UpdateOrg(s.ctx, &models.ServiceUpdateOrgRequest{})

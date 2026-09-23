@@ -52,9 +52,9 @@ func (s *InstallsServiceTestSuite) TestInstallTelemetrySettings() {
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &settings))
 	require.False(s.T(), settings.Enabled)
 
-	var persisted app.RunnerGroupSettings
-	require.NoError(s.T(), s.deps.DB.Where(app.RunnerGroupSettings{RunnerGroupID: runnerGroup.ID}).First(&persisted).Error)
-	require.False(s.T(), persisted.VendorTelemetryEnabled)
+	var persisted app.InstallConfig
+	require.NoError(s.T(), s.deps.DB.Where(app.InstallConfig{InstallID: install.ID}).First(&persisted).Error)
+	require.Equal(s.T(), boolPtr(false), persisted.TelemetryEnabled)
 }
 
 func (s *InstallsServiceTestSuite) TestUpdateInstallTelemetrySettingsRequiresEnabled() {

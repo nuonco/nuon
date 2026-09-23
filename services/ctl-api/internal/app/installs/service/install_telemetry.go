@@ -4,31 +4,23 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
-	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type InstallTelemetrySettings struct {
-	Enabled bool `json:"enabled"`
+	Enabled    bool  `json:"enabled"`
+	Override   *bool `json:"override" extensions:"x-nullable"`
+	OrgDefault bool  `json:"org_default"`
 }
 
 type UpdateInstallTelemetryRequest struct {
-	Enabled *bool `json:"enabled" validate:"required"`
-}
-
-func (r *UpdateInstallTelemetryRequest) Validate(v *validator.Validate) error {
-	if err := v.Struct(r); err != nil {
-		return validatorPkg.FormatValidationError(err)
-	}
-	return nil
+	Enabled *bool `json:"enabled" extensions:"x-nullable,!x-omitempty"`
 }
 
 // @ID GetInstallTelemetrySettings
@@ -88,12 +80,17 @@ func (s *service) UpdateInstallTelemetrySettings(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
-	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+	patch := cctx.PatcherFromContext(ctx)
+	if patch == nil || !slices.Contains(patch.SelectFields, "enabled") {
+		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("provide enabled as true, false, or null")))
 		return
 	}
 
-	settings, err := s.updateInstallTelemetrySettings(ctx, org.ID, ctx.Param("install_id"), *req.Enabled)
+	if err := s.helpers.SetInstallTelemetry(ctx, ctx.Param("install_id"), req.Enabled); err != nil {
+		ctx.Error(fmt.Errorf("unable to update install telemetry settings: %w", err))
+		return
+	}
+	settings, err := s.getInstallTelemetrySettings(ctx, org.ID, ctx.Param("install_id"))
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update install telemetry settings: %w", err))
 		return
@@ -103,53 +100,17 @@ func (s *service) UpdateInstallTelemetrySettings(ctx *gin.Context) {
 }
 
 func (s *service) getInstallTelemetrySettings(ctx context.Context, orgID, installID string) (*InstallTelemetrySettings, error) {
-	runnerGroup, err := s.getInstallRunnerGroupForTelemetry(ctx, orgID, installID)
-	if err != nil {
+	var install app.Install
+	if err := s.db.WithContext(ctx).Preload("InstallConfig").Preload("Org").
+		Where(app.Install{ID: installID, OrgID: orgID}).First(&install).Error; err != nil {
 		return nil, err
 	}
-	return &InstallTelemetrySettings{Enabled: runnerGroup.Settings.VendorTelemetryEnabled}, nil
-}
-
-func (s *service) updateInstallTelemetrySettings(ctx context.Context, orgID, installID string, enabled bool) (*InstallTelemetrySettings, error) {
-	runnerGroup, err := s.getInstallRunnerGroupForTelemetry(ctx, orgID, installID)
-	if err != nil {
-		return nil, err
+	settings := &InstallTelemetrySettings{
+		Enabled:    install.InstallConfig.IsTelemetryEnabled(install.Org.Telemetry.Enabled),
+		OrgDefault: install.Org.Telemetry.Enabled,
 	}
-
-	result := s.db.WithContext(ctx).
-		Model(&app.RunnerGroupSettings{}).
-		Where(app.RunnerGroupSettings{
-			ID:            runnerGroup.Settings.ID,
-			OrgID:         orgID,
-			RunnerGroupID: runnerGroup.ID,
-		}).
-		Update("vendor_telemetry_enabled", enabled)
-	if result.Error != nil {
-		return nil, fmt.Errorf("update runner group telemetry settings: %w", result.Error)
+	if install.InstallConfig != nil {
+		settings.Override = install.InstallConfig.TelemetryEnabled
 	}
-	if result.RowsAffected != 1 {
-		return nil, fmt.Errorf("update runner group telemetry settings: %w", gorm.ErrRecordNotFound)
-	}
-
-	return &InstallTelemetrySettings{Enabled: enabled}, nil
-}
-
-func (s *service) getInstallRunnerGroupForTelemetry(ctx context.Context, orgID, installID string) (*app.RunnerGroup, error) {
-	var runnerGroup app.RunnerGroup
-	result := s.db.WithContext(ctx).
-		Preload("Settings").
-		Where(app.RunnerGroup{
-			OrgID:     orgID,
-			OwnerID:   installID,
-			OwnerType: plugins.TableName(s.db, app.Install{}),
-			Type:      app.RunnerGroupTypeInstall,
-		}).
-		First(&runnerGroup)
-	if result.Error != nil {
-		return nil, fmt.Errorf("get install runner group: %w", result.Error)
-	}
-	if runnerGroup.Settings.ID == "" {
-		return nil, fmt.Errorf("get install runner group settings: %w", gorm.ErrRecordNotFound)
-	}
-	return &runnerGroup, nil
+	return settings, nil
 }

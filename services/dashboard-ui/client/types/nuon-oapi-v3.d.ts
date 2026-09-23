@@ -5077,6 +5077,7 @@ export interface components {
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       org_id?: string;
       runner_nested_template_url?: string;
+      telemetry_enabled?: boolean | null;
       updated_at?: string;
       /** @description Per-install stack template overrides (nil = use app config default) */
       vpc_nested_template_url?: string;
@@ -5799,6 +5800,7 @@ export interface components {
       status_description?: string;
       status_v2?: components["schemas"]["app.CompositeStatus"];
       tags?: string[];
+      telemetry?: components["schemas"]["app.OrgTelemetrySettings"];
       updated_at?: string;
       vcs_connections?: components["schemas"]["app.VCSConnection"][];
     };
@@ -5838,6 +5840,9 @@ export interface components {
     };
     /** @enum {string} */
     "app.OrgMemberStatus": "active" | "invited";
+    "app.OrgTelemetrySettings": {
+      enabled?: boolean;
+    };
     "app.OtelLogRecord": {
       body?: string;
       created_at?: string;
@@ -7140,6 +7145,9 @@ export interface components {
       repoURL?: string;
       version?: string;
     };
+    "config.InstallTelemetry": {
+      enabled?: boolean | null;
+    };
     "configs.ACRAppRegistration": {
       clientCertificateName?: string;
       clientID?: string;
@@ -7312,6 +7320,7 @@ export interface components {
         [key: string]: string;
       };
       runner_nested_template_url?: string;
+      telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
     };
     "helpers.CreateInstallGCPAccountParams": {
@@ -8529,6 +8538,7 @@ export interface components {
         [key: string]: string;
       };
       runner_nested_template_url?: string;
+      telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
     };
     "service.CreateInstallDeployRequest": {
@@ -9137,6 +9147,8 @@ export interface components {
     };
     "service.InstallTelemetrySettings": {
       enabled?: boolean;
+      org_default?: boolean;
+      override?: boolean | null;
     };
     "service.InstallUpdate": {
       app_config?: components["schemas"]["service.InstallAppConfigUpdate"];
@@ -9549,6 +9561,7 @@ export interface components {
         [key: string]: string;
       };
       runner_nested_template_url?: string;
+      telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
     };
     "service.UpdateInstallInputsRequest": {
@@ -9572,7 +9585,7 @@ export interface components {
       enabled: boolean;
     };
     "service.UpdateInstallTelemetryRequest": {
-      enabled: boolean;
+      enabled?: boolean | null;
     };
     "service.UpdateNotebookRequest": {
       description?: string;
@@ -9600,7 +9613,11 @@ export interface components {
       };
     };
     "service.UpdateOrgRequest": {
-      name: string;
+      name?: string;
+      telemetry?: components["schemas"]["service.UpdateOrgTelemetryRequest"];
+    };
+    "service.UpdateOrgTelemetryRequest": {
+      enabled: boolean;
     };
     "service.UpdateRunbookRequest": {
       description?: string;
