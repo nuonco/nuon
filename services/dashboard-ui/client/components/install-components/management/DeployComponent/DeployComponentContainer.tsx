@@ -140,6 +140,7 @@ export const DeployComponentButton = ({
   component,
   currentBuildId,
   currentDeployStatus,
+  children,
   ...props
 }: IButtonAsButton & {
   component: TComponent
@@ -162,7 +163,7 @@ export const DeployComponentButton = ({
       {...props}
     >
       {props?.isMenuButton ? null : <Icon variant="CloudArrowUpIcon" />}
-      Deploy component
+      {children ?? 'Deploy component'}
       {props?.isMenuButton ? <Icon variant="CloudArrowUpIcon" /> : null}
     </Button>
   )
