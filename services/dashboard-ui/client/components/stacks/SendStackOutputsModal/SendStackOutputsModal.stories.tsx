@@ -36,7 +36,12 @@ export const WithError = () => (
       versionId="ver-abc"
       onSend={() => {}}
       isPending={false}
-      error={{ error: 'Phone home endpoint not found', status: 404, description: '', user_error: false }}
+      error={{
+        error: 'Phone home endpoint not found',
+        status: 404,
+        description: '',
+        user_error: false,
+      }}
     />
   </ModalStory>
 )
