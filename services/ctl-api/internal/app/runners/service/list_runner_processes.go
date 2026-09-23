@@ -51,6 +51,8 @@ func (s *service) ListRunnerProcesses(ctx *gin.Context) {
 		return
 	}
 
+	s.attachScheduledRestarts(runnerProcessPtrs(processes))
+
 	ctx.JSON(http.StatusOK, processes)
 }
 
