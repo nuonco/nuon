@@ -7,7 +7,9 @@ import (
 
 	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
+
 	"charm.land/lipgloss/v2"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
 	"golang.org/x/term"
 
 	"github.com/nuonco/nuon/pkg/cli/styles"
@@ -265,7 +267,7 @@ func (v *TableView) RenderInteractive(data [][]string, interactive bool) error {
 	model := NewInteractiveTableModel(data)
 	model.table.Focus()
 
-	program := tea.NewProgram(model)
+	program := teaprogram.NewProgram(model)
 	_, err := program.Run()
 	return err
 }
