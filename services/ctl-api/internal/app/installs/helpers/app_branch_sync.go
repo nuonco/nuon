@@ -192,17 +192,6 @@ func (h *Helpers) CreateAppBranchConfigUpdateWorkflow(ctx context.Context, input
 	}
 
 	deployedAppConfigID := install.DeployedAppConfigID()
-	if !input.PlanOnly && install.AppConfigRef.AppliedConfigID == "" && install.AppConfigID != "" {
-		deployedAppConfigID = install.AppConfigID
-		if err := h.db.WithContext(ctx).
-			Model(&install).
-			Update("app_config_ref", app.AppConfigRef{
-				ExpectedConfigID: install.AppConfigID,
-				AppliedConfigID:  install.AppConfigID,
-			}).Error; err != nil {
-			return nil, fmt.Errorf("unable to initialize install actual app config: %w", err)
-		}
-	}
 
 	diff, err := configdiff.ComputeInstallConfigDiff(ctx, h.db, deployedAppConfigID, input.NewAppConfigID)
 	if err != nil {
