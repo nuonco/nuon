@@ -33,7 +33,7 @@ describe('approval-utils', () => {
       expect(getApprovalResponseType('approve')).toBe('approved')
       expect(getApprovalResponseType('auto-approve')).toBe('auto-approved')
       expect(getApprovalResponseType('deny')).toBe('denied')
-      expect(getApprovalResponseType('retry')).toBe('retired')
+      expect(getApprovalResponseType('retry')).toBe('retried')
       expect(getApprovalResponseType('skip')).toBe('skipped')
     })
 
@@ -54,7 +54,7 @@ describe('approval-utils', () => {
     })
 
     test('should return specific mappings correctly', () => {
-      expect(getApprovalResponseType('retry')).toBe('retired') // Note: "retired" not "retried"
+      expect(getApprovalResponseType('retry')).toBe('retried')
       expect(getApprovalResponseType('auto-approve')).toBe('auto-approved')
     })
   })
@@ -79,7 +79,7 @@ describe('approval-utils', () => {
         approve: 'approved',
         'auto-approve': 'auto-approved',
         deny: 'denied',
-        retry: 'retired', // Note the difference
+        retry: 'retried',
         skip: 'skipped',
       }
 
