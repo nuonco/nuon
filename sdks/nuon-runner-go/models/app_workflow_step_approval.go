@@ -25,6 +25,24 @@ type AppWorkflowStepApproval struct {
 	// app id
 	AppID string `json:"app_id,omitempty"`
 
+	// changes create
+	ChangesCreate int64 `json:"changes_create,omitempty"`
+
+	// changes delete
+	ChangesDelete int64 `json:"changes_delete,omitempty"`
+
+	// changes noop
+	ChangesNoop int64 `json:"changes_noop,omitempty"`
+
+	// changes replace
+	ChangesReplace int64 `json:"changes_replace,omitempty"`
+
+	// changes state
+	ChangesState AppStepChangeState `json:"changes_state,omitempty"`
+
+	// changes update
+	ChangesUpdate int64 `json:"changes_update,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -72,6 +90,10 @@ type AppWorkflowStepApproval struct {
 func (m *AppWorkflowStepApproval) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateChangesState(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateInstallWorkflowStep(formats); err != nil {
 		res = append(res, err)
 	}
@@ -91,6 +113,27 @@ func (m *AppWorkflowStepApproval) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppWorkflowStepApproval) validateChangesState(formats strfmt.Registry) error {
+	if swag.IsZero(m.ChangesState) { // not required
+		return nil
+	}
+
+	if err := m.ChangesState.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("changes_state")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("changes_state")
+		}
+
+		return err
+	}
+
 	return nil
 }
 
@@ -188,6 +231,10 @@ func (m *AppWorkflowStepApproval) validateWorkflowStep(formats strfmt.Registry) 
 func (m *AppWorkflowStepApproval) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateChangesState(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateInstallWorkflowStep(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -207,6 +254,28 @@ func (m *AppWorkflowStepApproval) ContextValidate(ctx context.Context, formats s
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppWorkflowStepApproval) contextValidateChangesState(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ChangesState) { // not required
+		return nil
+	}
+
+	if err := m.ChangesState.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("changes_state")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("changes_state")
+		}
+
+		return err
+	}
+
 	return nil
 }
 

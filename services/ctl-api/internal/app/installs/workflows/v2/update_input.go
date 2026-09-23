@@ -325,7 +325,8 @@ func componentDisableSteps(ctx workflow.Context, dg *genCtx, disableComps, skipC
 		}
 		dg.sg.nextGroup()
 		skipStep, err := dg.sg.installSignalStep(ctx, dg.installID, "skipped disable "+comp.Name, pgtype.Hstore{
-			"reason": generics.ToPtr("component is already not deployed on this install"),
+			"reason":         generics.ToPtr("component is already not deployed on this install"),
+			"component_name": generics.ToPtr(comp.Name),
 		}, nil, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create disable skip step")

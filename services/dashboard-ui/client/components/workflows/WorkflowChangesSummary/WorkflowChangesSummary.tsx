@@ -9,6 +9,7 @@ import {
   PLAN_TYPE_META,
   formatAggregate,
   hasChanges,
+  isUnsummarized,
   sumCounts,
 } from './change-summary-utils'
 import { WorkflowChangeRow } from './WorkflowChangeRow'
@@ -29,7 +30,9 @@ export interface IWorkflowChangesSummary {
 const isActionable = (summary: TStepChangeSummary): boolean =>
   hasChanges(summary.counts) ||
   summary.status === 'generating' ||
-  summary.status === 'error'
+  summary.status === 'error' ||
+  summary.countsState === 'unknown' ||
+  (summary.countsState === 'unsupported' && summary.hasDetail)
 
 const ChangesHeader = ({
   summaries,
@@ -38,6 +41,7 @@ const ChangesHeader = ({
 }) => {
   const totals = sumCounts(summaries)
   const changedSteps = summaries.filter((s) => hasChanges(s.counts))
+  const unsummarized = summaries.filter(isUnsummarized)
 
   if (changedSteps.length === 0) {
     return (
@@ -46,8 +50,9 @@ const ChangesHeader = ({
           No changes
         </Text>
         <Text variant="subtext" theme="neutral">
-          {summaries.length} {summaries.length === 1 ? 'step' : 'steps'}, nothing
-          to apply
+          {unsummarized.length > 0
+            ? `${summaries.length - unsummarized.length} of ${summaries.length} steps summarized, nothing to apply`
+            : `${summaries.length} ${summaries.length === 1 ? 'step' : 'steps'}, nothing to apply`}
         </Text>
       </div>
     )
@@ -61,6 +66,9 @@ const ChangesHeader = ({
       <Text variant="subtext" theme="neutral">
         {summaries.length} {summaries.length === 1 ? 'step' : 'steps'} in this
         workflow
+        {unsummarized.length > 0
+          ? `, ${unsummarized.length} couldn't be summarized`
+          : ''}
       </Text>
     </div>
   )
