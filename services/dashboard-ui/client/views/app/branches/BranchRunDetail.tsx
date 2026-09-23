@@ -32,6 +32,7 @@ import {
 } from '@/components/branches/shared/pr-link'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
+import { WorkflowChangesLink } from '@/components/workflows/WorkflowChangesSummary'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
@@ -299,6 +300,8 @@ const BranchRunDetailContent = () => {
           }
         >
           <div className="flex flex-col gap-4">
+            <WorkflowChangesLink workflow={run} />
+
             {showRunComparison && branchRun?.id ? (
               <BranchRunComparisonRuns
                 orgId={orgId}
