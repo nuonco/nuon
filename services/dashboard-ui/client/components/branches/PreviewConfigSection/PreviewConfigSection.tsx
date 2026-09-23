@@ -32,7 +32,7 @@ export const PreviewConfigSection = ({
     installs.find((install) => install.id === defaults.installId)?.name ??
     currentConfig?.preview_config?.install_name
   const target =
-    defaults.mode === 'build-only'
+    defaults.mode === 'none' || defaults.mode === 'build-only'
       ? 'Not used'
       : labels.length > 0
         ? null
@@ -82,7 +82,7 @@ export const PreviewConfigSection = ({
             </Text>
           )}
         </LabeledValue>
-        {hasGithubVCS ? (
+        {hasGithubVCS && defaults.mode !== 'none' ? (
           <>
             <LabeledValue
               label="Commit statuses"
@@ -121,9 +121,9 @@ export const PreviewConfigSection = ({
         ) : null}
       </div>
 
-      {!isLoading && !currentConfig?.preview_config ? (
+      {!isLoading && defaults.mode === 'none' ? (
         <Text variant="subtext" theme="neutral">
-          Platform defaults are used until custom settings are saved.
+          Preview runs are disabled for this branch.
         </Text>
       ) : null}
     </Card>

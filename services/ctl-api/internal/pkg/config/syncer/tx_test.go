@@ -6,8 +6,7 @@ import (
 	testseedconfig "github.com/nuonco/nuon/services/ctl-api/tests/testseed/config"
 )
 
-// A helper that bypasses the sync transaction fails the foreign key instead of seeing the new rows.
-func (s *SyncFieldsTestSuite) TestNewBranchGetsAConfig() {
+func branchedAppConfig() *config.AppConfig {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cfg.Branches = []*config.AppBranchConfig{
 		{
@@ -19,8 +18,24 @@ func (s *SyncFieldsTestSuite) TestNewBranchGetsAConfig() {
 			},
 		},
 	}
+	return cfg
+}
 
-	ctx, testApp, _ := s.sync(cfg)
+func (s *SyncFieldsTestSuite) TestBranchesNotSyncedByDefault() {
+	ctx, testApp, _ := s.sync(branchedAppConfig())
+
+	var count int64
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Model(&app.AppBranch{}).
+		Where(app.AppBranch{AppID: testApp.ID}).
+		Count(&count).Error)
+	s.Zero(count, "app config sync must not create branches by default")
+}
+
+// A helper that bypasses the sync transaction fails the foreign key instead of seeing the new rows.
+func (s *SyncFieldsTestSuite) TestNewBranchGetsAConfigWithBranchSync() {
+	ctx, testApp, _ := s.syncEmpty()
+	s.syncInto(ctx, testApp.ID, branchedAppConfig(), WithBranchSync())
 
 	var branch app.AppBranch
 	s.Require().NoError(s.deps.DB.WithContext(ctx).

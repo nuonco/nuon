@@ -30,6 +30,15 @@ func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir stri
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 	})
 	if err != nil {
+		var configErr config.ErrConfig
+		var parseErr parse.ParseErr
+		if errors.As(err, &configErr) || errors.As(err, &parseErr) {
+			return nil, temporal.NewNonRetryableApplicationError(
+				err.Error(),
+				branchrunerrors.ConfigValidationFailedTemporalType,
+				err,
+			)
+		}
 		return nil, fmt.Errorf("unable to parse config from repo: %w", err)
 	}
 	cfg := parseResult.Config

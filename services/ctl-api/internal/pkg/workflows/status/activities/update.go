@@ -225,6 +225,9 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 	}
 
 	a.syncInstallAppConfigVersionFromFlowStatus(ctx, req.ID, req.Status)
+	if req.Status.Status == app.StatusSuccess {
+		a.syncInstallActualAppConfigFromFlow(ctx, &loaded)
+	}
 
 	if a.notifier != nil {
 		a.notifier.FlowStatusUpdated(ctx, req)
@@ -269,6 +272,64 @@ func (a *Activities) syncInstallAppConfigVersionFromFlowStatus(ctx context.Conte
 		a.l.Warn("unable to sync install app config version status from flow",
 			zap.String("workflow_id", workflowID),
 			zap.Error(res.Error),
+		)
+	}
+}
+
+func (a *Activities) syncInstallActualAppConfigFromFlow(ctx context.Context, flw *app.Workflow) {
+	if flw.OwnerType != "installs" || flw.Type != app.WorkflowTypeAppBranchConfigUpdate || flw.PlanOnly {
+		return
+	}
+	newAppConfigID := ""
+	if v, ok := flw.Metadata["new_app_config_id"]; ok && v != nil {
+		newAppConfigID = *v
+	}
+	if newAppConfigID == "" {
+		return
+	}
+
+	var unapplied int64
+	if err := a.db.WithContext(ctx).
+		Model(&app.WorkflowStep{}).
+		Where(app.WorkflowStep{InstallWorkflowID: flw.ID}).
+		Where("((status->>'status' IN ?) OR (status->>'status' = ? AND retried = ?))",
+			[]string{
+				string(app.StatusError),
+				string(app.StatusUserSkipped),
+				string(app.StatusCancelled),
+				string(app.StatusNotAttempted),
+				string(app.WorkflowStepApprovalStatusApprovalDenied),
+				string(app.WorkflowStepApprovalStatusApprovalExpired),
+			},
+			string(app.StatusDiscarded), false,
+		).
+		Count(&unapplied).Error; err != nil {
+		a.l.Warn("unable to check workflow steps for install actual app config",
+			zap.String("workflow_id", flw.ID),
+			zap.Error(err),
+		)
+		return
+	}
+	if unapplied > 0 {
+		return
+	}
+
+	now := time.Now().UTC()
+	ref := app.AppConfigRef{
+		ExpectedConfigID:    newAppConfigID,
+		AppliedConfigID:     newAppConfigID,
+		AppliedConfigAt:     &now,
+		AppliedConfigByType: app.AppConfigRefByTypeInstallWorkflows,
+		AppliedConfigByID:   flw.ID,
+	}
+	if err := a.db.WithContext(ctx).
+		Model(&app.Install{}).
+		Where(app.Install{ID: flw.OwnerID}).
+		Update("app_config_ref", ref).Error; err != nil {
+		a.l.Warn("unable to record install actual app config",
+			zap.String("workflow_id", flw.ID),
+			zap.String("install_id", flw.OwnerID),
+			zap.Error(err),
 		)
 	}
 }

@@ -50,7 +50,11 @@ type RunRequest struct {
 	// DispatchBuilds: see components.SyncComponentParams.DispatchBuilds.
 	DispatchBuilds bool
 
-	// SkipBranches leaves existing app branch configuration unchanged.
+	// SyncBranches opts in to writing app branches from the config; see WithBranchSync.
+	SyncBranches bool
+
+	// Deprecated: branches are not synced unless SyncBranches is set. When both
+	// are set, SkipBranches wins.
 	SkipBranches bool
 }
 
@@ -116,8 +120,8 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (res *RunResult, ret
 	if req.DispatchBuilds {
 		opts = append(opts, WithComponentBuildDispatch())
 	}
-	if req.SkipBranches {
-		opts = append(opts, WithoutBranchSync())
+	if req.SyncBranches && !req.SkipBranches {
+		opts = append(opts, WithBranchSync())
 	}
 
 	var result RunResult

@@ -46,6 +46,15 @@ func TestAppBranchPreviewConfigValidateTargets(t *testing.T) {
 			cfg:  AppBranchPreviewConfig{Mode: AppBranchRunPreviewModeBuildOnly},
 		},
 		{
+			name: "none does not require target",
+			cfg:  AppBranchPreviewConfig{Mode: AppBranchRunPreviewModeNone},
+		},
+		{
+			name:    "none rejects target",
+			cfg:     AppBranchPreviewConfig{Mode: AppBranchRunPreviewModeNone, InstallName: &installName},
+			wantErr: "mode none cannot set",
+		},
+		{
 			name: "install ID is valid",
 			cfg:  AppBranchPreviewConfig{Mode: AppBranchRunPreviewModePlanOnly, InstallID: &installID},
 		},
