@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
@@ -13,6 +14,7 @@ import type { TComponentType } from '@/types'
 
 export type TInstallComponentListItem = {
   actions?: ReactNode
+  enabled?: boolean | null
   id: string
   latestDeploy: ReactNode
   name: string
@@ -64,39 +66,53 @@ const InstallComponentsListBase = ({
         </div>
       ) : components.length ? (
         <div className="flex flex-col gap-4">
-          {components.map((component) => (
-            <Card key={component.id} className="!p-4 !gap-4">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div className="flex flex-col gap-1.5 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap min-w-0">
-                    {component.type ? (
-                      <ComponentType
-                        type={component.type}
-                        displayVariant="icon-only"
-                        iconSize="16"
-                        colorVariant="color"
-                      />
-                    ) : null}
-                    <Text
-                      variant="body"
-                      weight="stronger"
-                      role="heading"
-                      level={3}
-                    >
-                      {component.name}
-                    </Text>
-                    <Status status={component.status} variant="badge" />
-                  </div>
-                  <ID>{component.id}</ID>
-                </div>
-                {component.actions}
-              </div>
+          {components.map((component) => {
+            const disabled = component.enabled === false
 
-              <div className="flex flex-col gap-4 border-t pt-4">
-                {component.latestDeploy}
-              </div>
-            </Card>
-          ))}
+            return (
+              <Card
+                key={component.id}
+                className={`!p-4 !gap-4 ${disabled ? 'opacity-55' : ''}`}
+              >
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex flex-col gap-1.5 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                      {component.type ? (
+                        <ComponentType
+                          type={component.type}
+                          displayVariant="icon-only"
+                          iconSize="16"
+                          colorVariant={disabled ? 'mono' : 'color'}
+                        />
+                      ) : null}
+                      <Text
+                        variant="body"
+                        weight="stronger"
+                        role="heading"
+                        level={3}
+                        theme={disabled ? 'neutral' : undefined}
+                      >
+                        {component.name}
+                      </Text>
+                      {disabled ? (
+                        <Badge size="sm" theme="neutral">
+                          Disabled
+                        </Badge>
+                      ) : (
+                        <Status status={component.status} variant="badge" />
+                      )}
+                    </div>
+                    <ID>{component.id}</ID>
+                  </div>
+                  {component.actions}
+                </div>
+
+                <div className="flex flex-col gap-4 border-t pt-4">
+                  {component.latestDeploy}
+                </div>
+              </Card>
+            )
+          })}
         </div>
       ) : filtered ? (
         <EmptyState
