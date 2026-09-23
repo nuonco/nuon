@@ -3,10 +3,11 @@ package activities
 import (
 	"context"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 )
 
 func newRunnerJobLifecycleFailures(provider metric.MeterProvider) metric.Int64Counter {
