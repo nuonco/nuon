@@ -1,8 +1,12 @@
 package installs
 
 import (
+	"context"
 	"strings"
 	"testing"
+
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // TestParseInstallConfig_RejectsMalformedOverride proves the CLI parse path
@@ -64,4 +68,56 @@ cidr = "10.0.0.0/16"
 			t.Fatalf("expected 2 component overrides, got %d", len(cfg.Components))
 		}
 	})
+}
+
+type testAppBranchLister struct {
+	branches []*models.AppAppBranch
+}
+
+func (l testAppBranchLister) GetAppBranches(context.Context, string) ([]*models.AppAppBranch, error) {
+	return l.branches, nil
+}
+
+func TestResolveInstallConfigBranchesRequiresBranchWhenAppSyncDisabled(t *testing.T) {
+	_, err := resolveInstallConfigBranches(
+		context.Background(),
+		testAppBranchLister{},
+		"app-1",
+		[]*config.Install{{Name: "production"}},
+		true,
+	)
+	if err == nil {
+		t.Fatal("expected app_branch requirement error")
+	}
+	if !strings.Contains(err.Error(), "must set app_branch when disable-app-sync is enabled") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestResolveInstallConfigBranchesAcceptsNameAndID(t *testing.T) {
+	branches := []*models.AppAppBranch{
+		{ID: "branch-1", Name: "production"},
+		{ID: "branch-2", Name: "staging"},
+	}
+	configs := []*config.Install{
+		{Name: "one", AppBranch: "production"},
+		{Name: "two", AppBranch: "branch-2"},
+	}
+
+	resolved, err := resolveInstallConfigBranches(
+		context.Background(),
+		testAppBranchLister{branches: branches},
+		"app-1",
+		configs,
+		true,
+	)
+	if err != nil {
+		t.Fatalf("expected branches to resolve: %v", err)
+	}
+	if resolved["one"].ID != "branch-1" || resolved["two"].ID != "branch-2" {
+		t.Fatalf("unexpected resolved branches: %#v", resolved)
+	}
+	if configs[0].AppBranch != "production" || configs[1].AppBranch != "staging" {
+		t.Fatalf("expected canonical branch names, got %q and %q", configs[0].AppBranch, configs[1].AppBranch)
+	}
 }

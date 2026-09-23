@@ -183,6 +183,7 @@ export type TConfigurationVersion = {
 }
 
 export type TPlaygroundConfiguration = {
+  nuonState: Record<string, unknown>
   inputs: TInputEntry[]
   inputVersions: TConfigurationVersion[]
   configFile?: TConfigFileInfo
@@ -302,6 +303,7 @@ export type TActivityEvent = {
 
 export type TBranchCommitRef = {
   sha: string
+  runId?: string
   message?: string
   author?: string
   createdAt?: string

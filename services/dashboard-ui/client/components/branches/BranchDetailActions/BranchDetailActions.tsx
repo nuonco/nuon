@@ -7,6 +7,7 @@ import { useNudge } from '@/hooks/use-nudge'
 
 interface IBranchDetailActions {
   isTriggerPending: boolean
+  previewDisabled?: boolean
   showTriggerNudge?: boolean
   onTriggerRun: () => void
   onTriggerPreviewModal: () => void
@@ -14,6 +15,7 @@ interface IBranchDetailActions {
 
 export const BranchDetailActions = ({
   isTriggerPending,
+  previewDisabled = false,
   showTriggerNudge = false,
   onTriggerRun,
   onTriggerPreviewModal,
@@ -47,7 +49,7 @@ export const BranchDetailActions = ({
           variant="primary"
           alignment="right"
           hideIcon
-          disabled={isTriggerPending}
+          disabled={isTriggerPending || previewDisabled}
           buttonClassName="!rounded-l-none !border-l !border-l-primary-700 !px-2"
           buttonText={<Icon variant="CaretDownIcon" size={14} />}
         >

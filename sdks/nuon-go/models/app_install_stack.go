@@ -20,11 +20,23 @@ import (
 // swagger:model app.InstallStack
 type AppInstallStack struct {
 
+	// actual app config id
+	ActualAppConfigID string `json:"actual_app_config_id,omitempty"`
+
+	// actual applied at
+	ActualAppliedAt string `json:"actual_applied_at,omitempty"`
+
+	// actual install stack version id
+	ActualInstallStackVersionID string `json:"actual_install_stack_version_id,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
+
+	// expected app config id
+	ExpectedAppConfigID string `json:"expected_app_config_id,omitempty"`
 
 	// id
 	ID string `json:"id,omitempty"`

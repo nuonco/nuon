@@ -34,12 +34,27 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, conf
 		return ui.PrintError(err)
 	}
 
+	org, err := s.api.GetOrg(ctx)
+	if err != nil {
+		return ui.PrintError(fmt.Errorf("unable to read org features: %w", err))
+	}
+	branchesByInstall, err := resolveInstallConfigBranches(
+		ctx,
+		s.api,
+		appID,
+		installCfgs,
+		org.Features["disable-app-sync"],
+	)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+
 	curInstalls, err := s.listAllAppInstalls(ctx, appID)
 	if err != nil {
 		return ui.PrintError(fmt.Errorf("error listing installs for app %s: %w", appID, err))
 	}
 
-	is := newAppInstallSyncer(s.api, appID, s.cfg.OrgID, s.cfg.Interactive, asJSON, approveAll)
+	is := newAppInstallSyncer(s.api, appID, s.cfg.OrgID, s.cfg.Interactive, asJSON, approveAll, branchesByInstall)
 
 	results := make([]syncedInstall, 0, len(installCfgs))
 	for _, installCfg := range installCfgs {
@@ -76,6 +91,72 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, conf
 		ui.PrintJSON(syncResult{Installs: results})
 	}
 	return nil
+}
+
+func resolveInstallConfigBranches(
+	ctx context.Context,
+	api interface {
+		GetAppBranches(context.Context, string) ([]*models.AppAppBranch, error)
+	},
+	appID string,
+	installCfgs []*config.Install,
+	requireBranch bool,
+) (map[string]*models.AppAppBranch, error) {
+	needsBranches := false
+	for _, installCfg := range installCfgs {
+		if installCfg == nil {
+			continue
+		}
+		if installCfg.AppBranch == "" {
+			if requireBranch {
+				return nil, fmt.Errorf(
+					"install config %q must set app_branch when disable-app-sync is enabled; use an app branch name or ID",
+					installCfg.Name,
+				)
+			}
+			continue
+		}
+		needsBranches = true
+	}
+	if !needsBranches {
+		return nil, nil
+	}
+
+	branches, err := api.GetAppBranches(ctx, appID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list app branches for app %s: %w", appID, err)
+	}
+	byID := make(map[string]*models.AppAppBranch, len(branches))
+	byName := make(map[string]*models.AppAppBranch, len(branches))
+	for _, branch := range branches {
+		if branch == nil {
+			continue
+		}
+		byID[branch.ID] = branch
+		byName[branch.Name] = branch
+	}
+
+	resolved := make(map[string]*models.AppAppBranch, len(installCfgs))
+	for _, installCfg := range installCfgs {
+		if installCfg == nil || installCfg.AppBranch == "" {
+			continue
+		}
+		branch, ok := byID[installCfg.AppBranch]
+		if !ok {
+			branch, ok = byName[installCfg.AppBranch]
+		}
+		if !ok {
+			return nil, fmt.Errorf(
+				"app_branch %q for install config %q was not found on app %s",
+				installCfg.AppBranch,
+				installCfg.Name,
+				appID,
+			)
+		}
+		installCfg.AppBranch = branch.Name
+		resolved[installCfg.Name] = branch
+	}
+	return resolved, nil
 }
 
 type syncResult struct {

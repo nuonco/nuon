@@ -96,6 +96,15 @@ func (s *Service) SyncDirWithCreate(ctx context.Context, dir string, version str
 func (s *Service) syncDir(ctx context.Context, dir string, version string, opts SyncOptions) error {
 	ui.PrintLn("syncing directory from " + dir)
 
+	org, err := s.api.GetOrg(ctx)
+	if err != nil {
+		return ui.PrintError(fmt.Errorf("unable to read org features: %w", err))
+	}
+	appSyncDisabled := org.Features[disableAppSyncFeature]
+	if appSyncDisabled {
+		opts.Create = false
+	}
+
 	appID, err := s.resolveSyncAppID(ctx, dir, opts)
 	if err != nil {
 		return ui.PrintError(err)
@@ -103,12 +112,20 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 
 	s.warnIfCLIOutdated(ctx)
 
+	if appSyncDisabled {
+		return s.handleAppSyncDisabled(ctx, dir, appID, opts)
+	}
+
 	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
 		Dirname:       dir,
 		V:             validator.New(),
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 	})
 	if err != nil {
+		return ui.PrintError(err)
+	}
+
+	if err := checkEmbeddedBranches(cfg, dir); err != nil {
 		return ui.PrintError(err)
 	}
 
@@ -156,7 +173,7 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		}
 	default:
 		var branchErr error
-		branchID, branchErr = s.resolveDefaultBranchID(ctx, appID)
+		branchID, branchErr = s.resolveDefaultBranchID(ctx, appID, org.Features)
 		if branchErr != nil {
 			return ui.PrintError(branchErr)
 		}

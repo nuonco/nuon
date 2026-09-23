@@ -4,6 +4,8 @@ export const previewModeDisplayLabel = (
   mode: TAppBranchRunPreviewMode
 ): string => {
   switch (mode) {
+    case 'none':
+      return 'None'
     case 'apply':
       return 'Apply'
     case 'build-only':

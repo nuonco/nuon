@@ -98,6 +98,21 @@ func (c *client) UpdateInstall(ctx context.Context, installID string, req *model
 	return resp.Payload, nil
 }
 
+func (c *client) MoveInstallToAppBranch(ctx context.Context, installID, appBranchID string) (*models.AppInstall, error) {
+	resp, err := c.genClient.Operations.MoveInstallToAppBranch(&operations.MoveInstallToAppBranchParams{
+		InstallID: installID,
+		Req: &models.ServiceMoveInstallToAppBranchRequest{
+			AppBranchID: &appBranchID,
+		},
+		Context: ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) DeleteInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.DeleteInstall(&operations.DeleteInstallParams{
 		InstallID: installID,

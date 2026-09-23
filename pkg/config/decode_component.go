@@ -125,7 +125,7 @@ func decodeComponent(fromType reflect.Type, toType reflect.Type, from interface{
 		}
 		comp.KubernetesManifest = &cmpCfg
 	default:
-		return from, ErrConfig{Description: "invalid type"}
+		return from, ErrConfig{Description: fmt.Sprintf("invalid component type %q", comp.Type)}
 	}
 
 	return comp, nil

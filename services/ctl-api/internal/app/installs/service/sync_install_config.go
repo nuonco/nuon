@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigsync"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -45,15 +46,22 @@ func (s *service) SyncInstallConfig(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
 	}
+	if !install.AppBranchID.Valid || install.AppBranchID.String == "" {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("install %s is not assigned to an app branch", install.ID),
+			Description: "Set app_branch in the install config before syncing.",
+		})
+		return
+	}
 
 	var branch app.AppBranch
 	if err := s.db.WithContext(ctx).
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("created_at DESC").Limit(1)
 		}).
-		Where(app.AppBranch{AppID: install.AppID}).
+		Where(app.AppBranch{ID: install.AppBranchID.String, AppID: install.AppID}).
 		First(&branch).Error; err != nil {
-		ctx.Error(fmt.Errorf("unable to find app branch: %w", err))
+		ctx.Error(fmt.Errorf("unable to find install app branch %s: %w", install.AppBranchID.String, err))
 		return
 	}
 
