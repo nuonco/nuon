@@ -1,4 +1,11 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import {
   CodeView,
   File,
@@ -8,7 +15,10 @@ import {
 } from '@pierre/diffs/react'
 import { cn } from '@/utils/classnames'
 import { Button } from '@/components/common/Button'
-import { ClickToCopyButton } from '@/components/common/ClickToCopy'
+import {
+  ClickToCopyButton,
+  useCopyState,
+} from '@/components/common/ClickToCopy'
 import { Icon } from '@/components/common/Icon'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
@@ -18,11 +28,7 @@ import {
   resolveLanguage,
   type TSyntaxLanguage,
 } from '@/lib/syntax'
-import {
-  MATCH_NAV_TOOLTIP,
-  lineMatches,
-  matchNavKeyDown,
-} from './code-search'
+import { MATCH_NAV_TOOLTIP, lineMatches, matchNavKeyDown } from './code-search'
 
 registerSyntax()
 
@@ -46,6 +52,7 @@ export interface ICodeBlock {
   value: string
   language?: string
   filename?: string
+  actions?: ReactNode
   defaultWrap?: boolean
   copy?: boolean
   lineNumbers?: boolean
@@ -57,6 +64,7 @@ export const CodeBlock = ({
   value,
   language,
   filename,
+  actions,
   defaultWrap = false,
   copy = false,
   lineNumbers,
@@ -69,6 +77,7 @@ export const CodeBlock = ({
   const [matchIndex, setMatchIndex] = useState(0)
   const [wrap, setWrap] = useState(defaultWrap)
   const [scrolled, setScrolled] = useState(false)
+  const { isCopied, handleCopy } = useCopyState()
 
   const lang = resolveLanguage(language)
   const lineCount = useMemo(() => value.split('\n').length, [value])
@@ -140,86 +149,110 @@ export const CodeBlock = ({
     })
   }
 
-  const copyButton = copy ? (
-    <ClickToCopyButton textToCopy={value} title="Copy code" />
+  const toolbarCopyButton = copy ? (
+    <Button
+      size="sm"
+      variant="icon"
+      aria-label="Copy code"
+      tooltipProps={{ tipContent: isCopied ? 'Copied' : 'Copy code' }}
+      onClick={() => handleCopy(value)}
+    >
+      <Icon variant={isCopied ? 'CheckIcon' : 'CopyIcon'} size={14} />
+    </Button>
   ) : null
 
-  const search = virtualized ? (
+  const showToolbar = virtualized || !!actions
+
+  const toolbar = showToolbar ? (
     <div className="flex items-center gap-2 border-b px-2 py-1.5">
-      <SearchInput
-        value={query}
-        placeholder="Find in block"
-        aria-label="Find in block"
-        onChange={setQuery}
-        onKeyDown={matchNavKeyDown(matchIndex, goTo)}
-        labelClassName="w-full max-w-xl flex-1"
-        className="!h-8 md:min-w-0 w-full"
-      />
-      <Text
-        variant="subtext"
-        theme="neutral"
-        className="w-20 shrink-0 text-right tabular-nums"
-      >
-        {query
-          ? `${matches.length ? matchIndex + 1 : 0} of ${matches.length}`
-          : `${lineCount} lines`}
-      </Text>
-      <Button
-        size="sm"
-        variant="icon"
-        aria-label="Previous match"
-        tooltipProps={{ tipContent: MATCH_NAV_TOOLTIP.previous }}
-        disabled={!matches.length}
-        onClick={() => goTo(matchIndex - 1)}
-      >
-        <Icon variant="CaretUpIcon" size={14} />
-      </Button>
-      <Button
-        size="sm"
-        variant="icon"
-        aria-label="Next match"
-        tooltipProps={{ tipContent: MATCH_NAV_TOOLTIP.next }}
-        disabled={!matches.length}
-        onClick={() => goTo(matchIndex + 1)}
-      >
-        <Icon variant="CaretDownIcon" size={14} />
-      </Button>
+      {virtualized ? (
+        <>
+          <SearchInput
+            value={query}
+            placeholder="Find in block"
+            aria-label="Find in block"
+            onChange={setQuery}
+            onKeyDown={matchNavKeyDown(matchIndex, goTo)}
+            labelClassName="w-full max-w-xl flex-1"
+            className="!h-8 md:min-w-0 w-full"
+          />
+          <Text
+            variant="subtext"
+            theme="neutral"
+            className="w-20 shrink-0 text-right tabular-nums"
+          >
+            {query
+              ? `${matches.length ? matchIndex + 1 : 0} of ${matches.length}`
+              : `${lineCount} lines`}
+          </Text>
+          <Button
+            size="sm"
+            variant="icon"
+            aria-label="Previous match"
+            tooltipProps={{ tipContent: MATCH_NAV_TOOLTIP.previous }}
+            disabled={!matches.length}
+            onClick={() => goTo(matchIndex - 1)}
+          >
+            <Icon variant="CaretUpIcon" size={14} />
+          </Button>
+          <Button
+            size="sm"
+            variant="icon"
+            aria-label="Next match"
+            tooltipProps={{ tipContent: MATCH_NAV_TOOLTIP.next }}
+            disabled={!matches.length}
+            onClick={() => goTo(matchIndex + 1)}
+          >
+            <Icon variant="CaretDownIcon" size={14} />
+          </Button>
+        </>
+      ) : null}
 
-      <span aria-hidden className="mx-0.5 h-4 border-l" />
-
-      <Button
-        size="sm"
-        variant="icon"
-        aria-pressed={wrap}
-        aria-label={wrap ? 'Stop wrapping lines' : 'Wrap lines'}
-        tooltipProps={{
-          tipContent: wrap ? 'Stop wrapping lines' : 'Wrap lines',
-        }}
-        onClick={() => setWrap((current) => !current)}
-      >
-        <Icon
-          variant={wrap ? 'ArrowElbowDownLeftIcon' : 'ArrowsHorizontalIcon'}
-          size={14}
-        />
-      </Button>
-      <Button
-        size="sm"
-        variant="icon"
-        aria-label="Back to top"
-        tooltipProps={{ tipContent: 'Back to top' }}
-        disabled={!scrolled}
-        onClick={() => {
-          viewer.current?.scrollTo({
-            type: 'position',
-            position: 0,
-            behavior: 'smooth',
-          })
-          setScrolled(false)
-        }}
-      >
-        <Icon variant="ArrowUpIcon" size={14} />
-      </Button>
-      {copyButton}
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        {virtualized ? (
+          <span aria-hidden className="mx-0.5 h-4 border-l" />
+        ) : null}
+        {actions}
+        {virtualized ? (
+          <>
+            <Button
+              size="sm"
+              variant="icon"
+              aria-pressed={wrap}
+              aria-label={wrap ? 'Stop wrapping lines' : 'Wrap lines'}
+              tooltipProps={{
+                tipContent: wrap ? 'Stop wrapping lines' : 'Wrap lines',
+              }}
+              onClick={() => setWrap((current) => !current)}
+            >
+              <Icon
+                variant={
+                  wrap ? 'ArrowElbowDownLeftIcon' : 'ArrowsHorizontalIcon'
+                }
+                size={14}
+              />
+            </Button>
+            <Button
+              size="sm"
+              variant="icon"
+              aria-label="Back to top"
+              tooltipProps={{ tipContent: 'Back to top' }}
+              disabled={!scrolled}
+              onClick={() => {
+                viewer.current?.scrollTo({
+                  type: 'position',
+                  position: 0,
+                  behavior: 'smooth',
+                })
+                setScrolled(false)
+              }}
+            >
+              <Icon variant="ArrowUpIcon" size={14} />
+            </Button>
+          </>
+        ) : null}
+        {toolbarCopyButton}
+      </div>
     </div>
   ) : null
 
@@ -231,9 +264,11 @@ export const CodeBlock = ({
         className
       )}
     >
-      {search}
-      {copyButton && !virtualized ? (
-        <div className="absolute top-1.5 right-1.5 z-10">{copyButton}</div>
+      {toolbar}
+      {copy && !showToolbar ? (
+        <div className="absolute top-1.5 right-1.5 z-10">
+          <ClickToCopyButton textToCopy={value} title="Copy code" />
+        </div>
       ) : null}
       {virtualized ? (
         <CodeView
