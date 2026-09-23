@@ -4,13 +4,13 @@ import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { ID } from '@/components/common/ID'
 import { Icon } from '@/components/common/Icon'
-import { JSONViewer } from '@/components/common/JSONViewer'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { CodeBlock } from '@/components/diffs/CodeBlock'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import type { TInstallStack, TInstallStackVersionRun } from '@/types'
 import { objectToKeyValueArray } from '@/utils/data-utils'
@@ -38,14 +38,22 @@ export const StackVersionDetails = ({
       <div className="grid grid-cols-2 gap-4">
         <LabeledValue label="Created">
           {version?.created_at ? (
-            <Time variant="subtext" time={version.created_at} format="relative" />
+            <Time
+              variant="subtext"
+              time={version.created_at}
+              format="relative"
+            />
           ) : (
             <Icon variant="MinusIcon" />
           )}
         </LabeledValue>
         <LabeledValue label="Updated">
           {version?.updated_at ? (
-            <Time variant="subtext" time={version.updated_at} format="relative" />
+            <Time
+              variant="subtext"
+              time={version.updated_at}
+              format="relative"
+            />
           ) : (
             <Icon variant="MinusIcon" />
           )}
@@ -204,6 +212,10 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
     <div className="flex flex-col gap-4">
       {runs.map((run, idx) => {
         const ordinalIdx = runs.length - 1 - idx
+        const data =
+          Object.keys(run?.data_contents ?? {}).length > 0
+            ? run.data_contents
+            : (run?.data ?? {})
         return (
           <div key={run?.id} className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
@@ -211,22 +223,25 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
                 <Text variant="subtext" weight="strong">
                   {indexToOrdinal(ordinalIdx)} run
                 </Text>
-                <Time variant="subtext" theme="neutral" time={run?.created_at} />
+                <Time
+                  variant="subtext"
+                  theme="neutral"
+                  time={run?.created_at}
+                />
                 <RunTypeBadge runType={run?.run_type} />
               </span>
-              <ClickToCopyButton
-                textToCopy={JSON.stringify(run?.data_contents || run?.data || {})}
-              />
             </div>
 
             <RunDiffs run={run} />
 
-            {Object.keys(run?.data_contents || {}).length > 0 ? (
-              <div className="overflow-auto max-h-[400px]">
-                <KeyValueList
-                  values={objectToKeyValueArray(run?.data_contents || {})}
-                />
-              </div>
+            {Object.keys(data).length > 0 ? (
+              <CodeBlock
+                value={JSON.stringify(data, null, 2)}
+                language="json"
+                filename={`stack-run-${run.id}.json`}
+                copy
+                maxHeight={400}
+              />
             ) : (
               <Text variant="subtext" theme="neutral">
                 No outputs reported for this run.
@@ -239,11 +254,7 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
   )
 }
 
-const StackVersionStatusHistory = ({
-  version,
-}: {
-  version: TStackVersion
-}) => {
+const StackVersionStatusHistory = ({ version }: { version: TStackVersion }) => {
   const history = version?.composite_status?.history ?? []
 
   return (
@@ -279,6 +290,21 @@ export const StackVersionMetadata = ({
 }: {
   version: TStackVersion
 }) => {
+  const contents = version?.contents ? atob(version.contents) : undefined
+  let value = contents
+  let language = 'yaml'
+  let filename = 'stack-template.yaml'
+
+  if (contents) {
+    try {
+      value = JSON.stringify(JSON.parse(contents), null, 2)
+      language = 'json'
+      filename = 'stack-template.json'
+    } catch {
+      value = contents
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <KeyValueList
@@ -291,8 +317,14 @@ export const StackVersionMetadata = ({
         })}
       />
 
-      {version?.contents ? (
-        <JSONViewer data={atob(version.contents)} showCopy />
+      {value ? (
+        <CodeBlock
+          value={value}
+          language={language}
+          filename={filename}
+          copy
+          maxHeight={480}
+        />
       ) : (
         <Text variant="subtext" theme="neutral">
           No version contents to show.
