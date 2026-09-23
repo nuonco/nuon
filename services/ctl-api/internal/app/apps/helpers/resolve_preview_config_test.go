@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -41,4 +42,25 @@ func TestMergePreviewConfigModeOverridePreservesTarget(t *testing.T) {
 
 	require.Equal(t, app.AppBranchRunPreviewModeApply, resolved.Mode)
 	require.Equal(t, &installID, resolved.InstallID)
+}
+
+func TestBranchPreviewConfigOrDefaultDisablesPreview(t *testing.T) {
+	resolved := branchPreviewConfigOrDefault(&app.AppBranchConfig{})
+	require.Equal(t, app.AppBranchRunPreviewModeNone, resolved.Mode)
+}
+
+func TestBuildAppBranchRunPreviewRejectsDisabledBranch(t *testing.T) {
+	mode := app.AppBranchRunPreviewModeApply
+	_, err := (&Helpers{}).BuildAppBranchRunPreview(
+		context.Background(),
+		"app-1",
+		&app.AppBranchConfig{},
+		&PreviewRunInput{
+			Source: app.AppBranchRunPreviewSourceBranch,
+			Override: &app.AppBranchPreviewOverride{
+				Mode: &mode,
+			},
+		},
+	)
+	require.ErrorContains(t, err, "preview runs are disabled")
 }

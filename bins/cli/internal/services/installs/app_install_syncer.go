@@ -28,21 +28,28 @@ const (
 const defaultPollDuration = time.Second * 10
 
 type appInstallSyncer struct {
-	api          nuon.Client
-	appID, orgID string
-	interactive  bool
-	asJSON       bool
-	approveAll   bool
+	api               nuon.Client
+	appID, orgID      string
+	interactive       bool
+	asJSON            bool
+	approveAll        bool
+	branchesByInstall map[string]*models.AppAppBranch
 }
 
-func newAppInstallSyncer(api nuon.Client, appID, orgID string, interactive, asJSON, approveAll bool) *appInstallSyncer {
+func newAppInstallSyncer(
+	api nuon.Client,
+	appID, orgID string,
+	interactive, asJSON, approveAll bool,
+	branchesByInstall map[string]*models.AppAppBranch,
+) *appInstallSyncer {
 	return &appInstallSyncer{
-		api:         api,
-		appID:       appID,
-		orgID:       orgID,
-		interactive: interactive,
-		asJSON:      asJSON,
-		approveAll:  approveAll,
+		api:               api,
+		appID:             appID,
+		orgID:             orgID,
+		interactive:       interactive,
+		asJSON:            asJSON,
+		approveAll:        approveAll,
+		branchesByInstall: branchesByInstall,
 	}
 }
 
@@ -77,9 +84,10 @@ func (s *appInstallSyncer) syncInstall(
 }
 
 func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *config.Install, confirm, wait, dryRun bool) (*models.AppInstall, error) {
-	appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
+	branch := s.branchesByInstall[installCfg.Name]
+	appInputCfg, err := s.inputConfigForNewInstall(ctx, branch)
 	if err != nil {
-		return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
+		return nil, err
 	}
 
 	// Use defaults for any missing inputs. Customer-owned inputs are excluded: they
@@ -136,9 +144,10 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	}
 
 	req := models.ServiceCreateInstallRequest{
-		Name:   &installCfg.Name,
-		Inputs: installCfg.FlattenedInputs(),
-		Labels: installCfg.Labels,
+		Name:        &installCfg.Name,
+		Inputs:      installCfg.FlattenedInputs(),
+		Labels:      installCfg.Labels,
+		AppBranchID: branchID(branch),
 		Metadata: &models.HelpersInstallMetadata{
 			ManagedBy: ManagedByNuonCLIConfig,
 		},
@@ -203,9 +212,17 @@ func (s *appInstallSyncer) syncExistingInstall(
 ) (*models.AppInstall, error) {
 	var err error
 
-	appConfig, err := s.api.GetAppConfig(ctx, appInstall.AppID, appInstall.AppConfigID, generics.ToPtr(true))
+	branch := s.branchesByInstall[installCfg.Name]
+	targetAppConfigID := appInstall.AppConfigID
+	if branch != nil {
+		if branch.LatestRun == nil || branch.LatestRun.AppConfigID == "" {
+			return nil, fmt.Errorf("app branch %q has no app config to apply", branch.Name)
+		}
+		targetAppConfigID = branch.LatestRun.AppConfigID
+	}
+	appConfig, err := s.api.GetAppConfig(ctx, appInstall.AppID, targetAppConfigID, generics.ToPtr(true))
 	if err != nil {
-		return nil, fmt.Errorf("error getting app config for install %s: %w", appInstall.Name, err)
+		return nil, fmt.Errorf("error getting target app config for install %s: %w", appInstall.Name, err)
 	}
 
 	if appConfig == nil || appConfig.Input == nil {
@@ -245,7 +262,8 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, fmt.Errorf("error generating diff for install %s: %w", installCfg.Name, err)
 	}
 	diffRes := diff.Summary()
-	if !diffRes.HasChanged {
+	branchChanged := branch != nil && appInstall.AppBranchID != branch.ID
+	if !diffRes.HasChanged && !branchChanged {
 		if !s.asJSON {
 			ui.PrintSuccess(fmt.Sprintf("install %s is up to date, no changes needed", installCfg.Name))
 		}
@@ -378,10 +396,48 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, fmt.Errorf("error syncing labels for install %s: %w", appInstall.Name, err)
 	}
 
+	if branchChanged {
+		appInstall, err = s.api.MoveInstallToAppBranch(ctx, appInstall.ID, branch.ID)
+		if err != nil {
+			return nil, fmt.Errorf("error moving install %s to app branch %s: %w", appInstall.Name, branch.Name, err)
+		}
+	}
+
 	if !s.asJSON {
 		ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
 	}
 	return appInstall, nil
+}
+
+func (s *appInstallSyncer) inputConfigForNewInstall(
+	ctx context.Context,
+	branch *models.AppAppBranch,
+) (*models.AppAppInputConfig, error) {
+	if branch == nil {
+		appInputCfg, err := s.api.GetAppInputLatestConfig(ctx, s.appID)
+		if err != nil {
+			return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
+		}
+		return appInputCfg, nil
+	}
+	if branch.LatestRun == nil || branch.LatestRun.AppConfigID == "" {
+		return nil, fmt.Errorf("app branch %q has no app config to apply", branch.Name)
+	}
+	appConfig, err := s.api.GetAppConfig(ctx, s.appID, branch.LatestRun.AppConfigID, generics.ToPtr(true))
+	if err != nil {
+		return nil, fmt.Errorf("error getting latest app config for app branch %q: %w", branch.Name, err)
+	}
+	if appConfig.Input == nil {
+		return nil, fmt.Errorf("latest app config %s for app branch %q has no input configuration", appConfig.ID, branch.Name)
+	}
+	return appConfig.Input, nil
+}
+
+func branchID(branch *models.AppAppBranch) string {
+	if branch == nil {
+		return ""
+	}
+	return branch.ID
 }
 
 func (s *appInstallSyncer) syncLabels(ctx context.Context, installID string, desired, current map[string]string) error {

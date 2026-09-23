@@ -39,13 +39,22 @@ func canonicalizeLocalBranch(ctx context.Context, resolver *branchNameResolver, 
 		}
 		normalizePreviewDefaults(out.Preview)
 	}
+	out.Run = normalizeRunConfig(out.Run)
 	return out, nil
 }
 
 func normalizeRemoteBranch(ctx context.Context, resolver *branchNameResolver, name string, latest *models.AppAppBranchConfig) (*config.AppBranchConfig, error) {
-	out := &config.AppBranchConfig{Name: name}
+	out := &config.AppBranchConfig{Name: name, Run: normalizeRunConfig(nil)}
 	if latest == nil {
 		return out, nil
+	}
+
+	if latest.RunConfig != nil {
+		out.Run = normalizeRunConfig(&config.AppBranchRunConfig{
+			Mode:        string(latest.RunConfig.Mode),
+			TagPrefix:   latest.RunConfig.TagPrefix,
+			GithubLabel: latest.RunConfig.GithubLabel,
+		})
 	}
 
 	if latest.ConnectedGithubVcsConfig != nil {
@@ -143,6 +152,22 @@ func normalizePreviewDefaults(p *config.AppBranchPreviewConfig) {
 	if p.React == nil {
 		p.React = generics.ToPtr(true)
 	}
+}
+
+// normalizeRunConfig returns a copy with the server's mode aliases and default
+// applied. An absent run config is written as push, so it compares equal to one.
+func normalizeRunConfig(in *config.AppBranchRunConfig) *config.AppBranchRunConfig {
+	out := &config.AppBranchRunConfig{}
+	if in != nil {
+		*out = *in
+	}
+	switch out.Mode {
+	case "", "all":
+		out.Mode = string(models.AppAppBranchRunModePush)
+	case "on_tag_prefix":
+		out.Mode = string(models.AppAppBranchRunModeOnTag)
+	}
+	return out
 }
 
 func cloneAppBranchConfig(in *config.AppBranchConfig) *config.AppBranchConfig {

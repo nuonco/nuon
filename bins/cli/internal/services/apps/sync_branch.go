@@ -36,12 +36,8 @@ const (
 // older CLI never ends up with a branch-linked config it will not run: the sync
 // endpoint skips the install rollout for branch-linked configs on the assumption a
 // branch run owns it.
-func (s *Service) resolveDefaultBranchID(ctx context.Context, appID string) (string, error) {
-	org, err := s.api.GetOrg(ctx)
-	if err != nil {
-		return "", fmt.Errorf("unable to read org features: %w", err)
-	}
-	if !org.Features[defaultAppBranchesFeature] {
+func (s *Service) resolveDefaultBranchID(ctx context.Context, appID string, features map[string]bool) (string, error) {
+	if !features[defaultAppBranchesFeature] {
 		return "", nil
 	}
 
