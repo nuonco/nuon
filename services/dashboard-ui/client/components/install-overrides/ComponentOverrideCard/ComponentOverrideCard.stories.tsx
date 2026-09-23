@@ -104,3 +104,15 @@ export const Editable = () => (
     />
   </form>
 )
+
+export const ReadOnlyWithTypeIcon = () => (
+  <ComponentOverrideCard
+    card={helmCard}
+    readOnly
+    typeVariant="icon"
+    values={{
+      [helmCard.enabledInput!.name!]: 'true',
+      [helmCard.configInput!.name!]: helmValues,
+    }}
+  />
+)
