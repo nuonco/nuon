@@ -6551,6 +6551,8 @@ export interface components {
     "app.StackVersionRunType": "workflow-run" | "out-of-band-update";
     /** @enum {string} */
     "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    /** @enum {string} */
+    "app.StepChangeState": "" | "ok" | "unsupported" | "error";
     "app.TerraformLock": {
       created?: string;
       id?: string;
@@ -6927,6 +6929,12 @@ export interface components {
     "app.WorkflowStepApproval": {
       app_branch_id?: string;
       app_id?: string;
+      changes_create?: number;
+      changes_delete?: number;
+      changes_noop?: number;
+      changes_replace?: number;
+      changes_state?: components["schemas"]["app.StepChangeState"];
+      changes_update?: number;
       created_at?: string;
       created_by_id?: string;
       id?: string;
