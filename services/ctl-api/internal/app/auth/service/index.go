@@ -41,6 +41,13 @@ func (s *service) Index(c *gin.Context) {
 		}
 	}
 
+	if isAuthenticated {
+		if dest, ok := s.signedInRedirectURL(redirectURL); ok {
+			s.redirect302(c, dest)
+			return
+		}
+	}
+
 	// Get available identity providers
 	providers, err := s.getIdentityProviders(c.Request.Context())
 	if err != nil {
@@ -88,6 +95,27 @@ func useNuonBrandedLogin(flagEnabled bool, appURL string) bool {
 	}
 
 	return u.Hostname() == "app.nuon.co"
+}
+
+// signedInRedirectURL returns a safe post-auth destination from the `url`
+// query param. Invalid or off-domain values are ignored so the signed-in
+// interstitial still renders.
+func (s *service) signedInRedirectURL(raw string) (string, bool) {
+	if raw == "" {
+		return "", false
+	}
+
+	decoded, err := url.QueryUnescape(raw)
+	if err != nil || decoded == "" {
+		return "", false
+	}
+
+	valid, err := s.validateRequestedURL(decoded)
+	if err != nil {
+		return "", false
+	}
+
+	return valid, true
 }
 
 // providerDisplayName returns a human-readable name for the provider.
