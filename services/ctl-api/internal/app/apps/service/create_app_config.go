@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -101,6 +103,11 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 		return
 	}
 
+	if err := s.validateAppConfigBranch(ctx, appID, &req); err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	cfg, err := s.createAppConfig(ctx, org.ID, appID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app inputs config: %w", err))
@@ -112,6 +119,40 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, cfg)
+}
+
+func (s *service) validateAppConfigBranch(ctx context.Context, appID string, req *CreateAppConfigRequest) error {
+	if req.AppBranchID == "" {
+		if req.SkipNotification {
+			return nil
+		}
+		enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureDefaultAppBranches)
+		if err != nil {
+			return fmt.Errorf("unable to check feature: %w", err)
+		}
+		if enabled {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("app_branch_id is required when %s is enabled", app.OrgFeatureDefaultAppBranches),
+				Description: "This org syncs app configs through app branches. Set app_branch_id, or upgrade the CLI so `nuon apps sync` targets the default branch.",
+				Code:        "app_branch_id_required",
+			}
+		}
+		return nil
+	}
+
+	var branch app.AppBranch
+	if err := s.db.WithContext(ctx).
+		Where(app.AppBranch{ID: req.AppBranchID, AppID: appID}).
+		First(&branch).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("app branch %s not found on app %s", req.AppBranchID, appID),
+				Description: "The selected app branch does not belong to this app.",
+			}
+		}
+		return fmt.Errorf("unable to get app branch: %w", err)
+	}
+	return nil
 }
 
 func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req *CreateAppConfigRequest) (*app.AppConfig, error) {

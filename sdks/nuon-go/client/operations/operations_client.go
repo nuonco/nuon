@@ -624,6 +624,8 @@ type ClientService interface {
 
 	GetInstallDeploy(params *GetInstallDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeployOK, error)
 
+	GetInstallDeployments(params *GetInstallDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentsOK, error)
+
 	GetInstallDeploys(params *GetInstallDeploysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploysOK, error)
 
 	GetInstallEvent(params *GetInstallEventParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallEventOK, error)
@@ -12902,6 +12904,58 @@ func (a *Client) GetInstallDeploy(params *GetInstallDeployParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallDeploy: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	GetInstallDeployments gets normalized deployment feed for an install
+
+	Returns a normalized, chronological deployment feed for an install.
+
+Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, action runs, runbook runs, and install-config updates. Plan-only and preview records are excluded.
+
+Records include a `type`, unified `status`, human-readable `title` and `summary`, an optional `workflow` reference, an optional `app_branch` reference (when the change originated from a branch run), an optional primary `component` reference (for single-component operations), a flat `affected_resources` list of component names, and `change_groups` that group the affected resources by logical category.
+
+Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`.
+*/
+func (a *Client) GetInstallDeployments(params *GetInstallDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeploymentsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallDeploymentsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallDeployments",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/deployments",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallDeploymentsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallDeploymentsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallDeployments: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

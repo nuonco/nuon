@@ -210,8 +210,8 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("production").
 		Example("staging").
 		Example("customer-acme").
-		Field("app_branch").Short("app branch name").
-		Long("App branch this install belongs to. Changing it moves the install and applies the branch's latest run.").
+		Field("app_branch").Short("app branch name or ID").
+		Long("App branch this install belongs to, by name or ID. Changing it moves the install and applies the branch's latest run. Required when disable-app-sync is enabled for the organization.").
 		Example("main").
 		Field("approval_option").Short("approval option for the install").
 		Long("Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation)").

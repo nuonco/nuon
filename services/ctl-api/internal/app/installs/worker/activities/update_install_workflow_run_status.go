@@ -3,6 +3,7 @@ package activities
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -30,6 +31,11 @@ func (a *Activities) UpdateInstallWorkflowRunStatus(ctx context.Context, req Upd
 	}
 	if res.RowsAffected < 1 {
 		return fmt.Errorf("no run found: %s %w", req.RunID, gorm.ErrRecordNotFound)
+	}
+	if req.Status == app.InstallActionRunStatusFinished {
+		if err := a.helpers.RecordInstallActionWorkflowRunApplied(ctx, req.RunID, time.Now().UTC()); err != nil {
+			return fmt.Errorf("unable to record applied action workflow run: %w", err)
+		}
 	}
 	return nil
 }
