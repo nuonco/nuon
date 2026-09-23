@@ -17,6 +17,7 @@ interface IDeployTimeline {
   componentName: string
   isLoading: boolean
   error: unknown
+  variant?: 'deploy' | 'sync'
 }
 
 export const DeployTimeline = ({
@@ -28,7 +29,10 @@ export const DeployTimeline = ({
   componentName,
   isLoading,
   error,
+  variant = 'deploy',
 }: IDeployTimeline) => {
+  const isSync = variant === 'sync'
+
   if (isLoading) {
     return <TimelineSkeleton />
   }
@@ -37,8 +41,12 @@ export const DeployTimeline = ({
     return (
       <EmptyState
         variant="table"
-        emptyTitle="No deploys"
-        emptyMessage="This component has not been deployed yet."
+        emptyTitle={isSync ? 'No syncs' : 'No deploys'}
+        emptyMessage={
+          isSync
+            ? 'This image has not been synced yet.'
+            : 'This component has not been deployed yet.'
+        }
       />
     )
   }
@@ -63,7 +71,9 @@ export const DeployTimeline = ({
                   {componentName}{' '}
                   {deploy?.install_deploy_type === 'teardown'
                     ? 'teardown'
-                    : 'deploy'}
+                    : isSync
+                      ? 'sync'
+                      : 'deploy'}
                 </Link>
                 {deploy?.status_v2?.status === 'drifted' ? (
                   <Badge variant="code" size="sm">
@@ -74,7 +84,8 @@ export const DeployTimeline = ({
             }
             underline={
               <Text variant="label" theme="neutral">
-                Deployed by: {deploy?.created_by?.email}
+                {isSync ? 'Synced' : 'Deployed'} by:{' '}
+                {deploy?.created_by?.email}
               </Text>
             }
           />
