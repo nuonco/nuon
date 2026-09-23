@@ -33,9 +33,7 @@ type InstallActionWorkflow struct {
 
 	StatusV2 CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
-	ExpectedActionWorkflowConfigID *string    `json:"expected_action_workflow_config_id,omitempty" gorm:"default null" temporaljson:"expected_action_workflow_config_id,omitzero,omitempty"`
-	ActualActionWorkflowConfigID   *string    `json:"actual_action_workflow_config_id,omitempty" gorm:"default null" temporaljson:"actual_action_workflow_config_id,omitzero,omitempty"`
-	ActualAppliedAt                *time.Time `json:"actual_applied_at,omitempty" gorm:"default null" temporaljson:"actual_applied_at,omitzero,omitempty"`
+	AppConfigRef AppConfigRef `json:"app_config_ref,omitzero" gorm:"type:jsonb" temporaljson:"app_config_ref,omitzero,omitempty"`
 
 	// after query fields filled in after querying
 	Status InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`

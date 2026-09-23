@@ -314,14 +314,18 @@ func (a *Activities) syncInstallActualAppConfigFromFlow(ctx context.Context, flw
 		return
 	}
 
+	now := time.Now().UTC()
+	ref := app.AppConfigRef{
+		ExpectedConfigID:    newAppConfigID,
+		AppliedConfigID:     newAppConfigID,
+		AppliedConfigAt:     &now,
+		AppliedConfigByType: app.AppConfigRefByTypeInstallWorkflows,
+		AppliedConfigByID:   flw.ID,
+	}
 	if err := a.db.WithContext(ctx).
 		Model(&app.Install{}).
 		Where(app.Install{ID: flw.OwnerID}).
-		Updates(map[string]any{
-			"actual_app_config_id":          newAppConfigID,
-			"actual_app_config_applied_at":  time.Now().UTC(),
-			"actual_app_config_workflow_id": flw.ID,
-		}).Error; err != nil {
+		Update("app_config_ref", ref).Error; err != nil {
 		a.l.Warn("unable to record install actual app config",
 			zap.String("workflow_id", flw.ID),
 			zap.String("install_id", flw.OwnerID),

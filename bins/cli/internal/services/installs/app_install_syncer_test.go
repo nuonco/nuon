@@ -1,9 +1,13 @@
 package installs
 
 import (
+	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -71,6 +75,33 @@ func TestInputDefaults(t *testing.T) {
 		if got[k] != v {
 			t.Errorf("inputDefaults()[%q] = %q, want %q", k, got[k], v)
 		}
+	}
+}
+
+func TestInputConfigForNewInstallUsesLatestAppBranchRunConfig(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	api := nuon.NewMockClient(ctrl)
+	inputCfg := &models.AppAppInputConfig{ID: "input-config-1"}
+	api.EXPECT().
+		GetAppConfig(gomock.Any(), "app-1", "app-config-2", gomock.Any()).
+		Return(&models.AppAppConfig{
+			ID:    "app-config-2",
+			Input: inputCfg,
+		}, nil)
+
+	syncer := &appInstallSyncer{api: api, appID: "app-1"}
+	got, err := syncer.inputConfigForNewInstall(context.Background(), &models.AppAppBranch{
+		ID:   "branch-1",
+		Name: "production",
+		LatestRun: &models.AppAppBranchRun{
+			AppConfigID: "app-config-2",
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected latest branch config input: %v", err)
+	}
+	if got.ID != inputCfg.ID {
+		t.Fatalf("input config ID = %q, want %q", got.ID, inputCfg.ID)
 	}
 }
 

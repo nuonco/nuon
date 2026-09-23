@@ -120,10 +120,7 @@ type InstallComponent struct {
 	HealthStatusDescription string                       `json:"health_status_description,omitzero" gorm:"-" temporaljson:"health_status_description,omitzero,omitempty"`
 	HealthStatusV2          CompositeStatus              `json:"health_status_v2,omitzero" gorm:"type:jsonb" temporaljson:"health_status_v2,omitzero,omitempty"`
 
-	ExpectedAppConfigID    *string    `json:"expected_app_config_id,omitempty" gorm:"default null" temporaljson:"expected_app_config_id,omitzero,omitempty"`
-	ActualInstallDeployID  *string    `json:"actual_install_deploy_id,omitempty" gorm:"default null" temporaljson:"actual_install_deploy_id,omitzero,omitempty"`
-	ActualComponentBuildID *string    `json:"actual_component_build_id,omitempty" gorm:"default null" temporaljson:"actual_component_build_id,omitzero,omitempty"`
-	ActualAppliedAt        *time.Time `json:"actual_applied_at,omitempty" gorm:"default null" temporaljson:"actual_applied_at,omitzero,omitempty"`
+	AppConfigRef AppConfigRef `json:"app_config_ref,omitzero" gorm:"type:jsonb" temporaljson:"app_config_ref,omitzero,omitempty"`
 
 	// Enabled is the resolved enabled/disabled state for a toggleable component
 	// (from the synthetic enabled input, falling back to default_enabled); nil otherwise.

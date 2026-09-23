@@ -24,10 +24,7 @@ type InstallStack struct {
 
 	InstallID string `json:"install_id,omitzero" gorm:"notnull;default null" temporaljson:"install_id,omitzero,omitempty"`
 
-	ExpectedAppConfigID         *string    `json:"expected_app_config_id,omitempty" gorm:"default null" temporaljson:"expected_app_config_id,omitzero,omitempty"`
-	ActualAppConfigID           *string    `json:"actual_app_config_id,omitempty" gorm:"default null" temporaljson:"actual_app_config_id,omitzero,omitempty"`
-	ActualInstallStackVersionID *string    `json:"actual_install_stack_version_id,omitempty" gorm:"default null" temporaljson:"actual_install_stack_version_id,omitzero,omitempty"`
-	ActualAppliedAt             *time.Time `json:"actual_applied_at,omitempty" gorm:"default null" temporaljson:"actual_applied_at,omitzero,omitempty"`
+	AppConfigRef AppConfigRef `json:"app_config_ref,omitzero" gorm:"type:jsonb" temporaljson:"app_config_ref,omitzero,omitempty"`
 
 	InstallStackOutputs  InstallStackOutputs   `json:"install_stack_outputs,omitzero" temporaljson:"install_stack_outputs,omitzero,omitempty"`
 	InstallStackVersions []InstallStackVersion `json:"versions,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_stack_versions,omitzero,omitempty"`

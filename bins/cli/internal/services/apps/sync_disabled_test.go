@@ -148,6 +148,8 @@ func TestHandleAppSyncDisabledNonInteractive(t *testing.T) {
 			var userErr *ui.CLIUserError
 			require.ErrorAs(t, err, &userErr)
 			require.Contains(t, userErr.Msg, "disabled")
+			require.Contains(t, userErr.Msg, "nuon branches sync")
+			require.Contains(t, userErr.Msg, "move installs onto that branch")
 			require.Contains(t, userErr.Msg, "No app branches exist yet.")
 			entries, readErr := os.ReadDir(dir)
 			require.NoError(t, readErr)

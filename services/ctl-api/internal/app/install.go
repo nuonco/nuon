@@ -64,9 +64,7 @@ type Install struct {
 	AppConfigID string    `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 	AppConfig   AppConfig `json:"-" temporaljson:"app_config,omitzero,omitempty"`
 
-	ActualAppConfigID         *string    `json:"actual_app_config_id,omitempty" gorm:"default null" temporaljson:"actual_app_config_id,omitzero,omitempty"`
-	ActualAppConfigAppliedAt  *time.Time `json:"actual_app_config_applied_at,omitempty" gorm:"default null" temporaljson:"actual_app_config_applied_at,omitzero,omitempty"`
-	ActualAppConfigWorkflowID *string    `json:"actual_app_config_workflow_id,omitempty" gorm:"default null" temporaljson:"actual_app_config_workflow_id,omitzero,omitempty"`
+	AppConfigRef AppConfigRef `json:"app_config_ref,omitzero" gorm:"type:jsonb" temporaljson:"app_config_ref,omitzero,omitempty"`
 
 	AppBranchID generics.NullString `json:"app_branch_id,omitzero" gorm:"index" swaggertype:"string" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   *AppBranch          `json:"app_branch,omitempty" temporaljson:"app_branch,omitzero,omitempty"`
@@ -186,8 +184,8 @@ func (i *Install) TableName() string {
 }
 
 func (i *Install) DeployedAppConfigID() string {
-	if i.ActualAppConfigID != nil && *i.ActualAppConfigID != "" {
-		return *i.ActualAppConfigID
+	if i.AppConfigRef.AppliedConfigID != "" {
+		return i.AppConfigRef.AppliedConfigID
 	}
 	return i.AppConfigID
 }

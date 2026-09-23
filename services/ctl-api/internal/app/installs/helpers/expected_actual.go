@@ -12,26 +12,19 @@ func (h *Helpers) SetInstallExpectedAppConfig(ctx context.Context, installID, ap
 	if err := h.db.WithContext(ctx).
 		Model(&app.InstallStack{}).
 		Where(app.InstallStack{InstallID: installID}).
-		Update("expected_app_config_id", appConfigID).Error; err != nil {
+		Update("app_config_ref", app.AppConfigRef{
+			ExpectedConfigID: appConfigID,
+		}).Error; err != nil {
 		return fmt.Errorf("unable to set expected app config on install stack: %w", err)
 	}
 
-	var sandboxConfigIDs []string
-	if err := h.db.WithContext(ctx).
-		Model(&app.AppSandboxConfig{}).
-		Where(app.AppSandboxConfig{AppConfigID: appConfigID}).
-		Pluck("id", &sandboxConfigIDs).Error; err != nil {
-		return fmt.Errorf("unable to get app sandbox config: %w", err)
-	}
-	var expectedSandboxConfigID *string
-	if len(sandboxConfigIDs) == 1 {
-		expectedSandboxConfigID = &sandboxConfigIDs[0]
-	}
 	if err := h.db.WithContext(ctx).
 		Model(&app.InstallSandbox{}).
 		Where(app.InstallSandbox{InstallID: installID}).
-		Update("expected_app_sandbox_config_id", expectedSandboxConfigID).Error; err != nil {
-		return fmt.Errorf("unable to set expected sandbox config on install sandbox: %w", err)
+		Update("app_config_ref", app.AppConfigRef{
+			ExpectedConfigID: appConfigID,
+		}).Error; err != nil {
+		return fmt.Errorf("unable to set expected config on install sandbox: %w", err)
 	}
 
 	return nil
@@ -40,34 +33,46 @@ func (h *Helpers) SetInstallExpectedAppConfig(ctx context.Context, installID, ap
 func (h *Helpers) RecordInstallDeployApplied(ctx context.Context, deployID string, appliedAt time.Time) error {
 	var deploy app.InstallDeploy
 	if err := h.db.WithContext(ctx).
+		Preload("InstallComponent").
 		Where(app.InstallDeploy{ID: deployID}).
 		First(&deploy).Error; err != nil {
 		return fmt.Errorf("unable to get install deploy: %w", err)
 	}
 
-	var updates map[string]any
 	switch deploy.Type {
 	case app.InstallDeployTypeRecover:
 		return nil
 	case app.InstallDeployTypeTeardown:
-		updates = map[string]any{
-			"actual_install_deploy_id":  nil,
-			"actual_component_build_id": nil,
-			"actual_applied_at":         nil,
+		if err := h.db.WithContext(ctx).
+			Model(&app.InstallComponent{}).
+			Where(app.InstallComponent{ID: deploy.InstallComponentID}).
+			Update("app_config_ref", app.AppConfigRef{
+				ExpectedConfigID: deploy.InstallComponent.AppConfigRef.ExpectedConfigID,
+			}).Error; err != nil {
+			return fmt.Errorf("unable to clear actual deploy on install component: %w", err)
 		}
 	default:
-		updates = map[string]any{
-			"actual_install_deploy_id":  deploy.ID,
-			"actual_component_build_id": deploy.ComponentBuildID,
-			"actual_applied_at":         appliedAt,
+		var install app.Install
+		if err := h.db.WithContext(ctx).
+			Select("id", "app_config_id").
+			Where(app.Install{ID: deploy.InstallComponent.InstallID}).
+			First(&install).Error; err != nil {
+			return fmt.Errorf("unable to get install for deploy: %w", err)
 		}
-	}
 
-	if err := h.db.WithContext(ctx).
-		Model(&app.InstallComponent{}).
-		Where(app.InstallComponent{ID: deploy.InstallComponentID}).
-		Updates(updates).Error; err != nil {
-		return fmt.Errorf("unable to record actual deploy on install component: %w", err)
+		at := appliedAt
+		if err := h.db.WithContext(ctx).
+			Model(&app.InstallComponent{}).
+			Where(app.InstallComponent{ID: deploy.InstallComponentID}).
+			Update("app_config_ref", app.AppConfigRef{
+				ExpectedConfigID:    install.AppConfigID,
+				AppliedConfigID:     install.AppConfigID,
+				AppliedConfigAt:     &at,
+				AppliedConfigByType: app.AppConfigRefByTypeInstallDeploys,
+				AppliedConfigByID:   deploy.ID,
+			}).Error; err != nil {
+			return fmt.Errorf("unable to record actual deploy on install component: %w", err)
+		}
 	}
 	return nil
 }
@@ -83,19 +88,34 @@ func (h *Helpers) RecordInstallSandboxRunApplied(ctx context.Context, runID stri
 		return nil
 	}
 
-	var updates map[string]any
+	var ref app.AppConfigRef
 	switch run.RunType {
 	case app.SandboxRunTypeProvision, app.SandboxRunTypeReprovision:
-		updates = map[string]any{
-			"actual_app_sandbox_config_id":  run.AppSandboxConfigID,
-			"actual_install_sandbox_run_id": run.ID,
-			"actual_applied_at":             appliedAt,
+		var install app.Install
+		if err := h.db.WithContext(ctx).
+			Select("id", "app_config_id").
+			Where(app.Install{ID: run.InstallID}).
+			First(&install).Error; err != nil {
+			return fmt.Errorf("unable to get install for sandbox run: %w", err)
+		}
+		at := appliedAt
+		ref = app.AppConfigRef{
+			ExpectedConfigID:    install.AppConfigID,
+			AppliedConfigID:     install.AppConfigID,
+			AppliedConfigAt:     &at,
+			AppliedConfigByType: app.AppConfigRefByTypeInstallSandboxRuns,
+			AppliedConfigByID:   run.ID,
 		}
 	case app.SandboxRunTypeDeprovision:
-		updates = map[string]any{
-			"actual_app_sandbox_config_id":  nil,
-			"actual_install_sandbox_run_id": nil,
-			"actual_applied_at":             nil,
+		var existing app.InstallSandbox
+		if err := h.db.WithContext(ctx).
+			Select("id", "app_config_ref").
+			Where(app.InstallSandbox{ID: *run.InstallSandboxID}).
+			First(&existing).Error; err != nil {
+			return fmt.Errorf("unable to get install sandbox: %w", err)
+		}
+		ref = app.AppConfigRef{
+			ExpectedConfigID: existing.AppConfigRef.ExpectedConfigID,
 		}
 	default:
 		return nil
@@ -104,7 +124,7 @@ func (h *Helpers) RecordInstallSandboxRunApplied(ctx context.Context, runID stri
 	if err := h.db.WithContext(ctx).
 		Model(&app.InstallSandbox{}).
 		Where(app.InstallSandbox{ID: *run.InstallSandboxID}).
-		Updates(updates).Error; err != nil {
+		Update("app_config_ref", ref).Error; err != nil {
 		return fmt.Errorf("unable to record actual sandbox run on install sandbox: %w", err)
 	}
 	return nil
@@ -118,19 +138,34 @@ func (h *Helpers) RecordInstallStackVersionApplied(ctx context.Context, stackVer
 		return nil
 	}
 
-	updates := map[string]any{
-		"actual_install_stack_version_id": stackVersion.ID,
-		"actual_applied_at":               time.Now().UTC(),
-		"actual_app_config_id":            nil,
+	appConfigID := stackVersion.AppConfigID
+
+	var existing app.InstallStack
+	if err := h.db.WithContext(ctx).
+		Select("id", "app_config_ref").
+		Where(app.InstallStack{ID: stackVersion.InstallStackID}).
+		First(&existing).Error; err != nil {
+		return fmt.Errorf("unable to get install stack: %w", err)
 	}
-	if stackVersion.AppConfigID != "" {
-		updates["actual_app_config_id"] = stackVersion.AppConfigID
+
+	expectedConfigID := existing.AppConfigRef.ExpectedConfigID
+	if appConfigID == "" {
+		appConfigID = expectedConfigID
+	}
+
+	now := time.Now().UTC()
+	ref := app.AppConfigRef{
+		ExpectedConfigID:    expectedConfigID,
+		AppliedConfigID:     appConfigID,
+		AppliedConfigAt:     &now,
+		AppliedConfigByType: app.AppConfigRefByTypeInstallStackVersions,
+		AppliedConfigByID:   stackVersion.ID,
 	}
 
 	if err := h.db.WithContext(ctx).
 		Model(&app.InstallStack{}).
 		Where(app.InstallStack{ID: stackVersion.InstallStackID}).
-		Updates(updates).Error; err != nil {
+		Update("app_config_ref", ref).Error; err != nil {
 		return fmt.Errorf("unable to record actual stack version on install stack: %w", err)
 	}
 	return nil
