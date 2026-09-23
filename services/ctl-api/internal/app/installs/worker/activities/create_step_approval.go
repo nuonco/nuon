@@ -4,12 +4,14 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/plancounts"
 )
 
 type CreateStepApprovalRequest struct {
@@ -50,6 +52,15 @@ func (a *Activities) CreateStepApproval(ctx context.Context, req *CreateStepAppr
 		Contents:              plan,
 		Type:                  req.Type,
 	}
+
+	counts, state, err := plancounts.Counts(req.Type, plan)
+	if err != nil {
+		a.l.Warn("unable to summarize approval plan",
+			zap.String("step_id", req.StepID),
+			zap.String("approval_type", string(req.Type)),
+			zap.Error(err))
+	}
+	sa.SetChanges(counts, state)
 
 	if plan != "" {
 		// the blob upload in WorkflowStepApproval's BeforeCreate hook requires org_id on the context

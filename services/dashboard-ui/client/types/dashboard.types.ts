@@ -41,6 +41,8 @@ export type TStepChangeCounts = {
   noop: number
 }
 
+export type TStepChangeState = 'ok' | 'unsupported' | 'unknown'
+
 export type TStepChangeSummary = {
   stepId: string
   stepName: string
@@ -48,6 +50,7 @@ export type TStepChangeSummary = {
   planType: TStepChangePlanType
   status: TStepChangeStatus
   counts: TStepChangeCounts
+  countsState: TStepChangeState
   hasDetail: boolean
 }
 
