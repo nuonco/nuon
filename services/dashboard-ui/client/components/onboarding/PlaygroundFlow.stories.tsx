@@ -743,12 +743,6 @@ const IntroDiagram = () => (
           </div>
           <MiniArch live />
         </div>
-        <div className="flex items-center gap-2">
-          <Icon variant="CpuIcon" size={14} theme="brand" />
-          <Text variant="subtext" theme="neutral">
-            Nuon runner: you operate it from here, inside their account
-          </Text>
-        </div>
       </div>
     </div>
   </div>
