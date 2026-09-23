@@ -7,12 +7,13 @@ import type { TComponent, TAPIError } from '@/types'
 
 export const BuildComponentButton = ({
   onClick,
+  children,
   ...props
 }: { onClick: () => void } & Omit<IButtonAsButton, 'onClick'>) => {
   return (
     <Button onClick={onClick} {...props}>
       {props?.isMenuButton ? null : <Icon variant="HammerIcon" />}
-      Build component
+      {children ?? 'Build component'}
       {props?.isMenuButton ? <Icon variant="HammerIcon" /> : null}
     </Button>
   )
@@ -35,12 +36,7 @@ export const BuildComponentModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="HammerIcon" size="24" />
           Build {component.name} component?
         </Text>

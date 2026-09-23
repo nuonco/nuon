@@ -81,14 +81,14 @@ export const NEW_INSTALL_NAV_LINKS: TNavItem[] = [
     text: 'Overview',
   },
   {
-    path: `/resources`,
-    iconVariant: 'CardsIcon',
-    text: 'Resources',
-  },
-  {
     path: `/deployments`,
     iconVariant: 'ArrowsClockwiseIcon',
     text: 'Deployments',
+  },
+  {
+    path: `/resources`,
+    iconVariant: 'CardsIcon',
+    text: 'Resources',
   },
   {
     path: `/health`,
