@@ -6,13 +6,14 @@ import { CodeInput } from '@/components/common/form/CodeInput'
 import { Toggle } from '@/components/common/form/Toggle'
 import { Expand } from '@/components/common/Expand'
 import { Text } from '@/components/common/Text'
+import { ComponentType } from '@/components/components/ComponentType'
 import {
   type TComponentOverrideCard,
-  type TComponentType,
+  type TComponentType as TOverrideComponentType,
 } from '@/utils/install-utils'
-import type { TAppInput } from '@/types'
+import type { TAppInput, TComponentType } from '@/types'
 
-const COMPONENT_TYPE_LABELS: Record<TComponentType, string> = {
+const COMPONENT_TYPE_LABELS: Record<TOverrideComponentType, string> = {
   terraform_module: 'Terraform module',
   helm_chart: 'Helm chart',
 }
@@ -39,6 +40,9 @@ export interface IComponentOverrideCard {
   readOnly?: boolean
   showEnabled?: boolean
   codeBlockVariant?: 'compact' | 'viewer'
+  componentType?: TComponentType
+  muteDisabled?: boolean
+  typeVariant?: 'badge' | 'icon'
 }
 
 export const ComponentOverrideCard = ({
@@ -47,14 +51,19 @@ export const ComponentOverrideCard = ({
   readOnly = false,
   showEnabled = true,
   codeBlockVariant = 'compact',
+  componentType,
+  muteDisabled = false,
+  typeVariant = 'badge',
 }: IComponentOverrideCard) => {
   const { enabledInput, configInput, configKind } = card
   const toggleable = !!enabledInput
+  const type = componentType ?? card.componentType
 
   const initialEnabled = enabledInput
     ? (values?.[enabledInput.name || ''] ?? enabledInput.default) === 'true'
     : true
   const [enabled, setEnabled] = useState(initialEnabled)
+  const muted = muteDisabled && showEnabled && toggleable && !enabled
 
   const config = configKind ? CONFIG_KIND[configKind] : undefined
   const configValue =
@@ -63,13 +72,27 @@ export const ComponentOverrideCard = ({
       : undefined
 
   return (
-    <div className="flex flex-col gap-3 border rounded-md p-4">
+    <div
+      className={`flex flex-col gap-3 border rounded-md p-4 ${muted ? 'opacity-55' : ''}`}
+    >
       <div className="flex items-center justify-between gap-4">
-        <span className="flex items-center gap-2">
-          <Text variant="body" weight="strong">
+        <span className="flex items-center gap-2 min-w-0">
+          {typeVariant === 'icon' && type && (
+            <ComponentType
+              type={type}
+              displayVariant="icon-only"
+              iconSize="16"
+              colorVariant={muted ? 'mono' : 'color'}
+            />
+          )}
+          <Text
+            variant="body"
+            weight="strong"
+            theme={muted ? 'neutral' : undefined}
+          >
             {card.component}
           </Text>
-          {card.componentType && (
+          {typeVariant === 'badge' && card.componentType && (
             <Badge size="sm" theme="neutral">
               {COMPONENT_TYPE_LABELS[card.componentType]}
             </Badge>

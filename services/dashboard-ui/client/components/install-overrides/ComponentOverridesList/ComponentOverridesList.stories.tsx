@@ -56,6 +56,17 @@ export const WithCodeViewer = () => (
   </div>
 )
 
+export const WithTypeIcons = () => (
+  <div className="max-w-2xl">
+    <ComponentOverridesList
+      inputs={inputs}
+      values={values}
+      codeBlockVariant="viewer"
+      typeVariant="icon"
+    />
+  </div>
+)
+
 export const Empty = () => (
   <div className="max-w-2xl">
     <ComponentOverridesList inputs={[]} values={{}} />
