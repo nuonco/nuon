@@ -33,5 +33,6 @@ func (a *Activities) UpdateInstallAppConfigID(ctx context.Context, input *Update
 	if res.Error != nil {
 		return fmt.Errorf("unable to update install app_config_id: %w", res.Error)
 	}
-	return nil
+
+	return a.helpers.SetInstallExpectedAppConfig(ctx, input.InstallID, input.NewAppConfigID)
 }

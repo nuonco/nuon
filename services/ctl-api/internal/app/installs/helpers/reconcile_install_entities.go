@@ -120,6 +120,26 @@ func (h *Helpers) ReconcileInstallActions(ctx context.Context, installID string)
 		}
 	}
 
+	var desiredConfigs []app.ActionWorkflowConfig
+	if err := h.db.WithContext(ctx).
+		Select("id", "action_workflow_id").
+		Where(app.ActionWorkflowConfig{AppConfigID: appCfg.ID}).
+		Find(&desiredConfigs).Error; err != nil {
+		return fmt.Errorf("unable to get action workflow configs: %w", err)
+	}
+	for _, cfg := range desiredConfigs {
+		if err := h.db.WithContext(ctx).
+			Model(&app.InstallActionWorkflow{}).
+			Where(app.InstallActionWorkflow{InstallID: installID, ActionWorkflowID: cfg.ActionWorkflowID}).
+			Updates(map[string]any{
+				"expected_action_workflow_config_id": cfg.ID,
+				"actual_action_workflow_config_id":   cfg.ID,
+				"actual_applied_at":                  time.Now().UTC(),
+			}).Error; err != nil {
+			return fmt.Errorf("unable to set expected config on install action workflow: %w", err)
+		}
+	}
+
 	for i := range existing {
 		iaw := &existing[i]
 		if desiredSet[iaw.ActionWorkflowID] {
@@ -143,6 +163,15 @@ func (h *Helpers) ReconcileInstallActions(ctx context.Context, installID string)
 			Model(iaw).
 			Update("status_v2", removedStatus).Error; err != nil {
 			return fmt.Errorf("unable to mark install action workflow %s as removed: %w", iaw.ID, err)
+		}
+		if err := h.db.WithContext(ctx).
+			Model(iaw).
+			Updates(map[string]any{
+				"expected_action_workflow_config_id": nil,
+				"actual_action_workflow_config_id":   nil,
+				"actual_applied_at":                  time.Now().UTC(),
+			}).Error; err != nil {
+			return fmt.Errorf("unable to clear expected config on install action workflow %s: %w", iaw.ID, err)
 		}
 	}
 
@@ -341,6 +370,16 @@ func (h *Helpers) ReconcileInstallComponents(ctx context.Context, installID stri
 		}
 	}
 
+	if len(appCfg.ComponentIDs) > 0 {
+		if err := h.db.WithContext(ctx).
+			Model(&app.InstallComponent{}).
+			Where(app.InstallComponent{InstallID: installID}).
+			Where("component_id IN ?", []string(appCfg.ComponentIDs)).
+			Update("expected_app_config_id", appCfg.ID).Error; err != nil {
+			return fmt.Errorf("unable to set expected app config on install components: %w", err)
+		}
+	}
+
 	for i := range existing {
 		ic := &existing[i]
 		if desiredSet[ic.ComponentID] {
@@ -363,8 +402,9 @@ func (h *Helpers) ReconcileInstallComponents(ctx context.Context, installID stri
 		if err := h.db.WithContext(ctx).
 			Model(ic).
 			Updates(map[string]any{
-				"status_v2": removedStatus,
-				"status":    app.InstallComponentStatusInactive,
+				"status_v2":              removedStatus,
+				"status":                 app.InstallComponentStatusInactive,
+				"expected_app_config_id": nil,
 			}).Error; err != nil {
 			return fmt.Errorf("unable to mark install component %s as removed: %w", ic.ID, err)
 		}

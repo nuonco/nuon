@@ -212,5 +212,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "134-backfill-app-sandbox-build-app-branch-run",
 			Fn:   m.Migration133BackfillAppSandboxBuildAppBranchRun,
 		},
+		{
+			Name: "135-backfill-install-expected-actual-state",
+			Fn:   m.Migration135BackfillInstallExpectedActualState,
+		},
 	}
 }

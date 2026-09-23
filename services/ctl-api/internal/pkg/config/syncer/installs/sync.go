@@ -218,7 +218,7 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	appBranchChanged := appBranchID != "" && (!existing.AppBranchID.Valid || existing.AppBranchID.String != appBranchID)
 	if appBranchChanged {
-		if _, err := installHelpers.LatestActiveBranchAppConfig(ctx, existing.AppID, appBranchID); err != nil {
+		if _, err := installHelpers.LatestDeployableAppBranchRun(ctx, appBranchID); err != nil {
 			return nil, err
 		}
 	}

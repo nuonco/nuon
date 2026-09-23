@@ -20,11 +20,23 @@ import (
 // swagger:model app.InstallSandbox
 type AppInstallSandbox struct {
 
+	// actual app sandbox config id
+	ActualAppSandboxConfigID string `json:"actual_app_sandbox_config_id,omitempty"`
+
+	// actual applied at
+	ActualAppliedAt string `json:"actual_applied_at,omitempty"`
+
+	// actual install sandbox run id
+	ActualInstallSandboxRunID string `json:"actual_install_sandbox_run_id,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
+
+	// expected app sandbox config id
+	ExpectedAppSandboxConfigID string `json:"expected_app_sandbox_config_id,omitempty"`
 
 	// id
 	ID string `json:"id,omitempty"`

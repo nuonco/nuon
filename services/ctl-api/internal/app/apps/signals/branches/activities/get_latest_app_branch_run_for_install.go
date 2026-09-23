@@ -2,6 +2,8 @@ package activities
 
 import (
 	"context"
+
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 )
 
 type GetLatestAppBranchRunForInstallInput struct {
@@ -21,7 +23,7 @@ type GetLatestAppBranchRunForInstallOutput struct {
 func (a *Activities) GetLatestAppBranchRunForInstall(ctx context.Context, input *GetLatestAppBranchRunForInstallInput) (*GetLatestAppBranchRunForInstallOutput, error) {
 	latest, err := a.installHelpers.LatestAppBranchRunForInstall(ctx, input.AppBranchID, input.InstallID)
 	if err != nil {
-		return nil, err
+		return nil, installhelpers.AppBranchRunResolveActivityError(err)
 	}
 
 	return &GetLatestAppBranchRunForInstallOutput{
