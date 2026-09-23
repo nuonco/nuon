@@ -69,6 +69,9 @@ func (s *service) CreateRunnerProcess(ctx *gin.Context) {
 		return
 	}
 
+	process.NextScheduledRestartAt = s.scheduledRestartAt(process)
+	process.PreviousScheduledRestartAt = s.previousProcessScheduledRestart(ctx, runnerID, process)
+
 	_, telemetrySpan := runnerTracer.Start(
 		ctx.Request.Context(), "runner.process.telemetry.emit")
 	s.emitProcessStart(ctx, runnerID, process)
@@ -141,4 +144,21 @@ func (s *service) createRunnerProcess(ctx context.Context, runnerID string, req 
 	}
 
 	return &process, nil
+}
+
+func (s *service) previousProcessScheduledRestart(ctx context.Context, runnerID string, process *app.RunnerProcess) *time.Time {
+	if process.Type != app.RunnerProcessTypeInstall && process.Type != app.RunnerProcessTypeMng {
+		return nil
+	}
+
+	var prev app.RunnerProcess
+	if res := s.db.WithContext(ctx).
+		Where(app.RunnerProcess{RunnerID: runnerID, Type: process.Type}).
+		Where("id <> ?", process.ID).
+		Order("created_at DESC").
+		First(&prev); res.Error != nil {
+		return nil
+	}
+
+	return s.scheduledRestartAt(&prev)
 }

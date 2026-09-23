@@ -41,8 +41,17 @@ type AppRunnerProcess struct {
 	// log stream id
 	LogStreamID string `json:"log_stream_id,omitempty"`
 
+	// NextScheduledRestartAt is the scheduled uptime TTL restart time for this
+	// process (install and mng only). Set on process creation and not persisted.
+	NextScheduledRestartAt string `json:"next_scheduled_restart_at,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
+
+	// PreviousScheduledRestartAt is the scheduled restart time of the previous
+	// process of the same type, if one exists. Set on process creation and not
+	// persisted.
+	PreviousScheduledRestartAt string `json:"previous_scheduled_restart_at,omitempty"`
 
 	// restart requested
 	RestartRequested bool `json:"restart_requested,omitempty"`
