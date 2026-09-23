@@ -208,6 +208,19 @@ func (w *workspace) show(ctx context.Context, client Terraform) (*tfjson.State, 
 	return out, nil
 }
 
+func (w *workspace) StatePull(ctx context.Context, log hclog.Logger) (string, error) {
+	client, err := w.getClient(ctx, log)
+	if err != nil {
+		return "", err
+	}
+
+	state, err := client.StatePull(ctx)
+	if err != nil {
+		return "", fmt.Errorf("unable to execute state pull: %w", err)
+	}
+	return state, nil
+}
+
 func (w *workspace) Validate(ctx context.Context, log hclog.Logger) (*tfjson.ValidateOutput, error) {
 	client, err := w.getClient(ctx, log)
 	if err != nil {
