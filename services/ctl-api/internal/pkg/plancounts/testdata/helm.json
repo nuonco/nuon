@@ -1,0 +1,37 @@
+{
+  "plan": "payments, api, Deployment (apps) to be added.\npayments, api, Service (v1) to be added.\npayments, worker, Deployment (apps) to be changed.\npayments, legacy, ConfigMap (v1) to be destroyed.\nPlan: 2 to add, 1 to change, 1 to destroy.\n",
+  "op": "upgrade",
+  "helm_content_diff": [
+    {
+      "api": "apps/v1",
+      "kind": "Deployment",
+      "name": "api",
+      "namespace": "payments",
+      "before": null,
+      "after": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api"
+    },
+    {
+      "api": "apps/v1",
+      "kind": "Deployment",
+      "name": "worker",
+      "namespace": "payments",
+      "entries": [
+        {
+          "path": "spec.replicas",
+          "original": "1",
+          "applied": "2",
+          "type": 1,
+          "payload": "replicas: 1"
+        },
+        {
+          "path": "spec.replicas",
+          "original": "1",
+          "applied": "2",
+          "type": 2,
+          "payload": "replicas: 2"
+        }
+      ]
+    }
+  ],
+  "helm_release_status": "deployed"
+}

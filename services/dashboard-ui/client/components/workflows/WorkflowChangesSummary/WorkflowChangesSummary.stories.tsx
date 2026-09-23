@@ -17,6 +17,7 @@ const mk = (over: Partial<TStepChangeSummary>): TStepChangeSummary => ({
   planType: 'terraform_plan',
   status: 'pending-approval',
   counts: noCounts,
+  countsState: 'ok',
   hasDetail: true,
   ...over,
 })
@@ -268,7 +269,8 @@ export const BranchRun = () => (
         componentName: 'main',
         planType: 'app_branch_plan',
         status: 'pending-approval',
-        counts: { create: 2, update: 1, delete: 0, replace: 0, noop: 0 },
+        counts: noCounts,
+        countsState: 'unsupported',
       }),
       mk({
         stepId: 'install-1',
@@ -277,7 +279,37 @@ export const BranchRun = () => (
         planType: 'install_creation',
         status: 'pending-approval',
         counts: noCounts,
+        countsState: 'unsupported',
         hasDetail: false,
+      }),
+    ]}
+  />
+)
+
+export const Unsummarized = () => (
+  <WorkflowChangesSummary
+    renderDetail={renderMockDetail}
+    summaries={[
+      mk({
+        stepId: 'legacy-1',
+        stepName: 'Sync and plan api',
+        componentName: 'api',
+        status: 'applied',
+        countsState: 'unknown',
+      }),
+      mk({
+        stepId: 'legacy-2',
+        stepName: 'Sync and plan worker',
+        componentName: 'worker',
+        status: 'applied',
+        countsState: 'unknown',
+      }),
+      mk({
+        stepId: 'fresh-1',
+        stepName: 'Sync and plan gateway',
+        componentName: 'gateway',
+        status: 'pending-approval',
+        counts: { create: 3, update: 1, delete: 0, replace: 0, noop: 0 },
       }),
     ]}
   />
