@@ -190,10 +190,11 @@ func (a *Activities) installsWithDisabledCrons(ctx context.Context, installIDs [
 		FROM queue_emitters e
 		JOIN queues q ON q.id = e.queue_id
 		WHERE q.owner_type = ? AND q.owner_id IN ? AND q.deleted_at = 0
-			AND e.mode = ? AND e.deleted_at = 0 AND e.enabled = false`,
+			AND e.mode = ? AND e.deleted_at = 0 AND e.status->>'status' = ?`,
 		installOwnerType,
 		installIDs,
 		string(app.QueueEmitterModeCron),
+		string(app.StatusDisabled),
 	).Scan(&ownerIDs); res.Error != nil {
 		return nil, fmt.Errorf("unable to list installs with disabled crons: %w", res.Error)
 	}

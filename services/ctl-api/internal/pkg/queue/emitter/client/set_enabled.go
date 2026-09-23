@@ -29,12 +29,11 @@ type SetCronEmittersEnabledResponse struct {
 	EmitterIDs []string `json:"emitter_ids"`
 }
 
-// SetCronEmittersEnabledForOwner flips every live cron emitter on the owner's
-// queues to the requested state and brings their Temporal executions in line.
+// SetCronEmittersEnabledForOwner updates every eligible live cron emitter on
+// the owner's queues and brings their Temporal executions in line.
 //
-// Disabling tears the workflows down; enabling restarts them. Only rows whose
-// state actually changes are touched, so repeat calls from a health sweep that
-// has already converged cost one UPDATE and no Temporal traffic.
+// Disabling tears active workflows down; enabling restarts emitters previously
+// disabled by this path. Cancelled emitters remain paused.
 //
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 2m
@@ -52,22 +51,25 @@ func (c *Client) SetCronEmittersEnabledForOwner(ctx context.Context, req *SetCro
 		return resp, nil
 	}
 
-	reason := ""
-	if !req.Enabled {
-		reason = req.Reason
+	status := app.NewCompositeStatus(ctx, app.StatusDisabled)
+	status.StatusHumanDescription = req.Reason
+	statusFilter := "COALESCE(status->>'status', '') IN ?"
+	statuses := []string{string(app.StatusPending), string(app.StatusInProgress)}
+	if req.Enabled {
+		status = app.NewCompositeStatus(ctx, app.StatusInProgress)
+		statuses = []string{string(app.StatusDisabled)}
 	}
 
 	var changed []app.QueueEmitter
 	if res := c.db.WithContext(ctx).
 		Model(&changed).
 		Clauses(clause.Returning{}).
-		Where("queue_id IN ? AND mode = ? AND deleted_at = 0 AND enabled <> ?",
-			queueIDs, app.QueueEmitterModeCron, req.Enabled).
+		Where("queue_id IN ? AND mode = ? AND deleted_at = 0", queueIDs, app.QueueEmitterModeCron).
+		Where(statusFilter, statuses).
 		Updates(map[string]any{
-			"enabled":         req.Enabled,
-			"disabled_reason": reason,
+			"status": status,
 		}); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to update emitter enabled state")
+		return nil, errors.Wrap(res.Error, "unable to update emitter status")
 	}
 
 	if len(changed) == 0 {

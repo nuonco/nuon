@@ -39,7 +39,7 @@ func (e *EmitterTestSuite) insertEmitter(ctx context.Context, queueID string, mo
 		Mode:         mode,
 		CronSchedule: "* * * * *",
 		SignalType:   example.ExampleSignalType,
-		Enabled:      true,
+		Status:       app.NewCompositeStatus(ctx, app.StatusInProgress),
 	}
 	require.NoError(e.T(), e.service.DB.WithContext(ctx).Create(&em).Error)
 
@@ -85,12 +85,12 @@ func (e *EmitterTestSuite) TestSetCronEmittersEnabledForOwnerScope() {
 	require.Zero(e.T(), resp.Errors, "the emitter's workflow should have accepted the stop update")
 
 	disabled := e.emitter(cron.ID)
-	require.False(e.T(), disabled.Enabled)
-	require.Equal(e.T(), "no healthy runner", disabled.DisabledReason)
+	require.Equal(e.T(), app.StatusDisabled, disabled.Status.Status)
+	require.Equal(e.T(), "no healthy runner", disabled.Status.StatusHumanDescription)
 
-	require.True(e.T(), e.emitter(fireOnce.ID).Enabled, "fire-once emitters are not gated")
-	require.True(e.T(), e.emitter(deletedCron.ID).Enabled, "soft-deleted emitters must not be touched")
-	require.True(e.T(), e.emitter(otherOwnerCron.ID).Enabled, "another owner's emitters must not be touched")
+	require.Equal(e.T(), app.StatusInProgress, e.emitter(fireOnce.ID).Status.Status, "fire-once emitters are not gated")
+	require.Equal(e.T(), app.StatusInProgress, e.emitter(deletedCron.ID).Status.Status, "soft-deleted emitters must not be touched")
+	require.Equal(e.T(), app.StatusInProgress, e.emitter(otherOwnerCron.ID).Status.Status, "another owner's emitters must not be touched")
 
 	// A converged install must not keep re-issuing Temporal work every sweep.
 	require.Equal(e.T(), 0, disable().Changed)
@@ -110,7 +110,7 @@ func (e *EmitterTestSuite) TestSetCronEmittersEnabledForOwnerReEnable() {
 		Reason:    "no healthy runner",
 	})
 	require.NoError(e.T(), err)
-	require.False(e.T(), e.emitter(cron.ID).Enabled)
+	require.Equal(e.T(), app.StatusDisabled, e.emitter(cron.ID).Status.Status)
 
 	resp, err := e.service.EmitterClient.SetCronEmittersEnabledForOwner(ctx, &emitterclient.SetCronEmittersEnabledRequest{
 		OwnerID:   ownerID,
@@ -122,6 +122,6 @@ func (e *EmitterTestSuite) TestSetCronEmittersEnabledForOwnerReEnable() {
 	require.Equal(e.T(), 1, resp.Changed)
 
 	reEnabled := e.emitter(cron.ID)
-	require.True(e.T(), reEnabled.Enabled)
-	require.Empty(e.T(), reEnabled.DisabledReason, "the disable reason should not outlive the disable")
+	require.Equal(e.T(), app.StatusInProgress, reEnabled.Status.Status)
+	require.Empty(e.T(), reEnabled.Status.StatusHumanDescription, "the disable reason should not outlive the disable")
 }

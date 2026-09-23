@@ -37,8 +37,8 @@ func TestCronTickerEmitsWhenSerializedEmitterOmitsSignalTemplate(t *testing.T) {
 	emitter := &app.QueueEmitter{
 		ID:         "emitter-id",
 		QueueID:    "queue-id",
-		Enabled:    true,
 		SignalType: example.ExampleSignalType,
+		Status:     app.NewCompositeStatus(t.Context(), app.StatusInProgress),
 		SignalTemplate: signaldb.SignalData{
 			Signal: &example.ExampleSignal{},
 		},
@@ -86,8 +86,8 @@ func TestCronTickerRepairsEmptyContextFromEmitter(t *testing.T) {
 		QueueID:     "queue-id",
 		OrgID:       "orgacme",
 		CreatedByID: "accacme",
-		Enabled:     true,
 		SignalType:  example.ExampleSignalType,
+		Status:      app.NewCompositeStatus(t.Context(), app.StatusInProgress),
 		SignalTemplate: signaldb.SignalData{
 			Signal: &example.ExampleSignal{},
 		},
@@ -138,12 +138,13 @@ func TestCronTickerTerminatesWhenEmitterIsDisabled(t *testing.T) {
 		pkgdataconverter.NewJSONConverter(),
 	))
 
+	status := app.NewCompositeStatus(t.Context(), app.StatusDisabled)
+	status.StatusHumanDescription = "no healthy runner"
 	emitter := &app.QueueEmitter{
-		ID:             "emitter-id",
-		QueueID:        "queue-id",
-		Enabled:        false,
-		DisabledReason: "no healthy runner",
-		SignalType:     example.ExampleSignalType,
+		ID:         "emitter-id",
+		QueueID:    "queue-id",
+		Status:     status,
+		SignalType: example.ExampleSignalType,
 		SignalTemplate: signaldb.SignalData{
 			Signal: &example.ExampleSignal{},
 		},

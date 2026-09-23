@@ -91,8 +91,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 		SignalTemplate: signaldb.SignalData{
 			Signal: req.SignalTemplate,
 		},
-		Enabled: true,
-		Status:  app.NewCompositeStatus(ctx, app.StatusPending),
+		Status: app.NewCompositeStatus(ctx, app.StatusPending),
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  q.Workflow.Namespace,
 			IDTemplate: idTemplate,
