@@ -2,11 +2,11 @@ package terraform
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/go-hclog"
-	tfjson "github.com/hashicorp/terraform-json"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
@@ -28,14 +28,15 @@ const vendorPoliciesResourceName = "vendor_policies"
 // a no-op for the migrated entries.
 //
 // It is safe to run on every sandbox apply: after migration completes, state
-// contains no legacy keys and subsequent runs are a quick state-list no-op.
+// contains no legacy keys and subsequent runs are a state-read no-op.
 func (h *handler) migrateLegacyPolicyKeys(ctx context.Context, log hclog.Logger, ws workspace.Workspace) error {
 	zl, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
 	}
 
-	state, err := ws.Show(ctx, log)
+	// Show requires current provider schemas before plan has upgraded older state.
+	state, err := ws.StatePull(ctx, log)
 	if err != nil {
 		return fmt.Errorf("unable to read state for policy key migration: %w", err)
 	}
@@ -85,73 +86,74 @@ type policyKeyMigration struct {
 // findLegacyPolicyKeyMigrations walks the state for vendor_policies resources
 // with legacy positional keys, parses their yaml_body to derive the new
 // content-derived key, and returns the list of state-mv operations to perform.
-func findLegacyPolicyKeyMigrations(state *tfjson.State) ([]policyKeyMigration, error) {
-	if state == nil || state.Values == nil || state.Values.RootModule == nil {
+func findLegacyPolicyKeyMigrations(rawState string) ([]policyKeyMigration, error) {
+	if strings.TrimSpace(rawState) == "" {
 		return nil, nil
 	}
 
+	var state struct {
+		Version   int `json:"version"`
+		Resources []struct {
+			Module    string `json:"module"`
+			Mode      string `json:"mode"`
+			Type      string `json:"type"`
+			Name      string `json:"name"`
+			Instances []struct {
+				IndexKey   any             `json:"index_key"`
+				Deposed    string          `json:"deposed"`
+				Attributes json.RawMessage `json:"attributes"`
+			} `json:"instances"`
+		} `json:"resources"`
+	}
+	if err := json.Unmarshal([]byte(rawState), &state); err != nil {
+		return nil, fmt.Errorf("unable to decode state for policy key migration: %w", err)
+	}
+	if state.Version != 4 {
+		return nil, fmt.Errorf("unsupported state version %d for policy key migration", state.Version)
+	}
+
 	var mvs []policyKeyMigration
-	if err := walkModuleForPolicyMigrations(state.Values.RootModule, &mvs); err != nil {
-		return nil, err
+	for _, r := range state.Resources {
+		if r.Mode != "managed" || r.Type != vendorPoliciesResourceType || r.Name != vendorPoliciesResourceName {
+			continue
+		}
+		address := r.Type + "." + r.Name
+		if r.Module != "" {
+			address = r.Module + "." + address
+		}
+		for _, instance := range r.Instances {
+			key, ok := instance.IndexKey.(string)
+			if !ok || !policies.IsLegacyKey(key) || instance.Deposed != "" {
+				continue
+			}
+			source := fmt.Sprintf("%s[%q]", address, key)
+			var attributes struct {
+				YAMLBody string `json:"yaml_body"`
+			}
+			if len(instance.Attributes) > 0 {
+				if err := json.Unmarshal(instance.Attributes, &attributes); err != nil {
+					return nil, fmt.Errorf("unable to decode policy attributes for %s: %w", source, err)
+				}
+			}
+			if attributes.YAMLBody == "" {
+				return nil, fmt.Errorf("resource %s has legacy key %q but no yaml_body attribute", source, key)
+			}
+			newKey, err := policies.ManifestKeyFromYAML(attributes.YAMLBody)
+			if err != nil {
+				return nil, fmt.Errorf("unable to derive new key for %s: %w", source, err)
+			}
+			kind, name := manifestKindAndName(attributes.YAMLBody)
+			mvs = append(mvs, policyKeyMigration{
+				sourceAddress:      source,
+				destinationAddress: fmt.Sprintf("%s[%q]", address, newKey),
+				oldKey:             key,
+				newKey:             newKey,
+				kind:               kind,
+				name:               name,
+			})
+		}
 	}
 	return mvs, nil
-}
-
-func walkModuleForPolicyMigrations(mod *tfjson.StateModule, out *[]policyKeyMigration) error {
-	if mod == nil {
-		return nil
-	}
-
-	for _, r := range mod.Resources {
-		if r.Type != vendorPoliciesResourceType || r.Name != vendorPoliciesResourceName {
-			continue
-		}
-		key, ok := r.Index.(string)
-		if !ok || !policies.IsLegacyKey(key) {
-			continue
-		}
-		yamlBody, _ := r.AttributeValues["yaml_body"].(string)
-		if yamlBody == "" {
-			return fmt.Errorf("resource %s has legacy key %q but no yaml_body attribute", r.Address, key)
-		}
-		newKey, err := policies.ManifestKeyFromYAML(yamlBody)
-		if err != nil {
-			return fmt.Errorf("unable to derive new key for %s: %w", r.Address, err)
-		}
-		if newKey == key {
-			continue
-		}
-		kind, name := manifestKindAndName(yamlBody)
-		*out = append(*out, policyKeyMigration{
-			sourceAddress:      r.Address,
-			destinationAddress: replaceIndexInAddress(r.Address, key, newKey),
-			oldKey:             key,
-			newKey:             newKey,
-			kind:               kind,
-			name:               name,
-		})
-	}
-
-	for _, child := range mod.ChildModules {
-		if err := walkModuleForPolicyMigrations(child, out); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// replaceIndexInAddress swaps the `[...]` suffix of a TF state address with a
-// new key. Example: `module.x.kubectl_manifest.vendor_policies["0.yaml"]` ->
-// `module.x.kubectl_manifest.vendor_policies["clusterrole-foo.yaml"]`.
-func replaceIndexInAddress(address, oldKey, newKey string) string {
-	oldSuffix := fmt.Sprintf("[%q]", oldKey)
-	newSuffix := fmt.Sprintf("[%q]", newKey)
-	if strings.HasSuffix(address, oldSuffix) {
-		return strings.TrimSuffix(address, oldSuffix) + newSuffix
-	}
-	// tfjson typically quotes with double-quotes; fall back to a rough replace
-	// if the exact form isn't present (defensive, should not happen in practice).
-	return address[:strings.LastIndex(address, "[")] + newSuffix
 }
 
 // manifestKindAndName is a best-effort extraction of kind/metadata.name for
