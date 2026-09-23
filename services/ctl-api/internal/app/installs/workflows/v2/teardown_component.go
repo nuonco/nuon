@@ -75,7 +75,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		}
 
 		compIDStr := generics.FromPtrStr(componentID)
-		deployStep, err := sg.installSignalStep(ctx, install.ID, "teardown sync and plan "+comp.Name, pgtype.Hstore{}, &componentteardownsyncandplan.Signal{
+		deployStep, err := sg.installSignalStep(ctx, install.ID, "teardown sync and plan "+comp.Name, componentStepMetadata(comp.Name), &componentteardownsyncandplan.Signal{
 			InstallComponentID: installComp.ID,
 			InstallID:          install.ID,
 			ComponentID:        compIDStr,
@@ -88,7 +88,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		}
 		steps = append(steps, deployStep)
 
-		applyStep, err := sg.installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &componentteardownapplyplan.Signal{
+		applyStep, err := sg.installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, componentStepMetadata(comp.Name), &componentteardownapplyplan.Signal{
 			InstallComponentID: installComp.ID,
 			InstallID:          install.ID,
 			ComponentID:        compIDStr,
@@ -101,7 +101,8 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		steps = append(steps, applyStep)
 	} else {
 		deployStep, err := sg.installSignalStep(ctx, installID, "skipped image teardown "+comp.Name, pgtype.Hstore{
-			"reason": generics.ToPtr("skipped image teardown"),
+			"reason":         generics.ToPtr("skipped image teardown"),
+			"component_name": generics.ToPtr(comp.Name),
 		}, nil, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create skip step")
