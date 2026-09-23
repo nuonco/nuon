@@ -1,0 +1,51 @@
+{
+  "plan": "{\"k8s_content_diff\":[]}",
+  "op": "apply",
+  "k8s_content_diff": [
+    {
+      "_version": "2",
+      "name": "api",
+      "namespace": "payments",
+      "kind": "Deployment",
+      "api": "apps/v1",
+      "resource": "deployments",
+      "op": "apply",
+      "type": 2,
+      "dry_run": true,
+      "entries": []
+    },
+    {
+      "_version": "2",
+      "name": "worker",
+      "namespace": "payments",
+      "kind": "Deployment",
+      "api": "apps/v1",
+      "resource": "deployments",
+      "op": "apply",
+      "type": 3,
+      "dry_run": true,
+      "entries": [
+        {
+          "path": "spec.replicas",
+          "original": "1",
+          "applied": "2",
+          "type": 2,
+          "payload": "2"
+        }
+      ]
+    },
+    {
+      "_version": "2",
+      "name": "legacy",
+      "namespace": "payments",
+      "kind": "ConfigMap",
+      "api": "v1",
+      "resource": "configmaps",
+      "op": "delete",
+      "type": 1,
+      "dry_run": true,
+      "entries": []
+    }
+  ],
+  "dry_run_output": ""
+}

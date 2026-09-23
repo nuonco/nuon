@@ -29,6 +29,23 @@ For prompts to paste into a client, see [Sample queries](/guides/agents/sample-q
 
 Mutating tools are prefixed with `WRITE OPERATION:` in their descriptions. The stdio proxy hides them unless you pass `--allow-writes`. The identity still needs [Admin](/concepts/access-control) (`org_admin`), not Read-only.
 
-Destructive tools (deprovision, approve/reject, preview apply, and similar) should be confirmed with the user before the client sets flags such as `confirm=true` or `mode=apply`.
+### Destructive tools
+
+These tools carry the MCP `destructiveHint` annotation. The annotation is advisory: your client decides whether to prompt.
+
+| Tool | Requires `confirm: true` |
+| --- | --- |
+| `deprovision_install` | Yes |
+| `deprovision_sandbox` | Yes |
+| `reprovision_install` | No |
+| `reprovision_sandbox` | No |
+| `deploy_install_components` | No |
+| `approve_step` | No |
+| `reject_step` | No |
+| `cancel_workflow` | No |
+| `run_runbook` | No |
+| `preview_app_branch` | No |
+
+The two deprovision calls are rejected until the agent passes `confirm: true`, and their descriptions tell it to ask you first. `plan_only: true` is exempt, since nothing is applied. You cannot turn this off: `confirm` is an argument on those two tools, not a proxy flag or a client setting.
 
 Write tools that take `role` use an IAM role name from the install's stack. Call `list_available_roles` first (with the matching `operation_type` / `principal_type`) and pass a returned `name`, or omit `role` to use the default. A role the install cannot assume is rejected before any workflow starts, and the error lists the names that are available.

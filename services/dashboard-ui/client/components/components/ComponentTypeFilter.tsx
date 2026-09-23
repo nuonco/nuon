@@ -7,7 +7,7 @@ import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { CheckboxInputWithButton } from '@/components/common/form/CheckboxInput'
 
-type TComponentConfigTypeText =
+export type TComponentConfigTypeText =
   | 'docker_build'
   | 'external_image'
   | 'helm_chart'
@@ -53,21 +53,22 @@ const groupClasses = {
 
 interface IComponentTypeFilterDropdown {
   isNotDropdown?: boolean
+  options?: Array<TComponentConfigTypeText>
 }
 
 export const ComponentTypeFilterDropdown: React.FC<
   IComponentTypeFilterDropdown
-> = ({ isNotDropdown = false }) => {
+> = ({ isNotDropdown = false, options = FILTER_OPTIONS }) => {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const typesParam = searchParams.get('types')
   const allSelected = !typesParam || typesParam === ''
   const selectedTypes: TComponentConfigTypeText[] = allSelected
-    ? FILTER_OPTIONS
+    ? options
     : typesParam!
         .split(',')
         .filter((v): v is TComponentConfigTypeText =>
-          FILTER_OPTIONS.includes(v as any)
+          options.includes(v as any)
         )
 
   const setTypesInUrl = (types: TComponentConfigTypeText[]) => {
@@ -87,7 +88,7 @@ export const ComponentTypeFilterDropdown: React.FC<
         params.delete('offset')
       }
 
-      if (newTypes.length === FILTER_OPTIONS.length) {
+      if (newTypes.length === options.length) {
         params.delete('types')
       } else if (newTypes.length > 0) {
         params.set('types', newTypes.join(','))
@@ -115,10 +116,10 @@ export const ComponentTypeFilterDropdown: React.FC<
     setTypesInUrl([value])
   }
 
-  const handleShowAll = () => setTypesInUrl(FILTER_OPTIONS)
+  const handleShowAll = () => setTypesInUrl(options)
 
   const renderFilters = (buttonLabelClass: string, onlyLabelClass: string) =>
-    FILTER_OPTIONS.map((opt) => (
+    options.map((opt) => (
       <div className="flex items-center space-x-2" key={opt}>
         <CheckboxInputWithButton
           buttonProps={{
