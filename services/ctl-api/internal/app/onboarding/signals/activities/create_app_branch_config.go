@@ -22,6 +22,7 @@ func (a *Activities) createOnboardingAppBranchConfig(ctx context.Context, appBra
 		nil, // no post-deploy runbooks
 		nil, // ignore-changes settings: carry forward
 		nil, // preview config: carry forward
+		false,
 		nil, // run config: carry forward
 	)
 	if err != nil {

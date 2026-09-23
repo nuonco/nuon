@@ -22,7 +22,7 @@ export type IPreviewDefaults = {
 }
 
 export const defaultPreviewDefaults = (): IPreviewDefaults => ({
-  mode: 'plan-only',
+  mode: 'none',
   installTargetMode: 'install',
   installId: '',
   labelSelector: {},
@@ -78,6 +78,10 @@ export const previewDefaultsToConfig = (
   defaults: IPreviewDefaults,
   installs: TInstall[]
 ): TAppBranchPreviewConfig => {
+  if (defaults.mode === 'none') {
+    return { mode: 'none' }
+  }
+
   const install = installs.find((i) => i.id === defaults.installId)
   const config: TAppBranchPreviewConfig = {
     mode: defaults.mode,
@@ -147,6 +151,10 @@ export const PreviewDefaultsEditor = ({
           onChange={(mode) => onChange({ ...value, mode })}
           options={[
             {
+              value: 'none',
+              label: previewModeDisplayLabel('none'),
+            },
+            {
               value: 'build-only',
               label: previewModeDisplayLabel('build-only'),
             },
@@ -159,7 +167,7 @@ export const PreviewDefaultsEditor = ({
         />
       </div>
 
-      {value.mode !== 'build-only' && (
+      {value.mode !== 'none' && value.mode !== 'build-only' ? (
         <div className="flex flex-col gap-2">
           <Text variant="subtext" weight="strong">
             Default install
@@ -175,9 +183,9 @@ export const PreviewDefaultsEditor = ({
             menuPlacement="bottom"
           />
         </div>
-      )}
+      ) : null}
 
-      {hasGithubVCS && (
+      {hasGithubVCS && value.mode !== 'none' ? (
         <div className="flex flex-col gap-2">
           <CheckboxInput
             id="preview-set-statuses"
@@ -205,7 +213,7 @@ export const PreviewDefaultsEditor = ({
             labelProps={{ labelText: 'Ignore draft pull requests' }}
           />
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

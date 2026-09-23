@@ -20,6 +20,15 @@ import (
 // swagger:model app.Install
 type AppInstall struct {
 
+	// actual app config applied at
+	ActualAppConfigAppliedAt string `json:"actual_app_config_applied_at,omitempty"`
+
+	// actual app config id
+	ActualAppConfigID string `json:"actual_app_config_id,omitempty"`
+
+	// actual app config workflow id
+	ActualAppConfigWorkflowID string `json:"actual_app_config_workflow_id,omitempty"`
+
 	// app branch
 	AppBranch *AppAppBranch `json:"app_branch,omitempty"`
 

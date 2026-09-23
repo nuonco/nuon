@@ -230,6 +230,10 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.
 		return errors.Wrap(res.Error, "unable to create install stack version run")
 	}
 
+	if err := s.helpers.RecordInstallStackVersionApplied(ctx, stackVersion, requestType); err != nil {
+		return err
+	}
+
 	ctx = cctx.SetOrgIDContext(ctx, stackVersion.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, stackVersion.CreatedByID)
 	queueID, err := s.getInstallSignalsQueueID(ctx, installID)

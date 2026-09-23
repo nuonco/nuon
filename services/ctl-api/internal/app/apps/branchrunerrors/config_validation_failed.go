@@ -34,12 +34,12 @@ func (e *ConfigValidationFailedError) Severity() compositeerrors.Severity {
 
 func (e *ConfigValidationFailedError) Sections() []compositeerrors.Section {
 	sections := []compositeerrors.Section{
-		compositeerrors.MarkdownSection("Why", "The branch run stopped because the app configuration contains invalid template references."),
+		compositeerrors.MarkdownSection("Why", "The branch run stopped because the app configuration could not be parsed or validated."),
 	}
 	if e.Detail != "" {
 		sections = append(sections, compositeerrors.CodeSection("Validation errors", e.Detail))
 	}
-	return append(sections, compositeerrors.MarkdownSection("How to fix", "Fix the invalid references in the app configuration, commit the changes, and run the branch again."))
+	return append(sections, compositeerrors.MarkdownSection("How to fix", "Fix the invalid app configuration, commit the changes, and run the branch again."))
 }
 
 func (e *ConfigValidationFailedError) Hints() compositeerrors.Hints {
