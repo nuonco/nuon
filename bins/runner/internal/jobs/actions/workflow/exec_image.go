@@ -36,18 +36,7 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 		return errors.New("image-backed action received by a runner without a container launcher")
 	}
 
-	scriptHostPath, workdirHostPath, scriptArgs, err := h.prepareContainerStep(ctx, l, cfg, src)
-	if err != nil {
-		return errors.Wrap(err, "unable to prepare step script")
-	}
-
 	root := h.state.workspace.Root()
-
-	// write the supervisor shell script into the workspace (already bind-mounted)
-	supervisorHostPath, err := supervisor.Write(root)
-	if err != nil {
-		return errors.Wrap(err, "unable to write actions supervisor")
-	}
 
 	mapPath := func(hostPath string) string {
 		rel, relErr := filepath.Rel(root, hostPath)
@@ -79,14 +68,9 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 	lOut := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.InfoLevel), zapwriter.WithLineBuffering())
 	lErr := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.ErrorLevel), zapwriter.WithLineBuffering())
 
-	command := []string{
-		"/bin/sh", mapPath(supervisorHostPath),
-		"--script", mapPath(scriptHostPath),
-		"--workdir", mapPath(workdirHostPath),
-	}
-	if len(scriptArgs) > 0 {
-		command = append(command, "--")
-		command = append(command, scriptArgs...)
+	command, workdir, err := h.containerCommand(ctx, l, cfg, src, mapPath)
+	if err != nil {
+		return errors.Wrap(err, "unable to prepare container command")
 	}
 
 	spec := launcher.RunSpec{
@@ -95,9 +79,8 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 		Mounts: []launcher.Mount{
 			{HostPath: root, ContainerPath: containerWorkspaceMount},
 		},
-		// run the supervisor via the image's own /bin/sh so it works in any
-		// base image (musl/glibc/any arch) — no mounted binary to exec.
 		Command: command,
+		Workdir: workdir,
 		Env:     env,
 		Labels: map[string]string{
 			"nuon.install_id": h.state.plan.InstallID,
@@ -125,6 +108,29 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 	end(nil)
 
 	return nil
+}
+
+func (h *handler) containerCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource, mapPath func(string) string) ([]string, string, error) {
+	if cfg.InlineContents == "" && (src == nil || src.URL == "") {
+		if args := directContainerCommand(cfg.Command); len(args) > 0 {
+			return args, mapPath(h.state.workspace.Root()), nil
+		}
+	}
+
+	script, workdir, args, err := h.prepareContainerStep(ctx, l, cfg, src)
+	if err != nil {
+		return nil, "", err
+	}
+	supervisorPath, err := supervisor.Write(h.state.workspace.Root())
+	if err != nil {
+		return nil, "", err
+	}
+	command := []string{"/bin/sh", mapPath(supervisorPath), "--script", mapPath(script), "--workdir", mapPath(workdir)}
+	if len(args) > 0 {
+		command = append(command, "--")
+		command = append(command, args...)
+	}
+	return command, "", nil
 }
 
 // prepareActionImage pulls the action's image once for the whole job and leases
