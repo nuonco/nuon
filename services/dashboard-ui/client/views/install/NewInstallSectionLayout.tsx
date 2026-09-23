@@ -12,7 +12,6 @@ export const NEW_INSTALL_RESOURCES_TABS: TNavLink[] = [
   { path: '/sandbox', text: 'Sandbox' },
   { path: '/components', text: 'Components' },
   { path: '/images', text: 'Images' },
-  { path: '/state', text: 'State' },
 ]
 
 export const NEW_INSTALL_OPERATIONS_TABS: TNavLink[] = [
@@ -28,6 +27,7 @@ export const NEW_INSTALL_CONFIGURATION_TABS: TNavLink[] = [
   { path: '/inputs', text: 'Inputs' },
   { path: '/config-file', text: 'Config file' },
   { path: '/overrides', text: 'Overrides' },
+  { path: '/state', text: 'State' },
 ]
 
 const NewInstallSectionLayout = ({
