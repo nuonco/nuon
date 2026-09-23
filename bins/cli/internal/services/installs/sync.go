@@ -3,6 +3,7 @@ package installs
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -80,6 +81,12 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, conf
 		}
 
 		synced, err := is.syncInstall(ctx, installCfg, installID, confirm, wait, dryRun)
+		if errors.Is(err, ErrSyncAborted) {
+			if asJSON {
+				ui.PrintJSON(syncResult{Installs: results})
+			}
+			return ui.PrintError(ErrSyncAborted)
+		}
 		if err != nil {
 			return ui.PrintError(fmt.Errorf("error syncing install %s: %w", installCfg.Name, err))
 		}

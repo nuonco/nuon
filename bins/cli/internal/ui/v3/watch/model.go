@@ -14,6 +14,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
+
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
@@ -361,7 +363,7 @@ func WatchApp(
 	}
 
 	m := initialModel(ctx, cfg, api, installID)
-	p := tea.NewProgram(m)
+	p := teaprogram.NewProgram(m)
 	finalModel, err := p.Run()
 	if err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
