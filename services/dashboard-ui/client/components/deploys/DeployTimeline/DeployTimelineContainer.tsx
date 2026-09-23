@@ -13,6 +13,7 @@ interface IDeployTimelineContainer {
   componentId: string
   pollInterval?: number
   shouldPoll?: boolean
+  variant?: 'deploy' | 'sync'
 }
 
 export const DeployTimelineContainer = ({
@@ -20,6 +21,7 @@ export const DeployTimelineContainer = ({
   componentId,
   pollInterval = 20000,
   shouldPoll = false,
+  variant = 'deploy',
 }: IDeployTimelineContainer) => {
   const { install } = useInstall()
   const { org } = useOrg()
@@ -64,6 +66,7 @@ export const DeployTimelineContainer = ({
       componentName={componentName}
       isLoading={isLoading}
       error={error}
+      variant={variant}
     />
   )
 }
