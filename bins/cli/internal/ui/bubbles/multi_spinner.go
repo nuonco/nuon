@@ -7,7 +7,9 @@ import (
 
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
+
 	"charm.land/lipgloss/v2"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
 
 	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/pkg/cli/styles"
@@ -265,7 +267,7 @@ func (v *MultiSpinnerView) Start() {
 		return
 	}
 
-	v.program = tea.NewProgram(v.model)
+	v.program = teaprogram.NewProgram(v.model)
 
 	// Run in background
 	go func() {
