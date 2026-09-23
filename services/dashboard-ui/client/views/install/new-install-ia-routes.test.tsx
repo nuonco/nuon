@@ -16,7 +16,7 @@ const paths = (routes: RouteObject[]): string[] =>
 
 const tabLabels = (tabs: { text: string }[]) => tabs.map((tab) => tab.text)
 
-test('registers the new install IA navigation and placeholder routes', () => {
+test('registers the new install IA navigation and routes', () => {
   expect(
     NEW_INSTALL_NAV_LINKS.map((link) => ('text' in link ? link.text : null))
   ).toEqual([
