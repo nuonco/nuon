@@ -167,9 +167,6 @@ func (s *syncer) validateFeatureCompatibility(ctx context.Context) error {
 			Err:         res.Error,
 		}
 	}
-	if s.cfg.Triggers != nil && len(s.cfg.Triggers.Rules) != 0 && !org.Features[string(app.OrgFeatureTriggers)] {
-		return sync.SyncErr{Resource: "triggers", Description: "the triggers feature is not enabled for this organization"}
-	}
 	if s.cfg.Sandbox != nil && s.cfg.Sandbox.Type == config.AppSandboxTypePulumi && !org.Features[string(app.OrgFeaturePulumiSandbox)] {
 		return sync.SyncErr{Resource: "app-sandbox", Description: "pulumi sandboxes are not enabled for this organization"}
 	}
@@ -194,14 +191,18 @@ func (s *syncer) syncSteps() []syncStep {
 				return appconfig.Sync(ctx, s.db, s.cfg, s.appConfigID)
 			},
 		},
-		{
-			// Validate branches early even though they are written last, so a bad
-			// branch block fails before components sync and builds are dispatched.
+	}
+
+	if s.syncBranches {
+		steps = append(steps, syncStep{
 			Resource: "app-branches",
 			Method: func(ctx context.Context) error {
 				return branches.Validate(ctx, s.db, s.cfg, s.appID)
 			},
-		},
+		})
+	}
+
+	steps = append(steps, []syncStep{
 		{
 			Resource: "app-inputs",
 			Method: func(ctx context.Context) error {
@@ -256,7 +257,7 @@ func (s *syncer) syncSteps() []syncStep {
 				return stack.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID, s.appConfigID)
 			},
 		},
-	}
+	}...)
 
 	// Ensure all components exist (with full initialization: queue, dependencies, install components)
 	for _, comp := range s.cfg.Components {

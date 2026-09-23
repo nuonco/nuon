@@ -144,6 +144,25 @@
   --color-on-primary: var(--on-primary);
 
   --color-code: var(--bg-code);
+  --color-code-bg: var(--code-bg);
+  --color-code-inline-bg: var(--code-inline-bg);
+  --color-syntax-plain: var(--syntax-plain);
+
+  --color-diff-add: var(--diff-add-gutter);
+  --color-diff-add-row: var(--diff-add-row);
+  --color-diff-add-emphasis: var(--diff-add-emphasis);
+  --color-diff-add-section: var(--diff-add-section);
+  --color-diff-remove: var(--diff-remove-gutter);
+  --color-diff-remove-row: var(--diff-remove-row);
+  --color-diff-remove-emphasis: var(--diff-remove-emphasis);
+  --color-diff-remove-section: var(--diff-remove-section);
+  --color-diff-change: var(--diff-change-gutter);
+  --color-diff-change-row: var(--diff-change-row);
+  --color-diff-change-emphasis: var(--diff-change-emphasis);
+  --color-diff-change-section: var(--diff-change-section);
+  --color-diff-neutral: var(--diff-neutral-gutter);
+  --color-diff-neutral-row: var(--diff-neutral-row);
+  --color-diff-neutral-section: var(--diff-neutral-section);
 
   /* text tokens */
   --font-weight-normal: 400;
@@ -524,6 +543,44 @@
   --blue-800: #00ffff;
   --blue-900: #00ffff;
   --blue-950: var(--hc-blue-deep);
+
+  /* Four hues, not two: JSON only uses plain, keyword, punctuation,
+     string-expression and constant, so collapsing them all to yellow made a
+     document unreadable. Every value below clears AAA on --hc-blue-deep. */
+  --code-bg: var(--hc-blue-deep);
+  --code-inline-bg: rgba(255, 255, 255, 0.16);
+  --syntax-plain: #ffffff;
+  --syntax-comment: #ffb86c;
+  --syntax-string: var(--hc-yellow);
+  --syntax-string-expression: var(--hc-yellow);
+  --syntax-constant: #7cff7c;
+  --syntax-keyword: #7fffff;
+  --syntax-function: #7fffff;
+  --syntax-parameter: #ffb86c;
+  --syntax-punctuation: #ffffff;
+  --syntax-link: var(--hc-yellow);
+
+  --code-match: rgba(255, 255, 255, 0.24);
+  --code-match-current: rgba(255, 255, 255, 0.44);
+
+  --diff-add-row: #00401f;
+  --diff-add-gutter: #7cff7c;
+  --diff-add-emphasis: #005c2e;
+  --diff-add-section: rgba(124, 255, 124, 0.16);
+
+  --diff-remove-row: #5a0000;
+  --diff-remove-gutter: #ffb3b3;
+  --diff-remove-emphasis: #8a0000;
+  --diff-remove-section: rgba(255, 128, 128, 0.16);
+
+  --diff-change-row: #4a3800;
+  --diff-change-gutter: var(--hc-yellow);
+  --diff-change-emphasis: #5c4600;
+  --diff-change-section: rgba(255, 255, 0, 0.16);
+
+  --diff-neutral-row: rgba(255, 255, 255, 0.16);
+  --diff-neutral-gutter: #ffffff;
+  --diff-neutral-section: rgba(255, 255, 255, 0.12);
 }
 
 :root {
@@ -549,6 +606,82 @@
 
   --bg-gradient: var(--bg-gradient-light);
   --landing-graphic: url('../../public/login-graphics/landing-graphic-light.svg');
+
+  /* Shiki reads --code-bg by name via the theme registered in client/lib/syntax. */
+  --code-bg: var(--bg-code);
+  --code-inline-bg: light-dark(
+    rgba(29, 29, 29, 0.08),
+    rgba(254, 254, 254, 0.12)
+  );
+
+  --syntax-plain: light-dark(var(--cool-grey-900), var(--cool-grey-100));
+  --syntax-comment: light-dark(#4b5563, #8a94a6);
+  --syntax-string: light-dark(#075e45, #6fd3ac);
+  --syntax-string-expression: light-dark(#075e45, #6fd3ac);
+  --syntax-constant: light-dark(#7a4200, #f0b26b);
+  --syntax-keyword: light-dark(#7b23a3, #d79cf0);
+  --syntax-function: light-dark(#1743b8, #8fb8ff);
+  --syntax-parameter: light-dark(#8a2e10, #f0a882);
+  --syntax-punctuation: light-dark(#374151, #9aa3b2);
+  --syntax-link: light-dark(var(--primary-600), var(--primary-400));
+
+  --code-match: light-dark(rgba(234, 179, 8, 0.28), rgba(250, 204, 21, 0.18));
+  --code-match-current: light-dark(
+    rgba(234, 179, 8, 0.55),
+    rgba(250, 204, 21, 0.36)
+  );
+
+  --diff-add-row: light-dark(rgba(37, 112, 82, 0.12), rgba(74, 165, 120, 0.1));
+  --diff-add-gutter: light-dark(var(--green-800), #6fd3ac);
+  --diff-add-emphasis: light-dark(
+    rgba(37, 112, 82, 0.28),
+    rgba(74, 165, 120, 0.3)
+  );
+  --diff-add-section: light-dark(
+    rgba(37, 112, 82, 0.04),
+    rgba(74, 165, 120, 0.035)
+  );
+
+  --diff-remove-row: light-dark(
+    rgba(180, 35, 24, 0.12),
+    rgba(249, 112, 102, 0.1)
+  );
+  --diff-remove-gutter: light-dark(var(--red-800), var(--red-400));
+  --diff-remove-emphasis: light-dark(
+    rgba(180, 35, 24, 0.28),
+    rgba(249, 112, 102, 0.3)
+  );
+  --diff-remove-section: light-dark(
+    rgba(180, 35, 24, 0.04),
+    rgba(249, 112, 102, 0.035)
+  );
+
+  --diff-change-row: light-dark(
+    rgba(143, 83, 0, 0.12),
+    rgba(245, 183, 49, 0.1)
+  );
+  --diff-change-gutter: light-dark(var(--orange-800), var(--orange-400));
+  --diff-change-emphasis: light-dark(
+    rgba(143, 83, 0, 0.28),
+    rgba(245, 183, 49, 0.3)
+  );
+  --diff-change-section: light-dark(
+    rgba(143, 83, 0, 0.04),
+    rgba(245, 183, 49, 0.035)
+  );
+
+  --diff-neutral-row: light-dark(
+    rgba(29, 29, 29, 0.06),
+    rgba(254, 254, 254, 0.07)
+  );
+  --diff-neutral-gutter: light-dark(
+    rgba(29, 29, 29, 0.28),
+    rgba(254, 254, 254, 0.3)
+  );
+  --diff-neutral-section: light-dark(
+    rgba(29, 29, 29, 0.03),
+    rgba(254, 254, 254, 0.03)
+  );
 }
 
 :root[data-theme='light'] {
@@ -594,6 +727,13 @@ body {
 
 .disable-ligatures {
   font-variant-ligatures: no-contextual !important;
+}
+
+/* The renderer's shadow host forces color-scheme: dark, which would resolve
+   every light-dark() token we inherit into it to its dark branch. Outer rules
+   beat :host rules, so this hands the page's scheme back. */
+diffs-container {
+  color-scheme: inherit;
 }
 
 /* Keyed off which logo renders, not the resolved mode: the landing footer

@@ -2,7 +2,6 @@
 
 ## Setup
 - env: E2E_ORG_ID (required)
-- feature-flag: org feature flag `triggers` must be enabled (the `/:orgId/settings/triggers` route is gated by `TriggersGate`; without it the route renders NotFound)
 - start: /:orgId/settings/triggers
 
 ## Steps

@@ -71,11 +71,14 @@ func (w *Workflows) ExecuteControlPlaneJob(ctx workflow.Context, req *ExecuteReq
 		return temporal.NewCanceledError()
 	}
 	if finalized.Status != app.RunnerJobExecutionStatusFinished {
-		message := outcome.Error
+		message := finalized.Message
+		if message == "" {
+			message = conciseFailureMessage(outcome.Error)
+		}
 		if message == "" {
 			message = string(finalized.Status)
 		}
-		return temporal.NewNonRetryableApplicationError(message, "control-plane-build", fmt.Errorf("control-plane job failed: %s", message))
+		return temporal.NewNonRetryableApplicationError(message, "control-plane-build", nil)
 	}
 	return nil
 }

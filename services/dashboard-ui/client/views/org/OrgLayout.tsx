@@ -17,13 +17,20 @@ import { ToastProvider } from '@/providers/toast-provider'
 import { useSpotlight } from '@/hooks/use-spotlight'
 import { useHelp } from '@/hooks/use-help'
 import { useNavShortcuts } from '@/hooks/use-nav-shortcuts'
+import { useDashboardPreferences } from '@/hooks/use-dashboard-preferences'
 import { VCSConnectionSuccess } from '@/components/vcs-connections/VCSConnectionSuccess'
+import { DashboardPreferencesProvider } from '@/providers/dashboard-preferences-provider'
 
 const SpotlightListener = () => {
   useSpotlight()
   useHelp()
   useNavShortcuts()
   return null
+}
+
+const PreferredOrgStatusBar = () => {
+  const { isStatusBarEnabled } = useDashboardPreferences()
+  return isStatusBarEnabled ? <OrgStatusBar /> : null
 }
 
 export const OrgLayout = () => {
@@ -43,24 +50,26 @@ export const OrgLayout = () => {
                 <OrgStatusSSEProvider>
                   <ActiveWorkflowsProvider>
                     <WorkflowApprovalsProvider>
-                      <SurfacesProvider>
-                        <SpotlightListener />
-                        <VCSConnectionSuccess />
-                        <MainLayout
-                          versions={{
-                            api: {
-                              git_ref: versions?.api?.git_ref ?? '',
-                              version: versions?.api?.version ?? '',
-                            },
-                            ui: {
-                              version: versions?.ui?.version ?? '',
-                            },
-                          }}
-                        >
-                          <Outlet />
-                          <OrgStatusBar />
-                        </MainLayout>
-                      </SurfacesProvider>
+                      <DashboardPreferencesProvider>
+                        <SurfacesProvider>
+                          <SpotlightListener />
+                          <VCSConnectionSuccess />
+                          <MainLayout
+                            versions={{
+                              api: {
+                                git_ref: versions?.api?.git_ref ?? '',
+                                version: versions?.api?.version ?? '',
+                              },
+                              ui: {
+                                version: versions?.ui?.version ?? '',
+                              },
+                            }}
+                          >
+                            <Outlet />
+                            <PreferredOrgStatusBar />
+                          </MainLayout>
+                        </SurfacesProvider>
+                      </DashboardPreferencesProvider>
                     </WorkflowApprovalsProvider>
                   </ActiveWorkflowsProvider>
                 </OrgStatusSSEProvider>

@@ -5,6 +5,7 @@ import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { ThemeSwitcher } from '@/components/common/ThemeSwitcher'
+import { UserPreferencesPanel } from '../UserPreferencesPanel'
 import { Toast } from '@/components/surfaces/Toast'
 import { InviteUserButton } from '@/components/team/InviteUser'
 import { cn } from '@/utils/classnames'
@@ -60,12 +61,19 @@ export const UserDropdown = ({
   return (
     <Dropdown
       buttonClassName={cn('text-left !px-px !py-px', buttonClassName)}
-      buttonText={<UserProfile collapsible={collapsible} isCollapsed={isCollapsed} isLoading={isUserLoading} user={user} />}
+      buttonText={
+        <UserProfile
+          collapsible={collapsible}
+          isCollapsed={isCollapsed}
+          isLoading={isUserLoading}
+          user={user}
+        />
+      }
       id="profile"
       variant="ghost"
       {...props}
     >
-      <Menu className="min-w-56">
+      <Menu className="min-w-72">
         {!hideOrgSettings && (
           <Text variant="label" theme="neutral">
             Org settings
@@ -74,7 +82,8 @@ export const UserDropdown = ({
         {!hideOrgSettings && <InviteUserButton isMenuButton />}
         {!hideOrgSettings && (
           <Link href={isByoc ? '/byoc-setup' : '/onboarding'}>
-            {isByoc ? 'Setup guide' : 'Re-open onboarding'} <Icon variant="SignpostIcon" />
+            {isByoc ? 'Setup guide' : 'Re-open onboarding'}{' '}
+            <Icon variant="SignpostIcon" />
           </Link>
         )}
         {!hideOrgSettings && <hr />}
@@ -84,10 +93,7 @@ export const UserDropdown = ({
           </Text>
         )}
         {!hideOrgSettings && (isNuonEmployee || isDev) && (
-          <Button
-            onClick={() => onAddPanel(<AdminPanel />)}
-            isMenuButton
-          >
+          <Button onClick={() => onAddPanel(<AdminPanel />)} isMenuButton>
             Admin controls <Icon variant="SlidersIcon" />
           </Button>
         )}
@@ -130,28 +136,44 @@ export const UserDropdown = ({
         <div className="px-1.5 py-1">
           <ThemeSwitcher />
         </div>
+        <Button onClick={() => onAddPanel(<UserPreferencesPanel />)} isMenuButton>
+          Preferences <Icon variant="SlidersHorizontalIcon" />
+        </Button>
         {notificationsSupported && notificationPermission === 'granted' ? (
-          <Button onClick={() => {
-            onToggleMute()
-            onAddToast(
-              <Toast heading={muted ? 'Notifications enabled' : 'Notifications disabled'}>
-                <Text>{muted ? 'You will receive desktop notifications.' : 'Desktop notifications are now muted.'}</Text>
-              </Toast>
-            )
-          }}>
-            {muted ? 'Enable' : 'Disable'} notifications <Icon variant={muted ? 'BellIcon' : 'BellSlashIcon'} />
-          </Button>
-        ) : notificationsSupported && notificationPermission !== 'denied' ? (
-          <Button onClick={async () => {
-            const result = await onRequestPermission()
-            if (result === 'granted') {
+          <Button
+            onClick={() => {
+              onToggleMute()
               onAddToast(
-                <Toast heading="Notifications enabled">
-                  <Text>You will receive desktop notifications.</Text>
+                <Toast
+                  heading={
+                    muted ? 'Notifications enabled' : 'Notifications disabled'
+                  }
+                >
+                  <Text>
+                    {muted
+                      ? 'You will receive desktop notifications.'
+                      : 'Desktop notifications are now muted.'}
+                  </Text>
                 </Toast>
               )
-            }
-          }}>
+            }}
+          >
+            {muted ? 'Enable' : 'Disable'} notifications{' '}
+            <Icon variant={muted ? 'BellIcon' : 'BellSlashIcon'} />
+          </Button>
+        ) : notificationsSupported && notificationPermission !== 'denied' ? (
+          <Button
+            onClick={async () => {
+              const result = await onRequestPermission()
+              if (result === 'granted') {
+                onAddToast(
+                  <Toast heading="Notifications enabled">
+                    <Text>You will receive desktop notifications.</Text>
+                  </Toast>
+                )
+              }
+            }}
+          >
             Enable notifications <Icon variant="BellIcon" />
           </Button>
         ) : null}

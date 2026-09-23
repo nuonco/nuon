@@ -1,8 +1,20 @@
-import { redirect, type RouteObject } from 'react-router'
+import { Outlet, redirect, useMatch, type RouteObject } from 'react-router'
+import { useNewInstallIA } from '@/hooks/use-new-install-ia'
+import { useOrg } from '@/hooks/use-org'
+import { NotFound } from '@/views/NotFound'
 import { InstallLayout } from './InstallLayout'
 import { Overview } from './Overview'
 import { Components } from './Components'
 import { Resources } from './Resources'
+import {
+  NewInstallPlaceholder,
+  NewInstallPlaceholderBody,
+} from './NewInstallPlaceholder'
+import {
+  NewInstallConfigurationLayout,
+  NewInstallOperationsLayout,
+  NewInstallResourcesLayout,
+} from './NewInstallSectionLayout'
 import { Actions } from './Actions'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
@@ -54,7 +66,6 @@ import { RunnerJobDetail } from './RunnerJobDetail'
 import { Notebooks } from './Notebooks'
 import { NotebookDetail } from './NotebookDetail'
 import { InstallConfigs } from './InstallConfigs'
-import { SimpleIAGate } from '../SimpleIAGate'
 
 // Legacy install paths redirect to the Updates/History IA. Carry the query string and
 // hash across so deep links like ?panel=<stepId> survive the hop.
@@ -71,19 +82,46 @@ const legacyRedirect =
     return redirect(`${to(params)}${search}${hash}`)
   }
 
+const NewInstallIAGate = () => {
+  const { org } = useOrg()
+  const hasNewInstallIA = useNewInstallIA()
+
+  if (!org) return null
+  return hasNewInstallIA ? <Outlet /> : <NotFound />
+}
+
+const InstallOverviewRoute = () => {
+  const hasNewInstallIA = useNewInstallIA()
+
+  return hasNewInstallIA ? (
+    <NewInstallPlaceholder path="" title="Overview" />
+  ) : (
+    <Overview />
+  )
+}
+
+const InstallResourcesRoute = () => {
+  const hasNewInstallIA = useNewInstallIA()
+  const isIndex = !!useMatch('/:orgId/installs/:installId/resources')
+
+  if (hasNewInstallIA) return <NewInstallResourcesLayout />
+  if (isIndex) return <Resources />
+  return <Outlet />
+}
+
+const NewInstallResourcesIndex = () => {
+  const hasNewInstallIA = useNewInstallIA()
+  if (!hasNewInstallIA) return null
+  return <NewInstallPlaceholderBody title="Stack" />
+}
+
 export const installRoutes: RouteObject[] = [
   {
     element: <InstallLayout />,
     children: [
-      { path: ':orgId/installs/:installId', element: <Overview /> },
       {
-        element: <SimpleIAGate />,
-        children: [
-          {
-            path: ':orgId/installs/:installId/activity',
-            element: <History />,
-          },
-        ],
+        path: ':orgId/installs/:installId',
+        element: <InstallOverviewRoute />,
       },
       {
         path: ':orgId/installs/:installId/components',
@@ -91,7 +129,94 @@ export const installRoutes: RouteObject[] = [
       },
       {
         path: ':orgId/installs/:installId/resources',
-        element: <Resources />,
+        element: <InstallResourcesRoute />,
+        children: [
+          { index: true, element: <NewInstallResourcesIndex /> },
+          {
+            element: <NewInstallIAGate />,
+            children: [
+              {
+                path: 'sandbox',
+                element: <NewInstallPlaceholderBody title="Sandbox" />,
+              },
+              {
+                path: 'components',
+                element: <NewInstallPlaceholderBody title="Components" />,
+              },
+              {
+                path: 'images',
+                element: <NewInstallPlaceholderBody title="Images" />,
+              },
+              {
+                path: 'state',
+                element: <NewInstallPlaceholderBody title="State" />,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        element: <NewInstallIAGate />,
+        children: [
+          {
+            path: ':orgId/installs/:installId/deployments',
+            element: (
+              <NewInstallPlaceholder path="/deployments" title="Deployments" />
+            ),
+          },
+          {
+            path: ':orgId/installs/:installId/health',
+            element: <NewInstallPlaceholder path="/health" title="Health" />,
+          },
+          {
+            path: ':orgId/installs/:installId/operations',
+            element: <NewInstallOperationsLayout />,
+            children: [
+              {
+                index: true,
+                element: <NewInstallPlaceholderBody title="Activity" />,
+              },
+              {
+                path: 'actions',
+                element: <NewInstallPlaceholderBody title="Actions" />,
+              },
+              {
+                path: 'runbooks',
+                element: <NewInstallPlaceholderBody title="Runbooks" />,
+              },
+              {
+                path: 'policies',
+                element: <NewInstallPlaceholderBody title="Policies" />,
+              },
+              {
+                path: 'runner',
+                element: <NewInstallPlaceholderBody title="Runner" />,
+              },
+            ],
+          },
+          {
+            path: ':orgId/installs/:installId/configuration',
+            element: <NewInstallConfigurationLayout />,
+            children: [
+              {
+                index: true,
+                element: <NewInstallPlaceholderBody title="App branch" />,
+              },
+              {
+                path: 'inputs',
+                element: <NewInstallPlaceholderBody title="Inputs" />,
+              },
+              {
+                path: 'config-file',
+                element: <NewInstallPlaceholderBody title="Config file" />,
+              },
+              {
+                path: 'overrides',
+                element: <NewInstallPlaceholderBody title="Overrides" />,
+              },
+            ],
+          },
+        ],
       },
       { path: ':orgId/installs/:installId/actions', element: <Actions /> },
       { path: ':orgId/installs/:installId/notebooks', element: <Notebooks /> },

@@ -23,8 +23,12 @@ interface IGroupEditor {
   group: IInstallGroup
   index: number
   totalGroups: number
-  unassignedInstalls: TInstall[]
+  // installs that can still be added to a group
+  pickableInstalls: TInstall[]
+  // installs the branch owns, which is what `all installs` and label
+  // selectors resolve to
   availableInstalls: TInstall[]
+  installsById?: Record<string, TInstall>
   labelColors?: Record<string, string>
   disabled?: boolean
   autoFocusName?: boolean
@@ -42,8 +46,9 @@ export const GroupEditor = ({
   group,
   index,
   totalGroups,
-  unassignedInstalls,
+  pickableInstalls,
   availableInstalls,
+  installsById,
   labelColors,
   disabled,
   autoFocusName,
@@ -59,9 +64,9 @@ export const GroupEditor = ({
   const nameRef = useRef<HTMLInputElement>(null)
 
   const installs = useMemo(() => {
-    const byId = new Map(availableInstalls.map((i) => [i.id, i]))
-    return group.install_ids.map((id) => byId.get(id)).filter((i): i is TInstall => !!i)
-  }, [group.install_ids, availableInstalls])
+    const byId = installsById ?? Object.fromEntries(availableInstalls.map((i) => [i.id, i]))
+    return group.install_ids.map((id) => byId[id]).filter((i): i is TInstall => !!i)
+  }, [group.install_ids, availableInstalls, installsById])
 
   useEffect(() => {
     if (!autoFocusName || disabled) return
@@ -179,7 +184,7 @@ export const GroupEditor = ({
             >
               <AddInstallPicker
                 groupId={group.id}
-                unassignedInstalls={unassignedInstalls}
+                pickableInstalls={pickableInstalls}
                 disabled={disabled}
                 onAdd={onAddInstalls}
               />

@@ -29,6 +29,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	sg.nextGroupEager()
 	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
+		Mode:      awaitrunnerhealthy.ModeRequireActive,
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
@@ -55,7 +56,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	deploySteps, err := teardownComponents(ctx, dg, install)
+	deploySteps, err := teardownComponents(ctx, dg, install, false)
 	if err != nil {
 		return nil, err
 	}

@@ -31,6 +31,7 @@ export type TAppBranchRun = Omit<
 export type TAppBranchRunMode =
   | 'push'
   | 'all'
+  | 'on_tag'
   | 'on_tag_prefix'
   | 'on_github_label'
   | 'manual_only'
@@ -137,6 +138,9 @@ export type TAppSandboxBuild = {
   updated_at?: string
   org_id?: string
   app_id?: string
+  app_branch_id?: string
+  app_branch_run_id?: string
+  app_branch_run?: TAppBranchRun
   app_config_id?: string
   app_sandbox_config_id?: string
   status?: string
@@ -149,7 +153,7 @@ export type TAppSandboxBuild = {
   composite_error?: TCompositeError
   log_stream?: { id?: string; open?: boolean }
   runner_job?: TRunnerJob
-  vcs_connection_commit?: { sha?: string; message?: string }
+  vcs_connection_commit?: TVCSCommit
 }
 // Policy types - manually defined as API schema may not be deployed yet
 export type TAppPolicyType =
@@ -459,6 +463,7 @@ export type TSignatureAuthorityType =
 
 export type TComponentBuild = components['schemas']['app.ComponentBuild']
 export type TBuild = TComponentBuild & {
+  app_branch_run?: TAppBranchRun
   org_id: string
   build_runner_job_id?: string | null
 }

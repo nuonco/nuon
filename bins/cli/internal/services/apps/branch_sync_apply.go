@@ -133,6 +133,8 @@ func branchConfigRequest(ctx context.Context, resolver *branchNameResolver, cfg 
 		mode := cfg.Run.Mode
 		if mode == "" || mode == "all" {
 			mode = "push"
+		} else if mode == "on_tag_prefix" {
+			mode = "on_tag"
 		}
 		req.RunConfig.Mode = models.AppAppBranchRunMode(mode)
 		req.RunConfig.TagPrefix = cfg.Run.TagPrefix
@@ -248,7 +250,6 @@ func previewConfigRequest(ctx context.Context, resolver *branchNameResolver, cfg
 			return nil, fmt.Errorf("branch %q preview: %w", cfg.Name, err)
 		}
 		out.InstallID = id
-		out.InstallName = p.InstallName
 	}
 	if len(p.LabelSelector) > 0 {
 		out.LabelSelector = &models.GithubComNuoncoNuonPkgLabelsSelector{

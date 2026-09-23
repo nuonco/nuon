@@ -18,7 +18,12 @@ import type { IInstallGroup } from './types'
 
 interface IDeploymentPlanEditor extends Omit<IModal, 'onSubmit'> {
   initialGroups: IInstallGroup[]
+  // installs this branch owns: the population `all installs` and label
+  // selectors resolve to
   availableInstalls: TInstall[]
+  // every install on the app; naming one by ID moves it onto this branch when
+  // the plan is saved. Defaults to the branch's own installs.
+  appInstalls?: TInstall[]
   loadingInstalls: boolean
   isSaving: boolean
   labelColors?: Record<string, string>
@@ -33,6 +38,7 @@ interface IDeploymentPlanEditor extends Omit<IModal, 'onSubmit'> {
 export const DeploymentPlanEditor = ({
   initialGroups,
   availableInstalls,
+  appInstalls,
   loadingInstalls,
   isSaving,
   labelColors,
@@ -57,11 +63,13 @@ export const DeploymentPlanEditor = ({
     newGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [newGroupId])
 
+  const selectableInstalls = appInstalls ?? availableInstalls
+
   const installsById = useMemo(() => {
     const map: Record<string, TInstall> = {}
-    for (const i of availableInstalls) map[i.id] = i
+    for (const i of selectableInstalls) map[i.id] = i
     return map
-  }, [availableInstalls])
+  }, [selectableInstalls])
 
   const previewConfig = useMemo<TAppBranchConfig>(() => ({
     install_groups: groups.map((g) => ({
@@ -98,23 +106,42 @@ export const DeploymentPlanEditor = ({
     [availableInstalls, assignedInstallIds]
   )
 
+  const pickableInstalls = useMemo(
+    () => selectableInstalls.filter((i) => !assignedInstallIds.has(i.id)),
+    [selectableInstalls, assignedInstallIds]
+  )
+
+  // Installs this plan will act on once saved: the ones the branch owns, plus
+  // the ones it claims by naming them.
+  const planInstalls = useMemo(() => {
+    const owned = new Set(availableInstalls.map((i) => i.id))
+    const claimed = selectableInstalls.filter(
+      (i) =>
+        !owned.has(i.id) &&
+        groups.some(
+          (g) => g.selection_mode === 'manual' && g.install_ids.includes(i.id)
+        )
+    )
+    return [...availableInstalls, ...claimed]
+  }, [availableInstalls, selectableInstalls, groups])
+
   const overlappingInstalls = useMemo(() => {
     const matches = new Map<string, number>()
     groups.forEach((g) => {
       const matchedIds =
         g.selection_mode === 'all'
-          ? availableInstalls.map((i) => i.id)
+          ? planInstalls.map((i) => i.id)
           : g.selection_mode === 'labels'
-            ? availableInstalls
+            ? planInstalls
                 .filter((i) => matchesSelector(i.labels, g.label_selector))
                 .map((i) => i.id)
             : g.install_ids.filter((id) =>
-                availableInstalls.some((i) => i.id === id)
+                planInstalls.some((i) => i.id === id)
               )
       matchedIds.forEach((id) => matches.set(id, (matches.get(id) ?? 0) + 1))
     })
-    return availableInstalls.filter((i) => (matches.get(i.id) ?? 0) > 1)
-  }, [groups, availableInstalls])
+    return planInstalls.filter((i) => (matches.get(i.id) ?? 0) > 1)
+  }, [groups, planInstalls])
 
   const groupContentError = (g: IInstallGroup): string | undefined => {
     if (g.selection_mode === 'all') return undefined
@@ -156,7 +183,7 @@ export const DeploymentPlanEditor = ({
   const addGroup = () => {
     const group = newGroup(
       groups.length,
-      availableInstalls.length === 0 ? 'all' : 'manual'
+      selectableInstalls.length === 0 ? 'all' : 'manual'
     )
     setGroups((curr) => [...curr, group])
     setNewGroupId(group.id)
@@ -258,7 +285,7 @@ export const DeploymentPlanEditor = ({
             to its max parallel. Any install left unassigned is skipped.
           </Text>
 
-          {availableInstalls.length === 0 && (
+          {selectableInstalls.length === 0 && (
             <Banner theme="info">
               This app has no installs yet. Groups that match on labels or take
               all installs pick them up as they are created — a group with a
@@ -306,7 +333,8 @@ export const DeploymentPlanEditor = ({
                       totalGroups={groups.length}
                       autoFocusName={group.id === newGroupId}
                       availableInstalls={availableInstalls}
-                      unassignedInstalls={unassignedInstalls}
+                      pickableInstalls={pickableInstalls}
+                      installsById={installsById}
                       labelColors={labelColors}
                       disabled={isDisabled}
                       nameError={nameError}

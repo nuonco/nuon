@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
@@ -29,6 +30,8 @@ type GetStepErrorHintsResponse struct {
 //     (set by infrastructure failures during apply).
 //   - install_deploys: checks the row-level CompositeError first (set by plan
 //     render failures), then falls through to the latest runner job error.
+//   - no target (app branch run steps): falls back to the error already
+//     recorded on the step's own status by the step's signal.
 //
 // It is best-effort: a target with no composite error yields empty hints.
 //
@@ -60,7 +63,7 @@ func (a *Activities) GetStepErrorHints(ctx context.Context, req GetStepErrorHint
 // follow the same order.
 func (a *Activities) stepTargetCompositeError(ctx context.Context, step *app.WorkflowStep) (*compositeerrors.CompositeErrorData, error) {
 	if step.StepTargetID == "" {
-		return nil, nil
+		return step.Status.CompositeError, nil
 	}
 
 	switch app.WorkflowStepTargetType(step.StepTargetType) {
@@ -107,13 +110,17 @@ func (a *Activities) stepTargetCompositeError(ctx context.Context, step *app.Wor
 }
 
 // stackVersionCompositeError reads the row-level composite error from an
-// InstallStackVersion. Returns nil when the version has no error recorded.
+// InstallStackVersion. A missing row means no row-level error, so the caller
+// can fall through to the next best-effort source.
 func (a *Activities) stackVersionCompositeError(ctx context.Context, stackVersionID string) (*compositeerrors.CompositeErrorData, error) {
 	var sv app.InstallStackVersion
 	if err := a.db.WithContext(ctx).
 		Select("id", "composite_error").
 		Where(app.InstallStackVersion{ID: stackVersionID}).
 		First(&sv).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, errors.Wrap(err, "unable to get stack version")
 	}
 	return sv.CompositeError, nil
@@ -125,20 +132,27 @@ func (a *Activities) deployRowCompositeError(ctx context.Context, installDeployI
 		Select("id", "composite_error").
 		Where(app.InstallDeploy{ID: installDeployID}).
 		First(&deploy).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, errors.Wrap(err, "unable to get install deploy")
 	}
 	return deploy.CompositeError, nil
 }
 
 // sandboxRunRowCompositeError reads the row-level composite error from an
-// InstallSandboxRun without touching runner jobs. Returns nil when the row
-// carries no error (e.g. the run succeeded or failed via infrastructure).
+// InstallSandboxRun without touching runner jobs. A missing row, or a row
+// that carries no error (e.g. the run succeeded or failed via
+// infrastructure), yields nil so the caller falls through to the next source.
 func (a *Activities) sandboxRunRowCompositeError(ctx context.Context, sandboxRunID string) (*compositeerrors.CompositeErrorData, error) {
 	var run app.InstallSandboxRun
 	if err := a.db.WithContext(ctx).
 		Select("id", "composite_error").
 		Where(app.InstallSandboxRun{ID: sandboxRunID}).
 		First(&run).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, errors.Wrap(err, "unable to get sandbox run")
 	}
 	return run.CompositeError, nil

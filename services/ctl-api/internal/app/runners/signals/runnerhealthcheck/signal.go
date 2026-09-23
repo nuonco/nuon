@@ -26,6 +26,7 @@ import (
 const (
 	SignalType                signal.SignalType = "runner_healthcheck"
 	runnerUnhealthyAlertDelay                   = 15 * time.Minute
+	atomicRunnerStatusVersion                   = "runner-healthcheck-atomic-runner-status-v1"
 )
 
 type Signal struct {
@@ -152,6 +153,10 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 	tags["missing_install_process"] = "false"
 	if err != nil {
 		if isNotFound(err) {
+			if runner.HealthcheckPending(workflow.Now(ctx)) {
+				tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "skipped"))...)
+				return nil
+			}
 			l.Warn("install runner has no active install process",
 				zap.String("runner_id", s.RunnerID),
 			)
@@ -340,25 +345,37 @@ func (s *Signal) notifyRunnerUnhealthy(ctx workflow.Context, tmw tmetrics.Writer
 }
 
 func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, status app.RunnerStatus, description string) error {
-	if runner.Status != status {
-		if err := activities.LocalAwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+	statusVersion := workflow.GetVersion(ctx, atomicRunnerStatusVersion, workflow.DefaultVersion, 1)
+	if statusVersion == workflow.DefaultVersion {
+		if runner.Status != status {
+			if err := activities.LocalAwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+				RunnerID:          s.RunnerID,
+				Status:            status,
+				StatusDescription: description,
+			}); err != nil {
+				return errors.Wrap(err, "unable to update runner status")
+			}
+		}
+		if runner.StatusV2.Status == app.Status(status) {
+			return nil
+		}
+		if err := statusactivities.LocalAwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
 			RunnerID:          s.RunnerID,
 			Status:            status,
 			StatusDescription: description,
 		}); err != nil {
-			return errors.Wrap(err, "unable to update runner status")
+			return errors.Wrap(err, "unable to update runner status v2")
 		}
-	}
-	if runner.StatusV2.Status == app.Status(status) {
 		return nil
 	}
 
-	if err := statusactivities.LocalAwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+	if err := activities.LocalAwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          s.RunnerID,
 		Status:            status,
 		StatusDescription: description,
+		SkipIfDisabled:    true,
 	}); err != nil {
-		return errors.Wrap(err, "unable to update runner status v2")
+		return errors.Wrap(err, "unable to update runner status")
 	}
 
 	return nil

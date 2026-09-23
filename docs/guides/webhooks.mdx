@@ -268,6 +268,10 @@ How matching works:
 - Within a kind, the entity matches if its ID is in `ids` **or** its labels satisfy `selector`.
 - A `selector` requires every `match_labels` entry to match (AND); use `"*"` as the value to require only that the
   key is present.
+- A `selector` may also carry `not_match_labels` exclusions: any entity whose labels contain the key with the exact
+  value (`"*"` = key present at all) is rejected. Entities **without** the key still match, so
+  `{"not_match_labels": {"monitor": "false"}}` scopes a kind to "everything except installs labelled `monitor=false`"
+  without enumerating every other value.
 - An empty filter (`{}`) for a kind means "any entity of this kind".
 - Omit `match` entirely (or send `null`) for the org-wide default.
 

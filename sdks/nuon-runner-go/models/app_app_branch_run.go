@@ -79,6 +79,9 @@ type AppAppBranchRun struct {
 	// log stream id
 	LogStreamID string `json:"log_stream_id,omitempty"`
 
+	// metadata
+	Metadata *AppAppBranchRunMetadata `json:"metadata,omitempty"`
+
 	// no config changes
 	NoConfigChanges bool `json:"no_config_changes,omitempty"`
 
@@ -148,6 +151,10 @@ func (m *AppAppBranchRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLogStream(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMetadata(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -338,6 +345,29 @@ func (m *AppAppBranchRun) validateLogStream(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppAppBranchRun) validateMetadata(formats strfmt.Registry) error {
+	if swag.IsZero(m.Metadata) { // not required
+		return nil
+	}
+
+	if m.Metadata != nil {
+		if err := m.Metadata.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("metadata")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("metadata")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppAppBranchRun) validatePreview(formats strfmt.Registry) error {
 	if swag.IsZero(m.Preview) { // not required
 		return nil
@@ -480,6 +510,10 @@ func (m *AppAppBranchRun) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateLogStream(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateMetadata(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -672,6 +706,31 @@ func (m *AppAppBranchRun) contextValidateLogStream(ctx context.Context, formats 
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("log_stream")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) contextValidateMetadata(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Metadata != nil {
+
+		if swag.IsZero(m.Metadata) { // not required
+			return nil
+		}
+
+		if err := m.Metadata.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("metadata")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("metadata")
 			}
 
 			return err

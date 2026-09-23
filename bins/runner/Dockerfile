@@ -12,6 +12,7 @@ ARG GOCACHE_S3_URI
 ARG GOCACHE_S3_ETAG
 ARG GOCACHE_RELEASE_S3_URI
 ARG GOCACHE_RELEASE_S3_ETAG
+ARG GOCACHE_COMPACT=false
 ARG ARTIFACT_PLATFORMS=full
 
 FROM ${BUILD_IMAGE} AS gocache-restore
@@ -19,6 +20,7 @@ ARG AWS_REGION
 ARG GOCACHE_S3_URI
 ARG GOCACHE_S3_ETAG
 ARG GOCACHE_RESTORE_NONCE
+ARG GOCACHE_COMPACT
 ARG GOBUILD_CACHE_ID=gobuild-runner
 ARG GOMOD_CACHE_ID=gomod-runner
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=locked \
@@ -51,6 +53,11 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
       wait; \
       echo "wipe-wait: $(($(date +%s) - WAIT))s"; \
       [ "$stream_status" -eq 0 ] && \
+      if [ "${GOCACHE_COMPACT}" = "true" ]; then \
+        find /go/pkg/build-cache -mindepth 2 -maxdepth 2 -exec touch -d "@0" {} +; \
+        touch /go/pkg/build-cache/.nuon-compact-since; \
+        date +%s > /go/pkg/build-cache/trim.txt; \
+      fi && \
       echo "${GOCACHE_S3_ETAG}" > /go/pkg/build-cache/.nuon-s3-etag; \
     elif [ -z "${GOCACHE_S3_URI}" ]; then \
       echo "WARNING: no Go cache seed available, this build compiles cold"; \
@@ -63,6 +70,7 @@ ARG AWS_REGION
 ARG GOCACHE_RELEASE_S3_URI
 ARG GOCACHE_RELEASE_S3_ETAG
 ARG GOCACHE_RESTORE_NONCE
+ARG GOCACHE_COMPACT
 ARG GOBUILD_RELEASE_CACHE_ID=gobuild-runner-release
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_RELEASE_CACHE_ID},sharing=locked \
     --mount=type=secret,id=aws_access_key_id \
@@ -92,6 +100,11 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_RELEASE_CACHE_ID}
       wait; \
       echo "wipe-wait: $(($(date +%s) - WAIT))s"; \
       [ "$stream_status" -eq 0 ] && \
+      if [ "${GOCACHE_COMPACT}" = "true" ]; then \
+        find /go/pkg/build-cache -mindepth 2 -maxdepth 2 -exec touch -d "@0" {} +; \
+        touch /go/pkg/build-cache/.nuon-compact-since; \
+        date +%s > /go/pkg/build-cache/trim.txt; \
+      fi && \
       echo "${GOCACHE_RELEASE_S3_ETAG}" > /go/pkg/build-cache/.nuon-s3-etag; \
     elif [ -z "${GOCACHE_RELEASE_S3_URI}" ]; then \
       echo "WARNING: no release Go cache seed available, this build compiles cold"; \
@@ -427,6 +440,7 @@ COPY --from=gocache-release-status /gocache-status /
 FROM code AS gocache-s3
 ARG AWS_REGION
 ARG GOCACHE_S3_UPLOAD_URI
+ARG GOCACHE_COMPACT
 ARG tag
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing=shared \
     --mount=type=cache,target=/go/pkg/mod,id=${GOMOD_CACHE_ID},sharing=shared \
@@ -436,6 +450,12 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     export AWS_ACCESS_KEY_ID="$(cat /run/secrets/aws_access_key_id)" && \
     export AWS_SECRET_ACCESS_KEY="$(cat /run/secrets/aws_secret_access_key)" && \
     export AWS_SESSION_TOKEN="$(cat /run/secrets/aws_session_token)" && \
+    if [ "${GOCACHE_COMPACT}" = "true" ] && [ -f /go/pkg/build-cache/.nuon-compact-since ]; then \
+      BEFORE="$(du -sh /go/pkg/build-cache | cut -f1)"; \
+      find /go/pkg/build-cache -mindepth 2 -maxdepth 2 ! -newer /go/pkg/build-cache/.nuon-compact-since -exec rm -rf {} +; \
+      rm /go/pkg/build-cache/.nuon-compact-since; \
+      echo "compacted Go build cache from ${BEFORE} to $(du -sh /go/pkg/build-cache | cut -f1)"; \
+    fi && \
     if [ "$(du -sk /go/pkg/build-cache | cut -f1)" -lt 51200 ]; then \
       echo "cache mount held <50MB, refusing to upload an empty cache"; \
       exit 1; \
@@ -443,7 +463,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
     echo "uploading cache for ${tag}" && \
     echo "mounts hold $(du -sh /go/pkg/build-cache /go/pkg/mod | paste -sd ' ' -)" && \
     START=$(date +%s) && \
-    tar -C /go/pkg --exclude=build-cache/.nuon-dirty --exclude=build-cache/.nuon-s3-etag --exclude=build-cache/.stale-* --exclude=mod/.stale-* -cf - build-cache mod \
+    tar -C /go/pkg --exclude=build-cache/.nuon-dirty --exclude=build-cache/.nuon-s3-etag --exclude=build-cache/.nuon-compact-since --exclude=build-cache/.stale-* --exclude=mod/.stale-* -cf - build-cache mod \
       | zstd -T0 -1 \
       | s5cmd pipe --metadata "nuon-tag=${tag}" "${GOCACHE_S3_UPLOAD_URI}" && \
     echo "${tag}" > /go/pkg/build-cache/.nuon-s3-etag && \
@@ -453,6 +473,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_CACHE_ID},sharing
 FROM code AS gocache-s3-release
 ARG AWS_REGION
 ARG GOCACHE_RELEASE_S3_UPLOAD_URI
+ARG GOCACHE_COMPACT
 ARG tag
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_RELEASE_CACHE_ID},sharing=shared \
     --mount=type=secret,id=aws_access_key_id \
@@ -461,6 +482,12 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_RELEASE_CACHE_ID}
     export AWS_ACCESS_KEY_ID="$(cat /run/secrets/aws_access_key_id)" && \
     export AWS_SECRET_ACCESS_KEY="$(cat /run/secrets/aws_secret_access_key)" && \
     export AWS_SESSION_TOKEN="$(cat /run/secrets/aws_session_token)" && \
+    if [ "${GOCACHE_COMPACT}" = "true" ] && [ -f /go/pkg/build-cache/.nuon-compact-since ]; then \
+      BEFORE="$(du -sh /go/pkg/build-cache | cut -f1)"; \
+      find /go/pkg/build-cache -mindepth 2 -maxdepth 2 ! -newer /go/pkg/build-cache/.nuon-compact-since -exec rm -rf {} +; \
+      rm /go/pkg/build-cache/.nuon-compact-since; \
+      echo "compacted release Go build cache from ${BEFORE} to $(du -sh /go/pkg/build-cache | cut -f1)"; \
+    fi && \
     if [ "$(du -sk /go/pkg/build-cache | cut -f1)" -lt 51200 ]; then \
       echo "release cache mount held <50MB, refusing to upload an empty cache"; \
       exit 1; \
@@ -468,7 +495,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=${GOBUILD_RELEASE_CACHE_ID}
     echo "uploading release cache for ${tag}" && \
     echo "mount holds $(du -sh /go/pkg/build-cache | cut -f1)" && \
     START=$(date +%s) && \
-    tar -C /go/pkg/build-cache --exclude=.nuon-dirty --exclude=.nuon-s3-etag --exclude=.stale-* -cf - . \
+    tar -C /go/pkg/build-cache --exclude=.nuon-dirty --exclude=.nuon-s3-etag --exclude=.nuon-compact-since --exclude=.stale-* -cf - . \
       | zstd -T0 -1 \
       | s5cmd pipe --metadata "nuon-tag=${tag}" "${GOCACHE_RELEASE_S3_UPLOAD_URI}" && \
     echo "${tag}" > /go/pkg/build-cache/.nuon-s3-etag && \

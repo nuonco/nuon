@@ -53,13 +53,6 @@ func (a *Activities) DispatchTriggerEvent(ctx context.Context, req DispatchTrigg
 
 	ctx = cctx.SetOrgIDContext(ctx, dispatch.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, dispatch.CreatedByID)
-	enabled, featureErr := a.featuresClient.FeatureEnabled(ctx, app.OrgFeatureTriggers)
-	if featureErr != nil {
-		return nil, a.failTriggerEventDispatch(ctx, dispatch, fmt.Errorf("unable to check triggers feature: %w", featureErr), true)
-	}
-	if !enabled {
-		return nil, a.failTriggerEventDispatch(ctx, dispatch, errors.New("triggers feature is not enabled"), false)
-	}
 
 	if dispatch.TargetType == app.TriggerTargetTypeRunbook {
 		if dispatch.RunbookConfigID == nil {

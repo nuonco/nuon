@@ -160,6 +160,7 @@ func (v *varsValidator) getFakeInstallStackState() *state.InstallStackState {
 	fakeInstallStack.Outputs = map[string]any{
 		"break_glass_role_arns": map[string]string{},
 		"custom_role_arns":      map[string]string{},
+		"named_policy_arns":     map[string]string{},
 		"install_inputs":        map[string]string{},
 	}
 	return &fakeInstallStack

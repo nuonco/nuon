@@ -25,6 +25,7 @@ func init() {
 	config.RegisterDefault("service_deployment", "local")
 	config.RegisterDefault("nuon_admin_dashboard_url", "http://localhost:8087")
 	config.RegisterDefault("posthog_host", "https://us.i.posthog.com")
+	config.RegisterDefault("posthog_replay_enabled", true)
 	// docker-compose's kafka-ui, which serves under the same /admin/kafka context
 	// path it does in the cluster
 	config.RegisterDefault("nuon_kafka_ui_url", "http://localhost:8092")
@@ -43,30 +44,33 @@ type Config struct {
 	APIUrl string `config:"nuon_api_url"`
 	// RunnerAPIUrl is the runner API install stacks authenticate against. A different
 	// host from APIUrl, and the audience a stack's OIDC trust policy names.
-	RunnerAPIUrl          string `config:"nuon_runner_api_url"`
-	AdminAPIUrl           string `config:"nuon_admin_api_url"`
-	TemporalUIUrl         string `config:"nuon_temporal_ui_url"`
-	KafkaUIUrl            string `config:"nuon_kafka_ui_url"`
-	AuthServiceUrl        string `config:"nuon_auth_service_url"`
-	AppUrl                string `config:"nuon_app_url"`
-	GithubAppName         string `config:"github_app_name"`
-	PylonAppID            string `config:"pylon_app_id"`
-	DatadogEnv            string `config:"datadog_env"`
-	DatadogAPIKey         string `config:"datadog_api_key"`
-	DatadogApplicationKey string `config:"datadog_application_key"`
-	DatadogTraceDebug     bool   `config:"datadog_trace_debug"`
-	DatadogAPIUrl         string `config:"datadog_api_url"`
-	DisableMetrics        bool   `config:"disable_metrics"`
-	ServiceDeployment     string `config:"service_deployment"`
-	IsBYOC                bool   `config:"nuon_byoc"`
-	BYOCName              string `config:"nuon_byoc_name"`
-	BYOCIconText          string `config:"nuon_byoc_icon_text"`
-	BYOCColor             string `config:"nuon_byoc_color"`
-	OnboardingV2          bool   `config:"nuon_onboarding_v2"`
-	DashboardLite         bool   `config:"nuon_dashboard_lite"`
-	AdminDashboardUrl     string `config:"nuon_admin_dashboard_url"`
-	PostHogKey            string `config:"posthog_key"`
-	PostHogHost           string `config:"posthog_host"`
+	RunnerAPIUrl           string `config:"nuon_runner_api_url"`
+	AdminAPIUrl            string `config:"nuon_admin_api_url"`
+	TemporalUIUrl          string `config:"nuon_temporal_ui_url"`
+	KafkaUIUrl             string `config:"nuon_kafka_ui_url"`
+	AuthServiceUrl         string `config:"nuon_auth_service_url"`
+	AppUrl                 string `config:"nuon_app_url"`
+	GithubAppName          string `config:"github_app_name"`
+	PylonAppID             string `config:"pylon_app_id"`
+	DatadogEnv             string `config:"datadog_env"`
+	DatadogAPIKey          string `config:"datadog_api_key"`
+	DatadogApplicationKey  string `config:"datadog_application_key"`
+	DatadogTraceDebug      bool   `config:"datadog_trace_debug"`
+	DatadogAPIUrl          string `config:"datadog_api_url"`
+	DisableMetrics         bool   `config:"disable_metrics"`
+	ServiceDeployment      string `config:"service_deployment"`
+	IsBYOC                 bool   `config:"nuon_byoc"`
+	BYOCName               string `config:"nuon_byoc_name"`
+	BYOCIconText           string `config:"nuon_byoc_icon_text"`
+	BYOCColor              string `config:"nuon_byoc_color"`
+	OnboardingV2           bool   `config:"nuon_onboarding_v2"`
+	DashboardLite          bool   `config:"nuon_dashboard_lite"`
+	StatusBarAutoEnabled   bool   `config:"status_bar_auto_enabled"`
+	InstallsTabAutoEnabled bool   `config:"installs_tab_auto_enabled"`
+	AdminDashboardUrl      string `config:"nuon_admin_dashboard_url"`
+	PostHogKey             string `config:"posthog_key"`
+	PostHogHost            string `config:"posthog_host"`
+	PostHogReplayEnabled   bool   `config:"posthog_replay_enabled"`
 }
 
 func NewConfig() (*Config, error) {

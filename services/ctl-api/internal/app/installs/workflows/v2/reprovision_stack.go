@@ -84,6 +84,7 @@ func getStackReprovisionSteps(ctx workflow.Context, sg *stepGroup, install *app.
 
 	step, err = sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
+		Mode:      awaitrunnerhealthy.ModeStartup,
 	}, planOnly)
 	if err != nil {
 		return nil, err
