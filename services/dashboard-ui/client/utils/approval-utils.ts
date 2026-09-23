@@ -1,4 +1,5 @@
 import type {
+  TTheme,
   TWorkflowStepApprovalResponse,
   TWorkflowStepApprovalType,
 } from '@/types'
@@ -24,14 +25,34 @@ const RESPONSE_TYPE: Record<TWorkflowStepApprovalResponse['type'], string> = {
   approve: 'approved',
   'auto-approve': 'auto-approved',
   deny: 'denied',
-  retry: 'retired',
+  'deny-skip-current': 'skipped',
+  'deny-skip-current-and-dependents': 'skipped',
+  retry: 'retried',
   skip: 'skipped',
+  'auto-skipped': 'skipped',
 }
 
 export function getApprovalResponseType(
   responseType: TWorkflowStepApprovalResponse['type']
 ): string {
   return RESPONSE_TYPE[responseType]
+}
+
+const RESPONSE_THEME: Record<TWorkflowStepApprovalResponse['type'], TTheme> = {
+  approve: 'success',
+  'auto-approve': 'success',
+  deny: 'warn',
+  'deny-skip-current': 'default',
+  'deny-skip-current-and-dependents': 'default',
+  retry: 'info',
+  skip: 'default',
+  'auto-skipped': 'default',
+}
+
+export function getApprovalResponseTheme(
+  responseType: TWorkflowStepApprovalResponse['type']
+): TTheme {
+  return RESPONSE_THEME[responseType] ?? 'default'
 }
 
 export const APPROVAL_MODAL_COPY: Record<
