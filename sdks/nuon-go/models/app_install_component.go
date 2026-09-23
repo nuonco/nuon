@@ -20,6 +20,15 @@ import (
 // swagger:model app.InstallComponent
 type AppInstallComponent struct {
 
+	// actual applied at
+	ActualAppliedAt string `json:"actual_applied_at,omitempty"`
+
+	// actual component build id
+	ActualComponentBuildID string `json:"actual_component_build_id,omitempty"`
+
+	// actual install deploy id
+	ActualInstallDeployID string `json:"actual_install_deploy_id,omitempty"`
+
 	// component
 	Component *AppComponent `json:"component,omitempty"`
 
@@ -38,6 +47,9 @@ type AppInstallComponent struct {
 	// Enabled is the resolved enabled/disabled state for a toggleable component
 	// (from the synthetic enabled input, falling back to default_enabled); nil otherwise.
 	Enabled *bool `json:"enabled,omitempty"`
+
+	// expected app config id
+	ExpectedAppConfigID string `json:"expected_app_config_id,omitempty"`
 
 	// health status
 	HealthStatus string `json:"health_status,omitempty"`

@@ -5,10 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"gorm.io/gorm"
-
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 )
 
 type GetLatestActiveBranchAppConfigInput struct {
@@ -28,25 +26,16 @@ func (a *Activities) GetLatestActiveBranchAppConfig(ctx context.Context, input *
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	var appConfig app.AppConfig
-	err := a.db.WithContext(ctx).
-		Where(app.AppConfig{
-			AppID:       install.AppID,
-			AppBranchID: generics.NewNullString(input.AppBranchID),
-			Status:      app.AppConfigStatusActive,
-		}).
-		Where("labels->>'source' IS NULL OR labels->>'source' != ?", string(app.AppBranchRunTypeGitPreview)).
-		Order("created_at DESC").
-		First(&appConfig).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	run, err := a.installHelpers.LatestDeployableAppBranchRun(ctx, input.AppBranchID)
+	if errors.Is(err, installhelpers.ErrNoDeployableAppBranchRun) {
 		return &GetLatestActiveBranchAppConfigOutput{}, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("unable to get latest active app config: %w", err)
+		return nil, err
 	}
 
 	return &GetLatestActiveBranchAppConfigOutput{
-		AppConfigID:    appConfig.ID,
-		AlreadyCurrent: install.AppConfigID == appConfig.ID,
+		AppConfigID:    run.AppConfigID,
+		AlreadyCurrent: install.DeployedAppConfigID() == run.AppConfigID,
 	}, nil
 }
