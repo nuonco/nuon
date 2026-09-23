@@ -52,8 +52,9 @@ type CreateAppBranchConfigRequest struct {
 	// IgnoreChangesRegex. Omit to carry the current setting forward.
 	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 
-	PreviewConfig *app.AppBranchPreviewConfig `json:"preview_config,omitempty"`
-	RunConfig     *app.AppBranchRunConfig     `json:"run_config,omitempty"`
+	PreviewConfig      *app.AppBranchPreviewConfig `json:"preview_config,omitempty"`
+	ClearPreviewConfig bool                        `json:"clear_preview_config,omitempty"`
+	RunConfig          *app.AppBranchRunConfig     `json:"run_config,omitempty"`
 }
 
 func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
@@ -114,6 +115,9 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 	}
 
 	if c.PreviewConfig != nil {
+		if c.ClearPreviewConfig {
+			return stderr.NewInvalidRequest(fmt.Errorf("preview_config and clear_preview_config cannot both be set"))
+		}
 		c.PreviewConfig.Normalize()
 		if err := c.PreviewConfig.Validate(); err != nil {
 			return stderr.NewInvalidRequest(err)
@@ -280,6 +284,7 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 			SendStatusesOnIgnore: req.SendStatusesOnIgnore,
 		},
 		req.PreviewConfig,
+		req.ClearPreviewConfig,
 		req.RunConfig,
 	)
 	if err != nil {

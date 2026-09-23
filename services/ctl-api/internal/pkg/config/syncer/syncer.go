@@ -82,7 +82,6 @@ func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers
 		tfClient:         tfClient,
 		appID:            appID,
 		appConfigID:      appConfigID,
-		syncBranches:     true,
 	}
 	for _, opt := range opts {
 		opt(s)

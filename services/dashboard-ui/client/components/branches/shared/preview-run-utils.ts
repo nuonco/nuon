@@ -69,7 +69,7 @@ export const formatPreviewDefaultsSummary = (
   const defaults = previewDefaultsFromConfig(config, installs)
   const parts: string[] = [previewModeDisplayLabel(defaults.mode)]
 
-  if (defaults.mode !== 'build-only') {
+  if (defaults.mode !== 'none' && defaults.mode !== 'build-only') {
     if (
       defaults.installTargetMode === 'labels' &&
       Object.keys(defaults.labelSelector).length > 0
@@ -85,7 +85,7 @@ export const formatPreviewDefaultsSummary = (
     }
   }
 
-  if (options?.includeGithub !== false) {
+  if (defaults.mode !== 'none' && options?.includeGithub !== false) {
     if (defaults.setStatuses) parts.push('statuses on')
     if (defaults.comment) parts.push('PR comments on')
     if (defaults.ignoreDrafts) parts.push('ignore drafts')
