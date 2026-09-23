@@ -5,19 +5,22 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+
 	"charm.land/lipgloss/v2"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
 
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
 // ConfirmDialogModel represents an interactive confirmation dialog
 type ConfirmDialogModel struct {
-	message   string
-	note      string // optional highlighted note rendered before the question
-	confirmed bool
-	cancelled bool
-	quitting  bool
-	cursor    int // 0 = Yes, 1 = No
+	message     string
+	note        string // optional highlighted note rendered before the question
+	confirmed   bool
+	cancelled   bool
+	interrupted bool // ctrl+c, ctrl+d, or esc: user wants out, not just "no"
+	quitting    bool
+	cursor      int // 0 = Yes, 1 = No
 }
 
 // NewConfirmDialog creates a new confirmation dialog
@@ -47,8 +50,9 @@ func (m ConfirmDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
-		case "ctrl+c", "esc":
+		case "ctrl+c", "ctrl+d", "esc":
 			m.cancelled = true
+			m.interrupted = true
 			m.quitting = true
 			return m, tea.Quit
 
@@ -153,10 +157,16 @@ func (m ConfirmDialogModel) View() tea.View {
 	return tea.NewView(BorderStyle.Render(b.String()))
 }
 
-// Result returns whether the dialog was confirmed
-func (m ConfirmDialogModel) Result() (bool, bool) {
-	return m.confirmed, m.cancelled
+// Result reports confirmed ("Yes"), declined ("No"), or interrupted
+// (ctrl+c/ctrl+d/esc).
+func (m ConfirmDialogModel) Result() (confirmed, cancelled, interrupted bool) {
+	return m.confirmed, m.cancelled, m.interrupted
 }
+
+// ErrConfirmInterrupted means the user exited via ctrl+c/ctrl+d/esc, not an
+// explicit "No". Callers looping over multiple confirmations should treat
+// this as "stop everything", not "skip this item".
+var ErrConfirmInterrupted = fmt.Errorf("confirmation interrupted by user")
 
 // Show displays the confirmation dialog and returns the result
 // This provides a pterm-compatible API for easy migration
@@ -174,17 +184,20 @@ func showDialog(model ConfirmDialogModel, interactive bool) (bool, error) {
 		return false, fmt.Errorf("interactive terminal required for confirmation; use --yes flag to auto-approve")
 	}
 
-	program := tea.NewProgram(model)
+	program := teaprogram.NewProgram(model)
 	finalModel, err := program.Run()
 	if err != nil {
 		return false, err
 	}
 
 	confirmModel := finalModel.(ConfirmDialogModel)
-	confirmed, cancelled := confirmModel.Result()
+	confirmed, cancelled, interrupted := confirmModel.Result()
 
+	if interrupted {
+		return false, ErrConfirmInterrupted
+	}
 	if cancelled {
-		return false, fmt.Errorf("confirmation cancelled by user")
+		return false, nil
 	}
 
 	return confirmed, nil

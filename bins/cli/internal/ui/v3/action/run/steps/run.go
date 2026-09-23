@@ -11,6 +11,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
+
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -55,7 +57,7 @@ func Run(
 	m := model{m: app}
 
 	// Initialize the program
-	p := tea.NewProgram(m)
+	p := teaprogram.NewProgram(m)
 
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error running steps app: %v", err)
