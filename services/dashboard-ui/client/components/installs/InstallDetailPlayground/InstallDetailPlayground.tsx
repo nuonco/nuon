@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Expand } from '@/components/common/Expand'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
+import { JSONViewer } from '@/components/common/JSONViewer'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
@@ -100,11 +102,21 @@ interface IInstallPlaygroundHeader {
   ) => void
 }
 
+const branchRunHref = (
+  install: TPlaygroundInstall,
+  commit?: TBranchCommitRef
+) =>
+  commit?.runId
+    ? `/${install.orgId}/apps/${install.appId}/branches/${install.branchTracking.branchId}/runs/${commit.runId}`
+    : undefined
+
 export const ConfigurationSummaryRow = ({
   install,
   onNavigate,
 }: IInstallPlaygroundHeader) => {
   const branchHref = `/${install.orgId}/apps/${install.appId}/branches/${install.branchTracking.branchId}`
+  const applied = install.branchTracking.appliedCommit
+  const appliedRunHref = branchRunHref(install, applied)
 
   return (
     <Card className="!p-3 !gap-2 !shadow-none w-full">
@@ -135,6 +147,49 @@ export const ConfigurationSummaryRow = ({
               {install.branchTracking.targetBranch}
             </Text>
           </Link>
+        </span>
+
+        <span className="flex items-center gap-1.5">
+          <Text as="span" variant="subtext" theme="neutral">
+            Commit
+          </Text>
+          <Icon
+            variant="GitCommitIcon"
+            size={13}
+            className="text-cool-grey-400"
+          />
+          {!applied ? (
+            <Text as="span" variant="subtext" theme="neutral">
+              None
+            </Text>
+          ) : (
+            <>
+              {appliedRunHref ? (
+                <Link href={appliedRunHref} textVariant="subtext">
+                  <Text as="span" variant="subtext" family="mono">
+                    {applied.sha.slice(0, 8)}
+                  </Text>
+                </Link>
+              ) : (
+                <Text as="span" variant="subtext" family="mono">
+                  {applied.sha.slice(0, 8)}
+                </Text>
+              )}
+              {applied.author && (
+                <Text as="span" variant="subtext" theme="neutral">
+                  by {applied.author}
+                </Text>
+              )}
+              {applied.createdAt && (
+                <Time
+                  time={applied.createdAt}
+                  format="relative"
+                  variant="subtext"
+                  theme="neutral"
+                />
+              )}
+            </>
+          )}
         </span>
       </div>
 
@@ -406,9 +461,11 @@ const TRACKING_STATUS_MAP: Record<
 const CommitRef = ({
   commit,
   label,
+  runHref,
 }: {
   commit?: TBranchCommitRef
   label: string
+  runHref?: string
 }) => (
   <div className="flex flex-col gap-1">
     <Text variant="subtext" weight="strong" theme="neutral">
@@ -421,9 +478,17 @@ const CommitRef = ({
     ) : (
       <div className="flex flex-col gap-1 mt-0.5">
         <span className="flex items-center gap-1.5 flex-wrap">
-          <Badge size="sm" variant="code" theme="neutral">
-            {commit.sha.slice(0, 8)}
-          </Badge>
+          {runHref ? (
+            <Link href={runHref} textVariant="subtext">
+              <Badge size="sm" variant="code" theme="neutral">
+                {commit.sha.slice(0, 8)}
+              </Badge>
+            </Link>
+          ) : (
+            <Badge size="sm" variant="code" theme="neutral">
+              {commit.sha.slice(0, 8)}
+            </Badge>
+          )}
           {commit.runStatus && (
             <Status status={commit.runStatus} variant="badge" />
           )}
@@ -539,8 +604,13 @@ export const InstallBranchTrackingCard = ({
         <CommitRef
           label="Expected / latest run"
           commit={tracking.expectedCommit}
+          runHref={branchRunHref(install, tracking.expectedCommit)}
         />
-        <CommitRef label="Currently applied" commit={tracking.appliedCommit} />
+        <CommitRef
+          label="Currently applied"
+          commit={tracking.appliedCommit}
+          runHref={branchRunHref(install, tracking.appliedCommit)}
+        />
       </div>
     </Card>
   )
@@ -1742,6 +1812,106 @@ export const OperationsTab = ({
 
 // ─── Configuration sub-tabs ───────────────────────────────────────────────────
 
+type TNuonStateValue = {
+  template: string
+  value: string
+}
+
+const NUON_STATE_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_-]*$/
+const EXCLUDED_NUON_STATE_ROOTS = new Set(['secrets', 'cloud_account'])
+
+const getNuonStateValues = (
+  state: Record<string, unknown>
+): TNuonStateValue[] => {
+  const values: TNuonStateValue[] = []
+
+  const visit = (value: unknown, path: string[]) => {
+    if (EXCLUDED_NUON_STATE_ROOTS.has(path[0])) return
+
+    if (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean'
+    ) {
+      values.push({
+        template: `{{.nuon.${path.join('.')}}}`,
+        value: String(value),
+      })
+      return
+    }
+
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return
+
+    Object.entries(value).forEach(([key, child]) => {
+      if (NUON_STATE_IDENTIFIER.test(key)) visit(child, [...path, key])
+    })
+  }
+
+  Object.entries(state).forEach(([key, value]) => visit(value, [key]))
+  return values.sort((a, b) => a.template.localeCompare(b.template))
+}
+
+export const StateTab = ({ state }: { state: Record<string, unknown> }) => {
+  const stateValues = getNuonStateValues(state)
+
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      <Card className="!p-4 !gap-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <Text variant="body" weight="strong">
+              Install state
+            </Text>
+            <Text variant="subtext" theme="neutral">
+              State available to Nuon templates for this install.
+            </Text>
+          </div>
+          <ClickToCopyButton
+            textToCopy={JSON.stringify(state, null, 2)}
+            aria-label="Copy install state as JSON"
+          />
+        </div>
+        <JSONViewer className="max-h-96 bg-code" data={state} expanded={1} />
+      </Card>
+
+      <Card className="!p-4 !gap-4">
+        <div className="flex flex-col gap-1">
+          <Text variant="body" weight="strong">
+            Template usage
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            Reference state values with the{' '}
+            <Text as="span" family="mono">{`{{.nuon.*}}`}</Text> syntax in app
+            configuration.
+          </Text>
+        </div>
+
+        <CodeBlock language="toml" showCopy>
+          {`namespace = "{{.nuon.install.id}}"
+region = "{{.nuon.inputs.inputs.region}}"
+api_url = "{{.nuon.components.api.outputs.url}}"
+public_domain = "{{.nuon.sandbox.outputs.nuon_dns.public_domain.name}}"`}
+        </CodeBlock>
+
+        <PropertyGrid
+          values={stateValues}
+          align="start"
+          columns={[
+            {
+              key: 'template',
+              header: 'Template',
+            },
+            {
+              key: 'value',
+              header: 'Current value',
+            },
+          ]}
+        />
+      </Card>
+    </div>
+  )
+}
+
 export const ConfigurationVersionFeed = ({
   versions,
   idPrefix,
@@ -2006,6 +2176,11 @@ export const ConfigurationTabPanel = ({
   initTab?: string
 }) => {
   const sections: TSectionNavSection[] = [
+    {
+      id: 'state',
+      label: 'State',
+      render: () => <StateTab state={install.configuration.nuonState} />,
+    },
     {
       id: 'appBranch',
       label: 'App branch',

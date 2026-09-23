@@ -30,8 +30,8 @@ type GetStepErrorHintsResponse struct {
 //     (set by infrastructure failures during apply).
 //   - install_deploys: checks the row-level CompositeError first (set by plan
 //     render failures), then falls through to the latest runner job error.
-//   - no target (app branch run steps): falls back to the error already
-//     recorded on the step's own status by the step's signal.
+//   - no target (app branch run steps): reads the app branch run error for the
+//     workflow, then falls back to the error already recorded on the step.
 //
 // It is best-effort: a target with no composite error yields empty hints.
 //
@@ -63,6 +63,17 @@ func (a *Activities) GetStepErrorHints(ctx context.Context, req GetStepErrorHint
 // follow the same order.
 func (a *Activities) stepTargetCompositeError(ctx context.Context, step *app.WorkflowStep) (*compositeerrors.CompositeErrorData, error) {
 	if step.StepTargetID == "" {
+		var run app.AppBranchRun
+		err := a.db.WithContext(ctx).
+			Select("id", "composite_error").
+			Where(app.AppBranchRun{WorkflowID: &step.InstallWorkflowID}).
+			First(&run).Error
+		if err == nil && run.CompositeError != nil {
+			return run.CompositeError, nil
+		}
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.Wrap(err, "unable to get app branch run composite error")
+		}
 		return step.Status.CompositeError, nil
 	}
 

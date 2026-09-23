@@ -1,9 +1,11 @@
 package installs
 
 import (
+	"context"
 	"testing"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -71,6 +73,49 @@ func TestInputDefaults(t *testing.T) {
 		if got[k] != v {
 			t.Errorf("inputDefaults()[%q] = %q, want %q", k, got[k], v)
 		}
+	}
+}
+
+type inputConfigAPI struct {
+	nuon.Client
+	appID, appConfigID string
+	cfg                *models.AppAppConfig
+}
+
+func (a *inputConfigAPI) GetAppConfig(_ context.Context, appID, appConfigID string, _ *bool) (*models.AppAppConfig, error) {
+	a.appID = appID
+	a.appConfigID = appConfigID
+	return a.cfg, nil
+}
+
+func TestInputConfigForNewInstallUsesLatestAppBranchRunConfig(t *testing.T) {
+	inputCfg := &models.AppAppInputConfig{ID: "input-config-1"}
+	api := &inputConfigAPI{
+		cfg: &models.AppAppConfig{
+			ID:    "app-config-2",
+			Input: inputCfg,
+		},
+	}
+
+	syncer := &appInstallSyncer{api: api, appID: "app-1"}
+	got, err := syncer.inputConfigForNewInstall(context.Background(), &models.AppAppBranch{
+		ID:   "branch-1",
+		Name: "production",
+		LatestRun: &models.AppAppBranchRun{
+			AppConfigID: "app-config-2",
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected latest branch config input: %v", err)
+	}
+	if got.ID != inputCfg.ID {
+		t.Fatalf("input config ID = %q, want %q", got.ID, inputCfg.ID)
+	}
+	if api.appID != "app-1" {
+		t.Fatalf("GetAppConfig appID = %q, want app-1", api.appID)
+	}
+	if api.appConfigID != "app-config-2" {
+		t.Fatalf("GetAppConfig appConfigID = %q, want app-config-2", api.appConfigID)
 	}
 }
 
