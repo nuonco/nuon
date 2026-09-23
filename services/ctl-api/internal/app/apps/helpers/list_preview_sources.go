@@ -33,6 +33,10 @@ func (h *Helpers) ListPreviewSources(ctx context.Context, branch *app.AppBranch,
 		PullRequests: []PreviewSourcePR{},
 		Branches:     []PreviewSourceBranch{},
 	}
+	preview := branchPreviewConfigOrDefault(config)
+	if preview.Mode == app.AppBranchRunPreviewModeNone {
+		return result, nil
+	}
 
 	owner, repo, client, err := h.resolveGithubClientForBranchConfig(ctx, config)
 	if err != nil {
@@ -48,7 +52,6 @@ func (h *Helpers) ListPreviewSources(ctx context.Context, branch *app.AppBranch,
 			PerPage: 100,
 		},
 	}
-	preview := branchPreviewConfigOrDefault(config)
 	for {
 		prs, resp, err := client.PullRequests.List(ctx, owner, repo, prOpts)
 		if err != nil {

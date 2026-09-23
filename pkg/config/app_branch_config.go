@@ -19,7 +19,7 @@ type AppBranchInstallGroupConfig struct {
 }
 
 type AppBranchPreviewConfig struct {
-	Mode          string            `mapstructure:"mode,omitempty" toml:"mode,omitempty" jsonschema:"enum=plan-only,enum=apply,enum=build-only"`
+	Mode          string            `mapstructure:"mode,omitempty" toml:"mode,omitempty" jsonschema:"enum=none,enum=plan-only,enum=apply,enum=build-only"`
 	InstallID     string            `mapstructure:"install_id,omitempty" toml:"install_id,omitempty"`
 	InstallName   string            `mapstructure:"install_name,omitempty" toml:"install_name,omitempty"`
 	LabelSelector map[string]string `mapstructure:"label_selector,omitempty" toml:"label_selector,omitempty"`
@@ -42,7 +42,7 @@ func (c AppBranchRunConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 func (c AppBranchPreviewConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "mode", "preview run mode: plan-only, apply, or build-only")
+	addDescription(schema, "mode", "preview run mode: none, plan-only, apply, or build-only")
 	addDescription(schema, "install_id", "default install ID for preview runs")
 	addDescription(schema, "install_name", "default install name for preview runs, resolved to an ID at sync time")
 	addDescription(schema, "label_selector", "label key-value pairs to select the default preview install")
@@ -174,11 +174,15 @@ func (c *AppBranchConfig) Validate() error {
 			mode = "plan-only"
 		}
 		switch mode {
+		case "none":
+			if hasInstallID || hasInstallName || hasLabels {
+				return ErrConfig{Description: fmt.Sprintf("branch %q: preview mode none cannot set install_id, install_name, or label_selector", c.Name)}
+			}
 		case "plan-only", "apply", "build-only":
 		default:
-			return ErrConfig{Description: fmt.Sprintf("branch %q: unknown preview mode %q (valid modes: plan-only, apply, build-only)", c.Name, mode)}
+			return ErrConfig{Description: fmt.Sprintf("branch %q: unknown preview mode %q (valid modes: none, plan-only, apply, build-only)", c.Name, mode)}
 		}
-		if mode != "build-only" && !hasInstallID && !hasInstallName && !hasLabels {
+		if mode != "none" && mode != "build-only" && !hasInstallID && !hasInstallName && !hasLabels {
 			return ErrConfig{
 				Description: fmt.Sprintf("branch %q: preview requires install_id, install_name, or label_selector for mode %q", c.Name, mode),
 			}
