@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -78,16 +76,26 @@ func TestInputDefaults(t *testing.T) {
 	}
 }
 
+type inputConfigAPI struct {
+	nuon.Client
+	appID, appConfigID string
+	cfg                *models.AppAppConfig
+}
+
+func (a *inputConfigAPI) GetAppConfig(_ context.Context, appID, appConfigID string, _ *bool) (*models.AppAppConfig, error) {
+	a.appID = appID
+	a.appConfigID = appConfigID
+	return a.cfg, nil
+}
+
 func TestInputConfigForNewInstallUsesLatestAppBranchRunConfig(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	api := nuon.NewMockClient(ctrl)
 	inputCfg := &models.AppAppInputConfig{ID: "input-config-1"}
-	api.EXPECT().
-		GetAppConfig(gomock.Any(), "app-1", "app-config-2", gomock.Any()).
-		Return(&models.AppAppConfig{
+	api := &inputConfigAPI{
+		cfg: &models.AppAppConfig{
 			ID:    "app-config-2",
 			Input: inputCfg,
-		}, nil)
+		},
+	}
 
 	syncer := &appInstallSyncer{api: api, appID: "app-1"}
 	got, err := syncer.inputConfigForNewInstall(context.Background(), &models.AppAppBranch{
@@ -102,6 +110,12 @@ func TestInputConfigForNewInstallUsesLatestAppBranchRunConfig(t *testing.T) {
 	}
 	if got.ID != inputCfg.ID {
 		t.Fatalf("input config ID = %q, want %q", got.ID, inputCfg.ID)
+	}
+	if api.appID != "app-1" {
+		t.Fatalf("GetAppConfig appID = %q, want app-1", api.appID)
+	}
+	if api.appConfigID != "app-config-2" {
+		t.Fatalf("GetAppConfig appConfigID = %q, want app-config-2", api.appConfigID)
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	cliconfig "github.com/nuonco/nuon/bins/cli/internal/config"
@@ -123,6 +122,19 @@ init_script_url = "https://example.com/init.sh"
 	require.Error(t, checkEmbeddedBranches(cfg, dir))
 }
 
+type appSyncDisabledAPI struct {
+	nuon.Client
+	cliConfig *models.ServiceCLIConfig
+}
+
+func (a *appSyncDisabledAPI) GetAppBranches(_ context.Context, _ string) ([]*models.AppAppBranch, error) {
+	return nil, nil
+}
+
+func (a *appSyncDisabledAPI) GetCLIConfig(_ context.Context) (*models.ServiceCLIConfig, error) {
+	return a.cliConfig, nil
+}
+
 func TestHandleAppSyncDisabledNonInteractive(t *testing.T) {
 	tests := map[string]struct {
 		interactive bool
@@ -134,10 +146,9 @@ func TestHandleAppSyncDisabledNonInteractive(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			dir := t.TempDir()
-			ctrl := gomock.NewController(t)
-			api := nuon.NewMockClient(ctrl)
-			api.EXPECT().GetAppBranches(gomock.Any(), "app-1").Return(nil, nil)
-			api.EXPECT().GetCLIConfig(gomock.Any()).Return(&models.ServiceCLIConfig{DashboardURL: "https://app.nuon.co"}, nil)
+			api := &appSyncDisabledAPI{
+				cliConfig: &models.ServiceCLIConfig{DashboardURL: "https://app.nuon.co"},
+			}
 			s := &Service{
 				api: api,
 				cfg: &cliconfig.Config{Interactive: tc.interactive, OrgID: "org-1"},
