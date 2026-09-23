@@ -1,7 +1,12 @@
 import { Text } from '@/components/common/Text'
 import type { TStepChangeSummary } from '@/types'
 import { cn } from '@/utils/classnames'
-import { formatAggregate, hasChanges, sumCounts } from './change-summary-utils'
+import {
+  formatAggregate,
+  hasChanges,
+  isSummarized,
+  sumCounts,
+} from './change-summary-utils'
 
 interface IChangesAggregate {
   summaries: TStepChangeSummary[]
@@ -27,17 +32,17 @@ export const ChangesAggregate = ({
 
   const totals = sumCounts(summaries)
   const changedSteps = summaries.filter((s) => hasChanges(s.counts))
+  const summarized = summaries.filter(isSummarized)
 
   if (changedSteps.length === 0) {
     return (
       <Text
         variant="subtext"
-        theme="success"
         weight="strong"
         className={cn('flex items-center gap-1', className)}
       >
-        No changes across {summaries.length}{' '}
-        {summaries.length === 1 ? 'step' : 'steps'}
+        No changes across {summarized.length}{' '}
+        {summarized.length === 1 ? 'step' : 'steps'}
       </Text>
     )
   }
