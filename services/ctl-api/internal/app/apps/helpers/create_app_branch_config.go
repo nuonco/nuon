@@ -47,9 +47,10 @@ func (h *Helpers) CreateAppBranchConfig(
 	postDeployRunbookIDs *[]string,
 	ignoreChanges *IgnoreChangesSettings,
 	previewConfig *app.AppBranchPreviewConfig,
+	clearPreviewConfig bool,
 	runConfig *app.AppBranchRunConfig,
 ) (*app.AppBranchConfig, error) {
-	return h.CreateAppBranchConfigWithDB(ctx, h.db, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs, ignoreChanges, previewConfig, runConfig)
+	return h.CreateAppBranchConfigWithDB(ctx, h.db, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs, ignoreChanges, previewConfig, clearPreviewConfig, runConfig)
 }
 
 // Callers inside a transaction must use this, or the app_branch_id FK fails.
@@ -63,6 +64,7 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 	postDeployRunbookIDs *[]string,
 	ignoreChanges *IgnoreChangesSettings,
 	previewConfig *app.AppBranchPreviewConfig,
+	clearPreviewConfig bool,
 	runConfig *app.AppBranchRunConfig,
 ) (*app.AppBranchConfig, error) {
 	if ignoreChanges != nil && ignoreChanges.Regex != nil {
@@ -123,7 +125,7 @@ func (h *Helpers) CreateAppBranchConfigWithDB(
 
 	if previewConfig != nil {
 		config.PreviewConfig = previewConfig
-	} else if hasPrevious {
+	} else if hasPrevious && !clearPreviewConfig {
 		config.PreviewConfig = previous.PreviewConfig
 	}
 

@@ -20,6 +20,9 @@ import (
 // swagger:model service.CreateAppBranchConfigRequest
 type ServiceCreateAppBranchConfigRequest struct {
 
+	// clear preview config
+	ClearPreviewConfig bool `json:"clear_preview_config,omitempty"`
+
 	// connected github vcs config
 	ConnectedGithubVcsConfig *HelpersConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 

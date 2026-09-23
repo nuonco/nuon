@@ -26,11 +26,20 @@ type AppInstallActionWorkflow struct {
 	// action workflow id
 	ActionWorkflowID string `json:"action_workflow_id,omitempty"`
 
+	// actual action workflow config id
+	ActualActionWorkflowConfigID string `json:"actual_action_workflow_config_id,omitempty"`
+
+	// actual applied at
+	ActualAppliedAt string `json:"actual_applied_at,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
+
+	// expected action workflow config id
+	ExpectedActionWorkflowConfigID string `json:"expected_action_workflow_config_id,omitempty"`
 
 	// id
 	ID string `json:"id,omitempty"`

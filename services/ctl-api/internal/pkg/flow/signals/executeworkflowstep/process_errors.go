@@ -22,6 +22,8 @@ const parkedWaitCeilingVersion = "parked-step-wait-ceiling-v1"
 // step target: histories written before it have no such activity command.
 const targetlessStepCompositeErrorVersion = "targetless-step-composite-error-v1"
 
+const terminalTargetlessStopVersion = "terminal-targetless-step-stop-v1"
+
 // handleStepError marks the step as errored and checks for auto-retry.
 // If the inner signal implements SignalWithAutoRetry and the retry budget
 // hasn't been exhausted, it writes a directive ("retry" or "retry-group")
@@ -32,7 +34,19 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	// Check auto-retry on inner signal.
 	ar, isAutoRetry := sig.(signal.SignalWithAutoRetry)
 	if !isAutoRetry || !ar.AutoRetry() {
-		return s.markStepFailed(ctx, step, stepErr, nil, s.targetlessStepCompositeError(ctx, l, step))
+		stepCE := s.targetlessStepCompositeError(ctx, l, step)
+		if stepCE != nil &&
+			stepCE.Hints.Terminal() &&
+			workflow.GetVersion(ctx, terminalTargetlessStopVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			if err := s.updateStepFailedStatus(ctx, step, stepErr, nil, stepCE); err != nil {
+				return err
+			}
+			if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
+				return errors.Wrap(err, "unable to set stop directive")
+			}
+			return nil
+		}
+		return s.markStepFailed(ctx, step, stepErr, nil, stepCE)
 	}
 
 	// Consult the composite-error hint recorded for this step's target. The
@@ -280,6 +294,13 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 // the parsed composite error when one was recorded for the step's target, and
 // optional extra metadata. It always returns stepErr.
 func (s *Signal) markStepFailed(ctx workflow.Context, step *app.WorkflowStep, stepErr error, extraMeta map[string]any, stepCE *compositeerrors.CompositeErrorData) error {
+	if err := s.updateStepFailedStatus(ctx, step, stepErr, extraMeta, stepCE); err != nil {
+		return err
+	}
+	return stepErr
+}
+
+func (s *Signal) updateStepFailedStatus(ctx workflow.Context, step *app.WorkflowStep, stepErr error, extraMeta map[string]any, stepCE *compositeerrors.CompositeErrorData) error {
 	meta := map[string]any{
 		"reason": stepErr.Error(),
 	}
@@ -298,7 +319,7 @@ func (s *Signal) markStepFailed(ctx workflow.Context, step *app.WorkflowStep, st
 	}); err != nil {
 		return errors.Wrap(err, "unable to mark step as error")
 	}
-	return stepErr
+	return nil
 }
 
 // targetlessStepCompositeError reads back the composite error a targetless step

@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appbranchchanged"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
@@ -104,17 +103,8 @@ func (s *service) MoveInstallToAppBranch(ctx *gin.Context) {
 
 	// Refusing up front beats moving the install somewhere that has nothing to
 	// deploy and leaving it stranded there.
-	if _, err := s.helpers.LatestActiveBranchAppConfig(ctx, install.AppID, branch.ID); err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	groups, err := s.appsHelpers.LatestConfigInstallGroups(ctx, branch.ID)
+	target, err := s.helpers.ResolveAppBranchRunForInstall(ctx, branch.ID, &install)
 	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := appshelpers.ValidateInstallSingleGroup(groups, &install); err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -124,14 +114,7 @@ func (s *service) MoveInstallToAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	var groupID string
-	for i := range groups {
-		if appshelpers.InstallMatchesGroup(&groups[i], &install) {
-			groupID = groups[i].ID
-			break
-		}
-	}
-	if err := appbranchchanged.Enqueue(ctx, s.queueClient, install.ID, branch.ID, groupID); err != nil {
+	if err := appbranchchanged.Enqueue(ctx, s.queueClient, install.ID, branch.ID, target.InstallGroupID); err != nil {
 		ctx.Error(fmt.Errorf("unable to enqueue app branch install update: %w", err))
 		return
 	}
