@@ -30,6 +30,30 @@ const deniedStep: TWorkflowStep = {
   },
 } as TWorkflowStep
 
+const skippedStep: TWorkflowStep = {
+  ...baseTerraformStep,
+  approval: {
+    type: 'app_branch_plan',
+    response: { type: 'deny-skip-current' },
+  },
+} as TWorkflowStep
+
+const retriedStep: TWorkflowStep = {
+  ...baseTerraformStep,
+  approval: {
+    type: 'terraform_plan',
+    response: { type: 'retry' },
+  },
+} as TWorkflowStep
+
+const autoApprovedStep: TWorkflowStep = {
+  ...baseTerraformStep,
+  approval: {
+    type: 'terraform_plan',
+    response: { type: 'auto-approve' },
+  },
+} as TWorkflowStep
+
 const helmStep: TWorkflowStep = {
   ...baseTerraformStep,
   approval: {
@@ -67,6 +91,12 @@ export const Approved = () => <ApprovalBanner step={approvedStep} />
 export const Superseded = () => <ApprovalBanner step={supersededStep} />
 
 export const Denied = () => <ApprovalBanner step={deniedStep} />
+
+export const Skipped = () => <ApprovalBanner step={skippedStep} />
+
+export const Retried = () => <ApprovalBanner step={retriedStep} />
+
+export const AutoApproved = () => <ApprovalBanner step={autoApprovedStep} />
 
 export const AwaitingHelmApproval = () => <ApprovalBanner step={helmStep} />
 

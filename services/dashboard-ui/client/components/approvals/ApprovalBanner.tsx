@@ -1,14 +1,11 @@
-import { Banner, type TBannerTheme } from '@/components/common/Banner'
+import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
-import type {
-  TWorkflowStep,
-  TWorkflowStepApprovalType,
-  TWorkflowStepApprovalResponse,
-} from '@/types'
+import type { TWorkflowStep, TWorkflowStepApprovalType } from '@/types'
 import {
   getApprovalType,
   getApprovalResponseType,
+  getApprovalResponseTheme,
 } from '@/utils/approval-utils'
 import { humanize } from '@/utils/string-utils'
 import { ApprovePlanButton } from './ApprovePlan'
@@ -92,18 +89,6 @@ const AwaitingApprovalBanner = ({ step }: IApprovalBanner) => {
   )
 }
 
-const RESPONSE_THEME: Record<
-  TWorkflowStepApprovalResponse['type'],
-  TBannerTheme
-> = {
-  approve: 'success',
-  'auto-approve': 'success',
-  'auto-skipped': 'default',
-  deny: 'warn',
-  skip: 'default',
-  retry: 'info',
-}
-
 const ApprovedPlanBanner = ({ step }: IApprovalBanner) => {
   const { hasResponded } = useRespondedApprovals()
   const responseType = getApprovalResponseType(step?.approval?.response?.type)
@@ -132,7 +117,13 @@ const ApprovedPlanBanner = ({ step }: IApprovalBanner) => {
   }
 
   return (
-    <Banner theme={optimistic ? 'success' : RESPONSE_THEME[step?.approval?.response?.type]}>
+      <Banner
+        theme={
+          optimistic
+            ? 'success'
+            : getApprovalResponseTheme(step?.approval?.response?.type)
+        }
+      >
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col">
           <Text weight="strong">
