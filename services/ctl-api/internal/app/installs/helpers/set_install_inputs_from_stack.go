@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -127,6 +128,12 @@ func (h *Helpers) SetInstallInputsFromStack(ctx context.Context, install *app.In
 		app.WorkflowTypeInputUpdate,
 	)
 	if err != nil {
+		// A stack reports inputs while provisioning, before the runner it is
+		// creating exists. The values are already persisted; there are no
+		// dependents to deploy on a first provision.
+		if errors.Is(err, ErrNoActiveRunner) {
+			return inputs, nil, nil
+		}
 		return nil, nil, fmt.Errorf("unable to create input update workflow: %w", err)
 	}
 
