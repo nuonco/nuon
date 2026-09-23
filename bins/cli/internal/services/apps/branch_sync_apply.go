@@ -104,7 +104,7 @@ func (s *Service) updateSyncedBranch(ctx context.Context, appID, branchID string
 func (s *Service) writeBranchConfig(ctx context.Context, appID, branchID string, cfg *config.AppBranchConfig) (*models.AppAppBranchConfig, error) {
 	if cfg.ConnectedRepo == nil && cfg.PublicRepo == nil {
 		if branchConfigNeedsRepo(cfg) {
-			return nil, fmt.Errorf("branch %q sets install groups, preview, or post-deploy runbooks but has no connected_repo or public_repo", cfg.Name)
+			return nil, fmt.Errorf("branch %q sets install groups, preview, post-deploy runbooks, or a non-push run mode but has no connected_repo or public_repo", cfg.Name)
 		}
 		return nil, nil
 	}
@@ -118,27 +118,22 @@ func (s *Service) writeBranchConfig(ctx context.Context, appID, branchID string,
 }
 
 func branchConfigNeedsRepo(cfg *config.AppBranchConfig) bool {
-	return len(cfg.InstallGroups) > 0 || cfg.Preview != nil || len(cfg.PostDeployRunbooks) > 0 || cfg.IgnoreChangesRegex != ""
+	previewNeedsRepo := cfg.Preview != nil && cfg.Preview.Mode != "none"
+	return len(cfg.InstallGroups) > 0 || previewNeedsRepo || len(cfg.PostDeployRunbooks) > 0 || cfg.IgnoreChangesRegex != "" ||
+		normalizeRunConfig(cfg.Run).Mode != string(models.AppAppBranchRunModePush)
 }
 
 func branchConfigRequest(ctx context.Context, resolver *branchNameResolver, cfg *config.AppBranchConfig) (*models.ServiceCreateAppBranchConfigRequest, error) {
+	run := normalizeRunConfig(cfg.Run)
 	req := &models.ServiceCreateAppBranchConfigRequest{
+		ClearPreviewConfig:   cfg.Preview == nil,
 		IgnoreChangesRegex:   generics.ToPtr(cfg.IgnoreChangesRegex),
 		SendStatusesOnIgnore: generics.ToPtr(cfg.SendStatusesOnIgnore),
 		RunConfig: &models.AppAppBranchRunConfig{
-			Mode: models.AppAppBranchRunModePush,
+			Mode:        models.AppAppBranchRunMode(run.Mode),
+			TagPrefix:   run.TagPrefix,
+			GithubLabel: run.GithubLabel,
 		},
-	}
-	if cfg.Run != nil {
-		mode := cfg.Run.Mode
-		if mode == "" || mode == "all" {
-			mode = "push"
-		} else if mode == "on_tag_prefix" {
-			mode = "on_tag"
-		}
-		req.RunConfig.Mode = models.AppAppBranchRunMode(mode)
-		req.RunConfig.TagPrefix = cfg.Run.TagPrefix
-		req.RunConfig.GithubLabel = cfg.Run.GithubLabel
 	}
 
 	if cfg.ConnectedRepo != nil {

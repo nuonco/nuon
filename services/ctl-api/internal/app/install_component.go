@@ -120,6 +120,8 @@ type InstallComponent struct {
 	HealthStatusDescription string                       `json:"health_status_description,omitzero" gorm:"-" temporaljson:"health_status_description,omitzero,omitempty"`
 	HealthStatusV2          CompositeStatus              `json:"health_status_v2,omitzero" gorm:"type:jsonb" temporaljson:"health_status_v2,omitzero,omitempty"`
 
+	AppConfigRef AppConfigRef `json:"app_config_ref,omitzero" gorm:"type:jsonb" temporaljson:"app_config_ref,omitzero,omitempty"`
+
 	// Enabled is the resolved enabled/disabled state for a toggleable component
 	// (from the synthetic enabled input, falling back to default_enabled); nil otherwise.
 	Enabled *bool `json:"enabled,omitempty" gorm:"-" temporaljson:"-" swaggertype:"boolean" extensions:"x-nullable"`

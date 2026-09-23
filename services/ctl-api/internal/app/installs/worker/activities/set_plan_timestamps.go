@@ -39,7 +39,7 @@ func (a *Activities) SetDeployAppliedAt(ctx context.Context, req SetDeployApplie
 	if res.Error != nil {
 		return fmt.Errorf("unable to set applied_at on deploy: %w", res.Error)
 	}
-	return nil
+	return a.helpers.RecordInstallDeployApplied(ctx, req.DeployID, now)
 }
 
 type SetSandboxRunPlannedAtRequest struct {
@@ -73,5 +73,5 @@ func (a *Activities) SetSandboxRunAppliedAt(ctx context.Context, req SetSandboxR
 	if res.Error != nil {
 		return fmt.Errorf("unable to set applied_at on sandbox run: %w", res.Error)
 	}
-	return nil
+	return a.helpers.RecordInstallSandboxRunApplied(ctx, req.SandboxRunID, now)
 }
