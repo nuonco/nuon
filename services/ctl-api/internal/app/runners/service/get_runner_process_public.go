@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -45,6 +46,8 @@ func (s *service) GetRunnerProcessPublic(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("runner process not found"))
 		return
 	}
+
+	s.attachScheduledRestarts([]*app.RunnerProcess{process})
 
 	ctx.JSON(http.StatusOK, process)
 }
