@@ -48,6 +48,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		l.Info("requested CAN on queues", zap.Int64("rows_affected", queueResp.RowsAffected))
 	}
 
+	migrationResp, err := generalactivities.AwaitEnqueueOrgQueueMigrations(ctx, generalactivities.EnqueueOrgQueueMigrationsRequest{
+		Tag: s.Tag,
+	})
+	if err != nil {
+		return fmt.Errorf("enqueue org queue migrations: %w", err)
+	}
+	if l != nil {
+		l.Info("enqueued org queue migrations", zap.Int("orgs_enqueued", migrationResp.OrgsEnqueued))
+	}
+
 	// Idempotent + additive — chained off promote so new label-tagged
 	// orgs land without a separate POST.
 	autoLinkResp, err := generalactivities.AwaitEnsureSlackAutoLinks(ctx, generalactivities.EnsureSlackAutoLinksRequest{})
