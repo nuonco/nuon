@@ -31,6 +31,34 @@ export const Running = () => (
   </div>
 )
 
+export const Inline = () => (
+  <div className="max-w-md">
+    <BranchRunCommit
+      displayVariant="inline"
+      showStatus={false}
+      href="#"
+      message="feat: add retry budget to the checkout worker"
+      author="developer"
+      sha="a1b2c3d4e5f6"
+      createdAt="2026-08-12T09:00:00Z"
+    />
+  </div>
+)
+
+export const InlineLongMessageTruncates = () => (
+  <div className="max-w-xs">
+    <BranchRunCommit
+      displayVariant="inline"
+      showStatus={false}
+      href="#"
+      message="feat: add retry budget to the checkout worker and rework the queue drain path"
+      author="developer"
+      sha="a1b2c3d4e5f6"
+      createdAt="2026-08-12T09:00:00Z"
+    />
+  </div>
+)
+
 export const NoCommitMeta = () => (
   <div className="max-w-md">
     <BranchRunCommit status="pending" href="#" />
