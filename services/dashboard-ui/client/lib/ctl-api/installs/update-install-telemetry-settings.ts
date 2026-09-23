@@ -8,7 +8,7 @@ export const updateInstallTelemetrySettings = ({
 }: {
   installId: string
   orgId: string
-  enabled: boolean
+  enabled: boolean | null
 }) =>
   api<TInstallTelemetrySettings>({
     path: `installs/${installId}/telemetry`,
