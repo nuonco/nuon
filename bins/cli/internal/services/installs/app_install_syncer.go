@@ -27,6 +27,10 @@ const (
 
 const defaultPollDuration = time.Second * 10
 
+// ErrSyncAborted means an interrupted confirm dialog should stop the whole
+// batch, unlike an explicit "No" which only skips the current install.
+var ErrSyncAborted = errors.New("sync aborted by user")
+
 type appInstallSyncer struct {
 	api               nuon.Client
 	appID, orgID      string
@@ -133,12 +137,14 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 			fmt.Sprintf("Install %q does not exist and will be created.", installCfg.Name),
 			s.interactive,
 		)
+		if errors.Is(err, bubbles.ErrConfirmInterrupted) {
+			return nil, ErrSyncAborted
+		}
 		if err != nil {
-			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
-			return nil, nil
+			return nil, fmt.Errorf("error confirming install %s: %w", installCfg.Name, err)
 		}
 		if !ok {
-			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
+			ui.PrintSuccess(fmt.Sprintf("skipping install %s, declined by user", installCfg.Name))
 			return nil, nil
 		}
 	}
@@ -279,12 +285,14 @@ func (s *appInstallSyncer) syncExistingInstall(
 
 	if !confirm {
 		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with updating this install?", s.interactive)
+		if errors.Is(err, bubbles.ErrConfirmInterrupted) {
+			return nil, ErrSyncAborted
+		}
 		if err != nil {
-			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
-			return nil, nil
+			return nil, fmt.Errorf("error confirming install %s: %w", installCfg.Name, err)
 		}
 		if !ok {
-			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
+			ui.PrintSuccess(fmt.Sprintf("skipping install %s, declined by user", installCfg.Name))
 			return nil, nil
 		}
 	}

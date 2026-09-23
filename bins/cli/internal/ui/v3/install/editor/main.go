@@ -22,6 +22,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
+
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
@@ -272,7 +274,7 @@ func EditInputsApp(
 	}
 
 	m := initialModel(ctx, cfg, api, installID, deployDependents)
-	p := tea.NewProgram(m)
+	p := teaprogram.NewProgram(m)
 
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error running inputs editor: %v\n", err)
