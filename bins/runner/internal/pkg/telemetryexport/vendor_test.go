@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"go.uber.org/zap"
 )
 
@@ -398,6 +399,55 @@ func TestVendorSupervisorRollsBackAndRetriesAttributeChange(t *testing.T) {
 	}
 }
 
+func TestVendorSupervisorAuditsAppliedTelemetryChanges(t *testing.T) {
+	s := newVendorTestSupervisor(&fakeTokenLifecycle{})
+	var events []audit.Event
+	s.writeAuditFn = func(event audit.Event) error {
+		events = append(events, event)
+		return audit.ErrUnavailable
+	}
+	ctx := context.Background()
+	s.reconcile(ctx, vendorSettings{})
+	s.replaceChildFn = func(context.Context, string, map[string]string) error {
+		return errors.New("collector failed")
+	}
+	settings := vendorSettings{enabled: true, endpoint: "https://relay.example.com"}
+	s.reconcile(ctx, settings)
+	if len(events) != 0 {
+		t.Fatalf("initial disabled state or failed enable emitted success: %#v", events)
+	}
+
+	s.replaceChildFn = func(context.Context, string, map[string]string) error {
+		s.child = &childProcess{done: make(chan struct{}), startedAt: time.Now()}
+		return nil
+	}
+	s.stopChildFn = func() { s.child = nil }
+	s.nextStart = time.Now().Add(-time.Second)
+	s.restartIfNeeded(ctx)
+	if !s.enabled || len(events) != 1 || events[0].Name != "install_telemetry_updated" || events[0].Outcome != audit.OutcomeSucceeded || events[0].Attributes["telemetry.enabled"] != "true" {
+		t.Fatalf("successful enable did not emit the expected event: enabled=%t events=%#v", s.enabled, events)
+	}
+
+	s.reconcile(ctx, settings)
+	settings.attributes = map[string]string{"nuon.install.name": "acme"}
+	s.reconcile(ctx, settings)
+	close(s.child.done)
+	s.restartIfNeeded(ctx)
+	s.nextStart = time.Now().Add(-time.Second)
+	s.restartIfNeeded(ctx)
+	if !s.enabled || len(events) != 1 {
+		t.Fatalf("poll, metadata update, or restart duplicated toggle event: enabled=%t events=%#v", s.enabled, events)
+	}
+
+	close(s.child.done)
+	s.restartIfNeeded(ctx)
+	s.reconcile(ctx, vendorSettings{})
+	s.reconcile(ctx, vendorSettings{})
+	if !s.disabled || s.enabled || len(events) != 2 || events[1].Name != "install_telemetry_updated" || events[1].Outcome != audit.OutcomeSucceeded || events[1].Attributes["telemetry.enabled"] != "false" {
+		t.Fatalf("disable after crash did not emit exactly one event: disabled=%t events=%#v", s.disabled, events)
+	}
+}
+
 func newVendorTestSupervisor(tokens tokenLifecycle) *VendorSupervisor {
 	s := &VendorSupervisor{
 		logger:    zap.NewNop(),
@@ -411,5 +461,6 @@ func newVendorTestSupervisor(tokens tokenLifecycle) *VendorSupervisor {
 	}
 	s.replaceChildFn = func(context.Context, string, map[string]string) error { return nil }
 	s.stopChildFn = func() {}
+	s.writeAuditFn = func(audit.Event) error { return nil }
 	return s
 }
