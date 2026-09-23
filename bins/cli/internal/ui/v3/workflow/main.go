@@ -22,6 +22,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
+
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -688,7 +690,7 @@ func WorkflowApp(
 	m := initialModel(ctx, cfg, api, install_id, workflow_id)
 	m.autoRetryAll = autoRetry
 	// initialize the program
-	p := tea.NewProgram(m)
+	p := teaprogram.NewProgram(m)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
 		os.Exit(1)
