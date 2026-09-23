@@ -42,8 +42,9 @@ type RunSpec struct {
 
 	Mounts []Mount
 
-	// Command is the container entrypoint + args (the mounted supervisor).
+	// Command overrides the image entrypoint and arguments.
 	Command []string
+	Workdir string
 
 	Env    map[string]string
 	Labels map[string]string
