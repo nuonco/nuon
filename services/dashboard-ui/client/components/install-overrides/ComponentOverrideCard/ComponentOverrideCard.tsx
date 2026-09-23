@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { CodeBlock } from '@/components/common/CodeBlock'
+import { CodeBlock as DiffCodeBlock } from '@/components/diffs/CodeBlock'
 import { CodeInput } from '@/components/common/form/CodeInput'
 import { Toggle } from '@/components/common/form/Toggle'
 import { Expand } from '@/components/common/Expand'
@@ -37,6 +38,7 @@ export interface IComponentOverrideCard {
   values?: Record<string, string>
   readOnly?: boolean
   showEnabled?: boolean
+  codeBlockVariant?: 'compact' | 'viewer'
 }
 
 export const ComponentOverrideCard = ({
@@ -44,6 +46,7 @@ export const ComponentOverrideCard = ({
   values,
   readOnly = false,
   showEnabled = true,
+  codeBlockVariant = 'compact',
 }: IComponentOverrideCard) => {
   const { enabledInput, configInput, configKind } = card
   const toggleable = !!enabledInput
@@ -121,13 +124,23 @@ export const ComponentOverrideCard = ({
               headerClassName="!px-4 bg-code"
               className="border rounded-md"
             >
-              <CodeBlock
-                className="!text-xs w-full !max-h-64 border-t"
-                language={config.language}
-                showCopy
-              >
-                {String(configValue).replace(/\n+$/, '')}
-              </CodeBlock>
+              {codeBlockVariant === 'viewer' ? (
+                <DiffCodeBlock
+                  className="border-t"
+                  language={config.language}
+                  value={String(configValue).replace(/\n+$/, '')}
+                  copy
+                  maxHeight={256}
+                />
+              ) : (
+                <CodeBlock
+                  className="!text-xs w-full !max-h-64 border-t"
+                  language={config.language}
+                  showCopy
+                >
+                  {String(configValue).replace(/\n+$/, '')}
+                </CodeBlock>
+              )}
             </Expand>
           ) : (
             <Text variant="subtext" theme="neutral">

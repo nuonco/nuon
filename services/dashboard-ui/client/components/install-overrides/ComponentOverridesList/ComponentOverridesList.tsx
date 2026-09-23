@@ -7,12 +7,14 @@ export interface IComponentOverridesList {
   inputs?: TAppInput[]
   values?: Record<string, string>
   showEnabled?: boolean
+  codeBlockVariant?: 'compact' | 'viewer'
 }
 
 export const ComponentOverridesList = ({
   inputs,
   values,
   showEnabled = true,
+  codeBlockVariant = 'compact',
 }: IComponentOverridesList) => {
   const cards = groupComponentOverrideInputs(inputs || [])
 
@@ -36,6 +38,7 @@ export const ComponentOverridesList = ({
           values={values}
           readOnly
           showEnabled={showEnabled}
+          codeBlockVariant={codeBlockVariant}
         />
       ))}
     </div>
