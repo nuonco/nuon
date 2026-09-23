@@ -60,7 +60,7 @@ func RecoverHelmRelease(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 	}
 
 	sg.nextGroup() // recover
-	recoverStep, err := sg.installSignalStep(ctx, installID, "recover helm release "+comp.Name, pgtype.Hstore{},
+	recoverStep, err := sg.installSignalStep(ctx, installID, "recover helm release "+comp.Name, componentStepMetadata(comp.Name),
 		&componenthelmrecover.Signal{
 			InstallID:          installID,
 			InstallComponentID: installComp.ID,
