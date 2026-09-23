@@ -108,6 +108,7 @@ func (a *Activities) EnsureDefaultAppBranch(ctx context.Context, req EnsureDefau
 		&[]string{},
 		nil,
 		nil,
+		false,
 		nil,
 	)
 	if err != nil {

@@ -607,6 +607,99 @@ iam_role_arn = "arn:aws:iam::111122223333:role/nuon-acme-prod"
 `
 
 const COMMON_CONFIGURATION: TPlaygroundConfiguration = {
+  nuonState: {
+    id: 'ins-acme-prod',
+    name: 'acme-prod',
+    org: {
+      id: 'org-acme',
+      name: 'acme',
+      populated: true,
+    },
+    app: {
+      id: 'app-acme-byoc',
+      name: 'acme-byoc',
+      populated: true,
+    },
+    install: {
+      id: 'ins-acme-prod',
+      name: 'acme-prod',
+      populated: true,
+      public_domain: 'acme.example.com',
+      internal_domain: 'acme.internal',
+    },
+    inputs: {
+      populated: true,
+      inputs: {
+        region: 'us-east-1',
+        iam_role_arn: 'arn:aws:iam::111122223333:role/nuon-acme-prod',
+        cluster_size: 'large',
+        enable_backups: 'true',
+        retention_days: '30',
+      },
+    },
+    sandbox: {
+      populated: true,
+      status: 'active',
+      type: 'aws-eks',
+      version: 'sbxv-a1b2c3d4',
+      outputs: {
+        cluster: {
+          name: 'acme-prod',
+          endpoint: 'https://cluster.acme.example.com',
+        },
+        nuon_dns: {
+          public_domain: {
+            name: 'acme.example.com',
+            zone_id: 'Z0123456789ACME',
+          },
+        },
+      },
+    },
+    components: {
+      api: {
+        name: 'api',
+        status: 'active',
+        outputs: {
+          url: 'https://api.acme.example.com',
+        },
+      },
+      worker: {
+        name: 'worker',
+        status: 'active',
+        outputs: {
+          queue: 'acme-prod-jobs',
+        },
+      },
+      frontend: {
+        name: 'frontend',
+        status: 'active',
+        outputs: {
+          url: 'https://acme.example.com',
+        },
+      },
+      cache: {
+        name: 'cache',
+        status: 'active',
+        outputs: {
+          endpoint: 'acme-prod.cache.amazonaws.com',
+        },
+      },
+    },
+    domain: {
+      populated: true,
+      public_domain: 'acme.example.com',
+      internal_domain: 'acme.internal',
+    },
+    runner: {
+      populated: true,
+      status: 'active',
+    },
+    labels: {
+      env: 'prod',
+      region: 'us-east-1',
+      tier: 'enterprise',
+    },
+  },
   inputs: [
     {
       name: 'region',
@@ -897,6 +990,7 @@ const BRANCH_TRACKING_CURRENT: TBranchTracking = {
   directory: 'apps/acme',
   expectedCommit: {
     sha: 'a1b2c3d4',
+    runId: 'abr-8',
     message: 'feat: add Redis cache component',
     author: 'alice',
     createdAt: h(4),
@@ -904,6 +998,7 @@ const BRANCH_TRACKING_CURRENT: TBranchTracking = {
   },
   appliedCommit: {
     sha: 'a1b2c3d4',
+    runId: 'abr-8',
     message: 'feat: add Redis cache component',
     author: 'alice',
     createdAt: h(4),
@@ -920,6 +1015,7 @@ const BRANCH_TRACKING_MOVED: TBranchTracking = {
   directory: 'apps/acme',
   expectedCommit: {
     sha: 'ff001234',
+    runId: 'abr-9',
     message: 'feat: add secondary region support',
     author: 'carol',
     createdAt: h(1),
@@ -927,6 +1023,7 @@ const BRANCH_TRACKING_MOVED: TBranchTracking = {
   },
   appliedCommit: {
     sha: 'a1b2c3d4',
+    runId: 'abr-8',
     message: 'feat: add Redis cache component',
     author: 'alice',
     createdAt: h(4),

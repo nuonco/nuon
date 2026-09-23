@@ -72,7 +72,15 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		return &TriggerAppBranchRunFromVCSPushResponse{}, nil
 	}
 
+	runType := RunTypeFromEventType(req.EventType)
 	previewDefaults := appshelpers.BranchPreviewConfigOrDefault(&config)
+	if runType == app.AppBranchRunTypeGitPreview && previewDefaults.Mode == app.AppBranchRunPreviewModeNone {
+		a.l.Info("skipping pull request because previews are disabled",
+			zap.String("app_branch_id", appBranchID),
+			zap.String("app_branch_config_id", appBranchConfigID),
+		)
+		return &TriggerAppBranchRunFromVCSPushResponse{}, nil
+	}
 	if req.Draft && previewDefaults.IgnoreDrafts {
 		a.l.Info("skipping draft pull request preview",
 			zap.String("app_branch_id", appBranchID),
@@ -88,7 +96,6 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 
 	ctx = a.resolvePusherAccount(ctx, branch.OrgID, req.PusherEmails, req.FallbackCreatedByID)
 
-	runType := RunTypeFromEventType(req.EventType)
 	runLabels := BuildRunLabels(&req)
 
 	metadata := map[string]string{

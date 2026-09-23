@@ -1897,6 +1897,19 @@ export interface paths {
      */
     patch: operations["UpdateInstallConfig"];
   };
+  "/v1/installs/{install_id}/deployments": {
+    /**
+     * get normalized deployment feed for an install
+     * @description Returns a normalized, chronological deployment feed for an install.
+     *
+     * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, action runs, runbook runs, and install-config updates. Plan-only and preview records are excluded.
+     *
+     * Records include a `type`, unified `status`, human-readable `title` and `summary`, an optional `workflow` reference, an optional `app_branch` reference (when the change originated from a branch run), an optional primary `component` reference (for single-component operations), a flat `affected_resources` list of component names, and `change_groups` that group the affected resources by logical category.
+     *
+     * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`.
+     */
+    get: operations["GetInstallDeployments"];
+  };
   "/v1/installs/{install_id}/deploys": {
     /**
      * get all deploys to an install
@@ -3817,7 +3830,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.AppBranchRunPreviewMode": "plan-only" | "apply" | "build-only";
+    "app.AppBranchRunPreviewMode": "none" | "plan-only" | "apply" | "build-only";
     /** @enum {string} */
     "app.AppBranchRunPreviewSource": "pr" | "commit" | "branch" | "local";
     /** @enum {string} */
@@ -4747,6 +4760,9 @@ export interface components {
       version?: string;
     };
     "app.Install": {
+      actual_app_config_applied_at?: string;
+      actual_app_config_id?: string;
+      actual_app_config_workflow_id?: string;
       app_branch?: components["schemas"]["app.AppBranch"];
       app_branch_connections?: components["schemas"]["app.InstallAppBranchConnection"][];
       app_branch_id?: string;
@@ -4872,8 +4888,11 @@ export interface components {
     "app.InstallActionWorkflow": {
       action_workflow?: components["schemas"]["app.ActionWorkflow"];
       action_workflow_id?: string;
+      actual_action_workflow_config_id?: string;
+      actual_applied_at?: string;
       created_at?: string;
       created_by_id?: string;
+      expected_action_workflow_config_id?: string;
       id?: string;
       install_id?: string;
       runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
@@ -4982,6 +5001,9 @@ export interface components {
       type?: string;
     };
     "app.InstallComponent": {
+      actual_applied_at?: string;
+      actual_component_build_id?: string;
+      actual_install_deploy_id?: string;
       component?: components["schemas"]["app.Component"];
       component_id?: string;
       created_at?: string;
@@ -4992,6 +5014,7 @@ export interface components {
        * (from the synthetic enabled input, falling back to default_enabled); nil otherwise.
        */
       enabled?: boolean | null;
+      expected_app_config_id?: string;
       health_status?: string;
       health_status_description?: string;
       health_status_v2?: components["schemas"]["app.CompositeStatus"];
@@ -5335,8 +5358,12 @@ export interface components {
       updated_at?: string;
     };
     "app.InstallSandbox": {
+      actual_app_sandbox_config_id?: string;
+      actual_applied_at?: string;
+      actual_install_sandbox_run_id?: string;
       created_at?: string;
       created_by_id?: string;
+      expected_app_sandbox_config_id?: string;
       id?: string;
       install_id?: string;
       install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
@@ -5386,8 +5413,12 @@ export interface components {
       workflow_id?: string;
     };
     "app.InstallStack": {
+      actual_app_config_id?: string;
+      actual_applied_at?: string;
+      actual_install_stack_version_id?: string;
       created_at?: string;
       created_by_id?: string;
+      expected_app_config_id?: string;
       id?: string;
       install_id?: string;
       install_stack_outputs?: components["schemas"]["app.InstallStackOutputs"];
@@ -8181,6 +8212,7 @@ export interface components {
       name?: string;
     };
     "service.CreateAppBranchConfigRequest": {
+      clear_preview_config?: boolean;
       connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
       /**
        * @description IgnoreChangesRegex marks a run not-attempted when every changed file path in
@@ -8894,6 +8926,13 @@ export interface components {
     "service.ForceShutdownRequest": Record<string, never>;
     "service.ForgetInstallComponentRequest": Record<string, never>;
     "service.ForgetInstallRequest": Record<string, never>;
+    "service.GetInstallDeploymentsResponse": {
+      deployments?: components["schemas"]["service.InstallDeployment"][];
+      has_more?: boolean;
+      limit?: number;
+      offset?: number;
+      page?: number;
+    };
     "service.GetInstallURLResponse": {
       url?: string;
     };
@@ -8959,6 +8998,56 @@ export interface components {
     };
     "service.InstallConfigUpdate": {
       version?: components["schemas"]["app.InstallConfigVersion"];
+    };
+    "service.InstallDeployment": {
+      affected_resources?: components["schemas"]["service.InstallDeploymentAffectedResources"];
+      app_branch?: components["schemas"]["service.InstallDeploymentAppBranchRef"];
+      change_groups?: components["schemas"]["service.InstallDeploymentChangeGroup"][];
+      component_name?: string;
+      created_at?: string;
+      id?: string;
+      status?: string;
+      summary?: string;
+      title?: string;
+      type?: components["schemas"]["service.InstallDeploymentType"];
+      workflow?: components["schemas"]["service.InstallDeploymentWorkflowRef"];
+    };
+    "service.InstallDeploymentAffectedResources": {
+      components?: string[];
+      images?: string[];
+      sandbox?: boolean;
+      stack?: boolean;
+    };
+    "service.InstallDeploymentAppBranchRef": {
+      git_ref?: string;
+      id?: string;
+      name?: string;
+      run_id?: string;
+      sha?: string;
+    };
+    "service.InstallDeploymentChangeGroup": {
+      changes?: components["schemas"]["service.InstallDeploymentConfigChange"][];
+      diff_language?: string;
+      file_diff?: string;
+      id?: string;
+      label?: string;
+      resource_name?: string;
+      scope?: string;
+      summary?: string;
+    };
+    "service.InstallDeploymentConfigChange": {
+      is_redacted?: boolean;
+      next_value?: string;
+      operation?: string;
+      path?: string;
+      previous_value?: string;
+    };
+    /** @enum {string} */
+    "service.InstallDeploymentType": "provision" | "reprovision" | "sandbox_reprovision" | "app_branch_update" | "component_deploy" | "image_update" | "stack_update" | "install_config_update";
+    "service.InstallDeploymentWorkflowRef": {
+      id?: string;
+      name?: string;
+      type?: components["schemas"]["app.WorkflowType"];
     };
     "service.InstallGroupRequest": {
       /**
@@ -23739,6 +23828,82 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.InstallConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get normalized deployment feed for an install
+   * @description Returns a normalized, chronological deployment feed for an install.
+   *
+   * Each record represents one install-owned workflow that caused a real change: provisioning, reprovisioning, component deploys, input updates, stack reprovisioning, sandbox reprovisioning, action runs, runbook runs, and install-config updates. Plan-only and preview records are excluded.
+   *
+   * Records include a `type`, unified `status`, human-readable `title` and `summary`, an optional `workflow` reference, an optional `app_branch` reference (when the change originated from a branch run), an optional primary `component` reference (for single-component operations), a flat `affected_resources` list of component names, and `change_groups` that group the affected resources by logical category.
+   *
+   * Supports pagination via `page`/`offset`/`limit`/`has_more`, and filtering by `type`, `status`, `search`, `created_at_gte`, and `created_at_lte`.
+   */
+  GetInstallDeployments: {
+    parameters: {
+      query?: {
+        /** @description page number */
+        page?: number;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description page size */
+        limit?: number;
+        /** @description filter by deployment type (comma-separated) */
+        type?: string;
+        /** @description filter by workflow status (comma-separated) */
+        status?: string;
+        /** @description filter by affected stack, sandbox, or component name */
+        resource?: string;
+        /** @description case-insensitive substring match on id or title */
+        search?: string;
+        /** @description include deployments created at or after this RFC3339 timestamp */
+        created_at_gte?: string;
+        /** @description include deployments created at or before this RFC3339 timestamp */
+        created_at_lte?: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.GetInstallDeploymentsResponse"];
         };
       };
       /** @description Bad Request */

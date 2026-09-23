@@ -59,3 +59,22 @@ func TestPreviewConfigRequestUnknownInstallName(t *testing.T) {
 	})
 	require.ErrorContains(t, err, "unknown install name")
 }
+
+func TestBranchConfigRequestClearsOmittedPreview(t *testing.T) {
+	req, err := branchConfigRequest(context.Background(), testResolver(nil), &config.AppBranchConfig{Name: "default"})
+	require.NoError(t, err)
+	require.True(t, req.ClearPreviewConfig)
+	require.Nil(t, req.PreviewConfig)
+}
+
+func TestBranchConfigRequestKeepsConfiguredPreview(t *testing.T) {
+	req, err := branchConfigRequest(context.Background(), testResolver(nil), &config.AppBranchConfig{
+		Name: "default",
+		Preview: &config.AppBranchPreviewConfig{
+			Mode: "plan-only",
+		},
+	})
+	require.NoError(t, err)
+	require.False(t, req.ClearPreviewConfig)
+	require.NotNil(t, req.PreviewConfig)
+}

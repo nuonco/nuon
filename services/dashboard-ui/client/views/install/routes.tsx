@@ -10,6 +10,7 @@ import {
   NewInstallPlaceholder,
   NewInstallPlaceholderBody,
 } from './NewInstallPlaceholder'
+import { Deployments } from './Deployments'
 import {
   NewInstallConfigurationLayout,
   NewInstallOperationsLayout,
@@ -165,9 +166,7 @@ export const installRoutes: RouteObject[] = [
         children: [
           {
             path: ':orgId/installs/:installId/deployments',
-            element: (
-              <NewInstallPlaceholder path="/deployments" title="Deployments" />
-            ),
+            element: <Deployments />,
           },
           {
             path: ':orgId/installs/:installId/health',
