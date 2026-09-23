@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -52,7 +57,9 @@ export const ChangeAppBranchContainer = ({
           </Text>
         </Toast>
       )
-      queryClient.invalidateQueries({ queryKey: ['install', org?.id, install.id] })
+      queryClient.invalidateQueries({
+        queryKey: ['install', org?.id, install.id],
+      })
       queryClient.invalidateQueries({ queryKey: ['installs'] })
       queryClient.invalidateQueries({
         queryKey: ['install-current-app-branch-run', org?.id, install.id],
@@ -64,7 +71,9 @@ export const ChangeAppBranchContainer = ({
       addToast(
         <Toast heading="Branch change failed" theme="error">
           <Text>
-            {err?.error || err?.description || 'Unable to move install to the selected branch.'}
+            {err?.error ||
+              err?.description ||
+              'Unable to move install to the selected branch.'}
           </Text>
         </Toast>
       )
@@ -88,30 +97,34 @@ interface IChangeAppBranchButton {
   install: TInstall
   onSuccess?: () => void
   compact?: boolean
+  iconOnly?: boolean
 }
 
 export const ChangeAppBranchButton = ({
   install,
   onSuccess,
   compact = false,
+  iconOnly = false,
 }: IChangeAppBranchButton) => {
   const { addModal } = useSurfaces()
 
   return (
     <Button
-      variant="secondary"
-      size={compact ? 'sm' : 'md'}
+      variant={iconOnly ? 'icon' : 'secondary'}
+      size={iconOnly ? 'xs' : compact ? 'sm' : 'md'}
+      aria-label={iconOnly ? 'Change app branch' : undefined}
+      tooltipProps={iconOnly ? { tipContent: 'Change app branch' } : undefined}
       onClick={() =>
         addModal(
-          <ChangeAppBranchContainer
-            install={install}
-            onSuccess={onSuccess}
-          />
+          <ChangeAppBranchContainer install={install} onSuccess={onSuccess} />
         )
       }
     >
-      <Icon variant={compact ? 'PencilSimpleLineIcon' : 'GitBranchIcon'} size={16} />
-      {compact ? 'Edit' : 'Change branch'}
+      <Icon
+        variant={compact || iconOnly ? 'PencilSimpleLineIcon' : 'GitBranchIcon'}
+        size={iconOnly ? 12 : 16}
+      />
+      {iconOnly ? null : compact ? 'Edit' : 'Change branch'}
     </Button>
   )
 }

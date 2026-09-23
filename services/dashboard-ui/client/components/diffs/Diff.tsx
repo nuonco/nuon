@@ -15,7 +15,6 @@ import { useDashboardPreferences } from '@/hooks/use-dashboard-preferences'
 import { SYNTAX_THEME, registerSyntax, resolveLanguage } from '@/lib/syntax'
 import { endWithNewline } from '@/lib/diffs'
 import { MATCH_NAV_TOOLTIP, diffMatches, matchNavKeyDown } from './code-search'
-import { CodeBlock } from './CodeBlock'
 
 registerSyntax()
 
@@ -88,9 +87,6 @@ export const Diff = ({
 
   const beforeText = endWithNewline(before)
   const afterText = endWithNewline(after)
-  const oneSided =
-    (beforeText === '' && afterText !== '') ||
-    (afterText === '' && beforeText !== '')
 
   const fileDiff = useMemo(() => {
     const file = (contents: string): FileContents => ({
@@ -174,18 +170,6 @@ export const Diff = ({
       align: 'center',
       behavior: 'smooth-auto',
     })
-  }
-
-  if (oneSided) {
-    return (
-      <CodeBlock
-        value={beforeText === '' ? afterText : beforeText}
-        language={language}
-        filename={filename}
-        maxHeight={maxHeight}
-        className={className}
-      />
-    )
   }
 
   return (
