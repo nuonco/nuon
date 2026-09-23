@@ -101,6 +101,10 @@ func (d *DockerLauncher) run(ctx context.Context, spec RunSpec) error {
 		"--security-opt", "no-new-privileges",
 	}
 
+	if spec.Workdir != "" {
+		args = append(args, "--workdir", spec.Workdir)
+	}
+
 	if spec.Memory != "" {
 		args = append(args, "--memory", spec.Memory)
 	}
