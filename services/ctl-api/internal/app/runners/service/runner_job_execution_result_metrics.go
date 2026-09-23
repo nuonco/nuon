@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func newRunnerJobExecutionResults(provider metric.MeterProvider) metric.Int64Counter {

@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func (a *Activities) recordDriftPlanEvaluationForTarget(ctx context.Context, workflowType app.WorkflowType, installID, componentID string, isNoop bool, stage string, err error) {
