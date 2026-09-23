@@ -127,8 +127,8 @@ type appSyncDisabledAPI struct {
 	cliConfig *models.ServiceCLIConfig
 }
 
-func (a *appSyncDisabledAPI) GetAppBranches(_ context.Context, _ string) ([]*models.AppAppBranch, error) {
-	return nil, nil
+func (a *appSyncDisabledAPI) GetAppBranches(_ context.Context, _ string, _ *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error) {
+	return nil, false, nil
 }
 
 func (a *appSyncDisabledAPI) GetCLIConfig(_ context.Context) (*models.ServiceCLIConfig, error) {
