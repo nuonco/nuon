@@ -3,7 +3,11 @@ export default {
 }
 
 import { DateTime } from 'luxon'
-import { HealthTimelineComponent } from '@/components/install-health/HealthTimeline'
+import {
+  HealthTimelineComponent,
+  isImageComponentType,
+  type THealthTimelineComponent,
+} from '@/components/install-health/HealthTimeline'
 import {
   groupComponentResources,
   groupSandboxResources,
@@ -33,6 +37,25 @@ const components: TInstallHealthTimelineComponent[] = [
     current_health: 'healthy',
     uptime_percent: 99.91,
     observed_seconds: 30 * 86400,
+  },
+]
+
+const images: THealthTimelineComponent[] = [
+  {
+    install_component_id: 'instcmp-api-image',
+    component_id: 'cmp-api-image',
+    component_name: 'api-image',
+    component_type: 'docker_build',
+    current_health: 'not-applicable',
+    uptime_percent: 0,
+  },
+  {
+    install_component_id: 'instcmp-nginx',
+    component_id: 'cmp-nginx',
+    component_name: 'nginx',
+    component_type: 'external_image',
+    current_health: 'not-applicable',
+    uptime_percent: 0,
   },
 ]
 
@@ -160,12 +183,12 @@ const Timeline = ({
   clusterAccessError,
   currentHealth = 'healthy',
   timeline = daily('healthy'),
-  timelineComponents = components,
+  timelineComponents = [...components, ...images],
 }: {
   clusterAccessError?: string
   currentHealth?: string
   timeline?: THealthTimelineDay[]
-  timelineComponents?: TInstallHealthTimelineComponent[]
+  timelineComponents?: THealthTimelineComponent[]
 }) => (
   <HealthTimelineComponent
     scope="install"
@@ -186,9 +209,12 @@ const Timeline = ({
     )}
     currentHealth={currentHealth}
     components={timelineComponents}
+    groupByKind
     componentBasePath="/org-1/installs/inst-1/resources/components"
-    getComponentHref={(componentId) =>
-      `/org-1/installs/inst-1/resources/components#${componentId}`
+    getComponentHref={({ component_id, component_name, component_type }) =>
+      `/org-1/installs/inst-1/resources/${
+        isImageComponentType(component_type) ? 'images' : 'components'
+      }?q=${encodeURIComponent(component_name || component_id)}`
     }
     clusterAccessError={clusterAccessError}
   />
