@@ -8,6 +8,7 @@ import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { useAuth } from '@/hooks/use-auth'
 import { cn } from '@/utils/classnames'
 import type { TInstallWorkflowStep } from '@/types'
+import { getStepDisplayStatus } from '@/components/branches/shared/step-status'
 import { DetailStatusIcon } from './shared/icons'
 import { formatDuration } from './shared/format'
 import { STEP_GUTTER as GUTTER } from './shared/StepLayout'
@@ -29,12 +30,16 @@ export interface IStepCard {
 }
 
 export const StepCard = ({ step, children }: IStepCard) => {
-  const isInProgress = step.status?.status === 'in-progress'
+  const displayStatus = getStepDisplayStatus(step)
+  const isInProgress = displayStatus === 'in-progress'
   const duration = formatDuration(step.execution_time)
   const compositeError = step.status?.composite_error
+  const hasResponse = !!step.approval?.response
   const description = compositeError
     ? undefined
-    : step.status?.status_human_description
+    : hasResponse
+      ? undefined
+      : step.status?.status_human_description
   const stepIndexStr = String(step.group_idx ?? '').padStart(2, '0') || '—'
 
   return (
@@ -54,7 +59,7 @@ export const StepCard = ({ step, children }: IStepCard) => {
     >
       <div className={cn('flex flex-col gap-1 py-4 border-b', GUTTER)}>
         <div className="flex items-center gap-3">
-          <DetailStatusIcon status={step.status?.status} />
+          <DetailStatusIcon status={displayStatus} />
           <Text
             variant="subtext"
             family="mono"
@@ -73,7 +78,7 @@ export const StepCard = ({ step, children }: IStepCard) => {
           </Text>
 
           <Status
-            status={step.status?.status || 'pending'}
+            status={displayStatus}
             variant="badge"
             className="shrink-0"
           />
