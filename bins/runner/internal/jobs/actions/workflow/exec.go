@@ -15,6 +15,11 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
+// actionImagePullTimeout is deliberately separate from the action's own
+// timeout: a cold pull that shares the step budget fails every first run and
+// only passes once the host image cache is warm.
+const actionImagePullTimeout = 15 * time.Minute
+
 // resolveStepConfig builds the step config for execution, preferring interpolated
 // values from the plan (where Go templates have been rendered) over raw config values.
 func resolveStepConfig(
@@ -88,14 +93,17 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	} else if h.state.workflowCfg != nil && h.state.workflowCfg.Timeout > 0 {
 		timeout = time.Duration(h.state.workflowCfg.Timeout)
 	}
-	execCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
 	if h.state.plan != nil && h.state.plan.SourceImage != "" {
-		if err := h.prepareActionImage(execCtx, l, jobExecution.ID); err != nil {
+		pullCtx, cancelPull := context.WithTimeout(ctx, actionImagePullTimeout)
+		err := h.prepareActionImage(pullCtx, l, jobExecution.ID)
+		cancelPull()
+		if err != nil {
 			return errors.Wrap(err, "unable to prepare action image")
 		}
 	}
+
+	execCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
 	for idx, step := range h.state.run.Steps {
 		var configStepCfg *models.AppActionWorkflowStepConfig
