@@ -177,8 +177,11 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		}
 	}
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
-		installCfg.StackOverrides.HasOverrides() {
+		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil {
 		icParams := &models.HelpersCreateInstallConfigParams{}
+		if installCfg.Telemetry != nil {
+			icParams.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
+		}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			icParams.ApprovalOption = installCfg.ApprovalOption.APIType()
 		}
@@ -298,7 +301,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 
 	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
-		installCfg.StackOverrides.HasOverrides()
+		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil
 
 	if hasConfigFields {
 		so := installCfg.StackOverrides
@@ -308,6 +311,9 @@ func (s *appInstallSyncer) syncExistingInstall(
 
 		if appInstall.InstallConfig == nil {
 			createReq := &models.ServiceCreateInstallConfigRequest{}
+			if installCfg.Telemetry != nil {
+				createReq.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
+			}
 			if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 				createReq.ApprovalOption = installCfg.ApprovalOption.APIType()
 			}
@@ -328,20 +334,26 @@ func (s *appInstallSyncer) syncExistingInstall(
 			updateReq := &models.ServiceUpdateInstallConfigRequest{}
 			needsUpdate := false
 
+			if installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil &&
+				(appInstall.InstallConfig.TelemetryEnabled == nil || *appInstall.InstallConfig.TelemetryEnabled != *installCfg.Telemetry.Enabled) {
+				updateReq.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
+				needsUpdate = true
+			}
+
 			if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown &&
 				appInstall.InstallConfig.ApprovalOption != installCfg.ApprovalOption.APIType() {
 				updateReq.ApprovalOption = installCfg.ApprovalOption.APIType()
 				needsUpdate = true
 			}
-			if so.VPCNestedTemplateURL != appInstall.InstallConfig.VpcNestedTemplateURL {
+			if installCfg.StackOverrides != nil && so.VPCNestedTemplateURL != appInstall.InstallConfig.VpcNestedTemplateURL {
 				updateReq.VpcNestedTemplateURL = so.VPCNestedTemplateURL
 				needsUpdate = true
 			}
-			if so.RunnerNestedTemplateURL != appInstall.InstallConfig.RunnerNestedTemplateURL {
+			if installCfg.StackOverrides != nil && so.RunnerNestedTemplateURL != appInstall.InstallConfig.RunnerNestedTemplateURL {
 				updateReq.RunnerNestedTemplateURL = so.RunnerNestedTemplateURL
 				needsUpdate = true
 			}
-			if !customNestedStacksEqual(so.CustomNestedStacks, appInstall.InstallConfig.CustomNestedStacks) {
+			if installCfg.StackOverrides != nil && !customNestedStacksEqual(so.CustomNestedStacks, appInstall.InstallConfig.CustomNestedStacks) {
 				updateReq.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
 				needsUpdate = true
 			}

@@ -1,4 +1,4 @@
-import { afterEach, expect, mock, test } from 'bun:test'
+import { afterEach, expect, test } from 'bun:test'
 import {
   act,
   cleanup,
@@ -7,12 +7,10 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
+import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TApp, TAppInputConfig } from '@/types'
 import { CreateInstallFormFields } from './CreateInstallFormFields'
-
-mock.module('@/hooks/use-surfaces', () => ({
-  useSurfaces: () => ({ addModal: () => 'modal-id', removeModal: () => {} }),
-}))
 
 const app = { id: 'app-1', name: 'acme' } as TApp
 const inputConfig = { id: 'config-1', input_groups: [] } as unknown as TAppInputConfig
@@ -29,15 +27,19 @@ const renderForm = (
   const states: { canSubmit: boolean; submit: () => unknown }[] = []
 
   render(
-    <CreateInstallFormFields
-      app={app}
-      inputConfig={inputConfig}
-      validateName={validateName}
-      onSubmit={onSubmit}
-      onStateChange={(state) =>
-        states.push({ canSubmit: state.canSubmit, submit: state.submit })
-      }
-    />
+    <MemoryRouter>
+      <SurfacesProvider>
+        <CreateInstallFormFields
+          app={app}
+          inputConfig={inputConfig}
+          validateName={validateName}
+          onSubmit={onSubmit}
+          onStateChange={(state) =>
+            states.push({ canSubmit: state.canSubmit, submit: state.submit })
+          }
+        />
+      </SurfacesProvider>
+    </MemoryRouter>
   )
 
   return states
