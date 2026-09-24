@@ -41,7 +41,7 @@ func runnerHealthCases() []runnerHealthCase {
 	offlineExact := corpusNow.Add(-15 * time.Minute).Unix()
 	offlineStale := corpusNow.Add(-time.Hour).Unix()
 
-	healthyInstall := runnerHealthWant{result: "healthy", reason: "runner healthy"}
+	healthyInstall := runnerHealthWant{result: runnerHealthResultHealthy, reason: "runner healthy"}
 	unhealthyInstallReason := "no active install process"
 
 	cases := []runnerHealthCase{
@@ -58,14 +58,14 @@ func runnerHealthCases() []runnerHealthCase {
 			name: "org healthy clears stale offline_ts without resetting", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive, activeInstall: true,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
-			want:     runnerHealthWant{result: "healthy", reason: "runner healthy", clearOfflineTS: true},
+			want:     runnerHealthWant{result: runnerHealthResultHealthy, reason: "runner healthy", clearOfflineTS: true},
 		},
 		{
 			name: "org recovery flips both statuses and clears offline_ts", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline, activeInstall: true,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
 			want: runnerHealthWant{
-				result: "healthy", reason: "runner healthy", clearOfflineTS: true,
+				result: runnerHealthResultHealthy, reason: "runner healthy", clearOfflineTS: true,
 				legacyStatus: runnerStatusPtr(app.RunnerStatusActive), v2Status: runnerStatusPtr(app.RunnerStatusActive),
 			},
 		},
@@ -73,7 +73,7 @@ func runnerHealthCases() []runnerHealthCase {
 			name: "org first failed check arms and transitions without alert", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyInstallReason, armOfflineTS: true,
+				result: runnerHealthResultUnhealthy, reason: unhealthyInstallReason, armOfflineTS: true,
 				legacyStatus: runnerStatusPtr(app.RunnerStatusOffline), v2Status: runnerStatusPtr(app.RunnerStatusOffline),
 			},
 		},
@@ -82,7 +82,7 @@ func runnerHealthCases() []runnerHealthCase {
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyInstallReason,
+				result: runnerHealthResultUnhealthy, reason: unhealthyInstallReason,
 				legacyStatus: runnerStatusPtr(app.RunnerStatusOffline), v2Status: runnerStatusPtr(app.RunnerStatusOffline),
 			},
 		},
@@ -90,31 +90,31 @@ func runnerHealthCases() []runnerHealthCase {
 			name: "org offline under alert delay does nothing", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineFresh},
-			want:     runnerHealthWant{result: "unhealthy", reason: unhealthyInstallReason},
+			want:     runnerHealthWant{result: runnerHealthResultUnhealthy, reason: unhealthyInstallReason},
 		},
 		{
 			name: "org offline exactly at alert delay alerts", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineExact},
-			want:     runnerHealthWant{result: "unhealthy", reason: unhealthyInstallReason, alert: true, alertOfflineAt: offlineExact},
+			want:     runnerHealthWant{result: runnerHealthResultUnhealthy, reason: unhealthyInstallReason, alert: true, alertOfflineAt: offlineExact},
 		},
 		{
 			name: "org offline past alert delay alerts with persisted offlineAt", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
-			want:     runnerHealthWant{result: "unhealthy", reason: unhealthyInstallReason, alert: true, alertOfflineAt: offlineStale},
+			want:     runnerHealthWant{result: runnerHealthResultUnhealthy, reason: unhealthyInstallReason, alert: true, alertOfflineAt: offlineStale},
 		},
 		{
 			name: "org offline without timestamp arms only", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline,
-			want: runnerHealthWant{result: "unhealthy", reason: unhealthyInstallReason, armOfflineTS: true},
+			want: runnerHealthWant{result: runnerHealthResultUnhealthy, reason: unhealthyInstallReason, armOfflineTS: true},
 		},
 		{
 			name: "legacy offline but v2 stale repairs v2 only", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusActive,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyInstallReason,
+				result: runnerHealthResultUnhealthy, reason: unhealthyInstallReason,
 				v2Status: runnerStatusPtr(app.RunnerStatusOffline),
 			},
 		},
@@ -123,7 +123,7 @@ func runnerHealthCases() []runnerHealthCase {
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusOffline,
 			metadata: map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale},
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyInstallReason,
+				result: runnerHealthResultUnhealthy, reason: unhealthyInstallReason,
 				legacyStatus: runnerStatusPtr(app.RunnerStatusOffline),
 			},
 		},
@@ -131,41 +131,41 @@ func runnerHealthCases() []runnerHealthCase {
 			name: "install healthy with mng writes missing_mng=false when metadata absent", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			activeInstall: true, activeMng: true, mngChecked: true,
-			want: runnerHealthWant{result: "healthy", reason: "runner healthy", setMissingMng: generics.ToPtr(false)},
+			want: runnerHealthWant{result: runnerHealthResultHealthy, reason: "runner healthy", setMissingMng: generics.ToPtr(false)},
 		},
 		{
 			name: "install healthy mng metadata unchanged writes nothing", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			metadata:      map[string]any{"missing_mng_process": false},
 			activeInstall: true, activeMng: true, mngChecked: true,
-			want: runnerHealthWant{result: "healthy", reason: "runner healthy"},
+			want: runnerHealthWant{result: runnerHealthResultHealthy, reason: "runner healthy"},
 		},
 		{
 			name: "install healthy mng went missing writes flip", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			metadata:      map[string]any{"missing_mng_process": false},
 			activeInstall: true, activeMng: false, mngChecked: true,
-			want: runnerHealthWant{result: "healthy", reason: "runner healthy", setMissingMng: generics.ToPtr(true)},
+			want: runnerHealthWant{result: runnerHealthResultHealthy, reason: "runner healthy", setMissingMng: generics.ToPtr(true)},
 		},
 		{
 			name: "install healthy non-bool mng metadata is rewritten", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			metadata:      map[string]any{"missing_mng_process": "yes"},
 			activeInstall: true, activeMng: true, mngChecked: true,
-			want: runnerHealthWant{result: "healthy", reason: "runner healthy", setMissingMng: generics.ToPtr(false)},
+			want: runnerHealthWant{result: runnerHealthResultHealthy, reason: "runner healthy", setMissingMng: generics.ToPtr(false)},
 		},
 		{
 			name: "install mng unchecked never writes mng metadata", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			activeInstall: true, activeMng: false, mngChecked: false,
-			want: runnerHealthWant{result: "healthy", reason: "runner healthy"},
+			want: runnerHealthWant{result: runnerHealthResultHealthy, reason: "runner healthy"},
 		},
 		{
 			name: "install missing install process is unhealthy", groupType: app.RunnerGroupTypeInstall,
 			status: app.RunnerStatusActive, v2Status: app.RunnerStatusActive,
 			activeMng: true, mngChecked: true,
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyInstallReason, armOfflineTS: true,
+				result: runnerHealthResultUnhealthy, reason: unhealthyInstallReason, armOfflineTS: true,
 				setMissingMng: generics.ToPtr(false),
 				legacyStatus:  runnerStatusPtr(app.RunnerStatusOffline), v2Status: runnerStatusPtr(app.RunnerStatusOffline),
 			},
@@ -175,7 +175,7 @@ func runnerHealthCases() []runnerHealthCase {
 			status: app.RunnerStatusOffline, v2Status: app.RunnerStatusOffline,
 			metadata:  map[string]any{app.RunnerOfflineTSMetadataKey: offlineStale, "missing_mng_process": true},
 			activeMng: false, mngChecked: true,
-			want: runnerHealthWant{result: "unhealthy", reason: unhealthyInstallReason, alert: true, alertOfflineAt: offlineStale},
+			want: runnerHealthWant{result: runnerHealthResultUnhealthy, reason: unhealthyInstallReason, alert: true, alertOfflineAt: offlineStale},
 		},
 	}
 
@@ -186,7 +186,7 @@ func runnerHealthCases() []runnerHealthCase {
 		groupType: app.RunnerGroupTypeInstall,
 		status:    app.RunnerStatusDisabled, v2Status: app.RunnerStatusDisabled,
 		mngChecked: true,
-		want:       runnerHealthWant{result: "skipped"},
+		want:       runnerHealthWant{result: runnerHealthResultSkipped},
 	})
 
 	for _, status := range []app.RunnerStatus{
@@ -202,7 +202,7 @@ func runnerHealthCases() []runnerHealthCase {
 			groupType: app.RunnerGroupTypeInstall,
 			status:    status, v2Status: status,
 			activeInstall: true,
-			want:          runnerHealthWant{result: "skipped"},
+			want:          runnerHealthWant{result: runnerHealthResultSkipped},
 		})
 	}
 
@@ -214,21 +214,21 @@ func runnerHealthCases() []runnerHealthCase {
 			groupType: app.RunnerGroupTypeInstall,
 			status:    app.RunnerStatusAwaitingInstallStackRun, v2Status: app.RunnerStatusAwaitingInstallStackRun,
 			v2CreatedAt: offlineStale, mngChecked: true,
-			want: runnerHealthWant{result: "skipped"},
+			want: runnerHealthWant{result: runnerHealthResultSkipped},
 		},
 		runnerHealthCase{
 			name:      "awaiting heartbeat within grace with no processes is skipped",
 			groupType: app.RunnerGroupTypeInstall,
 			status:    app.RunnerStatusAwaitingHeartbeat, v2Status: app.RunnerStatusAwaitingHeartbeat,
 			v2CreatedAt: heartbeatFresh, mngChecked: true,
-			want: runnerHealthWant{result: "skipped"},
+			want: runnerHealthWant{result: runnerHealthResultSkipped},
 		},
 		runnerHealthCase{
 			name:      "awaiting heartbeat without v2 timestamp is skipped",
 			groupType: app.RunnerGroupTypeInstall,
 			status:    app.RunnerStatusAwaitingHeartbeat, v2Status: app.RunnerStatusAwaitingHeartbeat,
 			mngChecked: true,
-			want:       runnerHealthWant{result: "skipped"},
+			want:       runnerHealthWant{result: runnerHealthResultSkipped},
 		},
 		runnerHealthCase{
 			name:      "awaiting heartbeat past grace goes offline",
@@ -236,7 +236,7 @@ func runnerHealthCases() []runnerHealthCase {
 			status:    app.RunnerStatusAwaitingHeartbeat, v2Status: app.RunnerStatusAwaitingHeartbeat,
 			v2CreatedAt: heartbeatStale,
 			want: runnerHealthWant{
-				result: "unhealthy", reason: unhealthyInstallReason, armOfflineTS: true,
+				result: runnerHealthResultUnhealthy, reason: unhealthyInstallReason, armOfflineTS: true,
 				legacyStatus: runnerStatusPtr(app.RunnerStatusOffline), v2Status: runnerStatusPtr(app.RunnerStatusOffline),
 			},
 		},
@@ -246,7 +246,7 @@ func runnerHealthCases() []runnerHealthCase {
 			status:    app.RunnerStatusAwaitingHeartbeat, v2Status: app.RunnerStatusAwaitingHeartbeat,
 			v2CreatedAt: heartbeatFresh, activeInstall: true, activeMng: true, mngChecked: true,
 			want: runnerHealthWant{
-				result: "healthy", reason: "runner healthy", setMissingMng: generics.ToPtr(false),
+				result: runnerHealthResultHealthy, reason: "runner healthy", setMissingMng: generics.ToPtr(false),
 				legacyStatus: runnerStatusPtr(app.RunnerStatusActive), v2Status: runnerStatusPtr(app.RunnerStatusActive),
 			},
 		},
