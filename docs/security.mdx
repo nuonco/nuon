@@ -47,7 +47,7 @@ destination and credentials remain in the customer's cloud secret manager.
 
 ## Build Isolation
 
-[Build Runners](/architecture/platform#build-runner) are always single-tenant. Each is deployed to its own host and does not share resources with other Runners. Build artifacts are stored as OCI images in the customer's cloud registry.
+Builds run in the [Control Plane](/architecture/platform#builds) and never touch your install infrastructure. Build artifacts are stored as OCI images in the customer's cloud registry.
 
 ## Policies
 
