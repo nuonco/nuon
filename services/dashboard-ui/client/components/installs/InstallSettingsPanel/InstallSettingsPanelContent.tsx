@@ -60,7 +60,7 @@ const ActionCard = ({
 )
 
 const InstallSettingsPanelContentInner = () => {
-  const { isByoc } = useConfig()
+  const { isByoc, isDev } = useConfig()
   const { install } = useInstall()
   const { org } = useOrg()
   const canRenameInstall = !!org?.features?.['install-rename']
@@ -92,7 +92,7 @@ const InstallSettingsPanelContentInner = () => {
         >
           <GenerateInstallConfigButton />
         </ActionCard>
-        {isByoc ? (
+        {isByoc || isDev ? (
           <ActionCard
             title="Telemetry"
             description="Forward application logs, metrics, and traces through the BYOC relay. Confirm the relay is setup before enabling."
