@@ -1406,23 +1406,18 @@ const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; 
   )
 }
 
-// The two ways out of the agent path, stated once, under the card. Amber lives in the
-// icon only: the cost is real, but the row must not out-shout "Copy prompt".
+// The two ways out of the agent path, one line under the card. Amber lives in the
+// icon only, so the row does not out-shout "Copy prompt".
 const ManualExits = ({ appName, repo, cloud }: { appName: string; repo: string; cloud: TCloud }) => {
   const [open, setOpen] = useState(false)
   return (
-    <div className="flex flex-col gap-4 rounded-md border bg-cool-grey-50 px-5 py-4 dark:bg-dark-grey-800">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <Icon variant="WarningIcon" size={20} theme="warn" className="mt-0.5 shrink-0" />
-          <div className="flex flex-col gap-0.5">
-            <Text variant="body" weight="strong">
-              Prefer to write the config by hand?
-            </Text>
-            <Text variant="subtext" theme="neutral">
-              It takes longer and is easier to get wrong.
-            </Text>
-          </div>
+    <div className="flex flex-col gap-4 rounded-md border bg-cool-grey-50 px-5 py-3 dark:bg-dark-grey-800">
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <Icon variant="WarningIcon" size={18} theme="warn" className="shrink-0" />
+          <Text variant="body" weight="strong">
+            Prefer to write the config by hand?
+          </Text>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" size="sm" onClick={contactUs}>
