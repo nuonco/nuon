@@ -101,6 +101,21 @@ const (
 	OrgFeatureDefaultAppBranches  OrgFeature = "default-app-branches"
 	OrgFeatureNewInstallIA        OrgFeature = "new-install-ia"
 	OrgFeatureDisableAppSync      OrgFeature = "disable-app-sync"
+
+	// OrgFeatureDisableModule* hide one Lite dashboard module from everyone in
+	// the org: its pages, navigation, and keyboard shortcuts. Off by default so
+	// every module ships; flip one on (or pin it through forced_enabled_features)
+	// to ship a trimmed control plane. The API and CLI are unaffected. See
+	// ModuleFeatures.
+	OrgFeatureDisableModuleApps            OrgFeature = "disable-module-apps"
+	OrgFeatureDisableModuleInstalls        OrgFeature = "disable-module-installs"
+	OrgFeatureDisableModuleTeam            OrgFeature = "disable-module-team"
+	OrgFeatureDisableModuleConnections     OrgFeature = "disable-module-connections"
+	OrgFeatureDisableModuleWebhooks        OrgFeature = "disable-module-webhooks"
+	OrgFeatureDisableModuleTriggers        OrgFeature = "disable-module-triggers"
+	OrgFeatureDisableModuleAPITokens       OrgFeature = "disable-module-api-tokens"
+	OrgFeatureDisableModuleServiceAccounts OrgFeature = "disable-module-service-accounts"
+	OrgFeatureDisableModuleOIDCFederation  OrgFeature = "disable-module-oidc-federation"
 )
 
 type OrgTelemetrySettings struct {
@@ -265,6 +280,17 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeatureNewInstallIA:            false,
 		OrgFeatureDisableAppSync:          false,
 
+		// Disabled by default: every Lite module ships unless hidden
+		OrgFeatureDisableModuleApps:            false,
+		OrgFeatureDisableModuleInstalls:        false,
+		OrgFeatureDisableModuleTeam:            false,
+		OrgFeatureDisableModuleConnections:     false,
+		OrgFeatureDisableModuleWebhooks:        false,
+		OrgFeatureDisableModuleTriggers:        false,
+		OrgFeatureDisableModuleAPITokens:       false,
+		OrgFeatureDisableModuleServiceAccounts: false,
+		OrgFeatureDisableModuleOIDCFederation:  false,
+
 		// Enabled by default
 		OrgFeatureAppBranches:   true,
 		OrgFeatureAppBranchesUI: true,
@@ -300,6 +326,15 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureDefaultAppBranches,
 		OrgFeatureNewInstallIA,
 		OrgFeatureDisableAppSync,
+		OrgFeatureDisableModuleApps,
+		OrgFeatureDisableModuleInstalls,
+		OrgFeatureDisableModuleTeam,
+		OrgFeatureDisableModuleConnections,
+		OrgFeatureDisableModuleWebhooks,
+		OrgFeatureDisableModuleTriggers,
+		OrgFeatureDisableModuleAPITokens,
+		OrgFeatureDisableModuleServiceAccounts,
+		OrgFeatureDisableModuleOIDCFederation,
 	}
 }
 
@@ -315,32 +350,41 @@ type OrgFeatureInfo struct {
 // GetFeatureDescriptions returns a map of feature names to their descriptions
 func GetFeatureDescriptions() map[OrgFeature]string {
 	return map[OrgFeature]string{
-		OrgFeatureAppBranches:              "Support for multiple application branches allowing parallel development and testing",
-		OrgFeatureUserManagedFeatures:      "Allow organization users to manage feature flags through the public API (admin-only flag)",
-		OrgFeatureSupportRole:              "Enable the support role option when inviting users to the organization",
-		OrgFeatureInstallRename:            "Allow renaming installs from the dashboard edit install modal",
-		OrgFeatureTerraformProviderMirror:  "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
-		OrgFeatureAppBranchesUI:            "Enable the app branches UI in the dashboard for managing and switching between app branches",
-		OrgFeatureTraceView:                "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
-		OrgFeatureAutoSkipNoop:             "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
-		OrgFeatureSlack:                    "Enable the Slack integration, including the Slack link in the dashboard sidebar and per-org Slack workspace/channel subscriptions",
-		OrgFeaturePulumiSandbox:            "Enable Pulumi-typed app sandboxes (sandbox type=pulumi) in addition to Terraform",
-		OrgFeaturePulumiUpdatePlans:        "Pin Pulumi applies to the approved preview via saved update plans; leave off for stacks using helm (the helm Release resource fails plan validation)",
-		OrgFeatureNotebooks:                "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
-		OrgFeatureVersionsUI:               "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
-		OrgFeatureSpaceliftInstallStacks:   "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
-		OrgFeatureAWSAccountConnections:    "Enable organization-owned cross-account AWS connections with external ID trust verification.",
-		OrgFeatureServiceAccountsAndTokens: "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
-		OrgFeaturePhoneHomeAuth:            "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
-		OrgFeatureRunbookStudio:            "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
-		OrgFeatureCronNamespaceIsolation:   "Route the org's runner-healthcheck and install cron queues into dedicated Temporal namespaces + task queues polled by their own workers, isolating cron load from the api task queue.",
-		OrgFeatureNewAppIA:                 "Enable the branch-centric app information architecture in the dashboard: branches as the app landing page, grouped navigation, and the app source header. Requires app-branches-ui.",
-		OrgFeatureOrgHealthcheckSweeps:     "Replace per-runner and per-process healthcheck cron emitters with two per-org sweep emitters that check all runners/processes in paginated batches. Toggle via POST /v1/orgs/{org_id}/migrate-healthcheck-sweeps, which also migrates the emitters.",
-		OrgFeatureAppInstallSyncing:        "Enable app install config syncing: point an app at a git repo of per-install configs so pushes to that repo sync every install's config and create missing installs behind an approval step. Gates the install syncs API, the VCS push fan-out, and the dashboard install syncs tab.",
-		OrgFeatureSandboxOCIArtifacts:      "Build the app sandbox into an OCI artifact during branch runs and resolve sandbox runs against that artifact instead of cloning the sandbox git source. With it off, sandbox runs always clone git.",
-		OrgFeatureDefaultAppBranches:       "Route `nuon apps sync` through an app branch run: every app gets a `default` branch covering all of its installs, and the sync hands its config to a run on that branch instead of the standalone config sync plus install rollout. Requires app-branches.",
-		OrgFeatureNewInstallIA:             "Enable the new install information architecture in the dashboard. Requires app-branches-ui.",
-		OrgFeatureDisableAppSync:           "Block standalone `nuon apps sync`. Config changes ship through config-managed app branches (`nuon branches sync`) instead; on a TTY the CLI offers a wizard that creates a branch config file and moves the app's installs onto it.",
+		OrgFeatureAppBranches:                  "Support for multiple application branches allowing parallel development and testing",
+		OrgFeatureUserManagedFeatures:          "Allow organization users to manage feature flags through the public API (admin-only flag)",
+		OrgFeatureSupportRole:                  "Enable the support role option when inviting users to the organization",
+		OrgFeatureInstallRename:                "Allow renaming installs from the dashboard edit install modal",
+		OrgFeatureTerraformProviderMirror:      "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
+		OrgFeatureAppBranchesUI:                "Enable the app branches UI in the dashboard for managing and switching between app branches",
+		OrgFeatureTraceView:                    "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
+		OrgFeatureAutoSkipNoop:                 "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
+		OrgFeatureSlack:                        "Enable the Slack integration, including the Slack link in the dashboard sidebar and per-org Slack workspace/channel subscriptions",
+		OrgFeaturePulumiSandbox:                "Enable Pulumi-typed app sandboxes (sandbox type=pulumi) in addition to Terraform",
+		OrgFeaturePulumiUpdatePlans:            "Pin Pulumi applies to the approved preview via saved update plans; leave off for stacks using helm (the helm Release resource fails plan validation)",
+		OrgFeatureNotebooks:                    "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
+		OrgFeatureVersionsUI:                   "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
+		OrgFeatureSpaceliftInstallStacks:       "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
+		OrgFeatureAWSAccountConnections:        "Enable organization-owned cross-account AWS connections with external ID trust verification.",
+		OrgFeatureServiceAccountsAndTokens:     "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
+		OrgFeaturePhoneHomeAuth:                "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
+		OrgFeatureRunbookStudio:                "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
+		OrgFeatureCronNamespaceIsolation:       "Route the org's runner-healthcheck and install cron queues into dedicated Temporal namespaces + task queues polled by their own workers, isolating cron load from the api task queue.",
+		OrgFeatureNewAppIA:                     "Enable the branch-centric app information architecture in the dashboard: branches as the app landing page, grouped navigation, and the app source header. Requires app-branches-ui.",
+		OrgFeatureOrgHealthcheckSweeps:         "Replace per-runner and per-process healthcheck cron emitters with two per-org sweep emitters that check all runners/processes in paginated batches. Toggle via POST /v1/orgs/{org_id}/migrate-healthcheck-sweeps, which also migrates the emitters.",
+		OrgFeatureAppInstallSyncing:            "Enable app install config syncing: point an app at a git repo of per-install configs so pushes to that repo sync every install's config and create missing installs behind an approval step. Gates the install syncs API, the VCS push fan-out, and the dashboard install syncs tab.",
+		OrgFeatureSandboxOCIArtifacts:          "Build the app sandbox into an OCI artifact during branch runs and resolve sandbox runs against that artifact instead of cloning the sandbox git source. With it off, sandbox runs always clone git.",
+		OrgFeatureDefaultAppBranches:           "Route `nuon apps sync` through an app branch run: every app gets a `default` branch covering all of its installs, and the sync hands its config to a run on that branch instead of the standalone config sync plus install rollout. Requires app-branches.",
+		OrgFeatureNewInstallIA:                 "Enable the new install information architecture in the dashboard. Requires app-branches-ui.",
+		OrgFeatureDisableAppSync:               "Block standalone `nuon apps sync`. Config changes ship through config-managed app branches (`nuon branches sync`) instead; on a TTY the CLI offers a wizard that creates a branch config file and moves the app's installs onto it.",
+		OrgFeatureDisableModuleApps:            "Hide the Apps module from the Lite dashboard: apps, app branches, branch config diffs, and app setup. The API and CLI are unaffected.",
+		OrgFeatureDisableModuleInstalls:        "Hide the Installs module from the Lite dashboard: the installs list, install setup, and install overview and activity pages. The API and CLI are unaffected.",
+		OrgFeatureDisableModuleTeam:            "Hide the Team module from the Lite dashboard: members, invites, and role changes. The API and CLI are unaffected.",
+		OrgFeatureDisableModuleConnections:     "Hide the Connections settings section from the Lite dashboard. The API and CLI are unaffected.",
+		OrgFeatureDisableModuleWebhooks:        "Hide the Webhooks settings section from the Lite dashboard. The API and CLI are unaffected.",
+		OrgFeatureDisableModuleTriggers:        "Hide the Triggers settings section from the Lite dashboard. The API and CLI are unaffected.",
+		OrgFeatureDisableModuleAPITokens:       "Hide the API tokens settings section from the Lite dashboard. The API and CLI are unaffected.",
+		OrgFeatureDisableModuleServiceAccounts: "Hide the Service accounts settings section from the Lite dashboard. The API and CLI are unaffected.",
+		OrgFeatureDisableModuleOIDCFederation:  "Hide the OIDC federation settings section from the Lite dashboard. The API and CLI are unaffected.",
 	}
 }
 
@@ -366,9 +410,18 @@ func GetFeaturesWithDescriptions() []OrgFeatureInfo {
 // because they gate the flag system itself or because enabling them depends on
 // infrastructure prerequisites outside the org's control.
 var adminOnlyFeatures = map[OrgFeature]struct{}{
-	OrgFeatureUserManagedFeatures:   {},
-	OrgFeatureAWSAccountConnections: {},
-	OrgFeaturePhoneHomeAuth:         {},
+	OrgFeatureUserManagedFeatures:          {},
+	OrgFeatureAWSAccountConnections:        {},
+	OrgFeaturePhoneHomeAuth:                {},
+	OrgFeatureDisableModuleApps:            {},
+	OrgFeatureDisableModuleInstalls:        {},
+	OrgFeatureDisableModuleTeam:            {},
+	OrgFeatureDisableModuleConnections:     {},
+	OrgFeatureDisableModuleWebhooks:        {},
+	OrgFeatureDisableModuleTriggers:        {},
+	OrgFeatureDisableModuleAPITokens:       {},
+	OrgFeatureDisableModuleServiceAccounts: {},
+	OrgFeatureDisableModuleOIDCFederation:  {},
 }
 
 // GetUserManageableFeatures returns features that users are allowed to toggle
