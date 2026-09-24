@@ -30,7 +30,7 @@ func (c *cli) registerRunLocal() error {
 
 func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 	if len(args) < 1 {
-		log.Fatal("must pass in a valid runner-id or \"org\"|\"install\" to select the most current one")
+		log.Fatal("must pass in a valid runner-id or \"install\" to select the most current one")
 	}
 
 	ctx := context.Background()
@@ -38,12 +38,9 @@ func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 	defer cancel()
 
 	// Start health check server for monitoring runner status
-	// Use different ports for org (9090) and install (9091) runners
+	// Install runners use port 9091
 	arg := args[0]
-	healthPort := 9090
-	if arg == "install" {
-		healthPort = 9091
-	}
+	healthPort := 9091
 
 	go func() {
 		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -67,8 +64,6 @@ func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 
 	fmt.Println("running runner like usual")
 	switch arg {
-	case "org", "build":
-		c.runBuild(cmd, nil)
 	case "install":
 		// register the image-actions loop in-process so image-backed actions
 		// can be exercised locally (they normally run only in the mng process).
