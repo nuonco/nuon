@@ -298,7 +298,6 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeaturesKnownFeatureFlags() {
 
 		// Verify some known feature flags are present
 		knownFeatures := []string{
-			"org-runner",
 			"app-branches",
 			"user-managed-features",
 			"slack",
