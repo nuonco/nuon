@@ -1,8 +1,8 @@
-import { useOrg } from '@/hooks/use-org'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 
 export const useNewAppIA = () => {
-  const { org } = useOrg()
-  return (
-    !!org?.features?.['app-branches-ui'] && !!org?.features?.['new-app-ia']
-  )
+  const appBranchesUI = useOrgFeatureFlag('app-branches-ui')
+  const newAppIA = useOrgFeatureFlag('new-app-ia')
+
+  return appBranchesUI && newAppIA
 }
