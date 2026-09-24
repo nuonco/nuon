@@ -64,11 +64,11 @@ See [Export Runner Audit Logs](/guides/export-runner-audit-logs) for the configu
 ## Collect Install Telemetry
 
 With Nuon's assistance, deploy a telemetry relay in your BYOC control plane and configure your observability backend
-credentials once. Then enable forwarding for individual customer installs and send application logs, metrics, and
-traces to their private OTLP endpoints. The relay attaches verified install identity before forwarding the data.
+credentials once. Customer installs can then send application logs, metrics, and traces through the relay to your
+backend. This is separate from Runner audit-log export and does not use the `telemetry-export-config` secret.
 
-This is separate from Runner audit-log export and does not use the `telemetry-export-config` secret.
-See [Collect Install Telemetry](/guides/byoc/telemetry) for setup, per-install enablement, and verification.
+Follow [Set Up Install Telemetry](/guides/byoc/telemetry) to get started. Once it is set up, use
+[Manage Install Telemetry](/guides/manage-install-telemetry) to choose your org default and enable or disable installs.
 
 ## Use your own S3 Bucket
 
