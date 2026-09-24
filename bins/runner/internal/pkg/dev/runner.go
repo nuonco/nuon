@@ -20,13 +20,6 @@ func (d *devver) initRunner(ctx context.Context) error {
 	}
 
 	switch d.watchRunnerType {
-	case "org":
-		if os.Getenv("ORG_RUNNER_ID") != "" {
-			fmt.Println("runner id set from environment using ORG_RUNNER_ID env-var")
-			d.runnerID = os.Getenv("ORG_RUNNER_ID")
-			os.Setenv("RUNNER_ID", d.runnerID)
-			return nil
-		}
 	case "install":
 		if os.Getenv("INSTALL_RUNNER_ID") != "" {
 			fmt.Println("runner id set from environment using INSTALL_RUNNER_ID env-var")

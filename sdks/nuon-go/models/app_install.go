@@ -20,15 +20,6 @@ import (
 // swagger:model app.Install
 type AppInstall struct {
 
-	// actual app config applied at
-	ActualAppConfigAppliedAt string `json:"actual_app_config_applied_at,omitempty"`
-
-	// actual app config id
-	ActualAppConfigID string `json:"actual_app_config_id,omitempty"`
-
-	// actual app config workflow id
-	ActualAppConfigWorkflowID string `json:"actual_app_config_workflow_id,omitempty"`
-
 	// app branch
 	AppBranch *AppAppBranch `json:"app_branch,omitempty"`
 
@@ -40,6 +31,9 @@ type AppInstall struct {
 
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
+
+	// app config ref
+	AppConfigRef *AppAppConfigRef `json:"app_config_ref,omitempty"`
 
 	// AppDefaultLabels is the snapshot of the app's default labels applied to
 	// this install. It is the lock set for label mutation endpoints, and lets
@@ -242,6 +236,10 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateAppConfigRef(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateAppRunnerConfig(formats); err != nil {
 		res = append(res, err)
 	}
@@ -380,6 +378,29 @@ func (m *AppInstall) validateAppBranchConnections(formats strfmt.Registry) error
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppInstall) validateAppConfigRef(formats strfmt.Registry) error {
+	if swag.IsZero(m.AppConfigRef) { // not required
+		return nil
+	}
+
+	if m.AppConfigRef != nil {
+		if err := m.AppConfigRef.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_config_ref")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_config_ref")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -935,6 +956,10 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateAppConfigRef(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateAppRunnerConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -1074,6 +1099,31 @@ func (m *AppInstall) contextValidateAppBranchConnections(ctx context.Context, fo
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppInstall) contextValidateAppConfigRef(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AppConfigRef != nil {
+
+		if swag.IsZero(m.AppConfigRef) { // not required
+			return nil
+		}
+
+		if err := m.AppConfigRef.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_config_ref")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_config_ref")
+			}
+
+			return err
+		}
 	}
 
 	return nil
