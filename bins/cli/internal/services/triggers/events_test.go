@@ -247,7 +247,7 @@ func TestTailSuppressesHistoryAndEmitsDispatchTransitions(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			api := &tailAPI{cancel: cancel, transition: test.transition}
-			require.NoError(t, New(api).Tail(ctx, "trigger-1", time.Millisecond, true))
+			require.NoError(t, (&Service{api: api}).Tail(ctx, "trigger-1", time.Millisecond, true))
 			require.Equal(t, 2, api.listCalls)
 			require.Equal(t, test.rawCalls, api.rawCalls)
 		})
@@ -255,7 +255,7 @@ func TestTailSuppressesHistoryAndEmitsDispatchTransitions(t *testing.T) {
 }
 
 func TestResolveTriggerID(t *testing.T) {
-	service := New(&tailAPI{})
+	service := &Service{api: &tailAPI{}}
 	for _, test := range []struct {
 		trigger string
 		want    string
@@ -304,7 +304,7 @@ func TestEventsSinceSeenFollowsPagesUntilKnownEvent(t *testing.T) {
 	}}
 	seen := newTailSeen(tailRecentTerminalLimit)
 	seen.fingerprints["known"] = "matched|—"
-	events, err := New(api).eventsSinceSeen(context.Background(), "trigger", seen, true)
+	events, err := (&Service{api: api}).eventsSinceSeen(context.Background(), "trigger", seen, true)
 	require.NoError(t, err)
 	require.Len(t, events, 151)
 	require.Equal(t, []string{"", "page-2"}, api.calls)
