@@ -223,9 +223,8 @@ If you are having trouble finding the repository ARN in the AWS console, you can
 ### AWS ECR from a Self-Hosted-on-GCP Customer
 
 If your customer is running a self-hosted Nuon deployment on GCP, pass the customer's GCP service account unique IDs
-via `gcp_principals` so they can assume the role via Workload Identity Federation. Two SAs need to be listed:
+via `gcp_principals` so they can assume the role via Workload Identity Federation. One SA needs to be listed:
 
-- The org runner SA, which pulls source for builds. Display name: `Nuon org runner <org_id>`.
 - The ctl-api SA, which fetches image metadata for `external_image` components. Display name: `ctl-api for <install_id>`.
 
 <Note>
@@ -240,10 +239,6 @@ module "nuon_ecr_access" {
 
   gcp_principals = [
     {
-      service_account_unique_id = "123456789012345678901"  # org runner SA UID
-      service_account_email     = "<org-id-truncated>@<customer-project>.iam.gserviceaccount.com"
-    },
-    {
       service_account_unique_id = "987654321098765432109"  # ctl-api SA UID
       service_account_email     = "ctl-api-<install-id-truncated>@<customer-project>.iam.gserviceaccount.com"
     },
@@ -257,12 +252,12 @@ and the truncation length varies. Look the SAs up directly in the customer's pro
 preserved in each SA's display name.
 </Note>
 
-Look them up with:
+Look it up with:
 
 ```bash
 gcloud iam service-accounts list \
   --project=<customer-project> \
-  --filter='displayName~"Nuon org runner" OR displayName~"ctl-api for"' \
+  --filter='displayName~"ctl-api for"' \
   --format='table(email,uniqueId,displayName)'
 ```
 

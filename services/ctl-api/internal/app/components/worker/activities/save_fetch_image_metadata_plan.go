@@ -18,9 +18,8 @@ import (
 )
 
 type SaveFetchImageMetadataPlanRequest struct {
-	JobID               string `validate:"required"`
-	BuildID             string `validate:"required"`
-	IsControlPlaneBuild bool
+	JobID   string `validate:"required"`
+	BuildID string `validate:"required"`
 }
 
 // @temporal-gen-v2 activity
@@ -46,7 +45,7 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 		return fmt.Errorf("build %s does not have external image config", req.BuildID)
 	}
 
-	srcRepo, err := a.getSourceRepository(extImgCfg, req.IsControlPlaneBuild, build.ComponentConfigConnection.ComponentID)
+	srcRepo, err := a.getSourceRepository(extImgCfg, build.ComponentConfigConnection.ComponentID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get source repository")
 	}
@@ -76,7 +75,7 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 	return nil
 }
 
-func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, isControlPlaneBuild bool, componentID string) (*configs.OCIRegistryRepository, error) {
+func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
 	if cfg.AWSECRImageConfig != nil {
 		assumeRole := &credentials.AssumeRoleConfig{
 			RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
@@ -85,12 +84,10 @@ func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, 
 			UseGCPOIDC:             a.cfg.IsGCP(),
 		}
 
-		// Control-plane metadata jobs run as the ctl-api pod identity, which
-		// the vendor's ECR pull role does not trust — vendors grant the Nuon
-		// management account, so hop through the management role first (the
-		// identity the org runner presented as). Org-runner jobs run in the
-		// customer account and assume the pull role directly.
-		if isControlPlaneBuild && a.cfg.IsAWS() && a.cfg.ManagementIAMRoleARN != "" {
+		// Control-plane jobs run as the ctl-api pod identity, which the
+		// vendor's ECR pull role does not trust — vendors grant the Nuon
+		// management account, so hop through the management role first.
+		if a.cfg.IsAWS() && a.cfg.ManagementIAMRoleARN != "" {
 			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
 				IAMRoleARN: a.cfg.ManagementIAMRoleARN,
 			}

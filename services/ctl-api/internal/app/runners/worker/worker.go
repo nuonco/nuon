@@ -26,7 +26,6 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processshutdown"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/triggershutdown"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/updatetag"
-	runner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
 
@@ -99,7 +98,6 @@ func buildWorker(params WorkerParams, namespace string, taskQueue string, logNam
 	for _, acts := range params.SharedActivities.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
-	wkr.RegisterActivity(runner.NewActivities(params.V, params.Cfg))
 
 	// register workflows
 	for _, wkflow := range params.Wkflows.All() {

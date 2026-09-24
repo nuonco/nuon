@@ -34,8 +34,8 @@ The central interface for managing apps, installs, and jobs. The [Dashboard](/da
 
 A separate API that Runners use to poll for jobs and write logs and metrics. This is distinct from the Control API used by vendors and operators.
 
-### Build Runner
+### Builds
 
-Before components can be deployed to installs, they are built into OCI artifacts by a Build Runner hosted in the Control Plane. All installs of an app share the same artifacts. The Build Runner is the same binary as the Install Runner, but only runs build jobs. It is the only part of the Control Plane that touches your source code.
+Before components can be deployed to installs, they are built into OCI artifacts by the Control Plane. All installs of an app share the same artifacts, and the Control Plane is the only part of the platform that touches your source code.
 
-<Note>Build Runners are always single-tenant. Each is deployed to its own host and does not share resources with other Runners.</Note>
+<Note>Build artifacts are stored as OCI images in your cloud registry.</Note>

@@ -9,9 +9,7 @@ import (
 )
 
 type CreateFetchImageMetadataJobRequest struct {
-	BuildID     string `validate:"required"`
-	ParentJobID string `validate:"required"`
-	RunnerID    string
+	BuildID     string            `validate:"required"`
 	LogStreamID string            `validate:"required"`
 	Metadata    map[string]string `validate:"required"`
 }
@@ -26,18 +24,7 @@ func (a *Activities) CreateFetchImageMetadataJob(ctx context.Context, req *Creat
 	ctx = cctx.SetAccountIDContext(ctx, bld.CreatedByID)
 	ctx = cctx.SetOrgIDContext(ctx, bld.OrgID)
 
-	parentJob := app.RunnerJob{}
-	if err := a.db.WithContext(ctx).Where(&app.RunnerJob{ID: req.ParentJobID}).First(&parentJob).Error; err != nil {
-		return nil, fmt.Errorf("unable to get parent runner job: %w", err)
-	}
-	runnerID := parentJob.RunnerID
-	if parentJob.Executor == app.RunnerJobExecutorOrgRunner && req.RunnerID != "" {
-		runnerID = req.RunnerID
-	}
-
 	job, err := a.runnersHelpers.CreateFetchImageMetadataJob(ctx,
-		runnerID,
-		parentJob.Executor,
 		buildOwnerType,
 		bld.ID,
 		req.LogStreamID,
