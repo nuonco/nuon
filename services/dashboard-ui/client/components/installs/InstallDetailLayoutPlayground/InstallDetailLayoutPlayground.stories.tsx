@@ -4,6 +4,7 @@ export default {
 }
 
 import type { ReactNode } from 'react'
+import { AuthContext } from '@/providers/auth-provider'
 import { BreadcrumbContext } from '@/providers/breadcrumb-provider'
 import { DashboardPreferencesProvider } from '@/providers/dashboard-preferences-provider'
 import { NotificationContext } from '@/providers/notification-provider'
@@ -58,6 +59,17 @@ const mockPageSidebar = {
   togglePageSidebar: () => {},
 }
 
+const mockAuth = {
+  user: { sub: '1', email: 'test@nuon.co' },
+  isAuthenticated: true,
+  isAdmin: true,
+  isNuonEmployee: true,
+  isLoading: false,
+  error: null,
+  demoMode: false,
+  toggleDemoMode: () => {},
+}
+
 const Providers = ({
   children,
   isPageSidebarOpen = true,
@@ -65,19 +77,21 @@ const Providers = ({
   children: ReactNode
   isPageSidebarOpen?: boolean
 }) => (
-  <DashboardPreferencesProvider>
-    <NotificationContext.Provider value={mockNotifications}>
-      <BreadcrumbContext.Provider value={mockBreadcrumb}>
-        <SidebarContext.Provider value={mockSidebar}>
-          <PageSidebarContext.Provider
-            value={{ ...mockPageSidebar, isPageSidebarOpen }}
-          >
-            {children}
-          </PageSidebarContext.Provider>
-        </SidebarContext.Provider>
-      </BreadcrumbContext.Provider>
-    </NotificationContext.Provider>
-  </DashboardPreferencesProvider>
+  <AuthContext.Provider value={mockAuth}>
+    <DashboardPreferencesProvider>
+      <NotificationContext.Provider value={mockNotifications}>
+        <BreadcrumbContext.Provider value={mockBreadcrumb}>
+          <SidebarContext.Provider value={mockSidebar}>
+            <PageSidebarContext.Provider
+              value={{ ...mockPageSidebar, isPageSidebarOpen }}
+            >
+              {children}
+            </PageSidebarContext.Provider>
+          </SidebarContext.Provider>
+        </BreadcrumbContext.Provider>
+      </NotificationContext.Provider>
+    </DashboardPreferencesProvider>
+  </AuthContext.Provider>
 )
 
 export const ConfigCurrent = () => (
