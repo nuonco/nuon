@@ -37,7 +37,6 @@ func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app
 	var runner app.Runner
 	err = s.db.WithContext(ctx).
 		Preload("RunnerGroup").
-		Preload("RunnerGroup.Settings").
 		Where(app.Runner{ID: acct.Subject, OrgID: orgID}).
 		First(&runner).Error
 	if err != nil {
@@ -52,12 +51,14 @@ func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app
 	}
 
 	group := runner.RunnerGroup
-	if group.OrgID != orgID || group.Type != app.RunnerGroupTypeInstall || group.OwnerType != plugins.TableName(s.db, app.Install{}) || !group.Settings.VendorTelemetryEnabled {
+	if group.OrgID != orgID || group.Type != app.RunnerGroupTypeInstall || group.OwnerType != plugins.TableName(s.db, app.Install{}) {
 		return principal, telemetryRunnerAuthorizationError()
 	}
 
 	var install app.Install
 	err = s.db.WithContext(ctx).
+		Preload("InstallConfig").
+		Preload("Org").
 		Where(app.Install{ID: group.OwnerID, OrgID: orgID}).
 		First(&install).Error
 	if err != nil {
@@ -66,7 +67,7 @@ func (s *service) resolveTelemetryRunnerPrincipal(ctx context.Context, acct *app
 		}
 		return principal, fmt.Errorf("get telemetry runner install: %w", err)
 	}
-	if install.AppID == "" {
+	if install.AppID == "" || !install.InstallConfig.IsTelemetryEnabled(install.Org.Telemetry.Enabled) {
 		return principal, telemetryRunnerAuthorizationError()
 	}
 

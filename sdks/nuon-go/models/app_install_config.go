@@ -50,6 +50,9 @@ type AppInstallConfig struct {
 	// runner nested template url
 	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
 
+	// telemetry enabled
+	TelemetryEnabled *bool `json:"telemetry_enabled,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 

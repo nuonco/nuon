@@ -19,6 +19,12 @@ type ServiceInstallTelemetrySettings struct {
 
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
+
+	// org default
+	OrgDefault bool `json:"org_default,omitempty"`
+
+	// override
+	Override *bool `json:"override,omitempty"`
 }
 
 // Validate validates this service install telemetry settings
