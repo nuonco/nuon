@@ -1,4 +1,5 @@
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
+import { InstallCronOfflineBanner } from '@/components/installs/InstallCronOfflineBanner'
 import { SandboxRunsTimeline } from '@/components/sandbox/SandboxRunsTimeline'
 import { ManagementDropdown } from '@/components/sandbox/management/ManagementDropdown'
 import { SandboxConfigCard } from '@/components/sandbox/SandboxConfigCard'
@@ -61,6 +62,12 @@ export const Sandbox = () => {
         }
       >
         {driftedObject ? <DriftedBanner drifted={driftedObject} /> : null}
+
+        <InstallCronOfflineBanner
+          runnerStatus={install?.runner_status}
+          kind="sandbox_drift"
+          hasCronSchedule={!!sandboxConfig?.drift_schedule}
+        />
 
         <SandboxConfigCard config={sandboxConfig} loading={!sandboxConfig} />
 

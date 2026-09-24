@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
+import { InstallCronOfflineBanner } from '@/components/installs/InstallCronOfflineBanner'
 import { SandboxConfigCard } from '@/components/sandbox/SandboxConfigCard'
 import { ManagementDropdown } from '@/components/sandbox/management/ManagementDropdown'
 import { Panel } from '@/components/surfaces/Panel'
@@ -93,7 +94,14 @@ export const InstallSandboxContainer = () => {
         </>
       }
       driftBanner={
-        driftedObject ? <DriftedBanner drifted={driftedObject} /> : undefined
+        <>
+          {driftedObject ? <DriftedBanner drifted={driftedObject} /> : null}
+          <InstallCronOfflineBanner
+            runnerStatus={install?.runner_status}
+            kind="sandbox_drift"
+            hasCronSchedule={!!sandboxConfig?.drift_schedule}
+          />
+        </>
       }
       config={
         configLoading || sandboxConfig ? (
