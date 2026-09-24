@@ -82,7 +82,7 @@ func (s *Service) SyncBranches(ctx context.Context, opts SyncBranchesOptions) er
 		}
 	}
 
-	remotes, err := s.api.GetAppBranches(ctx, appID)
+	remotes, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return ui.PrintError(fmt.Errorf("unable to list branches for app %s: %w", appID, err))
 	}

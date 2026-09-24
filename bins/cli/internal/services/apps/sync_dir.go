@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/config/validate"
 	"github.com/nuonco/nuon/pkg/errs"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 )
 
 const (
@@ -366,7 +367,7 @@ func (s *Service) notifyOrphanedComponents(cmps map[string]string) {
 
 // resolveAppBranchID resolves a branch name or ID to a branch ID.
 func (s *Service) resolveAppBranchID(ctx context.Context, appID, branchNameOrID string) (string, error) {
-	branches, err := s.api.GetAppBranches(ctx, appID)
+	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return "", fmt.Errorf("unable to list app branches: %w", err)
 	}
@@ -381,7 +382,7 @@ func (s *Service) resolveAppBranchID(ctx context.Context, appID, branchNameOrID 
 }
 
 func (s *Service) selectAppBranch(ctx context.Context, appID string) (string, error) {
-	branches, err := s.api.GetAppBranches(ctx, appID)
+	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return "", fmt.Errorf("unable to list app branches: %w", err)
 	}
