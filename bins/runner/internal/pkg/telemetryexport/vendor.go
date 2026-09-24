@@ -2,6 +2,7 @@ package telemetryexport
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -18,6 +20,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zapio"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/pkg/runner/settings"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
@@ -41,6 +44,7 @@ type VendorParams struct {
 	Settings  *settings.Settings
 	Logger    *zap.Logger `name:"system"`
 	APIClient nuonrunner.Client
+	Audit     *audit.Writer
 }
 
 type VendorSupervisor struct {
@@ -62,11 +66,13 @@ type VendorSupervisor struct {
 	nextStart           time.Time
 	enabled             bool
 	disabled            bool
+	auditEnabled        bool
 	settingsUnavailable bool
 
 	fetchSettingsFn func(context.Context) (vendorSettings, error)
 	replaceChildFn  func(context.Context, string, map[string]string) error
 	stopChildFn     func()
+	writeAuditFn    func(audit.Event) error
 }
 
 func NewVendor(params VendorParams) *VendorSupervisor {
@@ -95,6 +101,7 @@ func NewVendor(params VendorParams) *VendorSupervisor {
 	}
 	s.replaceChildFn = s.replaceChild
 	s.stopChildFn = s.stopChild
+	s.writeAuditFn = params.Audit.WriteAsync
 	params.Lifecycle.Append(fx.Hook{OnStart: s.start, OnStop: s.stop})
 	return s
 }
@@ -215,6 +222,7 @@ func (s *VendorSupervisor) disable() {
 	s.enabled = false
 	s.disabled = true
 	s.logger.Info("vendor telemetry export collector disabled")
+	s.writeTelemetryAudit(false)
 }
 
 func (s *VendorSupervisor) startCollector(ctx context.Context) {
@@ -265,6 +273,25 @@ func (s *VendorSupervisor) startCollector(ctx context.Context) {
 		zap.Bool("vendor_telemetry_export.metrics", true),
 		zap.Bool("vendor_telemetry_export.traces", true),
 	)
+	s.writeTelemetryAudit(true)
+}
+
+func (s *VendorSupervisor) writeTelemetryAudit(enabled bool) {
+	if s.auditEnabled == enabled {
+		return
+	}
+	s.auditEnabled = enabled
+	event := audit.Event{
+		Name:    "install_telemetry_updated",
+		Message: "runner applied telemetry setting",
+		Outcome: audit.OutcomeSucceeded,
+		Attributes: map[string]string{
+			"telemetry.enabled": strconv.FormatBool(enabled),
+		},
+	}
+	if err := s.writeAuditFn(event); err != nil && !errors.Is(err, audit.ErrUnavailable) {
+		s.logger.Warn("customer telemetry audit event enqueue failed", zap.Error(err))
+	}
 }
 
 func (s *VendorSupervisor) replaceChild(ctx context.Context, endpoint string, attributes map[string]string) error {
