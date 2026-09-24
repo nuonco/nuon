@@ -106,8 +106,16 @@ func (h *handler) cloudCredentialEnv(ctx context.Context) (map[string]string, er
 			return nil, errors.Wrap(err, "unable to get GCP credentials")
 		}
 
-		if h.state.auth.GCPAuth.ImpersonateServiceAccount != "" {
-			gcpEnv["CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT"] = h.state.auth.GCPAuth.ImpersonateServiceAccount
+		if sa := h.state.auth.GCPAuth.ImpersonateServiceAccount; sa != "" {
+			gcpEnv["CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT"] = sa
+
+			token, err := gcpcredentials.ImpersonatedAccessToken(ctx, sa)
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to get an access token for the action's operation role")
+			}
+
+			delete(gcpEnv, "GOOGLE_IMPERSONATE_SERVICE_ACCOUNT")
+			gcpEnv["GOOGLE_OAUTH_ACCESS_TOKEN"] = token
 		}
 
 		env = generics.MergeMap(env, gcpEnv)
