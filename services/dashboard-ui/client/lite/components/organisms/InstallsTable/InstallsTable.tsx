@@ -171,7 +171,7 @@ export const columnsFor = (
   {
     id: 'name',
     header: 'Install',
-    size: 240,
+    size: 200,
     cell: ({ row }) => {
       const incomplete = Boolean(
         row.original?.id && incompleteIds?.has(row.original.id)
@@ -203,7 +203,7 @@ export const columnsFor = (
   {
     id: 'app',
     header: 'App',
-    size: 140,
+    size: 120,
     cell: ({ row }) =>
       row.original?.app_id ? (
         <Link href={appHref(orgId, row.original)} variant="body">
@@ -224,13 +224,13 @@ export const columnsFor = (
   {
     id: 'platform',
     header: 'Cloud',
-    size: 165,
+    size: 140,
     cell: ({ row }) => <Platform install={row.original} />,
   },
   {
     id: 'labels',
     header: 'Labels',
-    size: 145,
+    size: 125,
     cell: ({ row }) => (
       <InstallLabels install={row.original} labelColors={labelColors} />
     ),
