@@ -66,7 +66,7 @@ export const InstallTelemetry = ({
           tipContent={
             isManagedByConfig
               ? 'Managed by config. Disable config sync to edit.'
-              : 'Cannot enable telemetry — private telemetry endpoint missing from the install stack'
+              : 'Cannot enable telemetry. Telemetry endpoint missing from the install stack. Ensure your stack enables telemetry ingress.'
           }
           disableHover={!isManagedByConfig && (enabled || hasEndpoint)}
           tabIndex={
@@ -106,7 +106,7 @@ export const InstallTelemetry = ({
                 : !canUseOrgDefault
                   ? {
                       tipContent:
-                        'A private telemetry endpoint is required to enable telemetry',
+                        'A telemetry endpoint is required. Ensure your install stack enables telemetry ingress.',
                     }
                   : undefined
             }
