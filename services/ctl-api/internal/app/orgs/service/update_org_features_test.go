@@ -231,7 +231,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 						string(app.OrgFeatureUserManagedFeatures): true,
 						string(app.OrgFeatureTraceView):           false,
 						string(app.OrgFeatureAppBranches):         true,
-						string(app.OrgFeatureOrgRunner):           false,
+						string(app.OrgFeatureSupportRole):         false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -256,7 +256,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				Features: map[string]bool{
 					string(app.OrgFeatureTraceView):   true,
 					string(app.OrgFeatureAppBranches): false,
-					string(app.OrgFeatureOrgRunner):   true,
+					string(app.OrgFeatureSupportRole): true,
 				},
 			},
 			expectedCode: http.StatusOK,
@@ -264,7 +264,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				require.NotNil(s.T(), org)
 				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgRunner)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
 			},
 			checkDBFunc: func(org *app.Org) {
@@ -273,7 +273,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				require.NoError(s.T(), err)
 				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureOrgRunner)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureSupportRole)])
 			},
 		},
 		{
@@ -671,7 +671,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 						string(app.OrgFeatureUserManagedFeatures): true,
 						string(app.OrgFeatureTraceView):           true,
 						string(app.OrgFeatureAppBranches):         false,
-						string(app.OrgFeatureOrgRunner):           true,
+						string(app.OrgFeatureSupportRole):         true,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -704,7 +704,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				assert.False(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 				// Unmodified features should be preserved
 				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgRunner)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
 			},
 			checkDBFunc: func(org *app.Org) {
@@ -714,7 +714,7 @@ func (s *UpdateOrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				// Verify database state matches
 				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureOrgRunner)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureSupportRole)])
 			},
 		},
 		{

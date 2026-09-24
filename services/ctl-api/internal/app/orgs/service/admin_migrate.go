@@ -13,7 +13,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/reprovision"
 	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -92,12 +91,6 @@ func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
 		return errors.Wrap(gorm.ErrRecordNotFound, "org not found")
 	}
 
-	// create org runner group
-	_, err := s.runnersHelpers.CreateOrgRunnerGroup(ctx, org)
-	if err != nil {
-		return errors.Wrap(err, "unable to create org runner group")
-	}
-
 	// Org signals use v2 queues
 	queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
 	if err != nil {
@@ -105,9 +98,6 @@ func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
 	}
 	if err := s.enqueueOrgSignal(ctx, queueID, &orgrestart.Signal{OrgID: org.ID}, org.ID); err != nil {
 		return fmt.Errorf("enqueue restart signal: %w", err)
-	}
-	if err := s.enqueueOrgSignal(ctx, queueID, &orgreprovision.Signal{OrgID: org.ID}, org.ID); err != nil {
-		return fmt.Errorf("enqueue reprovision signal: %w", err)
 	}
 	return nil
 }

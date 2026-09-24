@@ -99,12 +99,10 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig, com
 
 		// Control-plane builds run as the ctl-api pod identity, which the
 		// vendor's ECR pull role does not trust — vendors grant the Nuon
-		// management account, so hop through the management role first (the
-		// identity the org runner presented as). Org-runner builds run in the
-		// customer account and assume the pull role directly. AWS is the
-		// default cloud provider, so it is represented as anything other than
-		// gcp/azure (including an empty string).
-		if b.isControlPlaneBuild && b.cloudProvider != "gcp" && b.cloudProvider != "azure" && b.managementIAMRoleARN != "" {
+		// management account, so hop through the management role first. AWS
+		// is the default cloud provider, so it is represented as anything
+		// other than gcp/azure (including an empty string).
+		if b.cloudProvider != "gcp" && b.cloudProvider != "azure" && b.managementIAMRoleARN != "" {
 			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
 				IAMRoleARN: b.managementIAMRoleARN,
 			}
