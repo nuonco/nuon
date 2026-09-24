@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -6,11 +7,16 @@ import {
   getInstallHealthTimeline,
 } from '@/lib'
 import type {
+  TComponentType,
+  TInstallComponent,
   TInstallComponentHealthTimeline,
   TInstallHealthTimeline,
 } from '@/types'
 import { HealthCardActions } from '@/components/install-health/HealthCardActions'
-import { HealthTimeline } from './HealthTimeline'
+import {
+  HealthTimeline,
+  type THealthTimelineComponentLink,
+} from './HealthTimeline'
 
 export const HealthTimelineContainer = ({
   installComponentId,
@@ -19,13 +25,15 @@ export const HealthTimelineContainer = ({
   shouldPoll = false,
   componentBasePath,
   getComponentHref,
+  groupByKind = false,
 }: {
   installComponentId?: string
   days?: number
   pollInterval?: number
   shouldPoll?: boolean
   componentBasePath?: string
-  getComponentHref?: (componentId: string) => string
+  getComponentHref?: (component: THealthTimelineComponentLink) => string
+  groupByKind?: boolean
 }) => {
   const { org } = useOrg()
   const { install } = useInstall()
@@ -63,6 +71,30 @@ export const HealthTimelineContainer = ({
   const timeline = isComponentScope ? componentTimeline : installTimeline
   const isLoading = isComponentScope ? isComponentLoading : isInstallLoading
 
+  const componentTypes = useMemo(() => {
+    const types = new Map<string, TComponentType>()
+    for (const installComponent of (install?.install_components ??
+      []) as TInstallComponent[]) {
+      const type = installComponent.component?.type
+      if (!type) continue
+      if (installComponent.component_id)
+        types.set(installComponent.component_id, type)
+      if (installComponent.id) types.set(installComponent.id, type)
+    }
+    return types
+  }, [install?.install_components])
+
+  const components = isComponentScope
+    ? undefined
+    : (timeline as TInstallHealthTimeline | undefined)?.components?.map(
+        (component) => ({
+          ...component,
+          component_type:
+            componentTypes.get(component.component_id ?? '') ??
+            componentTypes.get(component.install_component_id),
+        })
+      )
+
   return (
     <HealthTimeline
       headerAction={
@@ -81,11 +113,8 @@ export const HealthTimelineContainer = ({
           : (timeline as TInstallHealthTimeline | undefined)?.cluster_access_error
       }
       currentHealth={timeline?.current_health}
-      components={
-        isComponentScope
-          ? undefined
-          : (timeline as TInstallHealthTimeline | undefined)?.components
-      }
+      components={components}
+      groupByKind={groupByKind}
       componentBasePath={
         componentBasePath ??
         `/${org?.id}/installs/${install?.id}/components`
