@@ -216,26 +216,45 @@ function dayAriaLabel(day: THealthTimelineDay): string {
   }`
 }
 
+function componentHref(
+  component: TInstallHealthTimelineComponent,
+  componentBasePath?: string,
+  getComponentHref?: (componentId: string) => string
+) {
+  if (!component.component_id) return undefined
+  if (getComponentHref) return getComponentHref(component.component_id)
+  if (componentBasePath)
+    return `${componentBasePath}/${component.component_id}`
+  return undefined
+}
+
 function ComponentHealthRows({
   components,
   componentBasePath,
+  getComponentHref,
   className,
 }: {
   components: TInstallHealthTimelineComponent[]
   componentBasePath?: string
+  getComponentHref?: (componentId: string) => string
   className?: string
 }) {
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      {components.map((component) => (
+      {components.map((component) => {
+        const href = componentHref(
+          component,
+          componentBasePath,
+          getComponentHref
+        )
+
+        return (
         <div
           key={component.install_component_id}
           className="flex items-center justify-between gap-3"
         >
-          {/* Component routes are keyed by component_id; linking with the
-              install-component id dead-ends on an empty page. */}
-          {componentBasePath && component.component_id ? (
-            <Link href={`${componentBasePath}/${component.component_id}`}>
+          {href ? (
+            <Link href={href}>
               {component.component_name || component.component_id}
             </Link>
           ) : (
@@ -248,7 +267,8 @@ function ComponentHealthRows({
             </Text>
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -265,6 +285,7 @@ export interface IHealthTimeline {
   currentHealth?: string
   components?: TInstallHealthTimelineComponent[]
   componentBasePath?: string
+  getComponentHref?: (componentId: string) => string
   transitions?: TInstallComponentHealthTransition[]
   deployBasePath?: string
   isLoading?: boolean
@@ -282,6 +303,7 @@ export const HealthTimeline = ({
   currentHealth,
   components,
   componentBasePath,
+  getComponentHref,
   transitions,
   deployBasePath,
   isLoading = false,
@@ -410,6 +432,7 @@ export const HealthTimeline = ({
             <ComponentHealthRows
               components={assessed}
               componentBasePath={componentBasePath}
+              getComponentHref={getComponentHref}
             />
           ) : null}
           {unassessed.length > 0 ? (
@@ -432,6 +455,7 @@ export const HealthTimeline = ({
                 className="pt-2"
                 components={unassessed}
                 componentBasePath={componentBasePath}
+                getComponentHref={getComponentHref}
               />
             </Expand>
           ) : null}
