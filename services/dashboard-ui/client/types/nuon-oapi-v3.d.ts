@@ -5628,8 +5628,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update an install's telemetry settings */
-        patch: operations["UpdateInstallTelemetrySettings"];
+        patch?: never;
         trace?: never;
     };
     "/v1/installs/{install_id}/updates": {
@@ -6269,6 +6268,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/orgs/current/telemetry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update current org telemetry settings */
+        patch: operations["UpdateOrgTelemetry"];
         trace?: never;
     };
     "/v1/orgs/current/user": {
@@ -10014,6 +10030,7 @@ export interface components {
             labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
             org_id?: string;
             runner_nested_template_url?: string;
+            telemetry_enabled?: boolean | null;
             updated_at?: string;
             /** @description Per-install stack template overrides (nil = use app config default) */
             vpc_nested_template_url?: string;
@@ -10730,6 +10747,7 @@ export interface components {
             status_description?: string;
             status_v2?: components["schemas"]["app.CompositeStatus"];
             tags?: string[];
+            telemetry?: components["schemas"]["app.OrgTelemetrySettings"];
             updated_at?: string;
             vcs_connections?: components["schemas"]["app.VCSConnection"][];
         };
@@ -10769,6 +10787,9 @@ export interface components {
         };
         /** @enum {string} */
         "app.OrgMemberStatus": "active" | "invited";
+        "app.OrgTelemetrySettings": {
+            enabled?: boolean;
+        };
         "app.OtelLogRecord": {
             body?: string;
             created_at?: string;
@@ -12082,6 +12103,9 @@ export interface components {
             repoURL?: string;
             version?: string;
         };
+        "config.InstallTelemetry": {
+            enabled?: boolean | null;
+        };
         "configs.ACRAppRegistration": {
             clientCertificateName?: string;
             clientID?: string;
@@ -12254,6 +12278,7 @@ export interface components {
                 [key: string]: string;
             };
             runner_nested_template_url?: string;
+            telemetry?: components["schemas"]["config.InstallTelemetry"];
             vpc_nested_template_url?: string;
         };
         "helpers.CreateInstallGCPAccountParams": {
@@ -13471,6 +13496,7 @@ export interface components {
                 [key: string]: string;
             };
             runner_nested_template_url?: string;
+            telemetry?: components["schemas"]["config.InstallTelemetry"];
             vpc_nested_template_url?: string;
         };
         "service.CreateInstallDeployRequest": {
@@ -14079,6 +14105,8 @@ export interface components {
         };
         "service.InstallTelemetrySettings": {
             enabled?: boolean;
+            org_default?: boolean;
+            override?: boolean | null;
         };
         "service.InstallUpdate": {
             app_config?: components["schemas"]["service.InstallAppConfigUpdate"];
@@ -14491,6 +14519,7 @@ export interface components {
                 [key: string]: string;
             };
             runner_nested_template_url?: string;
+            telemetry?: components["schemas"]["config.InstallTelemetry"];
             vpc_nested_template_url?: string;
         };
         "service.UpdateInstallInputsRequest": {
@@ -14511,9 +14540,6 @@ export interface components {
             name?: string;
         };
         "service.UpdateInstallRoleRequest": {
-            enabled: boolean;
-        };
-        "service.UpdateInstallTelemetryRequest": {
             enabled: boolean;
         };
         "service.UpdateNotebookRequest": {
@@ -14543,6 +14569,9 @@ export interface components {
         };
         "service.UpdateOrgRequest": {
             name: string;
+        };
+        "service.UpdateOrgTelemetryRequest": {
+            enabled: boolean;
         };
         "service.UpdateRunbookRequest": {
             description?: string;
@@ -36997,79 +37026,6 @@ export interface operations {
             };
         };
     };
-    UpdateInstallTelemetrySettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Install ID */
-                install_id: string;
-            };
-            cookie?: never;
-        };
-        /** @description Input */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["service.UpdateInstallTelemetryRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["service.InstallTelemetrySettings"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["stderr.ErrResponse"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["stderr.ErrResponse"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["stderr.ErrResponse"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["stderr.ErrResponse"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["stderr.ErrResponse"];
-                };
-            };
-        };
-    };
     GetInstallUpdates: {
         parameters: {
             query?: {
@@ -39329,6 +39285,76 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app.Org"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["stderr.ErrResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["stderr.ErrResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["stderr.ErrResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["stderr.ErrResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["stderr.ErrResponse"];
+                };
+            };
+        };
+    };
+    UpdateOrgTelemetry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Input */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["service.UpdateOrgTelemetryRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

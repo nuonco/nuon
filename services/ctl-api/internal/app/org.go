@@ -103,6 +103,10 @@ const (
 	OrgFeatureDisableAppSync      OrgFeature = "disable-app-sync"
 )
 
+type OrgTelemetrySettings struct {
+	Enabled bool `json:"enabled" gorm:"not null;default:false" temporaljson:"enabled,omitempty"`
+}
+
 type Org struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string  `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -118,6 +122,8 @@ type Org struct {
 	StatusV2          CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	SandboxMode bool `json:"sandbox_mode,omitzero" gorm:"notnull" temporaljson:"sandbox_mode,omitzero,omitempty"`
+
+	Telemetry OrgTelemetrySettings `json:"telemetry" gorm:"embedded;embeddedPrefix:telemetry_" temporaljson:"telemetry,omitempty"`
 
 	OrgType   OrgType `json:"-" temporaljson:"org_type,omitzero,omitempty"`
 	DebugMode bool    `json:"-" temporaljson:"debug_mode,omitzero,omitempty"`

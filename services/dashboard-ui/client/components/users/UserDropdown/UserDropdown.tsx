@@ -5,6 +5,7 @@ import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { ThemeSwitcher } from '@/components/common/ThemeSwitcher'
+import { OrgTelemetryButton } from '@/components/orgs/OrgTelemetry'
 import { UserPreferencesPanel } from '../UserPreferencesPanel'
 import { Toast } from '@/components/surfaces/Toast'
 import { InviteUserButton } from '@/components/team/InviteUser'
@@ -80,6 +81,9 @@ export const UserDropdown = ({
           </Text>
         )}
         {!hideOrgSettings && <InviteUserButton isMenuButton />}
+        {!hideOrgSettings && (isByoc || isDev) && (
+          <OrgTelemetryButton isMenuButton />
+        )}
         {!hideOrgSettings && (
           <Link href={isByoc ? '/byoc-setup' : '/onboarding'}>
             {isByoc ? 'Setup guide' : 'Re-open onboarding'}{' '}
