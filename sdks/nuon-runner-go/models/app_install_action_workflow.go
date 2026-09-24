@@ -26,6 +26,9 @@ type AppInstallActionWorkflow struct {
 	// action workflow id
 	ActionWorkflowID string `json:"action_workflow_id,omitempty"`
 
+	// app config ref
+	AppConfigRef *AppAppConfigRef `json:"app_config_ref,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -59,6 +62,10 @@ func (m *AppInstallActionWorkflow) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateAppConfigRef(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateRuns(formats); err != nil {
 		res = append(res, err)
 	}
@@ -87,6 +94,29 @@ func (m *AppInstallActionWorkflow) validateActionWorkflow(formats strfmt.Registr
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("action_workflow")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallActionWorkflow) validateAppConfigRef(formats strfmt.Registry) error {
+	if swag.IsZero(m.AppConfigRef) { // not required
+		return nil
+	}
+
+	if m.AppConfigRef != nil {
+		if err := m.AppConfigRef.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_config_ref")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_config_ref")
 			}
 
 			return err
@@ -157,6 +187,10 @@ func (m *AppInstallActionWorkflow) ContextValidate(ctx context.Context, formats 
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateAppConfigRef(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateRuns(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -187,6 +221,31 @@ func (m *AppInstallActionWorkflow) contextValidateActionWorkflow(ctx context.Con
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("action_workflow")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallActionWorkflow) contextValidateAppConfigRef(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AppConfigRef != nil {
+
+		if swag.IsZero(m.AppConfigRef) { // not required
+			return nil
+		}
+
+		if err := m.AppConfigRef.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_config_ref")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_config_ref")
 			}
 
 			return err

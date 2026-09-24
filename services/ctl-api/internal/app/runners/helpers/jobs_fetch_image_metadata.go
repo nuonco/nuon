@@ -12,16 +12,13 @@ import (
 // CreateFetchImageMetadataJob creates a job for fetching image metadata from an OCI registry.
 // This job is used during external image builds to fetch metadata for policy evaluation.
 func (h *Helpers) CreateFetchImageMetadataJob(ctx context.Context,
-	runnerID string,
-	executor app.RunnerJobExecutor,
 	ownerType string,
 	ownerID string,
 	logStreamID string,
 	metadata map[string]string,
 ) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
-		RunnerID:          runnerID,
-		Executor:          executor,
+		Executor:          app.RunnerJobExecutorControlPlane,
 		OwnerType:         ownerType,
 		OwnerID:           ownerID,
 		QueueTimeout:      DefaultQueueTimeout,
@@ -37,10 +34,7 @@ func (h *Helpers) CreateFetchImageMetadataJob(ctx context.Context,
 		Metadata:          generics.ToHstore(metadata),
 	}
 
-	db := h.db.WithContext(ctx)
-	if executor == app.RunnerJobExecutorControlPlane {
-		db = db.Omit("RunnerID")
-	}
+	db := h.db.WithContext(ctx).Omit("RunnerID")
 	if res := db.Create(&job); res.Error != nil {
 		return nil, fmt.Errorf("unable to create job: %w", res.Error)
 	}

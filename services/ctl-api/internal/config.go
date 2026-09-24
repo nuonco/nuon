@@ -118,9 +118,6 @@ func init() {
 	config.RegisterDefault("app_repository_name_template", "%s/%s")
 	config.RegisterDefault("app_region", "us-west-2")
 
-	config.RegisterDefault("org_runner_helm_chart_dir", "/bundle/helm")
-	config.RegisterDefault("org_runner_instance_type", "t3a.medium")
-
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
 	config.RegisterDefault("blob_storage_provider", "s3")
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
@@ -467,9 +464,6 @@ type Config struct {
 
 	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
-	// When set, org runners share this stack-created SA (WI bindings appended
-	// per org) instead of ctl-api creating one SA per org at runtime.
-	ManagementGCPOrgRunnerSAEmail string `config:"management_gcp_org_runner_sa_email"`
 
 	// Azure management (not required for AWS/GCP)
 	ManagementACRRegistryURL      string `config:"management_acr_registry_url"`
@@ -478,21 +472,6 @@ type Config struct {
 	ManagementAzureSubscriptionID string `config:"management_azure_subscription_id"`
 	ManagementAzureResourceGroup  string `config:"management_azure_resource_group"`
 	ManagementAzureOIDCIssuerURL  string `config:"management_azure_oidc_issuer_url"`
-
-	// configuration for org runners (shared across cloud providers)
-	OrgRunnerK8sClusterID      string `config:"org_runner_k8s_cluster_id" validate:"required"`
-	OrgRunnerK8sPublicEndpoint string `config:"org_runner_k8s_public_endpoint" validate:"required"`
-	OrgRunnerK8sCAData         string `config:"org_runner_k8s_ca_data" validate:"required"`
-	OrgRunnerRegion            string `config:"org_runner_region" validate:"required"`
-	OrgRunnerHelmChartDir      string `config:"org_runner_helm_chart_dir" validate:"required"`
-	OrgRunnerInstanceType      string `config:"org_runner_instance_type" validate:"required"`
-
-	// configuration for org runners (AWS-only, not required for GCP)
-	OrgRunnerOIDCProviderURL    string `config:"org_runner_oidc_provider_url"`
-	OrgRunnerOIDCProviderARN    string `config:"org_runner_oidc_provider_arn"`
-	OrgRunnerSupportRoleARN     string `config:"org_runner_support_role_arn"`
-	OrgRunnerK8sIAMRoleARN      string `config:"org_runner_k8s_iam_role_arn"`
-	OrgRunnerK8sUseDefaultCreds bool   `config:"org_runner_k8s_use_default_creds"`
 
 	// configuration for apps
 	AppRegion string `config:"app_region" validate:"required"`
@@ -525,7 +504,6 @@ type Config struct {
 	// Runner process uptime thresholds
 	ProcessInstallUptimeThreshold time.Duration `config:"process_install_uptime_threshold"`
 	ProcessMngUptimeThreshold     time.Duration `config:"process_mng_uptime_threshold"`
-	ProcessBuildUptimeThreshold   time.Duration `config:"process_build_uptime_threshold"`
 
 	// Queue handler grace period
 	QueueHandlerGracePeriod time.Duration `config:"queue_handler_grace_period"`
