@@ -6,6 +6,7 @@ import { Text } from '@/components/common/Text'
 import { AWSAccountConnections } from '@/components/aws-account-connections/AWSAccountConnections'
 import { ConnectGithubButton } from '@/components/vcs-connections/ConnectGithub'
 import { VCSConnections } from '@/components/vcs-connections/VCSConnections'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { cn } from '@/utils/classnames'
 import '../OrgAvatar.css'
 import { OrgSummary } from '../OrgSummary'
@@ -19,6 +20,8 @@ interface IOrgSwitcher
 }
 
 export const OrgSwitcher = ({ org, isSidebarOpen, ...props }: IOrgSwitcher) => {
+  const awsAccountConnections = useOrgFeatureFlag('aws-account-connections')
+
   return (
     <Dropdown
       alignment="overlay"
@@ -62,7 +65,7 @@ export const OrgSwitcher = ({ org, isSidebarOpen, ...props }: IOrgSwitcher) => {
           <div className="flex flex-col gap-2">
             <VCSConnections vcsConnections={org?.vcs_connections} />
           </div>
-          {org?.features?.['aws-account-connections'] ? (
+          {awsAccountConnections ? (
             <AWSAccountConnections />
           ) : null}
         </div>
