@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
-	jobpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -214,17 +213,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Execute the runner job
 	s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusBuilding, "building sandbox")
-	if runnerJob.Executor == app.RunnerJobExecutorControlPlane {
-		err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
-			WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", build.ID, runnerJob.ID),
-		})
-	} else {
-		_, err = jobpkg.AwaitExecuteJob(ctx, &jobpkg.ExecuteJobRequest{
-			RunnerID:   runnerJob.RunnerID,
-			JobID:      runnerJob.ID,
-			WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", build.ID, runnerJob.ID),
-		})
-	}
+	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", build.ID, runnerJob.ID),
+	})
 	if err != nil {
 		s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "sandbox build job failed")
 		return fmt.Errorf("sandbox build job failed: %w", err)

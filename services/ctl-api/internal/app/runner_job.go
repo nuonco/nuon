@@ -280,7 +280,7 @@ type RunnerJob struct {
 	Type      RunnerJobType          `json:"type,omitzero" gorm:"default null;not null" temporaljson:"type,omitzero,omitempty"`
 	Group     RunnerJobGroup         `json:"group,omitzero" gorm:"default:null;not null;index:idx_runner_jobs_query,priority:2" temporaljson:"group,omitzero,omitempty"`
 	Operation RunnerJobOperationType `json:"operation,omitzero" gorm:"default:null;not null" temporaljson:"operation,omitzero,omitempty"`
-	Executor  RunnerJobExecutor      `json:"executor,omitzero" gorm:"default:org-runner;not null" swaggertype:"string" temporaljson:"executor,omitzero,omitempty"`
+	Executor  RunnerJobExecutor      `json:"executor,omitzero" gorm:"default:control-plane;not null" swaggertype:"string" temporaljson:"executor,omitzero,omitempty"`
 
 	Executions []RunnerJobExecution `json:"executions,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"executions,omitzero,omitempty"`
 	Plan       RunnerJobPlan        `json:"json" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"plan,omitzero,omitempty"`
@@ -374,7 +374,7 @@ func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {
 		r.Group = r.Type.Group()
 	}
 	if r.Executor == RunnerJobExecutorUnknown {
-		r.Executor = RunnerJobExecutorOrgRunner
+		r.Executor = RunnerJobExecutorControlPlane
 	}
 
 	if r.OrgID == "" {
