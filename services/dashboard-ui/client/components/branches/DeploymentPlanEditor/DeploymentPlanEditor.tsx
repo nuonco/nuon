@@ -13,7 +13,7 @@ import type { TRunbook } from '@/lib/ctl-api/apps/runbooks/get-runbooks'
 import type { TInstall, TAppBranchConfig } from '@/types'
 import { GroupEditor } from './GroupEditor'
 import { InstallRow } from './InstallRow'
-import { newGroup } from './lib'
+import { duplicateSelectorGroupIds, newGroup } from './lib'
 import type { IInstallGroup } from './types'
 
 interface IDeploymentPlanEditor extends Omit<IModal, 'onSubmit'> {
@@ -70,7 +70,7 @@ export const DeploymentPlanEditor = ({
         name: g.name || `Group ${g.order + 1}`,
         label_selector:
           g.selection_mode === 'labels' ? g.label_selector : undefined,
-        default: g.selection_mode === 'default',
+        default: g.is_default,
         max_parallel: g.max_parallel,
       })),
     [groups]
@@ -99,9 +99,16 @@ export const DeploymentPlanEditor = ({
     })
     return duplicates
   }, [groups])
+  const duplicateSelectorIds = useMemo(
+    () => duplicateSelectorGroupIds(groups),
+    [groups]
+  )
 
   const groupContentError = (g: IInstallGroup): string | undefined => {
-    if (g.selection_mode === 'default') return undefined
+    if (g.selection_mode !== 'labels') return undefined
+    if (duplicateSelectorIds.has(g.id)) {
+      return 'This label selector matches another group.'
+    }
     if (
       !g.label_selector?.match_labels ||
       Object.keys(g.label_selector.match_labels).length === 0
@@ -110,11 +117,13 @@ export const DeploymentPlanEditor = ({
     }
     return undefined
   }
+  const defaultGroupCount = groups.filter((group) => group.is_default).length
 
   const hasErrors =
     groups.some((g) => !g.name.trim() || !!groupContentError(g)) ||
     duplicateGroupNames.size > 0 ||
-    groups.filter((g) => g.selection_mode === 'default').length > 1 ||
+    duplicateSelectorIds.size > 0 ||
+    defaultGroupCount !== 1 ||
     overlappingInstalls.length > 0
   const canSave = !isSaving && !loadingInstalls && !hasErrors
   const isDisabled = isSaving || loadingInstalls
@@ -123,9 +132,12 @@ export const DeploymentPlanEditor = ({
     if (canSave || isSaving || loadingInstalls) return undefined
     if (overlappingInstalls.length > 0)
       return 'Each install must match exactly one install group.'
-    if (groups.filter((g) => g.selection_mode === 'default').length > 1)
-      return 'Only one default group is allowed.'
+    if (defaultGroupCount === 0)
+      return 'Every deployment plan needs one default group.'
+    if (defaultGroupCount > 1) return 'Only one default group is allowed.'
     if (duplicateGroupNames.size > 0) return 'Every group needs a unique name.'
+    if (duplicateSelectorIds.size > 0)
+      return 'Every labels group needs a unique label selector.'
     const needsName = groups.some((g) => !g.name.trim())
     const needsLabels = groups.some((g) => !!groupContentError(g))
     if (needsName && needsLabels)
@@ -137,12 +149,16 @@ export const DeploymentPlanEditor = ({
 
   const updateGroup = (id: string, updates: Partial<IInstallGroup>) => {
     setGroups((curr) =>
-      curr.map((g) => (g.id === id ? { ...g, ...updates } : g))
+      curr.map((g) => {
+        if (g.id === id) return { ...g, ...updates }
+        if (updates.is_default === true) return { ...g, is_default: false }
+        return g
+      })
     )
   }
 
   const addGroup = () => {
-    const group = newGroup(groups.length, 'labels')
+    const group = newGroup(groups.length, 'pinned', defaultGroupCount === 0)
     setGroups((curr) => [...curr, group])
     setNewGroupId(group.id)
   }
@@ -214,8 +230,7 @@ export const DeploymentPlanEditor = ({
       ) : (
         <div className="flex flex-col gap-6">
           <Text variant="subtext" theme="neutral">
-            Groups deploy top to bottom. Installs in a group deploy together, up
-            to its max parallel. Any install left unassigned is skipped.
+            Define the stages that installs will be updated in for this branch.
           </Text>
 
           {overlappingInstalls.length > 0 && (
@@ -269,6 +284,11 @@ export const DeploymentPlanEditor = ({
                       disabled={isDisabled}
                       nameError={nameError}
                       contentError={contentError}
+                      deleteDisabledReason={
+                        group.is_default && defaultGroupCount === 1
+                          ? 'Cannot delete — every deployment plan needs one default group'
+                          : undefined
+                      }
                       onUpdate={(updates) => updateGroup(group.id, updates)}
                       onMoveUp={() => moveGroup(group.id, -1)}
                       onMoveDown={() => moveGroup(group.id, 1)}

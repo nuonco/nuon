@@ -12,6 +12,7 @@ import { Input } from '@/components/common/form/Input'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import type { TInstall } from '@/types'
 import { cn } from '@/utils/classnames'
+import { matchesSelector } from '@/components/match/matches'
 import { parseLabelsQuery } from '@/components/match/parse'
 import { InstallRow } from './InstallRow'
 import type {
@@ -31,6 +32,7 @@ interface IGroupEditor {
   autoFocusName?: boolean
   nameError?: string
   contentError?: string
+  deleteDisabledReason?: string
   onUpdate: (updates: Partial<IInstallGroup>) => void
   onMoveUp: () => void
   onMoveDown: () => void
@@ -48,6 +50,7 @@ export const GroupEditor = ({
   autoFocusName,
   nameError,
   contentError,
+  deleteDisabledReason,
   onUpdate,
   onMoveUp,
   onMoveDown,
@@ -63,7 +66,7 @@ export const GroupEditor = ({
 
   return (
     <Card className="!p-0 !gap-0 overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-cool-grey-50 dark:bg-dark-grey-800">
+      <div className="flex items-center gap-2 px-5 py-3.5 bg-cool-grey-50 dark:bg-dark-grey-800">
         <div className="flex-1 min-w-0">
           <Input
             ref={nameRef}
@@ -74,7 +77,6 @@ export const GroupEditor = ({
             onChange={(e) => onUpdate({ name: e.target.value })}
             placeholder={`Group ${index + 1}`}
             disabled={disabled}
-            size="sm"
             className="!font-bold"
             error={!!nameError}
             errorMessage={nameError}
@@ -85,7 +87,7 @@ export const GroupEditor = ({
           <ToggleButton<InstallSelectionMode>
             options={[
               { value: 'labels', label: 'Labels' },
-              { value: 'default', label: 'Default' },
+              { value: 'pinned', label: 'Pinned only' },
             ]}
             value={group.selection_mode}
             onChange={(mode) => onUpdate({ selection_mode: mode })}
@@ -116,7 +118,17 @@ export const GroupEditor = ({
                 <Icon variant="ArrowDownIcon" />
               </Button>
               <hr />
-              <Button isMenuButton variant="danger" onClick={onDelete}>
+              <Button
+                isMenuButton
+                variant="danger"
+                onClick={onDelete}
+                disabled={!!deleteDisabledReason}
+                tooltipProps={
+                  deleteDisabledReason
+                    ? { tipContent: deleteDisabledReason }
+                    : undefined
+                }
+              >
                 Delete group
                 <Icon variant="TrashIcon" />
               </Button>
@@ -125,10 +137,8 @@ export const GroupEditor = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 p-4">
-        {group.selection_mode === 'default' ? (
-          <DefaultGroupSummary installCount={resolvedInstalls.length} />
-        ) : (
+      <div className="flex flex-col gap-4 p-5">
+        {group.selection_mode === 'labels' ? (
           <LabelSelectorEditor
             groupId={group.id}
             labelSelector={group.label_selector}
@@ -138,6 +148,10 @@ export const GroupEditor = ({
             disabled={disabled}
             onUpdate={(ls) => onUpdate({ label_selector: ls })}
           />
+        ) : group.is_default ? (
+          <DefaultGroupSummary installCount={resolvedInstalls.length} />
+        ) : (
+          <PinnedGroupSummary installCount={resolvedInstalls.length} />
         )}
 
         {group.selection_mode === 'labels' && contentError && (
@@ -146,18 +160,37 @@ export const GroupEditor = ({
           </Text>
         )}
 
-        <div className="border-t border-cool-grey-200 dark:border-dark-grey-700 pt-2">
+        {group.selection_mode === 'labels' && group.is_default && (
+          <DefaultGroupSummary installCount={resolvedInstalls.length} />
+        )}
+
+        <div className="border-t pt-3">
           <CheckboxInput
-            id={`group-auto-approve-${group.id}`}
-            checked={group.auto_approve_on_policies_passing}
+            id={`group-default-${group.id}`}
+            checked={group.is_default}
             disabled={disabled}
-            onChange={(e) =>
-              onUpdate({ auto_approve_on_policies_passing: e.target.checked })
-            }
+            onChange={(e) => onUpdate({ is_default: e.target.checked })}
             labelProps={{
-              labelText: 'Auto-approve when policies pass',
-              className: '!p-1 !gap-1.5',
-              labelTextProps: { variant: 'subtext' },
+              labelText: (
+                <span className="flex flex-col gap-1">
+                  <Text
+                    variant="subtext"
+                    weight="strong"
+                    className="!leading-none"
+                  >
+                    Default group
+                  </Text>
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="!leading-none"
+                  >
+                    Installs that match no other group deploy here.
+                  </Text>
+                </span>
+              ),
+              className: '!p-1 !gap-1.5 items-start',
+              labelTextProps: { as: 'div' },
             }}
           />
         </div>
@@ -167,15 +200,22 @@ export const GroupEditor = ({
 }
 
 const DefaultGroupSummary = ({ installCount }: { installCount: number }) => (
+  <Text variant="subtext" theme="neutral">
+    {installCount === 0
+      ? 'No installs yet — installs join this group as they are created.'
+      : `${installCount} install${installCount === 1 ? '' : 's'} in this group today.`}
+  </Text>
+)
+
+const PinnedGroupSummary = ({ installCount }: { installCount: number }) => (
   <div className="flex flex-col gap-1">
     <Text variant="subtext" theme="neutral">
-      Every install on this branch that no other group matches is included at
-      deploy time.
+      Only installs manually pinned to this group are included.
     </Text>
     <Text variant="subtext" theme="neutral">
       {installCount === 0
-        ? 'No installs yet — installs join this group as they are created.'
-        : `${installCount} install${installCount === 1 ? '' : 's'} match today.`}
+        ? 'No installs are pinned to this group.'
+        : `${installCount} install${installCount === 1 ? '' : 's'} pinned.`}
     </Text>
   </div>
 )
@@ -218,7 +258,11 @@ const LabelSelectorEditor = ({
     return result
   }, [availableInstalls])
 
-  const matchedInstalls = hasSelector ? resolvedInstalls : []
+  const matchedInstalls = hasSelector
+    ? resolvedInstalls.filter((install) =>
+        matchesSelector(install.labels, labelSelector)
+      )
+    : []
 
   const commitDraft = () => {
     const parsed = parseLabelsQuery(draft)
@@ -269,7 +313,6 @@ const LabelSelectorEditor = ({
       <Input
         id={`label-input-${groupId}`}
         type="text"
-        size="sm"
         placeholder="env=prod — press Enter to add"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}

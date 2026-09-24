@@ -60,12 +60,11 @@ export const WithBranches = () => (
   </div>
 )
 
-export const AddedToLabelGroup = () => (
+export const SelectExplicitGroup = () => (
   <div className="max-w-xl p-4">
     <BranchConnectionStep
       branches={mockBranches}
       installId="inst-new"
-      installLabels={{ env: 'production' }}
       orgId="org123"
       appId="app123"
       onDone={() => alert('done')}

@@ -51,5 +51,5 @@ func (h *Helpers) ApplyAppDefaultLabels(ctx context.Context, installID string) e
 		return h.RenderInstallLabels(ctx, installID)
 	}
 
-	return nil
+	return h.appsHelpers.ReconcileInstallAppBranchGroup(ctx, installID)
 }

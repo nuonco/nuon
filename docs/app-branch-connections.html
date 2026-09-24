@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How app branch connections work</title>
+    <style>
+      :root {
+        --bg: #fbfbfd;
+        --card: #ffffff;
+        --border: #d9dde3;
+        --border-strong: #b6bdc7;
+        --fg: #16191d;
+        --muted: #5c6672;
+        --faint: #8b95a1;
+        --accent: #2f5bd7;
+        --ok: #0f7b3d;
+        --ok-bg: #e7f6ec;
+        --warn: #8a5200;
+        --warn-bg: #fdf1dd;
+        --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f1216;
+          --card: #171b21;
+          --border: #2b323b;
+          --border-strong: #3d4653;
+          --fg: #e8ecf1;
+          --muted: #a2adba;
+          --faint: #77828f;
+          --accent: #87a6ff;
+          --ok: #5fd48b;
+          --ok-bg: #14301f;
+          --warn: #f0c274;
+          --warn-bg: #33260f;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 48px 32px 96px;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      main {
+        max-width: 1160px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        font-size: 28px;
+        letter-spacing: -0.02em;
+        margin: 0 0 8px;
+      }
+
+      h2 {
+        font-size: 18px;
+        letter-spacing: -0.01em;
+        margin: 56px 0 6px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .lede {
+        color: var(--muted);
+        font-size: 15px;
+        margin: 0 0 4px;
+        max-width: 80ch;
+      }
+
+      .section-note {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 12px 0 22px;
+        max-width: 85ch;
+      }
+
+      code {
+        font-family: var(--mono);
+        font-size: 0.9em;
+      }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 22px 0 0;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 5px 12px;
+        background: var(--card);
+      }
+
+      .pill strong {
+        color: var(--fg);
+        font-weight: 600;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 20px 20px;
+      }
+
+      .diagram-wrap {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        overflow-x: auto;
+      }
+
+      svg {
+        display: block;
+        width: 100%;
+        min-width: 980px;
+        height: auto;
+      }
+
+      .box {
+        fill: var(--card);
+        stroke: var(--border-strong);
+        stroke-width: 1.2;
+      }
+
+      .box-head {
+        fill: color-mix(in srgb, var(--border) 38%, transparent);
+        stroke: none;
+      }
+
+      .t-title {
+        fill: var(--fg);
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .t-field {
+        fill: var(--muted);
+        font-family: var(--mono);
+        font-size: 11.5px;
+      }
+
+      .t-note {
+        fill: var(--faint);
+        font-family: -apple-system, sans-serif;
+        font-size: 10.5px;
+      }
+
+      .t-rel {
+        fill: var(--accent);
+        font-family: -apple-system, sans-serif;
+        font-size: 11px;
+      }
+
+      .edge {
+        fill: none;
+        stroke: var(--accent);
+        stroke-width: 1.4;
+      }
+
+      .flow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 10px;
+        margin-top: 4px;
+      }
+
+      .step {
+        flex: 1 1 200px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+      }
+
+      .step .ord {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--faint);
+      }
+
+      .step .what {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        color: var(--fg);
+        margin: 5px 0 6px;
+      }
+
+      .step .desc {
+        font-size: 12.5px;
+        color: var(--muted);
+        margin: 0;
+      }
+
+      .arrow {
+        align-self: center;
+        color: var(--faint);
+        font-size: 17px;
+        flex: none;
+      }
+
+      .callout {
+        margin-top: 14px;
+        border-left: 3px solid var(--accent);
+        background: color-mix(in srgb, var(--accent) 8%, var(--card));
+        border-radius: 0 8px 8px 0;
+        padding: 11px 16px;
+        font-size: 13px;
+        color: var(--fg);
+      }
+
+      .callout.warn {
+        border-left-color: var(--warn);
+        background: var(--warn-bg);
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
+      }
+
+      .grid-2 h3 {
+        margin: 0 0 4px;
+        font-size: 13.5px;
+      }
+
+      .grid-2 p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .run {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: stretch;
+      }
+
+      .run-step {
+        flex: 1 1 90px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 12px 14px;
+        min-width: 108px;
+      }
+
+      .run-step .n {
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--faint);
+      }
+
+      .run-step .t {
+        font-size: 13px;
+        margin-top: 4px;
+        color: var(--fg);
+      }
+
+      .run-step.group {
+        border-color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 7%, var(--card));
+      }
+
+      footer {
+        margin-top: 56px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+        font-size: 12.5px;
+        color: var(--faint);
+      }
+
+      footer code {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>How app branch connections work</h1>
+      <p class="lede">
+        An install belongs to exactly one app branch, and that branch places it
+        in exactly one deployment group. Ownership is a row in an append-only
+        connection ledger, not a column on the install.
+      </p>
+      <div class="pill-row">
+        <span class="pill"><strong>1 install</strong> → 1 branch</span>
+        <span class="pill"><strong>1 branch</strong> → 1 group per install</span>
+        <span class="pill"><strong>Move</strong> deactivates, then appends</span>
+      </div>
+
+      <h2>The shape</h2>
+      <p class="section-note">
+        <code>Install.app_branch_id</code> and <code>app_branch_group</code>
+        still appear on the API. They are derived from the active connection
+        after the row is loaded. The source of truth is
+        <code>InstallAppBranchConnection</code>.
+      </p>
+
+      <div class="diagram-wrap">
+        <svg
+          viewBox="0 0 1120 560"
+          role="img"
+          aria-label="An app owns branches. A branch config declares ordered groups. An install connects through an active connection row that names the branch and group."
+        >
+          <defs>
+            <marker
+              id="arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="7"
+              markerHeight="7"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)" />
+            </marker>
+          </defs>
+
+          <rect class="box" x="24" y="24" width="240" height="86" rx="9" />
+          <path
+            class="box-head"
+            d="M24 33a9 9 0 0 1 9-9h222a9 9 0 0 1 9 9v25H24z"
+          />
+          <line
+            x1="24"
+            y1="58"
+            x2="264"
+            y2="58"
+            stroke="var(--border-strong)"
+            stroke-width="1.2"
+          />
+          <text class="t-title" x="40" y="50">App</text>
+          <text class="t-field" x="40" y="82">acme-platform</text>
+          <text class="t-note" x="40" y="98">owns many branches</text>
+
+          <rect class="box" x="360" y="24" width="280" height="108" rx="9" />
+          <path
+            class="box-head"
+            d="M360 33a9 9 0 0 1 9-9h262a9 9 0 0 1 9 9v25H360z"
+          />
+          <line
+            x1="360"
+            y1="58"
+            x2="640"
+            y2="58"
+            stroke="var(--border-strong)"
+            stroke-width="1.2"
+          />
+          <text class="t-title" x="376" y="50">AppBranch</text>
+          <text class="t-field" x="376" y="82">name: main</text>
+          <text class="t-note" x="376" y="100">one git branch per app branch</text>
+          <text class="t-note" x="376" y="116">group names are branch-scoped</text>
+
+          <rect class="box" x="736" y="24" width="360" height="108" rx="9" />
+          <path
+            class="box-head"
+            d="M736 33a9 9 0 0 1 9-9h342a9 9 0 0 1 9 9v25H736z"
+          />
+          <line
+            x1="736"
+            y1="58"
+            x2="1096"
+            y2="58"
+            stroke="var(--border-strong)"
+            stroke-width="1.2"
+          />
+          <text class="t-title" x="752" y="50">AppBranchConfig</text>
+          <text class="t-field" x="752" y="82">install_groups[]</text>
+          <text class="t-note" x="752" y="100">latest config is the live plan</text>
+          <text class="t-note" x="752" y="116">order is the deploy sequence</text>
+
+          <rect class="box" x="736" y="176" width="168" height="128" rx="9" />
+          <path
+            class="box-head"
+            d="M736 185a9 9 0 0 1 9-9h150a9 9 0 0 1 9 9v25H736z"
+          />
+          <line
+            x1="736"
+            y1="210"
+            x2="904"
+            y2="210"
+            stroke="var(--border-strong)"
+            stroke-width="1.2"
+          />
+          <text class="t-title" x="748" y="202">canary</text>
+          <text class="t-field" x="748" y="234">order: 1</text>
+          <text class="t-field" x="748" y="252">label_selector</text>
+          <text class="t-note" x="748" y="270">tier=canary</text>
+          <text class="t-note" x="748" y="286">not default</text>
+
+          <rect class="box" x="928" y="176" width="168" height="128" rx="9" />
+          <path
+            class="box-head"
+            d="M928 185a9 9 0 0 1 9-9h150a9 9 0 0 1 9 9v25H928z"
+          />
+          <line
+            x1="928"
+            y1="210"
+            x2="1096"
+            y2="210"
+            stroke="var(--border-strong)"
+            stroke-width="1.2"
+          />
+          <text class="t-title" x="940" y="202">rest</text>
+          <text class="t-field" x="940" y="234">order: 2</text>
+          <text class="t-field" x="940" y="252">default: true</text>
+          <text class="t-note" x="940" y="270">no selector</text>
+          <text class="t-note" x="940" y="286">catches the rest</text>
+
+          <rect class="box" x="24" y="196" width="240" height="168" rx="9" />
+          <path
+            class="box-head"
+            d="M24 205a9 9 0 0 1 9-9h222a9 9 0 0 1 9 9v25H24z"
+          />
+          <line
+            x1="24"
+            y1="230"
+            x2="264"
+            y2="230"
+            stroke="var(--border-strong)"
+            stroke-width="1.2"
+          />
+          <text class="t-title" x="40" y="222">Install</text>
+          <text class="t-field" x="40" y="254">acme-prod</text>
+          <text class="t-field" x="40" y="272">labels: tier=canary</text>
+          <text class="t-note" x="40" y="300">app_branch_id (derived)</text>
+          <text class="t-note" x="40" y="316">app_branch_group (derived)</text>
+          <text class="t-note" x="40" y="332">from the active connection</text>
+
+          <rect class="box" x="328" y="188" width="332" height="216" rx="9" />
+          <path
+            class="box-head"
+            d="M328 197a9 9 0 0 1 9-9h314a9 9 0 0 1 9 9v25H328z"
+          />
+          <line
+            x1="328"
+            y1="222"
+            x2="660"
+            y2="222"
+            stroke="var(--border-strong)"
+            stroke-width="1.2"
+          />
+          <text class="t-title" x="344" y="214">InstallAppBranchConnection</text>
+          <text class="t-note" x="344" y="242">append-only ownership ledger</text>
+          <text class="t-field" x="344" y="266">install_id</text>
+          <text class="t-field" x="344" y="284">app_branch_id</text>
+          <text class="t-field" x="344" y="302">app_branch_group: canary</text>
+          <text class="t-field" x="344" y="320">source: labels</text>
+          <text class="t-field" x="344" y="338">active: true</text>
+          <text class="t-note" x="344" y="364">
+            moving deactivates this row
+          </text>
+          <text class="t-note" x="344" y="380">and appends a new one</text>
+
+          <rect class="box" x="328" y="436" width="332" height="92" rx="9" />
+          <path
+            class="box-head"
+            d="M328 445a9 9 0 0 1 9-9h314a9 9 0 0 1 9 9v25H328z"
+          />
+          <line
+            x1="328"
+            y1="470"
+            x2="660"
+            y2="470"
+            stroke="var(--border-strong)"
+            stroke-width="1.2"
+          />
+          <text class="t-title" x="344" y="462">Older connection (inactive)</text>
+          <text class="t-field" x="344" y="492">app_branch_group: rest</text>
+          <text class="t-note" x="344" y="510">history stays; it is not overwritten</text>
+
+          <path class="edge" d="M264 67 H360" marker-end="url(#arrow)" />
+          <text class="t-rel" x="276" y="58">owns</text>
+          <path class="edge" d="M640 78 H736" marker-end="url(#arrow)" />
+          <text class="t-rel" x="652" y="70">latest</text>
+          <path class="edge" d="M820 132 V176" marker-end="url(#arrow)" />
+          <path class="edge" d="M1012 132 V176" marker-end="url(#arrow)" />
+          <text class="t-rel" x="838" y="158">declares</text>
+          <path class="edge" d="M264 280 H328" marker-end="url(#arrow)" />
+          <text class="t-rel" x="270" y="272">has many</text>
+          <path class="edge" d="M500 188 V132" marker-end="url(#arrow)" />
+          <text class="t-rel" x="508" y="164">owned by</text>
+          <path class="edge" d="M660 260 H736" marker-end="url(#arrow)" />
+          <text class="t-rel" x="668" y="252">group</text>
+        </svg>
+      </div>
+
+      <h2>How an install lands in a group</h2>
+      <p class="section-note">
+        Groups describe how to match, they do not list install IDs. Resolution
+        runs whenever the install is created, moved, or has labels changed, and
+        whenever the branch config changes. An install can only belong to one
+        group on a branch.
+      </p>
+      <div class="flow">
+        <div class="step">
+          <div class="ord">First</div>
+          <div class="what">explicit group</div>
+          <p class="desc">
+            If the install names <code>app_branch_group</code>, that group wins.
+            Naming a group that does not exist on the branch is an error.
+            Source recorded as <code>explicit</code>.
+          </p>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="ord">Then</div>
+          <div class="what">label_selector</div>
+          <p class="desc">
+            Match the install&rsquo;s labels against each group. Matching two
+            groups is an error. Source recorded as <code>labels</code>.
+          </p>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="ord">Then</div>
+          <div class="what">default group</div>
+          <p class="desc">
+            The single group flagged <code>default</code> catches every remaining
+            install the branch owns. Source recorded as <code>default</code>.
+          </p>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="ord">Otherwise</div>
+          <div class="what">error</div>
+          <p class="desc">
+            The install does not match any group and the branch has no default.
+            Create, move, and label changes refuse rather than leaving it
+            ungrouped.
+          </p>
+        </div>
+      </div>
+      <div class="callout">
+        Branch config rules: group names are unique; every group is either
+        <code>default</code> or has a <code>label_selector</code>, never both;
+        at most one default per branch. Install config:
+        <code>app_branch_group</code> requires <code>app_branch</code>.
+      </div>
+
+      <h2>What changes a connection</h2>
+      <p class="section-note">
+        Changing branch or group deactivates the current row and appends a new
+        one. There is no way to take an install off a branch without naming
+        another branch.
+      </p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Create</h3>
+          <p>
+            Create with <code>app_branch</code> (and optional
+            <code>app_branch_group</code>). Resolve the group, then write the
+            install and the first connection in one transaction.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Move</h3>
+          <p>
+            <code>PATCH /v1/installs/{id}/app-branch</code> first checks the
+            destination has a completed, non-preview run to deploy, then
+            deactivates the old row, appends a new one, and enqueues an update.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Labels</h3>
+          <p>
+            Adding or removing labels never changes which branch owns the
+            install. It re-resolves the group on that branch. Two matching
+            groups is still an error.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Branch config</h3>
+          <p>
+            Saving a new branch config reconciles every install the branch
+            already owns. Explicit group names stay put if they still exist;
+            label-matched installs can move groups.
+          </p>
+        </div>
+      </div>
+
+      <h2>What a branch run does with those connections</h2>
+      <p class="section-note">
+        A branch run does not pick installs off the app. Each group step starts
+        from the installs the branch owns, then keeps only those that resolve
+        into that group.
+      </p>
+      <div class="run">
+        <div class="run-step">
+          <div class="n">1</div>
+          <div class="t">Fetch commit</div>
+        </div>
+        <div class="run-step">
+          <div class="n">2</div>
+          <div class="t">Fetch / sync config</div>
+        </div>
+        <div class="run-step">
+          <div class="n">3</div>
+          <div class="t">Compute differences</div>
+        </div>
+        <div class="run-step">
+          <div class="n">4</div>
+          <div class="t">Build components</div>
+        </div>
+        <div class="run-step group">
+          <div class="n">5</div>
+          <div class="t">Plan canary</div>
+        </div>
+        <div class="run-step group">
+          <div class="n">6</div>
+          <div class="t">Deploy canary</div>
+        </div>
+        <div class="run-step group">
+          <div class="n">7</div>
+          <div class="t">Plan rest</div>
+        </div>
+        <div class="run-step group">
+          <div class="n">8</div>
+          <div class="t">Deploy rest</div>
+        </div>
+        <div class="run-step">
+          <div class="n">9</div>
+          <div class="t">Post-deploy runbooks</div>
+        </div>
+      </div>
+      <p class="section-note" style="margin-top: 18px">
+        Plan steps wait for approval. Deploy steps create one install config
+        update workflow per install in the group and track them on an
+        <code>InstallGroupRun</code>. Groups run in <code>order</code>, so
+        canary finishes before rest starts.
+      </p>
+      <div class="callout warn">
+        Containment: a group can never reach an install another branch owns,
+        even if its label selector would match. Resolve always starts from
+        <code>BranchInstalls</code>.
+      </div>
+
+      <footer>
+        Conceptual model for demoing app branch connections. Sources:
+        <code>services/ctl-api/internal/app/install_app_branch_connection.go</code>,
+        <code>apps/helpers/install_branch_ownership.go</code>,
+        <code>installs/helpers/create_install.go</code>,
+        <code>installs/service/move_install_to_app_branch.go</code>,
+        <code>apps/workflows/app_branch_run.go</code>,
+        <code>pkg/config/app_branch_config.go</code>.
+      </footer>
+    </main>
+  </body>
+</html>

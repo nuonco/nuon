@@ -5,6 +5,8 @@ import (
 	"regexp"
 
 	"github.com/invopop/jsonschema"
+
+	"github.com/nuonco/nuon/pkg/labels"
 )
 
 type AppBranchInstallGroupConfig struct {
@@ -141,6 +143,7 @@ func (c *AppBranchConfig) Validate() error {
 
 	defaultGroups := 0
 	groupNames := make(map[string]struct{}, len(c.InstallGroups))
+	selectors := make(map[string]string, len(c.InstallGroups))
 	for _, g := range c.InstallGroups {
 		if _, ok := groupNames[g.Name]; ok {
 			return ErrConfig{
@@ -148,23 +151,28 @@ func (c *AppBranchConfig) Validate() error {
 			}
 		}
 		groupNames[g.Name] = struct{}{}
+		if key := labels.CanonicalMap(g.LabelSelector); key != "" {
+			if existing, ok := selectors[key]; ok {
+				return ErrConfig{
+					Description: fmt.Sprintf("branch %q: install groups %q and %q have the same label_selector", c.Name, existing, g.Name),
+				}
+			}
+			selectors[key] = g.Name
+		}
 		if g.Default {
 			defaultGroups++
-		}
-		if g.Default && len(g.LabelSelector) > 0 {
-			return ErrConfig{
-				Description: fmt.Sprintf("install group %q: default is mutually exclusive with label_selector", g.Name),
-			}
-		}
-		if !g.Default && len(g.LabelSelector) == 0 {
-			return ErrConfig{
-				Description: fmt.Sprintf("install group %q: either default or label_selector is required", g.Name),
-			}
 		}
 	}
 	if defaultGroups > 1 {
 		return ErrConfig{
 			Description: fmt.Sprintf("branch %q: only one install group can be default", c.Name),
+		}
+	}
+	// Installs that match no selector, and installs pinned to a group that was
+	// deleted, have nowhere to land without a default group.
+	if len(c.InstallGroups) > 0 && defaultGroups == 0 {
+		return ErrConfig{
+			Description: fmt.Sprintf("branch %q: one install group must be default", c.Name),
 		}
 	}
 	if c.Preview != nil {

@@ -69,8 +69,9 @@ type Install struct {
 	AppBranchID generics.NullString `json:"app_branch_id,omitzero" gorm:"-" swaggertype:"string" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   *AppBranch          `json:"app_branch,omitempty" gorm:"-" temporaljson:"app_branch,omitzero,omitempty"`
 
-	AppBranchConnections []InstallAppBranchConnection `json:"app_branch_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_branch_connections,omitzero,omitempty"`
-	AppBranchGroup       string                       `json:"app_branch_group,omitzero" gorm:"-" temporaljson:"app_branch_group,omitzero,omitempty"`
+	AppBranchConnections           []InstallAppBranchConnection          `json:"app_branch_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_branch_connections,omitzero,omitempty"`
+	AppBranchGroup                 string                                `json:"app_branch_group,omitzero" gorm:"-" temporaljson:"app_branch_group,omitzero,omitempty"`
+	AppBranchGroupAssignmentSource InstallAppBranchGroupAssignmentSource `json:"app_branch_group_assignment_source,omitzero" gorm:"-" temporaljson:"app_branch_group_assignment_source,omitzero,omitempty"`
 
 	AppSandboxConfigID string           `json:"-" swaggerignore:"true" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
 	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config,omitzero" temporaljson:"app_sandbox_config,omitzero,omitempty"`
@@ -273,6 +274,7 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 		i.AppBranchID = generics.NewNullString(activeConnection.AppBranchID)
 		i.AppBranch = &activeConnection.AppBranch
 		i.AppBranchGroup = activeConnection.AppBranchGroup
+		i.AppBranchGroupAssignmentSource = activeConnection.AppBranchGroupAssignmentSource
 	}
 
 	// get the runner status

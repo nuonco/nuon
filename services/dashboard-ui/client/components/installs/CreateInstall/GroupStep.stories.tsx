@@ -54,16 +54,23 @@ const labelOnlyConfig: TAppBranchConfig = {
       name: 'US',
       label_selector: { match_labels: { region: 'us-east-1' } },
     },
+    {
+      id: 'g-default',
+      name: 'Other installs',
+      default: true,
+    },
   ],
 } as unknown as TAppBranchConfig
 
 export const Default = () => {
-  const [selected, setSelected] = useState<TGroupStepSelection>(null)
+  const [selected, setSelected] = useState<TGroupStepSelection>({
+    mode: 'none',
+    group: null,
+  })
   return (
     <div className="p-6 max-w-lg">
       <GroupStep
         config={mixedConfig}
-        installLabels={{}}
         selected={selected}
         onSelect={setSelected}
       />
@@ -71,13 +78,15 @@ export const Default = () => {
   )
 }
 
-export const WithConflict = () => {
-  const [selected, setSelected] = useState<TGroupStepSelection>(null)
+export const LabelGroups = () => {
+  const [selected, setSelected] = useState<TGroupStepSelection>({
+    mode: 'none',
+    group: null,
+  })
   return (
     <div className="p-6 max-w-lg">
       <GroupStep
         config={labelOnlyConfig}
-        installLabels={{ region: 'ap-southeast-1' }}
         selected={selected}
         onSelect={setSelected}
       />
@@ -85,13 +94,15 @@ export const WithConflict = () => {
   )
 }
 
-export const WithMatchingLabels = () => {
-  const [selected, setSelected] = useState<TGroupStepSelection>(null)
+export const LabelGroupSelected = () => {
+  const [selected, setSelected] = useState<TGroupStepSelection>({
+    mode: 'labels',
+    group: labelOnlyConfig.install_groups![0],
+  })
   return (
     <div className="p-6 max-w-lg">
       <GroupStep
         config={labelOnlyConfig}
-        installLabels={{ region: 'eu-west-1' }}
         selected={selected}
         onSelect={setSelected}
       />
@@ -103,14 +114,13 @@ export const EmptyConfig = () => (
   <div className="p-6 max-w-lg">
     <GroupStep
       config={emptyConfig}
-      installLabels={{}}
-      selected={null}
+      selected={{ mode: 'none', group: null }}
       onSelect={noop}
     />
   </div>
 )
 
-export const NoLabelGroups = () => {
+export const DefaultGroup = () => {
   const defaultOnlyConfig: TAppBranchConfig = {
     id: 'cfg-no-labels',
     install_groups: [{ id: 'g-default', name: 'Everyone', default: true }],
@@ -120,9 +130,35 @@ export const NoLabelGroups = () => {
     <div className="p-6 max-w-lg">
       <GroupStep
         config={defaultOnlyConfig}
-        installLabels={{}}
-        selected={null}
+        selected={{
+          mode: 'default',
+          group: defaultOnlyConfig.install_groups![0],
+        }}
         onSelect={noop}
+      />
+    </div>
+  )
+}
+
+export const PinnedOnlyGroup = () => {
+  const pinnedConfig: TAppBranchConfig = {
+    id: 'cfg-pinned',
+    install_groups: [
+      { id: 'g-pinned', name: 'Canary' },
+      { id: 'g-default', name: 'Other installs', default: true },
+    ],
+  } as unknown as TAppBranchConfig
+  const [selected, setSelected] = useState<TGroupStepSelection>({
+    mode: 'none',
+    group: pinnedConfig.install_groups![0],
+  })
+
+  return (
+    <div className="p-6 max-w-lg">
+      <GroupStep
+        config={pinnedConfig}
+        selected={selected}
+        onSelect={setSelected}
       />
     </div>
   )

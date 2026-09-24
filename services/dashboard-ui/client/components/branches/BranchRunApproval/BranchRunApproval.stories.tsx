@@ -23,8 +23,18 @@ export const Default = () => (
 export const MultipleGroups = () => (
   <BranchRunApproval
     items={[
-      { key: 'step-1', groupName: 'uat', onReview: () => {}, actions: mockActions },
-      { key: 'step-2', groupName: 'production', onReview: () => {}, actions: mockActions },
+      {
+        key: 'step-1',
+        groupName: 'uat',
+        onReview: () => {},
+        actions: mockActions,
+      },
+      {
+        key: 'step-2',
+        groupName: 'production',
+        onReview: () => {},
+        actions: mockActions,
+      },
     ]}
   />
 )

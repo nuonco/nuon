@@ -4,6 +4,7 @@ import type { TInstall } from '@/types'
 export type TMoveInstallAppBranchBody = {
   app_branch_id: string
   app_branch_group?: string
+  labels?: Record<string, string>
 }
 
 export async function moveInstallAppBranch({

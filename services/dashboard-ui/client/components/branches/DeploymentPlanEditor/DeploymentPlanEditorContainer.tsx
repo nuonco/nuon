@@ -22,12 +22,14 @@ import type { IInstallGroup } from './types'
 
 const toEditorGroups = (config?: TAppBranchConfig): IInstallGroup[] =>
   config?.install_groups?.map((g, idx) => {
-    const isDefault = !!g.default
+    const hasLabels =
+      Object.keys(g.label_selector?.match_labels ?? {}).length > 0
     return {
       id: g.id || `group-${idx}`,
       name: g.name || '',
       label_selector: g.label_selector || null,
-      selection_mode: isDefault ? ('default' as const) : ('labels' as const),
+      selection_mode: hasLabels ? ('labels' as const) : ('pinned' as const),
+      is_default: !!g.default,
       order: g.order ?? idx,
       max_parallel: g.max_parallel || 1,
       auto_approve_on_policies_passing: !!g.auto_approve_on_policies_passing,
@@ -94,14 +96,15 @@ export const DeploymentPlanEditorContainer = ({
     }) => {
       const installGroupsForApi = groups.map((group, index) => {
         const matchLabels = group.label_selector?.match_labels
-        const isDefault = group.selection_mode === 'default'
         const useLabels =
-          !isDefault && !!matchLabels && Object.keys(matchLabels).length > 0
+          group.selection_mode === 'labels' &&
+          !!matchLabels &&
+          Object.keys(matchLabels).length > 0
 
         return {
           name: group.name,
           label_selector: useLabels ? group.label_selector : undefined,
-          default: isDefault || undefined,
+          default: group.is_default || undefined,
           order: index,
           max_parallel: group.max_parallel || 1,
           auto_approve_on_policies_passing:

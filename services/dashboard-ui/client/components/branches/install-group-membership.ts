@@ -37,7 +37,6 @@ export const resolveInstallGroupMembership = (
     }
 
     const matchingGroupIndexes = groups.flatMap((group, index) =>
-      !group.default &&
       Object.keys(group.label_selector?.match_labels ?? {}).length > 0 &&
       matchesSelector(install.labels, group.label_selector)
         ? [index]

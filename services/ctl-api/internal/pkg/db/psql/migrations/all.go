@@ -236,5 +236,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "140-retry-install-app-branch-connections",
 			Fn:   m.Migration140RetryInstallAppBranchConnections,
 		},
+		{
+			Name: "141-backfill-install-app-branch-group-assignment-source",
+			Fn:   m.Migration141BackfillInstallAppBranchGroupAssignmentSource,
+		},
 	}
 }

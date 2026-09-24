@@ -17,12 +17,39 @@ import (
 )
 
 func (h *Helpers) SetInstallAppBranch(ctx context.Context, installID, branchID string) error {
-	return h.SetInstallAppBranchGroup(ctx, installID, branchID, "")
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var install app.Install
+		if err := tx.WithContext(ctx).First(&install, "id = ?", installID).Error; err != nil {
+			return fmt.Errorf("unable to load install: %w", err)
+		}
+		groups, err := LatestConfigInstallGroupsWithDB(ctx, tx, branchID)
+		if err != nil {
+			return err
+		}
+		install.AppBranchGroup = ""
+		install.AppBranchGroupAssignmentSource = ""
+		group, source, err := ResolveInstallGroupAssignment(groups, &install)
+		if err != nil {
+			return err
+		}
+		if group == nil {
+			return NoMatchingInstallGroupError(&install)
+		}
+		return SetInstallAppBranchGroupAssignmentWithDB(ctx, tx, installID, branchID, group.Name, source)
+	})
 }
 
 func (h *Helpers) SetInstallAppBranchGroup(ctx context.Context, installID, branchID, group string) error {
+	source := app.InstallAppBranchGroupAssignmentSource("")
+	if group != "" {
+		source = app.InstallAppBranchGroupAssignmentSourceExplicit
+	}
+	return h.SetInstallAppBranchGroupAssignment(ctx, installID, branchID, group, source)
+}
+
+func (h *Helpers) SetInstallAppBranchGroupAssignment(ctx context.Context, installID, branchID, group string, source app.InstallAppBranchGroupAssignmentSource) error {
 	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return SetInstallAppBranchGroupWithDB(ctx, tx, installID, branchID, group)
+		return SetInstallAppBranchGroupAssignmentWithDB(ctx, tx, installID, branchID, group, source)
 	})
 }
 
@@ -31,12 +58,20 @@ func SetInstallAppBranchWithDB(ctx context.Context, db *gorm.DB, installID, bran
 }
 
 func SetInstallAppBranchGroupWithDB(ctx context.Context, db *gorm.DB, installID, branchID, group string) error {
+	source := app.InstallAppBranchGroupAssignmentSource("")
+	if group != "" {
+		source = app.InstallAppBranchGroupAssignmentSourceExplicit
+	}
+	return SetInstallAppBranchGroupAssignmentWithDB(ctx, db, installID, branchID, group, source)
+}
+
+func SetInstallAppBranchGroupAssignmentWithDB(ctx context.Context, db *gorm.DB, installID, branchID, group string, source app.InstallAppBranchGroupAssignmentSource) error {
 	now := time.Now()
 
 	if err := db.WithContext(ctx).
 		Model(&app.InstallAppBranchConnection{}).
 		Where(app.InstallAppBranchConnection{InstallID: installID, Active: true}).
-		Where("app_branch_id != ? OR COALESCE(app_branch_group, '') != ?", branchID, group).
+		Where("app_branch_id != ? OR COALESCE(app_branch_group, '') != ? OR COALESCE(app_branch_group_assignment_source, '') != ?", branchID, group, source).
 		Updates(map[string]any{
 			"active":         false,
 			"deactivated_at": now,
@@ -46,16 +81,23 @@ func SetInstallAppBranchGroupWithDB(ctx context.Context, db *gorm.DB, installID,
 
 	var existing app.InstallAppBranchConnection
 	err := db.WithContext(ctx).
-		Where("install_id = ? AND app_branch_id = ? AND COALESCE(app_branch_group, '') = ? AND active = ?", installID, branchID, group, true).
+		Where(app.InstallAppBranchConnection{
+			InstallID:                      installID,
+			AppBranchID:                    branchID,
+			AppBranchGroup:                 group,
+			AppBranchGroupAssignmentSource: source,
+			Active:                         true,
+		}).
 		First(&existing).Error
 	switch {
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		if err := db.WithContext(ctx).Create(&app.InstallAppBranchConnection{
-			InstallID:      installID,
-			AppBranchID:    branchID,
-			AppBranchGroup: group,
-			Active:         true,
-			ActivatedAt:    now,
+			InstallID:                      installID,
+			AppBranchID:                    branchID,
+			AppBranchGroup:                 group,
+			AppBranchGroupAssignmentSource: source,
+			Active:                         true,
+			ActivatedAt:                    now,
 		}).Error; err != nil {
 			return fmt.Errorf("unable to create install branch connection: %w", err)
 		}
@@ -85,11 +127,27 @@ func BranchInstallsWithDB(ctx context.Context, db *gorm.DB, branchID string) ([]
 	return installs, nil
 }
 
+func installUsesExplicitGroup(install *app.Install) bool {
+	return install.AppBranchGroupAssignmentSource == app.InstallAppBranchGroupAssignmentSourceExplicit ||
+		(install.AppBranchGroupAssignmentSource == "" && install.AppBranchGroup != "")
+}
+
+func NoMatchingInstallGroupError(install *app.Install) error {
+	name := install.Name
+	if name == "" {
+		name = install.ID
+	}
+	return stderr.ErrUser{
+		Err:         fmt.Errorf("install %s does not match an app branch group", install.ID),
+		Description: fmt.Sprintf("Install %q does not match an install group and the branch has no default group.", name),
+	}
+}
+
 func InstallMatchesGroup(group *app.AppBranchInstallGroup, install *app.Install) bool {
 	if group == nil {
 		return false
 	}
-	if install.AppBranchGroup != "" {
+	if installUsesExplicitGroup(install) {
 		return group.Name == install.AppBranchGroup
 	}
 	if group.LabelSelector != nil && len(group.LabelSelector.MatchLabels) > 0 {
@@ -109,13 +167,18 @@ func InstallGroupsMatching(groups []app.AppBranchInstallGroup, install *app.Inst
 }
 
 func ResolveInstallGroup(groups []app.AppBranchInstallGroup, install *app.Install) (*app.AppBranchInstallGroup, error) {
-	if install.AppBranchGroup != "" {
+	group, _, err := ResolveInstallGroupAssignment(groups, install)
+	return group, err
+}
+
+func ResolveInstallGroupAssignment(groups []app.AppBranchInstallGroup, install *app.Install) (*app.AppBranchInstallGroup, app.InstallAppBranchGroupAssignmentSource, error) {
+	if installUsesExplicitGroup(install) {
 		for i := range groups {
 			if groups[i].Name == install.AppBranchGroup {
-				return &groups[i], nil
+				return &groups[i], app.InstallAppBranchGroupAssignmentSourceExplicit, nil
 			}
 		}
-		return nil, stderr.ErrUser{
+		return nil, "", stderr.ErrUser{
 			Err:         fmt.Errorf("install %s selects unknown app branch group %s", install.ID, install.AppBranchGroup),
 			Description: fmt.Sprintf("The selected app branch group %q does not exist.", install.AppBranchGroup),
 		}
@@ -128,7 +191,7 @@ func ResolveInstallGroup(groups []app.AppBranchInstallGroup, install *app.Instal
 		if name == "" {
 			name = install.ID
 		}
-		return nil, stderr.ErrUser{
+		return nil, "", stderr.ErrUser{
 			Err: fmt.Errorf("install %s matches install groups %s", install.ID, strings.Join(matched, ", ")),
 			Description: fmt.Sprintf(
 				"Install %q matches more than one install group (%s). An install can only belong to one install group on a branch.",
@@ -139,16 +202,69 @@ func ResolveInstallGroup(groups []app.AppBranchInstallGroup, install *app.Instal
 	if len(matched) == 1 {
 		for i := range groups {
 			if groups[i].Name == matched[0] {
-				return &groups[i], nil
+				return &groups[i], app.InstallAppBranchGroupAssignmentSourceLabels, nil
 			}
 		}
 	}
 	for i := range groups {
 		if groups[i].Default {
-			return &groups[i], nil
+			return &groups[i], app.InstallAppBranchGroupAssignmentSourceDefault, nil
 		}
 	}
-	return nil, nil
+	return nil, "", nil
+}
+
+func ReconcileInstallAppBranchGroupWithDB(ctx context.Context, db *gorm.DB, installID string) error {
+	var install app.Install
+	if err := db.WithContext(ctx).First(&install, "id = ?", installID).Error; err != nil {
+		return fmt.Errorf("unable to load install: %w", err)
+	}
+	if !install.AppBranchID.Valid || install.AppBranchID.String == "" || installUsesExplicitGroup(&install) {
+		return nil
+	}
+
+	groups, err := LatestConfigInstallGroupsWithDB(ctx, db, install.AppBranchID.String)
+	if err != nil {
+		return err
+	}
+	group, source, err := ResolveInstallGroupAssignment(groups, &install)
+	if err != nil {
+		return err
+	}
+	if group == nil {
+		return NoMatchingInstallGroupError(&install)
+	}
+	return SetInstallAppBranchGroupAssignmentWithDB(ctx, db, install.ID, install.AppBranchID.String, group.Name, source)
+}
+
+func (h *Helpers) ReconcileInstallAppBranchGroup(ctx context.Context, installID string) error {
+	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return ReconcileInstallAppBranchGroupWithDB(ctx, tx, installID)
+	})
+}
+
+func ReconcileBranchInstallAppBranchGroupsWithDB(ctx context.Context, db *gorm.DB, branchID string, groups []app.AppBranchInstallGroup) error {
+	installs, err := BranchInstallsWithDB(ctx, db, branchID)
+	if err != nil {
+		return err
+	}
+	for idx := range installs {
+		install := &installs[idx]
+		if installUsesExplicitGroup(install) {
+			continue
+		}
+		group, source, err := ResolveInstallGroupAssignment(groups, install)
+		if err != nil {
+			return err
+		}
+		if group == nil {
+			continue
+		}
+		if err := SetInstallAppBranchGroupAssignmentWithDB(ctx, db, install.ID, branchID, group.Name, source); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ValidateInstallSingleGroup(groups []app.AppBranchInstallGroup, install *app.Install) error {
@@ -168,6 +284,9 @@ func ValidateBranchInstallsSingleGroupWithDB(ctx context.Context, db *gorm.DB, b
 	}
 
 	for i := range installs {
+		if installUsesExplicitGroup(&installs[i]) {
+			continue
+		}
 		if err := ValidateInstallSingleGroup(groups, &installs[i]); err != nil {
 			return err
 		}

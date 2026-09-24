@@ -290,14 +290,38 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	}
 
 	appBranchChanged := appBranchID != "" && (!existing.AppBranchID.Valid || existing.AppBranchID.String != appBranchID)
-	appBranchGroupChanged := appBranchID != "" && existing.AppBranchGroup != installCfg.AppBranchGroup
+	appBranchGroupChanged := false
 	if appBranchChanged {
 		if _, err := installHelpers.LatestDeployableAppBranchRun(ctx, appBranchID); err != nil {
 			return nil, err
 		}
 	}
-	if appBranchChanged || appBranchGroupChanged {
-		if err := appshelpers.SetInstallAppBranchGroupWithDB(ctx, db, existing.ID, appBranchID, installCfg.AppBranchGroup); err != nil {
+	if appBranchID != "" {
+		var candidate app.Install
+		if err := db.WithContext(ctx).First(&candidate, "id = ?", existing.ID).Error; err != nil {
+			return nil, fmt.Errorf("unable to reload install for app branch assignment: %w", err)
+		}
+		candidate.AppBranchGroup = installCfg.AppBranchGroup
+		candidate.AppBranchGroupAssignmentSource = ""
+		if installCfg.AppBranchGroup != "" {
+			candidate.AppBranchGroupAssignmentSource = app.InstallAppBranchGroupAssignmentSourceExplicit
+		}
+		groups, err := appshelpers.LatestConfigInstallGroupsWithDB(ctx, db, appBranchID)
+		if err != nil {
+			return nil, err
+		}
+		if err := appshelpers.ValidateInstallSingleGroup(groups, &candidate); err != nil {
+			return nil, err
+		}
+		group, source, err := appshelpers.ResolveInstallGroupAssignment(groups, &candidate)
+		if err != nil {
+			return nil, err
+		}
+		if group == nil {
+			return nil, appshelpers.NoMatchingInstallGroupError(&candidate)
+		}
+		appBranchGroupChanged = existing.AppBranchGroup != group.Name || existing.AppBranchGroupAssignmentSource != source
+		if err := appshelpers.SetInstallAppBranchGroupAssignmentWithDB(ctx, db, existing.ID, appBranchID, group.Name, source); err != nil {
 			return nil, fmt.Errorf("unable to update install app branch connection: %w", err)
 		}
 	}

@@ -198,7 +198,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		publicGitVCSConfig = cfg
 	}
 
-	installGroups := buildInstallGroups(branchCfg)
+	installGroups := appshelpers.WithDefaultInstallGroup(buildInstallGroups(branchCfg))
 
 	if err := validateInstallGroups(ctx, db, branchID, branchCfg.Name, installGroups); err != nil {
 		return err

@@ -8,13 +8,12 @@ import { LabelBadge } from '@/components/common/LabelBadge'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { useToast } from '@/hooks/use-toast'
-import { addInstallLabels, moveInstallAppBranch } from '@/lib'
+import { moveInstallAppBranch } from '@/lib'
 import type { TAppBranch, TAppBranchConfig } from '@/types'
 
 interface IBranchConnectionStep {
   branches: TAppBranch[]
   installId: string
-  installLabels?: Record<string, string>
   orgId: string
   appId: string
   onDone: () => void
@@ -24,7 +23,6 @@ interface IBranchConnectionStep {
 const BranchGroupRow = ({
   group,
   installId,
-  installLabels,
   orgId,
   appId,
   branchId,
@@ -32,7 +30,6 @@ const BranchGroupRow = ({
 }: {
   group: NonNullable<TAppBranchConfig['install_groups']>[number]
   installId: string
-  installLabels?: Record<string, string>
   orgId: string
   appId: string
   branchId: string
@@ -42,15 +39,6 @@ const BranchGroupRow = ({
   const queryClient = useQueryClient()
   const isDefault = !!group.default
   const labelEntries = Object.entries(group.label_selector?.match_labels ?? {})
-  const isLabels = !isDefault && labelEntries.length > 0
-  const alreadyAddedByLabels =
-    isLabels && labelEntries.every(([k, v]) => installLabels?.[k] === v)
-  const conflictsWithLabels =
-    isLabels &&
-    !alreadyAddedByLabels &&
-    labelEntries.some(
-      ([k, v]) => installLabels?.[k] !== undefined && installLabels[k] !== v
-    )
   const invalidateBranch = () => {
     queryClient.invalidateQueries({
       queryKey: ['app-branch-with-config', orgId, appId, branchId],
@@ -59,20 +47,17 @@ const BranchGroupRow = ({
   }
 
   const { mutate: joinGroup, isPending: isJoining } = useMutation({
-    mutationFn: async () => {
-      if (isLabels && !alreadyAddedByLabels) {
-        await addInstallLabels({
-          installId,
-          orgId,
-          body: { labels: group.label_selector?.match_labels ?? {} },
-        })
-      }
-      return moveInstallAppBranch({
+    mutationFn: (mode: 'labels' | 'explicit') =>
+      moveInstallAppBranch({
         installId,
         orgId,
-        body: { app_branch_id: branchId },
-      })
-    },
+        body: {
+          app_branch_id: branchId,
+          app_branch_group: mode === 'explicit' ? group.name : undefined,
+          labels:
+            mode === 'labels' ? Object.fromEntries(labelEntries) : undefined,
+        },
+      }),
     onSuccess: () => {
       addToast(
         <Toast heading="Connected to app branch" theme="success">
@@ -107,23 +92,26 @@ const BranchGroupRow = ({
         )}
       </div>
 
-      {isDefault || isLabels ? (
+      <div className="flex shrink-0 items-center gap-2">
+        {labelEntries.length > 0 && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => joinGroup('labels')}
+            disabled={isJoining}
+          >
+            Add labels
+          </Button>
+        )}
         <Button
           variant="secondary"
-          onClick={() => joinGroup()}
-          disabled={isJoining || conflictsWithLabels}
-          tooltipProps={
-            conflictsWithLabels
-              ? {
-                  tipContent:
-                    'Conflicts with labels already applied to this install',
-                }
-              : undefined
-          }
+          size="sm"
+          onClick={() => joinGroup('explicit')}
+          disabled={isJoining}
         >
-          {isJoining ? 'Connecting...' : 'Connect'}
+          {isJoining ? 'Connecting...' : 'Pin group'}
         </Button>
-      ) : null}
+      </div>
     </div>
   )
 }
@@ -131,7 +119,6 @@ const BranchGroupRow = ({
 export const BranchConnectionStep = ({
   branches,
   installId,
-  installLabels,
   orgId,
   appId,
   onDone,
@@ -195,7 +182,6 @@ export const BranchConnectionStep = ({
                       key={group.id ?? idx}
                       group={group}
                       installId={installId}
-                      installLabels={installLabels}
                       orgId={orgId}
                       appId={appId}
                       branchId={branch.id || ''}

@@ -195,7 +195,7 @@ export const EditPreviewConfigButton = ({
 
   return (
     <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
-      Edit preview settings
+      Edit preview defaults
     </Button>
   )
 }

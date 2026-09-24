@@ -23,10 +23,12 @@ import (
 
 // AppBranchRunForInstall describes the app branch run an install should be on.
 type AppBranchRunForInstall struct {
-	AppBranchRunID string
-	AppConfigID    string
-	InstallGroupID string
-	AlreadyCurrent bool
+	AppBranchRunID               string
+	AppConfigID                  string
+	InstallGroupID               string
+	InstallGroupName             string
+	InstallGroupAssignmentSource app.InstallAppBranchGroupAssignmentSource
+	AlreadyCurrent               bool
 }
 
 // AppBranchConfigUpdateInput describes the config update to run for an install.
@@ -100,13 +102,15 @@ func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID
 		return nil, err
 	}
 
-	var groups []app.AppBranchInstallGroup
-	if err := h.db.WithContext(ctx).
-		Where(app.AppBranchInstallGroup{AppBranchConfigID: run.AppBranchConfigID}).
-		Find(&groups).Error; err != nil {
-		return nil, fmt.Errorf("unable to get install groups for app branch run: %w", err)
+	// Membership follows the branch's latest config (what the API and dashboard
+	// expose). Group rows are minted per config version, so a pin to a group
+	// added after the last deployable run would miss if we resolved against
+	// that run's config.
+	groups, err := h.appsHelpers.LatestConfigInstallGroups(ctx, appBranchID)
+	if err != nil {
+		return nil, err
 	}
-	group, err := appshelpers.ResolveInstallGroup(groups, install)
+	group, source, err := appshelpers.ResolveInstallGroupAssignment(groups, install)
 	if err != nil {
 		return nil, err
 	}
@@ -117,16 +121,29 @@ func (h *Helpers) ResolveAppBranchRunForInstall(ctx context.Context, appBranchID
 		}
 	}
 
+	installGroupID := ""
+	var runGroup app.AppBranchInstallGroup
+	err = h.db.WithContext(ctx).
+		Where(app.AppBranchInstallGroup{AppBranchConfigID: run.AppBranchConfigID, Name: group.Name}).
+		First(&runGroup).Error
+	if err == nil {
+		installGroupID = runGroup.ID
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("unable to get install group for app branch run: %w", err)
+	}
+
 	alreadyCurrent, err := h.installOnAppConfig(ctx, install, run.AppConfigID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AppBranchRunForInstall{
-		AppBranchRunID: run.ID,
-		AppConfigID:    run.AppConfigID,
-		InstallGroupID: group.ID,
-		AlreadyCurrent: alreadyCurrent,
+		AppBranchRunID:               run.ID,
+		AppConfigID:                  run.AppConfigID,
+		InstallGroupID:               installGroupID,
+		InstallGroupName:             group.Name,
+		InstallGroupAssignmentSource: source,
+		AlreadyCurrent:               alreadyCurrent,
 	}, nil
 }
 

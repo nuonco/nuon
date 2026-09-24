@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { getAppBranches, getAppBranch, getInstall } from '@/lib'
+import { getAppBranches, getAppBranch } from '@/lib'
 import { BranchConnectionStep } from './BranchConnectionStep'
 import { Text } from '@/components/common/Text'
 
@@ -21,35 +21,39 @@ export const BranchConnectionStepContainer = ({
   const { org } = useOrg()
   const orgId = org?.id ?? ''
 
-  const { data: branchList, isLoading, isSuccess } = useQuery({
+  const {
+    data: branchList,
+    isLoading,
+    isSuccess,
+  } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-branches', orgId, appId],
     queryFn: () => getAppBranches({ appId, orgId: orgId! }),
     enabled: !!orgId && !!appId,
   })
 
-  const branchIds = (branchList?.data ?? []).map((b) => b?.id).filter(Boolean) as string[]
+  const branchIds = (branchList?.data ?? [])
+    .map((b) => b?.id)
+    .filter(Boolean) as string[]
   const hasBranches = branchIds.length > 0
 
   const branchQueries = useQueries({
     queries: hasBranches
       ? branchIds.map((branchId) => ({
           queryKey: ['app-branch-with-config', orgId, appId, branchId],
-          queryFn: () => getAppBranch({ appId, branchId, orgId: orgId!, latestConfig: true }),
+          queryFn: () =>
+            getAppBranch({
+              appId,
+              branchId,
+              orgId: orgId!,
+              latestConfig: true,
+            }),
           enabled: !!orgId && !!appId,
         }))
       : [],
   })
 
-  const branchesWithConfigs = branchQueries
-    .map((q) => q.data)
-    .filter(Boolean)
-
-  const { data: install } = useQuery({
-    queryKey: ['install', orgId, installId],
-    queryFn: () => getInstall({ installId, orgId }),
-    enabled: !!orgId && !!installId,
-  })
+  const branchesWithConfigs = branchQueries.map((q) => q.data).filter(Boolean)
 
   useEffect(() => {
     if (isSuccess && !hasBranches) {
@@ -71,7 +75,6 @@ export const BranchConnectionStepContainer = ({
     <BranchConnectionStep
       branches={branchesWithConfigs as any[]}
       installId={installId}
-      installLabels={install?.labels}
       orgId={orgId}
       appId={appId}
       onDone={onDone}

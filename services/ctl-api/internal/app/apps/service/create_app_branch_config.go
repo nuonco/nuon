@@ -70,6 +70,7 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 	// Validate install groups have unique orders
 	orders := make(map[int]bool)
 	names := make(map[string]bool)
+	selectors := make(map[string]string)
 	defaultGroups := 0
 	for _, group := range c.InstallGroups {
 		if names[group.Name] {
@@ -91,18 +92,6 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 		if group.Default {
 			defaultGroups++
 		}
-		if hasSelector && group.Default {
-			return stderr.ErrUser{
-				Err:         fmt.Errorf("install group %q sets both label_selector and default", group.Name),
-				Description: "install groups must use either label_selector or default",
-			}
-		}
-		if !hasSelector && !group.Default {
-			return stderr.ErrUser{
-				Err:         fmt.Errorf("install group %q has neither label_selector nor default", group.Name),
-				Description: "install groups must specify label_selector or default",
-			}
-		}
 		if hasSelector {
 			if err := group.LabelSelector.Validate(); err != nil {
 				return stderr.ErrUser{
@@ -110,12 +99,26 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 					Description: "label_selector must have non-empty match_labels",
 				}
 			}
+			key := group.LabelSelector.Canonical()
+			if existing, ok := selectors[key]; ok {
+				return stderr.ErrUser{
+					Err:         fmt.Errorf("install groups %q and %q have the same label_selector", existing, group.Name),
+					Description: fmt.Sprintf("install groups %q and %q have the same label selector", existing, group.Name),
+				}
+			}
+			selectors[key] = group.Name
 		}
 	}
 	if defaultGroups > 1 {
 		return stderr.ErrUser{
 			Err:         fmt.Errorf("multiple default install groups"),
 			Description: "only one install group can be default",
+		}
+	}
+	if len(c.InstallGroups) > 0 && defaultGroups == 0 {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("no default install group"),
+			Description: "one install group must be default",
 		}
 	}
 

@@ -30,6 +30,7 @@ const labelGroup: IInstallGroup = {
   name: 'Production',
   label_selector: { match_labels: { tier: 'prod' } },
   selection_mode: 'labels',
+  is_default: false,
   order: 0,
   max_parallel: 1,
   auto_approve_on_policies_passing: false,
@@ -39,14 +40,15 @@ const defaultGroup: IInstallGroup = {
   id: 'group-2',
   name: 'Everything',
   label_selector: null,
-  selection_mode: 'default',
+  selection_mode: 'pinned',
+  is_default: true,
   order: 1,
   max_parallel: 1,
   auto_approve_on_policies_passing: false,
 }
 
 const Wrap = ({ children }: { children: React.ReactNode }) => (
-  <div className="max-w-2xl">{children}</div>
+  <div className="max-w-3xl">{children}</div>
 )
 
 export const LabelSelector = () => (
@@ -109,14 +111,13 @@ export const DefaultSelectionNoInstalls = () => (
   </Wrap>
 )
 
-export const WithNameError = () => (
+export const LabeledDefaultSelection = () => (
   <Wrap>
     <GroupEditor
-      group={{ ...labelGroup, name: '' }}
+      group={{ ...labelGroup, is_default: true }}
       index={0}
       totalGroups={1}
       availableInstalls={installs}
-      nameError="Group name is required"
       onUpdate={noop}
       onMoveUp={noop}
       onMoveDown={noop}
@@ -125,13 +126,14 @@ export const WithNameError = () => (
   </Wrap>
 )
 
-export const AutoApproveEnabled = () => (
+export const WithNameError = () => (
   <Wrap>
     <GroupEditor
-      group={{ ...labelGroup, auto_approve_on_policies_passing: true }}
+      group={{ ...labelGroup, name: '' }}
       index={0}
       totalGroups={1}
       availableInstalls={installs}
+      nameError="Group name is required"
       onUpdate={noop}
       onMoveUp={noop}
       onMoveDown={noop}

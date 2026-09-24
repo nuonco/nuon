@@ -24,7 +24,27 @@ func canonicalizeLocalBranch(ctx context.Context, resolver *branchNameResolver, 
 		normalizePreviewDefaults(out.Preview)
 	}
 	out.Run = normalizeRunConfig(out.Run)
+	out.InstallGroups = withDefaultInstallGroup(out)
 	return out, nil
+}
+
+// withDefaultInstallGroup mirrors the server, which seeds a single default group
+// on any config written without one. Without this a branch that declares no
+// install_groups compares unequal to the group the server stored and every sync
+// reports drift no update can settle. A branch with no repo has no config
+// written at all, so it keeps an empty list.
+func withDefaultInstallGroup(cfg *config.AppBranchConfig) []config.AppBranchInstallGroupConfig {
+	if len(cfg.InstallGroups) > 0 {
+		return cfg.InstallGroups
+	}
+	if cfg.ConnectedRepo == nil && cfg.PublicRepo == nil {
+		return cfg.InstallGroups
+	}
+	return []config.AppBranchInstallGroupConfig{{
+		Name:    defaultInstallGroupName,
+		Order:   0,
+		Default: true,
+	}}
 }
 
 func normalizeRemoteBranch(ctx context.Context, resolver *branchNameResolver, name string, latest *models.AppAppBranchConfig) (*config.AppBranchConfig, error) {
