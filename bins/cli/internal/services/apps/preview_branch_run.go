@@ -34,16 +34,22 @@ func (s *Service) PreviewBranchRun(ctx context.Context, appID, branchID string, 
 		return view.Error(err)
 	}
 
+	opts.InstallID, err = s.resolveInstallID(ctx, opts.InstallID)
+	if err != nil {
+		return view.Error(err)
+	}
+
+	branchID, err = s.resolveBranchID(ctx, appID, branchID)
+	if err != nil {
+		return view.Error(err)
+	}
+
 	if s.cfg.Interactive && !asJSON {
 		return s.previewBranchRunInteractive(ctx, appID, branchID, opts)
 	}
 
 	if branchID == "" {
 		return view.Error(fmt.Errorf("app branch required: use --branch-id or run interactively"))
-	}
-	branchID, err = s.selectBranchID(ctx, appID, branchID)
-	if err != nil {
-		return view.Error(err)
 	}
 
 	configID := opts.ConfigID
@@ -108,13 +114,7 @@ func (s *Service) previewBranchRunInteractive(ctx context.Context, appID, branch
 	}
 
 	branches := make([]previewui.Branch, 0)
-	if branchID != "" {
-		resolved, err := s.resolveAppBranchID(ctx, appID, branchID)
-		if err != nil {
-			return err
-		}
-		branchID = resolved
-	} else {
+	if branchID == "" {
 		appBranches, err := s.api.GetAppBranches(ctx, appID)
 		if err != nil {
 			return fmt.Errorf("unable to list app branches: %w", err)

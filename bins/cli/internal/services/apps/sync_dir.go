@@ -366,18 +366,7 @@ func (s *Service) notifyOrphanedComponents(cmps map[string]string) {
 
 // resolveAppBranchID resolves a branch name or ID to a branch ID.
 func (s *Service) resolveAppBranchID(ctx context.Context, appID, branchNameOrID string) (string, error) {
-	branches, err := s.api.GetAppBranches(ctx, appID)
-	if err != nil {
-		return "", fmt.Errorf("unable to list app branches: %w", err)
-	}
-
-	for _, b := range branches {
-		if b.ID == branchNameOrID || b.Name == branchNameOrID {
-			return b.ID, nil
-		}
-	}
-
-	return "", fmt.Errorf("app branch %q not found", branchNameOrID)
+	return lookup.AppBranchID(ctx, s.api, appID, branchNameOrID)
 }
 
 func (s *Service) selectAppBranch(ctx context.Context, appID string) (string, error) {
