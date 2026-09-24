@@ -15,7 +15,6 @@ import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
 import { Select } from '@/components/common/form/Select'
 import { Toggle } from '@/components/common/form/Toggle'
-import { ToggleButton } from '@/components/common/ToggleButton'
 import {
   OnboardingWizardProvider,
   type IWizardStepComponentProps,
@@ -786,8 +785,9 @@ const IntroScreen = ({ onStart }: { onStart: () => void }) => (
 // --- Step 1: the fork --------------------------------------------------------
 //
 // "Start with your app" does not advance the wizard. It expands the setup in
-// place: connect GitHub, install the CLI, then create the app. The agent/manual
-// either/or is a Clerk-style tab toggle.
+// place: connect GitHub, install the CLI, then create the app. On the Template
+// step the agent path is the whole card; manual setup is a cautioned option
+// below it, beside a way to have Nuon's team write the config.
 //
 // Order, verified against docs/guides/agents: the MCP server is `nuon agents
 // mcp`, a CLI subcommand, so the CLI must be installed and logged in first. The
@@ -795,7 +795,18 @@ const IntroScreen = ({ onStart }: { onStart: () => void }) => (
 // is offered as an optional extra. GitHub is only required for `connected_repo`
 // components (private repos); production onboarding v2 has no GitHub step.
 
-type TSetupMode = 'agent' | 'manual'
+// Where "Contact us" lands. In the product, AuthLayout loads the Pylon chat widget
+// for signed-in users (lib/pylon-chat), so the button opens it with a message
+// started. The playground has no widget, so it falls back to the demo form.
+const DEMO_REQUEST = 'https://nuon.co/demo-request'
+const CONTACT_MESSAGE = 'I would like help writing the app config for my first install.'
+const contactUs = () => {
+  if (typeof window.Pylon === 'function') {
+    window.Pylon('showNewMessage', CONTACT_MESSAGE)
+    return
+  }
+  window.open(DEMO_REQUEST, '_blank', 'noopener,noreferrer')
+}
 
 const DOCS_MCP = 'https://docs.nuon.co/guides/agents/mcp-walkthrough'
 const CLI_SETUP = 'brew install nuonco/tap/nuon\nnuon auth login'
@@ -820,10 +831,12 @@ const CopyTextButton = ({
   text,
   label,
   size = 'md',
+  variant = 'secondary',
 }: {
   text: string
   label: string
   size?: 'lg' | 'md' | 'sm'
+  variant?: 'primary' | 'secondary'
 }) => {
   const [copied, setCopied] = useState(false)
 
@@ -835,7 +848,7 @@ const CopyTextButton = ({
 
   return (
     <Button
-      variant="secondary"
+      variant={variant}
       size={size}
       className="shrink-0"
       onClick={() => {
@@ -854,49 +867,6 @@ const OWN_APP_STEPS: { icon: TIconVariant; title: string }[] = [
   { icon: 'RobotIcon', title: 'Create your app template' },
   { icon: 'CloudIcon', title: 'Create the first install' },
 ]
-
-const AgentSetup = () => (
-  <div className="flex flex-col gap-4">
-    <div className="flex flex-col gap-3">
-      <Text variant="body" weight="strong">
-        Open the directory that holds your app, paste this to your agent
-      </Text>
-      <div className="flex flex-col gap-4 rounded-md border p-4 sm:flex-row sm:items-center">
-        <div className="line-clamp-3 flex-1">
-          <Text as="span" variant="body" family="mono" weight="strong" theme="brand">
-            /goal
-          </Text>
-          <Text as="span" variant="body" family="mono" theme="neutral">
-            {AGENT_PASTE.slice(5)}
-          </Text>
-        </div>
-        <CopyTextButton text={AGENT_PASTE} label="Copy prompt" size="lg" />
-      </div>
-    </div>
-
-    {/* Same shape as the sections above: strong label, bordered body, docs row. */}
-    <div className="flex flex-col gap-3 rounded-md border p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge size="sm" theme="neutral">
-          Optional
-        </Badge>
-        <Text variant="body" weight="strong">
-          Give your agent the Nuon MCP server
-        </Text>
-      </div>
-      <Text variant="body" theme="neutral">
-        Live access to your org while it works: apps, builds, installs, and logs. For example, in
-        Claude Code:
-      </Text>
-      <CodeBlock language="bash" showCopy wrapLongLines className="!pr-14">
-        {MCP_ADD_CLAUDE}
-      </CodeBlock>
-      <Link href={DOCS_MCP} isExternal textVariant="subtext">
-        docs.nuon.co/guides/agents/mcp-walkthrough
-      </Link>
-    </div>
-  </div>
-)
 
 // Manual setup, push-based. The config lives in the repo connected in Set up and the
 // default app branch tracks it, so a push is the sync (docs/guides/app-branches: any
@@ -976,7 +946,7 @@ const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boo
       detected ? 'ring-green-500 dark:ring-green-400' : 'ring-neutral-200 dark:ring-neutral-700'
     )}
   >
-    <div className="flex items-center gap-3">
+    <div className="flex min-w-0 items-center gap-3">
       {detected ? (
         <Icon variant="CheckCircleIcon" size={20} weight="fill" theme="success" />
       ) : skipped ? (
@@ -984,11 +954,11 @@ const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boo
       ) : (
         <Icon variant="Loading" size={20} />
       )}
-      <div className="flex flex-col gap-0.5">
+      <div className="flex min-w-0 flex-col gap-0.5">
         <Text variant="body" weight="strong">
           {detected ? 'Config detected on main' : skipped ? 'Waiting on your first push' : 'Listening for a push'}
         </Text>
-        <Text variant="subtext" theme="neutral" flex>
+        <Text variant="subtext" theme="neutral" flex className="flex-wrap">
           {detected ? (
             <>
               Commit
@@ -1020,11 +990,6 @@ const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boo
     </Badge>
   </div>
 )
-
-const SETUP_MODES: { value: TSetupMode; label: string }[] = [
-  { value: 'agent', label: 'Agent setup' },
-  { value: 'manual', label: 'Manual setup' },
-]
 
 interface IAppFileStub {
   name: string
@@ -1388,11 +1353,120 @@ const OwnAppSetup = ({
 //
 // The app exists and its config is stubbed. This step shows the stubs and the
 // two ways to fill them in.
+// A quiet row that opens in place (the animated grid from ExampleAppDrawer).
+const CollapsibleRow = ({
+  id,
+  icon,
+  summary,
+  badge,
+  children,
+}: {
+  id: string
+  icon: TIconVariant
+  summary: string
+  badge?: string
+  children: ReactNode
+}) => {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="flex flex-col rounded-md border bg-background">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left cursor-pointer hover:bg-cool-grey-500/8"
+      >
+        <span className="flex flex-wrap items-center gap-2">
+          <Icon variant={icon} size={16} theme="neutral" />
+          <Text as="span" variant="body" weight="strong">
+            {summary}
+          </Text>
+          {badge ? (
+            <Badge size="sm" theme="neutral">
+              {badge}
+            </Badge>
+          ) : null}
+        </span>
+        <span className={cn('flex shrink-0 transition-transform duration-300', open && 'rotate-180')} aria-hidden>
+          <Icon variant="CaretDownIcon" size={14} weight="bold" theme="neutral" />
+        </span>
+      </button>
+      <div
+        id={id}
+        className={cn(
+          'grid transition-[grid-template-rows,opacity,visibility] duration-300 ease-out',
+          open ? 'visible grid-rows-[1fr] opacity-100' : 'invisible grid-rows-[0fr] opacity-0'
+        )}
+        aria-hidden={!open}
+      >
+        <div className="overflow-hidden">
+          <div className="flex flex-col gap-3 border-t p-4">{children}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// The agent path is the step. The prompt is the one thing to act on; the files
+// it fills in and the MCP extra sit under it, closed.
+const AgentSetup = ({ appName, cloud }: { appName: string; cloud: TCloud }) => (
+  <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-1.5">
+      <Text variant="base" weight="strong" flex>
+        <Icon variant="RobotIcon" size={20} />
+        Have your agent write the config
+      </Text>
+      <Text variant="body" theme="neutral">
+        Open the directory that holds your app and paste this prompt. Your agent fills in the files Nuon
+        stubbed, validates the config and syncs it to Nuon.
+      </Text>
+    </div>
+    <div className="flex flex-col gap-4 rounded-md border bg-background p-4 sm:flex-row sm:items-center">
+      <div className="line-clamp-3 flex-1">
+        <Text as="span" variant="body" family="mono" weight="strong" theme="brand">
+          /goal
+        </Text>
+        <Text as="span" variant="body" family="mono" theme="neutral">
+          {AGENT_PASTE.slice(5)}
+        </Text>
+      </div>
+      <CopyTextButton text={AGENT_PASTE} label="Copy prompt" size="lg" variant="primary" />
+    </div>
+    <CollapsibleRow
+      id="stubbed-files"
+      icon="FileTextIcon"
+      summary={`The ${APP_FILE_STUBS.length} files your agent fills in`}
+      badge="Stubbed by Nuon"
+    >
+      <Text variant="subtext" theme="neutral">
+        The minimum for a first install: four required files, the branch that tracks your repo, and
+        components/. Inputs, secrets, policies and more are optional.{' '}
+        <Link href={DOCS_CONFIG_FILES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+          Configuration files
+        </Link>
+      </Text>
+      <FileStubRows appName={appName} cloud={cloud} />
+    </CollapsibleRow>
+    <CollapsibleRow id="mcp-server" icon="SparkleIcon" summary="Give your agent the Nuon MCP server" badge="Optional">
+      <Text variant="subtext" theme="neutral">
+        Live access to your org while it works: apps, builds, installs, and logs. For example, in Claude Code:
+      </Text>
+      <CodeBlock language="bash" showCopy wrapLongLines className="!pr-14">
+        {MCP_ADD_CLAUDE}
+      </CodeBlock>
+      <Link href={DOCS_MCP} isExternal textVariant="subtext">
+        docs.nuon.co/guides/agents/mcp-walkthrough
+      </Link>
+    </CollapsibleRow>
+  </div>
+)
+
 const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizardStepComponentProps) => {
   const { choose, pushTick } = useForkChoice()
   const appName = readAppName(sharedData)
   const cloud = readCloud(sharedData)
-  const [mode, setMode] = useState<TSetupMode>('agent')
+  const [showManual, setShowManual] = useState(false)
   // The connected account from Set up, and a repo named after the template.
   const repo = `jane-doe/${appName}`
   const detected = pushTick > 0
@@ -1413,45 +1487,6 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
     onGoBack?.()
   }
 
-  const stubs = (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Text variant="body" weight="strong">
-          Your app template
-        </Text>
-        <Badge size="sm" theme="brand">
-          Stubbed by Nuon
-        </Badge>
-        <Text variant="subtext" theme="neutral">
-          The minimum for a first install: four required files, the branch that tracks your repo, and
-          components/. Inputs, secrets, policies and more are optional.{' '}
-          <Link href={DOCS_CONFIG_FILES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
-            Configuration files
-          </Link>
-        </Text>
-      </div>
-      <FileStubRows appName={appName} cloud={cloud} />
-    </div>
-  )
-
-  const fill = (
-    <div className="flex flex-col gap-3">
-      <Text variant="body" weight="strong">
-        Fill it in
-      </Text>
-      <ToggleButton<TSetupMode>
-        options={SETUP_MODES}
-        value={mode}
-        onChange={setMode}
-        size="lg"
-        className="self-start"
-      />
-      <div className="rounded-md border bg-background p-4">
-        {mode === 'agent' ? <AgentSetup /> : <ManualSetup appName={appName} repo={repo} />}
-      </div>
-    </div>
-  )
-
   return (
     <div className="flex flex-col gap-6">
       <Card className="!gap-5 !p-5 !border-0 !shadow-none bg-primary-50 dark:bg-primary-950/40 ring-1 ring-primary-200 dark:ring-primary-800">
@@ -1461,12 +1496,32 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
             {appName}
           </Badge>
         </Text>
-        <div className="grid gap-5 items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-          {stubs}
-          {fill}
-        </div>
+        <AgentSetup appName={appName} cloud={cloud} />
         <PushListener repo={repo} detected={detected} skipped={skipped} />
       </Card>
+      {/* The out: hand-written config is allowed, with the cost stated, and Nuon's team is one click away. */}
+      <Banner theme="warn">
+        <div className="flex flex-col gap-2">
+          <Text weight="strong">Prefer to write the config by hand?</Text>
+          <Text variant="subtext">
+            Manual setup takes longer and is easier to get wrong. Our team can also write the app config
+            with you.
+          </Text>
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <Button variant="secondary" size="sm" onClick={contactUs}>
+              <Icon variant="ChatCircleIcon" size={14} /> Contact us
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowManual((prev) => !prev)}>
+              {showManual ? 'Hide manual steps' : 'Show manual steps'}
+            </Button>
+          </div>
+          {showManual ? (
+            <div id="manual-setup" className="mt-2 rounded-md border bg-background p-4 text-foreground">
+              <ManualSetup appName={appName} repo={repo} />
+            </div>
+          ) : null}
+        </div>
+      </Banner>
       <ExampleEscapeHatch onExit={exitToExample} />
       {waitingOnPush && confirmSkip ? (
         <Banner theme="warn">
