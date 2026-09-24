@@ -11,14 +11,15 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
+
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/launcher"
 	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestImageActionRunsWithoutAShellAsNonRootAndCollectsOutputs(t *testing.T) {

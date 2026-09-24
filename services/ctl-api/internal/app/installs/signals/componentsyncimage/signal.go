@@ -206,10 +206,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-// execSync copies the deploy's image into the install registry. The
-// choreography lives in imagesync.RunSyncJob so an image-backed action run,
-// which has no workflow step to hang a sync off, applies exactly the same
-// steps in the same order.
 func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) error {
 	return imagesync.RunSyncJob(ctx, imagesync.RunSyncJobRequest{
 		Install:       install,
@@ -220,8 +216,6 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 		OnJobCreated: func(jobID string) {
 			s.runnerJobID = jobID
 		},
-		// Unchanged from when this was inline: these IDs are recorded in the
-		// histories of syncs that are still in flight.
 		PlanWorkflowID: fmt.Sprintf("%s-create-oci-sync-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 		JobWorkflowID:  fmt.Sprintf("%s-execute-job", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})

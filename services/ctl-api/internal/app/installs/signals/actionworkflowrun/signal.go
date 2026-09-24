@@ -301,11 +301,8 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		return errors.Wrap(err, "unable to get log stream")
 	}
 
-	// An image-backed action's image is rendered from install state when the
-	// plan is built, so the image components it depends on have to be current
-	// in the install registry before that happens.
 	if workflow.GetVersion(ctx, actionImageDepSyncVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		if err := s.syncActionImageDeps(ctx, run, ls.ID, metadata); err != nil {
+		if err := s.syncActionImageDeps(ctx, run, ls.ID); err != nil {
 			if preparationCompositeErrorsEnabled {
 				s.recordPreparationCompositeError(ctx, run.ID, err)
 			}
@@ -535,14 +532,8 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 	}
 	awPlan.ImageDigestRef = digestRef
 
-	// Record what the run pulled. A component sync records an artifact against
-	// its deploy; the mirror had no equivalent, so the only trace of the image
-	// an action ran was inside the sync job's outputs.
 	if workflow.GetVersion(ctx, actionImageDepSyncVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		// One attempt only. There is one artifact row per owner, so a retried
-		// run that re-mirrors hits a duplicate key, and the generated wrapper
-		// would otherwise retry that for hours before the run could continue.
-		// This is a record of the pull, not part of it.
+		// One attempt: retried runs that re-mirror hit a unique owner key.
 		if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
 			OwnerID:   run.ID,
 			OwnerType: "install_action_workflow_runs",
@@ -562,8 +553,7 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 
 // resolveMirroredDigestRef reads the digest-pinned image ref the oci-sync job
 // recorded and verifies it actually carries a digest, so execution can only
-// ever run the manifest that was just mirrored. It returns the job's full
-// artifact outputs alongside it so the caller can record what was pulled.
+// ever run the manifest that was just mirrored.
 func resolveMirroredDigestRef(ctx workflow.Context, syncJobID string) (string, state.OCIArtifactOutputs, error) {
 	var out state.OCIArtifactOutputs
 

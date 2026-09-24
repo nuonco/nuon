@@ -476,9 +476,6 @@ func TestGetRoleForAction(t *testing.T) {
 	}
 }
 
-// Concurrent runs of the same source ref must not share a destination tag: the
-// mirror target is the org registry, shared by every install of the app, so a
-// shared tag lets one run overwrite the manifest another is about to pull.
 func TestActionImageTag(t *testing.T) {
 	const sourceImage = "ghcr.io/acme/migrate-tools:v1.4.0"
 

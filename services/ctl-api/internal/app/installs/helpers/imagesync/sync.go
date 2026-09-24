@@ -20,41 +20,19 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-// StatusFunc records sync progress on the install deploy that owns it. Callers
-// own it because they disagree on whether a status write should also drive a
-// status sync.
 type StatusFunc func(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string)
 
-// RunSyncJobRequest is the input to RunSyncJob.
 type RunSyncJobRequest struct {
 	Install       *app.Install
 	InstallDeploy *app.InstallDeploy
-
-	// Status is optional; sync progress goes unrecorded without it.
-	Status StatusFunc
-
-	// OnJobCreated is called as soon as the sync job row exists and before it
-	// is queued, so a caller can cancel that job when its workflow is
-	// cancelled mid-sync.
-	OnJobCreated func(jobID string)
-
-	// PlanWorkflowID and JobWorkflowID name the child workflows this starts.
-	// They are caller-supplied for two reasons: the existing callers' IDs are
-	// part of in-flight workflow histories and must not change, and a caller
-	// that syncs more than one component from a single workflow needs a
-	// distinct pair per component.
+	Status        StatusFunc
+	OnJobCreated  func(jobID string)
+	// PlanWorkflowID and JobWorkflowID are part of in-flight Temporal histories
+	// and must stay caller-supplied.
 	PlanWorkflowID string
 	JobWorkflowID  string
 }
 
-// RunSyncJob copies the deploy's component build into the install's own OCI
-// registry: it plans the copy, runs it as a runner job, and records the
-// resulting artifact against the deploy.
-//
-// The deploy and the log stream on ctx must already exist. The caller owns them
-// because a deploy driven by a workflow step also has to retarget that step at
-// it, and because a caller running this inline nests the log stream under its
-// own.
 func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -145,7 +123,6 @@ func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 	}
 	l.Info("sync image job was successfully completed")
 
-	// parse outputs
 	syncedJob, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner job")
@@ -168,36 +145,16 @@ func RunSyncJob(ctx workflow.Context, req RunSyncJobRequest) error {
 	return nil
 }
 
-// SyncRequest is the input to Sync.
 type SyncRequest struct {
-	Install     *app.Install
-	ComponentID string
-	BuildID     string
-
-	// FlowID is the install workflow the sync belongs to, recorded on the
-	// deploy. Empty for a sync that no install workflow drives.
-	FlowID string
-
-	// ParentLogStreamID nests the sync's logs under the caller's stream, so
-	// they read as part of whatever triggered them.
+	Install           *app.Install
+	ComponentID       string
+	BuildID           string
+	FlowID            string
 	ParentLogStreamID string
-
-	OnJobCreated func(jobID string)
-
-	// WorkflowIDSuffix is appended to the child workflow IDs the sync starts,
-	// to disambiguate them when one workflow syncs several components. Include
-	// a leading separator.
-	WorkflowIDSuffix string
+	OnJobCreated      func(jobID string)
+	WorkflowIDSuffix  string
 }
 
-// Sync creates a sync deploy for one image component and runs it now.
-//
-// It exists for callers with no workflow step of their own to hang a sync off —
-// an image-backed action run, which can be triggered by a cron with no workflow
-// at all — and produces the same install-visible record a deploy would: an
-// install deploy of type sync, an OCI artifact, and logs nested under the
-// caller's stream. Callers still own state generation afterwards, since only
-// they know which state the sync has to be visible in.
 func Sync(ctx workflow.Context, req SyncRequest) (*app.InstallDeploy, error) {
 	installDeploy, err := activities.AwaitCreateInstallDeploy(ctx, activities.CreateInstallDeployRequest{
 		InstallID:   req.Install.ID,
@@ -205,11 +162,8 @@ func Sync(ctx workflow.Context, req SyncRequest) (*app.InstallDeploy, error) {
 		BuildID:     req.BuildID,
 		Type:        app.InstallDeployTypeSync,
 		WorkflowID:  req.FlowID,
-		// Role is deliberately left empty. A non-empty deploy role is treated
-		// as a hard request by role selection with no fallback, so passing a
-		// caller's own role (an action's, say) fails the sync outright when
-		// that role is not a valid deploy role for the image component. An
-		// empty one resolves the same way a deploy with no explicit role does.
+		// Empty role: a non-empty one is a hard request with no fallback, and
+		// an action's role is often not a valid deploy role for the image.
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create install deploy")
@@ -254,8 +208,6 @@ func updateDeployStatus(
 	message string,
 	skipStatusSync bool,
 ) {
-	// A status write is best-effort, so failures are logged rather than
-	// returned — but the writes still happen when there is no logger.
 	logFailure := func(msg string, err error) {
 		l, lErr := log.WorkflowLogger(ctx)
 		if lErr != nil {

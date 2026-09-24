@@ -9,9 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// fakeLoader counts lookups so a test can assert that a rule settled the
-// outcome before the lookup it would otherwise have needed: the callers'
-// activity sequences depend on that short-circuiting.
 type fakeLoader struct {
 	latestBuildID string
 	latestErr     error
@@ -129,8 +126,6 @@ func TestDecide(t *testing.T) {
 			if got.BuildID != tc.wantBuildID {
 				t.Errorf("BuildID = %q, want %q", got.BuildID, tc.wantBuildID)
 			}
-			// Both callers depend on this: the deploy generator puts it on the
-			// sync signal, and the action run uses it as the state-gen target.
 			if got.InstallComponentID != tc.wantInstallComponentID {
 				t.Errorf("InstallComponentID = %q, want %q", got.InstallComponentID, tc.wantInstallComponentID)
 			}
@@ -157,9 +152,6 @@ func TestDecideSurfacesLoaderErrors(t *testing.T) {
 	}
 }
 
-// A sync deploy row is written before its job runs, so a failed one must not
-// answer for the build it never landed — otherwise the staleness check reads
-// the install as current and the sync is never retried.
 func TestSyncFailed(t *testing.T) {
 	for status, want := range map[app.InstallDeployStatus]bool{
 		app.InstallDeployStatusError:     true,

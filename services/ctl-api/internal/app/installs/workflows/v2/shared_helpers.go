@@ -493,20 +493,42 @@ func getComponentTeardownSteps(ctx workflow.Context, dg *genCtx, comp app.Compon
 // getImageDepSyncSteps returns image-dep sync steps to prepend before the
 // non-image parent component identified by parentCompID at parentIdx in
 // componentIDs. It walks the parent's pinned dependencies (from the AppConfig
-// snapshot) and emits a componentsyncimage signal for each image dep that
-// imagesync.Decide says the install is behind on. The rules for that decision
-// (and the reasons a dep is quietly skipped) live in imagesync, because an
-// image-backed action run applies the same ones to its own image deps.
+// snapshot), filters to image-typed deps, and emits a componentsyncimage
+// signal for each image dep whose latest Active ComponentBuild — for the
+// install's pinned app config version — differs from the build currently
+// deployed on the install.
+//
+// Why the lookup is pinned to the install's app config version:
+//
+// Each ComponentConfigConnection (ccc) is the per-app-config-version snapshot
+// of a component's config and is what owns that component's builds. When an
+// app config is re-synced, fresh ccc rows are created for every component;
+// builds that happen later are tied to the new ccc, not the old. The dep-sync
+// decision must therefore use the ccc that belongs to the consumer's pinned
+// app config version. Asking for "latest active build for component X" across
+// every ccc (i.e. across every app config version) over-syncs into installs
+// pinned to an older app config and conceptually decouples the dep from the
+// consumer's snapshot.
 //
 // The returned steps are added to a single step group ordered before the
 // parent's group: the function calls sg.nextGroup() lazily on the first
 // emitted step so that no empty group is left behind when no dep needs
 // syncing.
 //
-// Dedup rules, which are specific to generating steps for one workflow:
+// Dedup rules:
 //   - skip image deps already handled earlier in this workflow (dg.addedImageDepSyncs)
 //   - skip image deps that already appear earlier in componentIDs (their
 //     normal per-component sync step will run earlier in the workflow)
+//
+// Quiet skip rules (no error returned, no step emitted):
+//   - dep is not present in the loaded app config
+//   - dep is not an image-typed component
+//   - dep has no ccc in the install's pinned app config snapshot (the app
+//     config doesn't include this dep at all)
+//   - install component for the dep does not exist (nothing to sync against)
+//   - dep has no Active ComponentBuild yet for the pinned ccc
+//   - dep's currently deployed ComponentBuildID matches the latest Active
+//     build for the pinned ccc (nothing to do)
 func getImageDepSyncSteps(
 	ctx workflow.Context,
 	dg *genCtx,
@@ -554,9 +576,6 @@ func getImageDepSyncSteps(
 			return nil, err
 		}
 		if !decision.NeedsSync {
-			// A skip that means something upstream has not happened is why a
-			// component would deploy against an older image, so it is
-			// reported rather than dropped.
 			if decision.WorthLogging() {
 				if l, lErr := log.WorkflowLogger(ctx); lErr == nil {
 					l.Info("image dependency cannot be synced",
@@ -590,9 +609,6 @@ func getImageDepSyncSteps(
 	return steps, nil
 }
 
-// genCtxDepLoader answers imagesync.Decide's build lookup from the generation
-// context's pinned app config snapshot. The install-side half comes from
-// imagesync.InstallDeploys so it cannot drift from the action run's.
 type genCtxDepLoader struct {
 	imagesync.InstallDeploys
 
