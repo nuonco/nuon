@@ -1008,8 +1008,6 @@ type ClientService interface {
 
 	UpdateInstallRole(params *UpdateInstallRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallRoleOK, error)
 
-	UpdateInstallTelemetrySettings(params *UpdateInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallTelemetrySettingsOK, error)
-
 	UpdateInstallWorkflow(params *UpdateInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallWorkflowOK, error)
 
 	UpdateNotebook(params *UpdateNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateNotebookOK, error)
@@ -21737,50 +21735,6 @@ func (a *Client) UpdateInstallRole(params *UpdateInstallRoleParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateInstallRole: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-UpdateInstallTelemetrySettings updates an install s telemetry settings
-*/
-func (a *Client) UpdateInstallTelemetrySettings(params *UpdateInstallTelemetrySettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallTelemetrySettingsOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewUpdateInstallTelemetrySettingsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "UpdateInstallTelemetrySettings",
-		Method:             "PATCH",
-		PathPattern:        "/v1/installs/{install_id}/telemetry",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &UpdateInstallTelemetrySettingsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*UpdateInstallTelemetrySettingsOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for UpdateInstallTelemetrySettings: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

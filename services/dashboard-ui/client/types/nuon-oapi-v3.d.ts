@@ -2280,8 +2280,6 @@ export interface paths {
   "/v1/installs/{install_id}/telemetry": {
     /** Get an install's telemetry settings */
     get: operations["GetInstallTelemetrySettings"];
-    /** Update an install's telemetry settings */
-    patch: operations["UpdateInstallTelemetrySettings"];
   };
   "/v1/installs/{install_id}/updates": {
     /**
@@ -9583,9 +9581,6 @@ export interface components {
     };
     "service.UpdateInstallRoleRequest": {
       enabled: boolean;
-    };
-    "service.UpdateInstallTelemetryRequest": {
-      enabled?: boolean | null;
     };
     "service.UpdateNotebookRequest": {
       description?: string;
@@ -26885,59 +26880,6 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["service.InstallTelemetrySettings"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /** Update an install's telemetry settings */
-  UpdateInstallTelemetrySettings: {
-    parameters: {
-      path: {
-        /** @description Install ID */
-        install_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.UpdateInstallTelemetryRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["service.InstallTelemetrySettings"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
       /** @description Unauthorized */

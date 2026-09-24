@@ -6,9 +6,11 @@ import { Toast } from '@/components/surfaces/Toast'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
+import { createInstallConfig } from '@/lib/ctl-api/installs/create-install-config'
 import { getInstallStack } from '@/lib/ctl-api/installs/get-install-stack'
 import { getInstallTelemetrySettings } from '@/lib/ctl-api/installs/get-install-telemetry-settings'
-import { updateInstallTelemetrySettings } from '@/lib/ctl-api/installs/update-install-telemetry-settings'
+import { updateInstallConfig } from '@/lib/ctl-api/installs/update-install-config'
+import type { TInstall } from '@/types'
 import { InstallTelemetry } from './InstallTelemetry'
 
 export const InstallTelemetryContainer = () => {
@@ -84,26 +86,62 @@ export const InstallTelemetryContainer = () => {
     mutationFn: (variables: {
       orgId: string
       installId: string
+      installConfigId?: string
       runnerId?: string
       enabled: boolean | null
-    }) => updateInstallTelemetrySettings(variables),
-    onSuccess: (data, variables) => {
+    }) => {
+      const cachedInstall = queryClient.getQueryData<TInstall>([
+        'install',
+        variables.orgId,
+        variables.installId,
+      ])
+      const installConfigId =
+        cachedInstall?.install_config?.id || variables.installConfigId
+      const params = {
+        orgId: variables.orgId,
+        installId: variables.installId,
+        body: { telemetry: { enabled: variables.enabled } },
+      }
+      return installConfigId
+        ? updateInstallConfig({ ...params, installConfigId })
+        : createInstallConfig(params)
+    },
+    onSuccess: async (data, variables) => {
+      const installKey = ['install', variables.orgId, variables.installId]
+      await queryClient.cancelQueries({ queryKey: installKey, exact: true })
+      queryClient.setQueryData<TInstall>(installKey, (old) => ({
+        ...old,
+        id: variables.installId,
+        install_config: data,
+      }))
       const updatedKey = [
         'install-telemetry',
         variables.orgId,
         variables.installId,
       ]
-      queryClient.setQueryData(updatedKey, data)
-      queryClient.invalidateQueries({ queryKey: updatedKey })
       queryClient.invalidateQueries({
         queryKey: ['runner', variables.orgId, variables.runnerId],
       })
+      queryClient.invalidateQueries({ queryKey: installKey })
+      await queryClient.cancelQueries({ queryKey: updatedKey, exact: true })
       queryClient.invalidateQueries({
-        queryKey: ['install', variables.orgId, variables.installId],
+        queryKey: updatedKey,
+        exact: true,
+        refetchType: 'none',
       })
+      const settings = await queryClient
+        .fetchQuery({
+          queryKey: updatedKey,
+          queryFn: () => getInstallTelemetrySettings(variables),
+          retry: false,
+        })
+        .catch(() => undefined)
+      if (!settings) return
       addToast(
         <Toast
-          heading={data.enabled ? 'Telemetry enabled' : 'Telemetry disabled'}
+          heading={
+            settings.enabled ? 'Telemetry enabled' : 'Telemetry disabled'
+          }
           theme="success"
         >
           <Text>The runner will apply this setting on its next refresh.</Text>
@@ -154,6 +192,7 @@ export const InstallTelemetryContainer = () => {
             enabled,
             orgId: orgId!,
             installId: installId!,
+            installConfigId: install?.install_config?.id,
             runnerId: install?.runner_id,
           })
         }
@@ -171,6 +210,7 @@ export const InstallTelemetryContainer = () => {
             enabled: null,
             orgId: orgId!,
             installId: installId!,
+            installConfigId: install?.install_config?.id,
             runnerId: install?.runner_id,
           })
         }

@@ -213,12 +213,16 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
 		installCfg.StackOverrides.HasOverrides() ||
-		len(installCfg.ComponentToggles) > 0
+		len(installCfg.ComponentToggles) > 0 ||
+		(installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil)
 
 	if hasConfigFields {
 		updates := map[string]any{}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			updates["approval_option"] = string(installCfg.ApprovalOption)
+		}
+		if installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil {
+			updates["telemetry_enabled"] = installCfg.Telemetry.Enabled
 		}
 		if installCfg.StackOverrides != nil {
 			if installCfg.StackOverrides.VPCNestedTemplateURL != "" {
@@ -247,16 +251,11 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		} else if len(updates) > 0 {
 			icParams := &installhelpers.CreateInstallConfigParams{
 				ApprovalOption: app.InstallApprovalOption(installCfg.ApprovalOption),
+				Telemetry:      installCfg.Telemetry,
 			}
 			if _, err := installHelpers.CreateInstallConfig(ctx, existing.ID, icParams); err != nil {
 				return nil, fmt.Errorf("unable to create config for install %s: %w", installCfg.Name, err)
 			}
-		}
-	}
-
-	if installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil {
-		if err := installHelpers.SetInstallTelemetry(ctx, existing.ID, installCfg.Telemetry.Enabled); err != nil {
-			return nil, fmt.Errorf("unable to update telemetry for install %s: %w", installCfg.Name, err)
 		}
 	}
 
