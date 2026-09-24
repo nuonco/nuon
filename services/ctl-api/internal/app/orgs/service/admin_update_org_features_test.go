@@ -218,7 +218,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 					Features: map[string]bool{
 						string(app.OrgFeatureTraceView):   false,
 						string(app.OrgFeatureAppBranches): true,
-						string(app.OrgFeatureOrgRunner):   false,
+						string(app.OrgFeatureSupportRole): false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -233,7 +233,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				Features: map[string]bool{
 					string(app.OrgFeatureTraceView):   true,
 					string(app.OrgFeatureAppBranches): false,
-					string(app.OrgFeatureOrgRunner):   true,
+					string(app.OrgFeatureSupportRole): true,
 				},
 			},
 			expectedCode: http.StatusOK,
@@ -241,7 +241,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				require.NotNil(s.T(), org)
 				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgRunner)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
@@ -249,7 +249,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				require.NoError(s.T(), err)
 				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureOrgRunner)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureSupportRole)])
 			},
 		},
 		{
@@ -352,7 +352,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 					Features: map[string]bool{
 						string(app.OrgFeatureTraceView):           false,
 						string(app.OrgFeatureAppBranches):         false,
-						string(app.OrgFeatureOrgRunner):           false,
+						string(app.OrgFeatureSupportRole):         false,
 						string(app.OrgFeatureUserManagedFeatures): false,
 					},
 				}
@@ -368,7 +368,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				Features: map[string]bool{
 					string(app.OrgFeatureTraceView):           true,
 					string(app.OrgFeatureAppBranches):         true,
-					string(app.OrgFeatureOrgRunner):           true,
+					string(app.OrgFeatureSupportRole):         true,
 					string(app.OrgFeatureUserManagedFeatures): true,
 					string(app.OrgFeatureSlack):               true,
 					string(app.OrgFeatureInstallRename):       true,
@@ -379,7 +379,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				require.NotNil(s.T(), org)
 				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgRunner)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureSlack)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureInstallRename)])
@@ -408,7 +408,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 					Features: map[string]bool{
 						string(app.OrgFeatureTraceView):   true,
 						string(app.OrgFeatureAppBranches): false,
-						string(app.OrgFeatureOrgRunner):   true,
+						string(app.OrgFeatureSupportRole): true,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -431,7 +431,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				assert.False(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 				// Unmodified features should be preserved
 				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgRunner)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureSupportRole)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
@@ -440,7 +440,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				// Verify database state matches
 				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureOrgRunner)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureSupportRole)])
 			},
 		},
 		{

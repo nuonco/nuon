@@ -38,7 +38,6 @@ func isSkippableRunnerStatus(status app.RunnerStatus) bool {
 }
 
 type runnerProcessPresence struct {
-	HasActiveBuild   bool
 	HasActiveInstall bool
 	HasActiveMng     bool
 	MngChecked       bool
@@ -85,9 +84,6 @@ func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProces
 
 	var healthy bool
 	switch runner.RunnerGroup.Type {
-	case app.RunnerGroupTypeOrg:
-		healthy = presence.HasActiveBuild
-		d.Reason = "no active build process"
 	case app.RunnerGroupTypeInstall:
 		healthy = presence.HasActiveInstall
 		d.Reason = "no active install process"
