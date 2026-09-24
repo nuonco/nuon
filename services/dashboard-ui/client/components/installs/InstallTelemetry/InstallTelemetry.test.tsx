@@ -37,6 +37,7 @@ afterEach(() => {
 
 function setup({
   isByoc = true,
+  isDev = false,
   telemetryEnabled = false,
   telemetryOverride = undefined as boolean | null | undefined,
   orgDefault = false,
@@ -73,7 +74,7 @@ function setup({
   const tree = (id = installId, status = runnerStatus) => (
     <QueryClientProvider client={client}>
       <ConfigContext.Provider
-        value={{ apiUrl: '', appUrl: '', githubAppName: '', isByoc }}
+        value={{ apiUrl: '', appUrl: '', githubAppName: '', isByoc, isDev }}
       >
         <OrgContext.Provider
           value={{ org: { id: orgId, name: 'acme' }, refresh: () => {} }}
@@ -132,14 +133,18 @@ test('hides telemetry outside BYOC even with an endpoint and enabled settings', 
   expect(fetch).not.toHaveBeenCalled()
 })
 
-test.each([false, true])(
-  'settings panel owns the telemetry card and shows it only in BYOC (%p)',
-  (isByoc) => {
-    setup({ isByoc, runnerId: '', renderPanel: true })
+test.each([
+  { isByoc: false, isDev: false },
+  { isByoc: true, isDev: false },
+  { isByoc: false, isDev: true },
+])(
+  'settings panel shows telemetry in BYOC or local dev (%p)',
+  ({ isByoc, isDev }) => {
+    setup({ isByoc, isDev, runnerId: '', renderPanel: true })
     expect(
       screen.getByText('Configuration', { exact: true })
     ).toBeInTheDocument()
-    if (isByoc) {
+    if (isByoc || isDev) {
       const heading = screen.getByText('Telemetry', { exact: true })
       const card = heading.closest('.shadow-sm')!
       expect(card).toContainElement(
