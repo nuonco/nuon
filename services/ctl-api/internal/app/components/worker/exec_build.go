@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
 func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, currentApp *app.App, sandboxMode bool) (retErr error) {
@@ -58,16 +57,9 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		defer cancel()
 		w.failQueuedRunnerJob(failureCtx, runnerJob.ID, truncateErrorMessage("build failed before job execution", retErr))
 	}()
-	if runnerJob.RunnerID == "" {
-		if runnerJob.Executor != app.RunnerJobExecutorControlPlane {
-			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "no runners available in runner group")
-			w.failRunnerJob(ctx, runnerJob.ID, "no runners available in runner group")
-			return fmt.Errorf("no runners available in runner group for org %s", comp.Org.ID)
-		}
-	}
 
 	if comp.Type == app.ComponentTypeExternalImage {
-		if err := w.evaluateExternalImagePolicy(ctx, buildID, runnerJob.ID, runnerJob.RunnerID, comp.Name); err != nil {
+		if err := w.evaluateExternalImagePolicy(ctx, buildID, runnerJob.ID, comp.Name); err != nil {
 			return err
 		}
 	}
@@ -78,7 +70,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		WorkflowID:           fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 		CloudProvider:        w.cfg.CloudProvider,
 		ManagementIAMRoleARN: w.cfg.ManagementIAMRoleARN,
-		IsControlPlaneBuild:  runnerJob.Executor == app.RunnerJobExecutorControlPlane,
 	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")
@@ -109,17 +100,9 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 
 	// wait for the job
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building")
-	if runnerJob.Executor == app.RunnerJobExecutorControlPlane {
-		err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
-			WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", comp.ID, runnerJob.ID),
-		})
-	} else {
-		_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-			RunnerID:   runnerJob.RunnerID,
-			JobID:      runnerJob.ID,
-			WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", comp.ID, runnerJob.ID),
-		})
-	}
+	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", comp.ID, runnerJob.ID),
+	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build did not complete successfully")
 		return fmt.Errorf("build job failed: %w", err)
