@@ -136,7 +136,7 @@ type appSyncBranchGuide struct {
 }
 
 func (s *Service) appSyncBranchGuides(ctx context.Context, dir, appID string) ([]appSyncBranchGuide, error) {
-	branches, err := s.api.GetAppBranches(ctx, appID)
+	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to list app branches: %w", err)
 	}
@@ -238,7 +238,7 @@ func printMigrationIntro() {
 }
 
 func (s *Service) runAppBranchMigration(ctx context.Context, dir, appID string) error {
-	remotes, err := s.api.GetAppBranches(ctx, appID)
+	remotes, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return fmt.Errorf("unable to list app branches: %w", err)
 	}
@@ -384,7 +384,7 @@ func (s *Service) createMigrationBranch(ctx context.Context, dir, appID string, 
 		return nil, printedErr{err}
 	}
 
-	refreshed, err := s.api.GetAppBranches(ctx, appID)
+	refreshed, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to list app branches: %w", err)
 	}
