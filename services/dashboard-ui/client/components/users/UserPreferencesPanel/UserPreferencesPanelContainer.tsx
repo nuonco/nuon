@@ -6,6 +6,8 @@ import { UserPreferencesPanel } from './UserPreferencesPanel'
 export const UserPreferencesPanelContainer = (props: IPanel) => {
   const { preference, setPreference } = useTheme()
   const {
+    showIds,
+    setShowIds,
     isInstallsTabEnabled,
     setIsInstallsTabEnabled,
     isStatusBarEnabled,
@@ -25,6 +27,8 @@ export const UserPreferencesPanelContainer = (props: IPanel) => {
     <UserPreferencesPanel
       theme={preference}
       onThemeChange={setPreference}
+      showIds={showIds}
+      onShowIdsChange={setShowIds}
       isInstallsTabEnabled={isInstallsTabEnabled}
       onInstallsTabChange={setIsInstallsTabEnabled}
       isStatusBarEnabled={isStatusBarEnabled}
