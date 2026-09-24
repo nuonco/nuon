@@ -77,6 +77,12 @@ certificate   = false
 
 See the [Toggleable Components guide](/guides/toggleable-components) for how toggles reconcile on sync, dependency validation, and imperative dashboard/CLI toggles.
 
+## Install telemetry
+
+If your Nuon BYOC deployment has a telemetry relay configured, set `[telemetry]` in the install config to enable
+or disable forwarding of application logs, metrics, and traces. See
+[Manage Install Telemetry](/guides/manage-install-telemetry) for the configuration and org-default behavior.
+
 ## Monitoring in-progress workflows
 
 Once an install kicks off a deploy — or any other workflow — you can monitor progress from the dashboard, via outbound webhooks, or via Slack notifications.
