@@ -18,6 +18,7 @@ import {
 import type { InstallFormValues } from '@/components/installs/forms/InstallForm'
 import { useAuth } from '@/hooks/use-auth'
 import { useOrg } from '@/hooks/use-org'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { trackEvent } from '@/lib/posthog-analytics'
@@ -104,9 +105,9 @@ export const CreateInstallFromAppContainer = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const platform = app.runner_config?.app_runner_type
-  const requireTargetAccount = !!org?.features?.['phone-home-auth']
-  const awsConnectionsEnabled =
-    platform === 'aws' && !!org?.features?.['aws-account-connections']
+  const requireTargetAccount = useOrgFeatureFlag('phone-home-auth')
+  const awsConnectionsFlag = useOrgFeatureFlag('aws-account-connections')
+  const awsConnectionsEnabled = platform === 'aws' && awsConnectionsFlag
 
   const [fields, setFields] = useState<ICreateFormTriggerState>({
     canSubmit: false,
