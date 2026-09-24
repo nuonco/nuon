@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
+import { CodeBlock } from '@/components/common/CodeBlock'
 import { DebouncedSearchInput } from '@/components/common/DeboundedSearch'
 import { Dropdown } from '@/components/common/Dropdown'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -17,7 +19,7 @@ import { Tooltip } from '@/components/common/Tooltip'
 import { InstallResourceDetailPanelButton } from '@/components/install-resources/InstallResourceDetailPanel'
 import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig/RemovedFromAppConfig'
 import { Badge } from '@/components/common/Badge'
-import type { TInstallResource } from '@/types'
+import type { TAPIError, TInstallResource } from '@/types'
 import { cn } from '@/utils/classnames'
 import {
   bearsHealthVerdict,
@@ -728,11 +730,45 @@ const ResourceGroupSection = ({
   )
 }
 
+function ResourceLoadError({ error }: { error: TAPIError }) {
+  const detail = [error.error, error.description].filter(Boolean).join('\n\n')
+
+  return (
+    <Banner theme="error">
+      <div className="flex flex-col gap-1 min-w-0">
+        <Text weight="strong">Unable to load resource health</Text>
+        <Text variant="subtext">
+          Resource health could not be read for this install. It will retry
+          automatically.
+        </Text>
+        {detail ? (
+          <Expand
+            id="install-resources-load-error"
+            isIconBeforeHeading
+            headerClassName="!px-0 !py-0 !justify-start"
+            heading={<Text variant="subtext">View error</Text>}
+          >
+            <CodeBlock
+              className="mt-2 !text-xs"
+              language="text"
+              showCopy
+              wrapLongLines
+            >
+              {detail}
+            </CodeBlock>
+          </Expand>
+        ) : null}
+      </div>
+    </Banner>
+  )
+}
+
 interface IInstallResourcesTable {
   componentGroups: TInstallResourceGroup[]
   sandboxGroups: TInstallResourceGroup[]
   healthCounts: Record<string, number>
   isLoading: boolean
+  error?: TAPIError | null
   kind: string
   namespace: string
   health: string
@@ -749,6 +785,7 @@ export const InstallResourcesTable = ({
   sandboxGroups,
   healthCounts,
   isLoading,
+  error,
   kind,
   namespace,
   health,
@@ -810,7 +847,9 @@ export const InstallResourcesTable = ({
         </div>
       </div>
 
-      {!hasResources ? (
+      {error && !hasResources ? (
+        <ResourceLoadError error={error} />
+      ) : !hasResources ? (
         <EmptyState
           variant="table"
           emptyTitle={forceExpanded ? 'No matching resources' : 'No resources yet'}
