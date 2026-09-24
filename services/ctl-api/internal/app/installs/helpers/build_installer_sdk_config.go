@@ -306,6 +306,10 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			DeprovisionPermissions:    deprov.Permissions,
 			DeprovisionPredefinedRole: deprov.PredefinedRole,
 
+			ProvisionPredefinedRoles:   prov.PredefinedRoles,
+			MaintenancePredefinedRoles: maint.PredefinedRoles,
+			DeprovisionPredefinedRoles: deprov.PredefinedRoles,
+
 			ProvisionPolicies:   prov.Policies,
 			MaintenancePolicies: maint.Policies,
 			DeprovisionPolicies: deprov.Policies,
@@ -440,10 +444,11 @@ func gcpRolesToSDKMap(rs []gcpstacks.GCPRoleRaw, enabled bool) map[string]app.In
 	out := make(map[string]app.InstallerSDKGCPRole, len(rs))
 	for _, r := range rs {
 		out[r.Name] = app.InstallerSDKGCPRole{
-			Permissions:    r.Permissions,
-			PredefinedRole: r.PredefinedRole,
-			Enabled:        enabled,
-			Policies:       r.Policies,
+			Permissions:     r.Permissions,
+			PredefinedRole:  r.PredefinedRole,
+			PredefinedRoles: r.PredefinedRoles,
+			Enabled:         enabled,
+			Policies:        r.Policies,
 		}
 	}
 	return out
