@@ -138,7 +138,8 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 				tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "skipped"))...)
 				return nil
 			}
-			l.Warn("install runner has no active install process",
+			l.Warn(
+				"install runner has no active install process",
 				zap.String("runner_id", s.RunnerID),
 			)
 			tags["missing_install_process"] = "true"
@@ -164,12 +165,14 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 		if isNotFound(mngErr) {
 			mngProcessChecked = true
 			missingMngProcess = true
-			l.Warn("install runner missing management process",
+			l.Warn(
+				"install runner missing management process",
 				zap.String("runner_id", s.RunnerID),
 			)
 			tags["missing_mng_process"] = "true"
 		} else {
-			l.Warn("unable to check management process",
+			l.Warn(
+				"unable to check management process",
 				zap.String("runner_id", s.RunnerID),
 				zap.Error(mngErr),
 			)
@@ -210,9 +213,7 @@ func (s *Signal) handleRunnerActive(ctx workflow.Context, runner *app.Runner) er
 		}
 	}
 
-	// Only on the recovery tick. The batched sweep can afford to check every
-	// tick; here it would cost an extra activity per healthy runner.
-	if hasOfflineTS || runner.Status != app.RunnerStatusActive {
+	if runner.Status != app.RunnerStatusActive {
 		if err := s.toggleInstallCronEmitter(ctx, runner, activities.InstallCronsEnabled); err != nil {
 			return err
 		}
@@ -296,7 +297,8 @@ func (s *Signal) runnerOfflineEvent(ctx workflow.Context, runner *app.Runner, re
 		})
 		if err == nil {
 			ownerName = install.Name
-			eventTags = append(eventTags,
+			eventTags = append(
+				eventTags,
 				metrics.ToTag("install_id", install.ID),
 				metrics.ToTag("install_name", install.Name),
 				metrics.ToTag("app_id", install.AppID),
