@@ -134,18 +134,21 @@ const unmonitoredDaily = buildSparseDaily(90, 0)
 const mockComponents: TInstallHealthTimelineComponent[] = [
   {
     install_component_id: 'icmp1',
+    component_id: 'cmp-api',
     component_name: 'api',
     current_health: 'healthy',
     uptime_percent: 99.98,
   },
   {
     install_component_id: 'icmp2',
+    component_id: 'cmp-worker',
     component_name: 'worker',
     current_health: 'unhealthy',
     uptime_percent: 96.4,
   },
   {
     install_component_id: 'icmp3',
+    component_id: 'cmp-database',
     component_name: 'database',
     current_health: 'degraded',
     uptime_percent: 99.1,
@@ -155,18 +158,21 @@ const mockComponents: TInstallHealthTimelineComponent[] = [
 const mockNoSignalComponents: TInstallHealthTimelineComponent[] = [
   {
     install_component_id: 'icmp4',
+    component_id: 'cmp-networking',
     component_name: 'networking',
     current_health: 'not-applicable',
     uptime_percent: 0,
   },
   {
     install_component_id: 'icmp5',
+    component_id: 'cmp-secrets',
     component_name: 'secrets',
     current_health: 'unknown',
     uptime_percent: 0,
   },
   {
     install_component_id: 'icmp6',
+    component_id: 'cmp-dns',
     component_name: 'dns',
     current_health: 'not-applicable',
     uptime_percent: 0,
@@ -403,5 +409,22 @@ export const NoData = () => (
 export const Loading = () => (
   <Frame>
     <HealthTimeline scope="install" days={90} isLoading />
+  </Frame>
+)
+
+export const InstallScopeResourcesHashLinks = () => (
+  <Frame>
+    <HealthTimeline
+      scope="install"
+      days={90}
+      daily={buildDaily(90)}
+      uptimePercent={99.42}
+      observedSeconds={90 * 86400}
+      currentHealth="healthy"
+      components={mockComponents}
+      getComponentHref={(componentId) =>
+        `/org123/installs/inst123/resources/components#${componentId}`
+      }
+    />
   </Frame>
 )

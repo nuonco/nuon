@@ -19,6 +19,7 @@ import {
 import { NewInstallComponents } from './NewInstallComponents'
 import { NewInstallImages } from './NewInstallImages'
 import { NewInstallSandbox } from './NewInstallSandbox'
+import { NewInstallHealth } from './NewInstallHealth'
 import { NewInstallState } from './NewInstallState'
 import { NewInstallStack } from './NewInstallStack'
 import {
@@ -170,7 +171,7 @@ export const installRoutes: RouteObject[] = [
           },
           {
             path: ':orgId/installs/:installId/health',
-            element: <NewInstallPlaceholder path="/health" title="Health" />,
+            element: <NewInstallHealth />,
           },
           {
             path: ':orgId/installs/:installId/operations',
