@@ -1452,7 +1452,7 @@ const AgentSetup = () => (
       </Text>
     </div>
     <div className="flex flex-col gap-4 rounded-md border bg-background p-4 sm:flex-row sm:items-center">
-      <div className="line-clamp-3 flex-1">
+      <div className="line-clamp-1 min-w-0 flex-1">
         <Text as="span" variant="body" family="mono" weight="strong" theme="brand">
           /goal
         </Text>
@@ -1485,7 +1485,7 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="!gap-5 !p-5 !border-0 !shadow-none bg-primary-50 dark:bg-primary-950/40 ring-1 ring-primary-200 dark:ring-primary-800">
+      <Card className="!gap-10 !p-5 !border-0 !shadow-none bg-primary-50 dark:bg-primary-950/40 ring-1 ring-primary-200 dark:ring-primary-800">
         <AgentSetup />
         <PushListener detected={detected} />
       </Card>
