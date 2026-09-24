@@ -14,6 +14,7 @@ import type { TThemePreference } from '@/providers/theme-provider'
 
 const preferencesSchema = z.object({
   theme: z.enum(['system', 'light', 'dark', 'classic', 'high-contrast']),
+  showIds: z.enum(['hidden', 'shown']),
   installsTab: z.enum(['hidden', 'shown']),
   statusBar: z.enum(['hidden', 'shown']),
   diffViewer: z.enum(['legacy', 'v2']),
@@ -25,6 +26,8 @@ const preferencesSchema = z.object({
 export interface IUserPreferencesPanel extends IPanel {
   theme: TThemePreference
   onThemeChange: (theme: TThemePreference) => void
+  showIds: boolean
+  onShowIdsChange: (showIds: boolean) => void
   isInstallsTabEnabled: boolean
   onInstallsTabChange: (isEnabled: boolean) => void
   isStatusBarEnabled: boolean
@@ -43,6 +46,8 @@ export interface IUserPreferencesPanel extends IPanel {
 export const UserPreferencesPanel = ({
   theme,
   onThemeChange,
+  showIds,
+  onShowIdsChange,
   isInstallsTabEnabled,
   onInstallsTabChange,
   isStatusBarEnabled,
@@ -60,6 +65,7 @@ export const UserPreferencesPanel = ({
 }: IUserPreferencesPanel) => {
   const values = {
     theme,
+    showIds: showIds ? ('shown' as const) : ('hidden' as const),
     installsTab: isInstallsTabEnabled ? ('shown' as const) : ('hidden' as const),
     statusBar: isStatusBarEnabled ? ('shown' as const) : ('hidden' as const),
     diffViewer,
@@ -117,6 +123,29 @@ export const UserPreferencesPanel = ({
           <Text variant="subtext" theme="neutral">
             How the dashboard looks in this browser. Classic is the previous
             purple theme.
+          </Text>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <form.Field
+            name="showIds"
+            listeners={{
+              onChange: ({ value }) => onShowIdsChange(value === 'shown'),
+            }}
+          >
+            {(field) => (
+              <FormRadioGroup
+                field={field}
+                label="Resource IDs"
+                options={[
+                  { value: 'shown', label: 'Shown' },
+                  { value: 'hidden', label: 'Hidden' },
+                ]}
+              />
+            )}
+          </form.Field>
+          <Text variant="subtext" theme="neutral">
+            Show the raw resource ID under names on cards, tables and headers.
           </Text>
         </div>
 

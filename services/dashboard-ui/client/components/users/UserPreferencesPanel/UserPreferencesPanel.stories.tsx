@@ -18,6 +18,7 @@ const Demo = ({
   initialViewer?: TDiffViewer
 }) => {
   const [theme, setTheme] = useState<TThemePreference>('system')
+  const [showIds, setShowIds] = useState(false)
   const [installsTab, setInstallsTab] = useState(true)
   const [statusBar, setStatusBar] = useState(true)
   const [diffViewer, setDiffViewer] = useState<TDiffViewer>(initialViewer)
@@ -31,6 +32,8 @@ const Demo = ({
       panelId="preferences-story"
       theme={theme}
       onThemeChange={setTheme}
+      showIds={showIds}
+      onShowIdsChange={setShowIds}
       isInstallsTabEnabled={installsTab}
       onInstallsTabChange={setInstallsTab}
       isStatusBarEnabled={statusBar}
@@ -45,6 +48,7 @@ const Demo = ({
       onPlanSectionsChange={setPlanSections}
       onResetPreferences={() => {
         setTheme('system')
+        setShowIds(false)
         setInstallsTab(true)
         setStatusBar(true)
         setDiffViewer('legacy')

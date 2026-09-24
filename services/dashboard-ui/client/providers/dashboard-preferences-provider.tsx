@@ -1,4 +1,5 @@
 import { createContext, useMemo, useState } from 'react'
+import { useAuth } from '@/hooks/use-auth'
 import { useConfig } from '@/hooks/use-config'
 import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import {
@@ -21,12 +22,32 @@ export const PLAN_SECTIONS: readonly TPlanSections[] = [
   'expanded',
 ]
 
+export const SHOW_IDS_STORAGE_KEY = 'nuon-show-ids'
+
 export const DEFAULT_DIFF_VIEWER: TDiffViewer = 'legacy'
 export const DEFAULT_DIFF_WRAP: TDiffWrap = 'scroll'
 export const DEFAULT_DIFF_VIEW: TDiffView = 'unified'
 export const DEFAULT_PLAN_SECTIONS: TPlanSections = 'collapsed'
 
+function readStoredShowIds(): boolean | undefined {
+  try {
+    const stored = localStorage.getItem(SHOW_IDS_STORAGE_KEY)
+    if (stored === 'shown') return true
+    if (stored === 'hidden') return false
+  } catch {}
+  return undefined
+}
+
+function writeStoredShowIds(showIds: boolean | undefined) {
+  try {
+    if (showIds === undefined) localStorage.removeItem(SHOW_IDS_STORAGE_KEY)
+    else localStorage.setItem(SHOW_IDS_STORAGE_KEY, showIds ? 'shown' : 'hidden')
+  } catch {}
+}
+
 export interface IDashboardPreferencesContext {
+  showIds: boolean
+  setShowIds: (showIds: boolean) => void
   isStatusBarEnabled: boolean
   setIsStatusBarEnabled: (isEnabled: boolean) => void
   isInstallsTabEnabled: boolean
@@ -52,6 +73,9 @@ export const DashboardPreferencesProvider = ({
   children: React.ReactNode
 }) => {
   const { installsTabAutoEnabled, statusBarAutoEnabled } = useConfig()
+  const { isNuonEmployee } = useAuth()
+  const [storedShowIds, setStoredShowIds] = useState(readStoredShowIds)
+  const showIds = storedShowIds ?? isNuonEmployee
   const [isStatusBarEnabled, setIsStatusBarEnabledState] = useState(
     () => getStatusBarEnabled() ?? statusBarAutoEnabled ?? true
   )
@@ -81,6 +105,11 @@ export const DashboardPreferencesProvider = ({
 
   const value = useMemo(
     () => ({
+      showIds,
+      setShowIds: (next: boolean) => {
+        writeStoredShowIds(next)
+        setStoredShowIds(next)
+      },
       isStatusBarEnabled,
       setIsStatusBarEnabled: (isEnabled: boolean) => {
         setStatusBarEnabled(isEnabled)
@@ -100,6 +129,8 @@ export const DashboardPreferencesProvider = ({
       planSections,
       setPlanSections,
       resetPreferences: () => {
+        writeStoredShowIds(undefined)
+        setStoredShowIds(undefined)
         setStatusBarEnabled(true)
         setIsStatusBarEnabledState(true)
         setInstallsTabEnabled(true)
@@ -111,6 +142,7 @@ export const DashboardPreferencesProvider = ({
       },
     }),
     [
+      showIds,
       isInstallsTabEnabled,
       isStatusBarEnabled,
       diffViewer,
