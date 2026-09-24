@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 type InstallRef struct {
@@ -24,8 +25,9 @@ func (a *Activities) getInstallsForAppBranch(ctx context.Context, appBranchID st
 	}
 
 	var installs []app.Install
+	installIDCol := views.TableOrViewName(a.db, &app.Install{}, ".id")
 	if err := a.db.WithContext(ctx).
-		Joins("JOIN install_app_branch_connections ON install_app_branch_connections.install_id = installs.id AND install_app_branch_connections.active = ? AND install_app_branch_connections.deleted_at = 0", true).
+		Joins("JOIN install_app_branch_connections ON install_app_branch_connections.install_id = "+installIDCol+" AND install_app_branch_connections.active = ? AND install_app_branch_connections.deleted_at = 0", true).
 		Where("install_app_branch_connections.app_branch_id = ?", branch.ID).
 		Where(app.Install{AppID: branch.AppID}).
 		Find(&installs).Error; err != nil {

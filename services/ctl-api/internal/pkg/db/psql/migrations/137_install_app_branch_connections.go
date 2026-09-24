@@ -12,6 +12,10 @@ import (
 )
 
 func (m *Migrations) Migration137InstallAppBranchConnections(ctx context.Context, db *gorm.DB) error {
+	return backfillInstallAppBranchConnections(ctx, db)
+}
+
+func backfillInstallAppBranchConnections(ctx context.Context, db *gorm.DB) error {
 	if !db.Migrator().HasColumn("installs", "app_branch_id") {
 		return nil
 	}

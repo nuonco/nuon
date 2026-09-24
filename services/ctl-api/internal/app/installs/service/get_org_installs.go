@@ -87,6 +87,10 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels(views.TableOrViewName(s.db, &app.Install{}, ".labels"), lbls)).
 		Preload("AppSandboxConfig").
+		Preload("AppBranchConnections", func(db *gorm.DB) *gorm.DB {
+			return db.Order("active DESC, created_at DESC, id DESC")
+		}).
+		Preload("AppBranchConnections.AppBranch").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").

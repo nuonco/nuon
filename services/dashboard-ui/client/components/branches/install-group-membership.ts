@@ -1,5 +1,6 @@
 import { matchesSelector } from '@/components/match/matches'
 import type { TAppBranchInstallGroup, TInstall } from '@/types'
+import { installAppBranchGroup } from './active-app-branch-connection'
 
 type InstallGroup = Pick<
   TAppBranchInstallGroup,
@@ -22,9 +23,10 @@ export const resolveInstallGroupMembership = (
   const defaultGroupIndex = groups.findIndex((group) => group.default)
 
   installs.forEach((install) => {
-    if (install.app_branch_group) {
+    const explicitGroup = installAppBranchGroup(install)
+    if (explicitGroup) {
       const explicitGroupIndex = groups.findIndex(
-        (group) => group.name === install.app_branch_group
+        (group) => group.name === explicitGroup
       )
       if (explicitGroupIndex === -1) {
         unassignedInstalls.push(install)

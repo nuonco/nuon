@@ -60,6 +60,12 @@ const installHref = (orgId: string, install: TInstall, incomplete: boolean) =>
 const appHref = (orgId: string, install: TInstall) =>
   `/${orgId}/apps/${install?.app_id ?? ''}`
 
+const installGroup = (install: TInstall) =>
+  install.app_branch_connections?.find((connection) => connection.active)
+    ?.app_branch_group ??
+  install.app_branch_group ??
+  ''
+
 const installPlatform = (install: TInstall): TBrandVariant | undefined => {
   const normalized = (install?.cloud_platform ?? '').toLowerCase()
   if (normalized === 'aws') return 'AWS'
@@ -240,6 +246,16 @@ export const columnsFor = (
     ),
   },
   {
+    id: 'group',
+    header: 'Group',
+    size: 105,
+    cell: ({ row }) => (
+      <Text variant="caption" family="mono" color="secondary" lines={1}>
+        {installGroup(row.original) || '—'}
+      </Text>
+    ),
+  },
+  {
     accessorKey: 'updated_at',
     header: 'Updated',
     size: 105,
@@ -311,6 +327,14 @@ const InstallCard = ({
           </Text>
           <Text as="dd" family="mono" color="secondary" lines={1}>
             {install?.app_branch?.name ?? '—'}
+          </Text>
+        </div>
+        <div className="min-w-0">
+          <Text as="dt" variant="label" color="tertiary">
+            Group
+          </Text>
+          <Text as="dd" family="mono" color="secondary" lines={1}>
+            {installGroup(install) || '—'}
           </Text>
         </div>
         <div className="min-w-0">

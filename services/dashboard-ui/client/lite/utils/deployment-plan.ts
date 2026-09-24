@@ -40,6 +40,12 @@ const toPlanInstall = (
   id: install.id,
 })
 
+const installGroup = (install: Partial<TInstall>) =>
+  install.app_branch_connections?.find((connection) => connection.active)
+    ?.app_branch_group ??
+  install.app_branch_group ??
+  ''
+
 export const resolveDeploymentPlanStages = ({
   groups,
   installs,
@@ -74,9 +80,10 @@ export const resolveDeploymentPlanStages = ({
   const defaultGroupIndex = orderedGroups.findIndex((group) => group.default)
   for (const install of knownInstalls) {
     let groupIndex = -1
-    if (install.app_branch_group) {
+    const explicitGroup = installGroup(install)
+    if (explicitGroup) {
       groupIndex = orderedGroups.findIndex(
-        (group) => group.name === install.app_branch_group
+        (group) => group.name === explicitGroup
       )
     } else {
       groupIndex = orderedGroups.findIndex(

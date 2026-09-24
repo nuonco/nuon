@@ -625,7 +625,7 @@ func (s *Service) migrateInstallsToBranch(ctx context.Context, appID string, bra
 	}
 
 	result := moveInstallsToBranch(ctx, pending, branch.ID, func(ctx context.Context, installID, branchID string) error {
-		_, err := s.api.MoveInstallToAppBranch(ctx, installID, branchID)
+		_, err := s.api.MoveInstallToAppBranch(ctx, installID, branchID, "")
 		return err
 	})
 	for _, inst := range result.Moved {

@@ -54,23 +54,18 @@ export const DeploymentPlanEditorContainer = ({
 
   const { data: installsResult, isLoading: loadingInstalls } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['app-installs', org.id, app.id],
+    queryKey: ['app-installs', org.id, app.id, branch.id],
     queryFn: () =>
       getAppInstalls({
         appId: app.id!,
         orgId: org.id!,
+        app_branch_id: branch.id,
         limit: 100,
       }),
-    enabled: !!org.id && !!app.id,
+    enabled: !!org.id && !!app.id && !!branch.id,
   })
 
-  const branchInstalls = useMemo(
-    () =>
-      (installsResult?.data ?? []).filter(
-        (install) => install.app_branch_id === branch.id
-      ),
-    [installsResult, branch.id]
-  )
+  const branchInstalls = installsResult?.data ?? []
 
   const { data: runbooksResult, isLoading: loadingRunbooks } = useQuery({
     placeholderData: keepPreviousData,

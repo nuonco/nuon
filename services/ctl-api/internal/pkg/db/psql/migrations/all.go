@@ -232,5 +232,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "139-migrate-all-installs-to-default",
 			Fn:   m.Migration139MigrateAllInstallsToDefault,
 		},
+		{
+			Name: "140-retry-install-app-branch-connections",
+			Fn:   m.Migration140RetryInstallAppBranchConnections,
+		},
 	}
 }

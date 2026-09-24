@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
 func (h *Helpers) SetInstallAppBranch(ctx context.Context, installID, branchID string) error {
@@ -74,8 +75,9 @@ func (h *Helpers) BranchInstalls(ctx context.Context, branchID string) ([]app.In
 // Callers inside a transaction must use this so they see their own writes.
 func BranchInstallsWithDB(ctx context.Context, db *gorm.DB, branchID string) ([]app.Install, error) {
 	var installs []app.Install
+	installIDCol := views.TableOrViewName(db, &app.Install{}, ".id")
 	if err := db.WithContext(ctx).
-		Joins("JOIN install_app_branch_connections ON install_app_branch_connections.install_id = installs.id AND install_app_branch_connections.active = ? AND install_app_branch_connections.deleted_at = 0", true).
+		Joins("JOIN install_app_branch_connections ON install_app_branch_connections.install_id = "+installIDCol+" AND install_app_branch_connections.active = ? AND install_app_branch_connections.deleted_at = 0", true).
 		Where("install_app_branch_connections.app_branch_id = ?", branchID).
 		Find(&installs).Error; err != nil {
 		return nil, fmt.Errorf("unable to load installs for branch %s: %w", branchID, err)
