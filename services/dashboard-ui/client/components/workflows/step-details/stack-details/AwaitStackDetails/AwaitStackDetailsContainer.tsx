@@ -1,15 +1,15 @@
 import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { AwaitStackDetails } from './AwaitStackDetails'
 import type { IStackDetails } from '../types'
 
 export const AwaitStackDetailsContainer = (props: IStackDetails) => {
   const { install } = useInstall()
-  const { org } = useOrg()
+  const spaceliftEnabled = useOrgFeatureFlag('spacelift-install-stacks')
   return (
     <AwaitStackDetails
       runnerType={install?.app_runner_config?.app_runner_type}
-      spaceliftEnabled={!!org?.features?.['spacelift-install-stacks']}
+      spaceliftEnabled={spaceliftEnabled}
       {...props}
     />
   )
