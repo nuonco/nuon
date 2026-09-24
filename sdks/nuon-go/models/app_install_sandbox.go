@@ -20,23 +20,14 @@ import (
 // swagger:model app.InstallSandbox
 type AppInstallSandbox struct {
 
-	// actual app sandbox config id
-	ActualAppSandboxConfigID string `json:"actual_app_sandbox_config_id,omitempty"`
-
-	// actual applied at
-	ActualAppliedAt string `json:"actual_applied_at,omitempty"`
-
-	// actual install sandbox run id
-	ActualInstallSandboxRunID string `json:"actual_install_sandbox_run_id,omitempty"`
+	// app config ref
+	AppConfigRef *AppAppConfigRef `json:"app_config_ref,omitempty"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
-
-	// expected app sandbox config id
-	ExpectedAppSandboxConfigID string `json:"expected_app_sandbox_config_id,omitempty"`
 
 	// id
 	ID string `json:"id,omitempty"`
@@ -67,6 +58,10 @@ type AppInstallSandbox struct {
 func (m *AppInstallSandbox) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAppConfigRef(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateInstallSandboxRuns(formats); err != nil {
 		res = append(res, err)
 	}
@@ -82,6 +77,29 @@ func (m *AppInstallSandbox) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallSandbox) validateAppConfigRef(formats strfmt.Registry) error {
+	if swag.IsZero(m.AppConfigRef) { // not required
+		return nil
+	}
+
+	if m.AppConfigRef != nil {
+		if err := m.AppConfigRef.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_config_ref")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_config_ref")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -165,6 +183,10 @@ func (m *AppInstallSandbox) validateTerraformWorkspace(formats strfmt.Registry) 
 func (m *AppInstallSandbox) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAppConfigRef(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateInstallSandboxRuns(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -180,6 +202,31 @@ func (m *AppInstallSandbox) ContextValidate(ctx context.Context, formats strfmt.
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallSandbox) contextValidateAppConfigRef(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AppConfigRef != nil {
+
+		if swag.IsZero(m.AppConfigRef) { // not required
+			return nil
+		}
+
+		if err := m.AppConfigRef.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_config_ref")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_config_ref")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

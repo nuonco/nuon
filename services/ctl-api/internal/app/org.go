@@ -41,7 +41,6 @@ const (
 type OrgFeature string
 
 const (
-	OrgFeatureOrgRunner           OrgFeature = "org-runner"
 	OrgFeatureAppBranches         OrgFeature = "app-branches"
 	OrgFeatureUserManagedFeatures OrgFeature = "user-managed-features"
 	OrgFeatureSupportRole         OrgFeature = "support-role"
@@ -248,7 +247,6 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeaturePulumiUpdatePlans:       false,
 		OrgFeatureNotebooks:               false,
 		OrgFeatureSpaceliftInstallStacks:  false,
-		OrgFeatureOrgRunner:               false,
 		OrgFeatureAWSAccountConnections:   false,
 		OrgFeaturePhoneHomeAuth:           false,
 		OrgFeatureRunbookStudio:           false,
@@ -270,7 +268,6 @@ func DefaultFeatures() map[OrgFeature]bool {
 // active feature flags for an orgs
 func GetFeatures() []OrgFeature {
 	return []OrgFeature{
-		OrgFeatureOrgRunner,
 		OrgFeatureAppBranches,
 		OrgFeatureUserManagedFeatures,
 		OrgFeatureSupportRole,
@@ -312,7 +309,6 @@ type OrgFeatureInfo struct {
 // GetFeatureDescriptions returns a map of feature names to their descriptions
 func GetFeatureDescriptions() map[OrgFeature]string {
 	return map[OrgFeature]string{
-		OrgFeatureOrgRunner:                "Enable organization-specific runner functionality for executing deployments",
 		OrgFeatureAppBranches:              "Support for multiple application branches allowing parallel development and testing",
 		OrgFeatureUserManagedFeatures:      "Allow organization users to manage feature flags through the public API (admin-only flag)",
 		OrgFeatureSupportRole:              "Enable the support role option when inviting users to the organization",

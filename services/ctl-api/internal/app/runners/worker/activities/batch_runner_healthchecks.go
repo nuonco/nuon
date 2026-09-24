@@ -154,7 +154,6 @@ func (a *Activities) activeProcessPresence(ctx context.Context, runnerIDs []stri
 		ORDER BY runner_id, type, created_at DESC`,
 		runnerIDs,
 		[]string{
-			string(app.RunnerProcessTypeBuild),
 			string(app.RunnerProcessTypeInstall),
 			string(app.RunnerProcessTypeMng),
 		}).Scan(&rows); res.Error != nil {
@@ -169,8 +168,6 @@ func (a *Activities) activeProcessPresence(ctx context.Context, runnerIDs []stri
 		p := presence[row.RunnerID]
 		active := row.Status == string(app.RunnerProcessStatusActive)
 		switch row.Type {
-		case app.RunnerProcessTypeBuild:
-			p.HasActiveBuild = active
 		case app.RunnerProcessTypeInstall:
 			p.HasActiveInstall = active
 		case app.RunnerProcessTypeMng:
@@ -310,8 +307,6 @@ func runnerHealthTags(r *app.Runner, presence runnerProcessPresence, d runnerHea
 	}
 
 	switch r.RunnerGroup.Type {
-	case app.RunnerGroupTypeOrg:
-		tags["missing_build_process"] = fmt.Sprintf("%t", !presence.HasActiveBuild)
 	case app.RunnerGroupTypeInstall:
 		tags["missing_install_process"] = fmt.Sprintf("%t", !presence.HasActiveInstall)
 		tags["missing_mng_process"] = fmt.Sprintf("%t", presence.MngChecked && !presence.HasActiveMng)
