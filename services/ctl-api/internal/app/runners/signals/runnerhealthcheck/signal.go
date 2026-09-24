@@ -107,36 +107,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	switch runner.RunnerGroup.Type {
-	case app.RunnerGroupTypeOrg:
-		return s.checkOrgRunner(ctx, l, tmw, runner, tags)
 	case app.RunnerGroupTypeInstall:
 		return s.checkInstallRunner(ctx, l, tmw, runner, tags)
 	default:
 		return nil
 	}
-}
-
-func (s *Signal) checkOrgRunner(ctx workflow.Context, l *zap.Logger, tmw tmetrics.Writer, runner *app.Runner, tags map[string]string) error {
-	_, err := activities.LocalAwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
-		RunnerID:    s.RunnerID,
-		ProcessType: string(app.RunnerProcessTypeBuild),
-	})
-
-	tags["missing_build_process"] = "false"
-	if err != nil {
-		if isNotFound(err) {
-			l.Warn("org runner has no active build process",
-				zap.String("runner_id", s.RunnerID),
-			)
-			tags["missing_build_process"] = "true"
-			tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "unhealthy"))...)
-			return s.handleRunnerOffline(ctx, tmw, runner, "no active build process")
-		}
-		return errors.Wrap(err, "unable to get current build process")
-	}
-
-	tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "healthy"))...)
-	return s.handleRunnerActive(ctx, runner)
 }
 
 func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tmetrics.Writer, runner *app.Runner, tags map[string]string) error {
