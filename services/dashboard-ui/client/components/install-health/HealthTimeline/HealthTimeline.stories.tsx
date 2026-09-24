@@ -10,7 +10,10 @@ import type {
   TInstallComponentHealthTransition,
   TInstallHealthTimelineComponent,
 } from '@/types'
-import { HealthTimeline } from './HealthTimeline'
+import {
+  HealthTimeline,
+  type THealthTimelineComponent,
+} from './HealthTimeline'
 
 function buildDaily(days: number): THealthTimelineDay[] {
   return Array.from({ length: days }, (_, i) => {
@@ -174,6 +177,25 @@ const mockNoSignalComponents: TInstallHealthTimelineComponent[] = [
     install_component_id: 'icmp6',
     component_id: 'cmp-dns',
     component_name: 'dns',
+    current_health: 'not-applicable',
+    uptime_percent: 0,
+  },
+]
+
+const mockImageComponents: THealthTimelineComponent[] = [
+  {
+    install_component_id: 'icmp7',
+    component_id: 'cmp-api-image',
+    component_name: 'api-image',
+    component_type: 'docker_build',
+    current_health: 'not-applicable',
+    uptime_percent: 0,
+  },
+  {
+    install_component_id: 'icmp8',
+    component_id: 'cmp-nginx',
+    component_name: 'nginx',
+    component_type: 'external_image',
     current_health: 'not-applicable',
     uptime_percent: 0,
   },
@@ -412,7 +434,7 @@ export const Loading = () => (
   </Frame>
 )
 
-export const InstallScopeResourcesHashLinks = () => (
+export const InstallScopeResourcesSearchLinks = () => (
   <Frame>
     <HealthTimeline
       scope="install"
@@ -422,8 +444,35 @@ export const InstallScopeResourcesHashLinks = () => (
       observedSeconds={90 * 86400}
       currentHealth="healthy"
       components={mockComponents}
-      getComponentHref={(componentId) =>
-        `/org123/installs/inst123/resources/components#${componentId}`
+      getComponentHref={({ component_id, component_name }) =>
+        `/org123/installs/inst123/resources/components?q=${encodeURIComponent(component_name || component_id)}`
+      }
+    />
+  </Frame>
+)
+
+export const InstallScopeGroupedByKind = () => (
+  <Frame>
+    <HealthTimeline
+      scope="install"
+      days={90}
+      daily={buildDaily(90)}
+      uptimePercent={99.42}
+      observedSeconds={90 * 86400}
+      currentHealth="healthy"
+      groupByKind
+      components={[
+        ...mockComponents,
+        ...mockNoSignalComponents,
+        ...mockImageComponents,
+      ]}
+      getComponentHref={({ component_id, component_name, component_type }) =>
+        `/org123/installs/inst123/resources/${
+          component_type === 'docker_build' ||
+          component_type === 'external_image'
+            ? 'images'
+            : 'components'
+        }?q=${encodeURIComponent(component_name || component_id)}`
       }
     />
   </Frame>
