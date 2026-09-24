@@ -35,6 +35,14 @@ function getConfigVCSItems(
 function getConfigItems(config: TComponentConfig): TContextTooltipItem[] {
   const items: TContextTooltipItem[] = []
 
+  if (config?.drift_schedule) {
+    items.push({
+      id: `config-drift-schedule`,
+      title: 'Drift schedule',
+      subtitle: config.drift_schedule,
+    })
+  }
+
   switch (config?.type) {
     case 'helm_chart':
       items.push(
