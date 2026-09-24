@@ -99,11 +99,11 @@ test.each([false, true])(
     fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1))
     const [url, options] = fetch.mock.calls[0]
-    expect(String(url)).toEndWith('/v1/orgs/current')
+    expect(String(url)).toEndWith('/v1/orgs/current/telemetry')
     expect(options?.method).toBe('PATCH')
     expect(options?.headers).toMatchObject({ 'X-Nuon-Org-ID': orgId })
     expect(JSON.parse(options?.body as string)).toEqual({
-      telemetry: { enabled: !enabled },
+      enabled: !enabled,
     })
     await waitFor(() => expect(addToast).toHaveBeenCalledTimes(1))
     expect(client.getQueryData<TOrg>(['org', orgId])?.telemetry?.enabled).toBe(

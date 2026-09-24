@@ -9,8 +9,8 @@ export const updateOrgTelemetry = ({
   enabled: boolean
 }) =>
   api<TOrg>({
-    path: 'orgs/current',
+    path: 'orgs/current/telemetry',
     orgId,
     method: 'PATCH',
-    body: { telemetry: { enabled } },
+    body: { enabled },
   })

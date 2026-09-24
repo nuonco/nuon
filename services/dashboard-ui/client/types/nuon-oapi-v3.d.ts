@@ -2572,6 +2572,10 @@ export interface paths {
      */
     get: operations["GetOrgStats"];
   };
+  "/v1/orgs/current/telemetry": {
+    /** Update current org telemetry settings */
+    patch: operations["UpdateOrgTelemetry"];
+  };
   "/v1/orgs/current/user": {
     /**
      * Add a user to the current org
@@ -9608,8 +9612,7 @@ export interface components {
       };
     };
     "service.UpdateOrgRequest": {
-      name?: string;
-      telemetry?: components["schemas"]["service.UpdateOrgTelemetryRequest"];
+      name: string;
     };
     "service.UpdateOrgTelemetryRequest": {
       enabled: boolean;
@@ -28692,6 +28695,53 @@ export interface operations {
    * @description Returns statistics for the provided organization.
    */
   GetOrgStats: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Org"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** Update current org telemetry settings */
+  UpdateOrgTelemetry: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateOrgTelemetryRequest"];
+      };
+    };
     responses: {
       /** @description OK */
       200: {

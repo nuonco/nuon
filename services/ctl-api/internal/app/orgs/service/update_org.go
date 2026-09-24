@@ -16,12 +16,7 @@ import (
 )
 
 type UpdateOrgRequest struct {
-	Name      string                     `json:"name" validate:"required_without=Telemetry"`
-	Telemetry *UpdateOrgTelemetryRequest `json:"telemetry,omitempty"`
-}
-
-type UpdateOrgTelemetryRequest struct {
-	Enabled *bool `json:"enabled" validate:"required"`
+	Name string `json:"name" validate:"required"`
 }
 
 func (c *UpdateOrgRequest) Validate(v *validator.Validate) error {
@@ -67,21 +62,6 @@ func (s *service) UpdateOrg(ctx *gin.Context) {
 		return
 	}
 
-	if req.Telemetry != nil {
-		caller, err := cctx.AccountFromGinContext(ctx)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if !s.isOrgAdmin(caller, org.ID) {
-			ctx.Error(stderr.ErrAuthorization{
-				Err:         fmt.Errorf("only org admins can change the telemetry default"),
-				Description: "only org admins can change the telemetry default",
-			})
-			return
-		}
-	}
-
 	org, err = s.updateOrg(ctx, org.ID, &req)
 	if err != nil {
 		ctx.Error(err)
@@ -92,15 +72,8 @@ func (s *service) UpdateOrg(ctx *gin.Context) {
 }
 
 func (s *service) updateOrg(ctx context.Context, orgID string, req *UpdateOrgRequest) (*app.Org, error) {
-	updates := map[string]any{}
-	if req.Name != "" {
-		updates["name"] = req.Name
-	}
-	if req.Telemetry != nil {
-		updates["telemetry_enabled"] = *req.Telemetry.Enabled
-	}
 	filter := app.Org{ID: orgID}
-	res := s.db.WithContext(ctx).Model(&app.Org{}).Where(filter).Updates(updates)
+	res := s.db.WithContext(ctx).Model(&app.Org{}).Where(filter).Update("name", req.Name)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update org: %w", res.Error)
 	}

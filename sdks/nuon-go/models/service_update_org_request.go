@@ -7,11 +7,11 @@ package models
 
 import (
 	"context"
-	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // ServiceUpdateOrgRequest service update org request
@@ -20,17 +20,15 @@ import (
 type ServiceUpdateOrgRequest struct {
 
 	// name
-	Name string `json:"name,omitempty"`
-
-	// telemetry
-	Telemetry *ServiceUpdateOrgTelemetryRequest `json:"telemetry,omitempty"`
+	// Required: true
+	Name *string `json:"name"`
 }
 
 // Validate validates this service update org request
 func (m *ServiceUpdateOrgRequest) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateTelemetry(formats); err != nil {
+	if err := m.validateName(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -40,65 +38,17 @@ func (m *ServiceUpdateOrgRequest) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ServiceUpdateOrgRequest) validateTelemetry(formats strfmt.Registry) error {
-	if swag.IsZero(m.Telemetry) { // not required
-		return nil
-	}
+func (m *ServiceUpdateOrgRequest) validateName(formats strfmt.Registry) error {
 
-	if m.Telemetry != nil {
-		if err := m.Telemetry.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("telemetry")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("telemetry")
-			}
-
-			return err
-		}
+	if err := validate.Required("name", "body", m.Name); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-// ContextValidate validate this service update org request based on the context it is used
+// ContextValidate validates this service update org request based on context it is used
 func (m *ServiceUpdateOrgRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateTelemetry(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *ServiceUpdateOrgRequest) contextValidateTelemetry(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Telemetry != nil {
-
-		if swag.IsZero(m.Telemetry) { // not required
-			return nil
-		}
-
-		if err := m.Telemetry.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("telemetry")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("telemetry")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 

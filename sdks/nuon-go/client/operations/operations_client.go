@@ -1022,6 +1022,8 @@ type ClientService interface {
 
 	UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgFeaturesOK, error)
 
+	UpdateOrgTelemetry(params *UpdateOrgTelemetryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgTelemetryOK, error)
+
 	UpdateRunbook(params *UpdateRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunbookOK, error)
 
 	UpdateRunnerMng(params *UpdateRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerMngCreated, error)
@@ -22073,6 +22075,50 @@ func (a *Client) UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateOrgFeatures: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateOrgTelemetry updates current org telemetry settings
+*/
+func (a *Client) UpdateOrgTelemetry(params *UpdateOrgTelemetryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgTelemetryOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateOrgTelemetryParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateOrgTelemetry",
+		Method:             "PATCH",
+		PathPattern:        "/v1/orgs/current/telemetry",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateOrgTelemetryReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateOrgTelemetryOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateOrgTelemetry: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
