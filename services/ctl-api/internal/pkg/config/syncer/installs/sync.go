@@ -2,6 +2,7 @@ package installs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"maps"
 
@@ -131,8 +132,11 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
 		installCfg.StackOverrides.HasOverrides() ||
-		len(installCfg.ComponentToggles) > 0 {
+		len(installCfg.ComponentToggles) > 0 || installCfg.Telemetry != nil {
 		icParams := &installhelpers.CreateInstallConfigParams{}
+		if installCfg.Telemetry != nil {
+			icParams.Telemetry = installCfg.Telemetry
+		}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			icParams.ApprovalOption = app.InstallApprovalOption(installCfg.ApprovalOption)
 		}
@@ -209,12 +213,16 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
 		installCfg.StackOverrides.HasOverrides() ||
-		len(installCfg.ComponentToggles) > 0
+		len(installCfg.ComponentToggles) > 0 ||
+		(installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil)
 
 	if hasConfigFields {
 		updates := map[string]any{}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			updates["approval_option"] = string(installCfg.ApprovalOption)
+		}
+		if installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil {
+			updates["telemetry_enabled"] = installCfg.Telemetry.Enabled
 		}
 		if installCfg.StackOverrides != nil {
 			if installCfg.StackOverrides.VPCNestedTemplateURL != "" {
@@ -226,17 +234,24 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 				updates["runner_nested_template_url"] = &url
 			}
 			if len(installCfg.StackOverrides.CustomNestedStacks) > 0 {
-				updates["custom_nested_stacks"] = installCfg.StackOverrides.CustomNestedStacks
+				b, err := json.Marshal(installCfg.StackOverrides.CustomNestedStacks)
+				if err != nil {
+					return nil, fmt.Errorf("unable to marshal custom_nested_stacks: %w", err)
+				}
+				updates["custom_nested_stacks"] = string(b)
 			}
 		}
 
 		if len(updates) > 0 && existing.InstallConfig != nil {
-			db.WithContext(ctx).Model(&app.InstallConfig{}).
-				Where("id = ?", existing.InstallConfig.ID).
-				Updates(updates)
+			if err := db.WithContext(ctx).Model(&app.InstallConfig{}).
+				Where(app.InstallConfig{ID: existing.InstallConfig.ID, InstallID: existing.ID, OrgID: existing.OrgID}).
+				Updates(updates).Error; err != nil {
+				return nil, fmt.Errorf("unable to update config for install %s: %w", installCfg.Name, err)
+			}
 		} else if len(updates) > 0 {
 			icParams := &installhelpers.CreateInstallConfigParams{
 				ApprovalOption: app.InstallApprovalOption(installCfg.ApprovalOption),
+				Telemetry:      installCfg.Telemetry,
 			}
 			if _, err := installHelpers.CreateInstallConfig(ctx, existing.ID, icParams); err != nil {
 				return nil, fmt.Errorf("unable to create config for install %s: %w", installCfg.Name, err)
@@ -391,6 +406,9 @@ func existingToConfig(install *app.Install) *config.Install {
 
 	if install.InstallConfig != nil {
 		cfg.ApprovalOption = config.InstallApprovalOption(install.InstallConfig.ApprovalOption)
+		if install.InstallConfig.TelemetryEnabled != nil {
+			cfg.Telemetry = &config.InstallTelemetry{Enabled: install.InstallConfig.TelemetryEnabled}
+		}
 		if install.InstallConfig.VPCNestedTemplateURL != nil ||
 			install.InstallConfig.RunnerNestedTemplateURL != nil ||
 			len(install.InstallConfig.CustomNestedStacks) > 0 {
