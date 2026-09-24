@@ -227,10 +227,28 @@ export const PostHogOrgProperties = () => {
   useEffect(() => {
     if (!initialized || !org?.id) return
     posthog.register({ org_id: org.id })
-    posthog.group('organization', org.id, { name: org.name })
-  }, [org?.id, org?.name])
+    // Org feature flags as group properties: every event the org sends
+    // becomes sliceable by flag state, no per-event wiring needed.
+    posthog.group('organization', org.id, {
+      name: org.name,
+      ...Object.fromEntries(
+        Object.entries(org.features ?? {}).map(([flag, enabled]) => [
+          `flag_${flag}`,
+          enabled,
+        ])
+      ),
+    })
+  }, [org?.id, org?.name, org?.features])
 
   return null
+}
+
+export const captureFeatureFlagEvaluation = (props: {
+  flag: string
+  enabled: boolean
+}) => {
+  if (!initialized) return
+  posthog.capture('feature_flag_evaluated', props)
 }
 
 export const PostHogAppProperties = () => {
