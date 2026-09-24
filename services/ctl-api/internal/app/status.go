@@ -33,6 +33,7 @@ const (
 	StatusQueued             Status = "queued"
 	StatusWarning            Status = "warning"
 	StatusFailedPendingRetry Status = "failed-pending-retry"
+	StatusDisabled           Status = "disabled"
 )
 
 // type specific statuses

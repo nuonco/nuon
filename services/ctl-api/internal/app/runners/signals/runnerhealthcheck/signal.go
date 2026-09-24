@@ -101,6 +101,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
+	if runner.Status == app.RunnerStatusDisabled {
+		if err := s.toggleInstallCronEmitter(ctx, runner, activities.InstallCronsDisabled); err != nil {
+			return err
+		}
+	}
+
 	if isSkippableStatus(runner.Status) {
 		tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "skipped"))...)
 		return nil
@@ -132,7 +138,8 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 				tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "skipped"))...)
 				return nil
 			}
-			l.Warn("install runner has no active install process",
+			l.Warn(
+				"install runner has no active install process",
 				zap.String("runner_id", s.RunnerID),
 			)
 			tags["missing_install_process"] = "true"
@@ -158,12 +165,14 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 		if isNotFound(mngErr) {
 			mngProcessChecked = true
 			missingMngProcess = true
-			l.Warn("install runner missing management process",
+			l.Warn(
+				"install runner missing management process",
 				zap.String("runner_id", s.RunnerID),
 			)
 			tags["missing_mng_process"] = "true"
 		} else {
-			l.Warn("unable to check management process",
+			l.Warn(
+				"unable to check management process",
 				zap.String("runner_id", s.RunnerID),
 				zap.Error(mngErr),
 			)
@@ -192,7 +201,8 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 }
 
 func (s *Signal) handleRunnerActive(ctx workflow.Context, runner *app.Runner) error {
-	if _, ok := runner.StatusV2.Metadata[app.RunnerOfflineTSMetadataKey]; ok {
+	_, hasOfflineTS := runner.StatusV2.Metadata[app.RunnerOfflineTSMetadataKey]
+	if hasOfflineTS {
 		if err := statusactivities.LocalAwaitUpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
 			RunnerID: s.RunnerID,
 			Metadata: map[string]any{
@@ -203,7 +213,29 @@ func (s *Signal) handleRunnerActive(ctx workflow.Context, runner *app.Runner) er
 		}
 	}
 
+	if runner.Status != app.RunnerStatusActive {
+		if err := s.toggleInstallCronEmitter(ctx, runner, activities.InstallCronsEnabled); err != nil {
+			return err
+		}
+	}
+
 	return s.updateRunnerStatus(ctx, runner, app.RunnerStatusActive, "runner healthy")
+}
+
+func (s *Signal) toggleInstallCronEmitter(ctx workflow.Context, runner *app.Runner, state activities.InstallCronState) error {
+	if runner.RunnerGroup.Type != app.RunnerGroupTypeInstall {
+		return nil
+	}
+
+	if _, err := activities.AwaitToggleInstallCronEmitter(ctx, activities.ToggleInstallCronEmitterRequest{
+		InstallID: runner.RunnerGroup.OwnerID,
+		OrgID:     runner.OrgID,
+		AccountID: runner.CreatedByID,
+		State:     state,
+	}); err != nil {
+		return errors.Wrap(err, "unable to toggle install cron emitters")
+	}
+	return nil
 }
 
 func (s *Signal) handleRunnerOffline(ctx workflow.Context, tmw tmetrics.Writer, runner *app.Runner, reason string) error {
@@ -228,6 +260,10 @@ func (s *Signal) handleRunnerOffline(ctx workflow.Context, tmw tmetrics.Writer, 
 
 	if now.Sub(offlineAt) < runnerUnhealthyAlertDelay {
 		return nil
+	}
+
+	if err := s.toggleInstallCronEmitter(ctx, runner, activities.InstallCronsDisabled); err != nil {
+		return err
 	}
 
 	if err := s.notifyRunnerUnhealthy(ctx, tmw, runner, reason, offlineAt); err != nil {
@@ -261,7 +297,8 @@ func (s *Signal) runnerOfflineEvent(ctx workflow.Context, runner *app.Runner, re
 		})
 		if err == nil {
 			ownerName = install.Name
-			eventTags = append(eventTags,
+			eventTags = append(
+				eventTags,
 				metrics.ToTag("install_id", install.ID),
 				metrics.ToTag("install_name", install.Name),
 				metrics.ToTag("app_id", install.AppID),
