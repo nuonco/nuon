@@ -13,7 +13,6 @@ type CreateComponentBuildPlanRequest struct {
 	WorkflowID           string
 	CloudProvider        string
 	ManagementIAMRoleARN string
-	IsControlPlaneBuild  bool
 }
 
 // @temporal-gen-v2 workflow
@@ -25,7 +24,6 @@ func CreateComponentBuildPlan(ctx workflow.Context, req *CreateComponentBuildPla
 	p := Planner{
 		cloudProvider:        req.CloudProvider,
 		managementIAMRoleARN: req.ManagementIAMRoleARN,
-		isControlPlaneBuild:  req.IsControlPlaneBuild,
 	}
 	return p.createComponentBuildPlan(ctx, req)
 }

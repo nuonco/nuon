@@ -67,7 +67,6 @@ func TestDecideRunnerHealthCorpus(t *testing.T) {
 	for _, tc := range runnerHealthCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			d := decideRunnerHealth(corpusNow, corpusRunner(tc), runnerProcessPresence{
-				HasActiveBuild:   tc.activeBuild,
 				HasActiveInstall: tc.activeInstall,
 				HasActiveMng:     tc.activeMng,
 				MngChecked:       tc.mngChecked,
