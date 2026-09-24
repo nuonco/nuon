@@ -9,6 +9,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/pkg/browser"
 
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/bins/cli/internal/installcreate"
@@ -267,7 +268,7 @@ type createInstallBranch struct {
 }
 
 func (s *Service) resolveCreateInstallBranch(ctx context.Context, appID, appBranchID, installGroupID string, asJSON bool) (*createInstallBranch, error) {
-	branches, err := s.api.GetAppBranches(ctx, appID)
+	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return nil, err
 	}
