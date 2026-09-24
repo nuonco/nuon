@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	runner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
 )
 
 type Workflows struct {
@@ -27,12 +26,8 @@ type WorkflowParams struct {
 }
 
 func (w *Workflows) All() []any {
-	wkflow := runner.NewWorkflow(*w.cfg)
-
 	return []any{
 		w.CronShutdownVM,
-		wkflow.ProvisionRunner,
-		wkflow.DeprovisionRunner,
 	}
 }
 
