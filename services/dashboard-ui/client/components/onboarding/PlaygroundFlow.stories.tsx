@@ -4,7 +4,6 @@ export default {
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
-import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { CodeBlock } from '@/components/common/CodeBlock'
@@ -38,7 +37,7 @@ const NextButton = ({
   onClick?: () => void
   onBack?: () => void
   showNext?: boolean
-  // Escape hatch rendered beside the primary while it is blocked (e.g. "Continue without waiting").
+  // Rendered beside the primary (e.g. a cost line while a push is still pending).
   secondary?: ReactNode
 }) => (
   <div className={cn('flex gap-3', onBack ? 'justify-between' : 'justify-end')}>
@@ -864,82 +863,13 @@ const CopyTextButton = ({
 
 const OWN_APP_STEPS: { icon: TIconVariant; title: string }[] = [
   { icon: 'GitHub', title: 'Connect GitHub' },
-  { icon: 'RobotIcon', title: 'Create your app template' },
+  { icon: 'RobotIcon', title: 'Connect your app' },
   { icon: 'CloudIcon', title: 'Create the first install' },
 ]
 
-// Manual setup, push-based. The config lives in the repo connected in Set up and the
-// default app branch tracks it, so a push is the sync (docs/guides/app-branches: any
-// push to the tracked branch starts a run). Three steps; the detail lives in the docs.
-const ManualSetup = ({ appName, repo }: { appName: string; repo: string }) => {
-  const steps: { title: string; body: ReactNode; detail?: ReactNode }[] = [
-    {
-      title: 'Put the config at the root of the repo',
-      body: (
-        <>
-          Top level of <Badge size="sm" variant="code">{repo}</Badge>, the same layout as{' '}
-          <Link href={KITCHEN_SINK_REPO} isExternal textVariant="subtext" className="!inline-flex align-baseline">
-            nuonco/kitchen-sink
-          </Link>
-        </>
-      ),
-    },
-    {
-      title: 'Fill in the stubs',
-      body: (
-        <>
-          Point each component at a repo and branch, pick a sandbox, scope the three roles.{' '}
-          <Link href={DOCS_CONFIG_FILES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
-            Configuration files
-          </Link>
-        </>
-      ),
-    },
-    {
-      title: 'Commit and push',
-      body: <>Every push to main starts a run.</>,
-      detail: (
-        <CodeBlock language="bash" showCopy>
-          {GIT_PUSH(appName)}
-        </CodeBlock>
-      ),
-    },
-  ]
-
-  return (
-    <div className="flex flex-col gap-4">
-      <ol className="flex flex-col gap-4">
-        {steps.map((step, index) => (
-          <li key={step.title} className="flex gap-3">
-            <Badge size="sm" theme="brand" className="mt-0.5 shrink-0">
-              {index + 1}
-            </Badge>
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <Text variant="body" weight="strong">
-                {step.title}
-              </Text>
-              <Text variant="subtext" theme="neutral">
-                {step.body}
-              </Text>
-              {step.detail}
-            </div>
-          </li>
-        ))}
-      </ol>
-      <Text variant="subtext" theme="neutral" flex className="border-t pt-3">
-        Editing TOML by hand?
-        <Link href={VSCODE_EXTENSION} isExternal textVariant="subtext">
-          The Nuon VS Code extension
-        </Link>
-        adds autocomplete and validation.
-      </Text>
-    </div>
-  )
-}
-
 // The step's live moment: Nuon watching the tracked branch. In the prototype the
 // review panel's "Simulate push" stands in for the push.
-const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boolean; skipped: boolean }) => (
+const PushListener = ({ detected }: { detected: boolean }) => (
   <div
     className={cn(
       'flex flex-wrap items-center justify-between gap-3 rounded-md bg-background p-4 ring-1 transition-shadow',
@@ -949,14 +879,12 @@ const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boo
     <div className="flex min-w-0 items-center gap-3">
       {detected ? (
         <Icon variant="CheckCircleIcon" size={20} weight="fill" theme="success" />
-      ) : skipped ? (
-        <Icon variant="WarningIcon" size={20} theme="warn" />
       ) : (
         <Icon variant="Loading" size={20} />
       )}
       <div className="flex min-w-0 flex-col gap-0.5">
         <Text variant="body" weight="strong">
-          {detected ? 'Config detected on main' : skipped ? 'Waiting on your first push' : 'Listening for a push'}
+          {detected ? 'Synced from main' : 'The prompt ends with pushing your app config'}
         </Text>
         <Text variant="subtext" theme="neutral" flex className="flex-wrap">
           {detected ? (
@@ -965,28 +893,16 @@ const PushListener = ({ repo, detected, skipped }: { repo: string; detected: boo
               <Badge size="sm" variant="code">
                 a1b2c3d
               </Badge>
-              synced the default app branch. Building your components now.
+              updated the default app branch. Building your components now.
             </>
-          ) : skipped ? (
-            <>Your components deploy once it lands. Nuon keeps watching main.</>
           ) : (
-            <>
-              Push to
-              <Badge size="sm" variant="code">
-                {repo}
-              </Badge>
-              or run
-              <Badge size="sm" variant="code">
-                nuon sync
-              </Badge>
-              and the default app branch picks it up.
-            </>
+            <>Once it lands on main, Nuon syncs the config and builds your components.</>
           )}
         </Text>
       </div>
     </div>
-    <Badge size="sm" theme={detected ? 'success' : skipped ? 'warn' : 'brand'}>
-      {detected ? 'Synced' : skipped ? 'Not synced' : 'Watching'}
+    <Badge size="sm" theme={detected ? 'success' : 'brand'}>
+      {detected ? 'Synced' : 'Watching'}
     </Badge>
   </div>
 )
@@ -1029,7 +945,7 @@ const PERMISSIONS_STUB = (cloud: TCloud) =>
 const APP_FILE_STUBS: IAppFileStub[] = [
   {
     name: 'metadata.toml',
-    purpose: 'Names the app template and pins the config version.',
+    purpose: 'Names the app and pins the config version.',
     badge: 'Required',
     required: true,
     snippet: (app) =>
@@ -1204,11 +1120,11 @@ const ExampleEscapeHatch = ({ onExit }: { onExit: () => void }) => (
     <div className="flex items-center gap-2">
       <Icon variant="PackageIcon" size={16} theme="neutral" />
       <Text variant="subtext" theme="neutral">
-        Want to see it work first? Kick the tires with our example app.
+        Want to see an install work before touching your repo?
       </Text>
     </div>
     <Button variant="ghost" size="sm" onClick={onExit}>
-      Switch to the example app <Icon variant="ArrowRightIcon" size={14} />
+      Use the example app <Icon variant="ArrowRightIcon" size={14} />
     </Button>
   </div>
 )
@@ -1362,7 +1278,7 @@ const CollapsibleRow = ({
   children,
 }: {
   id: string
-  icon: TIconVariant
+  icon?: TIconVariant
   summary: string
   badge?: string
   children: ReactNode
@@ -1378,7 +1294,7 @@ const CollapsibleRow = ({
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left cursor-pointer hover:bg-cool-grey-500/8"
       >
         <span className="flex flex-wrap items-center gap-2">
-          <Icon variant={icon} size={16} theme="neutral" />
+          {icon ? <Icon variant={icon} size={16} theme="neutral" /> : null}
           <Text as="span" variant="body" weight="strong">
             {summary}
           </Text>
@@ -1408,18 +1324,125 @@ const CollapsibleRow = ({
   )
 }
 
-// The agent path is the step. The prompt is the one thing to act on; the files
-// it fills in and the MCP extra sit under it, closed.
-const AgentSetup = ({ appName, cloud }: { appName: string; cloud: TCloud }) => (
+// Manual setup, push-based. The config lives in the repo connected in Set up and the
+// default app branch tracks it, so a push is the sync (docs/guides/app-branches: any
+// push to the tracked branch starts a run). The six files live here, for the person
+// who chose to fill them in.
+const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; cloud: TCloud }) => {
+  const steps: { title: string; body: ReactNode; detail?: ReactNode }[] = [
+    {
+      title: 'Put the config at the root of the repo',
+      body: (
+        <>
+          Top level of <Badge size="sm" variant="code">{repo}</Badge>, the same layout as{' '}
+          <Link href={KITCHEN_SINK_REPO} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+            nuonco/kitchen-sink
+          </Link>
+        </>
+      ),
+    },
+    {
+      title: 'Fill in the six files Nuon started',
+      body: (
+        <>
+          Point each component at a repo and branch, pick a sandbox, scope the three roles.{' '}
+          <Link href={DOCS_CONFIG_FILES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+            Configuration files
+          </Link>
+        </>
+      ),
+      detail: <FileStubRows appName={appName} cloud={cloud} />,
+    },
+    {
+      title: 'Push to main',
+      body: <>Every push syncs the default app branch.</>,
+      detail: (
+        <CodeBlock language="bash" showCopy>
+          {GIT_PUSH(appName)}
+        </CodeBlock>
+      ),
+    },
+  ]
+
+  return (
+    <div className="flex flex-col gap-4">
+      <ol className="flex flex-col gap-4">
+        {steps.map((step, index) => (
+          <li key={step.title} className="flex gap-3">
+            <Badge size="sm" theme="brand" className="mt-0.5 shrink-0">
+              {index + 1}
+            </Badge>
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <Text variant="body" weight="strong">
+                {step.title}
+              </Text>
+              <Text variant="subtext" theme="neutral">
+                {step.body}
+              </Text>
+              {step.detail}
+            </div>
+          </li>
+        ))}
+      </ol>
+      <Text variant="subtext" theme="neutral" flex className="border-t pt-3">
+        Editing TOML by hand?
+        <Link href={VSCODE_EXTENSION} isExternal textVariant="subtext">
+          The Nuon VS Code extension
+        </Link>
+        adds autocomplete and validation.
+      </Text>
+    </div>
+  )
+}
+
+// The two ways out of the agent path, stated once, under the card. Amber lives in the
+// icon only: the cost is real, but the row must not out-shout "Copy prompt".
+const ManualExits = ({ appName, repo, cloud }: { appName: string; repo: string; cloud: TCloud }) => {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="flex flex-col gap-4 rounded-md border bg-cool-grey-50 px-5 py-4 dark:bg-dark-grey-800">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <Icon variant="WarningIcon" size={20} theme="warn" className="mt-0.5 shrink-0" />
+          <div className="flex flex-col gap-0.5">
+            <Text variant="body" weight="strong">
+              Prefer to write the config by hand?
+            </Text>
+            <Text variant="subtext" theme="neutral">
+              It takes longer and is easier to get wrong.
+            </Text>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={contactUs}>
+            <Icon variant="ChatCircleIcon" size={14} /> Have a Nuon engineer write it with you
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setOpen((prev) => !prev)}>
+            {open ? 'Hide manual steps' : 'Show manual steps'}
+          </Button>
+        </div>
+      </div>
+      {open ? (
+        <div className="rounded-md border bg-background p-4">
+          <ManualSetup appName={appName} repo={repo} cloud={cloud} />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+// The agent path is the card. The prompt is the one thing to act on.
+const AgentSetup = () => (
   <div className="flex flex-col gap-4">
     <div className="flex flex-col gap-1.5">
-      <Text variant="base" weight="strong" flex>
+      <Text as="h3" variant="h3" weight="strong" flex>
         <Icon variant="RobotIcon" size={20} />
         Have your agent write the config
       </Text>
       <Text variant="body" theme="neutral">
-        Open the directory that holds your app and paste this prompt. Your agent fills in the files Nuon
-        stubbed, validates the config and syncs it to Nuon.
+        Paste this prompt in the directory with your Helm charts, Terraform, and Dockerfiles. Your agent writes
+        Nuon config files, and then you&apos;re one step from a test install on a mock customer cloud account of
+        your choosing.
       </Text>
     </div>
     <div className="flex flex-col gap-4 rounded-md border bg-background p-4 sm:flex-row sm:items-center">
@@ -1433,32 +1456,6 @@ const AgentSetup = ({ appName, cloud }: { appName: string; cloud: TCloud }) => (
       </div>
       <CopyTextButton text={AGENT_PASTE} label="Copy prompt" size="lg" variant="primary" />
     </div>
-    <CollapsibleRow
-      id="stubbed-files"
-      icon="FileTextIcon"
-      summary={`The ${APP_FILE_STUBS.length} files your agent fills in`}
-      badge="Stubbed by Nuon"
-    >
-      <Text variant="subtext" theme="neutral">
-        The minimum for a first install: four required files, the branch that tracks your repo, and
-        components/. Inputs, secrets, policies and more are optional.{' '}
-        <Link href={DOCS_CONFIG_FILES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
-          Configuration files
-        </Link>
-      </Text>
-      <FileStubRows appName={appName} cloud={cloud} />
-    </CollapsibleRow>
-    <CollapsibleRow id="mcp-server" icon="SparkleIcon" summary="Give your agent the Nuon MCP server" badge="Optional">
-      <Text variant="subtext" theme="neutral">
-        Live access to your org while it works: apps, builds, installs, and logs. For example, in Claude Code:
-      </Text>
-      <CodeBlock language="bash" showCopy wrapLongLines className="!pr-14">
-        {MCP_ADD_CLAUDE}
-      </CodeBlock>
-      <Link href={DOCS_MCP} isExternal textVariant="subtext">
-        docs.nuon.co/guides/agents/mcp-walkthrough
-      </Link>
-    </CollapsibleRow>
   </div>
 )
 
@@ -1466,16 +1463,9 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
   const { choose, pushTick } = useForkChoice()
   const appName = readAppName(sharedData)
   const cloud = readCloud(sharedData)
-  const [showManual, setShowManual] = useState(false)
-  // The connected account from Set up, and a repo named after the template.
+  // The connected account from Set up, and a repo named after the app.
   const repo = `jane-doe/${appName}`
   const detected = pushTick > 0
-  // Persisted so Back from the Deploy step does not re-block the user.
-  const skipped = Boolean(sharedData.skippedPush)
-  // Skipping is reversible and not destructive, so COPY_STYLE's modal tiers do
-  // not apply. The cost is stated inline, next to the action, before it is taken.
-  const [confirmSkip, setConfirmSkip] = useState(false)
-  const waitingOnPush = !detected && !skipped
 
   // Back to the fork, collapsed, with the example path selected.
   const exitToExample = () => {
@@ -1490,77 +1480,46 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
   return (
     <div className="flex flex-col gap-6">
       <Card className="!gap-5 !p-5 !border-0 !shadow-none bg-primary-50 dark:bg-primary-950/40 ring-1 ring-primary-200 dark:ring-primary-800">
-        <Text variant="body" theme="neutral" flex>
-          You are creating
-          <Badge size="sm" variant="code">
-            {appName}
-          </Badge>
-        </Text>
-        <AgentSetup appName={appName} cloud={cloud} />
-        <PushListener repo={repo} detected={detected} skipped={skipped} />
+        <AgentSetup />
+        <PushListener detected={detected} />
       </Card>
-      {/* The out: hand-written config is allowed, with the cost stated, and Nuon's team is one click away. */}
-      <Banner theme="warn">
-        <div className="flex flex-col gap-2">
-          <Text weight="strong">Prefer to write the config by hand?</Text>
-          <Text variant="subtext">
-            Manual setup takes longer and is easier to get wrong. Our team can also write the app config
-            with you.
+      <ManualExits appName={appName} repo={repo} cloud={cloud} />
+      <CollapsibleRow id="mcp-setup" icon="SparkleIcon" summary="MCP setup and dependencies">
+        <div className="flex flex-col gap-1.5">
+          <Text variant="subtext" weight="strong">
+            Optional: give your agent the Nuon Model Context Protocol (MCP) server
           </Text>
-          <div className="flex flex-wrap items-center gap-3 pt-1">
-            <Button variant="secondary" size="sm" onClick={contactUs}>
-              <Icon variant="ChatCircleIcon" size={14} /> Contact us
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setShowManual((prev) => !prev)}>
-              {showManual ? 'Hide manual steps' : 'Show manual steps'}
-            </Button>
-          </div>
-          {showManual ? (
-            <div id="manual-setup" className="mt-2 rounded-md border bg-background p-4 text-foreground">
-              <ManualSetup appName={appName} repo={repo} />
-            </div>
-          ) : null}
+          <Text variant="subtext" theme="neutral">
+            Live access to your org while it works: apps, builds, installs and logs. In Claude Code:
+          </Text>
+          <CodeBlock language="bash" showCopy wrapLongLines className="!pr-14">
+            {MCP_ADD_CLAUDE}
+          </CodeBlock>
+          <Link href={DOCS_MCP} isExternal textVariant="subtext">
+            docs.nuon.co/guides/agents/mcp-walkthrough
+          </Link>
         </div>
-      </Banner>
+        <div className="flex flex-col gap-1.5 border-t pt-3">
+          <Text variant="subtext" weight="strong">
+            Dependencies
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            Databases like Postgres run as components in the customer&apos;s account. Third-party services like
+            Clerk or SendGrid stay external; their keys arrive as install inputs.
+          </Text>
+        </div>
+      </CollapsibleRow>
       <ExampleEscapeHatch onExit={exitToExample} />
-      {waitingOnPush && confirmSkip ? (
-        <Banner theme="warn">
-          <div className="flex flex-col gap-2">
-            <Text weight="strong">Components wait for your first push</Text>
-            <Text variant="subtext">
-              Nuon creates the install and provisions the sandbox now, then deploys your components once a
-              push lands on main.
-            </Text>
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setSharedData('skippedPush', true)
-                  setConfirmSkip(false)
-                }}
-              >
-                Continue anyway
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setConfirmSkip(false)}>
-                Keep waiting
-              </Button>
-            </div>
-          </div>
-        </Banner>
-      ) : null}
       <NextButton
         label="Set up your first install"
-        disabled={!detected && !skipped}
-        disabledReason="Cannot continue until your first push lands"
         onClick={onAdvance}
         onBack={onGoBack}
         secondary={
-          waitingOnPush && !confirmSkip ? (
-            <Button variant="ghost" onClick={() => setConfirmSkip(true)}>
-              Continue without waiting
-            </Button>
-          ) : null
+          detected ? null : (
+            <Text variant="subtext" theme="neutral">
+              You can keep going. Components deploy after your first push.
+            </Text>
+          )
         }
       />
     </div>
@@ -1706,7 +1665,7 @@ const ForkStep = ({ sharedData, setSharedData, onAdvance }: IWizardStepComponent
 
 
       {expanded ? (
-        <NextButton label="Create your app template" onClick={tryContinue} onBack={backToIntro} />
+        <NextButton label="Connect your app" onClick={tryContinue} onBack={backToIntro} />
       ) : (
         <NextButton onBack={backToIntro} showNext={false} />
       )}
@@ -2400,9 +2359,9 @@ const FORK_STEP: IWizardStepDef = {
 
 const TEMPLATE_STEP: IWizardStepDef = {
   id: 'own-template',
-  title: 'Create your app template',
-  navLabel: 'Template',
-  description: 'Your app template is what Nuon uses to deploy your product.',
+  title: 'Connect your app',
+  navLabel: 'Connect',
+  description: "This config is how Nuon installs and upgrades your app in every customer's cloud.",
   component: TemplateStep,
 }
 
