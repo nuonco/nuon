@@ -808,6 +808,8 @@ const contactUs = () => {
 }
 
 const DOCS_MCP = 'https://docs.nuon.co/guides/agents/mcp-walkthrough'
+const DOCS_RUNNERS = 'https://docs.nuon.co/concepts/runners'
+const DOCS_SANDBOXES = 'https://docs.nuon.co/concepts/sandboxes'
 const CLI_SETUP = 'brew install nuonco/tap/nuon\nnuon auth login'
 const MCP_ADD_CLAUDE = 'claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes'
 const DOCS_CONFIG_FILES = 'https://docs.nuon.co/configuration-files'
@@ -872,11 +874,11 @@ const OWN_APP_STEPS: { icon: TIconVariant; title: string }[] = [
 const PushListener = ({ detected }: { detected: boolean }) => (
   <div
     className={cn(
-      'flex flex-wrap items-center justify-between gap-3 rounded-md bg-background p-4 ring-1 transition-shadow',
+      'flex items-start justify-between gap-3 rounded-md bg-background p-4 ring-1 transition-shadow',
       detected ? 'ring-green-500 dark:ring-green-400' : 'ring-neutral-200 dark:ring-neutral-700'
     )}
   >
-    <div className="flex min-w-0 items-center gap-3">
+    <div className="flex min-w-0 flex-1 items-start gap-3">
       {detected ? (
         <Icon variant="CheckCircleIcon" size={20} weight="fill" theme="success" />
       ) : (
@@ -886,22 +888,31 @@ const PushListener = ({ detected }: { detected: boolean }) => (
         <Text variant="body" weight="strong">
           {detected ? 'Synced from main' : 'The prompt ends with pushing your app config'}
         </Text>
-        <Text variant="subtext" theme="neutral" flex className="flex-wrap">
-          {detected ? (
-            <>
-              Commit
-              <Badge size="sm" variant="code">
-                a1b2c3d
-              </Badge>
-              updated the default app branch. Building your components now.
-            </>
-          ) : (
-            <>Once it lands on main, Nuon syncs the config and builds your components.</>
-          )}
-        </Text>
+        {detected ? (
+          <Text variant="subtext" theme="neutral" flex className="flex-wrap">
+            Commit
+            <Badge size="sm" variant="code">
+              a1b2c3d
+            </Badge>
+            updated the default app branch. Building your components now.
+          </Text>
+        ) : (
+          <Text variant="subtext" theme="neutral">
+            Continue now and the next steps create the install and provision the{' '}
+            <Link href={DOCS_RUNNERS} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+              runner
+            </Link>{' '}
+            and{' '}
+            <Link href={DOCS_SANDBOXES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
+              Nuon sandbox
+            </Link>{' '}
+            in your test account. Your app deploys when the push lands. Or wait for the push and watch it all
+            deploy in one workflow.
+          </Text>
+        )}
       </div>
     </div>
-    <Badge size="sm" theme={detected ? 'success' : 'brand'}>
+    <Badge size="sm" theme={detected ? 'success' : 'brand'} className="mt-0.5 shrink-0">
       {detected ? 'Synced' : 'Watching'}
     </Badge>
   </div>
@@ -1510,18 +1521,7 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
         </div>
       </CollapsibleRow>
       <ExampleEscapeHatch onExit={exitToExample} />
-      <NextButton
-        label="Set up your first install"
-        onClick={onAdvance}
-        onBack={onGoBack}
-        secondary={
-          detected ? null : (
-            <Text variant="subtext" theme="neutral">
-              You can keep going. Components deploy after your first push.
-            </Text>
-          )
-        }
-      />
+      <NextButton label="Set up your first install" onClick={onAdvance} onBack={onGoBack} />
     </div>
   )
 }
