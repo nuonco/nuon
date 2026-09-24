@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -71,11 +72,12 @@ cidr = "10.0.0.0/16"
 }
 
 type testAppBranchLister struct {
+	nuon.Client
 	branches []*models.AppAppBranch
 }
 
-func (l testAppBranchLister) GetAppBranches(context.Context, string) ([]*models.AppAppBranch, error) {
-	return l.branches, nil
+func (l testAppBranchLister) GetAppBranches(context.Context, string, *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error) {
+	return l.branches, false, nil
 }
 
 func TestResolveInstallConfigBranchesRequiresBranchWhenAppSyncDisabled(t *testing.T) {

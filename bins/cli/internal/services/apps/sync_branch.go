@@ -77,7 +77,7 @@ func (s *Service) resolveDefaultBranchID(ctx context.Context, appID string, feat
 }
 
 func (s *Service) findBranchIDByName(ctx context.Context, appID, name string) (string, error) {
-	branches, err := s.api.GetAppBranches(ctx, appID)
+	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return "", fmt.Errorf("unable to list app branches: %w", err)
 	}
