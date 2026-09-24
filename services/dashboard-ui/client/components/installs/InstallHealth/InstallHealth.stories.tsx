@@ -187,8 +187,8 @@ const Timeline = ({
     currentHealth={currentHealth}
     components={timelineComponents}
     componentBasePath="/org-1/installs/inst-1/resources/components"
-    getComponentHref={(componentId) =>
-      `/org-1/installs/inst-1/resources/components#${componentId}`
+    getComponentHref={({ component_id, component_name }) =>
+      `/org-1/installs/inst-1/resources/components?q=${encodeURIComponent(component_name || component_id)}`
     }
     clusterAccessError={clusterAccessError}
   />

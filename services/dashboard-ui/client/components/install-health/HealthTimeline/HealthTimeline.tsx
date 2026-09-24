@@ -216,13 +216,23 @@ function dayAriaLabel(day: THealthTimelineDay): string {
   }`
 }
 
+export type THealthTimelineComponentLink = Pick<
+  TInstallHealthTimelineComponent,
+  'component_id' | 'component_name'
+>
+
 function componentHref(
   component: TInstallHealthTimelineComponent,
   componentBasePath?: string,
-  getComponentHref?: (componentId: string) => string
+  getComponentHref?: (component: THealthTimelineComponentLink) => string
 ) {
   if (!component.component_id) return undefined
-  if (getComponentHref) return getComponentHref(component.component_id)
+  if (getComponentHref) {
+    return getComponentHref({
+      component_id: component.component_id,
+      component_name: component.component_name,
+    })
+  }
   if (componentBasePath)
     return `${componentBasePath}/${component.component_id}`
   return undefined
@@ -236,7 +246,7 @@ function ComponentHealthRows({
 }: {
   components: TInstallHealthTimelineComponent[]
   componentBasePath?: string
-  getComponentHref?: (componentId: string) => string
+  getComponentHref?: (component: THealthTimelineComponentLink) => string
   className?: string
 }) {
   return (
@@ -249,24 +259,36 @@ function ComponentHealthRows({
         )
 
         return (
-        <div
-          key={component.install_component_id}
-          className="flex items-center justify-between gap-3"
-        >
-          {href ? (
-            <Link href={href}>
-              {component.component_name || component.component_id}
-            </Link>
-          ) : (
-            <Text>{component.component_name || component.install_component_id}</Text>
-          )}
-          <div className="flex items-center gap-3 shrink-0">
-            <Status status={component.current_health || 'unknown'} variant="badge" />
-            <Text variant="subtext" theme="neutral" className="w-16 text-right">
-              {formatUptime(component.uptime_percent, component.observed_seconds)}
-            </Text>
+          <div
+            key={component.install_component_id}
+            className="flex items-center justify-between gap-3"
+          >
+            {href ? (
+              <Link href={href}>
+                {component.component_name || component.component_id}
+              </Link>
+            ) : (
+              <Text>
+                {component.component_name || component.install_component_id}
+              </Text>
+            )}
+            <div className="flex items-center gap-3 shrink-0">
+              <Status
+                status={component.current_health || 'unknown'}
+                variant="badge"
+              />
+              <Text
+                variant="subtext"
+                theme="neutral"
+                className="w-16 text-right"
+              >
+                {formatUptime(
+                  component.uptime_percent,
+                  component.observed_seconds
+                )}
+              </Text>
+            </div>
           </div>
-        </div>
         )
       })}
     </div>
@@ -285,7 +307,7 @@ export interface IHealthTimeline {
   currentHealth?: string
   components?: TInstallHealthTimelineComponent[]
   componentBasePath?: string
-  getComponentHref?: (componentId: string) => string
+  getComponentHref?: (component: THealthTimelineComponentLink) => string
   transitions?: TInstallComponentHealthTransition[]
   deployBasePath?: string
   isLoading?: boolean

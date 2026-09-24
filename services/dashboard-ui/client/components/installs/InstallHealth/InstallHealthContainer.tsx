@@ -15,9 +15,10 @@ export const InstallHealthContainer = () => {
         <HealthTimeline
           days={30}
           shouldPoll
-          getComponentHref={(componentId) =>
-            `${resourcesComponentsPath}#${componentId}`
-          }
+          getComponentHref={({ component_id, component_name }) => {
+            const q = encodeURIComponent(component_name || component_id)
+            return `${resourcesComponentsPath}?q=${q}`
+          }}
         />
       }
       resources={<InstallResourcesTable shouldPoll />}

@@ -412,7 +412,7 @@ export const Loading = () => (
   </Frame>
 )
 
-export const InstallScopeResourcesHashLinks = () => (
+export const InstallScopeResourcesSearchLinks = () => (
   <Frame>
     <HealthTimeline
       scope="install"
@@ -422,8 +422,8 @@ export const InstallScopeResourcesHashLinks = () => (
       observedSeconds={90 * 86400}
       currentHealth="healthy"
       components={mockComponents}
-      getComponentHref={(componentId) =>
-        `/org123/installs/inst123/resources/components#${componentId}`
+      getComponentHref={({ component_id, component_name }) =>
+        `/org123/installs/inst123/resources/components?q=${encodeURIComponent(component_name || component_id)}`
       }
     />
   </Frame>

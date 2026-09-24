@@ -8,6 +8,7 @@ import {
 import type {
   TInstallComponentHealthTimeline,
   TInstallHealthTimeline,
+  TInstallHealthTimelineComponent,
 } from '@/types'
 import { HealthCardActions } from '@/components/install-health/HealthCardActions'
 import { HealthTimeline } from './HealthTimeline'
@@ -25,7 +26,12 @@ export const HealthTimelineContainer = ({
   pollInterval?: number
   shouldPoll?: boolean
   componentBasePath?: string
-  getComponentHref?: (componentId: string) => string
+  getComponentHref?: (
+    component: Pick<
+      TInstallHealthTimelineComponent,
+      'component_id' | 'component_name'
+    >
+  ) => string
 }) => {
   const { org } = useOrg()
   const { install } = useInstall()
