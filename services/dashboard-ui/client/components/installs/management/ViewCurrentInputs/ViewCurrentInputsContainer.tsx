@@ -4,6 +4,7 @@ import { Icon } from '@/components/common/Icon'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallCurrentInputs } from '@/lib'
@@ -15,7 +16,7 @@ export const ViewCurrentInputsModalContainer = ({ ...props }: IModal) => {
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const canRenameInstall = !!org?.features?.['install-rename']
+  const canRenameInstall = useOrgFeatureFlag('install-rename')
 
   const { data: inputs, isLoading: inputsLoading } = useQuery({
     placeholderData: keepPreviousData,
