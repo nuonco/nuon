@@ -7,7 +7,7 @@ import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownR
 import { ReprovisionSandboxButton } from '@/components/sandbox/management/ReprovisionSandbox'
 import { useConfig } from '@/hooks/use-config'
 import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
+import { useOrgFeatureFlag } from '@/hooks/use-org-feature-flag'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction/RunAdhocActionContainer'
 import { AuditHistoryButton } from '@/components/installs/management/AuditHistory'
@@ -62,8 +62,7 @@ const ActionCard = ({
 const InstallSettingsPanelContentInner = () => {
   const { isByoc, isDev } = useConfig()
   const { install } = useInstall()
-  const { org } = useOrg()
-  const canRenameInstall = !!org?.features?.['install-rename']
+  const canRenameInstall = useOrgFeatureFlag('install-rename')
 
   return (
     <div className="@container flex flex-col gap-6">
