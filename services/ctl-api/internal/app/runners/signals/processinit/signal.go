@@ -58,7 +58,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	resetRunnerHealth := false
 	switch process.Type {
-	case app.RunnerProcessTypeInstall, app.RunnerProcessTypeBuild, app.RunnerProcessTypeOrg:
+	case app.RunnerProcessTypeInstall:
 		resetRunnerHealth = true
 	}
 	processStatus := process.ProcessStatus()

@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"slices"
-
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/actions"
-	"github.com/nuonco/nuon/bins/runner/internal/jobs/build"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/deploy"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/operations"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox"
@@ -22,7 +19,6 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/telemetryexport"
-	"github.com/nuonco/nuon/pkg/runner/settings"
 
 	check "github.com/nuonco/nuon/bins/runner/internal/jobs/healthcheck/check"
 )
@@ -61,24 +57,14 @@ func (c *cli) runOptions() []fx.Option {
 	// actions
 	providers = append(providers, actions.GetJobs()...)
 
-	// org-only providers
-	providers = append(providers, build.GetJobs()...)
-
-	// install-only proviers
+	// deploy providers
 	providers = append(providers, deploy.GetJobs()...)
 	providers = append(providers, audit.Module, telemetryexport.Module)
 
 	providers = append(
 		providers,
 		[]fx.Option{
-			// derive process type from settings groups:
-			// org runners have "build" in groups, install runners have "deploys"
-			fx.Provide(fx.Annotate(func(s *settings.Settings) string {
-				if slices.Contains(s.Groups, "deploys") {
-					return "install"
-				}
-				return "build"
-			}, fx.ResultTags(`name:"process"`))),
+			fx.Supply(fx.Annotate("install", fx.ResultTags(`name:"process"`))),
 			// start all job loops
 			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 			fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),

@@ -49,7 +49,6 @@ const (
 // TODO(fd): use the consts
 var (
 	CommonRunnerGroupSettingsGroups         = [...]string{"operations", "sync"}
-	DefaultOrgRunnerGroupSettingsGroups     = [...]string{"build", "sandbox", "runner"}
 	DefaultInstallRunnerGroupSettingsGroups = [...]string{"deploys", "action", "sandbox"}
 )
 

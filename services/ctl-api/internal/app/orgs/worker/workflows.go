@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
@@ -33,13 +32,7 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
-	wkflow := orgiam.NewWorkflow(*w.cfg)
-	wkflows := []any{
-		wkflow.ProvisionIAM,
-		wkflow.DeprovisionIAM,
-	}
-
-	return append(wkflows, w.ListWorkflowFns()...)
+	return w.ListWorkflowFns()
 }
 
 // ListWorkflowFns returns the list of workflow functions for registration

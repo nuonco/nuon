@@ -13,8 +13,7 @@ const (
 )
 
 type CreateBuildJobRequest struct {
-	BuildID     string `validate:"required"`
-	RunnerID    string
+	BuildID     string                     `validate:"required"`
 	Op          app.RunnerJobOperationType `validate:"required"`
 	Type        app.RunnerJobType          `validate:"required"`
 	LogStreamID string                     `validate:"required"`
@@ -28,19 +27,14 @@ func (a *Activities) CreateBuildJob(ctx context.Context, req *CreateBuildJobRequ
 		return nil, fmt.Errorf("unable to get component build: %w", err)
 	}
 
-	ctx = cctx.SetAccountIDContext(ctx, bld.CreatedByID)
-	ctx = cctx.SetOrgIDContext(ctx, bld.OrgID)
-	executor, runnerID, err := a.runnersHelpers.BuildExecutorForOrg(ctx, &app.Org{ID: bld.OrgID}, req.Type)
-	if err != nil {
-		return nil, fmt.Errorf("unable to choose build executor: %w", err)
-	}
-	if executor == app.RunnerJobExecutorOrgRunner && req.RunnerID != "" {
-		runnerID = req.RunnerID
+	if req.Type == app.RunnerJobTypeDockerBuild {
+		return nil, fmt.Errorf("docker_build components are not supported by control-plane builds; replace this component with a container_image component")
 	}
 
+	ctx = cctx.SetAccountIDContext(ctx, bld.CreatedByID)
+	ctx = cctx.SetOrgIDContext(ctx, bld.OrgID)
+
 	job, err := a.runnersHelpers.CreateBuildJob(ctx,
-		runnerID,
-		executor,
 		buildOwnerType,
 		bld.ID,
 		req.Type,

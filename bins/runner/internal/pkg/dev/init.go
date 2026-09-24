@@ -21,10 +21,6 @@ func (d *devver) Init(ctx context.Context) error {
 	}
 
 	switch d.watchRunnerType {
-	case "org":
-		if os.Getenv("ORG_RUNNER_ID") != "" {
-			shouldMonitor = false
-		}
 	case "install":
 		if os.Getenv("INSTALL_RUNNER_ID") != "" {
 			shouldMonitor = false
@@ -33,7 +29,7 @@ func (d *devver) Init(ctx context.Context) error {
 
 	disabled := d.Disabled()
 	if disabled {
-		fmt.Println("disabling and returning because of DISABLE_ORG_RUNNER or DISABLE_INSTALL_RUNNER in env")
+		fmt.Println("disabling and returning because of DISABLE_INSTALL_RUNNER in env")
 		for {
 			if err := smithytime.SleepWithContext(ctx, time.Second*5); err != nil {
 				return err

@@ -135,7 +135,6 @@ import (
 	// runners signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/delete"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/deprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/flushorphanedjobs"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/forcedelete"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/forceshutdown"
@@ -153,9 +152,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processinit"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processshutdown"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/provision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/provisionserviceaccount"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/reprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/reprovisionserviceaccount"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/restart"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/runnerhealthcheck"

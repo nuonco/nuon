@@ -90,8 +90,8 @@ that directory instead of a clone, and everything downstream is unchanged.
 
 ## Where builds come from
 
-A sandbox build is a record tied to one app config version and one sandbox config, executed by a
-[build runner](/architecture/platform#build-runner) in the Nuon control plane. It moves through
+A sandbox build is a record tied to one app config version and one sandbox config, executed by the
+[Control Plane](/architecture/platform#builds). It moves through
 `queued` → `planning` → `building` → `active`, or `error`, and streams logs the whole way. The
 artifact is pushed to your app's OCI repository — the same one your component builds are pushed to —
 tagged with the build's ID.
