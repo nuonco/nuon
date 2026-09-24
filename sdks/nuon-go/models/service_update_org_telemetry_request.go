@@ -14,18 +14,18 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// ServiceUpdateInstallTelemetryRequest service update install telemetry request
+// ServiceUpdateOrgTelemetryRequest service update org telemetry request
 //
-// swagger:model service.UpdateInstallTelemetryRequest
-type ServiceUpdateInstallTelemetryRequest struct {
+// swagger:model service.UpdateOrgTelemetryRequest
+type ServiceUpdateOrgTelemetryRequest struct {
 
 	// enabled
 	// Required: true
 	Enabled *bool `json:"enabled"`
 }
 
-// Validate validates this service update install telemetry request
-func (m *ServiceUpdateInstallTelemetryRequest) Validate(formats strfmt.Registry) error {
+// Validate validates this service update org telemetry request
+func (m *ServiceUpdateOrgTelemetryRequest) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateEnabled(formats); err != nil {
@@ -38,7 +38,7 @@ func (m *ServiceUpdateInstallTelemetryRequest) Validate(formats strfmt.Registry)
 	return nil
 }
 
-func (m *ServiceUpdateInstallTelemetryRequest) validateEnabled(formats strfmt.Registry) error {
+func (m *ServiceUpdateOrgTelemetryRequest) validateEnabled(formats strfmt.Registry) error {
 
 	if err := validate.Required("enabled", "body", m.Enabled); err != nil {
 		return err
@@ -47,13 +47,13 @@ func (m *ServiceUpdateInstallTelemetryRequest) validateEnabled(formats strfmt.Re
 	return nil
 }
 
-// ContextValidate validates this service update install telemetry request based on context it is used
-func (m *ServiceUpdateInstallTelemetryRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this service update org telemetry request based on context it is used
+func (m *ServiceUpdateOrgTelemetryRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *ServiceUpdateInstallTelemetryRequest) MarshalBinary() ([]byte, error) {
+func (m *ServiceUpdateOrgTelemetryRequest) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -61,8 +61,8 @@ func (m *ServiceUpdateInstallTelemetryRequest) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ServiceUpdateInstallTelemetryRequest) UnmarshalBinary(b []byte) error {
-	var res ServiceUpdateInstallTelemetryRequest
+func (m *ServiceUpdateOrgTelemetryRequest) UnmarshalBinary(b []byte) error {
+	var res ServiceUpdateOrgTelemetryRequest
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

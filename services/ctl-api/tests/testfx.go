@@ -46,6 +46,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/salesforce"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/blob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
@@ -119,6 +120,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 
 		// Configuration
 		fx.Provide(internal.NewConfig),
+		fx.Provide(telemetry.NewConfig),
 
 		// Logging
 		fx.Provide(log.New),
