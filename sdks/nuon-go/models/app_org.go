@@ -71,6 +71,9 @@ type AppOrg struct {
 	// tags
 	Tags []string `json:"tags"`
 
+	// telemetry
+	Telemetry *AppOrgTelemetrySettings `json:"telemetry,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
@@ -99,6 +102,10 @@ func (m *AppOrg) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateStatusV2(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTelemetry(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -227,6 +234,29 @@ func (m *AppOrg) validateStatusV2(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppOrg) validateTelemetry(formats strfmt.Registry) error {
+	if swag.IsZero(m.Telemetry) { // not required
+		return nil
+	}
+
+	if m.Telemetry != nil {
+		if err := m.Telemetry.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("telemetry")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("telemetry")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppOrg) validateVcsConnections(formats strfmt.Registry) error {
 	if swag.IsZero(m.VcsConnections) { // not required
 		return nil
@@ -278,6 +308,10 @@ func (m *AppOrg) ContextValidate(ctx context.Context, formats strfmt.Registry) e
 	}
 
 	if err := m.contextValidateStatusV2(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTelemetry(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -401,6 +435,31 @@ func (m *AppOrg) contextValidateStatusV2(ctx context.Context, formats strfmt.Reg
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("status_v2")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppOrg) contextValidateTelemetry(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Telemetry != nil {
+
+		if swag.IsZero(m.Telemetry) { // not required
+			return nil
+		}
+
+		if err := m.Telemetry.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("telemetry")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("telemetry")
 			}
 
 			return err
