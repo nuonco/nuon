@@ -17,11 +17,15 @@ export const HealthTimelineContainer = ({
   days = 90,
   pollInterval = 20000,
   shouldPoll = false,
+  componentBasePath,
+  getComponentHref,
 }: {
   installComponentId?: string
   days?: number
   pollInterval?: number
   shouldPoll?: boolean
+  componentBasePath?: string
+  getComponentHref?: (componentId: string) => string
 }) => {
   const { org } = useOrg()
   const { install } = useInstall()
@@ -82,7 +86,11 @@ export const HealthTimelineContainer = ({
           ? undefined
           : (timeline as TInstallHealthTimeline | undefined)?.components
       }
-      componentBasePath={`/${org?.id}/installs/${install?.id}/components`}
+      componentBasePath={
+        componentBasePath ??
+        `/${org?.id}/installs/${install?.id}/components`
+      }
+      getComponentHref={getComponentHref}
       transitions={
         isComponentScope
           ? (timeline as TInstallComponentHealthTimeline | undefined)
