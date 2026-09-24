@@ -72,15 +72,21 @@ func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componen
 		return ui.PrintError(err)
 	}
 
+	install, err := s.api.GetInstall(ctx, installID)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+
+	componentID, err = lookup.ComponentID(ctx, s.api, install.AppID, componentID)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+
 	if buildID == "" {
-		latest, err := s.api.GetInstallComponentLatestDeploy(ctx, installID, componentID)
+		buildID, err = s.resolveComponentDeployBuildID(ctx, installID, componentID)
 		if err != nil {
 			return ui.PrintError(err)
 		}
-		if latest == nil || latest.BuildID == "" {
-			return ui.PrintError(fmt.Errorf("could not resolve a build for component %s; pass --build-id explicitly", componentID))
-		}
-		buildID = latest.BuildID
 	}
 
 	req := &models.ServiceCreateInstallDeployRequest{
@@ -100,6 +106,31 @@ func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componen
 		Status:    "deploy_triggered",
 	})
 	return nil
+}
+
+// resolveComponentDeployBuildID picks a build when --build-id is omitted.
+// Prefer the prior deploy's build so a redeploy stays on the same artifact;
+// when the component has never been deployed, fall back to its latest build.
+func (s *Service) resolveComponentDeployBuildID(ctx context.Context, installID, componentID string) (string, error) {
+	if buildID, ok := priorDeployBuildID(s.api.GetInstallComponentLatestDeploy(ctx, installID, componentID)); ok {
+		return buildID, nil
+	}
+
+	build, err := s.api.GetComponentLatestBuild(ctx, componentID)
+	if err != nil {
+		return "", fmt.Errorf("could not resolve a build for component %s; pass --build-id explicitly: %w", componentID, err)
+	}
+	if build == nil || build.ID == "" {
+		return "", fmt.Errorf("could not resolve a build for component %s; pass --build-id explicitly", componentID)
+	}
+	return build.ID, nil
+}
+
+func priorDeployBuildID(deploy *models.AppInstallDeploy, err error) (string, bool) {
+	if err != nil || deploy == nil || deploy.BuildID == "" {
+		return "", false
+	}
+	return deploy.BuildID, true
 }
 
 func (s *Service) DeployCancel(ctx context.Context, installID, deployID string, asJSON bool) error {
