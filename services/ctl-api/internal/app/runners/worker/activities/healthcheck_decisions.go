@@ -14,6 +14,10 @@ const (
 	processInactiveTimeout = 5 * time.Minute
 
 	runnerUnhealthyAlertDelay = 15 * time.Minute
+
+	runnerHealthResultSkipped   = "skipped"
+	runnerHealthResultHealthy   = "healthy"
+	runnerHealthResultUnhealthy = "unhealthy"
 )
 
 // skippableRunnerStatuses mirrors the statuses the runner healthcheck never
@@ -58,6 +62,8 @@ type runnerHealthDecision struct {
 
 	Alert          bool
 	AlertOfflineAt time.Time
+
+	InstallCronToggleDecision *InstallCronState
 }
 
 // decideRunnerHealth encodes runnerhealthcheck.Signal.Execute's branch logic:
@@ -66,8 +72,17 @@ type runnerHealthDecision struct {
 func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProcessPresence) runnerHealthDecision {
 	var d runnerHealthDecision
 
+	if runner.Status == app.RunnerStatusDisabled {
+		d.Result = runnerHealthResultSkipped
+		if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
+			state := InstallCronsDisabled
+			d.InstallCronToggleDecision = &state
+		}
+		return d
+	}
+
 	if isSkippableRunnerStatus(runner.Status) {
-		d.Result = "skipped"
+		d.Result = runnerHealthResultSkipped
 		return d
 	}
 
@@ -88,21 +103,25 @@ func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProces
 	}
 
 	if !healthy && runner.HealthcheckPending(now) {
-		return runnerHealthDecision{Result: "skipped"}
+		return runnerHealthDecision{Result: runnerHealthResultSkipped}
 	}
 
 	if healthy {
-		d.Result = "healthy"
+		d.Result = runnerHealthResultHealthy
 		d.TargetStatus = app.RunnerStatusActive
 		d.Reason = "runner healthy"
 		_, hasOfflineTS := runner.StatusV2.Metadata[app.RunnerOfflineTSMetadataKey]
 		d.ClearOfflineTS = hasOfflineTS
 		d.UpdateLegacy = runner.Status != app.RunnerStatusActive
 		d.UpdateV2 = runner.StatusV2.Status != app.Status(app.RunnerStatusActive)
+		if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
+			state := InstallCronsEnabled
+			d.InstallCronToggleDecision = &state
+		}
 		return d
 	}
 
-	d.Result = "unhealthy"
+	d.Result = runnerHealthResultUnhealthy
 	d.TargetStatus = app.RunnerStatusOffline
 
 	offlineAt, hasOfflineTS := runner.StatusV2.MetadataUnixTime(app.RunnerOfflineTSMetadataKey)
@@ -123,6 +142,10 @@ func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProces
 
 	d.Alert = true
 	d.AlertOfflineAt = offlineAt
+	if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
+		state := InstallCronsDisabled
+		d.InstallCronToggleDecision = &state
+	}
 	return d
 }
 
