@@ -96,6 +96,12 @@ type InstallerSDKGCPConfig struct {
 	DeprovisionPermissions    []string `json:"deprovision_permissions,omitempty"`
 	DeprovisionPredefinedRole string   `json:"deprovision_predefined_role,omitempty"`
 
+	// Every predefined role per operation role. The singular fields above carry
+	// only the last one for stack modules that predate these.
+	ProvisionPredefinedRoles   []string `json:"provision_predefined_roles,omitempty"`
+	MaintenancePredefinedRoles []string `json:"maintenance_predefined_roles,omitempty"`
+	DeprovisionPredefinedRoles []string `json:"deprovision_predefined_roles,omitempty"`
+
 	// Per-policy custom roles (policy name → permissions): one custom role per
 	// policy.
 	ProvisionPolicies   map[string][]string `json:"provision_policies,omitempty"`
@@ -166,9 +172,10 @@ type InstallerSDKRoleConfig struct {
 
 // InstallerSDKGCPRole is the per-role payload for GCP break-glass/custom roles.
 type InstallerSDKGCPRole struct {
-	Permissions    []string `json:"permissions,omitempty"`
-	PredefinedRole string   `json:"predefined_role,omitempty"`
-	Enabled        bool     `json:"enabled,omitempty"`
+	Permissions     []string `json:"permissions,omitempty"`
+	PredefinedRole  string   `json:"predefined_role,omitempty"`
+	PredefinedRoles []string `json:"predefined_roles,omitempty"`
+	Enabled         bool     `json:"enabled,omitempty"`
 
 	// Per-policy custom roles (policy name → permissions).
 	Policies map[string][]string `json:"policies,omitempty"`
