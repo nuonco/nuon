@@ -105,6 +105,9 @@ Read the relevant one before starting — they are not loaded automatically.
   before writing a label, heading, empty state, error or toast.
 - **[FLOWS.md](./FLOWS.md)** — the user-facing flows the app implements. Read
   before building or changing a multi-step flow such as a setup wizard.
+- **[MODULES.md](./MODULES.md)** — how the dashboard is packaged per customer:
+  the module registry, the flags that hide a module, and the internal modules
+  page. Read before adding a page, a settings section, or a sidebar item.
 - **[GOTCHAS.md](./GOTCHAS.md)** — non-obvious traps in the stylesheet, the diff
   renderer, oxlint and Ladle. Read when something behaves impossibly, and add to
   it when you lose time to something new.

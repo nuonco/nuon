@@ -36,3 +36,8 @@ export const resolveAppHref = ({
   }
   return appBranchHref(orgId, appId, branchIds[0]!)
 }
+
+export const settingsHref = (orgId: string, section = '') =>
+  section ? `/${orgId}/settings/${section}` : `/${orgId}/settings`
+
+export const modulesHref = (orgId: string) => `/${orgId}/modules`

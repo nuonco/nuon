@@ -208,7 +208,8 @@ what it covers, what Lite has chosen, and how to pick between the options.
 **Two levels of navigation today:**
 
 1. **Main sidebar** — the org's top-level areas. Dashboard, Apps, Installs,
-   Team, Settings.
+   Team, Settings. Every area after Dashboard is a module, and the sidebar only
+   lists the modules the org ships. See [MODULES.md](./MODULES.md).
 2. **Resource context nav** — within one resource: install pages, app branch
    pages, org settings.
 

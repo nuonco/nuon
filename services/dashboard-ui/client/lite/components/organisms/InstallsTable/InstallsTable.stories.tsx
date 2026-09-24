@@ -231,6 +231,13 @@ export const Overview = () => (
           'Install ids still in first provision, from isWizardComplete. Their row links into install setup and carries a Setup incomplete chip beside the install name.',
       },
       {
+        name: 'appLinks',
+        type: 'boolean',
+        default: 'true',
+        description:
+          'Links each app name to its app page. Off when the Apps module is hidden, so the name renders as text.',
+      },
+      {
         name: 'loading',
         type: 'boolean',
         default: 'false',

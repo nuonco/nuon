@@ -18,6 +18,7 @@ export interface IUserDropdown extends Omit<IDropdown, 'children' | 'trigger'> {
   org?: TOrg | null
   orgLoading?: boolean
   onOpenPreferences?: () => void
+  manageModulesHref?: string
 }
 
 export const UserDropdown = ({
@@ -30,6 +31,7 @@ export const UserDropdown = ({
   org,
   orgLoading = false,
   onOpenPreferences,
+  manageModulesHref,
   align = 'end',
   matchTriggerWidth,
   stretch = false,
@@ -76,6 +78,17 @@ export const UserDropdown = ({
             onSelect={onOpenPreferences}
           >
             Preferences
+          </MenuItem>
+          <MenuSeparator />
+        </>
+      ) : null}
+      {manageModulesHref ? (
+        <>
+          <MenuItem
+            icon={<Icon variant="PuzzlePieceIcon" />}
+            href={manageModulesHref}
+          >
+            Manage modules
           </MenuItem>
           <MenuSeparator />
         </>

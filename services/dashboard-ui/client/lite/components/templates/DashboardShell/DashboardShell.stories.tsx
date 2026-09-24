@@ -90,14 +90,18 @@ const Shell = ({
   initialDesktopExpanded,
   rows,
   status = true,
+  primaryNav = PRIMARY,
+  secondaryNav = SECONDARY,
 }: {
   initialDesktopExpanded?: boolean
   rows?: number
   status?: boolean
+  primaryNav?: typeof PRIMARY
+  secondaryNav?: typeof SECONDARY
 }) => (
   <DashboardShell
-    primaryNav={PRIMARY}
-    secondaryNav={SECONDARY}
+    primaryNav={primaryNav}
+    secondaryNav={secondaryNav}
     userMenu={<AccountControl />}
     headerLeading={
       <Text variant="caption" weight="semibold">
@@ -157,7 +161,8 @@ export const Overview = () => (
       {
         name: 'headerLeading',
         type: 'ReactNode',
-        description: 'Global context shown after the sidebar control in the header.',
+        description:
+          'Global context shown after the sidebar control in the header.',
       },
       {
         name: 'headerActions',
@@ -167,7 +172,8 @@ export const Overview = () => (
       {
         name: 'statusBar',
         type: 'ReactNode',
-        description: 'Currently unused. Status content is not rendered in the shell.',
+        description:
+          'Currently unused. Status content is not rendered in the shell.',
       },
       {
         name: 'children',
@@ -197,6 +203,15 @@ Collapsed.meta = { fullBleed: true }
 
 export const Scrolling = () => <Shell initialDesktopExpanded rows={18} />
 Scrolling.meta = { fullBleed: true }
+
+export const InstallOperationsModules = () => (
+  <Shell
+    initialDesktopExpanded
+    primaryNav={PRIMARY.filter((item) => item.label !== 'Apps')}
+    secondaryNav={SECONDARY.filter((item) => item.label !== 'Settings')}
+  />
+)
+InstallOperationsModules.meta = { fullBleed: true }
 
 export const WithoutStatusBar = () => (
   <Shell initialDesktopExpanded status={false} />

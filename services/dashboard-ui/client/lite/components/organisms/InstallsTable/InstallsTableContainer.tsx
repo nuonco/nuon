@@ -9,6 +9,7 @@ import {
 } from '@/lib'
 import { useListQueryState } from '../../../hooks/use-list-query-state'
 import { commaSetQueryParameter } from '../../../utils/list-query'
+import { useModules } from '../../../providers/modules-provider'
 import { useOrg } from '../../../providers/org-provider'
 import {
   installSetupDescriptor,
@@ -71,6 +72,7 @@ const filterControl = ({
 
 export const InstallsTableContainer = () => {
   const { orgId } = useOrg()
+  const { has } = useModules()
   const list = useListQueryState({
     pageSize: PAGE_SIZE,
     filters: INSTALL_FILTERS,
@@ -204,6 +206,7 @@ export const InstallsTableContainer = () => {
       })}
       labelColors={labelColors}
       incompleteIds={incompleteIds}
+      appLinks={has('apps')}
       loading={isLoading}
       fetching={isPlaceholderData}
       error={error}

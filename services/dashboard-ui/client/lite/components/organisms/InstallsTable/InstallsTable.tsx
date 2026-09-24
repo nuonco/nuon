@@ -47,6 +47,7 @@ export interface IInstallsTable {
   branchFilter?: IInstallFilter
   labelColors?: TLabelColors
   incompleteIds?: ReadonlySet<string>
+  appLinks?: boolean
   loading?: boolean
   fetching?: boolean
   error?: unknown
@@ -59,6 +60,31 @@ const installHref = (orgId: string, install: TInstall, incomplete: boolean) =>
 
 const appHref = (orgId: string, install: TInstall) =>
   `/${orgId}/apps/${install?.app_id ?? ''}`
+
+const AppName = ({
+  install,
+  orgId,
+  linked,
+}: {
+  install: TInstall
+  orgId: string
+  linked: boolean
+}) => {
+  if (!install?.app_id) {
+    return (
+      <Text variant="caption" color="tertiary">
+        —
+      </Text>
+    )
+  }
+  const name = install?.app?.name ?? install.app_id
+  if (!linked) return <Text variant="body">{name}</Text>
+  return (
+    <Link href={appHref(orgId, install)} variant="body">
+      {name}
+    </Link>
+  )
+}
 
 const installPlatform = (install: TInstall): TBrandVariant | undefined => {
   const normalized = (install?.cloud_platform ?? '').toLowerCase()
@@ -160,7 +186,8 @@ const InstallLabels = ({
 export const columnsFor = (
   orgId: string,
   labelColors?: TLabelColors,
-  incompleteIds?: ReadonlySet<string>
+  incompleteIds?: ReadonlySet<string>,
+  appLinks = true
 ): ColumnDef<TInstall>[] => [
   {
     id: 'name',
@@ -198,16 +225,9 @@ export const columnsFor = (
     id: 'app',
     header: 'App',
     size: 140,
-    cell: ({ row }) =>
-      row.original?.app_id ? (
-        <Link href={appHref(orgId, row.original)} variant="body">
-          {row.original?.app?.name ?? row.original.app_id}
-        </Link>
-      ) : (
-        <Text variant="caption" color="tertiary">
-          —
-        </Text>
-      ),
+    cell: ({ row }) => (
+      <AppName install={row.original} orgId={orgId} linked={appLinks} />
+    ),
   },
   {
     id: 'statuses',
@@ -254,11 +274,13 @@ const InstallCard = ({
   orgId,
   labelColors,
   incomplete,
+  appLinks,
 }: {
   install: TInstall
   orgId: string
   labelColors?: TLabelColors
   incomplete: boolean
+  appLinks: boolean
 }) => {
   return (
     <Card className="flex h-full flex-col gap-4">
@@ -288,13 +310,7 @@ const InstallCard = ({
             App
           </Text>
           <Text as="dd" className="mt-0.5">
-            {install?.app_id ? (
-              <Link href={appHref(orgId, install)} variant="body">
-                {install?.app?.name ?? install.app_id}
-              </Link>
-            ) : (
-              '—'
-            )}
+            <AppName install={install} orgId={orgId} linked={appLinks} />
           </Text>
         </div>
         <div className="min-w-0">
@@ -360,6 +376,7 @@ export const InstallsTable = ({
   branchFilter,
   labelColors,
   incompleteIds,
+  appLinks = true,
   loading = false,
   fetching = false,
   error,
@@ -367,7 +384,7 @@ export const InstallsTable = ({
   <div className="flex min-w-0 flex-col gap-4">
     <Table
       data={installs}
-      columns={columnsFor(orgId, labelColors, incompleteIds)}
+      columns={columnsFor(orgId, labelColors, incompleteIds, appLinks)}
       getRowId={(install) => install?.id ?? ''}
       loading={loading}
       loadingLabel="Loading installs"
@@ -393,6 +410,7 @@ export const InstallsTable = ({
           incomplete={Boolean(
             row.original?.id && incompleteIds?.has(row.original.id)
           )}
+          appLinks={appLinks}
         />
       )}
     />

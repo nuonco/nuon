@@ -9,6 +9,7 @@ import { installNavigation } from './pages/InstallLayout'
 import { orgNavigation } from './pages/OrgLayout'
 import { settingsNavigation } from './pages/SettingsLayout'
 import { liteRoutes } from './routes'
+import type { TModuleId } from './utils/modules'
 
 afterEach(cleanup)
 
@@ -29,22 +30,26 @@ test('matches focused and organization-scoped top-level routes', () => {
   expect(matchedIds('/org-123/apps')).toEqual([
     'root-layout',
     'org-layout',
+    'module-apps',
     'apps',
   ])
   expect(matchedIds('/org-123/apps/setup')).toEqual([
     'root-layout',
     'org-layout',
+    'module-apps',
     'app-setup',
   ])
   expect(matchedIds('/org-123/apps/app-1')).toEqual([
     'root-layout',
     'org-layout',
+    'module-apps',
     'app-layout',
     'app-resolver',
   ])
   expect(matchedIds('/org-123/apps/app-1/branches/br-1')).toEqual([
     'root-layout',
     'org-layout',
+    'module-apps',
     'app-layout',
     'app-branch-layout',
     'app-branch-overview',
@@ -52,6 +57,7 @@ test('matches focused and organization-scoped top-level routes', () => {
   expect(matchedIds('/org-123/apps/app-1/branches/br-1/activity')).toEqual([
     'root-layout',
     'org-layout',
+    'module-apps',
     'app-layout',
     'app-branch-layout',
     'app-branch-activity',
@@ -59,6 +65,7 @@ test('matches focused and organization-scoped top-level routes', () => {
   expect(matchedIds('/org-123/apps/app-1/branches/br-1/config')).toEqual([
     'root-layout',
     'org-layout',
+    'module-apps',
     'app-layout',
     'app-branch-layout',
     'app-branch-config',
@@ -66,27 +73,37 @@ test('matches focused and organization-scoped top-level routes', () => {
   expect(matchedIds('/org-123/installs')).toEqual([
     'root-layout',
     'org-layout',
+    'module-installs',
     'installs',
   ])
   expect(matchedIds('/org-123/installs/setup')).toEqual([
     'root-layout',
     'org-layout',
+    'module-installs',
     'install-setup',
   ])
   expect(matchedIds('/org-123/teams')).toEqual([
     'root-layout',
     'org-layout',
+    'module-team',
     'teams',
+  ])
+  expect(matchedIds('/org-123/modules')).toEqual([
+    'root-layout',
+    'org-layout',
+    'modules',
   ])
   expect(matchedIds('/org-123/installs/inst-1')).toEqual([
     'root-layout',
     'org-layout',
+    'module-installs',
     'install-layout',
     'install-overview',
   ])
   expect(matchedIds('/org-123/installs/inst-1/activity')).toEqual([
     'root-layout',
     'org-layout',
+    'module-installs',
     'install-layout',
     'install-activity',
   ])
@@ -96,7 +113,9 @@ test('matches every settings child from the playground route model', () => {
   expect(matchedIds('/org-123/settings')).toEqual([
     'root-layout',
     'org-layout',
+    'module-settings',
     'settings-layout',
+    'module-connections',
     'settings-connections',
   ])
   expect(matchedIds('/org-123/settings/webhooks')?.at(-1)).toBe(
@@ -137,7 +156,9 @@ test('wraps every routed page in the transition boundary', () => {
   const { leaves, layouts } = partitionRoutes(liteRoutes)
 
   expect(leaves.length).toBeGreaterThan(10)
-  expect(leaves.every((route) => isTransitionBoundary(route.element))).toBe(true)
+  expect(leaves.every((route) => isTransitionBoundary(route.element))).toBe(
+    true
+  )
   expect(layouts.some((route) => isTransitionBoundary(route.element))).toBe(
     false
   )
@@ -161,6 +182,33 @@ test('builds every shell destination from the active organization', () => {
   expect(destinations.find((item) => item.label === 'Settings')?.href).toBe(
     '/org-123/settings'
   )
+})
+
+test('drops hidden modules from the shell and settings navigation', () => {
+  const trimmed = new Set<TModuleId>(['installs', 'team', 'webhooks'])
+  const navigation = orgNavigation('org-123', trimmed)
+  const labels = [...navigation.primary, ...navigation.secondary].map(
+    (item) => item.label
+  )
+
+  expect(labels).toEqual([
+    'Dashboard',
+    'Installs',
+    'Team',
+    'Settings',
+    'Developer docs',
+  ])
+  expect(
+    navigation.secondary.find((item) => item.label === 'Settings')?.href
+  ).toBe('/org-123/settings/webhooks')
+  expect(
+    settingsNavigation('org-123', trimmed).map((item) => item.label)
+  ).toEqual(['Webhooks'])
+
+  const noSettings = orgNavigation('org-123', new Set<TModuleId>(['apps']))
+  expect(
+    [...noSettings.primary, ...noSettings.secondary].map((item) => item.label)
+  ).toEqual(['Dashboard', 'Apps', 'Developer docs'])
 })
 
 test('marks the active app section', () => {

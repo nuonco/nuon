@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Outlet } from 'react-router'
 import { useConfig } from '@/hooks/use-config'
 import { Text } from '../components/atoms/Text'
@@ -10,12 +11,36 @@ import { SurfaceHost } from '../components/organisms/surfaces'
 import { DashboardShell } from '../components/templates/DashboardShell'
 import { useBreadcrumbItems } from '../hooks/use-breadcrumbs'
 import { useCurrentUser } from '../hooks/use-current-user'
+import { useNuonStaff } from '../hooks/use-nuon-staff'
 import { useStatusBarContent } from '../hooks/use-status-bar'
 import { BreadcrumbProvider } from '../providers/breadcrumb-provider'
+import { ModulesProvider, useModules } from '../providers/modules-provider'
 import { OrgProvider, useOrg } from '../providers/org-provider'
 import { StatusBarProvider } from '../providers/status-bar-provider'
+import { modulesHref } from '../utils/hrefs'
+import {
+  ALL_MODULES,
+  MODULES,
+  moduleHref,
+  type IModule,
+  type TModuleId,
+} from '../utils/modules'
+import { settingsNavigation } from './SettingsLayout'
 
-export const orgNavigation = (orgId: string) => {
+const navItemFor = (orgId: string, module: IModule): INavItem => ({
+  href: moduleHref(orgId, module),
+  label: module.nav?.label ?? module.name,
+  icon: module.icon,
+  shortcut: module.nav?.shortcut,
+})
+
+export const orgNavigation = (
+  orgId: string,
+  enabled: ReadonlySet<TModuleId> = ALL_MODULES
+) => {
+  const modules = MODULES.filter(
+    (module) => module.nav && enabled.has(module.id)
+  )
   const primary: INavItem[] = [
     {
       href: `/${orgId}`,
@@ -24,39 +49,29 @@ export const orgNavigation = (orgId: string) => {
       shortcut: 'g d',
       end: true,
     },
-    {
-      href: `/${orgId}/apps`,
-      label: 'Apps',
-      icon: 'AppWindowIcon',
-      shortcut: 'g a',
-    },
-    {
-      href: `/${orgId}/installs`,
-      label: 'Installs',
-      icon: 'CubeIcon',
-      shortcut: 'g i',
-    },
+    ...modules
+      .filter((module) => module.nav?.group === 'primary')
+      .map((module) => navItemFor(orgId, module)),
   ]
-  const secondary: INavItem[] = [
-    {
-      href: `/${orgId}/teams`,
-      label: 'Team',
-      icon: 'UsersThreeIcon',
-      shortcut: 'g t',
-    },
-    {
-      href: `/${orgId}/settings`,
+  const secondary: INavItem[] = modules
+    .filter((module) => module.nav?.group === 'secondary')
+    .map((module) => navItemFor(orgId, module))
+
+  const settings = settingsNavigation(orgId, enabled)
+  if (settings.length) {
+    secondary.push({
+      href: settings[0].href,
       label: 'Settings',
       icon: 'GearIcon',
       shortcut: 'g s',
-    },
-    {
-      href: 'https://docs.nuon.co',
-      label: 'Developer docs',
-      icon: 'BookOpenTextIcon',
-      external: true,
-    },
-  ]
+    })
+  }
+  secondary.push({
+    href: 'https://docs.nuon.co',
+    label: 'Developer docs',
+    icon: 'BookOpenTextIcon',
+    external: true,
+  })
 
   return { primary, secondary }
 }
@@ -64,10 +79,15 @@ export const orgNavigation = (orgId: string) => {
 const OrgShell = () => {
   const config = useConfig()
   const { org, orgId, loading, error } = useOrg()
+  const { enabled } = useModules()
   const { user, isLoading: isLoadingUser } = useCurrentUser()
+  const { staff } = useNuonStaff()
   const breadcrumbs = useBreadcrumbItems()
   const statusBarContent = useStatusBarContent()
-  const navigation = orgNavigation(orgId ?? '')
+  const navigation = useMemo(
+    () => orgNavigation(orgId ?? '', enabled),
+    [enabled, orgId]
+  )
 
   return (
     <DashboardShell
@@ -84,6 +104,7 @@ const OrgShell = () => {
           org={org}
           orgLoading={loading}
           orgSwitcher={<OrgSwitcherMenu />}
+          manageModulesHref={staff && orgId ? modulesHref(orgId) : undefined}
         />
       }
       statusBar={
@@ -113,12 +134,14 @@ const OrgShell = () => {
 
 export const OrgLayout = () => (
   <OrgProvider>
-    <BreadcrumbProvider>
-      <StatusBarProvider>
-        <SurfaceHost scope="org">
-          <OrgShell />
-        </SurfaceHost>
-      </StatusBarProvider>
-    </BreadcrumbProvider>
+    <ModulesProvider>
+      <BreadcrumbProvider>
+        <StatusBarProvider>
+          <SurfaceHost scope="org">
+            <OrgShell />
+          </SurfaceHost>
+        </StatusBarProvider>
+      </BreadcrumbProvider>
+    </ModulesProvider>
   </OrgProvider>
 )

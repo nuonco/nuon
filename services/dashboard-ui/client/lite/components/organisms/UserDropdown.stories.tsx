@@ -25,6 +25,7 @@ export const Overview = () => (
       'Use compact mode for an icon-sized header control.',
       'Nest the organization switcher here so account and workspace context stay together.',
       'Open browser preferences from the account action group.',
+      'Pass manageModulesHref for Nuon staff so the modules page is one click away from any org.',
     ]}
     avoid={[
       'Do not add unrelated resource navigation or setup actions to this menu.',
@@ -34,6 +35,7 @@ export const Overview = () => (
       'The visible trigger is always UserProfile.',
       'Organization switching is a nested menu before the sign-out action.',
       'Preferences appear before the separated sign-out action.',
+      'Manage modules renders only when manageModulesHref is set, which the shell does for Nuon staff.',
       'The sign-out destination performs a same-window navigation.',
     ]}
     props={[
@@ -67,7 +69,8 @@ export const Overview = () => (
       {
         name: 'orgSwitcher',
         type: 'ReactNode',
-        description: 'Nested organization menu rendered above the account actions.',
+        description:
+          'Nested organization menu rendered above the account actions.',
       },
       {
         name: 'org',
@@ -83,7 +86,14 @@ export const Overview = () => (
       {
         name: 'onOpenPreferences',
         type: '() => void',
-        description: 'Opens the preferences panel from the account action group.',
+        description:
+          'Opens the preferences panel from the account action group.',
+      },
+      {
+        name: 'manageModulesHref',
+        type: 'string',
+        description:
+          'Adds a Manage modules item linking to the org modules page. Staff only.',
       },
     ]}
   />
@@ -108,6 +118,18 @@ export const Default = () => (
           onLoadMore={() => {}}
         />
       }
+      defaultOpen
+    />
+  </div>
+)
+
+export const NuonStaff = () => (
+  <div className="flex justify-end p-20">
+    <UserDropdown
+      user={{ name: 'Nat Hamilton', email: 'nat@nuon.co' }}
+      signOutHref={SIGN_OUT_HREF}
+      onOpenPreferences={() => {}}
+      manageModulesHref="/org_alpha/modules"
       defaultOpen
     />
   </div>
