@@ -48,7 +48,6 @@ communication with the Nuon control plane.
 - `run_local.go` - Local development execution
 - `mng.go` - Management operations
 - `install.go` - Installation and setup
-- `build.go` - Build operations
 - `version.go` - Version information
 
 #### `/internal/` - Core Logic
