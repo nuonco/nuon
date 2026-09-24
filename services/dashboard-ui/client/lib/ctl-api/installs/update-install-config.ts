@@ -3,6 +3,7 @@ import type { TInstallConfig } from '@/types'
 
 export type TUpdateInstallConfigBody = {
   approval_option?: 'approve-all' | 'prompt'
+  telemetry?: { enabled: boolean | null }
   vpc_nested_template_url?: string
   runner_nested_template_url?: string
   custom_nested_stacks?: Array<{
