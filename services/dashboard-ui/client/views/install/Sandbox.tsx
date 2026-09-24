@@ -67,6 +67,8 @@ export const Sandbox = () => {
           runnerStatus={install?.runner_status}
           kind="sandbox_drift"
           hasCronSchedule={!!sandboxConfig?.drift_schedule}
+          orgId={org?.id}
+          installId={install?.id}
         />
 
         <SandboxConfigCard config={sandboxConfig} loading={!sandboxConfig} />

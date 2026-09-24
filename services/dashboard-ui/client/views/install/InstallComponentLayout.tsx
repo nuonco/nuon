@@ -175,6 +175,8 @@ export const InstallComponentLayout = () => {
               runnerStatus={install?.runner_status}
               kind="component_drift"
               hasCronSchedule={!!config?.drift_schedule}
+              orgId={org?.id}
+              installId={install?.id}
             />
             {component && stuckHelmStatus ? (
               <StuckHelmReleaseBanner

@@ -100,6 +100,8 @@ export const InstallSandboxContainer = () => {
             runnerStatus={install?.runner_status}
             kind="sandbox_drift"
             hasCronSchedule={!!sandboxConfig?.drift_schedule}
+            orgId={org?.id}
+            installId={install?.id}
           />
         </>
       }

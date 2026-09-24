@@ -42,6 +42,8 @@ export const Actions = () => {
         runnerStatus={install?.runner_status}
         kind="action"
         hasCronSchedule={hasCronSchedule}
+        orgId={org?.id}
+        installId={install?.id}
       />
 
       <InstallActionsTable shouldPoll />

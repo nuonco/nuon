@@ -9,6 +9,8 @@ export const ActionCrons = () => (
     runnerStatus="offline"
     kind="action"
     hasCronSchedule
+    orgId="org_example"
+    installId="inst_example"
   />
 )
 
@@ -17,6 +19,8 @@ export const SandboxDrift = () => (
     runnerStatus="offline"
     kind="sandbox_drift"
     hasCronSchedule
+    orgId="org_example"
+    installId="inst_example"
   />
 )
 
@@ -25,6 +29,8 @@ export const ComponentDrift = () => (
     runnerStatus="offline"
     kind="component_drift"
     hasCronSchedule
+    orgId="org_example"
+    installId="inst_example"
   />
 )
 
@@ -33,6 +39,8 @@ export const HiddenWhenRunnerActive = () => (
     runnerStatus="active"
     kind="action"
     hasCronSchedule
+    orgId="org_example"
+    installId="inst_example"
   />
 )
 
@@ -41,5 +49,7 @@ export const HiddenWithoutCronSchedule = () => (
     runnerStatus="offline"
     kind="sandbox_drift"
     hasCronSchedule={false}
+    orgId="org_example"
+    installId="inst_example"
   />
 )

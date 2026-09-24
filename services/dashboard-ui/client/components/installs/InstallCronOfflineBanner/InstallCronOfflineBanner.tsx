@@ -1,4 +1,5 @@
 import { Banner } from '@/components/common/Banner'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 
 export type TInstallCronOfflineKind =
@@ -13,17 +14,17 @@ const COPY: Record<
   action: {
     title: 'Action crons are paused',
     description:
-      'The runner is offline, so scheduled action runs are not firing. They will resume automatically when the runner is back online.',
+      'The runner is offline, cron schedulings action runs are disabled. They will resume automatically when the runner is back online.',
   },
   sandbox_drift: {
     title: 'Sandbox drift checks are paused',
     description:
-      'The runner is offline, so scheduled sandbox drift scans are not firing. They will resume automatically when the runner is back online.',
+      'The runner is offline, cron schedulings for sandbox drift runs are disabled. They will resume automatically when the runner is back online.',
   },
   component_drift: {
     title: 'Component drift checks are paused',
     description:
-      'The runner is offline, so scheduled component drift scans are not firing. They will resume automatically when the runner is back online.',
+      'The runner is offline, cron schedulings for component drift runs are disabled. They will resume automatically when the runner is back online.',
   },
 }
 
@@ -31,10 +32,14 @@ export const InstallCronOfflineBanner = ({
   runnerStatus,
   kind,
   hasCronSchedule,
+  orgId,
+  installId,
 }: {
   runnerStatus?: string
   kind: TInstallCronOfflineKind
   hasCronSchedule?: boolean
+  orgId?: string
+  installId?: string
 }) => {
   if (runnerStatus !== 'offline' || !hasCronSchedule) return null
 
@@ -42,9 +47,11 @@ export const InstallCronOfflineBanner = ({
 
   return (
     <Banner theme="warn">
-      <div className="flex flex-col gap-0.5">
-        <Text weight="strong">{title}</Text>
-        <Text variant="subtext">{description}</Text>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-0.5">
+          <Text weight="strong">{title}</Text>
+          <Text variant="subtext">{description}</Text>
+        </div>
       </div>
     </Banner>
   )
