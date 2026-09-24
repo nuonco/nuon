@@ -2280,8 +2280,6 @@ export interface paths {
   "/v1/installs/{install_id}/telemetry": {
     /** Get an install's telemetry settings */
     get: operations["GetInstallTelemetrySettings"];
-    /** Update an install's telemetry settings */
-    patch: operations["UpdateInstallTelemetrySettings"];
   };
   "/v1/installs/{install_id}/updates": {
     /**
@@ -2560,19 +2558,16 @@ export interface paths {
      */
     post: operations["RemoveUser"];
   };
-  "/v1/orgs/current/runner-group": {
-    /**
-     * Get an org's runner group
-     * @description Get the current org's runner group, which includes the runners and their settings.
-     */
-    get: operations["GetOrgRunnerGroup"];
-  };
   "/v1/orgs/current/stats": {
     /**
      * Get an org
      * @description Returns statistics for the provided organization.
      */
     get: operations["GetOrgStats"];
+  };
+  "/v1/orgs/current/telemetry": {
+    /** Update current org telemetry settings */
+    patch: operations["UpdateOrgTelemetry"];
   };
   "/v1/orgs/current/user": {
     /**
@@ -5077,6 +5072,7 @@ export interface components {
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       org_id?: string;
       runner_nested_template_url?: string;
+      telemetry_enabled?: boolean | null;
       updated_at?: string;
       /** @description Per-install stack template overrides (nil = use app config default) */
       vpc_nested_template_url?: string;
@@ -5793,6 +5789,7 @@ export interface components {
       status_description?: string;
       status_v2?: components["schemas"]["app.CompositeStatus"];
       tags?: string[];
+      telemetry?: components["schemas"]["app.OrgTelemetrySettings"];
       updated_at?: string;
       vcs_connections?: components["schemas"]["app.VCSConnection"][];
     };
@@ -5832,6 +5829,9 @@ export interface components {
     };
     /** @enum {string} */
     "app.OrgMemberStatus": "active" | "invited";
+    "app.OrgTelemetrySettings": {
+      enabled?: boolean;
+    };
     "app.OtelLogRecord": {
       body?: string;
       created_at?: string;
@@ -6586,7 +6586,7 @@ export interface components {
     /** @enum {string} */
     "app.StackVersionRunType": "workflow-run" | "out-of-band-update";
     /** @enum {string} */
-    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "disabled" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     /** @enum {string} */
     "app.StepChangeState": "" | "ok" | "unsupported" | "error";
     "app.TerraformLock": {
@@ -7145,6 +7145,9 @@ export interface components {
       repoURL?: string;
       version?: string;
     };
+    "config.InstallTelemetry": {
+      enabled?: boolean | null;
+    };
     "configs.ACRAppRegistration": {
       clientCertificateName?: string;
       clientID?: string;
@@ -7317,6 +7320,7 @@ export interface components {
         [key: string]: string;
       };
       runner_nested_template_url?: string;
+      telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
     };
     "helpers.CreateInstallGCPAccountParams": {
@@ -8534,6 +8538,7 @@ export interface components {
         [key: string]: string;
       };
       runner_nested_template_url?: string;
+      telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
     };
     "service.CreateInstallDeployRequest": {
@@ -9142,6 +9147,8 @@ export interface components {
     };
     "service.InstallTelemetrySettings": {
       enabled?: boolean;
+      org_default?: boolean;
+      override?: boolean | null;
     };
     "service.InstallUpdate": {
       app_config?: components["schemas"]["service.InstallAppConfigUpdate"];
@@ -9554,6 +9561,7 @@ export interface components {
         [key: string]: string;
       };
       runner_nested_template_url?: string;
+      telemetry?: components["schemas"]["config.InstallTelemetry"];
       vpc_nested_template_url?: string;
     };
     "service.UpdateInstallInputsRequest": {
@@ -9574,9 +9582,6 @@ export interface components {
       name?: string;
     };
     "service.UpdateInstallRoleRequest": {
-      enabled: boolean;
-    };
-    "service.UpdateInstallTelemetryRequest": {
       enabled: boolean;
     };
     "service.UpdateNotebookRequest": {
@@ -9606,6 +9611,9 @@ export interface components {
     };
     "service.UpdateOrgRequest": {
       name: string;
+    };
+    "service.UpdateOrgTelemetryRequest": {
+      enabled: boolean;
     };
     "service.UpdateRunbookRequest": {
       description?: string;
@@ -26901,59 +26909,6 @@ export interface operations {
       };
     };
   };
-  /** Update an install's telemetry settings */
-  UpdateInstallTelemetrySettings: {
-    parameters: {
-      path: {
-        /** @description Install ID */
-        install_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.UpdateInstallTelemetryRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["service.InstallTelemetrySettings"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
   /**
    * get typed updates for an install
    * @description Returns app config, input, stack, and install config updates in reverse chronological order.
@@ -28690,15 +28645,15 @@ export interface operations {
     };
   };
   /**
-   * Get an org's runner group
-   * @description Get the current org's runner group, which includes the runners and their settings.
+   * Get an org
+   * @description Returns statistics for the provided organization.
    */
-  GetOrgRunnerGroup: {
+  GetOrgStats: {
     responses: {
       /** @description OK */
       200: {
         content: {
-          "application/json": components["schemas"]["app.RunnerGroup"];
+          "application/json": components["schemas"]["app.Org"];
         };
       };
       /** @description Bad Request */
@@ -28733,11 +28688,14 @@ export interface operations {
       };
     };
   };
-  /**
-   * Get an org
-   * @description Returns statistics for the provided organization.
-   */
-  GetOrgStats: {
+  /** Update current org telemetry settings */
+  UpdateOrgTelemetry: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateOrgTelemetryRequest"];
+      };
+    };
     responses: {
       /** @description OK */
       200: {
