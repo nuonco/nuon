@@ -26,9 +26,10 @@ type GCPPolicyTemplateInput struct {
 
 // GCPRoleTemplateInput holds the per-role data rendered into the template.
 type GCPRoleTemplateInput struct {
-	Name           string
-	Policies       []GCPPolicyTemplateInput
-	PredefinedRole string
+	Name            string
+	Policies        []GCPPolicyTemplateInput
+	PredefinedRole  string
+	PredefinedRoles []string
 }
 
 // GCPSecretTemplateInput holds a non-auto-gen secret definition for the template.
@@ -70,6 +71,10 @@ type GCPTemplateInput struct {
 	MaintenancePredefinedRole string
 	DeprovisionPredefinedRole string
 
+	ProvisionPredefinedRoles   []string
+	MaintenancePredefinedRoles []string
+	DeprovisionPredefinedRoles []string
+
 	BreakGlassRoles []GCPRoleTemplateInput
 	CustomRoles     []GCPRoleTemplateInput
 	InstallInputs   []GCPInstallInputTemplateInput
@@ -101,7 +106,7 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		return nil, "", errors.Wrap(err, "unable to parse gcp provider inputs template")
 	}
 
-	prov, maint, deprov, provPredefined, maintPredefined, deprovPredefined := extractGCPStandardPolicies(inputs.AppCfg)
+	prov, maint, deprov := extractGCPStandardPolicies(inputs.AppCfg)
 	breakGlassRoles := extractGCPRolesFromList(inputs.AppCfg.BreakGlassConfig.Roles)
 	customRoles := extractGCPRolesFromList(inputs.AppCfg.PermissionsConfig.CustomRoles)
 
@@ -186,21 +191,24 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	}
 
 	gcpInputs := &GCPTemplateInput{
-		TemplateInput:             inputs,
-		GCPProjectID:              gcpProjectID,
-		GCPRegion:                 gcpRegion,
-		ProvisionPolicies:         prov,
-		MaintenancePolicies:       maint,
-		DeprovisionPolicies:       deprov,
-		CustomStacks:              customStacks,
-		ProvisionPredefinedRole:   provPredefined,
-		MaintenancePredefinedRole: maintPredefined,
-		DeprovisionPredefinedRole: deprovPredefined,
-		BreakGlassRoles:           breakGlassRoles,
-		CustomRoles:               customRoles,
-		InstallInputs:             installInputs,
-		AutoGenerateSecrets:       autoGenerateSecrets,
-		Secrets:                   secrets,
+		TemplateInput:              inputs,
+		GCPProjectID:               gcpProjectID,
+		GCPRegion:                  gcpRegion,
+		ProvisionPolicies:          prov.Policies,
+		MaintenancePolicies:        maint.Policies,
+		DeprovisionPolicies:        deprov.Policies,
+		CustomStacks:               customStacks,
+		ProvisionPredefinedRole:    prov.PredefinedRole,
+		MaintenancePredefinedRole:  maint.PredefinedRole,
+		DeprovisionPredefinedRole:  deprov.PredefinedRole,
+		ProvisionPredefinedRoles:   prov.PredefinedRoles,
+		MaintenancePredefinedRoles: maint.PredefinedRoles,
+		DeprovisionPredefinedRoles: deprov.PredefinedRoles,
+		BreakGlassRoles:            breakGlassRoles,
+		CustomRoles:                customRoles,
+		InstallInputs:              installInputs,
+		AutoGenerateSecrets:        autoGenerateSecrets,
+		Secrets:                    secrets,
 	}
 
 	var inputsBuf bytes.Buffer
@@ -282,8 +290,15 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	return res, checksum, nil
 }
 
+// GCPStandardRoleTemplateInput holds one standard operation role's grants.
+type GCPStandardRoleTemplateInput struct {
+	Policies        []GCPPolicyTemplateInput
+	PredefinedRole  string
+	PredefinedRoles []string
+}
+
 // extractGCPStandardPolicies reads GCP IAM policies for the standard roles (provision, maintenance, deprovision).
-func extractGCPStandardPolicies(appCfg *app.AppConfig) (provision, maintenance, deprovision []GCPPolicyTemplateInput, provPredefined, maintPredefined, deprovPredefined string) {
+func extractGCPStandardPolicies(appCfg *app.AppConfig) (provision, maintenance, deprovision GCPStandardRoleTemplateInput) {
 	if appCfg == nil {
 		return
 	}
@@ -293,18 +308,20 @@ func extractGCPStandardPolicies(appCfg *app.AppConfig) (provision, maintenance, 
 			continue
 		}
 
-		policies, predefinedRole := extractRolePolicies(role)
+		predefined := extractPredefinedRoles(role)
+		in := GCPStandardRoleTemplateInput{
+			Policies:        extractRolePolicies(role),
+			PredefinedRole:  legacyPredefinedRole(predefined),
+			PredefinedRoles: predefined,
+		}
 
 		switch role.Type {
 		case app.AWSIAMRoleTypeRunnerProvision:
-			provision = policies
-			provPredefined = predefinedRole
+			provision = in
 		case app.AWSIAMRoleTypeRunnerMaintenance:
-			maintenance = policies
-			maintPredefined = predefinedRole
+			maintenance = in
 		case app.AWSIAMRoleTypeRunnerDeprovision:
-			deprovision = policies
-			deprovPredefined = predefinedRole
+			deprovision = in
 		}
 	}
 
@@ -320,15 +337,17 @@ func extractGCPRolesFromList(roles []app.AppAWSIAMRoleConfig) []GCPRoleTemplateI
 			continue
 		}
 
-		policies, predefinedRole := extractRolePolicies(role)
-		if len(policies) == 0 && predefinedRole == "" {
+		policies := extractRolePolicies(role)
+		predefined := extractPredefinedRoles(role)
+		if len(policies) == 0 && len(predefined) == 0 {
 			continue
 		}
 
 		result = append(result, GCPRoleTemplateInput{
-			Name:           role.Name,
-			Policies:       policies,
-			PredefinedRole: predefinedRole,
+			Name:            role.Name,
+			Policies:        policies,
+			PredefinedRole:  legacyPredefinedRole(predefined),
+			PredefinedRoles: predefined,
 		})
 	}
 
@@ -337,14 +356,9 @@ func extractGCPRolesFromList(roles []app.AppAWSIAMRoleConfig) []GCPRoleTemplateI
 
 // extractRolePolicies keeps each policy separate so the stack creates one
 // custom role per policy, matching the AWS one-policy-one-attachment shape.
-func extractRolePolicies(role app.AppAWSIAMRoleConfig) ([]GCPPolicyTemplateInput, string) {
+func extractRolePolicies(role app.AppAWSIAMRoleConfig) []GCPPolicyTemplateInput {
 	var policies []GCPPolicyTemplateInput
-	var predefinedRole string
 	for i, policy := range role.Policies {
-		if policy.GCPPredefinedRole != "" {
-			predefinedRole = policy.GCPPredefinedRole
-		}
-
 		if len(policy.GCPPermissions) == 0 {
 			continue
 		}
@@ -364,5 +378,5 @@ func extractRolePolicies(role app.AppAWSIAMRoleConfig) ([]GCPPolicyTemplateInput
 			Permissions: string(b),
 		})
 	}
-	return policies, predefinedRole
+	return policies
 }
