@@ -1406,15 +1406,15 @@ const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; 
   )
 }
 
-// The two ways out of the agent path, one line under the card. Amber lives in the
-// icon only, so the row does not out-shout "Copy prompt".
+// The two ways out of the agent path, one line under the card: pro mode and white
+// glove, neither of them a warning.
 const ManualExits = ({ appName, repo, cloud }: { appName: string; repo: string; cloud: TCloud }) => {
   const [open, setOpen] = useState(false)
   return (
     <div className="flex flex-col gap-4 rounded-md border bg-cool-grey-50 px-5 py-3 dark:bg-dark-grey-800">
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <div className="flex min-w-0 items-center gap-3">
-          <Icon variant="WarningIcon" size={18} theme="warn" className="shrink-0" />
+          <Icon variant="TerminalWindowIcon" size={18} theme="neutral" className="shrink-0" />
           <Text variant="body" weight="strong">
             Prefer to write the config by hand?
           </Text>
@@ -1446,9 +1446,8 @@ const AgentSetup = () => (
         Have your agent write the config
       </Text>
       <Text variant="body" theme="neutral">
-        Paste this prompt in the directory with your Helm charts, Terraform, and Dockerfiles. Your agent writes
-        Nuon config files, and then you&apos;re one step from a test install on a mock customer cloud account of
-        your choosing.
+        Paste this prompt in the same directory as your app. Then, you&apos;re one step from a test install as if
+        it were a customer&apos;s cloud.
       </Text>
     </div>
     <div className="flex flex-col gap-4 rounded-md border bg-background p-4 sm:flex-row sm:items-center">
