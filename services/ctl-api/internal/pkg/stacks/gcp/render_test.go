@@ -228,7 +228,7 @@ func TestRenderPermissions(t *testing.T) {
 		}
 		assert.Contains(t, tfvars, `"emergency-access"`)
 		assert.Contains(t, tfvars, `["iam.roles.get"]`)
-		assert.Contains(t, tfvars, "enabled         = false")
+		assert.Contains(t, tfvars, "enabled          = false")
 	})
 
 	t.Run("standard role policies stay separate", func(t *testing.T) {
@@ -269,7 +269,7 @@ func TestRenderMultipleBreakGlassRoles(t *testing.T) {
 	assert.Contains(t, tfvars, `["compute.instances.list","storage.buckets.list"]`)
 
 	// Both should be disabled by default
-	count := strings.Count(tfvars, "enabled         = false")
+	count := strings.Count(tfvars, "enabled          = false")
 	assert.Equal(t, 2, count, "both breakglass roles should be disabled by default")
 }
 
@@ -281,7 +281,7 @@ func TestRenderCustomRoles(t *testing.T) {
 
 	assert.Contains(t, tfvars, `"db-reader"`)
 	assert.Contains(t, tfvars, `["cloudsql.instances.list"]`)
-	assert.Contains(t, tfvars, "enabled         = true")
+	assert.Contains(t, tfvars, "enabled          = true")
 }
 
 func TestRenderPredefinedRoles(t *testing.T) {
@@ -317,7 +317,7 @@ func TestRenderPredefinedRoles(t *testing.T) {
 		tfvars := extractTfvars(t, out)
 
 		assert.Contains(t, tfvars, `"elevated-access"`)
-		assert.Contains(t, tfvars, `predefined_role = "roles/editor"`)
+		assert.Contains(t, tfvars, `predefined_role  = "roles/editor"`)
 	})
 }
 
@@ -580,4 +580,44 @@ func TestRenderCustomStacks(t *testing.T) {
 	inp.AppCfg.StackConfig.CustomNestedStacks[0].TemplateURL = "https://example.com/stack.yaml"
 	_, _, err = Render(inp)
 	require.Error(t, err)
+}
+
+func TestRenderMultiplePredefinedRoles(t *testing.T) {
+	inp := testInput()
+	inp.AppCfg.PermissionsConfig = app.AppPermissionsConfig{
+		Roles: []app.AppAWSIAMRoleConfig{
+			{
+				CloudPlatform: "gcp",
+				Type:          app.AWSIAMRoleTypeRunnerMaintenance,
+				Policies: []app.AppAWSIAMPolicyConfig{
+					{Name: "editor", GCPPredefinedRole: "roles/editor"},
+					{Name: "gke-admin", GCPPredefinedRole: "roles/container.admin"},
+					{Name: "registry", GCPPermissions: []string{"artifactregistry.repositories.downloadArtifacts"}},
+				},
+			},
+		},
+		CustomRoles: []app.AppAWSIAMRoleConfig{
+			{
+				CloudPlatform: "gcp",
+				Type:          app.AWSIAMRoleTypeCustom,
+				Name:          "setup",
+				Policies: []app.AppAWSIAMPolicyConfig{
+					{GCPPredefinedRole: "roles/editor"},
+					{GCPPredefinedRole: "roles/container.admin"},
+				},
+			},
+		},
+	}
+
+	out, _, err := Render(inp)
+	require.NoError(t, err)
+
+	tfvars := extractTfvars(t, out)
+
+	assert.Contains(t, tfvars, `maintenance_predefined_role  = "roles/container.admin"`)
+	assert.Contains(t, tfvars, `maintenance_predefined_roles = ["roles/editor", "roles/container.admin"]`)
+	assert.Contains(t, tfvars, `provision_predefined_roles   = []`)
+	assert.Contains(t, tfvars, `predefined_role  = "roles/container.admin"`)
+	assert.Contains(t, tfvars, `predefined_roles = ["roles/editor", "roles/container.admin"]`)
+	assert.Contains(t, tfvars, `"registry" = ["artifactregistry.repositories.downloadArtifacts"]`)
 }
