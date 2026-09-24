@@ -120,13 +120,13 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 		}
 
 		switch d.Result {
-		case "skipped":
+		case runnerHealthResultSkipped:
 			resp.Skipped++
-			a.mw.Incr(runnerHealthCheckCounter, metrics.ToTags(tags, metrics.ToTag("result", "skipped")))
+			a.mw.Incr(runnerHealthCheckCounter, metrics.ToTags(tags, metrics.ToTag("result", runnerHealthResultSkipped)))
 			continue
-		case "healthy":
+		case runnerHealthResultHealthy:
 			resp.Healthy++
-		case "unhealthy":
+		case runnerHealthResultUnhealthy:
 			resp.Unhealthy++
 		default:
 			continue
@@ -326,7 +326,7 @@ func runnerHealthTags(r *app.Runner, presence runnerProcessPresence, d runnerHea
 	if r.RunnerGroup.OwnerType == installOwnerType {
 		tags["install_id"] = r.RunnerGroup.OwnerID
 	}
-	if d.Result == "skipped" {
+	if d.Result == runnerHealthResultSkipped {
 		return tags
 	}
 

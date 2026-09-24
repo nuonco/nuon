@@ -14,6 +14,10 @@ const (
 	processInactiveTimeout = 5 * time.Minute
 
 	runnerUnhealthyAlertDelay = 15 * time.Minute
+
+	runnerHealthResultSkipped   = "skipped"
+	runnerHealthResultHealthy   = "healthy"
+	runnerHealthResultUnhealthy = "unhealthy"
 )
 
 // skippableRunnerStatuses mirrors the statuses the runner healthcheck never
@@ -69,7 +73,7 @@ func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProces
 	var d runnerHealthDecision
 
 	if runner.Status == app.RunnerStatusDisabled {
-		d.Result = "skipped"
+		d.Result = runnerHealthResultSkipped
 		if runner.RunnerGroup.Type == app.RunnerGroupTypeInstall {
 			state := InstallCronsDisabled
 			d.InstallCronToggleDecision = &state
@@ -78,7 +82,7 @@ func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProces
 	}
 
 	if isSkippableRunnerStatus(runner.Status) {
-		d.Result = "skipped"
+		d.Result = runnerHealthResultSkipped
 		return d
 	}
 
@@ -99,11 +103,11 @@ func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProces
 	}
 
 	if !healthy && runner.HealthcheckPending(now) {
-		return runnerHealthDecision{Result: "skipped"}
+		return runnerHealthDecision{Result: runnerHealthResultSkipped}
 	}
 
 	if healthy {
-		d.Result = "healthy"
+		d.Result = runnerHealthResultHealthy
 		d.TargetStatus = app.RunnerStatusActive
 		d.Reason = "runner healthy"
 		_, hasOfflineTS := runner.StatusV2.Metadata[app.RunnerOfflineTSMetadataKey]
@@ -117,7 +121,7 @@ func decideRunnerHealth(now time.Time, runner *app.Runner, presence runnerProces
 		return d
 	}
 
-	d.Result = "unhealthy"
+	d.Result = runnerHealthResultUnhealthy
 	d.TargetStatus = app.RunnerStatusOffline
 
 	offlineAt, hasOfflineTS := runner.StatusV2.MetadataUnixTime(app.RunnerOfflineTSMetadataKey)

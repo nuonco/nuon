@@ -134,7 +134,7 @@ func TestDecideRunnerHealthHealthyRunnerEnablesCrons(t *testing.T) {
 
 	d := decideRunnerHealth(now, r, runnerProcessPresence{HasActiveInstall: true, HasActiveMng: true, MngChecked: true})
 
-	require.Equal(t, "healthy", d.Result)
+	require.Equal(t, runnerHealthResultHealthy, d.Result)
 	require.Equal(t, installCronStatePtr(InstallCronsEnabled), d.InstallCronToggleDecision)
 }
 
