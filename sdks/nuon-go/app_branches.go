@@ -21,16 +21,50 @@ func (c *client) GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, er
 	return resp.Payload, nil
 }
 
-func (c *client) GetAppBranches(ctx context.Context, appID string) ([]*models.AppAppBranch, error) {
-	resp, err := c.genClient.Operations.GetAppBranches(&operations.GetAppBranchesParams{
+// GetAppBranches returns one page of branches for the app. The server
+// defaults to 10 per page when query is nil; callers that need every branch
+// should page through with GetAllAppBranches instead of assuming this is
+// the complete list.
+func (c *client) GetAppBranches(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error) {
+	params := &operations.GetAppBranchesParams{
 		Context: ctx,
 		AppID:   appID,
-	}, c.getOrgIDAuthInfo())
+	}
+	params.Offset, params.Limit = applyPaginationQuery(query)
+
+	hr := newResponseHeaderReader(&operations.GetAppBranchesReader{})
+	resp, err := c.genClient.Operations.GetAppBranches(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return resp.Payload, nil
+	return resp.Payload, hasNextPage(hr), nil
+}
+
+// GetAllAppBranches pages through GetAppBranches and returns every branch for
+// the app, rather than leaving each caller to reimplement the same loop.
+func GetAllAppBranches(ctx context.Context, api Client, appID string) ([]*models.AppAppBranch, error) {
+	const pageLimit = 100
+
+	var (
+		branches []*models.AppAppBranch
+		offset   int
+		hasMore  = true
+	)
+	for hasMore {
+		page, more, err := api.GetAppBranches(ctx, appID, &models.GetPaginatedQuery{
+			Offset: offset,
+			Limit:  pageLimit,
+		})
+		if err != nil {
+			return nil, err
+		}
+		branches = append(branches, page...)
+		offset += pageLimit
+		hasMore = more
+	}
+
+	return branches, nil
 }
 
 func (c *client) GetAppBranch(ctx context.Context, appID, appBranchID string) (*models.AppAppBranch, error) {

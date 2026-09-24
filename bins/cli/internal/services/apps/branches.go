@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -19,7 +20,7 @@ func (s *Service) ListBranches(ctx context.Context, appID string, asJSON bool) e
 		return view.Error(err)
 	}
 
-	branches, err := s.api.GetAppBranches(ctx, appID)
+	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -228,7 +229,7 @@ func (s *Service) selectBranchID(ctx context.Context, appID, branchID string) (s
 		return "", fmt.Errorf("interactive terminal required for branch selection; use --branch-id flag to specify directly")
 	}
 
-	branches, err := s.api.GetAppBranches(ctx, appID)
+	branches, err := nuon.GetAllAppBranches(ctx, s.api, appID)
 	if err != nil {
 		return "", fmt.Errorf("unable to list app branches: %w", err)
 	}
