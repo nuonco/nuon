@@ -14,6 +14,7 @@ import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { InstallActionRunTimeline } from '@/components/actions/InstallActionRunTimeline'
+import { InstallCronOfflineBanner } from '@/components/installs/InstallCronOfflineBanner'
 import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromAppConfig'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
@@ -75,9 +76,9 @@ export const ActionDetail = () => {
     />
   )
 
-  const manualTrigger = action?.action_workflow?.configs?.[0]?.triggers?.find(
-    (t) => t.type === 'manual'
-  )
+  const actionTriggers = action?.action_workflow?.configs?.[0]?.triggers
+  const manualTrigger = actionTriggers?.find((t) => t.type === 'manual')
+  const hasCronSchedule = !!actionTriggers?.some((t) => t.type === 'cron')
 
   return (
     <>
@@ -235,7 +236,18 @@ export const ActionDetail = () => {
             }
           />
         }
-        banners={removed ? <RemovedFromAppConfigBanner kind="action" /> : null}
+        banners={
+          <>
+            {removed ? <RemovedFromAppConfigBanner kind="action" /> : null}
+            <InstallCronOfflineBanner
+              runnerStatus={install?.runner_status}
+              kind="action"
+              hasCronSchedule={hasCronSchedule}
+              orgId={org?.id}
+              installId={install?.id}
+            />
+          </>
+        }
       >
         {installActionBreakGlassRole ? (
           <div className="flex flex-col gap-4">
