@@ -816,8 +816,10 @@ const DOCS_CONFIG_FILES = 'https://docs.nuon.co/configuration-files'
 const AWS_QUICK_CREATE_DOCS =
   'https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stacks-quick-create-links.html'
 const GCP_INFRA_MANAGER_DOCS = 'https://cloud.google.com/infrastructure-manager/docs'
-const GIT_PUSH = (app: string) => `git add ${app}\ngit commit -m "Add Nuon app template"\ngit push origin main`
+const GIT_PUSH = (app: string) => `git add ${app}\ngit commit -m "Add Nuon app config"\ngit push origin main`
 const VSCODE_EXTENSION = 'https://marketplace.visualstudio.com/items?itemName=Nuon.nuon-lsp'
+const LSP_NEOVIM_SETUP = 'https://github.com/nuonco/nuon/blob/main/bins/lsp/README.md#neovim'
+const DOCS_LSP = 'https://docs.nuon.co/configuration-files#language-server-protocol-lsp'
 // The one layout we show: config at the root of the connected repo, the way every
 // example-app-config does (kitchen-sink: metadata.toml at the top level, components/
 // beside it). Nesting under nuon/<app> exists in the wild but is an anti-pattern.
@@ -1353,10 +1355,10 @@ const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; 
       ),
     },
     {
-      title: 'Fill in the six files Nuon started',
+      title: 'Fill in the app config templates with your values',
       body: (
         <>
-          Point each component at a repo and branch, pick a sandbox, scope the three roles.{' '}
+          Point each component at a repo and branch, pick a sandbox, scope roles.{' '}
           <Link href={DOCS_CONFIG_FILES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
             Configuration files
           </Link>
@@ -1395,12 +1397,19 @@ const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; 
           </li>
         ))}
       </ol>
-      <Text variant="subtext" theme="neutral" flex className="border-t pt-3">
-        Editing TOML by hand?
+      <Text variant="subtext" theme="neutral" flex className="flex-wrap border-t pt-3">
+        Editing TOML by hand? The Nuon language server adds autocomplete and validation:
         <Link href={VSCODE_EXTENSION} isExternal textVariant="subtext">
-          The Nuon VS Code extension
+          VS Code extension
         </Link>
-        adds autocomplete and validation.
+        <span aria-hidden>·</span>
+        <Link href={LSP_NEOVIM_SETUP} isExternal textVariant="subtext">
+          Neovim setup
+        </Link>
+        <span aria-hidden>·</span>
+        <Link href={DOCS_LSP} isExternal textVariant="subtext">
+          Language server docs
+        </Link>
       </Text>
     </div>
   )
