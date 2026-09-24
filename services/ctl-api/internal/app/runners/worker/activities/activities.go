@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -27,6 +28,7 @@ type Params struct {
 	MW               metrics.Writer
 	L                *zap.Logger
 	QueueClient      *queueclient.Client
+	EmitterClient    *emitterclient.Client
 	StatusActivities *statusactivities.Activities
 	MeterProvider    metric.MeterProvider `optional:"true"`
 }
@@ -41,6 +43,7 @@ type Activities struct {
 	mw               metrics.Writer
 	l                *zap.Logger
 	queueClient      *queueclient.Client
+	emitterClient    *emitterclient.Client
 	statusActivities *statusactivities.Activities
 	jobFailures      metric.Int64Counter
 }
@@ -56,6 +59,7 @@ func New(params Params) *Activities {
 		mw:               params.MW,
 		l:                params.L,
 		queueClient:      params.QueueClient,
+		emitterClient:    params.EmitterClient,
 		statusActivities: params.StatusActivities,
 		jobFailures:      newRunnerJobLifecycleFailures(params.MeterProvider),
 	}
