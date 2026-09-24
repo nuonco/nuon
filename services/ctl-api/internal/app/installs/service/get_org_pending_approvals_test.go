@@ -13,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
 func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovalsEmpty() {
@@ -38,7 +39,7 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovals() {
 			setupApproval: func() *app.WorkflowStepApproval {
 				install := s.createTestInstall()
 				workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
-				step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
+				step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID, testseed.WithStepStatus(app.NewCompositeStatus(s.ctx, app.AwaitingApproval)))
 				return s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), step.ID, app.TerraformPlanApprovalType, "plan output")
 			},
 			setupResponse: nil,
@@ -49,7 +50,7 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovals() {
 			setupApproval: func() *app.WorkflowStepApproval {
 				install := s.createTestInstall()
 				workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
-				step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
+				step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID, testseed.WithStepStatus(app.NewCompositeStatus(s.ctx, app.AwaitingApproval)))
 				return s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), step.ID, app.TerraformPlanApprovalType, "plan output")
 			},
 			setupResponse: func(approvalID string) {
@@ -67,7 +68,7 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovals() {
 			setupApproval: func() *app.WorkflowStepApproval {
 				install := s.createTestInstall()
 				workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
-				step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
+				step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID, testseed.WithStepStatus(app.NewCompositeStatus(s.ctx, app.AwaitingApproval)))
 				return s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), step.ID, app.TerraformPlanApprovalType, "plan output")
 			},
 			setupResponse: func(approvalID string) {
@@ -91,7 +92,7 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovals() {
 					"status":      app.NewCompositeStatus(s.ctx, app.StatusCancelled),
 					"finished_at": now,
 				}).Error)
-				step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
+				step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID, testseed.WithStepStatus(app.NewCompositeStatus(s.ctx, app.AwaitingApproval)))
 				return s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), step.ID, app.TerraformPlanApprovalType, "plan output")
 			},
 			setupResponse: nil,
@@ -128,7 +129,7 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovals() {
 func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovalsOmitsContents() {
 	install := s.createTestInstall()
 	workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
-	step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
+	step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID, testseed.WithStepStatus(app.NewCompositeStatus(s.ctx, app.AwaitingApproval)))
 	approval := s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), step.ID, app.TerraformPlanApprovalType, "terraform plan output")
 
 	// Contents is json:"-", so the omit can only be asserted against the
@@ -153,7 +154,7 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovalsPagination() {
 
 	var approvalIDs []string
 	for i := 0; i < 3; i++ {
-		step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
+		step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID, testseed.WithStepStatus(app.NewCompositeStatus(s.ctx, app.AwaitingApproval)))
 		approval := s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), step.ID, app.TerraformPlanApprovalType, "plan output")
 		approvalIDs = append(approvalIDs, approval.ID)
 	}
@@ -186,7 +187,7 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovalsPagination() {
 func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovalsIsolation() {
 	install := s.createTestInstall()
 	workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
-	step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
+	step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID, testseed.WithStepStatus(app.NewCompositeStatus(s.ctx, app.AwaitingApproval)))
 	otherOrgApproval := s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), step.ID, app.TerraformPlanApprovalType, "other org plan")
 
 	ctx2, acc2 := s.deps.Seeder.EnsureAccount(context.Background(), s.T())
@@ -214,4 +215,28 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovalsIsolation() {
 	for _, a := range result {
 		assert.NotEqual(s.T(), otherOrgApproval.ID, a.ID, "approval from another org leaked into results")
 	}
+}
+
+func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovalsScopesToAwaitingSteps() {
+	install := s.createTestInstall()
+	workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
+
+	awaitingStep := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID, testseed.WithStepStatus(app.NewCompositeStatus(s.ctx, app.AwaitingApproval)))
+	awaitingApproval := s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), awaitingStep.ID, app.TerraformPlanApprovalType, "plan output")
+
+	executingStep := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID, testseed.WithStepStatus(app.NewCompositeStatus(s.ctx, app.StatusInProgress)))
+	executingApproval := s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), executingStep.ID, app.TerraformPlanApprovalType, "plan output")
+
+	rr := s.makeRequest(http.MethodGet, "/v1/workflows/pending-approvals", nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, "body: %s", rr.Body.String())
+
+	var result []app.WorkflowStepApproval
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &result))
+
+	found := map[string]bool{}
+	for _, a := range result {
+		found[a.ID] = true
+	}
+	assert.True(s.T(), found[awaitingApproval.ID], "awaiting approval missing from results")
+	assert.False(s.T(), found[executingApproval.ID], "executing-step approval should not be returned")
 }
