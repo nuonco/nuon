@@ -50,14 +50,16 @@ export const ModalBase = ({
   size = 'default',
   ...props
 }: Omit<IModal, 'triggerButton'>) => {
-  const { removeModal } = useSurfaces()
+  const { removeModal, modals } = useSurfaces()
   const handleClose = () => {
     if (onClose) onClose?.()
     removeModal(modalId, modalKey)
   }
   const modalRef = useRef<HTMLDivElement>(null)
+  const isTopModal =
+    [...modals].reverse().find((m) => m.isVisible)?.id === modalId
   useAutoFocusOnVisible(modalRef, isVisible)
-  useEscapeKey(handleClose)
+  useEscapeKey(handleClose, isVisible && isTopModal)
 
   return (
     <>

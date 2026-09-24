@@ -24,6 +24,15 @@ const (
 	RunnerProcessStatusUnknown         RunnerProcessStatus = "unknown"
 )
 
+// ActiveRunnerProcessStatuses is the canonical liveness set for runner admission checks.
+func ActiveRunnerProcessStatuses() []RunnerProcessStatus {
+	return []RunnerProcessStatus{
+		RunnerProcessStatusActive,
+		RunnerProcessStatusPendingShutdown,
+		RunnerProcessStatusShuttingDown,
+	}
+}
+
 type RunnerProcess struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero"`
 	CreatedByID string  `gorm:"not null;default:null" json:"created_by_id,omitzero"`
@@ -58,6 +67,15 @@ type RunnerProcess struct {
 
 	// Labels are computed server-side and not persisted.
 	Labels []string `json:"labels,omitempty" gorm:"-"`
+
+	// NextScheduledRestartAt is the scheduled uptime TTL restart time for this
+	// process (install and mng only). Set on process creation and not persisted.
+	NextScheduledRestartAt *time.Time `json:"next_scheduled_restart_at,omitzero" gorm:"-"`
+
+	// PreviousScheduledRestartAt is the scheduled restart time of the previous
+	// process of the same type, if one exists. Set on process creation and not
+	// persisted.
+	PreviousScheduledRestartAt *time.Time `json:"previous_scheduled_restart_at,omitzero" gorm:"-"`
 
 	Shutdowns []RunnerProcessShutdown `json:"shutdowns,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 }

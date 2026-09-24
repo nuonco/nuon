@@ -10,6 +10,7 @@ import (
 	nestedcloudformation "github.com/awslabs/goformation/v7/cloudformation/cloudformation"
 
 	"github.com/awslabs/goformation/v7/cloudformation/tags"
+
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
@@ -18,11 +19,11 @@ import (
 // getRunnerASGNestedStack returns a nested stack template for runner ASG resources.
 // It fetches the runner template to discover its parameters, conditionally including
 // RunnerApiToken only if the template defines it.
-func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuilder) (*nestedcloudformation.Stack, error) {
+func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuilder) (*nestedcloudformation.Stack, bool, error) {
 	// fetch the runner template to inspect its declared parameters
 	tmpl, err := a.fetchTemplate(inp.AppCfg.StackConfig.RunnerNestedTemplateURL)
 	if err != nil {
-		return nil, fmt.Errorf("runner ASG nested stack: %w", err)
+		return nil, false, fmt.Errorf("runner ASG nested stack: %w", err)
 	}
 
 	stackTags := []tags.Tag{
@@ -69,13 +70,20 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		params["RunnerEnvVars"] = inp.RunnerEnvVars
 	}
 
+	_, supportsTelemetryIngress := tmpl.Outputs["TelemetryEndpoint"]
+	for _, name := range []string{"EnableTelemetryIngress", "VpcId", "TelemetrySourcePrefixListId"} {
+		if _, ok := tmpl.Parameters[name]; !ok {
+			supportsTelemetryIngress = false
+		}
+	}
+
 	return &nestedcloudformation.Stack{
 		Parameters: params,
 		TemplateURL: cloudformation.Join("", []interface{}{
 			inp.AppCfg.StackConfig.RunnerNestedTemplateURL,
 		}),
 		Tags: t.apply(stackTags, "runner"),
-	}, nil
+	}, supportsTelemetryIngress, nil
 }
 
 func (a *Templates) runnerAPIURL(inp *stacks.TemplateInput) string {

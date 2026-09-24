@@ -20,12 +20,14 @@ const BranchPlanContent = () => {
   const appId = app.id!
 
   const currentConfig = useMemo(() => latestBranchConfig(branch), [branch])
+  const branchId = branch?.id
 
   const { data: appInstallsResult } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['app-installs', orgId, appId],
-    queryFn: () => getAppInstalls({ appId, orgId, limit: 100 }),
-    enabled: !!orgId && !!appId,
+    queryKey: ['app-installs', orgId, appId, branchId],
+    queryFn: () =>
+      getAppInstalls({ appId, orgId, app_branch_id: branchId, limit: 100 }),
+    enabled: !!orgId && !!appId && !!branchId,
     refetchInterval: 10000,
   })
 
@@ -43,34 +45,34 @@ const BranchPlanContent = () => {
 
   return (
     <BranchTabPage
-      tab="Install groups"
+      tab="Deployment plan"
       tabPath="plan"
-      heading="Install groups"
+      heading="Deployment plan"
       subheading="Group installs and control the rollout order for this branch."
     >
       <DeploymentPlanSection
-      config={currentConfig}
-      installsById={installsById}
-      orgId={orgId}
-      labelColors={labelColors}
-      createAction={
-        <EditDeploymentPlanButton
-          branch={branch}
-          currentConfig={currentConfig}
-          variant="secondary"
-          label="Create deployment plan"
-          onSuccess={refresh}
-        />
-      }
-      editAction={
-        <EditDeploymentPlanButton
-          branch={branch}
-          currentConfig={currentConfig}
-          variant="ghost"
-          label="Edit plan"
-          onSuccess={refresh}
-        />
-      }
+        config={currentConfig}
+        installsById={installsById}
+        orgId={orgId}
+        labelColors={labelColors}
+        createAction={
+          <EditDeploymentPlanButton
+            branch={branch}
+            currentConfig={currentConfig}
+            variant="secondary"
+            label="Create deployment plan"
+            onSuccess={refresh}
+          />
+        }
+        editAction={
+          <EditDeploymentPlanButton
+            branch={branch}
+            currentConfig={currentConfig}
+            variant="ghost"
+            label="Edit plan"
+            onSuccess={refresh}
+          />
+        }
       />
     </BranchTabPage>
   )

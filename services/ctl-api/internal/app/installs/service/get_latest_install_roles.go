@@ -58,12 +58,12 @@ func (s *service) GetLatestInstallRoles(ctx *gin.Context) {
 		Scopes(scopes.WithOffsetPagination).
 		Preload("AppRoleConfig").
 		Preload("AppRoleConfig.Policies").
-		Joins("JOIN app_awsiam_role_configs ON app_awsiam_role_configs.id = install_roles.app_role_config_id AND app_awsiam_role_configs.app_config_id = ?", install.AppConfigID).
 		Where("install_roles.install_id = ? AND install_roles.org_id = ?", installID, org.ID).
 		Order("install_roles.created_at DESC")
 
 	if q != "" {
-		tx = tx.Where("app_awsiam_role_configs.display_name ILIKE ? OR install_roles.id = ?", "%"+q+"%", q)
+		tx = tx.Joins("JOIN app_awsiam_role_configs ON app_awsiam_role_configs.id = install_roles.app_role_config_id").
+			Where("app_awsiam_role_configs.display_name ILIKE ? OR install_roles.id = ?", "%"+q+"%", q)
 	}
 
 	res = tx.Find(&roles)

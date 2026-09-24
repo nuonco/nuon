@@ -74,6 +74,9 @@ type AppInstallerSDKConfig struct {
 	// map[string]string with no room for per-key metadata, so this rides alongside
 	// like RequiredInputs.
 	SensitiveInputs []string `json:"sensitive_inputs"`
+
+	// Carried into the module's phone home so a new version produces a diff.
+	StackVersionID string `json:"stack_version_id,omitempty"`
 }
 
 // Validate validates this app installer s d k config

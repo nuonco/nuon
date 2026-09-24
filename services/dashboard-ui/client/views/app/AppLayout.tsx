@@ -82,8 +82,16 @@ const AppTemplate = () => {
       iconVariant: 'ShippingContainerIcon' as const,
       text: 'Sandbox builds',
     },
-    { path: `/components`, iconVariant: 'CardsIcon' as const, text: 'Components' },
-    { path: `/actions`, iconVariant: 'TerminalWindowIcon' as const, text: 'Actions' },
+    {
+      path: `/components`,
+      iconVariant: 'CardsIcon' as const,
+      text: 'Components',
+    },
+    {
+      path: `/actions`,
+      iconVariant: 'TerminalWindowIcon' as const,
+      text: 'Actions',
+    },
     {
       path: `/runbooks`,
       iconVariant: 'BookIcon' as const,
@@ -95,7 +103,11 @@ const AppTemplate = () => {
       text: 'Branches',
     },
     { path: `/roles`, iconVariant: 'FileLockIcon' as const, text: 'Roles' },
-    { path: `/policies`, iconVariant: 'ShieldCheckIcon' as const, text: 'Policies' },
+    {
+      path: `/policies`,
+      iconVariant: 'ShieldCheckIcon' as const,
+      text: 'Policies',
+    },
     { path: `/installs`, iconVariant: 'CubeIcon' as const, text: 'Installs' },
     hasInstallSyncing && {
       path: `/install-syncs`,
@@ -110,7 +122,11 @@ const AppTemplate = () => {
     <PageLayout>
       {!isChildRoute ? <AppHeader /> : null}
       <PageContent className="border-t" variant="row">
-        <SubNav basePath={`/${org?.id}/apps/${app?.id}`} links={navLinks} storageKey="subnav:app" />
+        <SubNav
+          basePath={`/${org?.id}/apps/${app?.id}`}
+          links={navLinks}
+          storageKey="subnav:app"
+        />
         <div className="flex flex-col flex-1 min-w-0">
           <Outlet />
         </div>

@@ -9,12 +9,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
-	"gorm.io/gorm"
 )
 
 // currentAppConfigComponentSubquery matches install components whose component is
@@ -205,7 +206,7 @@ func (s *service) populateComponentEnabled(ctx context.Context, installID string
 		if err := s.db.WithContext(ctx).
 			Scopes(
 				scopes.WithDisableViews,
-				scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
+				scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName),
 			).
 			Preload("Component").
 			Where("component_id IN ?", missingComponentIDs).

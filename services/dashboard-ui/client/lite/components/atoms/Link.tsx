@@ -31,7 +31,7 @@ const LINK_CLASSES =
   'text-link underline decoration-link/35 underline-offset-2 outline-none transition-colors ' +
   'hover:text-link-hover hover:decoration-link-hover/60 ' +
   'active:text-link-active ' +
-  'focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring'
+  'focus-visible:rounded-xs focus-ring'
 
 const DISABLED_CLASSES = 'text-tertiary no-underline cursor-not-allowed'
 
@@ -85,6 +85,7 @@ export const Link = ({
     <RouterLink
       to={href}
       reloadDocument={reloadDocument}
+      viewTransition
       className={cn(sizing, LINK_CLASSES, className)}
       {...props}
     >

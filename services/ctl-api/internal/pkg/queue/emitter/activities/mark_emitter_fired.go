@@ -41,7 +41,7 @@ func (a *Activities) MarkEmitterFired(ctx context.Context, req *MarkEmitterFired
 		return nil, generics.TemporalDoNotRetry(fmt.Errorf("emitter %s not found", req.EmitterID))
 	}
 
-	a.l.Debug("marked emitter as fired",
+	a.l.Info("marked emitter as fired",
 		zap.String("emitter-id", req.EmitterID),
 	)
 

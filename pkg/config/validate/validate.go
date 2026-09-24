@@ -70,6 +70,9 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		func() error {
 			return a.Permissions.Validate()
 		},
+		func() error {
+			return a.BreakGlass.Validate()
+		},
 
 		func() error {
 			return ValidateTemplateRefs(a)
@@ -79,6 +82,9 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		},
 		func() error {
 			return ValidateAzureRunnerIdentities(a)
+		},
+		func() error {
+			return validateAzureCustomNestedStacks(a)
 		},
 		//
 		func() error {
@@ -102,5 +108,23 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		}
 	}
 
+	return nil
+}
+
+func validateAzureCustomNestedStacks(a *config.AppConfig) error {
+	if a.Stack == nil {
+		return nil
+	}
+	if err := config.ValidateAzureCustomNestedStacks(a.Stack.Type, a.Stack.CustomNestedStacks); err != nil {
+		return err
+	}
+	for _, install := range a.Installs {
+		if install.StackOverrides == nil {
+			continue
+		}
+		if err := config.ValidateAzureCustomNestedStacks(a.Stack.Type, install.StackOverrides.CustomNestedStacks); err != nil {
+			return err
+		}
+	}
 	return nil
 }

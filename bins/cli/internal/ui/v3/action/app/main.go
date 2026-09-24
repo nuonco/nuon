@@ -7,6 +7,8 @@ import (
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
+
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/sdks/nuon-go"
@@ -172,7 +174,7 @@ func App(
 	}
 
 	m := initialModel(ctx, cfg, api, install_id, action_workflow_id)
-	p := tea.NewProgram(m)
+	p := teaprogram.NewProgram(m)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
 		os.Exit(1)

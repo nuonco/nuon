@@ -11,9 +11,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
-	jobpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
+
+const sourceAfterBuildVersion = "app-branch-sandbox-build-source-after-build-v1"
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
@@ -30,55 +31,56 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
 
-	// Get the app config (with App preloaded) to get AppID
+	sourceAfterBuild := workflow.GetVersion(ctx, sourceAfterBuildVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+
+	var (
+		sandboxConfig *app.AppSandboxConfig
+		source        *activities.ResolveSandboxBuildSourceOutput
+	)
+	if sourceAfterBuild {
+		sandbox, err := activities.AwaitGetSandboxBuildConfig(ctx, &activities.GetSandboxBuildConfigInput{
+			AppConfigID: run.AppConfigID,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to get sandbox build config: %w", err)
+		}
+		if sandbox == nil || sandbox.Skipped || sandbox.SandboxConfig == nil {
+			l.Info("no sandbox config found for app config, skipping sandbox build", "app_config_id", run.AppConfigID)
+			return nil
+		}
+		sandboxConfig = sandbox.SandboxConfig
+	} else {
+		source, err = activities.AwaitResolveSandboxBuildSource(ctx, &activities.ResolveSandboxBuildSourceInput{
+			AppConfigID: run.AppConfigID,
+			RunID:       s.RunID,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to resolve sandbox build source: %w", err)
+		}
+		if source == nil || source.Skipped || source.SandboxConfig == nil {
+			l.Info("no sandbox config found for app config, skipping sandbox build", "app_config_id", run.AppConfigID)
+			return nil
+		}
+		sandboxConfig = source.SandboxConfig
+	}
+
 	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
 	if err != nil {
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
 
-	// Get the sandbox config for this app — if not found, skip gracefully
-	sandboxConfig, err := activities.AwaitGetLatestAppSandboxConfigByAppID(ctx, appConfig.AppID)
-	if err != nil {
-		l.Info("no sandbox config found for app, skipping sandbox build", "app_id", appConfig.AppID)
-		return nil
+	createReq := activities.CreateSandboxBuildRequest{
+		AppID:              appConfig.AppID,
+		AppConfigID:        run.AppConfigID,
+		AppSandboxConfigID: sandboxConfig.ID,
+		OrgID:              run.OrgID,
+		CreatedByID:        run.CreatedByID,
+		AppBranchRunID:     s.RunID,
 	}
-
-	// Resolve git source for the sandbox build
-	gitSource, err := activities.AwaitGetSandboxBuildGitSource(ctx, activities.GetSandboxBuildGitSourceRequest{
-		SandboxConfigID: sandboxConfig.ID,
-	})
-	if err != nil {
-		return fmt.Errorf("unable to get sandbox build git source: %w", err)
+	if !sourceAfterBuild {
+		createReq.VCSConnectionCommitID = source.VCSConnectionCommitID
 	}
-
-	// If sandbox config shares the same VCS config as the branch run's commit, pin to that specific SHA
-	if run.VCSConnectionCommit != nil {
-		var sandboxVCSConfigID string
-		if sandboxConfig.ConnectedGithubVCSConfig != nil {
-			sandboxVCSConfigID = sandboxConfig.ConnectedGithubVCSConfig.ID
-		} else if sandboxConfig.PublicGitVCSConfig != nil {
-			sandboxVCSConfigID = sandboxConfig.PublicGitVCSConfig.ID
-		}
-		if sandboxVCSConfigID != "" && sandboxVCSConfigID == run.VCSConnectionCommit.OwnerID {
-			gitSource.Ref = run.VCSConnectionCommit.SHA
-		}
-	}
-
-	// Resolve VCS commit ID for the sandbox build record
-	var commitID *string
-	if run.VCSConnectionCommit != nil {
-		commitID = &run.VCSConnectionCommit.ID
-	}
-
-	// Create the sandbox build record
-	build, err := activities.AwaitCreateSandboxBuild(ctx, activities.CreateSandboxBuildRequest{
-		AppID:                 appConfig.AppID,
-		AppConfigID:           run.AppConfigID,
-		AppSandboxConfigID:    sandboxConfig.ID,
-		OrgID:                 run.OrgID,
-		CreatedByID:           run.CreatedByID,
-		VCSConnectionCommitID: commitID,
-	})
+	build, err := activities.AwaitCreateSandboxBuild(ctx, createReq)
 	if err != nil {
 		return fmt.Errorf("unable to create sandbox build: %w", err)
 	}
@@ -98,6 +100,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			l.Warn("unable to add sandbox build to step metadata", "error", err, "build_id", build.ID)
 		}
 	}
+
+	if sourceAfterBuild {
+		source, err = activities.AwaitResolveSandboxBuildSource(ctx, &activities.ResolveSandboxBuildSourceInput{
+			AppConfigID: run.AppConfigID,
+			RunID:       s.RunID,
+			BuildID:     build.ID,
+		})
+		if err != nil {
+			s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, activities.SandboxSourceFailureDescription(err))
+			return fmt.Errorf("unable to resolve sandbox build source: %w", err)
+		}
+	}
+	if source == nil || source.GitSource == nil {
+		s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to resolve sandbox source")
+		return fmt.Errorf("sandbox build source resolved to nothing for app config %s", run.AppConfigID)
+	}
+
+	gitSource := source.GitSource
 
 	// Create a log stream for the sandbox build
 	logStreamID := ""
@@ -193,17 +213,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Execute the runner job
 	s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusBuilding, "building sandbox")
-	if runnerJob.Executor == app.RunnerJobExecutorControlPlane {
-		err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
-			WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", build.ID, runnerJob.ID),
-		})
-	} else {
-		_, err = jobpkg.AwaitExecuteJob(ctx, &jobpkg.ExecuteJobRequest{
-			RunnerID:   runnerJob.RunnerID,
-			JobID:      runnerJob.ID,
-			WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", build.ID, runnerJob.ID),
-		})
-	}
+	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", build.ID, runnerJob.ID),
+	})
 	if err != nil {
 		s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "sandbox build job failed")
 		return fmt.Errorf("sandbox build job failed: %w", err)

@@ -14,6 +14,7 @@ import (
 )
 
 const SignalType signal.SignalType = "process_init"
+const atomicRunnerStatusVersion = "process-init-atomic-runner-status-v1"
 
 type Signal struct {
 	RunnerID  string `json:"runner_id"`
@@ -57,11 +58,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	resetRunnerHealth := false
 	switch process.Type {
-	case app.RunnerProcessTypeInstall, app.RunnerProcessTypeBuild, app.RunnerProcessTypeOrg:
+	case app.RunnerProcessTypeInstall:
 		resetRunnerHealth = true
 	}
 	processStatus := process.ProcessStatus()
-	if resetRunnerHealth && (processStatus == app.RunnerProcessStatus(app.StatusPending) || processStatus == app.RunnerProcessStatusActive) {
+	statusVersion := workflow.GetVersion(ctx, atomicRunnerStatusVersion, workflow.DefaultVersion, 1)
+	clearOfflineMetadata := resetRunnerHealth && processStatus == app.RunnerProcessStatusActive
+	if statusVersion == workflow.DefaultVersion {
+		clearOfflineMetadata = resetRunnerHealth &&
+			(processStatus == app.RunnerProcessStatus(app.StatusPending) || processStatus == app.RunnerProcessStatusActive)
+	}
+	if clearOfflineMetadata {
 		if err := statusactivities.AwaitUpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
 			RunnerID: s.RunnerID,
 			Metadata: map[string]any{
@@ -87,20 +94,34 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update process status")
 	}
 
-	// Update runner status to active
-	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
-		RunnerID:          s.RunnerID,
-		Status:            app.RunnerStatusActive,
-		StatusDescription: "process initialized",
-	}); err != nil {
-		return errors.Wrap(err, "unable to update runner status")
-	}
-	if err := statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
-		RunnerID:          s.RunnerID,
-		Status:            app.RunnerStatusActive,
-		StatusDescription: "process initialized",
-	}); err != nil {
-		l.Warn("unable to update runner status v2", "error", err)
+	if statusVersion == workflow.DefaultVersion {
+		if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusActive,
+			StatusDescription: "process initialized",
+		}); err != nil {
+			return errors.Wrap(err, "unable to update runner status")
+		}
+		if err := statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusActive,
+			StatusDescription: "process initialized",
+		}); err != nil {
+			l.Warn("unable to update runner status v2", "error", err)
+		}
+	} else {
+		var metadata map[string]any
+		if resetRunnerHealth {
+			metadata = map[string]any{app.RunnerOfflineTSMetadataKey: nil}
+		}
+		if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusActive,
+			StatusDescription: "process initialized",
+			Metadata:          metadata,
+		}); err != nil {
+			return errors.Wrap(err, "unable to update runner status")
+		}
 	}
 
 	l.Info("process initialized", "runner_id", s.RunnerID, "process_id", s.ProcessID)

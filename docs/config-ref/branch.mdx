@@ -16,6 +16,7 @@ title: 'Branch'
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public git repo the branch tracks | **Optional** | - |
 | **`install_groups`**<br/>[array](#install_groups) | ordered deployment groups for this branch | **Optional** | - |
 | **`preview`**<br/>[AppBranchPreviewConfig](#preview) | default preview run settings for this branch | **Optional** | - |
+| **`run`**<br/>[AppBranchRunConfig](#run) | controls which VCS events automatically run this branch | **Optional** | - |
 | **`post_deploy_runbooks`**<br/>array | names of runbooks to run on each install, in order, after its deploy succeeds; resolved to IDs at sync time | **Optional** | - |
 | **`ignore_changes_regex`**<br/>string | RE2 regex matched against every changed file path; a run whose entire changed file set matches is not attempted | **Optional** | - |
 | **`send_statuses_on_ignore`**<br/>boolean | whether to send a successful commit status when a run is ignored by ignore_changes_regex | **Optional** | - |
@@ -45,15 +46,26 @@ title: 'Branch'
 | **`install_ids`**<br/>array | static list of install IDs | **Optional** | - |
 | **`install_names`**<br/>array | static list of install names, resolved to IDs at sync time | **Optional** | - |
 | **`label_selector`**<br/>object | label key-value pairs to dynamically match installs | **Optional** | - |
+| **`auto_approve_on_policies_passing`**<br/>boolean | Auto-approve this group's plan when all policy checks pass. Defaults to false | **Optional** | - |
 
 ### `preview`
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`mode`**<br/>string | preview run mode: plan-only, apply, or build-only | **Optional** | - |
+| **`mode`**<br/>string | preview run mode: plan-only, apply, or build-only | **Optional**<br/>`"plan-only"`, `"apply"`, `"build-only"` | - |
 | **`install_id`**<br/>string | default install ID for preview runs | **Optional** | - |
 | **`install_name`**<br/>string | default install name for preview runs, resolved to an ID at sync time | **Optional** | - |
 | **`label_selector`**<br/>object | label key-value pairs to select the default preview install | **Optional** | - |
 | **`set_statuses`**<br/>boolean | whether to set GitHub commit statuses for preview runs | **Optional** | - |
 | **`comment`**<br/>boolean | whether to comment on the pull request with preview results | **Optional** | - |
+| **`ignore_drafts`**<br/>boolean | skip preview runs for draft pull requests until they are marked ready for review. Defaults to true | **Optional** | - |
+| **`react`**<br/>boolean | whether to add a GitHub eyes reaction when a preview run starts. Defaults to true | **Optional** | - |
+
+### `run`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`mode`**<br/>string | automatic run mode: push, on_tag, on_github_label, or manual_only | **Optional**<br/>`"push"`, `"on_tag"`, `"on_github_label"`, `"manual_only"` | - |
+| **`tag_prefix`**<br/>string | case-sensitive git tag prefix required by on_tag | **Optional** | - |
+| **`github_label`**<br/>string | exact pull request label required by on_github_label | **Optional** | - |
 

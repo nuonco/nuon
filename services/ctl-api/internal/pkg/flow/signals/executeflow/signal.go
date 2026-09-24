@@ -11,7 +11,10 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -179,6 +182,23 @@ func (s *Signal) LifecycleContext() qsignal.SignalLifecycleContext {
 	}
 }
 
+func (s *Signal) workflowTelemetry() cctx.WorkflowTelemetry {
+	telemetry := cctx.WorkflowTelemetry{
+		OrgID:        s.OrgID,
+		OrgName:      s.OrgName,
+		WorkflowID:   s.WorkflowID,
+		WorkflowType: s.WorkflowType,
+		OwnerID:      s.OwnerID,
+		OwnerType:    s.OwnerType,
+		OwnerName:    s.OwnerName,
+	}
+	if s.OwnerType == plugins.TableNameOf[app.Install]() {
+		telemetry.InstallID = s.OwnerID
+		telemetry.InstallName = s.OwnerName
+	}
+	return telemetry
+}
+
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.WorkflowID == "" {
 		return errors.New("workflow_id is required")
@@ -198,6 +218,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.WorkflowType == "" {
 		s.WorkflowType = string(flw.Type)
 	}
+	ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, s.workflowTelemetry())
 	if s.OrgID == "" {
 		s.OrgID = flw.OrgID
 	}
@@ -212,51 +233,25 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.OwnerName == "" {
 		s.OwnerName = flw.OwnerName
 	}
+	ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, s.workflowTelemetry())
 
 	// Resolve queue names from owner type if not explicitly set.
 	if s.StepGroupQueueName == "" || s.StepQueueName == "" || s.StepTargetQueueName == "" || s.GenerateStepsQueueName == "" {
-		switch s.OwnerType {
-		case "installs":
-			if s.StepGroupQueueName == "" {
-				s.StepGroupQueueName = "install-workflow-step-groups"
-			}
-			if s.StepQueueName == "" {
-				s.StepQueueName = "install-workflow-steps"
-			}
-			if s.StepTargetQueueName == "" {
-				s.StepTargetQueueName = "install-signals"
-			}
-			if s.GenerateStepsQueueName == "" {
-				s.GenerateStepsQueueName = "install-generate-steps"
-			}
-		case "apps":
-			if s.StepGroupQueueName == "" {
-				s.StepGroupQueueName = "app-workflow-step-groups"
-			}
-			if s.StepQueueName == "" {
-				s.StepQueueName = "app-workflow-steps"
-			}
-			if s.StepTargetQueueName == "" {
-				s.StepTargetQueueName = "app-signals"
-			}
-			if s.GenerateStepsQueueName == "" {
-				s.GenerateStepsQueueName = "app-generate-steps"
-			}
-		case "app_branches":
-			if s.StepGroupQueueName == "" {
-				s.StepGroupQueueName = "app-branch-workflow-step-groups"
-			}
-			if s.StepQueueName == "" {
-				s.StepQueueName = "app-branch-workflow-steps"
-			}
-			if s.StepTargetQueueName == "" {
-				s.StepTargetQueueName = "app-branch-signals"
-			}
-			if s.GenerateStepsQueueName == "" {
-				s.GenerateStepsQueueName = "app-branch-generate-steps"
-			}
-		default:
+		spec, ok := queuenames.Flow(s.OwnerType)
+		if !ok {
 			return s.failWorkflow(ctx, errors.Errorf("unable to resolve queue names for owner type %s", s.OwnerType))
+		}
+		if s.StepGroupQueueName == "" {
+			s.StepGroupQueueName = spec.StepGroups
+		}
+		if s.StepQueueName == "" {
+			s.StepQueueName = spec.Steps
+		}
+		if s.StepTargetQueueName == "" {
+			s.StepTargetQueueName = spec.StepTargets
+		}
+		if s.GenerateStepsQueueName == "" {
+			s.GenerateStepsQueueName = spec.GenerateSteps
 		}
 	}
 
@@ -281,6 +276,8 @@ func (s *Signal) failWorkflow(ctx workflow.Context, err error) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
+	ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, s.workflowTelemetry())
+
 	return s.executeFlow(ctx)
 }
 

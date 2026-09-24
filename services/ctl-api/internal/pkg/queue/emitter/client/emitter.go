@@ -51,14 +51,6 @@ type CreateEmitterRequest struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 2m
 func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (*app.QueueEmitter, error) {
-	if req.SignalTemplate == nil {
-		return nil, temporal.NewNonRetryableApplicationError(
-			"emitter signal_template is required",
-			"EMITTER_CONFIG_ERROR",
-			nil,
-		)
-	}
-
 	switch req.Mode {
 	case app.QueueEmitterModeCron:
 		if req.CronSchedule == "" {
@@ -268,20 +260,24 @@ func (c *Client) StopEmitter(ctx context.Context, emitterID string) (*app.QueueE
 		return nil, errors.Wrap(res.Error, "unable to update emitter status")
 	}
 
-	// Use the Temporal update handler to gracefully stop the emitter workflow.
-	// This sets e.stopped = true which causes the emitter's run loop to exit cleanly.
-	_, err = c.tClient.UpdateWorkflowInNamespace(ctx, em.Workflow.Namespace, tclient.UpdateWorkflowOptions{
-		WorkflowID:   em.Workflow.ID,
-		UpdateName:   emitter.StopUpdateName,
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		Args:         []any{&emitter.StopRequest{}},
-	})
-	if err != nil {
+	if err := c.stopEmitterWorkflow(ctx, em); err != nil {
 		c.l.Warn("failed to stop emitter workflow via update handler", zap.String("id", emitterID), zap.Error(err))
 	}
 
 	c.l.Debug("emitter stopped", zap.String("id", emitterID))
 	return em, nil
+}
+
+func (c *Client) stopEmitterWorkflow(ctx context.Context, em *app.QueueEmitter) error {
+	if _, err := c.tClient.UpdateWorkflowInNamespace(ctx, em.Workflow.Namespace, tclient.UpdateWorkflowOptions{
+		WorkflowID:   em.Workflow.ID,
+		UpdateName:   emitter.StopUpdateName,
+		WaitForStage: tclient.WorkflowUpdateStageAccepted,
+		Args:         []any{&emitter.StopRequest{}},
+	}); err != nil {
+		return fmt.Errorf("unable to stop emitter workflow %s: %w", em.Workflow.ID, err)
+	}
+	return nil
 }
 
 // @temporal-gen-v2 activity

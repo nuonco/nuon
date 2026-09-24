@@ -9,6 +9,7 @@ import (
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
+	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -44,6 +45,108 @@ func (s *PlanInstallGroupTestSuite) AfterTest(suiteName, testName string) {
 	s.env.AssertExpectations(s.T())
 }
 
+func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingFromGroup() {
+	sig := &Signal{
+		InstallGroupID: "group-1",
+		AppBranchID:    "branch-1",
+		RunID:          "run-1",
+		StepID:         "step-1",
+	}
+
+	autoApprove := true
+	s.env.OnActivity("GetInstallGroupByID", mock.Anything, mock.Anything).Return(
+		&app.AppBranchInstallGroup{
+			ID:                           "group-1",
+			Name:                         "prod",
+			AutoApproveOnPoliciesPassing: &autoApprove,
+		}, nil)
+
+	s.env.ExecuteWorkflow(func(ctx workflow.Context) (bool, error) {
+		return sig.AutoApproveOnPoliciesPassing(ctx), nil
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+	var result bool
+	s.NoError(s.env.GetWorkflowResult(&result))
+	s.True(result)
+}
+
+func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingDefaultsOff() {
+	sig := &Signal{
+		InstallGroupID: "group-1",
+		AppBranchID:    "branch-1",
+		RunID:          "run-1",
+		StepID:         "step-1",
+	}
+
+	s.env.OnActivity("GetInstallGroupByID", mock.Anything, mock.Anything).Return(
+		&app.AppBranchInstallGroup{
+			ID:   "group-1",
+			Name: "prod",
+		}, nil)
+
+	s.env.ExecuteWorkflow(func(ctx workflow.Context) (bool, error) {
+		return sig.AutoApproveOnPoliciesPassing(ctx), nil
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+	var result bool
+	s.NoError(s.env.GetWorkflowResult(&result))
+	s.False(result)
+}
+
+// Synthetic preview groups have no install group row to read the setting from.
+func (s *PlanInstallGroupTestSuite) TestAutoApproveOnPoliciesPassingFalseForSyntheticPreview() {
+	sig := &Signal{
+		PreviewInstallID:   "install-1",
+		SyntheticGroupName: "preview",
+		AppBranchID:        "branch-1",
+		RunID:              "run-1",
+	}
+
+	s.env.ExecuteWorkflow(func(ctx workflow.Context) (bool, error) {
+		return sig.AutoApproveOnPoliciesPassing(ctx), nil
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+	var result bool
+	s.NoError(s.env.GetWorkflowResult(&result))
+	s.False(result)
+}
+
+func (s *PlanInstallGroupTestSuite) TestPreviewLabelSelectorResolvesOnlyMatchingInstalls() {
+	selector := &labels.Selector{MatchLabels: labels.Labels{"env": "staging"}}
+	sig := &Signal{
+		PreviewLabelSelector: selector,
+		SyntheticGroupName:   "preview",
+		AppBranchID:          "branch-1",
+		RunID:                "run-1",
+	}
+
+	s.env.OnActivity((*activities.Activities).AppBranchesGetAppBranchByID, mock.Anything, mock.Anything, mock.Anything).Return(
+		&app.AppBranch{ID: "branch-1", AppID: "app-1"},
+		nil,
+	)
+	s.env.OnActivity((*activities.Activities).ResolveInstallGroupInstalls, mock.Anything, mock.Anything, mock.Anything).Return(
+		&activities.ResolveInstallGroupInstallsOutput{InstallIDs: []string{"install-1", "install-2"}},
+		nil,
+	)
+
+	s.env.ExecuteWorkflow(func(ctx workflow.Context) ([]string, error) {
+		installIDs, _, err := sig.resolveInstallIDs(ctx)
+		return installIDs, err
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+	var installIDs []string
+	s.NoError(s.env.GetWorkflowResult(&installIDs))
+	s.Equal([]string{"install-1", "install-2"}, installIDs)
+}
+
 func (s *PlanInstallGroupTestSuite) TestEmptyInstallGroup() {
 	sig := &Signal{
 		InstallGroupID: "group-1",
@@ -64,6 +167,12 @@ func (s *PlanInstallGroupTestSuite) TestEmptyInstallGroup() {
 			Name:       "prod",
 			InstallIDs: []string{},
 		}, nil)
+
+	s.env.OnActivity((*activities.Activities).AppBranchesGetAppBranchByID, mock.Anything, mock.Anything, mock.Anything).Return(
+		&app.AppBranch{ID: "branch-1", AppID: "app-1"}, nil)
+
+	s.env.OnActivity((*activities.Activities).ResolveInstallGroupInstalls, mock.Anything, mock.Anything, mock.Anything).Return(
+		&activities.ResolveInstallGroupInstallsOutput{InstallIDs: []string{}}, nil)
 
 	s.env.ExecuteWorkflow(sig.Execute)
 
@@ -91,6 +200,12 @@ func (s *PlanInstallGroupTestSuite) TestNoStepIDSkipsApproval() {
 			Name:       "prod",
 			InstallIDs: []string{"install-1"},
 		}, nil)
+
+	s.env.OnActivity((*activities.Activities).AppBranchesGetAppBranchByID, mock.Anything, mock.Anything, mock.Anything).Return(
+		&app.AppBranch{ID: "branch-1", AppID: "app-1"}, nil)
+
+	s.env.OnActivity((*activities.Activities).ResolveInstallGroupInstalls, mock.Anything, mock.Anything, mock.Anything).Return(
+		&activities.ResolveInstallGroupInstallsOutput{InstallIDs: []string{"install-1"}}, nil)
 
 	s.env.OnActivity("GetInstall", mock.Anything, mock.Anything).Return(
 		&app.Install{

@@ -39,7 +39,7 @@ func (e *EnqueueTestSuite) TestAwaitReadyOK() {
 	require.NotNil(e.T(), queue)
 
 	// wait for the queue to be ready
-	err = e.service.Client.QueueReady(ctx, queue.ID)
+	err = e.queueReady(ctx, queue.ID)
 	require.Nil(e.T(), err)
 }
 
@@ -58,7 +58,11 @@ func (e *EnqueueTestSuite) TestAwaitStatusOK() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), queue)
 
-	// now, restart the queue
-	err = e.service.Client.QueueReady(ctx, queue.ID)
+	err = e.queueReady(ctx, queue.ID)
 	require.Nil(e.T(), err)
+
+	status, err := e.service.Client.GetQueueStatus(ctx, queue.ID)
+	require.NoError(e.T(), err)
+	require.True(e.T(), status.Ready)
+	require.False(e.T(), status.Stopped)
 }

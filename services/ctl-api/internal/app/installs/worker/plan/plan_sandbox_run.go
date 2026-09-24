@@ -160,16 +160,23 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	var gitSource *plantypes.GitSource
 	var ociSource *plantypes.OCISource
 	switch {
+	case install.SandboxMode.Bool:
+		// A sandbox-mode org never provisions a real app repository — the record
+		// is faked — so its registry and region cannot mint credentials, and the
+		// run does not pull the artifact anyway.
+		l.Info("install is in sandbox mode, using git source")
 	case !ociArtifacts:
 		l.Info("sandbox-oci-artifacts disabled, using git source")
 	case req.OCISource != nil:
 		l.Info("using OCI source from caller")
 		ociSource = req.OCISource
 	default:
+		// Only a missing build falls back to git, which resolves branch HEAD rather
+		// than the commit the artifact was built from.
 		l.Info("checking for active sandbox build OCI artifact")
 		sandboxBuild, sbErr := activities.AwaitGetLatestActiveSandboxBuildByAppConfigID(ctx, appCfg.ID)
 		if sbErr != nil {
-			l.Warn("unable to check for sandbox build, falling back to git source", zap.Error(sbErr))
+			return nil, nil, errors.Wrap(sbErr, "unable to check for sandbox build")
 		}
 
 		if sandboxBuild != nil {
@@ -178,12 +185,11 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 				AppID: install.AppID,
 			})
 			if regErr != nil {
-				l.Warn("unable to get OCI registry, falling back to git source", zap.Error(regErr))
-			} else {
-				ociSource = &plantypes.OCISource{
-					Registry: registry,
-					Tag:      sandboxBuild.ID,
-				}
+				return nil, nil, errors.Wrap(regErr, "unable to get oci registry for sandbox build")
+			}
+			ociSource = &plantypes.OCISource{
+				Registry: registry,
+				Tag:      sandboxBuild.ID,
 			}
 		}
 	}
@@ -205,6 +211,9 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		}
 		if err := sharedactivities.EnsureACRAuth(ctx, ociSource.Registry); err != nil {
 			return nil, nil, errors.Wrap(err, "unable to get ACR access token for sandbox artifact")
+		}
+		if err := sharedactivities.EnsureECRAuth(ctx, ociSource.Registry); err != nil {
+			return nil, nil, errors.Wrap(err, "unable to get ECR access token for sandbox artifact")
 		}
 	}
 
@@ -356,8 +365,10 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 			"provision_iam_role_arn":   "{{.nuon.install_stack.outputs.provision_iam_role_arn}}",
 			"deprovision_iam_role_arn": "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}",
 			"maintenance_iam_role_arn": "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}",
+			// install.nuon.co/id is what everything else tags with; NUON_INSTALL_ID is the old key
 			"tags": map[string]string{
-				"NUON_INSTALL_ID": "{{.nuon.install.id}}",
+				"install.nuon.co/id": "{{.nuon.install.id}}",
+				"NUON_INSTALL_ID":    "{{.nuon.install.id}}",
 			},
 		}
 	case app.AppRunnerTypeGCP:

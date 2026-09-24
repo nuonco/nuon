@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -23,9 +24,24 @@ const SignalType signal.SignalType = "await-runner-healthy"
 // activities, so the disabled-runner short circuit must not apply on replay.
 const skipDisabledRunnerVersion = "await-runner-healthy-skip-disabled-runner-v1"
 
+// Offline or error runners will never become healthy during the poll window.
+// Old histories that already started the poll loop must not be interrupted.
+const failFastUnhealthyRunnerVersion = "await-runner-healthy-failfast-unhealthy-v1"
+
+// Existing histories must retain the aggregate-status fail-fast behavior they recorded.
+const processReadinessPolicyVersion = "await-runner-healthy-process-readiness-v1"
+
+type Mode string
+
+const (
+	ModeStartup       Mode = "startup"
+	ModeRequireActive Mode = "require-active"
+)
+
 type Signal struct {
 	InstallID      string `json:"install_id"`
 	WorkflowStepID string `json:"workflow_step_id"`
+	Mode           Mode   `json:"mode"`
 
 	v *validator.Validate
 }
@@ -36,11 +52,15 @@ var (
 	_ signal.SignalWithStepContext    = (*Signal)(nil)
 	_ signal.SignalWithAutoRetry      = (*Signal)(nil)
 	_ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
+	_ signal.SignalWithSkippable      = (*Signal)(nil)
 )
 
 func (s *Signal) AutoRetry() bool { return true }
+func (s *Signal) Skippable() bool { return false }
 
-func (s *Signal) MaxAutoRetries(ctx workflow.Context) int { return 3 }
+// Manual retry remains available if the runner is repaired, but another
+// automatic one-hour poll cannot repair it.
+func (s *Signal) MaxAutoRetries(ctx workflow.Context) int { return 0 }
 
 func (s *Signal) WithParams(params *signal.Params) {
 	s.v = params.V
@@ -57,6 +77,9 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.InstallID == "" {
 		return errors.New("install_id is required")
+	}
+	if s.Mode != "" && s.Mode != ModeStartup && s.Mode != ModeRequireActive {
+		return errors.Errorf("unsupported runner readiness mode %q", s.Mode)
 	}
 
 	// Validate that the install exists
@@ -87,7 +110,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// either, but that is the deploy steps' problem to report, not this
 	// step's.
 	skipDisabled := workflow.GetVersion(ctx, skipDisabledRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
-	if skipDisabled && runner.Status == app.RunnerStatusDisabled {
+	if skipDisabled && runnerDisabled(runner) {
 		if s.WorkflowStepID != "" {
 			// The step executor only preserves a status it recognises as a skip,
 			// so write auto-skipped here rather than letting it default to
@@ -104,6 +127,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 		return nil
 	}
+
+	failFast := workflow.GetVersion(ctx, failFastUnhealthyRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	processReadiness := workflow.GetVersion(ctx, processReadinessPolicyVersion, workflow.DefaultVersion, 1)
 
 	// Determine the process type to poll based on runner group type
 	processType := app.InstallProcessForRunnerGroupType(runner.RunnerGroup.Type)
@@ -127,6 +153,42 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		RunnerID:    runner.ID,
 		ProcessType: processType,
 	}
+
+	if processReadiness == workflow.DefaultVersion {
+		if failFast && runnerCannotBecomeHealthy(runner.Status) {
+			return errors.Errorf("runner is %s and cannot process jobs; check the runner status and try again", runner.Status)
+		}
+		return s.awaitActiveProcess(ctx, processReq)
+	}
+
+	if s.Mode == "" {
+		if failFast && runnerCannotBecomeHealthy(runner.Status) {
+			return errors.Errorf("runner is %s and cannot process jobs; check the runner status and try again", runner.Status)
+		}
+		return s.awaitActiveProcess(ctx, processReq)
+	}
+	if s.Mode == ModeRequireActive {
+		return requireActiveProcess(ctx, processReq)
+	}
+	return s.awaitActiveProcess(ctx, processReq)
+}
+
+func requireActiveProcess(ctx workflow.Context, processReq activities.GetCurrentRunnerProcessRequest) error {
+	process, err := activities.AwaitGetCurrentRunnerProcess(ctx, processReq)
+	if err != nil {
+		var appErr *temporal.ApplicationError
+		if errors.As(err, &appErr) && appErr.Type() == "not found" {
+			return errors.Wrap(poll.NonRetryableError, "runner has no active process; check the runner status and try again")
+		}
+		return errors.Wrap(err, "unable to get current runner process")
+	}
+	if process.ProcessStatus() != app.RunnerProcessStatusActive {
+		return errors.Wrapf(poll.NonRetryableError, "runner process is %s; check the runner status and try again", process.ProcessStatus())
+	}
+	return nil
+}
+
+func (s *Signal) awaitActiveProcess(ctx workflow.Context, processReq activities.GetCurrentRunnerProcessRequest) error {
 	if err := poll.Poll(ctx, s.v, poll.PollOpts{
 		MaxTS:           workflow.Now(ctx).Add(time.Hour),
 		InitialInterval: time.Second * 15,
@@ -157,4 +219,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	return nil
+}
+
+func runnerDisabled(runner *app.Runner) bool {
+	return runner.Status == app.RunnerStatusDisabled || runner.StatusV2.Status == app.Status(app.RunnerStatusDisabled)
+}
+
+func runnerCannotBecomeHealthy(status app.RunnerStatus) bool {
+	return status == app.RunnerStatusOffline || status == app.RunnerStatusError
 }

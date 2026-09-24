@@ -2,7 +2,8 @@ import { createContext, useMemo, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useSSEResourceQuery, isTerminalStatusV2 } from '@/hooks/use-sse-resource-query'
+import { useSSEResourceQuery, isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getInstallActionRun } from '@/lib'
 import { createSSEQueryListener } from '@/lib/sse-listeners'
 import { ProviderError } from '@/components/layout/ProviderError'
@@ -39,6 +40,8 @@ export function InstallActionRunProvider({
     ),
   }), [queryClient, org?.id])
 
+  const onRefreshError = useRefreshErrorToast()
+
   const { data: installActionRun, isLoading, error, refetch } = useSSEResourceQuery<TInstallActionRun>({
     sseUrl: org?.id && install?.id && runId
       ? `/api/orgs/${org.id}/installs/${install.id}/action-runs/${runId}/sse`
@@ -48,6 +51,7 @@ export function InstallActionRunProvider({
     enabled: !!org?.id && !!install?.id && !!runId,
     shouldPoll,
     eventName: 'action-run',
+    onError: onRefreshError,
     extraListeners,
     isFinished: isTerminalStatusV2,
   })

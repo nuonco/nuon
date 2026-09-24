@@ -2,7 +2,12 @@ import { ToggleButton } from '@/components/common/ToggleButton'
 import { Text } from '@/components/common/Text'
 import { Select } from '@/components/common/form/Select'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
-import type { TAppBranchPreviewConfig, TAppBranchRunPreviewMode, TInstall } from '@/types'
+import type {
+  TAppBranchPreviewConfig,
+  TAppBranchRunPreviewMode,
+  TInstall,
+} from '@/types'
+import { previewModeDisplayLabel } from './preview-mode'
 
 export type PreviewInstallTargetMode = 'install' | 'labels'
 
@@ -13,15 +18,17 @@ export type IPreviewDefaults = {
   labelSelector: Record<string, string>
   setStatuses: boolean
   comment: boolean
+  ignoreDrafts: boolean
 }
 
 export const defaultPreviewDefaults = (): IPreviewDefaults => ({
-  mode: 'plan-only',
+  mode: 'none',
   installTargetMode: 'install',
   installId: '',
   labelSelector: {},
   setStatuses: true,
   comment: true,
+  ignoreDrafts: true,
 })
 
 export const previewDefaultsFromConfig = (
@@ -34,8 +41,12 @@ export const previewDefaultsFromConfig = (
   const mode = config.mode ?? base.mode
   const setStatuses = config.set_statuses ?? true
   const comment = config.comment ?? true
+  const ignoreDrafts = config.ignore_drafts ?? true
 
-  if (config.label_selector?.match_labels && Object.keys(config.label_selector.match_labels).length > 0) {
+  if (
+    config.label_selector?.match_labels &&
+    Object.keys(config.label_selector.match_labels).length > 0
+  ) {
     return {
       mode,
       installTargetMode: 'labels',
@@ -43,6 +54,7 @@ export const previewDefaultsFromConfig = (
       labelSelector: config.label_selector.match_labels,
       setStatuses,
       comment,
+      ignoreDrafts,
     }
   }
 
@@ -58,6 +70,7 @@ export const previewDefaultsFromConfig = (
     labelSelector: {},
     setStatuses,
     comment,
+    ignoreDrafts,
   }
 }
 
@@ -65,14 +78,22 @@ export const previewDefaultsToConfig = (
   defaults: IPreviewDefaults,
   installs: TInstall[]
 ): TAppBranchPreviewConfig => {
+  if (defaults.mode === 'none') {
+    return { mode: 'none' }
+  }
+
   const install = installs.find((i) => i.id === defaults.installId)
   const config: TAppBranchPreviewConfig = {
     mode: defaults.mode,
     set_statuses: defaults.setStatuses,
     comment: defaults.comment,
+    ignore_drafts: defaults.ignoreDrafts,
   }
 
-  if (defaults.installTargetMode === 'labels' && Object.keys(defaults.labelSelector).length > 0) {
+  if (
+    defaults.installTargetMode === 'labels' &&
+    Object.keys(defaults.labelSelector).length > 0
+  ) {
     config.label_selector = { match_labels: defaults.labelSelector }
     return config
   }
@@ -129,14 +150,24 @@ export const PreviewDefaultsEditor = ({
           value={value.mode}
           onChange={(mode) => onChange({ ...value, mode })}
           options={[
-            { value: 'plan-only', label: 'Plan only' },
-            { value: 'apply', label: 'Apply' },
-            { value: 'build-only', label: 'Build only' },
+            {
+              value: 'none',
+              label: previewModeDisplayLabel('none'),
+            },
+            {
+              value: 'build-only',
+              label: previewModeDisplayLabel('build-only'),
+            },
+            {
+              value: 'plan-only',
+              label: previewModeDisplayLabel('plan-only'),
+            },
+            { value: 'apply', label: previewModeDisplayLabel('apply') },
           ]}
         />
       </div>
 
-      {value.mode !== 'build-only' && (
+      {value.mode !== 'none' && value.mode !== 'build-only' ? (
         <div className="flex flex-col gap-2">
           <Text variant="subtext" weight="strong">
             Default install
@@ -144,20 +175,24 @@ export const PreviewDefaultsEditor = ({
           <Select
             options={installOptions}
             value={value.installId}
-            onChange={(installId) => onChange({ ...value, installId, installTargetMode: 'install' })}
+            onChange={(installId) =>
+              onChange({ ...value, installId, installTargetMode: 'install' })
+            }
             placeholder="Select an install"
             disabled={disabled || installOptions.length === 0}
             menuPlacement="bottom"
           />
         </div>
-      )}
+      ) : null}
 
-      {hasGithubVCS && (
+      {hasGithubVCS && value.mode !== 'none' ? (
         <div className="flex flex-col gap-2">
           <CheckboxInput
             id="preview-set-statuses"
             checked={value.setStatuses}
-            onChange={(e) => onChange({ ...value, setStatuses: e.target.checked })}
+            onChange={(e) =>
+              onChange({ ...value, setStatuses: e.target.checked })
+            }
             disabled={disabled}
             labelProps={{ labelText: 'Set commit statuses' }}
           />
@@ -168,8 +203,17 @@ export const PreviewDefaultsEditor = ({
             disabled={disabled}
             labelProps={{ labelText: 'Comment on pull request' }}
           />
+          <CheckboxInput
+            id="preview-ignore-drafts"
+            checked={value.ignoreDrafts}
+            onChange={(e) =>
+              onChange({ ...value, ignoreDrafts: e.target.checked })
+            }
+            disabled={disabled}
+            labelProps={{ labelText: 'Ignore draft pull requests' }}
+          />
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

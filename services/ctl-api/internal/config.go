@@ -24,6 +24,7 @@ func init() {
 	config.RegisterDefault("admin_dashboard_http_port", "8087")
 	config.RegisterDefault("slack_http_port", "8089")
 	config.RegisterDefault("mcp_http_port", "8088")
+	config.RegisterDefault("nuonctl_mcp_http_port", "8091")
 	// Slack secrets: dev-only insecure defaults so the slack-libs FX module
 	// (statejwt.New) and signing.Middleware construction don't fail boot
 	// when no SLACK_* env is set. Prod overrides via env. Same pattern as
@@ -106,6 +107,9 @@ func init() {
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
+	config.RegisterDefault("telemetry_jwks", "")
+	config.RegisterDefault("telemetry_jwt_issuer", "")
+	config.RegisterDefault("telemetry_relay_endpoint", "")
 
 	// max request sizes to prevent too large of requests
 	config.RegisterDefault("max_request_size", 1024*50)
@@ -113,9 +117,6 @@ func init() {
 
 	config.RegisterDefault("app_repository_name_template", "%s/%s")
 	config.RegisterDefault("app_region", "us-west-2")
-
-	config.RegisterDefault("org_runner_helm_chart_dir", "/bundle/helm")
-	config.RegisterDefault("org_runner_instance_type", "t3a.medium")
 
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
 	config.RegisterDefault("blob_storage_provider", "s3")
@@ -168,6 +169,7 @@ func init() {
 
 	config.RegisterDefault("general_purge_stale_data_cron", "0 6 * * *")
 	config.RegisterDefault("general_purge_stale_data_duration_ago", "168h")
+	config.RegisterDefault("queue_signal_cleanup_enabled", true)
 
 	// Slack auto-link: empty TeamID or empty OrgLabelKey disables the feature.
 	config.RegisterDefault("slack_auto_link_team_id", "")
@@ -210,10 +212,12 @@ type Config struct {
 	worker.Config `config:",squash"`
 
 	// configs for starting and introspecting service
-	GitRef         string   `config:"git_ref" validate:"required"`
-	Version        string   `config:"version" validate:"required"`
-	MetricsTags    []string `config:"metrics_tags"`
-	DisableMetrics bool     `config:"disable_metrics"`
+	GitRef                   string   `config:"git_ref" validate:"required"`
+	Version                  string   `config:"version" validate:"required"`
+	MetricsTags              []string `config:"metrics_tags"`
+	DisableMetrics           bool     `config:"disable_metrics"`
+	OTELExporterOTLPEndpoint string   `config:"otel_exporter_otlp_endpoint"`
+	OTELExporterOTLPProtocol string   `config:"otel_exporter_otlp_protocol"`
 
 	ServiceName       string `config:"service_name" validate:"required"`
 	ServiceType       string `config:"service_type" validate:"required"`
@@ -229,6 +233,7 @@ type Config struct {
 	AdminDashboardDistDir  string `config:"admin_dashboard_dist_dir"`
 	SlackHTTPPort          string `config:"slack_http_port" validate:"required"`
 	MCPHTTPPort            string `config:"mcp_http_port"`
+	NuonctlMCPHTTPPort     string `config:"nuonctl_mcp_http_port"`
 
 	WorkerHealthcheckPort    string `config:"worker_healthcheck_port"`
 	WorkerHealthcheckEnabled bool   `config:"worker_healthcheck_enabled"`
@@ -393,11 +398,14 @@ type Config struct {
 	WebhookURLs    []string      `config:"webhook_urls"`
 	WebhookTimeout time.Duration `config:"webhook_timeout"`
 
-	// Audit log export. Audit records are the only telemetry ctl-api ships over
-	// OTLP; everything else keeps going to stderr untouched. Leave the endpoint
-	// empty to disable, which is the default until the gateway collector exists.
+	// Audit export requires its own endpoint; the generic OTLP endpoint does not
+	// enable it. An empty endpoint leaves the audit emitter disabled.
 	AuditOTLPEndpoint string `config:"audit_otlp_endpoint"`
 	AuditOTLPToken    string `config:"audit_otlp_token"`
+
+	TelemetryJWKS          string `config:"telemetry_jwks,secure"`
+	TelemetryJWTIssuer     string `config:"telemetry_jwt_issuer"`
+	TelemetryRelayEndpoint string `config:"telemetry_relay_endpoint"`
 
 	// configuration for runners
 	RunnerContainerImageURL      string `config:"runner_container_image_url" validate:"required"`
@@ -456,9 +464,6 @@ type Config struct {
 
 	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
-	// When set, org runners share this stack-created SA (WI bindings appended
-	// per org) instead of ctl-api creating one SA per org at runtime.
-	ManagementGCPOrgRunnerSAEmail string `config:"management_gcp_org_runner_sa_email"`
 
 	// Azure management (not required for AWS/GCP)
 	ManagementACRRegistryURL      string `config:"management_acr_registry_url"`
@@ -467,21 +472,6 @@ type Config struct {
 	ManagementAzureSubscriptionID string `config:"management_azure_subscription_id"`
 	ManagementAzureResourceGroup  string `config:"management_azure_resource_group"`
 	ManagementAzureOIDCIssuerURL  string `config:"management_azure_oidc_issuer_url"`
-
-	// configuration for org runners (shared across cloud providers)
-	OrgRunnerK8sClusterID      string `config:"org_runner_k8s_cluster_id" validate:"required"`
-	OrgRunnerK8sPublicEndpoint string `config:"org_runner_k8s_public_endpoint" validate:"required"`
-	OrgRunnerK8sCAData         string `config:"org_runner_k8s_ca_data" validate:"required"`
-	OrgRunnerRegion            string `config:"org_runner_region" validate:"required"`
-	OrgRunnerHelmChartDir      string `config:"org_runner_helm_chart_dir" validate:"required"`
-	OrgRunnerInstanceType      string `config:"org_runner_instance_type" validate:"required"`
-
-	// configuration for org runners (AWS-only, not required for GCP)
-	OrgRunnerOIDCProviderURL    string `config:"org_runner_oidc_provider_url"`
-	OrgRunnerOIDCProviderARN    string `config:"org_runner_oidc_provider_arn"`
-	OrgRunnerSupportRoleARN     string `config:"org_runner_support_role_arn"`
-	OrgRunnerK8sIAMRoleARN      string `config:"org_runner_k8s_iam_role_arn"`
-	OrgRunnerK8sUseDefaultCreds bool   `config:"org_runner_k8s_use_default_creds"`
 
 	// configuration for apps
 	AppRegion string `config:"app_region" validate:"required"`
@@ -514,7 +504,6 @@ type Config struct {
 	// Runner process uptime thresholds
 	ProcessInstallUptimeThreshold time.Duration `config:"process_install_uptime_threshold"`
 	ProcessMngUptimeThreshold     time.Duration `config:"process_mng_uptime_threshold"`
-	ProcessBuildUptimeThreshold   time.Duration `config:"process_build_uptime_threshold"`
 
 	// Queue handler grace period
 	QueueHandlerGracePeriod time.Duration `config:"queue_handler_grace_period"`
@@ -543,7 +532,7 @@ type Config struct {
 	GeneralPurgeStaleDataCron        string        `config:"general_purge_stale_data_cron"`
 	GeneralPurgeStaleDataDurationAgo time.Duration `config:"general_purge_stale_data_duration_ago" validate:"required"`
 
-	// When enabled, the daily cron hard-deletes process_healthcheck queue signals older than 7 days.
+	// When enabled (default), the daily cron hard-deletes process_healthcheck and healthcheck queue signals older than 7 days.
 	QueueSignalCleanupEnabled bool `config:"queue_signal_cleanup_enabled"`
 
 	// BlobBackfillRatePerSecond caps how many S3 PUTs/sec the blob backfill activity issues. Defaults to 500 when unset.

@@ -1,14 +1,16 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"gorm.io/gorm"
 )
 
 // @ID						GetInstallStackByInstallID
@@ -52,21 +54,24 @@ func (s *service) GetInstallStackByInstallID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installStack)
 }
 
-func (s *service) getInstallStack(ctx *gin.Context, installID, orgID string) (*app.InstallStack, error) {
+func (s *service) getInstallStack(ctx context.Context, installID, orgID string) (*app.InstallStack, error) {
 	install := &app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallStack").
 		Preload("InstallStack.InstallStackVersions", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_stack_versions.created_at DESC").Limit(10)
 		}).
-		Preload("InstallStack.InstallStackVersions.Runs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_stack_version_runs.created_at DESC").Limit(10)
-		}).
 		Preload("InstallStack.InstallStackOutputs").
 		Where("id = ? and org_id = ?", installID, orgID).
 		First(&install, "id = ?", installID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install stack: %w", res.Error)
+	}
+
+	if install.InstallStack != nil {
+		if err := s.attachStackVersionRuns(ctx, install.InstallStack.InstallStackVersions, maxStackVersionRuns); err != nil {
+			return nil, err
+		}
 	}
 
 	return install.InstallStack, nil

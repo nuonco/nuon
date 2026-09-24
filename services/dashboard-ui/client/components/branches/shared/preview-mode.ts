@@ -1,0 +1,16 @@
+import type { TAppBranchRunPreviewMode } from '@/types'
+
+export const previewModeDisplayLabel = (
+  mode: TAppBranchRunPreviewMode
+): string => {
+  switch (mode) {
+    case 'none':
+      return 'None'
+    case 'apply':
+      return 'Apply'
+    case 'build-only':
+      return 'Build and validate'
+    case 'plan-only':
+      return 'Plan only'
+  }
+}

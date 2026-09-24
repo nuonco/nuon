@@ -1,0 +1,206 @@
+---
+title: 'Install Nuon BYOC'
+sidebarTitle: 'Installation'
+description: 'Install Nuon BYOC in your cloud'
+icon: 'cloud'
+keywords: ['Nuon BYOC', 'BYOC', 'installation', 'installing', 'stack', 'install stack']
+---
+
+Once the requirements are ready, you can provision the Install Stack for your Nuon BYOC install. This will provision the foundational network resources and the Nuon runner. Once the runner is online, it will take over the process and deploy Nuon in your cloud.
+
+<Note>
+This is the same process your customers will complete when installing your app using Nuon.
+</Note>
+
+## Gather Inputs and Secrets
+
+Gather all the inputs and secrets from the [Requirements](/guides/byoc/requirements).
+
+### Authentication Inputs
+
+| Input              | Value                                       |
+| ------------------ | ------------------------------------------- |
+| Auth Provider Type | `google` or `oidc`                          |
+| Auth Issuer URL    | The issuer URL from your identity provider. |
+| Auth Client ID     | Client ID from your identity provider       |
+| Auth Redirect URL  | `https://auth.<your-root-domain>/auth`      |
+
+<Warning>
+If using the deprecated Auth0 integration, you will need to provide these inputs instead.
+
+| Input | Value |
+|-------|-------|
+| Auth0 Issuer URL | Your Auth0 tenant URL |
+| Auth0 Audience | Your Auth0 API identifier |
+| Auth0 Client ID - CTL API | Your Auth0 native app client ID |
+| Auth0 Client ID - Dashboard UI | Your Auth0 SPA client ID |
+</Warning>
+
+### GitHub Inputs
+
+| Input                | Value                          |
+| -------------------- | ------------------------------ |
+| GitHub App Name      | Name of your GitHub App        |
+| GitHub App ID        | ID of your GitHub App          |
+| GitHub App Client ID | Client ID from your GitHub App |
+
+### DNS Inputs
+
+| Input       | Value                                                                        |
+| ----------- | ---------------------------------------------------------------------------- |
+| Root Domain | Your custom domain, or `<your-install-id>.nuon.run` for Nuon-provided domain |
+
+### Secrets
+
+| Secret               | Value                                  |
+| -------------------- | -------------------------------------- |
+| `github_app_key`         | Your base64-encoded GitHub App PEM key |
+| `nuon_auth_client_secret` | OIDC client secret from your identity provider |
+
+## Provision the Install Stack
+
+The Install Stack consists of the Nuon Runner and the foundational network resources it depends on. Once the Runner is provisioned it will take over the installation process and deploy the components of Nuon BYOC.
+
+We provide Terraform modules to provision and manage the Stack. The install process is the same on AWS and GCP: `install_id`, `inputs`, `secrets`, and `roles` are identical. Use `nuonco/stack/aws` or `nuonco/stack/gcp` for the platform you are installing into. See [Architecture](/guides/byoc#architecture) for platform-specific resources.
+
+### Set Up the Stack Module
+
+Select or create a Terraform project to manage it in your preferred CI platform.
+Then, add and initialize the Nuon stack provider and module.
+
+<Tabs>
+<Tab title="AWS">
+Configure the region and install ID.
+
+```hcl
+terraform {
+  required_providers {
+    aws   = { source = "hashicorp/aws" }
+    stack = { source = "nuonco/stack" }
+  }
+}
+
+provider "aws" {
+  region = "<your-aws-account-region>" // [!code hl]
+}
+
+provider "stack" {
+  api_url = "https://runner.nuon.co"
+}
+
+module "nuon_byoc_stack" {
+  source  = "nuonco/stack/aws"
+  version = "~> 1.1"
+
+  install_id = "<your-install-id>" // [!code hl]
+
+  inputs = {}
+
+  secrets = {}
+
+  roles = {}
+}
+```
+</Tab>
+<Tab title="GCP">
+Configure the project, region, and install ID.
+
+```hcl
+terraform {
+  required_providers {
+    google = { source = "hashicorp/google" }
+    stack  = { source = "nuonco/stack" }
+  }
+}
+
+provider "google" {
+  project = "<your-gcp-project-id>" // [!code hl]
+  region  = "<your-gcp-region>" // [!code hl]
+}
+
+provider "stack" {
+  api_url = "https://runner.nuon.co"
+}
+
+module "nuon_byoc_stack" {
+  source  = "nuonco/stack/gcp"
+  version = "~> 1.1"
+
+  install_id = "<your-install-id>" // [!code hl]
+
+  inputs = {}
+
+  secrets = {}
+
+  roles = {}
+}
+```
+</Tab>
+</Tabs>
+
+Initialize the stack to ensure everything is configured correctly.
+
+```sh
+terraform init
+```
+
+### Provide the Inputs and Secrets
+
+Fill out the inputs and secrets on the module. The maps below are the same on AWS and GCP.
+
+<Note>
+We recommend storing the secret values in a secret store, and providing them to the module via env vars or an ephemeral `*.auto.tfvars` file.
+</Note>
+
+```hcl
+module "nuon_byoc_stack" {
+  // ...
+
+  inputs = {
+    github_app_client_id            = "<github-app-client-id>" // [!code ++:10]
+    github_app_id                   = "<github-app-id>"
+    github_app_name                 = "<github-app-name>"
+    nuon_auth_allow_all_users       = "false"
+    nuon_auth_allowed_domains       = "<nuon-auth-allowed-domains>"
+    nuon_auth_client_id             = "<nuon-auth-client-id>"
+    nuon_auth_issuer_url            = "<nuon-auth-issuer-url>"
+    nuon_auth_provider_type         = "<nuon-auth-provider-type>"
+    read_only_enable_cluster_access = "false"
+    read_only_role_arn              = ""
+  }
+
+  secrets = {
+    nuon_auth_client_secret = { value = var.nuon_auth_client_secret } // [!code ++:2]
+    github_app_key          = { value = var.github_app_key }
+  }
+}
+
+variable "nuon_auth_client_secret" { // [!code ++:9]
+  type        = string
+  sensitive   = true
+}
+
+variable "github_app_key" {
+  type        = string
+  sensitive   = true
+}
+```
+
+### Provision the Stack
+
+Apply to provision the Stack and install the Runner.
+Once the Runner is online, it will take over and complete the installation process.
+
+```sh
+terraform apply
+```
+
+## Verify the Installation
+
+Once installation is complete, verify that you can reach the Nuon Dashboard in your browser, at `https://app.<your-root-domain>`.
+
+Also verify you can reach the API from the command line using curl.
+
+```bash
+curl https://api.<your-root-domain>/health
+```

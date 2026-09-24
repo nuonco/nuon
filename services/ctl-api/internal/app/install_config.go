@@ -34,7 +34,8 @@ type InstallConfig struct {
 	InstallID string  `json:"install_id,omitzero" gorm:"notnull;default null" temporaljson:"install_id,omitzero,omitempty"`
 	Install   Install `json:"-" temporaljson:"install,omitzero,omitempty"`
 
-	ApprovalOption InstallApprovalOption `json:"approval_option,omitzero" gorm:"not null;default 'prompt'" temporaljson:"approval_option,omitzero,omitempty"`
+	ApprovalOption   InstallApprovalOption `json:"approval_option,omitzero" gorm:"not null;default:'prompt'" temporaljson:"approval_option,omitzero,omitempty"`
+	TelemetryEnabled *bool                 `json:"telemetry_enabled" temporaljson:"telemetry_enabled,omitempty" extensions:"x-nullable"`
 
 	// Per-install stack template overrides (nil = use app config default)
 	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty" gorm:"column:vpc_nested_template_url" temporaljson:"vpc_nested_template_url,omitempty"`
@@ -64,6 +65,13 @@ func (c *InstallConfig) IsComponentEnabled(componentID string, ccc *ComponentCon
 		}
 	}
 	return ccc.GetDefaultEnabled()
+}
+
+func (c *InstallConfig) IsTelemetryEnabled(orgDefault bool) bool {
+	if c != nil && c.TelemetryEnabled != nil {
+		return *c.TelemetryEnabled
+	}
+	return orgDefault
 }
 
 func (c *InstallConfig) Indexes(db *gorm.DB) []migrations.Index {

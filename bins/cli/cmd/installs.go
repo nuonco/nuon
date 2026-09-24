@@ -22,6 +22,8 @@ func (c *cli) installsCmd() *cobra.Command {
 		azureSubscriptionID string
 		gcpProjectID        string
 		appID               string
+		appBranchID         string
+		installGroupID      string
 		deployID            string
 		runID               string
 		installCompID       string
@@ -40,6 +42,8 @@ func (c *cli) installsCmd() *cobra.Command {
 		planOnly            bool
 		fileOrDir           string
 		confirm             bool
+		syncApproveAll      bool
+		deprecatedYes       bool
 		wait                bool
 		enable              bool
 		disable             bool
@@ -125,8 +129,7 @@ provided labels must match (AND semantics):
 		Short: "Create an install",
 		Long: `Create a new install of your app.
 
---region is required for AWS apps. For GCP and Azure apps the region is
-determined automatically from the stack output after provisioning.
+--region is required for every cloud. It is the AWS or GCP region, or the Azure location.
 
 Use --label (repeatable, format key=value) to attach labels at creation time:
 
@@ -146,7 +149,7 @@ sandbox and components unprovisioned:
 				AWSAccountID:        awsAccountID,
 				AzureSubscriptionID: azureSubscriptionID,
 				GCPProjectID:        gcpProjectID,
-			}, inputs, labelArgs, PrintJSON, noSelect, stackOnly)
+			}, inputs, labelArgs, PrintJSON, noSelect, stackOnly, appBranchID, installGroupID)
 		}),
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
@@ -155,7 +158,7 @@ sandbox and components unprovisioned:
 	if !c.cfg.Preview {
 		createCmd.MarkFlagRequired("name")
 	}
-	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in (required for AWS installs)")
+	createCmd.Flags().StringVarP(&region, "region", "r", "", "The AWS or GCP region, or Azure location (required)")
 	createCmd.Flags().StringVar(&awsAccountID, "aws-account-id", "", "The AWS account ID this install targets (required when phone home authentication is enabled for your org; immutable after creation)")
 	createCmd.Flags().StringVar(&azureSubscriptionID, "azure-subscription-id", "", "The Azure subscription ID this install targets (required when phone home authentication is enabled for your org; immutable after creation)")
 	createCmd.Flags().StringVar(&gcpProjectID, "gcp-project-id", "", "The GCP project ID this install targets (required when phone home authentication is enabled for your org; immutable after creation)")
@@ -163,6 +166,8 @@ sandbox and components unprovisioned:
 	createCmd.Flags().StringSliceVar(&labelArgs, "label", []string{}, "Labels to set on the install (repeatable, format: key=value). Example: --label env=prod --label team=platform")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")
 	createCmd.Flags().BoolVar(&stackOnly, "stack-only", false, "Provision the install stack and runner only, stopping before the sandbox and components")
+	createCmd.Flags().StringVar(&appBranchID, "app-branch-id", "", "App branch that will own this install (omit to use the most recent config from `nuon apps sync`)")
+	createCmd.Flags().StringVar(&installGroupID, "install-group-id", "", "Label-based install group whose labels should be applied (requires --app-branch-id)")
 	installsCmds.AddCommand(createCmd)
 
 	confirmDelete := false
@@ -203,12 +208,19 @@ sandbox and components unprovisioned:
 		Long:  "Sync install(s) with the help of config files",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm, wait, dryRun, PrintJSON)
+			if deprecatedYes {
+				confirm = true
+				syncApproveAll = true
+			}
+			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm, syncApproveAll, wait, dryRun, PrintJSON)
 		}),
 	}
 	syncCmd.Flags().StringVarP(&fileOrDir, "file", "d", "", "Path to an install config file or a directory with install config files to sync")
 	syncCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app the install belongs to")
-	syncCmd.Flags().BoolVarP(&confirm, "yes", "y", false, "Set to automatically approve diffs and workflows for synced installs")
+	syncCmd.Flags().BoolVar(&confirm, "confirm", false, "Set to skip the diff confirmation prompt for synced installs")
+	syncCmd.Flags().BoolVar(&syncApproveAll, "approve-all", false, "Set to approve all steps in the workflows triggered by the sync, overriding each install's configured approval_option")
+	syncCmd.Flags().BoolVarP(&deprecatedYes, "yes", "y", false, "Set to automatically approve diffs and workflows for synced installs")
+	syncCmd.Flags().MarkDeprecated("yes", "use --confirm to skip the diff prompt and --approve-all to approve triggered workflows")
 	syncCmd.Flags().BoolVarP(&wait, "wait", "w", false, "Set to wait for workflows to complete after syncing installs")
 	syncCmd.Flags().BoolVar(&dryRun, "dry-run", false, "If set the changes will not be applied, only the diffs will be shown")
 	syncCmd.MarkFlagRequired("file")
@@ -958,22 +970,19 @@ reprovisioning the sandbox.`,
 	}
 	installsCmds.AddCommand(unsetCurrentInstallCmd)
 
-	var reprovisionStackOnly, reprovisionSkipComponents bool
+	var reprovisionStackOnly bool
 	reprovisionInstallCmd := &cobra.Command{
 		Use:   "reprovision",
 		Short: "Reprovision install",
 		Long: `Reprovision an install: the stack, then the sandbox, then all components.
 
 With --stack-only, only the stack is reprovisioned — the runner and its
-infrastructure are recreated and the sandbox is left alone. This is the same as
-` + "`nuon installs stacks reprovision`" + `.`,
+infrastructure are recreated and the sandbox is left alone. Components are not
+redeployed. This is the same as ` + "`nuon installs stacks reprovision`" + `.`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			if reprovisionSkipComponents && !reprovisionStackOnly {
-				return ui.PrintError(&ui.CLIUserError{Msg: "--skip-components is only supported with --stack-only"})
-			}
 			if reprovisionStackOnly {
-				return svc.ReprovisionStack(cmd.Context(), id, reprovisionSkipComponents, PrintJSON)
+				return svc.ReprovisionStack(cmd.Context(), id, PrintJSON)
 			}
 			return svc.Reprovision(cmd.Context(), id, PrintJSON)
 		}),
@@ -981,7 +990,6 @@ infrastructure are recreated and the sandbox is left alone. This is the same as
 	reprovisionInstallCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	reprovisionInstallCmd.MarkFlagRequired("install-id")
 	reprovisionInstallCmd.Flags().BoolVar(&reprovisionStackOnly, "stack-only", false, "Only reprovision the install stack, leaving the sandbox untouched")
-	reprovisionInstallCmd.Flags().BoolVar(&reprovisionSkipComponents, "skip-components", false, "Skip deploying components after reprovisioning the stack (--stack-only only)")
 	installsCmds.AddCommand(reprovisionInstallCmd)
 
 	deprovisionInstallCmd := &cobra.Command{
@@ -1564,19 +1572,17 @@ Available service names: api, runner (or any service name present in the logs)`,
 	stacksLatestCmd.MarkFlagRequired("install-id")
 	stacksCmd.AddCommand(stacksLatestCmd)
 
-	var stackSkipComponents bool
 	stacksReprovisionCmd := &cobra.Command{
 		Use:   "reprovision",
 		Short: "Reprovision an install stack",
-		Long:  "Reprovision an install stack, recreating the runner and its infrastructure",
+		Long:  "Reprovision an install stack, recreating the runner and its infrastructure. Components are not redeployed.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.ReprovisionStack(cmd.Context(), id, stackSkipComponents, PrintJSON)
+			return svc.ReprovisionStack(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	stacksReprovisionCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	stacksReprovisionCmd.MarkFlagRequired("install-id")
-	stacksReprovisionCmd.Flags().BoolVar(&stackSkipComponents, "skip-components", false, "Skip deploying components after reprovisioning the stack")
 	stacksCmd.AddCommand(stacksReprovisionCmd)
 
 	// NOTE(fd): this may not be the place where this ends up living

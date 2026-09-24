@@ -27,7 +27,7 @@ func (s *InstallsServiceTestSuite) configConnectionIDFor(componentID string) str
 // needs: the plan reads the release name, namespace and storage driver off the
 // build the component was last deployed with.
 func (s *InstallsServiceTestSuite) seedDeployedHelmComponent() (*app.Install, *app.Component, *app.InstallDeploy) {
-	install := s.createTestInstall()
+	install := s.createTestInstallWithActiveRunner()
 	helmComp := s.getSeededComponent(app.ComponentTypeHelmChart)
 	installComp := s.deps.Seeder.CreateInstallComponent(s.ctx, s.T(), install.ID, helmComp.ID)
 	build := s.deps.Seeder.CreateComponentBuild(s.ctx, s.T(), s.configConnectionIDFor(helmComp.ID))

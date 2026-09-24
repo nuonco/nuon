@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
@@ -25,8 +26,18 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	sg := newStepGroup(flw)
 	steps := make([]*app.WorkflowStep, 0)
 
-	sg.nextGroupEager() // refresh inputs partial in state
-	step, err := stateInputsRefreshStep(ctx, sg, install, flw.PlanOnly)
+	sg.nextGroupEager()
+	step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+		InstallID: installID,
+		Mode:      awaitrunnerhealthy.ModeRequireActive,
+	}, flw.PlanOnly)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	sg.nextGroup()
+	step, err = stateInputsRefreshStep(ctx, sg, install, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +141,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	// If sandbox needs reprovision, add sandbox reprovision steps before component deploys
 	if sandboxNeedsReprovision {
-		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install, true)
+		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get sandbox reprovision steps")
 		}
@@ -314,7 +325,8 @@ func componentDisableSteps(ctx workflow.Context, dg *genCtx, disableComps, skipC
 		}
 		dg.sg.nextGroup()
 		skipStep, err := dg.sg.installSignalStep(ctx, dg.installID, "skipped disable "+comp.Name, pgtype.Hstore{
-			"reason": generics.ToPtr("component is already not deployed on this install"),
+			"reason":         generics.ToPtr("component is already not deployed on this install"),
+			"component_name": generics.ToPtr(comp.Name),
 		}, nil, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create disable skip step")

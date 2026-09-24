@@ -18,6 +18,7 @@ func Execute() {
 	c.registerAdminDashboardAPI()
 	c.registerSlackAPI()
 	c.registerMCPAPI()
+	c.registerNuonctlMCPAPI()
 	c.registerWorker()
 	c.registerConsumer()
 	c.registerStartup()

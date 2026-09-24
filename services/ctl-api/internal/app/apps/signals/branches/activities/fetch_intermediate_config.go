@@ -24,14 +24,25 @@ func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir stri
 	defer os.RemoveAll(sourceDir)
 
 	v := validator.New()
-	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
+	parseResult, err := parse.ParseDirWithSource(ctx, parse.ParseConfig{
 		Dirname:       sourceDir,
 		V:             v,
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 	})
 	if err != nil {
+		var configErr config.ErrConfig
+		var parseErr parse.ParseErr
+		if errors.As(err, &configErr) || errors.As(err, &parseErr) {
+			return nil, temporal.NewNonRetryableApplicationError(
+				err.Error(),
+				branchrunerrors.ConfigValidationFailedTemporalType,
+				err,
+			)
+		}
 		return nil, fmt.Errorf("unable to parse config from repo: %w", err)
 	}
+	cfg := parseResult.Config
+	cfg.SourceArchive = parseResult.Source
 
 	if err := validate.Validate(ctx, v, cfg); err != nil {
 		var configErr config.ErrConfig

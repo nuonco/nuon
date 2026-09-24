@@ -100,7 +100,7 @@ func SecretsConfig(secrets []SecretInput, appID, appConfigID string) (*app.AppSe
 }
 
 func validateSecret(secret SecretInput) error {
-	if err := validation.ValidateEntityName(secret.Name); err != nil {
+	if err := validateSecretName(secret.Name); err != nil {
 		return err
 	}
 	if secret.DisplayName == "" {
@@ -138,6 +138,13 @@ func validateSecret(secret SecretInput) error {
 	}
 
 	return nil
+}
+
+func validateSecretName(name string) error {
+	if strings.Contains(name, "{{") {
+		return validation.ValidateInterpolatedName(name)
+	}
+	return validation.ValidateEntityName(name)
 }
 
 // validateDNSSubdomain skips templated values, resolvable only after rendering.

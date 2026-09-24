@@ -11,6 +11,8 @@ import { LabelsField } from './LabelsField'
 import type { InstallFormApi } from './useInstallForm'
 import type { InstallFormMode, InstallPlatform } from './schema'
 
+const NAME_CHECK_DEBOUNCE_MS = 400
+
 export interface IInstallForm {
   form: InstallFormApi
   mode: InstallFormMode
@@ -22,6 +24,7 @@ export interface IInstallForm {
   requireTargetAccount?: boolean
   autoApproveDescription?: string
   showNameField?: boolean
+  validateName?: (name: string) => Promise<string | undefined>
 }
 
 export const InstallForm = ({
@@ -35,6 +38,7 @@ export const InstallForm = ({
   requireTargetAccount,
   autoApproveDescription,
   showNameField = true,
+  validateName,
 }: IInstallForm) => {
   const showName = mode === 'create' || showNameField
 
@@ -51,7 +55,21 @@ export const InstallForm = ({
           required
           helpText="A unique name for this install"
         >
-          <form.Field name="name">
+          <form.Field
+            name="name"
+            validators={
+              validateName
+                ? {
+                    onChangeAsyncDebounceMs: NAME_CHECK_DEBOUNCE_MS,
+                    onChangeAsync: ({ value }) => validateName(value),
+                    // A restored draft or prefilled value never fires a change,
+                    // so the name also has to be checked on blur and on submit.
+                    onBlurAsync: ({ value }) => validateName(value),
+                    onSubmitAsync: ({ value }) => validateName(value),
+                  }
+                : undefined
+            }
+          >
             {(field) => (
               <FormInput field={field} placeholder="Enter install name" />
             )}
@@ -88,37 +106,6 @@ export const InstallForm = ({
                       <Text variant="subtext" theme="neutral">
                         {autoApproveDescription ??
                           'Automatically approve and apply all future changes without manual confirmation. You can change this later in the install settings.'}
-                      </Text>
-                    </div>
-                  ),
-                }}
-              />
-            )}
-          </form.Field>
-        </FieldRow>
-      )}
-
-      {mode === 'create' && (
-        <FieldRow
-          labelText="Provisioning scope"
-          helpText="Choose how much of the install to provision now"
-        >
-          <form.Field name="stackOnly">
-            {(field) => (
-              <FormCheckbox
-                field={field}
-                className="mt-[6px]"
-                labelProps={{
-                  className: 'items-start',
-                  labelText: (
-                    <div className="flex flex-col gap-1">
-                      <Text variant="body" weight="stronger">
-                        Stack and runner only
-                      </Text>
-                      <Text variant="subtext" theme="neutral">
-                        Provision the stack and runner, and stop there. The
-                        sandbox and components stay unprovisioned until you
-                        provision the install.
                       </Text>
                     </div>
                   ),

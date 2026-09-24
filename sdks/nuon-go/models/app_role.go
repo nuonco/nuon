@@ -41,6 +41,9 @@ type AppRole struct {
 	// managed
 	Managed bool `json:"managed,omitempty"`
 
+	// NOTE: not all roles have to belong to an org, this is mainly for historical reasons.
+	OrgID string `json:"org_id,omitempty"`
+
 	// policies
 	Policies []*AppPolicy `json:"policies"`
 

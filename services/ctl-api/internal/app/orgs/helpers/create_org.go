@@ -11,9 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 const OrgSignalsQueueName = queue.OrgSignalsQueueName
@@ -88,27 +86,7 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		return nil, fmt.Errorf("unable to add user to org: %w", err)
 	}
 
-	// Orgs that build on the control plane skip the org runner group entirely;
-	// installs still use their own install runner groups. Provision, deprovision,
-	// and delete signals all guard on an empty runner group, so this is safe.
-	if enabled, ok := org.Features[string(app.OrgFeatureOrgRunner)]; ok && !enabled {
-		h.logger.Info("org-runner feature disabled; skipping org runner group creation",
-			zap.String("org_id", org.ID))
-	} else if _, err := h.runnersHelpers.CreateOrgRunnerGroup(ctx, &org); err != nil {
-		return nil, fmt.Errorf("unable to create org runner group: %w", err)
-	}
-
-	// Create the org-signals queue
-	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OrgID:       &org.ID,
-		OwnerID:     org.ID,
-		OwnerType:   plugins.TableName(h.db, app.Org{}),
-		Namespace:   "orgs",
-		Name:        OrgSignalsQueueName,
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	})
-	if err != nil {
+	if err := h.EnsureOrgQueue(ctx, org.ID); err != nil {
 		return nil, fmt.Errorf("unable to create org-signals queue: %w", err)
 	}
 

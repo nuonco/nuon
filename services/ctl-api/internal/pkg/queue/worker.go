@@ -111,7 +111,7 @@ func (q *queue) dispatcher(ctx workflow.Context) error {
 
 			if err := q.handleQueueSignal(gCtx, ref); err != nil {
 				if errors.Is(err, ErrSignalNoop) {
-					l.Debug("signal already processed, noop", zap.String("queue-ref-id", ref.ID))
+					l.Info("signal already processed, noop", zap.String("queue-ref-id", ref.ID))
 				} else {
 					l.Error("error handling workflow signal", zap.Error(err))
 				}

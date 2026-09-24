@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/log"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -12,11 +13,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
 	queuebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/queuebuild"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const buildBatchSize = 5
+
+// buildsCompositeErrorVersion gates attaching the canonical build composite
+// error to the step status: histories written before it have no such payload.
+const buildsCompositeErrorVersion = "app-branch-builds-composite-error-v1"
 
 // buildEntry tracks a single component build for metadata updates.
 type buildEntry struct {
@@ -65,7 +72,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	if len(appConfig.ComponentIDs) == 0 {
 		l.Info("no components to build")
-		s.markBuildsCompleted(ctx, l, true)
+		_ = s.markBuildsCompleted(ctx, l, true)
 		return nil
 	}
 
@@ -82,12 +89,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	builds, err := s.buildComponents(ctx, l, appConfig, run.AppConfigID, previousAppConfigID, run.Force)
 	if err != nil {
-		s.markBuildsCompleted(ctx, l, false)
-		s.finalizeBuildMetadata(ctx, builds, false)
+		buildsErr := s.markBuildsCompleted(ctx, l, false)
+		s.finalizeBuildMetadata(ctx, builds, false, buildsErr)
 		if isPreview && run.PRNumber != nil {
 			s.finalizePreview(ctx, l, run, builds, err)
 		}
-		return fmt.Errorf("component builds failed: %w", err)
+		return buildsFailure("component builds failed", buildsErr, err)
 	}
 
 	ociArtifacts, err := activities.AwaitOrgHasFeature(ctx, activities.OrgHasFeatureRequest{
@@ -111,12 +118,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 		if err := s.buildSandbox(ctx, l); err != nil {
 			s.setBuildStatus(builds, activities.SandboxComponentID, "error")
-			s.markBuildsCompleted(ctx, l, false)
-			s.finalizeBuildMetadata(ctx, builds, false)
+			buildsErr := s.markBuildsCompleted(ctx, l, false)
+			s.finalizeBuildMetadata(ctx, builds, false, buildsErr)
 			if isPreview && run.PRNumber != nil {
 				s.finalizePreview(ctx, l, run, builds, err)
 			}
-			return fmt.Errorf("sandbox build failed: %w", err)
+			return buildsFailure("sandbox build failed", buildsErr, err)
 		}
 		s.setBuildStatus(builds, activities.SandboxComponentID, "success")
 		s.updateBuildMetadata(ctx, builds)
@@ -128,10 +135,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.finalizePreview(ctx, l, run, builds, nil)
 	}
 
-	s.markBuildsCompleted(ctx, l, true)
-	s.finalizeBuildMetadata(ctx, builds, true)
+	_ = s.markBuildsCompleted(ctx, l, true)
+	s.finalizeBuildMetadata(ctx, builds, true, nil)
 	l.Info("all builds completed successfully")
 	return nil
+}
+
+// buildsFailure returns the step error for a failed builds step, preferring the
+// canonical composite error message so the step description names the actual
+// cause instead of the generic wrapper.
+func buildsFailure(wrapper string, ce *compositeerrors.CompositeErrorData, cause error) error {
+	if ce != nil && ce.Message != "" {
+		return temporal.NewNonRetryableApplicationError(ce.Message, string(ce.Type), nil)
+	}
+	return fmt.Errorf("%s: %w", wrapper, cause)
 }
 
 // buildComponents enqueues queuebuild signals directly to component queues
@@ -278,6 +295,7 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 				OwnerID:         componentID,
 				OwnerType:       "components",
+				QueueName:       queuenames.ComponentDefaultQueueName,
 				SignalOwnerID:   componentID,
 				SignalOwnerType: "components",
 				Signal: &queuebuild.Signal{
@@ -375,10 +393,10 @@ func (s *Signal) setBuildID(builds []buildEntry, componentID, buildID string) {
 // updateBuildMetadata writes the current builds list to the parent step's
 // status metadata so the UI can display real-time build progress.
 func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) {
-	s.updateBuildMetadataWithCompleted(ctx, builds, nil)
+	s.updateBuildMetadataWithCompleted(ctx, builds, nil, nil)
 }
 
-func (s *Signal) updateBuildMetadataWithCompleted(ctx workflow.Context, builds []buildEntry, buildsCompleted *bool) {
+func (s *Signal) updateBuildMetadataWithCompleted(ctx workflow.Context, builds []buildEntry, buildsCompleted *bool, ce *compositeerrors.CompositeErrorData) {
 	if s.StepID == "" {
 		return
 	}
@@ -422,12 +440,16 @@ func (s *Signal) updateBuildMetadataWithCompleted(ctx workflow.Context, builds [
 		} else {
 			statusVal = app.StatusError
 			desc = "builds failed"
+			if ce != nil && ce.Message != "" {
+				desc = ce.Message
+			}
 		}
 	}
 
 	status := app.CompositeStatus{
 		Status:                 statusVal,
 		StatusHumanDescription: desc,
+		CompositeError:         ce,
 		Metadata:               meta,
 	}
 
@@ -437,17 +459,26 @@ func (s *Signal) updateBuildMetadataWithCompleted(ctx workflow.Context, builds [
 	})
 }
 
-func (s *Signal) markBuildsCompleted(ctx workflow.Context, l log.Logger, completed bool) {
-	if err := activities.AwaitUpdateAppBranchRunBuildsCompleted(ctx, &activities.UpdateAppBranchRunBuildsCompletedInput{
+func (s *Signal) markBuildsCompleted(ctx workflow.Context, l log.Logger, completed bool) *compositeerrors.CompositeErrorData {
+	out, err := activities.AwaitUpdateAppBranchRunBuildsCompleted(ctx, &activities.UpdateAppBranchRunBuildsCompletedInput{
 		RunID:           s.RunID,
 		BuildsCompleted: completed,
-	}); err != nil {
+	})
+	if err != nil {
 		l.Warn("unable to update builds_completed label", "error", err, "builds_completed", completed)
+		return nil
 	}
+	if completed || out == nil {
+		return nil
+	}
+	if workflow.GetVersion(ctx, buildsCompositeErrorVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return nil
+	}
+	return out.CompositeError
 }
 
-func (s *Signal) finalizeBuildMetadata(ctx workflow.Context, builds []buildEntry, completed bool) {
-	s.updateBuildMetadataWithCompleted(ctx, builds, &completed)
+func (s *Signal) finalizeBuildMetadata(ctx workflow.Context, builds []buildEntry, completed bool, ce *compositeerrors.CompositeErrorData) {
+	s.updateBuildMetadataWithCompleted(ctx, builds, &completed, ce)
 }
 
 func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.AppBranchRun, builds []buildEntry, buildErr error) {
@@ -504,24 +535,40 @@ func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.Ap
 	commentContext, _ := activities.AwaitGetPreviewCommentContext(ctx, &activities.GetPreviewCommentContextInput{
 		RunID: s.RunID,
 	})
+
+	// Derive phases from DB context and override Builds with the known result.
+	// Config is accurately derived from the DB (the appconfig step completed
+	// before builds started).  Builds is still in-progress in the DB at this
+	// point, so we override it explicitly.
+	phases := commentContextPhases(commentContext)
+	if buildErr != nil {
+		phases.Builds = activities.PRCommentPhaseInvalid
+	} else {
+		phases.Builds = activities.PRCommentPhaseValid
+	}
+
 	commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
-		OrgName:            branch.Org.Name,
-		AppName:            branch.App.Name,
-		BranchName:         branch.Name,
-		RunID:              s.RunID,
-		RunURL:             previewRunURL(commentContext),
-		Status:             status,
-		Mode:               run.PreviewMode(),
-		Diff:               diff,
-		ComponentChanges:   componentBuildChanges(builds, commentContext),
-		PreviewInstallName: previewInstallName(commentContext),
-		PreviewInstallURL:  previewInstallURL(commentContext),
-		ErrorMessage:       errMsg,
+		OrgName:          branch.Org.Name,
+		AppName:          branch.App.Name,
+		AppBranchID:      branch.ID,
+		BranchName:       branch.Name,
+		RunID:            s.RunID,
+		RunURL:           previewRunURL(commentContext),
+		Status:           status,
+		Mode:             run.PreviewMode(),
+		Diff:             diff,
+		ComponentChanges: componentBuildChanges(builds, commentContext),
+		// PreviewInstallName and InstallApplied are intentionally omitted:
+		// the install step has not run yet at this point.  The run finalizer
+		// writes the final comment once the install step completes.
+		ErrorMessage: errMsg,
+		Phases:       phases,
 	})
 
 	_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
 		VcsConfigID:       vcsConfigID,
 		PRNumber:          *run.PRNumber,
+		AppBranchID:       run.AppBranchID,
 		ExistingCommentID: run.GithubCommentID,
 		Body:              commentBody,
 	})
@@ -559,6 +606,16 @@ func previewRunURL(commentContext *activities.GetPreviewCommentContextOutput) st
 	return commentContext.RunURL
 }
 
+// commentContextPhases returns a copy of the Phases from commentContext, or an
+// empty PRCommentPhases when the context is nil or carries no phase data.
+func commentContextPhases(commentContext *activities.GetPreviewCommentContextOutput) *activities.PRCommentPhases {
+	if commentContext == nil || commentContext.Phases == nil {
+		return &activities.PRCommentPhases{}
+	}
+	cp := *commentContext.Phases
+	return &cp
+}
+
 func previewInstallName(commentContext *activities.GetPreviewCommentContextOutput) string {
 	if commentContext == nil {
 		return ""
@@ -578,7 +635,7 @@ func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger) error {
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.AppBranchID,
 		OwnerType:       "app_branches",
-		QueueName:       "app-branch-sandbox-builds",
+		QueueName:       queuenames.AppBranchSandboxBuildsQueueName,
 		SignalOwnerID:   s.AppBranchID,
 		SignalOwnerType: "app_branches",
 		Signal: &sandboxbuild.Signal{

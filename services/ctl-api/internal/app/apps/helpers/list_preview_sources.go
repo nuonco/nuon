@@ -33,6 +33,10 @@ func (h *Helpers) ListPreviewSources(ctx context.Context, branch *app.AppBranch,
 		PullRequests: []PreviewSourcePR{},
 		Branches:     []PreviewSourceBranch{},
 	}
+	preview := branchPreviewConfigOrDefault(config)
+	if preview.Mode == app.AppBranchRunPreviewModeNone {
+		return result, nil
+	}
 
 	owner, repo, client, err := h.resolveGithubClientForBranchConfig(ctx, config)
 	if err != nil {
@@ -41,50 +45,70 @@ func (h *Helpers) ListPreviewSources(ctx context.Context, branch *app.AppBranch,
 
 	gitBase := previewGitBase(branch, config)
 
-	prs, _, err := client.PullRequests.List(ctx, owner, repo, &github.PullRequestListOptions{
+	prOpts := &github.PullRequestListOptions{
 		Base:  gitBase,
 		State: "open",
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to list pull requests: %w", err)
 	}
-
-	for _, pr := range prs {
-		headRef := ""
-		headSHA := ""
-		if pr.Head != nil {
-			headRef = pr.Head.GetRef()
-			headSHA = pr.Head.GetSHA()
+	for {
+		prs, resp, err := client.PullRequests.List(ctx, owner, repo, prOpts)
+		if err != nil {
+			return nil, fmt.Errorf("unable to list pull requests: %w", err)
 		}
-		result.PullRequests = append(result.PullRequests, PreviewSourcePR{
-			PRNumber: pr.GetNumber(),
-			Title:    pr.GetTitle(),
-			HeadSHA:  headSHA,
-			HeadRef:  headRef,
-			URL:      pr.GetHTMLURL(),
-		})
+
+		for _, pr := range prs {
+			if pr.GetDraft() && preview.IgnoreDrafts {
+				continue
+			}
+
+			headRef := ""
+			headSHA := ""
+			if pr.Head != nil {
+				headRef = pr.Head.GetRef()
+				headSHA = pr.Head.GetSHA()
+			}
+			result.PullRequests = append(result.PullRequests, PreviewSourcePR{
+				PRNumber: pr.GetNumber(),
+				Title:    pr.GetTitle(),
+				HeadSHA:  headSHA,
+				HeadRef:  headRef,
+				URL:      pr.GetHTMLURL(),
+			})
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		prOpts.Page = resp.NextPage
 	}
 
-	branches, _, err := client.Repositories.ListBranches(ctx, owner, repo, &github.BranchListOptions{
+	branchOpts := &github.BranchListOptions{
 		ListOptions: github.ListOptions{PerPage: 100},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to list branches: %w", err)
 	}
+	for {
+		branches, resp, err := client.Repositories.ListBranches(ctx, owner, repo, branchOpts)
+		if err != nil {
+			return nil, fmt.Errorf("unable to list branches: %w", err)
+		}
 
-	for _, b := range branches {
-		name := b.GetName()
-		if name == gitBase {
-			continue
+		for _, b := range branches {
+			name := b.GetName()
+			if name == gitBase {
+				continue
+			}
+			entry := PreviewSourceBranch{Name: name}
+			if b.Commit != nil {
+				entry.SHA = b.Commit.GetSHA()
+			}
+			result.Branches = append(result.Branches, entry)
 		}
-		entry := PreviewSourceBranch{Name: name}
-		if b.Commit != nil {
-			entry.SHA = b.Commit.GetSHA()
+
+		if resp.NextPage == 0 {
+			break
 		}
-		result.Branches = append(result.Branches, entry)
+		branchOpts.Page = resp.NextPage
 	}
 
 	return result, nil

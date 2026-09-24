@@ -93,6 +93,9 @@ poll:
 					continue
 				}
 			}
+			if cmpBuild == nil || cmpBuild.IsPreview {
+				continue
+			}
 			if cmpBuild.Status == componentBuildStatusError {
 				statusByID[cmp.ID] = buildOutcomeError
 				multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))

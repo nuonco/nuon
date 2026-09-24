@@ -217,7 +217,7 @@ func (s *StackPhoneHomeTestSuite) TestDeleteIsAcceptedWithoutRecording() {
 	rr := s.post(install.ID, map[string]any{
 		"request_type": installshelpers.PhoneHomeRequestTypeDelete,
 	})
-	require.Equal(t, http.StatusOK, rr.Code, "body: %s", rr.Body.String())
+	require.Equal(t, http.StatusCreated, rr.Code, "body: %s", rr.Body.String())
 
 	var runs []app.InstallStackVersionRun
 	require.NoError(t, s.deps.DB.

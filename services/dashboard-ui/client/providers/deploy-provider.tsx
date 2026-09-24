@@ -1,7 +1,8 @@
 import { createContext, useMemo, useCallback, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { useSSEResourceQuery, isTerminalStatusV2 } from '@/hooks/use-sse-resource-query'
+import { useSSEResourceQuery, isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { useStatusToast } from '@/hooks/use-status-toast'
 import { getDeploy } from '@/lib'
 import { createSSEQueryListener } from '@/lib/sse-listeners'
@@ -49,6 +50,8 @@ export function DeployProvider({
     ),
   }), [queryClient, org?.id])
 
+  const onRefreshError = useRefreshErrorToast()
+
   const { data: deploy, isLoading, error } = useSSEResourceQuery<TDeploy>({
     sseUrl: org?.id && installId && deployId
       ? `/api/orgs/${org.id}/installs/${installId}/deploys/${deployId}/sse`
@@ -58,6 +61,7 @@ export function DeployProvider({
     enabled: !!org?.id && !!installId && !!deployId,
     shouldPoll,
     eventName: 'deploy',
+    onError: onRefreshError,
     onPrimaryEvent: invalidateTabQueries,
     extraListeners,
     isFinished: isTerminalStatusV2,

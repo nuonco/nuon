@@ -37,12 +37,21 @@ type AppBranchInstallGroup struct {
 
 	LabelSelector *labels.Selector `json:"label_selector,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"label_selector,omitzero,omitempty"`
 
-	// AllInstalls claims every install on the app that no other branch owns.
+	// AllInstalls targets every install owned by this group's app branch.
 	// A nil LabelSelector already means "use InstallIDs", so there is no
 	// selector shape that expresses "everything" — hence the explicit flag.
 	AllInstalls bool `json:"all_installs,omitzero" gorm:"default:false" temporaljson:"all_installs,omitzero,omitempty"`
 
 	MaxParallel int `json:"max_parallel,omitzero" gorm:"default:0" temporaljson:"max_parallel,omitzero,omitempty"`
+
+	AutoApproveOnPoliciesPassing *bool `json:"auto_approve_on_policies_passing,omitempty" gorm:"default:null" temporaljson:"auto_approve_on_policies_passing,omitzero,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
+}
+
+func (a *AppBranchInstallGroup) GetAutoApproveOnPoliciesPassing() bool {
+	if a.AutoApproveOnPoliciesPassing != nil {
+		return *a.AutoApproveOnPoliciesPassing
+	}
+	return false
 }
 
 func (a *AppBranchInstallGroup) Indexes(db *gorm.DB) []migrations.Index {

@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/deployerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -61,7 +62,7 @@ func (p *Planner) createHelmDeployPlan(
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(err, "unable to render config")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render config")
 	}
 
 	namespace := cfg.Namespace.ValueOrDefault("{{.nuon.install.id}}")
@@ -70,7 +71,7 @@ func (p *Planner) createHelmDeployPlan(
 		l.Error("error rendering namespace",
 			zap.String("namespace", namespace),
 			zap.Error(err))
-		return nil, errors.Wrap(err, "unable to render namespace")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render namespace")
 	}
 
 	driver := cfg.StorageDriver.ValueOrDefault("configmap")
@@ -80,7 +81,7 @@ func (p *Planner) createHelmDeployPlan(
 			zap.String("driver", driver),
 			zap.Error(err))
 
-		return nil, errors.Wrap(err, "unable to render driver")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render storage driver")
 	}
 
 	var helmChartID string
@@ -100,7 +101,7 @@ func (p *Planner) createHelmDeployPlan(
 	for k, v := range generics.ToStringMap(cfg.Values) {
 		v, err = render.RenderV2(v, stateData)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to render")
+			return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render helm values")
 		}
 
 		values = append(values, plantypes.HelmValue{
@@ -116,7 +117,7 @@ func (p *Planner) createHelmDeployPlan(
 		config.HelmValuesOverrideInputName(installDeploy.ComponentName),
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to render helm values override")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render helm values override")
 	}
 
 	cloudAuth, err := p.getAuthForDeploy(

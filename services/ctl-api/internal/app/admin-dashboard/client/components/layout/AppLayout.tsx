@@ -15,6 +15,7 @@ const navGroups = [
       { path: '/orgs', label: 'Orgs' },
       { path: '/accounts', label: 'Accounts' },
       { path: '/installs', label: 'Installs' },
+      { path: '/app-branches', label: 'App branches' },
       { path: '/runners/all', label: 'Runners' },
       { path: '/runner-uptime', label: 'Runner uptime' },
     ],
@@ -24,6 +25,7 @@ const navGroups = [
     items: [
       { path: '/queues', label: 'Queues' },
       { path: '/workflows', label: 'Workflows' },
+      { path: '/bulk-cancel-workflows', label: 'Bulk cancel workflows' },
       { path: '/queue-signals', label: 'Queue signals' },
       { path: '/in-flight-signals', label: 'In-flight' },
       { path: '/signal-catalog', label: 'Signal catalog' },

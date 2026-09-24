@@ -31,7 +31,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/signing"
@@ -504,14 +503,14 @@ func (s *ingressPersistenceTestSuite) SetupSuite() {
 	mw, err := metrics.New(v, metrics.WithDisable(true), metrics.WithLogger(zap.NewNop()))
 	require.NoError(s.T(), err)
 	client := queueclient.New(queueclient.Params{DB: db, Cfg: &internal.Config{}, L: zap.NewNop(), MW: mw})
-	s.service = &service{db: db, l: zap.NewNop(), queueClient: client, features: features.New(features.Params{DB: db, Cfg: &internal.Config{}, V: v})}
+	s.service = &service{db: db, l: zap.NewNop(), queueClient: client}
 }
 
 func (s *ingressPersistenceTestSuite) SetupTest() {
 	account := &app.Account{ID: domains.NewAccountID(), Subject: domains.NewAccountID(), Email: domains.NewAccountID() + "@test.nuon.co", AccountType: app.AccountTypeAuth0}
 	require.NoError(s.T(), s.db.Create(account).Error)
 	ctx := cctx.SetAccountIDContext(context.Background(), account.ID)
-	org := &app.Org{ID: domains.NewOrgID(), Name: "event-ingress-" + domains.NewOrgID(), OrgType: app.OrgTypeSandbox, Status: app.OrgStatusActive, SandboxMode: true, CreatedByID: account.ID, Features: map[string]bool{string(app.OrgFeatureTriggers): true}}
+	org := &app.Org{ID: domains.NewOrgID(), Name: "event-ingress-" + domains.NewOrgID(), OrgType: app.OrgTypeSandbox, Status: app.OrgStatusActive, SandboxMode: true, CreatedByID: account.ID}
 	require.NoError(s.T(), s.db.WithContext(ctx).Create(org).Error)
 	ctx = cctx.SetOrgIDContext(ctx, org.ID)
 	s.account = account

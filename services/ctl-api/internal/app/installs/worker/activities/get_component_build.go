@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
-	"gorm.io/gorm"
 )
 
 type GetComponentBuildRequest struct {
@@ -28,6 +29,9 @@ func (a *Activities) GetComponentBuild(ctx context.Context, req GetComponentBuil
 		Preload("ComponentConfigConnection.HelmComponentConfig").
 		Preload("ComponentConfigConnection.DockerBuildComponentConfig").
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AWSECRImageConfig").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig.GCPGARImageConfig").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig.AzureACRImageConfig").
 		Preload("ComponentConfigConnection.JobComponentConfig").
 		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig").
 

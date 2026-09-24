@@ -24,6 +24,7 @@ import {
   PulumiConfigModal,
   PulumiEnvVarsModal,
 } from '@/components/components/configs/PulumiConfig'
+import { SignatureVerification } from '@/components/components/configs/SignatureVerification'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TBuild, TComponentConfig } from '@/types'
 import { getComponentConfigDisplayData } from '@/utils/component-config-display'
@@ -267,6 +268,10 @@ export const ComponentConfigCard = ({
               />
             </div>
           )}
+
+        <SignatureVerification
+          verification={config.external_image?.verification}
+        />
 
         {vcsInfo?.vcsConfig && (
           <div className="pt-6 border-t">

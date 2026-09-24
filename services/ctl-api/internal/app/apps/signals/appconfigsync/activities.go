@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"go.opentelemetry.io/otel/metric"
 	"go.temporal.io/sdk/temporal"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -42,6 +43,7 @@ type ActivitiesParams struct {
 	TFClient         terraform.Client
 	AccountsHelpers  *accountshelpers.Helpers
 	L                *zap.Logger
+	MeterProvider    metric.MeterProvider `optional:"true"`
 }
 
 type Activities struct {
@@ -62,6 +64,8 @@ func NewActivities(params ActivitiesParams) *Activities {
 			InstallHelpers:   params.InstallHelpers,
 			VCSHelpers:       params.VCSHelpers,
 			TFClient:         params.TFClient,
+			Metrics:          syncer.NewMetrics(params.MeterProvider),
+			Logger:           params.L,
 		},
 		queueClient:     params.QueueClient,
 		accountsHelpers: params.AccountsHelpers,
@@ -167,7 +171,7 @@ func (a *Activities) finalizeAppConfigSync(ctx context.Context, req *FinalizeApp
 		return nil
 	}
 
-	q, err := a.queueClient.GetQueueByOwner(ctx, req.AppID, "apps")
+	q, err := a.queueClient.GetQueueByOwnerAndName(ctx, req.AppID, "apps", "app-signals")
 	if err != nil {
 		return fmt.Errorf("unable to get app queue: %w", err)
 	}
@@ -200,7 +204,7 @@ type DispatchComponentBuildsInput struct {
 // @as-wrapper
 func (a *Activities) dispatchComponentBuilds(ctx context.Context, req *DispatchComponentBuildsInput) error {
 	for _, cmp := range req.Components {
-		q, err := a.queueClient.GetQueueByOwner(ctx, cmp.ComponentID, "components")
+		q, err := a.queueClient.GetDefaultQueueByOwner(ctx, cmp.ComponentID, "components")
 		if err != nil {
 			return fmt.Errorf("unable to get queue for component %s: %w", cmp.ComponentID, err)
 		}

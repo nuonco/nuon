@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { FormCheckbox } from '@/components/common/form/FormCheckbox'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { RadioInput } from '@/components/common/form/RadioInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { InstallForm } from '@/components/installs/forms/InstallForm'
 import {
@@ -148,62 +148,90 @@ export const EditInstallModal = ({
         variant: 'primary',
       }}
       footerActions={
-        <div className="flex flex-col gap-4 pl-4">
-          <div className="flex flex-col gap-1">
-            <form.Field name="inputsOnly">
-              {(field) => (
-                <FormCheckbox
-                  field={field}
-                  labelProps={{
-                    className:
-                      'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-4 max-w-none',
-                    labelText: 'Save inputs only',
-                    labelTextProps: { variant: 'base', weight: 'stronger' },
-                  }}
-                />
-              )}
-            </form.Field>
-            <Text
-              variant="subtext"
-              theme="neutral"
-              className="ml-8 leading-none"
-            >
-              Save the values without deploying components or reprovisioning the
-              sandbox.
-            </Text>
-          </div>
-          <form.Subscribe selector={(state) => state.values.inputsOnly}>
-            {(inputsOnly) =>
-              inputsOnly ? null : (
-                <div className="flex flex-col gap-1">
-                  <form.Field name="deployDependents">
-                    {(field) => (
-                      <FormCheckbox
-                        field={field}
-                        labelProps={{
-                          className:
-                            'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-4 max-w-none',
-                          labelText: 'Deploy dependents',
-                          labelTextProps: {
-                            variant: 'base',
-                            weight: 'stronger',
-                          },
-                        }}
-                      />
-                    )}
-                  </form.Field>
-                  <Text
-                    variant="subtext"
-                    theme="neutral"
-                    className="ml-8 leading-none"
-                  >
-                    Deploy all dependents as well as the affected components.
-                  </Text>
-                </div>
+        <form.Subscribe
+          selector={(state) => ({
+            inputsOnly: state.values.inputsOnly,
+            deployDependents: state.values.deployDependents,
+          })}
+        >
+          {({ inputsOnly, deployDependents }) => {
+            const mode = inputsOnly
+              ? 'inputs-only'
+              : deployDependents
+                ? 'deploy-dependents'
+                : 'deploy'
+            const setMode = (next: typeof mode) => {
+              form.setFieldValue('inputsOnly', next === 'inputs-only')
+              form.setFieldValue(
+                'deployDependents',
+                next === 'deploy-dependents'
               )
             }
-          </form.Subscribe>
-        </div>
+            const radioClass =
+              'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-4 max-w-none items-start'
+
+            return (
+              <div
+                className="flex flex-col gap-1 pl-4"
+                role="radiogroup"
+                aria-label="How to apply input changes"
+              >
+                {(
+                  [
+                    {
+                      value: 'inputs-only',
+                      title: 'Save inputs only',
+                      description:
+                        'Save the values without deploying components or reprovisioning the sandbox.',
+                    },
+                    {
+                      value: 'deploy',
+                      title: 'Deploy affected components',
+                      description:
+                        'Deploy components whose inputs changed, without dependents.',
+                    },
+                    {
+                      value: 'deploy-dependents',
+                      title: 'Deploy dependents',
+                      description:
+                        'Deploy all dependents as well as the affected components.',
+                    },
+                  ] as const
+                ).map((option) => (
+                  <RadioInput
+                    key={option.value}
+                    name="edit-inputs-mode"
+                    value={option.value}
+                    checked={mode === option.value}
+                    onChange={() => setMode(option.value)}
+                    labelProps={{
+                      className: radioClass,
+                      labelText: (
+                        <span className="flex flex-col gap-1">
+                          <Text
+                            variant="base"
+                            weight="stronger"
+                            className="!leading-none"
+                          >
+                            {option.title}
+                          </Text>
+                          <Text
+                            variant="subtext"
+                            theme="neutral"
+                            className="!leading-none"
+                          >
+                            {option.description}
+                          </Text>
+                        </span>
+                      ),
+                      labelTextProps: { as: 'div' },
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          }}
+        </form.Subscribe>
       }
     >
       <div className="flex flex-col gap-6">

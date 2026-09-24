@@ -5,11 +5,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/stategen"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/reprovisionserviceaccount"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -69,6 +69,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   install.RunnerID,
 		OwnerType: "runners",
+		QueueName: queuenames.RunnerSignalsQueueName,
 		Signal: &runnersignals.Signal{
 			RunnerID: install.RunnerID,
 		},
@@ -77,12 +78,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to enqueue reprovision service account signal to runner")
 	}
 
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
 	if err := stategen.HintOrGenerate(ctx, stategen.Request{
-		StateGenV2:      statemanager.UseStateGenV2(orgEnabled, install.Metadata),
 		InstallID:       s.InstallID,
 		Targets:         statemanager.TargetsForHint(statemanager.HintRunnerUpdated, ""),
 		ForceAll:        true,

@@ -9,6 +9,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
+// Install roles mirror the identities that exist in the customer account, so each
+// install keeps one live set. Rows are repointed in place: a stable ID is what keeps
+// install_role_usage history and enabled/provisioned/role_id attached across syncs.
 func (s *Helpers) MigrateInstallRoles(ctx context.Context, txn *gorm.DB, appID string, permCfg app.AppPermissionsConfig) error {
 	if permCfg.ID == "" {
 		return nil
@@ -18,40 +21,50 @@ func (s *Helpers) MigrateInstallRoles(ctx context.Context, txn *gorm.DB, appID s
 	res := txn.WithContext(ctx).
 		Preload("InstallRoles").
 		Preload("InstallRoles.AppRoleConfig").
-		Where("app_id = ?", appID).
+		Where(app.Install{AppID: appID}).
 		Find(&installs)
 	if res.Error != nil {
 		return fmt.Errorf("unable to get installs for app %s: %w", appID, res.Error)
 	}
 
 	for _, install := range installs {
-		oldByName := make(map[string]app.InstallRoles, len(install.InstallRoles))
+		staleByName := make(map[string]app.InstallRoles, len(install.InstallRoles))
 		for _, ir := range install.InstallRoles {
-			oldByName[ir.AppRoleConfig.Name] = ir
+			staleByName[ir.AppRoleConfig.Name] = ir
 		}
 
-		// soft-delete all existing install roles
-		for _, ir := range install.InstallRoles {
-			if err := txn.WithContext(ctx).Delete(&app.InstallRoles{}, "id = ?", ir.ID).Error; err != nil {
-				return fmt.Errorf("unable to delete install role %s: %w", ir.ID, err)
-			}
-		}
-
-		// create fresh set from new config, carrying over properties from matching old roles
 		for _, role := range permCfg.Roles {
-			newRole := app.InstallRoles{
-				InstallID:       install.ID,
-				AppRoleConfigID: role.ID,
+			existing, found := staleByName[role.Name]
+			if !found {
+				newRole := app.InstallRoles{
+					InstallID:       install.ID,
+					AppRoleConfigID: role.ID,
+				}
+				if err := txn.WithContext(ctx).Create(&newRole).Error; err != nil {
+					return fmt.Errorf("unable to create install role for install %s: %w", install.ID, err)
+				}
+				continue
 			}
+			delete(staleByName, role.Name)
 
-			if old, found := oldByName[role.Name]; found {
-				newRole.Enabled = old.Enabled
-				newRole.Provisioned = old.Provisioned
-				newRole.RoleID = old.RoleID
+			if existing.AppRoleConfigID == role.ID {
+				continue
 			}
+			err := txn.WithContext(ctx).
+				Model(&app.InstallRoles{}).
+				Where(app.InstallRoles{ID: existing.ID}).
+				Update("app_role_config_id", role.ID).Error
+			if err != nil {
+				return fmt.Errorf("unable to repoint install role %s: %w", existing.ID, err)
+			}
+		}
 
-			if err := txn.WithContext(ctx).Create(&newRole).Error; err != nil {
-				return fmt.Errorf("unable to create install role for install %s: %w", install.ID, err)
+		for _, stale := range staleByName {
+			err := txn.WithContext(ctx).
+				Where(app.InstallRoles{ID: stale.ID}).
+				Delete(&app.InstallRoles{}).Error
+			if err != nil {
+				return fmt.Errorf("unable to delete install role %s: %w", stale.ID, err)
 			}
 		}
 	}

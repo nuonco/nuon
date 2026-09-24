@@ -13,6 +13,7 @@ import (
 )
 
 const SignalType signal.SignalType = "install_stack_version_run"
+const atomicRunnerStatusVersion = "install-stack-version-run-atomic-runner-status-v1"
 
 type Signal struct {
 	RunnerID                 string `json:"runner_id"`
@@ -50,10 +51,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
-	// Only update status if runner is in specific states
+	// Offline/error are included so a re-applied stack gets a fresh heartbeat window.
 	if !generics.SliceContains(runner.Status, []app.RunnerStatus{
 		app.RunnerStatusAwaitingInstallStackRun,
 		app.RunnerStatusPending,
+		app.RunnerStatusOffline,
+		app.RunnerStatusError,
 	}) {
 		return nil
 	}
@@ -73,20 +76,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Update runner status to Error state
-	// This indicates the install stack was run and is waiting for health check
+	statusVersion := workflow.GetVersion(ctx, atomicRunnerStatusVersion, workflow.DefaultVersion, 1)
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          s.RunnerID,
-		Status:            app.RunnerStatusError,
-		StatusDescription: "runner install stack was run, waiting for health check to mark healthy",
+		Status:            app.RunnerStatusAwaitingHeartbeat,
+		StatusDescription: "runner install stack was run, waiting for the runner to report in",
 	}); err != nil {
 		return err
 	}
-	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
-		RunnerID:          s.RunnerID,
-		Status:            app.RunnerStatusError,
-		StatusDescription: "runner install stack was run, waiting for health check to mark healthy",
-	})
+	if statusVersion == workflow.DefaultVersion {
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusAwaitingHeartbeat,
+			StatusDescription: "runner install stack was run, waiting for the runner to report in",
+		})
+	}
 
 	return nil
 }

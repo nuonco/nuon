@@ -3,6 +3,8 @@ package spa
 import (
 	"strings"
 	"testing"
+
+	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
 const shellHTML = `<head>
@@ -51,5 +53,47 @@ func TestSelectShellLinksHashedFilenames(t *testing.T) {
 	}
 	if strings.Contains(got, "/assets/styles-e5f6a7b8.css") {
 		t.Errorf("expected hashed default stylesheet to be stripped, got:\n%s", got)
+	}
+}
+
+func TestBuildClientConfigIncludesDashboardDefaults(t *testing.T) {
+	got := buildClientConfig(&internal.Config{
+		StatusBarAutoEnabled:   true,
+		InstallsTabAutoEnabled: true,
+	})
+
+	if !got.StatusBarAutoEnabled {
+		t.Error("expected status bar auto-enabled setting in client config")
+	}
+	if !got.InstallsTabAutoEnabled {
+		t.Error("expected installs tab auto-enabled setting in client config")
+	}
+}
+
+func TestBuildClientConfigPostHog(t *testing.T) {
+	withKey := buildClientConfig(&internal.Config{
+		PostHogKey:  "phc_test",
+		PostHogHost: "https://us.i.posthog.com",
+	})
+	if withKey.PostHogKey != "phc_test" || withKey.PostHogHost != "https://us.i.posthog.com" {
+		t.Errorf("expected posthog key and host in client config when configured, got %+v", withKey)
+	}
+
+	byocWithKey := buildClientConfig(&internal.Config{
+		IsBYOC:     true,
+		PostHogKey: "phc_test",
+	})
+	if byocWithKey.PostHogKey != "phc_test" {
+		t.Errorf("expected posthog enabled on BYOC when key is configured, got %+v", byocWithKey)
+	}
+
+	for _, cfg := range []*internal.Config{
+		{},
+		{IsBYOC: true},
+	} {
+		got := buildClientConfig(cfg)
+		if got.PostHogKey != "" || got.PostHogHost != "" {
+			t.Errorf("expected posthog omitted from client config when no key is configured, got %+v", got)
+		}
 	}
 }

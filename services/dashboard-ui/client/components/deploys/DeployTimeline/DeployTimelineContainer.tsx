@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useSSETimelineQuery } from '@/hooks/use-sse-timeline-query'
+import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getComponentDeploys } from '@/lib'
 import { DeployTimeline } from './DeployTimeline'
 
@@ -12,6 +13,7 @@ interface IDeployTimelineContainer {
   componentId: string
   pollInterval?: number
   shouldPoll?: boolean
+  variant?: 'deploy' | 'sync'
 }
 
 export const DeployTimelineContainer = ({
@@ -19,11 +21,14 @@ export const DeployTimelineContainer = ({
   componentId,
   pollInterval = 20000,
   shouldPoll = false,
+  variant = 'deploy',
 }: IDeployTimelineContainer) => {
   const { install } = useInstall()
   const { org } = useOrg()
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
+
+  const onRefreshError = useRefreshErrorToast()
 
   const { data: result, isLoading, error } = useSSETimelineQuery({
     sseUrl:
@@ -43,6 +48,7 @@ export const DeployTimelineContainer = ({
     shouldPoll,
     pollInterval,
     eventName: 'deploys',
+    onError: onRefreshError,
   })
 
   const deploys = result?.data ?? []
@@ -60,6 +66,7 @@ export const DeployTimelineContainer = ({
       componentName={componentName}
       isLoading={isLoading}
       error={error}
+      variant={variant}
     />
   )
 }

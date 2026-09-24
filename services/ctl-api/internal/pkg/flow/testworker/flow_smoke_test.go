@@ -12,18 +12,27 @@ func (e *FlowTestSuite) TestSingleStepSuccess() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 	ownerID, ownerType := newTestOwner()
+	e.phase("seed")
 
 	flw, queueID := e.setupFlowTest(ctx, ownerID, ownerType, []app.WorkflowStep{
 		{Name: "only-step", Idx: 100, GroupIdx: 1, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 	})
+	e.phase("fixtures")
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
+	e.phase("enqueue")
+
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
+	e.phase("db-success")
 
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
 	require.Len(e.T(), steps, 1)
 	require.Equal(e.T(), app.StatusSuccess, steps[0].Status.Status)
+	e.phase("assertions")
+
+	e.assertTemporalDrained(ctx, flw.ID)
+	e.phase("drain")
 }
 
 // TestNoStepsNoSignalErrors verifies that a workflow with no pre-created steps
@@ -32,9 +41,6 @@ func (e *FlowTestSuite) TestNoStepsNoSignalErrors() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
 	ownerID, ownerType := newTestOwner()
-
-	e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
-	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
 
 	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
 	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
@@ -53,4 +59,9 @@ func (e *FlowTestSuite) TestNoStepsNoSignalErrors() {
 
 	// Should error because there are no steps and no way to generate them
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+
+	// The error is non-retryable, so the handler must exit and leave nothing
+	// pending; a leak here would mean the queue handler never observed the
+	// terminal status.
+	e.assertTemporalDrained(ctx, flw.ID)
 }

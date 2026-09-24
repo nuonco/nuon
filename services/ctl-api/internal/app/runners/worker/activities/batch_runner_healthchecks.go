@@ -39,6 +39,8 @@ type BatchRunnerHealthchecksResponse struct {
 	Skipped        int    `json:"skipped"`
 	AlertsEnqueued int    `json:"alerts_enqueued"`
 	AlertsDeduped  int    `json:"alerts_deduped"`
+	CronsDisabled  int    `json:"crons_disabled"`
+	CronsEnabled   int    `json:"crons_enabled"`
 	Errors         int    `json:"errors"`
 }
 
@@ -93,6 +95,7 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 
 	now := time.Now()
 	var alerts []runnerAlert
+	cronCandidates := map[string]*installCronCandidate{}
 
 	for i := range runners {
 		if i%batchHeartbeatEvery == 0 {
@@ -104,14 +107,26 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 		d := decideRunnerHealth(now, &r, presence[r.ID])
 		tags := runnerHealthTags(&r, presence[r.ID], d)
 
+		if r.RunnerGroup.OwnerType == installOwnerType && d.InstallCronToggleDecision != nil {
+			installID := r.RunnerGroup.OwnerID
+			candidate, ok := cronCandidates[installID]
+			if !ok {
+				candidate = &installCronCandidate{orgID: r.OrgID, accountID: r.CreatedByID}
+				cronCandidates[installID] = candidate
+			}
+			if candidate.state == "" || *d.InstallCronToggleDecision == InstallCronsEnabled {
+				candidate.state = *d.InstallCronToggleDecision
+			}
+		}
+
 		switch d.Result {
-		case "skipped":
+		case runnerHealthResultSkipped:
 			resp.Skipped++
-			a.mw.Incr(runnerHealthCheckCounter, metrics.ToTags(tags, metrics.ToTag("result", "skipped")))
+			a.mw.Incr(runnerHealthCheckCounter, metrics.ToTags(tags, metrics.ToTag("result", runnerHealthResultSkipped)))
 			continue
-		case "healthy":
+		case runnerHealthResultHealthy:
 			resp.Healthy++
-		case "unhealthy":
+		case runnerHealthResultUnhealthy:
 			resp.Unhealthy++
 		default:
 			continue
@@ -138,6 +153,15 @@ func (a *Activities) BatchRunnerHealthchecks(ctx context.Context, req BatchRunne
 		a.emitRunnerAlerts(ctx, req.OrgID, alerts, resp)
 	}
 
+	if len(cronCandidates) > 0 {
+		toggleResp, err := a.toggleInstallCronsState(ctx, cronCandidates)
+		if err != nil {
+			return nil, fmt.Errorf("unable to toggle install cron emitters: %w", err)
+		}
+		resp.CronsDisabled += toggleResp.Disabled
+		resp.CronsEnabled += toggleResp.Enabled
+	}
+
 	return resp, nil
 }
 
@@ -154,7 +178,6 @@ func (a *Activities) activeProcessPresence(ctx context.Context, runnerIDs []stri
 		ORDER BY runner_id, type, created_at DESC`,
 		runnerIDs,
 		[]string{
-			string(app.RunnerProcessTypeBuild),
 			string(app.RunnerProcessTypeInstall),
 			string(app.RunnerProcessTypeMng),
 		}).Scan(&rows); res.Error != nil {
@@ -169,8 +192,6 @@ func (a *Activities) activeProcessPresence(ctx context.Context, runnerIDs []stri
 		p := presence[row.RunnerID]
 		active := row.Status == string(app.RunnerProcessStatusActive)
 		switch row.Type {
-		case app.RunnerProcessTypeBuild:
-			p.HasActiveBuild = active
 		case app.RunnerProcessTypeInstall:
 			p.HasActiveInstall = active
 		case app.RunnerProcessTypeMng:
@@ -181,64 +202,37 @@ func (a *Activities) activeProcessPresence(ctx context.Context, runnerIDs []stri
 	return presence, nil
 }
 
-// applyRunnerHealthDecision performs the decision's writes in the signal's
-// order: mng metadata, offline_ts arm/clear, legacy status (fail-fast), then
-// status v2.
 func (a *Activities) applyRunnerHealthDecision(ectx context.Context, r *app.Runner, d runnerHealthDecision, now time.Time) error {
+	metadata := make(map[string]any)
 	if d.SetMissingMng != nil {
-		if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ectx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
-			RunnerID: r.ID,
-			Metadata: map[string]any{"missing_mng_process": *d.SetMissingMng},
-		}); err != nil {
-			return fmt.Errorf("unable to update management process status metadata: %w", err)
-		}
+		metadata["missing_mng_process"] = *d.SetMissingMng
 	}
-
 	if d.SetOfflineTS {
-		if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ectx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
-			RunnerID: r.ID,
-			Metadata: map[string]any{app.RunnerOfflineTSMetadataKey: now.Unix()},
-		}); err != nil {
-			return fmt.Errorf("unable to set runner offline metadata: %w", err)
-		}
+		metadata[app.RunnerOfflineTSMetadataKey] = now.Unix()
 	}
 	if d.ClearOfflineTS {
-		if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ectx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
-			RunnerID: r.ID,
-			Metadata: map[string]any{app.RunnerOfflineTSMetadataKey: nil},
-		}); err != nil {
-			return fmt.Errorf("unable to clear runner offline metadata: %w", err)
-		}
+		metadata[app.RunnerOfflineTSMetadataKey] = nil
 	}
 
-	if d.UpdateLegacy {
-		// Guarded write: the decision was computed from a read that may predate
-		// a reconcile marking this runner disabled. Overwriting that would pin
-		// an intentionally-disabled runner to offline, and since the skip
-		// conditions match on status it would never recover.
-		res := a.db.WithContext(ectx).
-			Model(&app.Runner{ID: r.ID}).
-			Where("status <> ?", app.RunnerStatusDisabled).
-			Updates(app.Runner{
-				Status:            d.TargetStatus,
-				StatusDescription: d.Reason,
-			})
-		if res.Error != nil {
-			return fmt.Errorf("unable to update runner status: %w", res.Error)
-		}
-		if res.RowsAffected < 1 {
-			// Runner went disabled under us; leave its status v2 alone too so
-			// the two columns cannot disagree.
-			return nil
-		}
-	}
-	if d.UpdateV2 {
-		if err := a.statusActivities.UpdateRunnerStatusV2(ectx, statusactivities.UpdateRunnerStatusV2Request{
+	if d.TargetStatus != "" {
+		if _, err := a.statusActivities.TransitionRunnerStatus(ectx, statusactivities.TransitionRunnerStatusRequest{
 			RunnerID:          r.ID,
 			Status:            d.TargetStatus,
 			StatusDescription: d.Reason,
+			SkipIfDisabled:    true,
+			Metadata:          metadata,
 		}); err != nil {
-			return fmt.Errorf("unable to update runner status v2: %w", err)
+			return fmt.Errorf("unable to transition runner status: %w", err)
+		}
+		return nil
+	}
+
+	if len(metadata) > 0 {
+		if err := a.statusActivities.UpdateRunnerStatusV2Metadata(ectx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
+			RunnerID: r.ID,
+			Metadata: metadata,
+		}); err != nil {
+			return fmt.Errorf("unable to update runner status metadata: %w", err)
 		}
 	}
 
@@ -248,7 +242,7 @@ func (a *Activities) applyRunnerHealthDecision(ectx context.Context, r *app.Runn
 func (a *Activities) emitRunnerAlerts(ctx context.Context, orgID string, alerts []runnerAlert, resp *BatchRunnerHealthchecksResponse) {
 	installIDs := make([]string, 0)
 	for _, al := range alerts {
-		if al.runner.RunnerGroup.OwnerType == "installs" {
+		if al.runner.RunnerGroup.OwnerType == installOwnerType {
 			installIDs = append(installIDs, al.runner.RunnerGroup.OwnerID)
 		}
 	}
@@ -329,16 +323,14 @@ func runnerHealthTags(r *app.Runner, presence runnerProcessPresence, d runnerHea
 		"org_id":        r.OrgID,
 		"org_name":      r.Org.Name,
 	}
-	if r.RunnerGroup.OwnerType == "installs" {
+	if r.RunnerGroup.OwnerType == installOwnerType {
 		tags["install_id"] = r.RunnerGroup.OwnerID
 	}
-	if d.Result == "skipped" {
+	if d.Result == runnerHealthResultSkipped {
 		return tags
 	}
 
 	switch r.RunnerGroup.Type {
-	case app.RunnerGroupTypeOrg:
-		tags["missing_build_process"] = fmt.Sprintf("%t", !presence.HasActiveBuild)
 	case app.RunnerGroupTypeInstall:
 		tags["missing_install_process"] = fmt.Sprintf("%t", !presence.HasActiveInstall)
 		tags["missing_mng_process"] = fmt.Sprintf("%t", presence.MngChecked && !presence.HasActiveMng)

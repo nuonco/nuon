@@ -1,7 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
@@ -12,8 +10,6 @@ import { useOrg } from '@/hooks/use-org'
 import type { IModal } from '@/components/surfaces/Modal'
 import type { TAPIError, TAppBranch, TAppBranchConfig } from '@/types'
 import { deleteAppBranch } from '@/lib'
-import { EditBranchButton } from '@/components/branches/EditBranchNameModal'
-import { EditDeploymentPlanButton } from '@/components/branches/DeploymentPlanEditor'
 import { TriggerBranchRunModal } from '@/components/branches/TriggerBranchRunModal'
 import { PreviewBranchRunModalContainer } from '@/components/branches/PreviewBranchRunModal'
 import { BranchDetailActions } from './BranchDetailActions'
@@ -23,7 +19,6 @@ interface IBranchDetailActionsContainer {
   currentConfig?: TAppBranchConfig
   appId: string
   orgId: string
-  showManage?: boolean
   showTriggerNudge?: boolean
 }
 
@@ -88,7 +83,6 @@ export const BranchDetailActionsContainer = ({
   currentConfig,
   appId,
   orgId,
-  showManage,
   showTriggerNudge,
 }: IBranchDetailActionsContainer) => {
   const { refresh } = useBranch()
@@ -121,37 +115,11 @@ export const BranchDetailActionsContainer = ({
 
   return (
     <BranchDetailActions
-      editButton={
-        <EditBranchButton
-          isMenuButton
-          branch={branch}
-          currentConfig={currentConfig}
-          onSuccess={refresh}
-        />
-      }
-      deploymentPlanButton={
-        <EditDeploymentPlanButton
-          isMenuButton
-          branch={branch}
-          currentConfig={currentConfig}
-          onSuccess={refresh}
-        />
-      }
-      deleteButton={
-        <Button
-          isMenuButton
-          variant="danger"
-          onClick={() => {
-            const modal = <DeleteBranchModal branch={branch} appId={appId} />
-            addModal(modal)
-          }}
-        >
-          Delete branch
-          <Icon variant="TrashIcon" size={16} />
-        </Button>
-      }
       isTriggerPending={false}
-      showManage={showManage}
+      previewDisabled={
+        !currentConfig?.preview_config ||
+        currentConfig.preview_config.mode === 'none'
+      }
       showTriggerNudge={showTriggerNudge}
       onTriggerRun={openTriggerModal}
       onTriggerPreviewModal={openPreviewModal}

@@ -47,6 +47,8 @@ const (
 
 	signalTypeSyncInstalls      signal.SignalType = "sync-installs"
 	signalTypeInstallConfigSync signal.SignalType = "install-config-sync"
+	signalTypeLabelAdded        signal.SignalType = "label-added"
+	signalTypeAppBranchChanged  signal.SignalType = "app-branch-changed"
 )
 
 // stepTargetType* mirror the WorkflowStepTargetType strings declared in
@@ -317,6 +319,20 @@ func classify(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome,
 	case signalTypeInstallConfigSync:
 		f.Resource = ResourceInstallConfigurations
 		f.Op = "sync"
+		f.EventClass = eventClassLifecycle
+		f.Resolved = true
+		return f
+
+	case signalTypeLabelAdded:
+		f.Resource = ResourceInstalls
+		f.Op = "label_added"
+		f.EventClass = eventClassLifecycle
+		f.Resolved = true
+		return f
+
+	case signalTypeAppBranchChanged:
+		f.Resource = ResourceInstalls
+		f.Op = "app_branch_changed"
 		f.EventClass = eventClassLifecycle
 		f.Resolved = true
 		return f

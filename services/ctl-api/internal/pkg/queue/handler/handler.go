@@ -93,8 +93,9 @@ type handler struct {
 	callbacks callback.Refs
 
 	// state that is loaded during run, but not passed between continue-as-news
-	queueSignal *app.QueueSignal
-	sig         signal.Signal
+	queueSignal     *app.QueueSignal
+	sig             signal.Signal
+	signalLogStream *app.LogStream
 }
 
 // setFinished marks the handler as finished with a terminal status and optional error description.

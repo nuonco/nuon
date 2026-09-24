@@ -25,8 +25,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
-	queuepkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -96,15 +96,6 @@ func (s *service) IngestEvent(ctx *gin.Context) {
 			return
 		}
 		ctx.Error(err)
-		return
-	}
-	enabled, err := s.features.OrgHasFeature(ctx, trigger.OrgID, app.OrgFeatureTriggers)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if !enabled {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "trigger not found"})
 		return
 	}
 	now := time.Now()
@@ -280,31 +271,18 @@ func (s *service) confirmSNSSubscription(ctx context.Context, msg *eventsns.Mess
 }
 
 func (s *service) appTriggerQueue(ctx context.Context, appID string) (*app.Queue, error) {
-	ownerType := plugins.TableName(s.db, app.App{})
-	var queue app.Queue
-	err := s.db.WithContext(ctx).Where(app.Queue{OwnerID: appID, OwnerType: ownerType, Name: queuepkg.AppTriggersQueueName}).First(&queue).Error
-	if err == nil {
-		return &queue, nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
 	return s.appsHelpers.EnsureAppTriggerQueue(ctx, appID)
 }
 
 func (s *service) orgTriggerQueue(ctx context.Context, orgID string) (*app.Queue, error) {
 	ownerType := plugins.TableName(s.db, app.Org{})
-	var queue app.Queue
-	err := s.db.WithContext(ctx).Where(app.Queue{OwnerID: orgID, OwnerType: ownerType, Name: queuepkg.OrgSignalsQueueName}).First(&queue).Error
-	if err == nil {
-		return &queue, nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+	spec, ok := queuenames.SpecByName(queuenames.OwnerOrgs, queuenames.OrgSignalsQueueName)
+	if !ok {
+		return nil, fmt.Errorf("org-signals queue is not registered")
 	}
 	return s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OrgID: &orgID, OwnerID: orgID, OwnerType: ownerType, Namespace: "orgs", Name: queuepkg.OrgSignalsQueueName,
-		MaxInFlight: 10, MaxDepth: 50,
+		OrgID: &orgID, OwnerID: orgID, OwnerType: ownerType, Namespace: "orgs", Name: spec.Name,
+		MaxInFlight: spec.MaxInFlight, MaxDepth: spec.MaxDepth, SkipRestartHint: true,
 	})
 }
 

@@ -64,8 +64,6 @@ export const InstallComponentsTableContainer = ({
     enabled: !!org?.id && !!install?.id && !syncedOnly,
   })
 
-  const showHealth = !!org?.features?.['component-health']
-
   const { appConfig: configResult } = useInstallAppConfig()
 
   const components = componentsResult?.data ?? []
@@ -140,7 +138,6 @@ export const InstallComponentsTableContainer = ({
       }
       pagination={pagination}
       isLoading={isLoading}
-      showHealth={showHealth}
     />
   )
 }

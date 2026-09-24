@@ -20,13 +20,16 @@ import (
 // swagger:model service.CreateAppBranchConfigRequest
 type ServiceCreateAppBranchConfigRequest struct {
 
+	// clear preview config
+	ClearPreviewConfig bool `json:"clear_preview_config,omitempty"`
+
 	// connected github vcs config
 	ConnectedGithubVcsConfig *HelpersConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
 	// IgnoreChangesRegex marks a run not-attempted when every changed file path in
 	// it matches this RE2 pattern. Omit to carry the current setting forward; send
 	// an empty string to clear it.
-	IgnoreChangesRegex string `json:"ignore_changes_regex,omitempty"`
+	IgnoreChangesRegex *string `json:"ignore_changes_regex,omitempty"`
 
 	// install groups
 	InstallGroups []*ServiceInstallGroupRequest `json:"install_groups"`
@@ -35,17 +38,18 @@ type ServiceCreateAppBranchConfigRequest struct {
 	// Omit to carry the current setting forward; send an empty array to clear it.
 	PostDeployRunbookIds []string `json:"post_deploy_runbook_ids"`
 
-	// PreviewConfig sets branch-level preview defaults. Omit to carry forward.
-	PreviewConfig struct {
-		AppAppBranchPreviewConfig
-	} `json:"preview_config,omitempty"`
+	// preview config
+	PreviewConfig *AppAppBranchPreviewConfig `json:"preview_config,omitempty"`
 
 	// public git vcs config
 	PublicGitVcsConfig *HelpersPublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
 
+	// run config
+	RunConfig *AppAppBranchRunConfig `json:"run_config,omitempty"`
+
 	// SendStatusesOnIgnore posts a successful commit status for runs ignored by
 	// IgnoreChangesRegex. Omit to carry the current setting forward.
-	SendStatusesOnIgnore bool `json:"send_statuses_on_ignore,omitempty"`
+	SendStatusesOnIgnore *bool `json:"send_statuses_on_ignore,omitempty"`
 }
 
 // Validate validates this service create app branch config request
@@ -65,6 +69,10 @@ func (m *ServiceCreateAppBranchConfigRequest) Validate(formats strfmt.Registry) 
 	}
 
 	if err := m.validatePublicGitVcsConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRunConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -132,6 +140,21 @@ func (m *ServiceCreateAppBranchConfigRequest) validatePreviewConfig(formats strf
 		return nil
 	}
 
+	if m.PreviewConfig != nil {
+		if err := m.PreviewConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview_config")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -158,6 +181,29 @@ func (m *ServiceCreateAppBranchConfigRequest) validatePublicGitVcsConfig(formats
 	return nil
 }
 
+func (m *ServiceCreateAppBranchConfigRequest) validateRunConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.RunConfig) { // not required
+		return nil
+	}
+
+	if m.RunConfig != nil {
+		if err := m.RunConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("run_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("run_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this service create app branch config request based on the context it is used
 func (m *ServiceCreateAppBranchConfigRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -175,6 +221,10 @@ func (m *ServiceCreateAppBranchConfigRequest) ContextValidate(ctx context.Contex
 	}
 
 	if err := m.contextValidatePublicGitVcsConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRunConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -240,6 +290,26 @@ func (m *ServiceCreateAppBranchConfigRequest) contextValidateInstallGroups(ctx c
 
 func (m *ServiceCreateAppBranchConfigRequest) contextValidatePreviewConfig(ctx context.Context, formats strfmt.Registry) error {
 
+	if m.PreviewConfig != nil {
+
+		if swag.IsZero(m.PreviewConfig) { // not required
+			return nil
+		}
+
+		if err := m.PreviewConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("preview_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("preview_config")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -259,6 +329,31 @@ func (m *ServiceCreateAppBranchConfigRequest) contextValidatePublicGitVcsConfig(
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("public_git_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateAppBranchConfigRequest) contextValidateRunConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.RunConfig != nil {
+
+		if swag.IsZero(m.RunConfig) { // not required
+			return nil
+		}
+
+		if err := m.RunConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("run_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("run_config")
 			}
 
 			return err

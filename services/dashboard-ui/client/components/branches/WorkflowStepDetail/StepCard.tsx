@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { CompositeError } from '@/components/common/CompositeError'
 import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -30,7 +31,10 @@ export interface IStepCard {
 export const StepCard = ({ step, children }: IStepCard) => {
   const isInProgress = step.status?.status === 'in-progress'
   const duration = formatDuration(step.execution_time)
-  const description = step.status?.status_human_description
+  const compositeError = step.status?.composite_error
+  const description = compositeError
+    ? undefined
+    : step.status?.status_human_description
   const stepIndexStr = String(step.group_idx ?? '').padStart(2, '0') || '—'
 
   return (
@@ -105,6 +109,12 @@ export const StepCard = ({ step, children }: IStepCard) => {
           </Text>
         )}
       </div>
+
+      {compositeError && (
+        <div className={cn('py-4 border-b', GUTTER)}>
+          <CompositeError error={compositeError} />
+        </div>
+      )}
 
       {children && <div className="flex flex-col divide-y">{children}</div>}
 

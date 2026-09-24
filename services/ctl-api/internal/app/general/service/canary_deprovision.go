@@ -5,10 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	tclient "go.temporal.io/sdk/client"
+
 	"github.com/nuonco/nuon/pkg/types/workflows/canary"
 	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	tclient "go.temporal.io/sdk/client"
 )
 
 type DeprovisionCanaryRequest struct {

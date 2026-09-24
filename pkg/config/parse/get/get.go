@@ -10,6 +10,7 @@ import (
 type Options struct {
 	FieldTimeout time.Duration
 	RootDir      string
+	OnLocalFile  func(path string, contents []byte) error
 }
 
 type get struct {

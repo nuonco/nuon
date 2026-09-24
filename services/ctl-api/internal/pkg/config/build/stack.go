@@ -24,18 +24,34 @@ func StackConfig(stack *config.StackConfig, appID, appConfigID string) (*app.App
 	if err := config.ValidateDeploymentScope(stack.DeploymentScope, stack.Type); err != nil {
 		return nil, err
 	}
+	if err := config.ValidateAzureCustomNestedStacks(stack.Type, stack.CustomNestedStacks); err != nil {
+		return nil, err
+	}
+	if err := config.ValidateGCPCustomNestedStacks(stack.Type, stack.CustomNestedStacks); err != nil {
+		return nil, err
+	}
 
 	// Copy so marking the upload status pending does not mutate the caller's
 	// parsed config.
 	customNestedStacks := make([]config.CustomNestedStack, 0, len(stack.CustomNestedStacks))
+	seenNames := make(map[string]int, len(stack.CustomNestedStacks))
+	seenIndices := make(map[int]string, len(stack.CustomNestedStacks))
 	for i, nested := range stack.CustomNestedStacks {
 		if nested.Name == "" {
 			return nil, fmt.Errorf("custom_nested_stacks[%d]: name is required", i)
 		}
+		if prev, exists := seenNames[nested.Name]; exists {
+			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): name is already used by custom_nested_stacks[%d]; each stack must have a unique name", i, nested.Name, prev)
+		}
+		seenNames[nested.Name] = i
+		if prev, exists := seenIndices[nested.Index]; exists {
+			return nil, fmt.Errorf("custom_nested_stacks: index %d is used by both %q and %q; each stack must have a unique index", nested.Index, prev, nested.Name)
+		}
+		seenIndices[nested.Index] = nested.Name
 		if nested.TemplateURL == "" {
 			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, nested.Name)
 		}
-		if nested.Contents == "" {
+		if stackType != app.StackTypeGCP && nested.Contents == "" {
 			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): contents is required when template_url is set", i, nested.Name)
 		}
 		for paramName, paramValue := range nested.Parameters {
@@ -44,9 +60,11 @@ func StackConfig(stack *config.StackConfig, appID, appConfigID string) (*app.App
 			}
 		}
 
-		// Pending until the contents have been uploaded to S3; consumers gate
-		// on Status before generating a stack from these templates.
-		nested.Status = config.CustomNestedStackStatusPending
+		if stackType == app.StackTypeGCP {
+			nested.Status = config.CustomNestedStackStatusReady
+		} else {
+			nested.Status = config.CustomNestedStackStatusPending
+		}
 		customNestedStacks = append(customNestedStacks, nested)
 	}
 

@@ -10,7 +10,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/render"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -47,57 +46,48 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 
 	installID := ctx.Param("install_id")
 
-	install, err := s.helpers.GetInstall(ctx, org.ID, installID)
+	response, err := s.renderInstallReadme(ctx, org.ID, installID)
 	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to get install"))
+		ctx.Error(err)
 		return
-	}
-
-	installState, err := s.helpers.GetInstallState(ctx, installID, true, true)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install state: %w", err))
-		return
-	}
-
-	// get app readme template
-	appConfig, err := s.appsHelpers.GetLatestActiveAppConfig(ctx, install.AppID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get latest app config: %w", err))
-		return
-	}
-
-	// interpolate the state into the readme md
-	stateMap, err := installState.AsMap()
-	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to convert state to json"))
-		return
-	}
-
-	value, warnings, err := render.RenderWithWarnings(appConfig.Readme, stateMap)
-	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to render"))
-		return
-	}
-
-	response := Readme{
-		Rendered: value,
-		Original: appConfig.Readme,
-		Warnings: generics.ErrsToStrings(warnings),
 	}
 
 	statusCode := http.StatusOK
-	if len(warnings) > 0 {
+	if len(response.Warnings) > 0 {
 		statusCode = http.StatusPartialContent
 	}
 
 	ctx.JSON(statusCode, response)
 }
 
-func (s *service) getLatestAppConfig(ctx context.Context, appID string) (*app.AppConfig, error) {
-	var appConfig app.AppConfig
-	res := s.db.WithContext(ctx).Where("app_id = ?", appID).Order("created_at DESC").First(&appConfig)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get app config: %w", res.Error)
+func (s *service) renderInstallReadme(ctx context.Context, orgID, installID string) (*Readme, error) {
+	install, err := s.helpers.GetInstall(ctx, orgID, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
 	}
-	return &appConfig, nil
+
+	installState, err := s.helpers.GetInstallState(ctx, install.ID, true, true)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install state: %w", err)
+	}
+
+	appConfig, err := s.appsHelpers.GetLatestActiveAppConfig(ctx, install.AppID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get latest app config: %w", err)
+	}
+
+	stateMap, err := installState.AsMap()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to convert state to json")
+	}
+
+	value, warnings, err := render.RenderWithWarnings(appConfig.Readme, stateMap)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to render")
+	}
+	return &Readme{
+		Rendered: value,
+		Original: appConfig.Readme,
+		Warnings: generics.ErrsToStrings(warnings),
+	}, nil
 }

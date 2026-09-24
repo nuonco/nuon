@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/labels"
@@ -9,6 +10,7 @@ import (
 type AppBranchRunPreviewMode string
 
 const (
+	AppBranchRunPreviewModeNone      AppBranchRunPreviewMode = "none"
 	AppBranchRunPreviewModePlanOnly  AppBranchRunPreviewMode = "plan-only"
 	AppBranchRunPreviewModeApply     AppBranchRunPreviewMode = "apply"
 	AppBranchRunPreviewModeBuildOnly AppBranchRunPreviewMode = "build-only"
@@ -16,7 +18,7 @@ const (
 
 func (m AppBranchRunPreviewMode) Valid() bool {
 	switch m {
-	case AppBranchRunPreviewModePlanOnly, AppBranchRunPreviewModeApply, AppBranchRunPreviewModeBuildOnly, "":
+	case AppBranchRunPreviewModeNone, AppBranchRunPreviewModePlanOnly, AppBranchRunPreviewModeApply, AppBranchRunPreviewModeBuildOnly, "":
 		return true
 	default:
 		return false
@@ -25,6 +27,8 @@ func (m AppBranchRunPreviewMode) Valid() bool {
 
 func (m AppBranchRunPreviewMode) Label() string {
 	switch m {
+	case AppBranchRunPreviewModeNone:
+		return "none"
 	case AppBranchRunPreviewModeBuildOnly:
 		return "build and validate"
 	case AppBranchRunPreviewModePlanOnly:
@@ -61,16 +65,54 @@ type AppBranchPreviewConfig struct {
 	InstallName   *string          `json:"install_name,omitempty"`
 	LabelSelector *labels.Selector `json:"label_selector,omitempty"`
 
-	SetStatuses bool `json:"set_statuses"`
-	Comment     bool `json:"comment"`
+	SetStatuses  bool `json:"set_statuses"`
+	Comment      bool `json:"comment"`
+	IgnoreDrafts bool `json:"ignore_drafts"`
+	React        bool `json:"react"`
 }
 
 func DefaultAppBranchPreviewConfig() AppBranchPreviewConfig {
 	return AppBranchPreviewConfig{
-		Mode:        AppBranchRunPreviewModePlanOnly,
-		SetStatuses: true,
-		Comment:     true,
+		Mode:         AppBranchRunPreviewModeNone,
+		SetStatuses:  true,
+		Comment:      true,
+		IgnoreDrafts: true,
+		React:        true,
 	}
+}
+
+// UnmarshalJSON defaults ignore_drafts and react to true when omitted so existing
+// stored preview configs keep the intended opt-out defaults.
+func (c *AppBranchPreviewConfig) UnmarshalJSON(data []byte) error {
+	type wire struct {
+		Mode          AppBranchRunPreviewMode `json:"mode,omitempty"`
+		InstallID     *string                 `json:"install_id,omitempty"`
+		InstallName   *string                 `json:"install_name,omitempty"`
+		LabelSelector *labels.Selector        `json:"label_selector,omitempty"`
+		SetStatuses   bool                    `json:"set_statuses"`
+		Comment       bool                    `json:"comment"`
+		IgnoreDrafts  *bool                   `json:"ignore_drafts"`
+		React         *bool                   `json:"react"`
+	}
+	var w wire
+	if err := json.Unmarshal(data, &w); err != nil {
+		return err
+	}
+	c.Mode = w.Mode
+	c.InstallID = w.InstallID
+	c.InstallName = w.InstallName
+	c.LabelSelector = w.LabelSelector
+	c.SetStatuses = w.SetStatuses
+	c.Comment = w.Comment
+	c.IgnoreDrafts = true
+	if w.IgnoreDrafts != nil {
+		c.IgnoreDrafts = *w.IgnoreDrafts
+	}
+	c.React = true
+	if w.React != nil {
+		c.React = *w.React
+	}
+	return nil
 }
 
 func (c *AppBranchPreviewConfig) Normalize() {
@@ -89,6 +131,12 @@ func (c *AppBranchPreviewConfig) Validate() error {
 	hasInstallID := c.InstallID != nil && *c.InstallID != ""
 	hasInstallName := c.InstallName != nil && *c.InstallName != ""
 	hasLabels := c.LabelSelector != nil && len(c.LabelSelector.MatchLabels) > 0
+	if c.Mode == AppBranchRunPreviewModeNone {
+		if hasInstallID || hasInstallName || hasLabels {
+			return fmt.Errorf("preview config: mode none cannot set install_id, install_name, or label_selector")
+		}
+		return nil
+	}
 	if hasInstallID && hasLabels {
 		return fmt.Errorf("preview config: label_selector is mutually exclusive with install_id")
 	}
@@ -97,6 +145,9 @@ func (c *AppBranchPreviewConfig) Validate() error {
 	}
 	if hasInstallID && hasInstallName {
 		return fmt.Errorf("preview config: install_id is mutually exclusive with install_name")
+	}
+	if c.Mode != AppBranchRunPreviewModeBuildOnly && !hasInstallID && !hasInstallName && !hasLabels {
+		return fmt.Errorf("preview config: install_id, install_name, or label_selector is required for mode %q", c.Mode)
 	}
 	return nil
 }

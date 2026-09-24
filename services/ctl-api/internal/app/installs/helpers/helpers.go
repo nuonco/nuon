@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"github.com/go-playground/validator/v10"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -13,54 +14,60 @@ import (
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 const (
 	// InstallWorkflowsQueueName is the queue that orchestrates install workflow execution.
-	InstallWorkflowsQueueName = "install-workflows"
+	InstallWorkflowsQueueName = queuenames.InstallWorkflowsQueueName
 
 	// InstallSignalsQueueName is the queue that handles individual install signal execution.
-	InstallSignalsQueueName = "install-signals"
+	InstallSignalsQueueName = queuenames.InstallSignalsQueueName
+
+	// InstallApprovalsQueueName isolates approval requests from the signals that await them.
+	InstallApprovalsQueueName = queuenames.InstallApprovalsQueueName
 
 	// InstallWorkflowStepGroupsQueueName is the queue that executes workflow step groups.
-	InstallWorkflowStepGroupsQueueName = "install-workflow-step-groups"
+	InstallWorkflowStepGroupsQueueName = queuenames.InstallWorkflowStepGroupsQueueName
 
 	// InstallWorkflowStepsQueueName is the queue that executes individual workflow steps
 	// as their own signals (when steps-workflows feature is enabled).
-	InstallWorkflowStepsQueueName = "install-workflow-steps"
+	InstallWorkflowStepsQueueName = queuenames.InstallWorkflowStepsQueueName
 
 	// InstallStateManagerQueueName is the queue that handles state manager operations
 	// (force-regenerate, regenerate, hint) for an install.
-	InstallStateManagerQueueName = "state-manager"
+	InstallStateManagerQueueName = queuenames.InstallStateManagerQueueName
 
 	// InstallGenerateStepsQueueName is the queue that handles generate-steps signals.
 	// Throttled at the same concurrency as workflows to prevent overload.
-	InstallGenerateStepsQueueName = "install-generate-steps"
+	InstallGenerateStepsQueueName = queuenames.InstallGenerateStepsQueueName
 
 	// InstallActionWorkflowsQueueName is the queue for action workflow execution.
 	// Separate from install-workflows so action runs don't compete with deploys.
-	InstallActionWorkflowsQueueName = "install-action-workflows"
+	InstallActionWorkflowsQueueName = queuenames.InstallActionWorkflowsQueueName
 
 	// InstallDriftWorkflowsQueueName is the queue for drift scan workflow execution.
 	// Separate from install-workflows so drift scans don't compete with deploys.
-	InstallDriftWorkflowsQueueName = "install-drift-workflows"
+	InstallDriftWorkflowsQueueName = queuenames.InstallDriftWorkflowsQueueName
 
 	// InstallActionCronSignalsQueueName is the queue for action cron emitter signals.
 	// Separate from install-signals so action crons don't compete with other signals.
-	InstallActionCronSignalsQueueName = "install-action-cron-signals"
+	InstallActionCronSignalsQueueName = queuenames.InstallActionCronSignalsQueueName
 
 	// InstallComponentHealthQueueName is the queue for the periodic component
 	// health evaluator. Its own queue (MaxInFlight 1) so evaluations never
 	// overlap and never compete with deploys or other signals.
-	InstallComponentHealthQueueName = "install-component-health"
+	InstallComponentHealthQueueName = queuenames.InstallComponentHealthQueueName
 
 	// InstallDriftCronSignalsQueueName is the queue for drift cron emitter signals.
 	// Separate from install-signals so drift crons don't compete with other signals
 	// and can be routed to the isolated install-crons task queue.
-	InstallDriftCronSignalsQueueName = "install-drift-cron-signals"
+	InstallDriftCronSignalsQueueName = queuenames.InstallDriftCronSignalsQueueName
 )
 
 type Params struct {
@@ -78,7 +85,9 @@ type Params struct {
 	QueueClient      *queueclient.Client
 	EmitterClient    *emitterclient.Client
 	FeaturesClient   *features.Features
+	BlobService      blobstore.Service
 	MW               metrics.Writer
+	MeterProvider    metric.MeterProvider `optional:"true"`
 }
 
 type Helpers struct {
@@ -93,7 +102,9 @@ type Helpers struct {
 	queueClient      *queueclient.Client
 	emitterClient    *emitterclient.Client
 	featuresClient   *features.Features
+	blobSvc          blobstore.Service
 	mw               metrics.Writer
+	stateMetrics     *state.Metrics
 }
 
 func New(params Params) *Helpers {
@@ -109,6 +120,8 @@ func New(params Params) *Helpers {
 		queueClient:      params.QueueClient,
 		emitterClient:    params.EmitterClient,
 		featuresClient:   params.FeaturesClient,
+		blobSvc:          params.BlobService,
 		mw:               params.MW,
+		stateMetrics:     state.NewMetrics(params.MeterProvider),
 	}
 }

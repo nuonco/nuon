@@ -49,7 +49,6 @@ const (
 // TODO(fd): use the consts
 var (
 	CommonRunnerGroupSettingsGroups         = [...]string{"operations", "sync"}
-	DefaultOrgRunnerGroupSettingsGroups     = [...]string{"build", "sandbox", "runner"}
 	DefaultInstallRunnerGroupSettingsGroups = [...]string{"deploys", "action", "sandbox"}
 )
 
@@ -90,6 +89,9 @@ type RunnerGroupSettings struct {
 	LoggingLevel  string         `json:"logging_level,omitzero" temporaljson:"logging_level,omitzero,omitempty"`
 	Groups        pq.StringArray `json:"groups,omitzero" gorm:"type:text[];default:'{}'" swaggertype:"array,string" temporaljson:"groups,omitzero,omitempty"` // the job loop groups the runner should poll for
 
+	VendorTelemetryEnabled            bool              `json:"vendor_telemetry_enabled" gorm:"-" temporaljson:"vendor_telemetry_enabled,omitempty"`
+	VendorTelemetryResourceAttributes map[string]string `json:"vendor_telemetry_resource_attributes,omitzero" gorm:"-" temporaljson:"-"`
+
 	// Metadata is used as both log and metric tags/attributes in the runner when emitting data
 	Metadata pgtype.Hstore `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
 
@@ -125,6 +127,8 @@ type RunnerGroupSettings struct {
 	// new long-poll endpoint at boot. Not persisted; populated by the
 	// runner-settings handler.
 	LongPollJobs bool `json:"long_poll_jobs,omitzero" gorm:"-" temporaljson:"-"`
+
+	TelemetryRelayEndpoint string `json:"telemetry_relay_endpoint,omitzero" gorm:"-" temporaljson:"-"`
 }
 
 func (i *RunnerGroupSettings) Indexes(db *gorm.DB) []migrations.Index {
@@ -156,6 +160,10 @@ func (i *RunnerGroupSettings) Views(db *gorm.DB) []migrations.View {
 func (r *RunnerGroupSettings) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == "" {
 		r.ID = domains.NewRunnerGroupSettingsID()
+		// Assigning into a nil map panics, and a settings row built literally has one.
+		if r.Metadata == nil {
+			r.Metadata = map[string]*string{}
+		}
 		r.Metadata["runner_group.id"] = generics.ToPtr(r.ID)
 	}
 	if r.CreatedByID == "" {

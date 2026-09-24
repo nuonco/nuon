@@ -24,19 +24,11 @@ import (
 
 func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, orgID, appID, appConfigID string) error {
 	if err := configvalidate.ValidateTriggers(cfg); err != nil {
-		return err
+		return sync.SyncErr{Resource: "triggers", Description: err.Error(), Err: err}
 	}
 	if cfg.Triggers == nil || len(cfg.Triggers.Rules) == 0 {
 		return nil
 	}
-	var org app.Org
-	if err := db.WithContext(ctx).Select("id", "features").Where(app.Org{ID: orgID}).First(&org).Error; err != nil {
-		return sync.SyncInternalErr{Description: "unable to check triggers feature", Err: err}
-	}
-	if !org.Features[string(app.OrgFeatureTriggers)] {
-		return sync.SyncErr{Resource: "triggers", Description: "the triggers feature is not enabled for this organization"}
-	}
-
 	validFrom := time.Now().UTC()
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		triggerNames := referencedTriggerNames(cfg.Triggers.Rules)
@@ -67,7 +59,7 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, orgID, appID,
 			}
 			rule, err := buildRule(ruleCfg, orgID, appID, appConfigID, trigger.ID, branchID, runbookID, validFrom)
 			if err != nil {
-				return sync.SyncInternalErr{Description: fmt.Sprintf("unable to build trigger rule %q", ruleCfg.Name), Err: err}
+				return err
 			}
 			res := tx.Clauses(clause.OnConflict{
 				Columns:   []clause.Column{{Name: "app_config_id"}, {Name: "name"}, {Name: "deleted_at"}},
@@ -124,7 +116,7 @@ func resolveRunbook(ctx context.Context, db *gorm.DB, appID, name string) (*app.
 	var runbook app.Runbook
 	err := db.WithContext(ctx).Where(app.Runbook{AppID: appID, Name: name}).First(&runbook).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, sync.SyncErr{Resource: "triggers", Description: fmt.Sprintf("trigger references unknown runbook %q", name)}
+		return nil, sync.SyncErr{Resource: "triggers", Description: fmt.Sprintf("trigger references unknown runbook %q", name), Err: err}
 	}
 	if err != nil {
 		return nil, sync.SyncInternalErr{Description: fmt.Sprintf("unable to resolve runbook %q", name), Err: err}
@@ -136,7 +128,7 @@ func resolveTrigger(ctx context.Context, db *gorm.DB, orgID, name string) (*app.
 	var trigger app.Trigger
 	err := db.WithContext(ctx).Where(app.Trigger{OrgID: orgID, Name: name, Status: app.TriggerStatusActive}).First(&trigger).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, sync.SyncErr{Resource: "triggers", Description: fmt.Sprintf("trigger references unknown or inactive trigger %q", name)}
+		return nil, sync.SyncErr{Resource: "triggers", Description: fmt.Sprintf("trigger references unknown or inactive trigger %q", name), Err: err}
 	}
 	if err != nil {
 		return nil, sync.SyncInternalErr{Description: fmt.Sprintf("unable to resolve trigger %q", name), Err: err}
@@ -148,7 +140,7 @@ func resolveAppBranch(ctx context.Context, db *gorm.DB, appID, name string) (*ap
 	var branch app.AppBranch
 	err := db.WithContext(ctx).Where(app.AppBranch{AppID: appID, Name: name}).First(&branch).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, sync.SyncErr{Resource: "triggers", Description: fmt.Sprintf("trigger references unknown app branch %q", name)}
+		return nil, sync.SyncErr{Resource: "triggers", Description: fmt.Sprintf("trigger references unknown app branch %q", name), Err: err}
 	}
 	if err != nil {
 		return nil, sync.SyncInternalErr{Description: fmt.Sprintf("unable to resolve app branch %q", name), Err: err}
@@ -159,12 +151,12 @@ func resolveAppBranch(ctx context.Context, db *gorm.DB, appID, name string) (*ap
 func buildRule(ruleCfg *config.TriggerRuleConfig, orgID, appID, appConfigID, triggerID string, branchID, runbookID *string, validFrom time.Time) (*app.TriggerRule, error) {
 	hash, err := configHash(ruleCfg)
 	if err != nil {
-		return nil, err
+		return nil, sync.SyncInternalErr{Description: fmt.Sprintf("unable to hash trigger rule %q", ruleCfg.Name), Err: err}
 	}
 	filters := make([]app.TriggerFilter, len(ruleCfg.Filters))
 	for i, filter := range ruleCfg.Filters {
 		if _, err := eventfilter.Compile(eventfilter.Filter{From: eventfilter.Source(filter.From), Path: filter.Path, Op: eventfilter.Operator(filter.Op), Value: filter.Value}); err != nil {
-			return nil, fmt.Errorf("compile filter %d: %w", i, err)
+			return nil, sync.SyncErr{Resource: "triggers", Description: fmt.Sprintf("trigger rule %q filter %d: %s", ruleCfg.Name, i, err), Err: err}
 		}
 		filters[i] = app.TriggerFilter{From: filter.From, Op: app.TriggerFilterType(filter.Op), Path: filter.Path, Value: filter.Value}
 	}

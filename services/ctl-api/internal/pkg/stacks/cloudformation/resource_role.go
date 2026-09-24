@@ -53,7 +53,7 @@ func (a *Templates) getRolesParamLabels(inp *stacks.TemplateInput) map[string]an
 	return paramLabels
 }
 
-func (a *Templates) getRoleResources(role app.AppAWSIAMRoleConfig, t tagBuilder) map[string]cloudformation.Resource {
+func (a *Templates) getRoleResources(role app.AppAWSIAMRoleConfig, named map[string]app.AppNamedIAMPolicyConfig, t tagBuilder) map[string]cloudformation.Resource {
 	rsrcs := make(map[string]cloudformation.Resource, 0)
 	managedPolicyARNs := make([]string, 0)
 	for _, policy := range role.Policies {
@@ -62,6 +62,13 @@ func (a *Templates) getRoleResources(role app.AppAWSIAMRoleConfig, t tagBuilder)
 		}
 
 		managedPolicyARNs = append(managedPolicyARNs, fmt.Sprintf("arn:aws:iam::aws:policy/%s", policy.ManagedPolicyName))
+	}
+	for _, ref := range role.NamedPolicyNames {
+		policy, ok := named[ref]
+		if !ok {
+			continue
+		}
+		managedPolicyARNs = append(managedPolicyARNs, cloudformation.Ref(namedPolicyLogicalID(policy)))
 	}
 
 	trustPolicies := make([]map[string]any, 0)
@@ -126,23 +133,50 @@ func (a *Templates) getRoleResources(role app.AppAWSIAMRoleConfig, t tagBuilder)
 
 func (a *Templates) getRolesResources(inp *stacks.TemplateInput, t tagBuilder) map[string]cloudformation.Resource {
 	rsrcs := make(map[string]cloudformation.Resource, 0)
+	named := namedPolicyByName(inp)
+
+	for _, policy := range inp.AppCfg.PermissionsConfig.NamedPolicies {
+		rsrcs[namedPolicyLogicalID(policy)] = a.getNamedPolicy(t.installID, policy)
+	}
 
 	for _, role := range inp.AppCfg.PermissionsConfig.Roles {
-		resources := a.getRoleResources(role, t)
+		resources := a.getRoleResources(role, named, t)
 		maps.Copy(rsrcs, resources)
 	}
 
 	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
-		resources := a.getRoleResources(role, t)
+		resources := a.getRoleResources(role, named, t)
 		maps.Copy(rsrcs, resources)
 	}
 
 	for _, role := range inp.AppCfg.PermissionsConfig.CustomRoles {
-		resources := a.getRoleResources(role, t)
+		resources := a.getRoleResources(role, named, t)
 		maps.Copy(rsrcs, resources)
 	}
 
 	return rsrcs
+}
+
+func namedPolicyByName(inp *stacks.TemplateInput) map[string]app.AppNamedIAMPolicyConfig {
+	out := make(map[string]app.AppNamedIAMPolicyConfig, len(inp.AppCfg.PermissionsConfig.NamedPolicies))
+	for _, policy := range inp.AppCfg.PermissionsConfig.NamedPolicies {
+		out[policy.Name] = policy
+	}
+	return out
+}
+
+func namedPolicyLogicalID(policy app.AppNamedIAMPolicyConfig) string {
+	if policy.CloudFormationStackName != "" {
+		return policy.CloudFormationStackName
+	}
+	return app.NamedIAMPolicyCloudFormationStackName(policy.Name)
+}
+
+func (a *Templates) getNamedPolicy(installID string, policy app.AppNamedIAMPolicyConfig) cloudformation.Resource {
+	return &iam.ManagedPolicy{
+		ManagedPolicyName: generics.ToPtr(policy.AWSPolicyNameForInstall(installID)),
+		PolicyDocument:    json.RawMessage([]byte(policy.Contents)),
+	}
 }
 
 func (a *Templates) getPermissionsBoundaryPolicy(role app.AppAWSIAMRoleConfig) cloudformation.Resource {
@@ -158,7 +192,8 @@ func (a *Templates) getRolePolicy(role app.AppAWSIAMRoleConfig, policy app.AppAW
 		AWSCloudFormationCondition: a.roleConditionName(role),
 		PolicyName: cloudformation.SubVars(
 			policy.Name,
-			map[string]any{"RoleName": cloudformation.Ref(role.CloudFormationStackName)}),
+			map[string]any{"RoleName": cloudformation.Ref(role.CloudFormationStackName)},
+		),
 		PolicyDocument: json.RawMessage([]byte(policy.Contents)),
 		Roles:          []string{cloudformation.Ref(role.CloudFormationStackName)},
 	}

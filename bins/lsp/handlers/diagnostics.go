@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/invopop/jsonschema"
-	"github.com/nuonco/nuon/bins/lsp/models"
-	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 	"github.com/tliron/glsp"
 	protocol "github.com/tliron/glsp/protocol_3_16"
+
+	"github.com/nuonco/nuon/bins/lsp/models"
+	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
 )
 
 // PublishDiagnostics handles the full diagnostic cycle: detection, parsing, diagnosis, and publishing
@@ -17,7 +18,7 @@ func PublishDiagnostics(ctx *glsp.Context, uri protocol.DocumentUri, text string
 	var diagnostics []protocol.Diagnostic
 
 	// Detect schema type
-	schemaType := models.DetectSchemaType(text)
+	schemaType := models.DetectSchemaTypeForDocument(text, string(uri))
 	if schemaType == "" {
 		// Clear diagnostics if no schema detected
 		ctx.Notify(protocol.ServerTextDocumentPublishDiagnostics, protocol.PublishDiagnosticsParams{
@@ -176,6 +177,13 @@ func DiagnoseDocument(uri protocol.DocumentUri, doc *tomlparser.TomlDocument, ro
 						diagnostics = append(diagnostics, protocol.Diagnostic{
 							Severity: ptrSeverity(protocol.DiagnosticSeverityError),
 							Message:  fmt.Sprintf("Type mismatch for '%s': expected %s, got %s", key.Name, propSchema.Type, tomlTypeOf(val)),
+							Range:    toProtocolRange(key.Range),
+							Source:   ptr("Nuon LSP"),
+						})
+					} else if !enumAllows(propSchema, val) {
+						diagnostics = append(diagnostics, protocol.Diagnostic{
+							Severity: ptrSeverity(protocol.DiagnosticSeverityError),
+							Message:  fmt.Sprintf("Invalid value for '%s': %v. Valid values: %s", key.Name, val, formatEnum(propSchema.Enum)),
 							Range:    toProtocolRange(key.Range),
 							Source:   ptr("Nuon LSP"),
 						})
@@ -555,6 +563,47 @@ func schemaTypeMatches(schemaNode *jsonschema.Schema, gotType string) bool {
 		return true
 	}
 	return false
+}
+
+func enumAllows(schemaNode *jsonschema.Schema, value any) bool {
+	if schemaNode == nil || len(schemaNode.Enum) == 0 {
+		return true
+	}
+
+	switch value.(type) {
+	case string, int, int64, int32, float64, float32, bool:
+	default:
+		return true
+	}
+
+	got := normalizeEnumValue(value)
+	for _, allowed := range schemaNode.Enum {
+		if normalizeEnumValue(allowed) == got {
+			return true
+		}
+	}
+	return false
+}
+
+// normalizeEnumValue strips the quotes that extractRawValues leaves on string
+// values when a document fails to parse strictly.
+func normalizeEnumValue(value any) string {
+	s := fmt.Sprintf("%v", value)
+	if len(s) >= 2 {
+		if (strings.HasPrefix(s, `"`) && strings.HasSuffix(s, `"`)) ||
+			(strings.HasPrefix(s, "'") && strings.HasSuffix(s, "'")) {
+			s = s[1 : len(s)-1]
+		}
+	}
+	return s
+}
+
+func formatEnum(enum []any) string {
+	values := make([]string, 0, len(enum))
+	for _, val := range enum {
+		values = append(values, fmt.Sprintf("%v", val))
+	}
+	return strings.Join(values, ", ")
 }
 
 func toProtocolRange(r tomlparser.Range) protocol.Range {

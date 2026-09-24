@@ -90,10 +90,6 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 	}
 
 	app.ApplyInstallStackOverrides(&install, &appCfg.StackConfig)
-	customStacks, err := buildInstallerSDKCustomStacks(appCfg.StackConfig.CustomNestedStacks, stateData)
-	if err != nil {
-		return nil, fmt.Errorf("build custom nested stacks: %w", err)
-	}
 
 	// Real values, not names: the read is authenticated. Current value per
 	// customer-source input, falling back to the app input's default.
@@ -105,10 +101,12 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 	var installInputs map[string]string
 	var requiredInputs []string
 	var sensitiveInputs []string
+	customerInputNames := make(map[string]struct{})
 	for _, in := range appCfg.InputConfig.AppInputs {
 		if in.Source != app.AppInputSourceCustomer {
 			continue
 		}
+		customerInputNames[in.Name] = struct{}{}
 		if installInputs == nil {
 			installInputs = map[string]string{}
 		}
@@ -127,6 +125,11 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		if in.Sensitive {
 			sensitiveInputs = append(sensitiveInputs, in.Name)
 		}
+	}
+
+	customStacks, err := buildInstallerSDKCustomStacks(appCfg.StackConfig.CustomNestedStacks, stateData, customerInputNames)
+	if err != nil {
+		return nil, fmt.Errorf("build custom nested stacks: %w", err)
 	}
 
 	// Auto-generated secrets are the stack's to mint, the rest the customer's to
@@ -162,28 +165,34 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		CustomStacks:        customStacks,
 	}
 
-	if appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS && len(customStacks) > 0 {
-		var latestVersion app.InstallStackVersion
-		// No "latest version" FK exists — InstallStackVersion.InstallStackID
-		// only points the other way — so created_at ordering resolves "latest".
-		res := h.db.WithContext(ctx).
-			Where(app.InstallStackVersion{InstallID: install.ID}).
-			Order("created_at DESC").
-			Limit(1).
-			First(&latestVersion)
-		switch {
-		case res.Error == nil:
-			cfg.CustomStacksTemplateURL = latestVersion.CustomStacksTemplateURL
-			// Never re-derive this: it runs on every terraform plan and must not
-			// fetch or parse templates.
-			for i := range cfg.CustomStacks {
-				cfg.CustomStacks[i].Outputs = latestVersion.CustomStacksOutputMap[cfg.CustomStacks[i].Name]
-				cfg.CustomStacks[i].InputParameters = latestVersion.CustomStacksInputParametersMap[cfg.CustomStacks[i].Name]
-			}
-		case errors.Is(res.Error, gorm.ErrRecordNotFound):
-			// no stack version yet — leave empty
-		default:
-			return nil, fmt.Errorf("load latest install stack version: %w", res.Error)
+	var latestVersion app.InstallStackVersion
+	// No "latest version" FK exists — InstallStackVersion.InstallStackID
+	// only points the other way — so created_at ordering resolves "latest".
+	res := h.db.WithContext(ctx).
+		Where(app.InstallStackVersion{InstallID: install.ID}).
+		Where("status->>'status' IN ?", app.InstallStackVersionTemplateReadyStatuses).
+		Order("created_at DESC").
+		Limit(1).
+		First(&latestVersion)
+	switch {
+	case res.Error == nil:
+		cfg.StackVersionID = latestVersion.ID
+	case errors.Is(res.Error, gorm.ErrRecordNotFound):
+		// no stack version yet — leave empty
+	default:
+		return nil, fmt.Errorf("load latest install stack version: %w", res.Error)
+	}
+
+	if (appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS || appCfg.RunnerConfig.Type == app.AppRunnerTypeAzure) && len(customStacks) > 0 && latestVersion.ID != "" {
+		cfg.CustomStacksTemplateURL = latestVersion.CustomStacksTemplateURL
+		// Never re-derive this: it runs on every terraform plan and must not
+		// fetch or parse templates.
+		for i := range cfg.CustomStacks {
+			cfg.CustomStacks[i].Outputs = latestVersion.CustomStacksOutputMap[cfg.CustomStacks[i].Name]
+			cfg.CustomStacks[i].InputParameters = customerInputParameters(
+				latestVersion.CustomStacksInputParametersMap[cfg.CustomStacks[i].Name],
+				customerInputNames,
+			)
 		}
 	}
 
@@ -238,6 +247,9 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			Region:            install.AWSAccount.Region,
 			ClusterName:       clusterName,
 			RunnerMachineType: instanceType,
+
+			VPCNestedTemplateURL:    appCfg.StackConfig.VPCNestedTemplateURL,
+			RunnerNestedTemplateURL: appCfg.StackConfig.RunnerNestedTemplateURL,
 
 			NuonSupportIAMRoleARNs: supportARNs,
 
@@ -294,6 +306,10 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			DeprovisionPermissions:    deprov.Permissions,
 			DeprovisionPredefinedRole: deprov.PredefinedRole,
 
+			ProvisionPredefinedRoles:   prov.PredefinedRoles,
+			MaintenancePredefinedRoles: maint.PredefinedRoles,
+			DeprovisionPredefinedRoles: deprov.PredefinedRoles,
+
 			ProvisionPolicies:   prov.Policies,
 			MaintenancePolicies: maint.Policies,
 			DeprovisionPolicies: deprov.Policies,
@@ -319,6 +335,9 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 			Location:             install.AzureAccount.Location,
 			SubscriptionID:       install.AzureAccount.SubscriptionID,
 			SubscriptionTenantID: install.AzureAccount.SubscriptionTenantID,
+
+			VPCNestedTemplateURL:    appCfg.StackConfig.VPCNestedTemplateURL,
+			RunnerNestedTemplateURL: appCfg.StackConfig.RunnerNestedTemplateURL,
 
 			RunnerVMSize:      instanceType,
 			ContainerImageURL: install.RunnerGroup.Settings.ContainerImageURL,
@@ -359,9 +378,26 @@ func rolesToSDKConfigMap(rs []awsstacks.AWSRoleRaw, enabled bool) map[string]app
 
 // buildInstallerSDKCustomStacks renders custom nested stack parameter values
 // and sorts by Index.
-func buildInstallerSDKCustomStacks(stacks []config.CustomNestedStack, stateData map[string]any) ([]app.InstallerSDKCustomStack, error) {
+func buildInstallerSDKCustomStacks(stacks []config.CustomNestedStack, stateData map[string]any, customerInputNames map[string]struct{}) ([]app.InstallerSDKCustomStack, error) {
 	if len(stacks) == 0 {
 		return nil, nil
+	}
+
+	inputParameters := make(map[string]map[string]string, len(stacks))
+	for _, stack := range stacks {
+		for parameterName, value := range stack.Parameters {
+			inputName, err := config.ParseInstallInputReference(value)
+			if err != nil {
+				continue
+			}
+			if _, ok := customerInputNames[inputName]; !ok {
+				continue
+			}
+			if inputParameters[stack.Name] == nil {
+				inputParameters[stack.Name] = make(map[string]string)
+			}
+			inputParameters[stack.Name][parameterName] = inputName
+		}
 	}
 
 	if err := config.RenderCustomNestedStackParameters(stacks, stateData); err != nil {
@@ -377,13 +413,28 @@ func buildInstallerSDKCustomStacks(stacks []config.CustomNestedStack, stateData 
 	out := make([]app.InstallerSDKCustomStack, len(rendered))
 	for i, s := range rendered {
 		out[i] = app.InstallerSDKCustomStack{
-			Name:       s.Name,
-			Index:      s.Index,
-			Parameters: s.Parameters,
-			Module:     s.GCPModuleName(),
+			Name:            s.Name,
+			Index:           s.Index,
+			Parameters:      s.Parameters,
+			Module:          s.GCPModuleName(),
+			InputParameters: inputParameters[s.Name],
 		}
 	}
 	return out, nil
+}
+
+func customerInputParameters(inputParameters map[string]string, customerInputNames map[string]struct{}) map[string]string {
+	var out map[string]string
+	for parameterName, inputName := range inputParameters {
+		if _, ok := customerInputNames[inputName]; !ok {
+			continue
+		}
+		if out == nil {
+			out = make(map[string]string)
+		}
+		out[parameterName] = inputName
+	}
+	return out
 }
 
 func gcpRolesToSDKMap(rs []gcpstacks.GCPRoleRaw, enabled bool) map[string]app.InstallerSDKGCPRole {
@@ -393,10 +444,11 @@ func gcpRolesToSDKMap(rs []gcpstacks.GCPRoleRaw, enabled bool) map[string]app.In
 	out := make(map[string]app.InstallerSDKGCPRole, len(rs))
 	for _, r := range rs {
 		out[r.Name] = app.InstallerSDKGCPRole{
-			Permissions:    r.Permissions,
-			PredefinedRole: r.PredefinedRole,
-			Enabled:        enabled,
-			Policies:       r.Policies,
+			Permissions:     r.Permissions,
+			PredefinedRole:  r.PredefinedRole,
+			PredefinedRoles: r.PredefinedRoles,
+			Enabled:         enabled,
+			Policies:        r.Policies,
 		}
 	}
 	return out

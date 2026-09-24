@@ -45,6 +45,57 @@ export const ThisRun = () => (
         },
       }}
       repoSlug="nuonco/kitchen-sink"
+      githubHeaderHref="https://github.com/nuonco/kitchen-sink/pull/32"
     />
+  </div>
+)
+
+export const FailedRun = () => (
+  <div className="max-w-md">
+    <BranchRunComparisonCard
+      label="Current run"
+      run={{ ...sampleRun, status: 'error' }}
+      repoSlug="nuonco/kitchen-sink"
+    />
+  </div>
+)
+
+export const ManualRunNoPullRequest = () => (
+  <div className="max-w-md">
+    <BranchRunComparisonCard
+      label="Current run"
+      run={{
+        ...sampleRun,
+        pr_number: undefined,
+        base_branch: undefined,
+        event_type: 'manual',
+      }}
+      repoSlug="nuonco/kitchen-sink"
+    />
+  </div>
+)
+
+export const LongCommitMessage = () => (
+  <div className="max-w-md">
+    <BranchRunComparisonCard
+      label="Previous run"
+      run={{
+        ...sampleRun,
+        vcs_connection_commit: {
+          ...sampleRun.vcs_connection_commit!,
+          message:
+            'ci: update gcp images for Nuon 0.19.1171 and re-pin the sandbox node pool defaults (#1146)',
+          author_name: 'automation-bot-with-a-long-name',
+        },
+      }}
+      runHref="/org/apps/app/branches/branch/runs/inwabc123workflow00000001"
+      repoSlug="nuonco/kitchen-sink"
+    />
+  </div>
+)
+
+export const NoRunData = () => (
+  <div className="max-w-md">
+    <BranchRunComparisonCard label="Previous run" run={null} />
   </div>
 )

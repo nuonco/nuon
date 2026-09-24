@@ -8,14 +8,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
 // setupFlowTest creates the queues, workflow, and steps needed for a flow test.
 // Returns the workflow and the step queue ID for enqueuing the execute-flow signal.
 func (e *FlowTestSuite) setupFlowTest(ctx context.Context, ownerID, ownerType string, steps []app.WorkflowStep) (*app.Workflow, string) {
-	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
-	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
+	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallWorkflowStepsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallWorkflowStepGroupsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallSignalsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallGenerateStepsQueueName)
 
 	flw := app.Workflow{
 		OwnerID:   ownerID,
@@ -36,11 +39,13 @@ func (e *FlowTestSuite) enqueueFlow(ctx context.Context, queueID string, flw *ap
 	resp, err := e.service.QueueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID: queueID,
 		Signal: &executeflow.Signal{
-			WorkflowID:          flw.ID,
-			StepQueueName:       "install-workflow-steps",
-			StepTargetQueueName: "install-signals",
-			OwnerID:             ownerID,
-			OwnerType:           ownerType,
+			WorkflowID:             flw.ID,
+			StepGroupQueueName:     queuenames.InstallWorkflowStepGroupsQueueName,
+			StepQueueName:          queuenames.InstallWorkflowStepsQueueName,
+			StepTargetQueueName:    queuenames.InstallSignalsQueueName,
+			GenerateStepsQueueName: queuenames.InstallGenerateStepsQueueName,
+			OwnerID:                ownerID,
+			OwnerType:              ownerType,
 		},
 		// Set owner so the flow client can find this queue signal via
 		// findQueueSignalByOwner(workflowID, "install_workflows", ...).
@@ -68,9 +73,13 @@ func (e *FlowTestSuite) TestSequentialGroupSuccess() {
 		{Name: "g2-step2", Idx: 400, GroupIdx: 2, ExecutionType: app.WorkflowStepExecutionTypeSystem,
 			QueueSignal: &signaldb.SignalData{Signal: &SuccessSignal{}}},
 	})
+	e.phase("fixtures")
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
+	e.phase("enqueue")
+
 	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusSuccess)
+	e.phase("db-success")
 
 	// Verify all steps completed
 	steps := e.getStepsByWorkflow(ctx, flw.ID)
@@ -78,4 +87,8 @@ func (e *FlowTestSuite) TestSequentialGroupSuccess() {
 		require.Equal(e.T(), app.StatusSuccess, step.Status.Status,
 			"step %s should be success, got %s", step.Name, step.Status.Status)
 	}
+	e.phase("assertions")
+
+	e.assertTemporalDrained(ctx, flw.ID)
+	e.phase("drain")
 }

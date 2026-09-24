@@ -108,7 +108,7 @@ func (a AppInputConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Array of paths to external files containing additional input definitions. Each file is loaded and merged into the inputs configuration. Supports YAML, JSON, and TOML formats")
 }
 
-func (a *AppInputConfig) parse() error {
+func (a *AppInputConfig) parse(rootDir string) error {
 	sources := make([]string, 0)
 	if a.Source != "" {
 		sources = append(sources, a.Source)
@@ -116,7 +116,7 @@ func (a *AppInputConfig) parse() error {
 	sources = append(sources, a.Sources...)
 
 	for _, src := range sources {
-		obj, err := source.LoadSource(src)
+		obj, err := source.LoadSourceFrom(src, rootDir)
 		if err != nil {
 			return ErrConfig{
 				Description: fmt.Sprintf("unable to load source %s", src),

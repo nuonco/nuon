@@ -66,5 +66,18 @@ func (a *Activities) CreateComponentBuildRecord(ctx context.Context, req CreateC
 		build.AppBranchRunID = &req.AppBranchRunID
 	}
 
+	// Public-repo builds are created with their configured branch as the ref, so
+	// the pin has to run even when GitRef is already set. pinBuildToBranchRunCommit
+	// leaves explicit refs alone.
+	if err := a.pinBuildToBranchRunCommit(ctx, build.ID, req.AppConfigID); err != nil {
+		return nil, err
+	}
+
+	if res := a.db.WithContext(ctx).
+		Where(app.ComponentBuild{ID: build.ID}).
+		First(build); res.Error != nil {
+		return nil, fmt.Errorf("reload component build: %w", res.Error)
+	}
+
 	return build, nil
 }

@@ -12,7 +12,9 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
@@ -23,6 +25,7 @@ type Activities struct {
 	db             *gorm.DB
 	chDB           *gorm.DB
 	appsHelpers    *appshelpers.Helpers
+	orgsHelpers    *orgshelpers.Helpers
 	mw             metrics.Writer
 	logger         *temporalzap.Logger
 	l              *zap.Logger
@@ -31,6 +34,7 @@ type Activities struct {
 	autoLinkHelper *autolink.Helper
 	blobSvc        blobstore.Service
 	queueClient    *queueclient.Client
+	flowsClient    *flowclient.Client
 }
 
 type Params struct {
@@ -41,11 +45,13 @@ type Params struct {
 	CHDB           *gorm.DB `name:"ch"`
 	QueueClient    *queueclient.Client
 	AppsHelpers    *appshelpers.Helpers
+	OrgsHelpers    *orgshelpers.Helpers
 	MW             metrics.Writer
 	TemporalClient temporalclient.Client
 	SlackClient    *slackclient.Client
 	AutoLinkHelper *autolink.Helper
 	BlobSvc        blobstore.Service
+	FlowsClient    *flowclient.Client
 }
 
 func New(params Params) (*Activities, error) {
@@ -59,6 +65,7 @@ func New(params Params) (*Activities, error) {
 		db:             params.DB,
 		chDB:           params.CHDB,
 		appsHelpers:    params.AppsHelpers,
+		orgsHelpers:    params.OrgsHelpers,
 		mw:             params.MW,
 		logger:         tlogger,
 		l:              logger,
@@ -67,5 +74,6 @@ func New(params Params) (*Activities, error) {
 		autoLinkHelper: params.AutoLinkHelper,
 		blobSvc:        params.BlobSvc,
 		queueClient:    params.QueueClient,
+		flowsClient:    params.FlowsClient,
 	}, nil
 }

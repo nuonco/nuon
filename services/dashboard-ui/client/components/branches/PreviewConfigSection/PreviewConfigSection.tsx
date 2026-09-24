@@ -5,8 +5,8 @@ import { LabelBadge } from '@/components/common/LabelBadge'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import type { TAppBranchConfig, TInstall } from '@/types'
-import { humanize } from '@/utils/string-utils'
 import { previewDefaultsFromConfig } from '@/components/branches/shared/PreviewDefaultsEditor'
+import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
 
 export interface IPreviewConfigSection {
   currentConfig?: TAppBranchConfig
@@ -32,7 +32,7 @@ export const PreviewConfigSection = ({
     installs.find((install) => install.id === defaults.installId)?.name ??
     currentConfig?.preview_config?.install_name
   const target =
-    defaults.mode === 'build-only'
+    defaults.mode === 'none' || defaults.mode === 'build-only'
       ? 'Not used'
       : labels.length > 0
         ? null
@@ -42,7 +42,7 @@ export const PreviewConfigSection = ({
     <Card>
       <div className="flex items-center justify-between gap-3">
         <Text variant="base" weight="strong">
-          Defaults
+          Previews
         </Text>
         <div className="flex items-center gap-2">
           {isLoading ? (
@@ -58,7 +58,7 @@ export const PreviewConfigSection = ({
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <LabeledValue label="Mode" loading={isLoading} loadingWidth={10}>
-          <Badge size="sm">{humanize(defaults.mode)}</Badge>
+          <Badge size="sm">{previewModeDisplayLabel(defaults.mode)}</Badge>
         </LabeledValue>
         <LabeledValue
           label="Default install"
@@ -82,7 +82,7 @@ export const PreviewConfigSection = ({
             </Text>
           )}
         </LabeledValue>
-        {hasGithubVCS ? (
+        {hasGithubVCS && defaults.mode !== 'none' ? (
           <>
             <LabeledValue
               label="Commit statuses"
@@ -105,13 +105,25 @@ export const PreviewConfigSection = ({
                 {defaults.comment ? 'Enabled' : 'Disabled'}
               </Badge>
             </LabeledValue>
+            <LabeledValue
+              label="Ignore draft PRs"
+              loading={isLoading}
+              loadingWidth={8}
+            >
+              <Badge
+                size="sm"
+                theme={defaults.ignoreDrafts ? 'success' : 'neutral'}
+              >
+                {defaults.ignoreDrafts ? 'Enabled' : 'Disabled'}
+              </Badge>
+            </LabeledValue>
           </>
         ) : null}
       </div>
 
-      {!isLoading && !currentConfig?.preview_config ? (
+      {!isLoading && defaults.mode === 'none' ? (
         <Text variant="subtext" theme="neutral">
-          Platform defaults are used until custom settings are saved.
+          Preview runs are disabled for this branch.
         </Text>
       ) : null}
     </Card>

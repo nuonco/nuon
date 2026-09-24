@@ -6,6 +6,9 @@ import (
 	"os"
 
 	tea "charm.land/bubbletea/v2"
+
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
+
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 )
@@ -50,7 +53,7 @@ func ActionWorkflowRunApp(
 	app := initialModel(ctx, cfg, api, install_id, action_workflow_id, run_id)
 	m := model{m: app}
 	// initialize the program
-	p := tea.NewProgram(m)
+	p := teaprogram.NewProgram(m)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
 		os.Exit(1)

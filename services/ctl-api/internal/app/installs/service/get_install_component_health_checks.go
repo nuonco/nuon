@@ -18,7 +18,7 @@ import (
 
 // @ID						GetInstallComponentHealthChecks
 // @Summary				list custom component health checks
-// @Description			Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name. Requires the component-health feature.
+// @Description			Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name.
 // @Param					install_id		path	string	true	"install ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					installs
@@ -39,10 +39,6 @@ func (s *service) GetInstallComponentHealthChecks(ctx *gin.Context) {
 
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := s.requireComponentHealthFeature(ctx, org); err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -161,7 +157,7 @@ func (s *service) currentComponentConfig(ctx context.Context, installID, compone
 	if err := s.db.WithContext(ctx).
 		Scopes(
 			scopes.WithDisableViews,
-			scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
+			scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName),
 		).
 		Where(app.ComponentConfigConnection{ComponentID: componentID}).
 		First(&ccc).Error; err != nil {

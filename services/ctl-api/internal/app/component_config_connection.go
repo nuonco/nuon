@@ -31,6 +31,14 @@ const (
 	VCSConnectionTypeNone          VCSConnectionType = "none"
 )
 
+const (
+	latestConfigsViewV2 = "latest_configs_view_v2"
+
+	// LatestComponentConfigConnectionsViewName is the latest-config-per-component view, for callers that
+	// override the query table directly rather than going through the views plugin.
+	LatestComponentConfigConnectionsViewName = "component_config_connections_" + latestConfigsViewV2
+)
+
 type ComponentConfigConnection struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -178,7 +186,7 @@ func (c *ComponentConfigConnection) UseView() bool {
 }
 
 func (c *ComponentConfigConnection) ViewVersion() string {
-	return "v1"
+	return "v3"
 }
 
 func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
@@ -189,8 +197,23 @@ func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
 			AlwaysReapply: true,
 		},
 		{
+			Name:          views.DefaultViewName(db, &ComponentConfigConnection{}, 2),
+			SQL:           viewsql.ComponentConfigConnectionsV2,
+			AlwaysReapply: true,
+		},
+		{
+			Name:          views.DefaultViewName(db, &ComponentConfigConnection{}, 3),
+			SQL:           viewsql.ComponentConfigConnectionsV3,
+			AlwaysReapply: true,
+		},
+		{
 			Name:          views.CustomViewName(db, &ComponentConfigConnection{}, "latest_configs_view"),
 			SQL:           viewsql.LatestComponentConfigConnectionsV1,
+			AlwaysReapply: true,
+		},
+		{
+			Name:          views.CustomViewName(db, &ComponentConfigConnection{}, latestConfigsViewV2),
+			SQL:           viewsql.LatestComponentConfigConnectionsV2,
 			AlwaysReapply: true,
 		},
 	}
@@ -203,6 +226,14 @@ func (a *ComponentConfigConnection) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"component_id",
 				"deleted_at",
+			},
+		},
+		{
+			Name: indexes.Name(db, &ComponentConfigConnection{}, "component_id_created_at"),
+			Columns: []string{
+				"component_id",
+				"created_at",
+				"id",
 			},
 		},
 		{

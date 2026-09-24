@@ -20,6 +20,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -27,9 +28,6 @@ import (
 )
 
 const SignalType signal.SignalType = "stack-run"
-
-const installSignalsQueueName = "install-signals"
-const installWorkflowsQueueName = "install-workflows"
 
 type Signal struct {
 	InstallStackID        string `json:"install_stack_id"`
@@ -42,10 +40,12 @@ var (
 	_ signal.Signal                     = (*Signal)(nil)
 	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
 	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
+	_ signal.SignalWithSkippable        = (*Signal)(nil)
 )
 
 func (s *Signal) Type() signal.SignalType { return SignalType }
 func (s *Signal) AutoRetry() bool         { return true }
+func (s *Signal) Skippable() bool         { return false }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
@@ -238,6 +238,7 @@ func (s *Signal) handleProvisionComplete(ctx workflow.Context, install *app.Inst
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   install.RunnerID,
 		OwnerType: "runners",
+		QueueName: queuenames.RunnerSignalsQueueName,
 		Signal: &runnersignalsv2.Signal{
 			RunnerID:                 install.RunnerID,
 			InstallStackVersionRunID: s.RunID,
@@ -439,22 +440,19 @@ func (s *Signal) processOutputs(ctx workflow.Context, install *app.Install, vers
 			if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 				OwnerID:   install.ID,
 				OwnerType: "installs",
-				QueueName: installWorkflowsQueueName,
+				QueueName: queuenames.InstallWorkflowsQueueName,
 				Signal: &executeflow.Signal{
 					WorkflowID: inputResp.WorkflowID,
 				},
+				SignalOwnerID:   inputResp.WorkflowID,
+				SignalOwnerType: (&app.Workflow{}).TableName(),
 			}); err != nil {
 				l.Warn("unable to enqueue input update workflow signal", zap.Error(err))
 			}
 		}
 	}
 
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
 	if err := stategen.HintOrGenerate(ctx, stategen.Request{
-		StateGenV2:      statemanager.UseStateGenV2(orgEnabled, install.Metadata),
 		InstallID:       install.ID,
 		Targets:         statemanager.TargetsForHint(statemanager.HintStackOutputsUpdated, ""),
 		ForceAll:        true,
@@ -546,7 +544,7 @@ func enqueueRoleChange(ctx workflow.Context, installID string, role roleSnapshot
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   installID,
 		OwnerType: "installs",
-		QueueName: installSignalsQueueName,
+		QueueName: queuenames.InstallSignalsQueueName,
 		Signal: &rolechange.Signal{
 			InstallID:  installID,
 			RoleName:   renderedName,

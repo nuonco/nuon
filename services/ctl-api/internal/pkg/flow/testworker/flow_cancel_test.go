@@ -42,6 +42,7 @@ func (e *FlowTestSuite) TestCancelStepCallsInnerCancel() {
 	step := e.getStep(ctx, stepID)
 	require.Equal(e.T(), CancelMarker, step.ResultDirective,
 		"inner signal Cancel() should have written the cancel marker to ResultDirective")
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // TestCancelWorkflowPropagatesDown verifies that cancel-workflow stops the
@@ -77,13 +78,13 @@ func (e *FlowTestSuite) TestCancelWorkflowPropagatesDown() {
 	for _, step := range steps {
 		switch step.Name {
 		case "cancellable-step":
-			require.Equal(e.T(), app.StatusCancelled, step.Status.Status,
-				"in-flight step should be cancelled")
+			e.waitForStepStatus(ctx, step.ID, app.StatusCancelled)
 		case "after-cancel":
 			require.NotEqual(e.T(), app.StatusSuccess, step.Status.Status,
 				"step after cancel should not have executed")
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }
 
 // TestCancelGroupPropagatesDown verifies that cancel-group cancels all steps
@@ -123,4 +124,5 @@ func (e *FlowTestSuite) TestCancelGroupPropagatesDown() {
 				"group 2 should not have executed after group 1 cancellation")
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }

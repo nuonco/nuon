@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/metric"
 	"go.temporal.io/sdk/activity"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -53,6 +54,8 @@ const (
 	cloudEventTypeInstallHealth     = "com.nuon.install.health.v1"
 	cloudEventTypeInstallSync       = "com.nuon.app.install_sync.v1"
 	cloudEventTypeInstallConfigSync = "com.nuon.install.config_sync.v1"
+	cloudEventTypeLabelAdded        = "com.nuon.install.label_added.v1"
+	cloudEventTypeAppBranchChanged  = "com.nuon.install.app_branch_changed.v1"
 
 	kindWorkflow             = "workflow"
 	kindWorkflowStep         = "workflow_step"
@@ -67,6 +70,8 @@ const (
 	kindInstallHealth        = "install_health"
 	kindInstallSync          = "install_sync"
 	kindInstallConfigSync    = "install_config_sync"
+	kindLabelAdded           = "label_added"
+	kindAppBranchChanged     = "app_branch_changed"
 )
 
 // Status values surfaced to webhook consumers in the *.lifecycle events.
@@ -150,6 +155,8 @@ const (
 
 	signalTypeSyncInstalls      signal.SignalType = "sync-installs"
 	signalTypeInstallConfigSync signal.SignalType = "install-config-sync"
+	signalTypeLabelAdded        signal.SignalType = "label-added"
+	signalTypeAppBranchChanged  signal.SignalType = "app-branch-changed"
 )
 
 // approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
@@ -163,10 +170,11 @@ const orgNameCacheTTL = 10 * time.Minute
 type Params struct {
 	fx.In
 
-	Cfg *internal.Config `optional:"true"`
-	L   *zap.Logger      `optional:"true"`
-	DB  *gorm.DB         `name:"psql" optional:"true"`
-	MW  metrics.Writer   `optional:"true"`
+	Cfg           *internal.Config     `optional:"true"`
+	L             *zap.Logger          `optional:"true"`
+	DB            *gorm.DB             `name:"psql" optional:"true"`
+	MW            metrics.Writer       `optional:"true"`
+	MeterProvider metric.MeterProvider `optional:"true"`
 }
 
 type WebhookSignalLifecycleHook struct {
@@ -177,6 +185,7 @@ type WebhookSignalLifecycleHook struct {
 	appURL          string
 	publicAPIURL    string
 	mw              metrics.Writer
+	deliveryMetrics *deliveryMetrics
 	blobReadEnabled bool
 
 	// workflowCreatorCache holds workflowCreatorRow values keyed by workflow
@@ -230,6 +239,7 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 		appURL:          appURL,
 		publicAPIURL:    publicAPIURL,
 		mw:              params.MW,
+		deliveryMetrics: newDeliveryMetrics(params.MeterProvider),
 		blobReadEnabled: blobReadEnabled,
 	}
 }
@@ -300,7 +310,9 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 		signalTypeInstallDegraded,
 		signalTypeRunnerUnhealthy,
 		signalTypeSyncInstalls,
-		signalTypeInstallConfigSync:
+		signalTypeInstallConfigSync,
+		signalTypeLabelAdded,
+		signalTypeAppBranchChanged:
 		return true
 	default:
 		return false
@@ -340,7 +352,7 @@ func isNotificationOnlySignalType(t signal.SignalType) bool {
 	case signalTypeDriftDetected, signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated, signalTypeAppConfigSynced, signalTypeUpdateAppConfig,
 		signalTypeRunnerUnhealthy,
 		signalTypeComponentUnhealthy, signalTypeComponentRecovered, signalTypeInstallDegraded,
-		signalTypeSyncInstalls, signalTypeInstallConfigSync:
+		signalTypeSyncInstalls, signalTypeInstallConfigSync, signalTypeLabelAdded, signalTypeAppBranchChanged:
 		return true
 	}
 	return false
@@ -549,6 +561,7 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 
 	dynamicTargets, err := h.listOrgWebhookTargets(ctx, event.OrgID)
 	if err != nil {
+		// TODO: Surface lookup failures in hook metrics without preventing delivery to static targets.
 		logger.Warn("failed to resolve org workflow lifecycle webhooks", zap.Error(err))
 	}
 
@@ -589,6 +602,10 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		ceType = cloudEventTypeInstallSync
 	case kindInstallConfigSync:
 		ceType = cloudEventTypeInstallConfigSync
+	case kindLabelAdded:
+		ceType = cloudEventTypeLabelAdded
+	case kindAppBranchChanged:
+		ceType = cloudEventTypeAppBranchChanged
 	}
 	// Awaiting-retry shares kind=workflow_step with the normal step
 	// lifecycle but gets its own CloudEvent type so consumers can route the
@@ -720,6 +737,12 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 		return h.buildComponentHealthEventData(event, outcome)
 	case signalTypeSyncInstalls, signalTypeInstallConfigSync:
 		return h.buildInstallSyncEventData(event, outcome)
+	case signalTypeLabelAdded:
+		return h.buildLabelAddedEventData(event, outcome)
+	case signalTypeAppBranchChanged:
+		data, ok := h.buildLabelAddedEventData(event, outcome)
+		data.Kind = kindAppBranchChanged
+		return data, ok
 	}
 
 	if event.WorkflowID == "" {
@@ -894,6 +917,25 @@ func (h *WebhookSignalLifecycleHook) buildInstallSyncEventData(event signal.Sign
 	data := lifecycleEventData{
 		Kind:       kind,
 		Transition: transition,
+		OrgID:      event.OrgID,
+		OrgName:    event.OrgName,
+		Workflow: workflowRef{
+			OwnerID:   event.OwnerID,
+			OwnerType: event.OwnerType,
+			OwnerName: event.OwnerName,
+		},
+		Metadata: event.Metadata,
+	}
+	if outcome != nil {
+		data.Outcome = h.buildOutcome(event, outcome)
+	}
+	return data, true
+}
+
+func (h *WebhookSignalLifecycleHook) buildLabelAddedEventData(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
+	data := lifecycleEventData{
+		Kind:       kindLabelAdded,
+		Transition: mapTransition(event, outcome),
 		OrgID:      event.OrgID,
 		OrgName:    event.OrgName,
 		Workflow: workflowRef{
@@ -1576,7 +1618,7 @@ func buildSubject(event signal.SignalPhaseEvent, data lifecycleEventData) string
 	return strings.Join(parts, "/")
 }
 
-func (h *WebhookSignalLifecycleHook) sendWebhook(ctx context.Context, target webhookTarget, payloadJSON []byte) error {
+func (h *WebhookSignalLifecycleHook) sendWebhook(ctx context.Context, target webhookTarget, payloadJSON []byte) (retErr error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, target.URL, bytes.NewReader(payloadJSON))
 	if err != nil {
 		return fmt.Errorf("unable to create webhook request: %w", err)
@@ -1588,6 +1630,11 @@ func (h *WebhookSignalLifecycleHook) sendWebhook(ctx context.Context, target web
 		mac.Write(payloadJSON)
 		req.Header.Set("X-Nuon-Signature", hex.EncodeToString(mac.Sum(nil)))
 	}
+
+	started := time.Now()
+	defer func() {
+		h.deliveryMetrics.record(ctx, deliveryChannelWebhook, deliveryOperationPost, started, retErr)
+	}()
 
 	resp, err := h.httpClient.Do(req)
 	if err != nil {

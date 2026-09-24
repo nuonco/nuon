@@ -11,8 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/deprovision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
-	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
-	runnerdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/deprovision"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -68,6 +67,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 				OwnerID:   a.ID,
 				OwnerType: "apps",
+				QueueName: queuenames.AppSignalsQueueName,
 				Signal: &appdeprovision.Signal{
 					AppID: a.ID,
 				},
@@ -87,42 +87,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) deprovisionOrg(ctx workflow.Context) error {
-	l := workflow.GetLogger(ctx)
-
-	org, err := activities.AwaitGet(ctx, activities.GetRequest{OrgID: s.OrgID})
-	if err != nil {
+	if _, err := activities.AwaitGet(ctx, activities.GetRequest{OrgID: s.OrgID}); err != nil {
 		s.updateStatus(ctx, app.OrgStatusError, "unable to get org from database")
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
 	s.updateStatus(ctx, app.OrgStatusDeprovisioning, "deprovisioning organization resources")
 
-	if org.OrgType == app.OrgTypeDefault {
-		_, err = orgiam.AwaitDeprovisionIAM(ctx, &orgiam.DeprovisionIAMRequest{OrgID: s.OrgID, WorkflowID: fmt.Sprintf("%s-deprovision-iam", workflow.GetInfo(ctx).WorkflowExecution.ID)})
-		if err != nil {
-			s.updateStatus(ctx, app.OrgStatusError, "unable to deprovision iam roles")
-			return fmt.Errorf("unable to deprovision iam roles: %w", err)
-		}
-	} else {
-		l.Info("skipping await deprovision iam", zap.Any("org_type", org.OrgType), zap.String("org_id", org.ID), zap.String("org_name", org.Name))
-	}
-
-	if len(org.RunnerGroup.Runners) < 1 {
-		s.updateStatus(ctx, app.OrgStatusDeprovisioned, "organization successfully deprovisioned")
-		return nil
-	}
-
-	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-		OwnerID:   org.RunnerGroup.Runners[0].ID,
-		OwnerType: "runners",
-		Signal: &runnerdeprovision.Signal{
-			RunnerID: org.RunnerGroup.Runners[0].ID,
-		},
-	})
-	if err != nil {
-		s.updateStatus(ctx, app.OrgStatusError, "unable to enqueue runner deprovision signal")
-		return fmt.Errorf("unable to enqueue runner deprovision signal: %w", err)
-	}
 	s.updateStatus(ctx, app.OrgStatusDeprovisioned, "organization successfully deprovisioned")
 	return nil
 }

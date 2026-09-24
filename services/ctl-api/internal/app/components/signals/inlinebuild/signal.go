@@ -21,7 +21,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -190,17 +189,6 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")
 		return notify(fmt.Errorf("unable to create job: %w", err))
 	}
-	if runnerJob.RunnerID == "" {
-		if runnerJob.Executor != app.RunnerJobExecutorControlPlane {
-			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "no runners available in runner group")
-			_ = activities.AwaitUpdateJobStatus(ctx, &activities.UpdateJobStatusRequest{
-				JobID:             runnerJob.ID,
-				Status:            app.RunnerJobStatusFailed,
-				StatusDescription: "no runners available in runner group",
-			})
-			return notify(fmt.Errorf("no runners available in runner group for org %s", fullComp.Org.ID))
-		}
-	}
 
 	cloudProvider, _ := activities.AwaitGetCloudProvider(ctx, &activities.GetCloudProviderRequest{})
 	managementIAMRoleARN, _ := activities.AwaitGetManagementIAMRoleARN(ctx, &activities.GetManagementIAMRoleARNRequest{})
@@ -210,22 +198,15 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 		WorkflowID:           fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 		CloudProvider:        cloudProvider,
 		ManagementIAMRoleARN: managementIAMRoleARN,
-		IsControlPlaneBuild:  runnerJob.Executor == app.RunnerJobExecutorControlPlane,
 	})
 	if err != nil {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")
 		return notify(errors.Wrap(err, "unable to create plan"))
 	}
 
-	if runPlan.ContainerImagePullPlan != nil {
-		if err := sharedactivities.EnsureGARAuth(ctx, runPlan.ContainerImagePullPlan.RepoCfg); err != nil {
-			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get GAR access token")
-			return notify(errors.Wrap(err, "unable to get GAR access token"))
-		}
-		if err := sharedactivities.EnsureACRAuth(ctx, runPlan.ContainerImagePullPlan.RepoCfg); err != nil {
-			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get ACR access token")
-			return notify(errors.Wrap(err, "unable to get ACR access token"))
-		}
+	if err := sharedactivities.EnsureContainerImagePullAuth(ctx, runPlan); err != nil {
+		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get image source credentials")
+		return notify(err)
 	}
 
 	planJSON, err := json.Marshal(runPlan)
@@ -247,18 +228,9 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 
 	// Execute the build job.
 	s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building")
-	if runnerJob.Executor == app.RunnerJobExecutorControlPlane {
-		err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
-			WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", fullComp.ID, runnerJob.ID),
-		})
-	} else {
-		_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-			RunnerID: runnerJob.RunnerID,
-			JobID:    runnerJob.ID,
-		}, &workflow.ChildWorkflowOptions{
-			WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", fullComp.ID, runnerJob.ID),
-		})
-	}
+	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", fullComp.ID, runnerJob.ID),
+	})
 	if err != nil {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, fmt.Sprintf("build failed: %s", signal.HumanError(err)))
 		return notify(fmt.Errorf("build job failed: %w", err))

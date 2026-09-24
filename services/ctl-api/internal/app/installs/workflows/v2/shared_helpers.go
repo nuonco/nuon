@@ -356,7 +356,7 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 			if latestBuild != nil {
 				buildID = latestBuild.ID
 			}
-			deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+comp.Name, pgtype.Hstore{}, &componentsyncimage.Signal{
+			deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+comp.Name, componentStepMetadata(comp.Name), &componentsyncimage.Signal{
 				InstallComponentID:          installComponentID,
 				ComponentID:                 comp.ID,
 				BuildID:                     buildID,
@@ -381,7 +381,7 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 			if latestBuild != nil {
 				buildID = latestBuild.ID
 			}
-			planStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
+			planStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync and plan "+comp.Name, componentStepMetadata(comp.Name), &componentdeploysyncandplan.Signal{
 				InstallComponentID:          installComponentID,
 				InstallID:                   dg.installID,
 				ComponentID:                 comp.ID,
@@ -393,7 +393,7 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 				return nil, errors.Wrap(err, "unable to create image sync")
 			}
 
-			applyPlanStep, err := dg.sg.installSignalStep(ctx, dg.installID, "apply "+comp.Name, pgtype.Hstore{}, &componentdeployapplyplan.Signal{
+			applyPlanStep, err := dg.sg.installSignalStep(ctx, dg.installID, "apply "+comp.Name, componentStepMetadata(comp.Name), &componentdeployapplyplan.Signal{
 				InstallComponentID: installComponentID,
 				InstallID:          dg.installID,
 				ComponentID:        comp.ID,
@@ -406,7 +406,7 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 			} else {
 				steps = append(steps, planStep, applyPlanStep)
 				if componentGateEnabled(ctx, dg.installID, comp.ID, comp.Type) {
-					gateStep, err := dg.sg.installSignalStep(ctx, dg.installID, "verify health "+comp.Name, pgtype.Hstore{}, &awaitcomponenthealthy.Signal{
+					gateStep, err := dg.sg.installSignalStep(ctx, dg.installID, "verify health "+comp.Name, componentStepMetadata(comp.Name), &awaitcomponenthealthy.Signal{
 						InstallID:          dg.installID,
 						InstallComponentID: installComponentID,
 					}, dg.flw.PlanOnly, WithSkippable(false), WithMaxAutoRetries(3))
@@ -429,6 +429,10 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 	return steps, nil
 }
 
+func componentStepMetadata(componentName string) pgtype.Hstore {
+	return pgtype.Hstore{"component_name": generics.ToPtr(componentName)}
+}
+
 // getComponentTeardownSteps emits the steps that tear a single component down
 // off an install: a teardown sync-and-plan followed by an apply for
 // infrastructure components, or a no-op skip step for image components (whose
@@ -441,7 +445,8 @@ func getComponentTeardownSteps(ctx workflow.Context, dg *genCtx, comp app.Compon
 
 	if comp.Type.IsImage() {
 		skipStep, err := dg.sg.installSignalStep(ctx, dg.installID, "skipped image disable "+comp.Name, pgtype.Hstore{
-			"reason": generics.ToPtr("skipped image teardown"),
+			"reason":         generics.ToPtr("skipped image teardown"),
+			"component_name": generics.ToPtr(comp.Name),
 		}, nil, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create image teardown skip step")
@@ -457,7 +462,7 @@ func getComponentTeardownSteps(ctx workflow.Context, dg *genCtx, comp app.Compon
 		return nil, errors.Wrap(err, "unable to get install component")
 	}
 
-	planStep, err := dg.sg.installSignalStep(ctx, dg.installID, "teardown sync and plan "+comp.Name, pgtype.Hstore{}, &componentteardownsyncandplan.Signal{
+	planStep, err := dg.sg.installSignalStep(ctx, dg.installID, "teardown sync and plan "+comp.Name, componentStepMetadata(comp.Name), &componentteardownsyncandplan.Signal{
 		InstallComponentID: installComp.ID,
 		InstallID:          dg.installID,
 		ComponentID:        comp.ID,
@@ -467,7 +472,7 @@ func getComponentTeardownSteps(ctx workflow.Context, dg *genCtx, comp app.Compon
 		return nil, errors.Wrap(err, "unable to create teardown sync and plan step")
 	}
 
-	applyStep, err := dg.sg.installSignalStep(ctx, dg.installID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &componentteardownapplyplan.Signal{
+	applyStep, err := dg.sg.installSignalStep(ctx, dg.installID, "teardown apply plan "+comp.Name, componentStepMetadata(comp.Name), &componentteardownapplyplan.Signal{
 		InstallComponentID: installComp.ID,
 		InstallID:          dg.installID,
 		ComponentID:        comp.ID,
@@ -642,6 +647,7 @@ func deployAllComponents(ctx workflow.Context, dg *genCtx, gateRunnerHealthy boo
 
 		step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 			InstallID: dg.installID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
 		}, dg.flw.PlanOnly)
 		if err != nil {
 			return nil, err

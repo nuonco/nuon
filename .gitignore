@@ -73,6 +73,7 @@ sdks/stack/.swagger.stamp
 .vscode/
 .zed/
 .cursor/
+.amp/
 
 # ignore binaries
 services/ctl-api/ctl-api
@@ -117,3 +118,6 @@ sdks/nuon-runner-go/models/cctx_signal_context.go
 
 # worktrees
 .worktrees
+
+# nuontest binary built locally (go build ./cmd/nuontest)
+/services/ctl-api/nuontest

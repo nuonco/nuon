@@ -57,6 +57,13 @@ type WorkflowStepApproval struct {
 
 	Type WorkflowStepApprovalType `json:"type"`
 
+	ChangesState   StepChangeState `json:"changes_state,omitzero" gorm:"type:text;default:''" temporaljson:"changes_state,omitzero,omitempty"`
+	ChangesCreate  int             `json:"changes_create" gorm:"default:0" temporaljson:"changes_create,omitzero,omitempty"`
+	ChangesUpdate  int             `json:"changes_update" gorm:"default:0" temporaljson:"changes_update,omitzero,omitempty"`
+	ChangesDelete  int             `json:"changes_delete" gorm:"default:0" temporaljson:"changes_delete,omitzero,omitempty"`
+	ChangesReplace int             `json:"changes_replace" gorm:"default:0" temporaljson:"changes_replace,omitzero,omitempty"`
+	ChangesNoop    int             `json:"changes_noop" gorm:"default:0" temporaljson:"changes_noop,omitzero,omitempty"`
+
 	// the response object must be created by the user in the UI or CLI
 
 	Response *WorkflowStepApprovalResponse `gorm:"foreignKey:InstallWorkflowStepApprovalID" json:"response,omitzero" temporaljson:"response,omitzero,omitempty" swaggertype:"object,string"`
@@ -89,6 +96,15 @@ func (c *WorkflowStepApproval) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (c *WorkflowStepApproval) SetChanges(counts StepChangeCounts, state StepChangeState) {
+	c.ChangesState = state
+	c.ChangesCreate = counts.Create
+	c.ChangesUpdate = counts.Update
+	c.ChangesDelete = counts.Delete
+	c.ChangesReplace = counts.Replace
+	c.ChangesNoop = counts.Noop
 }
 
 func (c *WorkflowStepApproval) AfterQuery(tx *gorm.DB) error {

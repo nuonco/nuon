@@ -3,9 +3,29 @@ package activities
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
+
+func TestBuildPRCommentBodyIncludesMarkerWaveAndSHA(t *testing.T) {
+	body := BuildPRCommentBody(&PRCommentParams{
+		AppBranchID: "abranch123",
+		AppName:     "acme",
+		RunID:       "run1",
+		HeadSHA:     "abcdef123456",
+		Status:      PRCommentStatusPending,
+	})
+	if !strings.Contains(body, PRCommentMarker("abranch123")) {
+		t.Errorf("missing marker\n%s", body)
+	}
+	if !strings.Contains(body, "\U0001f44b") {
+		t.Errorf("missing wave\n%s", body)
+	}
+	if !strings.Contains(body, "`abcdef1`") {
+		t.Errorf("missing short sha\n%s", body)
+	}
+}
 
 func TestBuildPRCommentBodyIncludesInstallImpact(t *testing.T) {
 	body := BuildPRCommentBody(&PRCommentParams{
@@ -97,15 +117,16 @@ func TestBuildPRCommentBodyIncludesModeRunLinkBuildLabelsAndStackWarning(t *test
 	})
 
 	for _, want := range []string{
-		"## Nuon Preview \u2014 acme/payments/production (build and validate)",
+		"## \U0001f44b Nuon Preview \u2014 acme/payments/production (build and validate)",
 		"[View preview run \u2192](https://app.example.com/org/apps/app/branches/branch/runs/workflow)",
 		"\U0001f6a8 Stack changes require customers to reprovision the stack. Learn more [here](https://docs.nuon.co/concepts/stacks).",
-		"### Builds",
+		"<details>\n<summary><strong>Builds</strong> <code>2</code></summary>",
 		"| [`api`](https://app.example.com/org/apps/app/components/api/builds/build-api) | `Source changed` |",
 		"| `worker` | `Config changed` |",
+		"</details>",
 		"No install was planned or applied.",
 		"### Debug with MCP",
-		"Fetch the overview of app branch run abrun-example and diagnose any failures.",
+		"Fetch the overview of app branch run abrun-example for app payments branch production and diagnose any failures.",
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("comment body missing %q\n%s", want, body)
@@ -132,9 +153,10 @@ func TestBuildPRCommentBodyApplyNamesPreviewInstall(t *testing.T) {
 		Mode:               app.AppBranchRunPreviewModeApply,
 		PreviewInstallName: "preview-us-west",
 		PreviewInstallURL:  "https://app.example.com/org/installs/install/app-branch-runs",
+		InstallApplied:     true,
 	})
 
-	if !strings.Contains(body, "## Nuon Preview \u2014 acme/payments/production (apply)") {
+	if !strings.Contains(body, "## \U0001f44b Nuon Preview \u2014 acme/payments/production (apply)") {
 		t.Errorf("comment body missing apply mode\n%s", body)
 	}
 	if !strings.Contains(body, "Applied to [`preview-us-west`](https://app.example.com/org/installs/install/app-branch-runs).") {
@@ -145,7 +167,25 @@ func TestBuildPRCommentBodyApplyNamesPreviewInstall(t *testing.T) {
 	}
 }
 
-func TestBuildPRCommentBodySkippedOmitsMCPPrompt(t *testing.T) {
+func TestBuildPRCommentBodyApplyOmitsInstallWhenNotApplied(t *testing.T) {
+	body := BuildPRCommentBody(&PRCommentParams{
+		OrgName:            "acme",
+		AppName:            "payments",
+		BranchName:         "production",
+		RunID:              "abrun-example",
+		Status:             PRCommentStatusSuccess,
+		Mode:               app.AppBranchRunPreviewModeApply,
+		PreviewInstallName: "preview-us-west",
+		PreviewInstallURL:  "https://app.example.com/org/installs/install/app-branch-runs",
+		// InstallApplied intentionally false
+	})
+
+	if strings.Contains(body, "Applied to") {
+		t.Errorf("comment body should not include 'Applied to' when InstallApplied is false\n%s", body)
+	}
+}
+
+func TestBuildPRCommentBodySkippedIncludesMCPPrompt(t *testing.T) {
 	body := BuildPRCommentBody(&PRCommentParams{
 		AppName: "production",
 		RunID:   "abrun-example",
@@ -153,8 +193,8 @@ func TestBuildPRCommentBodySkippedOmitsMCPPrompt(t *testing.T) {
 		Mode:    app.AppBranchRunPreviewModePlanOnly,
 	})
 
-	if strings.Contains(body, "Debug with MCP") {
-		t.Errorf("skipped comment should not contain an MCP debug prompt\n%s", body)
+	if !strings.Contains(body, "Debug with MCP") {
+		t.Errorf("skipped comment should retain the shared MCP debug section\n%s", body)
 	}
 	if strings.Contains(body, "Updated:") {
 		t.Errorf("skipped comment should not contain a redundant timestamp footer\n%s", body)
@@ -222,7 +262,7 @@ func TestBuildPRCommentBodyEmptyDiffCollapsesToNoChanges(t *testing.T) {
 	if !strings.Contains(body, "<summary><strong>Config changes</strong> <code>no changes</code></summary>") {
 		t.Errorf("comment body missing empty diff summary\n%s", body)
 	}
-	if !strings.Contains(body, "## Nuon Preview \u2014 production (plan-only)") {
+	if !strings.Contains(body, "## \U0001f44b Nuon Preview \u2014 production (plan-only)") {
 		t.Errorf("heading should fall back to the branch name alone\n%s", body)
 	}
 }
@@ -257,5 +297,297 @@ func TestComponentChangesFromMetadataBuildsURLs(t *testing.T) {
 	}
 	if changes[1].BuildURL != "https://app.example.com/org/apps/app/sandbox/builds/sandbox-build" {
 		t.Errorf("unexpected sandbox build URL %q", changes[1].BuildURL)
+	}
+}
+
+func TestBuildPRCommentBodyPhaseChecksTable(t *testing.T) {
+	body := BuildPRCommentBody(&PRCommentParams{
+		AppName: "acme",
+		RunID:   "abrun-example",
+		Status:  PRCommentStatusPending,
+		Mode:    app.AppBranchRunPreviewModePlanOnly,
+		Phases: &PRCommentPhases{
+			Config:  PRCommentPhaseValidating,
+			Builds:  PRCommentPhaseBuilding,
+			Install: PRCommentPhaseConfiguring,
+		},
+	})
+
+	if !strings.Contains(body, "| Check | Status |") {
+		t.Errorf("phase checks table header missing\n%s", body)
+	}
+	if !strings.Contains(body, "| Config | \u23f3 Validating |") {
+		t.Errorf("config phase row missing\n%s", body)
+	}
+	if !strings.Contains(body, "| Builds | \u23f3 Building |") {
+		t.Errorf("builds phase row missing\n%s", body)
+	}
+	if !strings.Contains(body, "| Install | \u23f3 Configuring |") {
+		t.Errorf("install phase row missing\n%s", body)
+	}
+}
+
+func TestBuildPRCommentBodyPhaseChecksValidStatuses(t *testing.T) {
+	body := BuildPRCommentBody(&PRCommentParams{
+		AppName: "acme",
+		RunID:   "abrun-example",
+		Status:  PRCommentStatusSuccess,
+		Mode:    app.AppBranchRunPreviewModePlanOnly,
+		Phases: &PRCommentPhases{
+			Config:  PRCommentPhaseValid,
+			Builds:  PRCommentPhaseValid,
+			Install: PRCommentPhaseValid,
+		},
+	})
+
+	validCount := strings.Count(body, "\u2705 Valid")
+	if validCount != 3 {
+		t.Errorf("expected 3 Valid rows, got %d\n%s", validCount, body)
+	}
+}
+
+func TestBuildPRCommentBodyPhaseChecksInvalidStatus(t *testing.T) {
+	body := BuildPRCommentBody(&PRCommentParams{
+		AppName: "acme",
+		RunID:   "abrun-example",
+		Status:  PRCommentStatusFailed,
+		Mode:    app.AppBranchRunPreviewModePlanOnly,
+		Phases: &PRCommentPhases{
+			Config:  PRCommentPhaseInvalid,
+			Builds:  PRCommentPhaseBuilding,
+			Install: "",
+		},
+	})
+
+	if !strings.Contains(body, "| Config | \u274c Invalid |") {
+		t.Errorf("config invalid row missing\n%s", body)
+	}
+	if strings.Contains(body, "| Install |") {
+		t.Errorf("install row should be omitted when phase is empty\n%s", body)
+	}
+}
+
+func TestBuildPRCommentBodyPhaseChecksOmittedWhenNil(t *testing.T) {
+	body := BuildPRCommentBody(&PRCommentParams{
+		AppName: "acme",
+		RunID:   "abrun-example",
+		Status:  PRCommentStatusPending,
+		Mode:    app.AppBranchRunPreviewModePlanOnly,
+		Phases:  nil,
+	})
+
+	if strings.Contains(body, "| Check | Status |") {
+		t.Errorf("phase checks table should be omitted when Phases is nil\n%s", body)
+	}
+}
+
+func TestBuildPRCommentBodyBuildOnlyOmitsInstallPhase(t *testing.T) {
+	body := BuildPRCommentBody(&PRCommentParams{
+		AppName: "acme",
+		RunID:   "abrun-example",
+		Status:  PRCommentStatusSuccess,
+		Mode:    app.AppBranchRunPreviewModeBuildOnly,
+		Phases: &PRCommentPhases{
+			Config:  PRCommentPhaseValid,
+			Builds:  PRCommentPhaseValid,
+			Install: PRCommentPhaseConfiguring,
+		},
+	})
+
+	if strings.Contains(body, "| Install |") {
+		t.Errorf("install row should be omitted in build-only mode\n%s", body)
+	}
+	if !strings.Contains(body, "| Config | \u2705 Valid |") {
+		t.Errorf("config valid row missing\n%s", body)
+	}
+}
+
+func TestBuildPRCommentBodyMCPDocsLink(t *testing.T) {
+	body := BuildPRCommentBody(&PRCommentParams{
+		AppName:    "payments",
+		BranchName: "production",
+		RunID:      "abrun-example",
+		Status:     PRCommentStatusSuccess,
+	})
+
+	if !strings.Contains(body, "https://docs.nuon.co/guides/agents/overview") {
+		t.Errorf("comment body missing MCP docs link\n%s", body)
+	}
+	if !strings.Contains(body, "[MCP-enabled assistant](https://docs.nuon.co/guides/agents/overview)") {
+		t.Errorf("comment body MCP link has wrong format\n%s", body)
+	}
+	if !strings.Contains(body, "Fetch the overview of app branch run abrun-example for app payments branch production and diagnose any failures.") {
+		t.Errorf("MCP prompt missing app and branch\n%s", body)
+	}
+}
+
+func TestBuildPRCommentBodySkippedIncludesMCPLink(t *testing.T) {
+	body := BuildPRCommentBody(&PRCommentParams{
+		AppName: "acme",
+		RunID:   "abrun-example",
+		Status:  PRCommentStatusSkipped,
+	})
+
+	if !strings.Contains(body, "docs.nuon.co") {
+		t.Errorf("skipped comment should retain MCP docs link\n%s", body)
+	}
+}
+
+func TestBuildPRCommentBodyUsesSharedTemplateForEveryStatus(t *testing.T) {
+	for _, status := range []PRCommentStatus{
+		PRCommentStatusPending,
+		PRCommentStatusSuccess,
+		PRCommentStatusFailed,
+		PRCommentStatusSkipped,
+	} {
+		t.Run(string(status), func(t *testing.T) {
+			body := BuildPRCommentBody(&PRCommentParams{
+				AppBranchID: "branch-1",
+				AppName:     "payments",
+				RunID:       "run-1",
+				Status:      status,
+				Mode:        app.AppBranchRunPreviewModePlanOnly,
+			})
+			for _, want := range []string{
+				PRCommentMarker("branch-1"),
+				"## \U0001f44b Nuon Preview",
+				"**Status**:",
+				"### Debug with MCP",
+			} {
+				if !strings.Contains(body, want) {
+					t.Errorf("status %q missing shared template element %q\n%s", status, want, body)
+				}
+			}
+		})
+	}
+}
+
+func TestNormalizePRCommentBodyReplacesMarkerAndLastUpdatedAt(t *testing.T) {
+	updatedAt := time.Date(2026, time.September, 15, 23, 30, 0, 0, time.UTC)
+	body := normalizePRCommentBody(
+		"<!-- nuon-app-branch-preview:stale -->\n## \U0001f44b Nuon Preview \u2014 acme\n\n**Last updated at:** stale\n\ncontent\n",
+		"branch-1",
+		updatedAt,
+	)
+
+	if strings.Count(body, prCommentMarkerPrefix) != 1 {
+		t.Fatalf("expected one marker\n%s", body)
+	}
+	if !strings.HasPrefix(body, PRCommentMarker("branch-1")+"\n") {
+		t.Fatalf("expected current marker first\n%s", body)
+	}
+	if strings.Count(body, lastUpdatedPrefix) != 1 {
+		t.Fatalf("expected one last-updated line\n%s", body)
+	}
+	if !strings.Contains(body, "**Last updated at:** 2026-09-15 23:30:00 UTC") {
+		t.Fatalf("expected UTC last-updated timestamp\n%s", body)
+	}
+}
+
+func TestFinalizeFailedPhasesPendingToInvalid(t *testing.T) {
+	phases := &PRCommentPhases{
+		Config:  PRCommentPhaseValidating,
+		Builds:  PRCommentPhaseBuilding,
+		Install: PRCommentPhaseConfiguring,
+	}
+	FinalizeFailedPhases(phases)
+
+	if phases.Config != PRCommentPhaseInvalid {
+		t.Errorf("expected Config=Invalid, got %q", phases.Config)
+	}
+	if phases.Builds != PRCommentPhaseInvalid {
+		t.Errorf("expected Builds=Invalid, got %q", phases.Builds)
+	}
+	if phases.Install != PRCommentPhaseInvalid {
+		t.Errorf("expected Install=Invalid, got %q", phases.Install)
+	}
+}
+
+func TestFinalizeFailedPhasesPreservesTerminalPhases(t *testing.T) {
+	phases := &PRCommentPhases{
+		Config:  PRCommentPhaseValid,
+		Builds:  PRCommentPhaseInvalid,
+		Install: "",
+	}
+	FinalizeFailedPhases(phases)
+
+	if phases.Config != PRCommentPhaseValid {
+		t.Errorf("Valid phase should not be changed, got %q", phases.Config)
+	}
+	if phases.Builds != PRCommentPhaseInvalid {
+		t.Errorf("Invalid phase should not be changed, got %q", phases.Builds)
+	}
+	if phases.Install != "" {
+		t.Errorf("empty phase should remain empty, got %q", phases.Install)
+	}
+}
+
+func TestInstallImpactFromStepMetadata(t *testing.T) {
+	metadata := map[string]any{
+		"total_installs": float64(2),
+		"install_groups": []any{
+			map[string]any{
+				"install_group_name": "canary",
+				"installs": []any{
+					map[string]any{
+						"install_id":      "inst-1",
+						"install_name":    "canary-1",
+						"added":           float64(3),
+						"changed":         float64(1),
+						"removed":         float64(0),
+						"unchanged":       float64(10),
+						"sandbox_changed": false,
+						"stack_changed":   true,
+					},
+				},
+			},
+			map[string]any{
+				"install_group_name": "prod",
+				"installs": []any{
+					map[string]any{
+						"install_id":   "inst-2",
+						"install_name": "prod-1",
+						"added":        float64(0),
+						"changed":      float64(0),
+						"removed":      float64(0),
+						"unchanged":    float64(5),
+					},
+				},
+			},
+		},
+	}
+
+	groups := installImpactFromStepMetadata(metadata)
+
+	if len(groups) != 2 {
+		t.Fatalf("expected 2 groups, got %d", len(groups))
+	}
+	if groups[0].GroupName != "canary" {
+		t.Errorf("expected canary group, got %q", groups[0].GroupName)
+	}
+	if len(groups[0].Installs) != 1 {
+		t.Fatalf("expected 1 canary install, got %d", len(groups[0].Installs))
+	}
+	inst := groups[0].Installs[0]
+	if inst.InstallID != "inst-1" || inst.InstallName != "canary-1" {
+		t.Errorf("unexpected install: %+v", inst)
+	}
+	if inst.Added != 3 || inst.Changed != 1 || inst.Unchanged != 10 {
+		t.Errorf("unexpected counts: added=%d changed=%d unchanged=%d", inst.Added, inst.Changed, inst.Unchanged)
+	}
+	if !inst.StackChanged {
+		t.Errorf("expected stack_changed=true")
+	}
+	if groups[1].GroupName != "prod" {
+		t.Errorf("expected prod group, got %q", groups[1].GroupName)
+	}
+}
+
+func TestInstallImpactFromStepMetadataEmpty(t *testing.T) {
+	if groups := installImpactFromStepMetadata(map[string]any{}); groups != nil {
+		t.Errorf("expected nil for missing key, got %v", groups)
+	}
+	if groups := installImpactFromStepMetadata(map[string]any{"install_groups": []any{}}); groups != nil {
+		t.Errorf("expected nil for empty slice, got %v", groups)
 	}
 }

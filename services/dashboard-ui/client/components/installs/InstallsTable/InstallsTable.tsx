@@ -86,7 +86,8 @@ function ActivityCell({ install }: { install: TInstall }) {
 export function parseInstallsToTableData(
   installs: TInstall[],
   orgId: string,
-  labelColorsByApp?: Record<string, Record<string, string>>
+  labelColorsByApp?: Record<string, Record<string, string>>,
+  lazyComponents = false
 ): InstallRow[] {
   return installs.map((install) => ({
     appHref: `/${install.org_id}/apps/${install.app_id}`,
@@ -103,7 +104,7 @@ export function parseInstallsToTableData(
       />
     ),
     statuses: (
-      <InstallStatuses install={install} isLabelHidden tooltipPosition="top" />
+      <InstallStatuses install={install} isLabelHidden lazyComponents={lazyComponents} tooltipPosition="top" />
     ),
     platform: (
       <CloudPlatform
@@ -277,4 +278,3 @@ export const InstallsTable = ({
     />
   )
 }
-

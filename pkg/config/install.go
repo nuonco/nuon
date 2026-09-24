@@ -7,11 +7,12 @@ import (
 	"strings"
 
 	"github.com/invopop/jsonschema"
+	"github.com/pelletier/go-toml/v2"
+
 	"github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
-	"github.com/pelletier/go-toml/v2"
 )
 
 type InstallApprovalOption string
@@ -149,7 +150,7 @@ func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Per-install override for the runner nested CloudFormation template URL. Overrides the app-level default from stack.toml.").
 		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-runner.yaml").
 		Field("custom_nested_stacks").Short("Custom nested stack overrides").
-		Long("Per-install overrides for custom nested CloudFormation stacks. Entries with the same name as app-level stacks replace them; new names are appended.").
+		Long("Per-install overrides for custom install stacks. Entries with the same name as app-level stacks replace them; new names are appended. Supports AWS CloudFormation, Azure ARM, and curated GCP modules.").
 		Nullable()
 }
 
@@ -161,7 +162,9 @@ func (s *InstallStackOverrides) HasOverrides() bool {
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
 	Name           string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
+	AppBranch      string                `mapstructure:"app_branch,omitempty" toml:"app_branch,omitempty"`
 	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
+	Telemetry      *InstallTelemetry     `mapstructure:"telemetry,omitempty" toml:"telemetry,omitempty" json:",omitempty"`
 	Labels         map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
 	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
 	GCPAccount     *GCPAccount           `mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
@@ -180,6 +183,16 @@ type Install struct {
 	// wins. It is carried through the install input system under a reserved
 	// synthetic input name (see component_override.go).
 	Components map[string]ComponentOverride `mapstructure:"components,omitempty" toml:"components,omitempty"`
+}
+
+type InstallTelemetry struct {
+	Enabled *bool `mapstructure:"enabled,omitempty" toml:"enabled,omitempty" json:"enabled,omitempty" extensions:"x-nullable,!x-omitempty"`
+}
+
+func (t InstallTelemetry) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("enabled").Short("Enable telemetry").
+		Long("Enable or disable telemetry for this install. Omit to preserve the current setting; new installs inherit the organization default.")
 }
 
 // ComponentOverride is a per-component install-level override. Exactly one field
@@ -208,12 +221,16 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("production").
 		Example("staging").
 		Example("customer-acme").
+		Field("app_branch").Short("app branch name or ID").
+		Long("App branch this install belongs to, by name or ID. Changing it moves the install and applies the branch's latest run. Required when disable-app-sync is enabled for the organization.").
+		Example("main").
 		Field("approval_option").Short("approval option for the install").
 		Long("Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation)").
 		Example("approve-all").
 		Example("prompt").
+		Field("telemetry").Short("Install telemetry settings").
 		Field("labels").Short("key/value labels for the install").
-		Long("Tag installs with arbitrary metadata like environment, region, or version. Values can use the .nuon interpolation syntax to render from install state, and re-render as state changes.").
+		Long("Tag installs with arbitrary metadata like environment, region, or version. Values can use the .nuon templating syntax to render from install state, and re-render as state changes.").
 		Example(map[string]string{"env": "production", "region": "{{ .nuon.cloud_account.aws.region }}"}).
 		Field("aws_account").Short("AWS account configuration").
 		Long("AWS-specific settings for this install, including region and other account details").
@@ -328,10 +345,28 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 	diffs = append(diffs,
 		diff.NewDiff(diff.WithKey("name"), diff.WithStringDiff(upstreamInstall.Name, i.Name)))
 
+	if i.AppBranch != "" {
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("app_branch"),
+			diff.WithStringDiff(upstreamInstall.AppBranch, i.AppBranch),
+		))
+	}
+
 	if i.ApprovalOption != InstallApprovalOptionUnknown {
 		diffs = append(diffs, diff.NewDiff(
 			diff.WithKey("approval_option"),
 			diff.WithStringDiff(string(upstreamInstall.ApprovalOption), string(i.ApprovalOption)),
+		))
+	}
+
+	if i.Telemetry != nil && i.Telemetry.Enabled != nil {
+		previous := "inherit"
+		if upstreamInstall.Telemetry != nil && upstreamInstall.Telemetry.Enabled != nil {
+			previous = strconv.FormatBool(*upstreamInstall.Telemetry.Enabled)
+		}
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("telemetry.enabled"),
+			diff.WithStringDiff(previous, strconv.FormatBool(*i.Telemetry.Enabled)),
 		))
 	}
 

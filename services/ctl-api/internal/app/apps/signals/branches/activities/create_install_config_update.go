@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 )
 
 type CreateInstallAppConfigVersionInput struct {
@@ -33,7 +34,8 @@ func (a *Activities) CreateInstallAppConfigVersion(ctx context.Context, input *C
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	diff, err := a.computeInstallConfigDiff(ctx, install.AppConfigID, input.NewAppConfigID)
+	oldAppConfigID := install.DeployedAppConfigID()
+	diff, err := configdiff.ComputeInstallConfigDiff(ctx, a.db, oldAppConfigID, input.NewAppConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to compute config diff: %w", err)
 	}
@@ -42,7 +44,7 @@ func (a *Activities) CreateInstallAppConfigVersion(ctx context.Context, input *C
 		AppBranchRunID: &input.AppBranchRunID,
 		InstallGroupID: &input.InstallGroupID,
 		InstallID:      input.InstallID,
-		OldAppConfigID: install.AppConfigID,
+		OldAppConfigID: oldAppConfigID,
 		NewAppConfigID: input.NewAppConfigID,
 		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
 	}
@@ -50,7 +52,7 @@ func (a *Activities) CreateInstallAppConfigVersion(ctx context.Context, input *C
 		return nil, fmt.Errorf("unable to create install config update: %w", err)
 	}
 
-	if err := a.saveDiffBlob(ctx, update.ID, diff); err != nil {
+	if err := a.installHelpers.SaveInstallConfigDiffBlob(ctx, update.ID, diff); err != nil {
 		a.l.Warn("unable to save config diff blob", zap.Error(err))
 	}
 
@@ -59,7 +61,7 @@ func (a *Activities) CreateInstallAppConfigVersion(ctx context.Context, input *C
 		Diff:                      diff,
 		InstallName:               install.Name,
 		InstallLabels:             install.Labels,
-		OldAppConfigID:            install.AppConfigID,
+		OldAppConfigID:            oldAppConfigID,
 		NewAppConfigID:            input.NewAppConfigID,
 	}, nil
 }

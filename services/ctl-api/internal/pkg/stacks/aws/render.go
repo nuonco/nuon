@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -308,8 +309,74 @@ func managedPolicyArnsForRole(role app.AppAWSIAMRoleConfig) []string {
 // Each policy.Contents is expected to be a full IAM policy JSON document of
 // the form `{"Version": "...", "Statement": [...]}`. Non-Contents policies
 // (i.e. ManagedPolicyName-only entries) are skipped.
+// Only this path merges a role's policy files into one document (CloudFormation
+// emits one AWS::IAM::Policy per file), so two files may share a Sid and IAM then
+// rejects the merged result.
+func dedupeStatementIDs(sources []string, statements []json.RawMessage) ([]json.RawMessage, error) {
+	seen := map[string]bool{}
+	out := make([]json.RawMessage, len(statements))
+
+	for i, raw := range statements {
+		out[i] = raw
+
+		var stmt map[string]any
+		if err := json.Unmarshal(raw, &stmt); err != nil {
+			return nil, fmt.Errorf("parse merged statement %d: %w", i, err)
+		}
+		sid, _ := stmt["Sid"].(string)
+		if sid == "" {
+			continue
+		}
+		if !seen[sid] {
+			seen[sid] = true
+			continue
+		}
+
+		source := ""
+		if i < len(sources) {
+			source = sources[i]
+		}
+		unique := sid + sidSuffix(source)
+		for n := 2; seen[unique]; n++ {
+			unique = fmt.Sprintf("%s%s%d", sid, sidSuffix(source), n)
+		}
+		seen[unique] = true
+
+		stmt["Sid"] = unique
+		rewritten, err := json.Marshal(stmt)
+		if err != nil {
+			return nil, fmt.Errorf("re-marshal statement %d after Sid rename: %w", i, err)
+		}
+		out[i] = rewritten
+	}
+
+	return out, nil
+}
+
+// IAM only allows alphanumerics in a Sid.
+func sidSuffix(policyName string) string {
+	var b strings.Builder
+	upperNext := true
+	for _, r := range policyName {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+			if upperNext && r >= 'a' && r <= 'z' {
+				b.WriteRune(r - 32)
+			} else {
+				b.WriteRune(r)
+			}
+			upperNext = false
+		default:
+			upperNext = true
+		}
+	}
+
+	return b.String()
+}
+
 func mergedInlinePolicyDocument(role app.AppAWSIAMRoleConfig) (string, error) {
 	var statements []json.RawMessage
+	var sources []string
 	for _, policy := range role.Policies {
 		if len(policy.Contents) == 0 {
 			continue
@@ -325,9 +392,16 @@ func mergedInlinePolicyDocument(role app.AppAWSIAMRoleConfig) (string, error) {
 			return "", fmt.Errorf("policy %q: parse inline policy JSON: %w", policy.Name, err)
 		}
 		statements = append(statements, doc.Statement...)
+		for range doc.Statement {
+			sources = append(sources, policy.Name)
+		}
 	}
 	if len(statements) == 0 {
 		return "", nil
+	}
+	statements, err := dedupeStatementIDs(sources, statements)
+	if err != nil {
+		return "", fmt.Errorf("role %q: %w", role.Name, err)
 	}
 	merged := struct {
 		Version   string            `json:"Version"`

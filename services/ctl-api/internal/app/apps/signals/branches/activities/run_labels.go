@@ -11,7 +11,7 @@ func RunTypeFromEventType(eventType string) app.AppBranchRunType {
 	switch eventType {
 	case "pull_request":
 		return app.AppBranchRunTypeGitPreview
-	case "push":
+	case "push", "tag":
 		return app.AppBranchRunTypeGit
 	default:
 		return app.AppBranchRunTypeManual
@@ -34,6 +34,9 @@ func BuildRunLabels(req *TriggerAppBranchRunFromVCSPushRequest) labels.Labels {
 	}
 	if req.EventType != "" {
 		l["event_type"] = req.EventType
+	}
+	if req.Draft {
+		l[app.AppBranchRunLabelIsDraftMode] = "true"
 	}
 	return l
 }

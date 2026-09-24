@@ -9,11 +9,10 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownsyncandplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func TeardownComponents(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -37,26 +36,22 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 
 	sg := newStepGroup(flw)
 	dg := newGenCtx(sg, flw, installID, appCfg, awData)
-	steps, err := teardownComponents(ctx, dg, install)
+	steps, err := teardownComponents(ctx, dg, install, true)
 	if err != nil {
 		return nil, err
 	}
 	return sg.Result(steps), nil
 }
 
-func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install) ([]*app.WorkflowStep, error) {
+func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install, gateRunnerHealthy bool) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
-	dg.sg.nextGroupEager() // generate install state
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-
-	if !stateGenV2 {
-		stateSignal := &generatestate.Signal{InstallID: dg.installID}
-		step, err := dg.sg.installSignalStep(ctx, dg.installID, "generate install state", pgtype.Hstore{}, stateSignal, dg.flw.PlanOnly, WithSkippable(false))
+	if gateRunnerHealthy {
+		dg.sg.nextGroupEager()
+		step, err := dg.sg.installSignalStep(ctx, install.ID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: install.ID,
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, dg.flw.PlanOnly)
 		if err != nil {
 			return nil, err
 		}
@@ -98,7 +93,8 @@ func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install) 
 
 		if comp.Type.IsImage() {
 			deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "skipped image teardown "+comp.Name, pgtype.Hstore{
-				"reason": generics.ToPtr("skipped image teardown"),
+				"reason":         generics.ToPtr("skipped image teardown"),
+				"component_name": generics.ToPtr(comp.Name),
 			}, nil, false)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create skip step")
@@ -115,7 +111,8 @@ func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install) 
 			reason := fmt.Sprintf("install component %s is not deployed", comp.Name)
 
 			deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "skipped teardown "+comp.Name, pgtype.Hstore{
-				"reason": generics.ToPtr(reason),
+				"reason":         generics.ToPtr(reason),
+				"component_name": generics.ToPtr(comp.Name),
 			}, nil, dg.flw.PlanOnly)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create skip step")
@@ -130,7 +127,7 @@ func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install) 
 		}
 		steps = append(steps, preDeploySteps...)
 
-		deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "plan teardown "+comp.Name, pgtype.Hstore{}, &componentteardownsyncandplan.Signal{
+		deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "plan teardown "+comp.Name, componentStepMetadata(comp.Name), &componentteardownsyncandplan.Signal{
 			InstallComponentID: installComp.ID,
 			InstallID:          dg.installID,
 			ComponentID:        compID,
@@ -143,7 +140,7 @@ func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install) 
 		}
 		steps = append(steps, deployStep)
 
-		deployStep, err = dg.sg.installSignalStep(ctx, dg.installID, "teardown "+comp.Name, pgtype.Hstore{}, &componentteardownapplyplan.Signal{
+		deployStep, err = dg.sg.installSignalStep(ctx, dg.installID, "teardown "+comp.Name, componentStepMetadata(comp.Name), &componentteardownapplyplan.Signal{
 			InstallComponentID: installComp.ID,
 			InstallID:          dg.installID,
 			ComponentID:        compID,

@@ -17,10 +17,12 @@ export const TerraformWorkspaceCardContainer = ({
   workspaceId: workspaceIdProp,
   description,
   componentType,
+  hideHeading,
 }: {
   workspaceId?: string
   description?: string
   componentType?: TComponentType
+  hideHeading?: boolean
 } = {}) => {
   const { org } = useOrg()
   const { install } = useInstall()
@@ -29,7 +31,7 @@ export const TerraformWorkspaceCardContainer = ({
 
   const isPulumi = componentType === 'pulumi'
 
-  const { data: states } = useQuery({
+  const { data: states, isLoading: statesLoading } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['workspace-states', org?.id, workspaceId],
     queryFn: () =>
@@ -42,11 +44,16 @@ export const TerraformWorkspaceCardContainer = ({
 
   const latestStateId = states?.[0]?.id
 
-  // For terraform, use the parsed state endpoint.
-  // For pulumi, use the raw endpoint (pulumi state isn't terraform JSON).
-  const { data: currentRevision } = useQuery({
+  // Pulumi state isn't terraform JSON, so it can't go through the parsed endpoint.
+  const { data: currentRevision, isLoading: revisionLoading } = useQuery({
     placeholderData: keepPreviousData,
-    queryKey: ['workspace-state', org?.id, workspaceId, latestStateId, isPulumi],
+    queryKey: [
+      'workspace-state',
+      org?.id,
+      workspaceId,
+      latestStateId,
+      isPulumi,
+    ],
     queryFn: () =>
       isPulumi
         ? getWorkspaceStateRaw({
@@ -79,6 +86,8 @@ export const TerraformWorkspaceCardContainer = ({
     <TerraformWorkspaceCard
       currentRevision={currentRevision}
       componentType={componentType}
+      hideHeading={hideHeading}
+      loading={statesLoading || (!!latestStateId && revisionLoading)}
       status={lock ? <TerraformWorkspaceLockBadge lock={lock} /> : undefined}
       actions={
         isPulumi ? undefined : (

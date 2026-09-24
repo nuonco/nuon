@@ -1,8 +1,33 @@
-import { redirect, type RouteObject } from 'react-router'
+import { Outlet, redirect, useMatch, type RouteObject } from 'react-router'
+import { useNewInstallIA } from '@/hooks/use-new-install-ia'
+import { useOrg } from '@/hooks/use-org'
+import { NotFound } from '@/views/NotFound'
 import { InstallLayout } from './InstallLayout'
 import { Overview } from './Overview'
 import { Components } from './Components'
 import { Resources } from './Resources'
+import {
+  NewInstallPlaceholder,
+  NewInstallPlaceholderBody,
+} from './NewInstallPlaceholder'
+import { Deployments } from './Deployments'
+import {
+  NewInstallConfigurationLayout,
+  NewInstallOperationsLayout,
+  NewInstallResourcesLayout,
+} from './NewInstallSectionLayout'
+import { NewInstallComponents } from './NewInstallComponents'
+import { NewInstallImages } from './NewInstallImages'
+import { NewInstallSandbox } from './NewInstallSandbox'
+import { NewInstallHealth } from './NewInstallHealth'
+import { NewInstallState } from './NewInstallState'
+import { NewInstallStack } from './NewInstallStack'
+import {
+  NewInstallAppBranch,
+  NewInstallConfigFile,
+  NewInstallInputs,
+  NewInstallOverrides,
+} from './NewInstallConfiguration'
 import { Actions } from './Actions'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
@@ -10,8 +35,8 @@ import { Runner } from './Runner'
 import { ProcessSystemLogs } from './ProcessSystemLogs'
 import { Sandbox } from './Sandbox'
 import { Stacks } from './Stacks'
-import { Versions } from './Versions'
-import { Workflows } from './Workflows'
+import { Updates } from './Updates'
+import { History } from './History'
 import { Readme } from './Readme'
 import { InstallComponentLayout } from './InstallComponentLayout'
 import { InstallComponentOverviewTab } from './install-component-tabs/InstallComponentOverviewTab'
@@ -55,18 +80,152 @@ import { Notebooks } from './Notebooks'
 import { NotebookDetail } from './NotebookDetail'
 import { InstallConfigs } from './InstallConfigs'
 
+const legacyRedirect =
+  (to: (params: Record<string, string | undefined>) => string) =>
+  ({
+    params,
+    request,
+  }: {
+    params: Record<string, string | undefined>
+    request: Request
+  }) => {
+    const { search, hash } = new URL(request.url)
+    return redirect(`${to(params)}${search}${hash}`)
+  }
+
+const NewInstallIAGate = () => {
+  const { org } = useOrg()
+  const hasNewInstallIA = useNewInstallIA()
+
+  if (!org) return null
+  return hasNewInstallIA ? <Outlet /> : <NotFound />
+}
+
+const InstallOverviewRoute = () => {
+  const hasNewInstallIA = useNewInstallIA()
+
+  return hasNewInstallIA ? (
+    <NewInstallPlaceholder path="" title="Overview" />
+  ) : (
+    <Overview />
+  )
+}
+
+const InstallResourcesRoute = () => {
+  const hasNewInstallIA = useNewInstallIA()
+  const isIndex = !!useMatch('/:orgId/installs/:installId/resources')
+
+  if (hasNewInstallIA) return <NewInstallResourcesLayout />
+  if (isIndex) return <Resources />
+  return <Outlet />
+}
+
+const NewInstallResourcesIndex = () => {
+  const hasNewInstallIA = useNewInstallIA()
+  if (!hasNewInstallIA) return null
+  return <NewInstallStack />
+}
+
 export const installRoutes: RouteObject[] = [
   {
     element: <InstallLayout />,
     children: [
-      { path: ':orgId/installs/:installId', element: <Overview /> },
+      {
+        path: ':orgId/installs/:installId',
+        element: <InstallOverviewRoute />,
+      },
       {
         path: ':orgId/installs/:installId/components',
         element: <Components />,
       },
       {
         path: ':orgId/installs/:installId/resources',
-        element: <Resources />,
+        element: <InstallResourcesRoute />,
+        children: [
+          { index: true, element: <NewInstallResourcesIndex /> },
+          {
+            element: <NewInstallIAGate />,
+            children: [
+              {
+                path: 'sandbox',
+                element: <NewInstallSandbox />,
+              },
+              {
+                path: 'components',
+                element: <NewInstallComponents />,
+              },
+              {
+                path: 'images',
+                element: <NewInstallImages />,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        element: <NewInstallIAGate />,
+        children: [
+          {
+            path: ':orgId/installs/:installId/deployments',
+            element: <Deployments />,
+          },
+          {
+            path: ':orgId/installs/:installId/health',
+            element: <NewInstallHealth />,
+          },
+          {
+            path: ':orgId/installs/:installId/operations',
+            element: <NewInstallOperationsLayout />,
+            children: [
+              {
+                index: true,
+                element: <NewInstallPlaceholderBody title="Activity" />,
+              },
+              {
+                path: 'actions',
+                element: <NewInstallPlaceholderBody title="Actions" />,
+              },
+              {
+                path: 'runbooks',
+                element: <NewInstallPlaceholderBody title="Runbooks" />,
+              },
+              {
+                path: 'policies',
+                element: <NewInstallPlaceholderBody title="Policies" />,
+              },
+              {
+                path: 'runner',
+                element: <NewInstallPlaceholderBody title="Runner" />,
+              },
+            ],
+          },
+          {
+            path: ':orgId/installs/:installId/configuration',
+            element: <NewInstallConfigurationLayout />,
+            children: [
+              {
+                index: true,
+                element: <NewInstallAppBranch />,
+              },
+              {
+                path: 'inputs',
+                element: <NewInstallInputs />,
+              },
+              {
+                path: 'config-file',
+                element: <NewInstallConfigFile />,
+              },
+              {
+                path: 'overrides',
+                element: <NewInstallOverrides />,
+              },
+              {
+                path: 'state',
+                element: <NewInstallState />,
+              },
+            ],
+          },
+        ],
       },
       { path: ':orgId/installs/:installId/actions', element: <Actions /> },
       { path: ':orgId/installs/:installId/notebooks', element: <Notebooks /> },
@@ -107,26 +266,47 @@ export const installRoutes: RouteObject[] = [
         ],
       },
       {
-        path: ':orgId/installs/:installId/workflows/:workflowId',
+        path: ':orgId/installs/:installId/history/:workflowId',
         element: <WorkflowDetail />,
+      },
+      {
+        path: ':orgId/installs/:installId/workflows/:workflowId',
+        loader: legacyRedirect(
+          (params) =>
+            `/${params.orgId}/installs/${params.installId}/history/${params.workflowId}`
+        ),
       },
       { path: ':orgId/installs/:installId/stacks', element: <Stacks /> },
       {
+        path: ':orgId/installs/:installId/updates',
+        element: <Updates />,
+      },
+      {
+        path: ':orgId/installs/:installId/history',
+        element: <History />,
+      },
+      {
         path: ':orgId/installs/:installId/app-branch-runs',
-        element: <Versions />,
+        loader: legacyRedirect(
+          (params) => `/${params.orgId}/installs/${params.installId}/updates`
+        ),
       },
       {
         path: ':orgId/installs/:installId/versions',
-        loader: ({ params }) =>
-          redirect(
-            `/${params.orgId}/installs/${params.installId}/app-branch-runs`
-          ),
+        loader: legacyRedirect(
+          (params) => `/${params.orgId}/installs/${params.installId}/updates`
+        ),
+      },
+      {
+        path: ':orgId/installs/:installId/workflows',
+        loader: legacyRedirect(
+          (params) => `/${params.orgId}/installs/${params.installId}/history`
+        ),
       },
       {
         path: ':orgId/installs/:installId/configs',
         element: <InstallConfigs />,
       },
-      { path: ':orgId/installs/:installId/workflows', element: <Workflows /> },
       { path: ':orgId/installs/:installId/readme', element: <Readme /> },
       {
         path: ':orgId/installs/:installId/components/:componentId',

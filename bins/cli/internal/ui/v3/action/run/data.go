@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "charm.land/bubbletea/v2"
+
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/action/run/steps"
 )
 

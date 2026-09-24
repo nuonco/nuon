@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/lib/pq"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
@@ -20,6 +22,7 @@ import (
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/triggers"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -36,6 +39,8 @@ type RunDeps struct {
 	InstallHelpers   *installhelpers.Helpers
 	VCSHelpers       *vcshelpers.Helpers
 	TFClient         terraform.Client
+	Metrics          *Metrics
+	Logger           *zap.Logger
 }
 
 type RunRequest struct {
@@ -44,6 +49,13 @@ type RunRequest struct {
 
 	// DispatchBuilds: see components.SyncComponentParams.DispatchBuilds.
 	DispatchBuilds bool
+
+	// SyncBranches opts in to writing app branches from the config; see WithBranchSync.
+	SyncBranches bool
+
+	// Deprecated: branches are not synced unless SyncBranches is set. When both
+	// are set, SkipBranches wins.
+	SkipBranches bool
 }
 
 type RunResult struct {
@@ -58,13 +70,31 @@ type RunResult struct {
 
 	// Caller must provision these queues after Run returns; the sync is transactional.
 	AppBranchesCreated []string
+
+	AppBranchConfigsUpdated []configsync.AppBranchConfigState
 }
 
 // Run syncs an app config from its stored intermediate config, driving the
 // status through syncing to active or error. The single path from intermediate
 // config to database records — the branch run and POST /configs/:id/sync both
 // go through it.
-func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) {
+func Run(ctx context.Context, deps RunDeps, req RunRequest) (res *RunResult, retErr error) {
+	started := time.Now()
+	stage := "load"
+	committed := false
+	defer func() {
+		if res == nil && retErr == nil {
+			return
+		}
+		outcome := deps.Metrics.recordForApp(ctx, started, req.AppID, stage, retErr)
+		if retErr != nil && deps.Logger != nil {
+			cctx.GetLogger(ctx, deps.Logger).Warn("config sync failed",
+				zap.String("app_id", req.AppID), zap.String("app_config_id", req.AppConfigID),
+				zap.String("outcome", outcome), zap.String("stage", stage),
+				zap.Bool("config_committed", committed), zap.Error(retErr))
+		}
+	}()
+
 	var appConfig app.AppConfig
 	if res := deps.DB.WithContext(ctx).First(&appConfig, "id = ?", req.AppConfigID); res.Error != nil {
 		return nil, fmt.Errorf("unable to load app config: %w", res.Error)
@@ -72,11 +102,13 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 
 	setStatus(ctx, deps.DB, &appConfig, app.AppConfigStatusSyncing, "syncing config")
 
+	stage = "intermediate"
 	intermediateJSON, err := appConfig.IntermediateConfig.Get(ctx)
 	if err != nil {
 		return nil, markSyncFailed(ctx, deps.DB, &appConfig, fmt.Errorf("unable to get intermediate config: %w", err))
 	}
 
+	stage = "decode"
 	var cfg config.AppConfig
 	decoder := json.NewDecoder(strings.NewReader(intermediateJSON))
 	decoder.UseNumber()
@@ -88,8 +120,12 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 	if req.DispatchBuilds {
 		opts = append(opts, WithComponentBuildDispatch())
 	}
+	if req.SyncBranches && !req.SkipBranches {
+		opts = append(opts, WithBranchSync())
+	}
 
 	var result RunResult
+	stage = "sync_transaction"
 	err = deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		s := NewDBSyncer(
 			tx,
@@ -128,13 +164,14 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 		}
 
 		result = RunResult{
-			AppConfigID:         s.GetAppConfigID(),
-			ComponentIDs:        s.GetComponentStateIds(),
-			ActionIDs:           s.GetActionStateIds(),
-			RunbookIDs:          s.GetRunbookStateIds(),
-			ComponentsScheduled: s.GetComponentsScheduled(),
-			ComponentsCreated:   s.GetComponentsCreated(),
-			AppBranchesCreated:  s.GetAppBranchesCreated(),
+			AppConfigID:             s.GetAppConfigID(),
+			ComponentIDs:            s.GetComponentStateIds(),
+			ActionIDs:               s.GetActionStateIds(),
+			RunbookIDs:              s.GetRunbookStateIds(),
+			ComponentsScheduled:     s.GetComponentsScheduled(),
+			ComponentsCreated:       s.GetComponentsCreated(),
+			AppBranchesCreated:      s.GetAppBranchesCreated(),
+			AppBranchConfigsUpdated: s.GetAppBranchConfigsUpdated(),
 		}
 
 		return nil
@@ -143,6 +180,8 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 		return nil, markSyncFailed(ctx, deps.DB, &appConfig, err)
 	}
 
+	committed = true
+	stage = "deferred_queues"
 	if err := provisionDeferredQueues(ctx, deps, &result); err != nil {
 		return nil, markSyncFailed(ctx, deps.DB, &appConfig, err)
 	}
@@ -160,7 +199,7 @@ func provisionDeferredQueues(ctx context.Context, deps RunDeps, result *RunResul
 			return fmt.Errorf("unable to create queues for component %s: %w", componentID, err)
 		}
 
-		q, err := queueClient.GetQueueByOwner(ctx, componentID, "components")
+		q, err := queueClient.GetDefaultQueueByOwner(ctx, componentID, "components")
 		if err != nil {
 			return fmt.Errorf("unable to get queue for component %s: %w", componentID, err)
 		}
@@ -182,6 +221,12 @@ func provisionDeferredQueues(ctx context.Context, deps RunDeps, result *RunResul
 	for _, branchID := range result.AppBranchesCreated {
 		if err := deps.AppsHelpers.EnsureAppBranchQueues(ctx, branchID); err != nil {
 			return fmt.Errorf("unable to create queues for app branch %s: %w", branchID, err)
+		}
+	}
+
+	for _, branchConfig := range result.AppBranchConfigsUpdated {
+		if err := deps.AppsHelpers.EnqueueAppBranchConfigSignals(ctx, branchConfig.AppBranchID, branchConfig.AppBranchConfigID); err != nil {
+			return fmt.Errorf("unable to enqueue app branch config signals for %s: %w", branchConfig.AppBranchID, err)
 		}
 	}
 

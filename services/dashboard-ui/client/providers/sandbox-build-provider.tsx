@@ -1,7 +1,8 @@
 import { createContext, type ReactNode } from 'react'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { useSSEResourceQuery, isTerminalStatusV2 } from '@/hooks/use-sse-resource-query'
+import { useSSEResourceQuery, isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { useStatusToast } from '@/hooks/use-status-toast'
 import { getSandboxBuild } from '@/lib'
 import { ProviderError } from '@/components/layout/ProviderError'
@@ -29,6 +30,8 @@ export function SandboxBuildProvider({
   const { org } = useOrg()
   const { app } = useApp()
 
+  const onRefreshError = useRefreshErrorToast()
+
   const { data: build, isLoading, error } = useSSEResourceQuery<TAppSandboxBuild>({
     sseUrl: org?.id && app?.id && buildId
       ? `/api/orgs/${org.id}/apps/${app.id}/sandbox-builds/${buildId}/sse`
@@ -38,6 +41,7 @@ export function SandboxBuildProvider({
     enabled: !!org?.id && !!app?.id && !!buildId,
     shouldPoll,
     eventName: 'sandbox-build',
+    onError: onRefreshError,
     isFinished: isTerminalStatusV2,
   })
 

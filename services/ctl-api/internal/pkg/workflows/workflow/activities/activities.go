@@ -1,6 +1,8 @@
 package activities
 
 import (
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -21,6 +23,8 @@ type Params struct {
 	Cfg         *internal.Config
 	Audit       *audit.Emitter `optional:"true"`
 	L           *zap.Logger    `optional:"true"`
+
+	MeterProvider metric.MeterProvider `optional:"true"`
 }
 
 type Activities struct {
@@ -31,6 +35,9 @@ type Activities struct {
 	cfg         *internal.Config
 	audit       *audit.Emitter
 	l           *zap.Logger
+
+	policyEvaluationMetrics
+	driftPlanEvaluations metric.Int64Counter
 }
 
 func New(params Params) *Activities {
@@ -38,7 +45,11 @@ func New(params Params) *Activities {
 	if l == nil {
 		l = zap.NewNop()
 	}
-	return &Activities{
+	provider := params.MeterProvider
+	if provider == nil {
+		provider = noop.NewMeterProvider()
+	}
+	a := &Activities{
 		db:          params.DB,
 		chDB:        params.CHDB,
 		appsHelpers: params.AppsHelpers,
@@ -47,4 +58,10 @@ func New(params Params) *Activities {
 		audit:       params.Audit,
 		l:           l,
 	}
+	a.policyEvaluationMetrics = newPolicyEvaluationMetrics(provider)
+	a.driftPlanEvaluations, _ = provider.Meter("github.com/nuonco/nuon/ctl-api/drift-plan").Int64Counter(
+		"nuon.install.drift.plan.evaluation.attempts",
+		metric.WithUnit("{attempt}"),
+		metric.WithDescription("Returned drift plan interpretation attempts, not end-to-end drift checks."))
+	return a
 }

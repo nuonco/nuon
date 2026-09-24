@@ -23,7 +23,7 @@ func NewSlackAPI(params Params) (*API, error) {
 		endpointAudit:         params.EndpointAudit,
 	}
 
-	if err := api.init(); err != nil {
+	if err := api.init(params.HTTPMetrics); err != nil {
 		return nil, errors.Wrap(err, "unable to initialize")
 	}
 

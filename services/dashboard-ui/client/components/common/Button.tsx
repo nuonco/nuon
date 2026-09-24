@@ -47,15 +47,15 @@ const SIZE_CLASSES: Record<TButtonSize, string> = {
 const VARIANT_CLASSES: Record<TButtonVariant, string> = {
   danger: `
     border rounded-lg bg-white dark:bg-dark-grey-900 text-red-800 dark:text-red-500
-    hover:bg-red-50 dark:hover:bg-[#1D0D10]
+    hover:bg-red-50 dark:hover:bg-red-950
     focus:outline-red-400 dark:focus:outline-red-500/50
     focus:bg-white dark:focus:bg-dark-grey-900
     active:outline-red-400 dark:active:outline-red-500/50
-    active:bg-red-100 dark:active:bg-[#2E1013]
+    active:bg-red-100 dark:active:bg-red-900/40
     disabled:opacity-50 disabled:hover:bg-white disabled:hover:dark:bg-dark-grey-700
   `,
   primary: `
-    border border-transparent rounded-lg bg-primary-600 text-white
+    border border-transparent rounded-lg bg-primary-600 text-on-primary
     hover:bg-primary-700
     focus:outline-primary-400/80 focus:bg-primary-600
     active:bg-primary-900
@@ -64,14 +64,14 @@ const VARIANT_CLASSES: Record<TButtonVariant, string> = {
   ghost: `
     border border-transparent rounded-lg bg-inherit
     hover:bg-cool-grey-500/8 dark:hover:bg-cool-grey-500/8
-    focus:outline-none focus:shadow-[0_0_0_1px_white,0_0_0_3px_rgba(128,64,191,0.64)] dark:focus:shadow-[0_0_0_1px_#141217,0_0_0_3px_rgba(128,64,191,0.64)]
+    focus:outline-none focus:shadow-[0_0_0_1px_var(--background),0_0_0_3px_var(--focus-ring)]
     active:bg-cool-grey-500/16 dark:active:bg-cool-grey-500/16
     disabled:opacity-50 disabled:hover:bg-inherit disabled:hover:dark:bg-inherit
   `,
   icon: `
     border border-transparent rounded-md bg-inherit aspect-square !p-0 justify-center
     hover:bg-cool-grey-500/8 dark:hover:bg-cool-grey-500/8
-    focus:outline-none focus:shadow-[0_0_0_1px_white,0_0_0_3px_rgba(128,64,191,0.64)] dark:focus:shadow-[0_0_0_1px_#141217,0_0_0_3px_rgba(128,64,191,0.64)]
+    focus:outline-none focus:shadow-[0_0_0_1px_var(--background),0_0_0_3px_var(--focus-ring)]
     active:bg-cool-grey-500/16 dark:active:bg-cool-grey-500/16
     disabled:opacity-50 disabled:hover:bg-inherit disabled:hover:dark:bg-inherit
   `,
@@ -79,7 +79,7 @@ const VARIANT_CLASSES: Record<TButtonVariant, string> = {
     border rounded-lg bg-white dark:bg-dark-grey-700 text-primary-600 dark:text-primary-400
     shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)]
     hover:bg-cool-grey-50 dark:hover:bg-dark-grey-500
-    focus:outline-none focus:shadow-[0_0_0_1px_white,0_0_0_3px_rgba(128,64,191,0.64)] dark:focus:shadow-[0_0_0_1px_#141217,0_0_0_3px_rgba(128,64,191,0.64)]
+    focus:outline-none focus:shadow-[0_0_0_1px_var(--background),0_0_0_3px_var(--focus-ring)]
     focus:bg-white dark:focus:bg-dark-grey-700
     active:bg-cool-grey-100 dark:active:bg-dark-grey-400
     disabled:opacity-50 disabled:hover:bg-white disabled:hover:dark:bg-dark-grey-700
@@ -127,7 +127,7 @@ export const Button = forwardRef<
           isActive && variant === 'tab',
         '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !bg-transparent !border-0 !shadow-none !text-cool-grey-800 dark:!text-white/70 hover:!bg-cool-grey-500/8 dark:hover:!bg-cool-grey-500/8 focus:!bg-cool-grey-500/8 dark:focus:!bg-cool-grey-500/8 focus-visible:[--tw-outline-style:solid] focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-primary-400/80 active:!bg-cool-grey-500/16 dark:active:!bg-cool-grey-500/16':
           isMenuButton && variant !== 'danger',
-        '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !bg-transparent !border-0 !shadow-none !text-red-800 dark:!text-red-500 hover:!bg-red-50 dark:hover:!bg-[#1D0D10] focus:!bg-red-50 dark:focus:!bg-[#1D0D10] focus-visible:[--tw-outline-style:solid] focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-red-400/80 dark:focus-visible:outline-red-500/50':
+        '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !bg-transparent !border-0 !shadow-none !text-red-800 dark:!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-950 focus:!bg-red-50 dark:focus:!bg-red-950 focus-visible:[--tw-outline-style:solid] focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-red-400/80 dark:focus-visible:outline-red-500/50':
           isMenuButton && variant === 'danger',
         'opacity-50 cursor-not-allowed pointer-events-none': useTooltipDisabled,
       },

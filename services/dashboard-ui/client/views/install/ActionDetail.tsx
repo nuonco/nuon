@@ -14,13 +14,11 @@ import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { InstallActionRunTimeline } from '@/components/actions/InstallActionRunTimeline'
+import { InstallCronOfflineBanner } from '@/components/installs/InstallCronOfflineBanner'
 import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromAppConfig'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
-import {
-  HistoryPanelButton,
-  HistoryRail,
-} from '@/components/layout/HistoryRail'
+import { HistoryPanelButton } from '@/components/layout/HistoryPanelButton'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -78,9 +76,9 @@ export const ActionDetail = () => {
     />
   )
 
-  const manualTrigger = action?.action_workflow?.configs?.[0]?.triggers?.find(
-    (t) => t.type === 'manual'
-  )
+  const actionTriggers = action?.action_workflow?.configs?.[0]?.triggers
+  const manualTrigger = actionTriggers?.find((t) => t.type === 'manual')
+  const hasCronSchedule = !!actionTriggers?.some((t) => t.type === 'cron')
 
   return (
     <>
@@ -210,69 +208,78 @@ export const ActionDetail = () => {
             }
           />
         }
-        banners={removed ? <RemovedFromAppConfigBanner kind="action" /> : null}
+        banners={
+          <>
+            {removed ? <RemovedFromAppConfigBanner kind="action" /> : null}
+            <InstallCronOfflineBanner
+              runnerStatus={install?.runner_status}
+              kind="action"
+              hasCronSchedule={hasCronSchedule}
+              orgId={org?.id}
+              installId={install?.id}
+            />
+          </>
+        }
       >
-        <HistoryRail title="Run history" history={history}>
-          {installActionBreakGlassRole ? (
-            <div className="flex flex-col gap-4">
-              <SectionHeader
-                title="Break glass role"
-                status={
-                  <Status
-                    status={
-                      breakGlassRoleArns?.[installActionBreakGlassRole]
-                        ? 'provisioned'
-                        : 'not-provisioned'
-                    }
-                  >
-                    {breakGlassRoleArns?.[installActionBreakGlassRole]
-                      ? 'Provisioned'
-                      : 'Not provisioned'}
-                  </Status>
-                }
-              />
-              {breakGlassRoleArns?.[installActionBreakGlassRole] ? (
-                <div className="flex flex-col gap-2">
-                  <Text variant="body" weight="strong">
-                    Role assumed while running this action
-                  </Text>
-                  <Code variant="default">
-                    {breakGlassRoleArns[installActionBreakGlassRole]}
-                  </Code>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <Text variant="body">
-                    Break glass role must be enabled in the install stack before
-                    running this action.
-                  </Text>
-                  <Code variant="default">{installActionBreakGlassRole}</Code>
-                </div>
-              )}
-            </div>
-          ) : null}
-
-          {action?.action_workflow?.configs?.[0]?.role ? (
-            <div className="flex flex-col gap-2">
-              <SectionHeader
-                title="Execution role"
-                description="IAM role used when executing this action."
-              />
-              <Code variant="inline">
-                {action.action_workflow.configs[0].role}
-              </Code>
-            </div>
-          ) : null}
-
+        {installActionBreakGlassRole ? (
           <div className="flex flex-col gap-4">
-            <SectionHeader title="Steps" />
-            {sortByIdx(action?.action_workflow?.configs?.[0]?.steps ?? []).map(
-              (step, i) => (
-                <ActionStep key={step.id ?? i} index={i} step={step} />
-              )
+            <SectionHeader
+              title="Break glass role"
+              status={
+                <Status
+                  status={
+                    breakGlassRoleArns?.[installActionBreakGlassRole]
+                      ? 'provisioned'
+                      : 'not-provisioned'
+                  }
+                >
+                  {breakGlassRoleArns?.[installActionBreakGlassRole]
+                    ? 'Provisioned'
+                    : 'Not provisioned'}
+                </Status>
+              }
+            />
+            {breakGlassRoleArns?.[installActionBreakGlassRole] ? (
+              <div className="flex flex-col gap-2">
+                <Text variant="body" weight="strong">
+                  Role assumed while running this action
+                </Text>
+                <Code variant="default">
+                  {breakGlassRoleArns[installActionBreakGlassRole]}
+                </Code>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Text variant="body">
+                  Break glass role must be enabled in the install stack before
+                  running this action.
+                </Text>
+                <Code variant="default">{installActionBreakGlassRole}</Code>
+              </div>
             )}
           </div>
-        </HistoryRail>
+        ) : null}
+
+        {action?.action_workflow?.configs?.[0]?.role ? (
+          <div className="flex flex-col gap-2">
+            <SectionHeader
+              title="Execution role"
+              description="IAM role used when executing this action."
+            />
+            <Code variant="inline">
+              {action.action_workflow.configs[0].role}
+            </Code>
+          </div>
+        ) : null}
+
+        <div className="flex flex-col gap-4">
+          <SectionHeader title="Steps" />
+          {sortByIdx(action?.action_workflow?.configs?.[0]?.steps ?? []).map(
+            (step, i) => (
+              <ActionStep key={step.id ?? i} index={i} step={step} />
+            )
+          )}
+        </div>
       </DetailPage>
     </>
   )

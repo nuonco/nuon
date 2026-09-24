@@ -10,3 +10,13 @@ export const getOrgs = ({
   api<TOrg[]>({
     path: `orgs${buildQueryParams({ limit, offset, q })}`,
   })
+
+export const getPaginatedOrgs = ({
+  limit,
+  offset,
+  q,
+}: { q?: string } & TPaginationParams = {}) =>
+  api<TOrg[]>({
+    path: `orgs${buildQueryParams({ limit, offset, q })}`,
+    paginated: true,
+  })

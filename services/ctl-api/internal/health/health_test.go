@@ -12,6 +12,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.temporal.io/sdk/client"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
@@ -77,6 +79,7 @@ func (s *HealthTestSuite) SetupSuite() {
 		}),
 		// service under test
 		fx.Provide(New),
+		fx.Provide(func() metric.MeterProvider { return noop.NewMeterProvider() }),
 		fx.Populate(&s.service),
 	)
 

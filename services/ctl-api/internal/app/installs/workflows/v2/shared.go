@@ -22,7 +22,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionrunner"
@@ -66,11 +65,6 @@ func WithGroupIdx(n int) WorkflowStepOptions {
 // gate config could not be read, and the signal re-resolves at run time.
 func componentGateEnabled(ctx workflow.Context, installID string, componentID string, componentType app.ComponentType) bool {
 	if componentType != app.ComponentTypeHelmChart && componentType != app.ComponentTypeKubernetesManifest {
-		return false
-	}
-	// Without the feature the gate signal no-ops, so inserting the step would
-	// show a phantom "verify health" step that verifies nothing.
-	if enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureComponentHealth)); err != nil || !enabled {
 		return false
 	}
 	ccc, err := activities.AwaitGetCurrentComponentConfig(ctx, &activities.GetCurrentComponentConfigRequest{
@@ -140,7 +134,7 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallSandboxRuns)
 	case executeactionworkflow.SignalType, actionworkflowrun.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallActionWorkflowRuns)
-	case generatestate.SignalType, statepartialgenerate.SignalType:
+	case statepartialgenerate.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallStates)
 	}
 
@@ -202,7 +196,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 			Signal: sig,
 		},
 		Retryable: meta.retryable,
-		Skippable: true,
+		Skippable: signal.IsSkippable(sig),
 	}
 
 	step.Timeout = signal.DeriveTimeout(sig)

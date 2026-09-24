@@ -6,6 +6,7 @@ import (
 	// apps signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/appconfigsync"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/appconfigsynced"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/addinstall"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/appconfig"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/comparison"
@@ -17,6 +18,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/previewimpact"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/run"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/vcspush"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/created"
@@ -35,6 +37,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/updatesandbox"
 
 	// general signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/bulk_cancel_workflows"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/promotion"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/slack_auto_link"
 
@@ -52,6 +55,7 @@ import (
 
 	// installs signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appbranchchanged"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitcomponenthealthy"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitinstallstackversionrun"
@@ -75,10 +79,10 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/inputsupdated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigdiff"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/labeladded"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/phonehomebackfill"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/polldependencies"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisiondns"
@@ -131,7 +135,6 @@ import (
 	// runners signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/delete"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/deprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/flushorphanedjobs"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/forcedelete"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/forceshutdown"
@@ -149,9 +152,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processinit"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processshutdown"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/provision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/provisionserviceaccount"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/reprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/reprovisionserviceaccount"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/restart"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/runnerhealthcheck"

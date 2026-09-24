@@ -88,6 +88,12 @@ type GetAppBranchesParams struct {
 	*/
 	Page *int64
 
+	/* Q.
+
+	   filter branches by name
+	*/
+	Q *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -202,6 +208,17 @@ func (o *GetAppBranchesParams) SetPage(page *int64) {
 	o.Page = page
 }
 
+// WithQ adds the q to the get app branches params
+func (o *GetAppBranchesParams) WithQ(q *string) *GetAppBranchesParams {
+	o.SetQ(q)
+	return o
+}
+
+// SetQ adds the q to the get app branches params
+func (o *GetAppBranchesParams) SetQ(q *string) {
+	o.Q = q
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetAppBranchesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -261,6 +278,23 @@ func (o *GetAppBranchesParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if qPage != "" {
 
 			if err := r.SetQueryParam("page", qPage); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Q != nil {
+
+		// query param q
+		var qrQ string
+
+		if o.Q != nil {
+			qrQ = *o.Q
+		}
+		qQ := qrQ
+		if qQ != "" {
+
+			if err := r.SetQueryParam("q", qQ); err != nil {
 				return err
 			}
 		}

@@ -34,7 +34,7 @@ func (a *Activities) UpdateSignalEmitter(ctx context.Context, req *UpdateSignalE
 		return nil, errors.New("queue signal not found")
 	}
 
-	a.l.Debug("updated queue signal with emitter relationship",
+	a.l.Info("updated queue signal with emitter relationship",
 		zap.String("queue-signal-id", req.QueueSignalID),
 		zap.String("emitter-id", req.EmitterID),
 	)

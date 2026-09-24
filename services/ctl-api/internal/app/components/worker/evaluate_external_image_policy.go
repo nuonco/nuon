@@ -16,11 +16,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, buildJobID, runnerID, componentName string) error {
+func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, buildJobID, componentName string) error {
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPlanning, "evaluating image policies")
 
 	l, err := log.WorkflowLogger(ctx)
@@ -45,6 +44,21 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		return nil
 	}
 
+	build, err := activities.AwaitGetComponentBuildByID(ctx, buildID)
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get build", err))
+		return fmt.Errorf("unable to get component build: %w", err)
+	}
+	org, err := activities.AwaitGetOrgByID(ctx, build.OrgID)
+	if err != nil {
+		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to get org", err))
+		return fmt.Errorf("unable to get org: %w", err)
+	}
+	if !shouldFetchImageMetadataForPolicy(policyCheckResult.HasPolicies, org.SandboxMode) {
+		l.Info("sandbox mode enabled, skipping image metadata fetch and policy evaluation")
+		return nil
+	}
+
 	l.Info("container image policies found, proceeding with metadata fetch")
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
@@ -53,11 +67,9 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		return fmt.Errorf("unable to get log stream ID: %w", err)
 	}
 
-	// Create a fetch-image-metadata job on the runner
+	// Create a fetch-image-metadata job on the control plane
 	metadataJob, err := activities.AwaitCreateFetchImageMetadataJob(ctx, &activities.CreateFetchImageMetadataJobRequest{
 		BuildID:     buildID,
-		ParentJobID: buildJobID,
-		RunnerID:    runnerID,
 		LogStreamID: logStreamID,
 		Metadata: map[string]string{
 			"component_build_id": buildID,
@@ -73,9 +85,8 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 
 	// Save the job plan
 	if err := activities.AwaitSaveFetchImageMetadataPlan(ctx, &activities.SaveFetchImageMetadataPlanRequest{
-		JobID:               metadataJob.ID,
-		BuildID:             buildID,
-		IsControlPlaneBuild: metadataJob.Executor == app.RunnerJobExecutorControlPlane,
+		JobID:   metadataJob.ID,
+		BuildID: buildID,
 	}); err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to save metadata job plan", err))
 		w.failRunnerJob(ctx, buildJobID, "unable to save metadata job plan")
@@ -84,17 +95,9 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 
 	// Execute the job (queue and poll for completion)
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPlanning, "fetching image metadata")
-	if metadataJob.Executor == app.RunnerJobExecutorControlPlane {
-		err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: metadataJob.ID}, &workflow.ChildWorkflowOptions{
-			WorkflowID: fmt.Sprintf("%s-fetch-image-metadata", workflow.GetInfo(ctx).WorkflowExecution.ID),
-		})
-	} else {
-		_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-			RunnerID:   runnerID,
-			JobID:      metadataJob.ID,
-			WorkflowID: fmt.Sprintf("%s-fetch-image-metadata", workflow.GetInfo(ctx).WorkflowExecution.ID),
-		})
-	}
+	err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: metadataJob.ID}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("%s-fetch-image-metadata", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	})
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to fetch image metadata", err))
 		w.failRunnerJob(ctx, buildJobID, "unable to fetch image metadata")
@@ -254,6 +257,14 @@ func (w *Workflows) recordComponentPolicyEvaluationFailure(ctx workflow.Context,
 }
 
 const maxDescriptionLength = 500
+
+// shouldFetchImageMetadataForPolicy is the gate in front of the
+// fetch-image-metadata job. Sandbox orgs cannot reach vendor registries, and
+// fake metadata would still fail typical deny policies (signature/SBOM), so
+// we skip the fetch and the rest of policy eval together.
+func shouldFetchImageMetadataForPolicy(hasPolicies, orgSandbox bool) bool {
+	return hasPolicies && !orgSandbox
+}
 
 func truncateErrorMessage(prefix string, err error) string {
 	if err == nil {

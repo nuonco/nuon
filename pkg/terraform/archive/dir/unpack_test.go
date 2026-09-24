@@ -9,8 +9,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/nuonco/nuon/pkg/terraform/archive"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/terraform/archive"
 )
 
 func Test_oci_unpackDir(t *testing.T) {

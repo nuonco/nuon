@@ -26,6 +26,7 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelpers *appshelpers.Helpers, cf
 		return sync.SyncErr{
 			Resource:    "app-cloudformation-stack",
 			Description: err.Error(),
+			Err:         err,
 		}
 	}
 
@@ -42,7 +43,7 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelpers *appshelpers.Helpers, cf
 
 	// Templates upload to S3 asynchronously; until then each stays pending and
 	// is skipped at stack generation.
-	q, err := appsHelpers.QueueClient().GetQueueByOwner(ctx, appID, "apps")
+	q, err := appsHelpers.QueueClient().GetDefaultQueueByOwner(ctx, appID, "apps")
 	if err != nil {
 		return sync.SyncInternalErr{
 			Description: "unable to get apps queue for custom nested stacks",

@@ -18,7 +18,12 @@ import type { IInstallGroup } from './types'
 
 interface IDeploymentPlanEditor extends Omit<IModal, 'onSubmit'> {
   initialGroups: IInstallGroup[]
+  // installs this branch owns: the population `all installs` and label
+  // selectors resolve to
   availableInstalls: TInstall[]
+  // every install on the app; naming one by ID moves it onto this branch when
+  // the plan is saved. Defaults to the branch's own installs.
+  appInstalls?: TInstall[]
   loadingInstalls: boolean
   isSaving: boolean
   labelColors?: Record<string, string>
@@ -33,6 +38,7 @@ interface IDeploymentPlanEditor extends Omit<IModal, 'onSubmit'> {
 export const DeploymentPlanEditor = ({
   initialGroups,
   availableInstalls,
+  appInstalls,
   loadingInstalls,
   isSaving,
   labelColors,
@@ -49,20 +55,21 @@ export const DeploymentPlanEditor = ({
     initialPostDeployRunbookIds
   )
   const [showValidation, setShowValidation] = useState(false)
-  const [scrollToId, setScrollToId] = useState<string | null>(null)
+  const [newGroupId, setNewGroupId] = useState<string | null>(null)
   const newGroupRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!scrollToId) return
+    if (!newGroupId) return
     newGroupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    setScrollToId(null)
-  }, [scrollToId])
+  }, [newGroupId])
+
+  const selectableInstalls = appInstalls ?? availableInstalls
 
   const installsById = useMemo(() => {
     const map: Record<string, TInstall> = {}
-    for (const i of availableInstalls) map[i.id] = i
+    for (const i of selectableInstalls) map[i.id] = i
     return map
-  }, [availableInstalls])
+  }, [selectableInstalls])
 
   const previewConfig = useMemo<TAppBranchConfig>(() => ({
     install_groups: groups.map((g) => ({
@@ -70,6 +77,7 @@ export const DeploymentPlanEditor = ({
       name: g.name || `Group ${g.order + 1}`,
       install_ids: g.selection_mode === 'manual' ? g.install_ids : [],
       label_selector: g.selection_mode === 'labels' ? g.label_selector : undefined,
+      all_installs: g.selection_mode === 'all',
       max_parallel: g.max_parallel,
     })),
   } as TAppBranchConfig), [groups])
@@ -77,7 +85,9 @@ export const DeploymentPlanEditor = ({
   const assignedInstallIds = useMemo(() => {
     const assigned = new Set<string>()
     groups.forEach((g) => {
-      if (g.selection_mode === 'labels') {
+      if (g.selection_mode === 'all') {
+        availableInstalls.forEach((i) => assigned.add(i.id))
+      } else if (g.selection_mode === 'labels') {
         const matchLabels = g.label_selector?.match_labels
         if (matchLabels && Object.keys(matchLabels).length > 0) {
           availableInstalls.forEach((i) => {
@@ -96,7 +106,45 @@ export const DeploymentPlanEditor = ({
     [availableInstalls, assignedInstallIds]
   )
 
+  const pickableInstalls = useMemo(
+    () => selectableInstalls.filter((i) => !assignedInstallIds.has(i.id)),
+    [selectableInstalls, assignedInstallIds]
+  )
+
+  // Installs this plan will act on once saved: the ones the branch owns, plus
+  // the ones it claims by naming them.
+  const planInstalls = useMemo(() => {
+    const owned = new Set(availableInstalls.map((i) => i.id))
+    const claimed = selectableInstalls.filter(
+      (i) =>
+        !owned.has(i.id) &&
+        groups.some(
+          (g) => g.selection_mode === 'manual' && g.install_ids.includes(i.id)
+        )
+    )
+    return [...availableInstalls, ...claimed]
+  }, [availableInstalls, selectableInstalls, groups])
+
+  const overlappingInstalls = useMemo(() => {
+    const matches = new Map<string, number>()
+    groups.forEach((g) => {
+      const matchedIds =
+        g.selection_mode === 'all'
+          ? planInstalls.map((i) => i.id)
+          : g.selection_mode === 'labels'
+            ? planInstalls
+                .filter((i) => matchesSelector(i.labels, g.label_selector))
+                .map((i) => i.id)
+            : g.install_ids.filter((id) =>
+                planInstalls.some((i) => i.id === id)
+              )
+      matchedIds.forEach((id) => matches.set(id, (matches.get(id) ?? 0) + 1))
+    })
+    return planInstalls.filter((i) => (matches.get(i.id) ?? 0) > 1)
+  }, [groups, planInstalls])
+
   const groupContentError = (g: IInstallGroup): string | undefined => {
+    if (g.selection_mode === 'all') return undefined
     if (g.selection_mode === 'labels') {
       if (!g.label_selector?.match_labels || Object.keys(g.label_selector.match_labels).length === 0) {
         return 'Add at least one label to match installs.'
@@ -107,18 +155,21 @@ export const DeploymentPlanEditor = ({
     return undefined
   }
 
-  const hasErrors = groups.some((g) => !g.name.trim() || !!groupContentError(g))
-  const canSave = !isSaving && !loadingInstalls && groups.length > 0 && !hasErrors
+  const hasErrors =
+    groups.some((g) => !g.name.trim() || !!groupContentError(g)) ||
+    overlappingInstalls.length > 0
+  const canSave = !isSaving && !loadingInstalls && !hasErrors
   const isDisabled = isSaving || loadingInstalls
 
   const saveDisabledReason = (() => {
     if (canSave || isSaving || loadingInstalls) return undefined
-    if (groups.length === 0) return 'Add at least one install group.'
+    if (overlappingInstalls.length > 0)
+      return 'Each install must match exactly one install group.'
     const needsName = groups.some((g) => !g.name.trim())
     const needsInstalls = groups.some((g) => !!groupContentError(g))
     if (needsName && needsInstalls)
-      return 'Every group needs a name and at least one install.'
-    if (needsInstalls) return 'Every group needs at least one install.'
+      return 'Every group needs a name and installs to target.'
+    if (needsInstalls) return 'Every group needs installs or matching labels.'
     if (needsName) return 'Every group needs a name.'
     return undefined
   })()
@@ -130,9 +181,12 @@ export const DeploymentPlanEditor = ({
   }
 
   const addGroup = () => {
-    const group = newGroup(groups.length)
+    const group = newGroup(
+      groups.length,
+      selectableInstalls.length === 0 ? 'all' : 'manual'
+    )
     setGroups((curr) => [...curr, group])
-    setScrollToId(group.id)
+    setNewGroupId(group.id)
   }
 
   const deleteGroup = (id: string) => {
@@ -179,14 +233,14 @@ export const DeploymentPlanEditor = ({
   }
 
   const handleSave = () => {
-    if (hasErrors || groups.length === 0) {
+    if (hasErrors) {
       setShowValidation(true)
       return
     }
     onSave(groups, postDeployRunbookIds)
   }
 
-  const canAddGroup = !loadingInstalls && availableInstalls.length > 0
+  const canAddGroup = !loadingInstalls
 
   return (
     <Modal
@@ -224,17 +278,30 @@ export const DeploymentPlanEditor = ({
           <Skeleton height="120px" />
           <Skeleton height="120px" />
         </div>
-      ) : availableInstalls.length === 0 ? (
-        <Banner theme="info">
-          No installs found for this app. Create installs first to configure a
-          deployment plan.
-        </Banner>
       ) : (
         <div className="flex flex-col gap-6">
           <Text variant="subtext" theme="neutral">
             Groups deploy top to bottom. Installs in a group deploy together, up
             to its max parallel. Any install left unassigned is skipped.
           </Text>
+
+          {selectableInstalls.length === 0 && (
+            <Banner theme="info">
+              This app has no installs yet. Groups that match on labels or take
+              all installs pick them up as they are created — a group with a
+              hand-picked list needs installs to exist first.
+            </Banner>
+          )}
+
+          {overlappingInstalls.length > 0 && (
+            <Banner theme="error">
+              {overlappingInstalls.length === 1
+                ? `${overlappingInstalls[0].name} matches more than one install group.`
+                : `${overlappingInstalls.length} installs match more than one install group.`}{' '}
+              Each install must match exactly one group before this deployment
+              plan can be saved.
+            </Banner>
+          )}
 
           {groups.length >= 2 && (
             <DeploymentPlanGraph config={previewConfig} installsById={installsById} orgId={orgId} />
@@ -258,14 +325,16 @@ export const DeploymentPlanEditor = ({
                 return (
                   <div
                     key={group.id}
-                    ref={group.id === scrollToId ? newGroupRef : null}
+                    ref={group.id === newGroupId ? newGroupRef : null}
                   >
                     <GroupEditor
                       group={group}
                       index={index}
                       totalGroups={groups.length}
+                      autoFocusName={group.id === newGroupId}
                       availableInstalls={availableInstalls}
-                      unassignedInstalls={unassignedInstalls}
+                      pickableInstalls={pickableInstalls}
+                      installsById={installsById}
                       labelColors={labelColors}
                       disabled={isDisabled}
                       nameError={nameError}
@@ -301,12 +370,16 @@ export const DeploymentPlanEditor = ({
 
           {groups.length > 0 && unassignedInstalls.length > 0 && (
             <div className="border-t pt-4">
-              <div className="flex items-baseline gap-2 mb-2">
-                <Text variant="base" weight="strong">Unassigned</Text>
+              <div className="flex items-baseline gap-2 mb-1">
+                <Text variant="base" weight="strong">Orphaned</Text>
                 <Text variant="subtext" theme="neutral">
-                  — {unassignedInstalls.length} install{unassignedInstalls.length !== 1 ? 's' : ''} won&apos;t deploy
+                  — {unassignedInstalls.length} install{unassignedInstalls.length !== 1 ? 's' : ''} won&apos;t receive updates
                 </Text>
               </div>
+              <Text variant="subtext" theme="neutral" className="mb-2">
+                These installs belong to this branch but don&apos;t match any
+                group. They will not be updated when this branch runs.
+              </Text>
               <div className="flex flex-col gap-1.5">
                 {unassignedInstalls.map((install) => (
                   <InstallRow key={install.id} install={install} labelColors={labelColors} />

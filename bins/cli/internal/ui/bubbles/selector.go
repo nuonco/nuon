@@ -6,8 +6,11 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+
 	"charm.land/lipgloss/v2"
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
+
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -190,6 +193,9 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		if m.searchMode {
 			switch msg.String() {
+			case "ctrl+c":
+				m.quitting = true
+				return m, tea.Quit
 			case "esc":
 				m.searchMode = false
 				return m, nil
@@ -450,7 +456,7 @@ func SelectFromItems(title string, items []SelectorItem, interactive bool) (stri
 		return "", fmt.Errorf("interactive terminal required for selection; use the appropriate --id flag to specify directly")
 	}
 	model := NewSelectorModel(title, items)
-	program := tea.NewProgram(model)
+	program := teaprogram.NewProgram(model)
 	finalModel, err := program.Run()
 	if err != nil {
 		return "", err
@@ -467,7 +473,7 @@ func SelectFromItemsWithMaxRows(title string, items []SelectorItem, maxVisibleRo
 		return "", fmt.Errorf("interactive terminal required for selection; use the appropriate --id flag to specify directly")
 	}
 	model := NewSelectorModelWithMaxRows(title, items, maxVisibleRows)
-	program := tea.NewProgram(model)
+	program := teaprogram.NewProgram(model)
 	finalModel, err := program.Run()
 	if err != nil {
 		return "", err
@@ -524,7 +530,7 @@ func SelectOrg(orgs []OrgOption, searchFn func(string) ([]OrgOption, error), int
 	model := NewSelectorModel(title, items)
 	model.originalItems = items
 	model.searchFn = selectorSearchFn
-	program := tea.NewProgram(model)
+	program := teaprogram.NewProgram(model)
 	finalModel, err := program.Run()
 	if err != nil {
 		return "", err

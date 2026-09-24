@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -53,7 +54,7 @@ func (s *service) CreateOrgUser(ctx *gin.Context) {
 
 func (s *service) createUserByEmail(ctx context.Context, org *app.Org, email string) error {
 	var acct app.Account
-	err := s.db.WithContext(ctx).First(&acct, "email = ?", email).Error
+	err := s.db.WithContext(ctx).First(&acct, "email = ?", strings.ToLower(email)).Error
 	if err != nil {
 		return fmt.Errorf("unable to create user: %w", err)
 	}

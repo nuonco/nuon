@@ -19,7 +19,12 @@ const BranchPicker = () => {
     placeholderData: keepPreviousData,
     queryKey: ['app-branches-source', org?.id, app?.id],
     queryFn: () =>
-      getAppBranches({ orgId: org!.id!, appId: app!.id!, limit: 50, offset: 0 }),
+      getAppBranches({
+        orgId: org!.id!,
+        appId: app!.id!,
+        limit: 50,
+        offset: 0,
+      }),
     enabled: !!org?.id && !!app?.id,
   })
 

@@ -38,6 +38,9 @@ var localFaviconRewrites = map[string]string{
 const (
 	shellDefault = "default"
 	shellLite    = "lite"
+
+	shellCookieName   = "nuon-shell"
+	shellCookieMaxAge = 365 * 24 * 60 * 60
 )
 
 var shellLinkRE = regexp.MustCompile(`(?i)[\t ]*<link[^>]*data-shell="([a-z]+)"[^>]*>\n?`)
@@ -52,56 +55,62 @@ func selectShellLinks(html []byte, shell string) []byte {
 }
 
 type clientConfig struct {
-	APIUrl                string `json:"apiUrl"`
-	RunnerAPIUrl          string `json:"runnerApiUrl,omitempty"`
-	TemporalUIUrl         string `json:"temporalUiUrl,omitempty"`
-	AuthServiceUrl        string `json:"authServiceUrl,omitempty"`
-	AppUrl                string `json:"appUrl"`
-	GithubAppName         string `json:"githubAppName"`
-	PylonAppID            string `json:"pylonAppId,omitempty"`
-	DatadogEnv            string `json:"datadogEnv,omitempty"`
-	DatadogAPIKey         string `json:"datadogApiKey,omitempty"`
-	DatadogApplicationKey string `json:"datadogApplicationKey,omitempty"`
-	DatadogTraceDebug     bool   `json:"datadogTraceDebug,omitempty"`
-	DatadogAPIUrl         string `json:"datadogApiUrl,omitempty"`
-	Version               string `json:"version,omitempty"`
-	GitRef                string `json:"gitRef,omitempty"`
-	IsBYOC                bool   `json:"isByoc"`
-	BYOCName              string `json:"byocName,omitempty"`
-	BYOCColor             string `json:"byocColor,omitempty"`
-	BYOCTextColor         string `json:"byocTextColor,omitempty"`
-	OnboardingV2          bool   `json:"onboardingV2,omitempty"`
-	DashboardLite         bool   `json:"dashboardLite,omitempty"`
-	AdminDashboardUrl     string `json:"adminDashboardUrl,omitempty"`
-	PostHogKey            string `json:"posthogKey,omitempty"`
-	PostHogHost           string `json:"posthogHost,omitempty"`
+	APIUrl                 string `json:"apiUrl"`
+	RunnerAPIUrl           string `json:"runnerApiUrl,omitempty"`
+	TemporalUIUrl          string `json:"temporalUiUrl,omitempty"`
+	AuthServiceUrl         string `json:"authServiceUrl,omitempty"`
+	AppUrl                 string `json:"appUrl"`
+	GithubAppName          string `json:"githubAppName"`
+	PylonAppID             string `json:"pylonAppId,omitempty"`
+	DatadogEnv             string `json:"datadogEnv,omitempty"`
+	DatadogAPIKey          string `json:"datadogApiKey,omitempty"`
+	DatadogApplicationKey  string `json:"datadogApplicationKey,omitempty"`
+	DatadogTraceDebug      bool   `json:"datadogTraceDebug,omitempty"`
+	DatadogAPIUrl          string `json:"datadogApiUrl,omitempty"`
+	Version                string `json:"version,omitempty"`
+	GitRef                 string `json:"gitRef,omitempty"`
+	IsBYOC                 bool   `json:"isByoc"`
+	BYOCName               string `json:"byocName,omitempty"`
+	BYOCColor              string `json:"byocColor,omitempty"`
+	BYOCTextColor          string `json:"byocTextColor,omitempty"`
+	OnboardingV2           bool   `json:"onboardingV2,omitempty"`
+	DashboardLite          bool   `json:"dashboardLite,omitempty"`
+	StatusBarAutoEnabled   bool   `json:"statusBarAutoEnabled,omitempty"`
+	InstallsTabAutoEnabled bool   `json:"installsTabAutoEnabled,omitempty"`
+	AdminDashboardUrl      string `json:"adminDashboardUrl,omitempty"`
+	PostHogKey             string `json:"posthogKey,omitempty"`
+	PostHogHost            string `json:"posthogHost,omitempty"`
+	PostHogReplayEnabled   bool   `json:"posthogReplayEnabled,omitempty"`
 }
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
 	cc := clientConfig{
-		APIUrl:                cfg.APIUrl,
-		RunnerAPIUrl:          cfg.RunnerAPIUrl,
-		TemporalUIUrl:         cfg.TemporalUIUrl,
-		AuthServiceUrl:        cfg.AuthServiceUrl,
-		AppUrl:                cfg.AppUrl,
-		GithubAppName:         cfg.GithubAppName,
-		PylonAppID:            cfg.PylonAppID,
-		DatadogEnv:            cfg.DatadogEnv,
-		DatadogAPIKey:         cfg.DatadogAPIKey,
-		DatadogApplicationKey: cfg.DatadogApplicationKey,
-		DatadogTraceDebug:     cfg.DatadogTraceDebug,
-		DatadogAPIUrl:         cfg.DatadogAPIUrl,
-		Version:               cfg.Version,
-		GitRef:                cfg.GitRef,
-		IsBYOC:                cfg.IsBYOC,
-		OnboardingV2:          cfg.OnboardingV2,
-		DashboardLite:         cfg.DashboardLite,
-		AdminDashboardUrl:     cfg.AdminDashboardUrl,
+		APIUrl:                 cfg.APIUrl,
+		RunnerAPIUrl:           cfg.RunnerAPIUrl,
+		TemporalUIUrl:          cfg.TemporalUIUrl,
+		AuthServiceUrl:         cfg.AuthServiceUrl,
+		AppUrl:                 cfg.AppUrl,
+		GithubAppName:          cfg.GithubAppName,
+		PylonAppID:             cfg.PylonAppID,
+		DatadogEnv:             cfg.DatadogEnv,
+		DatadogAPIKey:          cfg.DatadogAPIKey,
+		DatadogApplicationKey:  cfg.DatadogApplicationKey,
+		DatadogTraceDebug:      cfg.DatadogTraceDebug,
+		DatadogAPIUrl:          cfg.DatadogAPIUrl,
+		Version:                cfg.Version,
+		GitRef:                 cfg.GitRef,
+		IsBYOC:                 cfg.IsBYOC,
+		OnboardingV2:           cfg.OnboardingV2,
+		DashboardLite:          cfg.DashboardLite,
+		StatusBarAutoEnabled:   cfg.StatusBarAutoEnabled,
+		InstallsTabAutoEnabled: cfg.InstallsTabAutoEnabled,
+		AdminDashboardUrl:      cfg.AdminDashboardUrl,
 	}
 
-	if cfg.PostHogKey != "" && !cfg.IsBYOC {
+	if cfg.PostHogKey != "" {
 		cc.PostHogKey = cfg.PostHogKey
 		cc.PostHogHost = cfg.PostHogHost
+		cc.PostHogReplayEnabled = cfg.PostHogReplayEnabled
 	}
 
 	if cfg.IsBYOC {
@@ -114,6 +123,14 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 	}
 
 	return cc
+}
+
+func buildHeadReplacement(cc clientConfig, lite bool) []byte {
+	cc.DashboardLite = lite
+	ccJSON, _ := json.Marshal(cc)
+	return []byte(fmt.Sprintf(
+		`<script id="nuon-config">window.__NUON_CONFIG__=%s;</script></head>`, ccJSON,
+	))
 }
 
 type Handler struct {
@@ -155,15 +172,28 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 	}
 
 	cc := buildClientConfig(h.cfg)
-	ccJSON, _ := json.Marshal(cc)
-	configScript := []byte(fmt.Sprintf(`<script id="nuon-config">window.__NUON_CONFIG__=%s;</script>`, ccJSON))
 	h.l.Info("prepared client config", zap.String("apiUrl", cc.APIUrl), zap.String("appUrl", cc.AppUrl))
 
-	shell := shellDefault
-	if h.cfg.DashboardLite {
-		shell = shellLite
+	headForShell := map[string][]byte{
+		shellDefault: buildHeadReplacement(cc, false),
+		shellLite:    buildHeadReplacement(cc, true),
 	}
-	h.l.Info("serving dashboard shell", zap.String("shell", shell))
+
+	defaultShell := shellDefault
+	if h.cfg.DashboardLite {
+		defaultShell = shellLite
+	}
+	h.l.Info("serving dashboard shell", zap.String("shell", defaultShell))
+
+	resolveShell := func(c *gin.Context) string {
+		switch v, _ := c.Cookie(shellCookieName); v {
+		case shellLite:
+			return shellLite
+		case shellDefault:
+			return shellDefault
+		}
+		return defaultShell
+	}
 
 	serveIndex := func(c *gin.Context) {
 		raw, err := fs.ReadFile(distFS, "index.html")
@@ -171,8 +201,9 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 			c.Status(http.StatusNotFound)
 			return
 		}
+		shell := resolveShell(c)
 		html := selectShellLinks(raw, shell)
-		html = bytes.Replace(html, []byte("</head>"), append(configScript, []byte("</head>")...), 1)
+		html = bytes.Replace(html, []byte("</head>"), headForShell[shell], 1)
 		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 		c.Data(http.StatusOK, "text/html; charset=utf-8", html)
 	}
@@ -184,6 +215,15 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 	}
 
 	isLocalEnv := strings.Contains(h.cfg.AppUrl, "localhost") || strings.Contains(h.cfg.AppUrl, "127.0.0.1")
+
+	e.GET("/lite", func(c *gin.Context) {
+		shell := shellLite
+		if c.Query("off") != "" {
+			shell = shellDefault
+		}
+		c.SetCookie(shellCookieName, shell, shellCookieMaxAge, "/", "", !isLocalEnv, true)
+		c.Redirect(http.StatusFound, "/")
+	})
 
 	var distFileServer http.Handler
 	if hasDistDir {

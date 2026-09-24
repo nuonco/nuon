@@ -2,6 +2,7 @@ package activities
 
 import (
 	"github.com/go-playground/validator/v10"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -21,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/secretsmanager"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -48,6 +50,7 @@ type Params struct {
 	TClient           temporalclient.Client
 	SecretsService    secretsmanager.Service
 	StatusActivities  *statusactivities.Activities
+	MeterProvider     metric.MeterProvider `optional:"true"`
 }
 
 type Activities struct {
@@ -72,6 +75,8 @@ type Activities struct {
 	tClient           temporalclient.Client
 	secretsSvc        secretsmanager.Service
 	statusActivities  *statusactivities.Activities
+	stateMetrics      *state.Metrics
+	healthMetrics     *componentHealthEvaluationMetrics
 }
 
 func New(params Params) *Activities {
@@ -97,5 +102,7 @@ func New(params Params) *Activities {
 		tClient:           params.TClient,
 		secretsSvc:        params.SecretsService,
 		statusActivities:  params.StatusActivities,
+		stateMetrics:      state.NewMetrics(params.MeterProvider),
+		healthMetrics:     newComponentHealthEvaluationMetrics(params.MeterProvider),
 	}
 }

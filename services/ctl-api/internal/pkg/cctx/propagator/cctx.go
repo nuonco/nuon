@@ -53,10 +53,12 @@ func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.He
 	logStream, _ := cctx.GetLogStreamWorkflow(ctx)
 
 	payload, err := s.dataConverter.ToPayload(Payload{
-		OrgID:     orgID,
-		AccountID: acctID,
-		TraceID:   traceID,
-		LogStream: logStream,
+		OrgID:             orgID,
+		AccountID:         acctID,
+		TraceID:           traceID,
+		WorkflowTelemetry: cctx.WorkflowTelemetryFromContext(ctx),
+		LogStream:         logStream,
+		QueueID:           cctx.QueueIDFromContext(ctx),
 	})
 	if err != nil {
 		return err
@@ -74,6 +76,12 @@ func (s *propagator) getPayload(reader workflow.HeaderReader) (*Payload, error) 
 	var payload Payload
 	if err := s.dataConverter.FromPayload(value, &payload); err != nil {
 		return nil, errors.Wrap(err, "unable to convert payload")
+	}
+	if payload.OrgID == "" && payload.AccountID == "" {
+		var legacy legacyPayload
+		if err := s.dataConverter.FromPayload(value, &legacy); err == nil {
+			payload.fillFromLegacy(legacy)
+		}
 	}
 
 	if payload.TraceID == "" {
@@ -94,6 +102,8 @@ func (s *propagator) Extract(ctx context.Context, reader workflow.HeaderReader) 
 	ctx = cctx.SetAccountIDContext(ctx, payload.AccountID)
 	ctx = cctx.SetOrgIDContext(ctx, payload.OrgID)
 	ctx = cctx.SetTraceIDContext(ctx, payload.TraceID)
+	ctx = cctx.SetWorkflowTelemetryContext(ctx, payload.WorkflowTelemetry)
+	ctx = cctx.SetQueueIDContext(ctx, payload.QueueID)
 
 	if payload.LogStream != nil {
 		ctx = cctx.SetLogStreamContext(ctx, payload.LogStream)
@@ -112,6 +122,8 @@ func (s *propagator) ExtractToWorkflow(ctx workflow.Context, reader workflow.Hea
 	ctx = cctx.SetAccountIDWorkflowContext(ctx, payload.AccountID)
 	ctx = cctx.SetOrgIDWorkflowContext(ctx, payload.OrgID)
 	ctx = cctx.SetTraceIDWorkflowContext(ctx, payload.TraceID)
+	ctx = cctx.SetWorkflowTelemetryWorkflowContext(ctx, payload.WorkflowTelemetry)
+	ctx = cctx.SetQueueIDWorkflowContext(ctx, payload.QueueID)
 
 	if payload.LogStream != nil {
 		ctx = cctx.SetLogStreamWorkflowContext(ctx, payload.LogStream)

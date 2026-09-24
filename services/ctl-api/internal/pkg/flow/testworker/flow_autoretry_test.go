@@ -49,4 +49,5 @@ func (e *FlowTestSuite) TestAutoRetryCreatesCloneAndContinues() {
 				"retried step %s should have ResultDirective=retry", step.Name)
 		}
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }

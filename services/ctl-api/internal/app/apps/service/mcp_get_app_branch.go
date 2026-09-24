@@ -43,9 +43,10 @@ type mcpAppRef struct {
 }
 
 type mcpAppBranchOverview struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	ManagedBy string `json:"managed_by"`
+	ID        string                  `json:"id"`
+	Name      string                  `json:"name"`
+	ManagedBy string                  `json:"managed_by"`
+	RunConfig *app.AppBranchRunConfig `json:"run_config,omitempty"`
 }
 
 type mcpAppBranchInstallGroup struct {
@@ -63,6 +64,7 @@ type mcpAppBranchRunOverview struct {
 	Succeeded        bool                       `json:"succeeded"`
 	AwaitingApproval bool                       `json:"awaiting_approval"`
 	RunType          string                     `json:"run_type"`
+	Metadata         app.AppBranchRunMetadata   `json:"metadata"`
 	Preview          bool                       `json:"preview"`
 	PlanOnly         bool                       `json:"plan_only"`
 	PRNumber         *int                       `json:"pr_number,omitempty"`
@@ -168,6 +170,7 @@ func (s *service) mcpGetAppBranch(ctx context.Context, _ *mcp.CallToolRequest, i
 	}
 	result.VCS = mcpBranchVCS(cfg)
 	if cfg != nil {
+		result.Branch.RunConfig = cfg.RunConfig
 		for _, g := range cfg.InstallGroups {
 			result.InstallGroups = append(result.InstallGroups, mcpAppBranchInstallGroup{
 				ID:            g.ID,
@@ -201,7 +204,8 @@ func (s *service) appBranchRunOverview(ctx context.Context, run *app.AppBranchRu
 		return nil, err
 	}
 
-	headSHA := run.HeadSHA
+	metadata := run.RunMetadata()
+	headSHA := metadata.HeadSHA
 	if run.VCSConnectionCommit != nil && run.VCSConnectionCommit.SHA != "" {
 		headSHA = run.VCSConnectionCommit.SHA
 	}
@@ -212,14 +216,15 @@ func (s *service) appBranchRunOverview(ctx context.Context, run *app.AppBranchRu
 		Succeeded:        run.Status == "success",
 		AwaitingApproval: run.AwaitingApproval,
 		RunType:          string(run.RunType),
+		Metadata:         metadata,
 		Preview:          run.IsPreview(),
 		PlanOnly:         run.PlanOnly,
-		PRNumber:         run.PRNumber,
+		PRNumber:         metadata.PRNumber,
 		HeadSHA:          headSHA,
-		BaseBranch:       run.BaseBranch,
+		BaseBranch:       metadata.BaseBranch,
 		ErrorMessage:     run.ErrorMessage,
 		NoConfigChanges:  run.NoConfigChanges,
-		CreatedAt:        run.CreatedAt.String(),
+		CreatedAt:        apiPkg.MCPTime(run.CreatedAt),
 	}
 	if run.Preview != nil {
 		out.PreviewInstallID = run.Preview.InstallID

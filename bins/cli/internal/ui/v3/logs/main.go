@@ -19,7 +19,9 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
+
 	"charm.land/lipgloss/v2"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/teaprogram"
 
 	"golang.design/x/clipboard"
 
@@ -382,7 +384,7 @@ func LogStreamApp(
 	// initialize the model
 	m := initialModel(ctx, cfg, api, install_id, deploy_id, logstream_id)
 	// initialize the program
-	p := tea.NewProgram(m)
+	p := teaprogram.NewProgram(m)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Something has gone terribly wrong: %v", err)
 		os.Exit(1)
@@ -393,7 +395,7 @@ func LogStreamApp(
 func logStreamPlainText(ctx context.Context, api nuon.Client, logstreamID string) {
 	cursor := "0"
 	for {
-		logs, err := api.LogStreamReadLogs(ctx, logstreamID, cursor, "")
+		logs, err := api.LogStreamReadLogs(ctx, logstreamID, cursor, "", nil)
 		if err != nil {
 			fmt.Printf("Error reading logs: %v\n", err)
 			return

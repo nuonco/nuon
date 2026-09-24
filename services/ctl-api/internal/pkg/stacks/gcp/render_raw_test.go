@@ -61,3 +61,36 @@ func TestExtractGCPRolesRawUnnamedPolicyFallback(t *testing.T) {
 		t.Fatalf("role policies = %#v, want %#v", got[0].Policies, want)
 	}
 }
+
+func TestExtractGCPRolesRawPredefinedRoles(t *testing.T) {
+	appCfg := &app.AppConfig{
+		PermissionsConfig: app.AppPermissionsConfig{
+			Roles: []app.AppAWSIAMRoleConfig{
+				{
+					CloudPlatform: "gcp",
+					Type:          app.AWSIAMRoleTypeRunnerMaintenance,
+					Policies: []app.AppAWSIAMPolicyConfig{
+						{Name: "editor", GCPPredefinedRole: "roles/editor"},
+						{Name: "gke-admin", GCPPredefinedRole: "roles/container.admin"},
+						{Name: "editor-again", GCPPredefinedRole: "roles/editor"},
+					},
+				},
+			},
+		},
+	}
+
+	_, maint, _ := ExtractGCPStandardRolesRaw(appCfg)
+
+	want := []string{"roles/editor", "roles/container.admin"}
+	if !reflect.DeepEqual(maint.PredefinedRoles, want) {
+		t.Fatalf("maintenance predefined roles = %#v, want %#v", maint.PredefinedRoles, want)
+	}
+	if maint.PredefinedRole != "roles/container.admin" {
+		t.Fatalf("maintenance legacy predefined role = %q, want the last one", maint.PredefinedRole)
+	}
+
+	got := ExtractGCPRolesRaw(appCfg.PermissionsConfig.Roles)
+	if len(got) != 1 || !reflect.DeepEqual(got[0].PredefinedRoles, want) {
+		t.Fatalf("role predefined roles = %#v, want %#v", got, want)
+	}
+}

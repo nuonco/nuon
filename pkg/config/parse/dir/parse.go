@@ -69,7 +69,7 @@ func (p *parser) parse(ctx context.Context) error {
 
 			obj := reflect.New(elemType).Interface()
 			filePath := fieldOpts.Name + p.opts.Ext
-			parsed, err := p.parseFile(fieldOpts.Name, obj)
+			parsed, err := p.parseFile(fieldOpts.Name, fieldOpts.Name, obj)
 			if err != nil {
 				return errors.Wrap(err, "unable to load file for "+fieldOpts.Name)
 			}

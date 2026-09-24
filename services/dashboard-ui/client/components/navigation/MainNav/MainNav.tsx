@@ -7,6 +7,7 @@ import type { TOrg } from '@/types'
 interface IMainNav {
   org: TOrg
   isSidebarOpen: boolean
+  showInstalls: boolean
   hasCustomerPortal: boolean
   customerPortalUrl: string
 }
@@ -44,6 +45,7 @@ const Divider = ({ isSidebarOpen }: { isSidebarOpen: boolean }) => (
 export const MainNav = ({
   org,
   isSidebarOpen,
+  showInstalls,
   hasCustomerPortal,
   customerPortalUrl,
 }: IMainNav) => {
@@ -59,11 +61,14 @@ export const MainNav = ({
         },
       ]
     : MAIN_LINKS
+  const visibleMainLinks = mainLinks.filter(
+    (link) => showInstalls || link.path !== '/installs'
+  )
 
   return (
     <nav className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        {mainLinks.map((link) => (
+        {visibleMainLinks.map((link) => (
           <MainNavLink key={link.text} basePath={basePath} {...link} />
         ))}
       </div>

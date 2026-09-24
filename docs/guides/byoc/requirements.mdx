@@ -1,6 +1,7 @@
 ---
-title: 'Requirements'
-description: 'Prerequisites for installing Nuon BYOC on any cloud platform'
+title: 'Nuon BYOC Requirements'
+sidebarTitle: 'Requirements'
+description: 'Prerequisites for installing Nuon BYOC on AWS or GCP'
 icon: 'list-check'
 keywords: ['Nuon BYOC requirements', 'BYOC prerequisites', 'DNS setup', 'GitHub App', 'Identity Provider', 'Slack integration']
 ---
@@ -9,47 +10,80 @@ Before installing Nuon BYOC, you will need to prepare the following dependencies
 
 ## Cloud Account
 
-You will need either an AWS, GCP, or Azure account to provision Nuon BYOC to. Specifics are detailed in the installation guide for each platform.
+You will need an AWS or GCP account to run Nuon BYOC in.
+The installation process is the same on both platforms. Platform-specific architecture is covered in [Architecture](/guides/byoc#architecture).
+
+<Note>
+If you are hosting Nuon BYOC on GCP, a public S3 bucket is still required to support CloudFormation Quick create links for customer AWS install stacks.
+By default, we will provision a bucket for you, but if you would like to own the bucket yourself, you will need an AWS account.
+</Note>
 
 ## DNS
 
 ### Root DNS
 
-You will need to expose the Nuon APIs and Dashboard, which requires DNS. For example, if you wanted to host Nuon BYOC at `nuon.my-domain.com`, complete the following steps.
+In order to serve Nuon BYOC at your own domain — for example, `nuon.my-domain.com` — you will need a DNS zone to place the records in.
 
-1. Before installation, create the DNS zone `my-domain.com` if it does not already exist.
-1. Provide `nuon.my-domain.com` as the value for the Root Domain input.
-1. Once Nuon BYOC has fully provisioned, the Cloud DNS nameservers for the install will be available in the outputs.
-1. Create an NS record named `nuon.my-domain.com` using the Cloud DNS nameserver values.
-1. Once propagation is complete, the Nuon Dashboard should be reachable at `app.nuon.my-domain.com`.
+<Steps>
 
-Nuon will provision the following subdomains under the domain you configure. Only the runner API needs to be exposed to the Internet. The rest can be private to your network.
+<Step>
+Before creating the install, create the DNS zone `my-domain.com` in your preferred hosting provider, if it does not already exist.
+</Step>
+
+<Step>
+While provisioning the install stack, provide `nuon.my-domain.com` as the value for the **Root Domain** input.
+</Step>
+
+<Step>
+Once Nuon BYOC has fully provisioned, the nameservers for the install will be available in the outputs.
+</Step>
+
+<Step>
+Create an NS record named `nuon.my-domain.com` using the nameserver values from the install outputs.
+</Step>
+
+<Step>
+Once propagation is complete, your Nuon BYOC install will be available at `nuon.my-domain.com`.
+</Step>
+
+</Steps>
+
+Nuon will provision the following subdomains under `nuon.my-domain.com`. Only the runner API needs to be public. The rest can be private to your internal network.
 
 | Subdomain | Service | Public |
 | --------- | ------- | ------ |
 | app       | The vendor dashboard | |
 | api       | The control plane API, used by the Vendor Dashboard and the CLI | |
 | admin     | The admin API. Exposes functionality for administration of the control plane | |
-| runner    | The API used by runners to communicate with the control plane | true |
-| slack     | The Slack integration listener (OAuth callback, slash commands, events, interactions). Provisioned on every install — active once Slack credentials are configured. | true |
+| runner    | The API used by runners to communicate with the control plane | <Icon icon="check" /> |
+| slack     | The Slack integration API (optional) | <Icon icon="check" /> |
 
 <Warning>
-The Nuon Dashboard uses cookies for authentication, and they will be shared on all subdomains of the provided root domain. We strongly recommend creating a Nuon-specific subdomain to avoid leaking auth cookies.
+The Nuon Dashboard uses cookies for authentication, and they will be shared on all subdomains of the provided root domain.
+We strongly recommend creating a Nuon-specific subdomain to avoid leaking auth cookies.
 </Warning>
 
-### Delegation DNS
+### Install Delegation DNS (Optional)
 
-If you don't want your customers to set up DNS when installing your app, you can configure DNS delegation: a unique subdomain is provisioned for each install under a shared subdomain you control. In Nuon Cloud, for example, installs land at `inl160z2xmng8w1jnq0xxhelln.nuon.run`.
+If you don't want your customers to have to set up DNS when installing your app, you can configure DNS delegation.
+A subdomain is provisioned for each install under a subdomain you control.
+Nuon Cloud, for example, creates a subdomain for each install at `<install_id>.nuon.run` by default.
 
-To brand this subdomain so your customers see your domain instead of `nuon.run` (e.g. `<install-id>.installs.your-domain.com`), see [Custom Domains](/guides/custom-domains).
+For details, see [Custom Domains](/guides/custom-domains).
 
 ## GitHub App
 
-Create a GitHub App so Nuon can clone code for components from private repos. You'll share the App ID, Client ID, app name, and PEM key with Nuon — Nuon configures them on your install.
+Create a GitHub App so Nuon can access your GitHub org.
+This allows it to access private repos and receive webhook events.
 
-1. Go to [GitHub App Settings](https://github.com/settings/apps) and click **New GitHub App**.
+<Steps>
 
-2. Configure the app with these settings:
+<Step>
+Go to [GitHub App Settings](https://github.com/settings/apps) and click **New GitHub App**.
+</Step>
+
+<Step>
+Configure the app with the following settings.
 
 | Setting            | Value                                    |
 | ------------------ | ---------------------------------------- |
@@ -58,10 +92,12 @@ Create a GitHub App so Nuon can clone code for components from private repos. Yo
 | Setup URL          | `https://app.<your-root-domain>/connect` |
 | Redirect on Update | Checked                                  |
 | Webhook            | Unchecked                                |
+</Step>
 
-3. Set permissions:
+<Step>
+Configure the following permissions.
 
-Repository permissions:
+Repository permissions
 
 | Permission    | Access         |
 | ------------- | -------------- |
@@ -69,60 +105,125 @@ Repository permissions:
 | Metadata      | Read-only      |
 | Pull requests | Read and write |
 
-Organization permissions:
+Organization permissions
 
 | Permission | Access         |
 | ---------- | -------------- |
 | Webhooks   | Read and write |
 
 <Note>
-The **Webhooks** permission lets Nuon register a webhook to trigger [app branch runs](/concepts/app-branches). If you do not want grant this access, you can instead trigger runs from your own CI using the [Nuon GitHub Action](/guides/github-actions).
+The **Webhooks** permission lets Nuon register a webhook to trigger [app branch runs](/concepts/app-branches). If you do not want to grant this access, you can instead trigger runs from your own CI using the [Nuon GitHub Action](/guides/github-actions).
 </Note>
+</Step>
 
-4. Under "Where can this GitHub App be installed?", select **Only on this account** (unless you need to access repos in other GitHub organizations).
+<Step>
+Under "Where can this GitHub App be installed?", select **Only on this account** (unless you need to access repos in other GitHub organizations).
+</Step>
 
-5. Click **Create GitHub App**.
+<Step>
+Click **Create GitHub App**.
+</Step>
 
-6. After creation, scroll to the bottom and click **Generate a private key**. Save the PEM file — you'll provide it as a secret later.
+<Step>
+After creation, scroll to the bottom of the page and click **Generate a private key**. Save the PEM file to provide as a secret.
 
-7. Note the **App ID** and **Client ID** from the app settings page — share these along with the app name and PEM file with Nuon.
+<Note>
+The GitHub App PEM key must be base64 encoded to preserve newlines.
 
-## Identity Providers
+```bash
+base64 -i your-github-app-key.pem
+```
+</Note>
+</Step>
 
-Nuon must be configured to use your IdP for authentication.
+<Step>
+Save the **App ID** and **Client ID** from the app settings page to provide as inputs.
+</Step>
+
+</Steps>
+
+## Identity Provider
+
+Configure your preferred identity provider to control user access to Nuon.
 
 ### Google
 
 To use Google as your IdP, set up an OAuth client in the Google Cloud Console.
 
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/) and create or select a project.
-1. Navigate to **APIs & Services** > **Credentials**.
-1. Click **Create Credentials** > **OAuth client ID** and select **Web application** as the application type.
-1. Configure the OAuth client:
+<Steps>
+
+<Step>
+Go to the [Google Cloud Console](https://console.cloud.google.com/) and create or select a project.
+</Step>
+
+<Step>
+Navigate to **APIs & Services** > **Credentials**.
+</Step>
+
+<Step>
+Click **Create Credentials** > **OAuth client ID** and select **Web application** as the application type.
+</Step>
+
+<Step>
+Configure the OAuth client.
 
 | Setting                       | Value                                    |
 | ----------------------------- | ---------------------------------------- |
 | Name                          | `Nuon BYOC` (or any name)                |
 | Authorized JavaScript origins | `https://auth.<your-root-domain>`        |
 | Authorized redirect URIs      | `https://auth.<your-root-domain>/auth`   |
+</Step>
 
-5. Save the **Client ID** and **Client Secret** — you'll need them for the install inputs and secrets.
+<Step>
+Click **Create**.
+</Step>
+
+<Step>
+After creation, save the **Client ID** to provide as an input, and the **Client Secret** to provide as a secret.
+You will also need the **Issuer URL** for Google. It is always `https://accounts.google.com`.
+</Step>
+
+</Steps>
 
 ### Okta
 
 To use Okta as your IdP, set up an OIDC Application in Okta.
 
-1. In the Okta Admin Console, navigate to Applications and create a new OIDC application.
-    1. For Sign-in method: Select OIDC - OpenID Connect
-    1. For Application type: Select Web Application
-1. Set the **Sign In Redirect** to `https://auth.<your-root-domain>/auth`
-1. Set **Trusted Origins** to `<your-root-domain>`
-1. Save the client id and secret.
+<Steps>
 
-### Auth0
+<Step>
+In the Okta Admin Console, navigate to **Applications** and create a new **OIDC application**.
+  1. For Sign-in method, select **OIDC - OpenID Connect**
+  2. For Application type, select **Web Application**
+</Step>
+
+<Step>
+Set the **Sign In Redirect** to `https://auth.<your-root-domain>/auth`
+</Step>
+
+<Step>
+Set **Trusted Origins** to `<your-root-domain>`
+</Step>
+
+<Step>
+Click **Save**.
+</Step>
+
+<Step>
+After creation, save the **Issuer URL** and **Client ID** to provide as an input, and the **Secret** to provide as a secret.
+</Step>
+
+</Steps>
+
+### Auth0 (Legacy)
 
 <Warning>
-Nuon BYOC previously required Auth0 for authentication, but this dependency has been removed. This documentation is retained for anyone still using Auth0, but new Nuon BYOC installs should use the new IdP integration documented above.
+This section does not document using Auth0 as a regular auth provider.
+Nuon BYOC previously required Auth0 for authentication.
+This is no longer the case.
+This documentation is retained for anyone still using the legacy Auth0 integration.
+
+New Nuon BYOC installs should use one of the IdP integrations documented above.
 </Warning>
 
 To use Auth0 for authentication, you will need to configure an API, applications, and a custom action in your Auth0 tenant.
@@ -144,8 +245,11 @@ module "byoc_auth0" {
 
 After applying, the module outputs the values you will need for the install inputs.
 
-If you prefer to configure Auth0 manually, follow the steps below.
+If you would prefer to configure Auth0 manually, follow the steps below.
 
+<Steps>
+
+<Step>
 Add an action to enrich the access token with the user's email.
 
 1. Go to **Actions > Library** in your Auth0 dashboard
@@ -163,7 +267,9 @@ exports.onExecutePostLogin = async (event, api) => {
 5. Deploy the action
 6. Go to **Actions > Triggers > Post Login**
 7. Drag the `AddScope` action into the flow and save
+</Step>
 
+<Step>
 Create an API with the following settings.
 
 | Setting | Value |
@@ -177,7 +283,9 @@ Create an API with the following settings.
 <Note>
 The Identifier must match your API URL exactly. It cannot be changed after creation.
 </Note>
+</Step>
 
+<Step>
 Create a Single Page Application for the Dashboard UI.
 
 | Setting | Value |
@@ -190,7 +298,9 @@ Create a Single Page Application for the Dashboard UI.
 | Maximum Refresh Token Lifetime | `31557600` |
 | Allow Refresh Token Rotation | `true` |
 | Rotation Overlap Period | `0` |
+</Step>
 
+<Step>
 Create a Native Application for CLI authentication.
 
 | Setting | Value |
@@ -199,13 +309,6 @@ Create a Native Application for CLI authentication.
 | Description | `For Nuon BYOC Install <your-install-id>` |
 | Allow Cross-Origin Authentication | `true` |
 | Device Code (Advanced > Grant Types) | Checked |
+</Step>
 
-## Slack App (Optional)
-
-If you would like Nuon BYOC to send notifications to your Slack workspace, you can configure a Slack app for it to integrate with. This is optional. You can skip this, or enable it later.
-
-<Note>
-Since the Slack app requires secrets, enabling it later will require reprovisioning the install, so you can provide these secrets to the Stack.
-</Note>
-
-For detailed instructions on setting up the Slack app, see the [Slack integration guide](/guides/slack).
+</Steps>

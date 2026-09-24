@@ -7,8 +7,8 @@ backed by these, meaning that when an org, app, install or other is created we a
 signals too.
 
 Signals are workflows that do a user action, such as generating a plan, waiting for approvals, or running a deploy. It's
-important that signals can be decoupled from each other and live in different directories. We have a registration system
-where we use `init` functions to pick
+important that signals can be decoupled from each other and live in different directories. Signal packages register
+themselves via `init` functions so the queue client can resolve handlers by signal type.
 
 Some requirements of the queue system:
 
@@ -55,6 +55,33 @@ db.Model(&Owner{}).Where("id = ?", id).Update("queue_id", q.ID)
 
 The polymorphic relationship is the single source of truth. The Queue's `OwnerID`/`OwnerType` fields are indexed and
 used for lookups. Adding a reverse FK creates redundancy and drift risk.
+
+## Routing and layering
+
+No queue may contain both a signal and a signal it awaits, directly or transitively. Treat each owner's queues as a
+layered DAG: a parent runs in one layer and every callback-bearing child runs in a lower layer. `MaxInFlight` throttles
+work within one layer; it must never be relied on to make a parent and child sharing that layer safe.
+
+Queue names, defaults, and capacities live in `queuenames`. Name every enqueue with `QueueName` or `QueueID`.
+`GetDefaultQueueByOwner` resolves a declared default. `GetOnlyQueueByOwner` is only for owner types declared as having
+one dynamic queue. Do not look up a queue by owner and take the first row.
+
+| Owner | Layers |
+| --- | --- |
+| `app_branches` | default → `app-branch-workflows` → generate/step-groups → steps → signals → sandbox/component/install queues |
+| `apps` | default or `app-workflows` → generate/step-groups → steps → signals |
+| `installs` | `install-workflows` → generate/step-groups → steps → `install-signals` → `install-approvals` |
+| `components` | default → `component-workflow-steps` |
+| `runners` | `runner-signals`, job-group queues, and process queues are separate execution lanes |
+| `orgs` | `org-signals` |
+
+A callback-bearing enqueue into the caller's queue is rejected as non-retryable. Fire-and-forget work may use the
+caller's queue.
+
+## Recovering a wedged queue
+
+Cancel the affected run, force-restart the queue, then re-trigger the run. Confirm the replacement signals use the
+declared layers before recovering more runs.
 
 ## Testing
 

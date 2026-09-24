@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -30,6 +32,9 @@ func (c *client) GetAppInstalls(ctx context.Context, appID string, query *models
 	}
 
 	params.Offset, params.Limit = applyPaginationQuery(query)
+	if query != nil && query.Q != "" {
+		params.Q = &query.Q
+	}
 
 	hr := newResponseHeaderReader(&operations.GetAppInstallsReader{})
 	resp, err := c.genClient.Operations.GetAppInstalls(params, c.getOrgIDAuthInfo(), hr.ClientOption())
@@ -93,6 +98,21 @@ func (c *client) UpdateInstall(ctx context.Context, installID string, req *model
 	return resp.Payload, nil
 }
 
+func (c *client) MoveInstallToAppBranch(ctx context.Context, installID, appBranchID string) (*models.AppInstall, error) {
+	resp, err := c.genClient.Operations.MoveInstallToAppBranch(&operations.MoveInstallToAppBranchParams{
+		InstallID: installID,
+		Req: &models.ServiceMoveInstallToAppBranchRequest{
+			AppBranchID: &appBranchID,
+		},
+		Context: ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) DeleteInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.DeleteInstall(&operations.DeleteInstallParams{
 		InstallID: installID,
@@ -129,13 +149,12 @@ func (c *client) ReprovisionInstall(ctx context.Context, installID string) (*mod
 	return resp.Payload, nil
 }
 
-func (c *client) ReprovisionInstallStack(ctx context.Context, installID string, skipComponents bool) (*models.AppWorkflowResponse, error) {
+func (c *client) ReprovisionInstallStack(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.ReprovisionInstallStack(&operations.ReprovisionInstallStackParams{
 		InstallID: installID,
 		Context:   ctx,
 		Req: &models.ServiceReprovisionInstallStackRequest{
-			PlanOnly:       false,
-			SkipComponents: skipComponents,
+			PlanOnly: false,
 		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
@@ -146,17 +165,13 @@ func (c *client) ReprovisionInstallStack(ctx context.Context, installID string, 
 }
 
 func (c *client) DeprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
-	resp, err := c.genClient.Operations.DeprovisionInstall(&operations.DeprovisionInstallParams{
-		InstallID: installID,
-		Context:   ctx,
-		// TODO(jm): make this configurable
-		Req: &models.ServiceDeprovisionInstallRequest{},
-	}, c.getOrgIDAuthInfo())
+	var result models.AppWorkflowResponse
+	path := fmt.Sprintf("%s/v1/installs/%s/deprovision", c.APIURL, url.PathEscape(installID))
+	err := c.triggerRequest(ctx, http.MethodPost, path, &models.ServiceDeprovisionInstallRequest{}, http.StatusCreated, &result)
 	if err != nil {
 		return nil, err
 	}
-
-	return resp.Payload, nil
+	return &result, nil
 }
 
 func (c *client) AddInstallLabels(ctx context.Context, installID string, labels map[string]string) (*models.AppInstall, error) {

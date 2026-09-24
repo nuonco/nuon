@@ -17,9 +17,9 @@ import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { PageSection } from '@/components/layout/PageSection'
-import { DeprovisionBanner } from '@/components/installs/DeprovisionBanner'
-import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
+import { NewInstallHeader } from '@/components/installs/NewInstallHeader'
+import { ChangeAppBranchButton } from '@/components/installs/management/ChangeAppBranch'
 import {
   InstallSettingsPanel,
   useOpenInstallSettings,
@@ -31,6 +31,7 @@ import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useInstall } from '@/hooks/use-install'
+import { useNewInstallIA } from '@/hooks/use-new-install-ia'
 import { useOrg } from '@/hooks/use-org'
 import type { TNavItem } from '@/types'
 
@@ -73,121 +74,161 @@ const InstallContentError = () => (
   </PageSection>
 )
 
+export const NEW_INSTALL_NAV_LINKS: TNavItem[] = [
+  {
+    path: `/`,
+    iconVariant: 'HouseSimpleIcon',
+    text: 'Overview',
+  },
+  {
+    path: `/deployments`,
+    iconVariant: 'ArrowsClockwiseIcon',
+    text: 'Deployments',
+  },
+  {
+    path: `/resources`,
+    iconVariant: 'CardsIcon',
+    text: 'Resources',
+  },
+  {
+    path: `/health`,
+    iconVariant: 'PulseIcon',
+    text: 'Health',
+  },
+  {
+    path: `/operations`,
+    iconVariant: 'TerminalWindowIcon',
+    text: 'Operations',
+  },
+  {
+    path: `/configuration`,
+    iconVariant: 'FadersIcon',
+    text: 'Configuration',
+  },
+]
+
+const NEW_INSTALL_TAB_SECTIONS = ['resources', 'operations', 'configuration']
+
 const InstallTemplate = () => {
   const { org } = useOrg()
-  const { install, labelColors } = useInstall()
+  const { install, labelColors, refresh } = useInstall()
   const { pathname } = useLocation()
   const hasNotebooks = !!org?.features?.notebooks
+  const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
+  const hasNewInstallIA = useNewInstallIA()
   const openSettings = useOpenInstallSettings()
   const [searchParams] = useSearchParams()
   const isSettingsOpen =
     searchParams.get('panel') === INSTALL_SETTINGS_PANEL_KEY
 
-  const navLinks: TNavItem[] = [
-    { type: 'section', label: 'Overview' },
-    {
-      path: `/`,
-      iconVariant: 'HouseSimpleIcon' as const,
-      text: 'Overview',
-    },
-    {
-      path: `/workflows`,
-      iconVariant: 'TreeStructureIcon' as const,
-      text: 'Workflows',
-    },
-    {
-      path: `/app-branch-runs`,
-      iconVariant: 'GitBranchIcon' as const,
-      text: 'App branch runs',
-    },
-    {
-      type: 'action',
-      key: 'settings',
-      iconVariant: 'GearIcon' as const,
-      text: 'Settings',
-      onClick: openSettings,
-      isActive: isSettingsOpen,
-    },
-    { type: 'section', label: 'App' },
-    ...(org?.features?.['component-health']
-      ? [
-          {
-            path: `/resources`,
-            iconVariant: 'PulseIcon' as const,
-            text: 'Resources',
-          },
-        ]
-      : []),
-    {
-      path: `/components`,
-      iconVariant: 'CardsIcon' as const,
-      text: 'Components',
-    },
-    {
-      path: '/sandbox',
-      iconVariant: 'ShippingContainerIcon' as const,
-      text: 'Sandbox',
-    },
-    {
-      path: `/roles`,
-      iconVariant: 'FileLockIcon' as const,
-      text: 'Roles',
-    },
-    {
-      path: `/actions`,
-      iconVariant: 'TerminalWindowIcon' as const,
-      text: 'Actions',
-    },
-    {
-      path: `/runbooks`,
-      iconVariant: 'BookIcon' as const,
-      text: 'Runbooks',
-    },
-    ...(hasNotebooks
-      ? [
-          {
-            path: `/notebooks`,
-            iconVariant: 'NotebookIcon' as const,
-            text: 'Notebooks',
-          },
-        ]
-      : []),
-    { type: 'section', label: 'Customer' },
-    {
-      path: `/stacks`,
-      iconVariant: 'StackIcon' as const,
-      text: 'Stacks',
-    },
-    {
-      path: `/policies`,
-      iconVariant: 'ShieldCheckIcon' as const,
-      text: 'Policy reports',
-    },
-    {
-      path: `/inputs`,
-      iconVariant: 'ListChecksIcon' as const,
-      text: 'Current inputs',
-    },
-    {
-      path: `/state`,
-      iconVariant: 'CodeBlockIcon' as const,
-      text: 'View state',
-    },
-    { type: 'section', label: 'Advanced' },
-    {
-      path: `/configs`,
-      iconVariant: 'FadersIcon' as const,
-      text: 'Configs',
-    },
-    {
-      path: `/runner`,
-      iconVariant: 'SneakerMoveIcon' as const,
-      text: 'Install runner',
-    },
-  ]
-  const isChildRoute = !!useMatch(
-    '/:orgId/installs/:installId/:section/:rest/*'
-  )
+  const navLinks: TNavItem[] = hasNewInstallIA
+    ? NEW_INSTALL_NAV_LINKS
+    : [
+        { type: 'section', label: 'Overview' },
+        {
+          path: `/`,
+          iconVariant: 'HouseSimpleIcon' as const,
+          text: 'Overview',
+        },
+        {
+          path: `/history`,
+          iconVariant: 'TreeStructureIcon' as const,
+          text: 'History',
+        },
+        {
+          path: `/updates`,
+          iconVariant: 'GitBranchIcon' as const,
+          text: 'Updates',
+        },
+        {
+          type: 'action',
+          key: 'settings',
+          iconVariant: 'GearIcon' as const,
+          text: 'Settings',
+          onClick: openSettings,
+          isActive: isSettingsOpen,
+        },
+        { type: 'section', label: 'App' },
+        {
+          path: `/resources`,
+          iconVariant: 'PulseIcon' as const,
+          text: 'Resources',
+        },
+        {
+          path: `/components`,
+          iconVariant: 'CardsIcon' as const,
+          text: 'Components',
+        },
+        {
+          path: '/sandbox',
+          iconVariant: 'ShippingContainerIcon' as const,
+          text: 'Sandbox',
+        },
+        {
+          path: `/roles`,
+          iconVariant: 'FileLockIcon' as const,
+          text: 'Roles',
+        },
+        {
+          path: `/actions`,
+          iconVariant: 'TerminalWindowIcon' as const,
+          text: 'Actions',
+        },
+        {
+          path: `/runbooks`,
+          iconVariant: 'BookIcon' as const,
+          text: 'Runbooks',
+        },
+        ...(hasNotebooks
+          ? [
+              {
+                path: `/notebooks`,
+                iconVariant: 'NotebookIcon' as const,
+                text: 'Notebooks',
+              },
+            ]
+          : []),
+        { type: 'section', label: 'Customer' },
+        {
+          path: `/stacks`,
+          iconVariant: 'StackIcon' as const,
+          text: 'Stacks',
+        },
+        {
+          path: `/policies`,
+          iconVariant: 'ShieldCheckIcon' as const,
+          text: 'Policy reports',
+        },
+        {
+          path: `/inputs`,
+          iconVariant: 'ListChecksIcon' as const,
+          text: 'Current inputs',
+        },
+        {
+          path: `/state`,
+          iconVariant: 'CodeBlockIcon' as const,
+          text: 'View state',
+        },
+        { type: 'section', label: 'Advanced' },
+        {
+          path: `/configs`,
+          iconVariant: 'FadersIcon' as const,
+          text: 'Configs',
+        },
+        {
+          path: `/runner`,
+          iconVariant: 'SneakerMoveIcon' as const,
+          text: 'Install runner',
+        },
+      ]
+
+  const sectionTabMatch = useMatch('/:orgId/installs/:installId/:section/:tab')
+  const isNewIASectionTab =
+    hasNewInstallIA &&
+    NEW_INSTALL_TAB_SECTIONS.includes(sectionTabMatch?.params?.section ?? '')
+  const isChildRoute =
+    !!useMatch('/:orgId/installs/:installId/:section/:rest/*') &&
+    !isNewIASectionTab
 
   if (!install) return null
 
@@ -213,82 +254,90 @@ const InstallTemplate = () => {
           </PageContent>
         ) : (
           <>
-            <PageHeader>
-              <DeprovisionBanner />
-              <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
-                <HeadingGroup className="gap-1.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Text variant="h3" weight="stronger" level={1}>
-                      {install.name}
-                    </Text>
-
-                    {install.labels &&
-                      Object.entries(install.labels).map(([key, value]) => (
-                        <LabelBadge
-                          key={key}
-                          size="sm"
-                          labelKey={key}
-                          labelValue={value}
-                          customColor={labelColors?.[key]}
-                        />
-                      ))}
-                  </div>
-                  <ID>{install.id}</ID>
-                  <div className="flex items-center gap-3">
-                    <Text variant="subtext" theme="info">
-                      Last updated{' '}
-                      <Time
-                        variant="subtext"
-                        time={install?.updated_at}
-                        format="relative"
-                      />
-                    </Text>
-                    <AdminDashboardLink
-                      path={`/queues?owner_id=${install.id}`}
-                      label="Admin panel"
-                    />
-                  </div>
-                </HeadingGroup>
-
-                <div className="flex items-start flex-wrap gap-4 md:gap-8">
-                  {isManagedByConfig && (
-                    <LabeledValue label="Managed by">
-                      <Text variant="subtext">
-                        <span className="flex items-center gap-1">
-                          <Icon variant="FileCodeIcon" /> Install config
-                        </span>
+            {hasNewInstallIA ? (
+              <NewInstallHeader />
+            ) : (
+              <PageHeader>
+                <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
+                  <HeadingGroup className="gap-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Text variant="h3" weight="stronger" level={1}>
+                        {install.name}
                       </Text>
-                    </LabeledValue>
-                  )}
-                  {install?.app_branch && (
-                    <LabeledValue label="Branch">
-                      <Link
-                        href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch?.id}`}
-                      >
-                        <span className="flex items-center gap-1">
-                          <Icon variant="GitBranchIcon" size={14} />
-                          {install.app_branch.name}
+
+                      {install.labels &&
+                        Object.entries(install.labels).map(([key, value]) => (
+                          <LabelBadge
+                            key={key}
+                            size="sm"
+                            labelKey={key}
+                            labelValue={value}
+                            customColor={labelColors?.[key]}
+                          />
+                        ))}
+                    </div>
+                    <ID>{install.id}</ID>
+                    <div className="flex items-center gap-3">
+                      <Text variant="subtext" theme="info">
+                        Last updated{' '}
+                        <Time
+                          variant="subtext"
+                          time={install?.updated_at}
+                          format="relative"
+                        />
+                      </Text>
+                      <AdminDashboardLink
+                        path={`/queues?owner_id=${install.id}`}
+                        label="Admin panel"
+                      />
+                    </div>
+                  </HeadingGroup>
+
+                  <div className="flex items-start flex-wrap gap-4 md:gap-8">
+                    {isManagedByConfig && (
+                      <LabeledValue label="Managed by">
+                        <Text variant="subtext">
+                          <span className="flex items-center gap-1">
+                            <Icon variant="FileCodeIcon" /> Install config
+                          </span>
+                        </Text>
+                      </LabeledValue>
+                    )}
+                    {hasAppBranchesUI && (
+                      <LabeledValue label="Branch">
+                        <span className="flex items-center gap-2">
+                          {install.app_branch ? (
+                            <Link
+                              href={`/${org?.id}/apps/${install?.app_id}/branches/${install.app_branch.id}`}
+                            >
+                              <span className="flex items-center gap-1">
+                                <Icon variant="GitBranchIcon" size={14} />
+                                {install.app_branch.name}
+                              </span>
+                            </Link>
+                          ) : (
+                            <Text variant="subtext" theme="neutral">
+                              None
+                            </Text>
+                          )}
+                          <ChangeAppBranchButton
+                            compact
+                            install={install}
+                            onSuccess={refresh}
+                          />
                         </span>
+                      </LabeledValue>
+                    )}
+                    <LabeledValue label="App">
+                      <Link href={`/${org.id}/apps/${install.app_id}`}>
+                        {install?.app?.name}
                       </Link>
                     </LabeledValue>
-                  )}
-                  <LabeledValue label="App">
-                    <Link href={`/${org.id}/apps/${install.app_id}`}>
-                      {install?.app?.name}
-                    </Link>
-                  </LabeledValue>
-                  <InstallStatusesContainer collapsible />
+                    <InstallStatusesContainer collapsible />
+                  </div>
                 </div>
-              </div>
-              {install?.drifted_objects?.length ? (
-                <DriftedSummary
-                  className="mt-4"
-                  orgId={org.id}
-                  installId={install.id}
-                  driftedObjects={install.drifted_objects}
-                />
-              ) : null}
-            </PageHeader>
+              </PageHeader>
+            )}
             <PageContent className="border-t" variant="row">
               <SubNav
                 basePath={`/${org?.id}/installs/${install?.id}`}

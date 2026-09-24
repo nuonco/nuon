@@ -1,7 +1,8 @@
 import { createContext, useMemo, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { useResourceSSE } from '@/hooks/use-resource-sse'
+import { useResourceSSE } from '@/lib/sse/use-resource-sse'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { createSSEQueryListener } from '@/lib/sse-listeners'
 import type { TPaginatedResult } from '@/lib/api'
 import type {
@@ -57,10 +58,13 @@ export function OrgStatusSSEProvider({
     },
   }), [org?.id, queryClient])
 
+  const onRefreshError = useRefreshErrorToast()
+
   const { connected } = useResourceSSE({
     url: sseUrl,
     enabled: true,
     listeners,
+    onError: onRefreshError,
   })
 
   return (

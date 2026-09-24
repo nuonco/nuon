@@ -1,4 +1,3 @@
-import { type ReactNode } from 'react'
 import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
@@ -7,22 +6,16 @@ import { Text } from '@/components/common/Text'
 import { useNudge } from '@/hooks/use-nudge'
 
 interface IBranchDetailActions {
-  editButton: ReactNode
-  deploymentPlanButton: ReactNode
-  deleteButton: ReactNode
   isTriggerPending: boolean
-  showManage?: boolean
+  previewDisabled?: boolean
   showTriggerNudge?: boolean
   onTriggerRun: () => void
   onTriggerPreviewModal: () => void
 }
 
 export const BranchDetailActions = ({
-  editButton,
-  deploymentPlanButton,
-  deleteButton,
   isTriggerPending,
-  showManage = true,
+  previewDisabled = false,
   showTriggerNudge = false,
   onTriggerRun,
   onTriggerPreviewModal,
@@ -30,28 +23,7 @@ export const BranchDetailActions = ({
   const { isOpen: nudgeOpen, close: closeNudge } = useNudge(showTriggerNudge)
 
   return (
-    <div className="flex items-center gap-3">
-      {showManage ? (
-        <Dropdown
-          id="branch-manage"
-          variant="secondary"
-          alignment="right"
-          buttonText={
-            <>
-              <Icon variant="SlidersHorizontalIcon" size={16} />
-              Manage
-            </>
-          }
-        >
-          <Menu className="min-w-56">
-            {deploymentPlanButton}
-            {editButton}
-            <hr />
-            <span className="contents">{deleteButton}</span>
-          </Menu>
-        </Dropdown>
-      ) : null}
-
+    <div className="flex items-center">
       <div className="flex items-center">
         <Button
           variant="primary"
@@ -77,7 +49,7 @@ export const BranchDetailActions = ({
           variant="primary"
           alignment="right"
           hideIcon
-          disabled={isTriggerPending}
+          disabled={isTriggerPending || previewDisabled}
           buttonClassName="!rounded-l-none !border-l !border-l-primary-700 !px-2"
           buttonText={<Icon variant="CaretDownIcon" size={14} />}
         >

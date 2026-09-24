@@ -15,6 +15,13 @@ type mcpListWorkflowsInput struct {
 	InstallID string `json:"install_id" jsonschema:"install ID to list workflows for"`
 }
 
+type mcpWorkflowListItem struct {
+	ID        string `json:"id"`
+	Type      string `json:"type"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"created_at"`
+}
+
 func (s *service) mcpListWorkflows(ctx context.Context, _ *mcp.CallToolRequest, in mcpListWorkflowsInput) (*mcp.CallToolResult, any, error) {
 	orgID, err := require.Read(ctx)
 	if err != nil {
@@ -31,5 +38,15 @@ func (s *service) mcpListWorkflows(ctx context.Context, _ *mcp.CallToolRequest, 
 		return nil, nil, fmt.Errorf("unable to list workflows: %w", err)
 	}
 
-	return apiPkg.MCPJSONResult(workflows)
+	out := make([]mcpWorkflowListItem, 0, len(workflows))
+	for _, w := range workflows {
+		out = append(out, mcpWorkflowListItem{
+			ID:        w.ID,
+			Type:      string(w.Type),
+			Status:    string(w.Status.Status),
+			CreatedAt: apiPkg.MCPTime(w.CreatedAt),
+		})
+	}
+
+	return apiPkg.MCPJSONResult(out)
 }

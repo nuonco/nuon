@@ -33,12 +33,20 @@ type Client interface {
 	CreateOrgInvite(ctx context.Context, req *models.ServiceCreateOrgInviteRequest) (*models.AppOrgInvite, error)
 	UpdateOrgAccountRole(ctx context.Context, accountID string, req *models.ServiceUpdateOrgAccountRoleRequest) (*models.AppAccount, error)
 	GetOrgInvites(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppOrgInvite, bool, error)
+	GetOrgMembers(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppOrgMember, bool, error)
 
 	// org webhooks
 	GetCurrentOrgWebhooks(ctx context.Context) ([]*models.ServiceCurrentOrgWebhookResponse, error)
 	CreateCurrentOrgWebhook(ctx context.Context, req *models.ServiceCreateCurrentOrgWebhookRequest) (*models.ServiceCurrentOrgWebhookResponse, error)
 	UpdateCurrentOrgWebhook(ctx context.Context, webhookID string, req *models.ServiceUpdateCurrentOrgWebhookRequest) (*models.ServiceCurrentOrgWebhookResponse, error)
 	DeleteCurrentOrgWebhook(ctx context.Context, webhookID string) error
+
+	// slack channel subscriptions
+	ListSlackOrgLinks(ctx context.Context) ([]*models.AppSlackOrgLink, error)
+	ListSlackChannelSubscriptions(ctx context.Context) ([]*models.AppSlackChannelSubscription, error)
+	CreateSlackChannelSubscription(ctx context.Context, req *models.ServiceCreateChannelSubscriptionRequest) (*models.AppSlackChannelSubscription, error)
+	UpdateSlackChannelSubscription(ctx context.Context, subID string, req *models.ServiceUpdateChannelSubscriptionRequest) (*models.AppSlackChannelSubscription, error)
+	DeleteSlackChannelSubscription(ctx context.Context, subID string) error
 
 	// static api tokens
 	CreateStaticToken(ctx context.Context, req *models.ServiceCreateStaticTokenRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppAccountsServiceStaticTokenResponse, error)
@@ -63,8 +71,9 @@ type Client interface {
 
 	// app branch methods
 	GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, error)
-	GetAppBranches(ctx context.Context, appID string) ([]*models.AppAppBranch, error)
+	GetAppBranches(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error)
 	GetAppBranch(ctx context.Context, appID, appBranchID string) (*models.AppAppBranch, error)
+	GetAppBranchAppConfigs(ctx context.Context, appID, appBranchID string, query *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error)
 	CreateAppBranch(ctx context.Context, appID string, req *models.ServiceCreateAppBranchRequest) (*models.AppAppBranch, error)
 	UpdateAppBranch(ctx context.Context, appID, appBranchID string, req *models.ServiceUpdateAppBranchRequest) (*models.AppAppBranch, error)
 	DeleteAppBranch(ctx context.Context, appID, appBranchID string) error
@@ -74,6 +83,7 @@ type Client interface {
 	GetAppBranchPreviewInstallCandidates(ctx context.Context, appID, appBranchID, configID string) (*models.ServicePreviewInstallCandidatesResponse, error)
 	TriggerAppBranchRun(ctx context.Context, appID, appBranchID string, req *models.ServiceTriggerAppBranchRunRequest) (*models.AppAppBranchRun, error)
 	GetAppBranchRuns(ctx context.Context, appID, appBranchID string) ([]*models.AppWorkflow, error)
+	GetAppBranchRunsWithQuery(ctx context.Context, appID, appBranchID string, query *GetAppBranchRunsQuery) ([]*models.AppWorkflow, bool, error)
 	GetAppBranchRunBuilds(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppComponentBuild, error)
 	GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallAppConfigVersion, error)
 
@@ -201,10 +211,11 @@ type Client interface {
 	GetInstall(ctx context.Context, installID string) (*models.AppInstall, error)
 	GetAvailableRoles(ctx context.Context, installID string) ([]*models.ServiceAvailableRole, error)
 	UpdateInstall(ctx context.Context, installID string, req *models.ServiceUpdateInstallRequest) (*models.AppInstall, error)
+	MoveInstallToAppBranch(ctx context.Context, installID, appBranchID string) (*models.AppInstall, error)
 	DeleteInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 	ForgetInstall(ctx context.Context, installID string) (bool, error)
 	ReprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
-	ReprovisionInstallStack(ctx context.Context, installID string, skipComponents bool) (*models.AppWorkflowResponse, error)
+	ReprovisionInstallStack(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 	DeprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 	AddInstallLabels(ctx context.Context, installID string, labels map[string]string) (*models.AppInstall, error)
 	RemoveInstallLabels(ctx context.Context, installID string, keys []string) (*models.AppInstall, error)
@@ -290,9 +301,9 @@ type Client interface {
 
 	// log stream/logs
 	GetLogStream(ctx context.Context, logStreamID string) (*models.AppLogStream, error)
-	LogStreamReadLogs(ctx context.Context, logStreamId string, offset string, order string) ([]*models.AppOtelLogRecord, error)
-	LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string, order string) ([]*models.AppOtelLogRecord, string, error)
-	LogStreamTailLogs(ctx context.Context, logStreamID string, since string, wait string) (*models.ServiceLogStreamTailLogsResponse, error)
+	LogStreamReadLogs(ctx context.Context, logStreamId string, offset string, order string, filters *LogStreamLogFilters) ([]*models.AppOtelLogRecord, error)
+	LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string, order string, filters *LogStreamLogFilters) ([]*models.AppOtelLogRecord, string, error)
+	LogStreamTailLogs(ctx context.Context, logStreamID string, since string, wait string, filters *LogStreamLogFilters) (*models.ServiceLogStreamTailLogsResponse, error)
 
 	// terraform workspaces
 	GetTerraformWorkspaceStatesJSON(ctx context.Context, workspaceID string) ([]*models.AppTerraformWorkspaceStateJSON, error)

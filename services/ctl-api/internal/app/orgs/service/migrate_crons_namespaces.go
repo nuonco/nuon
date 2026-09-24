@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	queuemigration "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/queue_migration"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type MigrateCronsNamespacesRequest struct {
@@ -52,27 +51,11 @@ func (s *service) MigrateCronsNamespaces(ctx *gin.Context) {
 		return
 	}
 
-	// Ensure the org-signals queue exists (needed to enqueue the migration signal).
-	if err := s.helpers.EnsureOrgQueue(ctx, org.ID); err != nil {
-		s.l.Error("unable to ensure org queue", zap.String("org_id", org.ID), zap.Error(err))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "unable to ensure org queue: " + err.Error()})
-		return
-	}
-
-	var queue app.Queue
-	if res := s.db.WithContext(ctx).
-		Where(app.Queue{OwnerID: org.ID, Name: orgshelpers.OrgSignalsQueueName}).
-		First(&queue); res.Error != nil {
-		s.l.Error("unable to find org queue", zap.String("org_id", org.ID), zap.Error(res.Error))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "unable to find org queue"})
-		return
-	}
-
 	// Re-ensure all of the org's queues; EnsureInstallQueues/EnsureRunnerQueues
 	// now migrate cron queues to the namespace dictated by the feature flag.
-	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: queue.ID,
-		Signal:  &queuemigration.Signal{OrgID: org.ID, ReconcileCronEmitters: true},
+	if err := s.helpers.EnqueueOrgSignal(ctx, orgshelpers.EnqueueOrgSignalParams{
+		OrgID:  org.ID,
+		Signal: &queuemigration.Signal{OrgID: org.ID, ReconcileCronEmitters: true},
 	}); err != nil {
 		s.l.Error("unable to enqueue migration signal", zap.String("org_id", org.ID), zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "unable to enqueue migration signal: " + err.Error()})

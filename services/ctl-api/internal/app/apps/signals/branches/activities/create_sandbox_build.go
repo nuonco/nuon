@@ -16,6 +16,7 @@ type CreateSandboxBuildRequest struct {
 	CreatedByID        string `json:"created_by_id" validate:"required"`
 
 	VCSConnectionCommitID *string `json:"vcs_connection_commit_id"`
+	AppBranchRunID        string  `json:"app_branch_run_id"`
 }
 
 // @temporal-gen-v2 activity
@@ -33,6 +34,9 @@ func (a *Activities) CreateSandboxBuild(ctx context.Context, req CreateSandboxBu
 	}
 	if req.VCSConnectionCommitID != nil {
 		build.VCSConnectionCommitID = req.VCSConnectionCommitID
+	}
+	if req.AppBranchRunID != "" {
+		build.AppBranchRunID = &req.AppBranchRunID
 	}
 
 	if res := a.db.WithContext(ctx).Create(&build); res.Error != nil {

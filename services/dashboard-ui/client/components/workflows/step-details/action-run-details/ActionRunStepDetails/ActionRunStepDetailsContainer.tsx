@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { isTerminalStatusV2 } from '@/hooks/use-sse-resource-query'
+import { isTerminalStatusV2 } from '@/lib/sse/use-sse-resource-query'
 import { getInstallActionRun } from '@/lib'
 import type { TInstallActionRun } from '@/types'
 import type { IActionRunDetails } from '../types'

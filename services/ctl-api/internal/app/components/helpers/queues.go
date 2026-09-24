@@ -7,12 +7,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 const (
 	// ComponentWorkflowStepsQueueName is the named queue on each component
 	// where execute-workflow-step signals run for component builds.
-	ComponentWorkflowStepsQueueName = "component-workflow-steps"
+	ComponentWorkflowStepsQueueName = queuenames.ComponentWorkflowStepsQueueName
 )
 
 // ComponentQueueIDs holds the queue IDs for a component.
@@ -25,41 +26,39 @@ type ComponentQueueIDs struct {
 // and returns the queue IDs. Safe to call multiple times — Create is idempotent.
 func (h *Helpers) EnsureComponentQueues(ctx context.Context, componentID string) (*ComponentQueueIDs, error) {
 	ownerType := plugins.TableName(h.db, app.Component{})
-
-	defaultQueue, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     componentID,
-		OwnerType:   ownerType,
-		Namespace:   "components",
-		MaxInFlight: 1,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to ensure default queue for component %s: %w", componentID, err)
+	specs, ok := queuenames.Specs(queuenames.OwnerComponents)
+	if !ok {
+		return nil, fmt.Errorf("component queue specs are not registered")
 	}
 
-	stepsQueue, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     componentID,
-		OwnerType:   ownerType,
-		Namespace:   "components",
-		Name:        ComponentWorkflowStepsQueueName,
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to ensure %s queue for component %s: %w", ComponentWorkflowStepsQueueName, componentID, err)
+	ids := &ComponentQueueIDs{}
+	for _, spec := range specs {
+		existing, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+			OwnerID:     componentID,
+			OwnerType:   ownerType,
+			Namespace:   "components",
+			Name:        spec.Name,
+			MaxInFlight: spec.MaxInFlight,
+			MaxDepth:    spec.MaxDepth,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to ensure %s queue for component %s: %w", spec.Name, componentID, err)
+		}
+		if spec.Name == queuenames.ComponentDefaultQueueName {
+			ids.DefaultQueueID = existing.ID
+		} else if spec.Name == queuenames.ComponentWorkflowStepsQueueName {
+			ids.WorkflowStepsQueueID = existing.ID
+		}
 	}
 
-	return &ComponentQueueIDs{
-		DefaultQueueID:       defaultQueue.ID,
-		WorkflowStepsQueueID: stepsQueue.ID,
-	}, nil
+	return ids, nil
 }
 
 // GetComponentQueueIDs looks up existing queue IDs for a component.
 func (h *Helpers) GetComponentQueueIDs(ctx context.Context, componentID string) (*ComponentQueueIDs, error) {
 	ownerType := plugins.TableName(h.db, app.Component{})
 
-	defaultQueue, err := h.queueClient.GetQueueByOwner(ctx, componentID, ownerType)
+	defaultQueue, err := h.queueClient.GetDefaultQueueByOwner(ctx, componentID, ownerType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get default queue for component %s: %w", componentID, err)
 	}

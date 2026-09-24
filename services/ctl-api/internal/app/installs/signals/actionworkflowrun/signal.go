@@ -405,12 +405,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 
 	// this is empty for adhoc actions, for adhoc actions we dont need to generate states post completion
 	if s.InstallActionWorkflowID != "" {
-		orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-		if err != nil {
-			return errors.Wrap(err, "unable to check state-gen-v2 feature")
-		}
 		if err := stategen.HintOrGenerate(ctx, stategen.Request{
-			StateGenV2:      statemanager.UseStateGenV2(orgEnabled, metadata),
 			InstallID:       installID,
 			Targets:         statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
 			ForceAll:        true,
@@ -433,21 +428,13 @@ func (s *Signal) recordPreparationCompositeError(ctx workflow.Context, runID str
 	}
 }
 
-// checkImageActionSupported gates image-backed actions on the org feature and
-// the install's runner platform. It runs for every image-backed action,
-// including ones that skip mirroring, so neither path can bypass the gate.
+// checkImageActionSupported gates image-backed actions on the install's
+// runner platform. It runs for every image-backed action, including ones
+// that skip mirroring, so neither path can bypass the gate.
 func (s *Signal) checkImageActionSupported(ctx workflow.Context, run *app.InstallActionWorkflowRun) error {
-	enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureImageBackedActions))
-	if err != nil {
-		return errors.Wrap(err, "unable to check image-backed-actions feature")
-	}
-	if !enabled {
-		return errors.New("image-backed actions are not enabled for this organization")
-	}
-
 	platform := run.Install.RunnerGroup.Platform
 	if !supportedImageActionPlatform(platform) {
-		return fmt.Errorf("image-backed actions are only supported on AWS runners; runner platform %q is not supported", platform)
+		return fmt.Errorf("image-backed actions are only supported on AWS, Azure, and GCP VM runners; runner platform %q is not supported", platform)
 	}
 
 	return nil
@@ -572,16 +559,12 @@ func resolveMirroredDigestRef(ctx workflow.Context, syncJobID string) (string, e
 	return out.Ref, nil
 }
 
-// supportedImageActionPlatform gates image-backed actions to the platforms that
-// can put the selected role inside the container. AWS mints the role's
-// credentials on the runner and injects them, so the container never needs the
-// VM's metadata identity. Azure names the selected user-assigned managed
-// identity via ARM_CLIENT_ID/AZURE_CLIENT_ID and the container reaches IMDS over
-// the docker bridge, which is the same boundary a script action gets. GCP only
-// injects an impersonation hint and still needs credential work.
+// supportedImageActionPlatform gates image-backed actions to VM runners with a
+// host Docker launcher. GCP containers receive the same metadata identity and
+// service-account impersonation hints as host-based GCP actions.
 func supportedImageActionPlatform(p app.AppRunnerType) bool {
 	switch p {
-	case app.AppRunnerTypeAWS, app.AppRunnerTypeAzure, app.AppRunnerTypeLocal:
+	case app.AppRunnerTypeAWS, app.AppRunnerTypeAzure, app.AppRunnerTypeGCP, app.AppRunnerTypeLocal:
 		return true
 	default:
 		return false

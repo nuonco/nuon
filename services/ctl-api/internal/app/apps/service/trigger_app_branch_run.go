@@ -116,7 +116,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	// Verify branch exists and belongs to this org/app
 	var branch app.AppBranch
 	res := s.db.WithContext(ctx).
-		Preload("Queue").
+		Preload("Queue", app.DefaultQueueScope).
 		Where(app.AppBranch{
 			OrgID: org.ID,
 			AppID: appID,
@@ -169,7 +169,6 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		"config_id":     config.ID,
 		"config_number": strconv.Itoa(config.ConfigNumber),
 		"force":         strconv.FormatBool(req.Force),
-		"event_type":    "manual",
 	}
 	if req.AppConfigID != "" {
 		workflowMeta["app_config_id"] = req.AppConfigID
@@ -182,6 +181,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	}
 	// fetchcommit only honours HeadSHA on a git-preview run.
 	runType := app.AppBranchRunTypeManual
+	eventType := "manual"
 	planOnly := req.PlanOnly
 	prNumber := req.PRNumber
 	headSHA := req.HeadSHA
@@ -209,7 +209,9 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			headSHA = previewInput.HeadSHA
 		}
 		switch previewInput.Source {
-		case app.AppBranchRunPreviewSourcePR, app.AppBranchRunPreviewSourceCommit, app.AppBranchRunPreviewSourceBranch:
+		case app.AppBranchRunPreviewSourcePR:
+			runType = app.AppBranchRunTypeGitPreview
+		case app.AppBranchRunPreviewSourceCommit, app.AppBranchRunPreviewSourceBranch:
 			runType = app.AppBranchRunTypeGitPreview
 		case app.AppBranchRunPreviewSourceLocal:
 			if req.AppConfigID == "" {
@@ -217,9 +219,14 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 				return
 			}
 		}
+		eventType = previewEventType(previewInput.Source)
 	} else if req.PlanOnly && (req.PRNumber != nil || req.HeadSHA != "") {
 		runType = app.AppBranchRunTypeGitPreview
+		if req.PRNumber != nil {
+			eventType = "pull_request"
+		}
 	}
+	workflowMeta["event_type"] = eventType
 
 	if prNumber != nil {
 		workflowMeta["pr_number"] = strconv.Itoa(*prNumber)
@@ -231,14 +238,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		workflowMeta["base_branch"] = baseBranch
 	}
 
-	approvalOption := app.InstallApprovalOptionApproveAll
-	if !req.AutoApprove {
-		approvalOption, err = s.helpers.ResolveAppBranchApprovalOption(ctx, appID, appBranchID, config.ID)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to resolve approval option: %w", err))
-			return
-		}
-	}
+	approvalOption := branchRunApprovalOption(req.AutoApprove)
 
 	triggerResp, err := s.helpers.TriggerAppBranchRun(ctx, &helpers.TriggerAppBranchRunRequest{
 		Run: helpers.CreateAppBranchRunRequest{
@@ -248,7 +248,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			Force:             req.Force,
 			PlanOnly:          planOnly,
 			RunType:           runType,
-			EventType:         "manual",
+			EventType:         eventType,
 			PRNumber:          prNumber,
 			HeadSHA:           headSHA,
 			BaseBranch:        baseBranch,
@@ -289,4 +289,11 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, run)
+}
+
+func branchRunApprovalOption(autoApprove bool) app.InstallApprovalOption {
+	if autoApprove {
+		return app.InstallApprovalOptionApproveAll
+	}
+	return app.InstallApprovalOptionPrompt
 }

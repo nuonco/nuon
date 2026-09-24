@@ -16,6 +16,7 @@ type CreateAppConfigInput struct {
 	AppBranchID            string        `json:"app_branch_id" validate:"required"`
 	CreatedByID            string        `json:"created_by_id" validate:"required"`
 	IntermediateConfigJSON string        `json:"intermediate_config_json" validate:"required"`
+	SourceConfigJSON       string        `json:"source_config_json,omitempty"`
 	Labels                 labels.Labels `json:"labels,omitempty"`
 }
 
@@ -43,13 +44,19 @@ func (a *Activities) createAppConfig(ctx context.Context, req *CreateAppConfigIn
 		StatusDescription:  "pending sync",
 		StatusV2:           pendingStatus,
 		IntermediateConfig: &blobstore.Blob{},
+		SourceConfig:       &blobstore.Blob{},
 	}
 	if req.Labels != nil {
 		appConfig.Labels = req.Labels
 	}
 	appConfig.IntermediateConfig.Set(req.IntermediateConfigJSON)
+	if req.SourceConfigJSON != "" {
+		appConfig.SourceConfig.Set(req.SourceConfigJSON)
+		appConfig.SourceConfig.SetContentType("application/json")
+	}
 
-	if res := a.db.WithContext(ctx).Create(appConfig); res.Error != nil {
+	dbCtx := blobstore.WithBlobService(ctx, a.blobSvc)
+	if res := a.db.WithContext(dbCtx).Create(appConfig); res.Error != nil {
 		return nil, fmt.Errorf("unable to create app config: %w", res.Error)
 	}
 

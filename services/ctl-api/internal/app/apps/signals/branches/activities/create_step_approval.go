@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"go.uber.org/zap"
 	"gorm.io/gorm/clause"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/plancounts"
 )
 
 type CreateStepApprovalInput struct {
@@ -37,6 +40,15 @@ func (a *Activities) CreateStepApproval(ctx context.Context, req *CreateStepAppr
 		Contents:              req.Plan,
 		Type:                  req.Type,
 	}
+
+	counts, state, err := plancounts.Counts(req.Type, req.Plan)
+	if err != nil {
+		a.l.Warn("unable to summarize approval plan",
+			zap.String("step_id", req.StepID),
+			zap.String("approval_type", string(req.Type)),
+			zap.Error(err))
+	}
+	sa.SetChanges(counts, state)
 
 	if err := a.db.WithContext(ctx).Create(&sa).Error; err != nil {
 		return nil, fmt.Errorf("unable to create step approval: %w", err)

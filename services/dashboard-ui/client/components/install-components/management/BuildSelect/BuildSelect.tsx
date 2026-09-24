@@ -21,6 +21,9 @@ const SORT_OPTIONS = [
 const buildTimestamp = (build: TBuild) =>
   build?.created_at ? new Date(build.created_at).getTime() : 0
 
+export const excludePreviewBuilds = (builds: TBuild[]) =>
+  builds.filter((build) => !build?.is_preview)
+
 const matchesQuery = (build: TBuild, query: string) => {
   const haystack = [
     build?.id,
@@ -63,30 +66,31 @@ export const BuildSelect = ({
 }: IBuildSelect) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState<TSortOrder>('newest')
+  const deployableBuilds = useMemo(() => excludePreviewBuilds(builds), [builds])
 
   useEffect(() => {
-    if (!selectedBuildId && builds.length > 0) {
-      const mostRecentActiveBuild = builds.find(
+    if (!selectedBuildId && deployableBuilds.length > 0) {
+      const mostRecentActiveBuild = deployableBuilds.find(
         (build) => build?.status_v2?.status === 'active'
       )
       if (mostRecentActiveBuild) {
         onSelectBuild(mostRecentActiveBuild.id)
       }
     }
-  }, [selectedBuildId, builds, onSelectBuild])
+  }, [selectedBuildId, deployableBuilds, onSelectBuild])
 
   const visibleBuilds = useMemo(() => {
     const filtered = searchQuery
-      ? builds.filter((build) => matchesQuery(build, searchQuery))
-      : builds
+      ? deployableBuilds.filter((build) => matchesQuery(build, searchQuery))
+      : deployableBuilds
     return [...filtered].sort((a, b) =>
       sortOrder === 'newest'
         ? buildTimestamp(b) - buildTimestamp(a)
         : buildTimestamp(a) - buildTimestamp(b)
     )
-  }, [builds, searchQuery, sortOrder])
+  }, [deployableBuilds, searchQuery, sortOrder])
 
-  const showControls = builds.length > 0 && !error
+  const showControls = deployableBuilds.length > 0 && !error
 
   const renderContent = () => {
     if (isLoading && builds.length === 0) {
@@ -136,7 +140,7 @@ export const BuildSelect = ({
       )
     }
 
-    if (builds.length === 0 && !isLoading) {
+    if (deployableBuilds.length === 0 && !isLoading) {
       return (
         <EmptyState
           variant="search"

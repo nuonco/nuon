@@ -22,9 +22,6 @@ type ServiceReprovisionInstallStackRequest struct {
 
 	// role
 	Role string `json:"role,omitempty"`
-
-	// skip components
-	SkipComponents bool `json:"skip_components,omitempty"`
 }
 
 // Validate validates this service reprovision install stack request

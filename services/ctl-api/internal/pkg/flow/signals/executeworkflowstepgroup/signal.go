@@ -9,6 +9,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -109,6 +111,23 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	}
 }
 
+func (s *Signal) workflowTelemetry() cctx.WorkflowTelemetry {
+	telemetry := cctx.WorkflowTelemetry{
+		OrgID:        s.OrgID,
+		OrgName:      s.OrgName,
+		WorkflowID:   s.WorkflowID,
+		WorkflowType: s.WorkflowType,
+		OwnerID:      s.OwnerID,
+		OwnerType:    s.OwnerType,
+		OwnerName:    s.OwnerName,
+	}
+	if s.OwnerType == plugins.TableNameOf[app.Install]() {
+		telemetry.InstallID = s.OwnerID
+		telemetry.InstallName = s.OwnerName
+	}
+	return telemetry
+}
+
 func (s *Signal) WithParams(params *signal.Params) {
 	s.mw = params.MW
 }
@@ -176,6 +195,11 @@ func (s *Signal) cancelGroupHandler(ctx workflow.Context) error {
 
 // Cancel propagates cancellation to all in-flight step signals.
 func (s *Signal) Cancel(ctx workflow.Context) error {
+	// Stop the execute loop from dispatching further steps: the loop checks
+	// this flag before each step and on wake, and an external cancel (via the
+	// queue handler's cancel update) doesn't go through cancelGroupHandler.
+	s.cancelRequested = true
+
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
 	defer cancel()
 

@@ -37,8 +37,9 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 	}
 
 	result, err := syncer.Run(ctx, a.syncRunDeps(), syncer.RunRequest{
-		AppID:       req.AppID,
-		AppConfigID: req.AppConfigID,
+		AppID:        req.AppID,
+		AppConfigID:  req.AppConfigID,
+		SkipBranches: true,
 	})
 	if err != nil {
 		var syncErr configsync.SyncErr
@@ -72,6 +73,8 @@ func (a *Activities) syncRunDeps() syncer.RunDeps {
 		InstallHelpers:   a.installHelpers,
 		VCSHelpers:       a.vcsHelpers,
 		TFClient:         a.tfClient,
+		Metrics:          a.syncMetrics,
+		Logger:           a.l,
 	}
 }
 

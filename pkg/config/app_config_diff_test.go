@@ -3,8 +3,9 @@ package config
 import (
 	"testing"
 
-	"github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/nuonco/nuon/pkg/config/diff"
 )
 
 type AppConfigDiffSuite struct {
@@ -17,6 +18,16 @@ func TestAppConfigDiffSuite(t *testing.T) {
 
 func strPtr(s string) *string { return &s }
 func boolPtr(b bool) *bool    { return &b }
+
+func (s *AppConfigDiffSuite) TestRemovingPreviewChangesModeToNone() {
+	got := diffBranchPreview(
+		&AppBranchPreviewConfig{Mode: "plan-only", InstallName: "example"},
+		nil,
+	)
+
+	s.Contains(got.FormatChanged(""), "mode: 'plan-only' -> 'none'")
+	s.Contains(got.FormatChanged(""), "install_name: 'example' -> ''")
+}
 
 // baseConfig returns a minimal valid AppConfig for use in tests.
 func baseConfig() *AppConfig {

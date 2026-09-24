@@ -1,6 +1,6 @@
 ---
 title: "MCP walkthrough"
-description: "Connect an LLM client to Nuon and run your first MCP tool calls."
+description: "Connect an LLM client to Nuon and run your first queries."
 icon: "route"
 ---
 
@@ -14,27 +14,68 @@ icon: "route"
 <Steps>
 <Step title="Register the MCP server">
 
-Add the stdio proxy. Token and org stay in `~/.nuon` (or `-C`).
+Add the stdio proxy. Token and org stay in `~/.nuon`.
 
-```bash
-nuon agents mcp setup --platform claude-code
-nuon agents mcp setup --platform cursor
-nuon agents mcp setup --platform amp
-```
-
-Or register with the client CLI:
+Each client has its own config file, JSON key, and (sometimes) an add command. Check that client's MCP docs rather than assuming a shared schema. The process to spawn is `nuon` with arguments `agents`, `mcp`, and `--allow-writes`.
 
 <CodeGroup>
 ```bash Claude Code
-claude mcp add --transport stdio nuon -- nuon agents mcp
+claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes
+```
+
+```json Claude Code (by file)
+{
+  "mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes"]
+    }
+  }
+}
 ```
 
 ```bash Amp
-amp mcp add nuon -- nuon agents mcp
+amp mcp add nuon -- nuon agents mcp --allow-writes
+```
+
+```json Amp (by file)
+{
+  "amp.mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes"]
+    }
+  }
+}
+```
+
+```json Cursor
+{
+  "mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes"]
+    }
+  }
+}
 ```
 </CodeGroup>
 
-Stage: `nuon -C /path/to/stage-config agents mcp setup --platform cursor`. Overrides: `--url` and `--name`. Cursor Agent: `agent mcp enable <name>` after setup. Full examples: [Connect](/guides/agents/overview#connect).
+Claude Code: add command above, or save the JSON as `.mcp.json` in the project.
+
+Amp: add command above, or save the JSON under `amp.mcpServers` in `~/.config/amp/settings.json` (user) or `.amp/settings.json` (workspace).
+
+Cursor has no `mcp add`. Save the JSON as `~/.cursor/mcp.json` (all projects) or `.cursor/mcp.json` (one project), then:
+
+```bash
+agent mcp enable nuon
+```
+
+Examples include `--allow-writes` so mutating tools are available. That flag only lists write tools; the identity still needs [Admin](/concepts/access-control) (`org_admin`), not Read-only.
+
+The proxy derives its URL from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`). Pass `--url` when the MCP URL does not follow from the API URL, for example a self-hosted or Nuon BYOC control plane, or any deployment where the hostnames differ. Use `--name` to rename it in the client's MCP list. Full examples: [Connect](/guides/agents/overview#connect) and [Overriding the MCP URL](/guides/agents/overview#overriding-the-mcp-url).
+
+`nuon agents help` prints all of this against your own config.
 
 </Step>
 
@@ -48,28 +89,19 @@ Confirm you are authenticated and an org is selected. If not, run `nuon auth log
 
 </Step>
 
-<Step title="First tool calls">
+<Step title="Ask a first question">
 
-In the LLM client, call:
+In the LLM client, paste:
 
-1. `whoami` — confirm account and org
-2. `list_installs` — list installs in that org
-
-You do not need `select_org` when using the stdio proxy (org is already in `X-Nuon-Org-ID`).
-
-</Step>
-
-<Step title="Writes (optional)">
-
-Restart the proxy with `--allow-writes` only when you need to mutate (approve steps, run actions, preview branches, and so on):
-
-```bash
-nuon agents mcp --allow-writes
+```
+Who am I, and what installs are in this org?
 ```
 
-Your token must also have create permission.
+The client should call `whoami` and `list_installs`. You do not need `select_org` when using the stdio proxy (org is already in `X-Nuon-Org-ID`).
+
+More prompts: [Sample queries](/guides/agents/sample-queries).
 
 </Step>
 </Steps>
 
-Tool catalog and prompt → tool examples: [Agents](/guides/agents/overview).
+Tool catalog: [Tools](/guides/agents/tools). Prompts to paste: [Sample queries](/guides/agents/sample-queries).

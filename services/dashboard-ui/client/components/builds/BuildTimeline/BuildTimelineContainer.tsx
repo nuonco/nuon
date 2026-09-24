@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { useSSETimelineQuery } from '@/hooks/use-sse-timeline-query'
+import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getComponentBuilds } from '@/lib'
 import { BuildTimeline } from './BuildTimeline'
 
@@ -12,6 +13,8 @@ interface IBuildTimelineContainer {
   componentId: string
   pollInterval?: number
   shouldPoll?: boolean
+  branchId?: string
+  excludeBuildId?: string
 }
 
 export const BuildTimelineContainer = ({
@@ -19,11 +22,15 @@ export const BuildTimelineContainer = ({
   componentId,
   pollInterval = 10000,
   shouldPoll = false,
+  branchId,
+  excludeBuildId,
 }: IBuildTimelineContainer) => {
   const { app } = useApp()
   const { org } = useOrg()
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
+
+  const onRefreshError = useRefreshErrorToast()
 
   const { data: result } = useSSETimelineQuery({
     sseUrl:
@@ -42,6 +49,7 @@ export const BuildTimelineContainer = ({
     shouldPoll,
     pollInterval,
     eventName: 'builds',
+    onError: onRefreshError,
   })
 
   const builds = result?.data ?? []
@@ -57,6 +65,9 @@ export const BuildTimelineContainer = ({
       appId={app?.id}
       componentId={componentId}
       componentName={componentName}
+      isEmpty={builds.length === 0 && offset === 0}
+      branchId={branchId}
+      excludeBuildId={excludeBuildId}
     />
   )
 }

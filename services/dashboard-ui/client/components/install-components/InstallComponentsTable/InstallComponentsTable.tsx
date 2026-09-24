@@ -162,33 +162,7 @@ export function parseInstallComponentSummaryToTableData(
   })
 }
 
-const healthColumn: ColumnDef<InstallComponentRow> = {
-  enableSorting: false,
-  accessorKey: 'health',
-  header: 'Health',
-  cell: (info) => {
-    const health = info.getValue() as string | undefined
-    if (!health) return <Icon variant="MinusIcon" />
-    const badge = <Status variant="badge" status={health} />
-    const message = info.row.original.healthMessage
-    if (!message) return badge
-    return (
-      <Tooltip
-        position="top"
-        tipContentClassName="!p-0"
-        tipContent={
-          <Text as="div" className="flex w-fit max-w-96 p-2" variant="subtext">
-            {message}
-          </Text>
-        }
-      >
-        {badge}
-      </Tooltip>
-    )
-  },
-}
-
-const baseColumns: ColumnDef<InstallComponentRow>[] = [
+const columns: ColumnDef<InstallComponentRow>[] = [
   {
     accessorKey: 'componentName',
     header: 'Component name',
@@ -204,6 +178,31 @@ const baseColumns: ColumnDef<InstallComponentRow>[] = [
       </span>
     ),
     enableSorting: true,
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'health',
+    header: 'Health',
+    cell: (info) => {
+      const health = info.getValue() as string | undefined
+      if (!health) return <Icon variant="MinusIcon" />
+      const badge = <Status variant="badge" status={health} />
+      const message = info.row.original.healthMessage
+      if (!message) return badge
+      return (
+        <Tooltip
+          position="top"
+          tipContentClassName="!p-0"
+          tipContent={
+            <Text as="div" className="flex w-fit max-w-96 p-2" variant="subtext">
+              {message}
+            </Text>
+          }
+        >
+          {badge}
+        </Tooltip>
+      )
+    },
   },
   {
     accessorKey: 'componentType',
@@ -265,13 +264,6 @@ const baseColumns: ColumnDef<InstallComponentRow>[] = [
   },
 ]
 
-function buildColumns(showHealth: boolean): ColumnDef<InstallComponentRow>[] {
-  if (!showHealth) return baseColumns
-  const cols = [...baseColumns]
-  cols.splice(1, 0, healthColumn)
-  return cols
-}
-
 interface IInstallComponentsTable {
   data: InstallComponentRow[]
   filterActions: ReactNode
@@ -281,7 +273,6 @@ interface IInstallComponentsTable {
     limit: number
   }
   isLoading: boolean
-  showHealth?: boolean
 }
 
 export const InstallComponentsTable = ({
@@ -289,11 +280,10 @@ export const InstallComponentsTable = ({
   filterActions,
   pagination,
   isLoading,
-  showHealth = false,
 }: IInstallComponentsTable) => {
   return (
     <Table<InstallComponentRow>
-      columns={buildColumns(showHealth)}
+      columns={columns}
       data={data}
       isLoading={isLoading}
       filterActions={filterActions}

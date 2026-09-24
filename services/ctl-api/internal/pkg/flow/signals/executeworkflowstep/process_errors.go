@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -16,6 +17,12 @@ import (
 // written before the ceiling recorded an unbounded Await (no timer command),
 // so replaying them with AwaitWithTimeout is nondeterministic.
 const parkedWaitCeilingVersion = "parked-step-wait-ceiling-v1"
+
+// targetlessStepCompositeErrorVersion gates the hints lookup for steps with no
+// step target: histories written before it have no such activity command.
+const targetlessStepCompositeErrorVersion = "targetless-step-composite-error-v1"
+
+const terminalTargetlessStopVersion = "terminal-targetless-step-stop-v1"
 
 // handleStepError marks the step as errored and checks for auto-retry.
 // If the inner signal implements SignalWithAutoRetry and the retry budget
@@ -27,7 +34,19 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	// Check auto-retry on inner signal.
 	ar, isAutoRetry := sig.(signal.SignalWithAutoRetry)
 	if !isAutoRetry || !ar.AutoRetry() {
-		return s.markStepFailed(ctx, step, stepErr, nil)
+		stepCE := s.targetlessStepCompositeError(ctx, l, step)
+		if stepCE != nil &&
+			stepCE.Hints.Terminal() &&
+			workflow.GetVersion(ctx, terminalTargetlessStopVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			if err := s.updateStepFailedStatus(ctx, step, stepErr, nil, stepCE); err != nil {
+				return err
+			}
+			if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
+				return errors.Wrap(err, "unable to set stop directive")
+			}
+			return nil
+		}
+		return s.markStepFailed(ctx, step, stepErr, nil, stepCE)
 	}
 
 	// Consult the composite-error hint recorded for this step's target. The
@@ -38,6 +57,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	// instead of burning auto-retries.
 	skipAutoRetry := false
 	terminal := false
+	var stepCE *compositeerrors.CompositeErrorData
 	if targetSupportsCompositeErrorHints(step.StepTargetType) {
 		if hintsResp, herr := activities.AwaitGetStepErrorHints(ctx, activities.GetStepErrorHintsRequest{
 			StepID: step.ID,
@@ -48,6 +68,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		} else if hintsResp != nil {
 			skipAutoRetry = hintsResp.Hints.SkipAutoRetry()
 			terminal = hintsResp.Hints.Terminal()
+			stepCE = hintsResp.Error
 		}
 	}
 
@@ -68,7 +89,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		if err := setResultDirective(ctx, step.ID, directive); err != nil {
 			return errors.Wrap(err, "unable to set result directive")
 		}
-		return s.markStepFailed(ctx, step, stepErr, metadata)
+		return s.markStepFailed(ctx, step, stepErr, metadata, stepCE)
 	}
 
 	// Determine max retries from the signal, falling back to default.
@@ -111,7 +132,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 				"max_retries":        maxRetries,
 				"retry_index":        retryIndex,
 				"skipped_on_failure": true,
-			})
+			}, stepCE)
 			if err := setResultDirective(ctx, step.ID, DirectiveContinue); err != nil {
 				return errors.Wrap(err, "unable to set result directive")
 			}
@@ -125,7 +146,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			"retries_exhausted": true,
 			"max_retries":       maxRetries,
 			"retry_index":       retryIndex,
-		})
+		}, stepCE)
 	}
 
 	// Park for manual retry when auto-retries are exhausted OR the composite
@@ -149,7 +170,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 				"max_retries":            maxRetries,
 				"retry_index":            retryIndex,
 				"skipped_on_failure":     true,
-			})
+			}, stepCE)
 			if err := setResultDirective(ctx, step.ID, DirectiveContinue); err != nil {
 				return errors.Wrap(err, "unable to set result directive")
 			}
@@ -164,7 +185,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			"max_auto_retries":       maxAutoRetries,
 			"max_retries":            maxRetries,
 			"retry_index":            retryIndex,
-		})
+		}, stepCE)
 		if err := setResultDirective(ctx, step.ID, DirectiveAwaitRetry); err != nil {
 			return errors.Wrap(err, "unable to set await-retry directive")
 		}
@@ -197,13 +218,16 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			return err
 		}
 		if !parked {
+			abandonedDesc := abandonedHumanDescription(stepErr)
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: step.ID,
 				Status: app.CompositeStatus{
 					Status:                 app.StatusError,
-					StatusHumanDescription: "step abandoned: no retry or skip received",
+					StatusHumanDescription: abandonedDesc,
+					CompositeError:         stepCE,
 					Metadata: map[string]any{
-						"abandoned": true,
+						"abandoned":      true,
+						"original_error": stepErr.Error(),
 					},
 				},
 			}); err != nil {
@@ -212,7 +236,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
 				StepID:            step.ID,
 				Status:            app.StatusError,
-				StatusDescription: "step abandoned: no retry or skip received",
+				StatusDescription: abandonedDesc,
 			}); err != nil {
 				return errors.Wrap(err, "unable to update step target status for abandoned step")
 			}
@@ -246,6 +270,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		Status: app.CompositeStatus{
 			Status:                 app.StatusError,
 			StatusHumanDescription: stepHumanDescription(stepErr),
+			CompositeError:         stepCE,
 			Metadata: map[string]any{
 				"reason":       stepErr.Error(),
 				"auto_retried": true,
@@ -265,9 +290,17 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	return nil
 }
 
-// markStepFailed writes a StatusError update for the step with the given error
-// and optional extra metadata. It always returns stepErr.
-func (s *Signal) markStepFailed(ctx workflow.Context, step *app.WorkflowStep, stepErr error, extraMeta map[string]any) error {
+// markStepFailed writes a StatusError update for the step with the given error,
+// the parsed composite error when one was recorded for the step's target, and
+// optional extra metadata. It always returns stepErr.
+func (s *Signal) markStepFailed(ctx workflow.Context, step *app.WorkflowStep, stepErr error, extraMeta map[string]any, stepCE *compositeerrors.CompositeErrorData) error {
+	if err := s.updateStepFailedStatus(ctx, step, stepErr, extraMeta, stepCE); err != nil {
+		return err
+	}
+	return stepErr
+}
+
+func (s *Signal) updateStepFailedStatus(ctx workflow.Context, step *app.WorkflowStep, stepErr error, extraMeta map[string]any, stepCE *compositeerrors.CompositeErrorData) error {
 	meta := map[string]any{
 		"reason": stepErr.Error(),
 	}
@@ -280,12 +313,39 @@ func (s *Signal) markStepFailed(ctx workflow.Context, step *app.WorkflowStep, st
 		Status: app.CompositeStatus{
 			Status:                 app.StatusError,
 			StatusHumanDescription: stepHumanDescription(stepErr),
+			CompositeError:         stepCE,
 			Metadata:               meta,
 		},
 	}); err != nil {
 		return errors.Wrap(err, "unable to mark step as error")
 	}
-	return stepErr
+	return nil
+}
+
+// targetlessStepCompositeError reads back the composite error a targetless step
+// (e.g. an app branch run step) recorded on its own status, so marking the step
+// failed does not clear it.
+func (s *Signal) targetlessStepCompositeError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep) *compositeerrors.CompositeErrorData {
+	if step.StepTargetID != "" || step.StepTargetType != "" {
+		return nil
+	}
+	if workflow.GetVersion(ctx, targetlessStepCompositeErrorVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return nil
+	}
+
+	hintsResp, err := activities.AwaitGetStepErrorHints(ctx, activities.GetStepErrorHintsRequest{
+		StepID: step.ID,
+	})
+	if err != nil {
+		l.Warn("unable to get step error hints",
+			zap.String("step_id", step.ID),
+			zap.Error(err))
+		return nil
+	}
+	if hintsResp == nil {
+		return nil
+	}
+	return hintsResp.Error
 }
 
 func targetSupportsCompositeErrorHints(targetType string) bool {

@@ -68,7 +68,7 @@ func (p ComponentHealthProbeConfig) JSONSchemaExtend(schema *jsonschema.Schema) 
 		Example("api-healthz").
 		Field("url").Short("probe target").
 		Long("Target for http and tcp probes. http requires a full URL, tcp accepts host:port or a URL whose scheme implies the port. Supports Nuon templating").
-		Example("https://{{.nuon.install.sandbox.outputs.public_domain}}/healthz").
+		Example("https://{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.name}}/healthz").
 		Example("db.internal:5432").
 		Field("command").Short("exec probe command").
 		Long("Command to run for an exec probe, as an argv array. Executed directly with no shell, so pipes and redirection are not interpreted. Exit code 0 is healthy. Supports Nuon templating").

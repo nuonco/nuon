@@ -174,18 +174,6 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		}
 	}
 
-	// image-backed actions require every step to use inline_contents
-	if c.Image != "" {
-		for _, step := range c.Steps {
-			if step.InlineContents == "" {
-				return stderr.ErrUser{
-					Err:         errors.New("image-backed actions require inline_contents on every step"),
-					Description: fmt.Sprintf("step %s must use inline_contents because the action sets an image (command and repo steps are not supported with image-backed actions)", step.Name),
-				}
-			}
-		}
-	}
-
 	// validate execution methods: inline_contents is mutually exclusive, command can be used with VCS, only one VCS allowed
 	for _, step := range c.Steps {
 		// Check if multiple VCS configs are set
@@ -285,19 +273,6 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 }
 
 func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app.App, orgID string, awID string, req *CreateActionWorkflowConfigRequest) (*app.ActionWorkflowConfig, error) {
-	if req.Image != "" {
-		enabled, err := s.featuresClient.OrgHasFeature(ctx, orgID, app.OrgFeatureImageBackedActions)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to check image-backed-actions feature")
-		}
-		if !enabled {
-			return nil, stderr.ErrUser{
-				Err:         errors.New("image-backed actions are not enabled for this org"),
-				Description: "image-backed actions are not enabled for this organization; contact Nuon to enable the image-backed-actions feature",
-			}
-		}
-	}
-
 	timeout := req.Timeout
 	if timeout == 0 {
 		timeout = defaultTimeout

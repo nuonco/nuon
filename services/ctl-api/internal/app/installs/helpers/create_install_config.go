@@ -7,10 +7,13 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type CreateInstallConfigParams struct {
 	ApprovalOption          app.InstallApprovalOption  `json:"approval_option"`
+	Telemetry               *config.InstallTelemetry   `json:"telemetry,omitempty"`
 	Labels                  map[string]string          `json:"labels,omitempty"`
 	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL *string                    `json:"runner_nested_template_url,omitempty"`
@@ -53,6 +56,15 @@ func (h *Helpers) CreateInstallConfig(ctx context.Context, installID string, req
 	if err := ValidateStackOverrides(req.VPCNestedTemplateURL, req.RunnerNestedTemplateURL, req.CustomNestedStacks); err != nil {
 		return nil, fmt.Errorf("invalid stack overrides: %w", err)
 	}
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var install struct{ ID string }
+	if err := h.db.WithContext(ctx).Model(&app.Install{}).Scopes(scopes.WithDisableViews).
+		Where(app.Install{ID: installID, OrgID: orgID}).Take(&install).Error; err != nil {
+		return nil, fmt.Errorf("get install for config creation: %w", err)
+	}
 
 	installConfig := &app.InstallConfig{
 		InstallID:               installID,
@@ -61,6 +73,9 @@ func (h *Helpers) CreateInstallConfig(ctx context.Context, installID string, req
 		RunnerNestedTemplateURL: req.RunnerNestedTemplateURL,
 		CustomNestedStacks:      req.CustomNestedStacks,
 		Labeled:                 labels.Labeled{Labels: labels.Labels(req.Labels)},
+	}
+	if req.Telemetry != nil {
+		installConfig.TelemetryEnabled = req.Telemetry.Enabled
 	}
 
 	if err := h.db.WithContext(ctx).Create(installConfig).Error; err != nil {

@@ -59,33 +59,28 @@ type EvaluateComponentHealthResponse struct {
 // EvaluateComponentHealth derives each install component's debounced health
 // verdict from the runner's recent resource observations in ClickHouse and
 // persists it on the component (health_status / health_status_v2), recording a
-// transition row on every verdict change. No-ops when the org doesn't have the
-// component-health feature or the install is gone.
+// transition row on every verdict change. No-ops when the install is gone.
 //
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 60s
 // @by-field InstallID
-func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateComponentHealthRequest) (*EvaluateComponentHealthResponse, error) {
+func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateComponentHealthRequest) (result *EvaluateComponentHealthResponse, err error) {
+	started := time.Now()
+	reason := "load_install"
+	defer func() { a.healthMetrics.recordForInstall(ctx, started, req.InstallID, reason, result, err) }()
 	resp := &EvaluateComponentHealthResponse{}
 
 	var install app.Install
 	if err := a.db.WithContext(ctx).Where(app.Install{ID: req.InstallID}).First(&install).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			reason = "install_missing"
 			resp.Skipped = true
 			return resp, nil
 		}
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	enabled, err := a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureComponentHealth)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check component-health feature")
-	}
-	if !enabled {
-		resp.Skipped = true
-		return resp, nil
-	}
-
+	reason = "load_components"
 	var installComponents []app.InstallComponent
 	if err := a.db.WithContext(ctx).
 		Preload("Component").
@@ -97,6 +92,7 @@ func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateC
 		return resp, nil
 	}
 
+	reason = "load_observations"
 	now := time.Now()
 	reportsByComponent, err := a.recentComponentHealthReports(ctx, install.OrgID, install.ID, now)
 	if err != nil {
@@ -135,6 +131,7 @@ func (a *Activities) EvaluateComponentHealth(ctx context.Context, req *EvaluateC
 	priorVerdicts := make([]app.InstallComponentHealthStatus, 0, len(evals))
 	newVerdicts := make([]app.InstallComponentHealthStatus, 0, len(evals))
 
+	reason = "persist_verdicts"
 	for i := range evals {
 		e := &evals[i]
 		priorVerdicts = append(priorVerdicts, e.prior)
@@ -729,7 +726,7 @@ func (a *Activities) componentDependencies(ctx context.Context, appConfigID stri
 		if err := a.db.WithContext(ctx).
 			Scopes(
 				scopes.WithDisableViews,
-				scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
+				scopes.WithOverrideTable(app.LatestComponentConfigConnectionsViewName),
 			).
 			Select("component_id", "component_dependency_ids").
 			Where("component_id IN ?", missing).

@@ -102,7 +102,7 @@ export const InstallsTableContainer = ({
 
   return (
     <InstallsTable
-      data={parseInstallsToTableData(installs, org.id, labelColorsByApp)}
+      data={parseInstallsToTableData(installs, org.id, labelColorsByApp, scope === 'org')}
       isLoading={isLoading}
       emptyStateAction={emptyStateAction ?? <CreateInstallButton />}
       emptyTitle={emptyTitle}

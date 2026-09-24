@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/deployerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -58,7 +59,7 @@ func (p *Planner) createPulumiDeployPlan(
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(err, "unable to render config")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render config")
 	}
 
 	configMap := generics.ToStringMap(cfg.Config)
@@ -68,7 +69,7 @@ func (p *Planner) createPulumiDeployPlan(
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(err, "unable to render pulumi config")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render pulumi config")
 	}
 
 	envVars := generics.ToStringMap(cfg.EnvVars)
@@ -78,7 +79,7 @@ func (p *Planner) createPulumiDeployPlan(
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(err, "unable to render environment variables")
+		return nil, deployerrors.NewDeployPlanRenderFailed(err, "unable to render environment variables")
 	}
 
 	cloudAuth, err := p.getAuthForDeploy(

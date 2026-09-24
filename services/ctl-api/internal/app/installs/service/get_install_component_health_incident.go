@@ -23,7 +23,7 @@ type ComponentHealthIncidentBundle struct {
 
 // @ID						GetInstallComponentHealthIncident
 // @Summary				component health incident bundle
-// @Description			Returns the most recent degraded/unhealthy transition for the component (whether or not it has since recovered) along with its diagnosis, correlated deploy, and the component's currently non-healthy resources. Returns a null body when there's no incident in the retained history. Requires the component-health feature.
+// @Description			Returns the most recent degraded/unhealthy transition for the component (whether or not it has since recovered) along with its diagnosis, correlated deploy, and the component's currently non-healthy resources. Returns a null body when there's no incident in the retained history.
 // @Param					install_id				path	string	true	"install ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					installs
@@ -44,10 +44,6 @@ func (s *service) GetInstallComponentHealthIncident(ctx *gin.Context) {
 
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := s.requireComponentHealthFeature(ctx, org); err != nil {
 		ctx.Error(err)
 		return
 	}

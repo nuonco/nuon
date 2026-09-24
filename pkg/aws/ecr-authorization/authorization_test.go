@@ -8,8 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	ecr_types "github.com/aws/aws-sdk-go-v2/service/ecr/types"
 	gomock "github.com/golang/mock/gomock"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func Test_ecrAuthorizer_getAuthorizationData(t *testing.T) {

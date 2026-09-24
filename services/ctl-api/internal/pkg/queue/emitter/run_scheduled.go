@@ -10,7 +10,7 @@ import (
 )
 
 func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) (bool, error) {
-	l.Debug("running in scheduled mode",
+	l.Info("running in scheduled mode",
 		zap.String("emitter-id", e.emitterID),
 		zap.String("queue-id", emitter.QueueID),
 		zap.Timep("scheduled-at", emitter.ScheduledAt),
@@ -18,7 +18,7 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 
 	// Check if already fired
 	if emitter.Fired {
-		l.Debug("scheduled emitter already fired, stopping")
+		l.Info("scheduled emitter already fired, stopping")
 		return true, nil
 	}
 
@@ -31,7 +31,7 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 	waitDuration := emitter.ScheduledAt.Sub(now)
 
 	if waitDuration > 0 {
-		l.Debug("waiting until scheduled time",
+		l.Info("waiting until scheduled time",
 			zap.Duration("wait-duration", waitDuration),
 			zap.Time("scheduled-at", *emitter.ScheduledAt),
 		)
@@ -53,18 +53,18 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 			selector.Select(ctx)
 
 			if e.stopped {
-				l.Debug("emitter stopped while waiting")
+				l.Info("emitter stopped while waiting")
 				return true, nil
 			}
 			if e.restarted {
-				l.Debug("emitter restarting while waiting")
+				l.Info("emitter restarting while waiting")
 				return false, nil
 			}
 		}
 	}
 
 	// Fire the signal
-	l.Debug("scheduled time reached, emitting signal")
+	l.Info("scheduled time reached, emitting signal")
 
 	if err := e.emitSignal(ctx, l, emitter); err != nil {
 		return false, err
@@ -79,7 +79,7 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 
 	e.state.EmitCount++
 
-	l.Debug("scheduled emit complete, stopping emitter",
+	l.Info("scheduled emit complete, stopping emitter",
 		zap.Int64("total-emit-count", e.state.EmitCount),
 	)
 

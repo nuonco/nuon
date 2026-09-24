@@ -20,7 +20,7 @@ const (
 )
 
 func (e *emitterWorkflow) runCronMode(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) (bool, error) {
-	l.Debug("running in cron mode",
+	l.Info("running in cron mode",
 		zap.String("emitter-id", e.emitterID),
 		zap.String("queue-id", emitter.QueueID),
 		zap.Int64("emit-count", e.state.EmitCount),
@@ -40,11 +40,11 @@ func (e *emitterWorkflow) runCronMode(ctx workflow.Context, l *zap.Logger, emitt
 
 	for workflow.Now(ctx).Before(runUntil) {
 		if e.stopped {
-			l.Debug("emitter stopped")
+			l.Info("emitter stopped")
 			return true, nil
 		}
 		if e.restarted {
-			l.Debug("emitter restarting")
+			l.Info("emitter restarting")
 			return false, nil
 		}
 
@@ -53,7 +53,7 @@ func (e *emitterWorkflow) runCronMode(ctx workflow.Context, l *zap.Logger, emitt
 		}
 	}
 
-	l.Debug("parent run duration complete, continuing as new")
+	l.Info("parent run duration complete, continuing as new")
 	return false, nil
 }
 

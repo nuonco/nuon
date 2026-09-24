@@ -35,6 +35,7 @@ jobs:
       services: ${{ steps.filter.outputs.changes }}
       git_ref: ${{ steps.git_ref.outputs.git_ref }}
       auto_deploy: ${{ steps.auto_deploy.outputs.label_check == 'success' }}
+      merged_pr_number: ${{ steps.merged_pr.outputs.number }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -58,6 +59,16 @@ jobs:
         run: |
           SHA="${{ github.event.pull_request.head.sha || github.sha }}"
           echo "git_ref=${SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Find merged pull request
+        id: merged_pr
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NUMBER="$(gh api "/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" \
+            --jq '[.[] | select(.merged_at != null and .base.ref == "main")][0].number // empty')"
+          echo "number=${NUMBER}" >> "$GITHUB_OUTPUT"
 
       - uses: docker://agilepathway/pull-request-label-checker:latest
         id: auto_deploy
@@ -108,6 +119,7 @@ jobs:
       stage: ${{ github.event_name != 'pull_request' || needs.prepare.outputs.auto_deploy == 'true'}}
       tag: ${{ needs.prepare.outputs.git_ref }}
       disable_github_oidc: true
+      merged_pr_number: ${{ needs.prepare.outputs.merged_pr_number }}
     secrets: inherit
 
   update_status:

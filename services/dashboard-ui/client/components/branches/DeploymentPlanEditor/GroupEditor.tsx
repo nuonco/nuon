@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Dropdown } from '@/components/common/Dropdown'
@@ -23,10 +23,15 @@ interface IGroupEditor {
   group: IInstallGroup
   index: number
   totalGroups: number
-  unassignedInstalls: TInstall[]
+  // installs that can still be added to a group
+  pickableInstalls: TInstall[]
+  // installs the branch owns, which is what `all installs` and label
+  // selectors resolve to
   availableInstalls: TInstall[]
+  installsById?: Record<string, TInstall>
   labelColors?: Record<string, string>
   disabled?: boolean
+  autoFocusName?: boolean
   nameError?: string
   contentError?: string
   onUpdate: (updates: Partial<IInstallGroup>) => void
@@ -41,10 +46,12 @@ export const GroupEditor = ({
   group,
   index,
   totalGroups,
-  unassignedInstalls,
+  pickableInstalls,
   availableInstalls,
+  installsById,
   labelColors,
   disabled,
+  autoFocusName,
   nameError,
   contentError,
   onUpdate,
@@ -54,18 +61,28 @@ export const GroupEditor = ({
   onMoveDown,
   onDelete,
 }: IGroupEditor) => {
+  const nameRef = useRef<HTMLInputElement>(null)
+
   const installs = useMemo(() => {
-    const byId = new Map(availableInstalls.map((i) => [i.id, i]))
-    return group.install_ids.map((id) => byId.get(id)).filter((i): i is TInstall => !!i)
-  }, [group.install_ids, availableInstalls])
+    const byId = installsById ?? Object.fromEntries(availableInstalls.map((i) => [i.id, i]))
+    return group.install_ids.map((id) => byId[id]).filter((i): i is TInstall => !!i)
+  }, [group.install_ids, availableInstalls, installsById])
+
+  useEffect(() => {
+    if (!autoFocusName || disabled) return
+    nameRef.current?.focus({ preventScroll: true })
+    nameRef.current?.select()
+  }, [autoFocusName, disabled])
 
   return (
     <Card className="!p-0 !gap-0 overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-2.5 bg-cool-grey-50 dark:bg-dark-grey-800">
         <div className="flex-1 min-w-0">
           <Input
+            ref={nameRef}
             id={`group-name-${group.id}`}
             type="text"
+            aria-label={`Group ${index + 1} name`}
             value={group.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
             placeholder={`Group ${index + 1}`}
@@ -82,6 +99,7 @@ export const GroupEditor = ({
             options={[
               { value: 'manual', label: 'Manual' },
               { value: 'labels', label: 'Labels' },
+              { value: 'all', label: 'All installs' },
             ]}
             value={group.selection_mode}
             onChange={(mode) => onUpdate({ selection_mode: mode })}
@@ -118,7 +136,9 @@ export const GroupEditor = ({
       </div>
 
       <div className="flex flex-col gap-3 p-4">
-        {group.selection_mode === 'labels' ? (
+        {group.selection_mode === 'all' ? (
+          <AllInstallsSummary installCount={availableInstalls.length} />
+        ) : group.selection_mode === 'labels' ? (
           <LabelSelectorEditor
             groupId={group.id}
             labelSelector={group.label_selector}
@@ -164,7 +184,7 @@ export const GroupEditor = ({
             >
               <AddInstallPicker
                 groupId={group.id}
-                unassignedInstalls={unassignedInstalls}
+                pickableInstalls={pickableInstalls}
                 disabled={disabled}
                 onAdd={onAddInstalls}
               />
@@ -175,10 +195,40 @@ export const GroupEditor = ({
         {group.selection_mode === 'labels' && contentError && (
           <Text variant="subtext" theme="error">{contentError}</Text>
         )}
+
+        <div className="border-t border-cool-grey-200 dark:border-dark-grey-700 pt-2">
+          <CheckboxInput
+            id={`group-auto-approve-${group.id}`}
+            checked={group.auto_approve_on_policies_passing}
+            disabled={disabled}
+            onChange={(e) =>
+              onUpdate({ auto_approve_on_policies_passing: e.target.checked })
+            }
+            labelProps={{
+              labelText: 'Auto-approve when policies pass',
+              className: '!p-1 !gap-1.5',
+              labelTextProps: { variant: 'subtext' },
+            }}
+          />
+        </div>
       </div>
     </Card>
   )
 }
+
+const AllInstallsSummary = ({ installCount }: { installCount: number }) => (
+  <div className="flex flex-col gap-1">
+    <Text variant="subtext" theme="neutral">
+      Every install on this app that no other branch owns is included at deploy
+      time.
+    </Text>
+    <Text variant="subtext" theme="neutral">
+      {installCount === 0
+        ? 'No installs yet — installs join this group as they are created.'
+        : `${installCount} install${installCount === 1 ? '' : 's'} match today.`}
+    </Text>
+  </div>
+)
 
 const LabelSelectorEditor = ({
   groupId,

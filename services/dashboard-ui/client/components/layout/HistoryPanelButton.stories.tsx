@@ -1,0 +1,44 @@
+export default {
+  title: 'Layout/HistoryPanelButton',
+}
+
+import { Card } from '@/components/common/Card'
+import { Text } from '@/components/common/Text'
+import { HistoryPanelButton } from './HistoryPanelButton'
+import { PageSection } from './PageSection'
+
+const history = (
+  <div className="flex flex-col gap-3">
+    {['Ran 2 hours ago', 'Ran 1 day ago', 'Ran 3 days ago'].map((entry) => (
+      <Card key={entry} className="!p-4 !gap-2">
+        <Text variant="subtext">{entry}</Text>
+      </Card>
+    ))}
+  </div>
+)
+
+const sections = (
+  <>
+    <Card>
+      <Text variant="base" weight="strong">
+        Configuration
+      </Text>
+      <Text theme="neutral">Section body</Text>
+    </Card>
+    <Card>
+      <Text variant="base" weight="strong">
+        Steps
+      </Text>
+      <Text theme="neutral">Section body</Text>
+    </Card>
+  </>
+)
+
+export const Default = () => (
+  <PageSection className="@container">
+    <div className="flex justify-end">
+      <HistoryPanelButton title="Run history" history={history} />
+    </div>
+    {sections}
+  </PageSection>
+)

@@ -217,6 +217,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			branches.GET("/:app_branch_id/preview-install-candidates", s.GetAppBranchPreviewInstallCandidates)
 			branches.POST("/:app_branch_id/runs", s.TriggerAppBranchRun)
 			branches.GET("/:app_branch_id/runs", s.GetAppBranchRuns)
+			branches.GET("/:app_branch_id/runs/:run_id", s.GetAppBranchRun)
 			branches.GET("/:app_branch_id/runs/:run_id/builds", s.GetAppBranchRunBuilds)
 			branches.GET("/:app_branch_id/runs/:run_id/comparison", s.GetAppBranchRunComparison)
 			branches.GET("/:app_branch_id/runs/:run_id/install-groups", s.GetAppBranchRunInstallGroups)

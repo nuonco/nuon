@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/invopop/jsonschema"
+
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
@@ -66,6 +67,8 @@ type AppConfig struct {
 	Runbooks []*RunbookConfig `mapstructure:"runbooks,omitempty" toml:"runbooks,omitempty"`
 
 	Triggers *TriggersConfig `mapstructure:"triggers,omitempty" toml:"triggers,omitempty"`
+
+	SourceArchive *SourceArchive `mapstructure:"-" toml:"-" json:"-" jsonschema:"-" temporaljson:"source_archive,omitempty"`
 }
 type ComponentList []*Component
 
@@ -99,7 +102,7 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("label_colors").Short("label key color codes").
 		Long("Map of label key names to hex color codes for customizing label display in the dashboard").
 		Field("default_labels").Short("default labels for all installs").
-		Long("Labels applied to every install of the app. Values may use the interpolation syntax. Editable only via app config").
+		Long("Labels applied to every install of the app. Values may use the templating syntax. Editable only via app config").
 		Field("branch").Short("default app branch configuration").
 		Long("Default branch configuration for all installs. Can be overridden per install").
 		Field("inputs").Short("input configuration").
@@ -139,15 +142,16 @@ type parseFn struct {
 	fn   func() error
 }
 
-func (a *AppConfig) Parse() error {
+func (a *AppConfig) Parse(opts ...ParseOption) error {
+	cfg := parseOptions(opts...)
 	parseFns := []parseFn{
 		{
 			"sandbox",
-			a.Sandbox.parse,
+			func() error { return a.Sandbox.parse(cfg.RootDir) },
 		},
 		{
 			"runner",
-			a.Runner.parse,
+			func() error { return a.Runner.parse(cfg.RootDir) },
 		},
 	}
 
@@ -160,7 +164,7 @@ func (a *AppConfig) Parse() error {
 	if a.Inputs != nil {
 		parseFns = append(parseFns, parseFn{
 			"inputs",
-			a.Inputs.parse,
+			func() error { return a.Inputs.parse(cfg.RootDir) },
 		})
 	}
 	if a.Permissions != nil {
@@ -204,7 +208,7 @@ func (a *AppConfig) Parse() error {
 	for idx, comp := range a.Components {
 		parseFns = append(parseFns, parseFn{
 			fmt.Sprintf("components.%d", idx),
-			comp.parse,
+			func() error { return comp.parse(cfg.RootDir) },
 		})
 	}
 

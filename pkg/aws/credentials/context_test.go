@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	aws "github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func TestFromContext(t *testing.T) {

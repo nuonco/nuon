@@ -78,7 +78,7 @@ func (s *service) mcpGetWorkflow(ctx context.Context, _ *mcp.CallToolRequest, in
 		StatusDescription: workflow.Status.StatusHumanDescription,
 		OwnerID:           workflow.OwnerID,
 		OwnerName:         workflow.OwnerName,
-		CreatedAt:         workflow.CreatedAt.String(),
+		CreatedAt:         apiPkg.MCPTime(workflow.CreatedAt),
 	}
 
 	for _, step := range workflow.Steps {

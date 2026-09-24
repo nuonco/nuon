@@ -35,6 +35,7 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		First(&emitter); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to get emitter")
 	}
+	ctx = repairActivityContext(ctx, &emitter)
 
 	if emitter.SignalTemplate.Signal == nil {
 		return nil, temporal.NewNonRetryableApplicationError(
@@ -80,7 +81,7 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		existingSignals = live
 
 		if len(existingSignals) > 0 {
-			a.l.Debug("skipping signal emission - emitter already has in-flight signal",
+			a.l.Info("skipping signal emission - emitter already has in-flight signal",
 				zap.String("emitter-id", req.EmitterID),
 				zap.String("queue-id", req.QueueID),
 				zap.Int("existing-signal-count", len(existingSignals)),
@@ -113,7 +114,7 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		return nil, errors.Wrap(err, "unable to enqueue signal to queue")
 	}
 
-	a.l.Debug("signal emitted to queue",
+	a.l.Info("signal emitted to queue",
 		zap.String("emitter-id", req.EmitterID),
 		zap.String("queue-id", req.QueueID),
 		zap.String("queue-signal-id", enqueueResp.ID),

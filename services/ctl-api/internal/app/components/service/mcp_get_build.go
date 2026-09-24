@@ -50,7 +50,7 @@ func (s *service) mcpGetBuild(ctx context.Context, _ *mcp.CallToolRequest, in mc
 		Status:            string(build.Status),
 		StatusDescription: build.StatusDescription,
 		SourceRef:         build.SourceRef,
-		CreatedAt:         build.CreatedAt.String(),
+		CreatedAt:         apiPkg.MCPTime(build.CreatedAt),
 	}
 	if build.GitRef != nil {
 		detail.GitRef = *build.GitRef

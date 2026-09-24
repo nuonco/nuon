@@ -1,0 +1,39 @@
+---
+title: 'Updating Nuon BYOC'
+sidebarTitle: 'Updates'
+description: 'Update Nuon BYOC and the Stack'
+icon: 'cloud-arrow-up'
+keywords: ['Nuon BYOC', 'BYOC', 'update', 'updating', 'stack', 'install stack']
+---
+
+There are two types of updates that apply to your Nuon BYOC install.
+
+1. Updates to Nuon BYOC itself
+2. Updates to the Nuon BYOC stack module
+
+## Updating Nuon BYOC
+
+In most cases updates of the first type will require nothing from you.
+We will notify you when an update is ready, and deploy it on your approval.
+
+Occasionally, in the case of new features, there may be new inputs or secrets required.
+In those cases, we will notify you about the changes, but the Stack module will also provide actionable error messages if a required input or secret is missing.
+
+## Updating the Stack
+
+The Stack does not have to be upgraded often.
+When it is required, though, you simply need to update the stack module version.
+
+We recommend using a minor version constraint for the module, currently `~> 1.1`.
+This way, running `terraform init -upgrade` will pull in new patch versions.
+
+We will notify you if a minor or major version update is needed.
+In those cases, bump the version on the module (`nuonco/stack/aws` or `nuonco/stack/gcp`) and run `terraform init -upgrade`.
+
+```hcl
+module "nuon_byoc_stack" {
+  // ...
+  version = "~> 1.0" // [!code --]
+  version = "~> 1.1" // [!code ++]
+}
+```

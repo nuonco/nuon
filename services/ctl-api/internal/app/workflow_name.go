@@ -45,12 +45,26 @@ func computeWorkflowName(w *Workflow) string {
 
 func appBranchRunName(w *Workflow) string {
 	eventType := metaValue(w, "event_type")
-	commitSha := metaValue(w, "commit_sha")
 
 	var base string
 	switch eventType {
 	case "push":
 		base = "VCS push"
+	case "tag":
+		if tag := metaValue(w, "tag"); tag != "" {
+			base = "Tag " + tag
+		} else {
+			base = "Tag push"
+		}
+	case "github_label":
+		prNum := metaValue(w, "pr_number")
+		if prNum != "" {
+			base = "PR #" + prNum
+		} else if label := metaValue(w, "github_label"); label != "" {
+			base = "Label " + label
+		} else {
+			base = "Labeled pull request"
+		}
 	case "pull_request":
 		prNum := metaValue(w, "pr_number")
 		if prNum != "" {
@@ -61,14 +75,7 @@ func appBranchRunName(w *Workflow) string {
 	case "onboarding":
 		base = "Onboarding run"
 	default:
-		base = "Manual run"
-	}
-
-	if commitSha != "" {
-		if len(commitSha) > 7 {
-			commitSha = commitSha[:7]
-		}
-		base += " (" + commitSha + ")"
+		base = "Run"
 	}
 
 	return base

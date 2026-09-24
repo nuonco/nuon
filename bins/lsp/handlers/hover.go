@@ -5,11 +5,12 @@ import (
 	"strings"
 
 	"github.com/invopop/jsonschema"
+	"github.com/tliron/glsp"
+	protocol "github.com/tliron/glsp/protocol_3_16"
+
 	"github.com/nuonco/nuon/bins/lsp/mappers"
 	"github.com/nuonco/nuon/bins/lsp/models"
 	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
-	"github.com/tliron/glsp"
-	protocol "github.com/tliron/glsp/protocol_3_16"
 )
 
 // HoverProvider handles hover requests with injectable schema
@@ -231,7 +232,7 @@ func TextDocumentHover(ctx *glsp.Context, params *protocol.HoverParams) (*protoc
 	log.Debugf("✅ Found document, length: %d chars", len(text))
 
 	// Detect schema type from document
-	schemaType := models.DetectSchemaType(text)
+	schemaType := models.DetectSchemaTypeForDocument(text, string(uri))
 	if schemaType == "" {
 		log.Warningf("⚠️  No schema type detected")
 		return nil, nil

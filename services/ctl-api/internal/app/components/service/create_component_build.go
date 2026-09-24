@@ -70,7 +70,7 @@ func (s *service) CreateAppComponentBuild(ctx *gin.Context) {
 		return
 	}
 
-	q, err := s.queueClient.GetQueueByOwner(ctx, cmp.ID, "components")
+	q, err := s.queueClient.GetDefaultQueueByOwner(ctx, cmp.ID, "components")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get component queue: %w", err))
 		return
@@ -143,7 +143,7 @@ func (s *service) CreateComponentBuild(ctx *gin.Context) {
 		return
 	}
 
-	q, err := s.queueClient.GetQueueByOwner(ctx, cmpID, "components")
+	q, err := s.queueClient.GetDefaultQueueByOwner(ctx, cmpID, "components")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get component queue: %w", err))
 		return

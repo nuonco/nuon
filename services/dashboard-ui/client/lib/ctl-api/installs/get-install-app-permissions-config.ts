@@ -11,6 +11,14 @@ export type TInstallPermissionsRolePolicy = {
   azure_actions?: string[]
 }
 
+export type TNamedIAMPolicy = {
+  id?: string
+  name?: string
+  policy_name?: string
+  description?: string
+  contents?: string
+}
+
 export type TInstallPermissionsRoleStatus = {
   id: string
   name: string
@@ -18,6 +26,7 @@ export type TInstallPermissionsRoleStatus = {
   description: string
   type: string
   policies: TInstallPermissionsRolePolicy[]
+  named_policy_names?: string[]
   permissions_boundary: string
   created_at: string
   enabled: boolean

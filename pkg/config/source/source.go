@@ -11,7 +11,11 @@ import (
 
 // TODO(jm): this should be a global decoder hook
 func ReadSource(val string) ([]byte, error) {
-	path, err := expandSourcePath(val)
+	return ReadSourceFrom(val, "")
+}
+
+func ReadSourceFrom(val, baseDir string) ([]byte, error) {
+	path, err := expandSourcePath(val, baseDir)
 	if err != nil {
 		return nil, fmt.Errorf("unable to expand source path: %w", err)
 	}
@@ -25,7 +29,11 @@ func ReadSource(val string) ([]byte, error) {
 }
 
 func LoadSource(val string) (map[string]interface{}, error) {
-	byts, err := ReadSource(val)
+	return LoadSourceFrom(val, "")
+}
+
+func LoadSourceFrom(val, baseDir string) (map[string]interface{}, error) {
+	byts, err := ReadSourceFrom(val, baseDir)
 	if err != nil {
 		return nil, err
 	}
@@ -38,10 +46,13 @@ func LoadSource(val string) (map[string]interface{}, error) {
 	return obj, nil
 }
 
-func expandSourcePath(source string) (string, error) {
+func expandSourcePath(source, baseDir string) (string, error) {
 	path, err := homedir.Expand(source)
 	if err != nil {
 		return "", fmt.Errorf("unable to expand directory")
+	}
+	if baseDir != "" && !filepath.IsAbs(path) {
+		path = filepath.Join(baseDir, path)
 	}
 	path, err = filepath.Abs(path)
 	if err != nil {

@@ -10,31 +10,78 @@ import (
 // that needs information from the context can not rely on that package directly, otherwise a circular dependency will
 // be created.
 const (
-	AccountCtxKey         string = "account"
-	AccountIDCtxKey       string = "account_id"
-	BlobServiceCtxKey     string = "blob_service"
-	CfgCtxKey             string = "config"
-	IsGlobalKey           string = "is_global"
-	InstallWorkflowCtxKey string = "workflow"
-	FlowCtxKey            string = "flow"
-	IsEmployeeCtxKey      string = "is_employee"
-	LoggerFieldsCtxKey    string = "logger_fields"
-	LogStreamCtxKey       string = "log_stream"
-	MetricsKey            string = "metrics"
-	OrgCtxKey             string = "org"
-	OrgIDCtxKey           string = "org_id"
-	OffPaginationCtxKey   string = "offset_pagination"
-	IsPublicKey           string = "is_public"
-	RunnerCtxKey          string = "runner"
-	RunnerIDCtxKey        string = "runner_id"
-	DisableViewCtxKey     string = "disable_view"
-	PatcherCtxKey         string = "patcher"
-	TraceIDCtxKey         string = "trace_id"
-	FlowWorkflowIDCtxKey  string = "flow_workflow_id"
-	FlowInstallIDCtxKey   string = "flow_install_id"
-	OrgSelectorCtxKey     string = "mcp_org_selector"
-	TokenRoleCtxKey       string = "token_role"
+	AccountCtxKey           string = "account"
+	AccountIDCtxKey         string = "account_id"
+	BlobServiceCtxKey       string = "blob_service"
+	CfgCtxKey               string = "config"
+	IsGlobalKey             string = "is_global"
+	InstallWorkflowCtxKey   string = "workflow"
+	FlowCtxKey              string = "flow"
+	IsEmployeeCtxKey        string = "is_employee"
+	LoggerFieldsCtxKey      string = "logger_fields"
+	LogStreamCtxKey         string = "log_stream"
+	MetricsKey              string = "metrics"
+	OrgCtxKey               string = "org"
+	OrgIDCtxKey             string = "org_id"
+	OffPaginationCtxKey     string = "offset_pagination"
+	IsPublicKey             string = "is_public"
+	RunnerCtxKey            string = "runner"
+	RunnerIDCtxKey          string = "runner_id"
+	DisableViewCtxKey       string = "disable_view"
+	PatcherCtxKey           string = "patcher"
+	TraceIDCtxKey           string = "trace_id"
+	FlowWorkflowIDCtxKey    string = "flow_workflow_id"
+	FlowInstallIDCtxKey     string = "flow_install_id"
+	WorkflowTelemetryCtxKey string = "workflow_telemetry"
+	QueueIDCtxKey           string = "queue_id"
+	OrgSelectorCtxKey       string = "mcp_org_selector"
+	TokenRoleCtxKey         string = "token_role"
 )
+
+type WorkflowTelemetry struct {
+	OrgID        string `json:"org_id,omitempty"`
+	OrgName      string `json:"org_name,omitempty"`
+	WorkflowID   string `json:"workflow_id,omitempty"`
+	WorkflowType string `json:"workflow_type,omitempty"`
+	OwnerID      string `json:"owner_id,omitempty"`
+	OwnerType    string `json:"owner_type,omitempty"`
+	OwnerName    string `json:"owner_name,omitempty"`
+	InstallID    string `json:"install_id,omitempty"`
+	InstallName  string `json:"install_name,omitempty"`
+}
+
+// Merge returns t with every non-empty field of overlay applied, so a caller
+// holding partial identity never erases fields resolved further upstream.
+func (t WorkflowTelemetry) Merge(overlay WorkflowTelemetry) WorkflowTelemetry {
+	if overlay.OrgID != "" {
+		t.OrgID = overlay.OrgID
+	}
+	if overlay.OrgName != "" {
+		t.OrgName = overlay.OrgName
+	}
+	if overlay.WorkflowID != "" {
+		t.WorkflowID = overlay.WorkflowID
+	}
+	if overlay.WorkflowType != "" {
+		t.WorkflowType = overlay.WorkflowType
+	}
+	if overlay.OwnerID != "" {
+		t.OwnerID = overlay.OwnerID
+	}
+	if overlay.OwnerType != "" {
+		t.OwnerType = overlay.OwnerType
+	}
+	if overlay.OwnerName != "" {
+		t.OwnerName = overlay.OwnerName
+	}
+	if overlay.InstallID != "" {
+		t.InstallID = overlay.InstallID
+	}
+	if overlay.InstallName != "" {
+		t.InstallName = overlay.InstallName
+	}
+	return t
+}
 
 // OrgSelectFunc persists the selected org for the authenticated MCP token. It is
 // injected by the MCP server so leaf tool handlers (in other packages) can

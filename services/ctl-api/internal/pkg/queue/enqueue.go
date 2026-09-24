@@ -61,7 +61,7 @@ func (w *queue) enqueue(ctx workflow.Context, input EnqueueHandlerInput) error {
 	}
 
 	if w.inFlightSignals[input.QueueSignalID] {
-		l.Debug("signal already in-flight via requeueSignals, skipping re-dispatch",
+		l.Info("signal already in-flight via requeueSignals, skipping re-dispatch",
 			zap.String("queue-signal-id", input.QueueSignalID))
 		return nil
 	}
@@ -72,7 +72,7 @@ func (w *queue) enqueue(ctx workflow.Context, input EnqueueHandlerInput) error {
 	})
 
 	w.inFlightSignals[input.QueueSignalID] = true
-	l.Debug("queueing signal for processing", zap.String("workflow-id", input.WorkflowID))
+	l.Info("queueing signal for processing", zap.String("workflow-id", input.WorkflowID))
 	if !w.ch.SendAsync(QueueRef{
 		WorkflowID: input.WorkflowID,
 		ID:         input.QueueSignalID,
@@ -116,7 +116,7 @@ func (w *queue) drainEnqueueSignalChannel(ctx workflow.Context, l *zap.Logger) i
 			return drained
 		}
 		drained++
-		l.Debug("draining buffered enqueue signal before run end",
+		l.Info("draining buffered enqueue signal before run end",
 			zap.String("queue-signal-id", input.QueueSignalID))
 	}
 }

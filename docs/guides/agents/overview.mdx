@@ -1,6 +1,6 @@
 ---
 title: "Agents"
-description: "Operate Nuon from LLM clients via MCP."
+description: "Operate and build Nuon from LLM clients."
 icon: "robot"
 keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp"]
 ---
@@ -9,192 +9,136 @@ keywords: ["MCP", "agents", "Claude Code", "Cursor", "Amp", "nuon agents mcp"]
 **AI agent** here means an LLM client (Claude Code, Cursor, etc.) driving the control plane. This is not the [install runner](/concepts/runners) in customer clouds.
 </Note>
 
-To scaffold app config from example repos, see [AI and App Building](/guides/ai-and-apps). This page covers **reading and operating** orgs, apps, installs, and workflows via MCP.
+Use an LLM client to read and operate orgs, apps, installs, and workflows, or to scaffold app config from example repos.
 
-New to MCP? Follow the [walkthrough](/guides/agents/mcp-walkthrough).
+<CardGroup cols={2}>
+  <Card title="MCP walkthrough" icon="route" href="/guides/agents/mcp-walkthrough">
+    Connect Claude Code, Cursor, or Amp and run your first calls.
+  </Card>
+  <Card title="Tools" icon="wrench" href="/guides/agents/tools">
+    Read and write tools exposed on the control plane.
+  </Card>
+  <Card title="Sample queries" icon="comments" href="/guides/agents/sample-queries">
+    Prompts to paste into your client after MCP is connected.
+  </Card>
+  <Card title="AI and app building" icon="code" href="/guides/agents/ai-and-apps">
+    Generate Nuon app config with Claude Code, Gemini, Amp, and skills.
+  </Card>
+</CardGroup>
 
 ## Prerequisites
 
+Both are required. They write the credentials every setup below reads:
+
 ```bash
-nuon auth login
-nuon orgs select
+nuon auth login    # writes api_token to ~/.nuon
+nuon orgs select   # writes org_id to ~/.nuon
 ```
 
-`nuon agents context` prints your auth, selected org/app/install, and MCP HTTP URL.
+Two commands print this page from the CLI:
+
+- `nuon agents help`: for you, the same setup, checked against your own config.
+- `nuon agents context`: for your agent: auth, selected org/app/install, MCP HTTP URL, tool catalog, and how to read timestamps (UTC/`Z`, convert to local before naming a day or clock time).
 
 ## Connect
 
-**Recommended:** register the stdio proxy so the client runs `nuon agents mcp`. Token and org stay in `~/.nuon` (or `-C`).
-
-`nuon agents mcp setup` writes that stdio config for Claude Code, Cursor, or Amp. List name defaults from `api_url`. Use `-C` for a non-default CLI config (stage). `--url` and `--name` are passed through to `nuon agents mcp` when set.
-
-| `api_url` | Upstream MCP URL (proxy default) | List name |
-| --- | --- | --- |
-| `https://api.nuon.co` | `https://mcp.nuon.co/mcp` | `nuon` |
-| `https://api.stage.nuon.co` | `https://mcp.stage.nuon.co/mcp` | `nuon-stage` |
-| anything else | `http://localhost:8088/mcp` | `nuon-local` |
+**Recommended:** register the stdio proxy so the client runs `nuon agents mcp --allow-writes`. Token and org stay in `~/.nuon`, so nothing secret goes into the client config. The proxy derives its URL from the configured API hostname (`api.<hostname>` becomes `mcp.<hostname>/mcp`) and registers as `nuon`.
 
 ### Setup (stdio)
 
+Each client has its own config file, JSON key, and (sometimes) an add command. Check that client's MCP docs rather than assuming a shared schema. The process every client should spawn is `nuon` with arguments `agents`, `mcp`, and `--allow-writes`.
+
+Examples include `--allow-writes` so mutating tools are available. That flag only lists write tools; the identity still needs [Admin](/concepts/access-control) (`org_admin`), not Read-only. Omit the flag only if you want a read-only proxy.
+
+You do not need `select_org` when the org is already in the CLI config (the stdio proxy sends `X-Nuon-Org-ID`).
+
+#### Claude Code
+
 ```bash
-nuon agents mcp setup --platform claude-code
-nuon agents mcp setup --platform cursor
-nuon agents mcp setup --platform amp
-
-# stage (-C is copied into the generated command)
-nuon -C /path/to/stage-config agents mcp setup --platform cursor
-
-# overrides passed through to nuon agents mcp
-nuon agents mcp setup --platform amp --url http://localhost:8088/mcp --name nuon-local
-```
-
-`--platform claude` is an alias for `claude-code`. `nuon mcp setup` is the same command.
-
-| Platform | File |
-| --- | --- |
-| `claude-code` | `.mcp.json` |
-| `cursor` | `.cursor/mcp.json` |
-| `amp` | `.amp/settings.json` (`amp.mcpServers`) |
-
-Existing servers in the file are kept. Cursor Agent: `agent mcp enable <name>` after setup.
-
-### Client CLIs
-
-You can also register stdio yourself. Read-only by default. The name you pass (`nuon`, `nuon-stage`, `nuon-local`) is what appears in the client's MCP list.
-
-<CodeGroup>
-```bash Claude Code
-claude mcp add --transport stdio nuon -- nuon agents mcp
-claude mcp add --transport stdio nuon-stage -- nuon -C /path/to/stage-config agents mcp
-claude mcp add --transport stdio nuon-local -- nuon agents mcp --url http://localhost:8088/mcp
-
-# writes
 claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes
 ```
 
-```bash Amp
-amp mcp add nuon -- nuon agents mcp
-amp mcp add nuon-stage -- nuon -C /path/to/stage-config agents mcp
-amp mcp add nuon-local -- nuon agents mcp --url http://localhost:8088/mcp
+Or `.mcp.json` in a project:
 
-# writes
-amp mcp add nuon -- nuon agents mcp --allow-writes
-
-# this workspace only
-amp mcp add nuon --workspace -- nuon agents mcp
-```
-```json Cursor
+```json
 {
   "mcpServers": {
     "nuon": {
       "command": "nuon",
-      "args": ["agents", "mcp"]
-    },
-    "nuon-stage": {
-      "command": "nuon",
-      "args": ["-C", "/path/to/stage-config", "agents", "mcp"]
-    },
-    "nuon-local": {
-      "command": "nuon",
-      "args": ["agents", "mcp", "--url", "http://localhost:8088/mcp"]
+      "args": ["agents", "mcp", "--allow-writes"]
     }
   }
 }
 ```
-</CodeGroup>
 
-Cursor / Cursor Agent has no `mcp add`. Save the JSON above as `~/.cursor/mcp.json` or project `.cursor/mcp.json`, then `agent mcp enable <name>` — or run `nuon agents mcp setup --platform cursor`.
+#### Cursor
 
-Use an absolute path for `-C` in Cursor JSON; it does not expand `~`. Pass `--allow-writes` in stdio `args` when you need writes. Your token must have create permission.
+Cursor has no `mcp add`. Save this as `~/.cursor/mcp.json` (all projects) or `.cursor/mcp.json` (one project), then enable it:
 
-On the proxy itself, `--url` and `--name` override the upstream URL and handshake identity. That does not change the name in the client's list.
+```json
+{
+  "mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes"]
+    }
+  }
+}
+```
 
-You do not need `select_org` when the org is already in the CLI config (the stdio proxy sends `X-Nuon-Org-ID`). `select_org` is a write tool.
+```bash
+agent mcp enable nuon
+```
 
-## Tools
+#### Amp
 
-Writes are hidden from the stdio proxy unless `--allow-writes` is set. HTTP MCP lists them whenever the token can create.
+```bash
+amp mcp add nuon -- nuon agents mcp --allow-writes
 
-| Domain | Read | Write |
-| --- | --- | --- |
-| Orgs | `whoami`, `list_orgs` | `select_org` |
-| Apps | `list_apps`, `get_app`, `list_app_branches`, `get_app_branch`, `list_app_branch_preview_sources` | `preview_app_branch` |
-| Components | `list_components`, `get_component`, `list_builds`, `get_build` | |
-| Installs | `list_installs`, `get_install`, `list_install_components`, `get_install_inputs`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `reject_step`, `retry_step`, `cancel_workflow` |
-| Actions | `list_install_actions`, `get_action` | `run_action` |
-| Logs | `get_workflow_step_logs`, `get_deploy_logs`, `get_build_logs` | |
-| Runbooks | `list_runbooks`, `get_runbook` | |
+# this workspace only
+amp mcp add nuon --workspace -- nuon agents mcp --allow-writes
+```
 
-## Common queries
+Or `~/.config/amp/settings.json` (user) / `.amp/settings.json` (workspace). Amp's key is `amp.mcpServers`:
 
-Copy these into your LLM client after MCP is connected. Call tools in the order given. Write sequences need `--allow-writes` on the stdio proxy.
+```json
+{
+  "amp.mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes"]
+    }
+  }
+}
+```
 
-<AccordionGroup>
-  <Accordion title="What’s in this org?">
-    `list_apps` → `list_installs` (optional: filter installs with `app_id`)
-  </Accordion>
-  <Accordion title="Status of install X?">
-    `get_install` → `list_install_components` → `list_workflows`
-  </Accordion>
-  <Accordion title="Any pending approvals?">
-    `get_pending_approvals` → `get_workflow` (use `approval_id` from the response)
-  </Accordion>
-  <Accordion title="Approve or reject a pending plan">
-    `get_workflow` → `approve_step` or `reject_step` (write)
-  </Accordion>
-  <Accordion title="Why did this deploy fail?">
-    `list_deploys` → `get_deploy` → `get_deploy_logs` / `get_workflow_step_logs`
-  </Accordion>
-  <Accordion title="Why did this build fail?">
-    `list_builds` → `get_build` → `get_build_logs`
-  </Accordion>
-  <Accordion title="Watch a workflow until it finishes">
-    `watch_workflow` (loop with `last_known_status` until the status is terminal)
-  </Accordion>
-  <Accordion title="What actions can I run on this install?">
-    `list_install_actions` → `get_action`
-  </Accordion>
-  <Accordion title="Run an action on an install">
-    `get_action` → `run_action` (write)
-  </Accordion>
-  <Accordion title="Show runbooks for an app">
-    `list_runbooks` → `get_runbook`
-  </Accordion>
-  <Accordion title="Overview of an app branch">
-    `list_app_branches` → `get_app_branch`
+#### Other clients
 
-    Returns `answers.last_run_succeeded`, `answers.change_summary` (config/git), and `answers.deployment_summary` (per install-group progress). Requires the app-branches org feature.
-  </Accordion>
-  <Accordion title="Preview this PR (or git ref) against an install">
-    `list_app_branch_preview_sources` → `preview_app_branch` (write) → `watch_workflow` → `get_app_branch`
+Use that client's MCP docs for the file path and JSON key. Point it at the `nuon` binary with arguments `agents`, `mcp`, and `--allow-writes`.
 
-    Same as `nuon apps branches preview`. Pass `pr_number` or `git_ref` plus `install` (name or ID). Default `mode` is `plan-only`; ask before `apply`.
+### Overriding the MCP URL
 
-    HTTP MCP cannot read the local workspace. For local toml, `nuon apps sync` first then pass `app_config_id`.
-  </Accordion>
-  <Accordion title="Deprovision or reprovision an install">
-    `get_install` → `deprovision_install` / `reprovision_install` / `deploy_install_components` (write) → `watch_workflow`
+The proxy derives its upstream URL from `api_url` in your CLI config when the hostname starts with `api.` (`https://api.nuon.co` → `https://mcp.nuon.co/mcp`). Pass `--url` when the MCP URL does not follow from the API URL, for example a self-hosted or Nuon BYOC control plane, or any deployment where the two hostnames differ. To change the name in the client's MCP list, pass `--name`. Put those flags on the command the client runs, next to `--allow-writes`:
 
-    Deprovision requires `confirm=true` (ask the user first). `plan_only` does not require confirm.
-  </Accordion>
-  <Accordion title="Inspect or update install inputs">
-    `get_install_inputs` → `update_install_inputs` (write)
-  </Accordion>
-  <Accordion title="Retry a failed workflow step">
-    `get_workflow` → `retry_step` (write)
-  </Accordion>
-  <Accordion title="Cancel an in-progress workflow">
-    `get_workflow` → `cancel_workflow` (write)
-  </Accordion>
-</AccordionGroup>
+```bash
+nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
+claude mcp add --transport stdio nuon -- nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
+amp mcp add nuon -- nuon agents mcp --allow-writes --url https://mcp.example.nuon.co/mcp --name nuon-example
+```
 
-## Related CLI flags
+For a client configured by file, extra flags go inside `args`. Use that client's JSON key (examples above):
 
-These apply to `nuon` commands, not MCP tools:
+```json
+{
+  "mcpServers": {
+    "nuon": {
+      "command": "nuon",
+      "args": ["agents", "mcp", "--allow-writes", "--url", "https://mcp.example.nuon.co/mcp"]
+    }
+  }
+}
+```
 
-| Flag | Purpose |
-| --- | --- |
-| `--output agent` | Single JSON envelope on stdout (`{"ok":true,"data":...}`) |
-| `--read-only` | Block mutating CLI commands (exit 2) |
+A non-default CLI config (`nuon -C /path/to/config agents mcp --allow-writes`) carries its own token, org, and `api_url`. Put `-C` and `--allow-writes` on the registered command (in `args` when the client is configured by file).
 
-See [CLI commands](/cli-commands) for the full reference.
+Run `nuon agents help` or `nuon agents context` to confirm which MCP URL resolves before registering.

@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -61,7 +62,7 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStatus(ctx context.Context, r
 	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
 		return err
 	}
-	a.logWorkflowError(ctx, loaded, req.Status)
+	a.logWorkflowError(ctx, loaded, loaded.Status, req.Status)
 	return nil
 }
 
@@ -84,7 +85,7 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStepStatus(ctx context.Contex
 	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
 		return err
 	}
-	a.logStepError(ctx, loaded, req.Status)
+	a.logStepStatus(ctx, loaded, loaded.Status, req.Status)
 	return nil
 }
 
@@ -115,39 +116,14 @@ func (a *Activities) updateStatusV2(ctx context.Context, obj any, status app.Com
 }
 
 func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app.CompositeStatus, statusGetter func(ctx context.Context) (app.CompositeStatus, error), statusField string) error {
-	createdBy, err := cctx.AccountIDFromContext(ctx)
-	if err != nil {
-		return errors.Wrap(err, "unable to get created by")
-	}
-
-	status.CreatedByID = createdBy
-	status.CreatedAtTS = time.Now().Unix()
-
 	existingStatus, err := statusGetter(ctx)
 	if err != nil {
 		return err
 	}
-	history := existingStatus.History
-	existingStatus.History = nil
-	history = append(history, existingStatus)
-	// Limit history to the most recent 25 entries to prevent unbounded growth.
-	if len(history) > 25 {
-		history = history[len(history)-25:]
+	status, err = nextCompositeStatus(ctx, existingStatus, status)
+	if err != nil {
+		return err
 	}
-	status.History = history
-
-	// Carry forward existing metadata into the new status so it's not lost.
-	newMetadata := status.Metadata
-	if newMetadata == nil {
-		newMetadata = make(map[string]any, 0)
-	}
-	for k, v := range existingStatus.Metadata {
-		if _, ok := newMetadata[k]; ok {
-			continue
-		}
-		newMetadata[k] = v
-	}
-	status.Metadata = newMetadata
 
 	res := a.db.WithContext(ctx).Model(obj).Updates(
 		map[string]any{
@@ -173,6 +149,47 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	return nil
 }
 
+func nextCompositeStatus(ctx context.Context, existingStatus, status app.CompositeStatus) (app.CompositeStatus, error) {
+	createdBy, err := cctx.AccountIDFromContext(ctx)
+	if err != nil {
+		return app.CompositeStatus{}, errors.Wrap(err, "unable to get created by")
+	}
+
+	status.CreatedByID = createdBy
+	status.CreatedAtTS = time.Now().Unix()
+	return prepareCompositeStatus(existingStatus, status), nil
+}
+
+func prepareCompositeStatus(existingStatus, status app.CompositeStatus) app.CompositeStatus {
+	history := existingStatus.History
+	existingStatus.History = nil
+	// A composite error carries the full diagnostic output, so keeping one per
+	// history entry would grow the status column without bound. Only the current
+	// status keeps its error.
+	existingStatus.CompositeError = nil
+	history = append(history, existingStatus)
+	// Limit history to the most recent 25 entries to prevent unbounded growth.
+	if len(history) > 25 {
+		history = history[len(history)-25:]
+	}
+	status.History = history
+
+	// Carry forward existing metadata into the new status so it's not lost.
+	newMetadata := status.Metadata
+	if newMetadata == nil {
+		newMetadata = make(map[string]any, 0)
+	}
+	for k, v := range existingStatus.Metadata {
+		if _, ok := newMetadata[k]; ok {
+			continue
+		}
+		newMetadata[k] = v
+	}
+	status.Metadata = newMetadata
+
+	return status
+}
+
 // reflectID extracts the ID field from a model pointer via reflection.
 func reflectID(obj any) string {
 	v := reflect.ValueOf(obj)
@@ -189,11 +206,17 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 	}
 
 	var loaded app.Workflow
-	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		if err := a.getStatus(ctx, &loaded, req.ID); err != nil {
-			return app.CompositeStatus{}, err
-		}
+	if err := a.getStatus(ctx, &loaded, req.ID); err != nil {
+		return err
+	}
 
+	_, cancelRequested := loaded.Status.Metadata["cancel_requested_at"]
+	// Cancellation is terminal because downstream step/group writers can race the cancel handler with stale statuses.
+	if req.Status.Status != app.StatusCancelled && (loaded.Status.Status == app.StatusCancelled || cancelRequested) {
+		return nil
+	}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
 		return loaded.Status, nil
 	}
 
@@ -202,12 +225,28 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 	}
 
 	a.syncInstallAppConfigVersionFromFlowStatus(ctx, req.ID, req.Status)
+	if req.Status.Status == app.StatusSuccess {
+		a.syncInstallActualAppConfigFromFlow(ctx, &loaded)
+	}
 
 	if a.notifier != nil {
 		a.notifier.FlowStatusUpdated(ctx, req)
 	}
 
-	a.logWorkflowError(ctx, loaded, req.Status)
+	a.logWorkflowError(ctx, loaded, loaded.Status, req.Status)
+	return nil
+}
+
+type UpdateFlowStatusMetadataRequest struct {
+	WorkflowID string `validate:"required"`
+	Metadata   map[string]any
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateFlowStatusMetadata(ctx context.Context, req UpdateFlowStatusMetadataRequest) error {
+	if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), &app.Workflow{}, req.WorkflowID, "status", req.Metadata); err != nil {
+		return errors.Wrap(err, "unable to update flow status metadata")
+	}
 	return nil
 }
 
@@ -237,6 +276,64 @@ func (a *Activities) syncInstallAppConfigVersionFromFlowStatus(ctx context.Conte
 	}
 }
 
+func (a *Activities) syncInstallActualAppConfigFromFlow(ctx context.Context, flw *app.Workflow) {
+	if flw.OwnerType != "installs" || flw.Type != app.WorkflowTypeAppBranchConfigUpdate || flw.PlanOnly {
+		return
+	}
+	newAppConfigID := ""
+	if v, ok := flw.Metadata["new_app_config_id"]; ok && v != nil {
+		newAppConfigID = *v
+	}
+	if newAppConfigID == "" {
+		return
+	}
+
+	var unapplied int64
+	if err := a.db.WithContext(ctx).
+		Model(&app.WorkflowStep{}).
+		Where(app.WorkflowStep{InstallWorkflowID: flw.ID}).
+		Where("((status->>'status' IN ?) OR (status->>'status' = ? AND retried = ?))",
+			[]string{
+				string(app.StatusError),
+				string(app.StatusUserSkipped),
+				string(app.StatusCancelled),
+				string(app.StatusNotAttempted),
+				string(app.WorkflowStepApprovalStatusApprovalDenied),
+				string(app.WorkflowStepApprovalStatusApprovalExpired),
+			},
+			string(app.StatusDiscarded), false,
+		).
+		Count(&unapplied).Error; err != nil {
+		a.l.Warn("unable to check workflow steps for install actual app config",
+			zap.String("workflow_id", flw.ID),
+			zap.Error(err),
+		)
+		return
+	}
+	if unapplied > 0 {
+		return
+	}
+
+	now := time.Now().UTC()
+	ref := app.AppConfigRef{
+		ExpectedConfigID:    newAppConfigID,
+		AppliedConfigID:     newAppConfigID,
+		AppliedConfigAt:     &now,
+		AppliedConfigByType: app.AppConfigRefByTypeInstallWorkflows,
+		AppliedConfigByID:   flw.ID,
+	}
+	if err := a.db.WithContext(ctx).
+		Model(&app.Install{}).
+		Where(app.Install{ID: flw.OwnerID}).
+		Update("app_config_ref", ref).Error; err != nil {
+		a.l.Warn("unable to record install actual app config",
+			zap.String("workflow_id", flw.ID),
+			zap.String("install_id", flw.OwnerID),
+			zap.Error(err),
+		)
+	}
+}
+
 // @temporal-gen-v2 activity
 func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req UpdateStatusRequest) error {
 	obj := app.WorkflowStep{
@@ -255,7 +352,7 @@ func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req Upda
 	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
 		return err
 	}
-	a.logStepError(ctx, loaded, req.Status)
+	a.logStepStatus(ctx, loaded, loaded.Status, req.Status)
 	return nil
 }
 
@@ -488,6 +585,92 @@ type UpdateRunnerStatusV2Request struct {
 	StatusDescription string           `validate:"required"`
 }
 
+type TransitionRunnerStatusRequest struct {
+	RunnerID          string
+	Status            app.RunnerStatus
+	StatusDescription string
+	SkipIfDisabled    bool
+	Metadata          map[string]any
+	OnlyIfStatus      *app.RunnerStatus
+}
+
+func (a *Activities) TransitionRunnerStatus(ctx context.Context, req TransitionRunnerStatusRequest) (bool, error) {
+	updated := false
+	err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var runner app.Runner
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Select("id", "status", "status_description", "status_v2").
+			Where(&app.Runner{ID: req.RunnerID}).
+			First(&runner).Error; err != nil {
+			return generics.TemporalGormError(err, fmt.Sprintf("unable to get runner %s", req.RunnerID))
+		}
+		if req.SkipIfDisabled && (runner.Status == app.RunnerStatusDisabled || runner.StatusV2.Status == app.Status(app.RunnerStatusDisabled)) {
+			return nil
+		}
+		if req.OnlyIfStatus != nil && runner.Status != *req.OnlyIfStatus {
+			return nil
+		}
+
+		statusMatches := runner.Status == req.Status &&
+			runner.StatusDescription == req.StatusDescription
+		statusV2Matches := runner.StatusV2.Status == app.Status(req.Status) &&
+			runner.StatusV2.StatusHumanDescription == req.StatusDescription
+		if statusMatches && statusV2Matches && len(req.Metadata) == 0 {
+			return nil
+		}
+
+		next := runner.StatusV2
+		if !statusV2Matches {
+			next = app.NewCompositeStatus(ctx, app.Status(req.Status))
+			next.StatusHumanDescription = req.StatusDescription
+			if next.CreatedByID == "" {
+				next.CreatedByID = runner.StatusV2.CreatedByID
+			}
+			next.Metadata = make(map[string]any)
+			for key, value := range req.Metadata {
+				if value != nil {
+					next.Metadata[key] = value
+				}
+			}
+			next = prepareCompositeStatus(runner.StatusV2, next)
+			for key, value := range req.Metadata {
+				if value == nil {
+					delete(next.Metadata, key)
+				}
+			}
+		} else if len(req.Metadata) > 0 {
+			if next.Metadata == nil {
+				next.Metadata = make(map[string]any)
+			}
+			for key, value := range req.Metadata {
+				if value == nil {
+					delete(next.Metadata, key)
+				} else {
+					next.Metadata[key] = value
+				}
+			}
+		}
+
+		res := tx.Model(&app.Runner{ID: req.RunnerID}).Updates(map[string]any{
+			"status":             req.Status,
+			"status_description": req.StatusDescription,
+			"status_v2":          next,
+		})
+		if res.Error != nil {
+			return errors.Wrap(res.Error, "unable to update runner status")
+		}
+		if res.RowsAffected < 1 {
+			return errors.New("no runner found to update")
+		}
+		updated = true
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return updated, nil
+}
+
 // @temporal-gen-v2 activity
 // @local
 func (a *Activities) UpdateRunnerStatusV2(ctx context.Context, req UpdateRunnerStatusV2Request) error {
@@ -499,6 +682,14 @@ func (a *Activities) UpdateRunnerStatusV2(ctx context.Context, req UpdateRunnerS
 			return app.CompositeStatus{}, err
 		}
 		return obj.StatusV2, nil
+	}
+
+	existing, err := getter(ctx)
+	if err != nil {
+		return err
+	}
+	if existing.Status == app.Status(req.Status) && existing.StatusHumanDescription == req.StatusDescription {
+		return nil
 	}
 
 	status := app.NewCompositeStatus(ctx, app.Status(req.Status))

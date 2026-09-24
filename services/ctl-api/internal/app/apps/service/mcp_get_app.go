@@ -24,5 +24,5 @@ func (s *service) mcpGetApp(ctx context.Context, _ *mcp.CallToolRequest, in mcpG
 		return nil, nil, err
 	}
 
-	return apiPkg.MCPJSONResult(result)
+	return apiPkg.MCPJSONResult(mcpAppWithDerivedStatus(result))
 }

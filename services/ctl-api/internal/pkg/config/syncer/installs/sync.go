@@ -2,12 +2,14 @@ package installs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"maps"
 
 	"gorm.io/gorm"
 
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/labels"
@@ -27,26 +29,72 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 		return nil, fmt.Errorf("install config name is required")
 	}
 
+	var application app.App
+	if err := db.WithContext(ctx).
+		Preload("Org").
+		Where(app.App{ID: appID}).
+		First(&application).Error; err != nil {
+		return nil, fmt.Errorf("unable to load app %s for install sync: %w", appID, err)
+	}
+	if application.Org.Features[string(app.OrgFeatureDisableAppSync)] && install.AppBranch == "" {
+		return nil, fmt.Errorf("install config %q must set app_branch when disable-app-sync is enabled", install.Name)
+	}
+
 	var existing app.Install
 	err := db.WithContext(ctx).
 		Preload("InstallConfig").
+		Preload("AppBranch").
 		Preload("AWSAccount").
 		Preload("GCPAccount").
 		Preload("AzureAccount").
 		Where(app.Install{AppID: appID, Name: install.Name}).
 		First(&existing).Error
 
+	var appBranchID string
+	if install.AppBranch != "" {
+		branch, err := resolveAppBranch(ctx, db, appID, install.AppBranch)
+		if err != nil {
+			return nil, err
+		}
+		appBranchID = branch.ID
+		install.AppBranch = branch.Name
+	}
+
 	if err == gorm.ErrRecordNotFound {
-		return createInstall(ctx, db, installHelpers, appID, install)
+		return createInstall(ctx, db, installHelpers, appID, install, appBranchID)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to look up install %s: %w", install.Name, err)
 	}
 
-	return updateInstall(ctx, db, installHelpers, &existing, install)
+	return updateInstall(ctx, db, installHelpers, &existing, install, appBranchID)
 }
 
-func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, appID string, installCfg *config.Install) (*sync.InstallSyncResult, error) {
+func resolveAppBranch(ctx context.Context, db *gorm.DB, appID, ref string) (*app.AppBranch, error) {
+	var branch app.AppBranch
+	err := db.WithContext(ctx).
+		Where(app.AppBranch{ID: ref, AppID: appID}).
+		First(&branch).Error
+	if err == nil {
+		return &branch, nil
+	}
+	if err != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("unable to resolve app branch %q by ID: %w", ref, err)
+	}
+
+	err = db.WithContext(ctx).
+		Where(app.AppBranch{AppID: appID, Name: ref}).
+		First(&branch).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("app branch %q was not found on app %s", ref, appID)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve app branch %q by name: %w", ref, err)
+	}
+	return &branch, nil
+}
+
+func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, appID string, installCfg *config.Install, appBranchID string) (*sync.InstallSyncResult, error) {
 	inputs := make(map[string]*string)
 	for k, v := range installCfg.FlattenedInputs() {
 		val := v
@@ -60,6 +108,7 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		Metadata: installhelpers.InstallMetadata{
 			ManagedBy: ManagedByGitInstallConfig,
 		},
+		AppBranchID: appBranchID,
 	}
 
 	if installCfg.AWSAccount != nil {
@@ -83,8 +132,11 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
 		installCfg.StackOverrides.HasOverrides() ||
-		len(installCfg.ComponentToggles) > 0 {
+		len(installCfg.ComponentToggles) > 0 || installCfg.Telemetry != nil {
 		icParams := &installhelpers.CreateInstallConfigParams{}
+		if installCfg.Telemetry != nil {
+			icParams.Telemetry = installCfg.Telemetry
+		}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			icParams.ApprovalOption = app.InstallApprovalOption(installCfg.ApprovalOption)
 		}
@@ -120,7 +172,7 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	}, nil
 }
 
-func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, installCfg *config.Install) (*sync.InstallSyncResult, error) {
+func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, installCfg *config.Install, appBranchID string) (*sync.InstallSyncResult, error) {
 	upstream := existingToConfig(existing)
 
 	// Refused rather than ignored: nothing below writes the account, so without this
@@ -161,12 +213,16 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
 		installCfg.StackOverrides.HasOverrides() ||
-		len(installCfg.ComponentToggles) > 0
+		len(installCfg.ComponentToggles) > 0 ||
+		(installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil)
 
 	if hasConfigFields {
 		updates := map[string]any{}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			updates["approval_option"] = string(installCfg.ApprovalOption)
+		}
+		if installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil {
+			updates["telemetry_enabled"] = installCfg.Telemetry.Enabled
 		}
 		if installCfg.StackOverrides != nil {
 			if installCfg.StackOverrides.VPCNestedTemplateURL != "" {
@@ -178,17 +234,24 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 				updates["runner_nested_template_url"] = &url
 			}
 			if len(installCfg.StackOverrides.CustomNestedStacks) > 0 {
-				updates["custom_nested_stacks"] = installCfg.StackOverrides.CustomNestedStacks
+				b, err := json.Marshal(installCfg.StackOverrides.CustomNestedStacks)
+				if err != nil {
+					return nil, fmt.Errorf("unable to marshal custom_nested_stacks: %w", err)
+				}
+				updates["custom_nested_stacks"] = string(b)
 			}
 		}
 
 		if len(updates) > 0 && existing.InstallConfig != nil {
-			db.WithContext(ctx).Model(&app.InstallConfig{}).
-				Where("id = ?", existing.InstallConfig.ID).
-				Updates(updates)
+			if err := db.WithContext(ctx).Model(&app.InstallConfig{}).
+				Where(app.InstallConfig{ID: existing.InstallConfig.ID, InstallID: existing.ID, OrgID: existing.OrgID}).
+				Updates(updates).Error; err != nil {
+				return nil, fmt.Errorf("unable to update config for install %s: %w", installCfg.Name, err)
+			}
 		} else if len(updates) > 0 {
 			icParams := &installhelpers.CreateInstallConfigParams{
 				ApprovalOption: app.InstallApprovalOption(installCfg.ApprovalOption),
+				Telemetry:      installCfg.Telemetry,
 			}
 			if _, err := installHelpers.CreateInstallConfig(ctx, existing.ID, icParams); err != nil {
 				return nil, fmt.Errorf("unable to create config for install %s: %w", installCfg.Name, err)
@@ -202,16 +265,25 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		}
 	}
 
+	appBranchChanged := appBranchID != "" && (!existing.AppBranchID.Valid || existing.AppBranchID.String != appBranchID)
+	if appBranchChanged {
+		if _, err := installHelpers.LatestDeployableAppBranchRun(ctx, appBranchID); err != nil {
+			return nil, err
+		}
+	}
+
 	db.WithContext(ctx).Model(&app.Install{}).Where("id = ?", existing.ID).Updates(map[string]any{
 		"metadata": map[string]string{"managed_by": ManagedByGitInstallConfig},
 	})
 
 	return &sync.InstallSyncResult{
-		InstallID:   existing.ID,
-		InstallName: existing.Name,
-		Created:     false,
-		Changed:     true,
-		Diff:        d,
+		InstallID:        existing.ID,
+		InstallName:      existing.Name,
+		Created:          false,
+		Changed:          true,
+		Diff:             d,
+		AppBranchChanged: appBranchChanged,
+		AppBranchID:      appBranchID,
 	}, nil
 }
 
@@ -291,9 +363,14 @@ func syncLabels(ctx context.Context, db *gorm.DB, installHelpers *installhelpers
 }
 
 func existingToConfig(install *app.Install) *config.Install {
+	var appBranchName string
+	if install.AppBranch != nil {
+		appBranchName = install.AppBranch.Name
+	}
 	cfg := &config.Install{
-		Name:   install.Name,
-		Labels: upstreamLabels(install),
+		Name:      install.Name,
+		AppBranch: appBranchName,
+		Labels:    upstreamLabels(install),
 	}
 
 	// The target identifiers must be echoed back, otherwise a config that legitimately
@@ -329,6 +406,9 @@ func existingToConfig(install *app.Install) *config.Install {
 
 	if install.InstallConfig != nil {
 		cfg.ApprovalOption = config.InstallApprovalOption(install.InstallConfig.ApprovalOption)
+		if install.InstallConfig.TelemetryEnabled != nil {
+			cfg.Telemetry = &config.InstallTelemetry{Enabled: install.InstallConfig.TelemetryEnabled}
+		}
 		if install.InstallConfig.VPCNestedTemplateURL != nil ||
 			install.InstallConfig.RunnerNestedTemplateURL != nil ||
 			len(install.InstallConfig.CustomNestedStacks) > 0 {

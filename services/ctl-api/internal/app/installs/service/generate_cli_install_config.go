@@ -93,9 +93,9 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		delete(installLabels, key)
 	}
 
-	installCfg := config.Install{
-		Name:   install.Name,
-		Labels: installLabels,
+	installCfg := config.Install{Name: install.Name, Labels: installLabels}
+	if install.AppBranch != nil {
+		installCfg.AppBranch = install.AppBranch.Name
 	}
 
 	// The target identifiers must be echoed back, otherwise a config that legitimately
@@ -134,6 +134,9 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 	}
 
 	if installConfig != nil {
+		if installConfig.TelemetryEnabled != nil {
+			installCfg.Telemetry = &config.InstallTelemetry{Enabled: installConfig.TelemetryEnabled}
+		}
 		// Normalize the approval option: "auto" and empty both map to "prompt" in the generated config.
 		approvalOpt := config.InstallApprovalOption(installConfig.ApprovalOption)
 		switch approvalOpt {

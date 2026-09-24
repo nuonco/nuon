@@ -30,7 +30,10 @@ func (h *WorkflowTimelineHandler) StreamWorkflowTimeline(c *gin.Context) {
 	limit, offset := timelineQuery(c)
 	planonly := c.DefaultQuery("planonly", "true") == "true"
 	workflowType := c.DefaultQuery("type", "")
+	status := c.DefaultQuery("status", "")
 	search := c.DefaultQuery("search", "")
+	createdAtGte := c.DefaultQuery("created_at_gte", "")
+	createdAtLte := c.DefaultQuery("created_at_lte", "")
 
 	client, _, ok := sseAuth(c, h.cfg, h.l)
 	if !ok {
@@ -56,11 +59,14 @@ func (h *WorkflowTimelineHandler) StreamWorkflowTimeline(c *gin.Context) {
 			}
 
 			history, hasMore, err := client.GetInstallWorkflows(ctx, installID, &nuon.GetInstallWorkflowsQuery{
-				Planonly: &planonly,
-				Type:     workflowType,
-				Search:   search,
-				Limit:    limit,
-				Offset:   offset,
+				Planonly:     &planonly,
+				Type:         workflowType,
+				Status:       status,
+				Search:       search,
+				CreatedAtGte: createdAtGte,
+				CreatedAtLte: createdAtLte,
+				Limit:        limit,
+				Offset:       offset,
 			})
 			if err != nil {
 				if !isNotFoundErr(err) {

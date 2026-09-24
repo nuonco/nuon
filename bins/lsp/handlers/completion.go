@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tliron/glsp"
+	protocol "github.com/tliron/glsp/protocol_3_16"
+
 	"github.com/nuonco/nuon/bins/lsp/mappers"
 	"github.com/nuonco/nuon/bins/lsp/models"
 	tomlparser "github.com/nuonco/nuon/pkg/parser/toml"
-	"github.com/tliron/glsp"
-	protocol "github.com/tliron/glsp/protocol_3_16"
 )
 
 func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams) (any, error) {
@@ -63,7 +64,7 @@ func TextDocumentCompletion(ctx *glsp.Context, params *protocol.CompletionParams
 		tomlCtx.CurrentTable, tomlCtx.KeyOnLine, tomlCtx.KeyPath)
 
 	// Detect schema type from document
-	schemaType := models.DetectSchemaType(text)
+	schemaType := models.DetectSchemaTypeForDocument(text, string(uri))
 	if schemaType == "" {
 		log.Warningf("⚠️  No schema type detected, returning no completions")
 		return nil, nil

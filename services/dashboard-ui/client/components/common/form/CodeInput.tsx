@@ -7,7 +7,7 @@ import { yaml } from '@codemirror/legacy-modes/mode/yaml'
 import { EditorView } from '@codemirror/view'
 import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'
-import { useSystemTheme } from '@/hooks/use-system-theme'
+import { useColorScheme } from '@/hooks/use-theme'
 import { cn } from '@/utils/classnames'
 
 export interface ICodeInput
@@ -70,7 +70,7 @@ export const CodeInput = ({
   name,
   ...props
 }: ICodeInput) => {
-  const colorScheme = useSystemTheme()
+  const colorScheme = useColorScheme()
   const [internalValue, setInternalValue] = useState(
     (defaultValue as string) || ''
   )

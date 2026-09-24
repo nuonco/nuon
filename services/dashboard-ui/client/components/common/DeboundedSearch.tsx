@@ -31,8 +31,9 @@ export const DebouncedSearchInput = ({
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       const params = new URLSearchParams(window.location.search)
-      if (value) {
-        params.set(searchParamKey, value)
+      const search = value.trim()
+      if (search) {
+        params.set(searchParamKey, search)
       } else {
         params.delete(searchParamKey)
       }

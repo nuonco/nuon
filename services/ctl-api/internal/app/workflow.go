@@ -63,6 +63,61 @@ const (
 	WorkflowTypeRecoverHelmRelease WorkflowType = "recover_helm_release"
 )
 
+func AllWorkflowTypes() []WorkflowType {
+	return []WorkflowType{
+		WorkflowTypeProvision,
+		WorkflowTypeDeprovision,
+		WorkflowTypeDeprovisionSandbox,
+		WorkflowTypeManualDeploy,
+		WorkflowTypeInputUpdate,
+		WorkflowTypeDeployComponents,
+		WorkflowTypeTeardownComponent,
+		WorkflowTypeTeardownComponents,
+		WorkflowTypeReprovisionSandbox,
+		WorkflowTypeDriftRunReprovisionSandbox,
+		WorkflowTypeActionWorkflowRun,
+		WorkflowTypeSyncSecrets,
+		WorkflowTypeDriftRun,
+		WorkflowTypeAppBranchesRun,
+		WorkflowTypeAppBranchesConfigRepoUpdate,
+		WorkflowTypeAppBranchesComponentRepoUpdate,
+		WorkflowTypeAppBranchConfigUpdate,
+		WorkflowTypeAppInstallSync,
+		WorkflowTypeReprovision,
+		WorkflowTypeReprovisionStack,
+		WorkflowTypeAppConfigBuild,
+		WorkflowTypeRunbookRun,
+		WorkflowTypeComponentEnabled,
+		WorkflowTypeComponentDisabled,
+		WorkflowTypeRecoverHelmRelease,
+	}
+}
+
+func (i WorkflowType) RequiresLiveInstallRunner() bool {
+	switch i {
+	case WorkflowTypeDeprovision,
+		WorkflowTypeDeprovisionSandbox,
+		WorkflowTypeManualDeploy,
+		WorkflowTypeInputUpdate,
+		WorkflowTypeDeployComponents,
+		WorkflowTypeTeardownComponent,
+		WorkflowTypeTeardownComponents,
+		WorkflowTypeReprovisionSandbox,
+		WorkflowTypeDriftRunReprovisionSandbox,
+		WorkflowTypeActionWorkflowRun,
+		WorkflowTypeSyncSecrets,
+		WorkflowTypeDriftRun,
+		WorkflowTypeRunbookRun,
+		WorkflowTypeComponentEnabled,
+		WorkflowTypeComponentDisabled,
+		WorkflowTypeAppBranchConfigUpdate,
+		WorkflowTypeRecoverHelmRelease:
+		return true
+	default:
+		return false
+	}
+}
+
 // RequiresInstallRunner reports whether this workflow type dispatches jobs to
 // the install runner and therefore cannot make progress while that runner is
 // disabled. Callers must scope it to install-owned workflows: app-owned types
@@ -368,6 +423,22 @@ func (i *Workflow) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 		{
+			Name: "idx_install_workflows_owner_type_created_at",
+			Columns: []string{
+				"owner_id",
+				"type",
+				"created_at DESC",
+			},
+		},
+		{
+			Name: "idx_install_workflows_owner_status_created_at",
+			Columns: []string{
+				"owner_id",
+				"(status->>'status')",
+				"created_at DESC",
+			},
+		},
+		{
 			Name: indexes.Name(db, &Workflow{}, "org_id"),
 			Columns: []string{
 				"org_id",
@@ -377,6 +448,14 @@ func (i *Workflow) Indexes(db *gorm.DB) []migrations.Index {
 			Name: "idx_install_workflows_org_created_at",
 			Columns: []string{
 				"org_id",
+				"created_at DESC",
+			},
+		},
+		{
+			// admin fleet-wide sweeps for workflows stuck in a given status
+			Name: "idx_install_workflows_status_created_at",
+			Columns: []string{
+				"(status->>'status')",
 				"created_at DESC",
 			},
 		},

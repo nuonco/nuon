@@ -10,10 +10,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitinstallstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -61,38 +59,38 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 	steps = append(steps, configStep)
 
-	sg.nextGroupEager()
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
+	stackChanged := diff != nil && diff.StackChanged
 
-	if !stateGenV2 {
-		step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
+	// A stack change recycles the runner, so gating on the outgoing one would
+	// block the apply that brings its replacement up.
+	if !stackChanged {
+		sg.nextGroupEager()
+		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 			InstallID: installID,
-		}, flw.PlanOnly, WithSkippable(false))
+			Mode:      awaitrunnerhealthy.ModeRequireActive,
+		}, flw.PlanOnly)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, step)
 	}
 
-	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
-
-	if diff != nil && diff.StackChanged {
+	if stackChanged {
 		stackSteps, err := getStackVersionSteps(ctx, sg, installID, flw.PlanOnly)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to generate stack version steps")
 		}
 		steps = append(steps, stackSteps...)
+
+		sg.nextGroup()
+		step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: installID,
+			Mode:      awaitrunnerhealthy.ModeStartup,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create post-stack runner health step")
+		}
+		steps = append(steps, step)
 	}
 
 	if diff != nil && (diff.SandboxChanged || diff.SandboxBuildChanged) {
@@ -111,7 +109,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		}
 
 		dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
-		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install, sandboxNeedsRunnerHealthyGate(diff))
+		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to generate sandbox reprovision steps")
 		}
@@ -130,8 +128,12 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
+	// Order against the config being rolled out, not the one the install is
+	// still pinned to: a component this update adds has no vertex in the old
+	// graph, and would otherwise never get a deploy step.
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
-		InstallID: install.ID,
+		InstallID:   install.ID,
+		AppConfigID: newAppConfigID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install graph")
@@ -149,15 +151,10 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	return sg.Result(steps), nil
 }
 
-// sandboxNeedsRunnerHealthyGate reports whether the sandbox reprovision phase has
-// to wait on the runner again. This flow already waited before the stack steps,
-// and only those steps can roll the runner out from under the sandbox — without
-// them a second wait can only re-confirm the first, and rendered as a duplicate
-// "runner healthy" step.
-func sandboxNeedsRunnerHealthyGate(diff *app.InstallConfigDiff) bool {
-	return diff != nil && diff.StackChanged
-}
-
+// filterComponentsByDiff narrows a dependency-ordered component list to the ones
+// this config update touches. componentIDs must be ordered against newAppCfg —
+// the result can only ever be a subset of it, so anything the update adds is
+// silently dropped if the caller ordered against the install's current config.
 func filterComponentsByDiff(componentIDs []string, newAppCfg *app.AppConfig, diff *app.InstallConfigDiff) []string {
 	newComponentSet := make(map[string]bool, len(newAppCfg.ComponentIDs))
 	for _, id := range newAppCfg.ComponentIDs {

@@ -21,16 +21,50 @@ func (c *client) GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, er
 	return resp.Payload, nil
 }
 
-func (c *client) GetAppBranches(ctx context.Context, appID string) ([]*models.AppAppBranch, error) {
-	resp, err := c.genClient.Operations.GetAppBranches(&operations.GetAppBranchesParams{
+// GetAppBranches returns one page of branches for the app. The server
+// defaults to 10 per page when query is nil; callers that need every branch
+// should page through with GetAllAppBranches instead of assuming this is
+// the complete list.
+func (c *client) GetAppBranches(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppBranch, bool, error) {
+	params := &operations.GetAppBranchesParams{
 		Context: ctx,
 		AppID:   appID,
-	}, c.getOrgIDAuthInfo())
+	}
+	params.Offset, params.Limit = applyPaginationQuery(query)
+
+	hr := newResponseHeaderReader(&operations.GetAppBranchesReader{})
+	resp, err := c.genClient.Operations.GetAppBranches(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return resp.Payload, nil
+	return resp.Payload, hasNextPage(hr), nil
+}
+
+// GetAllAppBranches pages through GetAppBranches and returns every branch for
+// the app, rather than leaving each caller to reimplement the same loop.
+func GetAllAppBranches(ctx context.Context, api Client, appID string) ([]*models.AppAppBranch, error) {
+	const pageLimit = 100
+
+	var (
+		branches []*models.AppAppBranch
+		offset   int
+		hasMore  = true
+	)
+	for hasMore {
+		page, more, err := api.GetAppBranches(ctx, appID, &models.GetPaginatedQuery{
+			Offset: offset,
+			Limit:  pageLimit,
+		})
+		if err != nil {
+			return nil, err
+		}
+		branches = append(branches, page...)
+		offset += pageLimit
+		hasMore = more
+	}
+
+	return branches, nil
 }
 
 func (c *client) GetAppBranch(ctx context.Context, appID, appBranchID string) (*models.AppAppBranch, error) {
@@ -166,6 +200,64 @@ func (c *client) TriggerAppBranchRun(ctx context.Context, appID, appBranchID str
 	}
 
 	return resp.Payload, nil
+}
+
+type GetAppBranchRunsQuery struct {
+	Planonly     *bool
+	Preview      *bool
+	Type         string
+	Status       string
+	Q            string
+	CreatedAtGte string
+	CreatedAtLte string
+	Limit        int
+	Offset       int
+}
+
+func (c *client) GetAppBranchRunsWithQuery(ctx context.Context, appID, appBranchID string, query *GetAppBranchRunsQuery) ([]*models.AppWorkflow, bool, error) {
+	params := &operations.GetAppBranchRunsParams{
+		Context:     ctx,
+		AppID:       appID,
+		AppBranchID: appBranchID,
+	}
+
+	var limit, offset int
+	if query != nil {
+		params.Planonly = query.Planonly
+		params.Preview = query.Preview
+		if query.Type != "" {
+			params.Type = &query.Type
+		}
+		if query.Status != "" {
+			params.Status = &query.Status
+		}
+		if query.Q != "" {
+			params.Q = &query.Q
+		}
+		if query.CreatedAtGte != "" {
+			params.CreatedAtGte = &query.CreatedAtGte
+		}
+		if query.CreatedAtLte != "" {
+			params.CreatedAtLte = &query.CreatedAtLte
+		}
+		limit = query.Limit
+		offset = query.Offset
+	}
+	if limit == 0 {
+		limit = 10
+	}
+	l := int64(limit)
+	o := int64(offset)
+	params.Limit = &l
+	params.Offset = &o
+
+	hr := newResponseHeaderReader(&operations.GetAppBranchRunsReader{})
+	resp, err := c.genClient.Operations.GetAppBranchRuns(params, c.getOrgIDAuthInfo(), hr.ClientOption())
+	if err != nil {
+		return nil, false, err
+	}
+
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetAppBranchRuns(ctx context.Context, appID, appBranchID string) ([]*models.AppWorkflow, error) {

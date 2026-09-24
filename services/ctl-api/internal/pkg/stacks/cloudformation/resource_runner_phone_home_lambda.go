@@ -6,6 +6,7 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 	"github.com/awslabs/goformation/v7/cloudformation/lambda"
+
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
@@ -14,6 +15,7 @@ import (
 func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customStacks *customNestedStackResult) *cloudformation.CustomResource {
 	breakGlassRoleArns := make(map[string]interface{})
 	customRoleArns := make(map[string]interface{})
+	namedPolicyArns := make(map[string]interface{})
 
 	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
 		// cloudformation has parameter called role.CloudFormationStackParamName
@@ -30,6 +32,10 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 			generics.FromPtrStr(cloudformation.GetAttPtr(role.CloudFormationStackName, "Arn")),
 			cloudformation.Ref("AWS::NoValue"),
 		)
+	}
+
+	for _, policy := range inp.AppCfg.PermissionsConfig.NamedPolicies {
+		namedPolicyArns[policy.Name] = cloudformation.Ref(namedPolicyLogicalID(policy))
 	}
 
 	// add app input parameters from install_stack sourced inputs
@@ -66,6 +72,7 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 		"install_inputs":        installInputValues,
 		"break_glass_role_arns": breakGlassRoleArns,
 		"custom_role_arns":      customRoleArns,
+		"named_policy_arns":     namedPolicyArns,
 
 		// from the nested VPC Cloudformation Template (we want its outputs)
 		"vpc_id":          cloudformation.GetAtt("VPC", "Outputs.VPC"),

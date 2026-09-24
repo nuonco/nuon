@@ -65,6 +65,16 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 		}
 	}
 
+	if requiresLiveInstallRunner(workflowType, metadata) {
+		active, err := s.HasActiveRunner(ctx, installID)
+		if err != nil {
+			return nil, err
+		}
+		if !active {
+			return nil, NewNoActiveRunnerConflict()
+		}
+	}
+
 	approvalOption := app.InstallApprovalOptionPrompt
 	installConfig, err := s.GetLatestInstallConfig(ctx, installID)
 	if err != nil {
@@ -115,10 +125,18 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	cctx.GetLogger(ctx, s.l).Info("flow telemetry",
 		zap.String("flow_event", "workflow.created"),
 		zap.String("install_id", installID),
+		zap.String("install_name", install.Name),
 		zap.String("workflow_id", installWorkflow.ID),
 		zap.String("workflow_type", string(workflowType)),
 		zap.Bool("plan_only", planOnly),
 	)
 
 	return &installWorkflow, nil
+}
+
+func requiresLiveInstallRunner(workflowType app.WorkflowType, metadata map[string]string) bool {
+	if workflowType == app.WorkflowTypeInputUpdate && metadata[app.WorkflowMetadataKeyInputsOnly] == "true" {
+		return false
+	}
+	return workflowType.RequiresLiveInstallRunner()
 }

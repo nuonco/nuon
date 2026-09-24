@@ -196,5 +196,29 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "130-runner-job-dashboard-index",
 			Fn:   m.Migration130RunnerJobDashboardIndex,
 		},
+		{
+			Name: "131-repoint-orphaned-install-role-usages",
+			Fn:   m.Migration131RepointOrphanedInstallRoleUsages,
+		},
+		{
+			Name: "132-backfill-app-branch-run-config",
+			Fn:   m.Migration132BackfillAppBranchRunConfig,
+		},
+		{
+			Name: "133-dedupe-queues",
+			Fn:   m.Migration133DedupeQueues,
+		},
+		{
+			Name: "134-backfill-app-sandbox-build-app-branch-run",
+			Fn:   m.Migration133BackfillAppSandboxBuildAppBranchRun,
+		},
+		// {
+		// 	Name: "135-backfill-install-expected-actual-state",
+		// 	Fn:   m.Migration135BackfillInstallExpectedActualState,
+		// },
+		// {
+		// 	Name: "136-migrate-app-config-ref",
+		// 	Fn:   m.Migration136MigrateAppConfigRef,
+		// },
 	}
 }

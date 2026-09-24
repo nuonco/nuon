@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { useSSETimelineQuery } from '@/hooks/use-sse-timeline-query'
+import { useSSETimelineQuery } from '@/lib/sse/use-sse-timeline-query'
+import { useRefreshErrorToast } from '@/hooks/use-refresh-error-toast'
 import { getSandboxBuilds } from '@/lib'
 import { SandboxBuildTimeline } from './SandboxBuildTimeline'
 
@@ -10,16 +11,22 @@ const LIMIT = 10
 interface ISandboxBuildTimelineContainer {
   pollInterval?: number
   shouldPoll?: boolean
+  branchId?: string
+  excludeBuildId?: string
 }
 
 export const SandboxBuildTimelineContainer = ({
   pollInterval = 10000,
   shouldPoll = false,
+  branchId,
+  excludeBuildId,
 }: ISandboxBuildTimelineContainer) => {
   const { app } = useApp()
   const { org } = useOrg()
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
+
+  const onRefreshError = useRefreshErrorToast()
 
   const { data: result } = useSSETimelineQuery({
     sseUrl:
@@ -38,6 +45,7 @@ export const SandboxBuildTimelineContainer = ({
     shouldPoll,
     pollInterval,
     eventName: 'sandbox-builds',
+    onError: onRefreshError,
   })
 
   const builds = result?.data ?? []
@@ -52,6 +60,8 @@ export const SandboxBuildTimelineContainer = ({
       orgId={org?.id}
       appId={app?.id}
       isEmpty={builds.length === 0 && offset === 0}
+      branchId={branchId}
+      excludeBuildId={excludeBuildId}
     />
   )
 }

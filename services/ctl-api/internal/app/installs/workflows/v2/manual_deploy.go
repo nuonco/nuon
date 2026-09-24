@@ -14,9 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeploysyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentsyncimage"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -30,25 +28,10 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	sg.nextGroupEager() // generate install state
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-
-	if !stateGenV2 {
-		stateSignal := &generatestate.Signal{InstallID: installID}
-		step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, stateSignal, flw.PlanOnly, WithSkippable(false))
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, step)
-	}
-
 	sg.nextGroupEager()
 	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
+		Mode:      awaitrunnerhealthy.ModeRequireActive,
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
@@ -133,7 +116,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	// sync image
 	if comp.Type.IsImage() {
 		sg.nextGroup() // component sync
-		deployStep, err := sg.installSignalStep(ctx, installID, "sync "+comp.Name, pgtype.Hstore{}, &componentsyncimage.Signal{
+		deployStep, err := sg.installSignalStep(ctx, installID, "sync "+comp.Name, componentStepMetadata(comp.Name), &componentsyncimage.Signal{
 			InstallComponentID: installComp.ID,
 			DeployID:           generics.FromPtrStr(installDeployID),
 			ComponentID:        comp.ID,
@@ -154,7 +137,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		dg.addedImageDepSyncs[comp.ID] = struct{}{}
 	} else {
 		sg.nextGroup() // component sync + plan + apply
-		planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
+		planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, componentStepMetadata(comp.Name), &componentdeploysyncandplan.Signal{
 			InstallComponentID: installComp.ID,
 			InstallID:          installID,
 			DeployID:           generics.FromPtrStr(installDeployID),
@@ -166,7 +149,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create image sync")
 		}
-		applyPlanStep, err := sg.installSignalStep(ctx, installID, "apply "+comp.Name, pgtype.Hstore{}, &componentdeployapplyplan.Signal{
+		applyPlanStep, err := sg.installSignalStep(ctx, installID, "apply "+comp.Name, componentStepMetadata(comp.Name), &componentdeployapplyplan.Signal{
 			InstallComponentID: installComp.ID,
 			InstallID:          installID,
 			ComponentID:        comp.ID,
@@ -182,7 +165,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		} else {
 			steps = append(steps, planStep, applyPlanStep)
 			if componentGateEnabled(ctx, installID, comp.ID, comp.Type) {
-				gateStep, err := sg.installSignalStep(ctx, installID, "verify health "+comp.Name, pgtype.Hstore{}, &awaitcomponenthealthy.Signal{
+				gateStep, err := sg.installSignalStep(ctx, installID, "verify health "+comp.Name, componentStepMetadata(comp.Name), &awaitcomponenthealthy.Signal{
 					InstallID:          installID,
 					InstallComponentID: installComp.ID,
 				}, flw.PlanOnly, WithSkippable(false), WithMaxAutoRetries(3))

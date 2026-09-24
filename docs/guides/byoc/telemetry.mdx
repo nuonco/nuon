@@ -1,0 +1,138 @@
+---
+title: 'Set Up Install Telemetry'
+sidebarTitle: 'Telemetry Setup'
+description: 'Connect your Nuon BYOC deployment to your observability backend and start collecting telemetry from customer installs.'
+icon: 'chart-line'
+keywords: ['Nuon BYOC', 'telemetry setup', 'telemetry relay', 'OpenTelemetry', 'OTLP']
+---
+
+Collect application logs, metrics, and traces from customer installs in your own observability backend. Set up a
+telemetry relay once in your Nuon BYOC deployment, then choose which installs send data through it. Backend
+credentials stay in your BYOC deployment, not in customer environments.
+
+Already set up? Go to [Manage Install Telemetry](/guides/manage-install-telemetry) to enable or disable collection.
+For the data flow and security model, see [Install Telemetry](/concepts/install-telemetry).
+
+## Before you start
+
+You need:
+
+- A Nuon BYOC deployment and access to its cloud secret manager.
+- An observability backend that accepts logs, metrics, or traces over **OTLP/HTTP**, with an HTTP(S) endpoint and an
+  `Authorization` header if authentication is required.
+- An application configured to emit OpenTelemetry data, or a Collector that gathers it.
+
+Contact Nuon to enable the relay for your deployment. Nuon will confirm compatible control-plane, runner, and
+stack versions and coordinate the setup with you.
+
+## 1. Add your backend credentials
+
+Update these existing secrets in the cloud account hosting **your Nuon BYOC deployment**, not in each customer's
+install:
+
+- `telemetry_otlp_endpoint`: your backend's HTTP(S) OTLP/HTTP **base URL**, such as `https://otel.example.com/otlp`.
+  Do not append `/v1/logs`, `/v1/metrics`, or `/v1/traces`.
+- `telemetry_otlp_authorization`: the complete `Authorization` header value, including the `Basic ` or `Bearer ` prefix.
+  This can be empty if your backend does not require authentication.
+
+<Tabs>
+<Tab title="AWS">
+
+1. Open **AWS Secrets Manager** in the account and region hosting your Nuon BYOC deployment.
+2. Find the secrets corresponding to `telemetry_otlp_endpoint` and `telemetry_otlp_authorization` for your BYOC install.
+3. Update each secret with the value from your backend and save the changes.
+
+</Tab>
+<Tab title="GCP">
+
+1. Open **Secret Manager** in the project hosting your Nuon BYOC deployment.
+2. Find the secrets corresponding to `telemetry_otlp_endpoint` and `telemetry_otlp_authorization` for your BYOC install.
+3. Add a new version containing each value from your backend. Ensure the new versions are enabled.
+
+</Tab>
+</Tabs>
+
+<Note>
+If the secrets do not exist, ask Nuon to help update your BYOC stack first. Keep credentials out of app inputs,
+component configurations, and source control. You do not need to send Nuon the secret values.
+</Note>
+
+## 2. Have Nuon enable the relay
+
+Tell Nuon the secrets are ready. Nuon syncs them, checks the configuration, enables the relay, and verifies its
+deployment and HTTPS endpoint. Wait for confirmation before enabling telemetry on customer installs.
+
+Your application will send data to a private endpoint in its own install, not directly to this relay.
+
+## 3. Check the install endpoint
+
+Choose a customer install to start with. Current install stacks provision private telemetry ingress by default;
+update older stacks or re-enable ingress if the customer previously disabled it.
+
+<Tabs>
+<Tab title="AWS CloudFormation">
+
+Use current VPC and runner stack templates with **EnableTelemetryIngress** set to `true` (the default).
+The endpoint is private to the install VPC.
+
+</Tab>
+<Tab title="Azure">
+
+Use the current generated install stack with **enableTelemetryIngress** set to `true` (the default).
+The endpoint uses an internal load balancer in the runner subnet.
+
+</Tab>
+<Tab title="GCP Terraform">
+
+Use the current [Nuon install stack](https://github.com/nuonco/install-stacks/tree/main/gcp) with
+`runner_enabled = true` and `enable_telemetry_ingress = true` (the default). Workloads sending telemetry must be
+in the same region and allowed by the stack's internal firewall.
+
+</Tab>
+</Tabs>
+
+The install's stack outputs should include a nonempty `telemetry_endpoint`. You can check with:
+
+```sh
+nuon installs outputs --stack -i "<install-id>"
+```
+
+The endpoint accepts OTLP/HTTP on port 4318. Private ingress infrastructure may incur additional cloud charges.
+
+## 4. Connect your application
+
+Set these environment variables for your application's OpenTelemetry SDK or agent in its component configuration:
+
+```toml
+OTEL_EXPORTER_OTLP_PROTOCOL = "http/protobuf"
+OTEL_EXPORTER_OTLP_ENDPOINT = "{{ .nuon.install_stack.outputs.telemetry_endpoint }}"
+```
+
+Nuon resolves the endpoint template for each install when rendering the component configuration. If you configure
+an exporter outside Nuon templates, use the actual `telemetry_endpoint` output instead. If you use your own
+Collector, configure its OTLP/HTTP exporter to use that endpoint.
+
+Deploy the updated application configuration. You do not need backend credentials or runner tokens in your
+application.
+
+## 5. Enable telemetry and check your backend
+
+Follow [Manage Install Telemetry](/guides/manage-install-telemetry#enable-or-disable-an-install) to enable your first
+install from the dashboard or its install config. You can also set an org default when you are ready to enable
+collection more broadly.
+
+<Frame caption="Enable telemetry under the install's Settings → Configuration. Here it is enabled through the org default.">
+  <img src="/images/guides/install-telemetry/install-toggle.png" alt="Telemetry card with Enable telemetry turned on and Using org default beneath it" style={{ maxWidth: '400px', width: '100%' }} />
+</Frame>
+
+With the runner active, allow about a minute for its settings to refresh and the Collector to start. Generate some application
+activity, then find a recent log, metric, or trace in your backend with the install's `nuon.install.id` resource
+attribute. Check each signal you intend to collect.
+
+If data does not appear, see [troubleshooting](/guides/manage-install-telemetry#troubleshooting).
+
+## Change your backend or rotate credentials
+
+Update the same BYOC secrets, then coordinate with Nuon to sync them and restart the relay. The relay loads these
+values at startup; changing a secret alone does not update a running relay. No credential changes are needed in
+individual customer installs.

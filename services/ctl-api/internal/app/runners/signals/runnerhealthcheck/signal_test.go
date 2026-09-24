@@ -13,6 +13,7 @@ import (
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	basemetrics "github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
@@ -24,10 +25,7 @@ import (
 )
 
 func TestFirstFailedHealthCheckMarksRunnerOfflineWithoutAlerting(t *testing.T) {
-	var workflowSuite testsuite.WorkflowTestSuite
-	env := workflowSuite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
-	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env := newWorkflowTestEnvironment(t)
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
 
@@ -42,10 +40,6 @@ func TestFirstFailedHealthCheckMarksRunnerOfflineWithoutAlerting(t *testing.T) {
 		Run(func(mock.Arguments) { calls = append(calls, "status") }).
 		Return(nil).
 		Once()
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
-		Run(func(mock.Arguments) { calls = append(calls, "status-v2") }).
-		Return(nil).
-		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
 		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
@@ -53,15 +47,12 @@ func TestFirstFailedHealthCheckMarksRunnerOfflineWithoutAlerting(t *testing.T) {
 
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	require.Equal(t, []string{"offline-ts", "status", "status-v2"}, calls)
+	require.Equal(t, []string{"offline-ts", "status"}, calls)
 	env.AssertExpectations(t)
 }
 
 func TestOfflineRunnerDoesNotAlertBeforeDelay(t *testing.T) {
-	var workflowSuite testsuite.WorkflowTestSuite
-	env := workflowSuite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
-	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env := newWorkflowTestEnvironment(t)
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
 
@@ -78,10 +69,7 @@ func TestOfflineRunnerDoesNotAlertBeforeDelay(t *testing.T) {
 }
 
 func TestOfflineRunnerEnqueuesIdempotentAlertAfterDelay(t *testing.T) {
-	var workflowSuite testsuite.WorkflowTestSuite
-	env := workflowSuite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
-	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env := newWorkflowTestEnvironment(t)
 	env.SetDataConverter(signalDataConverter())
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
@@ -113,10 +101,7 @@ func TestOfflineRunnerEnqueuesIdempotentAlertAfterDelay(t *testing.T) {
 }
 
 func TestOfflineRunnerReusesAlertIdempotencyKey(t *testing.T) {
-	var workflowSuite testsuite.WorkflowTestSuite
-	env := workflowSuite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
-	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env := newWorkflowTestEnvironment(t)
 	env.SetDataConverter(signalDataConverter())
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
@@ -142,10 +127,7 @@ func TestOfflineRunnerReusesAlertIdempotencyKey(t *testing.T) {
 }
 
 func TestOfflineRunnerWithoutTimestampArmsAlert(t *testing.T) {
-	var workflowSuite testsuite.WorkflowTestSuite
-	env := workflowSuite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
-	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env := newWorkflowTestEnvironment(t)
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
 
@@ -166,10 +148,7 @@ func TestOfflineRunnerWithoutTimestampArmsAlert(t *testing.T) {
 }
 
 func TestActiveRunnerWithOfflineTimestampDoesNotResetDelay(t *testing.T) {
-	var workflowSuite testsuite.WorkflowTestSuite
-	env := workflowSuite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
-	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env := newWorkflowTestEnvironment(t)
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
 
@@ -177,9 +156,6 @@ func TestActiveRunnerWithOfflineTimestampDoesNotResetDelay(t *testing.T) {
 	sig := &Signal{RunnerID: runner.ID}
 
 	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
-		Return(nil).
-		Once()
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil).
 		Once()
 
@@ -193,10 +169,7 @@ func TestActiveRunnerWithOfflineTimestampDoesNotResetDelay(t *testing.T) {
 }
 
 func TestOfflineCheckRepairsStaleStatusV2(t *testing.T) {
-	var workflowSuite testsuite.WorkflowTestSuite
-	env := workflowSuite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
-	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env := newWorkflowTestEnvironment(t)
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
 
@@ -204,7 +177,7 @@ func TestOfflineCheckRepairsStaleStatusV2(t *testing.T) {
 	runner.StatusV2.Status = app.Status(app.RunnerStatusActive)
 	sig := &Signal{RunnerID: runner.ID}
 
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
+	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil).
 		Once()
 
@@ -218,10 +191,7 @@ func TestOfflineCheckRepairsStaleStatusV2(t *testing.T) {
 }
 
 func TestHealthyCheckClearsOfflineMetadataAndRestoresActive(t *testing.T) {
-	var workflowSuite testsuite.WorkflowTestSuite
-	env := workflowSuite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
-	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env := newWorkflowTestEnvironment(t)
 
 	runner := runnerWithOfflineMetadata(app.RunnerStatusOffline, time.Now().Add(-time.Minute))
 	sig := &Signal{RunnerID: runner.ID}
@@ -230,12 +200,13 @@ func TestHealthyCheckClearsOfflineMetadataAndRestoresActive(t *testing.T) {
 	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2Metadata, mock.MatchedBy(func(req statusactivities.UpdateRunnerStatusV2MetadataRequest) bool {
 		return len(req.Metadata) == 1 && req.Metadata[app.RunnerOfflineTSMetadataKey] == nil
 	})).Run(func(mock.Arguments) { calls = append(calls, "clear") }).Return(nil).Once()
+	env.OnActivity(new(runneractivities.Activities).ToggleInstallCronEmitter, mock.Anything, mock.MatchedBy(func(req runneractivities.ToggleInstallCronEmitterRequest) bool {
+		return req.InstallID == runner.RunnerGroup.OwnerID && req.State == runneractivities.InstallCronsEnabled
+	})).Run(func(mock.Arguments) { calls = append(calls, "toggle-crons") }).
+		Return(&runneractivities.ToggleInstallCronEmitterResponse{}, nil).
+		Once()
 	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
 		Run(func(mock.Arguments) { calls = append(calls, "status") }).
-		Return(nil).
-		Once()
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
-		Run(func(mock.Arguments) { calls = append(calls, "status-v2") }).
 		Return(nil).
 		Once()
 
@@ -245,15 +216,55 @@ func TestHealthyCheckClearsOfflineMetadataAndRestoresActive(t *testing.T) {
 
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	require.Equal(t, []string{"clear", "status", "status-v2"}, calls)
+	require.Equal(t, []string{"clear", "toggle-crons", "status"}, calls)
+	env.AssertExpectations(t)
+}
+
+func TestOfflineInstallRunnerDisablesCronsAfterDelay(t *testing.T) {
+	env := newWorkflowTestEnvironment(t)
+	env.SetDataConverter(signalDataConverter())
+	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
+	env.SetStartTime(now)
+
+	runner := runnerWithOfflineMetadata(app.RunnerStatusOffline, now.Add(-runnerUnhealthyAlertDelay))
+	sig := &Signal{RunnerID: runner.ID}
+
+	env.OnActivity(new(runneractivities.Activities).ToggleInstallCronEmitter, mock.Anything, mock.MatchedBy(func(req runneractivities.ToggleInstallCronEmitterRequest) bool {
+		return req.InstallID == runner.RunnerGroup.OwnerID && req.State == runneractivities.InstallCronsDisabled
+	})).Return(&runneractivities.ToggleInstallCronEmitterResponse{Disabled: 2}, nil).Once()
+	env.OnActivity(new(sharedactivities.Activities).EnqueueSignalToOwner, mock.Anything, mock.Anything).
+		Return(&sharedactivities.EnqueueSignalToOwnerResponse{Deduplicated: true}, nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
+	})
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
+}
+
+func TestHealthyRunnerWithoutRecoveryLeavesCronsAlone(t *testing.T) {
+	env := newWorkflowTestEnvironment(t)
+
+	runner := testRunner(app.RunnerStatusActive)
+	sig := &Signal{RunnerID: runner.ID}
+	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.handleRunnerActive(ctx, runner)
+	})
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
 	env.AssertExpectations(t)
 }
 
 func TestUpdateRunnerStatusStopsWhenLegacyUpdateFails(t *testing.T) {
-	var workflowSuite testsuite.WorkflowTestSuite
-	env := workflowSuite.NewTestWorkflowEnvironment()
-	// loaded CI runners starve the workflow goroutine past the 1s default
-	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	env := newWorkflowTestEnvironment(t)
 
 	runner := testRunner(app.RunnerStatusActive)
 	sig := &Signal{RunnerID: runner.ID}
@@ -268,6 +279,68 @@ func TestUpdateRunnerStatusStopsWhenLegacyUpdateFails(t *testing.T) {
 
 	require.True(t, env.IsWorkflowCompleted())
 	require.Error(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
+}
+
+func TestUpdateRunnerStatusDefersIdempotencyCheckToActivity(t *testing.T) {
+	env := newWorkflowTestEnvironment(t)
+
+	runner := testRunner(app.RunnerStatusActive)
+	sig := &Signal{RunnerID: runner.ID}
+
+	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusActive, "runner healthy")
+	})
+
+	require.NoError(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
+}
+
+func TestExistingHistoryKeepsSplitStatusWrite(t *testing.T) {
+	env := newWorkflowTestEnvironment(t)
+	env.OnGetVersion(atomicRunnerStatusVersion, workflow.DefaultVersion, 1).
+		Return(workflow.DefaultVersion).
+		Once()
+
+	runner := testRunner(app.RunnerStatusActive)
+	sig := &Signal{RunnerID: runner.ID}
+	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).
+		Once()
+	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active install process")
+	})
+
+	require.NoError(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
+}
+
+func TestExistingHistoryOnlyRepairsStaleStatusV2(t *testing.T) {
+	env := newWorkflowTestEnvironment(t)
+	env.OnGetVersion(atomicRunnerStatusVersion, workflow.DefaultVersion, 1).
+		Return(workflow.DefaultVersion).
+		Once()
+
+	runner := testRunner(app.RunnerStatusOffline)
+	runner.StatusV2.Status = app.Status(app.RunnerStatusActive)
+	sig := &Signal{RunnerID: runner.ID}
+	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active install process")
+	})
+
+	require.NoError(t, env.GetWorkflowError())
 	env.AssertExpectations(t)
 }
 
@@ -298,6 +371,18 @@ func runnerWithOfflineMetadata(status app.RunnerStatus, offlineAt time.Time) *ap
 		app.RunnerOfflineTSMetadataKey: float64(offlineAt.Unix()),
 	}
 	return runner
+}
+
+func newWorkflowTestEnvironment(t *testing.T) *testsuite.TestWorkflowEnvironment {
+	t.Helper()
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
+	return env
+}
+
+func testLogger() *zap.Logger {
+	return zap.NewNop()
 }
 
 func testTemporalMetricsWriter(t *testing.T) tmetrics.Writer {

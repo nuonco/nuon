@@ -83,6 +83,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		Signal: &executeflow.Signal{
 			WorkflowID: wkflw.ID,
 		},
+		SignalOwnerID:   wkflw.ID,
+		SignalOwnerType: (&app.Workflow{}).TableName(),
 	}); err != nil {
 		return fmt.Errorf("unable to enqueue flow execution signal: %w", err)
 	}

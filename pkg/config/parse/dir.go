@@ -33,6 +33,8 @@ type ConfigDir struct {
 	Permissions    *config.PermissionsConfig `name:"permissions"`
 	PermissionsDir []*config.AppAWSIAMRole   `name:"permissions"`
 
+	NamedPoliciesDir []config.NamedIAMPolicy `name:"permissions/policies"`
+
 	OperationRolesConfig *config.OperationRolesConfig `name:"operation_roles"`
 
 	KubernetesContexts    *config.KubernetesContextsConfig `name:"kubernetes_contexts"`
@@ -118,11 +120,11 @@ func (c *ConfigDir) getInputs() (*config.AppInputConfig, error) {
 }
 
 func (c *ConfigDir) getPermissions() (*config.PermissionsConfig, error) {
-	if c.Permissions == nil && len(c.PermissionsDir) < 1 {
+	if c.Permissions == nil && len(c.PermissionsDir) < 1 && len(c.NamedPoliciesDir) < 1 {
 		return nil, nil
 	}
 
-	if c.Permissions != nil && len(c.PermissionsDir) > 0 {
+	if c.Permissions != nil && (len(c.PermissionsDir) > 0 || len(c.NamedPoliciesDir) > 0) {
 		return nil, ParseErr{
 			Description: "Can not provide permissions both with a permissions.toml and permissions/ directory",
 			Err:         errors.New("Can not provide permissions both with a permissions.toml and permissions/ directory"),
@@ -134,7 +136,8 @@ func (c *ConfigDir) getPermissions() (*config.PermissionsConfig, error) {
 	}
 
 	return &config.PermissionsConfig{
-		Roles: c.PermissionsDir,
+		Roles:         c.PermissionsDir,
+		NamedPolicies: c.NamedPoliciesDir,
 	}, nil
 }
 
@@ -185,6 +188,16 @@ func (c *ConfigDir) getBranches() (*config.AppBranchConfig, []*config.AppBranchC
 		return nil, nil, ParseErr{
 			Description: "Can not provide branches both with a branch.toml and branches/ directory",
 			Err:         errors.New("Can not provide branches both with a branch.toml and branches/ directory"),
+		}
+	}
+	if c.Branch != nil {
+		if err := c.Branch.Validate(); err != nil {
+			return nil, nil, err
+		}
+	}
+	for _, branch := range c.Branches {
+		if err := branch.Validate(); err != nil {
+			return nil, nil, err
 		}
 	}
 	return c.Branch, c.Branches, nil

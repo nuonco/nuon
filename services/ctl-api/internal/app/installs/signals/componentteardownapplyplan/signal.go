@@ -10,6 +10,7 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/deployerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/stategen"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownsyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -25,6 +26,8 @@ import (
 )
 
 const SignalType signal.SignalType = "component-teardown-apply-plan"
+
+const planCompositeErrorVersion = "teardown-apply-plan-composite-error-v1"
 
 type Signal struct {
 	signal.LifecycleBase
@@ -202,7 +205,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update install workflow")
 	}
 
-	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installDeploy.LogStream)
+	logStream, err := activities.AwaitGetLogStreamByLogStreamID(ctx, installDeploy.LogStream.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to hydrate log stream")
+	}
+	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
@@ -226,12 +233,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
 	s.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, app.InstallComponentStatusInactive, "successfully torn down")
 
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
 	if err := stategen.HintOrGenerate(ctx, stategen.Request{
-		StateGenV2:      statemanager.UseStateGenV2(orgEnabled, install.Metadata),
 		InstallID:       install.ID,
 		Targets:         statemanager.TargetsForHint(statemanager.HintComponentTeardown, s.InstallComponentID),
 		ForceAll:        true,
@@ -310,6 +312,13 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	s.runnerJobID = runnerJob.ID
 
 	// NOTE(jm): this is probably going to need to be refactored
+	planCompositeErrorsEnabled := workflow.GetVersion(ctx, planCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if planCompositeErrorsEnabled {
+		_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
+			InstallDeployID: installDeploy.ID,
+		})
+	}
+
 	deployPlan, err := plan.AwaitCreateDeployPlan(ctx, &plan.CreateDeployPlanRequest{
 		InstallDeployID: installDeploy.ID,
 		InstallID:       install.ID,
@@ -318,6 +327,14 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	})
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
+		if planCompositeErrorsEnabled && deployerrors.IsDeployPlanRenderFailed(err) {
+			_ = activities.AwaitSetInstallDeployPlanCompositeError(ctx, activities.SetInstallDeployPlanCompositeErrorRequest{
+				InstallDeployID: installDeploy.ID,
+				ComponentName:   installDeploy.ComponentName,
+				Stage:           deployerrors.PlanRenderStage(err),
+				Detail:          deployerrors.PlanRenderDetail(err),
+			})
+		}
 		return errors.Wrap(err, "unable to create deploy plan")
 	}
 

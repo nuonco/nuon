@@ -1,6 +1,7 @@
 # Admin Dashboard (React + BFF)
 
-Internal admin dashboard for Nuon operations. A React SPA backed by a JSON BFF served by ctl-api. Completely separate from the customer-facing `dashboard-ui` SPA.
+Internal ops UI for Nuon operators (not the customer-facing `dashboard-ui`). A React SPA backed by a JSON BFF served by
+ctl-api.
 
 - **Port**: 8087 (configured via `admin_dashboard_http_port` in `internal/config.go`)
 - **URL**: `http://localhost:8087` when running locally

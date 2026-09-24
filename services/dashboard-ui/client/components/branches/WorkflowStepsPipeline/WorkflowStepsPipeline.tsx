@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Button } from '@/components/common/Button'
 import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
 import { Loading } from '@/components/common/Loading'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
 import type { TInstallWorkflowStep } from '@/types'
 import { getWorkflowStepTitle } from '@/utils/workflow-utils'
-import { stepStatusCategory, type TStepStatusCategory } from '../shared/step-status'
+import {
+  stepStatusCategory,
+  type TStepStatusCategory,
+} from '../shared/step-status'
 
 interface IWorkflowStepsPipeline {
   steps: TInstallWorkflowStep[]
@@ -22,90 +27,6 @@ const STEP_STATUS_LABELS: Record<TStepStatusCategory, string> = {
   pending: 'Pending',
 }
 
-const StatusIcon = ({ category }: { category: TStepStatusCategory }) => {
-  if (category === 'success') {
-    return (
-      <div
-        aria-hidden
-        className="w-[26px] h-[26px] rounded-full bg-green-500 flex items-center justify-center shrink-0"
-      >
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-          <path d="M2.5 6.5L5.5 9.5L10.5 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
-    )
-  }
-
-  if (category === 'error') {
-    return (
-      <div
-        aria-hidden
-        className="w-[26px] h-[26px] rounded-full bg-red-500 flex items-center justify-center shrink-0"
-      >
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-          <path d="M4 4L9 9M9 4L4 9" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
-      </div>
-    )
-  }
-
-  if (category === 'active') {
-    return (
-      <div
-        aria-hidden
-        className="w-[26px] h-[26px] rounded-full bg-blue-500 flex items-center justify-center shrink-0"
-      >
-        <svg className="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="6" stroke="white" strokeOpacity="0.3" strokeWidth="2" />
-          <path d="M8 2 A6 6 0 0 1 14 8" stroke="white" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      </div>
-    )
-  }
-
-  if (category === 'awaiting') {
-    return (
-      <div
-        aria-hidden
-        className="w-[26px] h-[26px] rounded-full bg-amber-500 flex items-center justify-center shrink-0"
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <circle cx="7" cy="7" r="5.25" stroke="white" strokeWidth="1.5" />
-          <path d="M7 4.25V7L8.75 8.25" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
-    )
-  }
-
-  return (
-    <div
-      aria-hidden
-      className="w-[26px] h-[26px] rounded-full flex items-center justify-center shrink-0 ring-1 ring-inset ring-cool-grey-400/40 dark:ring-dark-grey-500/40"
-    >
-      <div className="w-[5px] h-[5px] rounded-full bg-cool-grey-400 dark:bg-dark-grey-500" />
-    </div>
-  )
-}
-
-const Arrow = ({ filled }: { filled: boolean }) => (
-  <svg
-    aria-hidden
-    width="20"
-    height="20"
-    viewBox="0 0 20 20"
-    fill="none"
-    className={`shrink-0 self-center transition-colors ${filled ? 'text-green-500' : 'text-cool-grey-300 dark:text-cool-grey-600'}`}
-  >
-    <path
-      d="M4 10H16M16 10L11 5M16 10L11 15"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-)
-
 const NavButton = ({
   direction,
   onClick,
@@ -113,19 +34,20 @@ const NavButton = ({
   direction: 'left' | 'right'
   onClick: () => void
 }) => (
-  <button
-    type="button"
+  <Button
+    variant="icon"
     aria-label={direction === 'left' ? 'Previous steps' : 'Next steps'}
     onClick={onClick}
     className={cn(
-      'absolute top-1/2 z-20 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full',
-      'border bg-white dark:bg-dark-grey-800 shadow-sm',
-      'text-cool-grey-600 dark:text-cool-grey-300 hover:brightness-105',
+      'absolute top-1/2 z-20 -translate-y-1/2 bg-white dark:bg-dark-grey-700 shadow-sm',
       direction === 'left' ? 'left-1' : 'right-1'
     )}
   >
-    <Icon variant={direction === 'left' ? 'CaretLeftIcon' : 'CaretRightIcon'} size={16} />
-  </button>
+    <Icon
+      variant={direction === 'left' ? 'CaretLeftIcon' : 'CaretRightIcon'}
+      size={16}
+    />
+  </Button>
 )
 
 export const WorkflowStepsPipeline = ({
@@ -197,7 +119,7 @@ export const WorkflowStepsPipeline = ({
     <div className="relative">
       {canScrollLeft && (
         <>
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-white dark:from-dark-grey-900 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-[var(--background)] to-transparent" />
           <NavButton direction="left" onClick={() => scrollByPage(-1)} />
         </>
       )}
@@ -206,64 +128,40 @@ export const WorkflowStepsPipeline = ({
         ref={viewportRef}
         className="overflow-x-auto overflow-y-hidden snap-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
-        <div className="flex items-stretch gap-2 py-2 px-1 min-w-max">
+        <div className="flex min-w-full overflow-hidden rounded-md border divide-x">
           {steps.map((step, idx) => {
             const category = stepStatusCategory(step.status?.status)
             const isSelected = selectedStepId === step.id
-            const prevStep = idx > 0 ? steps[idx - 1] : null
-            const prevSuccess = stepStatusCategory(prevStep?.status?.status) === 'success'
-
-            let cardBorder = ''
-            let cardBg = 'bg-cool-grey-50 dark:bg-dark-grey-800'
-            let cardRing = ''
-
-            if (isSelected) {
-              cardBorder = 'border-primary-500 dark:border-primary-400'
-              cardBg = 'bg-primary-50 dark:bg-primary-500/15'
-              cardRing = 'ring-2 ring-primary-500/20'
-            } else if (category === 'active') {
-              cardBorder = 'border-blue-400/50 dark:border-blue-500/50'
-              cardBg = 'bg-blue-50/40 dark:bg-blue-500/10'
-            } else if (category === 'awaiting') {
-              cardBorder = 'border-amber-400/50 dark:border-amber-500/50'
-              cardBg = 'bg-amber-50/40 dark:bg-amber-500/10'
-            } else if (category === 'success') {
-              cardBorder = 'border-green-400/50 dark:border-green-500/40'
-              cardBg = 'bg-green-50/30 dark:bg-dark-grey-800'
-            } else if (category === 'error') {
-              cardBorder = 'border-red-400/50 dark:border-red-500/40'
-              cardBg = 'bg-red-50/30 dark:bg-dark-grey-800'
-            }
 
             return (
-              <div key={step.id || idx} className="flex items-stretch gap-2 flex-1 min-w-0">
-                {idx > 0 && <Arrow filled={prevSuccess} />}
-
-                <button
-                  type="button"
-                  ref={isSelected ? selectedCardRef : undefined}
-                  aria-current={isSelected ? 'step' : undefined}
-                  className={cn(
-                    'snap-start scroll-mx-12 flex flex-col flex-1 min-w-[168px] items-center justify-center gap-2 px-4 py-4 rounded-[10px] cursor-pointer border transition-all hover:brightness-105',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400/80',
-                    cardBorder,
-                    cardBg,
-                    cardRing
-                  )}
-                  onClick={() => onSelectStep(step)}
-                >
-                  <StatusIcon category={category} />
-
+              <Button
+                key={step.id || idx}
+                variant="ghost"
+                ref={isSelected ? selectedCardRef : undefined}
+                aria-current={isSelected ? 'step' : undefined}
+                className={cn(
+                  'snap-start scroll-mx-12 !h-auto min-h-24 min-w-40 flex-1 basis-40 !items-start !justify-start !rounded-none !px-4 !py-3',
+                  isSelected && 'bg-cool-grey-100 dark:bg-dark-grey-700'
+                )}
+                onClick={() => onSelectStep(step)}
+              >
+                <Status
+                  status={step.status?.status}
+                  variant="timeline"
+                  isWithoutText
+                  iconSize={14}
+                />
+                <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
                   <Text
-                    variant="body"
+                    variant="subtext"
                     weight="strong"
-                    className="text-center leading-tight max-w-[160px] text-cool-grey-900 dark:text-cool-grey-100"
+                    className="line-clamp-2 text-left"
                   >
                     {getWorkflowStepTitle(step) || 'Unknown'}
                   </Text>
-
-                  <span className="sr-only">{STEP_STATUS_LABELS[category]}</span>
-
+                  <span className="sr-only">
+                    {STEP_STATUS_LABELS[category]}
+                  </span>
                   {step.execution_time ? (
                     <Duration
                       nanoseconds={step.execution_time}
@@ -272,8 +170,8 @@ export const WorkflowStepsPipeline = ({
                       family="mono"
                     />
                   ) : null}
-                </button>
-              </div>
+                </span>
+              </Button>
             )
           })}
         </div>
@@ -281,7 +179,7 @@ export const WorkflowStepsPipeline = ({
 
       {canScrollRight && (
         <>
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-white dark:from-dark-grey-900 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-[var(--background)] to-transparent" />
           <NavButton direction="right" onClick={() => scrollByPage(1)} />
         </>
       )}

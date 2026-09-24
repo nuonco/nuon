@@ -11,11 +11,26 @@ import { getBranchWorkflowRun } from '@/lib'
 import { isActiveStepStatus } from '@/components/branches/shared/step-status'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { scrollElementIntoView } from '@/utils/scroll'
+import type { TInstallWorkflowStep } from '@/types'
 import { WorkflowRunPanel } from './WorkflowRunPanel'
 
 interface IWorkflowRunPanelContainer extends IPanel {
   onClose: () => void
 }
+
+const INTERNAL_STEP_NAMES = new Set([
+  'check ignored changes',
+  'setup preview',
+  'preview install impact',
+])
+
+export const filterWorkflowPanelSteps = (steps: TInstallWorkflowStep[]) =>
+  steps.filter(
+    (step) =>
+      step.owner_type !== 'components' &&
+      step.execution_type !== 'hidden' &&
+      !INTERNAL_STEP_NAMES.has(step.name)
+  )
 
 export const WorkflowRunPanelContainer = ({
   onClose,
@@ -40,7 +55,7 @@ export const WorkflowRunPanelContainer = ({
     refetchInterval: 5000,
   })
 
-  const steps = (run?.steps || []).filter((s) => s.owner_type !== 'components')
+  const steps = filterWorkflowPanelSteps(run?.steps || [])
   const activeStep = steps.find((step) =>
     isActiveStepStatus(step.status?.status)
   )

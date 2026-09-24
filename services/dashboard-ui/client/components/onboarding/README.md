@@ -49,6 +49,36 @@ export function MyFlow() {
 
 ---
 
+## Prototype a Flow in Ladle
+
+`PlaygroundFlow.stories.tsx` runs the real wizard chrome (nav, progress, back, step transitions) with fake steps
+that make no API calls, so you can click a whole flow end to end.
+
+```bash
+bun run dev:ladle   # http://localhost:61000 → Onboarding/Playground
+```
+
+Stories: `FiveStep`, `ThreeStep`, `ChoiceHeavy`, `Minimal`.
+
+To try a new experience, copy a flow array in that file and edit it:
+
+```tsx
+const MY_FLOW: IWizardStepDef[] = [
+  HERO_STEP,
+  { id: 'pricing', title: 'Pick a plan', navLabel: 'Plan', component: MyStep },
+  SUMMARY_STEP,
+]
+
+export const MyFlow = () => <Playground steps={MY_FLOW} />
+MyFlow.meta = { fullBleed: true }
+```
+
+A step is any component taking `IWizardStepComponentProps` — call `onAdvance()` to move forward, `setSharedData(key, val)`
+to pass values to later steps. Reuse `NextButton`, `ChoiceCard`, and `makeChoiceStep` from the same file. Nothing in
+this file is imported by production code.
+
+---
+
 ## `OnboardingWizard` Props
 
 ```ts

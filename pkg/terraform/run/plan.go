@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"github.com/hashicorp/go-hclog"
+
 	"github.com/nuonco/nuon/pkg/pipeline"
 	callbackmappers "github.com/nuonco/nuon/pkg/pipeline/mappers/callbacks"
 	execmappers "github.com/nuonco/nuon/pkg/pipeline/mappers/exec"

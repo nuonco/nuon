@@ -17,7 +17,7 @@ Install configs are defined by a [JSON Schema](/config-ref/install) that lists e
 Apply a generated config with the Nuon CLI:
 
 ```bash
-nuon installs sync --file <your-install>.toml --app-id <your-app-id> --yes
+nuon installs sync --file <your-install>.toml --app-id <your-app-id> --confirm
 ```
 
 For the full property list, see the [Install configuration reference](/config-ref/install).
@@ -39,7 +39,7 @@ See [Label badges](/guides/using-readmes#label-badge) for how labels render in i
 
 ### Dynamic labels
 
-Label values can use the [interpolation syntax](/guides/using-variables) to render from install state:
+Label values can use [Nuon templating](/guides/using-variables) to render from install state:
 
 ```toml install.toml
 name = "customer-acme"
@@ -76,6 +76,12 @@ certificate   = false
 ```
 
 See the [Toggleable Components guide](/guides/toggleable-components) for how toggles reconcile on sync, dependency validation, and imperative dashboard/CLI toggles.
+
+## Install telemetry
+
+If your Nuon BYOC deployment has a telemetry relay configured, set `[telemetry]` in the install config to enable
+or disable forwarding of application logs, metrics, and traces. See
+[Manage Install Telemetry](/guides/manage-install-telemetry) for the configuration and org-default behavior.
 
 ## Monitoring in-progress workflows
 

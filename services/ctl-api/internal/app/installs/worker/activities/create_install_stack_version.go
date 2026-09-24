@@ -128,7 +128,7 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 			obj.TemplateURL = loc.templateURL
 			obj.QuickLinkURL = loc.quickLinkURL
 
-			if req.Platform == "aws" && req.HasCustomNestedStacks {
+			if (req.Platform == "aws" || req.Platform == "azure") && req.HasCustomNestedStacks {
 				obj.CustomStacksAWSBucketKey = fmt.Sprintf("templates/%s/%s-custom.json", req.InstallID, id)
 				baseURL := strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/")
 				obj.CustomStacksTemplateURL = fmt.Sprintf("%s/%s", baseURL, obj.CustomStacksAWSBucketKey)

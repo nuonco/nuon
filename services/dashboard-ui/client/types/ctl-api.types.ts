@@ -1,22 +1,71 @@
 import { components } from '@/types/nuon-oapi-v3'
 import type { Interests as TInterests } from '@/components/interests/types'
 
-export type TAppBranch = components['schemas']['app.AppBranch'] & {
+export type TAppBranch = Omit<
+  components['schemas']['app.AppBranch'],
+  'configs' | 'latest_run'
+> & {
+  configs?: TAppBranchConfig[]
   latest_run?: TAppBranchRun
 }
-export type TAppBranchConfig = components['schemas']['app.AppBranchConfig'] & {
+export type TAppBranchConfig = Omit<
+  components['schemas']['app.AppBranchConfig'],
+  'run_config'
+> & {
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean
   preview_config?: TAppBranchPreviewConfig
+  run_config?: TAppBranchRunConfig
 }
 export type TAppBranchInstallGroup =
   components['schemas']['app.AppBranchInstallGroup']
-export type TAppBranchRun = components['schemas']['app.AppBranchRun'] & {
+export type TAppBranchRun = Omit<
+  components['schemas']['app.AppBranchRun'],
+  'metadata' | 'preview'
+> & {
   awaiting_approval?: boolean
   preview?: TAppBranchRunPreview
+  metadata?: TAppBranchRunMetadata
 }
 
-export type TAppBranchRunPreviewMode = 'plan-only' | 'apply' | 'build-only'
+export type TAppBranchRunMode =
+  | 'push'
+  | 'all'
+  | 'on_tag'
+  | 'on_tag_prefix'
+  | 'on_github_label'
+  | 'manual_only'
+
+export type TAppBranchRunConfig = {
+  mode?: TAppBranchRunMode
+  tag_prefix?: string
+  github_label?: string
+}
+
+export type TAppBranchRunMetadata = {
+  trigger?:
+    | 'manual'
+    | 'push'
+    | 'pull_request'
+    | 'tag'
+    | 'github_label'
+    | 'onboarding'
+  head_sha?: string
+  git_ref?: string
+  base_branch?: string
+  pr_number?: number
+  tag?: string
+  github_label?: string
+  is_draft?: boolean
+  run_mode?: string
+  tag_prefix?: string
+}
+
+export type TAppBranchRunPreviewMode =
+  | 'none'
+  | 'plan-only'
+  | 'apply'
+  | 'build-only'
 export type TAppBranchRunPreviewSource = 'pr' | 'commit' | 'branch' | 'local'
 
 export type TAppBranchPreviewConfig = {
@@ -26,6 +75,7 @@ export type TAppBranchPreviewConfig = {
   label_selector?: { match_labels?: Record<string, string> }
   set_statuses?: boolean
   comment?: boolean
+  ignore_drafts?: boolean
 }
 
 export type TAppBranchRunPreview = {
@@ -35,6 +85,7 @@ export type TAppBranchRunPreview = {
   install_id?: string
   install_name?: string
   git_ref?: string
+  is_draft_mode?: boolean
   resolved_preview_config?: TAppBranchPreviewConfig
   ignore_changes_regex?: string
   send_statuses_on_ignore?: boolean
@@ -91,6 +142,9 @@ export type TAppSandboxBuild = {
   updated_at?: string
   org_id?: string
   app_id?: string
+  app_branch_id?: string
+  app_branch_run_id?: string
+  app_branch_run?: TAppBranchRun
   app_config_id?: string
   app_sandbox_config_id?: string
   status?: string
@@ -103,7 +157,7 @@ export type TAppSandboxBuild = {
   composite_error?: TCompositeError
   log_stream?: { id?: string; open?: boolean }
   runner_job?: TRunnerJob
-  vcs_connection_commit?: { sha?: string; message?: string }
+  vcs_connection_commit?: TVCSCommit
 }
 // Policy types - manually defined as API schema may not be deployed yet
 export type TAppPolicyType =
@@ -405,14 +459,30 @@ export type TComponentConfig =
   components['schemas']['app.ComponentConfigConnection']
 export type TComponentType = components['schemas']['app.ComponentType']
 
+export type TSignatureVerification =
+  components['schemas']['signature.Verification']
+export type TSignatureAuthority = components['schemas']['signature.Authority']
+export type TSignatureAuthorityType =
+  components['schemas']['signature.AuthorityType']
+
 export type TComponentBuild = components['schemas']['app.ComponentBuild']
 export type TBuild = TComponentBuild & {
+  app_branch_run?: TAppBranchRun
   org_id: string
   build_runner_job_id?: string | null
 }
 
 export type TOrg = components['schemas']['app.Org']
 export type TOrgInvite = components['schemas']['app.OrgInvite']
+// Hand-written mirror of app.OrgFeatureInfo: the generated schema lags until
+// the next SDK regen, and the dashboard reads `deprecated` before then.
+export type TOrgFeatureInfo = {
+  name: string
+  description: string
+  forced?: boolean
+}
+export type TOrgMember = components['schemas']['app.OrgMember']
+export type TOrgMemberStatus = components['schemas']['app.OrgMemberStatus']
 export type TOrgStats = {
   install_names: string[]
   app_count: number
@@ -497,7 +567,10 @@ export type TPhoneHomeAuthStatus = {
   last_rejected_at?: string
 }
 
-export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
+export type TInstall = Omit<
+  components['schemas']['app.Install'],
+  'lifecycle_phase' | 'sandbox'
+> & {
   app?: components['schemas']['app.App']
   created_by?: components['schemas']['app.Account']
   gcp_account?: { project_id?: string; region?: string }
@@ -532,6 +605,8 @@ export type TInstallRoleUsage = components['schemas']['app.InstallRoleUsage']
 export type TInstallInputs = components['schemas']['app.InstallInputs']
 export type TInstallComponentOutputs = Record<string, string>
 export type TInstallConfig = components['schemas']['app.InstallConfig']
+export type TInstallTelemetrySettings =
+  components['schemas']['service.InstallTelemetrySettings']
 export type TInstallAuditLog = components['schemas']['app.InstallAuditLog']
 export type TDriftedObject = components['schemas']['app.DriftedObject']
 export type TInstallResource =
@@ -726,6 +801,7 @@ export type TVCSConnectionStatus = {
 }
 export type TVCSConnectionRepo = {
   id: number
+  owner_id: number
   name: string
   full_name: string
   description?: string
@@ -927,7 +1003,9 @@ export interface TUserJourney {
 export type TInstallWorkflow = components['schemas']['app.Workflow']
 export type TInstallWorkflowStep = components['schemas']['app.WorkflowStep']
 export type TWorkflow = components['schemas']['app.Workflow']
+export type TWorkflowType = components['schemas']['app.WorkflowType']
 export type TWorkflowStep = components['schemas']['app.WorkflowStep'] & {
+  status?: TCompositeStatus
   log_stream?: { id?: string; open?: boolean }
   links?: {
     event_wait?: TWorkflowStepEventWait
@@ -1084,7 +1162,9 @@ export type TAvailableRolesResponse =
 export type TOperationType = components['schemas']['app.OperationType']
 export type TPrincipalType = 'component' | 'sandbox' | 'action'
 
-export type TCompositeStatus = components['schemas']['app.CompositeStatus']
+export type TCompositeStatus = components['schemas']['app.CompositeStatus'] & {
+  composite_error?: TCompositeError
+}
 
 export type TOnboarding = components['schemas']['app.Onboarding']
 export type TExampleApp = components['schemas']['service.ExampleApp']
@@ -1157,4 +1237,162 @@ export type TInstallCreationApproval = {
   status: 'pending' | 'approved' | 'denied'
   approved_at?: string
   approved_by_id?: string
+}
+
+// Install updates — hand types (endpoint not yet in generated spec)
+export type TInstallUpdateImpactReason = {
+  from: string
+  edge: string
+}
+
+export type TInstallUpdateComponentDiff = {
+  component_id: string
+  component_name?: string
+  component_type?: string
+  old_checksum?: string
+  new_checksum?: string
+  old_build_id?: string
+  new_build_id?: string
+  build_changed?: boolean
+  impact_reasons?: TInstallUpdateImpactReason[]
+}
+
+export type TInstallUpdateDiff = {
+  added: TInstallUpdateComponentDiff[]
+  removed: TInstallUpdateComponentDiff[]
+  changed: TInstallUpdateComponentDiff[]
+  unchanged: TInstallUpdateComponentDiff[]
+  sandbox_changed?: boolean
+  sandbox_build_changed?: boolean
+  stack_changed?: boolean
+  stack_impacts?: string[]
+  stack_impact_reasons?: TInstallUpdateImpactReason[]
+}
+
+export type TInstallAppConfigUpdate = {
+  version: TInstallAppConfigVersion
+  diff?: TInstallUpdateDiff
+}
+
+export type TInstallUpdate = {
+  id: string
+  type: 'app_config' | 'inputs' | 'stack' | 'install_config'
+  created_at: string
+  created_by_id?: string
+  workflow_id?: string
+  app_config?: TInstallAppConfigUpdate
+  inputs?: {
+    input_config_id?: string
+    keys: string[]
+  }
+  stack?: {
+    version_id: string
+    status: TCompositeStatus
+    role_diff?: unknown
+    input_diff?: unknown
+    run_type?: string
+  }
+  install_config?: {
+    version: TInstallConfigVersion
+  }
+}
+
+export type TInstallUpdatesResponse = {
+  updates: TInstallUpdate[]
+  current_app_branch_run?: TAppBranchRun
+  page: number
+  limit: number
+  has_more: boolean
+}
+
+// ─── Install deployments ──────────────────────────────────────────────────────
+
+export type TInstallDeploymentRecordType =
+  | 'provision'
+  | 'reprovision'
+  | 'sandbox_reprovision'
+  | 'app_branch_update'
+  | 'component_deploy'
+  | 'image_update'
+  | 'stack_update'
+  | 'install_config_update'
+
+export type TInstallDeploymentStatus =
+  | 'active'
+  | 'pending'
+  | 'in-progress'
+  | 'error'
+  | 'warn'
+  | 'deprovisioned'
+  | 'unknown'
+  | 'success'
+
+export type TInstallDeploymentChangeScope =
+  | 'stack'
+  | 'sandbox'
+  | 'component'
+  | 'image'
+  | 'app_branch'
+  | 'install_config'
+  | 'workflow'
+
+export type TInstallDeploymentConfigChange = {
+  path: string
+  operation: 'add' | 'remove' | 'change'
+  previous_value?: string
+  next_value?: string
+  is_redacted?: boolean
+}
+
+export type TInstallDeploymentChangeGroup = {
+  id: string
+  scope: TInstallDeploymentChangeScope
+  label: string
+  resource_name?: string
+  summary: string
+  changes: TInstallDeploymentConfigChange[]
+  file_diff?: string
+  diff_language?: 'toml' | 'yaml' | 'json' | 'diff'
+}
+
+export type TInstallDeploymentAffectedResources = {
+  stack?: boolean
+  sandbox?: boolean
+  components: string[]
+  images: string[]
+}
+
+export type TInstallDeploymentRecord = {
+  id: string
+  type: TInstallDeploymentRecordType
+  status: TInstallDeploymentStatus
+  created_at: string
+  title: string
+  summary: string
+  workflow?: {
+    id: string
+    name: string
+    type: string
+  }
+  app_branch?: {
+    id: string
+    name: string
+    run_id?: string
+    sha?: string
+  }
+  component_name?: string
+  image?: {
+    repository: string
+    previous_tag?: string
+    next_tag: string
+  }
+  affected_resources: TInstallDeploymentAffectedResources
+  change_groups: TInstallDeploymentChangeGroup[]
+}
+
+export type TInstallDeploymentsResponse = {
+  deployments: TInstallDeploymentRecord[]
+  page: number
+  limit: number
+  has_more: boolean
 }

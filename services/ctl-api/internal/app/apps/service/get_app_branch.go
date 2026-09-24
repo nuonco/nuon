@@ -69,7 +69,7 @@ func (s *service) getAppBranch(ctx context.Context, orgID, appID, appBranchID st
 			OrgID: orgID,
 			AppID: appID,
 		}).
-		Preload("Queue")
+		Preload("Queue", app.DefaultQueueScope)
 
 	if latestConfig {
 		// Only preload the latest config with its relationships
@@ -88,5 +88,10 @@ func (s *service) getAppBranch(ctx context.Context, orgID, appID, appBranchID st
 		return nil, fmt.Errorf("unable to get app branch: %w", res.Error)
 	}
 
-	return &branch, nil
+	branches := []app.AppBranch{branch}
+	if err := s.attachLatestBranchRuns(ctx, branches); err != nil {
+		return nil, fmt.Errorf("unable to get latest branch run: %w", err)
+	}
+
+	return &branches[0], nil
 }

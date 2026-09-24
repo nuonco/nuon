@@ -14,12 +14,12 @@ Navigate to an install in the dashboard and click **Manage** > **Run adhoc actio
 - **Name** (optional) — a display name shown in workflow history.
 - **Single Command / Bash Script** — choose between a single-line shell command or a multi-line bash script.
 - **Timeout** — execution timeout in seconds (1–3600, default: 300).
-- **Environment Variables** — key/value pairs injected into the execution environment. Values support Go template interpolation (see below).
+- **Environment Variables** — key/value pairs injected into the execution environment. Values support Go templating (see below).
 - **Role** — the IAM role the runner will assume when executing the action.
 
 After submitting, you'll be taken directly to the workflow run to monitor logs and status.
 
-## Template interpolation
+## Templating
 
 Both commands and scripts support Go template syntax for injecting install state at execution time. For example:
 

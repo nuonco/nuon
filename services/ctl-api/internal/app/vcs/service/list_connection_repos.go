@@ -7,11 +7,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v50/github"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type VCSConnectionRepo struct {
 	ID            int64  `json:"id"`
+	OwnerID       int64  `json:"owner_id"`
 	Name          string `json:"name"`
 	FullName      string `json:"full_name"`
 	Description   string `json:"description,omitempty"`
@@ -72,6 +74,7 @@ func buildReposResponse(ghRepos []*github.Repository) *VCSConnectionReposRespons
 	for i, r := range ghRepos {
 		repos[i] = VCSConnectionRepo{
 			ID:            r.GetID(),
+			OwnerID:       r.GetOwner().GetID(),
 			Name:          r.GetName(),
 			FullName:      r.GetFullName(),
 			Description:   r.GetDescription(),

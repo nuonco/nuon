@@ -1,14 +1,12 @@
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
+import { InstallCronOfflineBanner } from '@/components/installs/InstallCronOfflineBanner'
 import { SandboxRunsTimeline } from '@/components/sandbox/SandboxRunsTimeline'
 import { ManagementDropdown } from '@/components/sandbox/management/ManagementDropdown'
 import { SandboxConfigCard } from '@/components/sandbox/SandboxConfigCard'
 import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
-import {
-  HistoryPanelButton,
-  HistoryRail,
-} from '@/components/layout/HistoryRail'
+import { HistoryPanelButton } from '@/components/layout/HistoryPanelButton'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -56,25 +54,28 @@ export const Sandbox = () => {
             id={install?.sandbox?.id}
             actions={
               <>
-                <HistoryPanelButton
-                  title="Sandbox history"
-                  history={history}
-                />
+                <HistoryPanelButton title="Sandbox history" history={history} />
                 <ManagementDropdown />
               </>
             }
           />
         }
       >
-        <HistoryRail title="Sandbox history" history={history}>
-          {driftedObject ? <DriftedBanner drifted={driftedObject} /> : null}
+        {driftedObject ? <DriftedBanner drifted={driftedObject} /> : null}
 
-          <SandboxConfigCard config={sandboxConfig} loading={!sandboxConfig} />
+        <InstallCronOfflineBanner
+          runnerStatus={install?.runner_status}
+          kind="sandbox_drift"
+          hasCronSchedule={!!sandboxConfig?.drift_schedule}
+          orgId={org?.id}
+          installId={install?.id}
+        />
 
-          <TerraformWorkspaceCard
-            componentType={isPulumi ? 'pulumi' : 'terraform_module'}
-          />
-        </HistoryRail>
+        <SandboxConfigCard config={sandboxConfig} loading={!sandboxConfig} />
+
+        <TerraformWorkspaceCard
+          componentType={isPulumi ? 'pulumi' : 'terraform_module'}
+        />
       </DetailPage>
     </>
   )

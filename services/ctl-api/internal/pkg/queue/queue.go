@@ -10,11 +10,12 @@ import (
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
 )
 
 const (
-	AppTriggersQueueName = "app-triggers"
-	OrgSignalsQueueName  = "org-signals"
+	AppTriggersQueueName = queuenames.AppTriggersQueueName
+	OrgSignalsQueueName  = queuenames.OrgSignalsQueueName
 )
 
 type QueueWorkflowRequest struct {
@@ -43,6 +44,10 @@ type QueueState struct {
 // @id-template queue-{{.QueueID}}
 // @memo type queue
 func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error {
+	// Queues outlive individual signals and must not inherit their log streams,
+	// including incomplete streams persisted in the context of a retrying queue.
+	ctx = cctx.ClearLogStreamWorkflowContext(ctx)
+
 	q := &queue{
 		cfg:             w.cfg,
 		v:               w.v,

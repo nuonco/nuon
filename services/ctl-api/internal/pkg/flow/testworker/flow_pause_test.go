@@ -61,4 +61,5 @@ func (e *FlowTestSuite) TestPauseAndUnpause() {
 		require.Equal(e.T(), app.StatusSuccess, step.Status.Status,
 			"step %s should be success after unpause", step.Name)
 	}
+	e.assertTemporalDrained(ctx, flw.ID)
 }

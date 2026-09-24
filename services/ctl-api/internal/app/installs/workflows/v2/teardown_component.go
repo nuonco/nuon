@@ -10,9 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownsyncandplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -38,21 +36,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	dg := newGenCtx(sg, flw, installID, appCfg, awData)
 	steps := make([]*app.WorkflowStep, 0)
 
-	sg.nextGroupEager() // generate install state
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-
-	if !stateGenV2 {
-		stateSignal := &generatestate.Signal{InstallID: installID}
-		step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, stateSignal, flw.PlanOnly, WithSkippable(false))
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, step)
-	}
+	sg.nextGroupEager()
 
 	componentID, ok := flw.Metadata["component_id"]
 	if !ok {
@@ -61,6 +45,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 
 	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
+		Mode:      awaitrunnerhealthy.ModeRequireActive,
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
@@ -90,7 +75,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		}
 
 		compIDStr := generics.FromPtrStr(componentID)
-		deployStep, err := sg.installSignalStep(ctx, install.ID, "teardown sync and plan "+comp.Name, pgtype.Hstore{}, &componentteardownsyncandplan.Signal{
+		deployStep, err := sg.installSignalStep(ctx, install.ID, "teardown sync and plan "+comp.Name, componentStepMetadata(comp.Name), &componentteardownsyncandplan.Signal{
 			InstallComponentID: installComp.ID,
 			InstallID:          install.ID,
 			ComponentID:        compIDStr,
@@ -103,7 +88,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		}
 		steps = append(steps, deployStep)
 
-		applyStep, err := sg.installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &componentteardownapplyplan.Signal{
+		applyStep, err := sg.installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, componentStepMetadata(comp.Name), &componentteardownapplyplan.Signal{
 			InstallComponentID: installComp.ID,
 			InstallID:          install.ID,
 			ComponentID:        compIDStr,
@@ -116,7 +101,8 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		steps = append(steps, applyStep)
 	} else {
 		deployStep, err := sg.installSignalStep(ctx, installID, "skipped image teardown "+comp.Name, pgtype.Hstore{
-			"reason": generics.ToPtr("skipped image teardown"),
+			"reason":         generics.ToPtr("skipped image teardown"),
+			"component_name": generics.ToPtr(comp.Name),
 		}, nil, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create skip step")

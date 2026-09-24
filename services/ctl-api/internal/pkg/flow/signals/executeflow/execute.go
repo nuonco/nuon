@@ -10,6 +10,7 @@ import (
 
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	flowdirective "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -129,6 +130,12 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 				if stoppedErr.RetriesExhausted {
 					metadata["retries_exhausted"] = true
 				}
+				if stoppedErr.StepID != "" {
+					metadata["step_name"] = stoppedErr.StepID
+				}
+				if stoppedErr.Reason != "" {
+					metadata["stop_reason"] = stoppedErr.Reason
+				}
 				humanDesc := stoppedErr.StatusHumanDescription
 				if humanDesc == "" {
 					humanDesc = "workflow stopped"
@@ -138,6 +145,7 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 					Status: app.CompositeStatus{
 						Status:                 app.StatusError,
 						StatusHumanDescription: humanDesc,
+						CompositeError:         stoppedErr.CompositeError,
 						Metadata:               metadata,
 					},
 				})
@@ -358,7 +366,21 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		}
 
 		if flw.GenerateStepsSignal == nil || flw.GenerateStepsSignal.Signal == nil {
-			return errors.Errorf("workflow %s has no steps and no generate-steps signal", s.WorkflowID)
+			missingStepsErr := errors.Errorf("workflow %s has no steps and no generate-steps signal", s.WorkflowID)
+			_ = statusactivities.AwaitUpdateFlowStatusMetadata(ctx, statusactivities.UpdateFlowStatusMetadataRequest{
+				WorkflowID: s.WorkflowID,
+				Metadata: map[string]any{
+					"error_message": missingStepsErr.Error(),
+				},
+			})
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: s.WorkflowID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusError,
+					StatusHumanDescription: missingStepsErr.Error(),
+				},
+			})
+			return missingStepsErr
 		}
 
 		// Use eager step groups: fetch and persist the eager groups so we can
@@ -529,8 +551,9 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		case flowdirective.GroupStop:
 			// Derive the reason before the sweeps overwrite step statuses.
 			stepName, reason := "", ""
+			var stepCE *compositeerrors.CompositeErrorData
 			if workflow.GetVersion(ctx, groupStopReasonVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-				stepName, reason = s.groupStopReason(ctx, group)
+				stepName, reason, stepCE = s.groupStopReason(ctx, group)
 			}
 
 			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
@@ -539,6 +562,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				l.Error("unable to update finished at", zap.Error(err))
 			}
 			stoppedErr := flow.NewFlowStoppedErr(stepName, reason)
+			stoppedErr.CompositeError = stepCE
 			if reason != "" {
 				stoppedErr.StatusHumanDescription = "workflow stopped: " + reason
 			}
@@ -727,6 +751,18 @@ func (s *Signal) findGroupPositionForStep(ctx workflow.Context, stepID string) i
 		}
 	}
 	return 0
+}
+
+// markResumeRequested arms the parked Execute loop to resume the run at the
+// group containing stepID. Call it last in an update handler: the paused loop
+// acts on the flag the instant it flips, and reads the fields written just
+// above it. The DB lookups in a handler pause it long enough for Execute to
+// run, so setting the flag first means resuming from a stale resumeStartIdx.
+func (s *Signal) markResumeRequested(ctx workflow.Context, runType app.WorkflowRunType, stepID string) {
+	s.resumeRunType = runType
+	s.resumeStepID = stepID
+	s.resumeStartIdx = s.findGroupPositionForStep(ctx, stepID)
+	s.resumeRequested = true
 }
 
 // firstPendingGroupPosition returns the position (index into the ordered group
@@ -960,6 +996,7 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 	if err != nil {
 		return false
 	}
+	terminalErrorComplete := workflow.GetVersion(ctx, workflowCompleteTerminalErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
 
 	for _, step := range steps {
 		switch step.Status.Status {
@@ -968,6 +1005,19 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 			app.WorkflowStepApprovalStatusApproved,
 			app.WorkflowStepNoDrift, app.WorkflowStepDrifted:
 			continue
+		case app.StatusError:
+			if !terminalErrorComplete {
+				return false
+			}
+			// Treat a settled failure (terminal directive) as complete so
+			// failures do not leak forever-open workflows: the group already
+			// acted on it, so nothing will resume this run. A parked error
+			// (await-retry, await-approval, or a legacy empty directive)
+			// still waits on a user decision and is not complete.
+			if flowdirective.Step(step.ResultDirective).IsTerminal() {
+				continue
+			}
+			return false
 		default:
 			return false
 		}
@@ -1009,21 +1059,28 @@ func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 // groupStopReason returns the name and status text of the step that caused
 // the group to stop. The step that writes the StepStop directive owns the
 // user-facing phrasing; this is only a lookup.
-func (s *Signal) groupStopReason(ctx workflow.Context, group *app.WorkflowStepGroup) (string, string) {
+func (s *Signal) groupStopReason(ctx workflow.Context, group *app.WorkflowStepGroup) (string, string, *compositeerrors.CompositeErrorData) {
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
 		FlowID: s.WorkflowID,
 	})
 	if err != nil {
-		return "", ""
+		return "", "", nil
 	}
 	for i := range steps {
 		step := &steps[i]
 		if step.GroupIdx != group.GroupIdx || flowdirective.Step(step.ResultDirective) != flowdirective.StepStop {
 			continue
 		}
-		return step.Name, step.Status.StatusHumanDescription
+		return step.Name, stepStopReason(step), step.Status.CompositeError
 	}
-	return "", ""
+	return "", "", nil
+}
+
+func stepStopReason(step *app.WorkflowStep) string {
+	if original, ok := step.Status.Metadata["original_error"].(string); ok && original != "" {
+		return original
+	}
+	return step.Status.StatusHumanDescription
 }
 
 // checkGroupRetriesExhausted checks if any step in the group has retries_exhausted
@@ -1058,6 +1115,10 @@ const flowCancelStatusVersion = "execute-flow-cancel-status-v1"
 // groupStopReasonVersion gates the GetFlowSteps lookup that derives the stop
 // reason; in-flight histories never scheduled it before the sweeps.
 const groupStopReasonVersion = "execute-flow-group-stop-reason-v1"
+
+// workflowCompleteTerminalErrorVersion gates terminal errored steps counting as
+// complete because in-flight histories previously parked after every error.
+const workflowCompleteTerminalErrorVersion = "execute-flow-terminal-error-complete-v1"
 
 // stopIfRunnerDisabled halts a workflow whose install runner was disabled after
 // it started. Creation already rejects these, so without this the workflow would

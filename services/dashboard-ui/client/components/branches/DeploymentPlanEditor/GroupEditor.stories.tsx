@@ -21,6 +21,7 @@ const manualGroup: IInstallGroup = {
   selection_mode: 'manual',
   order: 0,
   max_parallel: 1,
+  auto_approve_on_policies_passing: false,
 }
 
 const labelGroup: IInstallGroup = {
@@ -31,6 +32,18 @@ const labelGroup: IInstallGroup = {
   selection_mode: 'labels',
   order: 1,
   max_parallel: 2,
+  auto_approve_on_policies_passing: true,
+}
+
+const allInstallsGroup: IInstallGroup = {
+  id: 'group-3',
+  name: 'Everything',
+  install_ids: [],
+  label_selector: null,
+  selection_mode: 'all',
+  order: 2,
+  max_parallel: 1,
+  auto_approve_on_policies_passing: false,
 }
 
 const Wrap = ({ children }: { children: React.ReactNode }) => (
@@ -44,7 +57,7 @@ export const ManualSelection = () => (
       index={0}
       totalGroups={2}
       availableInstalls={installs}
-      unassignedInstalls={[installs[2]]}
+      pickableInstalls={[installs[2]]}
       onUpdate={noop}
       onAddInstalls={noop}
       onRemoveInstall={noop}
@@ -62,7 +75,7 @@ export const LabelSelector = () => (
       index={1}
       totalGroups={2}
       availableInstalls={installs}
-      unassignedInstalls={installs}
+      pickableInstalls={installs}
       onUpdate={noop}
       onAddInstalls={noop}
       onRemoveInstall={noop}
@@ -80,7 +93,43 @@ export const EmptyManual = () => (
       index={0}
       totalGroups={1}
       availableInstalls={installs}
-      unassignedInstalls={installs}
+      pickableInstalls={installs}
+      onUpdate={noop}
+      onAddInstalls={noop}
+      onRemoveInstall={noop}
+      onMoveUp={noop}
+      onMoveDown={noop}
+      onDelete={noop}
+    />
+  </Wrap>
+)
+
+export const AllInstalls = () => (
+  <Wrap>
+    <GroupEditor
+      group={allInstallsGroup}
+      index={0}
+      totalGroups={1}
+      availableInstalls={installs}
+      pickableInstalls={[]}
+      onUpdate={noop}
+      onAddInstalls={noop}
+      onRemoveInstall={noop}
+      onMoveUp={noop}
+      onMoveDown={noop}
+      onDelete={noop}
+    />
+  </Wrap>
+)
+
+export const AllInstallsWithNoInstalls = () => (
+  <Wrap>
+    <GroupEditor
+      group={allInstallsGroup}
+      index={0}
+      totalGroups={1}
+      availableInstalls={[]}
+      pickableInstalls={[]}
       onUpdate={noop}
       onAddInstalls={noop}
       onRemoveInstall={noop}
@@ -98,7 +147,7 @@ export const WithNameError = () => (
       index={0}
       totalGroups={1}
       availableInstalls={installs}
-      unassignedInstalls={[installs[2]]}
+      pickableInstalls={[installs[2]]}
       nameError="Group name is required"
       onUpdate={noop}
       onAddInstalls={noop}

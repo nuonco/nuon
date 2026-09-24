@@ -11,9 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
-	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
-	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 const (
@@ -114,129 +111,6 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 
 	if err := h.EnsureRunnerSignalsQueue(ctx, runnerGroup.Runners[0].ID); err != nil {
 		return nil, fmt.Errorf("unable to create runner signals queue: %w", err)
-	}
-
-	if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {
-		return nil, fmt.Errorf("unable to create runner queues: %w", err)
-	}
-
-	return &runnerGroup, nil
-}
-
-func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.RunnerGroup, error) {
-	ctx = cctx.SetOrgIDContext(ctx, org.ID)
-	ctx = cctx.SetAccountIDContext(ctx, org.CreatedByID)
-
-	platform := app.AppRunnerTypeAWSEKS
-	controlPlaneCloud := app.CloudPlatformAWS
-	if h.cfg.IsGCP() {
-		platform = app.AppRunnerTypeGCPGKE
-		controlPlaneCloud = app.CloudPlatformGCP
-	}
-	if h.cfg.IsAzure() {
-		platform = app.AppRunnerTypeAzureAKS
-		controlPlaneCloud = app.CloudPlatformAzure
-	}
-	if org.OrgType != app.OrgTypeDefault || h.cfg.UseLocalRunners {
-		platform = app.AppRunnerTypeLocal
-	}
-
-	// Build cloud-specific identity for the org runner service account
-	var orgAWSIAMRoleARN string
-	var orgGCPServiceAccount string
-	var orgAzureClientID string
-	switch h.cfg.CloudProvider {
-	case string(app.CloudPlatformGCP):
-		orgGCPServiceAccount = h.cfg.ManagementGCPOrgRunnerSAEmail
-		if orgGCPServiceAccount == "" {
-			orgGCPServiceAccount = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", org.ID, h.cfg.ManagementAccountID)
-		}
-	case string(app.CloudPlatformAzure):
-		// Azure per-org managed identity is created by ProvisionIAM workflow.
-		// OrgAzureClientID is populated after IAM provisioning completes.
-	default:
-		orgAWSIAMRoleARN = fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", h.cfg.ManagementAccountID, org.ID, org.ID)
-	}
-
-	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultOrgRunnerGroupSettingsGroups[:]...)
-	runnerGroup := app.RunnerGroup{
-		OwnerID:   org.ID,
-		OwnerType: "orgs",
-		// OwnerName: org.Name,
-		Type:     app.RunnerGroupTypeOrg,
-		Platform: platform,
-		Runners: []app.Runner{
-			{
-				Name:              "default",
-				DisplayName:       "Default runner",
-				Status:            app.RunnerStatusPending,
-				StatusDescription: string(app.RunnerStatusPending),
-			},
-		},
-		Settings: app.RunnerGroupSettings{
-			SandboxMode:       org.SandboxMode,
-			ContainerImageURL: h.runnerImageURLForPlatform(controlPlaneCloud),
-			ContainerImageTag: h.cfg.RunnerContainerImageTag,
-			RunnerAPIURL:      h.cfg.RunnerAPIURL,
-			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
-			EnableLogging:     true,
-			LoggingLevel:      slog.LevelInfo.String(),
-			EnableMetrics:     true,
-			EnableSentry:      true,
-			Groups:            groups,
-			Metadata: pgtype.Hstore(map[string]*string{
-				"org.id":          generics.ToPtr(org.ID),
-				"org.name":        generics.ToPtr(org.Name),
-				"org.type":        generics.ToPtr(string(org.OrgType)),
-				"runner.type":     generics.ToPtr(string(app.RunnerGroupTypeInstall)),
-				"runner.platform": generics.ToPtr(string(platform)),
-				"env":             generics.ToPtr(string(h.cfg.Env)),
-			}),
-
-			OrgAWSIAMRoleARN:         orgAWSIAMRoleARN,
-			OrgGCPServiceAccount:     orgGCPServiceAccount,
-			OrgAzureClientID:         orgAzureClientID,
-			LocalAWSIAMRoleARN:       "",
-			OrgK8sServiceAccountName: fmt.Sprintf("runner-%s", org.ID),
-		},
-	}
-	res := h.db.WithContext(ctx).Create(&runnerGroup)
-	if res.Error != nil {
-		return nil, res.Error
-	}
-
-	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     runnerGroup.Runners[0].ID,
-		OwnerType:   "runners",
-		Namespace:   "runners",
-		Name:        "runner-signals",
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create runner queue: %w", err)
-	}
-
-	sweeps, err := h.featuresClient.OrgHealthcheckSweepsEnabled(ctx, org.ID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to evaluate org healthcheck sweeps flag: %w", err)
-	}
-	if !sweeps {
-		if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-			QueueID:         q.ID,
-			Name:            RunnerHealthcheckEmitterName,
-			Description:     "Periodic runner-level health check",
-			Mode:            app.QueueEmitterModeCron,
-			CronSchedule:    RunnerHealthcheckSchedule(h.cfg.Env),
-			JitterWindow:    runnerHealthcheckJitterWindow,
-			SignalType:      "runner_healthcheck",
-			SignalExpiresIn: runnerHealthcheckSignalExpiry,
-			SignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{
-				"runner_id": runnerGroup.Runners[0].ID,
-			}),
-		}); err != nil {
-			return nil, fmt.Errorf("unable to create runner healthcheck emitter: %w", err)
-		}
 	}
 
 	if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {

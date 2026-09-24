@@ -8,8 +8,9 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/pkg/errors"
+
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 )
@@ -25,7 +26,10 @@ type Settings struct {
 	// surfaced through the runner-settings response. When true the
 	// jobloop calls the `/jobs/tail` long-poll endpoint instead of the
 	// legacy 5s idle-poll loop.
-	LongPollJobs bool
+	LongPollJobs                      bool
+	TelemetryRelayEndpoint            string
+	VendorTelemetryEnabled            bool
+	VendorTelemetryResourceAttributes map[string]string
 
 	// visibility settings
 	EnableLogging bool

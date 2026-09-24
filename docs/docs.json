@@ -50,21 +50,22 @@
             "pages": [
               "guides/nuon-cloud",
               {
-                "group": "Nuon BYOC",
+                "group": "BYOC",
                 "root": "guides/byoc",
                 "expanded": false,
                 "pages": [
                   "guides/byoc/requirements",
-                  "guides/byoc/aws",
-                  "guides/byoc/gcp",
-                  "guides/byoc/azure"
+                  "guides/byoc/installation",
+                  "guides/byoc/optional",
+                  "guides/byoc/telemetry",
+                  "guides/byoc/updates"
                 ]
               },
               {
-                "group": "Nuon Self-Hosted",
+                "group": "Self-Hosted",
                 "root": "guides/self-hosted",
                 "expanded": false,
-                "pages": ["guides/self-hosted/supported-platforms"]
+                "pages": ["guides/self-hosted/dependencies"]
               }
             ]
           }
@@ -127,6 +128,7 @@
               "concepts/actions",
               "concepts/policies",
               "concepts/operation-roles",
+              "concepts/install-telemetry",
               "concepts/triggers",
               "concepts/access-control",
               "concepts/api-tokens",
@@ -144,7 +146,6 @@
             "group": "Connect Your App",
             "boost": 3,
             "pages": [
-              "guides/app-init",
               "guides/managing-apps",
               "guides/managing-components",
               "guides/component-dependencies",
@@ -190,6 +191,7 @@
             "pages": [
               "guides/app-branches",
               "guides/rollback-install-config",
+              "guides/reprovision-installs",
               "guides/actions",
               "guides/adhoc-actions",
               "guides/container-actions",
@@ -197,6 +199,7 @@
               "guides/configuring-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
+              "guides/manage-install-telemetry",
               "guides/team-management"
             ]
           },
@@ -209,9 +212,8 @@
               "guides/webhooks",
               "guides/triggers",
               "guides/export-runner-audit-logs",
-              "guides/component-health",
-              "guides/slack",
-              "guides/ai-and-apps"
+              "guides/health-checks",
+              "guides/slack"
             ]
           },
           {
@@ -221,6 +223,7 @@
               "guides/using-readmes",
               "guides/programmable-readmes",
               "guides/custom-nested-stacks",
+              "guides/nuon-stack-terraform-provider",
               "guides/customizing-terraform-stack-templates",
               "guides/cli-extensions",
               "guides/external-image-policies",
@@ -234,7 +237,10 @@
         "icon": "robot",
         "pages": [
           "guides/agents/overview",
-          "guides/agents/mcp-walkthrough"
+          "guides/agents/mcp-walkthrough",
+          "guides/agents/tools",
+          "guides/agents/sample-queries",
+          "guides/agents/ai-and-apps"
         ]
       },
       {
@@ -293,6 +299,7 @@
                   "config-ref/installer",
                   "config-ref/metadata",
                   "config-ref/permissions",
+                  "config-ref/permission-policy",
                   "config-ref/policies",
                   "config-ref/runner",
                   "config-ref/sandbox",
@@ -319,6 +326,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/041-agents-health-checks-and-triggers",
           "updates/040-app-branches",
           "updates/039-oidc-federation",
           "updates/038-spacelift-and-cli-automation",
@@ -414,6 +422,18 @@
   },
   "redirects": [
     {
+      "source": "/guides/component-health",
+      "destination": "/guides/health-checks"
+    },
+    {
+      "source": "/guides/app-init",
+      "destination": "/configuration-files"
+    },
+    {
+      "source": "/guides/self-hosted/supported-platforms",
+      "destination": "/guides/self-hosted/dependencies"
+    },
+    {
       "source": "/",
       "destination": "/get-started/introduction"
     },
@@ -460,6 +480,26 @@
     {
       "source": "/guides/notifications",
       "destination": "/guides/slack"
+    },
+    {
+      "source": "/guides/byoc/aws",
+      "destination": "/guides/byoc"
+    },
+    {
+      "source": "/guides/byoc/gcp",
+      "destination": "/guides/byoc"
+    },
+    {
+      "source": "/guides/byoc/azure",
+      "destination": "/guides/byoc"
+    },
+    {
+      "source": "/guides/byoc/upgrading",
+      "destination": "/guides/byoc/updates"
+    },
+    {
+      "source": "/guides/ai-and-apps",
+      "destination": "/guides/agents/ai-and-apps"
     }
   ]
 }

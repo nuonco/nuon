@@ -22,7 +22,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
 
-const ignoreChangesStepVersion = "app-branch-ignore-changes-step-v1"
+const (
+	ignoreChangesStepVersion  = "app-branch-ignore-changes-step-v1"
+	setupPreviewHiddenVersion = "app-branch-setup-preview-hidden-v1"
+)
 
 // AppBranchRun builds the workflow steps for an app branch run
 // This workflow orchestrates:
@@ -86,10 +89,14 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 
 	if isPreview {
 		sg.nextGroup()
+		options := []WorkflowStepOptions{WithSkippable(false)}
+		if workflow.GetVersion(ctx, setupPreviewHiddenVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+			options = append(options, WithExecutionType(app.WorkflowStepExecutionTypeHidden))
+		}
 		step, err := sg.appBranchSignalStep(ctx, appBranchID, "setup preview", pgtype.Hstore{}, &setuppreview.Signal{
 			RunID:       runID,
 			AppBranchID: appBranchID,
-		}, WithSkippable(false))
+		}, options...)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create setup preview step")
 		}
@@ -186,31 +193,42 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		steps = append(steps, step)
 	}
 
-	// Preview runs: synthetic single-install group instead of previewimpact.
+	// Preview runs use a synthetic target instead of the branch's deployment
+	// groups. A target is either one install or all installs matching the
+	// preview selector.
 	if isPreview {
-		if run.Preview != nil && run.Preview.InstallID != "" {
+		if run.Preview != nil {
+			previewSelector := run.Preview.ResolvedPreviewConfig.LabelSelector
 			switch run.Preview.Mode {
 			case app.AppBranchRunPreviewModeBuildOnly:
 				return sg.Result(steps), nil
 			case app.AppBranchRunPreviewModePlanOnly:
+				if run.Preview.InstallID == "" && previewSelector == nil {
+					return nil, errors.New("plan-only preview has no install_id or label_selector")
+				}
 				sg.nextGroup()
 				step, err := sg.appBranchSignalStep(ctx, appBranchID, "plan preview install", pgtype.Hstore{}, &planinstallgroup.Signal{
-					PreviewInstallID:   run.Preview.InstallID,
-					SyntheticGroupName: "preview",
-					AppBranchID:        appBranchID,
-					RunID:              runID,
+					PreviewInstallID:     run.Preview.InstallID,
+					PreviewLabelSelector: previewSelector,
+					SyntheticGroupName:   "preview",
+					AppBranchID:          appBranchID,
+					RunID:                runID,
 				}, WithSkippable(true))
 				if err != nil {
 					return nil, errors.Wrap(err, "unable to create preview plan step")
 				}
 				steps = append(steps, step)
 			case app.AppBranchRunPreviewModeApply:
+				if run.Preview.InstallID == "" && previewSelector == nil {
+					return nil, errors.New("apply preview has no install_id or label_selector")
+				}
 				sg.nextGroup()
 				step, err := sg.appBranchSignalStep(ctx, appBranchID, "apply preview install", pgtype.Hstore{}, &updateinstallgroup.Signal{
-					PreviewInstallID:   run.Preview.InstallID,
-					SyntheticGroupName: "preview",
-					AppBranchID:        appBranchID,
-					RunID:              runID,
+					PreviewInstallID:     run.Preview.InstallID,
+					PreviewLabelSelector: previewSelector,
+					SyntheticGroupName:   "preview",
+					AppBranchID:          appBranchID,
+					RunID:                runID,
 				}, WithSkippable(true))
 				if err != nil {
 					return nil, errors.Wrap(err, "unable to create preview apply step")
