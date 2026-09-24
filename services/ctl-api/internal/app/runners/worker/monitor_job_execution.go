@@ -205,7 +205,12 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			JobExecutionID: jobExecution.ID,
 		})
 		if err != nil {
-			return false, err
+			// This loop already re-polls every defaultJobPollPeriod, so a transient
+			// failure of a single status check (e.g. an activity timeout under
+			// worker load) shouldn't kill an otherwise-healthy job. Log and retry
+			// on the next tick instead of failing the job immediately.
+			l.Warn("unable to get job execution status this tick, will retry next poll", zap.Error(err))
+			continue
 		}
 
 		// handle the job execution status
