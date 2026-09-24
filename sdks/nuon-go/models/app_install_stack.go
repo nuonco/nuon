@@ -20,23 +20,14 @@ import (
 // swagger:model app.InstallStack
 type AppInstallStack struct {
 
-	// actual app config id
-	ActualAppConfigID string `json:"actual_app_config_id,omitempty"`
-
-	// actual applied at
-	ActualAppliedAt string `json:"actual_applied_at,omitempty"`
-
-	// actual install stack version id
-	ActualInstallStackVersionID string `json:"actual_install_stack_version_id,omitempty"`
+	// app config ref
+	AppConfigRef *AppAppConfigRef `json:"app_config_ref,omitempty"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
-
-	// expected app config id
-	ExpectedAppConfigID string `json:"expected_app_config_id,omitempty"`
 
 	// id
 	ID string `json:"id,omitempty"`
@@ -61,6 +52,10 @@ type AppInstallStack struct {
 func (m *AppInstallStack) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAppConfigRef(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateInstallStackOutputs(formats); err != nil {
 		res = append(res, err)
 	}
@@ -72,6 +67,29 @@ func (m *AppInstallStack) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallStack) validateAppConfigRef(formats strfmt.Registry) error {
+	if swag.IsZero(m.AppConfigRef) { // not required
+		return nil
+	}
+
+	if m.AppConfigRef != nil {
+		if err := m.AppConfigRef.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_config_ref")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_config_ref")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -132,6 +150,10 @@ func (m *AppInstallStack) validateVersions(formats strfmt.Registry) error {
 func (m *AppInstallStack) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAppConfigRef(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateInstallStackOutputs(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -143,6 +165,31 @@ func (m *AppInstallStack) ContextValidate(ctx context.Context, formats strfmt.Re
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallStack) contextValidateAppConfigRef(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AppConfigRef != nil {
+
+		if swag.IsZero(m.AppConfigRef) { // not required
+			return nil
+		}
+
+		if err := m.AppConfigRef.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_config_ref")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_config_ref")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

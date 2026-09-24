@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"go.uber.org/zap"
 )
 
@@ -411,5 +412,6 @@ func newVendorTestSupervisor(tokens tokenLifecycle) *VendorSupervisor {
 	}
 	s.replaceChildFn = func(context.Context, string, map[string]string) error { return nil }
 	s.stopChildFn = func() {}
+	s.writeAuditFn = func(audit.Event) error { return nil }
 	return s
 }

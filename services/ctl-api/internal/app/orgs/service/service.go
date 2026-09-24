@@ -76,6 +76,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			current.GET("", s.GetOrg)
 			current.DELETE("", s.DeleteOrg)
 			current.PATCH("", s.UpdateOrg)
+			current.PATCH("/telemetry", s.UpdateOrgTelemetry)
 			current.POST("/user", s.CreateUser)
 			current.POST("/remove-user", s.RemoveUser)
 
@@ -92,9 +93,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 				invites.POST("/:invite_id/resend", s.ResendOrgInvite)
 				invites.POST("/:invite_id/revoke", s.RevokeOrgInvite)
 			}
-
-			// runners
-			current.GET("/runner-group", s.GetOrgRunnerGroup)
 
 			current.GET("/stats", s.GetOrgStats)
 
@@ -132,7 +130,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		// org-specific admin routes
 		org := orgs.Group("/:org_id")
 		{
-			org.GET("/admin-get-runner", s.AdminGetOrgRunner)
 			org.POST("/admin-add-user", s.CreateOrgUser)
 			org.POST("/admin-support-users", s.CreateSupportUsers)
 			org.POST("/admin-remove-support-users", s.RemoveSupportUsers)

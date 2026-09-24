@@ -14,7 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
-	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
@@ -80,9 +79,6 @@ func New(params WorkerParams) (*Worker, error) {
 	for _, wkflow := range params.SharedWkflows.AllWorkflows() {
 		wkr.RegisterWorkflow(wkflow)
 	}
-
-	// register infra workflows
-	wkr.RegisterActivity(orgiam.NewActivities())
 
 	params.LC.Append(fx.Hook{
 		OnStart: func(context.Context) error {

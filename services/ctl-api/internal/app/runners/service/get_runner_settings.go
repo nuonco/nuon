@@ -42,22 +42,33 @@ func (s *service) GetRunnerSettings(ctx *gin.Context) {
 
 	settings := runner.RunnerGroup.Settings
 	settings.LongPollJobs = true
+	settings.VendorTelemetryEnabled = false
 	installTable := plugins.TableName(s.db, app.Install{})
-	if s.telemetryRelayEndpoint != "" && settings.VendorTelemetryEnabled && runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerType == installTable {
+	if s.telemetryRelayEndpoint != "" && runner.RunnerGroup.Type == app.RunnerGroupTypeInstall && runner.RunnerGroup.OwnerType == installTable && runner.Status != app.RunnerStatusDisabled && runner.Status != app.RunnerStatusDeprovisioned {
 		// A projection avoids model AfterQuery hooks, which also run with SkipHooks.
 		var install struct {
-			Name    string
-			Labels  labels.Labels
-			AppName string `gorm:"column:App__name"`
+			Name                string
+			Labels              labels.Labels
+			AppName             string `gorm:"column:App__name"`
+			TelemetryEnabled    *bool  `gorm:"column:InstallConfig__telemetry_enabled"`
+			OrgTelemetryEnabled bool   `gorm:"column:Org__telemetry_enabled"`
 		}
 		err := s.db.WithContext(ctx).
 			Model(&app.Install{}).
 			Scopes(scopes.WithDisableViews).
 			Select(installTable+".name", installTable+".labels").
 			Joins("App", s.db.Select("name")).
+			Joins("InstallConfig", s.db.Select("telemetry_enabled")).
+			Joins("Org", s.db.Select("telemetry_enabled")).
 			Where(app.Install{ID: runner.RunnerGroup.OwnerID, OrgID: runner.OrgID}).
 			Take(&install).Error
 		if err == nil {
+			cfg := app.InstallConfig{TelemetryEnabled: install.TelemetryEnabled}
+			settings.VendorTelemetryEnabled = cfg.IsTelemetryEnabled(install.OrgTelemetryEnabled)
+			if !settings.VendorTelemetryEnabled {
+				ctx.JSON(http.StatusOK, settings)
+				return
+			}
 			settings.TelemetryRelayEndpoint = s.telemetryRelayEndpoint
 			settings.VendorTelemetryResourceAttributes = map[string]string{
 				"nuon.org.name":     runner.Org.Name,

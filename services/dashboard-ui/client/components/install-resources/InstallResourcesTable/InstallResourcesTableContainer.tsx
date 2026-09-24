@@ -1,9 +1,10 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallComponents, getInstallResources } from '@/lib'
+import type { TAPIError } from '@/types'
 import {
   groupComponentResources,
   groupSandboxResources,
@@ -47,7 +48,11 @@ export const InstallResourcesTableContainer = ({
     [setSearchParams]
   )
 
-  const { data: resources, isLoading } = useQuery({
+  const {
+    data: resources,
+    isPending,
+    error,
+  } = useQuery({
     queryKey: ['install-resources', org?.id, install?.id],
     queryFn: () =>
       getInstallResources({ orgId: org!.id, installId: install!.id }),
@@ -55,6 +60,13 @@ export const InstallResourcesTableContainer = ({
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
   })
+
+  const [loadError, setLoadError] = useState<TAPIError | null>(null)
+
+  useEffect(() => {
+    if (error) setLoadError(error as TAPIError)
+    else if (resources) setLoadError(null)
+  }, [error, resources])
 
   const { data: componentsResult } = useQuery({
     queryKey: ['install-components-for-resources', org?.id, install?.id],
@@ -147,7 +159,8 @@ export const InstallResourcesTableContainer = ({
       componentGroups={componentGroups}
       sandboxGroups={sandboxGroups}
       healthCounts={healthCounts}
-      isLoading={isLoading}
+      isLoading={isPending && !loadError}
+      error={loadError}
       kind={kind}
       namespace={namespace}
       health={health}

@@ -41,7 +41,6 @@ const (
 type OrgFeature string
 
 const (
-	OrgFeatureOrgRunner           OrgFeature = "org-runner"
 	OrgFeatureAppBranches         OrgFeature = "app-branches"
 	OrgFeatureUserManagedFeatures OrgFeature = "user-managed-features"
 	OrgFeatureSupportRole         OrgFeature = "support-role"
@@ -104,6 +103,10 @@ const (
 	OrgFeatureDisableAppSync      OrgFeature = "disable-app-sync"
 )
 
+type OrgTelemetrySettings struct {
+	Enabled bool `json:"enabled" gorm:"not null;default:false" temporaljson:"enabled,omitempty"`
+}
+
 type Org struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string  `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -119,6 +122,8 @@ type Org struct {
 	StatusV2          CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	SandboxMode bool `json:"sandbox_mode,omitzero" gorm:"notnull" temporaljson:"sandbox_mode,omitzero,omitempty"`
+
+	Telemetry OrgTelemetrySettings `json:"telemetry" gorm:"embedded;embeddedPrefix:telemetry_" temporaljson:"telemetry,omitempty"`
 
 	OrgType   OrgType `json:"-" temporaljson:"org_type,omitzero,omitempty"`
 	DebugMode bool    `json:"-" temporaljson:"debug_mode,omitzero,omitempty"`
@@ -248,7 +253,6 @@ func DefaultFeatures() map[OrgFeature]bool {
 		OrgFeaturePulumiUpdatePlans:       false,
 		OrgFeatureNotebooks:               false,
 		OrgFeatureSpaceliftInstallStacks:  false,
-		OrgFeatureOrgRunner:               false,
 		OrgFeatureAWSAccountConnections:   false,
 		OrgFeaturePhoneHomeAuth:           false,
 		OrgFeatureRunbookStudio:           false,
@@ -270,7 +274,6 @@ func DefaultFeatures() map[OrgFeature]bool {
 // active feature flags for an orgs
 func GetFeatures() []OrgFeature {
 	return []OrgFeature{
-		OrgFeatureOrgRunner,
 		OrgFeatureAppBranches,
 		OrgFeatureUserManagedFeatures,
 		OrgFeatureSupportRole,
@@ -312,7 +315,6 @@ type OrgFeatureInfo struct {
 // GetFeatureDescriptions returns a map of feature names to their descriptions
 func GetFeatureDescriptions() map[OrgFeature]string {
 	return map[OrgFeature]string{
-		OrgFeatureOrgRunner:                "Enable organization-specific runner functionality for executing deployments",
 		OrgFeatureAppBranches:              "Support for multiple application branches allowing parallel development and testing",
 		OrgFeatureUserManagedFeatures:      "Allow organization users to manage feature flags through the public API (admin-only flag)",
 		OrgFeatureSupportRole:              "Enable the support role option when inviting users to the organization",

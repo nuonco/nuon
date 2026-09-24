@@ -51,6 +51,9 @@ deprovision_policies = {
 provision_predefined_role    = "{{.ProvisionPredefinedRole}}"
 maintenance_predefined_role  = "{{.MaintenancePredefinedRole}}"
 deprovision_predefined_role  = "{{.DeprovisionPredefinedRole}}"
+provision_predefined_roles   = [{{range $i, $r := .ProvisionPredefinedRoles}}{{if $i}}, {{end}}"{{$r}}"{{end}}]
+maintenance_predefined_roles = [{{range $i, $r := .MaintenancePredefinedRoles}}{{if $i}}, {{end}}"{{$r}}"{{end}}]
+deprovision_predefined_roles = [{{range $i, $r := .DeprovisionPredefinedRoles}}{{if $i}}, {{end}}"{{$r}}"{{end}}]
 break_glass_roles = {
 {{- range .BreakGlassRoles}}
   "{{.Name}}" = {
@@ -59,8 +62,9 @@ break_glass_roles = {
       "{{.Name}}" = {{.Permissions}}
     {{- end}}
     }
-    predefined_role = "{{.PredefinedRole}}"
-    enabled         = false
+    predefined_role  = "{{.PredefinedRole}}"
+    predefined_roles = [{{range $i, $r := .PredefinedRoles}}{{if $i}}, {{end}}"{{$r}}"{{end}}]
+    enabled          = false
   }
 {{- end}}
 }
@@ -72,8 +76,9 @@ custom_roles = {
       "{{.Name}}" = {{.Permissions}}
     {{- end}}
     }
-    predefined_role = "{{.PredefinedRole}}"
-    enabled         = true
+    predefined_role  = "{{.PredefinedRole}}"
+    predefined_roles = [{{range $i, $r := .PredefinedRoles}}{{if $i}}, {{end}}"{{$r}}"{{end}}]
+    enabled          = true
   }
 {{- end}}
 }
