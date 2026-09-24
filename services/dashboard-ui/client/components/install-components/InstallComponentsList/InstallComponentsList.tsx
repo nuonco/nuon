@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { useLocation } from 'react-router'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -11,6 +12,7 @@ import { ComponentType } from '@/components/components/ComponentType'
 import { usePagination } from '@/hooks/use-pagination'
 import { PaginationProvider } from '@/providers/pagination-provider'
 import type { TComponentType } from '@/types'
+import { scrollElementIntoView } from '@/utils/scroll'
 
 export type TInstallComponentListItem = {
   actions?: ReactNode
@@ -42,10 +44,17 @@ const InstallComponentsListBase = ({
   search,
 }: IInstallComponentsList) => {
   const { setIsPaginating } = usePagination()
+  const { hash } = useLocation()
 
   useEffect(() => {
     setIsPaginating(false)
   }, [components, setIsPaginating])
+
+  useEffect(() => {
+    const id = hash.replace('#', '')
+    if (!id) return
+    scrollElementIntoView(document.getElementById(id), { block: 'start' })
+  }, [components, hash])
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
@@ -72,7 +81,8 @@ const InstallComponentsListBase = ({
             return (
               <Card
                 key={component.id}
-                className={`!p-4 !gap-4 ${disabled ? 'opacity-55' : ''}`}
+                id={component.id}
+                className={`!p-4 !gap-4 scroll-mt-4 ${disabled ? 'opacity-55' : ''}`}
               >
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="flex flex-col gap-1.5 min-w-0">
