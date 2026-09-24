@@ -8,6 +8,7 @@ import {
   stuckHelmReleaseStatus,
 } from '@/components/install-components/StuckHelmReleaseBanner'
 import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
+import { InstallCronOfflineBanner } from '@/components/installs/InstallCronOfflineBanner'
 import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromAppConfig'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { DetailHeader } from '@/components/layout/DetailHeader'
@@ -170,6 +171,13 @@ export const InstallComponentLayout = () => {
             {installComponent?.drifted_object ? (
               <DriftedBanner drifted={installComponent.drifted_object} />
             ) : null}
+            <InstallCronOfflineBanner
+              runnerStatus={install?.runner_status}
+              kind="component_drift"
+              hasCronSchedule={!!config?.drift_schedule}
+              orgId={org?.id}
+              installId={install?.id}
+            />
             {component && stuckHelmStatus ? (
               <StuckHelmReleaseBanner
                 component={component}
