@@ -808,6 +808,8 @@ const contactUs = () => {
 }
 
 const DOCS_MCP = 'https://docs.nuon.co/guides/agents/mcp-walkthrough'
+// Placeholder until the marketing site hosts the prompt as its own text file.
+const PROMPT_TXT_URL = 'https://nuon.co/llms.txt'
 const DOCS_RUNNERS = 'https://docs.nuon.co/concepts/runners'
 const DOCS_SANDBOXES = 'https://docs.nuon.co/concepts/sandboxes'
 const CLI_SETUP = 'brew install nuonco/tap/nuon\nnuon login'
@@ -908,12 +910,8 @@ const PushListener = ({ detected, cloud }: { detected: boolean; cloud: TCloud })
             <Link href={DOCS_SANDBOXES} isExternal textVariant="subtext" className="!inline-flex align-baseline">
               Nuon sandbox
             </Link>{' '}
-            in your test{' '}
-            <span className="inline-flex items-center gap-1 align-middle whitespace-nowrap">
-              <Icon variant={CLOUD_ICON[cloud]} size={cloud === 'aws' ? 16 : 14} />
-              {CLOUD_LABEL[cloud]}
-            </span>
-            . Your app deploys when the push lands. Or wait for the push and watch it all deploy in one workflow.
+            in your {CLOUD_LABEL[cloud]} test account. Your app deploys when the push lands. Or wait for the push and
+            watch it all deploy in one workflow.
           </Text>
         )}
       </div>
@@ -1290,10 +1288,20 @@ const OwnAppSetup = ({
 // disclosure: show the primary task, disclose the rest only when asked, with labels
 // that say what opens. Grey, dotted underline, no border: nothing here competes with
 // "Copy prompt".
-type TFootnote = 'mcp' | 'deps'
+type TFootnote = 'mcp' | 'deps' | 'manual'
 const FOOTNOTE_LINK =
   'cursor-pointer text-cool-grey-500 underline decoration-dotted underline-offset-2 hover:text-foreground dark:text-cool-grey-400'
-const Footnotes = ({ onExampleExit }: { onExampleExit: () => void }) => {
+const Footnotes = ({
+  appName,
+  repo,
+  cloud,
+  onExampleExit,
+}: {
+  appName: string
+  repo: string
+  cloud: TCloud
+  onExampleExit: () => void
+}) => {
   const [open, setOpen] = useState<TFootnote | null>(null)
   const toggle = (key: TFootnote) => setOpen((prev) => (prev === key ? null : key))
   return (
@@ -1320,10 +1328,29 @@ const Footnotes = ({ onExampleExit }: { onExampleExit: () => void }) => {
           Dependencies
         </button>
         <span aria-hidden>·</span>
+        <button
+          type="button"
+          aria-expanded={open === 'manual'}
+          aria-controls="footnote-manual"
+          onClick={() => toggle('manual')}
+          className={FOOTNOTE_LINK}
+        >
+          Manual steps
+        </button>
+        <span aria-hidden>·</span>
+        <button type="button" onClick={contactUs} className={FOOTNOTE_LINK}>
+          Get help
+        </button>
+        <span aria-hidden>·</span>
         <button type="button" onClick={onExampleExit} className={FOOTNOTE_LINK}>
           Use the example app instead
         </button>
       </Text>
+      {open === 'manual' ? (
+        <div id="footnote-manual" className="rounded-md border bg-background p-4">
+          <ManualSetup appName={appName} repo={repo} cloud={cloud} />
+        </div>
+      ) : null}
       {open === 'mcp' ? (
         <div id="footnote-mcp" className="flex flex-col gap-1.5 rounded-md border bg-background p-4">
           <Text variant="subtext" weight="strong">
@@ -1433,37 +1460,6 @@ const ManualSetup = ({ appName, repo, cloud }: { appName: string; repo: string; 
   )
 }
 
-// The two ways out of the agent path, one line under the card: pro mode and white
-// glove, neither of them a warning.
-const ManualExits = ({ appName, repo, cloud }: { appName: string; repo: string; cloud: TCloud }) => {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="flex flex-col gap-4 rounded-md border bg-cool-grey-50 px-5 py-3 dark:bg-dark-grey-800">
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <Icon variant="TerminalWindowIcon" size={18} theme="neutral" className="shrink-0" />
-          <Text variant="body" weight="strong">
-            Prefer to write the config by hand?
-          </Text>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={contactUs}>
-            <Icon variant="ChatCircleIcon" size={14} /> Have a Nuon engineer write it with you
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => setOpen((prev) => !prev)}>
-            {open ? 'Hide manual steps' : 'Show manual steps'}
-          </Button>
-        </div>
-      </div>
-      {open ? (
-        <div className="rounded-md border bg-background p-4">
-          <ManualSetup appName={appName} repo={repo} cloud={cloud} />
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
 // The agent path is the card. The prompt is the one thing to act on.
 const AgentSetup = () => (
   <div className="flex flex-col gap-4">
@@ -1486,7 +1482,12 @@ const AgentSetup = () => (
           {AGENT_PASTE.slice(5)}
         </Text>
       </div>
-      <CopyTextButton text={AGENT_PASTE} label="Copy prompt" size="lg" variant="primary" />
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <CopyTextButton text={AGENT_PASTE} label="Copy prompt" size="lg" variant="primary" />
+        <Button variant="secondary" size="lg" href={PROMPT_TXT_URL} target="_blank" rel="noreferrer">
+          See full prompt <Icon variant="ArrowSquareOutIcon" size={14} />
+        </Button>
+      </div>
     </div>
   </div>
 )
@@ -1515,8 +1516,7 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
         <AgentSetup />
         <PushListener detected={detected} cloud={cloud} />
       </Card>
-      <ManualExits appName={appName} repo={repo} cloud={cloud} />
-      <Footnotes onExampleExit={exitToExample} />
+      <Footnotes appName={appName} repo={repo} cloud={cloud} onExampleExit={exitToExample} />
       <NextButton label="Set up your first install" onClick={onAdvance} onBack={onGoBack} />
     </div>
   )
