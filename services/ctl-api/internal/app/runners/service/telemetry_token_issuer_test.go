@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -26,14 +27,33 @@ func telemetryTestRSAKey(t *testing.T) *rsa.PrivateKey {
 	return key
 }
 
-func telemetryTestJWK(key *rsa.PrivateKey, keyID string, includePrivate bool) telemetryJSONWebKey {
-	jwk := telemetryJSONWebKey{
+type telemetryTestPrivateJWK struct {
+	KeyType   string `json:"kty"`
+	KeyID     string `json:"kid"`
+	Use       string `json:"use"`
+	Algorithm string `json:"alg"`
+	Modulus   string `json:"n"`
+	Exponent  string `json:"e"`
+	D         string `json:"d,omitempty"`
+	P         string `json:"p,omitempty"`
+	Q         string `json:"q,omitempty"`
+	DP        string `json:"dp,omitempty"`
+	DQ        string `json:"dq,omitempty"`
+	QI        string `json:"qi,omitempty"`
+}
+
+func telemetryTestJWKInteger(value *big.Int) string {
+	return base64.RawURLEncoding.EncodeToString(value.Bytes())
+}
+
+func telemetryTestJWK(key *rsa.PrivateKey, keyID string, includePrivate bool) telemetryTestPrivateJWK {
+	jwk := telemetryTestPrivateJWK{
 		KeyType:   "RSA",
 		KeyID:     keyID,
 		Use:       "sig",
 		Algorithm: jwt.SigningMethodRS256.Alg(),
 		Modulus:   base64.RawURLEncoding.EncodeToString(key.N.Bytes()),
-		Exponent:  encodeTelemetryJWKInteger(int64(key.E)),
+		Exponent:  telemetryTestJWKInteger(big.NewInt(int64(key.E))),
 	}
 	if includePrivate {
 		jwk.D = base64.RawURLEncoding.EncodeToString(key.D.Bytes())
@@ -43,10 +63,12 @@ func telemetryTestJWK(key *rsa.PrivateKey, keyID string, includePrivate bool) te
 	return jwk
 }
 
-func telemetryTestJWKS(t *testing.T, keys ...telemetryJSONWebKey) string {
+func telemetryTestJWKS(t *testing.T, keys ...telemetryTestPrivateJWK) string {
 	t.Helper()
 
-	contents, err := json.Marshal(telemetryJSONWebKeySet{Keys: keys})
+	contents, err := json.Marshal(struct {
+		Keys []telemetryTestPrivateJWK `json:"keys"`
+	}{Keys: keys})
 	require.NoError(t, err)
 	return string(contents)
 }
@@ -120,7 +142,7 @@ func TestTelemetryTokenIssuerPublishesOnlyPublicKeyMaterial(t *testing.T) {
 		Use:       "sig",
 		Algorithm: "RS256",
 		Modulus:   base64.RawURLEncoding.EncodeToString(issuer.privateKey.N.Bytes()),
-		Exponent:  encodeTelemetryJWKInteger(int64(issuer.privateKey.E)),
+		Exponent:  telemetryTestJWKInteger(big.NewInt(int64(issuer.privateKey.E))),
 	}, keys.Keys[0])
 
 	encoded, err := json.Marshal(keys)
@@ -173,7 +195,7 @@ func TestRunnerServiceTelemetryTokenIssuerConfiguration(t *testing.T) {
 
 		require.Nil(t, svc)
 		require.ErrorContains(t, err, "initialize telemetry token issuer")
-		require.ErrorContains(t, err, "decode telemetry JWKS")
+		require.ErrorContains(t, err, "decode JWKS")
 	})
 }
 
@@ -215,6 +237,12 @@ func TestTelemetryEndpointsUnavailableWithoutIssuer(t *testing.T) {
 			method: http.MethodGet,
 			path:   "/.well-known/jwks.json",
 			invoke: svc.GetTelemetryJWKS,
+		},
+		{
+			name:   "openid configuration",
+			method: http.MethodGet,
+			path:   "/.well-known/openid-configuration",
+			invoke: svc.GetOpenIDConfiguration,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
