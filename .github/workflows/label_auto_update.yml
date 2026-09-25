@@ -23,7 +23,7 @@ jobs:
 
   add-label:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' }}
     steps:
       - name: add label
         uses: actions-ecosystem/action-add-labels@v1
