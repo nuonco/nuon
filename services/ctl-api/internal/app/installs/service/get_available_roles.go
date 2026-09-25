@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -35,7 +36,8 @@ type AvailableRolesResponse struct {
 // @Param					install_id					path	string	true	"install ID"
 // @Param					principal_type				query	principal.Type	false	"principal type: component, sandbox, action"
 // @Param					operation_type				query	app.OperationType	false	"operation type: provision, reprovision, deprovision, deploy, teardown, trigger"
-// @Param					principal_id				query	string	false	"principal ID: component ID or action workflow ID (required for component and action)"
+// @Param					workflow_type				query	app.WorkflowType	false	"parent workflow type used to preview the default role"
+// @Param					principal_id				query	string	false	"component ID (required for component) or action workflow ID (omit for adhoc actions)"
 // @Tags					installs
 // @Accept					json
 // @Produce				json
@@ -59,6 +61,21 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 	principalType := ctx.Query("principal_type")
 	operationType := ctx.Query("operation_type")
 	principalID := ctx.Query("principal_id")
+	workflowType := app.WorkflowType(ctx.Query("workflow_type"))
+	var flw *app.Workflow
+	if workflowType != "" {
+		if !slices.Contains(app.AllWorkflowTypes(), workflowType) {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("unsupported workflow_type: %s", workflowType),
+				Description: "workflow_type must be a supported workflow type",
+			})
+			return
+		}
+		flw = &app.Workflow{}
+		if !s.cfg.UseLegacyMaintenanceRoleDefault {
+			flw.Type = workflowType
+		}
+	}
 
 	if err := validateRoleSelectionParams(principalType, operationType); err != nil {
 		ctx.Error(stderr.ErrUser{
@@ -74,7 +91,7 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		return
 	}
 
-	roles, err := s.availableRolesForInstall(ctx, org.ID, install, principalType, operationType, principalID)
+	roles, err := s.availableRolesForInstall(ctx, org.ID, install, principalType, operationType, principalID, flw)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -88,6 +105,7 @@ func (s *service) availableRolesForInstall(
 	orgID string,
 	install *app.Install,
 	principalType, operationType, principalID string,
+	flw *app.Workflow,
 ) ([]AvailableRole, error) {
 	appCfg, err := s.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, false)
 	if err != nil {
@@ -126,8 +144,8 @@ func (s *service) availableRolesForInstall(
 		return nil, fmt.Errorf("unable to build available roles: %w", err)
 	}
 
-	if principalType != "" && operationType != "" {
-		defaultRoleName, err := s.getDefaultRoleName(ctx, principal.Type(principalType), principalID, app.OperationType(operationType), appCfg, installStack, installState)
+	if (principalType != "" && operationType != "") || flw != nil {
+		defaultRoleName, err := s.getDefaultRoleName(ctx, principal.Type(principalType), principalID, app.OperationType(operationType), appCfg, installStack, installState, flw)
 		if err != nil {
 			s.l.Warn("unable to determine default role", zap.Error(err))
 		}
@@ -153,6 +171,7 @@ func (s *service) getDefaultRoleName(
 	appCfg *app.AppConfig,
 	installStack *app.InstallStack,
 	installState *state.State,
+	flw *app.Workflow,
 ) (string, error) {
 	switch principalType {
 	case principal.TypeComponent:
@@ -174,7 +193,7 @@ func (s *service) getDefaultRoleName(
 		if operationType == app.OperationTeardown {
 			installDeploy.Type = app.InstallDeployTypeTeardown
 		}
-		roleSelection, _, err := operationroles.GetRoleForDeploy(s.l, appCfg, installDeploy, latestConfig, installStack, installState, nil)
+		roleSelection, _, err := operationroles.GetRoleForDeploy(s.l, appCfg, installDeploy, latestConfig, installStack, installState, flw)
 		if err != nil {
 			return "", err
 		}
@@ -200,28 +219,31 @@ func (s *service) getDefaultRoleName(
 		return roleSelection.RoleName, nil
 
 	case principal.TypeAction:
-		if principalID == "" {
-			return "", fmt.Errorf("principal_id is required for action")
+		run := &app.InstallActionWorkflowRun{}
+		if principalID != "" {
+			actionWorkflowCfg, err := s.actionsHelpers.GetActionWorkflowConfig(ctx, principalID, appCfg.ID)
+			if err != nil {
+				return "", fmt.Errorf("unable to get action workflow config: %w", err)
+			}
+			var actionWorkflow app.ActionWorkflow
+			if res := s.db.WithContext(ctx).Where(&app.ActionWorkflow{ID: actionWorkflowCfg.ActionWorkflowID}).First(&actionWorkflow); res.Error != nil {
+				return "", fmt.Errorf("unable to get action workflow: %w", res.Error)
+			}
+			actionWorkflowCfg.ActionWorkflow = actionWorkflow
+			run.ActionWorkflowConfig = *actionWorkflowCfg
 		}
-		actionWorkflowCfg, err := s.actionsHelpers.GetActionWorkflowConfig(ctx, principalID, appCfg.ID)
-		if err != nil {
-			return "", fmt.Errorf("unable to get action workflow config: %w", err)
-		}
-		// Load the action workflow name
-		var actionWorkflow app.ActionWorkflow
-		if res := s.db.WithContext(ctx).First(&actionWorkflow, "id = ?", actionWorkflowCfg.ActionWorkflowID); res.Error != nil {
-			return "", fmt.Errorf("unable to get action workflow: %w", res.Error)
-		}
-		actionWorkflowCfg.ActionWorkflow = actionWorkflow
 
-		run := &app.InstallActionWorkflowRun{
-			ActionWorkflowConfig: *actionWorkflowCfg,
-		}
-		roleSelection, _, err := operationroles.GetRoleForAction(s.l, appCfg, run, installStack, installState, nil)
+		roleSelection, _, err := operationroles.GetRoleForAction(s.l, appCfg, run, installStack, installState, flw)
 		if err != nil {
 			return "", err
 		}
 		return roleSelection.RoleName, nil
+
+	case "":
+		if flw != nil {
+			return operationroles.RenderRoleName(operationroles.DefaultRoleForWorkflowType(appCfg, flw.Type), installState)
+		}
+		return "", nil
 
 	default:
 		return "", fmt.Errorf("unsupported principal type: %s", principalType)

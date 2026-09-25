@@ -69,6 +69,7 @@ export const ReprovisionModalContainer = ({ ...props }: IReprovision & Omit<IMod
       roleSelector={
         <RoleSelector
           installId={install?.id}
+          workflowType="reprovision"
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"

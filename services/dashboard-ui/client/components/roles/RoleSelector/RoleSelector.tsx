@@ -18,6 +18,7 @@ interface IRoleSelector {
   roles: TAvailableRole[]
   isLoading: boolean
   isError: boolean
+  isWorkflowDefault?: boolean
   value?: string
   onChange?: (value: string) => void
   name?: string
@@ -28,6 +29,7 @@ export const RoleSelector = ({
   roles,
   isLoading,
   isError,
+  isWorkflowDefault,
   value,
   onChange,
   name,
@@ -46,7 +48,9 @@ export const RoleSelector = ({
 
   const options: SelectOption[] = [
     ...(defaultRole ? [roleOption(defaultRole, '')] : []),
-    ...roles.filter((role) => !role.default).map((role) => roleOption(role, role.name)),
+    ...roles
+      .filter((role) => !role.default)
+      .map((role) => roleOption(role, role.name)),
   ]
 
   const helperText = isLoading
@@ -55,7 +59,9 @@ export const RoleSelector = ({
       ? 'Failed to load available roles'
       : roles.length === 0
         ? 'No roles available from install stack outputs'
-        : 'If unset, the default role is used.'
+        : isWorkflowDefault && !value
+          ? 'Default for component and action steps. Configured role overrides still apply.'
+          : 'If unset, the default role is used.'
 
   return (
     <Select
