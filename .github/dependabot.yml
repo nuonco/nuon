@@ -18,6 +18,7 @@ updates:
       - dependabot
       - canary
       - integration
+      - auto-update
     groups:
       aws-deps:
         patterns:
@@ -33,6 +34,8 @@ updates:
       interval: "monthly"
       time: "07:00"
       timezone: "America/New_York"
+    labels:
+      - auto-update
     ignore:
       # ignore all updates for actions/download-artifact
       - dependency-name: 'actions/download-artifact'
