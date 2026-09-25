@@ -151,7 +151,7 @@ const ApprovalStepTabs = ({
   return (
     <LogStreamProvider logStreamId={deploy?.log_stream?.id} renderWhilePending>
       <LogViewerProvider>
-        <Tabs tabs={tabs} />
+        <Tabs naturalHeight tabs={tabs} />
       </LogViewerProvider>
     </LogStreamProvider>
   )
