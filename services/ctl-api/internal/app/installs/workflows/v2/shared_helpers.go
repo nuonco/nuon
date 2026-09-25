@@ -10,6 +10,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/imagesync"
@@ -235,6 +236,14 @@ func getLifecycleActionsSteps(ctx workflow.Context, dg *genCtx, triggerTyp app.A
 		return steps, nil
 	}
 
+	if !dg.flw.PlanOnly && actionImageSyncSupported(triggerTyp) {
+		imageDepSyncSteps, err := getActionImageDepSyncSteps(ctx, dg, installActions)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, imageDepSyncSteps...)
+	}
+
 	dg.sg.nextGroup() // lifecycleSteps
 
 	for _, installAction := range installActions {
@@ -266,6 +275,90 @@ func getLifecycleActionsSteps(ctx workflow.Context, dg *genCtx, triggerTyp app.A
 	}
 
 	return steps, nil
+}
+
+func actionImageSyncSupported(triggerTyp app.ActionWorkflowTriggerType) bool {
+	switch triggerTyp {
+	case app.ActionWorkflowTriggerTypePreProvision,
+		app.ActionWorkflowTriggerTypePostDeprovisionSandbox,
+		app.ActionWorkflowTriggerTypePostDeprovision:
+		return false
+	default:
+		return true
+	}
+}
+
+func getComponentActionImageDepSyncSteps(
+	ctx workflow.Context,
+	dg *genCtx,
+	comp *app.Component,
+	triggerTyps ...app.ActionWorkflowTriggerType,
+) ([]*app.WorkflowStep, error) {
+	if dg.flw.PlanOnly {
+		return nil, nil
+	}
+
+	installActions := make([]*app.InstallActionWorkflow, 0)
+	for _, triggerTyp := range triggerTyps {
+		if !actionImageSyncSupported(triggerTyp) {
+			continue
+		}
+		installActions = append(installActions, filterActionWorkflowsByTrigger(dg.awData, triggerTyp, comp.ID, dg.appCfg)...)
+	}
+	if len(installActions) == 0 {
+		return nil, nil
+	}
+
+	return getActionImageDepSyncSteps(ctx, dg, installActions)
+}
+
+func getActionImageDepSyncSteps(ctx workflow.Context, dg *genCtx, installActions []*app.InstallActionWorkflow) ([]*app.WorkflowStep, error) {
+	configsByWorkflowID := make(map[string]*app.ActionWorkflowConfig, len(dg.appCfg.ActionWorkflowConfigs))
+	for i := range dg.appCfg.ActionWorkflowConfigs {
+		cfg := &dg.appCfg.ActionWorkflowConfigs[i]
+		configsByWorkflowID[cfg.ActionWorkflowID] = cfg
+	}
+
+	componentIDsByName := make(map[string]string, len(dg.cccByComp))
+	for componentID, ccc := range dg.cccByComp {
+		if ccc != nil {
+			componentIDsByName[ccc.Component.Name] = componentID
+		}
+	}
+
+	depIDs := make([]string, 0)
+	seen := make(map[string]struct{})
+	for _, installAction := range installActions {
+		cfg := configsByWorkflowID[installAction.ActionWorkflowID]
+		if cfg == nil || cfg.Image == "" {
+			continue
+		}
+
+		declaredDeps := make(map[string]struct{}, len(cfg.ComponentDependencyIDs))
+		for _, depID := range cfg.ComponentDependencyIDs {
+			declaredDeps[depID] = struct{}{}
+		}
+
+		for _, ref := range refs.ParseFieldRefs(cfg.Image) {
+			if ref.Type != refs.RefTypeComponents {
+				continue
+			}
+			depID, ok := componentIDsByName[ref.Name]
+			if !ok {
+				continue
+			}
+			if _, ok := declaredDeps[depID]; !ok {
+				continue
+			}
+			if _, ok := seen[depID]; ok {
+				continue
+			}
+			seen[depID] = struct{}{}
+			depIDs = append(depIDs, depID)
+		}
+	}
+
+	return getImageDepSyncStepsForIDs(ctx, dg, depIDs, nil)
 }
 
 func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []string) ([]*app.WorkflowStep, error) {
@@ -334,6 +427,15 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 			steps = append(steps, depSyncSteps...)
 		}
 
+		actionDepSyncSteps, err := getComponentActionImageDepSyncSteps(ctx, dg, &comp,
+			app.ActionWorkflowTriggerTypePreDeployComponent,
+			app.ActionWorkflowTriggerTypePostDeployComponent,
+		)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, actionDepSyncSteps...)
+
 		dg.sg.nextGroup()
 
 		var installComponentID string
@@ -351,26 +453,37 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 
 		// sync image
 		if comp.Type.IsImage() && !dg.flw.PlanOnly {
-			latestBuild, err := resolvePinnedComponentBuild(ctx, dg, compID)
-			if err != nil {
-				return nil, errors.Wrapf(err, "unable to resolve pinned build for image component %s", comp.Name)
-			}
-			var buildID string
-			if latestBuild != nil {
-				buildID = latestBuild.ID
-			}
-			deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+comp.Name, componentStepMetadata(comp.Name), &componentsyncimage.Signal{
-				InstallComponentID:          installComponentID,
-				ComponentID:                 comp.ID,
-				BuildID:                     buildID,
-				ComponentConfigConnectionID: pinnedCCCID(dg, compID),
-				Role:                        dg.flw.Role,
-			}, dg.flw.PlanOnly)
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to create image sync")
-			}
+			if _, alreadySynced := dg.addedImageDepSyncs[compID]; alreadySynced {
+				skipStep, err := dg.sg.installSignalStep(ctx, dg.installID, "skipped sync "+comp.Name, pgtype.Hstore{
+					"reason":         generics.ToPtr("already synced as an action image dependency"),
+					"component_name": generics.ToPtr(comp.Name),
+				}, nil, false)
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to create skipped image sync")
+				}
+				steps = append(steps, skipStep)
+			} else {
+				latestBuild, err := resolvePinnedComponentBuild(ctx, dg, compID)
+				if err != nil {
+					return nil, errors.Wrapf(err, "unable to resolve pinned build for image component %s", comp.Name)
+				}
+				var buildID string
+				if latestBuild != nil {
+					buildID = latestBuild.ID
+				}
+				deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+comp.Name, componentStepMetadata(comp.Name), &componentsyncimage.Signal{
+					InstallComponentID:          installComponentID,
+					ComponentID:                 comp.ID,
+					BuildID:                     buildID,
+					ComponentConfigConnectionID: pinnedCCCID(dg, compID),
+					Role:                        dg.flw.Role,
+				}, dg.flw.PlanOnly)
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to create image sync")
+				}
 
-			steps = append(steps, deployStep)
+				steps = append(steps, deployStep)
+			}
 		} else {
 			if dg.flw.PlanOnly && comp.Type == app.ComponentTypeExternalImage || comp.Type == app.ComponentTypeDockerBuild {
 				continue
@@ -541,6 +654,22 @@ func getImageDepSyncSteps(
 		return nil, nil
 	}
 
+	skip := make(map[string]struct{})
+	for _, depID := range depIDs {
+		if depIdx, in := componentIDIdx[depID]; in && depIdx < parentIdx {
+			skip[depID] = struct{}{}
+		}
+	}
+
+	return getImageDepSyncStepsForIDs(ctx, dg, depIDs, skip)
+}
+
+func getImageDepSyncStepsForIDs(
+	ctx workflow.Context,
+	dg *genCtx,
+	depIDs []string,
+	skip map[string]struct{},
+) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 	groupStarted := false
 	loader := &genCtxDepLoader{
@@ -552,14 +681,9 @@ func getImageDepSyncSteps(
 		if _, already := dg.addedImageDepSyncs[depID]; already {
 			continue
 		}
-
-		// Skip if the dep is being deployed earlier in this same batch:
-		// its normal per-component image-sync step will run before the
-		// parent's group anyway, and adding another would double-sync.
-		if depIdx, in := componentIDIdx[depID]; in && depIdx < parentIdx {
+		if _, shouldSkip := skip[depID]; shouldSkip {
 			continue
 		}
-
 		dep, has := dg.components[depID]
 		if !has {
 			// Dep is not part of this app config snapshot — nothing to do.
