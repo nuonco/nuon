@@ -45,6 +45,7 @@ export const ActionRunLogs = ({
             <>
               <Text weight="strong">Action logs</Text>
               <Tabs
+                naturalHeight
                 tabs={{
                   logs: <SSELogs />,
                   trace: (
@@ -58,6 +59,7 @@ export const ActionRunLogs = ({
             </>
           ) : (
             <Tabs
+              naturalHeight
               tabs={{
                 logs: (
                   <div className="pt-4">
