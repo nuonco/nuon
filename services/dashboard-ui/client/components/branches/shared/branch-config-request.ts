@@ -4,23 +4,14 @@ import type { TAppBranchConfig } from '@/types'
 export const installGroupsForApi = (
   config?: TAppBranchConfig
 ): TCreateBranchConfigRequest['install_groups'] =>
-  config?.install_groups?.map((g, idx) => {
-    const hasSelector =
-      !!g.label_selector?.match_labels &&
-      Object.keys(g.label_selector.match_labels).length > 0
-    return {
-      name: g.name ?? '',
-      order: g.order ?? idx,
-      max_parallel: g.max_parallel || 1,
-      auto_approve_on_policies_passing:
-        g.auto_approve_on_policies_passing ?? undefined,
-      ...(g.all_installs
-        ? { all_installs: true }
-        : hasSelector
-          ? { label_selector: g.label_selector }
-          : { install_ids: g.install_ids || [] }),
-    }
-  })
+  config?.install_groups?.map((g, idx) => ({
+    name: g.name ?? '',
+    order: g.order ?? idx,
+    max_parallel: g.max_parallel || 1,
+    auto_approve_on_policies_passing:
+      g.auto_approve_on_policies_passing ?? undefined,
+    ...(g.default ? { default: true } : { label_selector: g.label_selector }),
+  }))
 
 export const vcsConfigForApi = (
   config?: TAppBranchConfig

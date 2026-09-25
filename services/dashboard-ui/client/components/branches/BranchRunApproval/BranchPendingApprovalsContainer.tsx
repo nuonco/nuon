@@ -2,7 +2,10 @@ import { useNavigate } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstallWorkflow } from '@/types'
 import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
-import { BranchRunApproval, type IBranchRunApprovalItem } from './BranchRunApproval'
+import {
+  BranchRunApproval,
+  type IBranchRunApprovalItem,
+} from './BranchRunApproval'
 
 interface IBranchPendingApprovalsContainer {
   run?: TInstallWorkflow

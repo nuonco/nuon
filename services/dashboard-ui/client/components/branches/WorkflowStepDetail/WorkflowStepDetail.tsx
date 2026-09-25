@@ -58,7 +58,10 @@ export const WorkflowStepDetail = ({
         />
       )
     }
-    if (name.includes('plan install group') || name === 'plan preview install') {
+    if (
+      name.includes('plan install group') ||
+      name === 'plan preview install'
+    ) {
       return <PlanGroupStep step={step} metadata={metadata} />
     }
     if (

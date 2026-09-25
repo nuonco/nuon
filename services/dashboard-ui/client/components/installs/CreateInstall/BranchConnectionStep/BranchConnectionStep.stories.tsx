@@ -15,13 +15,16 @@ const mockBranches: any[] = [
             id: 'group-1',
             name: 'Staging',
             label_selector: { match_labels: { env: 'staging' } },
-            install_ids: [],
           },
           {
             id: 'group-2',
             name: 'Production',
             label_selector: { match_labels: { env: 'production' } },
-            install_ids: [],
+          },
+          {
+            id: 'group-3',
+            name: 'Remaining installs',
+            default: true,
           },
         ],
       },
@@ -34,9 +37,9 @@ const mockBranches: any[] = [
       {
         install_groups: [
           {
-            id: 'group-3',
-            name: 'Canary',
-            install_ids: ['inst-001', 'inst-002'],
+            id: 'group-4',
+            name: 'All',
+            default: true,
           },
         ],
       },
@@ -57,12 +60,11 @@ export const WithBranches = () => (
   </div>
 )
 
-export const AddedToLabelGroup = () => (
+export const SelectExplicitGroup = () => (
   <div className="max-w-xl p-4">
     <BranchConnectionStep
       branches={mockBranches}
       installId="inst-new"
-      installLabels={{ env: 'production' }}
       orgId="org123"
       appId="app123"
       onDone={() => alert('done')}

@@ -9,9 +9,11 @@ const rows = [
     buildId: 'bld53jcw9957zg1flwrimnumzk',
     componentName: 'img_event_proof',
     componentHref: '#',
-    image: 'us-west1-docker.pkg.dev/nuon-gcp-support/nuon-event-proof/clickhouse-server',
+    image:
+      'us-west1-docker.pkg.dev/nuon-gcp-support/nuon-event-proof/clickhouse-server',
     resolvedTag: '1.0.1',
-    digest: 'sha256:45e09956dc667c5eff3583c9d94830261fb1ca0be10a0a7db36266edf5de9e1d',
+    digest:
+      'sha256:45e09956dc667c5eff3583c9d94830261fb1ca0be10a0a7db36266edf5de9e1d',
     noOp: false,
     status: 'active',
     buildHref: '#',
@@ -20,9 +22,11 @@ const rows = [
     buildId: 'bldyvnpxiumrmfykj4ekct1tqm',
     componentName: 'img_no_change',
     componentHref: '#',
-    image: 'us-west1-docker.pkg.dev/nuon-gcp-support/nuon-event-proof/clickhouse-server',
+    image:
+      'us-west1-docker.pkg.dev/nuon-gcp-support/nuon-event-proof/clickhouse-server',
     resolvedTag: '1.0.2',
-    digest: 'sha256:45e09956dc667c5eff3583c9d94830261fb1ca0be10a0a7db36266edf5de9e1d',
+    digest:
+      'sha256:45e09956dc667c5eff3583c9d94830261fb1ca0be10a0a7db36266edf5de9e1d',
     noOp: true,
     status: 'active',
     buildHref: '#',

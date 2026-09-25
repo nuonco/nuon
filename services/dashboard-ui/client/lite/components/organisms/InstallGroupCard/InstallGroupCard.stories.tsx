@@ -43,7 +43,8 @@ const STAGE: IDeploymentPlanStage = {
   name: 'Core installs',
   order: 0,
   stage: 1,
-  membership: 'install_ids',
+  membership: 'label_selector',
+  selector: { match_labels: { env: 'prod' } },
   installs: INSTALLS,
   totalInstalls: 3,
   maxParallel: 2,
@@ -71,7 +72,7 @@ export const Overview = () => (
     rules={[
       'Run totals take precedence because the resolver supplies what the rollout covered.',
       'Selector groups show their chips and explain that membership is dynamic.',
-      'Explicit-list groups do not show the dynamic-membership line.',
+      'Default groups do not show the dynamic-membership line.',
       'Empty groups remain visible with a zero count.',
       'Install rows reuse ConfigItem.',
     ]}

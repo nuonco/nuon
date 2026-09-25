@@ -113,7 +113,11 @@ export const BranchRunBuilds = ({
                       )}
                       <div className="flex flex-col gap-0.5 min-w-0">
                         <div className="flex items-center gap-2">
-                          <Text variant="body" weight="strong" className="truncate">
+                          <Text
+                            variant="body"
+                            weight="strong"
+                            className="truncate"
+                          >
                             {build.component_name || build.component_id}
                           </Text>
                           {componentType && componentType !== 'unknown' && (
@@ -149,7 +153,11 @@ export const BranchRunBuilds = ({
                     />
                     <div className="flex flex-col gap-0.5 min-w-0">
                       <div className="flex items-center gap-2">
-                        <Text variant="body" weight="strong" className="truncate">
+                        <Text
+                          variant="body"
+                          weight="strong"
+                          className="truncate"
+                        >
                           Sandbox
                         </Text>
                       </div>

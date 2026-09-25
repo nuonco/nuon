@@ -1,6 +1,9 @@
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { InstallRunbooksRow, type IInstallRunbooksRow } from './InstallRunbooksRow'
+import {
+  InstallRunbooksRow,
+  type IInstallRunbooksRow,
+} from './InstallRunbooksRow'
 import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 import { StepBlock, StepRowList } from '../../shared/StepLayout'
 
@@ -52,7 +55,9 @@ export const PostDeployRunbooksStep = ({
 
         {rows.length === 0 ? (
           emptyMessage ? (
-            <StepStatePlaceholder variant="loading">{emptyMessage}</StepStatePlaceholder>
+            <StepStatePlaceholder variant="loading">
+              {emptyMessage}
+            </StepStatePlaceholder>
           ) : statusDescription ? (
             <Text variant="subtext" theme="neutral">
               {statusDescription}

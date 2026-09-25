@@ -26,7 +26,7 @@ import {
 import { clearDraft, loadDraft, saveDraft } from '../../../utils/draft'
 import type { IWizardDescriptor } from '../../../utils/wizard'
 
-export type TInstallGroupKind = 'labels' | 'all' | 'install-ids' | 'wildcard'
+export type TInstallGroupKind = 'labels' | 'default' | 'wildcard'
 
 export interface IInstallSetupGroup {
   id: string
@@ -207,11 +207,8 @@ const StepAction = ({
   )
 
 const groupDescription = (group: IInstallSetupGroup) => {
-  if (group.kind === 'all') {
-    return 'This group already includes every install automatically.'
-  }
-  if (group.kind === 'install-ids') {
-    return 'This group is managed with explicit install IDs.'
+  if (group.kind === 'default') {
+    return 'This group includes all remaining installs automatically.'
   }
   if (group.kind === 'wildcard') {
     return 'Wildcard selectors cannot be joined by applying labels.'
