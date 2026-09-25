@@ -105,6 +105,8 @@ Tool JSON timestamps are UTC (Zulu) RFC3339 and always end in `Z`, for example `
 
 List tools are paginated (default 20, max 100). If `has_more` is true, tell the user there are more results. Do not keep paging until the list is complete unless they asked for everything; use `offset=next_offset` for the next page.
 
+Cloud connection tools: `list_cloud_connections` and `get_cloud_connection` read connection status and setup material. With writes enabled, `create_cloud_connection`, `verify_cloud_connection`, and `delete_cloud_connection` manage AWS access for install stacks and private image pulls.
+
 ## IAM permission checks (local CLI extension)
 
 These checks are not MCP tools. They run on the app directory via the `policies` CLI extension.
@@ -126,6 +128,7 @@ Writes are hidden from the stdio proxy unless `--allow-writes` is set. Descripti
 | Orgs | `whoami`, `list_orgs`, `select_org` | |
 | Apps | `list_apps`, `get_app`, `list_app_branches`, `get_app_branch`, `list_app_branch_runs`, `get_app_branch_run`, `list_app_branch_preview_sources` | `preview_app_branch` |
 | Components | `list_components`, `get_component`, `list_builds`, `get_build` | |
+| Cloud connections | `list_cloud_connections`, `get_cloud_connection` | `create_cloud_connection`, `verify_cloud_connection`, `delete_cloud_connection` |
 | Installs | `list_installs`, `get_install`, `get_install_readme`, `get_install_health`, `list_install_components`, `get_install_inputs`, `list_available_roles`, `list_workflows`, `get_workflow`, `get_workflow_step`, `watch_workflow`, `get_pending_approvals`, `list_deploys`, `get_deploy` | `update_install_inputs`, `deploy_install_components`, `reprovision_install`, `reprovision_sandbox`, `deprovision_install`, `deprovision_sandbox`, `approve_step`, `reject_step`, `retry_step`, `cancel_workflow` |
 | Actions | `list_install_actions`, `get_action` | `run_action` |
 | Logs | `get_workflow_step_logs`, `get_deploy_logs`, `get_build_logs` | |
