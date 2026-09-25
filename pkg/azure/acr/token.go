@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"go.uber.org/zap"
 
@@ -27,13 +29,18 @@ const (
 // NOTE: we do this, instead of using the ACR repository client to simplify our dependencies, however, at some point we
 // plan on moving this into a package, like we have with `pkg/aws`.
 func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService string, logger *zap.Logger) (string, error) {
-	// get a credential
 	credential, err := credentials.Fetch(ctx, cfg, logger)
 	if err != nil {
 		return "", fmt.Errorf("unable to get credential: %w", err)
 	}
+	tenantID := ""
+	if cfg != nil {
+		tenantID = cfg.TenantID
+	}
+	return GetRepositoryTokenWithCredential(ctx, credential, tenantID, acrService)
+}
 
-	// use the credentials to get an Entra ID token
+func GetRepositoryTokenWithCredential(ctx context.Context, credential azcore.TokenCredential, tenantID, acrService string) (string, error) {
 	aadToken, err := credential.GetToken(ctx, policy.TokenRequestOptions{
 		Scopes: []string{"https://management.azure.com/.default"}},
 	)
@@ -46,12 +53,8 @@ func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService
 		return "", fmt.Errorf("unable to parse entra id token for claims: %w", err)
 	}
 
-	// The exchange must name the tenant that owns the registry. Normally that
-	// is the token's own tenant, but an app registration authenticating into a
-	// vendor tenant is configured with it explicitly, so prefer that.
-	tenantID := claims.TenantID
-	if cfg != nil && cfg.TenantID != "" {
-		tenantID = cfg.TenantID
+	if tenantID == "" {
+		tenantID = claims.TenantID
 	}
 
 	formData := url.Values{
@@ -60,9 +63,18 @@ func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService
 		"tenant":       {tenantID},
 		"access_token": {aadToken.Token},
 	}
-	jsonResponse, err := http.PostForm(fmt.Sprintf("https://%s/oauth2/exchange", acrService), formData)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://%s/oauth2/exchange", acrService), strings.NewReader(formData.Encode()))
+	if err != nil {
+		return "", fmt.Errorf("unable to build token request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	jsonResponse, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("unable to get credential: %w", err)
+	}
+	defer jsonResponse.Body.Close()
+	if jsonResponse.StatusCode < http.StatusOK || jsonResponse.StatusCode >= http.StatusMultipleChoices {
+		return "", fmt.Errorf("ACR token exchange returned %s", jsonResponse.Status)
 	}
 	var response map[string]interface{}
 	decoder := json.NewDecoder(jsonResponse.Body)
@@ -75,6 +87,5 @@ func GetRepositoryToken(ctx context.Context, cfg *credentials.Config, acrService
 		return "", fmt.Errorf("unable to parse refresh token as string")
 	}
 
-	// return the refresh token
 	return token, nil
 }

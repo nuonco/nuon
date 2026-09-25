@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/aws/smithy-go"
 	"gorm.io/gorm"
 
@@ -46,6 +48,19 @@ func (h *Helpers) Credentials(ctx context.Context, connection *app.CloudConnecti
 		return nil, err
 	}
 	return &credentials.Config{Region: connection.DefaultRegion, AssumeRole: &credentials.AssumeRoleConfig{RoleARN: connection.Principal, SessionName: sessionName, SessionDurationSeconds: 900, WebIdentityToken: token}}, nil
+}
+
+func (h *Helpers) AzureCredential(connection *app.CloudConnection) (azcore.TokenCredential, error) {
+	return AzureCredential(h.issuer, connection)
+}
+
+func AzureCredential(issuer *oidcissuer.Issuer, connection *app.CloudConnection) (azcore.TokenCredential, error) {
+	if issuer == nil {
+		return nil, fmt.Errorf("cloud connection OIDC issuer is unavailable")
+	}
+	return azidentity.NewClientAssertionCredential(connection.TenantID, connection.Principal, func(ctx context.Context) (string, error) {
+		return issuer.Mint(ctx, fmt.Sprintf("org:%s:connection:%s", connection.OrgID, connection.ID), "api://AzureADTokenExchange", 10*time.Minute)
+	}, nil)
 }
 
 func (h *Helpers) ECRCredentials(ctx context.Context, connection *app.CloudConnection, sessionName string) (*credentials.Config, error) {

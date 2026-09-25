@@ -28,7 +28,7 @@ type VerificationResult struct {
 }
 
 type Verifier interface {
-	Verify(context.Context, *app.CloudConnection, []string) (VerificationResult, error)
+	Verify(context.Context, *app.CloudConnection, VerifyOptions) (VerificationResult, error)
 }
 
 type stsAPI interface {
@@ -53,7 +53,7 @@ func NewAWSVerifier(issuer *oidcissuer.Issuer) Verifier {
 	return &awsVerifier{issuer: issuer}
 }
 
-func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnection, repositories []string) (VerificationResult, error) {
+func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnection, options VerifyOptions) (VerificationResult, error) {
 	if v.issuer == nil {
 		return VerificationResult{}, fmt.Errorf("cloud connection OIDC issuer is unavailable")
 	}
@@ -103,8 +103,8 @@ func (v *awsVerifier) Verify(ctx context.Context, connection *app.CloudConnectio
 		case app.CloudConnectionCapabilityImages:
 			ecrClient := ecr.NewFromConfig(assumed)
 			_, err = ecrClient.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
-			if err == nil && len(repositories) > 0 {
-				_, err = ecrClient.DescribeRepositories(ctx, &ecr.DescribeRepositoriesInput{RepositoryNames: repositories})
+			if err == nil && len(options.Repositories) > 0 {
+				_, err = ecrClient.DescribeRepositories(ctx, &ecr.DescribeRepositoriesInput{RepositoryNames: options.Repositories})
 			}
 		}
 		if err == nil {

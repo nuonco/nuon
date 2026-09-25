@@ -26,6 +26,7 @@ type CreateRequest struct {
 	DefaultRegion    string                          `json:"default_region,omitempty"`
 	Capabilities     []app.CloudConnectionCapability `json:"capabilities"`
 	Repositories     []string                        `json:"repositories,omitempty"`
+	Registry         string                          `json:"registry,omitempty"`
 }
 
 type ConnectionResponse struct {
@@ -41,18 +42,19 @@ type ConnectionUsage struct {
 
 type VerifyRequest struct {
 	Repositories []string `json:"repositories,omitempty"`
+	Registry     string   `json:"registry,omitempty"`
 }
 
 func userError(err error) error {
 	return stderr.ErrUser{Err: err, Description: err.Error()}
 }
 
-func (s *service) response(ctx context.Context, connection *app.CloudConnection, repositories []string) (ConnectionResponse, error) {
+func (s *service) response(ctx context.Context, connection *app.CloudConnection, options SetupOptions) (ConnectionResponse, error) {
 	usage, err := s.usage(ctx, connection.ID)
 	if err != nil {
 		return ConnectionResponse{}, err
 	}
-	return ConnectionResponse{CloudConnection: *connection, Setup: s.setup(connection, repositories), UsedBy: usage}, nil
+	return ConnectionResponse{CloudConnection: *connection, Setup: s.setup(connection, options), UsedBy: usage}, nil
 }
 
 func (s *service) usage(ctx context.Context, connectionID string) (ConnectionUsage, error) {
@@ -96,7 +98,7 @@ func (s *service) Create(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create cloud connection: %w", err))
 		return
 	}
-	response, err := s.response(ctx, &connection, req.Repositories)
+	response, err := s.response(ctx, &connection, SetupOptions{Repositories: req.Repositories, Registry: req.Registry})
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -125,7 +127,7 @@ func (s *service) List(ctx *gin.Context) {
 	}
 	responses := make([]ConnectionResponse, 0, len(connections))
 	for i := range connections {
-		response, err := s.response(ctx, &connections[i], nil)
+		response, err := s.response(ctx, &connections[i], SetupOptions{})
 		if err != nil {
 			ctx.Error(err)
 			return
@@ -155,7 +157,7 @@ func (s *service) Get(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	response, err := s.response(ctx, connection, nil)
+	response, err := s.response(ctx, connection, SetupOptions{})
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -184,7 +186,7 @@ func (s *service) Setup(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, s.setup(connection, ctx.QueryArray("repository")))
+	ctx.JSON(http.StatusOK, s.setup(connection, SetupOptions{Repositories: ctx.QueryArray("repository"), Registry: ctx.Query("registry")}))
 }
 
 // @ID DeleteCloudConnection
@@ -254,12 +256,13 @@ func (s *service) Verify(ctx *gin.Context) {
 			return
 		}
 	}
-	connection, err := s.verify(ctx, org.ID, ctx.Param("connection_id"), req.Repositories)
+	options := VerifyOptions{Repositories: req.Repositories, Registry: req.Registry}
+	connection, err := s.verify(ctx, org.ID, ctx.Param("connection_id"), options)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	response, err := s.response(ctx, connection, req.Repositories)
+	response, err := s.response(ctx, connection, SetupOptions(options))
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -267,12 +270,12 @@ func (s *service) Verify(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-func (s *service) verify(ctx context.Context, orgID, connectionID string, repositories []string) (*app.CloudConnection, error) {
+func (s *service) verify(ctx context.Context, orgID, connectionID string, options VerifyOptions) (*app.CloudConnection, error) {
 	connection, err := s.getContext(ctx, orgID, connectionID)
 	if err != nil {
 		return nil, err
 	}
-	result, err := s.verifier.Verify(ctx, connection, repositories)
+	result, err := s.verifier.Verify(ctx, connection, options)
 	if err != nil {
 		return nil, fmt.Errorf("verify cloud connection: %w", err)
 	}

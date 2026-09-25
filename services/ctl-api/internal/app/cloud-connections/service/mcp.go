@@ -30,16 +30,20 @@ type mcpConnectionInput struct {
 
 type mcpCreateInput struct {
 	Name          string                          `json:"name" jsonschema:"connection name"`
-	TargetID      string                          `json:"target_id" jsonschema:"AWS account ID"`
-	Principal     string                          `json:"principal" jsonschema:"AWS IAM role ARN"`
+	Platform      app.CloudPlatform               `json:"platform" jsonschema:"cloud platform: aws or azure"`
+	TargetID      string                          `json:"target_id" jsonschema:"AWS account ID or Azure subscription ID"`
+	Principal     string                          `json:"principal" jsonschema:"AWS IAM role ARN or Entra application client ID"`
+	TenantID      string                          `json:"tenant_id,omitempty" jsonschema:"Entra tenant ID for Azure"`
 	DefaultRegion string                          `json:"default_region,omitempty" jsonschema:"AWS region, defaults to us-east-1"`
 	Capabilities  []app.CloudConnectionCapability `json:"capabilities" jsonschema:"requested capabilities: stacks, images, or both"`
-	Repositories  []string                        `json:"repositories,omitempty" jsonschema:"ECR repository names to scope setup material"`
+	Repositories  []string                        `json:"repositories,omitempty" jsonschema:"ECR or ACR repository names to scope setup material"`
+	Registry      string                          `json:"registry,omitempty" jsonschema:"Azure Container Registry name or login server"`
 }
 
 type mcpVerifyInput struct {
 	ConnectionID string   `json:"connection_id" jsonschema:"cloud connection ID"`
-	Repositories []string `json:"repositories,omitempty" jsonschema:"ECR repository names to probe"`
+	Repositories []string `json:"repositories,omitempty" jsonschema:"ECR or ACR repository names to probe"`
+	Registry     string   `json:"registry,omitempty" jsonschema:"Azure Container Registry name or login server"`
 }
 
 func (s *service) mcpList(ctx context.Context, _ *mcp.CallToolRequest, in mcpListInput) (*mcp.CallToolResult, any, error) {
@@ -58,7 +62,7 @@ func (s *service) mcpList(ctx context.Context, _ *mcp.CallToolRequest, in mcpLis
 	connections, hasMore := apiPkg.MCPClipList(connections, limit)
 	responses := make([]ConnectionResponse, 0, len(connections))
 	for i := range connections {
-		response, err := s.response(ctx, &connections[i], nil)
+		response, err := s.response(ctx, &connections[i], SetupOptions{})
 		if err != nil {
 			return nil, nil, err
 		}
@@ -76,7 +80,7 @@ func (s *service) mcpGet(ctx context.Context, _ *mcp.CallToolRequest, in mcpConn
 	if err != nil {
 		return nil, nil, err
 	}
-	response, err := s.response(ctx, connection, nil)
+	response, err := s.response(ctx, connection, SetupOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -88,14 +92,14 @@ func (s *service) mcpCreate(ctx context.Context, _ *mcp.CallToolRequest, in mcpC
 	if err != nil {
 		return nil, nil, err
 	}
-	connection := app.CloudConnection{OrgID: orgID, Name: in.Name, Platform: app.CloudPlatformAWS, TargetID: in.TargetID, Principal: in.Principal, DefaultRegion: in.DefaultRegion, Capabilities: in.Capabilities}
+	connection := app.CloudConnection{OrgID: orgID, Name: in.Name, Platform: in.Platform, TargetID: in.TargetID, Principal: in.Principal, TenantID: in.TenantID, DefaultRegion: in.DefaultRegion, Capabilities: in.Capabilities}
 	if err := validateConnection(&connection); err != nil {
 		return nil, nil, err
 	}
 	if err := s.db.WithContext(ctx).Create(&connection).Error; err != nil {
 		return nil, nil, fmt.Errorf("create cloud connection: %w", err)
 	}
-	response, err := s.response(ctx, &connection, in.Repositories)
+	response, err := s.response(ctx, &connection, SetupOptions{Repositories: in.Repositories, Registry: in.Registry})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -107,11 +111,12 @@ func (s *service) mcpVerify(ctx context.Context, _ *mcp.CallToolRequest, in mcpV
 	if err != nil {
 		return nil, nil, err
 	}
-	connection, err := s.verify(ctx, orgID, in.ConnectionID, in.Repositories)
+	options := VerifyOptions{Repositories: in.Repositories, Registry: in.Registry}
+	connection, err := s.verify(ctx, orgID, in.ConnectionID, options)
 	if err != nil {
 		return nil, nil, err
 	}
-	response, err := s.response(ctx, connection, in.Repositories)
+	response, err := s.response(ctx, connection, SetupOptions(options))
 	if err != nil {
 		return nil, nil, err
 	}
