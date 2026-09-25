@@ -16,10 +16,10 @@ export interface ILink extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
 }
 
 const LINK_COLOR_CLASSES = [
-  'text-primary-600 dark:text-primary-500',
-  'hover:text-primary-800 hover:dark:text-primary-400',
-  'focus:text-primary-800 focus:dark:text-primary-400',
-  'active:text-primary-900 active:dark:text-primary-600',
+  'text-link',
+  'hover:text-link-hover',
+  'focus:text-link-hover',
+  'active:text-link-active',
   'focus-visible:rounded',
   'focus-visible:px-0.5',
 ].join(' ')
@@ -41,14 +41,14 @@ const VARIANT_CLASSES: Record<TLinkVariant, string> = {
   ].join(' '),
   breadcrumb: [
     'whitespace-nowrap break-keep',
-    'hover:text-primary-800 hover:dark:text-primary-300',
+    'hover:text-link-hover',
   ].join(' '),
 }
 
 const NAV_ACTIVE =
   'text-primary-800 dark:text-primary-400 bg-primary-200 dark:bg-primary-600/25'
 const NAV_INACTIVE = 'text-cool-grey-800 dark:text-cool-grey-400'
-const BREADCRUMB_ACTIVE = 'text-primary-600 dark:text-primary-400'
+const BREADCRUMB_ACTIVE = 'text-link'
 const BREADCRUMB_INACTIVE = 'text-cool-grey-600 dark:text-cool-grey-400'
 
 export const Link = ({
