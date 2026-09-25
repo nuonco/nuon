@@ -25,6 +25,8 @@ type CancelGroupResponse struct {
 // the workflow as cancelled. The group signal's Cancel() method handles
 // propagating cancellation to in-flight steps.
 func (s *Signal) cancelGroupHandler(ctx workflow.Context, req CancelGroupRequest) (*CancelGroupResponse, error) {
+	defer s.beginUpdate()()
+
 	s.cancelRequested = true
 
 	// Cancel the active group signal.
