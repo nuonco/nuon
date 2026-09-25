@@ -22,6 +22,14 @@ bun run dev
 
 This watches `client/` for changes, rebuilds JS (bun build) and CSS (PostCSS/Tailwind) into `dist/`, and proxies through a Bun-based dev server with SSE live reload.
 
+From a git worktree (or whenever you want BFF + SPA + Ladle in one terminal):
+
+```bash
+bun run dev:stack -- 4010
+```
+
+That prints clickable `localhost` URLs for the BFF (`:4010`), live-reload proxy (`:4011`), and Ladle (port derived from the BFF port). See `scripts/README.md`.
+
 ## Build
 
 ```bash
@@ -35,6 +43,7 @@ Produces minified, content-hashed JS and CSS in `dist/assets/`.
 | Script                    | Description                     |
 | ------------------------- | ------------------------------- |
 | `bun run dev:ladle`       | Component stories (Ladle v5)    |
+| `bun run dev:stack`       | BFF + SPA proxy + Ladle (one terminal; pass a port) |
 | `bun run lint`            | ESLint on `client/`             |
 | `bun run tsc`             | TypeScript type check           |
 | `bun run fmt`             | Prettier on `client/`           |
