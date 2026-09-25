@@ -2,16 +2,13 @@ package stack
 
 import (
 	"context"
-	"fmt"
 
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/customstacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 // Sync creates the app stack configuration via the shared builder in
@@ -37,28 +34,11 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelpers *appshelpers.Helpers, cf
 		}
 	}
 
-	if len(obj.CustomNestedStacks) == 0 {
-		return nil
-	}
-
-	// Templates upload to S3 asynchronously; until then each stays pending and
-	// is skipped at stack generation.
-	q, err := appsHelpers.QueueClient().GetDefaultQueueByOwner(ctx, appID, "apps")
-	if err != nil {
+	// Uploads inside the sync transaction: keys are content addressed, so an object
+	// left behind by a rollback is inert.
+	if err := appsHelpers.UploadCustomNestedStackTemplates(ctx, db, obj); err != nil {
 		return sync.SyncInternalErr{
-			Description: "unable to get apps queue for custom nested stacks",
-			Err:         fmt.Errorf("unable to get apps queue for app %s: %w", appID, err),
-		}
-	}
-
-	if _, err := appsHelpers.QueueClient().EnqueueSignalInTransaction(ctx, db, &queueclient.EnqueueSignalRequest{
-		QueueID: q.ID,
-		Signal: &customstacks.Signal{
-			AppStackConfigID: obj.ID,
-		},
-	}); err != nil {
-		return sync.SyncInternalErr{
-			Description: "unable to enqueue custom stacks sync signal",
+			Description: "unable to upload custom nested stack templates",
 			Err:         err,
 		}
 	}
