@@ -94,8 +94,10 @@ func liftCustomStackInstallInputs(
 	outputs []customDeploymentOutputs,
 ) (map[string]map[string]string, error) {
 	deploymentNames := make(map[string]string, len(outputs))
+	parameterDefinitions := make(map[string]map[string]ARMParameter, len(outputs))
 	for _, output := range outputs {
 		deploymentNames[output.StackName] = output.DeploymentName
+		parameterDefinitions[output.StackName] = output.ParameterDefinitions
 	}
 	deployments := make(map[string]map[string]any, len(resources))
 	for _, resource := range resources {
@@ -134,6 +136,10 @@ func liftCustomStackInstallInputs(
 			if _, exists := parameters[parameterName]; !exists {
 				continue
 			}
+			source, exists := parameterDefinitions[stack.Name][parameterName]
+			if !exists {
+				continue
+			}
 
 			topLevelName := sanitizeDeploymentName(stack.Name) + sanitizeDeploymentName(parameterName)
 			canonicalName := strings.ToLower(topLevelName)
@@ -146,7 +152,11 @@ func liftCustomStackInstallInputs(
 
 			owners[canonicalName] = stack.Name + "." + parameterName
 			rootParameterNames[canonicalName] = struct{}{}
-			tmpl.Parameters[topLevelName] = ARMParameter{Type: "string"}
+			tmpl.Parameters[topLevelName] = ARMParameter{
+				Type:          source.Type,
+				AllowedValues: source.AllowedValues,
+				Metadata:      source.Metadata,
+			}
 			parameters[parameterName] = map[string]any{"value": "[parameters('" + topLevelName + "')]"}
 			if result[stack.Name] == nil {
 				result[stack.Name] = make(map[string]string)

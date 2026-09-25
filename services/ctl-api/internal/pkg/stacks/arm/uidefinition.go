@@ -30,8 +30,12 @@ import (
 //   - resourceGroup rejects any name but the install's, with allowExisting
 //     because by definition it already holds resources on every deploy after the
 //     first.
-//   - location is pinned to the install's region. Deploying elsewhere would strand
-//     resources in a region the platform does not track.
+//   - location is the portal region picker. The Runner step is built after the
+//     customer leaves Basics, so its size selector loads SKUs for the region they
+//     selected. At resource-group scope the picker is pinned to the install
+//     region: there is no deployment().location, and a different parameter would
+//     place the VNet outside the region the install tracks. At subscription scope
+//     the picker stays open and resources follow deployment().location.
 //   - subscription requires deploymentStacks/write, so a missing permission shows
 //     up in the form rather than as a mid-deploy authorization failure.
 //
@@ -74,10 +78,7 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 		"subscription": map[string]any{
 			"constraints": map[string]any{"validations": subscriptionValidations},
 		},
-		"location": map[string]any{
-			"allowedValues": []string{location},
-			"toolTip":       "The install's region. It is fixed for the lifetime of the install.",
-		},
+		"location": locationControl(scope, location),
 	}
 
 	// At subscription scope the stack template creates the install resource group
@@ -103,6 +104,7 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 	}
 
 	basics := []any{}
+	steps := []any{}
 	outputs := map[string]any{}
 	if _, declared := wrapperParams["location"]; declared {
 		outputs["location"] = "[location()]"
@@ -111,6 +113,21 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 	inputLabels := azureInputLabels(inp)
 	for _, name := range sortedParamNames(wrapperParams) {
 		if name == "location" || name == "deployTimestamp" {
+			continue
+		}
+
+		// SizeSelector on Basics is created with the portal's initial region and
+		// does not re-query when that region changes, so a size chosen for the
+		// default region is submitted unchanged. A later step is built after the
+		// customer leaves Basics, which loads SKUs for the region they settled on.
+		if name == runnerVmSizeParamName {
+			element := runnerVMSizeUIElement(wrapperParams[name])
+			steps = append(steps, map[string]any{
+				"name":     "runner",
+				"label":    "Runner",
+				"elements": []any{element},
+			})
+			outputs[name] = "[steps('runner').runnerVmSize]"
 			continue
 		}
 
@@ -129,7 +146,7 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 		"parameters": map[string]any{
 			"config":  map[string]any{"basics": basicsConfig},
 			"basics":  basics,
-			"steps":   []any{},
+			"steps":   steps,
 			"outputs": outputs,
 		},
 	}
@@ -141,6 +158,23 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 
 	hash := sha256.Sum256(uiDefBytes)
 	return uiDefBytes, hex.EncodeToString(hash[:]), nil
+}
+
+// locationControl is the Basics region picker. The runner size selector reads it
+// when the customer opens the next step, so the two stay on one region.
+//
+// Resource-group scope pins it: the VM's location parameter would otherwise
+// accept a region the install does not track, and deployment().location does
+// not exist there. Subscription scope leaves it open. The portal selection is
+// deployment().location, which is what the template deploys into.
+func locationControl(scope armScope, location string) map[string]any {
+	ctrl := map[string]any{
+		"toolTip": "Region for this install. The runner VM sizes on the next step are the SKUs this region offers.",
+	}
+	if !scope.subscription {
+		ctrl["allowedValues"] = []string{location}
+	}
+	return ctrl
 }
 
 // deployedResourceGroupName is the resource group the install's stack actually
@@ -198,6 +232,25 @@ func basicsElement(name string, p ARMParameter, label string) (map[string]any, s
 	}
 	if p.Metadata != nil && p.Metadata.Description != "" {
 		element["toolTip"] = p.Metadata.Description
+	}
+
+	if p.Type != "securestring" && len(p.AllowedValues) > 0 && (p.Type == "string" || p.Type == "int" || p.Type == "bool") {
+		allowedValues := make([]any, 0, len(p.AllowedValues))
+		for _, value := range p.AllowedValues {
+			allowedValues = append(allowedValues, map[string]any{
+				"label": humanizeParamName(fmt.Sprintf("%v", value)),
+				"value": value,
+			})
+		}
+		element["type"] = "Microsoft.Common.DropDown"
+		element["constraints"] = map[string]any{
+			"allowedValues": allowedValues,
+			"required":      true,
+		}
+		if p.DefaultValue != nil {
+			element["defaultValue"] = humanizeParamName(fmt.Sprintf("%v", p.DefaultValue))
+		}
+		return element, fmt.Sprintf("[basics('%s')]", name), true
 	}
 
 	switch p.Type {
@@ -259,4 +312,49 @@ func humanizeParamName(name string) string {
 		b.WriteRune(r)
 	}
 	return b.String()
+}
+
+// runnerVMSizeUIElement is a SizeSelector rather than the DropDown allowedValues
+// would otherwise produce. The portal lists SKUs for the Basics location and
+// skips any that the region does not actually offer, so a size that is in our
+// allowlist but unavailable in the install's region cannot be submitted.
+func runnerVMSizeUIElement(p ARMParameter) map[string]any {
+	allowed := make([]string, 0, len(p.AllowedValues))
+	for _, value := range p.AllowedValues {
+		allowed = append(allowed, fmt.Sprintf("%v", value))
+	}
+
+	recommended := allowed
+	if def, ok := p.DefaultValue.(string); ok && def != "" {
+		rest := make([]string, 0, len(allowed))
+		for _, size := range allowed {
+			if size != def {
+				rest = append(rest, size)
+			}
+		}
+		recommended = append([]string{def}, rest...)
+	}
+
+	toolTip := ""
+	if p.Metadata != nil {
+		toolTip = p.Metadata.Description
+	}
+
+	return map[string]any{
+		"name":             runnerVmSizeParamName,
+		"type":             "Microsoft.Compute.SizeSelector",
+		"label":            "Runner VM Size",
+		"toolTip":          toolTip,
+		"recommendedSizes": recommended,
+		"osPlatform":       "Linux",
+		"count":            1,
+		"imageReference": map[string]any{
+			"publisher": "Canonical",
+			"offer":     "0001-com-ubuntu-server-jammy",
+			"sku":       "22_04-lts-gen2",
+		},
+		"constraints": map[string]any{
+			"allowedSizes": allowed,
+		},
+	}
 }

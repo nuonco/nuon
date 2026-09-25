@@ -139,9 +139,8 @@ func (s armScope) locationExpr() string {
 //
 // At subscription scope this is a variable rather than a parameter, for the same
 // reason as installResourceGroupName: the portal renders one form field per
-// parameter with no way to hide one, and the region is not customer-configurable —
-// it is whatever Nuon recorded on the Azure account, and the sandbox and components
-// already assume that value.
+// parameter with no way to hide one. Its value is deployment().location, the
+// region the customer selected and the region the runner size selector queried.
 //
 // Only for references evaluated in the root. A wrapped resource is inside a nested
 // template that declares its own `location` parameter, so it keeps using

@@ -17,7 +17,12 @@ const customStacksOnlyTestTemplate = `{
   "contentVersion": "1.0.0.0",
   "parameters": {
     "vnetId": { "type": "string" },
-    "setting": { "type": "string", "defaultValue": "default" }
+    "setting": {
+      "type": "string",
+      "defaultValue": "production",
+      "allowedValues": ["production", "staging"],
+      "metadata": {"description": "Deployment environment."}
+    }
   },
   "resources": [],
   "outputs": {
@@ -31,7 +36,7 @@ func TestAzureCustomStacksOnlyTemplate(t *testing.T) {
 	}))
 	defer server.Close()
 
-	inp := armCustomStackInput(t, server.URL, map[string]string{"setting": "sensitive-value"})
+	inp := armCustomStackInput(t, server.URL, map[string]string{"setting": "production"})
 	inp.CustomStacksOnly = true
 	inp.UnrenderedCustomStackParameters = map[string]map[string]string{
 		"route53_zones": {"setting": "{{.nuon.install.inputs.setting}}"},
@@ -50,6 +55,12 @@ func TestAzureCustomStacksOnlyTemplate(t *testing.T) {
 	assert.Contains(t, tmpl.Parameters, "vnetId")
 	assert.NotContains(t, tmpl.Parameters, "setting")
 	assert.Contains(t, tmpl.Parameters, "Route53ZonesSetting")
+	lifted := tmpl.Parameters["Route53ZonesSetting"]
+	assert.Equal(t, "string", lifted.Type)
+	assert.Nil(t, lifted.DefaultValue)
+	assert.Equal(t, []any{"production", "staging"}, lifted.AllowedValues)
+	require.NotNil(t, lifted.Metadata)
+	assert.Equal(t, "Deployment environment.", lifted.Metadata.Description)
 	assert.Equal(t, "[parameters('"+customStacksResourceGroupParameter+"')]", tmpl.Variables[installRGVarName])
 
 	require.Len(t, tmpl.Resources, 1)

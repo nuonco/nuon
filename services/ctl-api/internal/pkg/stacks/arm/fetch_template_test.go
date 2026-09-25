@@ -444,3 +444,25 @@ func TestParseGeneratedBicepTemplate(t *testing.T) {
 		t.Error("expected vnetAddressPrefix parameter to be extracted")
 	}
 }
+
+func TestExtractARMParameters_PreservesTypedAllowedValues(t *testing.T) {
+	var tmpl armTemplateShape
+	err := json.Unmarshal([]byte(`{
+	  "parameters": {
+	    "replicas": {"type": "int", "allowedValues": [1, 3]},
+	    "enabled": {"type": "bool", "allowedValues": [true, false]}
+	  },
+	  "resources": []
+	}`), &tmpl)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, hoisted := extractARMParameters(&tmpl, nil)
+	if got := hoisted["replicas"].AllowedValues; len(got) != 2 || got[0] != float64(1) || got[1] != float64(3) {
+		t.Errorf("integer allowedValues = %#v", got)
+	}
+	if got := hoisted["enabled"].AllowedValues; len(got) != 2 || got[0] != true || got[1] != false {
+		t.Errorf("boolean allowedValues = %#v", got)
+	}
+}

@@ -1,0 +1,9 @@
+[extension]
+name = "install-config-history"
+description = "Browse and diff an install's app branch configuration history"
+
+[extension.auth]
+requires_token = true
+requires_org = true
+requires_app = false
+requires_install = true
