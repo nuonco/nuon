@@ -7,8 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 type CreateInstallAppConfigUpdateRequest struct {
@@ -46,59 +47,33 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 		return
 	}
 
-	install, err := s.getInstall(ctx, installID)
-	if err != nil {
+	if _, err := s.getInstall(ctx, installID); err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	// Verify the app config exists
 	var appConfig app.AppConfig
 	if err := s.db.WithContext(ctx).First(&appConfig, "id = ?", req.AppConfigID).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to find app config: %w", err))
 		return
 	}
 
-	// Create the install workflow
-	metadata := map[string]string{
-		"new_app_config_id": req.AppConfigID,
-	}
+	blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
+	blobCtx = blobstore.WithBlobWriteEnabled(blobCtx, true)
 
-	wf, err := s.helpers.CreateWorkflow(
-		ctx,
-		installID,
-		app.WorkflowTypeAppBranchConfigUpdate,
-		metadata,
-		req.PlanOnly,
-	)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create workflow: %w", err))
-		return
-	}
-
-	// Create the InstallAppConfigVersion tracking record
-	update := app.InstallAppConfigVersion{
+	created, err := s.helpers.CreateAppBranchConfigUpdateWorkflow(blobCtx, helpers.AppBranchConfigUpdateInput{
 		InstallID:      installID,
-		OldAppConfigID: install.AppConfigID,
 		NewAppConfigID: req.AppConfigID,
-		WorkflowID:     &wf.ID,
-		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
-	}
-	if err := s.db.WithContext(ctx).Create(&update).Error; err != nil {
-		ctx.Error(fmt.Errorf("unable to create install config update: %w", err))
-		return
-	}
-
-	// Enqueue the workflow on the install's queue
-	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
+		PlanOnly:       req.PlanOnly,
+	})
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
-		WorkflowID: wf.ID,
-	}, wf.ID, "install_workflows"); err != nil {
-		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+
+	var update app.InstallAppConfigVersion
+	if err := s.db.WithContext(ctx).First(&update, "id = ?", created.InstallAppConfigVersionID).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to load install config update: %w", err))
 		return
 	}
 
