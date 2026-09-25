@@ -18,13 +18,14 @@ interface IBranchGroupPicker {
 }
 
 const groupKind = (
-  group: NonNullable<NonNullable<TAppBranch['configs']>[number]['install_groups']>[number]
+  group: NonNullable<
+    NonNullable<TAppBranch['configs']>[number]['install_groups']
+  >[number]
 ) => {
-  if (group.all_installs) return 'All installs'
+  if (group.default) return 'All remaining installs'
   const labels = Object.entries(group.label_selector?.match_labels ?? {})
   if (labels.length > 0) return null
-  const count = group.install_ids?.length ?? 0
-  return `${count} install${count !== 1 ? 's' : ''} by ID`
+  return null
 }
 
 export const BranchGroupPicker = ({

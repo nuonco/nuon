@@ -78,7 +78,8 @@ type CreateInstallParams struct {
 	// the install starts on that branch's active app config and stays on the
 	// branch until explicitly moved. When empty, the install uses the latest
 	// unbranched config from apps sync.
-	AppBranchID string `json:"app_branch_id,omitempty"`
+	AppBranchID    string `json:"app_branch_id,omitempty"`
+	AppBranchGroup string `json:"app_branch_group,omitempty"`
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
@@ -370,8 +371,13 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	// The install's labels decide which of the branch's groups deploys it, so
 	// labels that put it in two groups have to fail here rather than at the
 	// branch's next run.
+	var appBranchGroupSource app.InstallAppBranchGroupAssignmentSource
 	if pin.BranchID != "" {
 		install.AppBranchID = pkggenerics.NewNullString(pin.BranchID)
+		install.AppBranchGroup = req.AppBranchGroup
+		if req.AppBranchGroup != "" {
+			install.AppBranchGroupAssignmentSource = app.InstallAppBranchGroupAssignmentSourceExplicit
+		}
 		groups, err := s.appsHelpers.LatestConfigInstallGroups(ctx, pin.BranchID)
 		if err != nil {
 			return nil, err
@@ -379,6 +385,16 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		if err := appshelpers.ValidateInstallSingleGroup(groups, &install); err != nil {
 			return nil, err
 		}
+		group, source, err := appshelpers.ResolveInstallGroupAssignment(groups, &install)
+		if err != nil {
+			return nil, err
+		}
+		if group == nil {
+			return nil, appshelpers.NoMatchingInstallGroupError(&install)
+		}
+		install.AppBranchGroup = group.Name
+		install.AppBranchGroupAssignmentSource = source
+		appBranchGroupSource = source
 	}
 
 	if pin.BranchID == "" {
@@ -390,7 +406,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 			if err := tx.WithContext(ctx).Create(&install).Error; err != nil {
 				return fmt.Errorf("unable to create install: %w", err)
 			}
-			if err := appshelpers.SetInstallAppBranchWithDB(ctx, tx, install.ID, pin.BranchID); err != nil {
+			if err := appshelpers.SetInstallAppBranchGroupAssignmentWithDB(ctx, tx, install.ID, pin.BranchID, install.AppBranchGroup, appBranchGroupSource); err != nil {
 				return fmt.Errorf("unable to add install to app branch: %w", err)
 			}
 			return nil

@@ -2,7 +2,6 @@ package apps
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
@@ -11,21 +10,6 @@ import (
 
 func canonicalizeLocalBranch(ctx context.Context, resolver *branchNameResolver, in *config.AppBranchConfig) (*config.AppBranchConfig, error) {
 	out := cloneAppBranchConfig(in)
-	for i, group := range out.InstallGroups {
-		names := append([]string{}, group.InstallNames...)
-		for _, id := range group.InstallIDs {
-			name, err := resolver.installName(ctx, id)
-			if err != nil {
-				return nil, fmt.Errorf("install group %q: %w", group.Name, err)
-			}
-			if name == "" {
-				name = id
-			}
-			names = appendUnique(names, name)
-		}
-		out.InstallGroups[i].InstallIDs = nil
-		out.InstallGroups[i].InstallNames = names
-	}
 	if out.Preview != nil {
 		if out.Preview.InstallID != "" && out.Preview.InstallName == "" {
 			name, err := resolver.installName(ctx, out.Preview.InstallID)
@@ -40,7 +24,27 @@ func canonicalizeLocalBranch(ctx context.Context, resolver *branchNameResolver, 
 		normalizePreviewDefaults(out.Preview)
 	}
 	out.Run = normalizeRunConfig(out.Run)
+	out.InstallGroups = withDefaultInstallGroup(out)
 	return out, nil
+}
+
+// withDefaultInstallGroup mirrors the server, which seeds a single default group
+// on any config written without one. Without this a branch that declares no
+// install_groups compares unequal to the group the server stored and every sync
+// reports drift no update can settle. A branch with no repo has no config
+// written at all, so it keeps an empty list.
+func withDefaultInstallGroup(cfg *config.AppBranchConfig) []config.AppBranchInstallGroupConfig {
+	if len(cfg.InstallGroups) > 0 {
+		return cfg.InstallGroups
+	}
+	if cfg.ConnectedRepo == nil && cfg.PublicRepo == nil {
+		return cfg.InstallGroups
+	}
+	return []config.AppBranchInstallGroupConfig{{
+		Name:    defaultInstallGroupName,
+		Order:   0,
+		Default: true,
+	}}
 }
 
 func normalizeRemoteBranch(ctx context.Context, resolver *branchNameResolver, name string, latest *models.AppAppBranchConfig) (*config.AppBranchConfig, error) {
@@ -79,17 +83,8 @@ func normalizeRemoteBranch(ctx context.Context, resolver *branchNameResolver, na
 		cfg := config.AppBranchInstallGroupConfig{
 			Name:                         group.Name,
 			Order:                        int(group.Order),
+			Default:                      group.Default,
 			AutoApproveOnPoliciesPassing: group.AutoApproveOnPoliciesPassing,
-		}
-		for _, id := range group.InstallIds {
-			name, err := resolver.installName(ctx, id)
-			if err != nil {
-				return nil, err
-			}
-			if name == "" {
-				name = id
-			}
-			cfg.InstallNames = append(cfg.InstallNames, name)
 		}
 		if group.LabelSelector != nil && len(group.LabelSelector.MatchLabels) > 0 {
 			cfg.LabelSelector = map[string]string(group.LabelSelector.MatchLabels)
@@ -206,8 +201,6 @@ func cloneAppBranchConfig(in *config.AppBranchConfig) *config.AppBranchConfig {
 		out.InstallGroups = make([]config.AppBranchInstallGroupConfig, len(in.InstallGroups))
 		for i, group := range in.InstallGroups {
 			g := group
-			g.InstallIDs = append([]string{}, group.InstallIDs...)
-			g.InstallNames = append([]string{}, group.InstallNames...)
 			g.LabelSelector = copyStringMap(group.LabelSelector)
 			if group.AutoApproveOnPoliciesPassing != nil {
 				g.AutoApproveOnPoliciesPassing = generics.ToPtr(*group.AutoApproveOnPoliciesPassing)

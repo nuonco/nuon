@@ -17,8 +17,7 @@ const (
 	// has default-app-branches on; the CLI holds the same value in sync_branch.go.
 	DefaultAppBranchName = "default"
 
-	// DefaultAppBranchInstallGroupName names that branch's single all-installs group.
-	DefaultAppBranchInstallGroupName = "all installs"
+	DefaultAppBranchInstallGroupName = "default"
 )
 
 func (h *Helpers) CreateAppBranch(

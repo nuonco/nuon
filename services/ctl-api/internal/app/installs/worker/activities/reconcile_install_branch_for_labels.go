@@ -39,17 +39,14 @@ func (a *Activities) ReconcileInstallBranchForLabels(ctx context.Context, input 
 		return nil, err
 	}
 
-	if err := appshelpers.ValidateInstallSingleGroup(groups, &install); err != nil {
+	group, err := appshelpers.ResolveInstallGroup(groups, &install)
+	if err != nil {
 		return nil, err
 	}
-
-	for i := range groups {
-		if !appshelpers.InstallMatchesGroup(&groups[i], &install) {
-			continue
-		}
+	if group != nil {
 		return &ReconcileInstallBranchForLabelsOutput{
 			AppBranchID:    branchID,
-			InstallGroupID: groups[i].ID,
+			InstallGroupID: group.ID,
 		}, nil
 	}
 
