@@ -37,6 +37,10 @@ export const BranchRunApprovalContainer = ({
     [run.id, setSearchParams]
   )
 
+  if (run.status?.status === 'cancelled') {
+    return null
+  }
+
   const items: IBranchRunApprovalItem[] = (run.steps ?? [])
     .filter(
       (step) =>
