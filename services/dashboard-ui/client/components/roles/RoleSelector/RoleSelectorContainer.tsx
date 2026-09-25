@@ -1,7 +1,7 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getAvailableRoles } from '@/lib'
-import type { TOperationType, TPrincipalType } from '@/types'
+import type { TOperationType, TPrincipalType, TWorkflowType } from '@/types'
 import { RoleSelector } from './RoleSelector'
 
 interface IRoleSelectorContainer {
@@ -9,6 +9,7 @@ interface IRoleSelectorContainer {
   operationType?: TOperationType
   principalType?: TPrincipalType
   principalId?: string
+  workflowType?: TWorkflowType
   value?: string
   onChange?: (value: string) => void
   name?: string
@@ -20,6 +21,7 @@ export const RoleSelectorContainer = ({
   operationType,
   principalType,
   principalId,
+  workflowType,
   value,
   onChange,
   name,
@@ -28,11 +30,25 @@ export const RoleSelectorContainer = ({
   const { org } = useOrg()
 
   const { data, isLoading, isError } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['available-roles', org.id, installId, operationType, principalType, principalId],
+    queryKey: [
+      'available-roles',
+      org?.id,
+      installId,
+      operationType,
+      principalType,
+      principalId,
+      workflowType,
+    ],
     queryFn: () =>
-      getAvailableRoles({ installId, operationType, principalType, principalId, orgId: org.id }),
-    enabled: !!installId && !!org.id,
+      getAvailableRoles({
+        installId,
+        operationType,
+        principalType,
+        principalId,
+        workflowType,
+        orgId: org!.id,
+      }),
+    enabled: !!installId && !!org?.id,
   })
 
   const roles = data?.roles ?? []
@@ -42,6 +58,7 @@ export const RoleSelectorContainer = ({
       roles={roles as any}
       isLoading={isLoading}
       isError={isError}
+      isWorkflowDefault={!!workflowType && !principalType}
       value={value}
       onChange={onChange}
       name={name}
