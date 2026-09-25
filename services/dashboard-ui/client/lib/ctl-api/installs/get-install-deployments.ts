@@ -5,7 +5,7 @@ import { buildQueryParams } from '@/utils/build-query-params'
 export const getInstallDeployments = ({
   installId,
   orgId,
-  page = 0,
+  offset = 0,
   limit = 20,
   status,
   type,
@@ -15,7 +15,7 @@ export const getInstallDeployments = ({
 }: {
   installId: string
   orgId: string
-  page?: number
+  offset?: number
   limit?: number
   status?: string
   type?: string
@@ -25,7 +25,7 @@ export const getInstallDeployments = ({
 }) =>
   api<TInstallDeploymentsResponse>({
     path: `installs/${installId}/deployments${buildQueryParams({
-      page,
+      offset,
       limit,
       status: status || undefined,
       type: type || undefined,
