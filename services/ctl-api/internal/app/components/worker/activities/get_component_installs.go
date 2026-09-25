@@ -2,9 +2,9 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GetComponentInstallsRequest struct {
@@ -16,7 +16,7 @@ type GetComponentInstallsRequest struct {
 func (a *Activities) GetComponentInstalls(ctx context.Context, req GetComponentInstallsRequest) ([]string, error) {
 	installs, err := a.appsHelpers.GetAppInstalls(ctx, req.AppID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get component dependents: %w", err)
+		return nil, generics.TemporalGormError(err, "unable to get component dependents")
 	}
 
 	activeInstalls := make([]string, 0)
