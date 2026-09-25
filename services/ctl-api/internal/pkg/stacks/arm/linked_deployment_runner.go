@@ -2,15 +2,32 @@ package arm
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
+const runnerVmSizeParamName = "runnerVmSize"
+
+// runnerLocationToken stands in for the VM region inside cloud-init. The script
+// is rendered before the customer picks a region; the default runner template
+// substitutes parameters('location') when it builds customData.
+const runnerLocationToken = "__NUON_LOCATION__"
+
+var allowedAzureVMSizes = []string{
+	app.DefaultAzureInstanceType,
+	"Standard_D4s_v5",
+	"Standard_D8s_v5",
+	"Standard_D2s_v3",
+	"Standard_D4s_v3",
+	"Standard_D8s_v3",
+}
+
 func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity, scope armScope) (map[string]any, map[string]ARMParameter, error) {
 	templateURL := inp.RunnerNestedStackTemplateURL
 	if templateURL == "" {
-		return t.getDefaultRunnerDeployment(inp, operationIDs, scope), telemetryIngressParameters(), nil
+		return t.getDefaultRunnerDeployment(inp, operationIDs, scope), runnerCustomerParameters(inp), nil
 	}
 
 	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
@@ -54,9 +71,9 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		"runnerApiUrl":        t.runnerAPIURL(inp),
 		"runnerInitScriptUrl": inp.RunnerInitScriptURL,
 		"runnerSubnetId":      fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment),
-		"customData":          t.buildRunnerCustomData(inp),
+		"customData":          t.buildRunnerCustomData(inp, inp.Install.AzureAccount.Location),
 		"commonTags":          "[variables('commonTags')]",
-		"runnerVmSize":        runnerVMSize(inp),
+		runnerVmSizeParamName: "[parameters('" + runnerVmSizeParamName + "')]",
 	}
 
 	if len(userAssigned) > 0 {
@@ -73,11 +90,16 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		// know about, ARM will surface a clear deployment error.
 	}
 
-	var customerParams map[string]ARMParameter
+	customerParams := map[string]ARMParameter{}
+	if _, ok := armTmpl.Parameters[runnerVmSizeParamName]; ok {
+		customerParams[runnerVmSizeParamName] = runnerVMSizeParameter(inp)
+	}
 	parameter, hasParameter := armTmpl.Parameters["enableTelemetryIngress"]
 	_, hasOutput := armTmpl.Outputs["telemetryEndpoint"]
 	if hasParameter && hasOutput && parameter.Type == "bool" {
-		customerParams = telemetryIngressParameters()
+		for name, p := range telemetryIngressParameters() {
+			customerParams[name] = p
+		}
 		deploymentParams["enableTelemetryIngress"] = map[string]any{"value": "[parameters('enableTelemetryIngress')]"}
 	}
 
@@ -107,7 +129,7 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 }
 
 func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity, scope armScope) map[string]any {
-	customData := t.buildRunnerCustomData(inp)
+	customData := t.buildRunnerCustomData(inp, runnerLocationToken)
 
 	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
 
@@ -134,8 +156,9 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 				"runnerSubnetId":         map[string]any{"value": fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment)},
 				"customData":             map[string]any{"value": customData},
 				"commonTags":             map[string]any{"value": "[variables('commonTags')]"},
+				runnerVmSizeParamName:    map[string]any{"value": "[parameters('" + runnerVmSizeParamName + "')]"},
 			},
-			"template": t.getDefaultRunnerTemplate(operationIDs, runnerVMSize(inp)),
+			"template": t.getDefaultRunnerTemplate(operationIDs),
 		},
 	}
 
@@ -153,7 +176,30 @@ func runnerVMSize(inp *stacks.TemplateInput) string {
 	return app.DefaultAzureInstanceType
 }
 
-func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdentity, vmSize string) map[string]any {
+func runnerVMSizeParameter(inp *stacks.TemplateInput) ARMParameter {
+	size := runnerVMSize(inp)
+	allowed := make([]any, 0, len(allowedAzureVMSizes)+1)
+	for _, s := range allowedAzureVMSizes {
+		allowed = append(allowed, s)
+	}
+	if !slices.Contains(allowedAzureVMSizes, size) {
+		allowed = append(allowed, size)
+	}
+	return ARMParameter{
+		Type:          "string",
+		DefaultValue:  size,
+		AllowedValues: allowed,
+		Metadata:      &ARMParameterMetadata{Description: "VM size for the Nuon runner."},
+	}
+}
+
+func runnerCustomerParameters(inp *stacks.TemplateInput) map[string]ARMParameter {
+	params := telemetryIngressParameters()
+	params[runnerVmSizeParamName] = runnerVMSizeParameter(inp)
+	return params
+}
+
+func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdentity) map[string]any {
 	identity := map[string]any{"type": "SystemAssigned"}
 	// The runner deployment is RG-targeted, so its inline template reads the
 	// identities at resource-group scope alongside them.
@@ -174,6 +220,7 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 			"runnerSubnetId":         map[string]any{"type": "string"},
 			"customData":             map[string]any{"type": "string"},
 			"commonTags":             map[string]any{"type": "object"},
+			runnerVmSizeParamName:    map[string]any{"type": "string"},
 		},
 		"resources": []any{
 			map[string]any{
@@ -184,7 +231,7 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 				"tags":       "[parameters('commonTags')]",
 				"dependsOn":  []string{"[resourceId('Microsoft.Network/loadBalancers', format('{0}-telemetry', parameters('nuonInstallID')))]"},
 				"sku": map[string]any{
-					"name":     vmSize,
+					"name":     "[parameters('" + runnerVmSizeParamName + "')]",
 					"tier":     "Standard",
 					"capacity": 1,
 				},
@@ -208,7 +255,7 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 						"osProfile": map[string]any{
 							"computerNamePrefix": "[parameters('nuonInstallID')]",
 							"adminUsername":      "nuon",
-							"customData":         "[base64(parameters('customData'))]",
+							"customData":         "[base64(replace(parameters('customData'), '" + runnerLocationToken + "', parameters('location')))]",
 							"linuxConfiguration": map[string]any{
 								"disablePasswordAuthentication": true,
 								"ssh": map[string]any{
@@ -303,7 +350,7 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 	}
 }
 
-func (t *Templates) buildRunnerCustomData(inp *stacks.TemplateInput) string {
+func (t *Templates) buildRunnerCustomData(inp *stacks.TemplateInput, region string) string {
 	return fmt.Sprintf(`#!/bin/bash
 
 RUNNER_ID=%s
@@ -406,5 +453,5 @@ EOF
 # Reload systemd and start the mng service
 systemctl daemon-reload
 systemctl enable --now nuon-runner-mng
-`, inp.Runner.ID, t.runnerAPIURL(inp), inp.Settings.ContainerImageURL, inp.Settings.ContainerImageTag, inp.Install.AzureAccount.Location)
+`, inp.Runner.ID, t.runnerAPIURL(inp), inp.Settings.ContainerImageURL, inp.Settings.ContainerImageTag, region)
 }

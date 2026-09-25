@@ -330,9 +330,9 @@ func TestGetAzureTemplate_SubscriptionScopeRoot(t *testing.T) {
 	}
 }
 
-// Both values are Nuon-internal and not customer-configurable, and the plain
-// deployment blade renders a field for every parameter with no way to hide one. As
-// variables they stay out of the form entirely.
+// Both stay variables: the plain deployment blade renders a field for every
+// parameter with no way to hide one. location's value is the portal region,
+// not a second field and not the account's recorded region.
 func TestGetAzureTemplate_SubscriptionScopeHidesNuonInternalsFromTheForm(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	inp := subscriptionTemplateInput()
@@ -344,7 +344,7 @@ func TestGetAzureTemplate_SubscriptionScopeHidesNuonInternalsFromTheForm(t *test
 
 	for name, want := range map[string]string{
 		installRGVarName: installResourceGroupName(inp.Install.ID),
-		locationVarName:  inp.Install.AzureAccount.Location,
+		locationVarName:  "[deployment().location]",
 	} {
 		if got := armTmpl.Variables[name]; got != want {
 			t.Errorf("variable %s = %v, want %q", name, got, want)

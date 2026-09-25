@@ -33,7 +33,7 @@ type ARMOutput struct {
 }
 
 // ReservedParamNames are always provided by Nuon, never exposed to the customer.
-var ReservedParamNames = []string{"nuonInstallID", "nuonOrgID", "nuonAppID", "location", "deployTimestamp"}
+var ReservedParamNames = []string{"nuonInstallID", "nuonOrgID", "nuonAppID", "location", "deployTimestamp", runnerVmSizeParamName}
 
 func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, error) {
 	scope := scopeFor(inp)
@@ -51,7 +51,11 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	// every existing install renders. At subscription scope they are variables
 	// instead: the portal builds its deployment form from a template's parameters and
 	// gives no way to hide one, so a parameter here is an editable field in front of
-	// the customer. None of these is customer-configurable.
+	// the customer. location is the exception: the portal prompts for a region on a
+	// subscription deployment, and that selection is deployment().location. The
+	// runner size selector queries the same control, so the variable has to be
+	// that value or the VM is created in a region the picker did not filter for.
+	// It stays a variable so the form does not grow a second location field.
 	nuonValues := map[string]struct {
 		value       string
 		description string
@@ -63,6 +67,10 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	}
 	for name, v := range nuonValues {
 		if scope.subscription {
+			if name == locationVarName {
+				tmpl.Variables[name] = "[deployment().location]"
+				continue
+			}
 			tmpl.Variables[name] = v.value
 			continue
 		}

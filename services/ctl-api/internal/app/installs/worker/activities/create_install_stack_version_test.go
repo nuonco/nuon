@@ -24,7 +24,8 @@ func TestStackTemplateLocations_AzureSubscriptionScope(t *testing.T) {
 		t.Errorf("templateURL = %q, want %q", got, want)
 	}
 
-	want := azurePortalCustomDeployBaseURL + escapeDataString(loc.templateURL)
+	want := azurePortalCustomDeployBaseURL + escapeDataString(loc.templateURL) +
+		"/createUIDefinitionUri/" + escapeDataString(testBaseURL+"/"+azureUIDefBucketKey(testBucketKey))
 	if loc.quickLinkURL != want {
 		t.Errorf("quickLinkURL = %q, want %q", loc.quickLinkURL, want)
 	}
@@ -40,10 +41,16 @@ func TestStackTemplateLocations_AzureSubscriptionScope(t *testing.T) {
 
 	// The template URL sits in a path segment, so its separators must be escaped.
 	// An unescaped one silently truncates the segment and the deployment fails to
-	// load.
-	segment := strings.TrimPrefix(loc.quickLinkURL, azurePortalCustomDeployBaseURL)
-	if strings.Contains(segment, "/") {
-		t.Errorf("quick link has unescaped separators: %q", loc.quickLinkURL)
+	// load. createUIDefinitionUri is its own segment and is escaped the same way.
+	rest := strings.TrimPrefix(loc.quickLinkURL, azurePortalCustomDeployBaseURL)
+	parts := strings.Split(rest, "/createUIDefinitionUri/")
+	if len(parts) != 2 {
+		t.Fatalf("quick link missing createUIDefinitionUri segment: %q", loc.quickLinkURL)
+	}
+	for _, segment := range parts {
+		if strings.Contains(segment, "/") {
+			t.Errorf("quick link has unescaped separators: %q", loc.quickLinkURL)
+		}
 	}
 }
 

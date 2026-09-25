@@ -211,14 +211,9 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 	}
 
 	_, params := renderUIDef(t, inp)
-	basics := params["basics"].([]any)
 	outputs := params["outputs"].(map[string]any)
 
-	byName := map[string]map[string]any{}
-	for _, b := range basics {
-		el := b.(map[string]any)
-		byName[el["name"].(string)] = el
-	}
+	byName := uiElements(params)
 
 	for name, p := range wrapperParams {
 		// location comes from the Basics step's own region picker, and
@@ -238,7 +233,11 @@ func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 		if p.Type == "securestring" && el["type"] != "Microsoft.Common.PasswordBox" {
 			t.Errorf("securestring parameter %q rendered as %v, want a PasswordBox", name, el["type"])
 		}
-		if got, want := outputs[name], "[basics('"+name+"')]"; got != want {
+		want := "[basics('" + name + "')]"
+		if name == runnerVmSizeParamName {
+			want = "[steps('runner').runnerVmSize]"
+		}
+		if got := outputs[name]; got != want {
 			t.Errorf("outputs[%q] = %v, want %v", name, got, want)
 		}
 	}
@@ -468,6 +467,76 @@ func TestQuickLinkUIDefinition_OutputsMatchWrapperParameters(t *testing.T) {
 			t.Errorf("outputs references %q, which the wrapper does not declare", name)
 		}
 	}
+}
+
+func TestQuickLinkUIDefinition_RunnerVMSizeIsRegionAware(t *testing.T) {
+	inp := minimalTemplateInput()
+	inp.DeploymentScope = app.StackDeploymentScopeSubscription
+
+	_, params := renderUIDef(t, inp)
+	element := uiElements(params)["runnerVmSize"]
+	if element == nil {
+		t.Fatal("runnerVmSize is not on the runner step")
+	}
+	if _, onBasics := func() (map[string]any, bool) {
+		for _, b := range params["basics"].([]any) {
+			el := b.(map[string]any)
+			if el["name"] == "runnerVmSize" {
+				return el, true
+			}
+		}
+		return nil, false
+	}(); onBasics {
+		t.Fatal("runnerVmSize is on Basics, where it is built against the portal's initial region and does not reload")
+	}
+	if got := element["type"]; got != "Microsoft.Compute.SizeSelector" {
+		t.Errorf("type = %v, want Microsoft.Compute.SizeSelector", got)
+	}
+	if got := element["osPlatform"]; got != "Linux" {
+		t.Errorf("osPlatform = %v, want Linux", got)
+	}
+	allowed := element["constraints"].(map[string]any)["allowedSizes"].([]any)
+	if len(allowed) == 0 {
+		t.Fatal("allowedSizes is empty")
+	}
+	if allowed[0] != app.DefaultAzureInstanceType {
+		t.Errorf("first allowed size = %v, want %q", allowed[0], app.DefaultAzureInstanceType)
+	}
+	recommended := element["recommendedSizes"].([]any)
+	if recommended[0] != app.DefaultAzureInstanceType {
+		t.Errorf("first recommended size = %v, want the default so SizeSelector can skip it when the region does not offer it", recommended[0])
+	}
+	if got := params["outputs"].(map[string]any)["runnerVmSize"]; got != "[steps('runner').runnerVmSize]" {
+		t.Errorf("runnerVmSize output = %v", got)
+	}
+
+	// Subscription scope leaves the portal region picker open. The selector is
+	// on the next step so it loads SKUs for whichever region the customer settled on.
+	basics := params["config"].(map[string]any)["basics"].(map[string]any)
+	location := basics["location"].(map[string]any)
+	if _, pinned := location["allowedValues"]; pinned {
+		t.Errorf("subscription location.allowedValues = %v, want none", location["allowedValues"])
+	}
+	image, ok := element["imageReference"].(map[string]any)
+	if !ok || image["offer"] != "0001-com-ubuntu-server-jammy" || image["sku"] != "22_04-lts-gen2" {
+		t.Errorf("imageReference = %v, want the runner image so the picker drops incompatible sizes", element["imageReference"])
+	}
+}
+
+func uiElements(params map[string]any) map[string]map[string]any {
+	byName := map[string]map[string]any{}
+	for _, b := range params["basics"].([]any) {
+		el := b.(map[string]any)
+		byName[el["name"].(string)] = el
+	}
+	for _, s := range params["steps"].([]any) {
+		step := s.(map[string]any)
+		for _, e := range step["elements"].([]any) {
+			el := e.(map[string]any)
+			byName[el["name"].(string)] = el
+		}
+	}
+	return byName
 }
 
 func TestQuickLinkUIDefinition_ChecksumIsDeterministic(t *testing.T) {

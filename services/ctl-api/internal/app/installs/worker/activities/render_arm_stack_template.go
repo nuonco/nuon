@@ -26,9 +26,9 @@ type RenderARMStackTemplateResponse struct {
 	QuickLinkWrapperJSON     []byte `temporaljson:"quick_link_wrapper_json"`
 	QuickLinkWrapperChecksum string `temporaljson:"quick_link_wrapper_checksum"`
 
-	// QuickLinkUIDefJSON is the createUiDefinition the quick link pairs with the
-	// wrapper. It constrains the portal's Basics step so a reprovision updates the
-	// install's stack rather than creating a second one in another resource group.
+	// QuickLinkUIDefJSON is the createUiDefinition the quick link appends as
+	// createUIDefinitionUri. The portal's own parameter form is a static dropdown;
+	// the definition's size selector loads VM SKUs for the region chosen on Basics.
 	QuickLinkUIDefJSON     []byte `temporaljson:"quick_link_ui_def_json"`
 	QuickLinkUIDefChecksum string `temporaljson:"quick_link_ui_def_checksum"`
 }
@@ -69,20 +69,25 @@ func (a *Activities) RenderARMStackTemplate(ctx context.Context, req *RenderARMS
 	res.Checksum = checksum
 
 	stackVersion := req.Input.CloudFormationStackVersion
-	if stackVersion == nil || stackVersion.QuickLinkBucketKey == "" {
+	if stackVersion == nil {
 		return res, nil
 	}
 
-	wrapperByts, wrapperChecksum, err := armTemplates.QuickLinkWrapper(&req.Input, stackVersion.TemplateURL)
-	if err != nil {
-		return res, temporal.NewNonRetryableApplicationError(
-			"unable to create ARM quick link wrapper",
-			"arm_template_error",
-			err,
-		)
+	// The current quick link addresses the stack template directly and does not
+	// set QuickLinkBucketKey. The wrapper is only rendered for rows that still
+	// carry one.
+	if stackVersion.QuickLinkBucketKey != "" {
+		wrapperByts, wrapperChecksum, err := armTemplates.QuickLinkWrapper(&req.Input, stackVersion.TemplateURL)
+		if err != nil {
+			return res, temporal.NewNonRetryableApplicationError(
+				"unable to create ARM quick link wrapper",
+				"arm_template_error",
+				err,
+			)
+		}
+		res.QuickLinkWrapperJSON = wrapperByts
+		res.QuickLinkWrapperChecksum = wrapperChecksum
 	}
-	res.QuickLinkWrapperJSON = wrapperByts
-	res.QuickLinkWrapperChecksum = wrapperChecksum
 
 	if stackVersion.QuickLinkUIDefBucketKey == "" {
 		return res, nil
