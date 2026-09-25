@@ -41,7 +41,7 @@ func (s *service) mcpListAvailableRoles(ctx context.Context, _ *mcp.CallToolRequ
 		return nil, nil, fmt.Errorf("unable to get install %q: %w", in.Install, err)
 	}
 
-	roles, err := s.availableRolesForInstall(ctx, orgID, install, in.PrincipalType, in.OperationType, in.PrincipalID)
+	roles, err := s.availableRolesForInstall(ctx, orgID, install, in.PrincipalType, in.OperationType, in.PrincipalID, nil)
 	if err != nil {
 		return nil, nil, err
 	}

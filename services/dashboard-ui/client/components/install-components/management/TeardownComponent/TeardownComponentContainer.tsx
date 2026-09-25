@@ -107,6 +107,7 @@ export const TeardownComponentModalContainer = ({
           operationType="teardown"
           principalType="component"
           principalId={component.id}
+          workflowType="manual_deploy"
           value={value}
           onChange={onChange}
           name="role"
