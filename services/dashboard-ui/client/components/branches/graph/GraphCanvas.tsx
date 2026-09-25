@@ -30,7 +30,11 @@ const GraphControls = () => {
       <Button variant="icon" onClick={() => zoomOut()} aria-label="Zoom out">
         <Icon variant="MinusIcon" size={14} />
       </Button>
-      <Button variant="icon" onClick={() => fitView({ padding: 0.2 })} aria-label="Fit to view">
+      <Button
+        variant="icon"
+        onClick={() => fitView({ padding: 0.2 })}
+        aria-label="Fit to view"
+      >
         <Icon variant="CornersOutIcon" size={14} />
       </Button>
     </div>
@@ -70,7 +74,9 @@ const GraphCanvasInner = ({
 
   const nodeSignature = initialNodes.map((n) => n.id).join('|')
   useEffect(() => {
-    const raf = requestAnimationFrame(() => fitView({ padding: resolvedPadding }))
+    const raf = requestAnimationFrame(() =>
+      fitView({ padding: resolvedPadding })
+    )
     return () => cancelAnimationFrame(raf)
   }, [nodeSignature, fitView, resolvedPadding])
 
@@ -78,7 +84,10 @@ const GraphCanvasInner = ({
 
   return (
     <div
-      className={cn('relative w-full overflow-hidden border', compact ? 'rounded' : 'rounded-lg')}
+      className={cn(
+        'relative w-full overflow-hidden border',
+        compact ? 'rounded' : 'rounded-lg'
+      )}
       style={{ height, background: 'var(--background-neutral)' }}
     >
       <ReactFlow

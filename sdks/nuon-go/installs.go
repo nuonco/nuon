@@ -98,11 +98,12 @@ func (c *client) UpdateInstall(ctx context.Context, installID string, req *model
 	return resp.Payload, nil
 }
 
-func (c *client) MoveInstallToAppBranch(ctx context.Context, installID, appBranchID string) (*models.AppInstall, error) {
+func (c *client) MoveInstallToAppBranch(ctx context.Context, installID, appBranchID, appBranchGroup string) (*models.AppInstall, error) {
 	resp, err := c.genClient.Operations.MoveInstallToAppBranch(&operations.MoveInstallToAppBranchParams{
 		InstallID: installID,
 		Req: &models.ServiceMoveInstallToAppBranchRequest{
-			AppBranchID: &appBranchID,
+			AppBranchID:    &appBranchID,
+			AppBranchGroup: appBranchGroup,
 		},
 		Context: ctx,
 	}, c.getOrgIDAuthInfo())

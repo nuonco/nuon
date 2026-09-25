@@ -87,10 +87,13 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels(views.TableOrViewName(s.db, &app.Install{}, ".labels"), lbls)).
 		Preload("AppSandboxConfig").
+		Preload("AppBranchConnections", func(db *gorm.DB) *gorm.DB {
+			return db.Order("active DESC, created_at DESC, id DESC")
+		}).
+		Preload("AppBranchConnections.AppBranch").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
-		Preload("AppBranch").
 		Preload("AppRunnerConfig").
 		Preload("AppConfig", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id", "app_id", "app_branch_id")
@@ -124,11 +127,13 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 			Where("runners.id = ?", runnerID)
 	}
 
-	branchCol := views.TableOrViewName(s.db, &app.Install{}, ".app_branch_id")
 	branchNames, branchNone := parseBranchesFilter(branches)
 
-	if q != "" || len(branchNames) > 0 {
-		tx = tx.Joins("LEFT JOIN app_branches ON app_branches.id = " + branchCol + " AND app_branches.deleted_at = 0")
+	if q != "" || len(branchNames) > 0 || branchNone {
+		installIDCol := views.TableOrViewName(s.db, &app.Install{}, ".id")
+		tx = tx.
+			Joins("LEFT JOIN install_app_branch_connections AS active_branch_connection ON active_branch_connection.install_id = "+installIDCol+" AND active_branch_connection.active = ? AND active_branch_connection.deleted_at = 0", true).
+			Joins("LEFT JOIN app_branches ON app_branches.id = active_branch_connection.app_branch_id AND app_branches.deleted_at = 0")
 	}
 
 	if q != "" {
@@ -140,11 +145,11 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 
 	switch {
 	case len(branchNames) > 0 && branchNone:
-		tx = tx.Where("(app_branches.name IN ? OR "+branchCol+" IS NULL OR "+branchCol+" = '')", branchNames)
+		tx = tx.Where("(app_branches.name IN ? OR active_branch_connection.app_branch_id IS NULL OR active_branch_connection.app_branch_id = '')", branchNames)
 	case len(branchNames) > 0:
 		tx = tx.Where("app_branches.name IN ?", branchNames)
 	case branchNone:
-		tx = tx.Where("(" + branchCol + " IS NULL OR " + branchCol + " = '')")
+		tx = tx.Where("(active_branch_connection.app_branch_id IS NULL OR active_branch_connection.app_branch_id = '')")
 	}
 	res := tx.Find(&installs)
 	if res.Error != nil {

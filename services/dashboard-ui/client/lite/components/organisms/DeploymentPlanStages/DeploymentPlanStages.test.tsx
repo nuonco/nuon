@@ -14,7 +14,7 @@ const stage = (
   name,
   order,
   stage: order + 1,
-  membership: 'install_ids',
+  membership: 'label_selector',
   installs: [],
   totalInstalls: 0,
 })

@@ -3,7 +3,10 @@ import { useSearchParams } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstallWorkflow } from '@/types'
 import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
-import { BranchRunApproval, type IBranchRunApprovalItem } from './BranchRunApproval'
+import {
+  BranchRunApproval,
+  type IBranchRunApprovalItem,
+} from './BranchRunApproval'
 
 interface IBranchRunApprovalContainer {
   run: TInstallWorkflow
@@ -12,7 +15,9 @@ interface IBranchRunApprovalContainer {
 const getGroupName = (name?: string) =>
   name?.replace(/^plan install group:\s*/i, '').trim() || 'install group'
 
-export const BranchRunApprovalContainer = ({ run }: IBranchRunApprovalContainer) => {
+export const BranchRunApprovalContainer = ({
+  run,
+}: IBranchRunApprovalContainer) => {
   const { org } = useOrg()
   const orgId = org?.id ?? ''
   const [, setSearchParams] = useSearchParams()

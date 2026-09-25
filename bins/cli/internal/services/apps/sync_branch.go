@@ -25,7 +25,7 @@ const (
 
 	defaultAppBranchesFeature = "default-app-branches"
 	defaultAppBranchName      = "default"
-	defaultInstallGroupName   = "all installs"
+	defaultInstallGroupName   = "default"
 )
 
 // resolveDefaultBranchID returns the app's default branch when the org has
@@ -64,9 +64,9 @@ func (s *Service) resolveDefaultBranchID(ctx context.Context, appID string, feat
 
 	if _, err := s.api.CreateAppBranchConfig(ctx, appID, branch.ID, &models.ServiceCreateAppBranchConfigRequest{
 		InstallGroups: []*models.ServiceInstallGroupRequest{{
-			Name:        ptr(defaultInstallGroupName),
-			Order:       ptr(int64(0)),
-			AllInstalls: true,
+			Name:    ptr(defaultInstallGroupName),
+			Order:   ptr(int64(0)),
+			Default: true,
 		}},
 		PostDeployRunbookIds: []string{},
 	}); err != nil {

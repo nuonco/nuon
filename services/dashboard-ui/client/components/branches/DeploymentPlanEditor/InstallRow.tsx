@@ -15,8 +15,14 @@ interface IInstallRow {
   disabled?: boolean
 }
 
-export const InstallRow = ({ install, labelColors, onRemove, disabled }: IInstallRow) => {
-  const platform = (install.cloud_platform?.toLowerCase() as TCloudPlatform) || 'unknown'
+export const InstallRow = ({
+  install,
+  labelColors,
+  onRemove,
+  disabled,
+}: IInstallRow) => {
+  const platform =
+    (install.cloud_platform?.toLowerCase() as TCloudPlatform) || 'unknown'
   const region = install.aws_account?.region || install.gcp_account?.region
   const location = install.azure_account?.location
   const hasRegion = platform !== 'unknown' && !!(region || location)
@@ -30,7 +36,13 @@ export const InstallRow = ({ install, labelColors, onRemove, disabled }: IInstal
             {install.name || install.id}
           </Text>
           {labelEntries.map(([k, v]) => (
-            <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" customColor={labelColors?.[k]} />
+            <LabelBadge
+              key={k}
+              labelKey={k}
+              labelValue={v}
+              size="sm"
+              customColor={labelColors?.[k]}
+            />
           ))}
         </div>
         <div className="flex items-center gap-2 min-w-0">
