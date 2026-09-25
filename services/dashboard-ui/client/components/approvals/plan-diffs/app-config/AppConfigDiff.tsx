@@ -613,7 +613,21 @@ const EntityRow = ({
   )
 
   if (!hasDetail) {
-    return <div id={entityId} className={cn(`border-l-4 ${borderColor} px-4 py-3 ${bgColor}`, highlightClass)}>{heading}</div>
+    return (
+      <Expand
+        id={entityId}
+        isOpen={forcedOpen}
+        className={cn(`border-l-4 ${borderColor}`, highlightClass)}
+        headerClassName={`w-full px-4 py-3 gap-3 text-left focus:outline-none ${bgColor}`}
+        heading={heading}
+      >
+        <div className="border-t px-4 py-3">
+          <Text variant="subtext" theme="neutral">
+            No line-level details for this change.
+          </Text>
+        </div>
+      </Expand>
+    )
   }
 
   return (
