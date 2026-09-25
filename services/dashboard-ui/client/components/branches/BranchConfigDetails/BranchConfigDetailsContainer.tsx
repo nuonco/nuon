@@ -5,7 +5,10 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getAppConfig } from '@/lib'
 import type { TAppConfig } from '@/types'
-import { BranchConfigDetails, type IBranchConfigDetails } from './BranchConfigDetails'
+import {
+  BranchConfigDetails,
+  type IBranchConfigDetails,
+} from './BranchConfigDetails'
 
 interface IBranchConfigDetailsPanel
   extends Omit<IBranchConfigDetails, 'fullConfig' | 'isLoading'> {

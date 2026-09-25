@@ -2,9 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import type { TAppBranchInstallGroup, TInstallGroupRun } from '@/types'
 import { resolveDeploymentPlanStages } from './deployment-plan'
 
-const group = (
-  fields: TAppBranchInstallGroup
-): TAppBranchInstallGroup => fields
+const group = (fields: TAppBranchInstallGroup): TAppBranchInstallGroup => fields
 
 const run = (fields: TInstallGroupRun): TInstallGroupRun => fields
 
@@ -57,46 +55,46 @@ describe('resolveDeploymentPlanStages', () => {
     ])
   })
 
-  test('all_installs claims what no earlier group claimed', () => {
+  test('default group claims only installs unmatched by label groups', () => {
     const stages = resolveDeploymentPlanStages({
       groups: [
         group({
-          id: 'g-ids',
-          name: 'named',
-          order: 0,
-          install_ids: ['ins-a'],
-        }),
-        group({
           id: 'g-all',
           name: 'everyone else',
+          order: 0,
+          default: true,
+        }),
+        group({
+          id: 'g-prod',
+          name: 'prod',
           order: 1,
-          all_installs: true,
+          label_selector: { match_labels: { env: 'prod' } },
         }),
       ],
       installs: [
-        { id: 'ins-a', name: 'alpha' },
+        { id: 'ins-a', name: 'alpha', labels: { env: 'prod' } },
         { id: 'ins-b', name: 'bravo' },
         { id: 'ins-c', name: 'charlie' },
       ],
     })
 
-    expect(stages[0]?.membership).toBe('install_ids')
-    expect(stages[0]?.installs.map((install) => install.id)).toEqual(['ins-a'])
-    expect(stages[1]?.membership).toBe('all_installs')
-    expect(stages[1]?.installs.map((install) => install.id)).toEqual([
+    expect(stages[0]?.membership).toBe('default')
+    expect(stages[0]?.installs.map((install) => install.id)).toEqual([
       'ins-b',
       'ins-c',
     ])
+    expect(stages[1]?.membership).toBe('label_selector')
+    expect(stages[1]?.installs.map((install) => install.id)).toEqual(['ins-a'])
   })
 
-  test('resolves install_ids and label_selector', () => {
+  test('explicit app_branch_group assignment and label_selector', () => {
     const stages = resolveDeploymentPlanStages({
       groups: [
         group({
-          id: 'g-ids',
-          name: 'fixed',
+          id: 'g-named',
+          name: 'named',
           order: 0,
-          install_ids: ['ins-b', 'ins-a'],
+          label_selector: { match_labels: { env: 'prod' } },
         }),
         group({
           id: 'g-sel',
@@ -109,11 +107,16 @@ describe('resolveDeploymentPlanStages', () => {
         }),
       ],
       installs: [
-        { id: 'ins-a', name: 'alpha' },
-        { id: 'ins-b', name: 'bravo' },
         {
-          id: 'ins-prod',
-          name: 'prod',
+          id: 'ins-explicit',
+          name: 'explicit',
+          app_branch_group: 'named',
+          labels: { tier: 'a' },
+        },
+        { id: 'ins-prod', name: 'prod', labels: { env: 'prod' } },
+        {
+          id: 'ins-tier',
+          name: 'tier',
           labels: { tier: 'a', env: 'prod' },
         },
         {
@@ -124,16 +127,18 @@ describe('resolveDeploymentPlanStages', () => {
       ],
     })
 
+    expect(stages[0]?.membership).toBe('label_selector')
     expect(stages[0]?.installs.map((install) => install.id)).toEqual([
-      'ins-b',
-      'ins-a',
+      'ins-explicit',
+      'ins-prod',
+      'ins-tier',
     ])
     expect(stages[1]?.membership).toBe('label_selector')
     expect(stages[1]?.selector).toEqual({
       match_labels: { tier: '*' },
       not_match_labels: { env: 'stage' },
     })
-    expect(stages[1]?.installs.map((install) => install.id)).toEqual(['ins-prod'])
+    expect(stages[1]?.installs.map((install) => install.id)).toEqual([])
   })
 
   test('omits an install that matches no group', () => {
@@ -182,20 +187,20 @@ describe('resolveDeploymentPlanStages', () => {
           id: 'g-core',
           name: 'core',
           order: 0,
-          install_ids: ['ins-a', 'ins-b'],
+          label_selector: { match_labels: { tier: 'core' } },
         }),
         group({
           id: 'g-edge',
           name: 'edge',
           order: 1,
-          install_ids: ['ins-c'],
+          label_selector: { match_labels: { tier: 'edge' } },
         }),
       ],
       installs: [
-        { id: 'ins-a' },
-        { id: 'ins-b' },
-        { id: 'ins-c' },
-        { id: 'ins-d' },
+        { id: 'ins-a', labels: { tier: 'core' } },
+        { id: 'ins-b', labels: { tier: 'core' } },
+        { id: 'ins-c', labels: { tier: 'edge' } },
+        { id: 'ins-d', labels: {} },
       ],
       groupRuns: [
         run({
@@ -225,10 +230,10 @@ describe('resolveDeploymentPlanStages', () => {
           id: 'g-now',
           name: 'now',
           order: 0,
-          install_ids: ['ins-a'],
+          label_selector: { match_labels: { env: 'prod' } },
         }),
       ],
-      installs: [{ id: 'ins-a' }],
+      installs: [{ id: 'ins-a', labels: { env: 'prod' } }],
       groupRuns: [
         run({
           install_group_id: 'g-gone',
@@ -252,10 +257,10 @@ describe('resolveDeploymentPlanStages', () => {
           order: 0,
           max_parallel: 3,
           auto_approve_on_policies_passing: true,
-          install_ids: ['ins-a'],
+          label_selector: { match_labels: { env: 'prod' } },
         }),
       ],
-      installs: [{ id: 'ins-a', name: 'alpha' }],
+      installs: [{ id: 'ins-a', name: 'alpha', labels: { env: 'prod' } }],
     })
 
     expect(stages[0]?.status).toBeUndefined()

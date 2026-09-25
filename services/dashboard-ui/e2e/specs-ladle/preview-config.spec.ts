@@ -5,7 +5,7 @@ const STORY = '/?story=branches--previewconfigsection--edit-modal&mode=preview'
 test.describe('PreviewConfig form behavior', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(STORY, { waitUntil: 'domcontentloaded' })
-    await page.getByRole('button', { name: 'Edit preview settings' }).click()
+    await page.getByRole('button', { name: 'Edit preview defaults' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
   })
 

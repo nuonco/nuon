@@ -31,22 +31,13 @@ export interface IInstallGroupPanel {
 }
 
 const membershipText = (stage: IDeploymentPlanStage) => {
-  if (stage.membership === 'all_installs') {
+  if (stage.membership === 'default') {
     return 'Every install on this branch, after earlier groups'
   }
-  if (stage.membership === 'label_selector') {
-    return 'Installs matching these labels'
-  }
-  return `A fixed list of ${stage.installs.length} ${
-    stage.installs.length === 1 ? 'install' : 'installs'
-  }`
+  return 'Installs matching these labels'
 }
 
-const InstallStatuses = ({
-  install,
-}: {
-  install: IDeploymentPlanInstall
-}) => (
+const InstallStatuses = ({ install }: { install: IDeploymentPlanInstall }) => (
   <>
     {installStatusFacets(install).map((facet) => (
       <Status
@@ -61,11 +52,7 @@ const InstallStatuses = ({
   </>
 )
 
-const InstallLocation = ({
-  install,
-}: {
-  install: IDeploymentPlanInstall
-}) => {
+const InstallLocation = ({ install }: { install: IDeploymentPlanInstall }) => {
   const location = installCloudLocation(install)
   if (!location.region && !location.location) return null
 
@@ -152,10 +139,13 @@ export const InstallGroupPanel = ({
               <>
                 <Text color="secondary">
                   {run.completed_installs ?? 0} done ·{' '}
-                  {run.failed_installs ?? 0} failed ·{' '}
-                  {run.total_installs ?? 0} total
+                  {run.failed_installs ?? 0} failed · {run.total_installs ?? 0}{' '}
+                  total
                 </Text>
-                <Time value={run.updated_at ?? run.created_at} format="relative" />
+                <Time
+                  value={run.updated_at ?? run.created_at}
+                  format="relative"
+                />
               </>
             ) : null}
           </Card>
