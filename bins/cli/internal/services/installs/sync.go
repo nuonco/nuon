@@ -13,6 +13,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pelletier/go-toml/v2"
 
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
@@ -102,9 +103,7 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, conf
 
 func resolveInstallConfigBranches(
 	ctx context.Context,
-	api interface {
-		GetAppBranches(context.Context, string) ([]*models.AppAppBranch, error)
-	},
+	api nuon.Client,
 	appID string,
 	installCfgs []*config.Install,
 	requireBranch bool,
@@ -129,7 +128,7 @@ func resolveInstallConfigBranches(
 		return nil, nil
 	}
 
-	branches, err := api.GetAppBranches(ctx, appID)
+	branches, err := nuon.GetAllAppBranches(ctx, api, appID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to list app branches for app %s: %w", appID, err)
 	}

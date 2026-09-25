@@ -81,6 +81,16 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		)
 		return &TriggerAppBranchRunFromVCSPushResponse{}, nil
 	}
+	if runType == app.AppBranchRunTypeGitPreview &&
+		previewDefaults.Mode != app.AppBranchRunPreviewModeBuildOnly &&
+		!previewDefaults.HasInstallTarget() {
+		a.l.Info("skipping pull request because preview has no install target",
+			zap.String("app_branch_id", appBranchID),
+			zap.String("app_branch_config_id", appBranchConfigID),
+			zap.String("preview_mode", string(previewDefaults.Mode)),
+		)
+		return &TriggerAppBranchRunFromVCSPushResponse{}, nil
+	}
 	if req.Draft && previewDefaults.IgnoreDrafts {
 		a.l.Info("skipping draft pull request preview",
 			zap.String("app_branch_id", appBranchID),

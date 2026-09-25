@@ -177,8 +177,11 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		}
 	}
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
-		installCfg.StackOverrides.HasOverrides() {
+		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil {
 		icParams := &models.HelpersCreateInstallConfigParams{}
+		if installCfg.Telemetry != nil {
+			icParams.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
+		}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			icParams.ApprovalOption = installCfg.ApprovalOption.APIType()
 		}
@@ -268,7 +271,8 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, fmt.Errorf("error generating diff for install %s: %w", installCfg.Name, err)
 	}
 	diffRes := diff.Summary()
-	branchChanged := branch != nil && appInstall.AppBranchID != branch.ID
+	branchChanged := branch != nil &&
+		(appInstall.AppBranchID != branch.ID || appInstall.AppBranchGroup != installCfg.AppBranchGroup)
 	if !diffRes.HasChanged && !branchChanged {
 		if !s.asJSON {
 			ui.PrintSuccess(fmt.Sprintf("install %s is up to date, no changes needed", installCfg.Name))
@@ -298,7 +302,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 
 	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
-		installCfg.StackOverrides.HasOverrides()
+		installCfg.StackOverrides.HasOverrides() || installCfg.Telemetry != nil
 
 	if hasConfigFields {
 		so := installCfg.StackOverrides
@@ -308,6 +312,9 @@ func (s *appInstallSyncer) syncExistingInstall(
 
 		if appInstall.InstallConfig == nil {
 			createReq := &models.ServiceCreateInstallConfigRequest{}
+			if installCfg.Telemetry != nil {
+				createReq.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
+			}
 			if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 				createReq.ApprovalOption = installCfg.ApprovalOption.APIType()
 			}
@@ -328,20 +335,26 @@ func (s *appInstallSyncer) syncExistingInstall(
 			updateReq := &models.ServiceUpdateInstallConfigRequest{}
 			needsUpdate := false
 
+			if installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil &&
+				(appInstall.InstallConfig.TelemetryEnabled == nil || *appInstall.InstallConfig.TelemetryEnabled != *installCfg.Telemetry.Enabled) {
+				updateReq.Telemetry = &models.ConfigInstallTelemetry{Enabled: installCfg.Telemetry.Enabled}
+				needsUpdate = true
+			}
+
 			if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown &&
 				appInstall.InstallConfig.ApprovalOption != installCfg.ApprovalOption.APIType() {
 				updateReq.ApprovalOption = installCfg.ApprovalOption.APIType()
 				needsUpdate = true
 			}
-			if so.VPCNestedTemplateURL != appInstall.InstallConfig.VpcNestedTemplateURL {
+			if installCfg.StackOverrides != nil && so.VPCNestedTemplateURL != appInstall.InstallConfig.VpcNestedTemplateURL {
 				updateReq.VpcNestedTemplateURL = so.VPCNestedTemplateURL
 				needsUpdate = true
 			}
-			if so.RunnerNestedTemplateURL != appInstall.InstallConfig.RunnerNestedTemplateURL {
+			if installCfg.StackOverrides != nil && so.RunnerNestedTemplateURL != appInstall.InstallConfig.RunnerNestedTemplateURL {
 				updateReq.RunnerNestedTemplateURL = so.RunnerNestedTemplateURL
 				needsUpdate = true
 			}
-			if !customNestedStacksEqual(so.CustomNestedStacks, appInstall.InstallConfig.CustomNestedStacks) {
+			if installCfg.StackOverrides != nil && !customNestedStacksEqual(so.CustomNestedStacks, appInstall.InstallConfig.CustomNestedStacks) {
 				updateReq.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
 				needsUpdate = true
 			}
@@ -405,10 +418,11 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 
 	if branchChanged {
-		appInstall, err = s.api.MoveInstallToAppBranch(ctx, appInstall.ID, branch.ID)
+		moved, err := s.api.MoveInstallToAppBranch(ctx, appInstall.ID, branch.ID, installCfg.AppBranchGroup)
 		if err != nil {
 			return nil, fmt.Errorf("error moving install %s to app branch %s: %w", appInstall.Name, branch.Name, err)
 		}
+		appInstall = moved
 	}
 
 	if !s.asJSON {

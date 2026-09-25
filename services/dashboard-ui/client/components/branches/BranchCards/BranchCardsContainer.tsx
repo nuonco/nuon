@@ -47,8 +47,8 @@ export function parseBranchToCardData(
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       .map((group, index) => ({
         name: group.name || `Group ${index + 1}`,
-        installs: group.install_ids?.length ?? 0,
-        hasSelector: !!group.label_selector,
+        installs: 0,
+        hasSelector: !!group.label_selector || !!group.default,
       })),
     action: (
       <BranchManagementDropdown branch={branch} appId={appId} orgId={orgId} />

@@ -2,6 +2,7 @@ package installs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"maps"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
@@ -42,7 +44,6 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 	var existing app.Install
 	err := db.WithContext(ctx).
 		Preload("InstallConfig").
-		Preload("AppBranch").
 		Preload("AWSAccount").
 		Preload("GCPAccount").
 		Preload("AzureAccount").
@@ -57,6 +58,9 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 		}
 		appBranchID = branch.ID
 		install.AppBranch = branch.Name
+		if err := validateAppBranchGroup(ctx, db, branch.ID, install.AppBranchGroup); err != nil {
+			return nil, err
+		}
 	}
 
 	if err == gorm.ErrRecordNotFound {
@@ -93,6 +97,26 @@ func resolveAppBranch(ctx context.Context, db *gorm.DB, appID, ref string) (*app
 	return &branch, nil
 }
 
+func validateAppBranchGroup(ctx context.Context, db *gorm.DB, branchID, group string) error {
+	if group == "" {
+		return nil
+	}
+	var branchConfig app.AppBranchConfig
+	if err := db.WithContext(ctx).
+		Preload("InstallGroups").
+		Where(app.AppBranchConfig{AppBranchID: branchID}).
+		Order("created_at DESC, id DESC").
+		First(&branchConfig).Error; err != nil {
+		return fmt.Errorf("unable to load app branch groups: %w", err)
+	}
+	for _, candidate := range branchConfig.InstallGroups {
+		if candidate.Name == group {
+			return nil
+		}
+	}
+	return fmt.Errorf("app branch group %q was not found on branch %s", group, branchID)
+}
+
 func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, appID string, installCfg *config.Install, appBranchID string) (*sync.InstallSyncResult, error) {
 	inputs := make(map[string]*string)
 	for k, v := range installCfg.FlattenedInputs() {
@@ -107,7 +131,8 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		Metadata: installhelpers.InstallMetadata{
 			ManagedBy: ManagedByGitInstallConfig,
 		},
-		AppBranchID: appBranchID,
+		AppBranchID:    appBranchID,
+		AppBranchGroup: installCfg.AppBranchGroup,
 	}
 
 	if installCfg.AWSAccount != nil {
@@ -131,8 +156,11 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
 		installCfg.StackOverrides.HasOverrides() ||
-		len(installCfg.ComponentToggles) > 0 {
+		len(installCfg.ComponentToggles) > 0 || installCfg.Telemetry != nil {
 		icParams := &installhelpers.CreateInstallConfigParams{}
+		if installCfg.Telemetry != nil {
+			icParams.Telemetry = installCfg.Telemetry
+		}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			icParams.ApprovalOption = app.InstallApprovalOption(installCfg.ApprovalOption)
 		}
@@ -209,12 +237,16 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
 		installCfg.StackOverrides.HasOverrides() ||
-		len(installCfg.ComponentToggles) > 0
+		len(installCfg.ComponentToggles) > 0 ||
+		(installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil)
 
 	if hasConfigFields {
 		updates := map[string]any{}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
 			updates["approval_option"] = string(installCfg.ApprovalOption)
+		}
+		if installCfg.Telemetry != nil && installCfg.Telemetry.Enabled != nil {
+			updates["telemetry_enabled"] = installCfg.Telemetry.Enabled
 		}
 		if installCfg.StackOverrides != nil {
 			if installCfg.StackOverrides.VPCNestedTemplateURL != "" {
@@ -226,17 +258,24 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 				updates["runner_nested_template_url"] = &url
 			}
 			if len(installCfg.StackOverrides.CustomNestedStacks) > 0 {
-				updates["custom_nested_stacks"] = installCfg.StackOverrides.CustomNestedStacks
+				b, err := json.Marshal(installCfg.StackOverrides.CustomNestedStacks)
+				if err != nil {
+					return nil, fmt.Errorf("unable to marshal custom_nested_stacks: %w", err)
+				}
+				updates["custom_nested_stacks"] = string(b)
 			}
 		}
 
 		if len(updates) > 0 && existing.InstallConfig != nil {
-			db.WithContext(ctx).Model(&app.InstallConfig{}).
-				Where("id = ?", existing.InstallConfig.ID).
-				Updates(updates)
+			if err := db.WithContext(ctx).Model(&app.InstallConfig{}).
+				Where(app.InstallConfig{ID: existing.InstallConfig.ID, InstallID: existing.ID, OrgID: existing.OrgID}).
+				Updates(updates).Error; err != nil {
+				return nil, fmt.Errorf("unable to update config for install %s: %w", installCfg.Name, err)
+			}
 		} else if len(updates) > 0 {
 			icParams := &installhelpers.CreateInstallConfigParams{
 				ApprovalOption: app.InstallApprovalOption(installCfg.ApprovalOption),
+				Telemetry:      installCfg.Telemetry,
 			}
 			if _, err := installHelpers.CreateInstallConfig(ctx, existing.ID, icParams); err != nil {
 				return nil, fmt.Errorf("unable to create config for install %s: %w", installCfg.Name, err)
@@ -251,9 +290,39 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	}
 
 	appBranchChanged := appBranchID != "" && (!existing.AppBranchID.Valid || existing.AppBranchID.String != appBranchID)
+	appBranchGroupChanged := false
 	if appBranchChanged {
 		if _, err := installHelpers.LatestDeployableAppBranchRun(ctx, appBranchID); err != nil {
 			return nil, err
+		}
+	}
+	if appBranchID != "" {
+		var candidate app.Install
+		if err := db.WithContext(ctx).First(&candidate, "id = ?", existing.ID).Error; err != nil {
+			return nil, fmt.Errorf("unable to reload install for app branch assignment: %w", err)
+		}
+		candidate.AppBranchGroup = installCfg.AppBranchGroup
+		candidate.AppBranchGroupAssignmentSource = ""
+		if installCfg.AppBranchGroup != "" {
+			candidate.AppBranchGroupAssignmentSource = app.InstallAppBranchGroupAssignmentSourceExplicit
+		}
+		groups, err := appshelpers.LatestConfigInstallGroupsWithDB(ctx, db, appBranchID)
+		if err != nil {
+			return nil, err
+		}
+		if err := appshelpers.ValidateInstallSingleGroup(groups, &candidate); err != nil {
+			return nil, err
+		}
+		group, source, err := appshelpers.ResolveInstallGroupAssignment(groups, &candidate)
+		if err != nil {
+			return nil, err
+		}
+		if group == nil {
+			return nil, appshelpers.NoMatchingInstallGroupError(&candidate)
+		}
+		appBranchGroupChanged = existing.AppBranchGroup != group.Name || existing.AppBranchGroupAssignmentSource != source
+		if err := appshelpers.SetInstallAppBranchGroupAssignmentWithDB(ctx, db, existing.ID, appBranchID, group.Name, source); err != nil {
+			return nil, fmt.Errorf("unable to update install app branch connection: %w", err)
 		}
 	}
 
@@ -267,7 +336,7 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		Created:          false,
 		Changed:          true,
 		Diff:             d,
-		AppBranchChanged: appBranchChanged,
+		AppBranchChanged: appBranchChanged || appBranchGroupChanged,
 		AppBranchID:      appBranchID,
 	}, nil
 }
@@ -353,9 +422,10 @@ func existingToConfig(install *app.Install) *config.Install {
 		appBranchName = install.AppBranch.Name
 	}
 	cfg := &config.Install{
-		Name:      install.Name,
-		AppBranch: appBranchName,
-		Labels:    upstreamLabels(install),
+		Name:           install.Name,
+		AppBranch:      appBranchName,
+		AppBranchGroup: install.AppBranchGroup,
+		Labels:         upstreamLabels(install),
 	}
 
 	// The target identifiers must be echoed back, otherwise a config that legitimately
@@ -391,6 +461,9 @@ func existingToConfig(install *app.Install) *config.Install {
 
 	if install.InstallConfig != nil {
 		cfg.ApprovalOption = config.InstallApprovalOption(install.InstallConfig.ApprovalOption)
+		if install.InstallConfig.TelemetryEnabled != nil {
+			cfg.Telemetry = &config.InstallTelemetry{Enabled: install.InstallConfig.TelemetryEnabled}
+		}
 		if install.InstallConfig.VPCNestedTemplateURL != nil ||
 			install.InstallConfig.RunnerNestedTemplateURL != nil ||
 			len(install.InstallConfig.CustomNestedStacks) > 0 {

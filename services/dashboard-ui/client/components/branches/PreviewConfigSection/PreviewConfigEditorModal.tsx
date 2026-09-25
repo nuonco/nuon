@@ -3,6 +3,7 @@ import { FormCheckbox } from '@/components/common/form/FormCheckbox'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormRadioGroup } from '@/components/common/form/FormRadioGroup'
 import { FormSelect } from '@/components/common/form/FormSelect'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type {
@@ -16,6 +17,7 @@ import {
   previewDefaultsToConfig,
 } from '@/components/branches/shared/PreviewDefaultsEditor'
 import { previewModeDisplayLabel } from '@/components/branches/shared/preview-mode'
+import { cn } from '@/utils/classnames'
 import { previewConfigSchema, type PreviewConfigFormValues } from './schema'
 
 export interface IPreviewConfigEditorModal extends Omit<IModal, 'onSubmit'> {
@@ -85,10 +87,12 @@ export const PreviewConfigEditorModal = ({
     value: install.id,
     label: install.name,
   }))
+  const previewsEnabled = values.mode !== 'none'
+  const showInstall = previewsEnabled && values.mode !== 'build-only'
 
   return (
     <Modal
-      heading="Edit preview settings"
+      heading="Edit preview defaults"
       primaryActionTrigger={{
         children: isPending ? 'Saving...' : 'Save changes',
         disabled: !canSubmit || isPending || isLoading || isUnchanged,
@@ -118,128 +122,187 @@ export const PreviewConfigEditorModal = ({
           fallback="Unable to save preview settings"
         />
 
-        <form.Field name="mode">
-          {(field) => (
-            <FormRadioGroup
-              field={field}
-              label="Mode"
-              disabled={isPending || isLoading}
-              options={[
-                {
-                  value: 'none',
-                  label: previewModeDisplayLabel('none'),
-                },
-                {
-                  value: 'build-only',
-                  label: previewModeDisplayLabel('build-only'),
-                },
-                {
-                  value: 'plan-only',
-                  label: previewModeDisplayLabel('plan-only'),
-                },
-                { value: 'apply', label: previewModeDisplayLabel('apply') },
-              ]}
-            />
-          )}
-        </form.Field>
-
-        {values.mode !== 'none' && values.mode !== 'build-only' ? (
-          <form.Field name="installId">
+        <div>
+          <form.Field name="mode">
             {(field) => (
-              <FormSelect
-                field={field}
-                id="preview-default-install"
-                options={installOptions}
-                placeholder={
-                  isLoading ? 'Loading installs...' : 'Select an install'
+              <CheckboxInput
+                id="preview-enabled"
+                checked={field.state.value !== 'none'}
+                onChange={(e) =>
+                  field.handleChange(e.target.checked ? 'plan-only' : 'none')
                 }
-                disabled={isPending || isLoading || installOptions.length === 0}
-                menuPlacement="bottom"
-                labelProps={{ labelText: 'Default install' }}
-                helperText={
-                  initialDefaults.installTargetMode === 'labels' &&
-                  !values.installId
-                    ? 'Select an install to replace the current label selector.'
-                    : 'Used for plan-only and apply preview runs.'
-                }
+                onBlur={field.handleBlur}
+                disabled={isPending || isLoading}
+                className="mt-[6px]"
+                labelProps={{
+                  className: 'items-start',
+                  labelText: (
+                    <div className="flex flex-col gap-1">
+                      <Text weight="strong">Enable automated previews</Text>
+                      <Text variant="subtext" theme="neutral">
+                        Turn off to skip automated preview runs. Manual
+                        previews still work.
+                      </Text>
+                    </div>
+                  ),
+                }}
               />
             )}
           </form.Field>
-        ) : null}
 
-        {hasGithubVCS && values.mode !== 'none' ? (
-          <div className="flex flex-col gap-3">
-            <form.Field name="setStatuses">
-              {(field) => (
-                <FormCheckbox
-                  field={field}
-                  disabled={isPending || isLoading}
-                  labelProps={{
-                    labelText: (
-                      <>
-                        <Text weight="strong">Set commit statuses</Text>
-                        <Text variant="subtext" theme="neutral">
-                          Report preview progress and results to GitHub.
-                        </Text>
-                      </>
-                    ),
-                    labelTextProps: {
-                      as: 'div',
-                      className: 'flex flex-col gap-1',
-                    },
-                  }}
-                  className="items-start"
-                />
-              )}
-            </form.Field>
-            <form.Field name="comment">
-              {(field) => (
-                <FormCheckbox
-                  field={field}
-                  disabled={isPending || isLoading}
-                  labelProps={{
-                    labelText: (
-                      <>
-                        <Text weight="strong">Comment on pull request</Text>
-                        <Text variant="subtext" theme="neutral">
-                          Post preview results to the pull request.
-                        </Text>
-                      </>
-                    ),
-                    labelTextProps: {
-                      as: 'div',
-                      className: 'flex flex-col gap-1',
-                    },
-                  }}
-                  className="items-start"
-                />
-              )}
-            </form.Field>
-            <form.Field name="ignoreDrafts">
-              {(field) => (
-                <FormCheckbox
-                  field={field}
-                  disabled={isPending || isLoading}
-                  labelProps={{
-                    labelText: (
-                      <>
-                        <Text weight="strong">Ignore draft pull requests</Text>
-                        <Text variant="subtext" theme="neutral">
-                          Skip preview runs for draft pull requests.
-                        </Text>
-                      </>
-                    ),
-                    labelTextProps: {
-                      as: 'div',
-                      className: 'flex flex-col gap-1',
-                    },
-                  }}
-                  className="items-start"
-                />
-              )}
-            </form.Field>
+          <div
+            className={cn(
+              'grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:duration-[1ms]',
+              previewsEnabled ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+            )}
+            aria-hidden={!previewsEnabled}
+          >
+            <div className="overflow-hidden">
+              <div className="flex flex-col gap-6 pt-4">
+                <form.Field name="mode">
+                  {(field) => (
+                    <FormRadioGroup
+                      field={field}
+                      label="Default mode"
+                      disabled={isPending || isLoading || !previewsEnabled}
+                      options={[
+                        {
+                          value: 'build-only',
+                          label: previewModeDisplayLabel('build-only'),
+                        },
+                        {
+                          value: 'plan-only',
+                          label: previewModeDisplayLabel('plan-only'),
+                        },
+                        {
+                          value: 'apply',
+                          label: previewModeDisplayLabel('apply'),
+                        },
+                      ]}
+                    />
+                  )}
+                </form.Field>
+
+                <div
+                  className={cn(
+                    'grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:duration-[1ms]',
+                    showInstall ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                  )}
+                  aria-hidden={!showInstall}
+                >
+                  <div className="overflow-hidden">
+                    <form.Field name="installId">
+                      {(field) => (
+                        <FormSelect
+                          field={field}
+                          id="preview-default-install"
+                          options={installOptions}
+                          placeholder={
+                            isLoading
+                              ? 'Loading installs...'
+                              : 'Select an install'
+                          }
+                          disabled={
+                            isPending ||
+                            isLoading ||
+                            !showInstall ||
+                            installOptions.length === 0
+                          }
+                          menuPlacement="bottom"
+                          labelProps={{ labelText: 'Default install' }}
+                          helperText={
+                            initialDefaults.installTargetMode === 'labels' &&
+                            !values.installId
+                              ? 'Select an install to replace the current label selector.'
+                              : 'Used for plan-only and apply preview runs.'
+                          }
+                        />
+                      )}
+                    </form.Field>
+                  </div>
+                </div>
+
+                {hasGithubVCS ? (
+                  <div className="flex flex-col gap-3">
+                    <form.Field name="setStatuses">
+                      {(field) => (
+                        <FormCheckbox
+                          field={field}
+                          disabled={
+                            isPending || isLoading || !previewsEnabled
+                          }
+                          className="mt-[6px]"
+                          labelProps={{
+                            className: 'items-start',
+                            labelText: (
+                              <div className="flex flex-col gap-1">
+                                <Text weight="strong">
+                                  Set commit statuses
+                                </Text>
+                                <Text variant="subtext" theme="neutral">
+                                  Report preview progress and results to
+                                  GitHub.
+                                </Text>
+                              </div>
+                            ),
+                          }}
+                        />
+                      )}
+                    </form.Field>
+                    <form.Field name="comment">
+                      {(field) => (
+                        <FormCheckbox
+                          field={field}
+                          disabled={
+                            isPending || isLoading || !previewsEnabled
+                          }
+                          className="mt-[6px]"
+                          labelProps={{
+                            className: 'items-start',
+                            labelText: (
+                              <div className="flex flex-col gap-1">
+                                <Text weight="strong">
+                                  Comment on pull request
+                                </Text>
+                                <Text variant="subtext" theme="neutral">
+                                  Post preview results to the pull request.
+                                </Text>
+                              </div>
+                            ),
+                          }}
+                        />
+                      )}
+                    </form.Field>
+                    <form.Field name="ignoreDrafts">
+                      {(field) => (
+                        <FormCheckbox
+                          field={field}
+                          disabled={
+                            isPending || isLoading || !previewsEnabled
+                          }
+                          className="mt-[6px]"
+                          labelProps={{
+                            className: 'items-start',
+                            labelText: (
+                              <div className="flex flex-col gap-1">
+                                <Text weight="strong">
+                                  Ignore draft pull requests
+                                </Text>
+                                <Text variant="subtext" theme="neutral">
+                                  Skip preview runs for draft pull requests.
+                                </Text>
+                              </div>
+                            ),
+                          }}
+                        />
+                      )}
+                    </form.Field>
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
-        ) : null}
+        </div>
       </form>
     </Modal>
   )

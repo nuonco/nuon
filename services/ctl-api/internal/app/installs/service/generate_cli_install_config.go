@@ -97,6 +97,7 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 	if install.AppBranch != nil {
 		installCfg.AppBranch = install.AppBranch.Name
 	}
+	installCfg.AppBranchGroup = install.AppBranchGroup
 
 	// The target identifiers must be echoed back, otherwise a config that legitimately
 	// declares them diffs against an upstream that never reports them and `apps sync`
@@ -134,6 +135,9 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 	}
 
 	if installConfig != nil {
+		if installConfig.TelemetryEnabled != nil {
+			installCfg.Telemetry = &config.InstallTelemetry{Enabled: installConfig.TelemetryEnabled}
+		}
 		// Normalize the approval option: "auto" and empty both map to "prompt" in the generated config.
 		approvalOpt := config.InstallApprovalOption(installConfig.ApprovalOption)
 		switch approvalOpt {

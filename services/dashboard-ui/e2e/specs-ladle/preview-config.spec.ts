@@ -5,7 +5,7 @@ const STORY = '/?story=branches--previewconfigsection--edit-modal&mode=preview'
 test.describe('PreviewConfig form behavior', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(STORY, { waitUntil: 'domcontentloaded' })
-    await page.getByRole('button', { name: 'Edit preview settings' }).click()
+    await page.getByRole('button', { name: 'Edit preview defaults' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
   })
 
@@ -16,6 +16,17 @@ test.describe('PreviewConfig form behavior', () => {
     await expect(submit).toBeDisabled()
     await dialog.getByLabel('Apply').check()
     await expect(submit).toBeEnabled()
+  })
+
+  test('disabling automated previews hides mode and install', async ({
+    page,
+  }) => {
+    const dialog = page.getByRole('dialog')
+
+    await expect(dialog.getByLabel('Default install')).toBeVisible()
+    await dialog.getByLabel('Enable automated previews').uncheck()
+    await expect(dialog.getByLabel('Default install')).toBeHidden()
+    await expect(dialog.getByText('Default mode')).toBeHidden()
   })
 
   test('build and validate mode hides the default install', async ({

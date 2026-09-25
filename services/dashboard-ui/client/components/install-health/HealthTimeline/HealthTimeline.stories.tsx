@@ -10,7 +10,10 @@ import type {
   TInstallComponentHealthTransition,
   TInstallHealthTimelineComponent,
 } from '@/types'
-import { HealthTimeline } from './HealthTimeline'
+import {
+  HealthTimeline,
+  type THealthTimelineComponent,
+} from './HealthTimeline'
 
 function buildDaily(days: number): THealthTimelineDay[] {
   return Array.from({ length: days }, (_, i) => {
@@ -134,18 +137,21 @@ const unmonitoredDaily = buildSparseDaily(90, 0)
 const mockComponents: TInstallHealthTimelineComponent[] = [
   {
     install_component_id: 'icmp1',
+    component_id: 'cmp-api',
     component_name: 'api',
     current_health: 'healthy',
     uptime_percent: 99.98,
   },
   {
     install_component_id: 'icmp2',
+    component_id: 'cmp-worker',
     component_name: 'worker',
     current_health: 'unhealthy',
     uptime_percent: 96.4,
   },
   {
     install_component_id: 'icmp3',
+    component_id: 'cmp-database',
     component_name: 'database',
     current_health: 'degraded',
     uptime_percent: 99.1,
@@ -155,19 +161,41 @@ const mockComponents: TInstallHealthTimelineComponent[] = [
 const mockNoSignalComponents: TInstallHealthTimelineComponent[] = [
   {
     install_component_id: 'icmp4',
+    component_id: 'cmp-networking',
     component_name: 'networking',
     current_health: 'not-applicable',
     uptime_percent: 0,
   },
   {
     install_component_id: 'icmp5',
+    component_id: 'cmp-secrets',
     component_name: 'secrets',
     current_health: 'unknown',
     uptime_percent: 0,
   },
   {
     install_component_id: 'icmp6',
+    component_id: 'cmp-dns',
     component_name: 'dns',
+    current_health: 'not-applicable',
+    uptime_percent: 0,
+  },
+]
+
+const mockImageComponents: THealthTimelineComponent[] = [
+  {
+    install_component_id: 'icmp7',
+    component_id: 'cmp-api-image',
+    component_name: 'api-image',
+    component_type: 'docker_build',
+    current_health: 'not-applicable',
+    uptime_percent: 0,
+  },
+  {
+    install_component_id: 'icmp8',
+    component_id: 'cmp-nginx',
+    component_name: 'nginx',
+    component_type: 'external_image',
     current_health: 'not-applicable',
     uptime_percent: 0,
   },
@@ -403,5 +431,49 @@ export const NoData = () => (
 export const Loading = () => (
   <Frame>
     <HealthTimeline scope="install" days={90} isLoading />
+  </Frame>
+)
+
+export const InstallScopeResourcesSearchLinks = () => (
+  <Frame>
+    <HealthTimeline
+      scope="install"
+      days={90}
+      daily={buildDaily(90)}
+      uptimePercent={99.42}
+      observedSeconds={90 * 86400}
+      currentHealth="healthy"
+      components={mockComponents}
+      getComponentHref={({ component_id, component_name }) =>
+        `/org123/installs/inst123/resources/components?q=${encodeURIComponent(component_name || component_id)}`
+      }
+    />
+  </Frame>
+)
+
+export const InstallScopeGroupedByKind = () => (
+  <Frame>
+    <HealthTimeline
+      scope="install"
+      days={90}
+      daily={buildDaily(90)}
+      uptimePercent={99.42}
+      observedSeconds={90 * 86400}
+      currentHealth="healthy"
+      groupByKind
+      components={[
+        ...mockComponents,
+        ...mockNoSignalComponents,
+        ...mockImageComponents,
+      ]}
+      getComponentHref={({ component_id, component_name, component_type }) =>
+        `/org123/installs/inst123/resources/${
+          component_type === 'docker_build' ||
+          component_type === 'external_image'
+            ? 'images'
+            : 'components'
+        }?q=${encodeURIComponent(component_name || component_id)}`
+      }
+    />
   </Frame>
 )

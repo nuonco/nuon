@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	tclient "go.temporal.io/sdk/client"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // CancelWorkflowRequest is the input for cancelling an entire workflow.
@@ -28,12 +25,10 @@ func (c *Client) CancelWorkflow(ctx context.Context, req *CancelWorkflowRequest)
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	if _, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
-		UpdateName:   "cancel-workflow",
-		WaitForStage: tclient.WorkflowUpdateStageAccepted,
-	}); err != nil {
-		return nil, fmt.Errorf("unable to send cancel-workflow update: %w", err)
+	var resp CancelWorkflowResponse
+	if err := c.updateWithStartUntilCompleted(ctx, qs, "cancel-workflow", &resp); err != nil {
+		return nil, fmt.Errorf("unable to get cancel-workflow response: %w", err)
 	}
 
-	return &CancelWorkflowResponse{WorkflowID: req.InstallWorkflowID}, nil
+	return &resp, nil
 }

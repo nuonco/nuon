@@ -2,8 +2,8 @@ import { PanelStory } from '@/components/__stories__/helpers'
 import type { TInstallDeploymentRecord } from '@/types'
 import { DeploymentDetailPanel } from './DeploymentDetailPanel'
 import {
-  DEFAULT_DEPLOYMENTS_FILTER,
   DeploymentsListPresenter,
+  type IDeploymentFilter,
 } from './DeploymentsListPresenter'
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
@@ -107,6 +107,12 @@ const DEPLOYMENT_CONFIG_UPDATE: TInstallDeploymentRecord = {
   ],
 }
 
+const DEFAULT_FILTER: IDeploymentFilter = {
+  search: '',
+  status: new Set(),
+  type: new Set(),
+}
+
 const MOCK_DEPLOYMENTS = [
   DEPLOYMENT_IMAGE_UPDATE,
   DEPLOYMENT_PROVISION,
@@ -121,15 +127,18 @@ export const Default = () => (
       deployments={MOCK_DEPLOYMENTS}
       isLoading={false}
       error={null}
-      page={0}
-      hasMore={false}
+      pagination={{ hasNext: false, offset: 0, limit: 20 }}
       orgId={ORG_ID}
       appId={APP_ID}
       installId={INSTALL_ID}
-      filter={DEFAULT_DEPLOYMENTS_FILTER}
-      onFilterChange={() => {}}
+      search=""
+      filter={DEFAULT_FILTER}
+      onSearchChange={() => {}}
+      onStatusChange={() => {}}
+      onTypeChange={() => {}}
+      onResourceChange={() => {}}
+      onDateChange={() => {}}
       onClearFilters={() => {}}
-      onPageChange={() => {}}
     />
   </div>
 )
@@ -140,15 +149,18 @@ export const Loading = () => (
       deployments={[]}
       isLoading
       error={null}
-      page={0}
-      hasMore={false}
+      pagination={{ hasNext: false, offset: 0, limit: 5 }}
       orgId={ORG_ID}
       appId={APP_ID}
       installId={INSTALL_ID}
-      filter={DEFAULT_DEPLOYMENTS_FILTER}
-      onFilterChange={() => {}}
+      search=""
+      filter={DEFAULT_FILTER}
+      onSearchChange={() => {}}
+      onStatusChange={() => {}}
+      onTypeChange={() => {}}
+      onResourceChange={() => {}}
+      onDateChange={() => {}}
       onClearFilters={() => {}}
-      onPageChange={() => {}}
     />
   </div>
 )
@@ -159,15 +171,18 @@ export const Empty = () => (
       deployments={[]}
       isLoading={false}
       error={null}
-      page={0}
-      hasMore={false}
+      pagination={{ hasNext: false, offset: 0, limit: 20 }}
       orgId={ORG_ID}
       appId={APP_ID}
       installId={INSTALL_ID}
-      filter={DEFAULT_DEPLOYMENTS_FILTER}
-      onFilterChange={() => {}}
+      search=""
+      filter={DEFAULT_FILTER}
+      onSearchChange={() => {}}
+      onStatusChange={() => {}}
+      onTypeChange={() => {}}
+      onResourceChange={() => {}}
+      onDateChange={() => {}}
       onClearFilters={() => {}}
-      onPageChange={() => {}}
     />
   </div>
 )
@@ -178,15 +193,18 @@ export const EmptyFiltered = () => (
       deployments={[]}
       isLoading={false}
       error={null}
-      page={0}
-      hasMore={false}
+      pagination={{ hasNext: false, offset: 0, limit: 20 }}
       orgId={ORG_ID}
       appId={APP_ID}
       installId={INSTALL_ID}
-      filter={{ ...DEFAULT_DEPLOYMENTS_FILTER, status: 'active' }}
-      onFilterChange={() => {}}
+      search=""
+      filter={{ ...DEFAULT_FILTER, status: new Set(['failed']) }}
+      onSearchChange={() => {}}
+      onStatusChange={() => {}}
+      onTypeChange={() => {}}
+      onResourceChange={() => {}}
+      onDateChange={() => {}}
       onClearFilters={() => {}}
-      onPageChange={() => {}}
     />
   </div>
 )
@@ -197,15 +215,18 @@ export const WithPagination = () => (
       deployments={MOCK_DEPLOYMENTS}
       isLoading={false}
       error={null}
-      page={1}
-      hasMore={true}
+      pagination={{ hasNext: true, offset: 20, limit: 20 }}
       orgId={ORG_ID}
       appId={APP_ID}
       installId={INSTALL_ID}
-      filter={DEFAULT_DEPLOYMENTS_FILTER}
-      onFilterChange={() => {}}
+      search=""
+      filter={DEFAULT_FILTER}
+      onSearchChange={() => {}}
+      onStatusChange={() => {}}
+      onTypeChange={() => {}}
+      onResourceChange={() => {}}
+      onDateChange={() => {}}
       onClearFilters={() => {}}
-      onPageChange={() => {}}
     />
   </div>
 )

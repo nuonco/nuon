@@ -2,7 +2,10 @@ import { useNavigate } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstallWorkflow } from '@/types'
 import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
-import { BranchRunApproval, type IBranchRunApprovalItem } from './BranchRunApproval'
+import {
+  BranchRunApproval,
+  type IBranchRunApprovalItem,
+} from './BranchRunApproval'
 
 interface IBranchPendingApprovalsContainer {
   run?: TInstallWorkflow
@@ -23,6 +26,10 @@ export const BranchPendingApprovalsContainer = ({
   const orgId = org?.id ?? ''
 
   if (!run || !runHref) return null
+
+  if (run.status?.status === 'cancelled') {
+    return null
+  }
 
   const items: IBranchRunApprovalItem[] = (run.steps ?? [])
     .filter(

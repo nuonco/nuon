@@ -14,6 +14,7 @@ import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { InstallActionRunTimeline } from '@/components/actions/InstallActionRunTimeline'
+import { InstallCronOfflineBanner } from '@/components/installs/InstallCronOfflineBanner'
 import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromAppConfig'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
@@ -75,9 +76,9 @@ export const ActionDetail = () => {
     />
   )
 
-  const manualTrigger = action?.action_workflow?.configs?.[0]?.triggers?.find(
-    (t) => t.type === 'manual'
-  )
+  const actionTriggers = action?.action_workflow?.configs?.[0]?.triggers
+  const manualTrigger = actionTriggers?.find((t) => t.type === 'manual')
+  const hasCronSchedule = !!actionTriggers?.some((t) => t.type === 'cron')
 
   return (
     <>
@@ -187,6 +188,34 @@ export const ActionDetail = () => {
                       <Code variant="inline">{actionImage}</Code>
                     </LabeledValue>
                   ) : null}
+                  {action?.action_workflow?.configs?.[0]?.triggers?.length ? (
+                    <LabeledValue label="Triggers">
+                      <div className="flex flex-col gap-2">
+                        {action.action_workflow.configs[0].triggers.map(
+                          (trigger) => (
+                            <div
+                              key={trigger.id}
+                              className="flex items-center gap-2 flex-wrap"
+                            >
+                              <ActionTriggerType
+                                size="sm"
+                                triggerType={
+                                  trigger.type as TActionConfigTriggerType
+                                }
+                                componentName={trigger?.component?.name}
+                                componentPath={
+                                  trigger?.component_id
+                                    ? `/${org?.id}/installs/${install?.id}/components/${trigger.component_id}`
+                                    : undefined
+                                }
+                                cronSchedule={trigger?.cron_schedule}
+                              />
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </LabeledValue>
+                  ) : null}
                   {action?.runs?.[0] ? (
                     <LabeledValue label="Last trigger">
                       <ActionTriggerType
@@ -207,7 +236,18 @@ export const ActionDetail = () => {
             }
           />
         }
-        banners={removed ? <RemovedFromAppConfigBanner kind="action" /> : null}
+        banners={
+          <>
+            {removed ? <RemovedFromAppConfigBanner kind="action" /> : null}
+            <InstallCronOfflineBanner
+              runnerStatus={install?.runner_status}
+              kind="action"
+              hasCronSchedule={hasCronSchedule}
+              orgId={org?.id}
+              installId={install?.id}
+            />
+          </>
+        }
       >
         {installActionBreakGlassRole ? (
           <div className="flex flex-col gap-4">

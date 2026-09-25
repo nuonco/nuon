@@ -1,8 +1,11 @@
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
+import { InstallCronOfflineBanner } from '@/components/installs/InstallCronOfflineBanner'
 import { SandboxRunsTimeline } from '@/components/sandbox/SandboxRunsTimeline'
 import { ManagementDropdown } from '@/components/sandbox/management/ManagementDropdown'
 import { SandboxConfigCard } from '@/components/sandbox/SandboxConfigCard'
 import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
+import { Cron } from '@/components/common/Cron'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { DetailHeader } from '@/components/layout/DetailHeader'
 import { DetailPage } from '@/components/layout/DetailPage'
 import { HistoryPanelButton } from '@/components/layout/HistoryPanelButton'
@@ -57,10 +60,25 @@ export const Sandbox = () => {
                 <ManagementDropdown />
               </>
             }
+            metadata={
+              sandboxConfig?.drift_schedule ? (
+                <LabeledValue label="Drift schedule">
+                  <Cron cron={sandboxConfig.drift_schedule} variant="subtext" />
+                </LabeledValue>
+              ) : null
+            }
           />
         }
       >
         {driftedObject ? <DriftedBanner drifted={driftedObject} /> : null}
+
+        <InstallCronOfflineBanner
+          runnerStatus={install?.runner_status}
+          kind="sandbox_drift"
+          hasCronSchedule={!!sandboxConfig?.drift_schedule}
+          orgId={org?.id}
+          installId={install?.id}
+        />
 
         <SandboxConfigCard config={sandboxConfig} loading={!sandboxConfig} />
 

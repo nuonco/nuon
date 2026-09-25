@@ -39,26 +39,38 @@ export const SandboxRunConfigCard = ({
   config,
   configHref,
 }: ISandboxRunConfigCard) => {
+  const items: TContextTooltipItem[] = []
+
+  if (config?.drift_schedule) {
+    items.push({
+      id: `config-drift-schedule`,
+      title: 'Drift schedule',
+      subtitle: config.drift_schedule,
+    })
+  }
+
+  if (config?.type === 'pulumi') {
+    items.push({
+      id: `config-version-`,
+      title: 'Pulumi runtime',
+      subtitle: config?.runtime ?? 'pulumi',
+    })
+  } else {
+    items.push({
+      id: `config-version-`,
+      title: 'Terraform version',
+      subtitle: config?.terraform_version,
+    })
+  }
+
+  items.push(
+    ...getConfigVCSItems(
+      config?.connected_github_vcs_config || config?.public_git_vcs_config
+    )
+  )
+
   return (
-    <ContextTooltip
-      title="Component configuration"
-      items={[
-        config?.type === 'pulumi'
-          ? {
-              id: `config-version-`,
-              title: 'Pulumi runtime',
-              subtitle: config?.runtime ?? 'pulumi',
-            }
-          : {
-              id: `config-version-`,
-              title: 'Terraform version',
-              subtitle: config?.terraform_version,
-            },
-        ...getConfigVCSItems(
-          config?.connected_github_vcs_config || config?.public_git_vcs_config
-        ),
-      ]}
-    >
+    <ContextTooltip title="Component configuration" items={items}>
       <Card className="!p-2 !flex-row">
         <Text weight="strong">
           <Link href={configHref} variant="inline">

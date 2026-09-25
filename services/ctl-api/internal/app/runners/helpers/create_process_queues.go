@@ -21,7 +21,6 @@ import (
 const (
 	DefaultMngUptimeThreshold     = 168 * time.Hour // 1 week
 	DefaultInstallUptimeThreshold = 8 * time.Hour
-	DefaultBuildUptimeThreshold   = 8 * time.Hour
 )
 
 var processTracer = otel.Tracer("github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers")
@@ -86,11 +85,6 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		if threshold == 0 {
 			threshold = DefaultMngUptimeThreshold
 		}
-	case app.RunnerProcessTypeBuild:
-		threshold = h.cfg.ProcessBuildUptimeThreshold
-		if threshold == 0 {
-			threshold = DefaultBuildUptimeThreshold
-		}
 	default:
 		threshold = h.cfg.ProcessInstallUptimeThreshold
 		if threshold == 0 {
@@ -108,6 +102,7 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 			SignalType:  "trigger_shutdown",
 			SignalTemplate: queuesignal.NewRaw("trigger_shutdown", map[string]any{
 				"runner_id":    runnerID,
+				"process_id":   process.ID,
 				"process_type": string(process.Type),
 			}),
 		})

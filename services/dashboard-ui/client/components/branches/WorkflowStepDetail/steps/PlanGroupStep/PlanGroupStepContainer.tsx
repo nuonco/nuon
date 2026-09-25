@@ -13,9 +13,14 @@ import { GroupApprovalActions } from './GroupApprovalActions'
 interface IPlanGroupStepContainer {
   step: TInstallWorkflowStep
   metadata: Record<string, any>
+  workflowStatus?: string
 }
 
-export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContainer) => {
+export const PlanGroupStepContainer = ({
+  step,
+  metadata,
+  workflowStatus,
+}: IPlanGroupStepContainer) => {
   const { org } = useOrg()
   const { app, labelColors } = useApp()
   const orgId = org?.id ?? ''
@@ -25,6 +30,8 @@ export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContain
   const hasApproval = step.execution_type === 'approval' && !!approvalId
   const hasResponse = !!step.approval?.response
   const isAwaiting = step.status?.status === 'approval-awaiting'
+  const isCancelled =
+    workflowStatus === 'cancelled' || step.status?.status === 'cancelled'
 
   const { data: plan } = useQuery({
     placeholderData: keepPreviousData,
@@ -33,7 +40,8 @@ export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContain
       const res = await fetch(
         `/api/orgs/${orgId}/workflows/${step.install_workflow_id}/steps/${step.id}/approvals/${approvalId}/contents`
       )
-      if (!res.ok) throw new Error(`Failed to fetch approval contents: ${res.status}`)
+      if (!res.ok)
+        throw new Error(`Failed to fetch approval contents: ${res.status}`)
       return res.json()
     },
     enabled: !!orgId && !!step.id && !!step.install_workflow_id && !!approvalId,
@@ -44,11 +52,17 @@ export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContain
     plan?.install_group ||
     metadata.install_group_name ||
     step.name?.replace(/^plan install group:\s*/i, '')
-  const showApproveBar = hasApproval && isAwaiting && !hasResponse
+  const showApproveBar = hasApproval && isAwaiting && !hasResponse && !isCancelled
 
   const diffQueries = useQueries({
     queries: rawInstalls.map((inst) => ({
-      queryKey: ['app-config-diff', orgId, appId, inst.new_app_config_id, inst.old_app_config_id],
+      queryKey: [
+        'app-config-diff',
+        orgId,
+        appId,
+        inst.new_app_config_id,
+        inst.old_app_config_id,
+      ],
       queryFn: () =>
         getAppConfigDiff({
           orgId,

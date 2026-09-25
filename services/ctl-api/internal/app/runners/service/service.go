@@ -185,7 +185,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runners.POST("/shutdown-processes", s.AdminShutdownAllRunnerProcesses)
 		runners.POST("/update-health-check-cron", s.AdminUpdateHealthCheckCron)
 		runners.POST("/migrate-cron-emitters", s.AdminMigrateCronEmitters)
-		runners.PATCH("/bulk-update", s.AdminBulkUpdateRunners)
 
 		// sandbox management
 		runners.GET("/sandbox", s.AdminListSandboxRunners)
@@ -200,9 +199,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			runner.GET("/settings", s.AdminGetRunnerSettings)
 			runner.PATCH("/settings", s.AdminUpdateRunnerSettings)
 
-			// runner lifecycle
-			s.POST(runner, "/reprovision", s.AdminReprovisionRunner, apiPkg.APIContextTypeInternal, true)
-			runner.POST("/deprovision", s.AdminDeprovisionRunner)
 			runner.POST("/delete", s.AdminDeleteRunner)
 			runner.POST("/force-delete", s.AdminForceDeleteRunner)
 			runner.POST("/restart", s.RestartRunner)
@@ -252,6 +248,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 		runnerJobs := sandboxMode.Group("/runner-jobs")
 		runnerJobs.GET("", s.AdminListAllSandboxConfigs)
+		runnerJobs.PUT("/:job_type", s.AdminUpsertSandboxConfig)
 		runnerJobs.POST("/disable-all", s.AdminDisableAllSandboxConfigs)
 	}
 

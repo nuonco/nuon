@@ -44,17 +44,20 @@ func TestMergePreviewConfigModeOverridePreservesTarget(t *testing.T) {
 	require.Equal(t, &installID, resolved.InstallID)
 }
 
-func TestBranchPreviewConfigOrDefaultDisablesPreview(t *testing.T) {
+func TestBranchPreviewConfigOrDefaultUsesPlanOnly(t *testing.T) {
 	resolved := branchPreviewConfigOrDefault(&app.AppBranchConfig{})
-	require.Equal(t, app.AppBranchRunPreviewModeNone, resolved.Mode)
+	require.Equal(t, app.AppBranchRunPreviewModePlanOnly, resolved.Mode)
 }
 
-func TestBuildAppBranchRunPreviewRejectsDisabledBranch(t *testing.T) {
+func TestBuildAppBranchRunPreviewAllowsOverrideWhenBranchDisabled(t *testing.T) {
 	mode := app.AppBranchRunPreviewModeApply
+	none := app.AppBranchRunPreviewModeNone
 	_, err := (&Helpers{}).BuildAppBranchRunPreview(
 		context.Background(),
 		"app-1",
-		&app.AppBranchConfig{},
+		&app.AppBranchConfig{
+			PreviewConfig: &app.AppBranchPreviewConfig{Mode: none},
+		},
 		&PreviewRunInput{
 			Source: app.AppBranchRunPreviewSourceBranch,
 			Override: &app.AppBranchPreviewOverride{
@@ -62,5 +65,21 @@ func TestBuildAppBranchRunPreviewRejectsDisabledBranch(t *testing.T) {
 			},
 		},
 	)
-	require.ErrorContains(t, err, "preview runs are disabled")
+	require.ErrorContains(t, err, "install_id, install_name, or label_selector is required")
+}
+
+func TestBuildAppBranchRunPreviewRejectsResolvedNone(t *testing.T) {
+	none := app.AppBranchRunPreviewModeNone
+	_, err := (&Helpers{}).BuildAppBranchRunPreview(
+		context.Background(),
+		"app-1",
+		&app.AppBranchConfig{},
+		&PreviewRunInput{
+			Source: app.AppBranchRunPreviewSourceBranch,
+			Override: &app.AppBranchPreviewOverride{
+				Mode: &none,
+			},
+		},
+	)
+	require.ErrorContains(t, err, "preview mode none")
 }

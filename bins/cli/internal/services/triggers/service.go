@@ -3,9 +3,13 @@ package triggers
 import (
 	"context"
 
+	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
+// apiClient is the subset of nuon.Client the service uses; tests substitute a
+// fake by constructing Service directly.
 type apiClient interface {
 	ListTriggerEvents(context.Context, int, string) ([]*models.TriggerEventSummary, error)
 	ListTriggerEventsPage(context.Context, int, string, string) (*models.TriggerEventPage, error)
@@ -31,8 +35,12 @@ type apiClient interface {
 
 type Service struct {
 	api apiClient
+	cfg *config.Config
 }
 
-func New(api apiClient) *Service {
-	return &Service{api: api}
+func New(apiClient nuon.Client, cfg *config.Config) *Service {
+	return &Service{
+		api: apiClient,
+		cfg: cfg,
+	}
 }

@@ -67,17 +67,16 @@ func TestDecideRunnerHealthCorpus(t *testing.T) {
 	for _, tc := range runnerHealthCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			d := decideRunnerHealth(corpusNow, corpusRunner(tc), runnerProcessPresence{
-				HasActiveBuild:   tc.activeBuild,
 				HasActiveInstall: tc.activeInstall,
 				HasActiveMng:     tc.activeMng,
 				MngChecked:       tc.mngChecked,
 			})
 			got := decisionToWant(d)
-			if got.result == "unhealthy" || got.result == "healthy" {
+			if got.result == runnerHealthResultUnhealthy || got.result == runnerHealthResultHealthy {
 				require.NotZero(t, d.TargetStatus)
 			}
 			want := tc.want
-			if want.result == "unhealthy" || want.result == "healthy" {
+			if want.result == runnerHealthResultUnhealthy || want.result == runnerHealthResultHealthy {
 				// reason is always populated on evaluated runners
 				require.NotEmpty(t, want.reason)
 			}

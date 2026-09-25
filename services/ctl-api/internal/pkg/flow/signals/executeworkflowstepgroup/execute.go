@@ -74,6 +74,11 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 				},
 			})
 		}
+	} else if s.lastDirective == string(directive.GroupAwaitRetry) {
+		s.updateGroupStatus(ctx, app.CompositeStatus{
+			Status:                 app.StatusFailedPendingRetry,
+			StatusHumanDescription: "group failed, awaiting retry or skip",
+		})
 	} else if s.lastDirective == string(directive.GroupStop) {
 		s.updateGroupStatus(ctx, app.CompositeStatus{
 			Status:                 app.StatusError,
@@ -133,6 +138,7 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 	var firstErr error
 	hasStop := false
 	hasRetryGroup := false
+	hasAwaitRetry := false
 
 	for range steps {
 		var result StepResult
@@ -140,11 +146,17 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 		if result.Error != nil && firstErr == nil {
 			firstErr = result.Error
 		}
-		if result.Result.Directive == directive.StepStop {
+		switch resolveStepAction(result.Result.Directive, s.ResidentFlow, result.ManualRetry) {
+		case actionStopGroup:
+			if result.Result.Directive != directive.StepStop {
+				l.Warn("unknown step directive, failing closed to group stop",
+					zap.String("directive", string(result.Result.Directive)))
+			}
 			hasStop = true
-		}
-		if result.Result.Directive == directive.StepRetryGroup {
+		case actionRetryGroup:
 			hasRetryGroup = true
+		case actionAwaitRetry:
+			hasAwaitRetry = true
 		}
 	}
 
@@ -161,6 +173,10 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 
 	if hasRetryGroup {
 		return s.writeStepGroupDirective(ctx, directive.GroupRetryGroup)
+	}
+
+	if hasAwaitRetry {
+		return s.writeStepGroupDirective(ctx, directive.GroupAwaitRetry)
 	}
 
 	return s.writeStepGroupDirective(ctx, directive.GroupContinue)
@@ -182,19 +198,11 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb c
 		TargetQueueName: s.TargetQueueName,
 		TargetQueueID:   step.TargetQueueID,
 		DerivedTimeout:  step.Timeout,
+		ResidentFlow:    s.ResidentFlow,
+		ResumeApproval:  step.Status.Status == app.AwaitingApproval,
 	}
 
-	// Mark step as queued
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: step.ID,
-		Status: app.CompositeStatus{
-			Status: app.StatusQueued,
-		},
-	}); err != nil {
-		return "", errors.Wrapf(err, "unable to mark step %s as queued", step.Name)
-	}
-
-	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+	enqueueReq := &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.OwnerID,
 		OwnerType:       s.OwnerType,
 		QueueName:       s.QueueName,
@@ -203,7 +211,44 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb c
 		SignalOwnerID:   step.ID,
 		SignalOwnerType: "install_workflow_steps",
 		Callback:        cb,
-	})
+	}
+
+	markQueued := func() error {
+		// A resumed approval keeps its awaiting-approval status until the
+		// response handler writes the outcome.
+		if sig.ResumeApproval {
+			return nil
+		}
+		return statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusQueued,
+			},
+		})
+	}
+
+	if executeworkflowstep.EnqueueBeforeQueued(ctx) {
+		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, enqueueReq)
+		if err != nil {
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID:     step.ID,
+				Status: executeworkflowstep.DispatchFailedStatus(err),
+			})
+			return "", errors.Wrapf(err, "unable to enqueue execute-workflow-step signal for step %s", step.Name)
+		}
+		if err := markQueued(); err != nil {
+			workflow.GetLogger(ctx).Warn("step execute signal enqueued but queued status write failed",
+				"step_id", step.ID,
+				"error", err)
+		}
+		return enqueueResp.QueueSignalID, nil
+	}
+
+	if err := markQueued(); err != nil {
+		return "", errors.Wrapf(err, "unable to mark step %s as queued", step.Name)
+	}
+
+	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, enqueueReq)
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to enqueue execute-workflow-step signal for step %s", step.Name)
 	}
@@ -218,9 +263,19 @@ func (s *Signal) nextExecutableStep(steps []app.WorkflowStep) (*app.WorkflowStep
 		switch step.Status.Status {
 		case app.StatusPending, app.StatusNotAttempted, app.StatusQueued:
 			return step, true
+		case app.AwaitingApproval:
+			if s.ResidentFlow && hasApprovalResponse(step) {
+				return step, true
+			}
 		}
 	}
 	return nil, false
+}
+
+// hasApprovalResponse reports whether a parked approval step has been answered
+// and can be re-dispatched to apply the response.
+func hasApprovalResponse(step *app.WorkflowStep) bool {
+	return step.Approval != nil && step.Approval.Response != nil
 }
 
 // cancelRemainingSteps marks all non-terminal steps after the given step with

@@ -474,6 +474,13 @@ export type TBuild = TComponentBuild & {
 
 export type TOrg = components['schemas']['app.Org']
 export type TOrgInvite = components['schemas']['app.OrgInvite']
+// Hand-written mirror of app.OrgFeatureInfo: the generated schema lags until
+// the next SDK regen, and the dashboard reads `deprecated` before then.
+export type TOrgFeatureInfo = {
+  name: string
+  description: string
+  forced?: boolean
+}
 export type TOrgMember = components['schemas']['app.OrgMember']
 export type TOrgMemberStatus = components['schemas']['app.OrgMemberStatus']
 export type TOrgStats = {
@@ -1386,6 +1393,7 @@ export type TInstallDeploymentRecord = {
 export type TInstallDeploymentsResponse = {
   deployments: TInstallDeploymentRecord[]
   page: number
+  offset: number
   limit: number
   has_more: boolean
 }
