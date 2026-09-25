@@ -12,8 +12,64 @@ import type {
 } from '@/providers/dashboard-preferences-provider'
 import type { TThemePreference } from '@/providers/theme-provider'
 
+const THEME_OPTIONS: Array<{
+  value: TThemePreference
+  label: string
+  swatch: string
+}> = [
+  {
+    value: 'system',
+    label: 'System',
+    swatch: 'linear-gradient(145deg, #f4f4f5 0%, #8a8a90 46%, #141416 100%)',
+  },
+  {
+    value: 'light',
+    label: 'Light',
+    swatch: 'linear-gradient(145deg, #ffffff 0%, #d9f6fd 52%, #4cc9f0 100%)',
+  },
+  {
+    value: 'dark',
+    label: 'Dark',
+    swatch: 'linear-gradient(145deg, #101012 0%, #1a4554 52%, #4cc9f0 100%)',
+  },
+  {
+    value: 'classic',
+    label: 'Classic',
+    swatch: 'linear-gradient(145deg, #1a1220 0%, #5b2d84 52%, #c084fc 100%)',
+  },
+  {
+    value: 'high-contrast',
+    label: 'High contrast',
+    swatch: 'linear-gradient(145deg, #0000aa 0%, #2f2fe0 42%, #ffff66 100%)',
+  },
+  {
+    value: 'monochrome',
+    label: 'Monochrome',
+    swatch: 'linear-gradient(145deg, #0a0a0a 0%, #f5f5f5 58%, #4cc9f0 100%)',
+  },
+]
+
+const sectionLabel = (label: string) => (
+  <Text variant="label" theme="neutral">
+    {label}
+  </Text>
+)
+
+const sectionDescription = (description: string) => (
+  <Text variant="subtext" theme="neutral">
+    {description}
+  </Text>
+)
+
 const preferencesSchema = z.object({
-  theme: z.enum(['system', 'light', 'dark', 'classic', 'high-contrast']),
+  theme: z.enum([
+    'system',
+    'light',
+    'dark',
+    'classic',
+    'high-contrast',
+    'monochrome',
+  ]),
   showIds: z.enum(['hidden', 'shown']),
   installsTab: z.enum(['hidden', 'shown']),
   statusBar: z.enum(['hidden', 'shown']),
@@ -66,7 +122,9 @@ export const UserPreferencesPanel = ({
   const values = {
     theme,
     showIds: showIds ? ('shown' as const) : ('hidden' as const),
-    installsTab: isInstallsTabEnabled ? ('shown' as const) : ('hidden' as const),
+    installsTab: isInstallsTabEnabled
+      ? ('shown' as const)
+      : ('hidden' as const),
     statusBar: isStatusBarEnabled ? ('shown' as const) : ('hidden' as const),
     diffViewer,
     diffView,
@@ -98,200 +156,190 @@ export const UserPreferencesPanel = ({
         className="flex flex-col gap-8"
         onSubmit={(event) => event.preventDefault()}
       >
-        <div className="flex flex-col gap-2">
-          <form.Field
-            name="theme"
-            listeners={{
-              onChange: ({ value }) =>
-                onThemeChange(value as TThemePreference),
-            }}
-          >
-            {(field) => (
-              <FormRadioGroup
-                field={field}
-                label="Appearance"
-                options={[
-                  { value: 'system', label: 'System' },
-                  { value: 'light', label: 'Light' },
-                  { value: 'dark', label: 'Dark' },
-                  { value: 'classic', label: 'Classic' },
-                  { value: 'high-contrast', label: 'High contrast' },
-                ]}
-              />
-            )}
-          </form.Field>
-          <Text variant="subtext" theme="neutral">
-            How the dashboard looks in this browser. Classic is the previous
-            purple theme.
-          </Text>
-        </div>
+        <form.Field
+          name="theme"
+          listeners={{
+            onChange: ({ value }) => onThemeChange(value as TThemePreference),
+          }}
+        >
+          {(field) => (
+            <FormRadioGroup
+              field={field}
+              label={sectionLabel('Appearance')}
+              description={sectionDescription(
+                'How the dashboard looks in this browser. Classic is the previous purple theme. Monochrome is black and white, with color kept for status.'
+              )}
+              options={THEME_OPTIONS.map((option) => ({
+                value: option.value,
+                label: (
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      aria-hidden
+                      className="inline-block size-5 shrink-0 rounded-full"
+                      style={{
+                        background: option.swatch,
+                        boxShadow:
+                          'inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.35)',
+                      }}
+                    />
+                    {option.label}
+                  </span>
+                ),
+              }))}
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <form.Field
-            name="showIds"
-            listeners={{
-              onChange: ({ value }) => onShowIdsChange(value === 'shown'),
-            }}
-          >
-            {(field) => (
-              <FormRadioGroup
-                field={field}
-                label="Resource IDs"
-                options={[
-                  { value: 'shown', label: 'Shown' },
-                  { value: 'hidden', label: 'Hidden' },
-                ]}
-              />
-            )}
-          </form.Field>
-          <Text variant="subtext" theme="neutral">
-            Show the raw resource ID under names on cards, tables and headers.
-          </Text>
-        </div>
+        <form.Field
+          name="showIds"
+          listeners={{
+            onChange: ({ value }) => onShowIdsChange(value === 'shown'),
+          }}
+        >
+          {(field) => (
+            <FormRadioGroup
+              field={field}
+              label={sectionLabel('Resource IDs')}
+              description={sectionDescription(
+                'Show the raw resource ID under names on cards, tables and headers.'
+              )}
+              options={[
+                { value: 'shown', label: 'Shown' },
+                { value: 'hidden', label: 'Hidden' },
+              ]}
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <form.Field
-            name="installsTab"
-            listeners={{
-              onChange: ({ value }) => onInstallsTabChange(value === 'shown'),
-            }}
-          >
-            {(field) => (
-              <FormRadioGroup
-                field={field}
-                label="Installs page"
-                options={[
-                  { value: 'shown', label: 'Shown' },
-                  { value: 'hidden', label: 'Hidden' },
-                ]}
-              />
-            )}
-          </form.Field>
-          <Text variant="subtext" theme="neutral">
-            Show the org-level installs page in the main navigation.
-          </Text>
-        </div>
+        <form.Field
+          name="installsTab"
+          listeners={{
+            onChange: ({ value }) => onInstallsTabChange(value === 'shown'),
+          }}
+        >
+          {(field) => (
+            <FormRadioGroup
+              field={field}
+              label={sectionLabel('Installs page')}
+              description={sectionDescription(
+                'Show the org-level installs page in the main navigation.'
+              )}
+              options={[
+                { value: 'shown', label: 'Shown' },
+                { value: 'hidden', label: 'Hidden' },
+              ]}
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <form.Field
-            name="statusBar"
-            listeners={{
-              onChange: ({ value }) => onStatusBarChange(value === 'shown'),
-            }}
-          >
-            {(field) => (
-              <FormRadioGroup
-                field={field}
-                label="Status bar"
-                options={[
-                  { value: 'shown', label: 'Shown' },
-                  { value: 'hidden', label: 'Hidden' },
-                ]}
-              />
-            )}
-          </form.Field>
-          <Text variant="subtext" theme="neutral">
-            Show the persistent status bar along the bottom of the dashboard.
-          </Text>
-        </div>
+        <form.Field
+          name="statusBar"
+          listeners={{
+            onChange: ({ value }) => onStatusBarChange(value === 'shown'),
+          }}
+        >
+          {(field) => (
+            <FormRadioGroup
+              field={field}
+              label={sectionLabel('Status bar')}
+              description={sectionDescription(
+                'Show the persistent status bar along the bottom of the dashboard.'
+              )}
+              options={[
+                { value: 'shown', label: 'Shown' },
+                { value: 'hidden', label: 'Hidden' },
+              ]}
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <form.Field
-            name="diffViewer"
-            listeners={{
-              onChange: ({ value }) =>
-                onDiffViewerChange(value as TDiffViewer),
-            }}
-          >
-            {(field) => (
-              <FormRadioGroup
-                field={field}
-                label="Plan diff viewer"
-                options={[
-                  { value: 'legacy', label: 'Current' },
-                  { value: 'v2', label: 'New' },
-                ]}
-              />
-            )}
-          </form.Field>
-          <Text variant="subtext" theme="neutral">
-            The new viewer adds search, chunk collapsing and split view. The
-            plan graphs and attribute tree are only in the current viewer.
-          </Text>
-        </div>
+        <form.Field
+          name="diffViewer"
+          listeners={{
+            onChange: ({ value }) => onDiffViewerChange(value as TDiffViewer),
+          }}
+        >
+          {(field) => (
+            <FormRadioGroup
+              field={field}
+              label={sectionLabel('Plan diff viewer')}
+              description={sectionDescription(
+                'The new viewer adds search, chunk collapsing and split view. The plan graphs and attribute tree are only in the current viewer.'
+              )}
+              options={[
+                { value: 'legacy', label: 'Current' },
+                { value: 'v2', label: 'New' },
+              ]}
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <form.Field
-            name="diffView"
-            listeners={{
-              onChange: ({ value }) => onDiffViewChange(value as TDiffView),
-            }}
-          >
-            {(field) => (
-              <FormRadioGroup
-                field={field}
-                disabled={diffViewer === 'legacy'}
-                label="Plan diff view"
-                options={[
-                  { value: 'unified', label: 'Unified' },
-                  { value: 'split', label: 'Split' },
-                ]}
-              />
-            )}
-          </form.Field>
-          <Text variant="subtext" theme="neutral">
-            Show before and after in one column, or side by side.
-          </Text>
-        </div>
+        <form.Field
+          name="diffView"
+          listeners={{
+            onChange: ({ value }) => onDiffViewChange(value as TDiffView),
+          }}
+        >
+          {(field) => (
+            <FormRadioGroup
+              field={field}
+              disabled={diffViewer === 'legacy'}
+              label={sectionLabel('Plan diff view')}
+              description={sectionDescription(
+                'Show before and after in one column, or side by side.'
+              )}
+              options={[
+                { value: 'unified', label: 'Unified' },
+                { value: 'split', label: 'Split' },
+              ]}
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <form.Field
-            name="diffWrap"
-            listeners={{
-              onChange: ({ value }) => onDiffWrapChange(value as TDiffWrap),
-            }}
-          >
-            {(field) => (
-              <FormRadioGroup
-                field={field}
-                disabled={diffViewer === 'legacy'}
-                label="Plan diff lines"
-                options={[
-                  { value: 'scroll', label: 'Scroll' },
-                  { value: 'wrap', label: 'Wrap' },
-                ]}
-              />
-            )}
-          </form.Field>
-          <Text variant="subtext" theme="neutral">
-            Keep long lines on one row, or wrap them to the available width.
-          </Text>
-        </div>
+        <form.Field
+          name="diffWrap"
+          listeners={{
+            onChange: ({ value }) => onDiffWrapChange(value as TDiffWrap),
+          }}
+        >
+          {(field) => (
+            <FormRadioGroup
+              field={field}
+              disabled={diffViewer === 'legacy'}
+              label={sectionLabel('Plan diff lines')}
+              description={sectionDescription(
+                'Keep long lines on one row, or wrap them to the available width.'
+              )}
+              options={[
+                { value: 'scroll', label: 'Scroll' },
+                { value: 'wrap', label: 'Wrap' },
+              ]}
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <form.Field
-            name="planSections"
-            listeners={{
-              onChange: ({ value }) =>
-                onPlanSectionsChange(value as TPlanSections),
-            }}
-          >
-            {(field) => (
-              <FormRadioGroup
-                field={field}
-                disabled={diffViewer === 'legacy'}
-                label="Plan sections"
-                options={[
-                  { value: 'collapsed', label: 'Collapsed' },
-                  { value: 'expanded', label: 'Expanded' },
-                ]}
-              />
-            )}
-          </form.Field>
-          <Text variant="subtext" theme="neutral">
-            Whether plan sections start open when a plan loads.
-          </Text>
-        </div>
+        <form.Field
+          name="planSections"
+          listeners={{
+            onChange: ({ value }) =>
+              onPlanSectionsChange(value as TPlanSections),
+          }}
+        >
+          {(field) => (
+            <FormRadioGroup
+              field={field}
+              disabled={diffViewer === 'legacy'}
+              label={sectionLabel('Plan sections')}
+              description={sectionDescription(
+                'Whether plan sections start open when a plan loads.'
+              )}
+              options={[
+                { value: 'collapsed', label: 'Collapsed' },
+                { value: 'expanded', label: 'Expanded' },
+              ]}
+            />
+          )}
+        </form.Field>
       </form>
     </Panel>
   )
