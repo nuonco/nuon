@@ -73,11 +73,21 @@ func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install, 
 	}
 
 	for _, compID := range componentIDs {
-		dg.sg.nextGroup() // new group for each component
 		comp, has := dg.components[compID]
 		if !has {
 			return nil, errors.Errorf("component %s not found in app config", compID)
 		}
+
+		actionDepSyncSteps, err := getComponentActionImageDepSyncSteps(ctx, dg, &comp,
+			app.ActionWorkflowTriggerTypePreTeardownComponent,
+			app.ActionWorkflowTriggerTypePostTeardownComponent,
+		)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, actionDepSyncSteps...)
+
+		dg.sg.nextGroup() // new group for each component
 
 		installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 			InstallID:   dg.installID,
