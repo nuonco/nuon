@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (c *cli) cloudConnectionsCmd() *cobra.Command {
@@ -44,10 +46,10 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 				principal = serviceAccountEmail
 			}
 			if targetID == "" {
-				return fmt.Errorf("--target-id, --subscription-id, or --project-id is required")
+				return ui.PrintError(fmt.Errorf("--target-id, --subscription-id, or --project-id is required"))
 			}
 			if principal == "" {
-				return fmt.Errorf("--principal, --client-id, or --service-account-email is required")
+				return ui.PrintError(fmt.Errorf("--principal, --client-id, or --service-account-email is required"))
 			}
 			return c.cloudConnections.Create(cmd.Context(), name, platform, targetID, principal, tenantID, identityProvider, defaultRegion, registry, capabilities, repositories, PrintJSON)
 		}),

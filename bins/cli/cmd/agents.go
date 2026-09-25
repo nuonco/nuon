@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/mcpserver"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (c *cli) agentsCmd() *cobra.Command {
@@ -98,7 +99,10 @@ which MCP URL resolves from your config.`,
 			if serverName != "" {
 				opts = append(opts, mcpserver.WithName(serverName))
 			}
-			return mcpserver.New(c.cfg, allowWrites, opts...).Run(cmd.Context())
+			if err := mcpserver.New(c.cfg, allowWrites, opts...).Run(cmd.Context()); err != nil {
+				return ui.PrintError(err)
+			}
+			return nil
 		}),
 	}
 	cmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "expose mutating tools whose descriptions start with WRITE OPERATION:")
