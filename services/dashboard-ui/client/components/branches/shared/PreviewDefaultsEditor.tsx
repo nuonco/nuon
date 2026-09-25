@@ -152,22 +152,19 @@ export const PreviewDefaultsEditor = ({
           })
         }
         disabled={disabled}
+        className="mt-[6px]"
         labelProps={{
+          className: 'items-start',
           labelText: (
-            <>
+            <div className="flex flex-col gap-1">
               <Text weight="strong">Enable automated previews</Text>
               <Text variant="subtext" theme="neutral">
                 Turn off to skip automated preview runs. Manual previews still
                 work.
               </Text>
-            </>
+            </div>
           ),
-          labelTextProps: {
-            as: 'div',
-            className: 'flex flex-col gap-1',
-          },
         }}
-        className="items-start"
       />
 
       {value.mode !== 'none' ? (
