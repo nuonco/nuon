@@ -74,6 +74,7 @@ export const RunRunbookModal = ({
         <RoleSelector
           installId={install?.id ?? ''}
           operationType="trigger"
+          workflowType="runbook_run"
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"

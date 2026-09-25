@@ -93,6 +93,7 @@ export const DeployAllComponentsModalContainer = ({
         <RoleSelector
           installId={install?.id}
           operationType="deploy"
+          workflowType="deploy_components"
           value={value}
           onChange={onChange}
           name="role"
