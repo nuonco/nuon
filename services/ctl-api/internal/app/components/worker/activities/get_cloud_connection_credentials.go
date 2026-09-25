@@ -22,5 +22,5 @@ func (a *Activities) GetCloudConnectionCredentials(ctx context.Context, req *Get
 	if err := a.db.WithContext(ctx).Where(app.CloudConnection{ID: req.ConnectionID}).First(&connection).Error; err != nil {
 		return nil, fmt.Errorf("get cloud connection: %w", err)
 	}
-	return a.cloudConnections.Credentials(ctx, &connection, req.SessionName)
+	return a.cloudConnections.ECRCredentials(ctx, &connection, req.SessionName)
 }

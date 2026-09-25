@@ -30,7 +30,7 @@ func (a *Activities) ReprobeLegacyCloudConnections(ctx context.Context, _ Reprob
 	response := &ReprobeLegacyCloudConnectionsResponse{}
 	for i := range connections {
 		response.Probed++
-		if _, err := a.cloudConnectionsHelpers.Credentials(ctx, &connections[i], "nuon-legacy-reprobe"); err != nil {
+		if _, err := a.cloudConnectionsHelpers.ECRCredentials(ctx, &connections[i], "nuon-legacy-reprobe"); err != nil {
 			response.Failures++
 			a.l.Warn("cloud connection legacy auth reprobe failed", zap.String("connection_id", connections[i].ID), zap.Error(err))
 			continue

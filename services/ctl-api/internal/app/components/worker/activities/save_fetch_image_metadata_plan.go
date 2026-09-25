@@ -75,7 +75,7 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 
 func (a *Activities) getSourceRepository(ctx context.Context, cfg *app.ExternalImageComponentConfig, componentID string) (*configs.OCIRegistryRepository, error) {
 	if cfg.AWSECRImageConfig != nil {
-		auth, err := a.cloudConnections.Credentials(ctx, cfg.AWSECRImageConfig.CloudConnection, "fetch-image-metadata")
+		auth, err := a.cloudConnections.ECRCredentials(ctx, cfg.AWSECRImageConfig.CloudConnection, "fetch-image-metadata")
 		if err != nil {
 			return nil, err
 		}

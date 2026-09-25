@@ -45,7 +45,14 @@ func (h *Helpers) Credentials(ctx context.Context, connection *app.CloudConnecti
 	if err != nil {
 		return nil, err
 	}
-	oidc := &credentials.Config{Region: connection.DefaultRegion, AssumeRole: &credentials.AssumeRoleConfig{RoleARN: connection.Principal, SessionName: sessionName, SessionDurationSeconds: 900, WebIdentityToken: token}}
+	return &credentials.Config{Region: connection.DefaultRegion, AssumeRole: &credentials.AssumeRoleConfig{RoleARN: connection.Principal, SessionName: sessionName, SessionDurationSeconds: 900, WebIdentityToken: token}}, nil
+}
+
+func (h *Helpers) ECRCredentials(ctx context.Context, connection *app.CloudConnection, sessionName string) (*credentials.Config, error) {
+	oidc, err := h.Credentials(ctx, connection, sessionName)
+	if err != nil {
+		return nil, err
+	}
 	var legacy *credentials.Config
 	mode, err := chooseAuthMode(connection.AuthMode,
 		func() error { _, err := credentials.Fetch(ctx, oidc); return err },

@@ -166,7 +166,7 @@ func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConf
 func (a *Activities) getECRAuth(ctx context.Context, ecrCfg *app.AWSECRImageConfig) (*metadata.RegistryAuth, error) {
 	v := validator.New()
 
-	credsCfg, err := a.cloudConnections.Credentials(ctx, ecrCfg.CloudConnection, "ctl-api-image-metadata-fetch")
+	credsCfg, err := a.cloudConnections.ECRCredentials(ctx, ecrCfg.CloudConnection, "ctl-api-image-metadata-fetch")
 	if err != nil {
 		return nil, err
 	}
