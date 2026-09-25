@@ -126,6 +126,7 @@ export const DeployComponentModalContainer = ({
           operationType="deploy"
           principalType="component"
           principalId={component.id}
+          workflowType="manual_deploy"
           value={value}
           onChange={onChange}
           name="role"
