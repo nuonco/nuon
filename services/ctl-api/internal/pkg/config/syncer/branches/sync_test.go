@@ -16,7 +16,7 @@ func TestBuildInstallGroupsThreadsAutoApproveOnPoliciesPassing(t *testing.T) {
 			{
 				Name:                         "canary",
 				Order:                        0,
-				InstallNames:                 []string{"canary-install"},
+				Default:                      true,
 				AutoApproveOnPoliciesPassing: generics.ToPtr(true),
 			},
 			{
@@ -26,18 +26,18 @@ func TestBuildInstallGroupsThreadsAutoApproveOnPoliciesPassing(t *testing.T) {
 				AutoApproveOnPoliciesPassing: generics.ToPtr(false),
 			},
 			{
-				Name:  "manual",
-				Order: 2,
+				Name:          "manual",
+				Order:         2,
+				LabelSelector: map[string]string{"tier": "manual"},
 				// Omitted in the TOML — stays nil so the getter defaults it off.
 			},
 		},
 	}
 
-	groups, err := buildInstallGroups(branchCfg, map[string]string{"canary-install": "install-1"})
-	require.NoError(t, err)
+	groups := buildInstallGroups(branchCfg)
 	require.Len(t, groups, 3)
 
-	require.Equal(t, []string{"install-1"}, []string(groups[0].InstallIDs))
+	require.True(t, groups[0].Default)
 	require.NotNil(t, groups[0].AutoApproveOnPoliciesPassing)
 	require.True(t, groups[0].GetAutoApproveOnPoliciesPassing())
 

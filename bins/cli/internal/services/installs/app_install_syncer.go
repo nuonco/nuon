@@ -271,7 +271,8 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, fmt.Errorf("error generating diff for install %s: %w", installCfg.Name, err)
 	}
 	diffRes := diff.Summary()
-	branchChanged := branch != nil && appInstall.AppBranchID != branch.ID
+	branchChanged := branch != nil &&
+		(appInstall.AppBranchID != branch.ID || appInstall.AppBranchGroup != installCfg.AppBranchGroup)
 	if !diffRes.HasChanged && !branchChanged {
 		if !s.asJSON {
 			ui.PrintSuccess(fmt.Sprintf("install %s is up to date, no changes needed", installCfg.Name))
@@ -417,10 +418,11 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 
 	if branchChanged {
-		appInstall, err = s.api.MoveInstallToAppBranch(ctx, appInstall.ID, branch.ID)
+		moved, err := s.api.MoveInstallToAppBranch(ctx, appInstall.ID, branch.ID, installCfg.AppBranchGroup)
 		if err != nil {
 			return nil, fmt.Errorf("error moving install %s to app branch %s: %w", appInstall.Name, branch.Name, err)
 		}
+		appInstall = moved
 	}
 
 	if !s.asJSON {

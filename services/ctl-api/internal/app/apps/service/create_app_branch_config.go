@@ -17,17 +17,12 @@ import (
 )
 
 type InstallGroupRequest struct {
-	Name       string   `json:"name" validate:"required,min=1"`
-	Order      int      `json:"order" validate:"min=0"`
-	InstallIDs []string `json:"install_ids"`
+	Name  string `json:"name" validate:"required,min=1"`
+	Order int    `json:"order" validate:"min=0"`
 
-	// LabelSelector dynamically resolves installs at deploy time.
-	// Mutually exclusive with InstallIDs.
 	LabelSelector *labels.Selector `json:"label_selector,omitempty"`
 
-	// AllInstalls targets every install owned by this branch.
-	// Mutually exclusive with InstallIDs and LabelSelector.
-	AllInstalls bool `json:"all_installs,omitempty"`
+	Default bool `json:"default,omitempty"`
 
 	// AutoApproveOnPoliciesPassing approves this group's plan step without user
 	// input when its policy checks pass. Omit to leave it unset (off).
@@ -74,7 +69,17 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 
 	// Validate install groups have unique orders
 	orders := make(map[int]bool)
+	names := make(map[string]bool)
+	selectors := make(map[string]string)
+	defaultGroups := 0
 	for _, group := range c.InstallGroups {
+		if names[group.Name] {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("duplicate install group name: %s", group.Name),
+				Description: "install groups must have unique names",
+			}
+		}
+		names[group.Name] = true
 		if orders[group.Order] {
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("duplicate install group order: %d", group.Order),
@@ -83,26 +88,9 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 		}
 		orders[group.Order] = true
 
-		// A group targets installs exactly one way
-		hasIDs := len(group.InstallIDs) > 0
 		hasSelector := group.LabelSelector != nil && len(group.LabelSelector.MatchLabels) > 0
-		targets := 0
-		for _, set := range []bool{hasIDs, hasSelector, group.AllInstalls} {
-			if set {
-				targets++
-			}
-		}
-		if targets > 1 {
-			return stderr.ErrUser{
-				Err:         fmt.Errorf("install group %q sets more than one of install_ids, label_selector, all_installs", group.Name),
-				Description: "install groups must use exactly one of install_ids, label_selector, or all_installs",
-			}
-		}
-		if targets == 0 {
-			return stderr.ErrUser{
-				Err:         fmt.Errorf("install group %q has none of install_ids, label_selector, all_installs", group.Name),
-				Description: "install groups must specify install_ids, label_selector, or all_installs",
-			}
+		if group.Default {
+			defaultGroups++
 		}
 		if hasSelector {
 			if err := group.LabelSelector.Validate(); err != nil {
@@ -111,6 +99,26 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 					Description: "label_selector must have non-empty match_labels",
 				}
 			}
+			key := group.LabelSelector.Canonical()
+			if existing, ok := selectors[key]; ok {
+				return stderr.ErrUser{
+					Err:         fmt.Errorf("install groups %q and %q have the same label_selector", existing, group.Name),
+					Description: fmt.Sprintf("install groups %q and %q have the same label selector", existing, group.Name),
+				}
+			}
+			selectors[key] = group.Name
+		}
+	}
+	if defaultGroups > 1 {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("multiple default install groups"),
+			Description: "only one install group can be default",
+		}
+	}
+	if len(c.InstallGroups) > 0 && defaultGroups == 0 {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("no default install group"),
+			Description: "one install group must be default",
 		}
 	}
 
@@ -146,9 +154,8 @@ func installGroupsFromRequest(reqGroups []InstallGroupRequest) []app.AppBranchIn
 		installGroups[i] = app.AppBranchInstallGroup{
 			Name:                         g.Name,
 			Order:                        g.Order,
-			InstallIDs:                   g.InstallIDs,
 			LabelSelector:                selector,
-			AllInstalls:                  g.AllInstalls,
+			Default:                      g.Default,
 			AutoApproveOnPoliciesPassing: g.AutoApproveOnPoliciesPassing,
 		}
 	}
@@ -257,15 +264,6 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 	}
 
 	installGroups := installGroupsFromRequest(req.InstallGroups)
-
-	var explicitInstallIDs []string
-	for _, group := range installGroups {
-		explicitInstallIDs = append(explicitInstallIDs, group.InstallIDs...)
-	}
-	if err := s.helpers.ValidateInstallIDsBelongToBranchApp(ctx, appBranchID, explicitInstallIDs); err != nil {
-		ctx.Error(err)
-		return
-	}
 
 	if err := s.helpers.ValidateBranchInstallsSingleGroup(ctx, appBranchID, installGroups); err != nil {
 		ctx.Error(err)

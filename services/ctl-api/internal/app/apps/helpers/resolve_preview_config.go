@@ -107,7 +107,6 @@ func (h *Helpers) ListPreviewInstallCandidates(
 	var installs []app.Install
 	if err := h.db.WithContext(ctx).
 		Where(app.Install{AppID: appID}).
-		Preload("AppBranch").
 		Order("name ASC").
 		Find(&installs).Error; err != nil {
 		return nil, fmt.Errorf("unable to list preview install candidates: %w", err)

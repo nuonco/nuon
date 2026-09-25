@@ -14,11 +14,17 @@ const mockRows: InstallRow[] = Array.from({ length: 5 }, (_, i) => ({
   statuses: <span className="text-sm text-foreground-muted">active</span>,
   region: <span className="text-sm text-foreground-muted">us-west-2</span>,
   platform: <span className="text-sm text-foreground-muted">AWS</span>,
-  labels: i % 2 === 0 ? <span className="text-xs font-mono">env: prod</span> : null,
+  labels:
+    i % 2 === 0 ? <span className="text-xs font-mono">env: prod</span> : null,
   branch: null,
+  group: <span className="text-sm font-mono">production</span>,
   activity: <span className="text-sm text-foreground-muted">{i + 1}h ago</span>,
   updatedAt: new Date(Date.now() - (i + 1) * 60 * 60 * 1000).toISOString(),
-  action: <Button size="sm" variant="ghost">Manage</Button>,
+  action: (
+    <Button size="sm" variant="ghost">
+      Manage
+    </Button>
+  ),
 }))
 
 export const Default = () => (

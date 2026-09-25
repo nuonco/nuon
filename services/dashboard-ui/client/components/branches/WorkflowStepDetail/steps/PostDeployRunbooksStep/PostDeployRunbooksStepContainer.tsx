@@ -26,7 +26,8 @@ export const PostDeployRunbooksStepContainer = ({
   const { data: appInstalls } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-installs', org?.id, app?.id],
-    queryFn: () => getAppInstalls({ orgId: org!.id, appId: app!.id, limit: 100 }),
+    queryFn: () =>
+      getAppInstalls({ orgId: org!.id, appId: app!.id, limit: 100 }),
     enabled: !!org?.id && !!app?.id && installEntries.length > 0,
   })
 
@@ -44,7 +45,9 @@ export const PostDeployRunbooksStepContainer = ({
       installId: entry.install_id,
       install: installsById[entry.install_id],
       installHref:
-        org?.id && entry.install_id ? `/${org.id}/installs/${entry.install_id}` : undefined,
+        org?.id && entry.install_id
+          ? `/${org.id}/installs/${entry.install_id}`
+          : undefined,
       runbooks: ((entry.runbooks as any[]) || []).map((runbook: any) => ({
         runbookId: runbook.runbook_id,
         runbookName: runbook.runbook_name || runbook.runbook_id,
@@ -67,7 +70,9 @@ export const PostDeployRunbooksStepContainer = ({
   }, [rows])
 
   const emptyMessage =
-    step.status?.status === 'in-progress' ? 'Starting post-deploy runbooks' : undefined
+    step.status?.status === 'in-progress'
+      ? 'Starting post-deploy runbooks'
+      : undefined
 
   return (
     <PostDeployRunbooksStep

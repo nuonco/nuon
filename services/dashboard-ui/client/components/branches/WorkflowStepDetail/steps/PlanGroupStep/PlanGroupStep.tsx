@@ -65,12 +65,17 @@ export const PlanGroupStep = ({
             <Banner className="@container" theme="warn">
               <div className="flex flex-col gap-2">
                 <div className="flex flex-col">
-                  <Text weight="strong">Install group plan requires review</Text>
+                  <Text weight="strong">
+                    Install group plan requires review
+                  </Text>
                   <Text variant="subtext" theme="neutral">
-                    Review the changes below, then approve to deploy or skip this install group.
+                    Review the changes below, then approve to deploy or skip
+                    this install group.
                   </Text>
                 </div>
-                {actions && <div className="flex self-end gap-2">{actions}</div>}
+                {actions && (
+                  <div className="flex self-end gap-2">{actions}</div>
+                )}
               </div>
             </Banner>
           )}
@@ -96,7 +101,9 @@ export const PlanGroupStep = ({
             (inst.summary?.removed ?? 0) +
             (inst.summary?.changed ?? 0)
           const hasChanges = total > 0 && inst.sections.length > 0
-          const labelEntries = inst.installLabels ? Object.entries(inst.installLabels) : []
+          const labelEntries = inst.installLabels
+            ? Object.entries(inst.installLabels)
+            : []
           const installLabel = inst.installName || inst.installId
 
           const heading = (
@@ -149,7 +156,11 @@ export const PlanGroupStep = ({
               >
                 {heading}
                 {changeSummary}
-                <Icon variant="CaretDownIcon" className="invisible shrink-0" aria-hidden />
+                <Icon
+                  variant="CaretDownIcon"
+                  className="invisible shrink-0"
+                  aria-hidden
+                />
               </div>
             )
           }
