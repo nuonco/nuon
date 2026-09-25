@@ -39,7 +39,7 @@ export function sectionsFromComparisonConfigDiff(
             ? [{ key: 'change', op: e.op, diff: e.description }]
             : e.source_changed
               ? [{ key: 'source', op: 'change', diff: 'source files changed' }]
-              : [],
+              : [{ key: 'change', op: e.op || 'change', diff: 'Configuration changed' }],
         }))
       : []
 
