@@ -551,7 +551,7 @@ const useForkChoice = () => useContext(ForkContext)
 
 // Clouds the example app (Kitchen Sink) can be deployed to from the fork. The
 // own-app path offers all three.
-const EXAMPLE_CLOUDS: TCloud[] = ['aws']
+const EXAMPLE_CLOUDS: TCloud[] = ['aws', 'gcp']
 
 const CLOUD_LABEL: Record<TCloud, string> = { aws: 'AWS', gcp: 'GCP', azure: 'Azure' }
 
@@ -1286,57 +1286,71 @@ const OwnAppSetup = ({
 //
 // The app exists and its config is stubbed. This step shows the stubs and the
 // two ways to fill them in.
-// A quiet row that opens in place (the animated grid from ExampleAppDrawer).
-const CollapsibleRow = ({
-  id,
-  icon,
-  summary,
-  badge,
-  children,
-}: {
-  id: string
-  icon?: TIconVariant
-  summary: string
-  badge?: string
-  children: ReactNode
-}) => {
-  const [open, setOpen] = useState(false)
+// The optional reading, as one line of fine print under the step. NN/g's progressive
+// disclosure: show the primary task, disclose the rest only when asked, with labels
+// that say what opens. Grey, dotted underline, no border: nothing here competes with
+// "Copy prompt".
+type TFootnote = 'mcp' | 'deps'
+const FOOTNOTE_LINK =
+  'cursor-pointer text-cool-grey-500 underline decoration-dotted underline-offset-2 hover:text-foreground dark:text-cool-grey-400'
+const Footnotes = ({ onExampleExit }: { onExampleExit: () => void }) => {
+  const [open, setOpen] = useState<TFootnote | null>(null)
+  const toggle = (key: TFootnote) => setOpen((prev) => (prev === key ? null : key))
   return (
-    <div className="flex flex-col rounded-md border bg-background">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left cursor-pointer hover:bg-cool-grey-500/8"
-      >
-        <span className="flex flex-wrap items-center gap-2">
-          {icon ? <Icon variant={icon} size={16} theme="neutral" /> : null}
-          <Text as="span" variant="body" weight="strong">
-            {summary}
+    <div className="flex flex-col gap-3">
+      <Text variant="subtext" theme="neutral" flex className="flex-wrap gap-x-2">
+        <span>Optional:</span>
+        <button
+          type="button"
+          aria-expanded={open === 'mcp'}
+          aria-controls="footnote-mcp"
+          onClick={() => toggle('mcp')}
+          className={FOOTNOTE_LINK}
+        >
+          MCP setup
+        </button>
+        <span aria-hidden>·</span>
+        <button
+          type="button"
+          aria-expanded={open === 'deps'}
+          aria-controls="footnote-deps"
+          onClick={() => toggle('deps')}
+          className={FOOTNOTE_LINK}
+        >
+          Dependencies
+        </button>
+        <span aria-hidden>·</span>
+        <button type="button" onClick={onExampleExit} className={FOOTNOTE_LINK}>
+          Use the example app instead
+        </button>
+      </Text>
+      {open === 'mcp' ? (
+        <div id="footnote-mcp" className="flex flex-col gap-1.5 rounded-md border bg-background p-4">
+          <Text variant="subtext" weight="strong">
+            Give your agent the Nuon Model Context Protocol (MCP) server
           </Text>
-          {badge ? (
-            <Badge size="sm" theme="neutral">
-              {badge}
-            </Badge>
-          ) : null}
-        </span>
-        <span className={cn('flex shrink-0 transition-transform duration-300', open && 'rotate-180')} aria-hidden>
-          <Icon variant="CaretDownIcon" size={14} weight="bold" theme="neutral" />
-        </span>
-      </button>
-      <div
-        id={id}
-        className={cn(
-          'grid transition-[grid-template-rows,opacity,visibility] duration-300 ease-out',
-          open ? 'visible grid-rows-[1fr] opacity-100' : 'invisible grid-rows-[0fr] opacity-0'
-        )}
-        aria-hidden={!open}
-      >
-        <div className="overflow-hidden">
-          <div className="flex flex-col gap-3 border-t p-4">{children}</div>
+          <Text variant="subtext" theme="neutral">
+            Live access to your org while it works: apps, builds, installs and logs. In Claude Code:
+          </Text>
+          <CodeBlock language="bash" showCopy wrapLongLines className="!pr-14">
+            {MCP_ADD_CLAUDE}
+          </CodeBlock>
+          <Link href={DOCS_MCP} isExternal textVariant="subtext">
+            docs.nuon.co/guides/agents/mcp-walkthrough
+          </Link>
         </div>
-      </div>
+      ) : null}
+      {open === 'deps' ? (
+        <div id="footnote-deps" className="flex flex-col gap-1.5 rounded-md border bg-background p-4">
+          <Text variant="subtext" weight="strong">
+            Dependencies
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            Databases like Postgres run as components in the customer&apos;s account. Third-party services like
+            Clerk or SendGrid stay external; their keys arrive as install inputs.
+          </Text>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -1502,32 +1516,7 @@ const TemplateStep = ({ sharedData, setSharedData, onAdvance, onGoBack }: IWizar
         <PushListener detected={detected} cloud={cloud} />
       </Card>
       <ManualExits appName={appName} repo={repo} cloud={cloud} />
-      <CollapsibleRow id="mcp-setup" icon="SparkleIcon" summary="MCP setup and dependencies">
-        <div className="flex flex-col gap-1.5">
-          <Text variant="subtext" weight="strong">
-            Optional: give your agent the Nuon Model Context Protocol (MCP) server
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Live access to your org while it works: apps, builds, installs and logs. In Claude Code:
-          </Text>
-          <CodeBlock language="bash" showCopy wrapLongLines className="!pr-14">
-            {MCP_ADD_CLAUDE}
-          </CodeBlock>
-          <Link href={DOCS_MCP} isExternal textVariant="subtext">
-            docs.nuon.co/guides/agents/mcp-walkthrough
-          </Link>
-        </div>
-        <div className="flex flex-col gap-1.5 border-t pt-3">
-          <Text variant="subtext" weight="strong">
-            Dependencies
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Databases like Postgres run as components in the customer&apos;s account. Third-party services like
-            Clerk or SendGrid stay external; their keys arrive as install inputs.
-          </Text>
-        </div>
-      </CollapsibleRow>
-      <ExampleEscapeHatch onExit={exitToExample} />
+      <Footnotes onExampleExit={exitToExample} />
       <NextButton label="Set up your first install" onClick={onAdvance} onBack={onGoBack} />
     </div>
   )
