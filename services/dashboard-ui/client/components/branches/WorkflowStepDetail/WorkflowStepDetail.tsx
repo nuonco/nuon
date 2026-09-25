@@ -12,6 +12,7 @@ interface IWorkflowStepDetail {
   step: TInstallWorkflowStep
   appBranchId?: string
   appBranchRunId?: string
+  workflowStatus?: string
   onClose: () => void
 }
 
@@ -19,6 +20,7 @@ export const WorkflowStepDetail = ({
   step,
   appBranchId,
   appBranchRunId,
+  workflowStatus,
   onClose: _onClose,
 }: IWorkflowStepDetail) => {
   const metadata = step.status?.metadata || {}
@@ -62,7 +64,13 @@ export const WorkflowStepDetail = ({
       name.includes('plan install group') ||
       name === 'plan preview install'
     ) {
-      return <PlanGroupStep step={step} metadata={metadata} />
+      return (
+        <PlanGroupStep
+          step={step}
+          metadata={metadata}
+          workflowStatus={workflowStatus}
+        />
+      )
     }
     if (
       name.includes('deploy install group') ||
