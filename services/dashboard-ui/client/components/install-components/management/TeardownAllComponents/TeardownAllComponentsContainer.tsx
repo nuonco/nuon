@@ -92,6 +92,7 @@ export const TeardownAllComponentsModalContainer = ({
         <RoleSelector
           installId={install?.id}
           operationType="teardown"
+          workflowType="teardown_components"
           value={value}
           onChange={onChange}
           name="role"

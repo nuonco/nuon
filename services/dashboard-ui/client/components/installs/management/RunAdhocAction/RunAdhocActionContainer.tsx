@@ -103,6 +103,7 @@ export const RunAdhocActionModalContainer = ({
           installId={install.id}
           operationType="trigger"
           principalType="action"
+          workflowType="action_workflow_run"
           value={selectedRole}
           onChange={setSelectedRole}
         />
