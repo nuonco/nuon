@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/nuonco/nuon/pkg/metrics"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	cloudconnectionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/cloud-connections/helpers"
@@ -21,6 +22,7 @@ type Params struct {
 	DB               *gorm.DB `name:"psql"`
 	QueueClient      *client.Client
 	CloudConnections *cloudconnectionshelpers.Helpers
+	MW               metrics.Writer
 }
 
 type Activities struct {
@@ -30,6 +32,7 @@ type Activities struct {
 	notifs           *notifications.Notifications
 	queueClient      *client.Client
 	cloudConnections *cloudconnectionshelpers.Helpers
+	mw               metrics.Writer
 }
 
 func New(params Params) (*Activities, error) {
@@ -40,5 +43,6 @@ func New(params Params) (*Activities, error) {
 		notifs:           params.Notifs,
 		queueClient:      params.QueueClient,
 		cloudConnections: params.CloudConnections,
+		mw:               params.MW,
 	}, nil
 }

@@ -54,6 +54,8 @@ type OCIRegistryRepository struct {
 
 	ServiceAccountEmail      string `hcl:"service_account_email,optional"`
 	WorkloadIdentityProvider string `hcl:"workload_identity_provider,optional"`
+	OrgID                    string
+	CloudConnectionID        string
 
 	ACRAppRegistration *ACRAppRegistration `hcl:"acr_app_registration,block"`
 

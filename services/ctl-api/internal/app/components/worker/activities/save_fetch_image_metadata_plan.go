@@ -98,6 +98,8 @@ func (a *Activities) getSourceRepository(ctx context.Context, cfg *app.ExternalI
 			LoginServer:              garLoginServer,
 			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
 			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
+			OrgID:                    cfg.GCPGARImageConfig.OrgID,
+			CloudConnectionID:        cfg.GCPGARImageConfig.CloudConnectionID,
 		}
 		if connection := cfg.GCPGARImageConfig.CloudConnection; connection != nil && connection.AuthMode != app.CloudConnectionAuthModeLegacy {
 			token, err := a.cloudConnections.GCPAccessToken(ctx, connection)

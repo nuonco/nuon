@@ -28,6 +28,8 @@ func EnsureGARAuth(ctx workflow.Context, cfg *configs.OCIRegistryRepository) err
 	token, err := AwaitGetGARAccessToken(ctx, &GetGARAccessTokenRequest{
 		ServiceAccountEmail:      cfg.ServiceAccountEmail,
 		WorkloadIdentityProvider: cfg.WorkloadIdentityProvider,
+		OrgID:                    cfg.OrgID,
+		ConnectionID:             cfg.CloudConnectionID,
 	})
 	if err != nil {
 		return err

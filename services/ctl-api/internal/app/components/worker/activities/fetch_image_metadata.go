@@ -158,6 +158,8 @@ func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConf
 	tok, err := a.sharedActs.GetGARAccessToken(ctx, &sharedactivities.GetGARAccessTokenRequest{
 		ServiceAccountEmail:      garCfg.ServiceAccountEmail,
 		WorkloadIdentityProvider: garCfg.WorkloadIdentityProvider,
+		OrgID:                    garCfg.OrgID,
+		ConnectionID:             garCfg.CloudConnectionID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get GAR access token")

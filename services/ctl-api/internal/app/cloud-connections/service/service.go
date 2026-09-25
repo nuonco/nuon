@@ -38,16 +38,9 @@ var _ apiPkg.Service = (*service)(nil)
 var _ apiPkg.MCPService = (*service)(nil)
 
 func New(params Params) (*service, error) {
-	var issuer *oidcissuer.Issuer
-	if params.Cfg != nil && params.Cfg.TelemetryJWKS != "" {
-		privateKey, keyID, _, err := oidcissuer.ParseJWKS(params.Cfg.TelemetryJWKS)
-		if err != nil {
-			return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
-		}
-		issuer, err = oidcissuer.New(params.Cfg.PublicAPIURL, privateKey, keyID)
-		if err != nil {
-			return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
-		}
+	issuer, err := issuerFromConfig(params.Cfg)
+	if err != nil {
+		return nil, err
 	}
 	verifier := params.Verifier
 	if verifier == nil {
@@ -60,6 +53,29 @@ func New(params Params) (*service, error) {
 		issuer:        issuer,
 		verifier:      verifier,
 	}, nil
+}
+
+func NewVerifierFromConfig(cfg *internal.Config) (Verifier, error) {
+	issuer, err := issuerFromConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return NewCloudVerifier(issuer), nil
+}
+
+func issuerFromConfig(cfg *internal.Config) (*oidcissuer.Issuer, error) {
+	if cfg == nil || cfg.TelemetryJWKS == "" {
+		return nil, nil
+	}
+	privateKey, keyID, _, err := oidcissuer.ParseJWKS(cfg.TelemetryJWKS)
+	if err != nil {
+		return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
+	}
+	issuer, err := oidcissuer.New(cfg.PublicAPIURL, privateKey, keyID)
+	if err != nil {
+		return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
+	}
+	return issuer, nil
 }
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {

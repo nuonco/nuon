@@ -7,12 +7,15 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/google/externalaccount"
 	"google.golang.org/api/impersonate"
 
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // azureTokenExchangeAudience is the audience the Azure managed identity token is
@@ -23,6 +26,8 @@ const azureTokenExchangeAudience = "api://AzureADTokenExchange"
 type GetGARAccessTokenRequest struct {
 	ServiceAccountEmail      string
 	WorkloadIdentityProvider string
+	OrgID                    string
+	ConnectionID             string
 }
 
 type GARAccessToken struct {
@@ -38,6 +43,17 @@ type GARAccessToken struct {
 // @temporal-gen-v2 activity
 // @max-retries 1
 func (a *Activities) GetGARAccessToken(ctx context.Context, req *GetGARAccessTokenRequest) (*GARAccessToken, error) {
+	l := temporalzap.GetActivityLogger(ctx)
+	orgID := req.OrgID
+	if orgID == "" {
+		orgID = "unknown"
+	}
+	connectionID := req.ConnectionID
+	if connectionID == "" {
+		connectionID = "none"
+	}
+	l.Info("using legacy cloud connection authentication", zap.String("org_id", orgID), zap.String("platform", string(app.CloudPlatformGCP)), zap.String("connection_id", connectionID))
+	a.mw.Incr("cloud_connections.legacy_auth_use", metrics.ToTags(map[string]string{"org": orgID, "platform": string(app.CloudPlatformGCP), "connection": connectionID}))
 	scopes := []string{"https://www.googleapis.com/auth/cloud-platform"}
 
 	if req.WorkloadIdentityProvider != "" {

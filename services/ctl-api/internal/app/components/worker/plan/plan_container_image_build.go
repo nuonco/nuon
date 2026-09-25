@@ -113,6 +113,8 @@ func (b *Planner) getSourceRepository(ctx workflow.Context, cfg *app.ExternalIma
 			LoginServer:              garLoginServer,
 			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
 			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
+			OrgID:                    cfg.GCPGARImageConfig.OrgID,
+			CloudConnectionID:        cfg.GCPGARImageConfig.CloudConnectionID,
 		}
 		if connection := cfg.GCPGARImageConfig.CloudConnection; connection != nil && connection.AuthMode != app.CloudConnectionAuthModeLegacy {
 			auth, err := activities.AwaitGetCloudConnectionGARAuth(ctx, &activities.GetCloudConnectionGARAuthRequest{ConnectionID: connection.ID})

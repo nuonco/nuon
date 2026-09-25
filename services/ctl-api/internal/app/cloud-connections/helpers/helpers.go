@@ -14,12 +14,14 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/aws/smithy-go"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google/externalaccount"
 	"gorm.io/gorm"
 
 	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
 	"github.com/nuonco/nuon/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
@@ -29,11 +31,13 @@ type Helpers struct {
 	db     *gorm.DB
 	cfg    *internal.Config
 	issuer *oidcissuer.Issuer
+	l      *zap.Logger
+	mw     metrics.Writer
 }
 
-func New(db *gorm.DB, cfg *internal.Config) (*Helpers, error) {
+func New(db *gorm.DB, cfg *internal.Config, l *zap.Logger, mw metrics.Writer) (*Helpers, error) {
 	if cfg.TelemetryJWKS == "" {
-		return &Helpers{db: db, cfg: cfg}, nil
+		return &Helpers{db: db, cfg: cfg, l: l, mw: mw}, nil
 	}
 	privateKey, keyID, _, err := oidcissuer.ParseJWKS(cfg.TelemetryJWKS)
 	if err != nil {
@@ -43,7 +47,7 @@ func New(db *gorm.DB, cfg *internal.Config) (*Helpers, error) {
 	if err != nil {
 		return nil, fmt.Errorf("initialize cloud connection issuer: %w", err)
 	}
-	return &Helpers{db: db, cfg: cfg, issuer: issuer}, nil
+	return &Helpers{db: db, cfg: cfg, issuer: issuer, l: l, mw: mw}, nil
 }
 
 func (h *Helpers) Credentials(ctx context.Context, connection *app.CloudConnection, sessionName string) (*credentials.Config, error) {
@@ -194,6 +198,9 @@ func (h *Helpers) ECRCredentials(ctx context.Context, connection *app.CloudConne
 	selected := oidc
 	if mode == app.CloudConnectionAuthModeLegacy {
 		selected = legacy
+		tags := metrics.ToTags(map[string]string{"org": connection.OrgID, "platform": string(connection.Platform), "connection": connection.ID})
+		h.l.Info("using legacy cloud connection authentication", zap.String("org_id", connection.OrgID), zap.String("platform", string(connection.Platform)), zap.String("connection_id", connection.ID))
+		h.mw.Incr("cloud_connections.legacy_auth_use", tags)
 	}
 	if mode != connection.AuthMode {
 		if err := h.db.WithContext(ctx).Model(&app.CloudConnection{}).Where(app.CloudConnection{ID: connection.ID, OrgID: connection.OrgID}).Update("auth_mode", mode).Error; err != nil {

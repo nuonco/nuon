@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/azure/acr"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -65,6 +66,15 @@ func (a *Activities) GetACRAccessToken(ctx context.Context, req *GetACRAccessTok
 			return nil, fmt.Errorf("unable to get ACR token for %s using cloud connection %s: %w", req.LoginServer, connection.ID, err)
 		}
 		return &ACRAccessToken{Username: acr.DefaultACRUsername, Password: token}, nil
+	}
+	if req.ClientSecretName != "" || req.ClientCertificateName != "" {
+		orgID := "unknown"
+		var component app.Component
+		if err := a.db.WithContext(ctx).Select("org_id").Where(app.Component{ID: req.ComponentID}).First(&component).Error; err == nil {
+			orgID = component.OrgID
+		}
+		l.Info("using legacy cloud connection authentication", zap.String("org_id", orgID), zap.String("platform", string(app.CloudPlatformAzure)), zap.String("connection_id", "none"))
+		a.mw.Incr("cloud_connections.legacy_auth_use", metrics.ToTags(map[string]string{"org": orgID, "platform": string(app.CloudPlatformAzure), "connection": "none"}))
 	}
 
 	cfg := &azurecredentials.Config{

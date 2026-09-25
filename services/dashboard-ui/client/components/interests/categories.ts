@@ -33,6 +33,7 @@ export const RESOURCE_CATEGORIES: Record<ResourceKind, EventCategory[]> = {
   runners: ['lifecycle'],
   actions: ['lifecycle'],
   app_branches: ['lifecycle', 'config_synced'],
+  cloud_connections: ['lifecycle'],
 }
 
 export const CATEGORY_LABELS: Record<EventCategory, string> = {

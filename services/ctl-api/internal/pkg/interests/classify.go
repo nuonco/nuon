@@ -45,10 +45,11 @@ const (
 	signalTypeComponentRecovered signal.SignalType = "component-recovered"
 	signalTypeInstallDegraded    signal.SignalType = "install-degraded"
 
-	signalTypeSyncInstalls      signal.SignalType = "sync-installs"
-	signalTypeInstallConfigSync signal.SignalType = "install-config-sync"
-	signalTypeLabelAdded        signal.SignalType = "label-added"
-	signalTypeAppBranchChanged  signal.SignalType = "app-branch-changed"
+	signalTypeSyncInstalls                      signal.SignalType = "sync-installs"
+	signalTypeInstallConfigSync                 signal.SignalType = "install-config-sync"
+	signalTypeLabelAdded                        signal.SignalType = "label-added"
+	signalTypeAppBranchChanged                  signal.SignalType = "app-branch-changed"
+	signalTypeCloudConnectionVerificationFailed signal.SignalType = "cloud-connection-verification-failed"
 )
 
 // stepTargetType* mirror the WorkflowStepTargetType strings declared in
@@ -86,6 +87,7 @@ const (
 	eventClassComponentRecovered
 	eventClassInstallDegraded
 	eventClassRunnerUnhealthy
+	eventClassCloudConnectionVerificationFailed
 )
 
 // approvalResponseType is the resolved approved/rejected outcome of an
@@ -243,6 +245,13 @@ func classify(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome,
 		f.Resource = ResourceRunners
 		f.Op = "unhealthy"
 		f.EventClass = eventClassRunnerUnhealthy
+		f.Resolved = true
+		return f
+
+	case signalTypeCloudConnectionVerificationFailed:
+		f.Resource = ResourceCloudConnections
+		f.Op = "verification_failed"
+		f.EventClass = eventClassCloudConnectionVerificationFailed
 		f.Resolved = true
 		return f
 
@@ -702,6 +711,10 @@ func slugsForFacts(f facts) []string {
 
 	case eventClassRunnerUnhealthy:
 		slugs = append(slugs, SlugEventRunnerUnhealthy, SlugOutcomeCompletion, SlugOutcomeFailures)
+		return slugs
+
+	case eventClassCloudConnectionVerificationFailed:
+		slugs = append(slugs, SlugEventLifecycleFailed, SlugOutcomeCompletion, SlugOutcomeFailures)
 		return slugs
 	}
 
