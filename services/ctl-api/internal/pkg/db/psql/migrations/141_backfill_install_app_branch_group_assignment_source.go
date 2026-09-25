@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -34,6 +35,9 @@ func (m *Migrations) Migration141BackfillInstallAppBranchGroupAssignmentSource(c
 		connection := &connections[idx]
 		var install app.Install
 		if err := db.WithContext(ctx).First(&install, "id = ?", connection.InstallID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
 			return fmt.Errorf("unable to load install %s: %w", connection.InstallID, err)
 		}
 		install.AppBranchGroup = ""
