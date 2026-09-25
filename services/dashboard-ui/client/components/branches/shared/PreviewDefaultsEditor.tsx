@@ -22,7 +22,7 @@ export type IPreviewDefaults = {
 }
 
 export const defaultPreviewDefaults = (): IPreviewDefaults => ({
-  mode: 'none',
+  mode: 'plan-only',
   installTargetMode: 'install',
   installId: '',
   labelSelector: {},
