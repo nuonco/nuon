@@ -37,10 +37,7 @@ func (s *InstallsServiceTestSuite) TestGetAppInstallsFiltersByAppBranch() {
 		Name:  "main",
 	}
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
-		Model(&app.Install{}).
-		Where(app.Install{ID: connected.ID}).
-		Update("app_branch_id", branch.ID).Error)
+	s.connectInstallToBranch(connected, branch)
 
 	path := fmt.Sprintf("/v1/apps/%s/installs?app_branch_id=%s", s.testApp.ID, branch.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)

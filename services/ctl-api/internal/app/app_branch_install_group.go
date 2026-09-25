@@ -6,8 +6,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
-	"github.com/lib/pq"
-
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
@@ -28,19 +26,11 @@ type AppBranchInstallGroup struct {
 	AppBranchConfigID string          `json:"app_branch_config_id,omitzero" gorm:"not null;uniqueIndex:idx_app_branch_install_group_order" temporaljson:"app_branch_config_id,omitzero,omitempty"`
 	AppBranchConfig   AppBranchConfig `faker:"-" json:"-" temporaljson:"app_branch_config,omitzero,omitempty"`
 
-	Name       string         `json:"name,omitzero" gorm:"not null" temporaljson:"name,omitzero,omitempty"`
-	Order      int            `json:"order,omitzero" gorm:"not null;uniqueIndex:idx_app_branch_install_group_order" temporaljson:"order,omitzero,omitempty"`
-	InstallIDs pq.StringArray `gorm:"type:text[]" json:"install_ids,omitzero" temporaljson:"install_ids,omitzero,omitempty" swaggertype:"array,string"`
-
-	// LabelSelector dynamically resolves installs at deploy time by matching labels.
-	// Mutually exclusive with InstallIDs — set one or the other, not both.
+	Name  string `json:"name,omitzero" gorm:"not null" temporaljson:"name,omitzero,omitempty"`
+	Order int    `json:"order,omitzero" gorm:"not null;uniqueIndex:idx_app_branch_install_group_order" temporaljson:"order,omitzero,omitempty"`
 
 	LabelSelector *labels.Selector `json:"label_selector,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"label_selector,omitzero,omitempty"`
-
-	// AllInstalls targets every install owned by this group's app branch.
-	// A nil LabelSelector already means "use InstallIDs", so there is no
-	// selector shape that expresses "everything" — hence the explicit flag.
-	AllInstalls bool `json:"all_installs,omitzero" gorm:"default:false" temporaljson:"all_installs,omitzero,omitempty"`
+	Default       bool             `json:"default,omitzero" gorm:"default:false" temporaljson:"default,omitzero,omitempty"`
 
 	MaxParallel int `json:"max_parallel,omitzero" gorm:"default:0" temporaljson:"max_parallel,omitzero,omitempty"`
 

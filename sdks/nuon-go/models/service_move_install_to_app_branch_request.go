@@ -19,6 +19,9 @@ import (
 // swagger:model service.MoveInstallToAppBranchRequest
 type ServiceMoveInstallToAppBranchRequest struct {
 
+	// app branch group
+	AppBranchGroup string `json:"app_branch_group,omitempty"`
+
 	// AppBranchID is the branch to move the install to. It must belong to the
 	// install's app and have an app config to deploy.
 	// Required: true

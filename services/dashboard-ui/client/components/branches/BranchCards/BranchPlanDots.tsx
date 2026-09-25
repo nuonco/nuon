@@ -1,10 +1,19 @@
+import { Badge } from '@/components/common/Badge'
+
 export type TBranchPlanGroup = {
   name: string
   installs: number
   hasSelector: boolean
+  isPreview?: boolean
 }
 
 const MAX_VISIBLE_GROUPS = 4
+
+export const PreviewBadge = () => (
+  <Badge size="xs" theme="info" className="shrink-0">
+    Preview
+  </Badge>
+)
 
 export const BranchPlanDots = ({ groups }: { groups: TBranchPlanGroup[] }) => {
   const visibleGroups = groups.slice(0, MAX_VISIBLE_GROUPS)
@@ -31,6 +40,7 @@ export const BranchPlanDots = ({ groups }: { groups: TBranchPlanGroup[] }) => {
           <span className="truncate text-xs text-cool-grey-700 dark:text-cool-grey-300">
             {group.name}
           </span>
+          {group.isPreview ? <PreviewBadge /> : null}
         </div>
       ))}
       {hiddenGroups > 0 ? (

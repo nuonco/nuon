@@ -84,26 +84,31 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBr
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("labels", lbls))
 
+	table := views.TableOrViewName(s.db, &app.Install{}, "")
+
 	if q != "" {
-		nameCol := views.TableOrViewName(s.db, &app.Install{}, ".name")
-		idCol := views.TableOrViewName(s.db, &app.Install{}, ".id")
 		queryPattern := "%" + q + "%"
-		tx = tx.Where(nameCol+" ILIKE ? OR "+idCol+" ILIKE ?", queryPattern, queryPattern)
+		tx = tx.Where(table+".name ILIKE ? OR "+table+".id ILIKE ?", queryPattern, queryPattern)
 	}
 
 	if appBranchID != "" {
-		tx = tx.Where(views.TableOrViewName(s.db, &app.Install{}, ".app_branch_id")+" = ?", appBranchID)
+		tx = tx.
+			Joins("JOIN install_app_branch_connections ON install_app_branch_connections.install_id = "+table+".id AND install_app_branch_connections.active = ? AND install_app_branch_connections.deleted_at = 0", true).
+			Where("install_app_branch_connections.app_branch_id = ?", appBranchID)
 	}
 
-	tx = tx.Where("app_id = ? AND org_id = ?", appID, orgID).
+	tx = tx.Where(table+".app_id = ? AND "+table+".org_id = ?", appID, orgID).
 		Preload("AppSandboxConfig").
+		Preload("AppBranchConnections", func(db *gorm.DB) *gorm.DB {
+			return db.Order("active DESC, created_at DESC, id DESC")
+		}).
+		Preload("AppBranchConnections.AppBranch").
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
 			return db.Order("install_sandbox_runs.created_at DESC")
 		}).
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
-		Preload("AppBranch").
 		Preload("AppRunnerConfig").
 		Preload("AppConfig", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id", "app_id", "app_branch_id")
