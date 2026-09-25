@@ -15,7 +15,11 @@
   --background: var(--color-dark-grey-600);
 }
 
-/* tooltip enter / exit animations */
+[data-theme='monochrome'] .tooltip-content {
+  --background: var(--color-dark-grey-200);
+  color: var(--white);
+}
+
 .tooltip-content.enter {
   opacity: 1;
   visibility: visible;
@@ -50,7 +54,6 @@
   translate: -0.5rem 0;
 }
 
-/* tooltip arrow point */
 .tooltip-content::after {
   content: '';
   position: absolute;
