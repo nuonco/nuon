@@ -475,3 +475,13 @@ func TestGetRoleForAction(t *testing.T) {
 		})
 	}
 }
+
+func TestActionImageTag(t *testing.T) {
+	const sourceImage = "ghcr.io/acme/migrate-tools:v1.4.0"
+
+	tag := actionImageTag(sourceImage, "run_1")
+	assert.Equal(t, tag, actionImageTag(sourceImage, "run_1"), "tag must be stable for one run")
+	assert.NotEqual(t, tag, actionImageTag(sourceImage, "run_2"), "a concurrent run must get its own tag")
+	assert.NotEqual(t, tag, actionImageTag("ghcr.io/acme/migrate-tools:v1.4.1", "run_1"), "a different source ref must get its own tag")
+	assert.Regexp(t, `^action-[0-9a-f]{16}-run_1$`, tag)
+}
