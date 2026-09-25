@@ -137,12 +137,12 @@ type Org struct {
 
 	Priority int `json:"-" temporaljson:"priority,omitzero,omitempty"`
 
-	Apps                  []App                  `faker:"-" swaggerignore:"true" json:"apps,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"apps,omitzero,omitempty"`
-	VCSConnections        []VCSConnection        `json:"vcs_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
-	AWSAccountConnections []AWSAccountConnection `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"aws_account_connections,omitzero,omitempty"`
-	Invites               []OrgInvite            `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
-	Features              types.StringBoolMap    `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
-	Tags                  pq.StringArray         `json:"tags,omitzero" gorm:"type:text[];default '{}'" swaggertype:"array,string" temporaljson:"tags,omitzero,omitempty"`
+	Apps             []App               `faker:"-" swaggerignore:"true" json:"apps,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"apps,omitzero,omitempty"`
+	VCSConnections   []VCSConnection     `json:"vcs_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
+	CloudConnections []CloudConnection   `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"cloud_connections,omitzero,omitempty"`
+	Invites          []OrgInvite         `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
+	Features         types.StringBoolMap `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
+	Tags             pq.StringArray      `json:"tags,omitzero" gorm:"type:text[];default '{}'" swaggertype:"array,string" temporaljson:"tags,omitzero,omitempty"`
 	labels.Labeled
 
 	// Other relationships as part of the data model
