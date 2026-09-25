@@ -91,9 +91,11 @@ func (b *Planner) getSourceRepository(ctx workflow.Context, cfg *app.ExternalIma
 
 	if cfg.AWSECRImageConfig != nil {
 		var auth credentials.Config
-		if err := workflow.ExecuteActivity(ctx, "GetCloudConnectionCredentials", &activities.GetCloudConnectionCredentialsRequest{ConnectionID: cfg.AWSECRImageConfig.CloudConnectionID, SessionName: "container-image-build"}).Get(ctx, &auth); err != nil {
+		authResult, err := activities.AwaitGetCloudConnectionCredentials(ctx, &activities.GetCloudConnectionCredentialsRequest{ConnectionID: cfg.AWSECRImageConfig.CloudConnectionID, SessionName: "container-image-build"})
+		if err != nil {
 			return nil, fmt.Errorf("get cloud connection credentials: %w", err)
 		}
+		auth = *authResult
 
 		return &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeECR,
