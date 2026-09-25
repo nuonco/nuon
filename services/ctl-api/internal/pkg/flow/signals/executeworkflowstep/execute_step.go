@@ -71,6 +71,10 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return errors.Wrap(err, "unable to get workflow")
 	}
 
+	if s.ResumeApproval {
+		return s.resumeApproval(ctx, l, step, flw)
+	}
+
 	// Check if step is in executable state
 	if step.Status.Status != app.StatusPending && step.Status.Status != app.StatusNotAttempted && step.Status.Status != app.StatusQueued {
 		l.Debug("step not in executable state, exiting",
@@ -131,6 +135,9 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 				})
 			}
 			return nil
+		}
+		if callback.IsCancelled(stepErr) {
+			return s.handleStepCancelled(ctx, l)
 		}
 		return s.handleStepError(ctx, l, step, flw, stepErr)
 	}

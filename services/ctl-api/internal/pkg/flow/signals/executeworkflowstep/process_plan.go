@@ -89,9 +89,9 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 
 	// Phase 2: Await user approval response
 	resp, err := s.awaitApprovalResponse(ctx, step, flw)
-	if goerrors.Is(err, errApprovalExpired) {
-		// Expired status and stop directive are already written; return nil so
-		// the group stops the workflow instead of retrying the step.
+	if goerrors.Is(err, errApprovalExpired) || goerrors.Is(err, errApprovalParked) {
+		// Status and directive are already written; return nil so the group
+		// acts on the directive instead of retrying the step.
 		return nil
 	}
 	if err != nil {
@@ -100,6 +100,15 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 	if s.retried || s.canceled || s.skipped {
 		return nil
 	}
+
+	return s.processApprovalResponse(ctx, step, flw, resp)
+}
+
+// processApprovalResponse runs the post-approval checks and then the response
+// handler. It is the resume point for a resident step re-dispatched after
+// parking in awaiting-approval.
+func (s *Signal) processApprovalResponse(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, resp *app.WorkflowStepApprovalResponse) error {
+	l, _ := log.WorkflowLogger(ctx)
 
 	// Phase 3: Post-approval checks (can override the response)
 	responseChecks := s.approvalResponseChecks(ctx)
