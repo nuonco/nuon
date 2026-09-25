@@ -5,7 +5,7 @@ export const previewModeDisplayLabel = (
 ): string => {
   switch (mode) {
     case 'none':
-      return 'None'
+      return 'Off'
     case 'apply':
       return 'Apply'
     case 'build-only':
