@@ -5,7 +5,10 @@ import { useOrg } from '@/hooks/use-org'
 import { AppContext } from '@/providers/app-provider'
 import { scrollElementIntoView } from '@/utils/scroll'
 import { getAppConfigs, getAppConfigDiff } from '@/lib'
-import { extractSections, computeSummary } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import {
+  extractSections,
+  computeSummary,
+} from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import { AppConfigDiffCard } from './AppConfigDiffCard'
 
 interface IAppConfigDiffContainer {
@@ -16,7 +19,13 @@ interface IAppConfigDiffContainer {
   focus?: TConfigDiffFocus | null
 }
 
-export const AppConfigDiffContainer = ({ appConfigId, oldConfigId: oldConfigIdProp, appId: appIdProp, className, focus }: IAppConfigDiffContainer) => {
+export const AppConfigDiffContainer = ({
+  appConfigId,
+  oldConfigId: oldConfigIdProp,
+  appId: appIdProp,
+  className,
+  focus,
+}: IAppConfigDiffContainer) => {
   const { org } = useOrg()
   const appCtx = useContext(AppContext)
   const appId = appIdProp || appCtx?.app?.id
@@ -30,9 +39,12 @@ export const AppConfigDiffContainer = ({ appConfigId, oldConfigId: oldConfigIdPr
     enabled: !!org?.id && !!appId && !!appConfigId,
   })
 
-  const previousConfigs = (recentConfigs || []).filter((c) => c.id !== appConfigId)
+  const previousConfigs = (recentConfigs || []).filter(
+    (c) => c.id !== appConfigId
+  )
   const oldConfig = oldConfigIdProp
-    ? (recentConfigs || []).find((c) => c.id === oldConfigIdProp) ?? previousConfigs[0]
+    ? ((recentConfigs || []).find((c) => c.id === oldConfigIdProp) ??
+      previousConfigs[0])
     : previousConfigs[0]
   const oldConfigId = oldConfigIdProp || oldConfig?.id
   const newConfig = (recentConfigs || []).find((c) => c.id === appConfigId)
@@ -61,7 +73,8 @@ export const AppConfigDiffContainer = ({ appConfigId, oldConfigId: oldConfigIdPr
   }, [focus?.nonce])
 
   const sections = diffData?.diff ? extractSections(diffData.diff) : []
-  const summary = sections.length > 0 ? computeSummary(sections) : (diffData?.summary || null)
+  const summary =
+    sections.length > 0 ? computeSummary(sections) : diffData?.summary || null
 
   const newVersion = newConfig?.version
   const oldVersion = oldConfig?.version

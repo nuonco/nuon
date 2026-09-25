@@ -116,10 +116,6 @@ export const BranchDetailActionsContainer = ({
   return (
     <BranchDetailActions
       isTriggerPending={false}
-      previewDisabled={
-        !currentConfig?.preview_config ||
-        currentConfig.preview_config.mode === 'none'
-      }
       showTriggerNudge={showTriggerNudge}
       onTriggerRun={openTriggerModal}
       onTriggerPreviewModal={openPreviewModal}

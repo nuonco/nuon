@@ -261,3 +261,14 @@ func TestSelector_Canonical_NotMatchLabelsStable(t *testing.T) {
 			a.Canonical(), b.Canonical())
 	}
 }
+
+func TestCanonicalMap(t *testing.T) {
+	a := CanonicalMap(map[string]string{"env": "prod", "tier": "web"})
+	b := CanonicalMap(map[string]string{"tier": "web", "env": "prod"})
+	if a == "" || a != b {
+		t.Errorf("CanonicalMap should be stable across map order:\n  a=%s\n  b=%s", a, b)
+	}
+	if CanonicalMap(nil) != "" || CanonicalMap(map[string]string{}) != "" {
+		t.Errorf("empty maps should canonicalize to empty string")
+	}
+}

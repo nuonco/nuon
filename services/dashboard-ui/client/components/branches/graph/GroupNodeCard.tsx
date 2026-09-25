@@ -49,7 +49,12 @@ export const GroupNodeCard = ({
         </span>
         {headerRight}
       </div>
-      <div className={cn('flex flex-col', compact ? 'gap-0.5 px-2 py-1' : 'gap-1 px-3 py-2')}>
+      <div
+        className={cn(
+          'flex flex-col',
+          compact ? 'gap-0.5 px-2 py-1' : 'gap-1 px-3 py-2'
+        )}
+      >
         {children}
       </div>
     </div>

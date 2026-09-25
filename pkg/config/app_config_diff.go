@@ -175,8 +175,7 @@ func diffBranchInstallGroup(old, new AppBranchInstallGroupConfig) *diff.Diff {
 
 	children := []*diff.Diff{
 		diff.NewDiff(diff.WithKey("order"), diff.WithStringDiff(strconv.Itoa(old.Order), strconv.Itoa(new.Order))),
-		diff.NewDiff(diff.WithKey("install_ids"), diff.WithStringSliceDiff(old.InstallIDs, new.InstallIDs)),
-		diff.NewDiff(diff.WithKey("install_names"), diff.WithStringSliceDiff(old.InstallNames, new.InstallNames)),
+		diff.NewDiff(diff.WithKey("default"), diff.WithBoolDiff(old.Default, new.Default)),
 		diff.NewDiff(diff.WithKey("auto_approve_on_policies_passing"), diff.WithOptionalBoolDiff(
 			old.AutoApproveOnPoliciesPassing, new.AutoApproveOnPoliciesPassing,
 		)),
