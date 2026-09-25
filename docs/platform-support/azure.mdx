@@ -2,7 +2,7 @@
 title: 'Azure'
 description: 'Deploy and manage BYOC apps on Microsoft Azure.'
 icon: 'microsoft'
-keywords: ["Azure support", "AKS", "Azure Kubernetes Service", "Microsoft Azure", "Azure BYOC", "Azure deployment"]
+keywords: ["Azure support", "AKS", "Azure Kubernetes Service", "Microsoft Azure", "Azure BYOC", "Azure deployment", "Deploy to Azure button", "Azure portal", "resource group scope", "subscription scope", "deployment_scope", "az stack group create", "az stack sub create", "Key Vault", "ARM template", "Bicep"]
 ---
 
 ## Configuration
@@ -40,24 +40,39 @@ helm_driver = "configmap"
 
 ## Installation
 
-Azure does not support a GUI installation flow, so you must use the CLI installation flow. It consists of 3 steps:
+What your customer does on Azure depends on the `deployment_scope` of the app's stack config. See the
+[stack config reference](/config-ref/stack).
 
-1. You will create the install in the dashboard.
-1. Your customer will provision the install stack, which includes the install runner, in their Azure account.
-1. The install runner will provision your app.
+| `deployment_scope` | One-click console link | What the customer creates first | Deploy command |
+| --- | --- | --- | --- |
+| `resource_group` (default) | None | Resource group, Key Vault, and any secrets | `az stack group create` |
+| `subscription` | **Deploy to Azure** button | Nothing | `az stack sub create` |
 
-Let's walk through each step in detail.
+At the default resource group scope there is no portal flow: the stack deploys into a resource group that must already
+exist, and the Azure portal's custom deployment form cannot create one, so the customer uses the Azure command-line
+interface (CLI). At subscription scope the stack creates its own resource group and Key Vault, which is what makes the
+portal button possible.
+
+Either way, installation is three steps:
+
+1. You create the install in the dashboard.
+1. Your customer provisions the install stack, which includes the install runner, in their Azure subscription.
+1. The install runner provisions your app.
+
+If the published [`nuonco/stack/azure`](https://registry.terraform.io/modules/nuonco/stack/azure/latest) Terraform module
+is enabled for your org, the customer can instead apply it from the **TF Module** tab at either scope. See
+[Provision Stacks with a Terraform Module](/guides/provision-stacks-with-terraform-module).
 
 ### Create an Install
 
 Navigate to the Installs tab in the Nuon dashboard, and click on the "Create Install" button, and select the app you
 want to install.
 
-This will kick off a provision workflow. A new install stack template will be generated along with CLI commands to
-install it. These commands are templated with the install ID and other settings, and can be shared with your
-customer to run as-is.
+This will kick off a provision workflow. A new install stack template will be generated, and the **await install stack**
+step shows the CLI commands to install it and, at subscription scope, the **Deploy to Azure** button. The commands are
+templated with the install ID and other settings, and can be shared with your customer to run as-is.
 
-### Install the Stack
+### Install the Stack at resource group scope (default)
 
 Your customer must
 [install the Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and log in.
@@ -69,10 +84,11 @@ az login
 They will be prompted to select a subscription. They should select the subscription they want to manage the install
 under.
 
-Now they can run the command to create the resource group that the install will be provisioned in.
+Next they create the resource group that the install will be provisioned in. The name must be `<install-id>-rg`, which
+is what the dashboard's copyable command uses.
 
 ```sh
-az group create --name {{install_id}}-rg --location eastus
+az group create --name <install-id>-rg --location <location>
 ```
 
 <Note>
@@ -81,17 +97,57 @@ az group create --name {{install_id}}-rg --location eastus
   lone permission at the subscription level to facilitate provisioning in a new subscription.
 </Note>
 
-Once the resource group has been created, they can provision the stack.
+Then they create the Key Vault the stack expects in that resource group. The vault name is the first 24 characters of
+the install ID, and the dashboard fills it in.
 
 ```sh
-az stack group create --name {{install_id}}-stack --resource-group {{install_id}}-rg --template-uri https://nuon-install-templates-stage.s3.us-east-1.amazonaws.com/templates/inlgofml5mnk1e69dw9w1w0xzt/ist5hnwpr1q36mpegdj6o1terw.json --deny-settings-mode "denyDelete" --aou deleteAll
+az keyvault create --name <vault-name> --resource-group <install-id>-rg --location <location> --enable-rbac-authorization
 ```
+
+If your app declares [secrets](/concepts/app-secrets), the customer grants themselves the Key Vault Secrets Officer role
+on the vault and sets each secret before deploying. Secret names in Key Vault are the app-config names with underscores
+replaced by hyphens, so `license_key` becomes `license-key`. The dashboard lists one command per secret.
+
+```sh
+az keyvault secret set --vault-name <vault-name> --name license-key --value "<your-secret-value>"
+```
+
+Finally they provision the stack. The dashboard also provides an `az deployment group what-if` command to preview the
+changes first.
+
+```sh
+az stack group create --name <install-id>-stack --resource-group <install-id>-rg --template-uri <template-url> --deny-settings-mode "denyDelete" --aou deleteAll
+```
+
+Once the runner phones home, the await install stack step completes and the install proceeds.
+
+### Install the Stack at subscription scope
+
+Set `deployment_scope = "subscription"` in the app's `stack.toml`. The generated stack then creates the resource group
+and Key Vault itself, and the customer has nothing to create up front.
+
+**In the Azure portal.** Click the **Deploy to Azure** button on the await install stack step, or send your customer its
+link. It opens the portal's custom deployment form with the template loaded. The customer selects the subscription and
+region, fills in any inputs, enters secret values into the masked secret fields, and clicks **Create**. The stack writes
+the secrets into the Key Vault it creates.
+
+**With the Azure CLI.** The equivalent command is a subscription-scoped deployment stack. Secrets are passed as
+`secret<CamelCaseName>` parameters alongside the `input<CamelCaseName>` parameters described below.
+
+```sh
+az stack sub create --name <install-id>-stack --location <location> --template-uri <template-url> --deny-settings-mode "denyDelete" --action-on-unmanage deleteAll --parameters secretLicenseKey="<value>"
+```
+
+<Note>
+  The CLI commands rendered on the await install stack step are the resource group scope commands above. At
+  subscription scope, use the portal button or the `az stack sub create` command from this page.
+</Note>
 
 ### Customer Inputs
 
 Every app input declared with `source = "customer"` is a parameter on the install stack template, named
-`input<CamelCaseName>` — `db_name` becomes `inputDbName`. The Deploy to Azure quick link renders one form field per
-input, and on the CLI they are `--parameters` arguments:
+`input<CamelCaseName>` — `db_name` becomes `inputDbName`. At subscription scope the Deploy to Azure form renders one
+field per input; on the CLI they are `--parameters` arguments:
 
 ```sh
 az stack group create ... --parameters inputDbName="orders" inputApiKey="<value>"
@@ -119,5 +175,7 @@ stack.
    reprovision workflow, and an updated CLI command will be provided.
 1. Send the command to your customer for them to run.
 
-Note that the provided CLI command is the same `az stack group create` command you used to create the install. Even
-though the command is `create` it is effectively an upsert, and will update the stack if it already exists.
+Note that the provided CLI command is the same `az stack group create` (or, at subscription scope,
+`az stack sub create`) command used to create the install. Even though the command is `create` it is effectively an
+upsert, and will update the stack if it already exists. At subscription scope the customer can also reopen the
+**Deploy to Azure** button for the new version.

@@ -176,13 +176,20 @@
               "guides/vendor-customers",
               "guides/install-configs",
               "guides/install-config-syncing",
+              {
+                "group": "Provision the install stack",
+                "icon": "layer-group",
+                "expanded": true,
+                "pages": [
+                  "guides/provision-stacks-with-cloudformation",
+                  "guides/provision-stacks-with-terraform-module",
+                  "guides/provision-stacks-with-terraform",
+                  "guides/provision-stacks-with-spacelift"
+                ]
+              },
               "guides/component-overrides",
               "guides/runner-kill-switch",
-              "guides/custom-domains",
-              "guides/provision-stacks-with-cloudformation",
-              "guides/provision-stacks-with-terraform-module",
-              "guides/provision-stacks-with-terraform",
-              "guides/provision-stacks-with-spacelift"
+              "guides/custom-domains"
             ]
           },
           {
