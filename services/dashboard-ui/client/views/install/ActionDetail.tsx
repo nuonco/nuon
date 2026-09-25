@@ -188,6 +188,34 @@ export const ActionDetail = () => {
                       <Code variant="inline">{actionImage}</Code>
                     </LabeledValue>
                   ) : null}
+                  {action?.action_workflow?.configs?.[0]?.triggers?.length ? (
+                    <LabeledValue label="Triggers">
+                      <div className="flex flex-col gap-2">
+                        {action.action_workflow.configs[0].triggers.map(
+                          (trigger) => (
+                            <div
+                              key={trigger.id}
+                              className="flex items-center gap-2 flex-wrap"
+                            >
+                              <ActionTriggerType
+                                size="sm"
+                                triggerType={
+                                  trigger.type as TActionConfigTriggerType
+                                }
+                                componentName={trigger?.component?.name}
+                                componentPath={
+                                  trigger?.component_id
+                                    ? `/${org?.id}/installs/${install?.id}/components/${trigger.component_id}`
+                                    : undefined
+                                }
+                                cronSchedule={trigger?.cron_schedule}
+                              />
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </LabeledValue>
+                  ) : null}
                   {action?.runs?.[0] ? (
                     <LabeledValue label="Last trigger">
                       <ActionTriggerType
