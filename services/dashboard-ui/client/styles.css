@@ -585,6 +585,7 @@
 
 :root {
   color-scheme: light dark;
+  --app-color-scheme: light dark;
 
   --font-inter: 'Inter', sans-serif;
   --font-hack: 'Hack', monospace;
@@ -686,12 +687,14 @@
 
 :root[data-theme='light'] {
   color-scheme: light;
+  --app-color-scheme: light;
 }
 
 :root[data-theme='dark'],
 :root[data-theme='classic'],
 :root[data-theme='high-contrast'] {
   color-scheme: dark;
+  --app-color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -731,9 +734,11 @@ body {
 
 /* The renderer's shadow host forces color-scheme: dark, which would resolve
    every light-dark() token we inherit into it to its dark branch. Outer rules
-   beat :host rules, so this hands the page's scheme back. */
+   beat :host rules, so this hands the page's scheme back. It reads the scheme
+   from a variable because Lightning CSS minifies `color-scheme: inherit` to
+   `normal`, which silently reverts this in production builds only. */
 diffs-container {
-  color-scheme: inherit;
+  color-scheme: var(--app-color-scheme);
 }
 
 /* Keyed off which logo renders, not the resolved mode: the landing footer
