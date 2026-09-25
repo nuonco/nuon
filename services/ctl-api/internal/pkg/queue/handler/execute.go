@@ -33,9 +33,18 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	var finStatus app.Status
 	var finDesc string
 	defer func() {
+		if h.canceled && finStatus == app.StatusSuccess {
+			// cancel raced in after execute finished — never let a stale
+			// success overwrite the cancelled terminal state
+			finStatus, finDesc = app.StatusCancelled, "signal was canceled during execution"
+		}
 		status := "success"
 		desc := ""
-		if retErr != nil {
+		switch {
+		case finStatus == app.StatusCancelled:
+			status = "cancelled"
+			desc = finDesc
+		case retErr != nil:
 			status = "error"
 			desc = retErr.Error()
 		}
@@ -53,13 +62,13 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 		QueueSignalID: h.queueSignalID,
 	})
 
-	if h.finished {
-		return nil, errors.New("handler already finished (validate may have failed)")
-	}
-
 	if h.canceled {
 		finStatus, finDesc = app.StatusCancelled, "signal was canceled"
 		return nil, errors.New("signal was canceled")
+	}
+
+	if h.finished {
+		return nil, errors.New("handler already finished (validate may have failed)")
 	}
 
 	event := h.buildSignalPhaseEvent(signal.SignalPhaseExecute)
@@ -247,10 +256,36 @@ func (h *handler) startAutoRewarm(ctx workflow.Context) {
 	if h.autoRewarmStarted || h.finished || h.canceled || h.validating || h.executing {
 		return
 	}
+	r, ok := h.sig.(signal.AutoExecuteOnTerminalStart)
+	if !ok {
+		return
+	}
 	h.autoRewarmStarted = true
 
 	workflow.Go(ctx, func(gctx workflow.Context) {
 		if h.finished || h.canceled {
+			return
+		}
+		if err := workflow.Await(gctx, func() bool {
+			if h.finished || h.canceled {
+				return true
+			}
+			if !workflow.AllHandlersFinished(gctx) {
+				return false
+			}
+			return r.AutoExecuteReady() || r.AutoExecuteDeclined()
+		}); err != nil {
+			return
+		}
+		if h.finished || h.canceled {
+			return
+		}
+		if !r.AutoExecuteReady() {
+			// Only read-only updates (poll/is-retryable) landed on this
+			// re-warm. Finish with the signal's existing terminal outcome
+			// instead of re-driving execute on a completed flow.
+			h.autoRewarmDeclined = true
+			h.setFinished(h.queueSignal.Status.Status, h.queueSignal.Status.StatusHumanDescription)
 			return
 		}
 		if _, err := h.validateHandler(gctx, callback.Ref{}); err != nil {

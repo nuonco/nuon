@@ -2,10 +2,14 @@ package testworker
 
 import (
 	"context"
+	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
@@ -34,7 +38,45 @@ func (e *FlowTestSuite) setupFlowTest(ctx context.Context, ownerID, ownerType st
 	return &flw, stepQueue.ID
 }
 
-// enqueueFlow dispatches the execute-flow signal to start the workflow.
+func (e *FlowTestSuite) setupGroupedFlowTest(ctx context.Context, ownerID, ownerType string, steps []app.WorkflowStep) (*app.Workflow, string) {
+	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallWorkflowStepsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallWorkflowStepGroupsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallSignalsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallGenerateStepsQueueName)
+
+	flw := app.Workflow{
+		OwnerID:   ownerID,
+		OwnerType: ownerType,
+		Type:      "test_flow",
+		Status:    app.NewCompositeStatus(ctx, app.StatusPending),
+	}
+	res := e.service.DB.WithContext(ctx).Create(&flw)
+	require.Nil(e.T(), res.Error)
+
+	groups := make(map[int]string)
+	for i := range steps {
+		groupID, ok := groups[steps[i].GroupIdx]
+		if !ok {
+			group := app.WorkflowStepGroup{
+				WorkflowID: flw.ID,
+				GroupIdx:   steps[i].GroupIdx,
+				Parallel:   steps[i].GroupParallel,
+				Status:     app.NewCompositeStatus(ctx, app.StatusPending),
+			}
+			res := e.service.DB.WithContext(ctx).Create(&group)
+			require.Nil(e.T(), res.Error)
+			groupID = group.ID
+			groups[steps[i].GroupIdx] = groupID
+		}
+		steps[i].WorkflowStepGroupID = groupID
+	}
+
+	e.createTestSteps(ctx, &flw, steps)
+	return &flw, stepQueue.ID
+}
+
+// enqueueFlow dispatches the execute-flow signal to start the workflow with
+// the production default (resident host), mirroring executeflow.NewSignal.
 func (e *FlowTestSuite) enqueueFlow(ctx context.Context, queueID string, flw *app.Workflow, ownerID, ownerType string) {
 	resp, err := e.service.QueueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID: queueID,
@@ -46,6 +88,8 @@ func (e *FlowTestSuite) enqueueFlow(ctx context.Context, queueID string, flw *ap
 			GenerateStepsQueueName: queuenames.InstallGenerateStepsQueueName,
 			OwnerID:                ownerID,
 			OwnerType:              ownerType,
+			Resident:               true,
+			ResidentIdleTimeout:    testResidentIdleTimeout,
 		},
 		// Set owner so the flow client can find this queue signal via
 		// findQueueSignalByOwner(workflowID, "install_workflows", ...).
@@ -54,6 +98,117 @@ func (e *FlowTestSuite) enqueueFlow(ctx context.Context, queueID string, flw *ap
 	})
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), resp)
+}
+
+func (e *FlowTestSuite) enqueueResidentFlow(ctx context.Context, queueID string, flw *app.Workflow, ownerID, ownerType string, idleTimeout time.Duration) {
+	resp, err := e.service.QueueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
+		QueueID: queueID,
+		Signal: &executeflow.Signal{
+			WorkflowID:             flw.ID,
+			StepGroupQueueName:     queuenames.InstallWorkflowStepGroupsQueueName,
+			StepQueueName:          queuenames.InstallWorkflowStepsQueueName,
+			StepTargetQueueName:    queuenames.InstallSignalsQueueName,
+			GenerateStepsQueueName: queuenames.InstallGenerateStepsQueueName,
+			OwnerID:                ownerID,
+			OwnerType:              ownerType,
+			Resident:               true,
+			ResidentIdleTimeout:    idleTimeout,
+		},
+		OwnerID:   flw.ID,
+		OwnerType: "install_workflows",
+	})
+	require.Nil(e.T(), err)
+	require.NotNil(e.T(), resp)
+}
+
+// enqueueLegacyFlow dispatches a non-resident execute-flow signal, the shape of
+// signals enqueued before resident hosts shipped.
+func (e *FlowTestSuite) enqueueLegacyFlow(ctx context.Context, queueID string, flw *app.Workflow, ownerID, ownerType string) {
+	resp, err := e.service.QueueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
+		QueueID: queueID,
+		Signal: &executeflow.Signal{
+			WorkflowID:             flw.ID,
+			StepGroupQueueName:     queuenames.InstallWorkflowStepGroupsQueueName,
+			StepQueueName:          queuenames.InstallWorkflowStepsQueueName,
+			StepTargetQueueName:    queuenames.InstallSignalsQueueName,
+			GenerateStepsQueueName: queuenames.InstallGenerateStepsQueueName,
+			OwnerID:                ownerID,
+			OwnerType:              ownerType,
+		},
+		OwnerID:   flw.ID,
+		OwnerType: "install_workflows",
+	})
+	require.Nil(e.T(), err)
+	require.NotNil(e.T(), resp)
+}
+
+func (e *FlowTestSuite) TestResidentEagerGenerationNeverFinishesWithPendingSteps() {
+	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
+	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
+	ownerID, ownerType := newTestOwner()
+	workflowType := app.WorkflowType("test_resident_eager_generated_flow")
+
+	registerTestGenerator(ownerType, workflowType, func(workflow.Context, *app.Workflow) (*app.GenerateStepsResult, error) {
+		return &app.GenerateStepsResult{
+			Groups: []*app.WorkflowStepGroup{
+				{GroupIdx: 1, EagerExecution: true, Status: app.CompositeStatus{Status: app.StatusPending}},
+				{GroupIdx: 2, Status: app.CompositeStatus{Status: app.StatusPending}},
+			},
+			Steps: []*app.WorkflowStep{
+				{
+					Name:          "eager-step",
+					Idx:           100,
+					GroupIdx:      1,
+					ExecutionType: app.WorkflowStepExecutionTypeSystem,
+					Status:        app.CompositeStatus{Status: app.StatusPending},
+					QueueSignal:   &signaldb.SignalData{Signal: &SuccessSignal{}},
+				},
+				{
+					Name:          "non-eager-blocking-step",
+					Idx:           200,
+					GroupIdx:      2,
+					ExecutionType: app.WorkflowStepExecutionTypeSystem,
+					Status:        app.CompositeStatus{Status: app.StatusPending},
+					QueueSignal:   &signaldb.SignalData{Signal: &CancellableTestSignal{}},
+				},
+				{
+					Name:          "non-eager-apply-step",
+					Idx:           300,
+					GroupIdx:      2,
+					ExecutionType: app.WorkflowStepExecutionTypeSystem,
+					Status:        app.CompositeStatus{Status: app.StatusPending},
+					QueueSignal:   &signaldb.SignalData{Signal: &SuccessSignal{}},
+				},
+			},
+		}, nil
+	})
+
+	workflowQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflows")
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallWorkflowStepGroupsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallWorkflowStepsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallSignalsQueueName)
+	e.createTestQueue(ctx, ownerID, ownerType, queuenames.InstallGenerateStepsQueueName)
+
+	flw := e.createTestWorkflow(ctx, ownerID, ownerType, workflowType, &generateworkflowsteps.Signal{})
+	e.enqueueResidentFlow(ctx, workflowQueue.ID, flw, ownerID, ownerType, time.Second)
+	e.waitForStepInProgress(ctx, flw.ID, "non-eager-blocking-step")
+
+	observedWorkflow := e.getWorkflow(ctx, flw.ID)
+	observedQueueSignal := e.getLatestQueueSignal(ctx, flw.ID, "install_workflows", executeflow.SignalType)
+	observedSteps := e.getStepsByWorkflow(ctx, flw.ID)
+
+	_, err := e.service.FlowClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{InstallWorkflowID: flw.ID})
+	require.NoError(e.T(), err)
+	e.waitForWorkflowTerminal(ctx, flw.ID)
+
+	require.NotEqual(e.T(), app.StatusSuccess, observedWorkflow.Status.Status)
+	require.True(e.T(), observedWorkflow.FinishedAt.IsZero())
+	require.NotEqual(e.T(), app.StatusSuccess, observedQueueSignal.Status.Status)
+	for _, step := range observedSteps {
+		if step.Name == "non-eager-apply-step" {
+			require.False(e.T(), isTerminal(step.Status.Status))
+		}
+	}
 }
 
 // TestSequentialGroupSuccess verifies that a workflow with multiple groups

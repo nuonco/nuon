@@ -107,6 +107,9 @@ const (
 
 	// GroupAwaitApproval means the group is awaiting approval.
 	GroupAwaitApproval Group = "await-approval"
+
+	// GroupAwaitRetry means the group is awaiting a manual retry or skip.
+	GroupAwaitRetry Group = "await-retry"
 )
 
 // MetadataKey is the key used to store the directive in status metadata.

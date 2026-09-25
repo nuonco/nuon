@@ -40,9 +40,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/testworker/seed"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/telemetry"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/blob"
@@ -55,10 +57,11 @@ import (
 type TestService struct {
 	fx.In
 
-	DB   *gorm.DB `name:"psql"`
-	V    *validator.Validate
-	L    *zap.Logger
-	Seed *seed.Seeder
+	Config *internal.Config
+	DB     *gorm.DB `name:"psql"`
+	V      *validator.Validate
+	L      *zap.Logger
+	Seed   *seed.Seeder
 
 	Client *client.Client
 }
@@ -88,20 +91,27 @@ func (e *EnqueueTestSuite) SetupSuite() {
 		fx.Provide(internal.NewConfig),
 
 		// various dependencies
+		fx.Provide(telemetry.NewConfig),
 		fx.Provide(log.New),
 		fx.Provide(dblog.New),
 		fx.Provide(loops.New),
 		fx.Provide(github.New),
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
-		fx.Provide(func() *querycollector.Collector { return querycollector.NewCollector(5000) }),
+		fx.Provide(func(cfg *internal.Config) *querycollector.Collector {
+			if cfg.DebugEnableQueryCollector {
+				return querycollector.NewCollector(5000)
+			}
+			return nil
+		}),
 		fx.Provide(psql.AsPSQL(psql.New)),
 		fx.Provide(ch.AsCH(ch.New)),
 
 		fx.Provide(blobstore.NewService),
 		fx.Provide(func(cfg *internal.Config, l *zap.Logger) *filecache.FileCache {
 			cache, err := filecache.New(filecache.Options{
-				Dir: cfg.TemporalBlobCacheDir, MaxCount: cfg.TemporalBlobCacheMaxCount,
+				Dir:      cfg.TemporalBlobCacheDir,
+				MaxCount: cfg.TemporalBlobCacheMaxCount,
 				MaxBytes: int64(cfg.TemporalBlobCacheMaxSizeMB) * 1024 * 1024,
 			})
 			if err != nil {
@@ -128,6 +138,7 @@ func (e *EnqueueTestSuite) SetupSuite() {
 		fx.Provide(statusactivities.New),
 		fx.Provide(job.New),
 		fx.Provide(signaldb.NewPayloadConverter),
+		fx.Provide(signal.NewSignalLifecycleActivities),
 
 		// test dependencies
 		fx.Provide(seed.New),
