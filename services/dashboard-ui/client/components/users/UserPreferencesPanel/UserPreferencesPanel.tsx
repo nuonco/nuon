@@ -13,7 +13,14 @@ import type {
 import type { TThemePreference } from '@/providers/theme-provider'
 
 const preferencesSchema = z.object({
-  theme: z.enum(['system', 'light', 'dark', 'classic', 'high-contrast']),
+  theme: z.enum([
+    'system',
+    'light',
+    'dark',
+    'classic',
+    'high-contrast',
+    'monochrome',
+  ]),
   showIds: z.enum(['hidden', 'shown']),
   installsTab: z.enum(['hidden', 'shown']),
   statusBar: z.enum(['hidden', 'shown']),
@@ -116,13 +123,15 @@ export const UserPreferencesPanel = ({
                   { value: 'dark', label: 'Dark' },
                   { value: 'classic', label: 'Classic' },
                   { value: 'high-contrast', label: 'High contrast' },
+                  { value: 'monochrome', label: 'Monochrome' },
                 ]}
               />
             )}
           </form.Field>
           <Text variant="subtext" theme="neutral">
             How the dashboard looks in this browser. Classic is the previous
-            purple theme.
+            purple theme. Monochrome is black and white, with color kept for
+            status.
           </Text>
         </div>
 
