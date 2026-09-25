@@ -29,6 +29,9 @@ type ConfigsACRAppRegistration struct {
 	// component ID
 	ComponentID string `json:"componentID,omitempty"`
 
+	// connection ID
+	ConnectionID string `json:"connectionID,omitempty"`
+
 	// tenant ID
 	TenantID string `json:"tenantID,omitempty"`
 }
