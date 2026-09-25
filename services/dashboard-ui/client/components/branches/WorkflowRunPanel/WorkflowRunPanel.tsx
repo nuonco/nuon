@@ -88,6 +88,7 @@ export const WorkflowRunPanel = ({
                 step={selectedStep}
                 appBranchId={appBranchId}
                 appBranchRunId={appBranchRunId}
+                workflowStatus={status}
                 onClose={() => {}}
               />
             </div>
