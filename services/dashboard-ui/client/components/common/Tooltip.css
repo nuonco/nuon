@@ -16,8 +16,8 @@
 }
 
 [data-theme='monochrome'] .tooltip-content {
-  --background: var(--white);
-  color: var(--black);
+  --background: var(--color-dark-grey-200);
+  color: var(--white);
 }
 
 .tooltip-content.enter {
