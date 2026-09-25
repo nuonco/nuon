@@ -3,6 +3,7 @@ package service
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,6 +12,53 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/oidcissuer"
 )
+
+func TestAWSSetup(t *testing.T) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	issuer, err := oidcissuer.New("https://api.example.com", key, "example-key")
+	require.NoError(t, err)
+	svc := &service{issuer: issuer}
+
+	tests := map[string]struct {
+		capabilities []app.CloudConnectionCapability
+		repositories []string
+		want         []string
+		notWant      []string
+	}{
+		"stacks": {
+			capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityStacks},
+			want:         []string{"cloudformation:CreateStack", "cloudformation:DescribeStacks", "iam:CreatePolicy", "iam:GetInstanceProfile", "iam:CreateServiceLinkedRole", "secretsmanager:CreateSecret"},
+			notWant:      []string{"ecr:GetAuthorizationToken"},
+		},
+		"images with selected repositories": {
+			capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityImages},
+			repositories: []string{"backend", "worker"},
+			want:         []string{"ecr:GetAuthorizationToken", "ecr:PutImage", "arn:aws:ecr:us-east-1:123456789012:repository/backend", "arn:aws:ecr:us-east-1:123456789012:repository/worker"},
+			notWant:      []string{"cloudformation:CreateStack", "repository/*"},
+		},
+		"both with all repositories": {
+			capabilities: []app.CloudConnectionCapability{app.CloudConnectionCapabilityStacks, app.CloudConnectionCapabilityImages},
+			want:         []string{"cloudformation:CreateStack", "ecr:GetAuthorizationToken", "arn:aws:ecr:us-east-1:123456789012:repository/*"},
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			connection := &app.CloudConnection{ID: "cc_example", OrgID: "org_example", Platform: app.CloudPlatformAWS, TargetID: "123456789012", DefaultRegion: "us-east-1", RequestedCapabilities: test.capabilities}
+			got := svc.setup(connection, SetupOptions{Repositories: test.repositories})
+			policy, err := json.Marshal(got.PermissionsPolicy)
+			require.NoError(t, err)
+			material := string(policy) + got.CLI + got.Terraform + got.CloudFormation
+			for _, value := range test.want {
+				assert.Contains(t, material, value)
+			}
+			for _, value := range test.notWant {
+				assert.NotContains(t, material, value)
+			}
+			assert.NotContains(t, got.CLI, "thumbprint")
+		})
+	}
+}
 
 func TestAzureSetup(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)

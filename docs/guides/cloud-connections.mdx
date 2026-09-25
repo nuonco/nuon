@@ -41,7 +41,7 @@ nuon cloud-connections create \
   --repository acme/api
 ```
 
-The response includes a `nuonco/ecr-access/aws` Terraform module, AWS CLI commands, and a CloudFormation role resource. Each option creates an OIDC provider and role trust policy restricted to the connection's issuer, subject, and `sts.amazonaws.com` audience. Grant CloudFormation permissions for `stacks` and ECR read permissions for `images`.
+The response includes self-contained Terraform, AWS CLI commands, and CloudFormation resources. Each option creates an OIDC provider, a role trust policy restricted to the connection's issuer, subject, and `sts.amazonaws.com` audience, and an inline permissions policy based on the requested capabilities. The `stacks` policy covers the resources in Nuon's install stack templates. The `images` policy grants token exchange globally, as required by ECR, and scopes push/pull access to the selected repositories (or all repositories when none are selected).
 
 ### Azure
 
