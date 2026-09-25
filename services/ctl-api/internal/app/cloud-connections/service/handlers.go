@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -206,6 +207,7 @@ func (s *service) Setup(ctx *gin.Context) {
 // @Security OrgID
 // @Param connection_id path string true "connection ID"
 // @Success 204
+// @Failure 409 {object} stderr.ErrResponse
 // @Router /v1/cloud-connections/{connection_id} [delete]
 func (s *service) Delete(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -228,25 +230,37 @@ func (s *service) delete(ctx context.Context, orgID, connectionID string) error 
 			return fmt.Errorf("cloud connection not found: %w", err)
 		}
 		var installReferences int64
-		if err := tx.Model(&app.Install{}).Where(app.Install{CloudConnectionID: &connection.ID}).Count(&installReferences).Error; err != nil {
+		if err := tx.Unscoped().Model(&app.Install{}).Where(app.Install{CloudConnectionID: &connection.ID}).Count(&installReferences).Error; err != nil {
 			return fmt.Errorf("count install references: %w", err)
 		}
-		var componentReferences int64
-		if err := tx.Model(&app.AWSECRImageConfig{}).Where(app.AWSECRImageConfig{CloudConnectionID: connection.ID}).Count(&componentReferences).Error; err != nil {
+		var awsECRReferences int64
+		if err := tx.Unscoped().Model(&app.AWSECRImageConfig{}).Where(app.AWSECRImageConfig{CloudConnectionID: connection.ID}).Count(&awsECRReferences).Error; err != nil {
 			return fmt.Errorf("count component references: %w", err)
 		}
 		var azureComponentReferences int64
-		if err := tx.Model(&app.AzureACRImageConfig{}).Where(app.AzureACRImageConfig{CloudConnectionID: connection.ID}).Count(&azureComponentReferences).Error; err != nil {
+		if err := tx.Unscoped().Model(&app.AzureACRImageConfig{}).Where(app.AzureACRImageConfig{CloudConnectionID: connection.ID}).Count(&azureComponentReferences).Error; err != nil {
 			return fmt.Errorf("count Azure component references: %w", err)
 		}
-		componentReferences += azureComponentReferences
 		var gcpComponentReferences int64
-		if err := tx.Model(&app.GCPGARImageConfig{}).Where(app.GCPGARImageConfig{CloudConnectionID: connection.ID}).Count(&gcpComponentReferences).Error; err != nil {
+		if err := tx.Unscoped().Model(&app.GCPGARImageConfig{}).Where(app.GCPGARImageConfig{CloudConnectionID: connection.ID}).Count(&gcpComponentReferences).Error; err != nil {
 			return fmt.Errorf("count GCP component references: %w", err)
 		}
-		componentReferences += gcpComponentReferences
-		if installReferences > 0 || componentReferences > 0 {
-			return stderr.ErrConflict{Err: fmt.Errorf("cloud connection %s is in use", connection.ID), Description: "Cloud connection cannot be deleted while it is in use"}
+		references := make([]string, 0, 4)
+		if installReferences > 0 {
+			references = append(references, fmt.Sprintf("installs (%d)", installReferences))
+		}
+		if awsECRReferences > 0 {
+			references = append(references, fmt.Sprintf("AWS ECR image configs (%d)", awsECRReferences))
+		}
+		if azureComponentReferences > 0 {
+			references = append(references, fmt.Sprintf("Azure ACR image configs (%d)", azureComponentReferences))
+		}
+		if gcpComponentReferences > 0 {
+			references = append(references, fmt.Sprintf("GCP GAR image configs (%d)", gcpComponentReferences))
+		}
+		if len(references) > 0 {
+			description := "Cloud connection cannot be deleted; it is referenced by " + strings.Join(references, ", ")
+			return stderr.ErrConflict{Err: errors.New(description), Description: description}
 		}
 		return tx.Unscoped().Delete(&connection).Error
 	})
