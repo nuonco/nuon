@@ -184,17 +184,7 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb c
 		DerivedTimeout:  step.Timeout,
 	}
 
-	// Mark step as queued
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: step.ID,
-		Status: app.CompositeStatus{
-			Status: app.StatusQueued,
-		},
-	}); err != nil {
-		return "", errors.Wrapf(err, "unable to mark step %s as queued", step.Name)
-	}
-
-	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+	enqueueReq := &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.OwnerID,
 		OwnerType:       s.OwnerType,
 		QueueName:       s.QueueName,
@@ -203,7 +193,39 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb c
 		SignalOwnerID:   step.ID,
 		SignalOwnerType: "install_workflow_steps",
 		Callback:        cb,
-	})
+	}
+
+	markQueued := func() error {
+		return statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusQueued,
+			},
+		})
+	}
+
+	if executeworkflowstep.EnqueueBeforeQueued(ctx) {
+		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, enqueueReq)
+		if err != nil {
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID:     step.ID,
+				Status: executeworkflowstep.DispatchFailedStatus(err),
+			})
+			return "", errors.Wrapf(err, "unable to enqueue execute-workflow-step signal for step %s", step.Name)
+		}
+		if err := markQueued(); err != nil {
+			workflow.GetLogger(ctx).Warn("step execute signal enqueued but queued status write failed",
+				"step_id", step.ID,
+				"error", err)
+		}
+		return enqueueResp.QueueSignalID, nil
+	}
+
+	if err := markQueued(); err != nil {
+		return "", errors.Wrapf(err, "unable to mark step %s as queued", step.Name)
+	}
+
+	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, enqueueReq)
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to enqueue execute-workflow-step signal for step %s", step.Name)
 	}
