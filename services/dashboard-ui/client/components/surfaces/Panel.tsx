@@ -70,7 +70,7 @@ export const PanelBase = ({
         />
         <section
           className={cn(
-            'panel fixed h-screen top-0 right-0 border flex flex-col drop-shadow-2xl overflow-hidden',
+            'panel fixed h-screen top-0 right-0 border flex flex-col shadow-2xl overflow-hidden',
             'bg-white dark:bg-dark-grey-900',
             {
               'w-screen md:w-104': size === 'default',
