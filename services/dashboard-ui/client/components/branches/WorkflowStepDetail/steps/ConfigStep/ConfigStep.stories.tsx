@@ -54,42 +54,21 @@ const sections: DiffSectionData[] = [
 ]
 
 export const FullConfig = () => (
-  <ConfigStep
-    appConfigId="cfg-123"
-    status="success"
-    sections={sections}
-  />
+  <ConfigStep appConfigId="cfg-123" status="success" sections={sections} />
 )
 
 export const Loading = () => (
-  <ConfigStep
-    appConfigId="cfg-123"
-    status="success"
-    sections={[]}
-    isLoading
-  />
+  <ConfigStep appConfigId="cfg-123" status="success" sections={[]} isLoading />
 )
 
 export const Empty = () => (
-  <ConfigStep
-    appConfigId="cfg-123"
-    status="success"
-    sections={[]}
-  />
+  <ConfigStep appConfigId="cfg-123" status="success" sections={[]} />
 )
 
 export const WaitingForConfig = () => (
-  <ConfigStep
-    appConfigId={undefined}
-    status="in-progress"
-    sections={[]}
-  />
+  <ConfigStep appConfigId={undefined} status="in-progress" sections={[]} />
 )
 
 export const PendingConfig = () => (
-  <ConfigStep
-    appConfigId={undefined}
-    status="pending"
-    sections={[]}
-  />
+  <ConfigStep appConfigId={undefined} status="pending" sections={[]} />
 )

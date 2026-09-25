@@ -41,20 +41,18 @@ func (a *Activities) GetNonBranchManagedInstallIDs(ctx context.Context, input *G
 		return nil, fmt.Errorf("unable to query installs: %w", err)
 	}
 
-	var branchInstallGroups []app.AppBranchInstallGroup
+	var branchConnections []app.InstallAppBranchConnection
 	if err := a.db.WithContext(ctx).
-		Joins("JOIN app_branch_configs ON app_branch_configs.id = app_branch_install_groups.app_branch_config_id").
-		Joins("JOIN app_branches ON app_branches.id = app_branch_configs.app_branch_id AND app_branches.deleted_at = 0").
+		Joins("JOIN app_branches ON app_branches.id = install_app_branch_connections.app_branch_id AND app_branches.deleted_at = 0").
 		Where("app_branches.app_id = ?", input.AppID).
-		Find(&branchInstallGroups).Error; err != nil {
-		return nil, fmt.Errorf("unable to query branch install groups: %w", err)
+		Where(app.InstallAppBranchConnection{Active: true}).
+		Find(&branchConnections).Error; err != nil {
+		return nil, fmt.Errorf("unable to query install app branch connections: %w", err)
 	}
 
 	branchManaged := make(map[string]bool)
-	for _, group := range branchInstallGroups {
-		for _, id := range group.InstallIDs {
-			branchManaged[id] = true
-		}
+	for _, connection := range branchConnections {
+		branchManaged[connection.InstallID] = true
 	}
 
 	var result []string

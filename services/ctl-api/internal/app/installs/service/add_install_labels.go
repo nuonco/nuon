@@ -6,10 +6,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/labeladded"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -138,7 +140,12 @@ func (s *service) AddInstallLabels(ctx *gin.Context) {
 	install.Labels = merged
 	install.LabelTemplates = newTemplates
 
-	if err := s.db.WithContext(ctx).Model(&install).Select("labels", "label_templates").Updates(&install).Error; err != nil {
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&install).Select("labels", "label_templates").Updates(&install).Error; err != nil {
+			return err
+		}
+		return appshelpers.ReconcileInstallAppBranchGroupWithDB(ctx, tx, install.ID)
+	}); err != nil {
 		ctx.Error(fmt.Errorf("unable to update install labels: %w", err))
 		return
 	}

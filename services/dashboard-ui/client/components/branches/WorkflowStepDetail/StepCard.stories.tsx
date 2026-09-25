@@ -106,7 +106,11 @@ const configStep = {
 
 export const ConfigSnapshot = () => (
   <StepCard step={configStep}>
-    <ConfigStep appConfigId="cfg-123" status="success" sections={configSections} />
+    <ConfigStep
+      appConfigId="cfg-123"
+      status="success"
+      sections={configSections}
+    />
   </StepCard>
 )
 
@@ -146,7 +150,12 @@ export const ConfigSnapshotFailed = () => (
 
 export const ConfigSnapshotLoading = () => (
   <StepCard step={configStep}>
-    <ConfigStep appConfigId="cfg-123" status="success" sections={[]} isLoading />
+    <ConfigStep
+      appConfigId="cfg-123"
+      status="success"
+      sections={[]}
+      isLoading
+    />
   </StepCard>
 )
 

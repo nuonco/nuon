@@ -319,7 +319,7 @@ export const PreviewBranchRunModalContainer = ({
 
   useEffect(() => {
     if (loadingInstalls || defaultsSynced) return
-    setMode(branchDefaults.mode)
+    setMode(branchDefaults.mode === 'none' ? 'plan-only' : branchDefaults.mode)
     setSelectedInstallId((prev) => prev || branchDefaults.installId)
     setDefaultsSynced(true)
   }, [

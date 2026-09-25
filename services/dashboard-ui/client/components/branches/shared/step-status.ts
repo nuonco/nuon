@@ -1,7 +1,12 @@
 import { getStatusTheme } from '@/utils/status-utils'
 import type { TInstallWorkflowStep } from '@/types'
 
-export type TStepStatusCategory = 'success' | 'error' | 'active' | 'awaiting' | 'pending'
+export type TStepStatusCategory =
+  | 'success'
+  | 'error'
+  | 'active'
+  | 'awaiting'
+  | 'pending'
 
 const SUCCESS_STATUSES = new Set(['success', 'succeeded'])
 const AWAITING_STATUSES = new Set(['approval-awaiting', 'pending-approval'])

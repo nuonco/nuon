@@ -34,9 +34,7 @@ export const BranchManagementDropdown = ({
       variant="ghost"
     >
       <Menu>
-        <Button href={detailHref}>
-          View details
-        </Button>
+        <Button href={detailHref}>View details</Button>
         <hr />
         <Text variant="label" theme="neutral">
           Settings
