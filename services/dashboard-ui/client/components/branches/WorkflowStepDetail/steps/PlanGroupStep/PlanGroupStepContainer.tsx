@@ -13,11 +13,13 @@ import { GroupApprovalActions } from './GroupApprovalActions'
 interface IPlanGroupStepContainer {
   step: TInstallWorkflowStep
   metadata: Record<string, any>
+  workflowStatus?: string
 }
 
 export const PlanGroupStepContainer = ({
   step,
   metadata,
+  workflowStatus,
 }: IPlanGroupStepContainer) => {
   const { org } = useOrg()
   const { app, labelColors } = useApp()
@@ -28,6 +30,8 @@ export const PlanGroupStepContainer = ({
   const hasApproval = step.execution_type === 'approval' && !!approvalId
   const hasResponse = !!step.approval?.response
   const isAwaiting = step.status?.status === 'approval-awaiting'
+  const isCancelled =
+    workflowStatus === 'cancelled' || step.status?.status === 'cancelled'
 
   const { data: plan } = useQuery({
     placeholderData: keepPreviousData,
@@ -48,7 +52,7 @@ export const PlanGroupStepContainer = ({
     plan?.install_group ||
     metadata.install_group_name ||
     step.name?.replace(/^plan install group:\s*/i, '')
-  const showApproveBar = hasApproval && isAwaiting && !hasResponse
+  const showApproveBar = hasApproval && isAwaiting && !hasResponse && !isCancelled
 
   const diffQueries = useQueries({
     queries: rawInstalls.map((inst) => ({
