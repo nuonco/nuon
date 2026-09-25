@@ -24,6 +24,9 @@ jobs:
   add-label:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
       - name: add label
         uses: actions-ecosystem/action-add-labels@v1
