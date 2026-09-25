@@ -28,9 +28,6 @@ type AppInstallerSDKGCPRole struct {
 
 	// predefined role
 	PredefinedRole string `json:"predefined_role,omitempty"`
-
-	// predefined roles
-	PredefinedRoles []string `json:"predefined_roles"`
 }
 
 // Validate validates this app installer s d k g c p role

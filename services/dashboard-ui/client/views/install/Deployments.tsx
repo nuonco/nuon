@@ -28,7 +28,7 @@ export const Deployments = () => {
         title="Deployments"
         description="View all deployments applied to this install, including config changes and affected resources."
       />
-      <DeploymentsList />
+      <DeploymentsList shouldPoll />
     </PageSection>
   )
 }
