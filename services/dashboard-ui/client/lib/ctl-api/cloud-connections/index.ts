@@ -7,10 +7,11 @@ export const createCloudConnection = ({
 }: {
   body: {
     name: string
-    platform: 'aws' | 'azure'
+    platform: 'aws' | 'azure' | 'gcp'
     target_id: string
     principal: string
     tenant_id?: string
+    identity_provider?: string
     default_region?: string
     capabilities: ('stacks' | 'images')[]
     repositories?: string[]

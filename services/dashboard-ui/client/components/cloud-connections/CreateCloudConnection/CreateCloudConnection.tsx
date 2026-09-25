@@ -23,8 +23,6 @@ const CLOUD_OPTIONS = [
   {
     value: 'gcp',
     label: 'Google Cloud',
-    disabled: true,
-    badge: { label: 'Coming soon' },
   },
 ]
 
@@ -35,7 +33,7 @@ const CAPABILITY_OPTIONS = [
 ]
 
 interface ICreateCloudConnectionModal extends Omit<IModal, 'onSubmit'> {
-  defaultPlatform?: 'aws' | 'azure'
+  defaultPlatform?: 'aws' | 'azure' | 'gcp'
   connection: TCloudConnection | null
   error: TAPIError | null
   isPending: boolean
@@ -64,10 +62,11 @@ export const CreateCloudConnectionModal = ({
       platform: defaultPlatform,
       targetId: '',
       tenantId: '',
-      capabilitySet: 'both',
+      capabilitySet: defaultPlatform === 'gcp' ? 'images' : 'both',
       registry: '',
       repositories: '',
       principal: '',
+      identityProvider: '',
     } as CreateCloudConnectionValues,
     validators: {
       onMount: createCloudConnectionSchema,
@@ -133,7 +132,9 @@ export const CreateCloudConnectionModal = ({
           Apply one of these configurations in the{' '}
           {connection.platform === 'azure'
             ? 'Azure subscription'
-            : 'AWS account'}
+            : connection.platform === 'gcp'
+              ? 'GCP project'
+              : 'AWS account'}
           , then verify the connection.
         </Text>
         {connection.platform === 'azure' ? (
@@ -156,6 +157,22 @@ export const CreateCloudConnectionModal = ({
               ),
             }}
             tabLabels={{ cli: 'Azure CLI', portal: 'Portal JSON' }}
+          />
+        ) : connection.platform === 'gcp' ? (
+          <Tabs
+            tabs={{
+              terraform: (
+                <CodeBlock language="hcl" showCopy>
+                  {connection.setup.terraform}
+                </CodeBlock>
+              ),
+              cli: (
+                <CodeBlock language="bash" showCopy>
+                  {connection.setup.cli}
+                </CodeBlock>
+              ),
+            }}
+            tabLabels={{ cli: 'gcloud CLI' }}
           />
         ) : (
           <Tabs
@@ -237,12 +254,16 @@ export const CreateCloudConnectionModal = ({
                 labelText:
                   platform === 'azure'
                     ? 'Azure subscription ID'
-                    : 'AWS account ID',
+                    : platform === 'gcp'
+                      ? 'GCP project ID'
+                      : 'AWS account ID',
               }}
               placeholder={
                 platform === 'azure'
                   ? '00000000-0000-4000-8000-000000000000'
-                  : '123456789012'
+                  : platform === 'gcp'
+                    ? 'acme-production'
+                    : '123456789012'
               }
               disabled={isPending}
             />
@@ -254,7 +275,11 @@ export const CreateCloudConnectionModal = ({
               field={field}
               labelProps={{ labelText: 'Name' }}
               placeholder={
-                platform === 'azure' ? 'Production Azure' : 'Production AWS'
+                platform === 'azure'
+                  ? 'Production Azure'
+                  : platform === 'gcp'
+                    ? 'Production GCP'
+                    : 'Production AWS'
               }
               disabled={isPending}
             />
@@ -264,7 +289,11 @@ export const CreateCloudConnectionModal = ({
           {(field) => (
             <FormSelect
               field={field}
-              options={CAPABILITY_OPTIONS}
+              options={
+                platform === 'gcp'
+                  ? [{ value: 'images', label: 'Pull images' }]
+                  : CAPABILITY_OPTIONS
+              }
               labelProps={{ labelText: 'Access' }}
               disabled={isPending}
             />
@@ -289,10 +318,18 @@ export const CreateCloudConnectionModal = ({
                 <FormTextarea
                   field={field}
                   labelProps={{
-                    labelText: `${platform === 'azure' ? 'ACR' : 'ECR'} repositories (optional)`,
+                    labelText: `${platform === 'azure' ? 'ACR' : platform === 'gcp' ? 'Artifact Registry' : 'ECR'} repositories (optional)`,
                   }}
-                  helperText="One repository name per line. Used to scope image access."
-                  placeholder={'backend\nworker'}
+                  helperText={
+                    platform === 'gcp'
+                      ? 'One location/repository per line. Used to scope image access.'
+                      : 'One repository name per line. Used to scope image access.'
+                  }
+                  placeholder={
+                    platform === 'gcp'
+                      ? 'us-central1/backend\nus-central1/worker'
+                      : 'backend\nworker'
+                  }
                   disabled={isPending}
                 />
               )}
@@ -306,18 +343,38 @@ export const CreateCloudConnectionModal = ({
                 field={field}
                 labelProps={{
                   labelText:
-                    platform === 'azure' ? 'Client ID' : 'IAM role ARN',
+                    platform === 'azure'
+                      ? 'Client ID'
+                      : platform === 'gcp'
+                        ? 'Service account email'
+                        : 'IAM role ARN',
                 }}
                 placeholder={
                   platform === 'azure'
                     ? '00000000-0000-4000-8000-000000000000'
-                    : 'arn:aws:iam::123456789012:role/nuon-cloud-connection'
+                    : platform === 'gcp'
+                      ? 'nuon-cloud-connection@acme-production.iam.gserviceaccount.com'
+                      : 'arn:aws:iam::123456789012:role/nuon-cloud-connection'
                 }
                 disabled={isPending}
               />
             )}
           </form.Field>
         </div>
+        {platform === 'gcp' && (
+          <div className="sm:col-span-2">
+            <form.Field name="identityProvider">
+              {(field) => (
+                <FormInput
+                  field={field}
+                  labelProps={{ labelText: 'Workload Identity Provider' }}
+                  placeholder="projects/123456789/locations/global/workloadIdentityPools/nuon/providers/connection"
+                  disabled={isPending}
+                />
+              )}
+            </form.Field>
+          </div>
+        )}
       </form>
     </Modal>
   )

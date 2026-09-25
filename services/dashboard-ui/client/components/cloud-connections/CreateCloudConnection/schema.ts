@@ -6,13 +6,14 @@ const uuid =
 export const createCloudConnectionSchema = z
   .object({
     name: z.string().trim().min(1, 'Name is required'),
-    platform: z.enum(['aws', 'azure']),
+    platform: z.enum(['aws', 'azure', 'gcp']),
     targetId: z.string().trim().min(1, 'Target is required'),
     tenantId: z.string(),
     capabilitySet: z.enum(['stacks', 'images', 'both']),
     registry: z.string(),
     repositories: z.string(),
     principal: z.string().trim().min(1, 'Principal is required'),
+    identityProvider: z.string(),
   })
   .superRefine((value, context) => {
     if (value.platform === 'aws') {
@@ -28,6 +29,46 @@ export const createCloudConnectionSchema = z
           code: 'custom',
           path: ['principal'],
           message: 'Enter a valid AWS IAM role ARN',
+        })
+      }
+      return
+    }
+
+    if (value.platform === 'gcp') {
+      if (!/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(value.targetId)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['targetId'],
+          message: 'Enter a valid GCP project ID',
+        })
+      }
+      if (
+        !/^[a-z][a-z0-9-]{4,28}[a-z0-9]@[a-z][a-z0-9-]{4,28}[a-z0-9]\.iam\.gserviceaccount\.com$/.test(
+          value.principal
+        )
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['principal'],
+          message: 'Enter a valid GCP service account email',
+        })
+      }
+      if (
+        !/^(?:https:)?\/\/iam\.googleapis\.com\/projects\/\d+\/locations\/global\/workloadIdentityPools\/[a-z0-9-]+\/providers\/[a-z0-9-]+$|^projects\/\d+\/locations\/global\/workloadIdentityPools\/[a-z0-9-]+\/providers\/[a-z0-9-]+$/.test(
+          value.identityProvider.trim()
+        )
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['identityProvider'],
+          message: 'Enter a valid Workload Identity Provider resource name',
+        })
+      }
+      if (value.capabilitySet !== 'images') {
+        context.addIssue({
+          code: 'custom',
+          path: ['capabilitySet'],
+          message: 'GCP connections support image pulls only',
         })
       }
       return

@@ -30,7 +30,9 @@ const CreateCloudConnectionModalContainer = (props: Record<string, any>) => {
   const createMutation = useMutation({
     mutationFn: (values: CreateCloudConnectionValues) => {
       const capabilities: ('stacks' | 'images')[] =
-        values.capabilitySet === 'both'
+        values.platform === 'gcp'
+          ? ['images']
+          : values.capabilitySet === 'both'
           ? ['stacks', 'images']
           : [values.capabilitySet]
       const nextRepositories = repositoriesFrom(values.repositories)
@@ -44,6 +46,10 @@ const CreateCloudConnectionModalContainer = (props: Record<string, any>) => {
           target_id: values.targetId.trim(),
           tenant_id:
             values.platform === 'azure' ? values.tenantId.trim() : undefined,
+          identity_provider:
+            values.platform === 'gcp'
+              ? values.identityProvider.trim()
+              : undefined,
           principal: values.principal.trim(),
           capabilities,
           registry:

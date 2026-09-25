@@ -44,14 +44,14 @@ func (s *Service) Get(ctx context.Context, connectionID string, asJSON bool) err
 	return render(connection, asJSON)
 }
 
-func (s *Service) Create(ctx context.Context, name, platform, targetID, principal, tenantID, defaultRegion, registry string, capabilities, repositories []string, asJSON bool) error {
+func (s *Service) Create(ctx context.Context, name, platform, targetID, principal, tenantID, identityProvider, defaultRegion, registry string, capabilities, repositories []string, asJSON bool) error {
 	capabilityValues := make([]models.AppCloudConnectionCapability, 0, len(capabilities))
 	for _, capability := range capabilities {
 		capabilityValues = append(capabilityValues, models.AppCloudConnectionCapability(capability))
 	}
 	connection, err := s.api.CreateCloudConnection(ctx, &models.ServiceCreateRequest{
 		Name: name, Platform: models.AppCloudPlatform(platform), TargetID: targetID,
-		Principal: principal, TenantID: tenantID, DefaultRegion: defaultRegion,
+		Principal: principal, TenantID: tenantID, IdentityProvider: identityProvider, DefaultRegion: defaultRegion,
 		Capabilities: capabilityValues, Registry: registry, Repositories: repositories,
 	})
 	if err != nil {

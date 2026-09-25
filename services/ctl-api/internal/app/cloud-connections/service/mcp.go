@@ -29,20 +29,21 @@ type mcpConnectionInput struct {
 }
 
 type mcpCreateInput struct {
-	Name          string                          `json:"name" jsonschema:"connection name"`
-	Platform      app.CloudPlatform               `json:"platform,omitempty" jsonschema:"cloud platform: aws or azure (defaults to aws)"`
-	TargetID      string                          `json:"target_id" jsonschema:"AWS account ID or Azure subscription ID"`
-	Principal     string                          `json:"principal" jsonschema:"AWS IAM role ARN or Entra application client ID"`
-	TenantID      string                          `json:"tenant_id,omitempty" jsonschema:"Entra tenant ID for Azure"`
-	DefaultRegion string                          `json:"default_region,omitempty" jsonschema:"AWS region, defaults to us-east-1"`
-	Capabilities  []app.CloudConnectionCapability `json:"capabilities" jsonschema:"requested capabilities: stacks, images, or both"`
-	Repositories  []string                        `json:"repositories,omitempty" jsonschema:"ECR or ACR repository names to scope setup material"`
-	Registry      string                          `json:"registry,omitempty" jsonschema:"Azure Container Registry name or login server"`
+	Name             string                          `json:"name" jsonschema:"connection name"`
+	Platform         app.CloudPlatform               `json:"platform,omitempty" jsonschema:"cloud platform: aws, azure, or gcp (defaults to aws)"`
+	TargetID         string                          `json:"target_id" jsonschema:"AWS account ID, Azure subscription ID, or GCP project ID"`
+	Principal        string                          `json:"principal" jsonschema:"AWS IAM role ARN, Entra application client ID, or GCP service account email"`
+	TenantID         string                          `json:"tenant_id,omitempty" jsonschema:"Entra tenant ID for Azure"`
+	IdentityProvider string                          `json:"identity_provider,omitempty" jsonschema:"GCP Workload Identity Provider resource name"`
+	DefaultRegion    string                          `json:"default_region,omitempty" jsonschema:"AWS region, defaults to us-east-1"`
+	Capabilities     []app.CloudConnectionCapability `json:"capabilities" jsonschema:"requested capabilities: stacks, images, or both"`
+	Repositories     []string                        `json:"repositories,omitempty" jsonschema:"ECR or ACR repository names, or GCP location/name values, to scope setup material"`
+	Registry         string                          `json:"registry,omitempty" jsonschema:"Azure Container Registry name or login server"`
 }
 
 type mcpVerifyInput struct {
 	ConnectionID string   `json:"connection_id" jsonschema:"cloud connection ID"`
-	Repositories []string `json:"repositories,omitempty" jsonschema:"ECR or ACR repository names to probe"`
+	Repositories []string `json:"repositories,omitempty" jsonschema:"ECR or ACR repository names, or GCP location/name values, to probe"`
 	Registry     string   `json:"registry,omitempty" jsonschema:"Azure Container Registry name or login server"`
 }
 
@@ -95,7 +96,7 @@ func (s *service) mcpCreate(ctx context.Context, _ *mcp.CallToolRequest, in mcpC
 	if in.Platform == "" {
 		in.Platform = app.CloudPlatformAWS
 	}
-	connection := app.CloudConnection{OrgID: orgID, Name: in.Name, Platform: in.Platform, TargetID: in.TargetID, Principal: in.Principal, TenantID: in.TenantID, DefaultRegion: in.DefaultRegion, Capabilities: in.Capabilities}
+	connection := app.CloudConnection{OrgID: orgID, Name: in.Name, Platform: in.Platform, TargetID: in.TargetID, Principal: in.Principal, TenantID: in.TenantID, IdentityProvider: in.IdentityProvider, DefaultRegion: in.DefaultRegion, Capabilities: in.Capabilities}
 	if err := validateConnection(&connection); err != nil {
 		return nil, nil, err
 	}

@@ -26,6 +26,7 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 
 	var name, platform, targetID, principal, defaultRegion string
 	var tenantID, subscriptionID, clientID, registry string
+	var projectID, serviceAccountEmail, identityProvider string
 	var capabilities, repositories []string
 	create := &cobra.Command{
 		Use: "create", Short: "Create a cloud connection", Annotations: outputs,
@@ -36,22 +37,31 @@ func (c *cli) cloudConnectionsCmd() *cobra.Command {
 			if clientID != "" {
 				principal = clientID
 			}
+			if projectID != "" {
+				targetID = projectID
+			}
+			if serviceAccountEmail != "" {
+				principal = serviceAccountEmail
+			}
 			if targetID == "" {
-				return fmt.Errorf("--target-id or --subscription-id is required")
+				return fmt.Errorf("--target-id, --subscription-id, or --project-id is required")
 			}
 			if principal == "" {
-				return fmt.Errorf("--principal or --client-id is required")
+				return fmt.Errorf("--principal, --client-id, or --service-account-email is required")
 			}
-			return c.cloudConnections.Create(cmd.Context(), name, platform, targetID, principal, tenantID, defaultRegion, registry, capabilities, repositories, PrintJSON)
+			return c.cloudConnections.Create(cmd.Context(), name, platform, targetID, principal, tenantID, identityProvider, defaultRegion, registry, capabilities, repositories, PrintJSON)
 		}),
 	}
 	create.Flags().StringVar(&name, "name", "", "Connection name")
-	create.Flags().StringVar(&platform, "platform", "aws", "Cloud platform (aws or azure)")
+	create.Flags().StringVar(&platform, "platform", "aws", "Cloud platform (aws, azure, or gcp)")
 	create.Flags().StringVar(&targetID, "target-id", "", "Cloud account or subscription ID")
 	create.Flags().StringVar(&principal, "principal", "", "Cloud principal")
 	create.Flags().StringVar(&tenantID, "tenant-id", "", "Azure Entra tenant ID")
 	create.Flags().StringVar(&subscriptionID, "subscription-id", "", "Azure subscription ID")
 	create.Flags().StringVar(&clientID, "client-id", "", "Azure application client ID")
+	create.Flags().StringVar(&projectID, "project-id", "", "GCP project ID")
+	create.Flags().StringVar(&serviceAccountEmail, "service-account-email", "", "GCP service account email")
+	create.Flags().StringVar(&identityProvider, "identity-provider", "", "GCP Workload Identity Provider resource name")
 	create.Flags().StringVar(&registry, "registry", "", "Azure Container Registry name or login server")
 	create.Flags().StringVar(&defaultRegion, "default-region", "", "Default AWS region")
 	create.Flags().StringSliceVar(&capabilities, "capability", nil, "Capability: stacks or images (repeatable)")

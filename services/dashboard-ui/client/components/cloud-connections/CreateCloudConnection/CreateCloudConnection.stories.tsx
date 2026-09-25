@@ -51,6 +51,29 @@ const azureConnection = {
   },
 } as TCloudConnection
 
+const gcpConnection = {
+  ...connection,
+  id: 'cc_01JGCPEXAMPLE',
+  name: 'Production GCP',
+  platform: 'gcp',
+  target_id: 'acme-production',
+  principal: 'nuon-cloud-connection@acme-production.iam.gserviceaccount.com',
+  identity_provider:
+    'projects/123456789/locations/global/workloadIdentityPools/nuon/providers/connection',
+  capabilities: ['images'],
+  setup: {
+    ...connection.setup,
+    subject: 'org:org_01JEXAMPLE:connection:cc_01JGCPEXAMPLE',
+    audience:
+      'https://iam.googleapis.com/projects/123456789/locations/global/workloadIdentityPools/nuon/providers/connection',
+    terraform:
+      'module "nuon_cloud_connection" {\n  source = "nuonco/gar-access/google"\n}',
+    cli: 'gcloud iam workload-identity-pools create "nuon" --location global',
+    cloudformation: '',
+    capabilities: ['images'],
+  },
+} as TCloudConnection
+
 export const Default = () => (
   <ModalStory>
     <CreateCloudConnectionModal
@@ -101,6 +124,37 @@ export const AzureSetup = () => (
   <ModalStory>
     <CreateCloudConnectionModal
       connection={azureConnection}
+      error={null}
+      isPending={false}
+      isVerifying={false}
+      verifyError={null}
+      onSubmit={noop}
+      onVerify={noop}
+      onDone={noop}
+    />
+  </ModalStory>
+)
+
+export const GCPCreate = () => (
+  <ModalStory>
+    <CreateCloudConnectionModal
+      defaultPlatform="gcp"
+      connection={null}
+      error={null}
+      isPending={false}
+      isVerifying={false}
+      verifyError={null}
+      onSubmit={noop}
+      onVerify={noop}
+      onDone={noop}
+    />
+  </ModalStory>
+)
+
+export const GCPSetup = () => (
+  <ModalStory>
+    <CreateCloudConnectionModal
+      connection={gcpConnection}
       error={null}
       isPending={false}
       isVerifying={false}
