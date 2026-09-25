@@ -200,12 +200,10 @@ func init() {
 	// Flow check thresholds
 	config.RegisterDefault("stale_plan_threshold", "72h") // override with STALE_PLAN_THRESHOLD env var
 
-	// When true, the lowest-precedence operation role is defaulted from the parent
-	// install workflow type (provision/reprovision -> provision role, deprovision ->
-	// deprovision role; everything else -> maintenance role). When false, deploys and
-	// action runs default to the maintenance role. Global rollout switch for all orgs;
-	// override with WORKFLOW_DEFAULT_ROLE_ENABLED env var.
-	config.RegisterDefault("workflow_default_role_enabled", false)
+	// Opt out of workflow-type defaults for component and action roles across all
+	// orgs with USE_LEGACY_MAINTENANCE_ROLE_DEFAULT=true. Overrides and sandbox
+	// operation defaults are unaffected.
+	config.RegisterDefault("use_legacy_maintenance_role_default", false)
 }
 
 type Config struct {
@@ -579,9 +577,9 @@ type Config struct {
 	// Flow check thresholds
 	StalePlanThreshold string `config:"stale_plan_threshold"`
 
-	// WorkflowDefaultRoleEnabled is a global switch (all orgs) that defaults the
-	// lowest-precedence operation role from the parent install workflow type.
-	WorkflowDefaultRoleEnabled bool `config:"workflow_default_role_enabled"`
+	// UseLegacyMaintenanceRoleDefault keeps component and action defaults on
+	// maintenance instead of deriving them from the parent workflow type.
+	UseLegacyMaintenanceRoleDefault bool `config:"use_legacy_maintenance_role_default"`
 }
 
 func (c *Config) IsAWS() bool {
